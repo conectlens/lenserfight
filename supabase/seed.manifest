@@ -8,6 +8,9 @@
 #
 # Order matters. Run: pnpm supabase:combine-seeds
 
+# ── CI guard — runs first to abort on accidental secrets in CI ────────────
+seeds/00_ci_guard.sql
+
 # ── Lookups the runtime depends on ──────────────────────────────────────────
 # core.languages MUST load before lensers.profiles (preferences trigger FK).
 seeds/01_core_languages.sql
@@ -40,7 +43,9 @@ seeds/41_developer_lens_templates.sql
 seeds/42_production_workflow_templates.sql
 seeds/43_ai_agent_lens_bindings.sql
 seeds/44_community_profiles.sql
+seeds/45_creator_business_lens_templates.sql
 seeds/46_connectors.sql
+seeds/47_chainabit_productivity_templates.sql
 seeds/48_workflow_templates.sql
 
 # ── Geo lookups (countries only — community edition) ──────────────────────
