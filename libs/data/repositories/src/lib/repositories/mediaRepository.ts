@@ -79,51 +79,39 @@ export class SupabaseMediaRepository implements MediaRepositoryPort {
     }
   }
 
-  async getByOwner(lenserId: string, limit = 200): Promise<MediaObject[]> {
-    const { data, error } = await supabase
-      .schema('media')
-      .from('objects')
-      .select('*')
-      .eq('owner_lenser_id', lenserId)
-      .neq('lifecycle_state', 'deleted')
-      .order('created_at', { ascending: false })
-      .limit(limit)
+  async getByOwner(_lenserId: string, limit = 200): Promise<MediaObject[]> {
+    const { data, error } = await supabase.rpc('fn_list_media_objects', {
+      p_limit: limit,
+      p_cursor: null,
+    })
 
     if (error) this.handleError(error)
     return ((data ?? []) as Record<string, unknown>[]).map((row) => this.mapObject(row))
   }
 
   async getById(id: string): Promise<MediaObject | null> {
-    const { data, error } = await supabase
-      .schema('media')
-      .from('objects')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_media_object', {
+      p_object_id: id,
+    })
 
     if (error) this.handleError(error)
-    if (!data) return null
-    return this.mapObject(data as Record<string, unknown>)
+    if (!data?.[0]) return null
+    return this.mapObject(data[0] as Record<string, unknown>)
   }
 
   async create(input: CreateMediaObjectDTO, workspaceId: string): Promise<MediaObject> {
-    const { data, error } = await supabase
-      .schema('media')
-      .from('objects')
-      .insert({
-        workspace_id: workspaceId,
-        media_type: input.mediaType,
-        mime_type: input.mimeType ?? null,
-        name: input.name,
-        content_text: input.contentText ?? null,
-        external_url: input.externalUrl ?? null,
-        lifecycle_state: input.contentText || input.externalUrl ? 'active' : 'pending',
-      })
-      .select('*')
-      .single()
+    const { data, error } = await supabase.rpc('fn_create_media_object', {
+      p_workspace_id: workspaceId,
+      p_media_type: input.mediaType,
+      p_mime_type: input.mimeType ?? null,
+      p_name: input.name,
+      p_content_text: input.contentText ?? null,
+      p_external_url: input.externalUrl ?? null,
+    })
 
     if (error) this.handleError(error)
-    return this.mapObject(data as Record<string, unknown>)
+    if (!data?.[0]) throw new Error('Failed to create media object')
+    return this.mapObject(data[0] as Record<string, unknown>)
   }
 
   async finalize(
@@ -193,15 +181,22 @@ export class SupabaseMediaRepository implements MediaRepositoryPort {
   }
 
   async getAttachmentsForEntity(entityType: string, entityId: string): Promise<MediaAttachment[]> {
-    const { data, error } = await supabase
-      .schema('media')
-      .from('attachments')
-      .select('*, object:objects(*)')
-      .eq('entity_type', entityType)
-      .eq('entity_id', entityId)
+    const { data, error } = await supabase.rpc('fn_get_entity_media_attachments', {
+      p_entity_type: entityType,
+      p_entity_id: entityId,
+    })
 
     if (error) this.handleError(error)
-    return ((data ?? []) as Record<string, unknown>[]).map((row) => this.mapAttachment(row))
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+      id: row.attachment_id as string,
+      objectId: row.object_id as string,
+      entityType: row.entity_type as string,
+      entityId: row.entity_id as string,
+      bindingKey: row.binding_key as string,
+      attachedBy: null,
+      attachedAt: row.attached_at as string,
+      object: this.mapObject(row),
+    }))
   }
 
   async getSignedUploadUrl(bucket: string, objectKey: string): Promise<{ signedUrl: string; token: string }> {

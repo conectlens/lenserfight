@@ -12,28 +12,22 @@ export interface ResolvedLens {
   headVersionId: string | null
 }
 
-function isUuid(input: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input)
-}
-
 export async function resolveLens(serviceClient: SupabaseClient, lensIdOrSlug: string): Promise<ResolvedLens> {
-  const query = serviceClient
-    .schema('lenses')
-    .from('lenses')
-    .select('id, head_version_id')
-    .limit(1)
+  const { data, error } = await serviceClient
+    .rpc('fn_get_lens_for_execution', { p_lens_id: lensIdOrSlug })
 
-  const { data, error } = isUuid(lensIdOrSlug)
-    ? await query.eq('id', lensIdOrSlug).maybeSingle()
-    : await query.eq('slug', lensIdOrSlug).maybeSingle()
+  if (error) {
+    throw new Error('Lens not found')
+  }
 
-  if (error || !data) {
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row) {
     throw new Error('Lens not found')
   }
 
   return {
-    id: data.id as string,
-    headVersionId: (data.head_version_id as string | null) ?? null,
+    id: row.id as string,
+    headVersionId: (row.head_version_id as string | null) ?? null,
   }
 }
 
@@ -41,63 +35,25 @@ export async function resolveModel(
   serviceClient: SupabaseClient,
   request: LensExecuteRequest,
 ): Promise<ResolvedModel> {
-  let providerIdFilter: string | null = null
-  if (request.providerOverride) {
-    const { data: providerRow, error: providerError } = await serviceClient
-      .schema('ai')
-      .from('providers')
-      .select('id')
-      .eq('key', request.providerOverride)
-      .maybeSingle()
+  const { data, error } = await serviceClient
+    .rpc('fn_resolve_execution_model', {
+      p_provider_override: request.providerOverride ?? null,
+      p_model_override: request.modelOverride ?? null,
+    })
 
-    if (providerError || !providerRow) {
-      throw new Error('Requested provider not found')
-    }
-    providerIdFilter = providerRow.id as string
+  if (error) {
+    throw new Error(error.message)
   }
 
-  let query = serviceClient
-    .schema('ai')
-    .from('models')
-    .select('id, key, provider_id')
-    .eq('is_active', true)
-    .order('created_at', { ascending: true })
-
-  if (providerIdFilter) {
-    query = query.eq('provider_id', providerIdFilter)
-  }
-
-  const modelRow = request.modelOverride
-    ? (await query.or(`id.eq.${request.modelOverride},key.eq.${request.modelOverride}`).limit(1).maybeSingle())
-    : (await query.limit(1).maybeSingle())
-
-  if ('error' in modelRow && modelRow.error) {
-    throw new Error(modelRow.error.message)
-  }
-
-  const row = Array.isArray(modelRow.data)
-    ? modelRow.data[0]
-    : modelRow.data
-
+  const row = Array.isArray(data) ? data[0] : data
   if (!row) {
     throw new Error('No active model found')
   }
 
-  const { data: provider, error: providerError } = await serviceClient
-    .schema('ai')
-    .from('providers')
-    .select('key')
-    .eq('id', row.provider_id as string)
-    .maybeSingle()
-
-  if (providerError || !provider) {
-    throw new Error('Provider not found for model')
-  }
-
   return {
-    id: row.id as string,
-    key: row.key as string,
-    providerKey: provider.key as string,
+    id: row.model_id as string,
+    key: row.model_key as string,
+    providerKey: row.provider_key as string,
   }
 }
 
@@ -109,9 +65,8 @@ export async function validateCloudByokOwnership(
   const { data, error } = await userClient.rpc('fn_get_my_api_keys')
   if (error) throw error
 
-  const key = (Array.isArray(data) ? data : []).find(
-    (item) => item.id === byokKeyRefId,
-  ) as { provider_key?: string } | undefined
+  const keys = (Array.isArray(data) ? data : []) as Array<{ id?: string; provider_key?: string }>
+  const key = keys.find((item) => item.id === byokKeyRefId)
 
   if (!key) {
     throw new Error('BYOK key not found or not owned by the current user')

@@ -37,27 +37,32 @@ async function loadContenderRuns(battleId: string): Promise<ContenderRunRow[]> {
   // Pull the pair of (contender, latest submission). We accept the most recent
   // submission per contender to support hybrid/manual battles where the run
   // id sits on the submission, not the contender.
-  const { data: contenders, error: contendersError } = await supabase
-    .schema('battles')
-    .from('contenders')
-    .select('id, slot')
-    .eq('battle_id', battleId)
+  const { data: contendersData, error: contendersError } = await supabase.rpc(
+    'fn_get_battle_contenders',
+    { p_battle_id: battleId },
+  )
 
   if (contendersError) throw new Error(contendersError.message)
+  const contenders = (Array.isArray(contendersData) ? contendersData : []) as Array<{ id: string; slot: 'A' | 'B' }>
   if (!contenders || contenders.length === 0) return []
 
-  const { data: submissions, error: submissionsError } = await supabase
-    .schema('battles')
-    .from('submissions')
-    .select('contender_id, execution_run_id, content_text, submitted_at')
-    .eq('battle_id', battleId)
+  const { data: submissionsData, error: submissionsError } = await supabase.rpc(
+    'fn_get_battle_submissions',
+    { p_battle_id: battleId },
+  )
 
   if (submissionsError) throw new Error(submissionsError.message)
+  const submissions = (Array.isArray(submissionsData) ? submissionsData : []) as Array<{
+    contender_id: string
+    execution_run_id: string | null
+    content_text: string | null
+    submitted_at: string | null
+  }>
 
   const submissionByContender = new Map<string, { execution_run_id: string | null; content_text: string | null; submitted_at: string | null }>()
-  for (const s of submissions ?? []) {
-    const existing = submissionByContender.get(s.contender_id as string)
-    const incomingSubmittedAt = (s.submitted_at as string | null) ?? null
+  for (const s of submissions) {
+    const existing = submissionByContender.get(s.contender_id)
+    const incomingSubmittedAt = s.submitted_at ?? null
     // Keep the most recently submitted row per contender. When both rows
     // are missing `submitted_at`, the first one wins (insertion order).
     if (
@@ -65,15 +70,15 @@ async function loadContenderRuns(battleId: string): Promise<ContenderRunRow[]> {
       (incomingSubmittedAt &&
         (!existing.submitted_at || incomingSubmittedAt > existing.submitted_at))
     ) {
-      submissionByContender.set(s.contender_id as string, {
-        execution_run_id: (s.execution_run_id as string | null) ?? null,
-        content_text: (s.content_text as string | null) ?? null,
+      submissionByContender.set(s.contender_id, {
+        execution_run_id: s.execution_run_id ?? null,
+        content_text: s.content_text ?? null,
         submitted_at: incomingSubmittedAt,
       })
     }
   }
 
-  return (contenders as Array<{ id: string; slot: 'A' | 'B' }>)
+  return contenders
     .map((c) => {
       const sub = submissionByContender.get(c.id)
       let runId: string | null = sub?.execution_run_id ?? null

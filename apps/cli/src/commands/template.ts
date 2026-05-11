@@ -233,24 +233,16 @@ const setRecurrence = defineCommand({
   },
   async run({ args }) {
     try {
-      const { createServiceClient } = await import('../utils/supabase-client');
-      const client = await createServiceClient();
-
       const nextRunAt = args['starts-at']
         ? new Date(args['starts-at'] as string).toISOString()
         : new Date().toISOString();
 
-      const { error } = await client
-        .schema('battles')
-        .from('templates')
-        .update({
-          recurrence_rule:        args.recurrence,
-          next_run_at:            nextRunAt,
-          auto_start_delay_hours: parseInt(args['auto-start-delay-hours'] as string, 10),
-        })
-        .eq('id', args.id);
-
-      if (error) throw error;
+      await callRpc('fn_templates_set_recurrence', {
+        p_template_id:          args.id,
+        p_recurrence_rule:      args.recurrence,
+        p_next_run_at:          nextRunAt,
+        p_auto_start_delay_hours: parseInt(args['auto-start-delay-hours'] as string, 10),
+      }, { requireAuth: true });
 
       consola.success('Recurrence set on template %s.', args.id);
       consola.info('Rule:       %s', args.recurrence);
@@ -273,28 +265,24 @@ const listRecurring = defineCommand({
   },
   async run({ args }) {
     try {
-      const { createServiceClient } = await import('../utils/supabase-client');
-      const client = await createServiceClient();
+      const data = await callRpc<Array<Record<string, unknown>>>(
+        'fn_list_battle_templates',
+        { p_limit: 100 },
+        { requireAuth: true }
+      );
 
-      const { data, error } = await client
-        .schema('battles')
-        .from('templates')
-        .select('id, title, recurrence_rule, next_run_at, auto_start_delay_hours')
-        .not('recurrence_rule', 'is', null)
-        .order('next_run_at', { ascending: true });
+      const recurring = (data ?? []).filter((t) => t['recurrence_rule'] != null);
 
-      if (error) throw error;
+      if (args.json) { printJson(recurring); return; }
 
-      if (args.json) { printJson(data ?? []); return; }
-
-      if (!data || data.length === 0) {
+      if (recurring.length === 0) {
         consola.info('No recurring templates. Use: lf template set-recurrence <id> --recurrence FREQ=DAILY');
         return;
       }
 
       printTable(
         ['ID', 'Title', 'Rule', 'Next Run At', 'Delay (h)'],
-        (data as Array<Record<string, unknown>>).map((t) => [
+        recurring.map((t) => [
           String(t['id']).slice(0, 8) + '…',
           truncate(String(t['title'] ?? ''), 30),
           String(t['recurrence_rule'] ?? ''),

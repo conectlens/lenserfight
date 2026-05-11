@@ -98,42 +98,31 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
   }
 
   async getAgentProfile(aiLenserId: string): Promise<AgentProfileView | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('v_agent_profile')
-      .select('*')
-      .eq('id', aiLenserId)
-      .maybeSingle()
-
+    const { data, error } = await supabase.rpc('fn_get_agent_profile', {
+      p_ai_lenser_id: aiLenserId,
+    })
     if (error) this.handleError(error)
-    return data as AgentProfileView | null
+    return (data ?? null) as AgentProfileView | null
   }
 
   async getAgentProfileByProfileId(profileId: string): Promise<AgentProfileView | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('v_agent_profile')
-      .select('*')
-      .eq('profile_id', profileId)
-      .maybeSingle()
-
+    const { data, error } = await supabase.rpc('fn_get_agent_profile_by_profile_id', {
+      p_profile_id: profileId,
+    })
     if (error) this.handleError(error)
-    return data as AgentProfileView | null
+    return (data ?? null) as AgentProfileView | null
   }
 
   async getAgentsByOwner(ownerLenserId: string): Promise<AgentProfileView[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('v_agent_profile')
-      .select('*')
-      .eq('owner_lenser_id', ownerLenserId)
-
+    const { data, error } = await supabase.rpc('fn_list_agents_by_owner', {
+      p_owner_lenser_id: ownerLenserId,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as AgentProfileView[]
   }
 
   async createAgent(input: CreateAILenserInput): Promise<CreateAILenserResult> {
-    const { data, error } = await supabase.schema('agents').rpc('fn_create_ai_lenser', {
+    const { data, error } = await supabase.rpc('fn_create_ai_lenser', {
       p_owner_lenser_id: input.owner_lenser_id,
       p_handle: input.handle,
       p_display_name: input.display_name,
@@ -157,14 +146,10 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
   }
 
   async getActionLogs(aiLenserId: string, limit = 50): Promise<AgentActionLogRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('action_logs')
-      .select('id, ai_lenser_id, action_type, context_ref_type, context_ref_id, result, metadata, occurred_at')
-      .eq('ai_lenser_id', aiLenserId)
-      .order('occurred_at', { ascending: false })
-      .limit(limit)
-
+    const { data, error } = await supabase.rpc('fn_list_agent_action_logs', {
+      p_ai_lenser_id: aiLenserId,
+      p_limit: limit,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as AgentActionLogRecord[]
   }
@@ -189,42 +174,31 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
 
   async getQuotaSnapshot(aiLenserId: string, date?: string): Promise<AgentQuotaSnapshotRecord | null> {
     const periodDate = date ?? new Date().toISOString().slice(0, 10)
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('quota_snapshots')
-      .select('id, ai_lenser_id, period_date, battles_used, votes_used, credits_spent, updated_at')
-      .eq('ai_lenser_id', aiLenserId)
-      .eq('period_date', periodDate)
-      .maybeSingle()
-
+    const { data, error } = await supabase.rpc('fn_get_agent_quota_snapshot', {
+      p_ai_lenser_id: aiLenserId,
+      p_period_date: periodDate,
+    })
     if (error) this.handleError(error)
-    return data as AgentQuotaSnapshotRecord | null
+    const rows = (data ?? []) as AgentQuotaSnapshotRecord[]
+    return rows[0] ?? null
   }
 
   async getLensBindings(aiLenserId: string, limit = 50, offset = 0): Promise<AgentLensBindingRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('lens_bindings')
-      .select('id, ai_lenser_id, lens_id, version_id, is_default, category_tags, created_at')
-      .eq('ai_lenser_id', aiLenserId)
-      .order('is_default', { ascending: false })
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
+    const { data, error } = await supabase.rpc('fn_list_agent_lens_bindings', {
+      p_ai_lenser_id: aiLenserId,
+      p_limit: limit,
+      p_offset: offset,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as AgentLensBindingRecord[]
   }
 
   async getModelBindings(aiLenserId: string, limit = 50, offset = 0): Promise<AgentModelBindingRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('model_bindings')
-      .select('id, ai_lenser_id, model_id, is_default, category_tags, created_at')
-      .eq('ai_lenser_id', aiLenserId)
-      .order('is_default', { ascending: false })
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
+    const { data, error } = await supabase.rpc('fn_list_agent_model_bindings', {
+      p_ai_lenser_id: aiLenserId,
+      p_limit: limit,
+      p_offset: offset,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as AgentModelBindingRecord[]
   }

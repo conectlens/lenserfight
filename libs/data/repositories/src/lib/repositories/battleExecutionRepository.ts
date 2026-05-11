@@ -73,53 +73,32 @@ export const battleExecutionRepository = {
     battleId: string,
     contenderId?: string | null,
   ): Promise<ExecutionConfigRecord | null> {
-    // Try contender-specific first, then battle-level default (contender_id IS NULL)
-    if (contenderId) {
-      const { data } = await supabase
-        .schema('battles')
-        .from('execution_configs')
-        .select('*')
-        .eq('battle_id', battleId)
-        .eq('contender_id', contenderId)
-        .maybeSingle()
-      if (data) return data as ExecutionConfigRecord
-    }
-    // Fallback to battle-level default
-    const { data } = await supabase
-      .schema('battles')
-      .from('execution_configs')
-      .select('*')
-      .eq('battle_id', battleId)
-      .is('contender_id', null)
-      .maybeSingle()
-    return (data as ExecutionConfigRecord) ?? null
+    const { data, error } = await supabase.rpc('fn_get_battle_execution_config', {
+      p_battle_id: battleId,
+      p_contender_id: contenderId ?? null,
+    })
+    if (error) return null
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as ExecutionConfigRecord | null
   },
 
   async upsertExecutionConfig(
     input: UpsertExecutionConfigInput,
   ): Promise<ExecutionConfigRecord> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('execution_configs')
-      .upsert(
-        {
-          battle_id: input.battle_id,
-          contender_id: input.contender_id ?? null,
-          provider_key: input.provider_key,
-          model_key: input.model_key,
-          model_id: input.model_id ?? null,
-          funding_source: input.funding_source,
-          byok_key_ref_id: input.byok_key_ref_id ?? null,
-          max_tokens: input.max_tokens ?? 4096,
-          temperature: input.temperature ?? 0.7,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'battle_id,contender_id' },
-      )
-      .select()
-      .single()
+    const { data, error } = await supabase.rpc('fn_upsert_battle_execution_config', {
+      p_battle_id: input.battle_id,
+      p_contender_id: input.contender_id ?? null,
+      p_provider_key: input.provider_key,
+      p_model_key: input.model_key,
+      p_model_id: input.model_id ?? null,
+      p_funding_source: input.funding_source,
+      p_byok_key_ref_id: input.byok_key_ref_id ?? null,
+      p_max_tokens: input.max_tokens ?? 4096,
+      p_temperature: input.temperature ?? 0.7,
+    })
     if (error) throw error
-    return data as ExecutionConfigRecord
+    const row = Array.isArray(data) ? data[0] : data
+    return row as ExecutionConfigRecord
   },
 
   // --- Contender Runs ---
