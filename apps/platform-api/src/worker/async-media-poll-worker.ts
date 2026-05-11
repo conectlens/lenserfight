@@ -36,12 +36,10 @@ interface PolledRun {
 export async function pollAsyncMediaBatch(): Promise<{ polled: number; completed: number; failed: number }> {
   const serviceClient = createServiceSupabaseClient()
 
-  const { data, error } = await serviceClient
-    .schema('execution')
-    .rpc('fn_poll_async_run', {
-      p_stale_after_seconds: STALE_AFTER_SECONDS,
-      p_limit:               BATCH_LIMIT,
-    })
+  const { data, error } = await serviceClient.rpc('fn_poll_async_run', {
+    p_stale_after_seconds: STALE_AFTER_SECONDS,
+    p_limit:               BATCH_LIMIT,
+  })
 
   if (error) {
     nodeLogger.error('async-poll-worker claim failed', { workerId: WORKER_ID, message: error.message })
@@ -100,32 +98,25 @@ async function applyStatus(
   if (status.state === 'pending') return  // re-poll next tick
 
   if (status.state === 'completed') {
-    const { error } = await client
-      .schema('execution')
-      .rpc('fn_async_run_idempotent_complete', {
-        p_run_id:     row.run_id,
-        p_media_url:  status.mediaUrl,
-        p_mime_type:  status.mimeType,
-        p_bytes:      status.bytes ?? null,
-        p_width:      status.width ?? null,
-        p_height:     status.height ?? null,
-        p_duration_s: status.durationSeconds ?? null,
-      })
+    const { error } = await client.rpc('fn_async_run_idempotent_complete', {
+      p_run_id:     row.run_id,
+      p_media_url:  status.mediaUrl,
+      p_mime_type:  status.mimeType,
+      p_bytes:      status.bytes ?? null,
+      p_width:      status.width ?? null,
+      p_height:     status.height ?? null,
+      p_duration_s: status.durationSeconds ?? null,
+    })
     if (error) throw new Error(error.message)
     return
   }
 
   // state === 'failed'
-  const { error } = await client
-    .schema('execution')
-    .from('runs')
-    .update({
-      status:        'failed',
-      completed_at:  new Date().toISOString(),
-      error_code:    status.errorCode ?? 'provider_failed',
-      error_message: status.errorMessage ?? 'Provider reported failure',
-    })
-    .eq('id', row.run_id)
+  const { error } = await client.rpc('fn_worker_fail_execution_run', {
+    p_run_id:      row.run_id,
+    p_error_code:  status.errorCode ?? 'provider_failed',
+    p_error_message: status.errorMessage ?? 'Provider reported failure',
+  })
   if (error) throw new Error(error.message)
 }
 
