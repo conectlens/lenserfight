@@ -12,6 +12,65 @@ vi.mock('@lenserfight/data/supabase', () => ({
   },
 }))
 
+vi.mock('../factory', () => ({
+  createMemoryRepository: vi.fn(() => ({
+    writeMemoryEntry: async (input: Record<string, unknown>) =>
+      rpcMock('fn_write_memory_entry', {
+        p_profile_id: input['profile_id'],
+        p_scope: input['scope'],
+        p_source: input['source'],
+        p_content: input['content'],
+        p_confidence: input['confidence'] ?? 0.5,
+        p_expires_at: input['expires_at'] ?? null,
+        p_team_run_id: input['team_run_id'] ?? null,
+        p_metadata: input['metadata'] ?? {},
+      }).then((r: { data: unknown; error: unknown }) => {
+        if (r.error) throw r.error
+        return r.data
+      }),
+    readMemoryEntries: async (input: Record<string, unknown>) =>
+      rpcMock('fn_read_memory_entries', {
+        p_profile_id: input['profile_id'],
+        p_scope: input['scope'] ?? null,
+        p_limit: input['limit'] ?? 10,
+        p_team_run_id: input['team_run_id'] ?? null,
+      }).then((r: { data: unknown; error: unknown }) => {
+        if (r.error) throw r.error
+        return r.data ?? []
+      }),
+    redactMemoryEntry: async (memoryId: string, reason?: string) =>
+      rpcMock('fn_redact_memory_entry', {
+        p_memory_id: memoryId,
+        p_reason: reason ?? null,
+      }).then((r: { data: unknown; error: unknown }) => {
+        if (r.error) throw r.error
+      }),
+    summarizeMemoryProfile: async (profileId: string) =>
+      rpcMock('fn_summarize_memory_profile', { p_profile_id: profileId }).then(
+        (r: { data: unknown; error: unknown }) => {
+          if (r.error) throw r.error
+          const raw = r.data as Record<string, unknown> | null
+          return {
+            profile_id: profileId,
+            count: raw?.['count'] ?? 0,
+            last_written_at: raw?.['last_written_at'] ?? null,
+            scopes: raw?.['scopes'] ?? {},
+          }
+        }
+      ),
+    listMemoryEntries: async (profileId: string, options?: Record<string, unknown>) => {
+      const builder = fromMock('memories_v')
+      let b = builder.select('*').eq('profile_id', profileId).eq('is_redacted', false)
+      if (options?.['scope']) b = b.eq('scope', options['scope'])
+      b = b.order('created_at', { ascending: false }).limit(options?.['limit'] ?? 50)
+      const r = await b
+      if (r.error) throw r.error
+      return r.data ?? []
+    },
+    listMemoryAccessLogs: async () => [],
+  })),
+}))
+
 import { memoryService } from './memoryService'
 
 describe('memoryService', () => {
