@@ -273,7 +273,7 @@ export interface RecordRunProvenanceInput {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface WorkflowsRepositoryPort {
-  listByLenser(lenserId: string): Promise<WorkflowRecord[]>
+  listByLenser(lenserId: string, limit?: number): Promise<WorkflowRecord[]>
   listByLenserPaginated(lenserId: string, offset: number, limit: number, filter?: WorkflowsListFilter): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
   getPopular(offset: number, limit: number, search?: string): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
   listTemplates(limit?: number, offset?: number): Promise<TemplateWorkflowRecord[]>
@@ -388,12 +388,13 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
   // ── Reads via public.vw_workflows (no schema switch needed) ────────────────
 
-  async listByLenser(lenserId: string): Promise<WorkflowRecord[]> {
+  async listByLenser(lenserId: string, limit = 100): Promise<WorkflowRecord[]> {
     const { data, error } = await supabase
       .from('vw_workflows')
       .select('id, lenser_id, title, description, visibility, battle_count, node_count, created_at, updated_at')
       .eq('lenser_id', lenserId)
       .order('updated_at', { ascending: false })
+      .limit(limit)
 
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowRecord[]
