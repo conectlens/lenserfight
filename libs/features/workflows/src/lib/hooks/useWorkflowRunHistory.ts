@@ -7,7 +7,11 @@ export { type WorkflowRunRecord }
 
 const PAGE_SIZE = 10
 
-export function useWorkflowRunHistory(workflowId: string | undefined) {
+export function useWorkflowRunHistory(
+  workflowId: string | undefined,
+  options?: { enabled?: boolean },
+) {
+  const enabled = (options?.enabled ?? true) && !!workflowId
   const query = useInfiniteQuery<WorkflowRunRecord[]>({
     queryKey: ['workflow', workflowId, 'runs'],
     queryFn: ({ pageParam }) =>
@@ -15,7 +19,7 @@ export function useWorkflowRunHistory(workflowId: string | undefined) {
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === PAGE_SIZE ? allPages.flat().length : undefined,
-    enabled: !!workflowId,
+    enabled,
     staleTime: 1000 * 30,
   })
 
