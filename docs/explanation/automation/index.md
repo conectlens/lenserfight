@@ -96,10 +96,10 @@ The open-core mode is file-first.
 Canonical objects live as markdown:
 
 - `LENS.md`
-- `AGENT.md`
+- `LENSER.MD`
 - `AGENT_TEAM.md`
 - `TOOL.md`
-- `WORKFLOW.md`
+- `COLENS.MD`
 - `PRIVATE_BATTLE.md`
 - `SKILL.md`
 - `MEMORY_POLICY.md`
