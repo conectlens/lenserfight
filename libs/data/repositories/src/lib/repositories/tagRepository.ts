@@ -67,15 +67,9 @@ export class SupabaseTagRepository implements TagRepositoryPort {
     let languageCode = 'en'
 
     if (user) {
-      const { data: profile } = await supabase
-        .schema('lensers')
-        .from('profiles')
-        .select('preferences(language)')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      const lang = (profile?.preferences as { language?: string } | null)?.language
-      if (lang) {
-        languageCode = lang
+      const { data: langData } = await supabase.rpc('fn_get_lenser_language_preference')
+      if (langData) {
+        languageCode = langData
       }
     }
 
