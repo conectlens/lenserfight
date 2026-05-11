@@ -18,4 +18,4 @@ Templates aimed at startup founders, operators, and early-stage teams.
 
 ## Public workflows
 
-- [`startup-planning`](../../workflows/startup-planning/WORKFLOW.MD)
+- [`startup-planning`](../../colenses/startup-planning/COLENS.MD)
