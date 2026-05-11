@@ -156,8 +156,12 @@ DECLARE
   WF8_T6 uuid := '48000000-0002-0008-0004-000000000006';
 
 BEGIN
-  -- Resolve author and template tag
-  SELECT profile_id INTO v_author FROM agents.ai_lensers LIMIT 1;
+  -- Canonical author: @lenserfight. Fall back to the first AI lenser profile
+  -- if the reserved account is not yet seeded (partial CI runs).
+  SELECT id INTO v_author FROM lensers.profiles WHERE handle = 'lenserfight' LIMIT 1;
+  IF v_author IS NULL THEN
+    SELECT profile_id INTO v_author FROM agents.ai_lensers LIMIT 1;
+  END IF;
   SELECT id INTO v_tag_template FROM content.tags WHERE slug = 'template';
 
   -- =============================================================================
