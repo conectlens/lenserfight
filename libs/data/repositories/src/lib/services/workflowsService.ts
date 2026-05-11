@@ -55,8 +55,8 @@ export type {
 }
 
 export const workflowsService = {
-  listByLenser: (lenserId: string): Promise<WorkflowRecord[]> =>
-    workflowsRepo.listByLenser(lenserId),
+  listByLenser: (lenserId: string, limit = 100): Promise<WorkflowRecord[]> =>
+    workflowsRepo.listByLenser(lenserId, limit),
 
   listByLenserPaginated: (
     lenserId: string,
