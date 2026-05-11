@@ -12,18 +12,18 @@ INSERT INTO content.tags (slug)
 VALUES ('template')
 ON CONFLICT (slug) DO NOTHING;
 
--- Idempotent helper: ensure each kind:* tag exists (the seeds expect them).
+-- Idempotent helper: ensure each lens-kind tag exists (the seeds expect them).
 INSERT INTO content.tags (slug)
 VALUES
-  ('kind-text'),
-  ('kind-image'),
-  ('kind-video'),
-  ('kind-research'),
-  ('kind-pdf'),
-  ('kind-transform'),
-  ('kind-orchestration'),
-  ('kind-validation'),
-  ('kind-routing')
+  ('text'),
+  ('image'),
+  ('video'),
+  ('research'),
+  ('pdf'),
+  ('transform'),
+  ('orchestration'),
+  ('validation'),
+  ('routing')
 ON CONFLICT (slug) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
@@ -86,7 +86,8 @@ AS $$
         FROM lenses.workflow_nodes wn
         JOIN lenses.lenses ll ON ll.id = wn.lens_id
         JOIN content.tag_map tm2 ON tm2.entity_id = ll.id AND tm2.entity_type = 'lens'::content.entity_type_enum
-        JOIN content.tags t ON t.id = tm2.tag_id AND t.slug LIKE 'kind-%'
+        JOIN content.tags t ON t.id = tm2.tag_id
+                               AND t.slug IN ('text','image','video','research','pdf','transform','orchestration','validation','routing')
         WHERE wn.workflow_id = w.id
       ),
       ARRAY[]::text[]
