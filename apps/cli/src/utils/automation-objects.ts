@@ -1,6 +1,7 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
-import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
+import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { homedir } from 'node:os'
 
 import {
   AUTOMATION_OBJECT_KINDS,
@@ -21,6 +22,7 @@ export const AUTOMATION_FILE_NAMES: Record<AutomationObjectKind, string> = {
   lenser: 'LENSER.MD',
   colens: 'COLENS.MD',
   battle: 'BATTLE.MD',
+  ray: 'RAY.MD',
   team: 'TEAM.MD',
   agent: 'AGENT.md',
   agent_team: 'AGENT_TEAM.md',
@@ -33,11 +35,28 @@ export const AUTOMATION_FILE_NAMES: Record<AutomationObjectKind, string> = {
   run_report: 'RUN_REPORT.md',
 }
 
+const LEGACY_AUTOMATION_FILE_NAMES: Partial<Record<AutomationObjectKind, string[]>> = {
+  lenser: ['AGENT.MD', 'AGENT.md'],
+  colens: ['WORKFLOW.MD'],
+}
+
+const CANONICAL_TEMPLATE_DIRECTORIES = ['lensers', 'lenses', 'colenses', 'battles', 'rays'] as const
+const LEGACY_TEMPLATE_DIRECTORY_ALIASES: Record<string, string> = {
+  agents: 'lensers',
+  workflows: 'colenses',
+}
+
+const CANONICAL_KIND_ALIASES: Partial<Record<AutomationObjectKind, AutomationObjectKind>> = {
+  agent: 'lenser',
+  workflow: 'colens',
+}
+
 const REQUIRED_FRONTMATTER_KEYS: Record<AutomationObjectKind, string[]> = {
   lens: ['name', 'description'],
   lenser: ['name', 'description'],
   colens: ['name', 'description'],
   battle: ['name', 'description'],
+  ray: ['name', 'description'],
   team: ['name', 'description'],
   agent: ['name'],
   agent_team: ['name'],
@@ -55,6 +74,7 @@ const REQUIRED_SECTIONS: Record<AutomationObjectKind, string[]> = {
   lenser: ['Mission', 'Activation', 'Operating Rules'],
   colens: ['Purpose', 'Inputs', 'Steps', 'Outputs'],
   battle: ['Purpose', 'Participants', 'Evaluation', 'Report'],
+  ray: ['Purpose', 'Related Items', 'Routing'],
   team: ['Team Purpose', 'LENSERS', 'Collaboration Rules'],
   agent: ['Purpose', 'Instructions', 'Execution Policy'],
   agent_team: ['Team Purpose', 'Members', 'Collaboration Rules'],
@@ -70,6 +90,8 @@ const REQUIRED_SECTIONS: Record<AutomationObjectKind, string[]> = {
 const AUTOMATION_REGISTRY_FILE = '.lenserfight/automation-registry.json'
 const AUTOMATION_RUNS_DIR = 'runs'
 const AUTOMATION_REPORTS_DIR = 'reports'
+const LENSERFIGHT_DIR_NAME = '.lenserfight'
+const CONFIG_FILE_NAMES = ['config.json', 'config.yaml', 'config.yml'] as const
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const DISCLOSURE_DIRS = {
   references: 'references',
@@ -79,10 +101,14 @@ const DISCLOSURE_DIRS = {
 } as const
 
 const PRIMARY_FILE_KIND_BY_NAME: Record<string, AutomationObjectKind> = Object.fromEntries(
-  Object.entries(AUTOMATION_FILE_NAMES).map(([kind, fileName]) => [
-    fileName.toLowerCase(),
-    kind as AutomationObjectKind,
-  ])
+  [
+    ...Object.entries(AUTOMATION_FILE_NAMES).map(([kind, fileName]) => [
+      fileName.toLowerCase(),
+      kind as AutomationObjectKind,
+    ]),
+    ['agent.md', 'agent' as AutomationObjectKind],
+    ['workflow.md', 'workflow' as AutomationObjectKind],
+  ]
 ) as Record<string, AutomationObjectKind>
 
 export interface AutomationRegistryEntry extends AutomationObjectSummary {
@@ -92,6 +118,91 @@ export interface AutomationRegistryEntry extends AutomationObjectSummary {
 export interface WorkflowSimulationArtifact {
   reportPath: string
   jsonPath: string
+}
+
+export interface FileCliDefaults {
+  author?: string
+  model?: string
+  provider?: string
+  outputDirectory?: string
+  cacheDirectory?: string
+  templateDirectories?: string[]
+  rays?: string[]
+  locale?: string
+  license?: string
+  visibility?: AutomationObjectFrontmatter['visibility']
+  forkable?: boolean
+  safetyPolicy?: string
+  legalDisclaimerRequired?: boolean
+  financeDisclaimerRequired?: boolean
+  workflowExecutionMode?: 'manual' | 'sequential'
+  battleJudge?: string
+  evaluationCriteria?: string[]
+  maxSteps?: number
+  timeoutMs?: number
+  retryCount?: number
+  concurrencyLimit?: number
+}
+
+export interface FileCliConfig {
+  defaults: FileCliDefaults
+  configPath?: string
+}
+
+export interface LenserfightSourceRoot {
+  dir: string
+  scope: 'global' | 'project' | 'nested'
+  priority: number
+  config?: FileCliConfig
+}
+
+export interface DiscoveredAutomationObject {
+  key: string
+  slug: string
+  filePath: string
+  sourceDir: string
+  sourceScope: LenserfightSourceRoot['scope']
+  sourcePriority: number
+  result: AutomationValidationResult
+  overriddenBy?: string
+  legacyPath?: boolean
+}
+
+export interface LenserfightDiscoveryOptions {
+  cwd?: string
+  includeGlobal?: boolean
+  recursive?: boolean
+}
+
+export interface LenserfightWorkspaceDiscovery {
+  cwd: string
+  roots: LenserfightSourceRoot[]
+  config: FileCliConfig
+  objects: DiscoveredAutomationObject[]
+  winners: DiscoveredAutomationObject[]
+  conflicts: Array<{ key: string; winner: string; overridden: string[] }>
+  warnings: string[]
+}
+
+export interface TerminologyMigrationOptions {
+  roots?: string[]
+  cwd?: string
+  includeGlobal?: boolean
+  recursive?: boolean
+  dryRun?: boolean
+}
+
+export interface TerminologyMigrationOperation {
+  type: 'rename'
+  from: string
+  to: string
+  status: 'planned' | 'applied' | 'conflict' | 'skipped'
+  reason?: string
+}
+
+export interface TerminologyMigrationResult {
+  dryRun: boolean
+  operations: TerminologyMigrationOperation[]
 }
 
 function runtimeWorkspaceDir(cwd = process.cwd()): string {
@@ -107,6 +218,19 @@ export function resolveAutomationFileName(kind: AutomationObjectKind): string {
   return AUTOMATION_FILE_NAMES[kind]
 }
 
+export function canonicalAutomationKind(kind: AutomationObjectKind): AutomationObjectKind {
+  return CANONICAL_KIND_ALIASES[kind] ?? kind
+}
+
+export function canonicalTemplateDirectory(directory: string): string {
+  return LEGACY_TEMPLATE_DIRECTORY_ALIASES[directory] ?? directory
+}
+
+export function normalizeTemplateDirectories(directories?: string[]): string[] | undefined {
+  if (!directories) return undefined
+  return [...new Set(directories.map(canonicalTemplateDirectory))]
+}
+
 export function templateForKind(kind: AutomationObjectKind): string {
   switch (kind) {
     case 'lenser':
@@ -115,6 +239,8 @@ export function templateForKind(kind: AutomationObjectKind): string {
       return COLENS_TEMPLATE
     case 'battle':
       return BATTLE_TEMPLATE
+    case 'ray':
+      return RAY_TEMPLATE
     case 'team':
       return TEAM_TEMPLATE
     case 'agent':
@@ -257,6 +383,7 @@ export function validateAutomationDocument(
     validateProgressiveDisclosureRefs(document, issues)
     validateLensParameterContract(document, issues)
     validateBattleReferences(document, issues)
+    validateDisclaimerMarkers(document, issues)
   }
 
   return {
@@ -276,7 +403,102 @@ export function findAutomationFiles(inputPath: string): string[] {
 
   const results: string[] = []
   walkMarkdownFiles(resolved, results)
-  return results
+  return results.sort((a, b) => a.localeCompare(b))
+}
+
+export function isLegacyAutomationPath(filePath: string): boolean {
+  const parts = resolve(filePath).split(sep)
+  const fileName = basename(filePath).toLowerCase()
+  return parts.includes('agents') || parts.includes('workflows') || fileName === 'agent.md' || fileName === 'workflow.md'
+}
+
+export function getUserLenserfightDir(): string {
+  return resolve(process.env['LENSERFIGHT_HOME'] || resolve(homedir(), LENSERFIGHT_DIR_NAME))
+}
+
+export function discoverLenserfightWorkspace(
+  options: LenserfightDiscoveryOptions = {}
+): LenserfightWorkspaceDiscovery {
+  const cwd = resolve(options.cwd ?? process.cwd())
+  const includeGlobal = options.includeGlobal ?? true
+  const recursive = options.recursive ?? true
+  const roots = discoverSourceRoots(cwd, includeGlobal, recursive)
+  const config = roots.reduce<FileCliConfig>(
+    (merged, root) => mergeFileCliConfig(merged, root.config ?? { defaults: {} }),
+    { defaults: {} }
+  )
+
+  const discovered: DiscoveredAutomationObject[] = []
+  const warnings: string[] = []
+  roots.forEach((root) => {
+    for (const filePath of findAutomationFiles(root.dir)) {
+      const result = parseAutomationDocument(filePath)
+      const slug = objectSlug(result, filePath)
+      const kind = result.kind ?? inferKindFromFilePath(filePath) ?? 'lens'
+      const canonicalKind = canonicalAutomationKind(kind)
+      const legacyPath = isLegacyAutomationPath(filePath)
+      if (legacyPath) {
+        warnings.push(
+          `Legacy automation path discovered: ${filePath}. Use ${canonicalKind === 'lenser' ? 'lensers/*/LENSER.MD' : canonicalKind === 'colens' ? 'colenses/*/COLENS.MD' : 'canonical terminology'} for new files.`
+        )
+      }
+      discovered.push({
+        key: `${canonicalKind}:${slug}`,
+        slug,
+        filePath,
+        sourceDir: root.dir,
+        sourceScope: root.scope,
+        sourcePriority: root.priority,
+        result,
+        legacyPath,
+      })
+    }
+  })
+
+  discovered.sort(compareDiscoveredObjects)
+
+  const byKey = new Map<string, DiscoveredAutomationObject>()
+  for (const object of discovered) {
+    const existing = byKey.get(object.key)
+    if (existing) existing.overriddenBy = object.filePath
+    byKey.set(object.key, object)
+  }
+
+  const winners = [...byKey.values()].sort((a, b) => a.key.localeCompare(b.key))
+  const winnerPaths = new Set(winners.map((winner) => winner.filePath))
+  const objects = discovered.map((object) =>
+    winnerPaths.has(object.filePath) ? object : { ...object, overriddenBy: byKey.get(object.key)?.filePath }
+  )
+
+  validateWorkspaceReferences(winners)
+
+  const conflictMap = new Map<string, DiscoveredAutomationObject[]>()
+  for (const object of objects) {
+    const values = conflictMap.get(object.key) ?? []
+    values.push(object)
+    conflictMap.set(object.key, values)
+  }
+  const conflicts = [...conflictMap.entries()]
+    .filter(([, values]) => values.length > 1)
+    .map(([key, values]) => {
+      const winner = byKey.get(key)
+      if (values.some((value) => value.legacyPath) && values.some((value) => !value.legacyPath)) {
+        warnings.push(
+          `Duplicate legacy/canonical automation object conflict for ${key}; canonical path wins: ${winner?.filePath ?? values[values.length - 1].filePath}.`
+        )
+      }
+      return {
+        key,
+        winner: winner?.filePath ?? values[values.length - 1].filePath,
+        overridden: values
+          .filter((value) => value.filePath !== winner?.filePath)
+          .map((value) => value.filePath)
+          .sort((a, b) => a.localeCompare(b)),
+      }
+    })
+    .sort((a, b) => a.key.localeCompare(b.key))
+
+  return { cwd, roots, config, objects, winners, conflicts, warnings: [...new Set(warnings)].sort((a, b) => a.localeCompare(b)) }
 }
 
 export function inferKindFromFilePath(filePath: string): AutomationObjectKind | undefined {
@@ -303,7 +525,10 @@ export function loadUnitReference(unitRoot: string, relativePath: string): strin
 
 function walkMarkdownFiles(dir: string, results: string[]) {
   const knownFileNames = new Set(
-    Object.values(AUTOMATION_FILE_NAMES).map((value) => value.toLowerCase())
+    [
+      ...Object.values(AUTOMATION_FILE_NAMES),
+      ...Object.values(LEGACY_AUTOMATION_FILE_NAMES).flat(),
+    ].map((value) => value.toLowerCase())
   )
 
   for (const entry of readdirSync(dir)) {
@@ -321,6 +546,147 @@ function walkMarkdownFiles(dir: string, results: string[]) {
       results.push(fullPath)
     }
   }
+}
+
+function discoverSourceRoots(cwd: string, includeGlobal: boolean, recursive: boolean): LenserfightSourceRoot[] {
+  const roots: LenserfightSourceRoot[] = []
+  const seen = new Set<string>()
+  let priority = 0
+
+  if (includeGlobal) {
+    const globalDir = getUserLenserfightDir()
+    if (existsSync(globalDir)) {
+      roots.push({ dir: globalDir, scope: 'global', priority: priority++, config: loadFileCliConfig(globalDir) })
+      seen.add(globalDir)
+    }
+  }
+
+  const ancestors = ancestorDirs(cwd)
+  const lenserfightAncestors = ancestors
+    .map((dir) => resolve(dir, LENSERFIGHT_DIR_NAME))
+    .filter((dir) => existsSync(dir) && statSync(dir).isDirectory())
+
+  for (const dir of lenserfightAncestors) {
+    if (seen.has(dir)) continue
+    roots.push({
+      dir,
+      scope: dir === lenserfightAncestors[0] ? 'project' : 'nested',
+      priority: priority++,
+      config: loadFileCliConfig(dir),
+    })
+    seen.add(dir)
+  }
+
+  if (recursive && lenserfightAncestors.length > 0) {
+    const projectRoot = dirname(lenserfightAncestors[0])
+    for (const dir of findNestedLenserfightDirs(projectRoot)) {
+      if (seen.has(dir)) continue
+      roots.push({ dir, scope: 'nested', priority: priority++, config: loadFileCliConfig(dir) })
+      seen.add(dir)
+    }
+  }
+
+  return roots.sort((a, b) => a.priority - b.priority || a.dir.localeCompare(b.dir))
+}
+
+function ancestorDirs(cwd: string): string[] {
+  const dirs: string[] = []
+  let current = cwd
+  while (true) {
+    dirs.push(current)
+    const next = dirname(current)
+    if (next === current) break
+    current = next
+  }
+  return dirs.reverse()
+}
+
+function findNestedLenserfightDirs(root: string): string[] {
+  const results: string[] = []
+  walkDirs(root, results)
+  return results
+    .filter((dir) => basename(dir) === LENSERFIGHT_DIR_NAME)
+    .sort((a, b) => pathDepth(a) - pathDepth(b) || a.localeCompare(b))
+}
+
+function walkDirs(dir: string, results: string[]): void {
+  const ignored = new Set(['node_modules', '.git', 'dist', 'coverage', '.nx'])
+  for (const entry of readdirSync(dir).sort((a, b) => a.localeCompare(b))) {
+    if (ignored.has(entry)) continue
+    const fullPath = join(dir, entry)
+    let stats
+    try {
+      stats = statSync(fullPath)
+    } catch {
+      continue
+    }
+    if (!stats.isDirectory()) continue
+    results.push(fullPath)
+    if (entry === LENSERFIGHT_DIR_NAME) continue
+    walkDirs(fullPath, results)
+  }
+}
+
+function pathDepth(filePath: string): number {
+  return resolve(filePath).split(sep).filter(Boolean).length
+}
+
+function loadFileCliConfig(dir: string): FileCliConfig {
+  for (const fileName of CONFIG_FILE_NAMES) {
+    const configPath = resolve(dir, fileName)
+    if (!existsSync(configPath)) continue
+    try {
+      const raw = parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>
+      return normalizeFileCliConfig(raw, configPath)
+    } catch {
+      return { defaults: {}, configPath }
+    }
+  }
+  return { defaults: {} }
+}
+
+function normalizeFileCliConfig(raw: Record<string, unknown> | undefined, configPath: string): FileCliConfig {
+  const defaults = raw?.['defaults'] && typeof raw['defaults'] === 'object'
+    ? (raw['defaults'] as FileCliDefaults)
+    : {}
+  return { defaults: { ...defaults, templateDirectories: normalizeTemplateDirectories(defaults.templateDirectories) }, configPath }
+}
+
+function mergeFileCliConfig(base: FileCliConfig, override: FileCliConfig): FileCliConfig {
+  return {
+    defaults: {
+      ...base.defaults,
+      ...override.defaults,
+      rays: mergeStringArrays(base.defaults.rays, override.defaults.rays),
+      templateDirectories: normalizeTemplateDirectories(mergeStringArrays(base.defaults.templateDirectories, override.defaults.templateDirectories)),
+      evaluationCriteria: mergeStringArrays(base.defaults.evaluationCriteria, override.defaults.evaluationCriteria),
+    },
+    configPath: override.configPath ?? base.configPath,
+  }
+}
+
+function mergeStringArrays(base?: string[], override?: string[]): string[] | undefined {
+  if (!base && !override) return undefined
+  return [...new Set([...(base ?? []), ...(override ?? [])])]
+}
+
+function objectSlug(result: AutomationValidationResult, filePath: string): string {
+  const frontmatter = result.document?.frontmatter
+  const value = frontmatter?.slug || frontmatter?.name || frontmatter?.id || basename(dirname(filePath))
+  return slugFragment(String(value))
+}
+
+function compareDiscoveredObjects(a: DiscoveredAutomationObject, b: DiscoveredAutomationObject): number {
+  return (
+    a.sourcePriority - b.sourcePriority ||
+    terminologyPathRank(a) - terminologyPathRank(b) ||
+    pathDepth(a.filePath) - pathDepth(b.filePath) ||
+    a.filePath.localeCompare(b.filePath)
+  )
+}
+
+function terminologyPathRank(object: DiscoveredAutomationObject): number {
+  return object.legacyPath ? 0 : 1
 }
 
 function parseSections(body: string): Record<string, string> {
@@ -530,6 +896,121 @@ function validateBattleReferences(
   })
 }
 
+function validateDisclaimerMarkers(
+  document: AutomationMarkdownDocument,
+  issues: AutomationValidationIssue[]
+): void {
+  const frontmatter = document.frontmatter as unknown as Record<string, unknown>
+  const rayValues = new Set(
+    [frontmatter['rays'], frontmatter['tags']]
+      .flatMap((value) => (Array.isArray(value) ? value : []))
+      .map((value) => String(value).toLowerCase())
+  )
+  const text = `${document.body}\n${frontmatter.description ?? ''}`.toLowerCase()
+  const isLegal = rayValues.has('legal') || rayValues.has('legal-adjacent') || text.includes('legal')
+  const isFinance = rayValues.has('finance') || text.includes('financial advice') || text.includes('finance report')
+
+  if (isLegal && !text.includes('not legal advice')) {
+    issues.push({
+      path: 'disclaimer.legal',
+      message: 'Legal-adjacent templates must say the output is not legal advice and should be reviewed by a qualified lawyer.',
+      severity: 'error',
+    })
+  }
+
+  if (isFinance && !text.includes('not financial advice') && !text.includes('not certified financial advice')) {
+    issues.push({
+      path: 'disclaimer.finance',
+      message: 'Finance templates must say the output is not financial advice.',
+      severity: 'error',
+    })
+  }
+}
+
+function validateWorkspaceReferences(objects: DiscoveredAutomationObject[]): void {
+  const keys = new Set(objects.map((object) => object.key))
+  const rays = new Set(objects.filter((object) => object.result.kind === 'ray').map((object) => object.slug))
+
+  for (const object of objects) {
+    const doc = object.result.document
+    if (!doc) continue
+    const issues = object.result.issues
+    const frontmatter = doc.frontmatter as unknown as Record<string, unknown>
+
+    for (const ray of [frontmatter['rays'], frontmatter['tags']].flatMap((value) => (Array.isArray(value) ? value : []))) {
+      const slug = slugFragment(String(ray))
+      if (rays.size > 0 && !rays.has(slug)) {
+        issues.push({ path: `rays.${slug}`, message: `Referenced ray \`${slug}\` was not discovered.`, severity: 'warning' })
+      }
+    }
+
+    if (doc.frontmatter.kind === 'workflow' || doc.frontmatter.kind === 'colens') {
+      const nodes = Array.isArray(frontmatter['nodes']) ? frontmatter['nodes'] : []
+      const steps = Array.isArray(frontmatter['steps']) ? frontmatter['steps'] : []
+      ;[...nodes, ...steps].forEach((step, index) => {
+        if (!step || typeof step !== 'object') return
+        const row = step as Record<string, unknown>
+        const lens = typeof row['lens'] === 'string' ? row['lens'] : undefined
+        const lenser = typeof row['lenser'] === 'string'
+          ? row['lenser']
+          : typeof row['lenser_ref'] === 'string'
+            ? row['lenser_ref']
+            : typeof row['agent'] === 'string'
+              ? row['agent']
+              : typeof row['agent_ref'] === 'string'
+                ? row['agent_ref']
+                : undefined
+        if (lens && !keys.has(`lens:${slugFragment(lens)}`)) {
+          issues.push({ path: `colens.step[${index}].lens`, message: `Referenced lens \`${lens}\` was not discovered.`, severity: 'error' })
+        }
+        if (lenser && !keys.has(`lenser:${slugFragment(lenser)}`)) {
+          issues.push({ path: `colens.step[${index}].lenser`, message: `Referenced lenser \`${lenser}\` was not discovered.`, severity: 'error' })
+        }
+      })
+    }
+
+    if (doc.frontmatter.kind === 'battle') {
+      const refs = [
+        ...collectBattleRefs(frontmatter['participants']),
+        ...collectBattleRefs(frontmatter['contenders']),
+      ]
+      for (const ref of refs) {
+        if (!keys.has(`${ref.kind}:${slugFragment(ref.slug)}`)) {
+          issues.push({
+            path: 'battle.participants',
+            message: `Referenced ${ref.kind} \`${ref.slug}\` was not discovered.`,
+            severity: 'error',
+          })
+        }
+      }
+    }
+
+    object.result.ok = !issues.some((issue) => issue.severity === 'error')
+  }
+}
+
+function collectBattleRefs(value: unknown): Array<{ kind: string; slug: string }> {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return []
+    const row = entry as Record<string, unknown>
+    const rawKind = typeof row['type'] === 'string' ? row['type'] : typeof row['kind'] === 'string' ? row['kind'] : ''
+    const ref = typeof row['ref'] === 'string' ? row['ref'] : typeof row['lens'] === 'string' ? row['lens'] : ''
+    if (!rawKind || !ref) return []
+    if (rawKind === 'ai_model' || rawKind === 'model' || rawKind === 'human' || rawKind === 'prompt') return []
+    const kind = rawKind === 'eval'
+      ? 'evaluation'
+      : rawKind === 'workflow'
+        ? 'colens'
+        : rawKind === 'agent'
+          ? 'lenser'
+          : ['ray', 'lenser', 'colens', 'team', 'battle', 'evaluation'].includes(rawKind)
+            ? rawKind
+        : 'lens'
+    return [{ kind, slug: ref }]
+  })
+}
+
 export function toSummary(result: AutomationValidationResult): AutomationObjectSummary | null {
   const doc = result.document
   if (!result.ok || !doc?.frontmatter.kind || !isAutomationObjectKind(doc.frontmatter.kind)) return null
@@ -599,11 +1080,12 @@ export function registerAutomationFiles(filePaths: string[], cwd = process.cwd()
   return { imported, failures }
 }
 
-export function exportAutomationTemplate(kind: AutomationObjectKind, outPath?: string, cwd = process.cwd()) {
-  const fileName = resolveAutomationFileName(kind)
+export function exportAutomationTemplate(kind: AutomationObjectKind, outPath?: string, cwd = process.cwd(), options: { legacy?: boolean } = {}) {
+  const canonicalKind = options.legacy ? kind : canonicalAutomationKind(kind)
+  const fileName = resolveAutomationFileName(canonicalKind)
   const target = resolve(cwd, outPath || fileName)
   mkdirSync(dirname(target), { recursive: true })
-  writeFileSync(target, templateForKind(kind))
+  writeFileSync(target, templateForKind(canonicalKind))
   return target
 }
 
@@ -619,6 +1101,78 @@ export function exportAutomationObject(kind: AutomationObjectKind, id: string, o
   mkdirSync(dirname(target), { recursive: true })
   copyFileSync(source, target)
   return { source, target }
+}
+
+export function planTerminologyMigration(options: TerminologyMigrationOptions = {}): TerminologyMigrationResult {
+  const dryRun = options.dryRun ?? true
+  const roots = options.roots?.map((root) => resolve(root)) ?? discoverMigrationRoots(options)
+  const operations: TerminologyMigrationOperation[] = []
+
+  for (const root of roots) {
+    if (!existsSync(root)) continue
+    collectFileRenameOperations(root, operations)
+    collectDirectoryRenameOperations(root, operations)
+  }
+
+  operations.sort((a, b) => pathDepth(b.from) - pathDepth(a.from) || a.from.localeCompare(b.from))
+  if (!dryRun) {
+    for (const operation of operations) {
+      if (operation.status !== 'planned') continue
+      renameSync(operation.from, operation.to)
+      operation.status = 'applied'
+    }
+  }
+
+  return { dryRun, operations }
+}
+
+function discoverMigrationRoots(options: TerminologyMigrationOptions): string[] {
+  const cwd = resolve(options.cwd ?? process.cwd())
+  const roots = new Set<string>()
+  const workspace = discoverLenserfightWorkspace({
+    cwd,
+    includeGlobal: options.includeGlobal ?? true,
+    recursive: options.recursive ?? true,
+  })
+  workspace.roots.forEach((root) => roots.add(root.dir))
+  const localRoot = resolve(cwd, LENSERFIGHT_DIR_NAME)
+  if (existsSync(localRoot)) roots.add(localRoot)
+  return [...roots].sort((a, b) => pathDepth(a) - pathDepth(b) || a.localeCompare(b))
+}
+
+function collectFileRenameOperations(dir: string, operations: TerminologyMigrationOperation[]): void {
+  for (const entry of readdirSync(dir).sort((a, b) => a.localeCompare(b))) {
+    const fullPath = join(dir, entry)
+    const stats = statSync(fullPath)
+    if (stats.isDirectory()) {
+      collectFileRenameOperations(fullPath, operations)
+      continue
+    }
+    const targetName = entry.toLowerCase() === 'agent.md'
+      ? 'LENSER.MD'
+      : entry.toLowerCase() === 'workflow.md'
+        ? 'COLENS.MD'
+        : null
+    if (!targetName || entry === targetName) continue
+    pushRenameOperation(operations, fullPath, join(dir, targetName))
+  }
+}
+
+function collectDirectoryRenameOperations(root: string, operations: TerminologyMigrationOperation[]): void {
+  for (const legacyDir of ['agents', 'workflows']) {
+    const from = join(root, legacyDir)
+    if (!existsSync(from) || !statSync(from).isDirectory()) continue
+    const to = join(root, canonicalTemplateDirectory(legacyDir))
+    pushRenameOperation(operations, from, to)
+  }
+}
+
+function pushRenameOperation(operations: TerminologyMigrationOperation[], from: string, to: string): void {
+  if (existsSync(to)) {
+    operations.push({ type: 'rename', from, to, status: 'conflict', reason: 'Target already exists; not overwriting.' })
+    return
+  }
+  operations.push({ type: 'rename', from, to, status: 'planned' })
 }
 
 export function ensureAutomationRunDirs(cwd = process.cwd()) {
@@ -776,6 +1330,36 @@ Define evals, scoring method, judges, and tie handling.
 Define the result format and what evidence must be included.
 `
 
+const RAY_TEMPLATE = `---
+kind: ray
+schema_version: 1
+id: ray_<uuid>
+slug: developer
+name: Developer
+description: Developer productivity, review, release, and architecture templates.
+visibility: public
+status: active
+version: 0.1.0
+route: /ray/developer
+aliases:
+  - engineering
+related_item_types:
+  - lens
+  - lenser
+  - colens
+  - battle
+---
+
+# Purpose
+Describe the category this ray owns and the kinds of work users should expect.
+
+# Related Items
+List the highest-signal lenses, lensers, colenses, and battles in this category.
+
+# Routing
+Describe the expected URL or CLI listing behavior for this ray.
+`
+
 const TEAM_TEMPLATE = `---
 name: implementation-team
 description: Use when a group of LENSERS coordinates on a shared outcome.
@@ -919,7 +1503,7 @@ triggers:
 steps:
   - id: plan
     type: agent_task
-    agent_ref: agent_research_lead
+    lenser_ref: lenser_research_lead
 ---
 
 # Purpose
@@ -929,7 +1513,7 @@ What the workflow automates and expected business outcome.
 Input contract, defaults, and validation.
 
 # Steps
-Ordered steps, branches, tool and agent bindings, and failure behavior.
+Ordered steps, branches, tool and lenser bindings, and failure behavior.
 
 # Outputs
 Primary outputs, artifacts, and storage destinations.
@@ -947,8 +1531,8 @@ visibility: private
 status: draft
 version: 0.1.0
 participants:
-  - type: agent
-    ref: agent_support_v1
+  - type: lenser
+    ref: lenser_support_v1
 evaluation_method: rubric_plus_judge
 ---
 
@@ -956,10 +1540,10 @@ evaluation_method: rubric_plus_judge
 Comparison goal and decision this battle supports.
 
 # Participants
-Agents, workflows, models, prompts, or humans under test.
+Lensers, colenses, models, prompts, or humans under test.
 
 # Evaluation
-Judge agent, human review, rubric, thresholds, and tie rules.
+Judge lenser, human review, rubric, thresholds, and tie rules.
 
 # Report
 Required sections in the exported report.
@@ -989,7 +1573,7 @@ What the skill helps accomplish.
 Activation conditions, preconditions, and anti-patterns.
 
 # Workflow
-Step-by-step instructions the agent should follow.
+Step-by-step instructions the lenser should follow.
 `
 
 const MEMORY_POLICY_TEMPLATE = `---
