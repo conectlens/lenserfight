@@ -1,5 +1,8 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { homedir } from 'node:os'
 import { type PrivateBattleFrontmatter } from '@lenserfight/types'
 import { callRpc, handleError } from '../utils/api'
 import { assertSafe } from '../lib/safety'
@@ -10,6 +13,10 @@ import {
 } from '../utils/automation-objects'
 import { printTable, printJson, truncate } from '../utils/output'
 import { A } from '../utils/ansi'
+
+function defaultPrivateBattlePath(): string {
+  return resolve(homedir(), '.lenserfight', 'PRIVATE_BATTLE.md')
+}
 
 // ---------------------------------------------------------------------------
 // battle create
@@ -287,7 +294,7 @@ const run = defineCommand({
   args: {
     file: {
       type: 'positional',
-      description: 'Path to PRIVATE_BATTLE.md (defaults to ./PRIVATE_BATTLE.md)',
+      description: 'Path to PRIVATE_BATTLE.md (defaults to ~/.lenserfight/PRIVATE_BATTLE.md)',
       required: false,
     },
     execute: {
@@ -314,7 +321,18 @@ const run = defineCommand({
     },
   },
   async run({ args }) {
-    const filePath = args.file || 'PRIVATE_BATTLE.md'
+    const filePath = args.file || defaultPrivateBattlePath()
+    if (!existsSync(filePath)) {
+      consola.error('File not found: %s', filePath)
+      consola.info('')
+      consola.info('Create a PRIVATE_BATTLE.md template first:')
+      consola.info('  lf export private_battle --template --out ~/.lenserfight/PRIVATE_BATTLE.md')
+      consola.info('')
+      consola.info('Then edit the file to set your participants and task, and run:')
+      consola.info('  lf battle run --execute')
+      process.exitCode = 1
+      return
+    }
     const parsed = parseAutomationDocument(filePath)
     if (!parsed.ok || parsed.kind !== 'private_battle' || !parsed.document) {
       consola.error('Private battle validation failed for %s', filePath)
@@ -736,6 +754,19 @@ const submit = defineCommand({
 // ---------------------------------------------------------------------------
 // battle open
 // ---------------------------------------------------------------------------
+
+const UUID_BATTLE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+async function resolveBattleId(idOrSlug: string): Promise<string> {
+  if (UUID_BATTLE_RE.test(idOrSlug)) return idOrSlug
+  const rows = await callRpc<Array<{ id: string }>>('fn_battles_resolve_slug', {
+    p_slug: idOrSlug,
+  })
+  const row = Array.isArray(rows) ? rows[0] : (rows as unknown as { id: string } | null)
+  if (!row?.id) throw new Error(`No battle found for slug "${idOrSlug}". Use \`lf battle list\` to find valid IDs or slugs.`)
+  return row.id
+}
+
 const open = defineCommand({
   meta: {
     name: 'open',
@@ -744,16 +775,17 @@ const open = defineCommand({
   args: {
     id: {
       type: 'positional',
-      description: 'Battle UUID',
+      description: 'Battle UUID or slug',
       required: true,
     },
   },
   async run({ args }) {
     try {
-      await callRpc('fn_battles_open', { p_battle_id: args.id }, { requireAuth: true })
+      const battleId = await resolveBattleId(args.id)
+      await callRpc('fn_battles_open', { p_battle_id: battleId }, { requireAuth: true })
       consola.success('Battle %s is now open for entries.', args.id)
       consola.info('Share the battle link or invite participants:')
-      consola.info('  lf battle invite %s --email <email>', args.id)
+      consola.info('  lf battle invite %s --email <email>', battleId)
     } catch (err) {
       handleError(err)
     }
@@ -1653,7 +1685,7 @@ const localInit = defineCommand({
         '  lf battle local add-contender A --provider anthropic --model claude-haiku-4-5'
       )
       consola.info('  lf battle local add-contender B --provider ollama    --model llama3')
-      consola.info('  lf battle local run %s', state.id.slice(0, 8))
+      consola.info('  lf battle local run %s', state.id)
     } catch (err) {
       handleError(err)
     }
