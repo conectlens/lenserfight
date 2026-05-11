@@ -41,6 +41,14 @@ export interface WorkflowRecord {
    * Values: 'text' | 'image' | 'video' | 'audio' | 'music'
    */
   output_modalities?: string[] | null
+  /**
+   * Viewer's own reactions on this workflow keyed by reaction enum
+   * (e.g. `{ like: true, saved: true }`). Populated by
+   * `fn_get_workflow_bootstrap` so the page can skip a follow-up
+   * `fn_get_entity_reaction_status` round trip. Empty `{}` when
+   * unauthenticated or no reactions.
+   */
+  viewer_reactions?: Record<string, boolean> | null
 }
 
 /**
