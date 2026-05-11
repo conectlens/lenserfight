@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { defineCommand } from 'citty'
 import consola from 'consola'
 
-import { callRest, callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '../utils/api'
 import { assertSafe } from '../lib/safety'
 import { printJson, printTable, truncate } from '../utils/output'
 
@@ -329,15 +329,10 @@ const schedulePause = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRest(
-        'lenses',
-        'workflow_schedules',
-        'PATCH',
-        { is_active: false },
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.schedule}` },
-        }
+      await callRpc(
+        'fn_toggle_workflow_schedule',
+        { p_schedule_id: args.schedule, p_is_active: false },
+        { requireAuth: true }
       )
       consola.success('Schedule %s paused.', args.schedule)
     } catch (err) {
@@ -360,15 +355,10 @@ const scheduleResume = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRest(
-        'lenses',
-        'workflow_schedules',
-        'PATCH',
-        { is_active: true },
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.schedule}` },
-        }
+      await callRpc(
+        'fn_toggle_workflow_schedule',
+        { p_schedule_id: args.schedule, p_is_active: true },
+        { requireAuth: true }
       )
       consola.success('Schedule %s resumed.', args.schedule)
     } catch (err) {
@@ -409,15 +399,10 @@ const scheduleDelete = defineCommand({
       notes: ['Active runs triggered before deletion are not affected.'],
     });
     try {
-      await callRest(
-        'lenses',
-        'workflow_schedules',
-        'DELETE',
-        undefined,
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.schedule}` },
-        }
+      await callRpc(
+        'fn_delete_workflow_schedule',
+        { p_schedule_id: args.schedule },
+        { requireAuth: true }
       )
       consola.success('Schedule %s deleted.', args.schedule)
     } catch (err) {
@@ -487,20 +472,10 @@ const scheduleHistory = defineCommand({
 
       const limit = clampLimit(parseInt(args.limit, 10), 10)
 
-      const runs = await callRest<WorkflowRunRow[]>(
-        'lenses',
-        'workflow_runs',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: {
-            workflow_id: `eq.${match.workflow_id}`,
-            order: 'created_at.desc',
-            limit,
-            select: 'id,workflow_id,status,started_at,completed_at,created_at',
-          },
-        }
+      const runs = await callRpc<WorkflowRunRow[]>(
+        'fn_get_schedule_run_history',
+        { p_schedule_id: args.schedule, p_limit: limit, p_cursor: null },
+        { requireAuth: true },
       )
 
       if (args.json) {
@@ -655,7 +630,6 @@ const scheduleHealth = defineCommand({
         const svcClient = await createServiceClient()
 
         const { data: workers } = await svcClient
-          .schema('platform')
           .rpc('fn_get_worker_health')
 
         if (workers && workers.length > 0) {
@@ -679,21 +653,10 @@ const scheduleHealth = defineCommand({
         }
 
         // ── DLQ counts ─────────────────────────────────────────────────────
-        const [battleDlq, workflowDlq] = await Promise.all([
-          svcClient
-            .schema('battles')
-            .from('battle_execution_dead_letters')
-            .select('id', { count: 'exact', head: true })
-            .is('resolved_at', null),
-          svcClient
-            .schema('lenses')
-            .from('workflow_run_dead_letters')
-            .select('id', { count: 'exact', head: true })
-            .is('resolved_at', null),
-        ])
-
-        const battleDlqCount   = battleDlq.count   ?? 0
-        const workflowDlqCount = workflowDlq.count ?? 0
+        const { data: dlqData } = await svcClient.rpc('fn_get_dlq_counts')
+        const dlq = (dlqData as { battle_dlq_count?: number; workflow_dlq_count?: number } | null) ?? {}
+        const battleDlqCount   = dlq.battle_dlq_count   ?? 0
+        const workflowDlqCount = dlq.workflow_dlq_count ?? 0
 
         consola.info('')
         consola.info('Dead-Letter Queue:')
@@ -966,45 +929,22 @@ const calendarCreate = defineCommand({
       }
       const dates = parseDateList(args.dates)
 
-      // RLS requires lenser_id = lensers.get_auth_lenser_id(); resolve it
-      // through the authenticated profile RPC the rest of the CLI uses.
-      const self = await callRpc<Record<string, unknown>>(
-        'fn_lensers_get_authenticated_profile',
-        {},
+      const calendarId = await callRpc<string>(
+        'fn_create_schedule_calendar',
+        {
+          p_name: args.name,
+          p_kind: args.kind,
+          p_dates: dates,
+          p_timezone: args.timezone,
+        },
         { requireAuth: true },
       )
-      const selfId = self?.['id'] as string | undefined
-      if (!selfId) {
-        consola.error('No authenticated lenser profile. Run `lf auth login` first.')
-        process.exitCode = 1
+
+      if (!calendarId) {
+        consola.warn('Calendar created but no ID returned.')
         return
       }
-
-      const rows = await callRest<Array<{ id: string; name: string }>>(
-        'lenses',
-        'schedule_calendars',
-        'POST',
-        {
-          lenser_id: selfId,
-          name: args.name,
-          kind: args.kind,
-          dates,
-          timezone: args.timezone,
-          is_seed: false,
-        },
-        {
-          requireAuth: true,
-          prefer: 'return=representation',
-          query: { select: 'id,name' },
-        },
-      )
-
-      const created = Array.isArray(rows) ? rows[0] : undefined
-      if (!created) {
-        consola.warn('Calendar created but no row returned.')
-        return
-      }
-      printJson({ calendar_id: created.id, name: created.name })
+      printJson({ calendar_id: calendarId, name: args.name })
     } catch (err) {
       handleError(err)
     }
@@ -1033,20 +973,14 @@ const calendarList = defineCommand({
   },
   async run({ args }) {
     try {
-      const query: Record<string, string | number | boolean | undefined> = {
-        select: 'id,name,kind,dates,timezone,is_seed,created_at',
-        order: 'created_at.desc',
-      }
-      if (args['seeds-only']) query['is_seed'] = 'eq.true'
-      if (args['mine-only']) query['is_seed'] = 'eq.false'
-
-      const rows = await callRest<ScheduleCalendarRow[]>(
-        'lenses',
-        'schedule_calendars',
-        'GET',
-        undefined,
-        { requireAuth: true, query },
+      let rows = await callRpc<ScheduleCalendarRow[]>(
+        'fn_get_schedule_calendars',
+        {},
+        { requireAuth: true },
       )
+
+      if (args['seeds-only']) rows = (rows ?? []).filter((r) => r.is_seed)
+      if (args['mine-only']) rows = (rows ?? []).filter((r) => !r.is_seed)
 
       if (!rows || rows.length === 0) {
         consola.info('No calendars found.')
@@ -1085,15 +1019,10 @@ const calendarAttach = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRest(
-        'lenses',
-        'workflow_schedules',
-        'PATCH',
-        { calendar_id: args.calendar },
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.schedule}` },
-        },
+      await callRpc(
+        'fn_set_schedule_calendar',
+        { p_schedule_id: args.schedule, p_calendar_id: args.calendar },
+        { requireAuth: true },
       )
       consola.success(
         'Attached calendar %s to schedule %s.',
@@ -1116,15 +1045,10 @@ const calendarDetach = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRest(
-        'lenses',
-        'workflow_schedules',
-        'PATCH',
-        { calendar_id: null },
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.schedule}` },
-        },
+      await callRpc(
+        'fn_set_schedule_calendar',
+        { p_schedule_id: args.schedule, p_calendar_id: null },
+        { requireAuth: true },
       )
       consola.success('Detached calendar from schedule %s.', args.schedule)
     } catch (err) {
@@ -1153,15 +1077,10 @@ const conditionSet = defineCommand({
       const raw = await loadJsonFile(args.file)
       validateConditionFilter(raw)
 
-      await callRest(
-        'lenses',
-        'workflow_schedules',
-        'PATCH',
-        { pre_dispatch_condition: raw },
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.schedule}` },
-        },
+      await callRpc(
+        'fn_set_schedule_condition',
+        { p_schedule_id: args.schedule, p_condition: raw },
+        { requireAuth: true },
       )
       consola.success('Pre-dispatch condition set on schedule %s.', args.schedule)
       consola.info(
@@ -1183,15 +1102,10 @@ const conditionClear = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRest(
-        'lenses',
-        'workflow_schedules',
-        'PATCH',
-        { pre_dispatch_condition: null },
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.schedule}` },
-        },
+      await callRpc(
+        'fn_set_schedule_condition',
+        { p_schedule_id: args.schedule, p_condition: null },
+        { requireAuth: true },
       )
       consola.success('Pre-dispatch condition cleared on schedule %s.', args.schedule)
     } catch (err) {
@@ -1230,15 +1144,10 @@ const rotationSet = defineCommand({
         }
       }
 
-      await callRest(
-        'lenses',
-        'workflow_schedules',
-        'PATCH',
-        { inputs_rotation: raw, last_rotation_index: 0 },
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.schedule}` },
-        },
+      await callRpc(
+        'fn_set_schedule_inputs_rotation',
+        { p_schedule_id: args.schedule, p_rotation: raw },
+        { requireAuth: true },
       )
       consola.success(
         'Inputs rotation set on schedule %s (%d entries; cursor reset).',
@@ -1261,15 +1170,10 @@ const rotationClear = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRest(
-        'lenses',
-        'workflow_schedules',
-        'PATCH',
-        { inputs_rotation: null, last_rotation_index: 0 },
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.schedule}` },
-        },
+      await callRpc(
+        'fn_set_schedule_inputs_rotation',
+        { p_schedule_id: args.schedule, p_rotation: null },
+        { requireAuth: true },
       )
       consola.success('Inputs rotation cleared on schedule %s.', args.schedule)
     } catch (err) {
@@ -1298,13 +1202,10 @@ const schedulePreview = defineCommand({
     try {
       const n = clampPreviewN(parseInt(args.next, 10), 10)
 
-      // The RPC lives in the `lenses` schema. Pass the schema option so the
-      // request goes through PostgREST's Content-Profile route rather than
-      // resolving against `public`.
       const rows = await callRpc<PreviewTickRow[]>(
         'fn_preview_schedule_ticks',
         { p_schedule_id: args.schedule, p_n: n },
-        { requireAuth: true, schema: 'lenses' },
+        { requireAuth: true },
       )
 
       if (!rows || rows.length === 0) {
