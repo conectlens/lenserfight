@@ -1,5 +1,19 @@
 -- =============================================================================
--- 2. TEST AUTH USERS
+-- 2. RESERVED PRODUCTION USERS
+-- =============================================================================
+-- Three reserved, production-facing accounts that own every public template
+-- shipped with the platform:
+--
+--   hey@lenserfight.com   @lenserfight   — default author of public templates
+--   lets@conectlens.com   @conectlens    — ConectLens platform / community hub
+--   bit@chainabit.com     @chainabit     — Chainabit productivity templates
+--
+-- The auth.user UUIDs are deterministic so that downstream seeds (battles,
+-- lens templates, workflows, analytics) can reference them safely.
+--
+-- Passwords are seeded for local development and CI ONLY. They are rotated by
+-- the deployment pipeline before any production environment is exposed to the
+-- public. NEVER commit real production credentials here.
 -- =============================================================================
 
 INSERT INTO auth.users (
@@ -19,8 +33,8 @@ VALUES
         '00000000-0000-0000-0000-000000000000',
         'a1000000-0000-0000-0000-000000000001',
         'authenticated', 'authenticated',
-        'alice@lenserfight.local',
-        extensions.crypt('Alice#Lenser2026!', extensions.gen_salt('bf')),
+        'hey@lenserfight.com',
+        extensions.crypt('LenserFight#DevSeed2026!', extensions.gen_salt('bf')),
         now(), now(), now(), now(),
         '', NULL,
         '', NULL,
@@ -29,14 +43,14 @@ VALUES
         false, false, NULL, false,
         NULL, NULL, '', '', NULL,
         '{"provider":"email","providers":["email"]}',
-        '{"display_name":"Alice Arena"}'
+        '{"display_name":"LenserFight"}'
     ),
     (
         '00000000-0000-0000-0000-000000000000',
         'a1000000-0000-0000-0000-000000000002',
         'authenticated', 'authenticated',
-        'bob@lenserfight.local',
-        extensions.crypt('Bob#Lenser2026!', extensions.gen_salt('bf')),
+        'bit@chainabit.com',
+        extensions.crypt('Chainabit#DevSeed2026!', extensions.gen_salt('bf')),
         now(), now(), now(), now(),
         '', NULL,
         '', NULL,
@@ -45,14 +59,14 @@ VALUES
         false, false, NULL, false,
         NULL, NULL, '', '', NULL,
         '{"provider":"email","providers":["email"]}',
-        '{"display_name":"Bob Builder"}'
+        '{"display_name":"Chainabit"}'
     ),
     (
         '00000000-0000-0000-0000-000000000000',
         'a1000000-0000-0000-0000-000000000003',
         'authenticated', 'authenticated',
-        'carol@lenserfight.local',
-        extensions.crypt('Carol#Lenser2026!', extensions.gen_salt('bf')),
+        'lets@conectlens.com',
+        extensions.crypt('ConectLens#DevSeed2026!', extensions.gen_salt('bf')),
         now(), now(), now(), now(),
         '', NULL,
         '', NULL,
@@ -61,10 +75,12 @@ VALUES
         false, false, NULL, false,
         NULL, NULL, '', '', NULL,
         '{"provider":"email","providers":["email"]}',
-        '{"display_name":"Carol Voter"}'
+        '{"display_name":"ConectLens"}'
     )
 ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
     encrypted_password = EXCLUDED.encrypted_password,
+    raw_user_meta_data = EXCLUDED.raw_user_meta_data,
     email_change = EXCLUDED.email_change,
     email_change_token_new = EXCLUDED.email_change_token_new,
     email_change_token_current = EXCLUDED.email_change_token_current,
@@ -79,21 +95,23 @@ VALUES
         'a1000000-0000-0000-0000-000000000001',
         'a1000000-0000-0000-0000-000000000001',
         'a1000000-0000-0000-0000-000000000001',
-        jsonb_build_object('sub', 'a1000000-0000-0000-0000-000000000001', 'email', 'alice@lenserfight.local'),
+        jsonb_build_object('sub', 'a1000000-0000-0000-0000-000000000001', 'email', 'hey@lenserfight.com'),
         'email', now(), now(), now()
     ),
     (
         'a1000000-0000-0000-0000-000000000002',
         'a1000000-0000-0000-0000-000000000002',
         'a1000000-0000-0000-0000-000000000002',
-        jsonb_build_object('sub', 'a1000000-0000-0000-0000-000000000002', 'email', 'bob@lenserfight.local'),
+        jsonb_build_object('sub', 'a1000000-0000-0000-0000-000000000002', 'email', 'bit@chainabit.com'),
         'email', now(), now(), now()
     ),
     (
         'a1000000-0000-0000-0000-000000000003',
         'a1000000-0000-0000-0000-000000000003',
         'a1000000-0000-0000-0000-000000000003',
-        jsonb_build_object('sub', 'a1000000-0000-0000-0000-000000000003', 'email', 'carol@lenserfight.local'),
+        jsonb_build_object('sub', 'a1000000-0000-0000-0000-000000000003', 'email', 'lets@conectlens.com'),
         'email', now(), now(), now()
     )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    identity_data = EXCLUDED.identity_data,
+    updated_at = now();
