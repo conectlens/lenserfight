@@ -16,4 +16,4 @@ Templates that push past first-order framing.
 
 ## Public workflows
 
-- [`startup-planning`](../../workflows/startup-planning/WORKFLOW.MD) — uses deep-thinking as the first node
+- [`startup-planning`](../../colenses/startup-planning/COLENS.MD) — uses deep-thinking as the first node
