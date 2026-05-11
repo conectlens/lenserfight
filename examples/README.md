@@ -4,7 +4,7 @@ Practical examples for the local-first LenserFight developer workflow.
 
 > **💡 IMPORTANT: Developer Safety & Responsibility**
 > 
-> These examples demonstrate autonomous agent coordination, third-party connectors, and multi-step workflows. When running these examples with live providers (BYOK), you are responsible for monitoring agent behavior and associated API costs. Always review the code and configuration before execution.
+> These examples demonstrate autonomous lenser coordination, third-party connectors, and multi-step colenses. When running these examples with live providers (BYOK), you are responsible for monitoring lenser behavior and associated API costs. Always review the code and configuration before execution.
 
 These examples are organized by the project concepts they teach:
 
@@ -12,21 +12,21 @@ These examples are organized by the project concepts they teach:
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | Lenses        | [lenses/minimal-lens](./lenses/minimal-lens/README.md)                                                                                            | The smallest portable `LENS.md` automation object                           |
 | Lenses        | [lenses/configured-review-lens](./lenses/configured-review-lens/README.md)                                                                        | Lens input/output schemas and configurable prompt behavior                  |
-| Workflows     | [workflows/research-to-rubric](./workflows/research-to-rubric/README.md)                                                                          | Multi-step `WORKFLOW.md` simulation with lens and agent references          |
-| Workflows     | [workflows/image-generation-demo](./workflows/image-generation-demo/README.md)                                                                    | Supabase-backed generative media workflow seed plus local simulation        |
-| Agents        | [agents/review-agent-team](./agents/review-agent-team/README.md)                                                                                  | Two AI agents coordinated by an `AGENT_TEAM.md`                             |
+| Colenses      | [colenses/research-to-rubric](./colenses/research-to-rubric/README.md)                                                                            | Multi-step `COLENS.MD` simulation with lens and lenser references           |
+| Colenses      | [colenses/image-generation-demo](./colenses/image-generation-demo/README.md)                                                                      | Supabase-backed generative media colens seed plus local simulation          |
+| Lensers       | [lensers/review-lenser-team](./lensers/review-lenser-team/README.md)                                                                              | Two AI lensers coordinated by a `TEAM.MD`                                   |
 | Battles       | [battles/model-review-battle](./battles/model-review-battle/README.md)                                                                            | Portable `PRIVATE_BATTLE.md` simulation and optional local execution        |
 | Local battles | [local-battle/review-rubric-smoke](./local-battle/review-rubric-smoke/README.md)                                                                  | Bundled local battle spec for `lf battle local run --example`               |
 | Connectors    | [connectors/mock-review-connector](./connectors/mock-review-connector/README.md)                                                                  | Connector adapter shape, token verification, dispatch, and failure handling |
 | Scoring       | [scoring/rubric-signal-plugin](./scoring/rubric-signal-plugin/README.md)                                                                          | Deterministic scoring plugin signals and result interpretation              |
-| End to end    | [workflows/research-to-rubric](./workflows/research-to-rubric/README.md) + [battles/model-review-battle](./battles/model-review-battle/README.md) | Lens -> agent team -> workflow -> battle -> scoring mental model            |
+| End to end    | [colenses/research-to-rubric](./colenses/research-to-rubric/README.md) + [battles/model-review-battle](./battles/model-review-battle/README.md)  | Lens -> lenser team -> colens -> battle -> scoring mental model             |
 
 Most examples can be validated without Supabase or cloud credentials after the CLI is built:
 
 ```bash
 pnpm nx run cli:build
 node dist/apps/cli/main.js validate examples/lenses/minimal-lens
-node dist/apps/cli/main.js workflow run examples/workflows/research-to-rubric/WORKFLOW.md
+node dist/apps/cli/main.js workflow run examples/colenses/research-to-rubric/COLENS.MD
 node dist/apps/cli/main.js battle run examples/battles/model-review-battle/PRIVATE_BATTLE.md
 ```
 
