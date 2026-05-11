@@ -20,7 +20,7 @@ Templates authored by `@chainabit` for startup operators, developer teams, and c
 
 ## Public agents
 
-- [`chainabit-operator`](../../agents/chainabit-operator/AGENT.MD)
+- [`chainabit-operator`](../../lensers/chainabit-operator/LENSER.MD)
 
 ## Ecosystem context
 
