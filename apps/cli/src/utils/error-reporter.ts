@@ -26,12 +26,16 @@ function classify(error: unknown): CliError {
   const msg = typeof e['message'] === 'string' ? e['message'] : ''
   const code = typeof e['code'] === 'string' ? e['code'] : ''
 
-  if (e['status'] === 429 || code === 'BATTLE_RATE_LIMIT') {
+  if (
+    e['status'] === 429 ||
+    code === 'BATTLE_RATE_LIMIT' ||
+    msg === 'battle_rate_limit_exceeded' ||
+    msg.includes('battle_rate_limit')
+  ) {
     return {
       kind: 'rate_limited',
       message: 'RATE LIMITED',
-      detail: (typeof e['message'] === 'string' ? e['message'] : 'Too many requests.') +
-        '\nYou can create at most 5 battles per 24-hour window. Try again later.',
+      detail: 'You can create at most 5 battles per 24-hour window. Try again later.',
     }
   }
 
