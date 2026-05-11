@@ -3,12 +3,13 @@ import consola from 'consola'
 
 import { type WorkflowFrontmatter } from '@lenserfight/types'
 
+import { callRpc, callRest, handleError } from '../utils/api'
 import {
   buildWorkflowSimulationReport,
   parseAutomationDocument,
   writeWorkflowSimulationArtifacts,
 } from '../utils/automation-objects'
-import { printJson } from '../utils/output'
+import { printJson, printTable, truncate } from '../utils/output'
 
 function parseInputs(raw: string | undefined): Record<string, unknown> | undefined {
   if (!raw) return undefined
@@ -19,15 +20,27 @@ function parseInputs(raw: string | undefined): Record<string, unknown> | undefin
   }
 }
 
+const WORKFLOW_TEMPLATES = [
+  'single-agent',
+  'multi-step-research',
+  'code-review-pipeline',
+  'judge-evaluation',
+  'team-debate',
+] as const
+
+// ---------------------------------------------------------------------------
+// workflow run (local simulation)
+// ---------------------------------------------------------------------------
+
 const run = defineCommand({
   meta: {
     name: 'run',
-    description: 'Simulate a file-first COLENS.MD locally and emit a run report.',
+    description: 'Simulate a file-first WORKFLOW.md locally and emit a run report.',
   },
   args: {
     file: {
       type: 'positional',
-      description: 'Path to COLENS.MD',
+      description: 'Path to WORKFLOW.md or COLENS.MD',
       required: true,
     },
     inputs: {
@@ -44,10 +57,13 @@ const run = defineCommand({
   async run({ args }) {
     const parsed = parseAutomationDocument(args.file)
     if (!parsed.ok || (parsed.kind !== 'colens' && parsed.kind !== 'workflow') || !parsed.document) {
-      consola.error('Colens validation failed for %s', args.file)
+      consola.error('Workflow validation failed for %s', args.file)
       for (const issue of parsed.issues) {
         consola.error('  - %s: %s', issue.path, issue.message)
       }
+      consola.info('')
+      consola.info('Generate a template first:')
+      consola.info('  lf export colens --template --out WORKFLOW.md')
       process.exitCode = 1
       return
     }
@@ -76,13 +92,206 @@ const run = defineCommand({
       return
     }
 
-    consola.success('Simulated colens %s', frontmatter.name ?? frontmatter.id)
+    consola.success('Simulated workflow %s', frontmatter.name ?? frontmatter.id)
     consola.info('Status: %s', status)
     consola.info('Steps: %d', steps.length)
     consola.info('JSON report: %s', artifacts.jsonPath)
     consola.info('Markdown report: %s', artifacts.reportPath)
   },
 })
+
+// ---------------------------------------------------------------------------
+// workflow validate
+// ---------------------------------------------------------------------------
+
+const validate = defineCommand({
+  meta: {
+    name: 'validate',
+    description: 'Validate a workflow markdown file without running it.',
+  },
+  args: {
+    file: {
+      type: 'positional',
+      description: 'Path to WORKFLOW.md or COLENS.MD',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output validation result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const parsed = parseAutomationDocument(args.file)
+
+    if (args.json) {
+      printJson(parsed)
+      if (!parsed.ok) process.exitCode = 1
+      return
+    }
+
+    if (!parsed.ok) {
+      consola.error('Validation failed for %s', args.file)
+      for (const issue of parsed.issues) {
+        consola.error('  - %s: %s', issue.path, issue.message)
+      }
+      consola.info('')
+      consola.info('Generate a valid template:  lf export colens --template --out WORKFLOW.md')
+      process.exitCode = 1
+      return
+    }
+
+    const frontmatter = parsed.document?.frontmatter as WorkflowFrontmatter | undefined
+    consola.success('Valid %s: %s', parsed.kind, frontmatter?.name ?? args.file)
+    const steps = (frontmatter?.steps ?? []).length
+    consola.info('Steps: %d', steps)
+    if (steps === 0) {
+      consola.warn('No steps defined. Add steps to your workflow before running.')
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// workflow create (cloud)
+// ---------------------------------------------------------------------------
+
+const create = defineCommand({
+  meta: {
+    name: 'create',
+    description: 'Create a cloud workflow on LenserFight.',
+  },
+  args: {
+    name: {
+      type: 'string',
+      description: 'Workflow name',
+      required: true,
+    },
+    template: {
+      type: 'string',
+      description: `Starter template: ${WORKFLOW_TEMPLATES.join(' | ')}`,
+      default: '',
+    },
+    description: {
+      type: 'string',
+      description: 'Workflow description',
+      default: '',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    if (args.template && !(WORKFLOW_TEMPLATES as readonly string[]).includes(args.template)) {
+      consola.error('Invalid template: %s. Available: %s', args.template, WORKFLOW_TEMPLATES.join(', '))
+      process.exitCode = 1
+      return
+    }
+    try {
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_workflow_create',
+        {
+          p_name: args.name,
+          p_description: args.description || null,
+          p_template: args.template || null,
+        },
+        { requireAuth: true }
+      )
+
+      if (args.json) {
+        printJson(result)
+        return
+      }
+
+      consola.success('Workflow created.')
+      consola.info('ID:   %s', result['id'])
+      consola.info('Name: %s', result['name'])
+      if (args.template) consola.info('Template: %s', args.template)
+      consola.info('')
+      consola.info('Next steps:')
+      consola.info('  lf workflow run WORKFLOW.md          — simulate locally')
+      consola.info('  lf export workflow %s  — export for editing', result['id'])
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// workflow list (cloud)
+// ---------------------------------------------------------------------------
+
+const list = defineCommand({
+  meta: {
+    name: 'list',
+    description: 'List your cloud workflows.',
+  },
+  args: {
+    limit: {
+      type: 'string',
+      description: 'Maximum results',
+      default: '20',
+    },
+    offset: {
+      type: 'string',
+      description: 'Pagination offset',
+      default: '0',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRest<Array<Record<string, unknown>>>(
+        'lenses',
+        'workflows',
+        'GET',
+        undefined,
+        {
+          requireAuth: true,
+          query: {
+            select: 'id,name,description,status,created_at',
+            order: 'created_at.desc',
+            limit: args.limit,
+            offset: args.offset,
+          },
+        }
+      )
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        consola.info('No workflows found.')
+        consola.info('Create one: lf workflow create --name "My Pipeline"')
+        return
+      }
+
+      if (args.json) {
+        printJson(rows)
+        return
+      }
+
+      printTable(
+        ['ID', 'Name', 'Status', 'Created'],
+        rows.map((r) => [
+          String(r['id'] ?? ''),
+          truncate(String(r['name'] ?? ''), 36),
+          String(r['status'] ?? '—'),
+          r['created_at'] ? new Date(String(r['created_at'])).toLocaleDateString() : '—',
+        ])
+      )
+      consola.info('%d workflow(s) shown.', rows.length)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// Root command
+// ---------------------------------------------------------------------------
 
 export default defineCommand({
   meta: {
@@ -91,5 +300,8 @@ export default defineCommand({
   },
   subCommands: {
     run,
+    validate,
+    create,
+    list,
   },
 })
