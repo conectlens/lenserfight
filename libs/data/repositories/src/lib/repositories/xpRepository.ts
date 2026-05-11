@@ -122,16 +122,13 @@ export class SupabaseXPRepository implements XPRepositoryPort {
   }
 
   async getBadges(lenserId: string): Promise<LenserBadge[]> {
-    const { data, error } = await supabase
-      .schema('lensers')
-      .from('badges')
-      .select('*')
-      .eq('lenser_id', lenserId)
-      .order('awarded_at', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_get_lenser_badges', {
+      p_lenser_id: lenserId,
+    })
 
     if (error) throw error
 
-    return data.map((b) => ({
+    return ((data ?? []) as any[]).map((b) => ({
       id: b.id,
       type: b.type,
       label: b.label,
