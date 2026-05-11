@@ -471,7 +471,10 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     return (data ?? []) as unknown as LensRecord[]
   }
 
+  private static UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
   async getById(id: string, _viewerLenserId?: string): Promise<LensRecord | null> {
+    if (!id || !SupabaseLensesRepository.UUID_RE.test(id)) return null
     const { data, error } = await supabase.rpc('fn_get_lens_detail_bootstrap', {
       p_lens_id: id,
     })
@@ -776,6 +779,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async getLatestPublishedVersion(lensId: string): Promise<LensVersion | null> {
+    if (!lensId || !SupabaseLensesRepository.UUID_RE.test(lensId)) return null
     // Use the bootstrap RPC to get the latest published version + params in one call.
     const { data, error } = await supabase.rpc('fn_get_lens_detail_bootstrap', {
       p_lens_id: lensId,
