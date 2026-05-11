@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from './supabaseClient'
 
 const COOLDOWN_KEY = 'lf_feedback_cooldown'
-const COOLDOWN_MS = 10 * 60 * 1000 // 10 minutes
+const COOLDOWN_MS = 2 * 60 * 1000 // 2 minutes
 
 const isOpen = ref(false)
 const topic = ref<string>('general')
