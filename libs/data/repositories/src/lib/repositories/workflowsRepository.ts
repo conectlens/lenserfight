@@ -70,7 +70,7 @@ export interface TemplateWorkflowRecord {
   updated_at: string
   author_handle?: string | null
   author_display_name?: string | null
-  /** Aggregated `kind-*` tag slugs across the workflow's nodes. */
+  /** Aggregated lens-kind tag slugs across the workflow's nodes (e.g. `text`, `image`). */
   kinds: string[]
 }
 
