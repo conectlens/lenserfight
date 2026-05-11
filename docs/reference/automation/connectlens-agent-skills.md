@@ -11,7 +11,7 @@ ConnectLens adapts Agent Skills conventions into LenserFight terminology without
 
 - File-first automation already exists through markdown objects and `lf validate`.
 - Native ConnectLens primary files are now discovered by filename: `LENS.MD`, `LENSER.MD`, `COLENS.MD`, `BATTLE.MD`, and `TEAM.MD`.
-- Compatibility files remain valid: `SKILL.MD`, `AGENT.md`, `AGENT_TEAM.md`, `WORKFLOW.md`, and `PRIVATE_BATTLE.md`.
+- Compatibility files remain valid: `SKILL.MD`, `AGENT.MD`, `AGENT_TEAM.md`, `WORKFLOW.MD`, and `PRIVATE_BATTLE.md`.
 - Parameter placeholders use `[[name]]`; stored database templates may use `[[:uuid]]`.
 - Lens parameter declarations mirror `lenses.version_parameters`: each declaration needs `label` and `tool_id`.
 - Local battle runtime state is private runtime data and is written outside the project by default.
@@ -111,7 +111,10 @@ The CLI writes new local battle state to user runtime storage. Existing `.lenser
 ## Migration Notes
 
 - Move reusable local prompt packages into folder units with native primary files.
-- Keep legacy `SKILL.MD`, `AGENT.md`, `WORKFLOW.md`, and `PRIVATE_BATTLE.md` files until consumers have migrated.
+- Rename `agents/` to `lensers/`, `workflows/` to `colenses/`, `AGENT.MD` to `LENSER.MD`, and `WORKFLOW.MD` to `COLENS.MD`.
+- Compatibility aliases remain readable, but canonical files win mixed-state conflicts and new files must use `lensers/`, `colenses/`, `LENSER.MD`, and `COLENS.MD`.
+- Use `lf migrate-terminology` for a dry-run plan or `lf migrate-terminology --apply` to rename safely. The bash helper `scripts/migrate-lenserfight-terminology.sh` supports the same migration for project, nested, and user-global `.lenserfight` directories.
+- Keep legacy `SKILL.MD`, `LENSER.MD`, `COLENS.MD`, and `PRIVATE_BATTLE.md` files only while consumers are migrating.
 - Do not add secrets to markdown frontmatter, YAML templates, scripts, or examples.
 - Add `parameters` only when the body uses `[[...]]` placeholders.
 - Move project-root local battle JSON files out of Git history and into user runtime storage.
