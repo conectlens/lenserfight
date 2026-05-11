@@ -6,7 +6,7 @@
 -- entity by a deterministic UUID and gates inserts with `IF NOT EXISTS`.
 --
 -- Template convention:
---   • Every template-origin lens is tagged with `template` and its `kind-*` tag.
+--   • Every template-origin lens is tagged with `template` and its lens-kind tag.
 --   • Every template workflow is tagged with `template` via content.tag_map so
 --     public.fn_list_template_workflows can surface it in the "Start from
 --     template" strip on WorkflowsPage.
@@ -148,15 +148,15 @@ BEGIN
   END IF;
 
   SELECT id INTO v_tag_template      FROM content.tags WHERE slug = 'template';
-  SELECT id INTO v_tag_routing       FROM content.tags WHERE slug = 'kind-routing';
-  SELECT id INTO v_tag_orchestration FROM content.tags WHERE slug = 'kind-orchestration';
-  SELECT id INTO v_tag_research      FROM content.tags WHERE slug = 'kind-research';
-  SELECT id INTO v_tag_text          FROM content.tags WHERE slug = 'kind-text';
-  SELECT id INTO v_tag_image         FROM content.tags WHERE slug = 'kind-image';
-  SELECT id INTO v_tag_video         FROM content.tags WHERE slug = 'kind-video';
-  SELECT id INTO v_tag_transform     FROM content.tags WHERE slug = 'kind-transform';
-  SELECT id INTO v_tag_validation    FROM content.tags WHERE slug = 'kind-validation';
-  SELECT id INTO v_tag_pdf           FROM content.tags WHERE slug = 'kind-pdf';
+  SELECT id INTO v_tag_routing       FROM content.tags WHERE slug = 'routing';
+  SELECT id INTO v_tag_orchestration FROM content.tags WHERE slug = 'orchestration';
+  SELECT id INTO v_tag_research      FROM content.tags WHERE slug = 'research';
+  SELECT id INTO v_tag_text          FROM content.tags WHERE slug = 'text';
+  SELECT id INTO v_tag_image         FROM content.tags WHERE slug = 'image';
+  SELECT id INTO v_tag_video         FROM content.tags WHERE slug = 'video';
+  SELECT id INTO v_tag_transform     FROM content.tags WHERE slug = 'transform';
+  SELECT id INTO v_tag_validation    FROM content.tags WHERE slug = 'validation';
+  SELECT id INTO v_tag_pdf           FROM content.tags WHERE slug = 'pdf';
 
   IF v_tag_template IS NULL THEN
     RAISE NOTICE '40_lens_chain_templates: `template` tag missing — run migration 20260417150000 first.';
@@ -223,7 +223,7 @@ BEGIN
     VALUES (
       'lens', v_lens_plan, 'en', true,
       'Planning Lens (template)',
-      'Turns a structured intent into an ordered execution plan of kind-tagged steps.',
+      'Turns a structured intent into an ordered execution plan of tagged steps.',
       'You are the Planning Lens. Produce an execution plan from [[context]].'
     );
 
