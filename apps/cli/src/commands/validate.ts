@@ -55,6 +55,14 @@ export default defineCommand({
 
     if (results.length === 0) {
       consola.warn('No automation markdown files found under %s.', args.path || '.')
+      consola.info('')
+      consola.info('Usage: lf validate <file-or-directory>')
+      consola.info('  lf validate my-lens.md')
+      consola.info('  lf validate my-workflow.md')
+      consola.info('')
+      consola.info('Generate a template first:')
+      consola.info('  lf export lens --template --out LENS.MD')
+      consola.info('  lf export colens --template --out WORKFLOW.MD')
       process.exitCode = 1
       return
     }
