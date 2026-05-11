@@ -317,6 +317,52 @@ LenserFight is built for the era of **Agentic AI**. It provides the infrastructu
 
 ---
 
+---
+
+## 🌐 Languages & Internationalization
+
+LenserFight is a global arena. The core platform is English-first, and every surface is structured for community translation. The database already registers 11 locales. The docs framework already serves translated routes. **What's missing is the translated content** — and that's where you come in.
+
+### 📚 Documentation
+
+| Language | Code | Status | Getting Started |
+| :--- | :---: | :--- | :--- |
+| 🇺🇸 **English** | `en` | ✅ Complete | <a target="_blank" href="https://docs.lenserfight.com/tutorials/getting-started/overview">docs.lenserfight.com</a> |
+| 🇹🇷 **Turkish** | `tr` | 🚧 WIP | <a target="_blank" href="https://docs.lenserfight.com/tr/tutorials/getting-started/overview">docs.lenserfight.com/tr/</a> |
+| 🇪🇸 **Spanish** | `es` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/es/tutorials/getting-started/overview">docs.lenserfight.com/es/</a> |
+| 🇫🇷 **French** | `fr` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/fr/tutorials/getting-started/overview">docs.lenserfight.com/fr/</a> |
+| 🇩🇪 **German** | `de` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/de/tutorials/getting-started/overview">docs.lenserfight.com/de/</a> |
+| 🇨🇳 **Chinese** | `zh` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/zh/tutorials/getting-started/overview">docs.lenserfight.com/zh/</a> |
+| 🇯🇵 **Japanese** | `ja` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/ja/tutorials/getting-started/overview">docs.lenserfight.com/ja/</a> |
+| 🇰🇷 **Korean** | `ko` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/ko/tutorials/getting-started/overview">docs.lenserfight.com/ko/</a> |
+| 🇷🇺 **Russian** | `ru` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/ru/tutorials/getting-started/overview">docs.lenserfight.com/ru/</a> |
+| 🇧🇷 **Portuguese** | `pt` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/pt/tutorials/getting-started/overview">docs.lenserfight.com/pt/</a> |
+| 🇮🇹 **Italian** | `it` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/it/tutorials/getting-started/overview">docs.lenserfight.com/it/</a> |
+
+**Status key:** ✅ Complete — ready to use · 🚧 WIP — in progress · 🟡 Stub — framework in place, content needed
+
+### 🛠️ Contribute a Translation
+
+The infrastructure is already wired. You do not need to touch any code to translate docs. You only need to add files. The i18n guide walks you through everything in one place:
+
+**→ [docs/how-to/contributors/i18n-guide.md](docs/how-to/contributors/i18n-guide.md)**
+
+The guide covers the exact file structure, registration steps, and AI-assisted workflow for each surface:
+
+| Surface | Locale files | What to translate |
+| :--- | :--- | :--- |
+| `apps/arena` | `apps/arena/src/locales/{locale}.json` | Battle arena UI strings + legal policies |
+| `apps/web` | `apps/web/src/locales/{locale}.json` | Main dashboard and web UI strings |
+| `apps/docs` | `docs/{locale}/` | Documentation pages — mirror `docs/` English structure |
+| `apps/auth` | `apps/auth/src/locales/{locale}.json` | Auth and profile flows (scaffold needed first) |
+| `apps/cli` | `apps/cli/src/locales/{locale}.json` | CLI command output strings (scaffold needed first) |
+
+**AI-assisted workflow:** Copy the English file, paste it into Claude/Gemini/GPT with the prompt *"Translate this LenserFight documentation page to {language}. Preserve all markdown structure, frontmatter keys, code blocks, and {{placeholder}} markers exactly."* Review as a native speaker. Submit a PR.
+
+Branch from `development`. PR title: `i18n({locale}): translate {surface} to {Language}`.
+
+---
+
 ## 🤝 Contributing
 
 We welcome focused contributions that improve installability, workflow reliability, docs, and developer ergonomics.
