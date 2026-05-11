@@ -1,6 +1,6 @@
 ---
 title: Developer Examples
-description: Practical local-first examples for LenserFight lenses, workflows, agents, battles, connectors, and scoring plugins.
+description: Practical local-first examples for LenserFight lenses, colenss, agents, battles, connectors, and scoring plugins.
 ---
 
 # Developer Examples
@@ -11,8 +11,8 @@ Start here:
 
 - [Minimal Lens](./minimal-lens.md)
 - [Configured Review Lens](./configured-review-lens.md)
-- [Research to Rubric Workflow](./research-to-rubric-workflow.md)
-- [Review Agent Team](./review-agent-team.md)
+- [Research to Rubric Colens](./research-to-rubric-colens.md)
+- [Review Lenser Team](./review-lenser-team.md)
 - [Model Review Battle](./model-review-battle.md)
 - [Review Rubric Smoke Battle](./review-rubric-smoke-battle.md)
 - [Mock Review Connector](./mock-review-connector.md)
