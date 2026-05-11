@@ -118,6 +118,10 @@ CREATE SCHEMA IF NOT EXISTS "execution";
 ALTER SCHEMA "execution" OWNER TO "postgres";
 
 
+COMMENT ON SCHEMA "execution" IS 'D12: poll/complete RPCs are service_role only (called by the poll-async-executions Edge Function which uses the service-role key).';
+
+
+
 CREATE SCHEMA IF NOT EXISTS "i18n";
 
 
@@ -245,6 +249,13 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
 
 
 CREATE EXTENSION IF NOT EXISTS "pgjwt" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pgtap" WITH SCHEMA "public";
 
 
 
@@ -1362,11 +1373,11 @@ CREATE OR REPLACE FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text" DEF
     SET "search_path" TO 'agents', 'public'
     AS $$
 DECLARE
-  v_id UUID;
+  v_claim_id uuid;
 BEGIN
   -- Take ONE queued team run with SKIP LOCKED so concurrent workers don't
-  -- contend. This mirrors the pattern used by execution.fn_poll_async_run.
-  SELECT tr.id INTO v_id
+  -- contend. Mirrors execution.fn_poll_async_run.
+  SELECT tr.id INTO v_claim_id
   FROM agents.team_runs tr
   WHERE tr.status = 'queued'
     AND tr.approval_status IN ('not_required', 'approved')
@@ -1374,23 +1385,23 @@ BEGIN
   FOR UPDATE SKIP LOCKED
   LIMIT 1;
 
-  IF v_id IS NULL THEN
+  IF v_claim_id IS NULL THEN
     RETURN;
   END IF;
 
-  UPDATE agents.team_runs
-  SET status     = 'running',
-      started_at = COALESCE(started_at, now()),
-      updated_at = now(),
-      metadata   = metadata || jsonb_build_object(
-        'claimed_by', COALESCE(p_worker_id, 'unknown'),
-        'claimed_at', now()
-      )
-  WHERE id = v_id;
+  UPDATE agents.team_runs tr
+  SET    status     = 'running',
+         started_at = COALESCE(tr.started_at, now()),
+         updated_at = now(),
+         metadata   = tr.metadata || jsonb_build_object(
+           'claimed_by', COALESCE(p_worker_id, 'unknown'),
+           'claimed_at', now()
+         )
+  WHERE  tr.id = v_claim_id;
 
   INSERT INTO agents.agent_run_events (team_run_id, event_type, payload)
   VALUES (
-    v_id,
+    v_claim_id,
     'dispatch_started',
     jsonb_build_object('worker_id', COALESCE(p_worker_id, 'unknown'))
   );
@@ -1398,7 +1409,7 @@ BEGIN
   RETURN QUERY
     SELECT tr.id, tr.ai_lenser_id, tr.workflow_id, tr.workflow_run_id, tr.metadata
     FROM agents.team_runs tr
-    WHERE tr.id = v_id;
+    WHERE tr.id = v_claim_id;
 END;
 $$;
 
@@ -1406,7 +1417,7 @@ $$;
 ALTER FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text") IS 'Phase AL: claims one queued agents.team_runs row using FOR UPDATE SKIP LOCKED. Transitions status=running and returns the row. Concurrent workers do not double-claim. SECURITY DEFINER; service_role only.';
+COMMENT ON FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text") IS 'D10 fix: disambiguates id by renaming local var to v_claim_id and qualifying WHERE predicates with the table alias. Service-role only.';
 
 
 
@@ -1764,6 +1775,51 @@ COMMENT ON FUNCTION "agents"."fn_notify_approval_pending"() IS 'Phase P3: AFTER 
 
 
 
+CREATE OR REPLACE FUNCTION "agents"."fn_purge_stale_blocked_team_runs"("p_max_age" interval DEFAULT '30 days'::interval) RETURNS integer
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'agents', 'public'
+    AS $$
+DECLARE
+  v_cutoff timestamptz := now() - GREATEST(p_max_age, interval '1 hour');
+  v_purged integer := 0;
+  r RECORD;
+BEGIN
+  FOR r IN
+    SELECT id
+    FROM   agents.team_runs
+    WHERE  status          = 'blocked'
+      AND  approval_status = 'pending'
+      AND  created_at     <  v_cutoff
+    FOR UPDATE SKIP LOCKED
+    LIMIT  500   -- bounded sweep; cron re-runs daily
+  LOOP
+    UPDATE agents.team_runs
+    SET    status          = 'cancelled',
+           approval_status = 'timed_out',
+           completed_at    = now(),
+           updated_at      = now()
+    WHERE  id = r.id;
+
+    INSERT INTO agents.agent_run_events (team_run_id, event_type, payload)
+    VALUES (r.id, 'approval_timed_out',
+            jsonb_build_object('reason', 'stale_blocked_purge',
+                               'cutoff', v_cutoff));
+
+    v_purged := v_purged + 1;
+  END LOOP;
+
+  RETURN v_purged;
+END;
+$$;
+
+
+ALTER FUNCTION "agents"."fn_purge_stale_blocked_team_runs"("p_max_age" interval) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "agents"."fn_purge_stale_blocked_team_runs"("p_max_age" interval) IS 'D6: daily age-out for blocked team_runs whose approval never arrived. Transitions to status=cancelled, approval_status=timed_out, emits approval_timed_out event. Bounded sweep of 500 per call.';
+
+
+
 CREATE OR REPLACE FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_agent_id" "uuid", "p_kind" "text", "p_to_agent_id" "uuid" DEFAULT NULL::"uuid", "p_payload" "jsonb" DEFAULT '{}'::"jsonb", "p_parent_id" "uuid" DEFAULT NULL::"uuid") RETURNS "uuid"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'agents', 'public'
@@ -1807,9 +1863,12 @@ CREATE OR REPLACE FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid",
     SET "search_path" TO 'agents', 'public'
     AS $$
 DECLARE
-  v_team_run_id     UUID;
-  v_status          TEXT;
-  v_approval_status TEXT;
+  v_team_run_id     uuid;
+  v_status          text;
+  v_approval_status text;
+  v_parent_id       uuid;
+  v_parent_depth    integer;
+  v_new_depth       integer;
 BEGIN
   IF p_ai_lenser_id IS NULL THEN
     RAISE EXCEPTION 'ai_lenser_id is required'
@@ -1821,17 +1880,42 @@ BEGIN
       USING ERRCODE = 'check_violation';
   END IF;
 
-  -- 'forbidden' raises BEFORE any side-effect — the workflow engine surfaces
-  -- this as a node failure. The AL pgTAP suite asserts this invariant.
   IF p_policy = 'forbidden' THEN
     RAISE EXCEPTION 'delegation_forbidden'
       USING ERRCODE = 'P0001',
             HINT    = 'Workflow node delegationPolicy=forbidden';
   END IF;
 
-  -- Map policy → (status, approval_status). Mirrors the convention used by
-  -- lenses.fn_dispatch_scheduled_workflows so downstream UI / triggers don't
-  -- need to special-case runtime vs scheduled origins.
+  -- ── D5: recursion-depth cap ──────────────────────────────────────────────
+  -- Workers pass the parent team_run id via the inputs envelope:
+  --   p_inputs := jsonb_build_object('_parent_team_run_id', <uuid>, ...)
+  IF p_inputs IS NOT NULL AND p_inputs ? '_parent_team_run_id' THEN
+    BEGIN
+      v_parent_id := (p_inputs->>'_parent_team_run_id')::uuid;
+    EXCEPTION WHEN OTHERS THEN
+      v_parent_id := NULL;
+    END;
+  END IF;
+
+  IF v_parent_id IS NOT NULL THEN
+    SELECT recursion_depth INTO v_parent_depth
+    FROM agents.team_runs
+    WHERE id = v_parent_id;
+
+    v_new_depth := COALESCE(v_parent_depth, 0) + 1;
+
+    IF v_new_depth > 8 THEN
+      RAISE EXCEPTION
+        'team_run_recursion_cap_exceeded: depth=% > 8 (parent=%)',
+        v_new_depth, v_parent_id
+        USING ERRCODE = '54000',
+              HINT    = 'D5: agents.fn_start_team_run recursion cap';
+    END IF;
+  ELSE
+    v_new_depth := 0;
+  END IF;
+  -- ── End D5 ───────────────────────────────────────────────────────────────
+
   IF p_policy = 'approval_required' THEN
     v_status          := 'blocked';
     v_approval_status := 'pending';
@@ -1841,34 +1925,32 @@ BEGIN
   END IF;
 
   INSERT INTO agents.team_runs (
-    ai_lenser_id,
-    workflow_id,
-    status,
-    approval_status,
-    metadata
+    ai_lenser_id, workflow_id, status, approval_status,
+    parent_team_run_id, recursion_depth, metadata
   )
   VALUES (
-    p_ai_lenser_id,
-    p_workflow_id,
-    v_status,
-    v_approval_status,
+    p_ai_lenser_id, p_workflow_id, v_status, v_approval_status,
+    v_parent_id, v_new_depth,
     jsonb_build_object(
-      'inputs',         p_inputs,
-      'origin',         'delegate_to_agent',
+      'inputs',            p_inputs - '_parent_team_run_id',
+      'origin',            'delegate_to_agent',
       'delegation_policy', p_policy
     )
   )
   RETURNING id INTO v_team_run_id;
 
-  -- Emit a baseline lifecycle event so the realtime UI can pick it up.
   INSERT INTO agents.agent_run_events (team_run_id, event_type, payload)
   VALUES (
     v_team_run_id,
-    CASE WHEN p_policy = 'approval_required' THEN 'approval_requested' ELSE 'dispatch_queued' END,
+    CASE WHEN p_policy = 'approval_required'
+         THEN 'approval_requested'
+         ELSE 'dispatch_queued'
+    END,
     jsonb_build_object(
       'workflow_id',       p_workflow_id,
       'delegation_policy', p_policy,
-      'requires_approval', p_policy = 'approval_required'
+      'requires_approval', p_policy = 'approval_required',
+      'recursion_depth',   v_new_depth
     )
   );
 
@@ -1880,7 +1962,7 @@ $$;
 ALTER FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb", "p_policy" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb", "p_policy" "text") IS 'Phase AL: creates an agents.team_runs row when a workflow node executes a `delegate_to_agent` action. Status mapping: auto→queued/not_required, approval_required→blocked/pending, forbidden→RAISE. SECURITY DEFINER; service_role only.';
+COMMENT ON FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb", "p_policy" "text") IS 'Service-role-only team-run dispatch. Enforces D5 recursion cap (≤8) when parent passed via inputs._parent_team_run_id. Maps policy → (status, approval_status). SECURITY DEFINER.';
 
 
 
@@ -5350,7 +5432,7 @@ $$;
 ALTER FUNCTION "battles"."fn_check_vote_rate_limit"("p_voter_lenser_id" "uuid", "p_battle_id" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "battles"."fn_claim_battle_execution_job"("p_worker_id" "text") RETURNS TABLE("job_id" "uuid", "battle_id" "uuid", "contender_id" "uuid", "slot" "text", "task_prompt" "text", "provider_key" "text", "model_key" "text", "byok_key_ref_id" "text", "lens_id" "uuid", "version_id" "uuid", "max_tokens" integer, "temperature" numeric, "retry_count" integer, "ai_lenser_id" "uuid", "personality_note" "text", "personality_version_id" "uuid")
+CREATE OR REPLACE FUNCTION "battles"."fn_claim_battle_execution_job"("p_worker_id" "text") RETURNS TABLE("job_id" "uuid", "battle_id" "uuid", "contender_id" "uuid", "slot" "text", "task_prompt" "text", "provider_key" "text", "model_key" "text", "byok_key_ref_id" "uuid", "lens_id" "uuid", "version_id" "uuid", "max_tokens" integer, "temperature" numeric, "retry_count" integer, "ai_lenser_id" "uuid", "personality_note" "text", "personality_version_id" "uuid")
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'battles', 'agents', 'execution', 'public'
     AS $$
@@ -5390,37 +5472,36 @@ BEGIN
       COALESCE(ec.max_tokens,   4096),
       COALESCE(ec.temperature,  0.7),
       v_job.retry_count,
-      -- personality: only populated for ai_agent contenders
-      al.id                     AS ai_lenser_id,
-      al.personality_note       AS personality_note,
-      plb.version_id            AS personality_version_id
+      al.id,
+      al.personality_note,
+      plb.version_id
     FROM battles.battles b
-    -- execution config: contender-specific wins over battle-level fallback
-    LEFT JOIN execution.execution_configs ec
+    LEFT JOIN battles.execution_configs ec
            ON ec.battle_id    = v_job.battle_id
           AND (ec.contender_id = v_job.contender_id OR ec.contender_id IS NULL)
-    -- instruction lens assigned to this contender slot
     LEFT JOIN battles.contender_lens_assignments cla
            ON cla.contender_id = v_job.contender_id
-    -- agent identity (only joins when contender_type = 'ai_agent')
     LEFT JOIN battles.contenders con
-           ON con.id           = v_job.contender_id
-          AND con.contender_type = 'ai_agent'
+           ON con.id              = v_job.contender_id
+          AND con.contender_type  = 'ai_agent'
     LEFT JOIN agents.ai_lensers al
-           ON al.profile_id   = con.contender_ref_id
-    -- personality lens binding: the default personality-tagged lens for this agent
+           ON al.profile_id      = con.contender_ref_id
     LEFT JOIN agents.lens_bindings plb
-           ON plb.ai_lenser_id = al.id
-          AND plb.is_default   = TRUE
-          AND 'personality'   = ANY(plb.category_tags)
+           ON plb.ai_lenser_id   = al.id
+          AND plb.is_default     = TRUE
+          AND 'personality'      = ANY(plb.category_tags)
     WHERE b.id = v_job.battle_id
-    ORDER BY ec.contender_id NULLS LAST   -- contender-specific config wins
+    ORDER BY ec.contender_id NULLS LAST
     LIMIT 1;
 END;
 $$;
 
 
 ALTER FUNCTION "battles"."fn_claim_battle_execution_job"("p_worker_id" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "battles"."fn_claim_battle_execution_job"("p_worker_id" "text") IS 'D9 fix: schema-qualifies execution_configs to battles.* (formerly execution.* which never existed), and corrects byok_key_ref_id return type uuid (formerly text, would have failed at first row). Service-role worker claim primitive: FOR UPDATE SKIP LOCKED on one queued job.';
+
 
 
 CREATE OR REPLACE FUNCTION "battles"."fn_clone_battle_for_rematch"("p_parent_id" "uuid") RETURNS "uuid"
@@ -6252,19 +6333,19 @@ CREATE OR REPLACE FUNCTION "battles"."trg_enforce_status_transition"() RETURNS "
 DECLARE
     v_valid boolean;
 BEGIN
-    -- Skip if status didn't change
     IF OLD.status = NEW.status THEN
         RETURN NEW;
     END IF;
 
     v_valid := CASE OLD.status::text
         WHEN 'draft'     THEN NEW.status::text IN ('open', 'archived')
-        WHEN 'open'      THEN NEW.status::text IN ('voting', 'archived')
-        WHEN 'voting'    THEN NEW.status::text IN ('scoring')
+        WHEN 'open'      THEN NEW.status::text IN ('executing', 'voting', 'archived')
+        WHEN 'executing' THEN NEW.status::text IN ('voting', 'archived')
+        WHEN 'voting'    THEN NEW.status::text IN ('scoring', 'archived')
         WHEN 'scoring'   THEN NEW.status::text IN ('closed')
         WHEN 'closed'    THEN NEW.status::text IN ('published')
         WHEN 'published' THEN NEW.status::text IN ('archived')
-        WHEN 'archived'  THEN false  -- terminal state
+        WHEN 'archived'  THEN false
         ELSE false
     END;
 
@@ -6279,6 +6360,10 @@ $$;
 
 
 ALTER FUNCTION "battles"."trg_enforce_status_transition"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "battles"."trg_enforce_status_transition"() IS 'D11 fix: extends the legal transition map with executing state so fn_auto_start_battles (open→executing) and fn_complete_battle_execution_job (executing→voting) succeed. Also adds archived as a safety exit from open, executing, and voting for manual cancellation.';
+
 
 
 CREATE OR REPLACE FUNCTION "battles"."trg_events_immutable"() RETURNS "trigger"
@@ -12271,36 +12356,23 @@ DECLARE
   v_team_run_status        text;
   v_approval_status        text;
   v_dispatched             integer := 0;
-  -- budget enforcement
   v_spending_limit         numeric;
   v_budget_enforce         boolean;
   v_credits_used           numeric;
-  -- Phase W
   v_condition_ctx          jsonb;
   v_condition_pass         boolean;
+  v_condition_err          text;
   v_rotation_len           integer;
   v_rotation_idx           integer;
   v_inputs                 jsonb;
 BEGIN
   FOR v_schedule IN
     SELECT
-      s.id,
-      s.workflow_id,
-      s.cron_expr,
-      s.global_model_id,
-      s.inputs_template,
-      s.is_active,
-      s.last_run_at,
-      s.assignee_type,
-      s.assignee_id,
-      s.workflow_assignment_id,
-      s.approval_policy,
-      s.calendar_id,
-      s.pre_dispatch_condition,
-      s.inputs_rotation,
-      s.last_rotation_index,
-      w.lenser_id,
-      w.title
+      s.id, s.workflow_id, s.cron_expr, s.global_model_id, s.inputs_template,
+      s.is_active, s.last_run_at, s.assignee_type, s.assignee_id,
+      s.workflow_assignment_id, s.approval_policy, s.calendar_id,
+      s.pre_dispatch_condition, s.inputs_rotation, s.last_rotation_index,
+      w.lenser_id, w.title
     FROM lenses.workflow_schedules s
     JOIN lenses.workflows w ON w.id = s.workflow_id
     WHERE s.is_active = true
@@ -12309,28 +12381,24 @@ BEGIN
     ORDER BY s.created_at ASC
     FOR UPDATE OF s SKIP LOCKED
   LOOP
-    -- Resolve the workflow-owner AI lenser for action_logs fallback
     SELECT al.id INTO v_ai_lenser_id
     FROM agents.ai_lensers al
     WHERE al.profile_id = v_schedule.lenser_id
     LIMIT 1;
 
-    -- Resolve the schedule assignee AI lenser for team_runs
     v_assignee_ai_lenser_id := NULL;
     IF v_schedule.assignee_id IS NOT NULL THEN
       IF v_schedule.assignee_type = 'agent' THEN
         v_assignee_ai_lenser_id := v_schedule.assignee_id;
       ELSIF v_schedule.assignee_type = 'team' THEN
         SELECT t.ai_lenser_id INTO v_assignee_ai_lenser_id
-        FROM agents.teams t
-        WHERE t.id = v_schedule.assignee_id
-        LIMIT 1;
+        FROM agents.teams t WHERE t.id = v_schedule.assignee_id LIMIT 1;
       END IF;
     END IF;
 
     v_log_ai_lenser_id := COALESCE(v_assignee_ai_lenser_id, v_ai_lenser_id);
 
-    -- ── Budget enforcement gate ───────────────────────────────────────────
+    -- Budget enforcement gate
     IF v_ai_lenser_id IS NOT NULL THEN
       SELECT pol.spending_limit_credits, pol.budget_enforce
         INTO v_spending_limit, v_budget_enforce
@@ -12339,371 +12407,163 @@ BEGIN
       WHERE al.id = v_ai_lenser_id;
 
       IF v_budget_enforce AND v_spending_limit IS NOT NULL THEN
-        SELECT COALESCE(SUM(qs.credits_spent), 0)
-          INTO v_credits_used
+        SELECT COALESCE(SUM(qs.credits_spent), 0) INTO v_credits_used
         FROM agents.quota_snapshots qs
         WHERE qs.ai_lenser_id = v_ai_lenser_id
           AND qs.period_date = CURRENT_DATE;
 
         IF v_credits_used >= v_spending_limit THEN
           UPDATE lenses.workflow_schedules
-          SET
-            last_dispatch_status = 'budget_exceeded',
-            last_error_at = v_now,
-            last_error_message = format(
-              'spending_limit_credits=%s reached (used=%s today)',
-              v_spending_limit, v_credits_used
-            )
+          SET last_dispatch_status = 'budget_exceeded',
+              last_error_at = v_now,
+              last_error_message = format('spending_limit_credits=%s reached (used=%s today)',
+                                          v_spending_limit, v_credits_used)
           WHERE id = v_schedule.id;
-
-          IF v_log_ai_lenser_id IS NOT NULL THEN
-            INSERT INTO agents.action_logs (
-              ai_lenser_id, action_type, result, metadata
-            ) VALUES (
-              v_log_ai_lenser_id,
-              'schedule_skipped',
-              'budget_exceeded',
-              jsonb_build_object(
-                'reason', 'budget_exceeded',
-                'schedule_id', v_schedule.id,
-                'workflow_id', v_schedule.workflow_id,
-                'scheduled_for', v_scheduled_for,
-                'spending_limit_credits', v_spending_limit,
-                'credits_used_today', v_credits_used
-              )
-            );
-          END IF;
-
           CONTINUE;
         END IF;
       END IF;
     END IF;
-    -- ── End budget gate ───────────────────────────────────────────────────
 
-    -- Determine approval requirement from policy (default: requiresApproval=true)
     v_requires_approval := COALESCE(
-      (v_schedule.approval_policy->>'requiresApproval')::boolean,
-      true
-    );
+      (v_schedule.approval_policy->>'requiresApproval')::boolean, true);
 
     IF lenses.fn_workflow_has_cycle(v_schedule.workflow_id) THEN
       UPDATE lenses.workflow_schedules
-      SET
-        last_dispatch_status = 'validation_failed',
-        last_error_at = v_now,
-        last_error_message = 'cycle_detected'
+      SET last_dispatch_status = 'validation_failed',
+          last_error_at = v_now, last_error_message = 'cycle_detected'
       WHERE id = v_schedule.id;
-
-      IF v_log_ai_lenser_id IS NOT NULL THEN
-        INSERT INTO agents.action_logs (
-          ai_lenser_id, action_type, result, metadata
-        ) VALUES (
-          v_log_ai_lenser_id,
-          'schedule_skipped',
-          'failed',
-          jsonb_build_object(
-            'reason', 'cycle_detected',
-            'schedule_id', v_schedule.id,
-            'workflow_id', v_schedule.workflow_id,
-            'scheduled_for', v_scheduled_for
-          )
-        );
-      END IF;
-
       CONTINUE;
     END IF;
 
     IF EXISTS (
-      SELECT 1
-      FROM lenses.workflow_runs r
+      SELECT 1 FROM lenses.workflow_runs r
       WHERE r.schedule_id = v_schedule.id
-        AND r.status IN ('draft', 'validated', 'queued', 'pending', 'running', 'streaming', 'recovered')
+        AND r.status IN ('draft','validated','queued','pending','running','streaming','recovered')
     ) THEN
       UPDATE lenses.workflow_schedules
-      SET
-        last_dispatch_status = 'skipped_overlap',
-        last_error_at = v_now,
-        last_error_message = 'overlap_in_flight'
+      SET last_dispatch_status = 'skipped_overlap',
+          last_error_at = v_now, last_error_message = 'overlap_in_flight'
       WHERE id = v_schedule.id;
-
-      IF v_log_ai_lenser_id IS NOT NULL THEN
-        INSERT INTO agents.action_logs (
-          ai_lenser_id, action_type, result, metadata
-        ) VALUES (
-          v_log_ai_lenser_id,
-          'schedule_skipped',
-          'throttled',
-          jsonb_build_object(
-            'reason', 'overlap_in_flight',
-            'schedule_id', v_schedule.id,
-            'workflow_id', v_schedule.workflow_id,
-            'scheduled_for', v_scheduled_for
-          )
-        );
-      END IF;
-
       CONTINUE;
     END IF;
 
-    -- ── Phase W1: calendar overlay guard ──────────────────────────────────
     IF NOT lenses.fn_check_calendar(v_schedule.calendar_id, v_now) THEN
       UPDATE lenses.workflow_schedules
-      SET
-        last_dispatch_status = 'skipped_calendar',
-        last_error_at = v_now,
-        last_error_message = 'calendar_skipped'
+      SET last_dispatch_status = 'skipped_calendar',
+          last_error_at = v_now, last_error_message = 'calendar_skipped'
       WHERE id = v_schedule.id;
-
-      IF v_log_ai_lenser_id IS NOT NULL THEN
-        INSERT INTO agents.action_logs (
-          ai_lenser_id, action_type, result, metadata
-        ) VALUES (
-          v_log_ai_lenser_id,
-          'schedule_skipped',
-          'skipped',
-          jsonb_build_object(
-            'schedule_id', v_schedule.id,
-            'workflow_id', v_schedule.workflow_id,
-            'scheduled_for', v_scheduled_for,
-            'reason', 'calendar',
-            'detail', 'calendar overlay denied this date',
-            'calendar_id', v_schedule.calendar_id
-          )
-        );
-      END IF;
-
       CONTINUE;
     END IF;
-    -- ── End calendar guard ────────────────────────────────────────────────
 
-    -- ── Phase W2: pre_dispatch_condition guard ────────────────────────────
+    -- ── D8: pre_dispatch_condition guard with error surfacing ─────────────
     IF v_schedule.pre_dispatch_condition IS NOT NULL THEN
       v_condition_ctx := lenses.fn_build_schedule_condition_context(v_schedule.id);
+      v_condition_err := NULL;
       BEGIN
         v_condition_pass := automation.fn_eval_filter(
-          v_schedule.pre_dispatch_condition,
-          v_condition_ctx
-        );
+          v_schedule.pre_dispatch_condition, v_condition_ctx);
       EXCEPTION WHEN OTHERS THEN
         v_condition_pass := false;
+        v_condition_err  := left(SQLERRM, 500);
       END;
 
       IF v_condition_pass IS DISTINCT FROM true THEN
-        UPDATE lenses.workflow_schedules
-        SET
-          last_dispatch_status = 'skipped_condition',
-          last_error_at = v_now,
-          last_error_message = 'condition_failed'
-        WHERE id = v_schedule.id;
-
-        IF v_log_ai_lenser_id IS NOT NULL THEN
-          INSERT INTO agents.action_logs (
-            ai_lenser_id, action_type, result, metadata
-          ) VALUES (
-            v_log_ai_lenser_id,
-            'schedule_skipped',
-            'skipped',
-            jsonb_build_object(
-              'schedule_id', v_schedule.id,
-              'workflow_id', v_schedule.workflow_id,
-              'scheduled_for', v_scheduled_for,
-              'reason', 'condition_failed',
-              'detail', 'pre_dispatch_condition evaluated to false',
-              'condition', v_schedule.pre_dispatch_condition,
-              'context', v_condition_ctx
-            )
-          );
+        IF v_condition_err IS NOT NULL THEN
+          -- D8: hard error in the DSL → surface as `condition_failed`
+          UPDATE lenses.workflow_schedules
+          SET last_dispatch_status = 'condition_failed',
+              last_error_at = v_now,
+              last_error_message = 'fn_eval_filter raised: ' || v_condition_err
+          WHERE id = v_schedule.id;
+        ELSE
+          -- Clean false return → keep `skipped_condition`
+          UPDATE lenses.workflow_schedules
+          SET last_dispatch_status = 'skipped_condition',
+              last_error_at = v_now, last_error_message = 'condition_failed'
+          WHERE id = v_schedule.id;
         END IF;
-
         CONTINUE;
       END IF;
     END IF;
-    -- ── End condition guard ───────────────────────────────────────────────
+    -- ── End D8 ──────────────────────────────────────────────────────────
 
-    -- ── Phase W3: rotation pick ───────────────────────────────────────────
     IF v_schedule.inputs_rotation IS NOT NULL
        AND jsonb_typeof(v_schedule.inputs_rotation) = 'array'
        AND jsonb_array_length(v_schedule.inputs_rotation) > 0 THEN
       v_rotation_len := jsonb_array_length(v_schedule.inputs_rotation);
       v_rotation_idx := COALESCE(v_schedule.last_rotation_index, 0) % v_rotation_len;
-      v_inputs := COALESCE(
-        v_schedule.inputs_rotation -> v_rotation_idx,
-        '{}'::jsonb
-      );
-
+      v_inputs := COALESCE(v_schedule.inputs_rotation -> v_rotation_idx, '{}'::jsonb);
       UPDATE lenses.workflow_schedules
       SET last_rotation_index = COALESCE(last_rotation_index, 0) + 1
       WHERE id = v_schedule.id;
     ELSE
       v_inputs := COALESCE(v_schedule.inputs_template, '{}'::jsonb);
     END IF;
-    -- ── End rotation pick ─────────────────────────────────────────────────
 
     BEGIN
       INSERT INTO lenses.workflow_runs (
-        workflow_id,
-        triggered_by,
-        status,
-        context_inputs,
-        global_model_id,
-        schedule_id,
-        scheduled_for,
-        trigger_mode
+        workflow_id, triggered_by, status, context_inputs, global_model_id,
+        schedule_id, scheduled_for, trigger_mode
       ) VALUES (
-        v_schedule.workflow_id,
-        v_schedule.lenser_id,
-        'pending',
-        v_inputs,
-        v_schedule.global_model_id,
-        v_schedule.id,
-        v_scheduled_for,
-        'schedule'
-      )
-      RETURNING id INTO v_run_id;
+        v_schedule.workflow_id, v_schedule.lenser_id, 'pending', v_inputs,
+        v_schedule.global_model_id, v_schedule.id, v_scheduled_for, 'schedule'
+      ) RETURNING id INTO v_run_id;
 
       INSERT INTO lenses.workflow_node_results (run_id, node_id, status)
       SELECT v_run_id, n.id, 'pending'
       FROM lenses.workflow_nodes n
       WHERE n.workflow_id = v_schedule.workflow_id;
 
-      -- Create team_run and dispatch event when the schedule has an assignee
       IF v_assignee_ai_lenser_id IS NOT NULL THEN
-        v_team_run_status  := CASE WHEN v_requires_approval THEN 'blocked' ELSE 'queued' END;
-        v_approval_status  := CASE WHEN v_requires_approval THEN 'pending' ELSE 'not_required' END;
+        v_team_run_status := CASE WHEN v_requires_approval THEN 'blocked' ELSE 'queued' END;
+        v_approval_status := CASE WHEN v_requires_approval THEN 'pending' ELSE 'not_required' END;
 
         INSERT INTO agents.team_runs (
-          ai_lenser_id,
-          team_id,
-          workflow_id,
-          workflow_run_id,
-          workflow_assignment_id,
-          status,
-          approval_status,
-          metadata
+          ai_lenser_id, team_id, workflow_id, workflow_run_id,
+          workflow_assignment_id, status, approval_status, metadata
         ) VALUES (
           v_assignee_ai_lenser_id,
           CASE WHEN v_schedule.assignee_type = 'team' THEN v_schedule.assignee_id ELSE NULL END,
-          v_schedule.workflow_id,
-          v_run_id,
-          v_schedule.workflow_assignment_id,
-          v_team_run_status,
-          v_approval_status,
-          jsonb_build_object(
-            'schedule_id', v_schedule.id,
-            'scheduled_for', v_scheduled_for,
-            'cron_expr', v_schedule.cron_expr
-          )
-        )
-        RETURNING id INTO v_team_run_id;
+          v_schedule.workflow_id, v_run_id, v_schedule.workflow_assignment_id,
+          v_team_run_status, v_approval_status,
+          jsonb_build_object('schedule_id', v_schedule.id,
+                             'scheduled_for', v_scheduled_for,
+                             'cron_expr', v_schedule.cron_expr)
+        ) RETURNING id INTO v_team_run_id;
 
-        INSERT INTO agents.agent_run_events (
-          team_run_id,
-          event_type,
-          payload,
-          occurred_at
-        ) VALUES (
+        INSERT INTO agents.agent_run_events (team_run_id, event_type, payload, occurred_at)
+        VALUES (
           v_team_run_id,
           CASE WHEN v_requires_approval THEN 'approval_requested' ELSE 'dispatch_queued' END,
-          jsonb_build_object(
-            'schedule_id', v_schedule.id,
-            'scheduled_for', v_scheduled_for,
-            'cron_expr', v_schedule.cron_expr,
-            'workflow_id', v_schedule.workflow_id,
-            'workflow_run_id', v_run_id,
-            'requires_approval', v_requires_approval
-          ),
+          jsonb_build_object('schedule_id', v_schedule.id,
+                             'scheduled_for', v_scheduled_for,
+                             'cron_expr', v_schedule.cron_expr,
+                             'workflow_id', v_schedule.workflow_id,
+                             'workflow_run_id', v_run_id,
+                             'requires_approval', v_requires_approval),
           v_now
         );
       END IF;
 
       UPDATE lenses.workflow_schedules
-      SET
-        last_run_at = v_now,
-        last_run_id = v_run_id,
-        last_dispatch_status = 'dispatched',
-        last_error_at = NULL,
-        last_error_message = NULL
+      SET last_run_at = v_now, last_run_id = v_run_id,
+          last_dispatch_status = 'dispatched',
+          last_error_at = NULL, last_error_message = NULL
       WHERE id = v_schedule.id;
-
-      IF v_log_ai_lenser_id IS NOT NULL THEN
-        INSERT INTO agents.action_logs (
-          ai_lenser_id, action_type, result, metadata
-        ) VALUES (
-          v_log_ai_lenser_id,
-          'dispatch_schedule',
-          'success',
-          jsonb_build_object(
-            'schedule_id', v_schedule.id,
-            'workflow_id', v_schedule.workflow_id,
-            'workflow_title', v_schedule.title,
-            'run_id', v_run_id,
-            'team_run_id', v_team_run_id,
-            'trigger_mode', 'schedule',
-            'scheduled_for', v_scheduled_for,
-            'assignee_type', v_schedule.assignee_type,
-            'assignee_id', v_schedule.assignee_id,
-            'workflow_assignment_id', v_schedule.workflow_assignment_id,
-            'requires_approval', v_requires_approval,
-            'rotation_index_used', CASE
-              WHEN v_schedule.inputs_rotation IS NOT NULL
-                AND jsonb_typeof(v_schedule.inputs_rotation) = 'array'
-                AND jsonb_array_length(v_schedule.inputs_rotation) > 0
-              THEN COALESCE(v_schedule.last_rotation_index, 0)
-                   % jsonb_array_length(v_schedule.inputs_rotation)
-              ELSE NULL
-            END
-          )
-        );
-      END IF;
 
       v_dispatched := v_dispatched + 1;
     EXCEPTION
       WHEN unique_violation THEN
         UPDATE lenses.workflow_schedules
-        SET
-          last_dispatch_status = 'skipped_overlap',
-          last_error_at = v_now,
-          last_error_message = 'schedule_slot_exists'
+        SET last_dispatch_status = 'skipped_overlap',
+            last_error_at = v_now, last_error_message = 'schedule_slot_exists'
         WHERE id = v_schedule.id;
-
-        IF v_log_ai_lenser_id IS NOT NULL THEN
-          INSERT INTO agents.action_logs (
-            ai_lenser_id, action_type, result, metadata
-          ) VALUES (
-            v_log_ai_lenser_id,
-            'schedule_skipped',
-            'throttled',
-            jsonb_build_object(
-              'reason', 'schedule_slot_exists',
-              'schedule_id', v_schedule.id,
-              'workflow_id', v_schedule.workflow_id,
-              'scheduled_for', v_scheduled_for
-            )
-          );
-        END IF;
       WHEN OTHERS THEN
         UPDATE lenses.workflow_schedules
-        SET
-          last_dispatch_status = 'dispatch_failed',
-          last_error_at = v_now,
-          last_error_message = left(SQLERRM, 500)
+        SET last_dispatch_status = 'dispatch_failed',
+            last_error_at = v_now,
+            last_error_message = left(SQLERRM, 500)
         WHERE id = v_schedule.id;
-
-        IF v_log_ai_lenser_id IS NOT NULL THEN
-          INSERT INTO agents.action_logs (
-            ai_lenser_id, action_type, result, metadata
-          ) VALUES (
-            v_log_ai_lenser_id,
-            'dispatch_schedule',
-            'failed',
-            jsonb_build_object(
-              'schedule_id', v_schedule.id,
-              'workflow_id', v_schedule.workflow_id,
-              'scheduled_for', v_scheduled_for,
-              'error', left(SQLERRM, 500)
-            )
-          );
-        END IF;
     END;
   END LOOP;
 
@@ -12715,7 +12575,7 @@ $$;
 ALTER FUNCTION "lenses"."fn_dispatch_scheduled_workflows"() OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "lenses"."fn_dispatch_scheduled_workflows"() IS 'Phase W: dispatch loop with calendar overlay (W1), pre_dispatch_condition (W2 — uses automation.fn_eval_filter) and parameter rotation (W3) added to the Phase 2.8 baseline. Skip reasons land in agents.action_logs as action_type=schedule_skipped with payload {reason, detail, ...}.';
+COMMENT ON FUNCTION "lenses"."fn_dispatch_scheduled_workflows"() IS 'D8 fix: distinguishes condition_failed (DSL raised an error) from skipped_condition (DSL returned clean false). Operators can now spot a broken rule rather than treating every skip as a normal outcome.';
 
 
 
@@ -13470,27 +13330,17 @@ COMMENT ON FUNCTION "lenses"."fn_start_workflow_run"("p_workflow_id" "uuid", "p_
 
 CREATE OR REPLACE FUNCTION "lenses"."fn_start_workflow_run"("p_workflow_id" "uuid", "p_inputs" "jsonb" DEFAULT '{}'::"jsonb", "p_global_model_id" "text" DEFAULT NULL::"text", "p_idempotency_key" "text" DEFAULT NULL::"text") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'lenses', 'lensers', 'agents', 'public'
+    SET "search_path" TO 'lenses', 'lensers', 'public'
     AS $$
 DECLARE
   v_lenser_id        uuid;
-  v_ai_lenser_id     uuid;
   v_run_id           uuid;
   v_rate_window_sec  integer := 60;
   v_rate_limit_count integer := 30;
   v_recent_count     integer;
+  v_role             text;
 BEGIN
   v_lenser_id := lensers.get_auth_lenser_id();
-
-  -- Automatically resolve ai_lenser_id when the caller is acting as an AI workspace.
-  -- get_auth_lenser_id() returns the AI profile id when active; join to agents.ai_lensers
-  -- to get the canonical ai_lenser_id (mirrors what fn_dispatch_scheduled_workflows does).
-  SELECT al.id INTO v_ai_lenser_id
-  FROM agents.ai_lensers al
-  JOIN lensers.profiles  p  ON p.id = al.profile_id
-  WHERE p.id   = v_lenser_id
-    AND p.type = 'ai'
-  LIMIT 1;
 
   IF NOT EXISTS (
     SELECT 1 FROM lenses.workflows w
@@ -13501,20 +13351,38 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
-  -- Idempotency short-circuit.
+  -- ── D4: idempotency short-circuit with TTL ─────────────────────────────
   IF p_idempotency_key IS NOT NULL AND length(p_idempotency_key) > 0 THEN
     SELECT id INTO v_run_id
-    FROM lenses.workflow_runs
-    WHERE workflow_id = p_workflow_id
-      AND idempotency_key = p_idempotency_key
-    LIMIT 1;
+    FROM   lenses.workflow_runs
+    WHERE  workflow_id    = p_workflow_id
+      AND  idempotency_key = p_idempotency_key
+      AND  (idempotency_expires_at IS NULL OR idempotency_expires_at > now())
+    ORDER  BY created_at DESC
+    LIMIT  1;
     IF v_run_id IS NOT NULL THEN
       RETURN v_run_id;
     END IF;
   END IF;
 
-  -- Rate limit (per-lenser, sliding window).
-  IF v_lenser_id IS NOT NULL THEN
+  -- ── D2: anonymous callers cannot bypass the rate limit. Authenticated
+  -- runs are bucketed per-lenser. Anon callers (v_lenser_id IS NULL) and
+  -- any caller without an auth profile are rejected via PostgREST role
+  -- check below — they should never call this RPC directly.
+  BEGIN
+    v_role := current_setting('request.jwt.claim.role', true);
+  EXCEPTION WHEN OTHERS THEN
+    v_role := NULL;
+  END;
+
+  IF v_lenser_id IS NULL THEN
+    IF v_role = 'anon' THEN
+      RAISE EXCEPTION 'fn_start_workflow_run: anon not permitted'
+        USING ERRCODE = '42501',
+              HINT    = 'D2: rate limit cannot be enforced for anon';
+    END IF;
+    -- service_role callers (workers/test) intentionally bypass the limit.
+  ELSE
     v_recent_count := lenses.fn_count_recent_runs(v_lenser_id, v_rate_window_sec);
     IF v_recent_count >= v_rate_limit_count THEN
       RAISE EXCEPTION
@@ -13525,19 +13393,24 @@ BEGIN
   END IF;
 
   INSERT INTO lenses.workflow_runs (
-    workflow_id, triggered_by, ai_lenser_id, status, context_inputs,
-    global_model_id, idempotency_key
+    workflow_id, triggered_by, status, context_inputs,
+    global_model_id, idempotency_key, idempotency_expires_at
   )
   VALUES (
-    p_workflow_id, v_lenser_id, v_ai_lenser_id, 'pending', p_inputs,
-    p_global_model_id, p_idempotency_key
+    p_workflow_id, v_lenser_id, 'pending', p_inputs,
+    p_global_model_id, p_idempotency_key,
+    CASE
+      WHEN p_idempotency_key IS NOT NULL AND length(p_idempotency_key) > 0
+      THEN now() + interval '24 hours'
+      ELSE NULL
+    END
   )
   RETURNING id INTO v_run_id;
 
   INSERT INTO lenses.workflow_node_results (run_id, node_id, status)
   SELECT v_run_id, n.id, 'pending'
-  FROM lenses.workflow_nodes n
-  WHERE n.workflow_id = p_workflow_id;
+  FROM   lenses.workflow_nodes n
+  WHERE  n.workflow_id = p_workflow_id;
 
   RETURN v_run_id;
 END;
@@ -13547,10 +13420,7 @@ $$;
 ALTER FUNCTION "lenses"."fn_start_workflow_run"("p_workflow_id" "uuid", "p_inputs" "jsonb", "p_global_model_id" "text", "p_idempotency_key" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "lenses"."fn_start_workflow_run"("p_workflow_id" "uuid", "p_inputs" "jsonb", "p_global_model_id" "text", "p_idempotency_key" "text") IS 'Phase 3 — auto-attributes ai_lenser_id from the caller''s active workspace.
-   When the authenticated user is acting as an AI agent profile, the run record is
-   tagged with that agent''s ai_lenser_id. Human workspace runs leave ai_lenser_id NULL.
-   Signature is unchanged; attribution is fully server-side.';
+COMMENT ON FUNCTION "lenses"."fn_start_workflow_run"("p_workflow_id" "uuid", "p_inputs" "jsonb", "p_global_model_id" "text", "p_idempotency_key" "text") IS 'D2+D4: anon callers rejected (cannot bypass per-lenser rate limit); idempotency_key window capped at 24h via idempotency_expires_at. Otherwise mirrors phase 9.';
 
 
 
@@ -23866,6 +23736,31 @@ COMMENT ON FUNCTION "public"."fn_get_entity_reaction_status"("p_entity_type" "te
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_entity_reactions_by_lenser"("p_entity_type" "text", "p_entity_id" "uuid" DEFAULT NULL::"uuid", "p_lenser_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "entity_type" "text", "entity_id" "uuid", "lenser_id" "uuid", "reaction" "text", "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content'
+    AS $$
+  SELECT
+    r.id,
+    r.entity_type::text,
+    r.entity_id,
+    r.lenser_id,
+    r.reaction::text,
+    r.created_at
+  FROM content.reactions r
+  WHERE r.entity_type::text = p_entity_type
+    AND (p_entity_id IS NULL OR r.entity_id = p_entity_id)
+    AND (p_lenser_id IS NULL OR r.lenser_id = p_lenser_id);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_entity_reactions_by_lenser"("p_entity_type" "text", "p_entity_id" "uuid", "p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_entity_reactions_by_lenser"("p_entity_type" "text", "p_entity_id" "uuid", "p_lenser_id" "uuid") IS 'Flexible reaction query: filter by entity_type (required), entity_id (optional), and/or lenser_id (optional). Used by reactionRepository getReactionsFor, getBatchUserReactions, and getLenserHistory.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_entity_tag_ids"("p_entity_type" "text", "p_entity_id" "uuid") RETURNS TABLE("tag_id" "uuid")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'content'
@@ -26635,7 +26530,10 @@ CREATE TABLE IF NOT EXISTS "agents"."team_runs" (
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "shared_scratchpad" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "shared_scratchpad_version" integer DEFAULT 0 NOT NULL,
+    "parent_team_run_id" "uuid",
+    "recursion_depth" integer DEFAULT 0 NOT NULL,
     CONSTRAINT "team_runs_approval_status_check" CHECK (("approval_status" = ANY (ARRAY['pending'::"text", 'approved'::"text", 'rejected'::"text", 'not_required'::"text", 'timed_out'::"text"]))),
+    CONSTRAINT "team_runs_recursion_depth_range" CHECK ((("recursion_depth" >= 0) AND ("recursion_depth" <= 8))),
     CONSTRAINT "team_runs_status_check" CHECK (("status" = ANY (ARRAY['queued'::"text", 'running'::"text", 'completed'::"text", 'failed'::"text", 'cancelled'::"text", 'blocked'::"text"])))
 );
 
@@ -26648,6 +26546,14 @@ COMMENT ON COLUMN "agents"."team_runs"."shared_scratchpad" IS 'Phase X3: shared 
 
 
 COMMENT ON COLUMN "agents"."team_runs"."shared_scratchpad_version" IS 'Phase X3: monotonic version counter for optimistic locking. Starts at 0.';
+
+
+
+COMMENT ON COLUMN "agents"."team_runs"."parent_team_run_id" IS 'D5: parent team_run that delegated to this run; used to enforce recursion cap.';
+
+
+
+COMMENT ON COLUMN "agents"."team_runs"."recursion_depth" IS 'D5: cached depth in parent_team_run_id chain; rejected at start when > 8.';
 
 
 
@@ -38622,6 +38528,7 @@ CREATE TABLE IF NOT EXISTS "lenses"."workflow_runs" (
     "ai_lenser_id" "uuid",
     "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "media_manifest" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "idempotency_expires_at" timestamp with time zone,
     CONSTRAINT "wf_runs_budget_nonneg" CHECK ((("budget_credits" IS NULL) OR ("budget_credits" >= 0))),
     CONSTRAINT "wf_runs_recursion_depth_cap" CHECK ((("recursion_depth" >= 0) AND ("recursion_depth" <= 8))),
     CONSTRAINT "wf_runs_spent_nonneg" CHECK (("spent_credits" >= 0)),
@@ -38700,6 +38607,10 @@ COMMENT ON COLUMN "lenses"."workflow_runs"."metadata" IS 'Free-form per-run meta
 
 
 COMMENT ON COLUMN "lenses"."workflow_runs"."media_manifest" IS 'AP: Ordered list of media produced by this run. Each entry: {object_id, media_type, mime_type, node_id, added_at}. Populated by fn_append_workflow_run_media via WorkflowExecutionService.';
+
+
+
+COMMENT ON COLUMN "lenses"."workflow_runs"."idempotency_expires_at" IS 'D4: idempotency window. After this time the (workflow_id, idempotency_key) lookup ignores this row, allowing a fresh run with the same key.';
 
 
 
@@ -39709,6 +39620,10 @@ CREATE TABLE IF NOT EXISTS "automation"."cron_runs" (
 
 
 ALTER TABLE "automation"."cron_runs" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "automation"."cron_runs" IS 'D1: cron job execution audit. RLS-enabled; service_role only. Read-only from any other role.';
+
 
 
 CREATE SEQUENCE IF NOT EXISTS "automation"."cron_runs_id_seq"
@@ -46755,6 +46670,10 @@ CREATE INDEX "idx_team_messages_to_agent" ON "agents"."team_messages" USING "btr
 
 
 
+CREATE INDEX "idx_team_runs_parent" ON "agents"."team_runs" USING "btree" ("parent_team_run_id") WHERE ("parent_team_run_id" IS NOT NULL);
+
+
+
 CREATE INDEX "idx_tool_assignments_agent" ON "agents"."tool_assignments" USING "btree" ("ai_lenser_id");
 
 
@@ -48427,6 +48346,10 @@ CREATE INDEX "idx_workflow_runs_heartbeat_stale" ON "lenses"."workflow_runs" USI
 
 
 
+CREATE INDEX "idx_workflow_runs_idempotency_lookup" ON "lenses"."workflow_runs" USING "btree" ("workflow_id", "idempotency_key", "idempotency_expires_at") WHERE ("idempotency_key" IS NOT NULL);
+
+
+
 CREATE INDEX "idx_workflow_runs_parent" ON "lenses"."workflow_runs" USING "btree" ("parent_run_id") WHERE ("parent_run_id" IS NOT NULL);
 
 
@@ -48436,6 +48359,14 @@ CREATE INDEX "idx_workflow_runs_schedule_active" ON "lenses"."workflow_runs" USI
 
 
 CREATE UNIQUE INDEX "idx_workflow_runs_schedule_slot" ON "lenses"."workflow_runs" USING "btree" ("schedule_id", "scheduled_for") WHERE (("schedule_id" IS NOT NULL) AND ("scheduled_for" IS NOT NULL));
+
+
+
+CREATE INDEX "idx_workflow_schedules_active" ON "lenses"."workflow_schedules" USING "btree" ("last_run_at" NULLS FIRST, "created_at") WHERE ("is_active" = true);
+
+
+
+COMMENT ON INDEX "lenses"."idx_workflow_schedules_active" IS 'D7: covers fn_dispatch_scheduled_workflows loop predicate (is_active=true AND last_run_at < current minute), ordered by created_at for stable lock order across concurrent dispatchers.';
 
 
 
@@ -48472,10 +48403,6 @@ CREATE INDEX "idx_wvn_version" ON "lenses"."workflow_version_nodes" USING "btree
 
 
 CREATE UNIQUE INDEX "uq_schedule_calendars_lenser_name" ON "lenses"."schedule_calendars" USING "btree" ("lenser_id", "name");
-
-
-
-CREATE UNIQUE INDEX "workflow_runs_idempotency_unique" ON "lenses"."workflow_runs" USING "btree" ("workflow_id", "idempotency_key") WHERE ("idempotency_key" IS NOT NULL);
 
 
 
@@ -49879,6 +49806,11 @@ ALTER TABLE ONLY "agents"."team_messages"
 
 ALTER TABLE ONLY "agents"."team_runs"
     ADD CONSTRAINT "team_runs_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "agents"."team_runs"
+    ADD CONSTRAINT "team_runs_parent_team_run_id_fkey" FOREIGN KEY ("parent_team_run_id") REFERENCES "agents"."team_runs"("id") ON DELETE SET NULL;
 
 
 
@@ -52453,6 +52385,13 @@ CREATE POLICY "webhook_outbox_service_role_all" ON "audit"."webhook_outbox" TO "
 
 
 CREATE POLICY "automation_events_owner_select" ON "automation"."events" FOR SELECT TO "authenticated" USING (("source_lenser_id" = "auth"."uid"()));
+
+
+
+ALTER TABLE "automation"."cron_runs" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "cron_runs_service_only" ON "automation"."cron_runs" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
@@ -55360,6 +55299,11 @@ GRANT ALL ON FUNCTION "agents"."fn_node_requires_review"("p_team_run_id" "uuid")
 
 
 
+REVOKE ALL ON FUNCTION "agents"."fn_purge_stale_blocked_team_runs"("p_max_age" interval) FROM PUBLIC;
+GRANT ALL ON FUNCTION "agents"."fn_purge_stale_blocked_team_runs"("p_max_age" interval) TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_agent_id" "uuid", "p_kind" "text", "p_to_agent_id" "uuid", "p_payload" "jsonb", "p_parent_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_agent_id" "uuid", "p_kind" "text", "p_to_agent_id" "uuid", "p_payload" "jsonb", "p_parent_id" "uuid") TO "authenticated";
 
@@ -55589,6 +55533,7 @@ GRANT ALL ON FUNCTION "battles"."fn_check_vote_rate_limit"("p_voter_lenser_id" "
 
 
 
+REVOKE ALL ON FUNCTION "battles"."fn_claim_battle_execution_job"("p_worker_id" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "battles"."fn_claim_battle_execution_job"("p_worker_id" "text") TO "service_role";
 
 
@@ -55890,6 +55835,7 @@ GRANT ALL ON FUNCTION "execution"."fn_claim_queued_run"() TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "execution"."fn_complete_async_run"("p_run_id" "uuid", "p_media_url" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) FROM PUBLIC;
 GRANT ALL ON FUNCTION "execution"."fn_complete_async_run"("p_run_id" "uuid", "p_media_url" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) TO "service_role";
 
 
@@ -55929,6 +55875,7 @@ GRANT ALL ON FUNCTION "execution"."fn_persist_local_execution"("p_lens_id" "uuid
 
 
 
+REVOKE ALL ON FUNCTION "execution"."fn_poll_async_run"("p_stale_after_seconds" integer, "p_limit" integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION "execution"."fn_poll_async_run"("p_stale_after_seconds" integer, "p_limit" integer) TO "service_role";
 
 
@@ -56524,9 +56471,1577 @@ GRANT ALL ON FUNCTION "platform"."fn_set_platform_flag"("p_key" "text", "p_enabl
 
 
 
+GRANT ALL ON FUNCTION "public"."_add"("text", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_add"("text", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."_add"("text", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_add"("text", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_add"("text", integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_add"("text", integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_add"("text", integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_add"("text", integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_alike"(boolean, "anyelement", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_alike"(boolean, "anyelement", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_alike"(boolean, "anyelement", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_alike"(boolean, "anyelement", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_ancestor_of"("name", "name", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_ancestor_of"("name", "name", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."_ancestor_of"("name", "name", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_ancestor_of"("name", "name", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_ancestor_of"("name", "name", "name", "name", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_ancestor_of"("name", "name", "name", "name", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."_ancestor_of"("name", "name", "name", "name", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_ancestor_of"("name", "name", "name", "name", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_are"("text", "name"[], "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_are"("text", "name"[], "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_are"("text", "name"[], "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_are"("text", "name"[], "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_areni"("text", "text"[], "text"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_areni"("text", "text"[], "text"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_areni"("text", "text"[], "text"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_areni"("text", "text"[], "text"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_array_to_sorted_string"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_array_to_sorted_string"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_array_to_sorted_string"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_array_to_sorted_string"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_assets_are"("text", "text"[], "text"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_assets_are"("text", "text"[], "text"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_assets_are"("text", "text"[], "text"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_assets_are"("text", "text"[], "text"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_cast_exists"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "anyelement") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "anyelement") TO "anon";
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "anyelement") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "anyelement") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "name", "anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "name", "anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "name", "anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_cdi"("name", "name", "name", "anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_cexists"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_cexists"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_cexists"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_cexists"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_cexists"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_cexists"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_cexists"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_cexists"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_ckeys"("name", character) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_ckeys"("name", character) TO "anon";
+GRANT ALL ON FUNCTION "public"."_ckeys"("name", character) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_ckeys"("name", character) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_ckeys"("name", "name", character) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_ckeys"("name", "name", character) TO "anon";
+GRANT ALL ON FUNCTION "public"."_ckeys"("name", "name", character) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_ckeys"("name", "name", character) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_cleanup"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."_cleanup"() TO "anon";
+GRANT ALL ON FUNCTION "public"."_cleanup"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_cleanup"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_cmp_types"("oid", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_cmp_types"("oid", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_cmp_types"("oid", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_cmp_types"("oid", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_col_is_null"("name", "name", "text", boolean) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_col_is_null"("name", "name", "text", boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."_col_is_null"("name", "name", "text", boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_col_is_null"("name", "name", "text", boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_col_is_null"("name", "name", "name", "text", boolean) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_col_is_null"("name", "name", "name", "text", boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."_col_is_null"("name", "name", "name", "text", boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_col_is_null"("name", "name", "name", "text", boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_constraint"("name", character, "name"[], "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_constraint"("name", character, "name"[], "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_constraint"("name", character, "name"[], "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_constraint"("name", character, "name"[], "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_constraint"("name", "name", character, "name"[], "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_constraint"("name", "name", character, "name"[], "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_constraint"("name", "name", character, "name"[], "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_constraint"("name", "name", character, "name"[], "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_contract_on"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_contract_on"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_contract_on"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_contract_on"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_currtest"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."_currtest"() TO "anon";
+GRANT ALL ON FUNCTION "public"."_currtest"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_currtest"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_db_privs"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."_db_privs"() TO "anon";
+GRANT ALL ON FUNCTION "public"."_db_privs"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_db_privs"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_def_is"("text", "text", "anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_def_is"("text", "text", "anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_def_is"("text", "text", "anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_def_is"("text", "text", "anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_definer"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_definer"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_definer"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_definer"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_definer"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_dexists"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_dexists"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_dexists"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_dexists"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_dexists"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_dexists"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_dexists"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_dexists"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_do_ne"("text", "text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_do_ne"("text", "text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_do_ne"("text", "text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_do_ne"("text", "text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_docomp"("text", "text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_docomp"("text", "text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_docomp"("text", "text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_docomp"("text", "text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_error_diag"("text", "text", "text", "text", "text", "text", "text", "text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_error_diag"("text", "text", "text", "text", "text", "text", "text", "text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_error_diag"("text", "text", "text", "text", "text", "text", "text", "text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_error_diag"("text", "text", "text", "text", "text", "text", "text", "text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_expand_context"(character) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_expand_context"(character) TO "anon";
+GRANT ALL ON FUNCTION "public"."_expand_context"(character) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_expand_context"(character) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_expand_on"(character) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_expand_on"(character) TO "anon";
+GRANT ALL ON FUNCTION "public"."_expand_on"(character) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_expand_on"(character) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_expand_vol"(character) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_expand_vol"(character) TO "anon";
+GRANT ALL ON FUNCTION "public"."_expand_vol"(character) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_expand_vol"(character) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_ext_exists"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_ext_exists"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_ext_exists"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_ext_exists"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_ext_exists"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_ext_exists"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_ext_exists"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_ext_exists"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_extensions"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."_extensions"() TO "anon";
+GRANT ALL ON FUNCTION "public"."_extensions"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_extensions"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_extensions"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_extensions"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_extensions"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_extensions"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_extras"(character[], "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_extras"(character[], "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_extras"(character[], "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_extras"(character[], "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_extras"(character, "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_extras"(character, "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_extras"(character, "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_extras"(character, "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_extras"(character[], "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_extras"(character[], "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_extras"(character[], "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_extras"(character[], "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_extras"(character, "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_extras"(character, "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_extras"(character, "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_extras"(character, "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_finish"(integer, integer, integer, boolean) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_finish"(integer, integer, integer, boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."_finish"(integer, integer, integer, boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_finish"(integer, integer, integer, boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_fkexists"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_fkexists"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_fkexists"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_fkexists"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_fkexists"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_fkexists"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_fkexists"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_fkexists"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_fprivs_are"("text", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_fprivs_are"("text", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_fprivs_are"("text", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_fprivs_are"("text", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", boolean, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", boolean, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", boolean, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", boolean, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "name"[], boolean, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "name"[], boolean, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "name"[], boolean, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "name"[], boolean, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "anyelement", "anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "anyelement", "anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "anyelement", "anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "anyelement", "anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "name"[], "anyelement", "anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "name"[], "anyelement", "anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "name"[], "anyelement", "anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_func_compare"("name", "name", "name"[], "anyelement", "anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_funkargs"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_funkargs"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_funkargs"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_funkargs"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_ac_privs"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_ac_privs"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_ac_privs"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_ac_privs"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_col_ns_type"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_col_ns_type"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_col_ns_type"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_col_ns_type"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_col_privs"("name", "text", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_col_privs"("name", "text", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_col_privs"("name", "text", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_col_privs"("name", "text", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_col_type"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_col_type"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_col_type"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_col_type"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_col_type"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_col_type"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_col_type"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_col_type"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_context"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_context"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_context"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_context"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_db_owner"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_db_owner"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_db_owner"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_db_owner"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_db_privs"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_db_privs"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_db_privs"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_db_privs"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_dtype"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_dtype"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_dtype"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_dtype"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_dtype"("name", "text", boolean) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_dtype"("name", "text", boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_dtype"("name", "text", boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_dtype"("name", "text", boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_fdw_privs"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_fdw_privs"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_fdw_privs"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_fdw_privs"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_func_owner"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_func_owner"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_func_owner"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_func_owner"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_func_owner"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_func_owner"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_func_owner"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_func_owner"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_func_privs"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_func_privs"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_func_privs"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_func_privs"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_index_owner"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_index_owner"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_index_owner"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_index_owner"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_index_owner"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_index_owner"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_index_owner"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_index_owner"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_lang_privs"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_lang_privs"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_lang_privs"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_lang_privs"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_language_owner"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_language_owner"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_language_owner"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_language_owner"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_latest"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_latest"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_latest"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_latest"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_latest"("text", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_latest"("text", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_latest"("text", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_latest"("text", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_note"(integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_note"(integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_note"(integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_note"(integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_note"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_note"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_note"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_note"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_opclass_owner"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_opclass_owner"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_opclass_owner"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_opclass_owner"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_opclass_owner"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_opclass_owner"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_opclass_owner"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_opclass_owner"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character[], "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character[], "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character[], "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character[], "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character, "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character, "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character, "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character, "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character[], "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character[], "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character[], "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character[], "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character, "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character, "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character, "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_rel_owner"(character, "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_schema_owner"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_schema_owner"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_schema_owner"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_schema_owner"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_schema_privs"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_schema_privs"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_schema_privs"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_schema_privs"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_sequence_privs"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_sequence_privs"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_sequence_privs"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_sequence_privs"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_server_privs"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_server_privs"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_server_privs"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_server_privs"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_table_privs"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_table_privs"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_table_privs"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_table_privs"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_tablespace_owner"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_tablespace_owner"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_tablespace_owner"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_tablespace_owner"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_tablespaceprivs"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_tablespaceprivs"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_tablespaceprivs"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_tablespaceprivs"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_type_owner"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_type_owner"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_type_owner"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_type_owner"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_get_type_owner"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_get_type_owner"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_get_type_owner"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_get_type_owner"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_got_func"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_got_func"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_got_func"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_got_func"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_got_func"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_grolist"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_grolist"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_grolist"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_grolist"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_has_def"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_has_def"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_has_def"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_has_def"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_has_def"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_has_def"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_has_def"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_has_def"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_has_group"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_has_group"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_has_group"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_has_group"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_has_role"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_has_role"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_has_role"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_has_role"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_has_type"("name", character[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_has_type"("name", character[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_has_type"("name", character[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_has_type"("name", character[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_has_type"("name", "name", character[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_has_type"("name", "name", character[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_has_type"("name", "name", character[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_has_type"("name", "name", character[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_has_user"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_has_user"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_has_user"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_has_user"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_hasc"("name", character) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_hasc"("name", character) TO "anon";
+GRANT ALL ON FUNCTION "public"."_hasc"("name", character) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_hasc"("name", character) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_hasc"("name", "name", character) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_hasc"("name", "name", character) TO "anon";
+GRANT ALL ON FUNCTION "public"."_hasc"("name", "name", character) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_hasc"("name", "name", character) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_have_index"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_have_index"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_have_index"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_have_index"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_have_index"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_have_index"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_have_index"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_have_index"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_ident_array_to_sorted_string"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_ident_array_to_sorted_string"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_ident_array_to_sorted_string"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_ident_array_to_sorted_string"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_ident_array_to_string"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_ident_array_to_string"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_ident_array_to_string"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_ident_array_to_string"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_ikeys"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_ikeys"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_ikeys"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_ikeys"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_ikeys"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_ikeys"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_ikeys"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_ikeys"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_inherited"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_inherited"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_inherited"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_inherited"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_inherited"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_inherited"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_inherited"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_inherited"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_is_indexed"("name", "name", "text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_is_indexed"("name", "name", "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_is_indexed"("name", "name", "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_is_indexed"("name", "name", "text"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_is_instead"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_is_instead"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_is_instead"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_is_instead"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_is_instead"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_is_instead"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_is_instead"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_is_instead"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_is_schema"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_is_schema"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_is_schema"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_is_schema"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_is_super"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_is_super"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_is_super"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_is_super"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_is_trusted"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_is_trusted"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_is_trusted"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_is_trusted"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_is_verbose"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."_is_verbose"() TO "anon";
+GRANT ALL ON FUNCTION "public"."_is_verbose"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_is_verbose"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_keys"("name", character) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_keys"("name", character) TO "anon";
+GRANT ALL ON FUNCTION "public"."_keys"("name", character) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_keys"("name", character) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_keys"("name", "name", character) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_keys"("name", "name", character) TO "anon";
+GRANT ALL ON FUNCTION "public"."_keys"("name", "name", character) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_keys"("name", "name", character) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_lang"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_lang"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_lang"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_lang"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_lang"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_missing"(character[], "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_missing"(character[], "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_missing"(character[], "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_missing"(character[], "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_missing"(character, "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_missing"(character, "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_missing"(character, "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_missing"(character, "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_missing"(character[], "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_missing"(character[], "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_missing"(character[], "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_missing"(character[], "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_missing"(character, "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_missing"(character, "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_missing"(character, "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_missing"(character, "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_nosuch"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_nosuch"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_nosuch"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_nosuch"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_op_exists"("name", "name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_opc_exists"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_opc_exists"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_opc_exists"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_opc_exists"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_opc_exists"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_opc_exists"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_opc_exists"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_opc_exists"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_partof"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_partof"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_partof"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_partof"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_partof"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_partof"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_partof"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_partof"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_parts"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_parts"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_parts"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_parts"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_parts"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_parts"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_parts"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_parts"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_pg_sv_column_array"("oid", smallint[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_pg_sv_column_array"("oid", smallint[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_pg_sv_column_array"("oid", smallint[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_pg_sv_column_array"("oid", smallint[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_pg_sv_table_accessible"("oid", "oid") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_pg_sv_table_accessible"("oid", "oid") TO "anon";
+GRANT ALL ON FUNCTION "public"."_pg_sv_table_accessible"("oid", "oid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_pg_sv_table_accessible"("oid", "oid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_pg_sv_type_array"("oid"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_pg_sv_type_array"("oid"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_pg_sv_type_array"("oid"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_pg_sv_type_array"("oid"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_prokind"("p_oid" "oid") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_prokind"("p_oid" "oid") TO "anon";
+GRANT ALL ON FUNCTION "public"."_prokind"("p_oid" "oid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_prokind"("p_oid" "oid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_query"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_query"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_query"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_query"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_refine_vol"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_refine_vol"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_refine_vol"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_refine_vol"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "anyarray", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "anyarray", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "anyarray", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "anyarray", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "text", "text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "text", "text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "text", "text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_relcomp"("text", "text", "text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_relexists"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_relexists"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_relexists"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_relexists"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_relexists"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_relexists"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_relexists"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_relexists"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_relne"("text", "anyarray", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_relne"("text", "anyarray", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_relne"("text", "anyarray", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_relne"("text", "anyarray", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_relne"("text", "text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_relne"("text", "text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_relne"("text", "text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_relne"("text", "text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_returns"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_returns"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_returns"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_returns"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_returns"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_retval"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_retval"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_retval"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_retval"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_rexists"(character[], "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_rexists"(character[], "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_rexists"(character[], "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_rexists"(character[], "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_rexists"(character, "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_rexists"(character, "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_rexists"(character, "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_rexists"(character, "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_rexists"(character[], "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_rexists"(character[], "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_rexists"(character[], "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_rexists"(character[], "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_rexists"(character, "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_rexists"(character, "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_rexists"(character, "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_rexists"(character, "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_rule_on"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_rule_on"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_rule_on"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_rule_on"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_rule_on"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_rule_on"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_rule_on"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_rule_on"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_runem"("text"[], boolean) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_runem"("text"[], boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."_runem"("text"[], boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_runem"("text"[], boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_runner"("text"[], "text"[], "text"[], "text"[], "text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_runner"("text"[], "text"[], "text"[], "text"[], "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_runner"("text"[], "text"[], "text"[], "text"[], "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_runner"("text"[], "text"[], "text"[], "text"[], "text"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_set"(integer, integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_set"(integer, integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."_set"(integer, integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_set"(integer, integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_set"("text", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_set"("text", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."_set"("text", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_set"("text", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_set"("text", integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_set"("text", integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_set"("text", integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_set"("text", integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_strict"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_strict"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_strict"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_strict"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_strict"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_table_privs"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."_table_privs"() TO "anon";
+GRANT ALL ON FUNCTION "public"."_table_privs"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_table_privs"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_temptable"("anyarray", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_temptable"("anyarray", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_temptable"("anyarray", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_temptable"("anyarray", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_temptable"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_temptable"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_temptable"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_temptable"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_temptypes"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_temptypes"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_temptypes"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_temptypes"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_time_trials"("text", integer, numeric) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_time_trials"("text", integer, numeric) TO "anon";
+GRANT ALL ON FUNCTION "public"."_time_trials"("text", integer, numeric) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_time_trials"("text", integer, numeric) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_tlike"(boolean, "text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_tlike"(boolean, "text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_tlike"(boolean, "text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_tlike"(boolean, "text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_todo"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."_todo"() TO "anon";
+GRANT ALL ON FUNCTION "public"."_todo"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_todo"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_trig"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_trig"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_trig"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_trig"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_trig"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_trig"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_trig"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_trig"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_type_func"("char", "name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_typename"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_typename"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_typename"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_typename"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_types_are"("name"[], "text", character[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_types_are"("name"[], "text", character[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_types_are"("name"[], "text", character[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_types_are"("name"[], "text", character[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_types_are"("name", "name"[], "text", character[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_types_are"("name", "name"[], "text", character[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_types_are"("name", "name"[], "text", character[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_types_are"("name", "name"[], "text", character[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_unalike"(boolean, "anyelement", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_unalike"(boolean, "anyelement", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."_unalike"(boolean, "anyelement", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_unalike"(boolean, "anyelement", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_vol"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_vol"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_vol"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_vol"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."_vol"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."add_result"(boolean, boolean, "text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."add_result"(boolean, boolean, "text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."add_result"(boolean, boolean, "text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."add_result"(boolean, boolean, "text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."alike"("anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."alike"("anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."alike"("anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."alike"("anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."alike"("anyelement", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."alike"("anyelement", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."alike"("anyelement", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."alike"("anyelement", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."any_column_privs_are"("name", "name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "anyarray") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "anyarray") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "anyarray") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "anyarray") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "anyarray", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "anyarray", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "anyarray", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "anyarray", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_eq"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_has"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_has"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_has"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_has"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_has"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_has"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_has"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_has"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_hasnt"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_hasnt"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_hasnt"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_hasnt"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_hasnt"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_hasnt"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_hasnt"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_hasnt"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "anyarray") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "anyarray") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "anyarray") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "anyarray") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "anyarray", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "anyarray", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "anyarray", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "anyarray", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."bag_ne"("text", "text", "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."can"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."can"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."can"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."can"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."can"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."can"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."can"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."can"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."can"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."can"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."can"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."can"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."can"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."can"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."can"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."can"("name", "name"[], "text") TO "service_role";
 
 
 
@@ -56534,6 +58049,615 @@ GRANT ALL ON FUNCTION "public"."cash_dist"("money", "money") TO "postgres";
 GRANT ALL ON FUNCTION "public"."cash_dist"("money", "money") TO "anon";
 GRANT ALL ON FUNCTION "public"."cash_dist"("money", "money") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."cash_dist"("money", "money") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."cast_context_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."cast_context_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."cast_context_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."cast_context_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."cast_context_is"("name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."cast_context_is"("name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."cast_context_is"("name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."cast_context_is"("name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."casts_are"("text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."casts_are"("text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."casts_are"("text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."casts_are"("text"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."casts_are"("text"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."casts_are"("text"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."casts_are"("text"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."casts_are"("text"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean) TO "postgres";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text", "text", boolean) TO "postgres";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text", "text", boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text", "text", boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."check_test"("text", boolean, "text", "text", "text", boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."cmp_ok"("anyelement", "text", "anyelement") TO "postgres";
+GRANT ALL ON FUNCTION "public"."cmp_ok"("anyelement", "text", "anyelement") TO "anon";
+GRANT ALL ON FUNCTION "public"."cmp_ok"("anyelement", "text", "anyelement") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."cmp_ok"("anyelement", "text", "anyelement") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."cmp_ok"("anyelement", "text", "anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."cmp_ok"("anyelement", "text", "anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."cmp_ok"("anyelement", "text", "anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."cmp_ok"("anyelement", "text", "anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "anyelement") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "anyelement") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "anyelement") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "anyelement") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "name", "anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "name", "anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "name", "anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "name", "anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_default_is"("name", "name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_has_check"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_has_default"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_hasnt_default"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_fk"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_null"("table_name" "name", "column_name" "name", "description" "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_null"("table_name" "name", "column_name" "name", "description" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_null"("table_name" "name", "column_name" "name", "description" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_null"("table_name" "name", "column_name" "name", "description" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_null"("schema_name" "name", "table_name" "name", "column_name" "name", "description" "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_null"("schema_name" "name", "table_name" "name", "column_name" "name", "description" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_null"("schema_name" "name", "table_name" "name", "column_name" "name", "description" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_null"("schema_name" "name", "table_name" "name", "column_name" "name", "description" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_pk"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_is_unique"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_fk"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_isnt_pk"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_not_null"("table_name" "name", "column_name" "name", "description" "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_not_null"("table_name" "name", "column_name" "name", "description" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_not_null"("table_name" "name", "column_name" "name", "description" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_not_null"("table_name" "name", "column_name" "name", "description" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_not_null"("schema_name" "name", "table_name" "name", "column_name" "name", "description" "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_not_null"("schema_name" "name", "table_name" "name", "column_name" "name", "description" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_not_null"("schema_name" "name", "table_name" "name", "column_name" "name", "description" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_not_null"("schema_name" "name", "table_name" "name", "column_name" "name", "description" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."col_type_is"("name", "name", "name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."collect_tap"(VARIADIC "text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."collect_tap"(VARIADIC "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."collect_tap"(VARIADIC "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."collect_tap"(VARIADIC "text"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."collect_tap"(character varying[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."collect_tap"(character varying[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."collect_tap"(character varying[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."collect_tap"(character varying[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."column_privs_are"("name", "name", "name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."columns_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."composite_owner_is"("name", "name", "name", "text") TO "service_role";
 
 
 
@@ -56545,10 +58669,451 @@ GRANT ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") TO "s
 
 
 
+GRANT ALL ON FUNCTION "public"."database_privs_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."database_privs_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."database_privs_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."database_privs_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."database_privs_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."database_privs_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."database_privs_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."database_privs_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."date_dist"("date", "date") TO "postgres";
 GRANT ALL ON FUNCTION "public"."date_dist"("date", "date") TO "anon";
 GRANT ALL ON FUNCTION "public"."date_dist"("date", "date") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."date_dist"("date", "date") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."db_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."db_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."db_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."db_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."db_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."db_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."db_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."db_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."diag"(VARIADIC "text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."diag"(VARIADIC "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."diag"(VARIADIC "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."diag"(VARIADIC "text"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."diag"(VARIADIC "anyarray") TO "postgres";
+GRANT ALL ON FUNCTION "public"."diag"(VARIADIC "anyarray") TO "anon";
+GRANT ALL ON FUNCTION "public"."diag"(VARIADIC "anyarray") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."diag"(VARIADIC "anyarray") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."diag"("msg" "anyelement") TO "postgres";
+GRANT ALL ON FUNCTION "public"."diag"("msg" "anyelement") TO "anon";
+GRANT ALL ON FUNCTION "public"."diag"("msg" "anyelement") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."diag"("msg" "anyelement") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."diag"("msg" "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."diag"("msg" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."diag"("msg" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."diag"("msg" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."diag_test_name"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."diag_test_name"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."diag_test_name"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."diag_test_name"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."display_oper"("name", "oid") TO "postgres";
+GRANT ALL ON FUNCTION "public"."display_oper"("name", "oid") TO "anon";
+GRANT ALL ON FUNCTION "public"."display_oper"("name", "oid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."display_oper"("name", "oid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."do_tap"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."do_tap"() TO "anon";
+GRANT ALL ON FUNCTION "public"."do_tap"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."do_tap"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."do_tap"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."do_tap"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."do_tap"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."do_tap"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."do_tap"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."do_tap"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."do_tap"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."do_tap"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."do_tap"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."do_tap"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."do_tap"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."do_tap"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."doesnt_imatch"("anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."doesnt_imatch"("anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."doesnt_imatch"("anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."doesnt_imatch"("anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."doesnt_imatch"("anyelement", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."doesnt_imatch"("anyelement", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."doesnt_imatch"("anyelement", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."doesnt_imatch"("anyelement", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."doesnt_match"("anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."doesnt_match"("anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."doesnt_match"("anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."doesnt_match"("anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."doesnt_match"("anyelement", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."doesnt_match"("anyelement", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."doesnt_match"("anyelement", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."doesnt_match"("anyelement", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_is"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_is"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_is"("name", "text", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domain_type_isnt"("name", "text", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domains_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."domains_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."domains_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domains_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domains_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domains_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domains_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domains_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domains_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."domains_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."domains_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domains_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."domains_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."domains_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."domains_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."domains_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."enum_has_labels"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."enums_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."enums_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."enums_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."enums_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."enums_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."enums_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."enums_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."enums_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."enums_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."enums_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."enums_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."enums_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."enums_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."enums_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."enums_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."enums_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."extensions_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."extensions_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."extensions_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."extensions_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."extensions_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fail"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."fail"() TO "anon";
+GRANT ALL ON FUNCTION "public"."fail"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fail"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fail"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."fail"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fail"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fail"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fdw_privs_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."fdw_privs_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."fdw_privs_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fdw_privs_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fdw_privs_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."fdw_privs_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fdw_privs_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fdw_privs_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."findfuncs"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."findfuncs"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."findfuncs"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."findfuncs"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."findfuncs"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."findfuncs"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."findfuncs"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."findfuncs"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."findfuncs"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."findfuncs"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."findfuncs"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."findfuncs"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."findfuncs"("name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."findfuncs"("name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."findfuncs"("name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."findfuncs"("name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."finish"("exception_on_failure" boolean) TO "postgres";
+GRANT ALL ON FUNCTION "public"."finish"("exception_on_failure" boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."finish"("exception_on_failure" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."finish"("exception_on_failure" boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name"[], "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name"[], "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name"[], "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name"[], "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name"[], "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name"[], "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name"[], "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name"[], "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name"[], "name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name"[], "name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name"[], "name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name"[], "name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name"[], "name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name"[], "name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name"[], "name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name"[], "name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fk_ok"("name", "name", "name", "name", "name", "name", "text") TO "service_role";
 
 
 
@@ -57902,6 +60467,12 @@ GRANT ALL ON FUNCTION "public"."fn_get_entity_reaction_counts"("p_entity_type" "
 GRANT ALL ON FUNCTION "public"."fn_get_entity_reaction_status"("p_entity_type" "text", "p_entity_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_entity_reaction_status"("p_entity_type" "text", "p_entity_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_entity_reaction_status"("p_entity_type" "text", "p_entity_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_entity_reactions_by_lenser"("p_entity_type" "text", "p_entity_id" "uuid", "p_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_reactions_by_lenser"("p_entity_type" "text", "p_entity_id" "uuid", "p_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_reactions_by_lenser"("p_entity_type" "text", "p_entity_id" "uuid", "p_lenser_id" "uuid") TO "service_role";
 
 
 
@@ -59911,6 +62482,265 @@ GRANT ALL ON FUNCTION "public"."fn_xp_get_summary"("p_lenser_id" "uuid", "p_app_
 
 
 
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."foreign_table_owner_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."foreign_tables_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."format_type_string"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."format_type_string"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."format_type_string"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."format_type_string"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name"[], "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name"[], "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name"[], "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name"[], "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name"[], "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name"[], "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name"[], "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name"[], "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name"[], "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name"[], "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name"[], "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name"[], "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name"[], "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name"[], "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name"[], "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_lang_is"("name", "name", "name"[], "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name"[], "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name"[], "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name"[], "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name"[], "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name"[], "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name"[], "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name"[], "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name"[], "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name", "name"[], "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name", "name"[], "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name", "name"[], "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name", "name"[], "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name", "name"[], "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name", "name"[], "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name", "name"[], "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_owner_is"("name", "name", "name"[], "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name"[], "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name"[], "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name"[], "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name"[], "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name"[], "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name"[], "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name"[], "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name"[], "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name", "name"[], "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name", "name"[], "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name", "name"[], "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name", "name"[], "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name", "name"[], "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name", "name"[], "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name", "name"[], "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_privs_are"("name", "name", "name"[], "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name"[], "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name"[], "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name"[], "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name"[], "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "name"[], "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "name"[], "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "name"[], "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."function_returns"("name", "name", "name"[], "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."functions_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."functions_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."functions_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."functions_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."functions_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."functions_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."functions_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."functions_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."functions_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."functions_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."functions_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."functions_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."functions_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."functions_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."functions_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."functions_are"("name", "name"[], "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."gbt_bit_compress"("internal") TO "postgres";
 GRANT ALL ON FUNCTION "public"."gbt_bit_compress"("internal") TO "anon";
 GRANT ALL ON FUNCTION "public"."gbt_bit_compress"("internal") TO "authenticated";
@@ -61079,6 +63909,1882 @@ GRANT ALL ON FUNCTION "public"."get_model_info"("p_provider_key" "text", "p_mode
 
 
 
+GRANT ALL ON FUNCTION "public"."groups_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."groups_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."groups_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."groups_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."groups_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."groups_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."groups_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."groups_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_cast"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_check"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_check"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_check"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_check"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_check"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_check"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_check"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_check"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_check"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_check"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_check"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_check"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_column"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_composite"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_composite"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_composite"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_composite"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_composite"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_composite"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_composite"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_composite"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_composite"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_composite"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_composite"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_composite"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_domain"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_domain"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_domain"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_domain"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_domain"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_enum"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_enum"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_enum"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_enum"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_enum"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_extension"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_extension"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_extension"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_extension"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_extension"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_fk"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_fk"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_fk"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_fk"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_fk"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_fk"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_fk"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_fk"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_fk"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_fk"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_fk"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_fk"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_foreign_table"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_function"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_function"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_function"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_function"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_function"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_function"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_group"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_group"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_group"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_group"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_group"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_group"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_group"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_group"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_index"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_inherited_tables"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_language"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_language"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_language"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_language"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_language"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_language"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_language"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_language"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_leftop"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_materialized_view"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_opclass"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_opclass"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_operator"("name", "name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_pk"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_pk"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_pk"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_pk"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_pk"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_relation"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_relation"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_relation"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_relation"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_relation"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_relation"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_relation"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_relation"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_relation"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_relation"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_relation"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_relation"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_rightop"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_role"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_role"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_role"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_role"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_role"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_role"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_role"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_role"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_rule"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_schema"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_schema"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_schema"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_schema"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_schema"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_schema"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_schema"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_schema"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_sequence"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_sequence"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_table"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_table"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_table"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_table"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_table"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_table"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_table"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_table"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_table"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_table"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_table"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_table"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_table"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_table"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_table"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_table"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_tablespace"("name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_trigger"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_type"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_type"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_type"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_type"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_type"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_type"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_type"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_type"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_type"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_type"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_type"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_type"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_type"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_type"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_type"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_type"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_unique"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_unique"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_unique"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_unique"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_unique"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_unique"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_unique"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_unique"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_unique"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_unique"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_unique"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_unique"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_user"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_user"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_user"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_user"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_user"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_user"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_user"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_user"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_view"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_view"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_view"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_view"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_view"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_view"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_view"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_view"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_view"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_view"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_view"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_view"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_view"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."has_view"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_view"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_view"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_cast"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_column"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_composite"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_domain"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_enum"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_extension"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_fk"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_foreign_table"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_function"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_group"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_group"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_group"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_group"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_group"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_group"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_group"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_group"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_index"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_inherited_tables"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_language"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_language"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_language"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_language"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_language"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_language"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_language"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_language"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_leftop"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_materialized_view"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_opclass"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_operator"("name", "name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_pk"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_relation"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_rightop"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_role"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_role"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_role"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_role"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_role"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_role"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_role"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_role"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_rule"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_schema"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_schema"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_schema"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_schema"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_schema"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_schema"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_schema"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_schema"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_sequence"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_table"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_tablespace"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_tablespace"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_tablespace"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_tablespace"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_tablespace"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_tablespace"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_tablespace"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_tablespace"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_trigger"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_type"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_user"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_user"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_user"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_user"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_user"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_user"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_user"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_user"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hasnt_view"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."ialike"("anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ialike"("anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."ialike"("anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ialike"("anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."ialike"("anyelement", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ialike"("anyelement", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."ialike"("anyelement", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ialike"("anyelement", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."imatches"("anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."imatches"("anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."imatches"("anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."imatches"("anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."imatches"("anyelement", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."imatches"("anyelement", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."imatches"("anyelement", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."imatches"("anyelement", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."in_todo"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."in_todo"() TO "anon";
+GRANT ALL ON FUNCTION "public"."in_todo"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."in_todo"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_primary"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_type"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_is_unique"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."index_owner_is"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."indexes_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."int2_dist"(smallint, smallint) TO "postgres";
 GRANT ALL ON FUNCTION "public"."int2_dist"(smallint, smallint) TO "anon";
 GRANT ALL ON FUNCTION "public"."int2_dist"(smallint, smallint) TO "authenticated";
@@ -61107,15 +65813,1380 @@ GRANT ALL ON FUNCTION "public"."interval_dist"(interval, interval) TO "service_r
 
 
 
+GRANT ALL ON FUNCTION "public"."is"("anyelement", "anyelement") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is"("anyelement", "anyelement") TO "anon";
+GRANT ALL ON FUNCTION "public"."is"("anyelement", "anyelement") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is"("anyelement", "anyelement") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is"("anyelement", "anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is"("anyelement", "anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is"("anyelement", "anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is"("anyelement", "anyelement", "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "anon";
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_aggregate"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_ancestor_of"("name", "name", "name", "name", integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_clustered"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_clustered"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_definer"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_definer"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_definer"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_definer"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_definer"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_descendent_of"("name", "name", "name", "name", integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_empty"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_empty"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_empty"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_empty"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_empty"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_empty"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_empty"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_empty"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_indexed"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_member_of"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_normal_function"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_partition_of"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_partitioned"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_procedure"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_procedure"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_strict"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_strict"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_strict"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_strict"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_strict"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_superuser"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_superuser"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_superuser"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_superuser"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_superuser"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_superuser"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_superuser"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_superuser"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_window"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_window"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_window"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_window"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_window"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_window"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isa_ok"("anyelement", "regtype") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isa_ok"("anyelement", "regtype") TO "anon";
+GRANT ALL ON FUNCTION "public"."isa_ok"("anyelement", "regtype") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isa_ok"("anyelement", "regtype") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isa_ok"("anyelement", "regtype", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isa_ok"("anyelement", "regtype", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isa_ok"("anyelement", "regtype", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isa_ok"("anyelement", "regtype", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt"("anyelement", "anyelement") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt"("anyelement", "anyelement") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt"("anyelement", "anyelement") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt"("anyelement", "anyelement") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt"("anyelement", "anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt"("anyelement", "anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt"("anyelement", "anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt"("anyelement", "anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_aggregate"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_ancestor_of"("name", "name", "name", "name", integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_definer"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_descendent_of"("name", "name", "name", "name", integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_empty"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_empty"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_empty"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_empty"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_empty"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_empty"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_empty"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_empty"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_member_of"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_normal_function"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_partitioned"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_procedure"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_strict"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_superuser"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_superuser"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_superuser"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_superuser"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_superuser"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_superuser"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_superuser"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_superuser"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_window"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isnt_window"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."language_is_trusted"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."language_is_trusted"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."language_is_trusted"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."language_is_trusted"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."language_is_trusted"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."language_is_trusted"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."language_is_trusted"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."language_is_trusted"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."language_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."language_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."language_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."language_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."language_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."language_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."language_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."language_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."language_privs_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."language_privs_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."language_privs_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."language_privs_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."language_privs_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."language_privs_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."language_privs_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."language_privs_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."languages_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."languages_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."languages_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."languages_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."languages_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."languages_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."languages_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."languages_are"("name"[], "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."list_tags_stats"("p_lang" "text", "p_limit" integer, "p_offset" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."list_tags_stats"("p_lang" "text", "p_limit" integer, "p_offset" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."list_tags_stats"("p_lang" "text", "p_limit" integer, "p_offset" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."lives_ok"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."lives_ok"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."lives_ok"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."lives_ok"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."lives_ok"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."lives_ok"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."lives_ok"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."lives_ok"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."matches"("anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."matches"("anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."matches"("anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."matches"("anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."matches"("anyelement", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."matches"("anyelement", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."matches"("anyelement", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."matches"("anyelement", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."materialized_view_owner_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."materialized_views_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."no_plan"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."no_plan"() TO "anon";
+GRANT ALL ON FUNCTION "public"."no_plan"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."no_plan"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."num_failed"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."num_failed"() TO "anon";
+GRANT ALL ON FUNCTION "public"."num_failed"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."num_failed"() TO "service_role";
 
 
 
@@ -61126,9 +67197,1129 @@ GRANT ALL ON FUNCTION "public"."oid_dist"("oid", "oid") TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."ok"(boolean) TO "postgres";
+GRANT ALL ON FUNCTION "public"."ok"(boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."ok"(boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ok"(boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."ok"(boolean, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ok"(boolean, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."ok"(boolean, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ok"(boolean, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."opclass_owner_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."opclasses_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."operators_are"("text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."operators_are"("text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."operators_are"("text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."operators_are"("text"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."operators_are"("text"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."operators_are"("text"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."operators_are"("text"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."operators_are"("text"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."operators_are"("name", "text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."operators_are"("name", "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."operators_are"("name", "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."operators_are"("name", "text"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."operators_are"("name", "text"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."operators_are"("name", "text"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."operators_are"("name", "text"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."operators_are"("name", "text"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."os_name"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."os_name"() TO "anon";
+GRANT ALL ON FUNCTION "public"."os_name"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."os_name"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."partitions_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."pass"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."pass"() TO "anon";
+GRANT ALL ON FUNCTION "public"."pass"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."pass"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."pass"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."pass"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."pass"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."pass"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."performs_ok"("text", numeric) TO "postgres";
+GRANT ALL ON FUNCTION "public"."performs_ok"("text", numeric) TO "anon";
+GRANT ALL ON FUNCTION "public"."performs_ok"("text", numeric) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."performs_ok"("text", numeric) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."performs_ok"("text", numeric, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."performs_ok"("text", numeric, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."performs_ok"("text", numeric, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."performs_ok"("text", numeric, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric) TO "postgres";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric) TO "anon";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."performs_within"("text", numeric, numeric, integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."pg_version"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."pg_version"() TO "anon";
+GRANT ALL ON FUNCTION "public"."pg_version"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."pg_version"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."pg_version_num"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."pg_version_num"() TO "anon";
+GRANT ALL ON FUNCTION "public"."pg_version_num"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."pg_version_num"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."pgtap_version"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."pgtap_version"() TO "anon";
+GRANT ALL ON FUNCTION "public"."pgtap_version"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."pgtap_version"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."plan"(integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."plan"(integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."plan"(integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."plan"(integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policies_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policy_cmd_is"("name", "name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."policy_roles_are"("name", "name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."relation_owner_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "anyarray") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "anyarray") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "anyarray") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "anyarray") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "refcursor") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "refcursor") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "refcursor") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "refcursor") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "anyarray") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "anyarray") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "anyarray") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "anyarray") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "refcursor") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "refcursor") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "refcursor") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "refcursor") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "anyarray", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "anyarray", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "anyarray", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "anyarray", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "refcursor", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "refcursor", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "refcursor", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "refcursor", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("refcursor", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "anyarray", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "anyarray", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "anyarray", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "anyarray", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "refcursor", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "refcursor", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "refcursor", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "refcursor", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_eq"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "anyarray") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "anyarray") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "anyarray") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "anyarray") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "refcursor") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "refcursor") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "refcursor") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "refcursor") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "anyarray") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "anyarray") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "anyarray") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "anyarray") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "refcursor") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "refcursor") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "refcursor") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "refcursor") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "anyarray", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "anyarray", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "anyarray", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "anyarray", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "refcursor", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "refcursor", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "refcursor", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "refcursor", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("refcursor", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "anyarray", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "anyarray", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "anyarray", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "anyarray", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "refcursor", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "refcursor", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "refcursor", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "refcursor", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."results_ne"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."roles_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."roles_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."roles_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."roles_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."roles_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."roles_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."roles_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."roles_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."row_eq"("text", "anyelement") TO "postgres";
+GRANT ALL ON FUNCTION "public"."row_eq"("text", "anyelement") TO "anon";
+GRANT ALL ON FUNCTION "public"."row_eq"("text", "anyelement") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."row_eq"("text", "anyelement") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."row_eq"("text", "anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."row_eq"("text", "anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."row_eq"("text", "anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."row_eq"("text", "anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rule_is_instead"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rule_is_on"("name", "name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rules_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."runtests"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."runtests"() TO "anon";
+GRANT ALL ON FUNCTION "public"."runtests"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."runtests"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."runtests"("name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."runtests"("name") TO "anon";
+GRANT ALL ON FUNCTION "public"."runtests"("name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."runtests"("name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."runtests"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."runtests"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."runtests"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."runtests"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."runtests"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."runtests"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."runtests"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."runtests"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."schema_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."schema_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."schema_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."schema_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."schema_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."schema_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."schema_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."schema_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."schema_privs_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."schema_privs_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."schema_privs_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."schema_privs_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."schema_privs_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."schema_privs_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."schema_privs_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."schema_privs_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."schemas_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."schemas_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."schemas_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."schemas_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."schemas_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."schemas_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."schemas_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."schemas_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequence_owner_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequence_privs_are"("name", "name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequences_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequences_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequences_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."sequences_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."sequences_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."server_privs_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."server_privs_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."server_privs_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."server_privs_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."server_privs_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."server_privs_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."server_privs_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."server_privs_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "anyarray") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "anyarray") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "anyarray") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "anyarray") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "anyarray", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "anyarray", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "anyarray", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "anyarray", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_eq"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_has"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_has"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_has"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_has"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_has"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_has"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_has"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_has"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_hasnt"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_hasnt"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_hasnt"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_hasnt"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_hasnt"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_hasnt"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_hasnt"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_hasnt"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "anyarray") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "anyarray") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "anyarray") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "anyarray") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "anyarray", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "anyarray", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "anyarray", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "anyarray", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_ne"("text", "text", "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."skip"(integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."skip"(integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."skip"(integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."skip"(integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."skip"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."skip"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."skip"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."skip"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."skip"(integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."skip"(integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."skip"(integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."skip"(integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."skip"("why" "text", "how_many" integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."skip"("why" "text", "how_many" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."skip"("why" "text", "how_many" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."skip"("why" "text", "how_many" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."table_owner_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."table_privs_are"("name", "name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."tables_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."tables_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."tables_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tables_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."tables_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."tables_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."tables_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tables_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."tables_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."tables_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."tables_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tables_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."tables_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."tables_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."tables_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tables_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."tablespace_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."tablespace_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."tablespace_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tablespace_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."tablespace_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."tablespace_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."tablespace_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tablespace_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."tablespace_privs_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."tablespace_privs_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."tablespace_privs_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tablespace_privs_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."tablespace_privs_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."tablespace_privs_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."tablespace_privs_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tablespace_privs_are"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."tablespaces_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."tablespaces_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."tablespaces_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tablespaces_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."tablespaces_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."tablespaces_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."tablespaces_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tablespaces_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_ilike"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_ilike"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_ilike"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_ilike"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_ilike"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_ilike"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_ilike"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_ilike"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_imatching"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_imatching"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_imatching"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_imatching"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_imatching"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_imatching"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_imatching"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_imatching"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_like"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_like"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_like"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_like"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_like"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_like"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_like"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_like"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_matching"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_matching"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_matching"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_matching"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_matching"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_matching"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_matching"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_matching"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_ok"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer, "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer, "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer, "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer, "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", character, "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", character, "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", character, "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", character, "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer, "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer, "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer, "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."throws_ok"("text", integer, "text", "text") TO "service_role";
 
 
 
@@ -61136,6 +68327,111 @@ GRANT ALL ON FUNCTION "public"."time_dist"(time without time zone, time without 
 GRANT ALL ON FUNCTION "public"."time_dist"(time without time zone, time without time zone) TO "anon";
 GRANT ALL ON FUNCTION "public"."time_dist"(time without time zone, time without time zone) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."time_dist"(time without time zone, time without time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."todo"("how_many" integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."todo"("how_many" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."todo"("how_many" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."todo"("how_many" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."todo"("why" "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."todo"("why" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."todo"("why" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."todo"("why" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."todo"("how_many" integer, "why" "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."todo"("how_many" integer, "why" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."todo"("how_many" integer, "why" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."todo"("how_many" integer, "why" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."todo"("why" "text", "how_many" integer) TO "postgres";
+GRANT ALL ON FUNCTION "public"."todo"("why" "text", "how_many" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."todo"("why" "text", "how_many" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."todo"("why" "text", "how_many" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."todo_end"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."todo_end"() TO "anon";
+GRANT ALL ON FUNCTION "public"."todo_end"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."todo_end"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."todo_start"() TO "postgres";
+GRANT ALL ON FUNCTION "public"."todo_start"() TO "anon";
+GRANT ALL ON FUNCTION "public"."todo_start"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."todo_start"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."todo_start"("text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."todo_start"("text") TO "anon";
+GRANT ALL ON FUNCTION "public"."todo_start"("text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."todo_start"("text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_is"("name", "name", "name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."triggers_are"("name", "name", "name"[], "text") TO "service_role";
 
 
 
@@ -61150,6 +68446,216 @@ GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp w
 GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "anon";
 GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."type_owner_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."types_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."types_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."types_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."types_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."types_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."types_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."types_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."types_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."types_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."types_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."types_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."types_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."types_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."types_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."types_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."types_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."unalike"("anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."unalike"("anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."unalike"("anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."unalike"("anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."unalike"("anyelement", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."unalike"("anyelement", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."unalike"("anyelement", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."unalike"("anyelement", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."unialike"("anyelement", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."unialike"("anyelement", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."unialike"("anyelement", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."unialike"("anyelement", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."unialike"("anyelement", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."unialike"("anyelement", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."unialike"("anyelement", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."unialike"("anyelement", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."users_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."users_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."users_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."users_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."users_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."users_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."users_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."users_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "name") TO "postgres";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "name") TO "anon";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "name") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "name") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."view_owner_is"("name", "name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."views_are"("name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."views_are"("name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."views_are"("name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."views_are"("name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."views_are"("name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."views_are"("name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."views_are"("name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."views_are"("name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."views_are"("name", "name"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."views_are"("name", "name"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."views_are"("name", "name"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."views_are"("name", "name"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."views_are"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."views_are"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."views_are"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."views_are"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name"[], "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name"[], "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name"[], "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name"[], "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "name"[], "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "name"[], "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "name"[], "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "name"[], "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "name"[], "text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "name"[], "text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "name"[], "text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."volatility_is"("name", "name", "name"[], "text", "text") TO "service_role";
 
 
 
@@ -61682,6 +69188,10 @@ GRANT ALL ON TABLE "audit"."moderation_decisions" TO "service_role";
 
 GRANT ALL ON TABLE "audit"."security_events" TO "service_role";
 GRANT SELECT ON TABLE "audit"."security_events" TO "authenticated";
+
+
+
+GRANT SELECT,INSERT,UPDATE ON TABLE "automation"."cron_runs" TO "service_role";
 
 
 
