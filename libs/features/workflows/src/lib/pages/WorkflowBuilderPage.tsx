@@ -101,7 +101,11 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const [selectedNodeConfig, setSelectedNodeConfig] = useState<{ nodeId: string; lensId: string; versionId: string | null; nodeLabel: string } | null>(null)
 
   // ── Run history ─────────────────────────────────────────────────────────────
-  const { runs: historyRuns } = useWorkflowRunHistory(workflowId)
+  // Defer the run-history fetch until the user opens the run panel. This keeps
+  // initial page load lean for the common case (just viewing the workflow).
+  const { runs: historyRuns } = useWorkflowRunHistory(workflowId, {
+    enabled: showRunPanel,
+  })
 
   const { data: historyNodeResults = [] } = useQuery({
     queryKey: ['workflow', workflowId, 'run', selectedHistoryRunId, 'nodeResults'],
@@ -158,7 +162,11 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const isOwner = !!lenser && lenser.id === workflow?.lenser_id
   const { mutate: forkWorkflow, isPending: isForking } = useForkWorkflow()
   const { liked, saved, likeCount, savedCount, toggleLike, toggleSave, isPending: reactionPending } =
-    useWorkflowReaction(workflowId, workflow?.reaction_totals as Record<string, number> | null | undefined)
+    useWorkflowReaction(
+      workflowId,
+      workflow?.reaction_totals as Record<string, number> | null | undefined,
+      workflow?.viewer_reactions as Record<string, boolean> | null | undefined,
+    )
 
   // ── Lens edit modal (via useCreateLens in edit mode) ────────────────────────
   const lensModal = useCreateLens()
