@@ -14,6 +14,8 @@ export function useWorkflowReaction(
   workflowId: string,
   initialCounts?: Record<string, number> | null,
   initialViewerReactions?: Record<string, boolean> | null,
+  /** Pass true while the workflow bootstrap query is still loading. */
+  bootstrapIsLoading?: boolean,
 ) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
@@ -28,12 +30,15 @@ export function useWorkflowReaction(
 
   // If bootstrap already supplied viewer_reactions, skip the redundant
   // fn_get_entity_reaction_counts + fn_get_entity_reaction_status round trip.
-  const hasBootstrapReactions = initialViewerReactions !== undefined && initialViewerReactions !== null
+  // Also wait until bootstrap has settled — if we fire before it loads we'd make
+  // a separate network round trip and then immediately discard the result.
+  const bootstrapSettled = bootstrapIsLoading === false || bootstrapIsLoading === undefined
+  const hasBootstrapReactions = bootstrapSettled && initialViewerReactions !== undefined && initialViewerReactions !== null
 
   const { data: summary } = useQuery({
     queryKey: ['workflow-reaction-summary', workflowId, user?.id],
     queryFn: () => reactionService.getReactionSummary('workflow', workflowId, user?.id ?? ''),
-    enabled: !!user?.id && !!workflowId && !hasBootstrapReactions,
+    enabled: !!user?.id && !!workflowId && bootstrapSettled && !hasBootstrapReactions,
     staleTime: 1000 * 60,
   })
 
