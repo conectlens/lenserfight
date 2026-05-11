@@ -20483,11 +20483,16 @@ CREATE OR REPLACE FUNCTION "public"."fn_create_agent_team"("p_ai_lenser_id" "uui
     SET "search_path" TO 'public', 'agents', 'lensers'
     AS $$
 DECLARE
-  v_lenser_id uuid := lensers.get_auth_lenser_id();
+  v_lenser_id uuid := lensers.get_auth_human_lenser_id();
   v_team_id   uuid;
   v_team      jsonb;
   v_member    jsonb;
+  v_members   jsonb := COALESCE(p_initial_members, '[]'::jsonb);
 BEGIN
+  IF jsonb_typeof(v_members) <> 'array' THEN
+    RAISE EXCEPTION 'p_initial_members must be a JSON array' USING ERRCODE = '22023';
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM agents.ownerships o
     WHERE o.ai_lenser_id = p_ai_lenser_id
@@ -20501,8 +20506,7 @@ BEGIN
   VALUES (p_ai_lenser_id, p_name, p_description, 'active', true)
   RETURNING id, to_jsonb(agents.teams.*) INTO v_team_id, v_team;
 
-  -- Batch insert initial members if provided
-  FOR v_member IN SELECT * FROM jsonb_array_elements(p_initial_members) LOOP
+  FOR v_member IN SELECT * FROM jsonb_array_elements(v_members) LOOP
     INSERT INTO agents.team_members (
       team_id, agent_id, role, responsibility, lane, sort_order, is_active
     ) VALUES (
