@@ -31,26 +31,16 @@ export class SupabaseMemoryRepository implements MemoryRepository {
     profileId: string,
     options: ListMemoryEntriesOptions = {}
   ): Promise<AgentMemoryEntryRecord[]> {
-    let query = supabase
-      .schema('agents')
-      .from('memories_v')
-      .select('*')
-      .eq('profile_id', profileId)
-      .order('created_at', { ascending: false })
-
-    if (options.scope) {
-      query = query.eq('scope', options.scope)
-    }
-    if (!options.includeRedacted) {
-      query = query.eq('is_redacted', false)
-    }
-    if (options.limit && options.limit > 0) {
-      query = query.limit(options.limit)
-    }
-
-    const { data, error } = await query
+    const { data, error } = await supabase.rpc('fn_list_agent_memories', {
+      p_ai_lenser_id: profileId,
+      p_limit: options.limit && options.limit > 0 ? options.limit : 100,
+      p_cursor: null,
+    })
     if (error) throw error
-    return (data ?? []) as AgentMemoryEntryRecord[]
+    let rows = (data ?? []) as AgentMemoryEntryRecord[]
+    if (options.scope) rows = rows.filter((r) => (r as unknown as Record<string, unknown>)['memory_type'] === options.scope)
+    if (!options.includeRedacted) rows = rows.filter((r) => !(r as unknown as Record<string, unknown>)['is_redacted'])
+    return rows
   }
 
   async readMemoryEntries(input: ReadMemoryEntriesInput): Promise<AgentMemoryEntryRecord[]> {
@@ -104,13 +94,10 @@ export class SupabaseMemoryRepository implements MemoryRepository {
     memoryId: string,
     limit = 50
   ): Promise<AgentMemoryAccessLogRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('memory_access_logs')
-      .select('*')
-      .eq('memory_id', memoryId)
-      .order('accessed_at', { ascending: false })
-      .limit(limit)
+    const { data, error } = await supabase.rpc('fn_list_memory_access_logs', {
+      p_memory_id: memoryId,
+      p_limit: limit,
+    })
     if (error) throw error
     return (data ?? []) as AgentMemoryAccessLogRecord[]
   }
