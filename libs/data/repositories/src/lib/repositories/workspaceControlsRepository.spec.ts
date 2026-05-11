@@ -109,25 +109,34 @@ describe('SupabaseWorkspaceControlsRepository', () => {
   })
 
   describe('listRunUnified', () => {
-    it('queries v_run_unified by ai_lenser_id', async () => {
-      mockLimit.mockResolvedValue({ data: [], error: null })
+    it('calls fn_get_workspace_controls with ai_lenser_id', async () => {
+      mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.listRunUnified('agent-1', { limit: 20 })
-      expect(mockSchema).toHaveBeenCalledWith('agents')
-      expect(mockFrom).toHaveBeenCalledWith('v_run_unified')
-      expect(mockEq).toHaveBeenCalledWith('ai_lenser_id', 'agent-1')
-      expect(mockLimit).toHaveBeenCalledWith(20)
+      expect(mockRpc).toHaveBeenCalledWith('fn_get_workspace_controls', {
+        p_ai_lenser_id: 'agent-1',
+      })
     })
 
-    it('filters by status when provided', async () => {
-      mockLimit.mockResolvedValue({ data: [], error: null })
-      await repo.listRunUnified('agent-1', { status: 'running' })
-      expect(mockEq).toHaveBeenCalledWith('status', 'running')
+    it('filters by status in JavaScript after RPC', async () => {
+      const rows = [
+        { status: 'running', run_type: 'workflow' },
+        { status: 'queued', run_type: 'workflow' },
+      ]
+      mockRpc.mockResolvedValue({ data: rows, error: null })
+      const result = await repo.listRunUnified('agent-1', { status: 'running' })
+      expect(result).toHaveLength(1)
+      expect((result[0] as Record<string, unknown>)['status']).toBe('running')
     })
 
-    it('filters by run_type when provided', async () => {
-      mockLimit.mockResolvedValue({ data: [], error: null })
-      await repo.listRunUnified('agent-1', { run_type: 'team' })
-      expect(mockEq).toHaveBeenCalledWith('run_type', 'team')
+    it('filters by run_type in JavaScript after RPC', async () => {
+      const rows = [
+        { status: 'running', run_type: 'team' },
+        { status: 'running', run_type: 'workflow' },
+      ]
+      mockRpc.mockResolvedValue({ data: rows, error: null })
+      const result = await repo.listRunUnified('agent-1', { run_type: 'team' })
+      expect(result).toHaveLength(1)
+      expect((result[0] as Record<string, unknown>)['run_type']).toBe('team')
     })
   })
 })
