@@ -174,7 +174,7 @@ const SITE_JSON_LD = JSON.stringify({
       url: `${DOCS_HOST}/favicons/original/apple-icon.png`,
     },
   },
-  inLanguage: ['en', 'tr'],
+  inLanguage: ['en', 'tr', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ru', 'pt', 'it'],
 })
 
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
@@ -335,6 +335,15 @@ export default defineConfig({
     // ── hreflang (for Googlebot multilingual discovery) ─────────────────────
     ['link', { rel: 'alternate', hreflang: 'en', href: DOCS_HOST }],
     ['link', { rel: 'alternate', hreflang: 'tr', href: `${DOCS_HOST}/tr/` }],
+    ['link', { rel: 'alternate', hreflang: 'es', href: `${DOCS_HOST}/es/` }],
+    ['link', { rel: 'alternate', hreflang: 'fr', href: `${DOCS_HOST}/fr/` }],
+    ['link', { rel: 'alternate', hreflang: 'de', href: `${DOCS_HOST}/de/` }],
+    ['link', { rel: 'alternate', hreflang: 'zh', href: `${DOCS_HOST}/zh/` }],
+    ['link', { rel: 'alternate', hreflang: 'ja', href: `${DOCS_HOST}/ja/` }],
+    ['link', { rel: 'alternate', hreflang: 'ko', href: `${DOCS_HOST}/ko/` }],
+    ['link', { rel: 'alternate', hreflang: 'ru', href: `${DOCS_HOST}/ru/` }],
+    ['link', { rel: 'alternate', hreflang: 'pt', href: `${DOCS_HOST}/pt/` }],
+    ['link', { rel: 'alternate', hreflang: 'it', href: `${DOCS_HOST}/it/` }],
     ['link', { rel: 'alternate', hreflang: 'x-default', href: DOCS_HOST }],
   ],
 
@@ -1026,6 +1035,70 @@ export default defineConfig({
           ],
         },
       },
+    },
+    // ── WIP locales (stub home + getting-started only; full nav added when content is ready) ──
+    es: {
+      label: 'Español',
+      lang: 'es',
+      link: '/es/',
+      title: 'Documentación LenserFight',
+      description: 'LenserFight — documentación de Lentes, Agentes, Flujos de Trabajo y Comunidad.',
+    },
+    fr: {
+      label: 'Français',
+      lang: 'fr',
+      link: '/fr/',
+      title: 'Documentation LenserFight',
+      description: 'LenserFight — documentation pour les Lentilles, Agents, Workflows et Communauté.',
+    },
+    de: {
+      label: 'Deutsch',
+      lang: 'de',
+      link: '/de/',
+      title: 'LenserFight Dokumentation',
+      description: 'LenserFight — Dokumentation für Lenses, Agenten, Workflows und Community.',
+    },
+    zh: {
+      label: '中文',
+      lang: 'zh',
+      link: '/zh/',
+      title: 'LenserFight 文档',
+      description: 'LenserFight — Lenses、Agents、工作流和社区文档。',
+    },
+    ja: {
+      label: '日本語',
+      lang: 'ja',
+      link: '/ja/',
+      title: 'LenserFight ドキュメント',
+      description: 'LenserFight — Lenses、エージェント、ワークフロー、コミュニティのドキュメント。',
+    },
+    ko: {
+      label: '한국어',
+      lang: 'ko',
+      link: '/ko/',
+      title: 'LenserFight 문서',
+      description: 'LenserFight — Lenses, 에이전트, 워크플로우 및 커뮤니티 문서.',
+    },
+    ru: {
+      label: 'Русский',
+      lang: 'ru',
+      link: '/ru/',
+      title: 'Документация LenserFight',
+      description: 'LenserFight — документация по Lenses, Агентам, Рабочим процессам и Сообществу.',
+    },
+    pt: {
+      label: 'Português',
+      lang: 'pt',
+      link: '/pt/',
+      title: 'Documentação LenserFight',
+      description: 'LenserFight — documentação de Lentes, Agentes, Fluxos de Trabalho e Comunidade.',
+    },
+    it: {
+      label: 'Italiano',
+      lang: 'it',
+      link: '/it/',
+      title: 'Documentazione LenserFight',
+      description: 'LenserFight — documentazione per Lenses, Agenti, Workflow e Community.',
     },
   },
 
