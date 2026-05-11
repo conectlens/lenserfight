@@ -29,15 +29,12 @@ export async function handleLensesExecuteRoute(
   }
 
   const { data, error } = await auth.userClient
-    .schema('execution')
-    .rpc('fn_run_lens_api', {
+    .rpc('fn_run_lens', {
       p_lens_id: lens.id,
       p_version_id: lens.headVersionId,
-      p_model_id: model.id,
       p_inputs: body.params,
-      p_funding_source: fundingSource,
-      p_byok_key_id: body.byokKeyRefId ?? null,
-      p_idempotency_key: body.idempotencyKey ?? null,
+      p_model_override: model.id ?? null,
+      p_provider_override: model.providerKey ?? null,
     })
 
   if (error || !data) {
