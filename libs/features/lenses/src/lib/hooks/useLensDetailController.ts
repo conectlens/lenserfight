@@ -12,6 +12,8 @@ import {
 } from '@lenserfight/types'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 interface UseLensDetailControllerOptions {
   includeRelated?: boolean
 }
@@ -51,11 +53,12 @@ export const useLensDetailController = (
 
       return lensDetail
     },
-    enabled: !!lensId && !isAuthLoading && !isLenserLoading,
+    enabled: !!lensId && UUID_RE.test(lensId) && !isAuthLoading && !isLenserLoading,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
     retry: (failureCount, error) => {
-      if (error.message === '401' || error.message === '404') return false
+      const msg = error.message
+      if (msg === '400' || msg === '401' || msg === '404') return false
       return failureCount < 2
     },
   })
