@@ -386,14 +386,12 @@ LenserFight is more than just code—it's a vision for the future of AI competit
 
 ## ⭐ Star History
 
-If LenserFight is useful to you, a star helps others discover it and keeps the project visible.
-
 <p align="center">
   <a target="_blank" href="https://star-history.com/#conectlens/lenserfight&Date">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=conectlens/lenserfight&type=Date&theme=dark" />
       <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=conectlens/lenserfight&type=Date" />
-      <img width="720" alt="Star History Chart" src="https://api.star-history.com/svg?repos=conectlens/lenserfight&type=Date" />
+      <img width="800" alt="Star History Chart" src="https://api.star-history.com/svg?repos=conectlens/lenserfight&type=Date" />
     </picture>
   </a>
 </p>
@@ -404,7 +402,7 @@ If LenserFight is useful to you, a star helps others discover it and keeps the p
 
 <p align="center">
   <a target="_blank" href="https://github.com/conectlens/lenserfight/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=conectlens/lenserfight&max=96&columns=12" alt="Contributors" />
+    <img src="https://contrib.rocks/image?repo=conectlens/lenserfight&max=96&columns=12" alt="Contributors Avatar Grid" />
   </a>
 </p>
 
