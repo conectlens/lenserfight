@@ -87,6 +87,17 @@ function rewriteHostIfCrossLocalHost(parsed: URL): URL {
 export function sanitizeReturnUrl(url: string | null | undefined): string {
   if (!url) return DEFAULT_RETURN_URL
 
+  // Allow relative paths — they stay within the current origin (same-app navigation).
+  // A path like /device-approval?code=X&mode=login must survive the login redirect so
+  // GatewayGuard can send the user back to DeviceApprovalPage after sign-in.
+  if (url.startsWith('/') && !url.startsWith('//')) {
+    // Block /auth/* to prevent open-redirect loops back to the auth entry routes.
+    if (url === '/auth' || url.startsWith('/auth/')) {
+      return DEFAULT_RETURN_URL
+    }
+    return url
+  }
+
   try {
     const parsed = new URL(url)
     if (AUTH_ORIGINS.includes(parsed.origin)) {
