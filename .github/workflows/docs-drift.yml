@@ -7,10 +7,12 @@ on:
   pull_request:
     paths:
       - 'apps/cli/src/commands/**'
+      - 'apps/cli/src/main.ts'
       - 'apps/platform-api/src/http/**'
       - 'docs/reference/cli/**'
       - 'docs/reference/platform-api/openapi.yaml'
       - 'tools/gen-cli-docs.mjs'
+      - 'tools/check-cli-docs.mjs'
       - 'tools/verify-openapi.mjs'
       - '.github/workflows/docs-drift.yml'
   push:
@@ -19,10 +21,12 @@ on:
       - development
     paths:
       - 'apps/cli/src/commands/**'
+      - 'apps/cli/src/main.ts'
       - 'apps/platform-api/src/http/**'
       - 'docs/reference/cli/**'
       - 'docs/reference/platform-api/openapi.yaml'
       - 'tools/gen-cli-docs.mjs'
+      - 'tools/check-cli-docs.mjs'
       - 'tools/verify-openapi.mjs'
 
 permissions:
@@ -50,6 +54,27 @@ jobs:
 
       - name: Check CLI docs are up to date
         run: pnpm gen-cli-docs:check
+
+  cli-docs-coverage:
+    name: CLI docs coverage check (registered command ↔ markdown page)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify every registered subcommand has a docs page (and vice versa)
+        run: pnpm check-cli-docs
 
   openapi-drift:
     name: OpenAPI drift check (verify-openapi)
