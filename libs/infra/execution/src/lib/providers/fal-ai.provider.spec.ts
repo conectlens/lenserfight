@@ -5,9 +5,9 @@
 // without hitting the network. Subsequent providers (AN/AO) follow this
 // same template — see media-provider-factory in AQ for shared helpers.
 
-const subscribeMock = jest.fn()
+const subscribeMock = vi.hoisted(() => vi.fn())
 
-jest.mock('@fal-ai/client', () => ({
+vi.mock('@fal-ai/client', () => ({
   fal: {
     subscribe: (...args: unknown[]) => subscribeMock(...args),
   },
