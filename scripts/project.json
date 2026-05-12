@@ -19,6 +19,14 @@
         "cwd": ".",
         "command": "bash scripts/coverage-gate.sh"
       }
+    },
+    "announcement-dashboard": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "cwd": ".",
+        "command": "bash scripts/announcement-dashboard.sh"
+      }
     }
   }
 }
