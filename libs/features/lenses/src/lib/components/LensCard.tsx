@@ -105,18 +105,6 @@ export const LensCard: React.FC<LensCardProps> = memo(
             {lens.description || 'Reusable prompt for battles, workflows, and AI lab runs.'}
           </p>
         </div>
-
-        <div className="mb-5 grid grid-cols-2 gap-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-          <span className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-700/50">
-            <Swords size={11} />
-            Battle-ready
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-700/50">
-            <GitBranch size={11} />
-            Workflow-ready
-          </span>
-        </div>
-
         <div className="flex flex-wrap gap-2 mb-6">
           {(lens.tags ?? []).slice(0, 3).map((tag) => (
             <span
@@ -125,7 +113,7 @@ export const LensCard: React.FC<LensCardProps> = memo(
                 e.stopPropagation()
                 navigate(`/ray/${tag.slug}`)
               }}
-              className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-md border border-gray-100 dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              className="text-[10px] tracking-wider text-gray-500 dark:text-gray-400 font-semibold bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-md border border-gray-100 dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
               {tag.name}
             </span>
