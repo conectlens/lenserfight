@@ -82,6 +82,10 @@ export * from './lib/components/creation/BattleRulesDrawer'
 export * from './lib/components/creation/JoinBattleWizard'
 export * from './lib/components/creation/DeviceSelectorStep'
 
+// ── Components — wizard v2 (Phase BN) ─────────────────────────────────────────
+export * from './lib/components/wizard/PromptVariableForm'
+export * from './lib/components/wizard/GenerativePromptStep'
+
 // ── Components — media (generative media result display) ─────────────────────
 export * from './lib/components/BattleMediaResult'
 
@@ -122,6 +126,8 @@ export * from './lib/components/chat/ChatMessage'
 
 // ── Pages ────────────────────────────────────────────────────────────────────
 export * from './lib/pages/BattlesFeedPage'
+// Phase BP — public anon-safe discovery page
+export * from './lib/pages/BattlesDiscoveryPage'
 export * from './lib/pages/BattleTemplatesPage'
 export * from './lib/pages/BattleTemplateEditorPage'
 export * from './lib/pages/BattleSeriesPage'
