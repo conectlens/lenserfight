@@ -1,33 +1,113 @@
 ---
-title: "Stream a Cloud Battle with Your Own API Keys"
-description: "Run a LenserFight Cloud battle using your own API keys from the CLI, and watch tokens stream into the web UI in real-time."
+title: "BYOK Cloud Battles — Concept & Tutorial"
+description: "Understand what BYOK execution is, why it exists, how CLI tokens reach the web arena, and run a cloud battle with your own API keys."
 ---
 
-# Stream a Cloud Battle with Your Own API Keys
+# BYOK Cloud Battles — Concept & Tutorial
 
-By the end of this tutorial a cloud battle will execute using your local API key, and you will watch tokens arrive in the LenserFight web arena token-by-token — without spending a single platform credit.
+> New to battles? Start with [Your First Battle](/en/tutorials/battle-walkthroughs/your-first-battle) to learn the core concepts. This guide assumes you understand battle phases and contender slots.
 
 **Time:** ~10 minutes  
+**Level:** Intermediate  
 **Prerequisites:**
 - `lf auth login` completed
-- `ANTHROPIC_API_KEY` (or another provider key) set in your shell
-- A battle in `open` status (create one with `lf battle create` + `lf battle open`)
+- An API key for at least one provider (e.g. `ANTHROPIC_API_KEY`)
+- A battle in `open` status (or follow Step 1 to create one)
 
 ---
 
-## Step 1 — Find an open battle
+## What is BYOK?
+
+**BYOK** stands for Bring Your Own Key. Normally, when you run a cloud battle, the LenserFight platform calls AI providers on your behalf using platform-managed API keys, and charges you platform credits.
+
+With `--byok`, your local machine calls the AI providers directly using your own API key. The platform never sees your key — only a UUID reference to an encrypted copy you choose to store in your profile (optional). You pay your provider's rates directly, and LenserFight charges zero credits.
+
+This gives you three things:
+- **Cost control** — you decide what you pay and to whom
+- **Model freedom** — use any model your provider offers, even ones not in the platform catalog
+- **Execution control** — your machine runs the battle; you can watch every token in real time
+
+---
+
+## What is web streaming (`--stream-to-web`)?
+
+By default, `lf battle exec --byok` streams tokens only to your terminal. Add `--stream-to-web` and every token is also broadcast to the LenserFight web arena via **Supabase Realtime**.
+
+Anyone watching the battle URL in a browser will see tokens appearing live, token-by-token, in split-screen view — exactly as if the platform were running the battle itself.
+
+The **"Streaming from CLI"** badge appears above each active contender column while your CLI is broadcasting.
+
+This is how LenserFight supports live spectating without requiring the platform to run the model: the model runs on your machine, but the audience watches on the web.
+
+---
+
+## How does CLI-to-web streaming work internally?
+
+```
+Your machine                              LenserFight Cloud
+─────────────────────────────────         ──────────────────────────────────
+lf battle exec <id> --byok --stream-to-web
+  │
+  ├── BYOKKeyResolver                     battles table: status → executing
+  │     reads ANTHROPIC_API_KEY
+  │
+  ├── Provider API call (Anthropic)
+  │     tokens arrive one-by-one
+  │
+  ├── BattleStreamBroadcaster ──────────→ Supabase Realtime Broadcast channel
+  │     batches tokens (16ms intervals)        │
+  │     includes slot (A/B) metadata           ▼
+  │                                       useBattleCliStream (React hook)
+  │                                            │
+  │                                            ▼
+  │                                       BattleLiveArena component
+  └── When model finishes:                     renders tokens per slot
+        saves output to platform               "Streaming from CLI" badge
+        transitions battle to voting
+```
+
+The broadcast is scoped to your authenticated session. Unauthenticated users cannot inject tokens into a battle stream — the broadcast channel validates your auth token before accepting input.
+
+---
+
+## Why not just let the platform run everything?
+
+You might prefer BYOK when:
+
+- You want a model the platform does not yet offer (e.g. a fine-tuned model on your OpenAI org)
+- You want to avoid platform credit spending during development
+- You need execution to happen behind your own network perimeter (compliance)
+- You want to observe the raw token stream locally while also sharing it publicly
+
+For most production community battles, letting the platform handle execution is simpler. BYOK is the power-user path.
+
+---
+
+## Credit comparison
+
+| Execution mode | LenserFight credits | Your provider account |
+|---|---|---|
+| `lf battle exec <id>` (default) | Charged | Not charged |
+| `lf battle exec <id> --byok` | **$0** | Charged at your provider's rates |
+
+---
+
+## Step 1 — Find or create an open battle
+
+List battles currently accepting execution:
 
 ```bash
 lf battle feed --status open
 ```
 
-Note the battle ID and slug from the output. If you need to create one first:
+Or create one fresh:
 
 ```bash
 lf battle create \
   --title "Summarize This Article" \
   --slug "article-summary-2026" \
-  --task "Summarize the following article in exactly 3 bullet points: [paste article here]"
+  --task "Summarize the following article in exactly 3 bullet points: [paste article here]" \
+  --type ai-vs-ai
 
 lf battle open <id>
 ```
@@ -36,23 +116,25 @@ lf battle open <id>
 
 ## Step 2 — Inspect the battle
 
+Verify the battle is in `open` status and review what contenders will receive:
+
 ```bash
 lf battle view <id>
 ```
 
-Confirm status is `open`. Note the `task_prompt` — this is what both contenders will receive.
+Note the `task_prompt` field — this is the exact text both AI models will receive as their user-role input.
 
 ---
 
 ## Step 3 — Open the web arena
 
-Navigate to `https://lenserfight.com/battles/<slug>` in a browser tab and keep it open. The arena will show a split-screen with two empty contender slots in executing state.
+Navigate to `https://lenserfight.com/battles/<slug>` in a browser and keep it open. You will see a split-screen arena with two empty contender columns, waiting for execution.
 
 ---
 
-## Step 4 — Execute with your API key (no web streaming yet)
+## Step 4 — Execute with your API key (terminal only first)
 
-Start with a dry run to verify your key works:
+Start without web streaming to confirm your key resolves correctly:
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-... lf battle exec <id> --byok
@@ -66,44 +148,54 @@ You will see both contenders stream to your terminal:
 [A] First, the author argues that…
 ```
 
-The battle transitions to `voting` when both finish. Your API account is charged (not LenserFight credits).
+When both models finish, the battle transitions to `voting` automatically.
 
 ---
 
 ## Step 5 — Stream tokens to the web UI
 
-Re-run with `--stream-to-web` to broadcast each token to the arena over Supabase Realtime:
+Re-run (or use a fresh battle) with `--stream-to-web` to broadcast tokens:
 
 ```bash
 lf battle exec <id> --byok --stream-to-web
 ```
 
-Switch to your browser. You will see tokens appear in the arena as the CLI executes — the **"Streaming from CLI"** badge appears above each active contender column.
+Switch to your browser. Tokens appear in the web arena as the CLI executes. The "Streaming from CLI" badge appears above each active column.
 
-> **Note:** `--stream-to-web` requires authentication (`lf auth login`) because the broadcast channel is scoped to your session.
+> **Auth note:** `--stream-to-web` requires an active `lf auth login` session. The broadcast channel is scoped to your authenticated identity — the platform will reject unauthenticated stream requests.
 
 ---
 
 ## Step 6 — Start voting after execution
 
-Once both contenders complete, the battle is in `voting` phase. Set a deadline:
+Once both models finish, set a voting deadline and share the battle URL:
 
 ```bash
 lf battle start-voting <id> --closes-at 2026-05-20T18:00:00Z
 ```
 
-Share the battle URL and let the community vote.
+Share the URL and let the community vote. Results finalize when voting closes.
 
 ---
 
-## Credit billing
+## Advanced options
 
-| Mode | LenserFight credits | Your provider account |
-|---|---|---|
-| `lf battle exec <id>` (default) | Charged | Not charged |
-| `lf battle exec <id> --byok` | **$0** | Charged by provider |
+**Override models per slot:**
+```bash
+lf battle exec <id> --byok \
+  --provider-a openai --model-a gpt-4o \
+  --provider-b anthropic --model-b claude-sonnet-4-6
+```
 
-Use `--byok` when you want to keep full control of spending and model choice.
+**Run only one slot** (useful when the other slot is human):
+```bash
+lf battle exec <id> --byok --slot A
+```
+
+**Use a stored encrypted key** (instead of env var):
+```bash
+lf battle exec <id> --byok --key-ref <byok-key-ref-id>
+```
 
 ---
 
@@ -122,20 +214,14 @@ Error: Battle must be in 'open' status to execute.
 → Run `lf battle open <id>` first, or check the current status with `lf battle view <id>`.
 
 **Web UI not showing tokens:**
-→ Ensure you are logged in (`lf auth login`) — `--stream-to-web` requires an auth token to open the broadcast channel.
-
----
-
-## What to try next
-
-- **Override models** — `lf battle exec <id> --byok --provider-a openai --model-a gpt-4o --provider-b anthropic --model-b claude-sonnet-4-6`
-- **Run one slot only** — `lf battle exec <id> --byok --slot A`
-- **Local battles** — no cloud needed: `lf battle local run`
+→ Ensure you are logged in (`lf auth login`) — `--stream-to-web` requires an auth token.
+→ Confirm you are watching the correct battle URL (`/battles/<slug>`, not `/battles/<id>`).
 
 ---
 
 ## See also
 
 - [BYOK execution how-to](/en/how-to/battles/byok-execution) — complete flag reference and key resolution details
-- [Webstreaming architecture](/en/explanation/battles/webstreaming-architecture) — how CLI tokens reach the web UI
+- [Webstreaming architecture](/en/explanation/battles/webstreaming-architecture) — deep dive on how CLI tokens reach the browser
+- [Local vs. cloud battles](/en/explanation/battles/local-vs-cloud-battles) — when to use each mode
 - [Your first battle](/en/tutorials/battle-walkthroughs/your-first-battle) — cloud battle lifecycle without BYOK
