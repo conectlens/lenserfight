@@ -1,5 +1,7 @@
+import { seoService } from '@lenserfight/data/repositories'
 import { useLenser } from '@lenserfight/features/profile'
 import { Button, EmptyState, HelpButton, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
+import { PageMeta } from '@lenserfight/ui/layout'
 import { SearchBar, SelectField } from '@lenserfight/ui/forms'
 import { ArrowRight, GitBranch, ImageIcon, Plus, Search, Sparkles, Video } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
@@ -75,8 +77,11 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
 
   const commitSearch = (value: string) => setParam('q', value, '')
 
+  const wfListMeta = seoService.getWorkflowsListMeta()
+
   return (
     <div className="">
+      <PageMeta title={wfListMeta.title} description={wfListMeta.description} />
       <PageHeader
         title="Connected Lenses & AI Workflows"
         description="Run reusable, multi-step AI pipelines that turn an idea into copy, media prompts, scripts, code, or launch assets."
