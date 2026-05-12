@@ -37,6 +37,9 @@ interface ArenaViewRenderProps {
     contentUrl?: string | null
     voteCount?: number
     votePercentage?: number
+    mediaUrl?: string | null
+    mimeType?: string | null
+    outputModality?: 'text' | 'image' | 'video' | 'audio' | null
   }) => React.ReactNode
   renderVotePanel: (props: {
     battleId: string
