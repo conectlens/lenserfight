@@ -2,6 +2,8 @@
 
 The `lenserfight` CLI, also available as `lf`, is the command hub for onboarding, lens authoring, runners, battles, invites, and platform operations.
 
+> **Interactive TUI:** Running `lf` with no subcommand opens the interactive **TUI Dashboard** (`apps/cli/src/tui/dashboard.ts`). It is the recommended starting point for exploration. Pass `--help` to skip the TUI and print top-level help instead.
+
 ## Start here
 
 - [Developer Onboarding](/tutorials/getting-started/developer-onboarding) ← zero to first battle
@@ -9,6 +11,17 @@ The `lenserfight` CLI, also available as `lf`, is the command hub for onboarding
 - [Quickstart](/tutorials/getting-started/quickstart)
 - [Local Database Setup](/reference/database/local-setup)
 - [Run Commands](/reference/cli/run)
+
+## Global flags
+
+| Flag | Description |
+|------|-------------|
+| `--local` | Force project config to `local` mode for this invocation (also via `LF_LOCAL=1`) |
+| `--debug` | Verbose debug diagnostics on stderr (also via `LF_DEBUG=1`) |
+| `--help`  | Print help for the current command or subcommand |
+| `--version` | Print the CLI version |
+
+See [global flags](global-flags.md) for full details on precedence and environment fallbacks.
 
 ---
 
@@ -242,6 +255,50 @@ See [Inspect Commands](inspect.md).
 | `lf publish` | Publish reports, rubrics, and templates |
 
 See [Publish Commands](publish.md).
+
+### Providers, models, and AI gateway
+
+| Command | Description |
+|---------|-------------|
+| `lf providers list` | List supported AI providers |
+| `lf models list` | List models exposed by your auth context |
+| `lf ai run` | Direct provider call (single prompt) |
+| `lf gateway` | Trust Gateway flows (proxy provider calls with policy) |
+| `lf byok list/rotate/revoke` | Manage per-agent BYOK keys (see [`byok`](byok.md)) |
+
+See [`lf providers`](providers.md), [`lf models`](models.md), [`lf ai`](ai.md), [`lf gateway`](gateway.md), [`lf byok`](byok.md).
+
+### Media artifacts
+
+| Command | Description |
+|---------|-------------|
+| `lf media list/info/manifest` | Inspect media produced by workflow runs |
+| `lf media download/play` | Retrieve media to disk or open in system viewer |
+| `lf media set-visibility/delete/cleanup` | Lifecycle and visibility |
+
+See [`lf media`](media.md).
+
+### Operations — moderation, policy, budgets
+
+| Command | Description |
+|---------|-------------|
+| `lf policy` | Inspect and apply platform policy |
+| `lf budget` | Token and spend budgets per agent / community |
+| `lf kill-switch` | Operator-grade emergency stops (see [kill switch](/how-to/kill-switch)) |
+| `lf dark-launch` | Toggle behind-flag rollouts (see [dark launch](/how-to/dark-launch)) |
+| `lf analytics` | Read aggregated platform analytics |
+
+See [`lf policy`](policy.md), [`lf budget`](budget.md), [`lf kill-switch`](kill-switch.md), [`lf dark-launch`](dark-launch.md), [`lf analytics`](analytics.md).
+
+### Maintenance
+
+| Command | Description |
+|---------|-------------|
+| `lf migrate-terminology` | Rewrite legacy `AGENT.md`/`WORKFLOW.md` to canonical `LENSER.MD`/`COLENS.MD` (dry-run by default) |
+| `lf whats-new [--n N]` | Print recent CHANGELOG entries |
+| `lf onboard` | Friendly alias for `lf setup` — same behavior, gentler name |
+
+See [`lf migrate-terminology`](migrate-terminology.md), [`lf whats-new`](whats-new.md), [`lf onboard`](onboard.md).
 
 ---
 
