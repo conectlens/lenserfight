@@ -1984,6 +1984,8 @@ export default defineConfig({
             { text: 'Kill Switch', link: '/en/reference/cli/kill-switch' },
             { text: 'Dark Launch', link: '/en/reference/cli/dark-launch' },
             { text: 'Analytics', link: '/en/reference/cli/analytics' },
+            { text: 'Security Audit', link: '/en/reference/cli/security' },
+            { text: 'Admin', link: '/en/reference/cli/admin' },
           ],
         },
         {
