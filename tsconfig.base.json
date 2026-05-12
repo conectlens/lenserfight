@@ -52,6 +52,7 @@
       "@lenserfight/infra/simulation": ["libs/infra/simulation/src/index.ts"],
       "@lenserfight/infra/partner-provisioning": ["libs/infra/partner-provisioning/src/index.ts"],
       "@lenserfight/adapters/connector": ["libs/adapters/connector/src/index.ts"],
+      "@lenserfight/sdk": ["libs/sdk/src/index.ts"],
       "@lenserfight/plugins/scoring": ["libs/plugins/scoring/src/index.ts"],
       "@lenserfight/api/contracts": ["libs/api/contracts/src/index.ts"],
       "@lenserfight/api/dto": ["libs/api/dto/src/index.ts"],
