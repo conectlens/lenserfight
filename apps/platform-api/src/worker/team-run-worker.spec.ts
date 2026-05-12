@@ -1,13 +1,14 @@
 // Phase AL — team-run-worker unit tests.
 //
-// delegation_forbidden and approval_required policies are enforced inside
-// fn_start_team_run (covered by pgTAP 10_delegation_policies.sql). This
-// suite focuses on the worker's own four execution paths.
+// The worker calls serviceClient.rpc() directly (no .schema()).
+// Four paths: empty queue, success, update-throws → failed, claim error.
+
+jest.mock('../lib/supabase', () => ({
+  createServiceSupabaseClient: jest.fn(),
+}))
 
 import { processNextTeamRun } from './team-run-worker'
 import { createServiceSupabaseClient } from '../lib/supabase'
-
-jest.mock('../lib/supabase')
 
 const mockCreate = createServiceSupabaseClient as jest.MockedFunction<typeof createServiceSupabaseClient>
 
@@ -23,26 +24,20 @@ function buildClient(opts: {
   claimResult?: unknown
   claimError?: { message: string }
   updateError?: { message: string } | null
-  insertError?: { message: string } | null
 }) {
-  const eq = jest.fn().mockResolvedValue({ error: opts.updateError ?? null })
-  const update = jest.fn().mockReturnValue({ eq })
-  const insert = jest.fn().mockResolvedValue({ error: opts.insertError ?? null })
-
-  const from = jest.fn().mockImplementation((table: string) => {
-    if (table === 'team_runs') return { update }
-    if (table === 'agent_run_events') return { insert }
-    return { update, insert }
+  const rpc = jest.fn().mockImplementation(async (name: string) => {
+    if (name === 'fn_worker_claim_team_run') {
+      return {
+        data: opts.claimError ? null : (opts.claimResult ?? null),
+        error: opts.claimError ?? null,
+      }
+    }
+    if (name === 'fn_worker_update_team_run_status') {
+      return { data: null, error: opts.updateError ?? null }
+    }
+    return { data: null, error: null }
   })
-
-  const rpc = jest.fn().mockResolvedValue({
-    data: opts.claimError ? null : (opts.claimResult ?? null),
-    error: opts.claimError ?? null,
-  })
-
-  const schema = jest.fn().mockReturnValue({ rpc, from })
-
-  return { client: { schema } as unknown as ReturnType<typeof createServiceSupabaseClient>, from, update, eq, insert, rpc }
+  return { client: { rpc } as unknown as ReturnType<typeof createServiceSupabaseClient>, rpc }
 }
 
 describe('processNextTeamRun', () => {
@@ -57,23 +52,21 @@ describe('processNextTeamRun', () => {
     expect(result).toBe(false)
   })
 
-  it('path 1 — success: team_run updated to completed, dispatch_completed event emitted', async () => {
-    const { client, update, insert } = buildClient({ claimResult: CLAIMED_RUN })
+  it('path 1 — success: fn_worker_update_team_run_status called with completed', async () => {
+    const { client, rpc } = buildClient({ claimResult: CLAIMED_RUN })
     mockCreate.mockReturnValue(client)
 
     const result = await processNextTeamRun()
 
     expect(result).toBe(true)
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'completed' }),
-    )
-    expect(insert).toHaveBeenCalledWith(
-      expect.objectContaining({ event_type: 'dispatch_completed' }),
+    expect(rpc).toHaveBeenCalledWith(
+      'fn_worker_update_team_run_status',
+      expect.objectContaining({ p_team_run_id: 'tr-1', p_status: 'completed' }),
     )
   })
 
-  it('path 2 — child run fails: team_run.update throws → status set to failed', async () => {
-    const { client, eq, update } = buildClient({
+  it('path 2 — update throws DB error: status ultimately set to failed', async () => {
+    const { client, rpc } = buildClient({
       claimResult: CLAIMED_RUN,
       updateError: { message: 'DB error' },
     })
@@ -82,17 +75,16 @@ describe('processNextTeamRun', () => {
     const result = await processNextTeamRun()
 
     expect(result).toBe(true)
-    // update called twice: first attempt (errors), then failure path
-    expect(update).toHaveBeenCalledTimes(2)
-    expect(update).toHaveBeenLastCalledWith(
-      expect.objectContaining({ status: 'failed' }),
+    expect(rpc).toHaveBeenCalledWith(
+      'fn_worker_update_team_run_status',
+      expect.objectContaining({ p_status: 'failed' }),
     )
   })
 
-  it('path 4 — claim RPC error: processNextTeamRun throws', async () => {
+  it('path 4 — claim RPC error: processNextTeamRun rejects with the RPC error', async () => {
     const { client } = buildClient({ claimError: { message: 'permission denied' } })
     mockCreate.mockReturnValue(client)
 
-    await expect(processNextTeamRun()).rejects.toThrow()
+    await expect(processNextTeamRun()).rejects.toMatchObject({ message: 'permission denied' })
   })
 })
