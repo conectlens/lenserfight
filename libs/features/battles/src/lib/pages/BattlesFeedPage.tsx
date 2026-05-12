@@ -28,6 +28,20 @@ const TYPE_OPTIONS: { value: BattleType | 'all'; label: string }[] = [
   { value: 'workflow_battle', label: 'Workflow' },
 ]
 
+const CONTENT_TYPE_OPTIONS = [
+  { value: 'all',       label: 'All media' },
+  { value: 'text',      label: 'Text' },
+  { value: 'code',      label: 'Code' },
+  { value: 'image',     label: 'Image' },
+  { value: 'drawing',   label: 'Drawing' },
+  { value: 'video',     label: 'Video' },
+  { value: 'audio',     label: 'Audio' },
+  { value: 'avatar',    label: 'Avatar' },
+  { value: 'workflow',  label: 'Workflow' },
+  { value: 'poem',      label: 'Poem' },
+  { value: 'image_edit', label: 'Image Edit' },
+]
+
 const SORT_OPTIONS: { value: BattlesFeedSortBy; label: string }[] = [
   { value: 'newest', label: 'Newest' },
   { value: 'most_votes', label: 'Most votes' },
@@ -54,6 +68,7 @@ export function BattlesFeedPage() {
 
   const statusFilter = searchParams.get('status') ?? 'all'
   const typeFilter = (searchParams.get('type') as BattleType | 'all') ?? 'all'
+  const contentTypeFilter = searchParams.get('content') ?? 'all'
   const sortBy = (searchParams.get('sort') as BattlesFeedSortBy) ?? 'newest'
 
   const setParam = (key: string, value: string, defaultValue: string) => {
@@ -76,9 +91,10 @@ export function BattlesFeedPage() {
   const battles = data?.pages.flat() ?? []
 
   // Client-side sort for most_votes / trending (RPC returns newest-first only)
-  const sorted = sortBy === 'most_votes' || sortBy === 'trending'
+  const sorted = (sortBy === 'most_votes' || sortBy === 'trending'
     ? [...battles].sort((a, b) => (b.total_vote_count ?? 0) - (a.total_vote_count ?? 0))
     : battles
+  ).filter((b) => contentTypeFilter === 'all' || b.content_type === contentTypeFilter)
 
   return (
     <div className="">
@@ -132,6 +148,12 @@ export function BattlesFeedPage() {
             className="w-44"
           />
           <SelectField
+            value={contentTypeFilter}
+            onChange={(v) => setParam('content', v, 'all')}
+            options={CONTENT_TYPE_OPTIONS}
+            className="w-36"
+          />
+          <SelectField
             value={sortBy}
             onChange={(v) => setParam('sort', v, 'newest')}
             options={SORT_OPTIONS}
@@ -181,6 +203,7 @@ export function BattlesFeedPage() {
                   status={b.status}
                   totalVoteCount={b.total_vote_count}
                   battleType={b.battle_type}
+                  contentType={b.content_type}
                   voterEligibility={b.voter_eligibility}
                   votingOpensAt={b.voting_opens_at}
                   votingClosesAt={b.voting_closes_at}
