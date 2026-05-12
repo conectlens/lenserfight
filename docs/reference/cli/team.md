@@ -152,9 +152,10 @@ Create a new team for an AI workspace.
 
 | Flag | Type | Required | Description |
 |---|---|---|---|
-| `--ai-lenser` | string | yes | AI Lenser UUID |
+| `--ai-lenser` | string | yes | AI Lenser UUID (owner of the team) |
 | `--name` | string | yes | Team name |
 | `--description` | string | no | Team description |
+| `--template` | string | no |  |
 
 ## `lf team inspect`
 
