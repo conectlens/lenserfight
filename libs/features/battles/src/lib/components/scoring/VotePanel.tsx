@@ -81,6 +81,7 @@ export function VotePanel({
   const [loading, setLoading] = useState(false)
   const [shakeKey, setShakeKey] = useState(0)
   const [changing, setChanging] = useState(false)
+  const [rateLimitBanner, setRateLimitBanner] = useState(false)
 
   // Show ineligibility gate before anything else
   if (!isEligible && voterEligibility && voterEligibility !== 'open') {
@@ -105,8 +106,16 @@ export function VotePanel({
   const handleVote = async () => {
     if (!selected) return
     setLoading(true)
+    setRateLimitBanner(false)
     try {
       await onVote(selected, rationale)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('rate_limit_exceeded') || msg.includes('P0001')) {
+        setRateLimitBanner(true)
+      } else {
+        throw err
+      }
     } finally {
       setLoading(false)
     }
@@ -242,6 +251,12 @@ export function VotePanel({
         autoResize={false}
         className="mt-2 text-sm bg-surface-base focus:ring-primary-yellow-500"
       />
+      {rateLimitBanner && (
+        <div className="rounded-lg border border-yellow-400/60 bg-yellow-50 dark:bg-yellow-500/10 px-3 py-2 text-sm text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
+          <span>⚠</span>
+          <span>Slow down — you&apos;re voting too fast. Please wait a moment before trying again.</span>
+        </div>
+      )}
       <Button
         variant="primary"
         onClick={handleVote}
