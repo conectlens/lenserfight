@@ -352,10 +352,10 @@ export default defineConfig({
   ],
 
   /**
-   * After VitePress finishes building, copy every .md source file from srcDir
-   * into outDir at the same relative path.  This makes raw markdown accessible
-   * at the same URL as its HTML counterpart (e.g. /tutorials/quickstart.md),
-   * so CopyPageButton's fetch() succeeds in production.
+   * After VitePress finishes building:
+   * 1. Copy every .md source file from srcDir into outDir (raw markdown for CopyPageButton).
+   * 2. Generate bare-path redirect HTML files: /tutorials/foo → /en/tutorials/foo, etc.
+   *    This ensures old links and HelpButton paths without a locale prefix still resolve.
    */
   buildEnd: async (siteConfig) => {
     function copyMd(src: string, dest: string) {
@@ -371,6 +371,43 @@ export default defineConfig({
       }
     }
     copyMd(siteConfig.srcDir, siteConfig.outDir)
+
+    // Generate /section/path/index.html → /en/section/path redirect shims
+    // so bare (non-locale) URLs always land on the English version.
+    const BARE_SECTIONS = ['tutorials', 'reference', 'how-to', 'explanation', 'getting-started']
+    function emitRedirect(bareHtmlPath: string, targetUrl: string) {
+      mkdirSync(dirname(bareHtmlPath), { recursive: true })
+      writeFileSync(
+        bareHtmlPath,
+        `<!DOCTYPE html><html><head><meta charset="utf-8">` +
+        `<meta http-equiv="refresh" content="0;url=${targetUrl}">` +
+        `<link rel="canonical" href="${targetUrl}"></head>` +
+        `<body><a href="${targetUrl}">Redirecting…</a></body></html>`,
+      )
+    }
+    function mirrorEnSection(enSectionDir: string, bareSectionDir: string, urlBase: string) {
+      if (!existsSync(enSectionDir)) return
+      mkdirSync(bareSectionDir, { recursive: true })
+      for (const entry of readdirSync(enSectionDir)) {
+        const enPath = join(enSectionDir, entry)
+        const barePath = join(bareSectionDir, entry)
+        const targetUrl = `${urlBase}/${entry.replace(/\.html$/, '')}`
+        if (statSync(enPath).isDirectory()) {
+          mirrorEnSection(enPath, barePath, targetUrl)
+        } else if (entry.endsWith('.html')) {
+          if (!existsSync(barePath)) emitRedirect(barePath, targetUrl)
+        }
+      }
+    }
+    const outDir = siteConfig.outDir
+    const enDir = join(outDir, 'en')
+    for (const section of BARE_SECTIONS) {
+      mirrorEnSection(
+        join(enDir, section),
+        join(outDir, section),
+        `/en/${section}`,
+      )
+    }
   },
 
   markdown: {
