@@ -14,6 +14,7 @@ interface BattleAutomationSettingsProps {
   autoPromote: boolean
   onChangeAutoAssign: (val: boolean) => void
   onChangeAutoPromote: (val: boolean) => void
+  onReadinessChange?: (ready: boolean) => void
 }
 
 export function BattleAutomationSettings({
@@ -22,6 +23,7 @@ export function BattleAutomationSettings({
   autoPromote,
   onChangeAutoAssign,
   onChangeAutoPromote,
+  onReadinessChange,
 }: BattleAutomationSettingsProps) {
   const [readiness, setReadiness] = useState<ReadinessResult | null>(null)
   const [checking, setChecking] = useState(false)
@@ -32,14 +34,17 @@ export function BattleAutomationSettings({
     void (async () => {
       try {
         const { data } = await supabase.rpc('fn_battles_check_readiness', { p_battle_id: battleId })
-        setReadiness(data as ReadinessResult)
+        const result = data as ReadinessResult
+        setReadiness(result)
+        onReadinessChange?.(result?.ready ?? true)
       } catch {
         setReadiness(null)
+        onReadinessChange?.(true)
       } finally {
         setChecking(false)
       }
     })()
-  }, [battleId, autoAssignContenders, autoPromote])
+  }, [battleId, autoAssignContenders, autoPromote]) // eslint-disable-line
 
   return (
     <div className="space-y-5">
