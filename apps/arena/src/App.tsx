@@ -22,6 +22,7 @@ import { ProductPage } from './pages/ProductPage'
 import { CLIPage } from './pages/CLIPage'
 import { MobileComingSoonPage } from './pages/MobileComingSoonPage'
 import { BattleShowcasePage } from './pages/BattleShowcasePage'
+import { RouteSEO } from './seo/RouteSEO'
 
 const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
 const ARENA_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
@@ -40,6 +41,7 @@ const App: React.FC = () => {
                 }}
               >
                 <AnalyticsProvider>
+                  <RouteSEO />
                   <ScrollToTop />
                   <RouteTracker />
                   <ErrorClearer />
