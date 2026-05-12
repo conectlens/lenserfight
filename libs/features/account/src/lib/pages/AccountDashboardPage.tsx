@@ -1,12 +1,19 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Swords, Monitor, ArrowRight, Zap } from 'lucide-react'
+import { Swords, Monitor, ArrowRight, Zap, Trophy, Flame } from 'lucide-react'
 import { ScoreBar } from '@lenserfight/ui/widgets'
 import { DeviceCard } from '@lenserfight/features/devices'
+import { useLenser } from '@lenserfight/features/profile'
+import {
+  XPHistoryPanel,
+  BadgeDisplay,
+  StreakCard,
+} from '@lenserfight/features/lenserboard'
 import { useAccountSummary } from '../hooks/useAccountSummary'
 
 export function AccountDashboardPage() {
   const { data, isLoading } = useAccountSummary()
+  const { lenser } = useLenser()
 
   if (isLoading) {
     return (
@@ -53,23 +60,81 @@ export function AccountDashboardPage() {
             <div className="flex items-end gap-3">
               <span className="text-4xl font-bold">{xpSummary.currentLevel}</span>
               <span className="text-sm text-muted-foreground pb-1">Level</span>
-              {xpSummary.rank && (
-                <span className="ml-auto text-sm text-muted-foreground pb-1">Rank #{xpSummary.rank}</span>
-              )}
+              <span className="ml-auto text-sm text-muted-foreground pb-1">
+                {xpSummary.totalXp.toLocaleString()} XP
+                {xpSummary.rank && <> · Rank #{xpSummary.rank}</>}
+              </span>
             </div>
             <ScoreBar
               scoreA={xpSummary.totalXp}
               scoreB={Math.max(0, (xpSummary.currentLevelMaxXp ?? xpSummary.totalXp + 500) - xpSummary.totalXp)}
               labelA={`${xpSummary.totalXp.toLocaleString()} XP`}
-              labelB="Next level"
+              labelB={
+                xpSummary.currentLevelMaxXp
+                  ? `${(xpSummary.currentLevelMaxXp - xpSummary.totalXp).toLocaleString()} to next level`
+                  : 'Next level'
+              }
             />
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Join a battle to start earning XP.
+            Join a battle or publish a lens to start earning XP.{' '}
+            <Link to="/tutorials/agent-walkthroughs/earning-xp" className="underline">
+              How to earn XP
+            </Link>
           </p>
         )}
       </section>
+
+      {/* Streak & Badges — only when logged in */}
+      {lenser?.id && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Streak */}
+          <section className="border rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Flame className="w-5 h-5 text-orange-500" />
+              <h2 className="font-semibold">Daily Streak</h2>
+            </div>
+            <StreakCard lenserId={lenser.id} />
+          </section>
+
+          {/* Badges */}
+          <section className="border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-yellow-500" />
+                <h2 className="font-semibold">Badges</h2>
+              </div>
+              <Link
+                to={`/lenser/${lenser.handle}`}
+                className="text-xs text-muted-foreground hover:underline flex items-center gap-1"
+              >
+                Profile <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <BadgeDisplay lenserId={lenser.id} detailed />
+          </section>
+        </div>
+      )}
+
+      {/* XP History */}
+      {lenser?.id && (
+        <section className="border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-emerald-500" />
+              <h2 className="font-semibold">XP Activity</h2>
+            </div>
+            <Link
+              to="/lenserboard?board=season"
+              className="text-xs text-muted-foreground hover:underline flex items-center gap-1"
+            >
+              Season <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <XPHistoryPanel lenserId={lenser.id} limit={10} />
+        </section>
+      )}
 
       {/* Devices */}
       <section className="space-y-3">
