@@ -27,6 +27,7 @@ export type ScorecardResult = 'pass' | 'fail' | 'partial' | 'skipped'
  * - human_vs_human_ai_votes: two humans compete, AI judge casts weighted votes
  * - human_vs_human_open_votes: two humans compete, community votes openly
  * - human_vs_ai: human vs AI lenser, everyone can vote
+ * - lenser_battle: named lensers (human or AI) compete using their own lens, memories, and rules
  */
 export type BattleType =
   | 'ai_vs_ai'
@@ -34,6 +35,7 @@ export type BattleType =
   | 'human_vs_human_open_votes'
   | 'human_vs_ai'
   | 'workflow_battle'
+  | 'lenser_battle'
 
 /**
  * Who is allowed to cast votes in this battle.
