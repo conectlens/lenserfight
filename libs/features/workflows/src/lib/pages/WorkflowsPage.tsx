@@ -1,8 +1,7 @@
 import { useLenser } from '@lenserfight/features/profile'
 import { Button, EmptyState, HelpButton, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
 import { SearchBar, SelectField } from '@lenserfight/ui/forms'
-import { AnimatePresence, motion } from 'framer-motion'
-import { GitBranch, Plus, Search, Sparkles } from 'lucide-react'
+import { ArrowRight, GitBranch, ImageIcon, Plus, Search, Sparkles, Video } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
 import { Link, Outlet, useSearchParams } from 'react-router-dom'
 
@@ -11,20 +10,6 @@ import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { usePopularWorkflows } from '../hooks/usePopularWorkflows'
 import { useTemplateWorkflows } from '../hooks/useTemplateWorkflows'
 import { useWorkflows } from '../hooks/useWorkflows'
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: i * 0.05,
-      duration: 0.3,
-      ease: [0, 0, 0.2, 1] as [number, number, number, number],
-    },
-  }),
-  exit: { opacity: 0, y: -10, transition: { duration: 0.15 } },
-}
 
 const SCOPE_OPTIONS = [
   { value: 'mine', label: 'My Workflows' },
@@ -93,8 +78,8 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
   return (
     <div className="">
       <PageHeader
-        title="Connected Lenses"
-        description="Chain lenses into multi-step workflows, run them, and iterate on the output path."
+        title="Workflows"
+        description="Run reusable, multi-step AI pipelines that turn an idea into copy, media prompts, scripts, code, or launch assets."
         action={
           <>
             <HelpButton path="/tutorials/walkthroughs/create-a-workflow" />
@@ -104,6 +89,35 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
           </>
         }
       />
+
+      <section className="my-5 rounded-2xl border border-surface-border bg-white p-4 shadow-sm dark:bg-gray-800">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
+              Workflow flow
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-greyscale-800 dark:text-greyscale-100">
+              {['Input', 'Lens or agent step', 'Human review', 'Media output', 'Final artifact'].map((step, index) => (
+                <React.Fragment key={step}>
+                  <span className="rounded-full bg-surface-raised px-3 py-1">{step}</span>
+                  {index < 4 && <ArrowRight size={14} className="text-greyscale-300" />}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs font-semibold">
+            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
+              <GitBranch size={13} /> Multi-step
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
+              <ImageIcon size={13} /> Image prompts
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
+              <Video size={13} /> Video scripts
+            </span>
+          </div>
+        </div>
+      </section>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center mb-4">
@@ -208,8 +222,8 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
       {!isLoading && workflows.length === 0 && scope === 'mine' && (
         <EmptyState
           icon={GitBranch}
-          title="Build your first Connected Lens workflow"
-          description="Chain lenses together and watch AI outputs transform step by step."
+          title="Build your first workflow"
+          description="Turn an idea into text, image prompts, video scripts, code, or a full launch kit with visible stages."
           action={
             <Button onClick={onCreateWorkflow} className="gap-2 w-auto">
               <Plus size={15} /> Create Workflow
@@ -221,31 +235,21 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
       {!isLoading && workflows.length === 0 && scope === 'popular' && (
         <EmptyState
           icon={Search}
-          title="No popular workflows yet"
-          description="Public workflows will appear here as the community starts sharing them."
+          title="No popular workflows match this view"
+          description="Public reusable workflows will appear here as Lensers share multi-step AI pipelines."
         />
       )}
 
       {!isLoading && workflows.length > 0 && (
-        <AnimatePresence mode="popLayout">
-          <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
-            {workflows.map((w, i) => (
-              <motion.div
-                key={w.id}
-                custom={i}
-                variants={cardVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="break-inside-avoid mb-3"
-              >
-                <Link to={`/workflows/${w.id}`} className="block">
-                  <WorkflowCard workflow={w} nodeCount={w.node_count} showReactions />
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </AnimatePresence>
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
+          {workflows.map((w) => (
+            <div key={w.id} className="break-inside-avoid mb-3">
+              <Link to={`/workflows/${w.id}`} className="block">
+                <WorkflowCard workflow={w} nodeCount={w.node_count} showReactions />
+              </Link>
+            </div>
+          ))}
+        </div>
       )}
 
       <InfiniteScrollSentinel
