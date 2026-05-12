@@ -1,0 +1,553 @@
+openapi: 3.1.0
+info:
+  title: LenserFight Platform API
+  version: '0.2.0'
+  summary: Synchronous and streaming execution of lenses, workflows, and partner integrations.
+  description: |
+    The LenserFight platform API exposes lens execution, workflow runs, run
+    status, server-sent event streams, partner provisioning, and a health
+    probe. Schemas are driven from `libs/api/contracts/`; consumers can rely
+    on the documented field names matching the SDK and CLI.
+
+    All endpoints under `/v1/*` require a Bearer token. The token is the
+    Supabase anon or user JWT depending on caller context. The `/health`
+    endpoint is unauthenticated.
+
+    All responses use the canonical envelope:
+
+    ```json
+    {
+      "data": { ... },
+      "meta": { "requestId": "...", "durationMs": 120 },
+      "error": null
+    }
+    ```
+
+    On error, `data` is omitted and `error` is set:
+
+    ```json
+    {
+      "error": { "code": "string", "message": "string" },
+      "meta": { "requestId": "...", "durationMs": 120 }
+    }
+    ```
+  license:
+    name: Apache-2.0
+    url: https://github.com/conectlens/lenserfight/blob/main/LICENSE
+  contact:
+    name: LenserFight Maintainers
+    url: https://github.com/conectlens/lenserfight
+
+servers:
+  - url: http://localhost:8787
+    description: Local development (default `PLATFORM_API_PORT`)
+  - url: https://platform.lenserfight.io
+    description: Hosted (subject to availability)
+
+tags:
+  - name: Health
+    description: Liveness probe.
+  - name: Lenses
+    description: Direct lens execution.
+  - name: Workflows
+    description: Multi-node workflow runs.
+  - name: Runs
+    description: Run status, artifacts, and event streaming.
+  - name: Partners
+    description: Partner integrations (Chainabit, etc.). Schemas vary by partner.
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      description: |
+        Returns 200 with `status=ok` when the platform-api can reach the
+        database (verified via the `public.fn_health()` RPC). Returns 503
+        with `status=degraded` if the probe fails or times out (1500 ms).
+        This route is unauthenticated.
+      security: []
+      operationId: getHealth
+      responses:
+        '200':
+          description: Healthy.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthOk'
+        '503':
+          description: Degraded — database unreachable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthDegraded'
+
+  /v1/lenses/{lensId}/execute:
+    post:
+      tags: [Lenses]
+      summary: Execute a lens
+      description: |
+        Enqueues a lens execution and returns a `runId`. Poll
+        `GET /v1/runs/{runId}` for terminal status, or stream
+        `GET /v1/runs/{runId}/events` for live progress.
+
+        Rate-limited per-user; bursts return 429.
+      operationId: executeLens
+      parameters:
+        - $ref: '#/components/parameters/LensId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LensExecuteRequest'
+            examples:
+              minimal:
+                value:
+                  params: { topic: 'LenserFight' }
+              byok:
+                value:
+                  params: { topic: 'LenserFight' }
+                  fundingSource: 'user_byok_cloud'
+                  byokKeyRefId: 'key_abc123'
+                  modelOverride: 'claude-sonnet-4-6'
+      responses:
+        '202':
+          description: Run accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformExecutionAcceptedEnvelope'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /v1/workflows/{workflowId}/run:
+    post:
+      tags: [Workflows]
+      summary: Run a workflow
+      operationId: runWorkflow
+      parameters:
+        - $ref: '#/components/parameters/WorkflowId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowRunRequest'
+            examples:
+              minimal:
+                value:
+                  inputs: { topic: 'LenserFight' }
+      responses:
+        '202':
+          description: Run accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformExecutionAcceptedEnvelope'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /v1/runs/{runId}:
+    get:
+      tags: [Runs]
+      summary: Get run status and artifacts
+      operationId: getRunStatus
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: Run details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformRunStatusEnvelope'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /v1/runs/{runId}/events:
+    get:
+      tags: [Runs]
+      summary: Stream run events (SSE)
+      description: |
+        Streams `text/event-stream` events for the run. Each event corresponds
+        to a row in `lenses.workflow_run_events`. The stream emits a final
+        `event: done` when the run reaches a terminal status.
+
+        Resume after a disconnect by sending the `Last-Event-ID` header with
+        the id of the last received event; the server resumes from the
+        following row.
+
+        Keep-alive comments are emitted every 15 seconds.
+      operationId: streamRunEvents
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+        - in: header
+          name: Last-Event-ID
+          required: false
+          schema:
+            type: string
+          description: Resume cursor — id of the last received event.
+      responses:
+        '200':
+          description: Event stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  SSE frames. Each event has `id`, `event`, and `data` lines.
+                  `data` is a JSON object with at minimum `eventType`,
+                  `payload`, and `occurredAt`.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/partners/{partnerName}/provision:
+    post:
+      tags: [Partners]
+      summary: Provision a partner integration
+      description: |
+        Schema varies by `partnerName`. Currently registered: `chainabit`.
+      operationId: provisionPartner
+      parameters:
+        - $ref: '#/components/parameters/PartnerName'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerOpaquePayload'
+      responses:
+        '200':
+          description: Provisioning record.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerOpaqueEnvelope'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /v1/partners/{partnerName}/balance:
+    get:
+      tags: [Partners]
+      summary: Read partner balance
+      operationId: getPartnerBalance
+      parameters:
+        - $ref: '#/components/parameters/PartnerName'
+      responses:
+        '200':
+          description: Partner balance snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerOpaqueEnvelope'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /v1/partners/{partnerName}/refresh-token:
+    post:
+      tags: [Partners]
+      summary: Refresh a partner OAuth token
+      operationId: refreshPartnerToken
+      parameters:
+        - $ref: '#/components/parameters/PartnerName'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerOpaquePayload'
+      responses:
+        '200':
+          description: New token bundle.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerOpaqueEnvelope'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /v1/partners/{partnerName}/send-claim:
+    post:
+      tags: [Partners]
+      summary: Send a partner claim
+      operationId: sendPartnerClaim
+      parameters:
+        - $ref: '#/components/parameters/PartnerName'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerOpaquePayload'
+      responses:
+        '200':
+          description: Claim accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerOpaqueEnvelope'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase user or anon JWT.
+
+  parameters:
+    LensId:
+      name: lensId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    WorkflowId:
+      name: workflowId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    RunId:
+      name: runId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    PartnerName:
+      name: partnerName
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [chainabit]
+
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorEnvelope'
+    Unauthorized:
+      description: Missing or invalid Bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorEnvelope'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorEnvelope'
+    RateLimited:
+      description: Per-user rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorEnvelope'
+    InternalError:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorEnvelope'
+
+  schemas:
+    ExecutionRunStatus:
+      type: string
+      enum: [queued, running, succeeded, failed, canceled, timed_out]
+
+    ArtifactKind:
+      type: string
+      enum: [text, image, audio, video, json, trace, tool_log, rubric_result]
+
+    FundingSource:
+      type: string
+      enum: [user_byok_cloud, user_byok_local, platform_credit, sponsored]
+
+    LensExecuteRequest:
+      type: object
+      required: [params]
+      properties:
+        params:
+          type: object
+          additionalProperties: true
+          description: Inputs passed to the lens template renderer.
+        modelOverride:
+          type: string
+          description: Force a specific model id (e.g. `claude-sonnet-4-6`).
+        providerOverride:
+          type: string
+          description: Force a provider key (e.g. `anthropic`, `openai`).
+        fundingSource:
+          $ref: '#/components/schemas/FundingSource'
+        byokKeyRefId:
+          type: string
+          description: Required when `fundingSource = user_byok_cloud`.
+        idempotencyKey:
+          type: string
+          description: Caller-supplied dedupe key.
+
+    WorkflowRunRequest:
+      type: object
+      required: [inputs]
+      properties:
+        inputs:
+          type: object
+          additionalProperties: true
+        modelOverride:
+          type: string
+        idempotencyKey:
+          type: string
+
+    PlatformExecutionAccepted:
+      type: object
+      required: [runId, status]
+      properties:
+        runId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/ExecutionRunStatus' }
+        workflowId:
+          type: string
+          format: uuid
+          nullable: true
+
+    PlatformExecutionArtifact:
+      type: object
+      required: [id, artifactKind, isPrimaryOutput, visibility, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        artifactKind: { $ref: '#/components/schemas/ArtifactKind' }
+        contentText: { type: string, nullable: true }
+        contentJson:
+          nullable: true
+          oneOf:
+            - { type: object, additionalProperties: true }
+            - { type: array }
+            - { type: string }
+            - { type: number }
+            - { type: boolean }
+        isPrimaryOutput: { type: boolean }
+        visibility: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    PlatformRunStatus:
+      type: object
+      required: [id, requestId, status, artifacts]
+      properties:
+        id: { type: string, format: uuid }
+        requestId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/ExecutionRunStatus' }
+        modelId: { type: string, nullable: true }
+        modelKey: { type: string, nullable: true }
+        providerKey: { type: string, nullable: true }
+        startedAt: { type: string, format: date-time, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        latencyMs: { type: integer, nullable: true }
+        tokenInput: { type: integer, nullable: true }
+        tokenOutput: { type: integer, nullable: true }
+        creditCost: { type: integer, nullable: true }
+        billingStatus: { type: string, nullable: true }
+        errorCode: { type: string, nullable: true }
+        errorMessage: { type: string, nullable: true }
+        artifacts:
+          type: array
+          items: { $ref: '#/components/schemas/PlatformExecutionArtifact' }
+
+    ApiMeta:
+      type: object
+      properties:
+        requestId: { type: string }
+        durationMs: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+        total: { type: integer }
+        hasNextPage: { type: boolean }
+        nextCursor: { type: string }
+
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details:
+          type: object
+          additionalProperties: true
+
+    ApiErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error: { $ref: '#/components/schemas/ApiError' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+
+    PlatformExecutionAcceptedEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/PlatformExecutionAccepted' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+
+    PlatformRunStatusEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/PlatformRunStatus' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+
+    PartnerOpaquePayload:
+      type: object
+      additionalProperties: true
+      description: |
+        Partner-specific payload. Refer to the partner provider in
+        `libs/infra/partner-provisioning/` for the actual shape.
+
+    PartnerOpaqueEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+
+    HealthOk:
+      type: object
+      required: [status, db, uptime_s, checked_at]
+      properties:
+        status: { type: string, enum: [ok] }
+        db: { type: boolean, enum: [true] }
+        uptime_s: { type: integer, minimum: 0 }
+        version:
+          type: string
+          nullable: true
+        checked_at: { type: string, format: date-time }
+
+    HealthDegraded:
+      type: object
+      required: [status, db, uptime_s, checked_at, reason]
+      properties:
+        status: { type: string, enum: [degraded] }
+        db: { type: boolean, enum: [false] }
+        uptime_s: { type: integer, minimum: 0 }
+        version:
+          type: string
+          nullable: true
+        checked_at: { type: string, format: date-time }
+        reason: { type: string }
