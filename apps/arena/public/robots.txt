@@ -15,6 +15,9 @@ Allow: /
 User-agent: YandexBot
 Allow: /
 
+User-agent: facebookexternalhit
+Allow: /
+
 User-agent: GPTBot
 Allow: /
 
@@ -24,7 +27,16 @@ Allow: /
 User-agent: PerplexityBot
 Allow: /
 
-User-agent: facebookexternalhit
+User-agent: Applebot
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: cohere-ai
 Allow: /
 
 Sitemap: https://lenserfight.com/sitemap.xml
