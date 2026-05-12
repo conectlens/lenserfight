@@ -247,6 +247,73 @@ lf gateway policy test --kind lenser-paused
 | `show` | Current `global_kill_switch`, `runner_paused`, `budget_enforce`, `max_parallel_runs`, `dark_launch_enabled`, `dark_launch_pct`. |
 | `test` | Preview stub that identifies the server-side policy gate used by executions. |
 
+### Command envelope security (Phase BG)
+
+As of Phase BG the daemon pulls commands via `fn_gateway_claim_commands_v2`, which returns two additional columns:
+
+| Column | Purpose |
+|--------|---------|
+| `envelope_sig` | base64url Ed25519 signature over the canonical JCS encoding of `{id, device_id, command_type, payload, created_at, envelope_nonce}`. |
+| `envelope_nonce` | random 128-bit nonce sealed inside the signed envelope. Lets the daemon detect replays of an old (still-valid) signature. |
+
+The daemon calls `verifyCommandSignature` on every claimed row before dispatch. Verification proceeds against the cloud signing public key (configure via the daemon identity material). Outcomes:
+
+- **Valid signature** → command is dispatched as usual.
+- **Invalid signature / tampered payload** → command is `ack`-ed (so the cloud sees no retries) and logged to stderr; **not dispatched**.
+- **Unsigned command + a configured public key** → refused (same as invalid).
+- **Unsigned command + no public key configured** → accepted (legacy migration window).
+- **`LF_GATEWAY_SKIP_SIG_VERIFY=true` in env** → verification short-circuits to true. Local dev and tests only — never set this in production.
+
+The deprecated v1 RPC (`fn_gateway_claim_commands`) still works for older daemons, but every new release should pull from v2.
+
+---
+
+### Health dashboard (Phase BE)
+
+The web app at `/settings/gateway` polls `fn_get_gateway_device_health()` every
+30 seconds and renders:
+
+- **Summary cards** — total daemons, online (last_seen ≤ 5 min), and total
+  pending commands across all your daemons.
+- **Status dot** — green if `last_seen_at < 5 min`, amber up to 30 min, red
+  otherwise (or any time `revoked_at` is set).
+- **Pending column** — count of unclaimed entries in `agents.gateway_commands`
+  for that daemon. A non-zero number means the daemon is either offline or
+  behind on its sync pull.
+
+The dashboard is owner-scoped: the RPC filters rows to `owner_id = auth.uid()`,
+so users only ever see their own daemons even when service_role inserts commands
+on their behalf.
+
+---
+
+### `lf gateway daemons` (Phase BB)
+
+Manage long-running gateway daemon registrations (`agents.gateway_devices`). This is distinct from `lf gateway devices`, which targets the older `devices.*` trusted-device flow used by RFC-0003.
+
+```bash
+# List your registered daemons.
+lf gateway daemons list
+lf gateway daemons list --json
+lf gateway daemons list --limit 100
+
+# Approve a daemon — the daemon's next heartbeat returns approved=true.
+lf gateway daemons approve <device-id>
+
+# Revoke a daemon — sets kill_switch=true; the daemon will shut itself
+# down on the next heartbeat. Use --force to skip the confirmation.
+lf gateway daemons revoke <device-id>
+lf gateway daemons revoke <device-id> --force
+```
+
+The `list` output uses a short device ID prefix. Status columns:
+- **Approved** — `yes` once `approved_at` has been set by `lf gateway daemons approve`.
+- **Kill** — `yes` once `revoked_at` is set; the daemon will exit on next heartbeat.
+
+All three commands are owner-scoped via `fn_gateway_approve_device`, `fn_gateway_revoke_device`, `fn_list_gateway_devices` and refuse to act on a device whose `owner_id` does not match the calling user (RPC returns `42501` `device_not_owned`).
+
+---
+
 ### `lf gateway consent`
 
 Grant or revoke explicit consent for the daemon to bind on a non-loopback interface. v1 supports `tailscale`; the consent file lives at `~/.lenserfight/gateway/tailscale-consent.json` and is the canonical source the daemon trusts.
