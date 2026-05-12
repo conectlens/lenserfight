@@ -1,10 +1,18 @@
 import { Button } from '@lenserfight/ui/components'
+import { sanitizeReturnUrl } from '@lenserfight/utils/dom'
 import { ShieldOff } from 'lucide-react'
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 export const NotAuthorizedPage: React.FC = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  const returnUrl = sanitizeReturnUrl(searchParams.get('return_url'))
+  const loginHref =
+    returnUrl && returnUrl !== '/'
+      ? `/auth/login?return_url=${encodeURIComponent(returnUrl)}`
+      : '/auth/login'
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
@@ -21,7 +29,7 @@ export const NotAuthorizedPage: React.FC = () => {
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           Go back
         </Button>
-        <Button onClick={() => navigate('/auth/login')} className="w-auto">
+        <Button onClick={() => navigate(loginHref)} className="w-auto">
           Sign in
         </Button>
       </div>
