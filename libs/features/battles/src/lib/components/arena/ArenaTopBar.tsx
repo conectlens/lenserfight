@@ -18,6 +18,7 @@ const BATTLE_TYPE_SHORT: Record<BattleType, string> = {
   human_vs_human_open_votes: 'H vs H · Open',
   human_vs_ai: 'Human vs AI',
   workflow_battle: 'Workflow',
+  lenser_battle: 'Lenser Battle',
 }
 
 const BATTLE_TYPE_DOC_PATH: Record<BattleType, string> = {
@@ -26,6 +27,7 @@ const BATTLE_TYPE_DOC_PATH: Record<BattleType, string> = {
   human_vs_human_open_votes:   '/tutorials/battle-walkthroughs/your-first-battle',
   human_vs_ai:                 '/tutorials/battle-walkthroughs/your-first-battle',
   workflow_battle:             '/tutorials/battle-walkthroughs/your-first-battle',
+  lenser_battle:               '/tutorials/battle-walkthroughs/your-first-battle',
 }
 
 interface ArenaTopBarProps {
