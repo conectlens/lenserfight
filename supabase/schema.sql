@@ -28830,7 +28830,13 @@ CREATE OR REPLACE FUNCTION "public"."fn_list_template_workflows"("p_limit" integ
         FROM lenses.workflow_nodes wn
         JOIN lenses.lenses ll ON ll.id = wn.lens_id
         JOIN content.tag_map tm2 ON tm2.entity_id = ll.id AND tm2.entity_type = 'lens'::content.entity_type_enum
-        JOIN content.tags t ON t.id = tm2.tag_id AND t.slug LIKE 'kind-%'
+        JOIN content.tags t ON t.id = tm2.tag_id
+                           AND t.slug IN (
+                             'text','image','video','audio','music',
+                             'research','pdf','transform','orchestration',
+                             'validation','routing',
+                             'code','data','planning','community','documentation'
+                           )
         WHERE wn.workflow_id = w.id
       ),
       ARRAY[]::text[]
