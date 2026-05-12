@@ -144,11 +144,31 @@ export default defineCommand({
       return
     }
 
+    // Phase BA — one-liner remediation hint per failing check id.
+    const FIX_HINT: Record<string, string> = {
+      auth: 'run: lf auth login',
+      cloud_api: 'check connectivity, set LENSERFIGHT_API_URL if behind a proxy',
+      node: 'install Node 18+ (https://nodejs.org)',
+      supabase_cli: 'install: brew install supabase/tap/supabase',
+      docker: 'install Docker Desktop',
+      project_config: 'run: lf setup --mode local',
+      ollama: 'install: https://ollama.com',
+      byok_openai: 'run: lf byok setup --provider openai --agent <agent-id>',
+      byok_anthropic: 'run: lf byok setup --provider anthropic --agent <agent-id>',
+      byok_google: 'run: lf byok setup --provider google --agent <agent-id>',
+      byok_mistral: 'run: lf byok setup --provider mistral --agent <agent-id>',
+      journey_state: 'apply migrations: pnpm supabase:db:reset',
+    }
+
     for (const result of results) {
       const line = formatCheck(result.status, result.id, result.detail)
       if (result.status === 'pass') printSuccess(line)
       else if (result.status === 'warn') printWarn(line)
       else printError(line)
+
+      if (result.status !== 'pass' && FIX_HINT[result.id]) {
+        printWarn(`    ↳ ${FIX_HINT[result.id]}`)
+      }
     }
 
     if (hasError) {
