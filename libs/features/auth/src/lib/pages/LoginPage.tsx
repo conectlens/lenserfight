@@ -4,6 +4,8 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { isMock, isLocal, LOCAL_SEED_CREDENTIALS, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
+
+const seedCredentials = isLocal || isMock ? LOCAL_SEED_CREDENTIALS : null
 import { useAuth } from '@lenserfight/features/auth'
 import { rememberMeStorage } from '@lenserfight/data/supabase'
 import { useFormValidation } from '@lenserfight/utils/validation'
@@ -21,8 +23,8 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
-    email: isLocal || isMock ? LOCAL_SEED_CREDENTIALS.email : '',
-    password: isLocal || isMock ? LOCAL_SEED_CREDENTIALS.password : '',
+    email: seedCredentials?.email ?? '',
+    password: seedCredentials?.password ?? '',
   })
 
   const { errors, validate, clearError } = useFormValidation<typeof formData>({
