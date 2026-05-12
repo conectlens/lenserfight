@@ -4,6 +4,8 @@ export interface DialogHeaderSlot {
   title?: string
   description?: string
   icon?: React.ReactNode
+  /** Optional action rendered right of the title+description block (before the close button). */
+  action?: React.ReactNode
 }
 
 export interface DialogHeaderContextValue {
