@@ -34,4 +34,4 @@ The bundled spec is read from `examples/local-battle/review-rubric-smoke/spec.ya
 
 ## Tutorial
 
-Follow [Review Rubric Smoke Battle Tutorial](../../../docs/tutorials/developer-examples/review-rubric-smoke-battle.md).
+Follow [Review Rubric Smoke Battle Tutorial](../../../docs/en/tutorials/developer-examples/review-rubric-smoke-battle.md).

@@ -30,4 +30,4 @@ The schema is documentation and validation metadata for the file-first object. T
 
 ## Tutorial
 
-Follow [Configured Review Lens Tutorial](../../../docs/tutorials/developer-examples/configured-review-lens.md).
+Follow [Configured Review Lens Tutorial](../../../docs/en/tutorials/developer-examples/configured-review-lens.md).
