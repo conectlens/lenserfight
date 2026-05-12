@@ -15,6 +15,7 @@ const BATTLE_TYPE_LABELS: Record<BattleType, string> = {
   human_vs_human_open_votes: 'H vs H · Open',
   human_vs_ai: 'Human vs AI',
   workflow_battle: 'Workflow',
+  lenser_battle: 'Lenser Battle',
 }
 
 const VOTER_ELIGIBILITY_RESTRICTED: Set<VoterEligibility> = new Set([
@@ -136,21 +137,12 @@ export function BattleCard({
           </p>
         </div>
 
-        <div className="grid grid-cols-5 items-center gap-1 rounded-xl bg-surface-raised px-2 py-2 text-center text-[10px] font-semibold text-greyscale-500 dark:text-greyscale-400">
-          <span>Task</span>
-          <ArrowRight size={11} className="mx-auto text-greyscale-300" />
-          <span>Compare</span>
-          <ArrowRight size={11} className="mx-auto text-greyscale-300" />
-          <span>Vote</span>
-        </div>
-
         {/* Winner banner */}
         {isFinished && winnerSlot && (
-          <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold ${
-            winnerSlot === 'A'
+          <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold ${winnerSlot === 'A'
               ? 'bg-status-green/10 text-status-green'
               : 'bg-primary-yellow-500/10 text-primary-yellow-600'
-          }`}>
+            }`}>
             <Trophy size={12} />
             {winnerSlot === 'A' ? (contenderAName ?? 'Contender A') : (contenderBName ?? 'Contender B')} wins
           </div>
