@@ -78,7 +78,7 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
   return (
     <div className="">
       <PageHeader
-        title="Workflows"
+        title="Connected Lenses & AI Workflows"
         description="Run reusable, multi-step AI pipelines that turn an idea into copy, media prompts, scripts, code, or launch assets."
         action={
           <>
