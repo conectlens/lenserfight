@@ -19,7 +19,7 @@ import { ConfirmModal } from '@lenserfight/ui/modals'
 import { useModalRouter } from '@lenserfight/ui/routing'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Activity, Bot, FolderOpen, MessageSquare, Plus, Trophy } from 'lucide-react'
+import { Activity, Bot, FolderOpen, LogIn, MessageSquare, Plus, Trophy } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useNavigate, useParams } from 'react-router-dom'
 
@@ -247,6 +247,7 @@ export const LenserProfilePage: React.FC = () => {
 
   const fetchTabData = async (targetTab: StandardTab, pageNum: number, refresh = false) => {
     if (!viewedProfile) return
+    if (!authUser) return
     if (!refresh && tabCache[targetTab].isLoaded && pageNum === 0) return
 
     if (pageNum === 0) setLoadingTab(true)
@@ -533,7 +534,22 @@ export const LenserProfilePage: React.FC = () => {
         </div>
 
         <div className="min-h-[300px] px-4 md:px-0">
-          {activeStandardTab === 'actions' && (isOwner || !viewedProfile.hide_actions) && (
+          {activeStandardTab && !authUser && !isAuthLoading && (
+            <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                <LogIn className="h-6 w-6 text-gray-400 dark:text-gray-500" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Sign in to view this content</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Create an account or sign in to explore this profile.</p>
+              </div>
+              <Button onClick={() => navigate('/auth/login')} className="!w-auto flex items-center gap-2">
+                <LogIn size={16} /> Sign In
+              </Button>
+            </div>
+          )}
+
+          {activeStandardTab && authUser && activeStandardTab === 'actions' && (isOwner || !viewedProfile.hide_actions) && (
             <>
               {items.length > 0 ? (
                 <LenserActionsList actions={items as ActivityFeedItem[]} />
@@ -543,11 +559,11 @@ export const LenserProfilePage: React.FC = () => {
             </>
           )}
 
-          {activeStandardTab === 'lenses' && !canViewContent && (
+          {authUser && activeStandardTab === 'lenses' && !canViewContent && (
             <EmptyState icon={FolderOpen} title="This content is not public." />
           )}
 
-          {activeStandardTab === 'lenses' && canViewContent && (
+          {authUser && activeStandardTab === 'lenses' && canViewContent && (
             <>
               {items.length > 0 ? (
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
@@ -581,11 +597,11 @@ export const LenserProfilePage: React.FC = () => {
             </>
           )}
 
-          {activeStandardTab === 'threads' && !canViewContent && (
+          {authUser && activeStandardTab === 'threads' && !canViewContent && (
             <EmptyState icon={MessageSquare} title="This content is not public." />
           )}
 
-          {activeStandardTab === 'threads' && canViewContent && (
+          {authUser && activeStandardTab === 'threads' && canViewContent && (
             <>
               {items.length > 0 ? (
                 <div className="space-y-6">
@@ -621,11 +637,11 @@ export const LenserProfilePage: React.FC = () => {
             </>
           )}
 
-          {activeStandardTab === 'challenges' && (
+          {authUser && activeStandardTab === 'challenges' && (
             <EmptyState icon={Trophy} title="No challenge history available." />
           )}
 
-          {activeStandardTab === 'agents' && FEATURES.AGENTS && (
+          {authUser && activeStandardTab === 'agents' && FEATURES.AGENTS && (
             <>
               {items.length > 0 ? (
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -651,13 +667,13 @@ export const LenserProfilePage: React.FC = () => {
             </>
           )}
 
-          {loadingTab && (
+          {authUser && loadingTab && (
             <div className="mt-6">
               <SkeletonLoader />
             </div>
           )}
 
-          <div ref={lastElementRef} className="h-4" />
+          {authUser && <div ref={lastElementRef} className="h-4" />}
         </div>
       </div>
 
