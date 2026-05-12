@@ -163,14 +163,14 @@ describe('battle submit', () => {
 
 describe('battle rematch', () => {
   it('resolves slug→id, calls fn_battles_create_rematch, then prints new slug', async () => {
-    // 1) parent lookup by slug
-    mockCallRest.mockResolvedValueOnce([
-      { id: 'parent-uuid', slug: 'my-battle', creator_lenser_id: 'lenser-1' },
+    // 1) parent lookup by slug via RPC
+    mockCallRpc.mockResolvedValueOnce([
+      { id: 'parent-uuid', slug: 'my-battle' },
     ])
-    // 2) RPC returns new id
+    // 2) create rematch RPC returns new id
     mockCallRpc.mockResolvedValueOnce('child-uuid')
-    // 3) child lookup by id → slug
-    mockCallRest.mockResolvedValueOnce([{ id: 'child-uuid', slug: 'my-battle-rematch' }])
+    // 3) get new battle RPC returns new slug
+    mockCallRpc.mockResolvedValueOnce([{ id: 'child-uuid', slug: 'my-battle-rematch' }])
 
     const rematchCmd = await getSubCmd('rematch')
     await rematchCmd.run?.({
@@ -181,42 +181,28 @@ describe('battle rematch', () => {
 
     expect(process.exitCode).toBe(0)
 
-    // First REST call: lookup parent battle by slug
-    expect(mockCallRest).toHaveBeenNthCalledWith(
+    // First RPC: lookup parent battle by slug
+    expect(mockCallRpc).toHaveBeenNthCalledWith(
       1,
-      'battles',
-      'battles',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        requireAuth: true,
-        query: expect.objectContaining({
-          select: 'id,slug,creator_lenser_id',
-          slug: 'eq.my-battle',
-          limit: 1,
-        }),
-      })
+      'fn_get_battle_by_slug',
+      { p_slug: 'my-battle' },
+      { requireAuth: true }
     )
 
-    // RPC call uses parent id
-    expect(mockCallRpc).toHaveBeenCalledWith(
+    // Second RPC: create rematch
+    expect(mockCallRpc).toHaveBeenNthCalledWith(
+      2,
       'fn_battles_create_rematch',
       { p_parent_id: 'parent-uuid' },
       { requireAuth: true }
     )
 
-    // Second REST call: resolve new id → new slug
-    expect(mockCallRest).toHaveBeenNthCalledWith(
-      2,
-      'battles',
-      'battles',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        query: expect.objectContaining({
-          id: 'eq.child-uuid',
-        }),
-      })
+    // Third RPC: resolve new id → new slug
+    expect(mockCallRpc).toHaveBeenNthCalledWith(
+      3,
+      'fn_get_battle',
+      { p_battle_id: 'child-uuid' },
+      { requireAuth: true }
     )
 
     expect(consolaSuccess).toHaveBeenCalledWith('Created rematch: %s', 'my-battle-rematch')
@@ -224,7 +210,7 @@ describe('battle rematch', () => {
   })
 
   it('errors when slug does not resolve to a battle', async () => {
-    mockCallRest.mockResolvedValueOnce([])
+    mockCallRpc.mockResolvedValueOnce([])
 
     const rematchCmd = await getSubCmd('rematch')
     await rematchCmd.run?.({
@@ -233,7 +219,11 @@ describe('battle rematch', () => {
       rawArgs: [],
     })
 
-    expect(mockCallRpc).not.toHaveBeenCalled()
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_get_battle_by_slug',
+      { p_slug: 'missing-slug' },
+      { requireAuth: true }
+    )
     expect(mockHandleError).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining('missing-slug') })
     )
@@ -242,18 +232,19 @@ describe('battle rematch', () => {
 
 describe('battle open', () => {
   it('calls fn_battles_open', async () => {
+    const battleId = '00000000-0000-0000-0000-000000000001'
     mockCallRpc.mockResolvedValueOnce(null)
 
     const openCmd = await getSubCmd('open')
     await openCmd.run?.({
-      args: { id: 'battle-uuid' },
+      args: { id: battleId },
       cmd: {},
       rawArgs: [],
     })
 
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_battles_open',
-      { p_battle_id: 'battle-uuid' },
+      { p_battle_id: battleId },
       { requireAuth: true }
     )
     expect(consolaSuccess).toHaveBeenCalled()
