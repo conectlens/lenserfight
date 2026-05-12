@@ -8,7 +8,12 @@ import {
   LeaderboardTimeframe,
   LeaderboardScope,
   XPSeason,
+  XPSeasonV2,
   SeasonLeaderboardEntry,
+  XPStreak,
+  XPLevelUp,
+  FeaturedChallenge,
+  XP_RULE_LABELS,
 } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
 
@@ -39,6 +44,13 @@ export interface XPRepositoryPort {
     limit?: number,
     offset?: number
   ): Promise<{ list: SeasonLeaderboardEntry[]; userEntry?: SeasonLeaderboardEntry | null }>
+  getStreak(lenserId: string, streakType?: string): Promise<XPStreak | null>
+  getLevelUps(lenserId: string, limit?: number): Promise<XPLevelUp[]>
+  getSeasonList(appId?: string): Promise<XPSeasonV2[]>
+  markTutorialComplete(
+    tutorialSlug: string,
+    kind?: 'tutorial' | 'walkthrough'
+  ): Promise<{ inserted: boolean; tutorialSlug: string; kind: string }>
 }
 
 // --- Supabase Implementation ---
@@ -84,6 +96,8 @@ export class SupabaseXPRepository implements XPRepositoryPort {
       baseXp: row.base_xp,
       source: row.source,
       createdAt: row.created_at,
+      label: XP_RULE_LABELS[row.action_key as keyof typeof XP_RULE_LABELS] ?? row.action_key,
+      frozen: row.meta?.frozen ?? false,
     }))
   }
 
@@ -240,5 +254,91 @@ export class SupabaseXPRepository implements XPRepositoryPort {
     const userEntry = currentUserId ? list.find((e) => e.lenserId === currentUserId) ?? null : null
 
     return { list, userEntry }
+  }
+
+  async getStreak(lenserId: string, streakType = 'daily'): Promise<XPStreak | null> {
+    const { data, error } = await supabase.rpc('fn_xp_get_streak', {
+      p_lenser_id: lenserId,
+      p_streak_type: streakType,
+    })
+
+    if (error) throw error
+
+    const row = data?.[0]
+    if (!row) return null
+
+    return {
+      lenserId: row.lenser_id,
+      streakType: row.streak_type,
+      currentStreak: row.current_streak,
+      bestStreak: row.best_streak,
+      lastUpdateAt: row.last_update_at,
+    }
+  }
+
+  async getLevelUps(lenserId: string, limit = 20): Promise<XPLevelUp[]> {
+    const { data, error } = await supabase.rpc('fn_xp_get_level_ups', {
+      p_lenser_id: lenserId,
+      p_limit: limit,
+    })
+
+    if (error) throw error
+
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      oldLevel: row.old_level,
+      newLevel: row.new_level,
+      totalXpAt: row.total_xp_at,
+      createdAt: row.created_at,
+    }))
+  }
+
+  async getSeasonList(appId = XP_APP_IDS.forum): Promise<XPSeasonV2[]> {
+    const { data, error } = await supabase.rpc('fn_xp_get_seasons', {
+      p_app_id: appId,
+    })
+
+    if (error) throw error
+
+    return (data ?? []).map((row: any) => {
+      const rawChallenges: any[] = row.featured_challenges ?? []
+      const featuredChallenges: FeaturedChallenge[] = rawChallenges.map((c) => ({
+        title: c.title,
+        description: c.description,
+        xpReward: c.xp_reward,
+        ruleKey: c.rule_key,
+      }))
+
+      return {
+        id: row.id,
+        slug: row.slug,
+        name: row.name,
+        description: row.description ?? undefined,
+        rewardDescription: row.reward_description ?? undefined,
+        featuredChallenges,
+        startsAt: row.starts_at,
+        endsAt: row.ends_at,
+        isActive: row.is_active,
+        status: row.status as 'active' | 'upcoming' | 'ended',
+      }
+    })
+  }
+
+  async markTutorialComplete(
+    tutorialSlug: string,
+    kind: 'tutorial' | 'walkthrough' = 'tutorial'
+  ): Promise<{ inserted: boolean; tutorialSlug: string; kind: string }> {
+    const { data, error } = await supabase.rpc('fn_mark_tutorial_complete', {
+      p_tutorial_slug: tutorialSlug,
+      p_kind: kind,
+    })
+
+    if (error) throw error
+
+    return {
+      inserted: data?.inserted ?? false,
+      tutorialSlug: data?.tutorial_slug ?? tutorialSlug,
+      kind: data?.kind ?? kind,
+    }
   }
 }

@@ -48,6 +48,12 @@ export const queryKeys = {
     all: ['xp'] as const,
     leaderboard: (timeframe: string, scope: string) => [...queryKeys.xp.all, 'leaderboard', timeframe, scope] as const,
     self: () => [...queryKeys.xp.all, 'self'] as const,
+    history: (lenserId: string) => [...queryKeys.xp.all, 'history', lenserId] as const,
+    streak: (lenserId: string) => [...queryKeys.xp.all, 'streak', lenserId] as const,
+    levelUps: (lenserId: string) => [...queryKeys.xp.all, 'levelUps', lenserId] as const,
+    seasons: (appId: string) => [...queryKeys.xp.all, 'seasons', appId] as const,
+    seasonLeaderboard: (appId: string, seasonId?: string) => [...queryKeys.xp.all, 'seasonLeaderboard', appId, seasonId] as const,
+    badges: (lenserId: string) => [...queryKeys.xp.all, 'badges', lenserId] as const,
   },
   feedbacks: {
     all: ['feedbacks'] as const,
