@@ -99,6 +99,8 @@ The following definitions establish the ubiquitous language used throughout the 
 
 ## ⚡ Quick Start
 
+> ✅ **Verified ≤ 5 min** on a 2-core CI runner — see [`smoke-timing.yml`](.github/workflows/smoke-timing.yml). `pnpm smoke` hard-fails on >300s.
+
 **5-minute path (no Docker, no Supabase)** — run a local battle with Ollama:
 
 ```bash
@@ -115,6 +117,13 @@ That's it. Your first battle runs fully offline. No account, no database, no API
 
 ```bash
 pnpm setup:doctor    # prints a green/yellow/red prereq table
+```
+
+**Verify the full smoke path:**
+
+```bash
+pnpm smoke    # boots Supabase, builds CLI/web, runs unit + integration tests
+              # hard-fails on >300s; per-step timings in tmp/smoke-timings.txt
 ```
 
 **Full-stack path (web app + Supabase):**
