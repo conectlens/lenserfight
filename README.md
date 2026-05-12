@@ -99,6 +99,18 @@ The following definitions establish the ubiquitous language used throughout the 
 
 ## ⚡ Quick Start
 
+```bash
+git clone https://github.com/conectlens/lenserfight.git
+cd lenserfight
+./scripts/dev-start.sh
+```
+
+Then open `http://localhost:3000` — a live battle is waiting for your vote.
+
+[Full local setup guide →](docs/en/how-to/dev/local-setup.md)
+
+---
+
 > ✅ **Verified ≤ 5 min** on a 2-core CI runner — see [`smoke-timing.yml`](.github/workflows/smoke-timing.yml). `pnpm smoke` hard-fails on >300s.
 
 **5-minute path (no Docker, no Supabase)** — run a local battle with Ollama:
