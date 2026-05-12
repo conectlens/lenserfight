@@ -1,4 +1,4 @@
-import { Button, SegmentedControl, StepWizard } from '@lenserfight/ui/components'
+import { Button, SegmentedControl, StepWizard, Tooltip } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Input, TextArea } from '@lenserfight/ui/forms'
 import { battlesService, battlesRepository, workflowsService, lensesService, battleExecutionService } from '@lenserfight/data/repositories'
@@ -9,13 +9,15 @@ import { useFundingSource, FundingSourceToggle } from '@lenserfight/features/len
 import { useLenser } from '@lenserfight/features/profile'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { normalizeError } from '@lenserfight/shared/error'
+import { isValidUUID } from '@lenserfight/utils/validation'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitBranch, Layers, Swords, Trophy } from 'lucide-react'
+import { GitBranch, HelpCircle, Layers, Swords, Trophy } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 
+import { BattleAutomationSettings } from './BattleAutomationSettings'
 import { BattleTypeSelector } from './BattleTypeSelector'
 import { ContenderInviteStep } from './ContenderInviteStep'
 import { HandicapConfigPanel } from './HandicapConfigPanel'
@@ -29,6 +31,28 @@ import type { LensViewModel } from '@lenserfight/types'
 import { useInviteContender } from '../../hooks/mutations/useInviteContender'
 
 // ─── Step config ─────────────────────────────────────────────────────────────
+
+const CONFIG_HELP_CONTENT = (
+  <span className="max-w-[220px] whitespace-normal block text-left">
+    <strong>Voter eligibility</strong> controls who can vote on the battle outcome.
+    <br /><br />
+    <strong>AI handicap</strong> limits model speed or context to level the playing field.
+    <br /><br />
+    <strong>Execution context</strong> sets which AI provider, model, and funding source runs this battle.
+  </span>
+)
+
+const CONFIG_HELP_BUTTON = (
+  <Tooltip content={CONFIG_HELP_CONTENT} position="bottom">
+    <button
+      type="button"
+      aria-label="Battle configuration help"
+      className="flex items-center justify-center rounded-lg p-1.5 text-greyscale-400 hover:text-greyscale-600 hover:bg-greyscale-100 dark:hover:text-greyscale-300 dark:hover:bg-greyscale-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500/50"
+    >
+      <HelpCircle size={16} />
+    </button>
+  </Tooltip>
+)
 
 const WIZARD_STEPS: WizardStepConfig[] = [
   {
@@ -55,6 +79,7 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     label: 'Config',
     title: 'Battle configuration',
     description: 'Set voter eligibility, AI handicap, and execution context.',
+    action: CONFIG_HELP_BUTTON,
   },
   {
     label: 'Schedule',
@@ -70,6 +95,11 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     label: 'Lenses',
     title: 'Assign Lenses',
     description: 'Lenses define how each contender approaches the prompt. Optional — assign later from the battle page.',
+  },
+  {
+    label: 'Automation',
+    title: 'Battle automation',
+    description: 'Configure auto-assign contenders and auto-promote rules.',
   },
 ]
 
@@ -173,6 +203,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // Step 5 — invite contenders
   const [slotA, setSlotA] = useState<LenserSearchResult | null>(null)
   const [slotB, setSlotB] = useState<LenserSearchResult | null>(null)
+
+  // Step 8 — automation
+  const [autoAssignContenders, setAutoAssignContenders] = useState(false)
+  const [autoPromote, setAutoPromote] = useState(false)
+  const [automationReady, setAutomationReady] = useState(true)
 
   const battleIdFromUrl = searchParams.get('battleId')
   const preselectedWorkflowId = searchParams.get('workflow_id')
@@ -323,7 +358,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       return battleFormat === 'workflow' ? !!selectedWorkflowId : !!selectedLensId
     }
     if (step === 2) return title.trim().length >= 3
-    // Steps 3 (type), 4 (config), 5 (schedule), 6 (contenders), 7 (lenses) are always valid
+    if (step === 8) return automationReady
+    // Steps 3–7 are always skippable / valid
     return true
   })()
 
@@ -337,6 +373,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     true, // schedule always skippable
     true, // contenders always skippable
     true, // lenses always skippable
+    automationReady, // automation step gates on readiness
   ]
 
   // ── Create battle (step 4 → 5) ───────────────────────────────────────────
@@ -415,7 +452,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // ── Invite contenders (step 6 → 7) ───────────────────────────────────────
 
-  const activeBattleId = createdBattleId ?? battleIdFromUrl
+  const activeBattleId = isValidUUID(createdBattleId) ? createdBattleId : isValidUUID(battleIdFromUrl) ? battleIdFromUrl : null
 
   const handleInvite = async () => {
     if (!activeBattleId) {
