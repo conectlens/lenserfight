@@ -191,6 +191,111 @@ const byokSetup = defineCommand({
   },
 })
 
+// ─── lf byok usage ──────────────────────────────────────────────────────────
+
+const byokUsage = defineCommand({
+  meta: {
+    name: 'usage',
+    description: 'Show the last 20 audit rows for a BYOK key.',
+  },
+  args: {
+    key: { type: 'string', description: 'audit.byok_key_usage.key_id (UUID)', required: true },
+    json: { type: 'boolean', description: 'Output raw JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRpc<
+        Array<{
+          id: string
+          key_id: string
+          battle_id: string | null
+          model_id: string
+          called_at: string
+          token_count: number
+          caller_role: string
+        }>
+      >('fn_byok_usage_list', { p_key_id: args.key, p_limit: 20 }, { requireAuth: true })
+
+      if (args.json) {
+        printJson(rows)
+        return
+      }
+
+      if (!rows.length) {
+        consola.info('No usage records for this key.')
+        return
+      }
+
+      printTable(
+        ['date', 'battle_id', 'model', 'tokens'],
+        rows.map((r) => [
+          new Date(r.called_at).toLocaleString(),
+          r.battle_id ? `${r.battle_id.slice(0, 8)}…` : '—',
+          r.model_id,
+          String(r.token_count),
+        ])
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── lf byok check-rotation ─────────────────────────────────────────────────
+
+const byokCheckRotation = defineCommand({
+  meta: {
+    name: 'check-rotation',
+    description: 'Check for BYOK keys overdue for rotation (90-day policy). Exits 1 if any found.',
+  },
+  args: {
+    json: { type: 'boolean', description: 'Output raw JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const overdue = await callRpc<
+        Array<{
+          id: string
+          provider: string
+          key_hint: string | null
+          agent_id: string
+          last_rotated_at: string | null
+        }>
+      >('fn_byok_rotation_due', {}, { requireAuth: true })
+
+      if (args.json) {
+        printJson(overdue)
+        if (overdue.length > 0) process.exitCode = 1
+        return
+      }
+
+      if (!overdue.length) {
+        consola.success('All BYOK keys are within the 90-day rotation window.')
+        return
+      }
+
+      const now = Date.now()
+      consola.warn(`${overdue.length} key(s) overdue for rotation:`)
+      printTable(
+        ['provider', 'hint', 'last_rotated', 'days_overdue'],
+        overdue.map((k) => {
+          const rotatedAt = k.last_rotated_at ? new Date(k.last_rotated_at).getTime() : 0
+          const daysOverdue = Math.floor((now - rotatedAt) / 86_400_000) - 90
+          return [
+            k.provider,
+            k.key_hint ? `···· ${k.key_hint}` : '????',
+            k.last_rotated_at ? new Date(k.last_rotated_at).toLocaleDateString() : 'never',
+            String(Math.max(0, daysOverdue)),
+          ]
+        })
+      )
+      process.exitCode = 1
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 // ─── parent ─────────────────────────────────────────────────────────────────
 
 const byokCommand = defineCommand({
@@ -203,6 +308,8 @@ const byokCommand = defineCommand({
     rotate: byokRotate,
     revoke: byokRevoke,
     setup: byokSetup,
+    usage: byokUsage,
+    'check-rotation': byokCheckRotation,
   },
 })
 
