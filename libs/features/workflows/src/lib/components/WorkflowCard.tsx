@@ -80,17 +80,6 @@ export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compac
           <span className="ml-auto text-xs text-greyscale-400">{timeAgo(workflow.created_at)}</span>
         </div>
 
-        <div className="grid grid-cols-5 items-center gap-1 rounded-xl bg-surface-raised px-2 py-2 text-center text-[10px] font-semibold text-greyscale-500 dark:text-greyscale-400">
-          <span>Input</span>
-          <ArrowRight size={11} className="mx-auto text-greyscale-300" />
-          <span className="inline-flex items-center justify-center gap-1">
-            <Layers3 size={10} />
-            Steps
-          </span>
-          <ArrowRight size={11} className="mx-auto text-greyscale-300" />
-          <span>Output</span>
-        </div>
-
         <div className="flex items-center gap-3 pt-1 border-t border-surface-border">
           <span className="flex items-center gap-1 text-xs text-greyscale-400">
             <ThumbsUp size={11} /> {likeCount}
