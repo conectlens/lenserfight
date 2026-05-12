@@ -1,7 +1,6 @@
 import { Badge, Card } from '@lenserfight/ui/components'
 import { timeAgo } from '@lenserfight/utils/date'
-import { motion } from 'framer-motion'
-import { Bookmark, GitFork, GitBranch, Lock, ThumbsUp } from 'lucide-react'
+import { ArrowRight, Bookmark, GitFork, GitBranch, Layers3, Lock, Play, ThumbsUp } from 'lucide-react'
 import React from 'react'
 
 import type { WorkflowRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
@@ -20,6 +19,7 @@ export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compac
   const likeCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.like ?? 0
   const savedCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.saved ?? 0
   const forkCount = workflow.fork_count ?? 0
+  const stageLabel = nodeCount > 0 ? `${nodeCount} stage${nodeCount !== 1 ? 's' : ''}` : 'Draft stages'
 
   if (compact) {
     return (
@@ -33,7 +33,9 @@ export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compac
             {workflow.title}
           </span>
           {workflow.visibility === 'private' && (
-            <Lock size={11} className="flex-shrink-0 text-greyscale-400" title="Private workflow" />
+            <span title="Private workflow">
+              <Lock size={11} className="flex-shrink-0 text-greyscale-400" />
+            </span>
           )}
         </div>
         <span className="ml-auto text-xs text-greyscale-400 whitespace-nowrap">{nodeCount} lenses</span>
@@ -42,13 +44,11 @@ export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compac
   }
 
   return (
-    <motion.div
-      whileHover={{ y: -3 }}
-      transition={{ duration: 0.1, ease: [0.4, 0, 0.2, 1] }}
-      className="hover:shadow-xl transition-shadow"
+    <div
+      onClick={onClick}
+      className={`transition-all hover:-translate-y-0.5 hover:shadow-xl ${onClick ? 'cursor-pointer' : ''}`}
     >
       <Card
-        onClick={onClick}
         className={`space-y-3 p-4 ${onClick ? 'cursor-pointer hover:border-primary-yellow-500 transition-colors' : ''}`}
       >
         <div className="flex items-start gap-3">
@@ -59,7 +59,9 @@ export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compac
             <div className="flex items-center gap-1.5">
               <p className="truncate font-semibold text-greyscale-900 dark:text-greyscale-50">{workflow.title}</p>
               {workflow.visibility === 'private' && (
-                <Lock size={12} className="flex-shrink-0 text-greyscale-400" title="Private workflow" />
+                <span title="Private workflow">
+                  <Lock size={12} className="flex-shrink-0 text-greyscale-400" />
+                </span>
               )}
             </div>
             {workflow.description && (
@@ -70,9 +72,23 @@ export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compac
 
         <div className="flex flex-wrap items-center gap-2">
           <Badge color="blue" variant="outline">
-            {nodeCount} lens{nodeCount !== 1 ? 'es' : ''}
+            {stageLabel}
+          </Badge>
+          <Badge color="green" variant="outline">
+            reusable
           </Badge>
           <span className="ml-auto text-xs text-greyscale-400">{timeAgo(workflow.created_at)}</span>
+        </div>
+
+        <div className="grid grid-cols-5 items-center gap-1 rounded-xl bg-surface-raised px-2 py-2 text-center text-[10px] font-semibold text-greyscale-500 dark:text-greyscale-400">
+          <span>Input</span>
+          <ArrowRight size={11} className="mx-auto text-greyscale-300" />
+          <span className="inline-flex items-center justify-center gap-1">
+            <Layers3 size={10} />
+            Steps
+          </span>
+          <ArrowRight size={11} className="mx-auto text-greyscale-300" />
+          <span>Output</span>
         </div>
 
         <div className="flex items-center gap-3 pt-1 border-t border-surface-border">
@@ -85,8 +101,11 @@ export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compac
           <span className="flex items-center gap-1 text-xs text-greyscale-400">
             <GitFork size={11} /> {forkCount}
           </span>
+          <span className="ml-auto inline-flex items-center gap-1 text-xs font-bold text-primary-700 dark:text-primary-yellow-400">
+            <Play size={11} /> Run workflow
+          </span>
         </div>
       </Card>
-    </motion.div>
+    </div>
   )
 }
