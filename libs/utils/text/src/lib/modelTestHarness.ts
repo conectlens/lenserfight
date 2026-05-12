@@ -5,7 +5,6 @@
 // (typically a JSON-schema validator). Keeps the model call behind an
 // injectable `runModel` so unit tests do not need real API keys.
 
-import { createHash } from 'node:crypto'
 
 export interface ModelTestProviderInput {
   provider: string
@@ -33,8 +32,14 @@ export interface ModelTestResult {
   violations: string[]
 }
 
-export function hashPrompt(prompt: string): string {
-  return 'sha256:' + createHash('sha256').update(prompt, 'utf8').digest('hex')
+export async function hashPrompt(prompt: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(prompt)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hex = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+  return 'sha256:' + hex
 }
 
 export async function runModelConformanceTest(
@@ -46,7 +51,7 @@ export async function runModelConformanceTest(
   options?: Record<string, unknown>,
 ): Promise<ModelTestResult> {
   const start = Date.now()
-  const promptHash = hashPrompt(prompt)
+  const promptHash = await hashPrompt(prompt)
 
   let raw: unknown = null
   let text = ''
