@@ -94,5 +94,21 @@ node dist/apps/cli/main.js battle series view smoke-no-such-series >/dev/null 2>
 node dist/apps/cli/main.js battle submit-media smoke-no-such-battle --file /tmp/no.png --contender-id x >/dev/null 2>&1 || true
 echo "    new CLI surface parsed without crashing"
 
+# Phase BI — opt-in end-to-end battle lifecycle proof. Skipped by default to
+# keep smoke.sh under a minute; flip RUN_E2E=1 to drive scripts/e2e-battle.sh.
+if [[ "${RUN_E2E:-0}" == "1" && -z "${SKIP_DB:-}" ]]; then
+  echo "==> [12/13] lf battle e2e (Phase BI)"
+  bash "$ROOT_DIR/scripts/e2e-battle.sh" --skip-vitest
+else
+  echo "==> [12/13] lf battle e2e — skipped (set RUN_E2E=1 to run)"
+fi
+
+# Phase BQ — credentialless browse RPC parses end-to-end.
+if [[ -z "${SKIP_DB:-}" ]]; then
+  echo "==> [13/13] lf battle browse --limit 1 --status open"
+  node dist/apps/cli/main.js battle browse --limit 1 --status open --json >/dev/null 2>&1 \
+    || echo "    browse smoke: skipped (anon read may require seed)"
+fi
+
 echo
 echo "✓ smoke complete — local environment is ready"
