@@ -311,6 +311,23 @@ const CreateBattleRoute: React.FC = () => {
   )
 }
 
+const CreateTemplateRoute: React.FC = () => {
+  const navigate = useNavigate()
+  const close = () => navigate('/battles/templates')
+  return (
+    <ModalRoute
+      accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
+      maxWidth="max-w-2xl"
+      onClose={close}
+    >
+      <LazyBattleTemplateEditorPage
+        onSuccess={close}
+        onClose={close}
+      />
+    </ModalRoute>
+  )
+}
+
 const OnboardingModal: React.FC = () => (
   <ModalRoute maxWidth="max-w-xl sm:max-w-2xl" dismissOnBackdrop={false}>
     <LazyCreateLenserProfileModal />
@@ -417,22 +434,8 @@ export const WebRouter: React.FC = () => {
                 </DashboardFrame>
               }
             />
-            <Route
-              path="/battles/templates/new"
-              element={
-                <DashboardFrame>
-                  <LazyBattleTemplateEditorPage />
-                </DashboardFrame>
-              }
-            />
-            <Route
-              path="/battles/templates/:id/edit"
-              element={
-                <DashboardFrame>
-                  <LazyBattleTemplateEditorPage />
-                </DashboardFrame>
-              }
-            />
+            <Route path="/battles/templates/new" element={<CreateTemplateRoute />} />
+            <Route path="/battles/templates/:id/edit" element={<CreateTemplateRoute />} />
             <Route
               path="/battles/series/:id"
               element={
