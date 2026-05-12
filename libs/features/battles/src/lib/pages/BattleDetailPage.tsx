@@ -1,7 +1,9 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
+import { seoService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
+import { PageMeta } from '@lenserfight/ui/layout'
 import { useBattle } from '../hooks/query/useBattle'
 import { ImmersiveArenaView } from '../components/arena/ImmersiveArenaView'
 import { BattleWebhookSubscriptions } from '../components/BattleWebhookSubscriptions'
@@ -19,8 +21,16 @@ export function BattleDetailPage() {
     battle.creator_lenser_id === lenser.id
   )
 
+  const battleMeta = seoService.getBattleMeta(battle ?? null)
+
   return (
     <>
+      <PageMeta
+        title={battleMeta.title}
+        description={battleMeta.description}
+        ogImage={battle?.og_image_url ?? undefined}
+        ogType="article"
+      />
       <ImmersiveArenaView slug={slug ?? ''} />
       {isOwner && battle?.id && (
         <div className="mx-auto max-w-4xl px-4 pb-12">
