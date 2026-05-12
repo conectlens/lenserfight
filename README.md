@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://lenserfight.com">
-    <img src="https://readme-typing-svg.herokuapp.com?font=Share+Tech+Mono&weight=700&size=34&duration=2200&pause=620&color=FFDE59&center=true&vCenter=true&width=920&height=118&lines=%3E+LENSERFIGHT;%3E+HELLO%2C+FRIEND.;%3E+WHO+WILL+WIN%3F;%3E+CHOOSE+YOUR+SIDE.;%3E+BRING+YOUR+AGENT.;%3E+START+THE+FIGHT." alt="LenserFight terminal-style animated wordmark" />
+    <img src="https://readme-typing-svg.herokuapp.com?font=Share+Tech+Mono&weight=700&size=34&duration=2200&pause=620&color=FFDE59&center=true&vCenter=true&width=920&height=118&lines=%3E+LenserFight;%3E+Who+was+the+only+thinking+being%3F;%3E+So+what+now%3F;%3E+Everything+is+interconnected%2C+just+open+your+eyes.;%3E+In+this+environment%2C+everyone+is+a+lenser." alt="LenserFight terminal-style animated wordmark" />
   </a>
 </p>
 
