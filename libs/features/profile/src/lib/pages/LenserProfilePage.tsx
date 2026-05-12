@@ -20,6 +20,7 @@ import { useModalRouter } from '@lenserfight/ui/routing'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Activity, Bot, FolderOpen, LogIn, MessageSquare, Plus, Trophy } from 'lucide-react'
+import { supabase } from '@lenserfight/data/supabase'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useNavigate, useParams } from 'react-router-dom'
 
@@ -29,6 +30,7 @@ import { LenserProfileHeader } from '../components/LenserProfileHeader'
 import { LenserStatsRow } from '../components/LenserStatsRow'
 import { LenserTabs, type LenserTabDefinition, type LenserTabId } from '../components/LenserTabs'
 import { OwnerRecoveryBanner } from '../components/OwnerRecoveryBanner'
+import { ProfileCompletionBanner } from '../components/ProfileCompletionBanner'
 import { RestrictedProfileShell } from '../components/RestrictedProfileShell'
 import { UnavailableProfile } from '../components/UnavailableProfile'
 import { useLenser } from '../context/LenserContext'
@@ -138,6 +140,18 @@ export const LenserProfilePage: React.FC = () => {
   const viewedProfile = accessPayload?.profile ?? null
   const relationshipState = accessPayload?.relationship_state ?? null
   const isOwner = !!viewedProfile && isOwnedWorkspace(viewedProfile.id)
+
+  const { data: completionScore = null } = useQuery<number | null>({
+    queryKey: ['profile-completion-score', viewedProfile?.id],
+    queryFn: async () => {
+      const { data } = await supabase.rpc('fn_profile_completion_score', {
+        p_lenser_id: viewedProfile!.id,
+      })
+      return typeof data === 'number' ? data : null
+    },
+    enabled: isOwner && !!viewedProfile?.id,
+    staleTime: 1000 * 60 * 5,
+  })
 
   const tabs = useMemo(
     () => buildProfileTabs(isOwner, viewedProfile),
@@ -501,6 +515,16 @@ export const LenserProfilePage: React.FC = () => {
           handle={handle!}
           status={viewedProfile.status ?? ''}
           deletionDeadline={viewedProfile.deletion_deadline_at}
+        />
+      )}
+
+      {isOwner && completionScore !== null && (
+        <ProfileCompletionBanner
+          score={completionScore}
+          bio={viewedProfile.bio}
+          avatarUrl={viewedProfile.avatar_url}
+          location={viewedProfile.location}
+          websiteUrl={(viewedProfile as any).website_url}
         />
       )}
 
