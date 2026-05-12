@@ -75,6 +75,7 @@ export interface Battle {
   voting_duration_hours: number
   vote_velocity: number
   og_image_url: string | null
+  content_type?: string | null
 }
 
 export interface BattleExecutionJob {
