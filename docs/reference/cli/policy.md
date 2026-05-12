@@ -7,7 +7,19 @@ description: Inspect agent policy evaluations.
 
 # `lf policy`
 
-Inspect agent policy evaluations.
+Inspect and manage agent policy evaluations.
+
+## `lf policy set`
+
+Upload or update the policy config for an agent.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<handle>` | positional | yes | Agent handle (without @) |
+| `--file` | string | no | Path to a JSON or YAML policy file |
+| `--policy-type` | string | no | Policy type: content | budget | rate_limit | capability (default: content) |
+| `--max-daily-runs` | string | no | Max daily run count (rate_limit policy) |
+| `--json` | boolean | no | Output result as JSON |
 
 ## `lf policy log`
 
