@@ -178,6 +178,26 @@ lf gateway identity export-public --json
 
 The private key NEVER leaves the OS keychain. `rotate` and `show` work without the daemon running.
 
+### Daemon HTTP surface
+
+Once `lf gateway serve` is running, the daemon exposes a small loopback HTTP API. All endpoints are bound to `127.0.0.1` (or your approved Tailscale CGNAT address) by default.
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/healthz` | GET | `{status, device_id, daemon_version, time}` |
+| `/identity` | GET | Returns `{public_key, generated_at, daemon_version}` from `identity.json`. The private key is never returned. |
+| `/peers` | GET | Peers discovered on the same Lenser account. |
+| `/outbox` | GET | `{pending}` — depth of the local outbox awaiting push to cloud. |
+| `/sync/pull` | POST | Manually trigger a single sync pull. Returns `{claimed}` (number of commands claimed and dispatched). |
+
+The daemon also runs three background loops:
+
+| Loop | Cadence | Source |
+|------|---------|--------|
+| `heartbeat` | `LF_GATEWAY_HEARTBEAT_INTERVAL_MS` (default `30000`) | `fn_gateway_heartbeat` — upserts the device row, returns `{approved, kill_switch}`. A `kill_switch: true` flag triggers a clean shutdown. |
+| `sync` | `LF_GATEWAY_PULL_INTERVAL_MS` (default `10000`) | `fn_gateway_claim_commands` → dispatch → `fn_gateway_ack_commands`. |
+| `outbox` | `LF_GATEWAY_OUTBOX_INTERVAL_MS` (default `5000`) | Future: signed push of local writes. |
+
 ### `lf gateway peers`
 
 List peer devices on the same Lenser account.
