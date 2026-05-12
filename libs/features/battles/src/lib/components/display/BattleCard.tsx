@@ -5,6 +5,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { BattleStatusBadge } from './BattleStatusBadge'
+import { ContentTypeBadge } from './ContentTypeBadge'
 import { useCountdown } from '../../hooks/utils/useCountdown'
 
 import type { BattleStatus, BattleType, ContenderType, VoterEligibility } from '../../types/battle.types'
@@ -37,6 +38,7 @@ interface BattleCardProps {
   status: BattleStatus
   totalVoteCount: number
   battleType?: BattleType
+  contentType?: string | null
   voterEligibility?: VoterEligibility
   votingOpensAt?: string | null
   votingClosesAt?: string | null
@@ -55,6 +57,7 @@ export function BattleCard({
   status,
   totalVoteCount,
   battleType,
+  contentType,
   voterEligibility,
   votingOpensAt,
   votingClosesAt,
@@ -94,6 +97,7 @@ export function BattleCard({
                 {BATTLE_TYPE_LABELS[battleType]}
               </span>
             )}
+            <ContentTypeBadge contentType={contentType} />
             {isRestricted && (
               <span className="flex items-center gap-1 text-[11px] font-semibold text-greyscale-500 bg-surface-raised px-2 py-0.5 rounded-full flex-shrink-0">
                 <Lock size={10} />
