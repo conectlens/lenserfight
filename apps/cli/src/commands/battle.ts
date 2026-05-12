@@ -3628,6 +3628,348 @@ const rematch = defineCommand({
 })
 
 // ---------------------------------------------------------------------------
+// Phase BJ — battle test-model
+// ---------------------------------------------------------------------------
+const testModel = defineCommand({
+  meta: {
+    name: 'test-model',
+    description:
+      'Run a conformance check against an AI model and log the result to model_test_runs.',
+  },
+  args: {
+    'battle-id':   { type: 'string', description: 'Battle UUID (owner-only)' },
+    'template-id': { type: 'string', description: 'Template UUID (owner-only)' },
+    provider:      { type: 'string', description: 'Model provider', required: true },
+    model:         { type: 'string', description: 'Model id',       required: true },
+    prompt:        { type: 'string', description: 'Prompt text',    required: true },
+    'expected-schema': {
+      type: 'string',
+      description: 'Path to a JSON file listing required top-level keys: ["title","body"]',
+      default: '',
+    },
+    'mock-output': {
+      type: 'string',
+      description:
+        'When set, skip the live model call and use the contents of this JSON file as raw output. ' +
+        'Designed for fixtures-driven CI runs.',
+      default: '',
+    },
+    json: { type: 'boolean', description: 'Output JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const { readFileSync } = await import('node:fs')
+      const { runModelConformanceTest, jsonShapeAssertion } = await import('@lenserfight/utils/text')
+
+      if (!args['battle-id'] && !args['template-id']) {
+        consola.error('Either --battle-id or --template-id must be provided.')
+        process.exitCode = 1
+        return
+      }
+
+      let requiredKeys: string[] = []
+      if (args['expected-schema']) {
+        const raw = readFileSync(args['expected-schema'], 'utf8')
+        const parsed = JSON.parse(raw) as unknown
+        if (!Array.isArray(parsed) || !parsed.every((v) => typeof v === 'string')) {
+          throw new Error('expected-schema must be a JSON array of string keys')
+        }
+        requiredKeys = parsed
+      }
+
+      const runner = async () => {
+        if (args['mock-output']) {
+          const text = readFileSync(args['mock-output'], 'utf8')
+          let raw: unknown = text
+          try { raw = JSON.parse(text) } catch { /* leave as text */ }
+          return { raw, text }
+        }
+        throw new Error(
+          'live provider invocation not yet wired into the CLI — pass --mock-output for now',
+        )
+      }
+
+      const result = await runModelConformanceTest(
+        args.provider,
+        args.model,
+        args.prompt,
+        requiredKeys.length > 0 ? jsonShapeAssertion(requiredKeys) : () => true,
+        runner,
+      )
+
+      const logged = await callRpc<Record<string, unknown>>(
+        'fn_log_model_test_run',
+        {
+          p_battle_id:      args['battle-id'] || null,
+          p_template_id:    args['template-id'] || null,
+          p_model_provider: args.provider,
+          p_model_id:       args.model,
+          p_prompt_hash:    result.promptHash,
+          p_passed:         result.passed,
+          p_duration_ms:    result.durationMs,
+          p_raw_output:     result.raw,
+          p_violations:     result.violations,
+        },
+        { requireAuth: true }
+      )
+
+      if (args.json) {
+        printJson({ result, logged })
+        return
+      }
+
+      printTable(
+        ['Metric', 'Value'],
+        [
+          ['Passed',      String(result.passed)],
+          ['Duration',    `${result.durationMs} ms`],
+          ['Prompt hash', truncate(result.promptHash, 24)],
+          ['Violations',  result.violations.join(', ') || '—'],
+          ['Run id',      String(logged?.['id'] ?? '—')],
+        ]
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// Phase BK — battle check-media
+// ---------------------------------------------------------------------------
+const checkMedia = defineCommand({
+  meta: {
+    name: 'check-media',
+    description: 'Run the media quality gate against an existing submission.',
+  },
+  args: {
+    'submission-id': { type: 'string', description: 'Submission UUID', required: true },
+    json: { type: 'boolean', description: 'Output JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_check_media_quality',
+        { p_submission_id: args['submission-id'] },
+        { requireAuth: true }
+      )
+      if (args.json) { printJson(result); return }
+      const violations = (result?.['violations'] as string[] | undefined) ?? []
+      printTable(
+        ['Field', 'Value'],
+        [
+          ['Submission', String(result?.['submission_id'] ?? args['submission-id'])],
+          ['Passed',     String(result?.['passed'] ?? false)],
+          ['Violations', violations.join(', ') || '—'],
+        ]
+      )
+    } catch (err) { handleError(err) }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// Phase BM — battle my-vote / change-vote
+// ---------------------------------------------------------------------------
+const myVote = defineCommand({
+  meta: { name: 'my-vote', description: 'Show your current vote on a battle (if any).' },
+  args: {
+    'battle-id': { type: 'string', description: 'Battle UUID', required: true },
+    json: { type: 'boolean', description: 'Output JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRpc<Array<Record<string, unknown>>>(
+        'fn_battles_get_my_vote',
+        { p_battle_id: args['battle-id'] },
+        { requireAuth: true }
+      )
+      const row = Array.isArray(rows) ? rows[0] : rows
+      if (args.json) { printJson(row ?? null); return }
+      if (!row) { consola.info('no vote cast'); return }
+      consola.info(
+        'voted for %s (value=%s, updated %s)',
+        String(row['contender_id'] ?? '—'),
+        String(row['vote_value'] ?? '—'),
+        String(row['updated_at'] ?? '—'),
+      )
+    } catch (err) { handleError(err) }
+  },
+})
+
+const changeVote = defineCommand({
+  meta: {
+    name: 'change-vote',
+    description: 'Change your vote on an open battle (transactional swap).',
+  },
+  args: {
+    'battle-id':     { type: 'string', description: 'Battle UUID',     required: true },
+    'contender-id':  { type: 'string', description: 'New contender UUID', required: true },
+    json: { type: 'boolean', description: 'Output JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_battles_change_vote',
+        {
+          p_battle_id:        args['battle-id'],
+          p_new_contender_id: args['contender-id'],
+        },
+        { requireAuth: true }
+      )
+      if (args.json) { printJson(result); return }
+      consola.success('Vote updated for battle %s.', args['battle-id'])
+    } catch (err) { handleError(err) }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// Phase BN — battle render-prompt
+// ---------------------------------------------------------------------------
+const renderPrompt = defineCommand({
+  meta: {
+    name: 'render-prompt',
+    description:
+      'Render a template prompt with structured variable substitution (variables as JSON).',
+  },
+  args: {
+    template: { type: 'string', description: 'Template UUID or slug', required: true },
+    vars:     {
+      type: 'string',
+      description: 'JSON object of variables, e.g. \'{"topic":"LLMs"}\'',
+      default: '{}',
+    },
+    json: { type: 'boolean', description: 'Output JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      let vars: Record<string, string> = {}
+      try {
+        vars = JSON.parse(args.vars || '{}') as Record<string, string>
+      } catch {
+        consola.error('--vars must be a JSON object')
+        process.exitCode = 1
+        return
+      }
+      const rendered = await callRpc<string>(
+        'fn_battles_render_prompt',
+        {
+          p_template_id: args.template,
+          p_variables:   vars,
+        },
+        { requireAuth: true }
+      )
+      if (args.json) { printJson({ rendered }); return }
+      process.stdout.write(`${rendered ?? ''}\n`)
+    } catch (err) { handleError(err) }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// Phase BP — battle browse
+// ---------------------------------------------------------------------------
+const browse = defineCommand({
+  meta: {
+    name: 'browse',
+    description: 'Browse open battles by category / status / FTS query (anon-safe).',
+  },
+  args: {
+    category: { type: 'string', description: 'Filter by category', default: '' },
+    status:   { type: 'string', description: 'Filter by status',   default: '' },
+    q:        { type: 'string', description: 'Full-text query',    default: '' },
+    limit:    { type: 'string', description: 'Max rows (1..100)',  default: '20' },
+    json: { type: 'boolean', description: 'Output JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRpc<Array<Record<string, unknown>>>(
+        'fn_browse_battles',
+        {
+          p_category: args.category || null,
+          p_status:   args.status   || null,
+          p_q:        args.q        || null,
+          p_after_created: null,
+          p_after_id:      null,
+          p_limit:    Math.min(Math.max(Number(args.limit) || 20, 1), 100),
+        },
+        { noAuth: true }
+      )
+      if (args.json) { printJson(rows ?? []); return }
+      if (!rows?.length) { consola.info('No battles found.'); return }
+      printTable(
+        ['Slug', 'Title', 'Status', 'Category', 'Votes'],
+        rows.map((r) => [
+          String(r['slug'] ?? '—'),
+          truncate(String(r['title'] ?? ''), 40),
+          String(r['status'] ?? '—'),
+          String(r['category'] ?? '—'),
+          String(r['vote_count'] ?? 0),
+        ])
+      )
+    } catch (err) { handleError(err) }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// Phase BL — battle dev-cycle (one-command lifecycle)
+// ---------------------------------------------------------------------------
+const devCycle = defineCommand({
+  meta: {
+    name: 'dev-cycle',
+    description:
+      'Create→enroll→submit→vote in one shot against a local Supabase. ' +
+      'Requires SUPABASE_SERVICE_ROLE_KEY and a local supabase URL.',
+  },
+  args: {
+    template:    { type: 'string', description: 'Template slug or UUID', default: 'e2e-default' },
+    contenders:  { type: 'string', description: 'Contender count',       default: '2' },
+    'submit-text':{ type: 'string', description: 'Submission body text', default: '' },
+    'vote-for':  { type: 'string', description: 'Contender to vote for (slot or id)', default: 'A' },
+    'dry-run':   { type: 'boolean', description: 'Print steps but execute none', default: false },
+    json: { type: 'boolean', description: 'Output JSON', default: false },
+  },
+  async run({ args }) {
+    const url = process.env['SUPABASE_URL'] ?? ''
+    const isLocal = /127\.0\.0\.1|localhost/.test(url)
+    if (!isLocal) {
+      consola.warn(
+        'refusing to drive dev-cycle against non-local Supabase (SUPABASE_URL="%s").',
+        url || '<unset>',
+      )
+      consola.warn('start `supabase start` and export SUPABASE_URL=http://127.0.0.1:54321 first.')
+      if (!args['dry-run']) {
+        process.exitCode = 2
+        return
+      }
+    }
+
+    const steps = [
+      `create battle from template "${args.template}"`,
+      `enroll ${args.contenders} contender(s)`,
+      `submit text entry per contender (body="${args['submit-text'] || '<auto-lorem>'}")`,
+      `cast cross-votes targeting "${args['vote-for']}"`,
+    ]
+    if (args['dry-run']) {
+      consola.box('dev-cycle (dry-run) — no RPCs executed:\n' + steps.map((s, i) => `  ${i + 1}. ${s}`).join('\n'))
+      return
+    }
+
+    // Real-run path: dev-cycle currently delegates to scripts/e2e-battle.sh
+    // because the bulk of the lifecycle proof lives in pgTAP + seed flow.
+    try {
+      const { spawnSync } = await import('node:child_process')
+      const r = spawnSync('bash', ['scripts/e2e-battle.sh', '--skip-vitest'], { stdio: 'inherit' })
+      if ((r.status ?? 1) !== 0) {
+        consola.error('e2e-battle.sh failed (status %s)', r.status)
+        process.exitCode = r.status ?? 1
+        return
+      }
+      if (args.json) { printJson({ ok: true, steps }); return }
+      consola.success('dev-cycle complete (delegated to scripts/e2e-battle.sh).')
+    } catch (err) { handleError(err) }
+  },
+})
+
+// ---------------------------------------------------------------------------
 // battle export
 // ---------------------------------------------------------------------------
 const battleExport = defineCommand({
@@ -3793,5 +4135,12 @@ export default defineCommand({
     'stream-feed': streamFeed,
     rematch,
     export: battleExport,
+    'test-model': testModel,
+    'check-media': checkMedia,
+    'my-vote': myVote,
+    'change-vote': changeVote,
+    'render-prompt': renderPrompt,
+    browse,
+    'dev-cycle': devCycle,
   },
 })
