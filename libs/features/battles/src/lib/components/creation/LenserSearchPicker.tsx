@@ -2,7 +2,7 @@ import { Button } from '@lenserfight/ui/components'
 import { lenserService } from '@lenserfight/data/repositories'
 import type { LenserSearchResult } from '@lenserfight/data/repositories'
 import { useQuery } from '@tanstack/react-query'
-import { User, X } from 'lucide-react'
+import { Bot, User, X } from 'lucide-react'
 import React, { useRef, useState } from 'react'
 
 export type { LenserSearchResult }
@@ -13,6 +13,7 @@ interface LenserSearchPickerProps {
   value: LenserSearchResult | null
   onChange: (lenser: LenserSearchResult | null) => void
   placeholder?: string
+  filterType?: 'human' | 'ai' | 'all'
 }
 
 const SLOT_COLORS = {
@@ -30,12 +31,19 @@ function useDebouncedQuery(value: string, delay = 400) {
   return debounced
 }
 
+function LenserIcon({ type, size = 14 }: { type?: 'human' | 'ai'; size?: number }) {
+  return type === 'ai'
+    ? <Bot size={size} className="text-greyscale-400 flex-shrink-0" />
+    : <User size={size} className="text-greyscale-400 flex-shrink-0" />
+}
+
 export function LenserSearchPicker({
   slot,
   slotLabel,
   value,
   onChange,
   placeholder = 'Search by name or @handle…',
+  filterType = 'all',
 }: LenserSearchPickerProps) {
   const [inputValue, setInputValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -44,12 +52,16 @@ export function LenserSearchPicker({
   // Min 3 chars; strip leading @ for the API (handled server-side too, but guard client-side)
   const queryForFetch = debouncedQuery.length >= 3 ? debouncedQuery : ''
 
-  const { data: results = [], isFetching } = useQuery({
+  const { data: rawResults = [], isFetching } = useQuery({
     queryKey: ['lenser-search-for-battle', queryForFetch],
     queryFn: () => lenserService.searchLensers(queryForFetch, 8),
     enabled: queryForFetch.length >= 3 && !value,
     staleTime: 10_000,
   })
+
+  const results = filterType === 'all'
+    ? rawResults
+    : rawResults.filter((l) => (l.type ?? 'human') === filterType)
 
   const handleSelect = (lenser: LenserSearchResult) => {
     onChange(lenser)
@@ -83,11 +95,18 @@ export function LenserSearchPicker({
       {/* Selected chip or search input */}
       {value ? (
         <div className="flex items-center gap-2 rounded-2xl border border-primary-yellow-500/40 bg-primary-yellow-500/5 px-3 py-2">
-          <User size={14} className="text-greyscale-400 flex-shrink-0" />
+          <LenserIcon type={value.type} size={14} />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50 truncate">
-              {value.display_name}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50 truncate">
+                {value.display_name}
+              </p>
+              {value.type === 'ai' && (
+                <span className="flex-shrink-0 rounded px-1 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-300">
+                  AI
+                </span>
+              )}
+            </div>
             <p className="text-xs text-greyscale-400 truncate">@{value.handle}</p>
           </div>
           <button
@@ -129,11 +148,18 @@ export function LenserSearchPicker({
                 onClick={() => handleSelect(lenser)}
                 className="!justify-start !gap-3 !px-3 !py-2.5 !rounded-none !font-normal"
               >
-                <User size={14} className="text-greyscale-400 flex-shrink-0" />
-                <div className="min-w-0 text-left">
-                  <p className="text-sm font-medium text-greyscale-900 dark:text-greyscale-50 truncate">
-                    {lenser.display_name}
-                  </p>
+                <LenserIcon type={lenser.type} size={14} />
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-medium text-greyscale-900 dark:text-greyscale-50 truncate">
+                      {lenser.display_name}
+                    </p>
+                    {lenser.type === 'ai' && (
+                      <span className="flex-shrink-0 rounded px-1 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-300">
+                        AI
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-greyscale-400 truncate">@{lenser.handle}</p>
                 </div>
               </Button>
