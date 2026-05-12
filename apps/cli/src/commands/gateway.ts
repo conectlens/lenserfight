@@ -731,6 +731,137 @@ const consent = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// gateway daemons — Phase BB: manage long-running `lf-gatewayd` registrations
+// (agents.gateway_devices) — distinct from the legacy `gateway devices` group
+// which targets the older devices.* trusted-device flow.
+// ---------------------------------------------------------------------------
+type GatewayDaemonRow = {
+  device_id: string;
+  hostname: string | null;
+  daemon_version: string | null;
+  last_seen_at: string | null;
+  approved_at: string | null;
+  revoked_at: string | null;
+  kill_switch: boolean;
+  created_at: string;
+};
+
+function fmtRelative(iso: string | null): string {
+  if (!iso) return '—';
+  const t = new Date(iso).getTime();
+  const diff = Date.now() - t;
+  if (diff < 60_000) return `${Math.max(1, Math.round(diff / 1000))}s ago`;
+  if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h ago`;
+  return `${Math.round(diff / 86_400_000)}d ago`;
+}
+
+const daemons = defineCommand({
+  meta: {
+    name: 'daemons',
+    description:
+      'Manage long-running gateway daemon registrations (agents.gateway_devices). ' +
+      'Distinct from the legacy `gateway devices` group.',
+  },
+  subCommands: {
+    list: defineCommand({
+      meta: { name: 'list', description: 'List your registered gateway daemons.' },
+      args: {
+        limit: { type: 'string', default: '50', description: 'Max rows (1-200)' },
+        json: { type: 'boolean', default: false, description: 'Output JSON' },
+      },
+      async run({ args }) {
+        try {
+          const rows = await callRpc<GatewayDaemonRow[]>(
+            'fn_list_gateway_devices',
+            { p_limit: Number(args.limit) || 50 },
+            { requireAuth: true }
+          );
+          if (!rows?.length) {
+            consola.info('No gateway daemons registered yet. Run `lf gateway serve` on a host.');
+            return;
+          }
+          if (args.json) { printJson(rows); return; }
+          printTable(
+            ['Device', 'Host', 'Version', 'Last Seen', 'Approved', 'Kill'],
+            rows.map((r) => [
+              r.device_id.substring(0, 8),
+              r.hostname ?? '—',
+              r.daemon_version ?? '—',
+              fmtRelative(r.last_seen_at),
+              r.approved_at ? 'yes' : 'no',
+              r.kill_switch ? 'yes' : 'no',
+            ])
+          );
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    }),
+    approve: defineCommand({
+      meta: { name: 'approve', description: 'Approve a gateway daemon device.' },
+      args: {
+        id: { type: 'positional', description: 'Device UUID', required: true },
+      },
+      async run({ args }) {
+        try {
+          await callRpc<void>(
+            'fn_gateway_approve_device',
+            { p_device_id: args.id },
+            { requireAuth: true }
+          );
+          consola.success('Daemon %s approved.', args.id);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes('device_not_owned')) {
+            consola.warn('Device %s is not yours, or not registered.', args.id);
+            process.exit(1);
+          }
+          handleError(err);
+        }
+      },
+    }),
+    revoke: defineCommand({
+      meta: {
+        name: 'revoke',
+        description: 'Revoke a gateway daemon device (kill_switch becomes true).',
+      },
+      args: {
+        id: { type: 'positional', description: 'Device UUID', required: true },
+        force: { type: 'boolean', default: false, description: 'Skip confirmation prompt' },
+      },
+      async run({ args }) {
+        if (!args.force) {
+          const answer = await consola.prompt(
+            `Revoke daemon ${args.id}? The daemon will receive kill_switch=true on its next heartbeat.`,
+            { type: 'confirm', initial: false }
+          );
+          if (!answer) {
+            consola.info('Aborted.');
+            return;
+          }
+        }
+        try {
+          await callRpc<void>(
+            'fn_gateway_revoke_device',
+            { p_device_id: args.id },
+            { requireAuth: true }
+          );
+          consola.success('Daemon %s revoked.', args.id);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes('device_not_owned')) {
+            consola.warn('Device %s is not yours, or not registered.', args.id);
+            process.exit(1);
+          }
+          handleError(err);
+        }
+      },
+    }),
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -741,6 +872,7 @@ export default defineCommand({
   subCommands: {
     models,
     devices,
+    daemons,
     'approve-device': approveDevice,
     runners,
     status,
