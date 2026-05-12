@@ -7,12 +7,13 @@ import {
   resolveLensKindFromTagSlugs,
 } from '@lenserfight/features/lens-kinds'
 import { FundingSourceToggle, useFundingSource } from '@lenserfight/features/lenses'
-import { Alert, Button, HelpButton, StepWizard } from '@lenserfight/ui/components'
+import { Alert, Button, StepWizard } from '@lenserfight/ui/components'
 import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/forms'
+import { DialogFooterContext, DialogHeaderContext, ModalFooter } from '@lenserfight/ui/overlays'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
 import { CalendarClock, Check, GitBranch, GitFork, KeyRound, Layers, Sparkles } from 'lucide-react'
-import React, { useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 
@@ -398,75 +399,68 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     }
   }
 
+  const { setHeader, clearHeader } = useContext(DialogHeaderContext)
+  const { setFooter, clearFooter } = useContext(DialogFooterContext)
+
+  useEffect(() => {
+    if (!showTemplatePicker || editMode) return
+    setHeader({
+      title: 'Start your workflow',
+      description: 'Pick a template to get started quickly, or build from scratch.',
+      icon: <Sparkles size={18} />,
+      action: (
+        <Button size="sm" onClick={() => setShowTemplatePicker(false)} className="gap-1.5">
+          <GitBranch size={12} /> Start blank
+        </Button>
+      ),
+    })
+    setFooter(
+      <ModalFooter
+        leftButton={{ label: 'Cancel', onClick: onCancel, variant: 'ghost' }}
+      />
+    )
+    return () => {
+      clearHeader()
+      clearFooter()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showTemplatePicker, editMode])
+
   if (showTemplatePicker && !editMode) {
     return (
-      <div className="space-y-4 p-1">
-        <div>
-          <h2 className="text-base font-bold text-greyscale-900 dark:text-greyscale-50">
-            Start your workflow
-          </h2>
-          <p className="text-sm text-greyscale-400 mt-0.5">
-            Pick a template to get started quickly, or build from scratch.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {templatesLoading && Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 rounded-2xl bg-surface-raised animate-pulse" />
-          ))}
-          {!templatesLoading && templates.map((tpl) => (
-            <div
-              key={tpl.id}
-              className="flex flex-col gap-2 rounded-2xl border border-surface-border bg-surface-raised p-3 hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5 transition-colors"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50 truncate leading-tight">
-                  {tpl.title.replace(/^Template\s*·\s*/i, '')}
-                </p>
-                {tpl.description && (
-                  <p className="mt-0.5 text-[11px] text-greyscale-400 line-clamp-2 leading-relaxed">
-                    {tpl.description}
-                  </p>
-                )}
-                <p className="mt-1 text-[10px] text-greyscale-400">
-                  {tpl.node_count} node{tpl.node_count !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                isLoading={isForking}
-                onClick={() => forkTemplate(tpl.id)}
-                className="gap-1.5 self-start"
-              >
-                <GitFork size={11} /> Use template
-              </Button>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-surface-border" />
-          <span className="text-xs text-greyscale-400">or</span>
-          <div className="h-px flex-1 bg-surface-border" />
-        </div>
-
-        <div className="flex justify-center">
-          <HelpButton path="/tutorials/walkthroughs/create-a-workflow" label="Workflow Guide" />
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => setShowTemplatePicker(false)}
-            className="gap-1.5"
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {templatesLoading && Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 rounded-2xl bg-surface-raised animate-pulse" />
+        ))}
+        {!templatesLoading && templates.map((tpl) => (
+          <div
+            key={tpl.id}
+            className="flex flex-col gap-2 rounded-2xl border border-surface-border bg-surface-raised p-3 hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5 transition-colors"
           >
-            <GitBranch size={12} /> Start blank
-          </Button>
-        </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50 truncate leading-tight">
+                {tpl.title.replace(/^Template\s*·\s*/i, '')}
+              </p>
+              {tpl.description && (
+                <p className="mt-0.5 text-[11px] text-greyscale-400 line-clamp-2 leading-relaxed">
+                  {tpl.description}
+                </p>
+              )}
+              <p className="mt-1 text-[10px] text-greyscale-400">
+                {tpl.node_count} node{tpl.node_count !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              isLoading={isForking}
+              onClick={() => forkTemplate(tpl.id)}
+              className="gap-1.5 self-start"
+            >
+              <GitFork size={11} /> Use template
+            </Button>
+          </div>
+        ))}
       </div>
     )
   }
