@@ -29,13 +29,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build SDK
+      - name: Build adapter-connector
         run: pnpm nx build adapters-connector
 
-      - name: Run SDK tests
+      - name: Test adapter-connector
         run: pnpm nx test adapters-connector --ci
 
-      - name: Publish to npm
+      - name: Publish @lenserfight/adapter-connector to npm
         run: npm publish dist/libs/adapters/connector --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Phase BW — public client SDK alpha
+      - name: Build @lenserfight/sdk
+        run: pnpm nx build sdk
+
+      - name: Test @lenserfight/sdk
+        run: pnpm nx test sdk --ci
+
+      - name: Publish @lenserfight/sdk alpha to npm
+        # Use the alpha dist-tag so installs default to the stable line once
+        # 1.0.0 lands. Tag promotion is a manual `npm dist-tag add` step.
+        run: npm publish dist/libs/sdk --access public --tag alpha --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
