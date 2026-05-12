@@ -36,6 +36,7 @@ const OPTIONAL_CRONS = [
   'team-run-claim',            // AL — workers prefer NOTIFY over cron
   'byok-key-expiry',           // AR
   'media-expiry',              // AT
+  'cleanup-cron-runs',         // Z11 — daily automation.cron_runs retention
 ]
 
 const MAX_LAG_MINUTES = 5
