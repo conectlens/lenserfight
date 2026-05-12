@@ -93,13 +93,13 @@ export async function processNextTeamRun(): Promise<boolean> {
       message,
     })
 
-    await withRetry(() =>
-      serviceClient.rpc('fn_worker_update_team_run_status', {
+    await withRetry(async () => {
+      await serviceClient.rpc('fn_worker_update_team_run_status', {
         p_team_run_id: claimed.id,
         p_status: 'failed',
         p_error_message: message,
       })
-    ).catch((statusErr) => {
+    }).catch((statusErr) => {
       nodeLogger.error('could not write failed status for team run', {
         teamRunId: claimed.id,
         message: statusErr instanceof Error ? statusErr.message : String(statusErr),
