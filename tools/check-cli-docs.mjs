@@ -2,7 +2,7 @@
 /**
  * check-cli-docs.mjs — Lightweight, read-only audit that fails CI when:
  *   1. A subcommand registered in apps/cli/src/main.ts has no doc page.
- *   2. A doc page in docs/reference/cli/ references a command that no
+ *   2. A doc page in docs/en/reference/cli/ references a command that no
  *      longer exists in main.ts (drift in the other direction).
  *
  * Unlike `gen-cli-docs.mjs`, this script never mutates files — it is safe
@@ -38,7 +38,7 @@ const repoRoot = resolve(__dirname, '..')
 
 const MAIN_TS = resolve(repoRoot, 'apps/cli/src/commands') // existence sanity
 const MAIN_FILE = resolve(repoRoot, 'apps/cli/src/main.ts')
-const DOCS_DIR = resolve(repoRoot, 'docs/reference/cli')
+const DOCS_DIR = resolve(repoRoot, 'docs/en/reference/cli')
 
 const jsonMode = process.argv.includes('--json')
 
@@ -135,7 +135,7 @@ if (jsonMode) {
   process.stdout.write(JSON.stringify(report, null, 2) + '\n')
 } else {
   console.log(`Registered CLI subcommands: ${registered.size}`)
-  console.log(`docs/reference/cli/*.md pages: ${docFiles.length}`)
+  console.log(`docs/en/reference/cli/*.md pages: ${docFiles.length}`)
   console.log(`Concept pages (always allowed): ${CONCEPT_PAGES.size}`)
   console.log('')
 
@@ -153,9 +153,10 @@ if (jsonMode) {
     }
     console.error('')
     console.error('Fix by:')
-    console.error('  - Adding the missing page under docs/reference/cli/<name>.md, OR')
+    console.error('  - Adding the missing page under docs/en/reference/cli/<name>.md, OR')
     console.error('  - Removing the orphaned page, OR')
     console.error('  - If the orphan is a concept page, add its slug to CONCEPT_PAGES in tools/check-cli-docs.mjs')
+    console.error('  - Run `node tools/gen-cli-docs.mjs` to auto-generate stubs for missing pages')
   }
 }
 
