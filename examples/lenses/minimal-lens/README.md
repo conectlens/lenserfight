@@ -32,4 +32,4 @@ No API keys, database, or provider configuration are required. This example vali
 
 ## Tutorial
 
-Follow [Minimal Lens Tutorial](../../../docs/tutorials/developer-examples/minimal-lens.md).
+Follow [Minimal Lens Tutorial](../../../docs/en/tutorials/developer-examples/minimal-lens.md).

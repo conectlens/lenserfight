@@ -43,6 +43,6 @@ The previous token is revoked immediately. Update `LENSERFIGHT_SERVICE_TOKEN` an
 
 ## Reference
 
-- [docs/reference/connectors/](../../../docs/reference/connectors/index.md)
-- [docs/how-to/integrations/build-an-adapter.md](../../../docs/how-to/integrations/build-an-adapter.md)
-- [docs/rfcs/RFC-0001-connector-interface.md](../../../docs/rfcs/RFC-0001-connector-interface.md)
+- [docs/en/reference/connectors/](../../../docs/en/reference/connectors/index.md)
+- [docs/en/how-to/integrations/build-an-adapter.md](../../../docs/en/how-to/integrations/build-an-adapter.md)
+- [docs/en/rfcs/RFC-0001-connector-interface.md](../../../docs/en/rfcs/RFC-0001-connector-interface.md)

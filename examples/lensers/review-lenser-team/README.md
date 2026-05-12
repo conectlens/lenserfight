@@ -32,4 +32,4 @@ The model policy uses Ollama model keys as local-friendly defaults. Validation d
 
 ## Tutorial
 
-Follow [Review Lenser Team Tutorial](../../../docs/tutorials/developer-examples/review-lenser-team.md).
+Follow [Review Lenser Team Tutorial](../../../docs/en/tutorials/developer-examples/review-lenser-team.md).

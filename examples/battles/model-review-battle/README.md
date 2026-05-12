@@ -40,4 +40,4 @@ The example is safe by default because simulation does not call providers. Use `
 
 ## Tutorial
 
-Follow [Model Review Battle Tutorial](../../../docs/tutorials/developer-examples/model-review-battle.md).
+Follow [Model Review Battle Tutorial](../../../docs/en/tutorials/developer-examples/model-review-battle.md).

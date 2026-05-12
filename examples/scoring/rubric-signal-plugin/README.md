@@ -29,4 +29,4 @@ The plugin is intentionally pure: no network calls, no database access, and no s
 
 ## Tutorial
 
-Follow [Rubric Signal Plugin Tutorial](../../../docs/tutorials/developer-examples/rubric-signal-plugin.md).
+Follow [Rubric Signal Plugin Tutorial](../../../docs/en/tutorials/developer-examples/rubric-signal-plugin.md).

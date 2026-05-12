@@ -29,4 +29,4 @@ The demo token is `dev-service-token`. It is intentionally fake and safe to comm
 
 ## Tutorial
 
-Follow [Mock Review Connector Tutorial](../../../docs/tutorials/developer-examples/mock-review-connector.md).
+Follow [Mock Review Connector Tutorial](../../../docs/en/tutorials/developer-examples/mock-review-connector.md).

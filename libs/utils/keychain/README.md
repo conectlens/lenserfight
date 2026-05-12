@@ -24,4 +24,4 @@ const all = await keychain.findAccounts({ service: 'lenserfight-gateway' })
 
 ## Spec
 
-See [security-rules R5](../../../docs/explanation/gateway/security-rules.md#r5--secret-handling) and [requirements CO-3 / SH-1](../../../docs/explanation/gateway/requirements.md).
+See [security-rules R5](../../../docs/en/explanation/gateway/security-rules.md#r5--secret-handling) and [requirements CO-3 / SH-1](../../../docs/en/explanation/gateway/requirements.md).
