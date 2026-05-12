@@ -20,6 +20,8 @@ COMMENT ON COLUMN battles.submissions.media_url IS
 COMMENT ON COLUMN battles.submissions.output_modality IS
   'Phase AY: discriminator the UI uses to pick the right renderer.';
 
+DROP FUNCTION IF EXISTS public.fn_get_battle_submissions(uuid);
+
 CREATE OR REPLACE FUNCTION public.fn_get_battle_submissions(p_battle_id uuid)
 RETURNS TABLE(
   id               uuid,
@@ -44,7 +46,13 @@ AS $$
          s.status::text, s.submitted_at, s.execution_run_id, s.is_final,
          s.media_url, s.mime_type, s.output_modality
   FROM battles.submissions s
-  WHERE s.battle_id = p_battle_id;
+  JOIN battles.battles b ON b.id = s.battle_id
+  WHERE s.battle_id = p_battle_id
+    AND b.deleted_at IS NULL
+    AND (
+      b.status::text = 'published'   -- anon: only published results are public
+      OR auth.uid() IS NOT NULL      -- authenticated: any non-deleted battle is accessible
+    );
 $$;
 
 ALTER FUNCTION public.fn_get_battle_submissions(uuid) OWNER TO postgres;
