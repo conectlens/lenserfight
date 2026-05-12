@@ -15,6 +15,7 @@ import { useExecutionJobs } from '../../hooks/query/useExecutionJobs'
 import { getRenderer } from '../../renderers'
 import { BattleLiveArena } from './BattleLiveArena'
 import type { ContenderLensAssignmentRecord } from '../../types/battle.types'
+import type { BattleContentType } from '../../types/battle-renderer.types'
 
 import { Drawer } from '@lenserfight/ui/overlays'
 import { ArenaTopBar } from './ArenaTopBar'
@@ -51,7 +52,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
   // Real-time battle state sync
   useBattleStateSync(battle?.id, slug)
 
-  const renderer = getRenderer('text')
+  const renderer = getRenderer((battle?.content_type ?? 'text') as BattleContentType)
 
   const contenders = contendersData?.contenders ?? []
   const submissions = contendersData?.submissions ?? []
