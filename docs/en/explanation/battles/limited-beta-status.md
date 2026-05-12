@@ -1,11 +1,11 @@
 ---
-title: Cloud Battles — Limited Beta Status
-description: Operator runbook for the Cloud Battles Limited Beta — preflight env vars and Postgres GUCs, monitoring signals, rollback steps, and escalation channel.
+title: Cloud Battles — Operator Runbook
+description: Operator runbook for the Cloud Battles surface — preflight env vars and Postgres GUCs, monitoring signals, rollback steps, and escalation channel.
 ---
 
-# Cloud Battles — Limited Beta Status
+# Cloud Battles — Operator Runbook
 
-This page is the operator runbook for running the Cloud Battles surface in Limited Beta. It assumes the deployment has the Phase O webhook outbox migration applied and a hosted Supabase instance with `pg_cron` and `pg_net` available.
+This page is the operator runbook for running the Cloud Battles surface. It assumes the deployment has the Phase O webhook outbox migration applied and a hosted Supabase instance with `pg_cron` and `pg_net` available.
 
 For the full set of integrity checks the surface must pass before flipping the flag, see [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist).
 
@@ -22,14 +22,14 @@ For the full set of integrity checks the surface must pass before flipping the f
 
 ### Postgres GUCs
 
-Set these on the Limited Beta deployment with `ALTER DATABASE postgres SET …`. Restart `pg_cron` workers after a change so the GUC takes effect inside the cron job's session.
+Set these on the deployment with `ALTER DATABASE postgres SET …`. Restart `pg_cron` workers after a change so the GUC takes effect inside the cron job's session.
 
 | GUC | Purpose | Default | Required |
 |---|---|---|---|
 | `app.approval_timeout_hours` | Threshold for the `expire-stale-approvals` job. | `24` | recommended |
-| `app.approval_webhook_url` | Best-effort POST URL for newly-pending approvals (drives the operator pager). | empty | yes for Limited Beta |
-| `app.moderation_webhook_url` | Best-effort POST URL for moderation events (flagged submissions, override decisions). | empty | yes for Limited Beta |
-| `app.webhook_signing_secret` | HMAC signing key for `audit.webhook_outbox` deliveries. Reject deliveries on the receiver side when `X-Lenserfight-Signature` does not match. | empty | yes for Limited Beta |
+| `app.approval_webhook_url` | Best-effort POST URL for newly-pending approvals (drives the operator pager). | empty | yes |
+| `app.moderation_webhook_url` | Best-effort POST URL for moderation events (flagged submissions, override decisions). | empty | yes |
+| `app.webhook_signing_secret` | HMAC signing key for `audit.webhook_outbox` deliveries. Reject deliveries on the receiver side when `X-Lenserfight-Signature` does not match. | empty | yes |
 
 ```sql
 ALTER DATABASE postgres SET app.approval_timeout_hours = 24;
@@ -86,13 +86,13 @@ To re-enable later, restore the flag values, re-set the GUCs, and re-schedule th
 
 Use this channel when an automated control fails to contain a real-world incident (abusive submission, leaked credentials in a prompt, sustained moderation bypass).
 
-- **Primary:** email `moderation@lenserfight.org`. Expected first response within 24 hours during Limited Beta.
+- **Primary:** email `moderation@lenserfight.org`. Expected first response within 24 hours.
 - **GitHub Issue (sensitive):** open a private security advisory if the report contains user data or credentials.
-- **GitHub Issue (general):** label the issue `limited-beta` and `incident` so it surfaces in the maintainer triage queue.
+- **GitHub Issue (general):** label the issue `incident` so it surfaces in the maintainer triage queue.
 
 ## Integrity gate verification (Phase BV — 2026-05-12)
 
-The five gates required by [OSS Launch Scope](/en/explanation/community/oss-launch-scope#limited-beta-gates) are verified by automated tests at the SHA listed in [Announcement Readiness](/en/explanation/community/announcement-readiness).
+The five gates required by [OSS Launch Scope](/en/explanation/community/oss-launch-scope#cloud-battles-deployment-gates) are verified by automated tests at the SHA listed in [Announcement Readiness](/en/explanation/community/announcement-readiness).
 
 | Gate | Test reference | Status |
 |------|----------------|--------|
@@ -108,5 +108,5 @@ All four pgTAP files are added to `scripts/coverage-gate.sh` critical-RPC checks
 
 - [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist) — required checks before enabling cloud battles.
 - [Known Preview Surfaces](/en/reference/known-preview-surfaces) — controlling flags, gates, and rollback per surface.
-- [OSS Launch Scope](/en/explanation/community/oss-launch-scope) — Limited Beta gates and how to participate.
+- [OSS Launch Scope](/en/explanation/community/oss-launch-scope) — surface status and deployment requirements.
 - [Approvals](/en/reference/internals/approvals) — webhook payload shape and delivery semantics.
