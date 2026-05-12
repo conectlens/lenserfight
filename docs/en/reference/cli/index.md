@@ -231,14 +231,16 @@ See [Automation CLI](automation.md).
 
 See [Schedule Commands](schedule.md), [Approval Commands](approval.md), [Memory Commands](memory.md).
 
-### Safety and audit
+### Safety, audit, and administration
 
 | Command | Description |
 |---------|-------------|
+| `lf security rls-audit` | Audit RLS coverage and SECURITY DEFINER hygiene; exits 1 on violations |
+| `lf admin vote-anomalies` | List vote manipulation anomalies (platform admin only) |
 | Safety gates | Confirmation system for destructive operations — FLAG, TYPED, COUNTDOWN policies |
 | `~/.lenserfight/audit.log` | JSONL audit log — every safety gate check appended here |
 
-See [Safety Gates](safety-gates.md).
+See [Security Commands](security.md), [Admin Commands](admin.md), [Safety Gates](safety-gates.md).
 
 ### Inspect
 
