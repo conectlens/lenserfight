@@ -32,6 +32,7 @@
     "supabase:gen:types": "supabase gen types typescript --local --schema public,lensers,lenses,agents,ai,execution,content,media,tenancy > libs/types/src/lib/database.types.ts",
     "smoke": "bash scripts/smoke.sh",
     "smoke:media": "bash scripts/smoke-media.sh",
+    "e2e-battle": "bash scripts/e2e-battle.sh",
     "test:db": "bash scripts/run-pgtap.sh",
     "test:rls": "bash scripts/run-pgtap.sh --filter rls",
     "setup:doctor": "node scripts/setup-doctor.mjs",
