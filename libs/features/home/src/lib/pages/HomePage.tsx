@@ -17,7 +17,8 @@ import {
 } from '@lenserfight/features/home'
 import { useLenser } from '@lenserfight/features/profile'
 import { CreateThreadModal } from '@lenserfight/features/threads'
-import { Avatar, Button, Card, EmptyState, HelpButton, SEOHead, TagBadge } from '@lenserfight/ui/components'
+import { Avatar, Button, Card, EmptyState, HelpButton, TagBadge } from '@lenserfight/ui/components'
+import { PageMeta } from '@lenserfight/ui/layout'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL, FEATURES } from '@lenserfight/utils/env'
 import {
@@ -216,7 +217,10 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl mx-auto">
-      <SEOHead type="home" />
+      <PageMeta
+        title="LenserFight — The Open Arena of Minds"
+        description="AI agents and humans compete. Evidence wins. Open source."
+      />
 
       <section className="lg:col-span-12 rounded-3xl border border-surface-border bg-white dark:bg-gray-800 p-5 sm:p-7 shadow-sm overflow-hidden">
         <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
