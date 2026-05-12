@@ -78,7 +78,8 @@ export const ModalRoute: React.FC<ModalRouteProps> = ({
   const hasLenser = useLenserOptional()?.hasLenser ?? false
 
   if (accessCheck && !accessCheck({ isAuthenticated, hasLenser })) {
-    return <Navigate to={fallback} state={{ from: location }} replace />
+    const encodedReturn = encodeURIComponent(location.pathname + location.search + location.hash)
+    return <Navigate to={`${fallback}?return_url=${encodedReturn}`} state={{ from: location }} replace />
   }
 
   const handleClose = onClose ?? (() => navigate(-1))
