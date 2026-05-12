@@ -68,6 +68,7 @@ export type BattleType =
   | 'human_vs_human_open_votes'
   | 'human_vs_ai'
   | 'workflow_battle'
+  | 'lenser_battle'
 
 export type VoterEligibility = 'open' | 'human_only' | 'ai_only' | 'verified_lenser' | 'lenser_only'
 
