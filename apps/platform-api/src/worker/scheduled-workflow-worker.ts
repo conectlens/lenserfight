@@ -45,6 +45,10 @@ interface ClaimedScheduledRun {
   context_inputs: Record<string, unknown>
   global_model_id: string | null
   ai_lenser_id: string | null
+  battle_id: string | null
+  contender_id: string | null
+  byok_key_id: string | null
+  funding_source: string | null
 }
 
 interface DbWorkflowNode {
@@ -93,6 +97,31 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
 
   const { run_id, workflow_id } = claimed
   const startedAt = Date.now()
+
+  // BZ: validate BYOK key before dispatching if this is a BYOK-funded battle run
+  if (claimed.funding_source === 'user_byok' && claimed.battle_id && claimed.contender_id) {
+    const { data: validationData, error: validationError } = await serviceClient.rpc(
+      'fn_byok_validate_for_battle',
+      { p_battle_id: claimed.battle_id, p_contender_id: claimed.contender_id }
+    )
+    if (validationError) {
+      nodeLogger.error('byok validation rpc error', { runId: run_id, message: validationError.message })
+      await serviceClient.rpc('fn_update_workflow_run_status', { p_run_id: run_id, p_status: 'failed' })
+      return true
+    }
+    const validation = (Array.isArray(validationData) ? validationData[0] : validationData) as
+      | { valid: boolean; reason: string | null; key_id?: string | null }
+      | undefined
+    if (!validation?.valid) {
+      nodeLogger.error('byok validation failed', {
+        runId: run_id,
+        battleId: claimed.battle_id,
+        reason: validation?.reason ?? 'unknown',
+      })
+      await serviceClient.rpc('fn_update_workflow_run_status', { p_run_id: run_id, p_status: 'failed' })
+      return true
+    }
+  }
 
   const { data: wfCtxData } = await serviceClient.rpc('fn_worker_get_workflow_context', {
     p_run_id: run_id,
@@ -168,6 +197,31 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
                 p_name:            `wf-${run_id.slice(0, 8)}-${nodeId.slice(0, 8)}.${ext}`,
               })
           }
+        }
+
+        // BZ: fire-and-forget BYOK usage log when this is a BYOK-funded battle run
+        if (
+          result.status === 'completed' &&
+          claimed.funding_source === 'user_byok' &&
+          claimed.byok_key_id &&
+          claimed.battle_id
+        ) {
+          const modelKey = (od?.['model_key'] as string | undefined) ?? claimed.global_model_id ?? 'unknown'
+          const tokenCount =
+            ((od?.['token_input'] as number | undefined) ?? 0) +
+            ((od?.['token_output'] as number | undefined) ?? 0)
+          serviceClient
+            .rpc('fn_byok_log_usage', {
+              p_key_id:      claimed.byok_key_id,
+              p_battle_id:   claimed.battle_id,
+              p_model_id:    modelKey,
+              p_token_count: tokenCount,
+            })
+            .then(({ error }) => {
+              if (error) {
+                nodeLogger.error('byok usage log failed', { runId: run_id, message: error.message })
+              }
+            })
         }
       },
     }
