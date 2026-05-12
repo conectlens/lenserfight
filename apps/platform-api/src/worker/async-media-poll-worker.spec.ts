@@ -47,8 +47,8 @@ describe('pollAsyncMediaBatch', () => {
   })
 
   it('returns zeros when no rows are claimed', async () => {
-    const { schema } = buildClient([])
-    mockCreate.mockReturnValue({ schema } as never)
+    const { schema, rpc, from } = buildClient([])
+    mockCreate.mockReturnValue({ schema, rpc, from } as never)
 
     const result = await pollAsyncMediaBatch()
 
@@ -57,7 +57,7 @@ describe('pollAsyncMediaBatch', () => {
   })
 
   it('calls fn_async_run_idempotent_complete for completed rows', async () => {
-    const { schema, rpc } = buildClient([
+    const { schema, rpc, from } = buildClient([
       {
         run_id: 'run-1',
         provider_task_id: 'task-1',
@@ -67,7 +67,7 @@ describe('pollAsyncMediaBatch', () => {
         started_at: new Date().toISOString(),
       },
     ])
-    mockCreate.mockReturnValue({ schema } as never)
+    mockCreate.mockReturnValue({ schema, rpc, from } as never)
     mockCheck.mockResolvedValueOnce({
       state: 'completed',
       mediaUrl: 'https://fal.example/out.png',
@@ -88,7 +88,7 @@ describe('pollAsyncMediaBatch', () => {
   })
 
   it('marks runs failed when provider reports failure', async () => {
-    const { schema, from } = buildClient([
+    const { schema, rpc, from } = buildClient([
       {
         run_id: 'run-2',
         provider_task_id: 'task-2',
@@ -98,7 +98,7 @@ describe('pollAsyncMediaBatch', () => {
         started_at: new Date().toISOString(),
       },
     ])
-    mockCreate.mockReturnValue({ schema } as never)
+    mockCreate.mockReturnValue({ schema, rpc, from } as never)
     mockCheck.mockResolvedValueOnce({
       state: 'failed',
       errorCode: 'fal_failed',
@@ -108,7 +108,10 @@ describe('pollAsyncMediaBatch', () => {
     const result = await pollAsyncMediaBatch()
 
     expect(result).toEqual({ polled: 1, completed: 0, failed: 1 })
-    expect(from).toHaveBeenCalledWith('runs')
+    expect(rpc).toHaveBeenCalledWith(
+      'fn_worker_fail_execution_run',
+      expect.objectContaining({ p_run_id: 'run-2' }),
+    )
   })
 
   it('does not write when state is pending', async () => {
@@ -122,7 +125,7 @@ describe('pollAsyncMediaBatch', () => {
         started_at: new Date().toISOString(),
       },
     ])
-    mockCreate.mockReturnValue({ schema } as never)
+    mockCreate.mockReturnValue({ schema, rpc, from } as never)
     mockCheck.mockResolvedValueOnce({ state: 'pending' })
 
     const result = await pollAsyncMediaBatch()
@@ -134,7 +137,7 @@ describe('pollAsyncMediaBatch', () => {
   })
 
   it('continues processing other rows when one fails', async () => {
-    const { schema } = buildClient([
+    const { schema, rpc, from } = buildClient([
       {
         run_id: 'run-a',
         provider_task_id: 'task-a',
@@ -152,7 +155,7 @@ describe('pollAsyncMediaBatch', () => {
         started_at: new Date().toISOString(),
       },
     ])
-    mockCreate.mockReturnValue({ schema } as never)
+    mockCreate.mockReturnValue({ schema, rpc, from } as never)
     mockCheck.mockRejectedValueOnce(new Error('network blip'))
     mockCheck.mockResolvedValueOnce({
       state: 'completed',
