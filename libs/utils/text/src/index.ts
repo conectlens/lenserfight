@@ -1,3 +1,5 @@
 export * from './lib/keyTransform'
 export * from './lib/mentionParser'
 export * from './lib/lensTemplate'
+export * from './lib/modelTestHarness'
+export * from './lib/mediaQualityChecker'
