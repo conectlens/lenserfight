@@ -117,9 +117,8 @@ describe('schedule create — CRON smoke tests', () => {
     );
   });
 
-  it('pauses a schedule (callRest PATCH is_active=false) and reports success', async () => {
-    const mockCallRest = (await import('../utils/api')).callRest as jest.MockedFunction<typeof import('../utils/api').callRest>;
-    mockCallRest.mockResolvedValueOnce(undefined);
+  it('pauses a schedule (fn_toggle_workflow_schedule p_is_active=false) and reports success', async () => {
+    mockCallRpc.mockResolvedValueOnce(undefined);
 
     const pauseCmd = await getSubCmd('pause');
     await pauseCmd.run?.({
@@ -129,12 +128,10 @@ describe('schedule create — CRON smoke tests', () => {
     });
 
     expect(process.exitCode).toBe(0);
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'lenses',
-      'workflow_schedules',
-      'PATCH',
-      { is_active: false },
-      expect.objectContaining({ requireAuth: true, query: { id: 'eq.sched-uuid' } }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_toggle_workflow_schedule',
+      { p_schedule_id: 'sched-uuid', p_is_active: false },
+      { requireAuth: true },
     );
     expect(consolaSuccess).toHaveBeenCalled();
   });
@@ -372,31 +369,28 @@ describe('schedule backfill', () => {
 });
 
 describe('schedule history', () => {
-  it('queries lenses.workflow_runs filtered by the schedule\'s workflow and renders rows', async () => {
+  it('queries run history via fn_get_schedule_run_history and renders rows', async () => {
     const schedule = makeSchedule({ id: 'sched-1', workflow_id: 'wf-1' });
-    mockCallRpc.mockResolvedValueOnce([schedule]);
-
-    const mockCallRest = (await import('../utils/api')).callRest as jest.MockedFunction<
-      typeof import('../utils/api').callRest
-    >;
-    mockCallRest.mockResolvedValueOnce([
-      {
-        id: 'aaaaaaaa-1111-2222-3333-444444444444',
-        workflow_id: 'wf-1',
-        status: 'completed',
-        started_at: '2026-05-01T10:00:00Z',
-        completed_at: '2026-05-01T10:00:05Z',
-        created_at: '2026-05-01T10:00:00Z',
-      },
-      {
-        id: 'bbbbbbbb-1111-2222-3333-444444444444',
-        workflow_id: 'wf-1',
-        status: 'failed',
-        started_at: '2026-05-01T09:00:00Z',
-        completed_at: '2026-05-01T09:00:02Z',
-        created_at: '2026-05-01T09:00:00Z',
-      },
-    ]);
+    mockCallRpc
+      .mockResolvedValueOnce([schedule])  // fn_get_workflow_schedules
+      .mockResolvedValueOnce([            // fn_get_schedule_run_history
+        {
+          id: 'aaaaaaaa-1111-2222-3333-444444444444',
+          workflow_id: 'wf-1',
+          status: 'completed',
+          started_at: '2026-05-01T10:00:00Z',
+          completed_at: '2026-05-01T10:00:05Z',
+          created_at: '2026-05-01T10:00:00Z',
+        },
+        {
+          id: 'bbbbbbbb-1111-2222-3333-444444444444',
+          workflow_id: 'wf-1',
+          status: 'failed',
+          started_at: '2026-05-01T09:00:00Z',
+          completed_at: '2026-05-01T09:00:02Z',
+          created_at: '2026-05-01T09:00:00Z',
+        },
+      ]);
 
     const historyCmd = await getSubCmd('history');
     await historyCmd.run?.({
@@ -405,19 +399,11 @@ describe('schedule history', () => {
       rawArgs: [],
     });
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'lenses',
-      'workflow_runs',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        requireAuth: true,
-        query: expect.objectContaining({
-          workflow_id: 'eq.wf-1',
-          order: 'created_at.desc',
-          limit: 10,
-        }),
-      })
+    expect(mockCallRpc).toHaveBeenNthCalledWith(
+      2,
+      'fn_get_schedule_run_history',
+      { p_schedule_id: 'sched-1', p_limit: 10, p_cursor: null },
+      { requireAuth: true },
     );
     expect(mockPrintTable).toHaveBeenCalled();
     const rows = mockPrintTable.mock.calls[0][1] as string[][];
@@ -429,12 +415,9 @@ describe('schedule history', () => {
 
   it('clamps --limit to [1, 50] (51 → 50)', async () => {
     const schedule = makeSchedule({ id: 'sched-1', workflow_id: 'wf-1' });
-    mockCallRpc.mockResolvedValueOnce([schedule]);
-
-    const mockCallRest = (await import('../utils/api')).callRest as jest.MockedFunction<
-      typeof import('../utils/api').callRest
-    >;
-    mockCallRest.mockResolvedValueOnce([]);
+    mockCallRpc
+      .mockResolvedValueOnce([schedule])  // fn_get_workflow_schedules
+      .mockResolvedValueOnce([]);          // fn_get_schedule_run_history
 
     const historyCmd = await getSubCmd('history');
     await historyCmd.run?.({
@@ -443,14 +426,11 @@ describe('schedule history', () => {
       rawArgs: [],
     });
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'lenses',
-      'workflow_runs',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        query: expect.objectContaining({ limit: 50 }),
-      })
+    expect(mockCallRpc).toHaveBeenNthCalledWith(
+      2,
+      'fn_get_schedule_run_history',
+      { p_schedule_id: 'sched-1', p_limit: 50, p_cursor: null },
+      { requireAuth: true },
     );
   });
 
@@ -530,10 +510,7 @@ describe('schedule calendar create', () => {
 
 describe('schedule calendar list', () => {
   it('renders rows with seed flag and date count', async () => {
-    const mockCallRest = (await import('../utils/api')).callRest as jest.MockedFunction<
-      typeof import('../utils/api').callRest
-    >;
-    mockCallRest.mockResolvedValueOnce([
+    mockCallRpc.mockResolvedValueOnce([
       {
         id: 'cal-uuid-1234567890',
         name: 'US Federal Holidays 2026',
@@ -552,12 +529,10 @@ describe('schedule calendar list', () => {
       rawArgs: [],
     });
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'lenses',
-      'schedule_calendars',
-      'GET',
-      undefined,
-      expect.objectContaining({ requireAuth: true }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_get_schedule_calendars',
+      {},
+      { requireAuth: true },
     );
     expect(mockPrintTable).toHaveBeenCalled();
     const rows = mockPrintTable.mock.calls[0][1] as string[][];
@@ -569,11 +544,8 @@ describe('schedule calendar list', () => {
 });
 
 describe('schedule calendar attach', () => {
-  it('issues a PATCH setting calendar_id on the schedule row', async () => {
-    const mockCallRest = (await import('../utils/api')).callRest as jest.MockedFunction<
-      typeof import('../utils/api').callRest
-    >;
-    mockCallRest.mockResolvedValueOnce(undefined);
+  it('issues fn_set_schedule_calendar RPC with calendar_id', async () => {
+    mockCallRpc.mockResolvedValueOnce(undefined);
 
     const cmd = await getNestedSubCmd('calendar', 'attach');
     await cmd.run?.({
@@ -582,15 +554,10 @@ describe('schedule calendar attach', () => {
       rawArgs: [],
     });
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'lenses',
-      'workflow_schedules',
-      'PATCH',
-      { calendar_id: 'cal-uuid' },
-      expect.objectContaining({
-        requireAuth: true,
-        query: { id: 'eq.sched-uuid' },
-      }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_set_schedule_calendar',
+      { p_schedule_id: 'sched-uuid', p_calendar_id: 'cal-uuid' },
+      { requireAuth: true },
     );
     expect(consolaSuccess).toHaveBeenCalled();
   });
@@ -660,7 +627,7 @@ describe('schedule preview', () => {
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_preview_schedule_ticks',
       { p_schedule_id: 'sched-uuid', p_n: 100 },
-      { requireAuth: true, schema: 'lenses' },
+      { requireAuth: true },
     );
   });
 
@@ -690,7 +657,7 @@ describe('schedule preview', () => {
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_preview_schedule_ticks',
       { p_schedule_id: 'sched-uuid', p_n: 10 },
-      { requireAuth: true, schema: 'lenses' },
+      { requireAuth: true },
     );
     expect(mockPrintTable).toHaveBeenCalled();
     const rows = mockPrintTable.mock.calls[0][1] as string[][];
