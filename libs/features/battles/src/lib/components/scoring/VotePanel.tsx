@@ -10,6 +10,12 @@ interface VotePanelProps {
   contenderA: { id: string; displayName: string }
   contenderB: { id: string; displayName: string }
   existingVote?: 'contender_a' | 'contender_b' | 'draw' | null
+  /** Phase BM: timestamp of the most recent vote/change, rendered as "voted N minutes ago". */
+  voteUpdatedAt?: string | null
+  /** Phase BM: optional swap handler — when present, the recorded-vote card shows a Change button. */
+  onChangeVote?: (newValue: 'contender_a' | 'contender_b' | 'draw') => Promise<void>
+  /** Phase BM: when true, the battle is still in 'voting' so change is allowed. */
+  canChangeVote?: boolean
   onVote: (value: 'contender_a' | 'contender_b' | 'draw', rationale: string) => Promise<void>
   disabled?: boolean
   voterEligibility?: VoterEligibility
@@ -45,11 +51,36 @@ const ELIGIBILITY_LABELS: Partial<Record<VoterEligibility, { label: string; colo
   ai_only: { label: 'AI judges only', color: 'gray' },
 }
 
-export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabled, voterEligibility, isEligible = true }: VotePanelProps) {
+function formatAgo(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const ms = Date.now() - new Date(iso).getTime()
+  if (!Number.isFinite(ms) || ms < 0) return ''
+  const mins = Math.floor(ms / 60_000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins} min ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours} h ago`
+  const days = Math.floor(hours / 24)
+  return `${days} d ago`
+}
+
+export function VotePanel({
+  contenderA,
+  contenderB,
+  existingVote,
+  voteUpdatedAt,
+  onChangeVote,
+  canChangeVote = false,
+  onVote,
+  disabled,
+  voterEligibility,
+  isEligible = true,
+}: VotePanelProps) {
   const [selected, setSelected] = useState<'contender_a' | 'contender_b' | 'draw' | null>(existingVote ?? null)
   const [rationale, setRationale] = useState('')
   const [loading, setLoading] = useState(false)
   const [shakeKey, setShakeKey] = useState(0)
+  const [changing, setChanging] = useState(false)
 
   // Show ineligibility gate before anything else
   if (!isEligible && voterEligibility && voterEligibility !== 'open') {
@@ -82,25 +113,55 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
   }
 
   if (existingVote) {
+    const targetLabel =
+      existingVote === 'draw'
+        ? 'Draw'
+        : existingVote === 'contender_a'
+          ? contenderA.displayName
+          : contenderB.displayName
+
+    const swapValue: 'contender_a' | 'contender_b' | null =
+      existingVote === 'contender_a' ? 'contender_b' :
+      existingVote === 'contender_b' ? 'contender_a' : null
+
+    const handleChange = async () => {
+      if (!onChangeVote || !swapValue || changing) return
+      setChanging(true)
+      try {
+        await onChangeVote(swapValue)
+      } finally {
+        setChanging(false)
+      }
+    }
+
     return (
       <motion.div
         key={`voted-${shakeKey}`}
         animate={shakeKey > 0 ? { x: [-4, 4, -4, 4, 0] } : {}}
         transition={{ duration: 0.35 }}
-        className="rounded-2xl border border-surface-border bg-surface-raised p-4 text-center text-sm text-surface-text-muted"
+        className="rounded-2xl border border-surface-border bg-surface-raised p-4 text-center text-sm text-surface-text-muted space-y-2"
       >
-        <Badge color="green" variant="outline" className="mb-3">
+        <Badge color="green" variant="outline" className="mb-1">
           Vote recorded
         </Badge>
-        You voted for{' '}
-        <strong className="text-surface-text">
-          {existingVote === 'draw'
-            ? 'Draw'
-            : existingVote === 'contender_a'
-              ? contenderA.displayName
-              : contenderB.displayName}
-        </strong>
-        .
+        <div>
+          You voted for <strong className="text-surface-text">{targetLabel}</strong>.
+        </div>
+        {voteUpdatedAt && (
+          <div className="text-xs text-surface-text-muted/70">{formatAgo(voteUpdatedAt)}</div>
+        )}
+        {canChangeVote && swapValue && onChangeVote && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleChange}
+            isLoading={changing}
+            disabled={changing || disabled}
+            className="mt-1"
+          >
+            Change vote
+          </Button>
+        )}
       </motion.div>
     )
   }
