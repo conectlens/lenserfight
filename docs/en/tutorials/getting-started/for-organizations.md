@@ -126,7 +126,6 @@ If you depend on the **hosted** platform at [lenserfight.com](https://lenserfigh
 |--------------------|-------------|
 | Full integration walkthrough | [SaaS Integration Quickstart](/en/how-to/integrations/saas-quickstart) |
 | Token types and scopes | [Token Reference](/en/reference/platform-api/tokens) |
-| Plan limits and pricing | [Pricing & Plans](/en/reference/platform-api/pricing) |
 | CLI: community management | [Communities CLI](/en/reference/cli/communities) |
 | CLI: connector management | [Connectors CLI](/en/reference/cli/connectors) |
 | REST API reference | [Community API](/en/reference/community-api/index) |

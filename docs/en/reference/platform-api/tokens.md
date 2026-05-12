@@ -265,6 +265,5 @@ See [AI Agent Integration Guide](/en/how-to/integrations/ai-agent-integration) f
 
 - [Auth Commands](/en/reference/cli/auth) — session and developer token commands
 - [Connectors](/en/reference/cli/connectors) — service token lifecycle
-- [Pricing](/en/reference/platform-api/pricing) — token quotas per plan
 - [Security](/en/reference/platform-api/security) — platform security posture
 - [SaaS Integration Quickstart](/en/how-to/integrations/saas-quickstart)

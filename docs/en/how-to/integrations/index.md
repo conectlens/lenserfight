@@ -27,7 +27,6 @@ These guides cover how external products and teams connect to LenserFight progra
 
 - [Connectors Reference](/en/reference/connectors/index) — `ConnectorAdapterV1` interface and scope grammar
 - [Token Reference](/en/reference/platform-api/tokens) — all token types and scopes
-- [Pricing & Plans](/en/reference/platform-api/pricing) — quota limits per tier
 - [Connectors](/en/reference/cli/connectors) — `lenserfight connectors` CLI reference
 - [Communities](/en/reference/cli/communities) — `lenserfight communities` CLI reference
 - [URL Conventions](/en/reference/platform-api/url-conventions) — handle and slug patterns
