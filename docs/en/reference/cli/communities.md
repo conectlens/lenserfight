@@ -220,8 +220,6 @@ lenserfight communities workflows chainabit --json
 | Community API tokens | — | 1 | 25 | Unlimited |
 | Community member seats | — | — | 50 | Custom |
 
-See [Pricing](/en/reference/platform-api/pricing) for full tier details.
-
 ---
 
 ## Related
@@ -230,7 +228,6 @@ See [Pricing](/en/reference/platform-api/pricing) for full tier details.
 - [Connectors](connectors.md) — register service integrations for a community
 - [Invite](connectors.md#lenserfight-invite) — invite users into a community
 - [Token Reference](/en/reference/platform-api/tokens) — org and service tokens
-- [Pricing](/en/reference/platform-api/pricing) — plan tiers and limits
 - [SaaS Integration Quickstart](/en/how-to/integrations/saas-quickstart)
 
 <!-- AUTO-GEN-START -->
