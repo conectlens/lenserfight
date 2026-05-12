@@ -61,6 +61,7 @@ export const Dialog: React.FC<DialogProps> = ({
   const activeTitle = headerSlot?.title ?? title
   const activeDesc = headerSlot?.description ?? description
   const activeIcon = headerSlot?.icon ?? icon
+  const activeAction = headerSlot?.action
 
   const safeTitle = activeTitle ? activeTitle.slice(0, TITLE_MAX) : undefined
   const safeDesc = activeDesc ? activeDesc.slice(0, DESC_MAX) : undefined
@@ -158,6 +159,13 @@ export const Dialog: React.FC<DialogProps> = ({
                         {safeDesc}
                       </p>
                     )}
+                  </div>
+                )}
+
+                {/* Header action slot — between title block and close button */}
+                {activeAction && (
+                  <div className="flex-shrink-0 ml-auto mr-2">
+                    {activeAction}
                   </div>
                 )}
 
