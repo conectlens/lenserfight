@@ -287,3 +287,58 @@ describe('battle new --from-template', () => {
     expect(consolaSuccess).toHaveBeenCalledWith('Battle created: /battles/%s', 'smoke-1')
   })
 })
+
+// ── Phase CB gap: check-readiness, auto-promote, webhook add ─────────────────
+
+describe('battle check-readiness', () => {
+  it('exits 1 and prints blocker when battle is not ready', async () => {
+    mockCallRpc.mockResolvedValueOnce({ ready: false, blockers: ['No contenders'] })
+
+    const cmd = await getSubCmd('check-readiness')
+    await cmd.run?.({ args: { id: 'battle-uuid', json: false }, cmd: {}, rawArgs: [] })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_battles_check_readiness',
+      { p_battle_id: 'battle-uuid' },
+      { requireAuth: true }
+    )
+    expect(process.exitCode).toBe(1)
+  })
+})
+
+describe('battle auto-promote', () => {
+  it('prints success when battle is promoted', async () => {
+    mockCallRpc.mockResolvedValueOnce(true)
+
+    const cmd = await getSubCmd('auto-promote')
+    await cmd.run?.({ args: { id: 'battle-uuid' }, cmd: {}, rawArgs: [] })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_battles_auto_promote',
+      { p_battle_id: 'battle-uuid' },
+      { requireAuth: true }
+    )
+    expect(consolaSuccess).toHaveBeenCalledWith('Battle %s promoted to open.', 'battle-uuid')
+  })
+})
+
+describe('battle webhook add', () => {
+  it('prints subscription ID on success', async () => {
+    const subId = 'sub-uuid-1234'
+    mockCallRpc.mockResolvedValueOnce(subId)
+
+    const webhookCmd = await getSubCmd('webhook') as { subCommands?: Record<string, { run?: (ctx: unknown) => Promise<void> }> }
+    await webhookCmd.subCommands?.['add']?.run?.({
+      args: { id: 'battle-uuid', url: 'https://example.com', events: 'status_change' },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_battles_subscribe_webhook',
+      expect.objectContaining({ p_battle_id: 'battle-uuid', p_webhook_url: 'https://example.com' }),
+      { requireAuth: true }
+    )
+    expect(consolaSuccess).toHaveBeenCalledWith('Webhook subscription created: %s', subId)
+  })
+})
