@@ -34,6 +34,10 @@ export const isEmail = (message = 'Please enter a valid email address'): Validat
   }
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export const isValidUUID = (v: string | null | undefined): v is string => !!v && UUID_RE.test(v)
+
 export const minLength = (min: number, message?: string): Validator => {
   return (value) => {
     if (!value) return null
