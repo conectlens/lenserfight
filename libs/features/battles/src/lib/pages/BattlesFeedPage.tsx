@@ -1,9 +1,8 @@
 import { Button, EmptyState, HelpButton, InfiniteScrollSentinel, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
-import { AnimatePresence, motion } from 'framer-motion'
 import React from 'react'
 import { useNavigate, Outlet, useSearchParams } from 'react-router-dom'
-import { PlusCircle, Zap } from 'lucide-react'
+import { ArrowRight, ImageIcon, PlusCircle, Swords, Video, Vote, Zap } from 'lucide-react'
 
 import { BattleCard } from '../components/display/BattleCard'
 import { useBattlesFeed } from '../hooks/query/useBattlesFeed'
@@ -48,20 +47,6 @@ const SORT_OPTIONS: { value: BattlesFeedSortBy; label: string }[] = [
   { value: 'trending', label: 'Trending' },
 ]
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: i * 0.05,
-      duration: 0.3,
-      ease: [0, 0, 0.2, 1] as [number, number, number, number],
-    },
-  }),
-  exit: { opacity: 0, y: -10, transition: { duration: 0.15 } },
-}
-
 export function BattlesFeedPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -101,7 +86,7 @@ export function BattlesFeedPage() {
       <SEOHead type="battles-list" />
       <PageHeader
         title="Battles"
-        description="Watch humans and AI go head-to-head — vote on the best response."
+        description="Create a task, compare human and AI outputs, vote on criteria, and reveal a winner."
         action={
           <>
             <HelpButton path="/tutorials/battle-walkthroughs/your-first-battle" />
@@ -116,6 +101,37 @@ export function BattlesFeedPage() {
           </>
         }
       />
+      <section className="my-5 rounded-2xl border border-surface-border bg-white p-4 shadow-sm dark:bg-gray-800">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
+              Battle flow
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-greyscale-800 dark:text-greyscale-100">
+              {['Input task', 'Generate or submit', 'Compare outputs', 'Vote', 'Result'].map((step, index) => (
+                <React.Fragment key={step}>
+                  <span className="rounded-full bg-surface-raised px-3 py-1">{step}</span>
+                  {index < 4 && <ArrowRight size={14} className="text-greyscale-300" />}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs font-semibold">
+            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
+              <Swords size={13} /> Human vs AI
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
+              <ImageIcon size={13} /> Image
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
+              <Video size={13} /> Video
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
+              <Vote size={13} /> Community voting
+            </span>
+          </div>
+        </div>
+      </section>
       <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         <div className="flex flex-wrap items-center gap-3">
           {/* Live quick-filter chip */}
@@ -170,8 +186,8 @@ export function BattlesFeedPage() {
         </div>
       ) : sorted.length === 0 ? (
         <EmptyState
-          title="Start your first battle"
-          description="Browse public templates and create a battle in seconds, or start from scratch."
+          title="Create the first battle"
+          description="Compare human and AI outputs on a real task. Choose a modality, add competitors, then let Lensers vote."
           action={
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Button variant="primary" size="sm" onClick={() => navigate('/battles/templates')}>
@@ -184,39 +200,29 @@ export function BattlesFeedPage() {
           }
         />
       ) : (
-        <AnimatePresence mode="popLayout">
-          <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
-            {sorted.map((b, i) => (
-              <motion.div
-                key={b.id}
-                custom={i}
-                variants={cardVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="break-inside-avoid mb-3"
-              >
-                <BattleCard
-                  id={b.id}
-                  slug={b.slug}
-                  title={b.title}
-                  status={b.status}
-                  totalVoteCount={b.total_vote_count}
-                  battleType={b.battle_type}
-                  contentType={b.content_type}
-                  voterEligibility={b.voter_eligibility}
-                  votingOpensAt={b.voting_opens_at}
-                  votingClosesAt={b.voting_closes_at}
-                  contenderAName={b.contender_a_name}
-                  contenderAType={b.contender_a_type}
-                  contenderBName={b.contender_b_name}
-                  contenderBType={b.contender_b_type}
-                  winnerSlot={b.winner_slot}
-                />
-              </motion.div>
-            ))}
-          </div>
-        </AnimatePresence>
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
+          {sorted.map((b) => (
+            <div key={b.id} className="break-inside-avoid mb-3">
+              <BattleCard
+                id={b.id}
+                slug={b.slug}
+                title={b.title}
+                status={b.status}
+                totalVoteCount={b.total_vote_count}
+                battleType={b.battle_type}
+                contentType={b.content_type}
+                voterEligibility={b.voter_eligibility}
+                votingOpensAt={b.voting_opens_at}
+                votingClosesAt={b.voting_closes_at}
+                contenderAName={b.contender_a_name}
+                contenderAType={b.contender_a_type}
+                contenderBName={b.contender_b_name}
+                contenderBType={b.contender_b_type}
+                winnerSlot={b.winner_slot}
+              />
+            </div>
+          ))}
+        </div>
       )}
       <InfiniteScrollSentinel
         hasNextPage={!!hasNextPage}
