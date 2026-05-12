@@ -39,7 +39,10 @@ STABLE
 SECURITY DEFINER
 SET search_path = public, battles
 AS $$
-  SELECT t.id, t.title, t.description, t.task_prompt,
+  SELECT t.id, t.title, t.description,
+         -- task_prompt only returned to authenticated callers; anon gets NULL to
+         -- prevent accidental full-prompt exposure of mistakenly-public templates.
+         CASE WHEN auth.uid() IS NOT NULL THEN t.task_prompt ELSE NULL END AS task_prompt,
          t.category, t.is_public, t.max_contenders, t.created_at, t.updated_at
     FROM battles.templates t
    WHERE t.is_public = true
