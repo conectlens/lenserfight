@@ -44,13 +44,13 @@ These surfaces exist in the codebase and have passed the integrity checks needed
 
 ### Limited Beta gates
 
-The cloud battles surface only enters Limited Beta after the following ship items pass verification on a deployment:
+The cloud battles surface only enters Limited Beta after the following ship items pass verification on a deployment. Each gate is backed by a pgTAP test that the [`coverage-gate.yml`](https://github.com/conectlens/lenserfight/blob/main/.github/workflows/coverage-gate.yml) CI workflow keeps green on every PR (Phase BV).
 
-- **K4 — `/health` probe.** `public.fn_health()` returns `ok` and the platform-api `/health` route reports green. See [Known Preview Surfaces](/reference/known-preview-surfaces#feature-surface-table).
-- **J1 — Rate limit on battle creation.** `fn_battles_create` enforces the per-creator and per-IP rate limit; integrity tests in [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) pass.
-- **J2 — Moderation override.** Admins or the battle creator can override an automated moderation flag through the [battle moderation admin console](/reference/known-preview-surfaces#feature-surface-table). Required for releasing false positives without a redeploy.
-- **O1 — Approval / moderation webhook outbox.** `audit.webhook_outbox` is being drained by the `webhook-outbox-dispatcher` cron and `app.webhook_signing_secret` is configured.
-- **O3 — ELO change log.** Every leaderboard mutation writes to the ELO change log so disputes can be resolved without replaying matches.
+- **K4 — `/health` probe.** `public.fn_health()` returns `ok` and the platform-api `/health` route reports green. Verified by `pnpm announcement:dashboard --once`. See [Known Preview Surfaces](/reference/known-preview-surfaces#feature-surface-table).
+- **J1 — Rate limit on battle creation.** `fn_battles_create` enforces the per-creator rolling 24h cap. Verified by [`supabase/tests/59_battles_create_rate_limit.sql`](https://github.com/conectlens/lenserfight/blob/main/supabase/tests/59_battles_create_rate_limit.sql) plan(3).
+- **J2 — Moderation override.** Battle creators can override an automated moderation flag via `fn_decide_moderation_override`. Verified by [`supabase/tests/60_moderation_admin_override.sql`](https://github.com/conectlens/lenserfight/blob/main/supabase/tests/60_moderation_admin_override.sql) plan(2).
+- **O1 — Approval / moderation webhook outbox.** `audit.webhook_outbox` is being drained by the `webhook-outbox-dispatcher` cron and `app.webhook_signing_secret` is configured. Verified by [`supabase/tests/61_webhook_outbox_drain.sql`](https://github.com/conectlens/lenserfight/blob/main/supabase/tests/61_webhook_outbox_drain.sql) plan(3); end-to-end smoke step 14 in `scripts/smoke.sh`.
+- **O3 — ELO change log.** Every leaderboard mutation writes a row to `reputation.elo_battle_log` so disputes can be resolved without replaying matches. Verified by [`supabase/tests/62_elo_change_log.sql`](https://github.com/conectlens/lenserfight/blob/main/supabase/tests/62_elo_change_log.sql) plan(2).
 
 ### How to participate
 
@@ -65,7 +65,8 @@ These are tracked in the roadmap but **no production-ready surface** exists yet.
 
 | Surface | Why out of scope |
 |---------|-----------------|
-| **Stable** connector SDK on npm (`@lenserfight/sdk` v1) | Alpha adapter code and RFC exist in-repo (Phase 10); v1 contract and npm promotion are Phase 16 — see [Connectors](/reference/connectors/index). |
+| **Stable** public client SDK on npm (`@lenserfight/sdk` v1.0) | Alpha line `0.1.0-alpha.1` is published (Phase BW); v1.0 contract follows 4–6 weeks of feedback. See [SDK reference](/reference/sdk). |
+| **Stable** connector SDK on npm (`@lenserfight/adapter-connector` v1) | Adapter code and RFC exist in-repo (Phase 10); v1 contract and npm promotion are Phase 16 — see [Connectors](/reference/connectors/index). |
 | Connector marketplace | Depends on stable public SDK and governance |
 | Billing and credits | Handled by Chainabit (private commercial API) — not part of OSS |
 | Benchmark suite | Evaluation harness not yet merged |
