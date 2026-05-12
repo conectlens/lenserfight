@@ -406,7 +406,15 @@ export interface BattlesRepositoryPort {
   renderTemplatePrompt(templateId: string, variables: Record<string, string>): Promise<string>
   // Phase BP: browse API
   browseBattles(filters: BrowseFilters, cursor?: BrowseCursor, limit?: number): Promise<BrowseBattleRecord[]>
+  // Phase BX: retention CTA
+  nextRecommendation(battleId: string): Promise<NextRecommendation | null>
 }
+
+// Phase BX — retention CTA returned by fn_battles_next_recommendation -------
+export type NextRecommendation =
+  | { action: 'rematch'; battle_id: string; slug?: string }
+  | { action: 'browse'; category: string | null }
+  | { action: 'create'; template_id: string | null }
 
 // Phase BJ — model conformance ledger ----------------------------------------
 export interface LogModelTestRunInput {
@@ -1104,6 +1112,16 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     })
     if (error) this.handleError(error)
     return (data ?? []) as BrowseBattleRecord[]
+  }
+
+  // Phase BX — retention CTA -------------------------------------------------
+  async nextRecommendation(battleId: string): Promise<NextRecommendation | null> {
+    const { data, error } = await supabase.rpc('fn_battles_next_recommendation', {
+      p_battle_id: battleId,
+    })
+    if (error) this.handleError(error)
+    if (data == null) return null
+    return data as NextRecommendation
   }
 }
 
