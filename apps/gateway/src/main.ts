@@ -1,8 +1,10 @@
 import { resolveGatewayConfig } from './config'
+import { loadGatewayIdentity, sendHeartbeat } from './heartbeat'
 import { scheduleLoop } from './loops'
 import { evaluatePreconditions, preconditionsAllPass } from './preconditions'
 import { createGatewayPreconditionProbes } from './probes'
 import { startServer } from './server'
+import { dispatchCommand, pullCommands } from './sync'
 import { resolveTailscaleConsent } from './tailscale'
 
 /**
@@ -49,29 +51,80 @@ async function main(): Promise<void> {
     // this branch is defensive for tests that bypass preconditions.
   }
 
+  const identity = await loadGatewayIdentity(config)
+  const supabaseUrl = process.env['SUPABASE_URL'] ?? ''
+  const supabaseAnonKey = process.env['SUPABASE_ANON_KEY'] ?? ''
+  const cloudConfigured = Boolean(identity && supabaseUrl && supabaseAnonKey)
+
   const server = await startServer(config, {
     daemonVersion: config.daemonVersion,
     primaryBind: config.bind,
     extraBinds,
+    deviceId: identity?.device_id,
+    stateDir: config.stateDir,
+    onSyncPull: async () => {
+      if (!cloudConfigured || !identity) return { claimed: 0 }
+      try {
+        const cmds = await pullCommands(identity.device_id, supabaseUrl, supabaseAnonKey)
+        for (const cmd of cmds) await dispatchCommand(cmd, { config, supabaseUrl, anonKey: supabaseAnonKey })
+        return { claimed: cmds.length }
+      } catch (err) {
+        process.stderr.write(`[sync/pull] ${(err as Error).message}\n`)
+        return { claimed: 0 }
+      }
+    },
   })
   process.stdout.write(`[lf-gatewayd] listening on ${server.url}\n`)
   for (const url of server.extraUrls) {
     process.stdout.write(`[lf-gatewayd] also listening on ${url} (tailscale)\n`)
   }
 
-  // Release candidate behavior: loops are scheduled but intentionally no-op
-  // until the daemon has a registered cloud device_id and signing context.
-  // This keeps startup/shutdown stable while the sync and heartbeat writes
-  // remain owned by explicit CLI/RPC paths for the OSS preview.
-  const heartbeat = scheduleLoop('heartbeat', config.heartbeatIntervalMs, async () => {
-    // POST devices.fn_device_heartbeat once identity is loaded.
-  })
-  const outbox = scheduleLoop('outbox', config.outboxFlushIntervalMs, async () => {
+  let heartbeat: { stop: () => void } = { stop: () => undefined }
+  let outbox: { stop: () => void } = { stop: () => undefined }
+  let pull: { stop: () => void } = { stop: () => undefined }
+  let killSwitchTriggered = false
+  const triggerKillSwitch = () => {
+    if (killSwitchTriggered) return
+    killSwitchTriggered = true
+    process.stdout.write('[lf-gatewayd] kill_switch received from cloud; shutting down\n')
+    void Promise.resolve()
+      .then(async () => {
+        heartbeat.stop()
+        outbox.stop()
+        pull.stop()
+        await server.close().catch(() => undefined)
+      })
+      .finally(() => process.exit(0))
+  }
+
+  const fireHeartbeat = async () => {
+    if (!cloudConfigured || !identity) return
+    try {
+      const result = await sendHeartbeat(config, identity, supabaseUrl, supabaseAnonKey)
+      if (result.killSwitch) triggerKillSwitch()
+    } catch (err) {
+      process.stderr.write(`[heartbeat] ${(err as Error).message}\n`)
+    }
+  }
+
+  heartbeat = scheduleLoop('heartbeat', config.heartbeatIntervalMs, fireHeartbeat)
+  outbox = scheduleLoop('outbox', config.outboxFlushIntervalMs, async () => {
     // Flush sync_outbox via gatewaySyncRepository.push.
   })
-  const pull = scheduleLoop('pull', config.pullIntervalMs, async () => {
-    // Pull via gatewaySyncRepository.pull(pullableObjectClasses()).
+  pull = scheduleLoop('sync', config.pullIntervalMs, async () => {
+    if (!cloudConfigured || !identity) return
+    try {
+      const cmds = await pullCommands(identity.device_id, supabaseUrl, supabaseAnonKey)
+      for (const cmd of cmds) {
+        await dispatchCommand(cmd, { config, supabaseUrl, anonKey: supabaseAnonKey })
+      }
+    } catch (err) {
+      process.stderr.write(`[sync] ${(err as Error).message}\n`)
+    }
   })
+
+  // Fire heartbeat once on startup so we surface kill_switch immediately.
+  void fireHeartbeat()
 
   const shutdown = async (signal: string) => {
     process.stdout.write(`[lf-gatewayd] received ${signal}; shutting down\n`)
