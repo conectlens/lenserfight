@@ -92,7 +92,7 @@ BEGIN
    RETURNING gc.*;
 END $$;
 
-GRANT EXECUTE ON FUNCTION agents.fn_gateway_claim_commands(UUID, INT) TO authenticated;
+-- agents schema is not in exposed_schemas; public wrapper below is the sole PostgREST entry point.
 
 CREATE OR REPLACE FUNCTION public.fn_gateway_claim_commands(
   p_device_id UUID,
@@ -128,6 +128,9 @@ BEGIN
   IF p_command_ids IS NULL OR cardinality(p_command_ids) = 0 THEN
     RETURN 0;
   END IF;
+  IF cardinality(p_command_ids) > 100 THEN
+    RAISE EXCEPTION 'too_many_ids' USING ERRCODE = '22023';
+  END IF;
 
   WITH owned AS (
     SELECT gc.id
@@ -146,7 +149,7 @@ BEGIN
   RETURN v_count;
 END $$;
 
-GRANT EXECUTE ON FUNCTION agents.fn_gateway_ack_commands(UUID[]) TO authenticated;
+-- agents schema is not in exposed_schemas; public wrapper below is the sole PostgREST entry point.
 
 CREATE OR REPLACE FUNCTION public.fn_gateway_ack_commands(
   p_command_ids UUID[]
