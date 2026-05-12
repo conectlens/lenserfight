@@ -180,12 +180,12 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
     const runResult = await service.executeWorkflow(nodes, edges, ctx)
 
     const finalStatus = runResult.status === 'completed' ? 'completed' : 'failed'
-    await withRetry(() =>
-      serviceClient.rpc('fn_update_workflow_run_status', {
+    await withRetry(async () => {
+      await serviceClient.rpc('fn_update_workflow_run_status', {
         p_run_id: run_id,
         p_status: finalStatus,
       })
-    )
+    })
 
     nodeLogger.info('scheduled workflow run completed', {
       runId: run_id,
@@ -196,12 +196,12 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     nodeLogger.error('scheduled workflow run failed', { runId: run_id, workflowId: workflow_id, message })
-    await withRetry(() =>
-      serviceClient.rpc('fn_update_workflow_run_status', {
+    await withRetry(async () => {
+      await serviceClient.rpc('fn_update_workflow_run_status', {
         p_run_id: run_id,
         p_status: 'failed',
       })
-    ).catch((statusErr) => {
+    }).catch((statusErr) => {
       nodeLogger.error('could not write failed status for run', {
         runId: run_id,
         message: statusErr instanceof Error ? statusErr.message : String(statusErr),
