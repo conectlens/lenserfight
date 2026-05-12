@@ -16,7 +16,7 @@ SELECT ok(
   'battles.battles should have RLS enabled'
 );
 
--- 2. anon role can SELECT public battles (there is a SELECT policy for anon)
+-- 2. battles.battles has a SELECT policy for authenticated/public access
 SELECT ok(
   EXISTS (
     SELECT 1 FROM pg_policies
@@ -24,14 +24,14 @@ SELECT ok(
       AND tablename  = 'battles'
       AND cmd        = 'SELECT'
   ),
-  'battles.battles should have at least one public SELECT policy'
+  'battles.battles should have at least one SELECT policy'
 );
 
--- 3. execution_jobs table exists (no direct authenticated SELECT — service_role only)
+-- 3. battle_execution_jobs table exists (service_role only — renamed from execution_jobs)
 SELECT has_table(
   'battles',
-  'execution_jobs',
-  'battles.execution_jobs table should exist'
+  'battle_execution_jobs',
+  'battles.battle_execution_jobs table should exist'
 );
 
 SELECT finish();
