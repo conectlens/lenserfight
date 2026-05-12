@@ -27,6 +27,7 @@ const LenserChatRail = lazy(() =>
 import { BattleSEOHead } from '../display/BattleSEOHead'
 import { VotePanel } from '../scoring/VotePanel'
 import { ResultBanner } from '../scoring/ResultBanner'
+import { BattleResultCTA } from '../result/BattleResultCTA'
 
 interface ImmersiveArenaViewProps {
   slug: string
@@ -143,13 +144,18 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
   ) : null
 
   const resultBanner = (
-    <ResultBanner
-      winnerName={winnerSlot === 'A' ? contenderA?.display_name : winnerSlot === 'B' ? contenderB?.display_name : undefined}
-      winnerSlot={winnerSlot}
-      voteA={aggA?.raw_vote_count ?? 0}
-      voteB={aggB?.raw_vote_count ?? 0}
-      forumThreadId={battle.forum_thread_id}
-    />
+    <div className="flex flex-col gap-4">
+      <ResultBanner
+        winnerName={winnerSlot === 'A' ? contenderA?.display_name : winnerSlot === 'B' ? contenderB?.display_name : undefined}
+        winnerSlot={winnerSlot}
+        voteA={aggA?.raw_vote_count ?? 0}
+        voteB={aggB?.raw_vote_count ?? 0}
+        forumThreadId={battle.forum_thread_id}
+      />
+      {/* Phase BX — retention CTA. The component renders nothing until the
+          battle is closed AND a recommendation is available. */}
+      <BattleResultCTA battleId={battle.id} enabled={battle.status === 'closed'} />
+    </div>
   )
 
   return (
