@@ -135,6 +135,9 @@ export function BattleResultPage() {
           contenderType={props.contenderType}
           contentText={props.contentText}
           contentUrl={props.contentUrl}
+          mediaUrl={props.mediaUrl}
+          mimeType={props.mimeType}
+          outputModality={props.outputModality}
           voteCount={props.voteCount}
           votePercentage={props.votePercentage}
         />
