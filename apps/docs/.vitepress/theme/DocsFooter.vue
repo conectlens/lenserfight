@@ -3,6 +3,21 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 
 const webBaseUrl = import.meta.env.WEB_BASE_URL ?? 'https://lenserfight.com'
 
+const utmSource = 'lenserfight'
+const utmMedium = 'docs_footer'
+
+function appendUtm(url: string, campaign: string) {
+  try {
+    const u = new URL(url)
+    u.searchParams.set('utm_source', utmSource)
+    u.searchParams.set('utm_medium', utmMedium)
+    u.searchParams.set('utm_campaign', campaign)
+    return u.toString()
+  } catch {
+    return url
+  }
+}
+
 const currentYear = computed(() => new Date().getFullYear())
 
 // Dark mode toggle: cycle light → dark → system
@@ -64,16 +79,22 @@ onMounted(() => {
 })
 
 const navLinks = [
-  { label: 'About', href: `${webBaseUrl}/about` },
-  { label: 'Product', href: `${webBaseUrl}/product` },
-  { label: 'Contact', href: `${webBaseUrl}/contact` },
+  { label: 'About', href: appendUtm(`${webBaseUrl}/about`, 'footer_about_link') },
+  { label: 'Product', href: appendUtm(`${webBaseUrl}/product`, 'footer_product_link') },
+  { label: 'FAQ', href: appendUtm(`${webBaseUrl}/faq`, 'footer_faq_link') },
+  { label: 'Contact', href: appendUtm('https://chainabit.com/contact', 'lenserfight_contact') },
 ]
 
 const policyLinks = [
-  { label: 'Terms & Policies', href: `${webBaseUrl}/policies/terms` },
-  { label: 'Privacy', href: `${webBaseUrl}/policies/privacy` },
-  { label: 'Cookies', href: `${webBaseUrl}/policies/cookies` },
+  { label: 'Terms & Policies', href: appendUtm(`${webBaseUrl}/policies/terms`, 'footer_policy_terms_link') },
+  { label: 'Privacy', href: appendUtm(`${webBaseUrl}/policies/privacy`, 'footer_policy_privacy_link') },
+  { label: 'Cookies', href: appendUtm(`${webBaseUrl}/policies/cookies`, 'footer_policy_cookies_link') },
 ]
+
+const conectlensUrl = computed(() => appendUtm('https://conectlens.com', 'footer_conectlens_link'))
+const chainabitUrl = computed(() => appendUtm('https://chainabit.com', 'footer_chainabit_partner'))
+const sponsorUrl = computed(() => appendUtm('https://github.com/sponsors/conectlens', 'footer_sponsor_link'))
+const lenserfightUrl = computed(() => appendUtm(webBaseUrl, 'footer_copyright_link'))
 </script>
 
 <template>
@@ -82,14 +103,40 @@ const policyLinks = [
       <!-- Top row: copyright · powered by | nav links | theme toggle -->
       <div class="df-top-row">
         <div class="df-left">
-          <span class="df-copy">© {{ currentYear }} LenserFight</span>
+          <a :href="lenserfightUrl" class="df-link df-copy" target="_blank" rel="noopener noreferrer">
+            © {{ currentYear }} LenserFight
+          </a>
           <span class="df-sep" aria-hidden="true">·</span>
           <a
-            href="https://conectlens.com"
+            :href="sponsorUrl"
+            class="df-link df-sponsor"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="df-heart">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            Sponsor us
+          </a>
+          <span class="df-sep" aria-hidden="true">·</span>
+          <a
+            :href="chainabitUrl"
+            class="df-link df-chainabit"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img src="/chainabit/favicon-32x32.png" width="14" height="14" alt="" />
+            <span>Chainabit</span>
+          </a>
+          <span class="df-sep" aria-hidden="true">·</span>
+          <a
+            :href="conectlensUrl"
             class="df-link"
             target="_blank"
             rel="noopener noreferrer"
-          >Powered by ConectLens</a>
+          >
+            <span>Powered by ConectLens</span>
+          </a>
         </div>
 
         <nav class="df-nav" aria-label="Footer navigation">
@@ -100,8 +147,27 @@ const policyLinks = [
             class="df-link"
             target="_blank"
             rel="noopener noreferrer"
-          >{{ link.label }}</a>
+          >
+            {{ link.label }}
+          </a>
         </nav>
+
+      </div>
+
+      <!-- Bottom row: policy links (always visible, full width) -->
+      <div class="df-bottom-row">
+        <div class="df-policies">
+          <a
+            v-for="link in policyLinks"
+            :key="link.label"
+            :href="link.href"
+            class="df-link df-link-sm"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ link.label }}
+          </a>
+        </div>
 
         <!-- Dark mode toggle -->
         <div class="df-right">
@@ -124,20 +190,6 @@ const policyLinks = [
           </button>
         </div>
       </div>
-
-      <!-- Bottom row: policy links (always visible, full width) -->
-      <div class="df-bottom-row">
-        <div class="df-policies">
-          <a
-            v-for="link in policyLinks"
-            :key="link.label"
-            :href="link.href"
-            class="df-link df-link-sm"
-            target="_blank"
-            rel="noopener noreferrer"
-          >{{ link.label }}</a>
-        </div>
-      </div>
     </div>
   </footer>
 </template>
@@ -148,7 +200,7 @@ const policyLinks = [
   z-index: 10; 
   background-color: var(--vp-c-bg);
   border-top: 1px solid var(--vp-c-divider);
-  padding: 3rem 1.5rem 4rem;
+  padding: 2rem 1.5rem;
   color: var(--vp-c-text-2);
   box-sizing: border-box;
   overflow: hidden;
@@ -209,16 +261,49 @@ const policyLinks = [
 }
 
 .df-copy {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--vp-c-text-1);
 }
+
+.df-sponsor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #db2777 !important;
+  font-weight: 500;
+}
+
+.df-sponsor:hover {
+  color: #be185d !important;
+}
+
+.df-heart {
+  color: #ec4899;
+}
+
+.df-chainabit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.df-chainabit img {
+  border-radius: 4px;
+  filter: grayscale(1) opacity(0.7);
+  transition: all 0.2s ease;
+}
+
+.df-chainabit:hover img {
+  filter: grayscale(0) opacity(1);
+}
+
 
 .df-nav {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1.5rem;
   flex: 1;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .df-right {
@@ -257,8 +342,10 @@ const policyLinks = [
 /* Bottom row: policy links always on their own line */
 .df-bottom-row {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
   width: 100%;
   padding-top: 1.25rem;
   border-top: 1px solid var(--vp-c-divider);
@@ -313,13 +400,18 @@ const policyLinks = [
     order: 1;
   }
 
-  .df-right {
-    order: 2;
-    margin-left: 0;
-  }
-
   .df-policies {
     gap: 0.5rem 1rem;
+  }
+
+  .df-bottom-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .df-right {
+    margin-left: 0;
   }
 }
 </style>
