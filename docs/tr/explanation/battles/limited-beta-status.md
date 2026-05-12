@@ -1,11 +1,11 @@
 ---
-title: Bulut Savaşları — Sınırlı Beta Durumu
-description: Bulut Savaşları Sınırlı Beta için operatör çalışma kitabı — ön hazırlık ortam değişkenleri ve Postgres GUC'leri, izleme sinyalleri, geri alma adımları ve eskalasyon kanalı.
+title: Bulut Savaşları — Operatör Çalışma Kitabı
+description: Bulut Savaşları yüzeyi için operatör çalışma kitabı — ön hazırlık ortam değişkenleri ve Postgres GUC'leri, izleme sinyalleri, geri alma adımları ve eskalasyon kanalı.
 ---
 
-# Bulut Savaşları — Sınırlı Beta Durumu
+# Bulut Savaşları — Operatör Çalışma Kitabı
 
-Bu sayfa, Cloud Battles yüzeyini Sınırlı Beta'da çalıştırmaya yönelik operatör çalışma kitabıdır. Dağıtımın Phase O webhook outbox migration'ını uyguladığı ve `pg_cron` ile `pg_net` mevcut olan barındırılan bir Supabase örneğinin bulunduğu varsayılır.
+Bu sayfa, Cloud Battles yüzeyini çalıştırmaya yönelik operatör çalışma kitabıdır. Dağıtımın Phase O webhook outbox migration'ını uyguladığı ve `pg_cron` ile `pg_net` mevcut olan barındırılan bir Supabase örneğinin bulunduğu varsayılır.
 
 Yüzeyin bayrak çevrilmeden önce geçmesi gereken bütün bütünlük kontrolleri için bkz. [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist).
 
@@ -22,14 +22,14 @@ Yüzeyin bayrak çevrilmeden önce geçmesi gereken bütün bütünlük kontroll
 
 ### Postgres GUC'leri
 
-Bu değerleri Sınırlı Beta dağıtımında `ALTER DATABASE postgres SET …` ile ayarlayın. GUC'nin cron job oturumunda etkili olması için değişiklikten sonra `pg_cron` işçilerini yeniden başlatın.
+Bu değerleri dağıtımda `ALTER DATABASE postgres SET …` ile ayarlayın. GUC'nin cron job oturumunda etkili olması için değişiklikten sonra `pg_cron` işçilerini yeniden başlatın.
 
 | GUC | Amaç | Varsayılan | Gerekli |
 |---|---|---|---|
 | `app.approval_timeout_hours` | `expire-stale-approvals` job'u için eşik. | `24` | önerilir |
-| `app.approval_webhook_url` | Yeni bekleyen onaylar için en iyi çaba POST URL'si (operatör çağrı zincirini besler). | boş | Sınırlı Beta için evet |
-| `app.moderation_webhook_url` | Moderasyon olayları için en iyi çaba POST URL'si (işaretlenen gönderimler, geçersiz kılma kararları). | boş | Sınırlı Beta için evet |
-| `app.webhook_signing_secret` | `audit.webhook_outbox` teslimleri için HMAC imzalama anahtarı. Alıcı tarafında `X-Lenserfight-Signature` eşleşmediğinde teslimi reddedin. | boş | Sınırlı Beta için evet |
+| `app.approval_webhook_url` | Yeni bekleyen onaylar için en iyi çaba POST URL'si (operatör çağrı zincirini besler). | boş | evet |
+| `app.moderation_webhook_url` | Moderasyon olayları için en iyi çaba POST URL'si (işaretlenen gönderimler, geçersiz kılma kararları). | boş | evet |
+| `app.webhook_signing_secret` | `audit.webhook_outbox` teslimleri için HMAC imzalama anahtarı. Alıcı tarafında `X-Lenserfight-Signature` eşleşmediğinde teslimi reddedin. | boş | evet |
 
 ```sql
 ALTER DATABASE postgres SET app.approval_timeout_hours = 24;
@@ -86,13 +86,13 @@ Daha sonra yeniden etkinleştirmek için bayrak değerlerini geri yükleyin, GUC
 
 Otomatik bir kontrol gerçek dünya olayını (saldırgan gönderim, bir prompt'ta sızdırılan kimlik bilgileri, sürekli moderasyon atlatma) durduramadığında bu kanalı kullanın.
 
-- **Birincil:** `moderation@lenserfight.org` adresine e-posta gönderin. Sınırlı Beta sırasında 24 saat içinde ilk yanıt beklenir.
+- **Birincil:** `moderation@lenserfight.org` adresine e-posta gönderin. 24 saat içinde ilk yanıt beklenir.
 - **GitHub Issue (hassas):** Rapor kullanıcı verisi veya kimlik bilgisi içeriyorsa özel bir güvenlik danışma belgesi açın.
-- **GitHub Issue (genel):** İhbarın bakımcı önceliklendirme kuyruğunda görünmesi için issue'yu `limited-beta` ve `incident` olarak etiketleyin.
+- **GitHub Issue (genel):** İhbarın bakımcı önceliklendirme kuyruğunda görünmesi için issue'yu `incident` olarak etiketleyin.
 
 ## İlgili
 
 - [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist) — bulut savaşları etkinleştirilmeden önce gereken kontroller.
-- [Bilinen Önizleme Yüzeyleri](/tr/reference/known-preview-surfaces) — yüzey başına denetim bayrakları, kapılar ve geri alma.
-- [OSS Lansman Kapsamı](/tr/explanation/community/oss-launch-scope) — Sınırlı Beta kapıları ve nasıl katılınır.
+- [Bilinen Önizleme Yüzeyleri](/tr/reference/known-preview-surfaces) — yüzey başına denetim bayrakları ve geri alma.
+- [OSS Lansman Kapsamı](/tr/explanation/community/oss-launch-scope) — yüzey durumu ve dağıtım gereksinimleri.
 - [Approvals](/en/reference/internals/approvals) — webhook payload şekli ve teslim semantiği.
