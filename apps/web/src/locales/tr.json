@@ -92,5 +92,25 @@
     "select": "Dil",
     "en": "English",
     "tr": "Türkçe"
+  },
+  "battles": {
+    "contentTypes": {
+      "text":       "Metin",
+      "code":       "Kod",
+      "poem":       "Şiir",
+      "drawing":    "Çizim",
+      "image":      "Görsel",
+      "video":      "Video",
+      "audio":      "Ses",
+      "workflow":   "İş Akışı",
+      "map":        "Harita",
+      "avatar":     "Avatar",
+      "image_edit": "Görsel Düzenleme",
+      "kaggle":     "Kaggle"
+    },
+    "filter": {
+      "allMedia":    "Tüm medya",
+      "contentType": "İçerik türü"
+    }
   }
 }
