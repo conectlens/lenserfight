@@ -1201,6 +1201,120 @@ const createFromTemplate = defineCommand({
 })
 
 // ---------------------------------------------------------------------------
+// battle new --from-template
+// ---------------------------------------------------------------------------
+// Phase AW: thin wrapper that resolves a slug-or-uuid template, optionally
+// prompts the user for title/slug, then defers to fn_battles_create_from_template.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 80)
+}
+
+const newFromTemplate = defineCommand({
+  meta: {
+    name: 'new',
+    description:
+      'Start a new battle, optionally seeded from a public template (`--from-template <slug>`).',
+  },
+  args: {
+    'from-template': {
+      type: 'string',
+      description: 'Public template slug or UUID',
+      default: '',
+    },
+    title: {
+      type: 'string',
+      description: 'Battle title (prompted if missing)',
+      default: '',
+    },
+    slug: {
+      type: 'string',
+      description: 'Battle URL slug (derived from title if missing)',
+      default: '',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const ref = (args['from-template'] || '').trim()
+      if (!ref) {
+        consola.error('--from-template <slug|uuid> is required for `lf battle new`.')
+        process.exitCode = 1
+        return
+      }
+
+      let templateId: string | null = null
+      if (UUID_RE.test(ref)) {
+        templateId = ref
+      } else {
+        const templates = await callRpc<Array<{ id: string; title?: string; description?: string | null }>>(
+          'fn_list_public_battle_templates',
+          { p_category: null, p_limit: 100 },
+          { requireAuth: false }
+        )
+        const match = (templates ?? []).find(
+          (t) => slugify(t.title ?? '') === ref || (t.title ?? '').trim() === ref
+        )
+        if (!match) {
+          consola.error('No public template matches "%s".', ref)
+          process.exitCode = 1
+          return
+        }
+        templateId = match.id
+      }
+
+      let title = (args.title || '').trim()
+      if (!title) {
+        const answer = await consola.prompt('Battle title:', { type: 'text' })
+        title = String(answer ?? '').trim()
+      }
+      if (!title) {
+        consola.error('Title is required.')
+        process.exitCode = 1
+        return
+      }
+
+      let slug = (args.slug || '').trim() || slugify(title)
+      if (!slug) {
+        const answer = await consola.prompt('Battle slug:', { type: 'text', initial: slugify(title) })
+        slug = String(answer ?? '').trim()
+      }
+
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_battles_create_from_template',
+        {
+          p_template_id: templateId,
+          p_title: title,
+          p_slug: slug,
+        },
+        { requireAuth: true }
+      )
+
+      if (args.json) {
+        printJson(result)
+        return
+      }
+
+      const battleSlug = (result?.['slug'] as string | undefined) ?? slug
+      consola.success('Battle created: /battles/%s', battleSlug)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
 // battle vote
 // ---------------------------------------------------------------------------
 const vote = defineCommand({
@@ -3303,6 +3417,7 @@ export default defineCommand({
     clone,
     delete: deleteBattle,
     'create-from-template': createFromTemplate,
+    new: newFromTemplate,
     vote,
     'close-voting': closeVoting,
     close: closeBattle,
