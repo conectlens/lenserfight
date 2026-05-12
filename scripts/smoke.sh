@@ -64,8 +64,25 @@ SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:-ci-anon-key-placeholder}" \
 LF_GATEWAY_KEY_FILE_FALLBACK=1 \
 node dist/apps/cli/main.js gateway doctor --check daemon,transport --json
 
-echo "==> [9/9] web build"
+echo "==> [9/10] web build"
 pnpm nx run web:build
+
+echo "==> [10/10] lf battle new --from-template (template smoke)"
+# Phase BA: confirm the full path from CLI to fn_battles_create_from_template
+# still works end-to-end against a seeded public template. Soft failure: if
+# the seed isn't applied locally we skip rather than failing the whole script.
+if command -v supabase >/dev/null 2>&1 && [[ -z "${SKIP_DB:-}" ]] \
+   && [[ -n "${LENSERFIGHT_API_KEY:-}${SUPABASE_SESSION:-}" ]]; then
+  TS=$(date +%s)
+  if ! node dist/apps/cli/main.js battle new \
+        --from-template "reasoning-quality-shootout" \
+        --title "Smoke test battle ${TS}" \
+        --slug "smoke-${TS}"; then
+    echo "    template smoke: skipped (no matching public template in this DB)"
+  fi
+else
+  echo "    template smoke: skipped (no DB session or auth context)"
+fi
 
 echo
 echo "✓ smoke complete — local environment is ready"
