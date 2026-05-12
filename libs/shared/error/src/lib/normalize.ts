@@ -24,6 +24,12 @@ function getCode(error: unknown): string | undefined {
   return typeof c === 'string' ? c : undefined
 }
 
+function getHint(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined
+  const h = (error as Record<string, unknown>)['hint']
+  return typeof h === 'string' ? h : undefined
+}
+
 function getMessage(error: unknown): string {
   if (!error || typeof error !== 'object') return ''
   const m = (error as Record<string, unknown>)['message']
@@ -53,6 +59,7 @@ const CONSTRAINT_VIOLATION_CODES = new Set(['23514', '23505', '23503'])
 export function normalizeError(error: unknown): AppError {
   const status = getStatus(error)
   const code = getCode(error)
+  const hint = getHint(error)
   const msg = getMessage(error)
 
   // ── 401 Unauthorized — session missing / JWT expired ───────────────────────
@@ -106,11 +113,21 @@ export function normalizeError(error: unknown): AppError {
   }
 
   // ── 429 Rate Limit ─────────────────────────────────────────────────────────
-  if (status === 429) {
+  // Covers HTTP 429 and Postgres RAISE EXCEPTION with hint 'p0429'
+  if (
+    status === 429 ||
+    (code === 'P0001' && hint === 'p0429')
+  ) {
+    const rateLimitMessages: Record<string, string> = {
+      battle_rate_limit_exceeded: 'You\'ve created too many battles recently. Please wait before creating another.',
+    }
+    const userMessage =
+      rateLimitMessages[msg] ??
+      'Too many requests. Please wait a moment before trying again.'
     return {
       kind: 'rate_limit',
-      statusCode: 429,
-      message: 'Too many requests. Please wait a moment before trying again.',
+      statusCode: status ?? 429,
+      message: userMessage,
       originalError: error,
     } satisfies RateLimitError
   }
