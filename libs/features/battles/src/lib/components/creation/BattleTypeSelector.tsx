@@ -1,4 +1,3 @@
-import { Card } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
 import { Bot, Brain, GitBranch, Swords, Users } from 'lucide-react'
 import React from 'react'
