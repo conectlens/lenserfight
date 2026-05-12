@@ -351,4 +351,64 @@ export const seoService = {
       `${FORUM_HOST}/lenses`,
     ),
   }),
+
+  getWorkflowMeta: (workflow?: { id: string; title: string; description?: string | null; visibility?: string } | null): SEOMetadata => {
+    if (!workflow) {
+      return {
+        title: 'Workflow · LenserFight',
+        description: 'AI workflow on LenserFight.',
+        index: false,
+      }
+    }
+
+    const isPublic = !workflow.visibility || workflow.visibility === 'public'
+    const desc = clampDescription(
+      workflow.description || `Run and explore the "${workflow.title}" AI workflow on LenserFight. Chain lenses, schedule runs, and automate AI tasks.`,
+    )
+    const pageUrl = `${FORUM_HOST}/workflows/${workflow.id}`
+
+    return {
+      title: `${workflow.title} | LenserFight Workflow`,
+      description: desc,
+      url: pageUrl,
+      ogImage: DEFAULT_OG_IMAGE,
+      index: isPublic,
+      jsonLd: isPublic
+        ? {
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareApplication',
+            name: workflow.title,
+            description: desc,
+            url: pageUrl,
+            applicationCategory: 'AIApplication',
+            publisher: ORGANIZATION_JSON_LD,
+            isAccessibleForFree: true,
+          }
+        : undefined,
+    }
+  },
+
+  getWorkflowsListMeta: (): SEOMetadata => ({
+    title: 'AI Workflows | Automate and Chain Lenses | LenserFight',
+    description: 'Browse and fork public LenserFight workflows. Chain AI lenses, schedule automated runs, and build multi-step AI pipelines for coding, research, and content.',
+    url: `${FORUM_HOST}/workflows`,
+    ogImage: DEFAULT_OG_IMAGE,
+    jsonLd: collectionPageJsonLd(
+      'AI Workflows',
+      'Public multi-step AI workflows, automated pipelines, and chainable lens sequences.',
+      `${FORUM_HOST}/workflows`,
+    ),
+  }),
+
+  getWorkflowTemplatesMeta: (): SEOMetadata => ({
+    title: 'Workflow Templates | Start Fast with Curated AI Pipelines | LenserFight',
+    description: 'Fork curated LenserFight workflow templates for coding assistants, research pipelines, content automation, and AI agent patterns.',
+    url: `${FORUM_HOST}/workflows/templates`,
+    ogImage: DEFAULT_OG_IMAGE,
+    jsonLd: collectionPageJsonLd(
+      'Workflow Templates',
+      'Curated AI workflow templates ready to fork — coding, research, content, agents, and more.',
+      `${FORUM_HOST}/workflows/templates`,
+    ),
+  }),
 }
