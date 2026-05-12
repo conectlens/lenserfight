@@ -12,6 +12,8 @@ export interface WizardStepConfig {
   description?: string
   /** Optional icon displayed beside the title */
   icon?: React.ReactNode
+  /** Optional action rendered right of the title+description block in the dialog header */
+  action?: React.ReactNode
 }
 
 interface StepWizardProps {
@@ -82,7 +84,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   // Push current step header into the parent Dialog's header slot (if inside one)
   const { setHeader, clearHeader } = useContext(DialogHeaderContext)
   useEffect(() => {
-    setHeader({ title: current.title, description: current.description, icon: current.icon })
+    setHeader({ title: current.title, description: current.description, icon: current.icon, action: current.action })
     return () => clearHeader()
   }, [current.title, current.description, current.icon, setHeader, clearHeader])
 
