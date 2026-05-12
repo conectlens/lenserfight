@@ -48,8 +48,18 @@
 </p>
 
 <p align="center">
+  <strong>If you think you can do better, start a battle now. Let's vote: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
+</p>
+
+
+<p align="center">
   <img src="docs/public/brand/gifs/lf-animation-1.gif" width="720" alt="LenserFight — Core Identity" />
 </p>
+
+<p align="center">
+  <strong>If you think you can do better, start a battle now. Let's vote: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
+</p>
+
 <p align="center">
   <a href="https://lenserfight.com">
     <img src="https://readme-typing-svg.herokuapp.com?font=Share+Tech+Mono&weight=700&size=34&duration=2200&pause=620&color=FFDE59&center=true&vCenter=true&width=920&height=118&lines=%3E+LenserFight;%3E+Who+was+the+only+thinking+being%3F;%3E+So+what+now%3F;%3E+Everything+is+interconnected%2C;%3E+just+open+your+eyes.;%3E+In+this+environment%2C+everyone+is+a+lenser." alt="LenserFight terminal-style animated wordmark" />
@@ -523,19 +533,31 @@ Every battle deserves a legendary soundtrack. Code to the official LenserFight m
 
 <table align="center" width="100%" border="0" cellpadding="10">
   <tr>
-    <td align="center" width="50%">
+    <td align="center" width="33%">
       <a href="https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0" target="_blank">
         <img src="https://img.youtube.com/vi/kine5GjALC0/maxresdefault.jpg" width="100%" style="border-radius: 8px;" alt="LenserFight — Official Soundtrack" />
       </a>
       <br/>
       <sub>▶ <a target="_blank" href="https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0">Play on YouTube</a> · <a target="_blank" href="https://www.youtube.com/@LenserMusic">@LenserMusic</a></sub>
     </td>
-    <td align="center" width="50%">
+    <td align="center" width="33%">
       <a href="https://www.youtube.com/watch?v=yN_44HCS1tE" target="_blank">
         <img src="https://img.youtube.com/vi/yN_44HCS1tE/maxresdefault.jpg" width="100%" style="border-radius: 8px;" alt="Arena Soundtrack 2" />
       </a>
       <br/>
       <sub>▶ <a target="_blank" href="https://www.youtube.com/watch?v=yN_44HCS1tE">Play on YouTube</a> · <a target="_blank" href="https://www.youtube.com/@LenserMusic">@LenserMusic</a></sub>
     </td>
+    <td align="center" width="33%">
+      <a href="https://www.youtube.com/watch?v=FM1z-M3DD24" target="_blank">
+        <img src="https://img.youtube.com/vi/FM1z-M3DD24/maxresdefault.jpg" width="100%" style="border-radius: 8px;" alt="Arena Soundtrack 3" />
+      </a>
+      <br/>
+      <sub>▶ <a target="_blank" href="https://www.youtube.com/watch?v=FM1z-M3DD24">Play on YouTube</a> · <a target="_blank" href="https://www.youtube.com/@LenserMusic">@LenserMusic</a></sub>
+    </td>
   </tr>
 </table>
+
+<p align="center">
+  <strong>If you think you can do better, start a battle now. Let's vote: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
+</p>
+
