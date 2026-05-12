@@ -4087,6 +4087,140 @@ function buildBattleMarkdown(
 }
 
 // ---------------------------------------------------------------------------
+// CB: battle check-readiness
+// ---------------------------------------------------------------------------
+const checkReadiness = defineCommand({
+  meta: {
+    name: 'check-readiness',
+    description: 'Check whether a battle is ready to be promoted from draft to open.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    json: { type: 'boolean', description: 'Output raw JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const result = await callRpc<{ ready: boolean; blockers: string[] }>(
+        'fn_battles_check_readiness',
+        { p_battle_id: args.id },
+        { requireAuth: true }
+      )
+      if (args.json) {
+        printJson(result)
+      } else {
+        if (result.ready) {
+          consola.success('Battle %s is ready.', args.id)
+        } else {
+          consola.warn('Battle %s is NOT ready. Blockers:', args.id)
+          for (const b of result.blockers ?? []) {
+            consola.info('  • %s', b)
+          }
+        }
+      }
+      if (!result.ready) process.exitCode = 1
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// CB: battle auto-promote
+// ---------------------------------------------------------------------------
+const autoPromote = defineCommand({
+  meta: {
+    name: 'auto-promote',
+    description: 'Attempt to auto-promote a draft battle to open.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      const promoted = await callRpc<boolean>(
+        'fn_battles_auto_promote',
+        { p_battle_id: args.id },
+        { requireAuth: true }
+      )
+      if (promoted) {
+        consola.success('Battle %s promoted to open.', args.id)
+      } else {
+        const readiness = await callRpc<{ ready: boolean; blockers: string[] }>(
+          'fn_battles_check_readiness',
+          { p_battle_id: args.id },
+          { requireAuth: true }
+        )
+        consola.warn('Not promoted. Blockers:')
+        for (const b of readiness.blockers ?? []) {
+          consola.info('  • %s', b)
+        }
+        process.exitCode = 1
+      }
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// CB: battle webhook add
+// ---------------------------------------------------------------------------
+const webhookAdd = defineCommand({
+  meta: {
+    name: 'add',
+    description: 'Subscribe a webhook URL to battle events.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    url: {
+      type: 'string',
+      description: 'Webhook URL to receive events',
+      required: true,
+    },
+    events: {
+      type: 'string',
+      description: 'Comma-separated event types (e.g. status_change,vote_cast)',
+      default: 'status_change',
+    },
+  },
+  async run({ args }) {
+    try {
+      const eventTypes = args.events.split(',').map((e: string) => e.trim()).filter(Boolean)
+      const subId = await callRpc<string>(
+        'fn_battles_subscribe_webhook',
+        {
+          p_battle_id:   args.id,
+          p_webhook_url: args.url,
+          p_event_types: eventTypes,
+        },
+        { requireAuth: true }
+      )
+      consola.success('Webhook subscription created: %s', subId)
+      consola.warn('Your HMAC secret is stored server-side. Use the admin UI to retrieve it.')
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const webhook = defineCommand({
+  meta: { name: 'webhook', description: 'Manage battle webhook subscriptions.' },
+  subCommands: { add: webhookAdd },
+})
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -4142,5 +4276,8 @@ export default defineCommand({
     'render-prompt': renderPrompt,
     browse,
     'dev-cycle': devCycle,
+    'check-readiness': checkReadiness,
+    'auto-promote': autoPromote,
+    webhook,
   },
 })
