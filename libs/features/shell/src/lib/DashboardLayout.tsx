@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, Suspense } from 'react'
 import { useLocation } from 'react-router-dom'
 import { ChainabitOnboardingModal, useLenserOptional } from '@lenserfight/features/profile'
 import { Footer } from '@lenserfight/ui/layout'
+import { Loader } from '@lenserfight/ui/feedback'
 import { WEB_BASE_URL } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 
@@ -141,16 +142,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, full
               : 'flex-1 overflow-y-auto scrollbar-hide flex flex-col'
           }
         >
-          {fullscreen ? (
-            children
-          ) : (
-            <>
-              <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-900 dark:text-gray-100">
-                {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
-              </div>
-              <Footer isDashboard={true} navBaseUrl={WEB_BASE_URL} />
-            </>
-          )}
+          <Suspense fallback={<Loader variant="centered" message="Loading..." />}>
+            {fullscreen ? (
+              children
+            ) : (
+              <>
+                <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-900 dark:text-gray-100">
+                  {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
+                </div>
+                <Footer isDashboard={true} navBaseUrl={WEB_BASE_URL} />
+              </>
+            )}
+          </Suspense>
         </main>
       </div>
 
