@@ -1315,6 +1315,357 @@ const newFromTemplate = defineCommand({
 })
 
 // ---------------------------------------------------------------------------
+// Phase BD — battle template <create|update|delete>: authoring CLI.
+// ---------------------------------------------------------------------------
+const templateCreate = defineCommand({
+  meta: {
+    name: 'create',
+    description: 'Create a new battle template.',
+  },
+  args: {
+    title: { type: 'string', description: 'Template title', required: true },
+    description: { type: 'string', description: 'Short description', default: '' },
+    prompt: { type: 'string', description: 'Task prompt', required: true },
+    category: {
+      type: 'string',
+      description: 'Category (creative|technical|business|gaming)',
+      default: '',
+    },
+    'max-contenders': { type: 'string', description: 'Max contenders (>=2)', default: '2' },
+    public: { type: 'boolean', default: false, description: 'Publish immediately' },
+    json: { type: 'boolean', default: false, description: 'Output JSON' },
+  },
+  async run({ args }) {
+    try {
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_battles_create_template',
+        {
+          p_title: args.title,
+          p_description: args.description || null,
+          p_task_prompt: args.prompt,
+          p_category: args.category || null,
+          p_max_contenders: Number(args['max-contenders']) || 2,
+          p_is_public: Boolean(args.public),
+        },
+        { requireAuth: true }
+      )
+      if (args.json) { printJson(result); return }
+      consola.success('Template created: %s', result?.['id'])
+    } catch (err) { handleError(err) }
+  },
+})
+
+const templateUpdate = defineCommand({
+  meta: {
+    name: 'update',
+    description: 'Update an existing battle template (only the flags you pass change).',
+  },
+  args: {
+    id: { type: 'positional', description: 'Template UUID', required: true },
+    title: { type: 'string', description: 'New title', default: '' },
+    description: { type: 'string', description: 'New description', default: '' },
+    prompt: { type: 'string', description: 'New task prompt', default: '' },
+    category: { type: 'string', description: 'New category', default: '' },
+    'max-contenders': { type: 'string', description: 'New max contenders', default: '' },
+    public: { type: 'boolean', default: false, description: 'Publish' },
+    'no-public': { type: 'boolean', default: false, description: 'Unpublish' },
+    json: { type: 'boolean', default: false, description: 'Output JSON' },
+  },
+  async run({ args }) {
+    try {
+      let p_is_public: boolean | null = null
+      if (args.public && args['no-public']) {
+        consola.error('Pass either --public or --no-public, not both.')
+        process.exitCode = 1
+        return
+      }
+      if (args.public) p_is_public = true
+      else if (args['no-public']) p_is_public = false
+
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_battles_update_template',
+        {
+          p_template_id: args.id,
+          p_title: args.title || null,
+          p_description: args.description || null,
+          p_task_prompt: args.prompt || null,
+          p_category: args.category || null,
+          p_max_contenders: args['max-contenders'] ? Number(args['max-contenders']) : null,
+          p_is_public,
+        },
+        { requireAuth: true }
+      )
+      if (args.json) { printJson(result); return }
+      consola.success('Template updated: %s', result?.['id'])
+    } catch (err) { handleError(err) }
+  },
+})
+
+const templateDelete = defineCommand({
+  meta: {
+    name: 'delete',
+    description: 'Soft-delete a battle template you own.',
+  },
+  args: {
+    id: { type: 'positional', description: 'Template UUID', required: true },
+    force: { type: 'boolean', default: false, description: 'Skip confirmation prompt' },
+  },
+  async run({ args }) {
+    if (!args.force) {
+      const answer = await consola.prompt(`Delete template ${args.id}?`, {
+        type: 'confirm',
+        initial: false,
+      })
+      if (!answer) {
+        consola.info('Aborted.')
+        return
+      }
+    }
+    try {
+      await callRpc<void>(
+        'fn_battles_delete_template',
+        { p_template_id: args.id },
+        { requireAuth: true }
+      )
+      consola.success('Template deleted: %s', args.id)
+    } catch (err) { handleError(err) }
+  },
+})
+
+const template = defineCommand({
+  meta: { name: 'template', description: 'Author and manage battle templates.' },
+  subCommands: {
+    create: templateCreate,
+    update: templateUpdate,
+    delete: templateDelete,
+  },
+})
+
+// ---------------------------------------------------------------------------
+// Phase BH — battle series <create|view|advance>
+// ---------------------------------------------------------------------------
+const seriesCreate = defineCommand({
+  meta: { name: 'create', description: 'Create a new best-of-N battle series.' },
+  args: {
+    template: { type: 'string', description: 'Template UUID', required: true },
+    title: { type: 'string', description: 'Series title', required: true },
+    rounds: { type: 'string', default: '3', description: 'Round count (1-16)' },
+    json: { type: 'boolean', default: false, description: 'Output JSON' },
+  },
+  async run({ args }) {
+    try {
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_create_battle_series',
+        {
+          p_template_id: args.template,
+          p_title: args.title,
+          p_round_count: Number(args.rounds) || 3,
+        },
+        { requireAuth: true }
+      )
+      if (args.json) { printJson(result); return }
+      consola.success('Series created: %s', result?.['id'])
+    } catch (err) { handleError(err) }
+  },
+})
+
+const seriesView = defineCommand({
+  meta: { name: 'view', description: 'View series rounds and per-round status.' },
+  args: {
+    id: { type: 'positional', description: 'Series UUID', required: true },
+    json: { type: 'boolean', default: false, description: 'Output JSON' },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRpc<Array<Record<string, unknown>>>(
+        'fn_get_series',
+        { p_series_id: args.id },
+        { requireAuth: true }
+      )
+      if (!rows?.length) {
+        consola.info('Series not found.')
+        return
+      }
+      if (args.json) { printJson(rows); return }
+      const head = rows[0]
+      consola.box(
+        `Series: ${head['title']}\n` +
+        `Status: ${head['status']}  Round: ${head['current_round']} / ${head['round_count']}`
+      )
+      printTable(
+        ['Round', 'Battle', 'Status', 'Winner'],
+        rows.map((r) => [
+          String(r['round_number']),
+          String(r['battle_slug'] ?? (r['battle_id'] as string)?.substring(0, 8) ?? '—'),
+          String(r['battle_status'] ?? '—'),
+          r['winner_contender_id'] ? (r['winner_contender_id'] as string).substring(0, 8) : '—',
+        ])
+      )
+    } catch (err) { handleError(err) }
+  },
+})
+
+const seriesAdvance = defineCommand({
+  meta: {
+    name: 'advance',
+    description: 'Promote the winner of the current round and seed the next.',
+  },
+  args: {
+    id: { type: 'positional', description: 'Series UUID', required: true },
+    json: { type: 'boolean', default: false, description: 'Output JSON' },
+  },
+  async run({ args }) {
+    try {
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_advance_series',
+        { p_series_id: args.id },
+        { requireAuth: true }
+      )
+      if (args.json) { printJson(result); return }
+      consola.success(
+        'Series %s — round %s / %s — status %s',
+        args.id,
+        String(result?.['current_round']),
+        String(result?.['round_count']),
+        String(result?.['status'])
+      )
+    } catch (err) { handleError(err) }
+  },
+})
+
+const series = defineCommand({
+  meta: { name: 'series', description: 'Manage best-of-N battle series.' },
+  subCommands: {
+    create: seriesCreate,
+    view: seriesView,
+    advance: seriesAdvance,
+  },
+})
+
+// ---------------------------------------------------------------------------
+// Phase BC — battle submit-media: upload image/video/audio for a contender.
+// ---------------------------------------------------------------------------
+function inferModalityFromMime(mime: string): 'image' | 'video' | 'audio' | null {
+  if (mime.startsWith('image/')) return 'image'
+  if (mime.startsWith('video/')) return 'video'
+  if (mime.startsWith('audio/')) return 'audio'
+  return null
+}
+
+function inferMimeFromExt(filename: string): string {
+  const lower = filename.toLowerCase()
+  if (lower.endsWith('.png')) return 'image/png'
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg'
+  if (lower.endsWith('.gif')) return 'image/gif'
+  if (lower.endsWith('.webp')) return 'image/webp'
+  if (lower.endsWith('.mp4')) return 'video/mp4'
+  if (lower.endsWith('.webm')) return 'video/webm'
+  if (lower.endsWith('.mov')) return 'video/quicktime'
+  if (lower.endsWith('.mp3')) return 'audio/mpeg'
+  if (lower.endsWith('.wav')) return 'audio/wav'
+  if (lower.endsWith('.ogg')) return 'audio/ogg'
+  return 'application/octet-stream'
+}
+
+const submitMedia = defineCommand({
+  meta: {
+    name: 'submit-media',
+    description:
+      'Upload image/video/audio as your contender submission. ' +
+      'Requires --file and --contender-id; modality is inferred from MIME prefix.',
+  },
+  args: {
+    id: { type: 'positional', description: 'Battle UUID', required: true },
+    file: { type: 'string', description: 'Local path to the media file', required: true },
+    'contender-id': { type: 'string', description: 'Contender UUID', required: true },
+    modality: {
+      type: 'string',
+      description: 'Override modality (image|video|audio)',
+      default: '',
+    },
+    json: { type: 'boolean', default: false, description: 'Output JSON' },
+  },
+  async run({ args }) {
+    try {
+      const fs = await import('node:fs/promises')
+      const path = await import('node:path')
+
+      const filePath = path.resolve(String(args.file))
+      const stat = await fs.stat(filePath).catch(() => null)
+      if (!stat || !stat.isFile()) {
+        consola.error('File not found: %s', filePath)
+        process.exitCode = 1
+        return
+      }
+      if (stat.size > 50 * 1024 * 1024) {
+        consola.error('File exceeds 50MB limit (%d bytes).', stat.size)
+        process.exitCode = 1
+        return
+      }
+
+      const mime = inferMimeFromExt(filePath)
+      const modality =
+        (String(args.modality).trim() as 'image' | 'video' | 'audio') ||
+        inferModalityFromMime(mime)
+      if (!modality || !['image', 'video', 'audio'].includes(modality)) {
+        consola.error(
+          'Could not infer modality (image|video|audio) for %s. Use --modality.',
+          filePath
+        )
+        process.exitCode = 1
+        return
+      }
+
+      const { createClient } = await import('../utils/supabase-client')
+      const supabase = await createClient()
+
+      const buffer = await fs.readFile(filePath)
+      const objectPath = `${args.id}/${args['contender-id']}/${Date.now()}-${path.basename(
+        filePath
+      )}`
+      consola.start('Uploading %s (%s)…', objectPath, mime)
+      const { error: uploadError } = await supabase.storage
+        .from('battles-media')
+        .upload(objectPath, buffer, { contentType: mime, upsert: false })
+      if (uploadError) {
+        consola.error('Upload failed: %s', uploadError.message)
+        process.exitCode = 1
+        return
+      }
+
+      const { data: signed, error: signError } = await supabase.storage
+        .from('battles-media')
+        .createSignedUrl(objectPath, 60 * 60 * 24)
+      if (signError) {
+        consola.error('Could not create signed URL: %s', signError.message)
+        process.exitCode = 1
+        return
+      }
+
+      const submission = await callRpc<Record<string, unknown>>(
+        'fn_battles_submit_media',
+        {
+          p_battle_id: args.id,
+          p_contender_id: args['contender-id'],
+          p_media_url: signed.signedUrl,
+          p_mime_type: mime,
+          p_output_modality: modality,
+        },
+        { requireAuth: true }
+      )
+
+      if (args.json) {
+        printJson(submission)
+        return
+      }
+      consola.success('Media submitted: %s', signed.signedUrl)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
 // battle vote
 // ---------------------------------------------------------------------------
 const vote = defineCommand({
@@ -3418,6 +3769,9 @@ export default defineCommand({
     delete: deleteBattle,
     'create-from-template': createFromTemplate,
     new: newFromTemplate,
+    'submit-media': submitMedia,
+    template,
+    series,
     vote,
     'close-voting': closeVoting,
     close: closeBattle,
