@@ -199,7 +199,79 @@ BEGIN
 
     (v_forum_app, 'CONTRIB_REVIEW_GIVEN', 'Code Review Given',
      'XP for providing a code review on an open PR.',
-     40, 1800, 5, 150, 600, 'standard', NULL, true)
+     40, 1800, 5, 150, 600, 'standard', NULL, true),
+
+    -- -----------------------------------------------------------------------
+    -- PLATFORM ACTIONS
+    -- -----------------------------------------------------------------------
+    (v_forum_app, 'ACCOUNT_CREATED', 'Account Created',
+     'One-time welcome XP when a new account is created and email is verified.',
+     25, NULL, 1, 25, 25, 'easy', NULL, true),
+
+    (v_forum_app, 'PROFILE_COMPLETED', 'Profile Completed',
+     'One-time XP for completing your lenser profile.',
+     100, NULL, 1, 100, 100, 'standard', NULL, true),
+
+    (v_forum_app, 'CLI_INIT', 'CLI Initialized',
+     'One-time XP for initializing the LenserFight CLI with a valid account.',
+     50, NULL, 1, 50, 50, 'standard', NULL, true),
+
+    (v_forum_app, 'AGENT_CREATED', 'Agent Created',
+     'One-time XP when a lenser creates and configures their first AI agent.',
+     80, NULL, 1, 80, 80, 'standard', NULL, true),
+
+    (v_forum_app, 'INVITE_SENT', 'Invite Sent',
+     'Small XP for sending a platform invite. Caps prevent invite spam.',
+     10, 3600, 3, 30, 150, 'easy', NULL, true),
+
+    (v_forum_app, 'INVITE_ACCEPTED', 'Invite Accepted',
+     'XP when a lenser you invited completes their profile setup.',
+     100, NULL, 5, 500, 1000, 'hard', NULL, true),
+
+    -- -----------------------------------------------------------------------
+    -- CONTENT CREATION (additional)
+    -- -----------------------------------------------------------------------
+    (v_forum_app, 'PROMPT_CREATED', 'Prompt Created',
+     'XP for creating a new prompt/lens (draft saved; distinct from publish XP).',
+     15, 1800, 5, 60, 400, 'easy', NULL, true),
+
+    (v_forum_app, 'WORKFLOW_PUBLISHED', 'Workflow Published',
+     'One-time XP when a workflow transitions from private/draft to public.',
+     40, 7200, 2, 80, 800, 'standard', NULL, true),
+
+    (v_forum_app, 'WORKFLOW_RUN_RECEIVED', 'Workflow Run Received',
+     'Award XP when your public workflow is run by another lenser.',
+     6, NULL, 50, 200, 1500, 'easy', NULL, true),
+
+    (v_forum_app, 'MULTILINGUAL_CONTENT_CREATED', 'Multilingual Content Published',
+     'XP for publishing a lens or thread tagged with a non-English locale.',
+     30, 3600, 5, 120, 600, 'standard', NULL, true),
+
+    (v_forum_app, 'GENERATIVE_MEDIA_CREATED', 'Generative Media Published',
+     'XP for publishing a battle or lens output that includes an AI-generated media artifact.',
+     25, 1800, 5, 100, 500, 'standard', NULL, true),
+
+    -- -----------------------------------------------------------------------
+    -- LEARNING & CHALLENGES
+    -- -----------------------------------------------------------------------
+    (v_forum_app, 'TUTORIAL_COMPLETED', 'Tutorial Completed',
+     'One-time XP per tutorial when the final step is marked complete.',
+     60, NULL, 3, 180, 600, 'standard', NULL, true),
+
+    (v_forum_app, 'WALKTHROUGH_COMPLETED', 'Walkthrough Completed',
+     'XP for completing a multi-step agent walkthrough guide.',
+     80, NULL, 2, 160, 480, 'standard', NULL, true),
+
+    (v_forum_app, 'CHALLENGE_COMPLETED', 'Seasonal Challenge Completed',
+     'Bonus XP for completing a featured seasonal challenge.',
+     200, NULL, 5, 1000, 2000, 'hard', NULL, true),
+
+    -- -----------------------------------------------------------------------
+    -- STREAKS (extended)
+    -- -----------------------------------------------------------------------
+    (v_forum_app, 'STREAK_BONUS_14D', '14-Day Streak Bonus',
+     'Bonus XP for maintaining a 14-consecutive-day login streak.',
+     80, 1209600, 1, 80, 320, 'standard', 'daily', true)
 
   ON CONFLICT (app_id, action_key) DO UPDATE SET
     name               = EXCLUDED.name,
@@ -237,7 +309,27 @@ BEGIN
 
     (v_battles_app, 'BATTLE_VOTED', 'Battle Voted',
      'Award XP for casting a vote in a battle. 10min cooldown.',
-     10, 600, 20, 200, 1000, 'easy', NULL, true)
+     10, 600, 20, 200, 1000, 'easy', NULL, true),
+
+    (v_battles_app, 'BATTLE_JOINED', 'Battle Joined',
+     'XP for joining a public battle as a contender (before submission deadline).',
+     20, 3600, 5, 100, 500, 'easy', NULL, true),
+
+    (v_battles_app, 'BATTLE_RANKED_TOP_3', 'Battle Top 3 Finish',
+     'Bonus XP for finishing in the top 3 of a public battle with 4+ contestants.',
+     75, NULL, 3, 225, 1500, 'hard', NULL, true),
+
+    (v_battles_app, 'BATTLE_RESULT_PUBLISHED', 'Battle Result Published',
+     'XP for publishing a battle result to your public profile.',
+     20, 7200, 3, 60, 300, 'easy', NULL, true),
+
+    (v_battles_app, 'BATTLE_SUBMISSION_COMPLETED', 'Battle Submission Evaluated',
+     'XP when a battle submission passes judge evaluation. Rewarded once per submission.',
+     30, NULL, 5, 150, 750, 'standard', NULL, true),
+
+    (v_battles_app, 'FAIR_EVALUATION_COMPLETED', 'Fair Evaluation Cast',
+     'XP for casting a vote that aligns with consensus (quality signal from judge).',
+     15, 600, 10, 150, 750, 'standard', NULL, true)
 
   ON CONFLICT (app_id, action_key) DO UPDATE SET
     name               = EXCLUDED.name,
