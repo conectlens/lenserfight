@@ -2510,10 +2510,13 @@ const exec = defineCommand({
         }
 
         const adapter = _getStreamAdapter(provider)
-        const { url, body, headers } = adapter.buildStreamRequest(model, messages, {
+        const { url: baseUrl, body, headers } = adapter.buildStreamRequest(model, messages, {
           maxTokens: 4096,
         })
         const authHeaders = args.byok ? adapter.authHeader(apiKey) : {}
+        const url = adapter.buildStreamUrl
+          ? adapter.buildStreamUrl(model, apiKey)
+          : baseUrl
 
         consola.start('[%s] Streaming %s/%s…', slot, provider, model)
 
