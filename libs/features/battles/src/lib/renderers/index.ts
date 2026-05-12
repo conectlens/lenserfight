@@ -10,6 +10,8 @@ import { MapRenderer } from './MapRenderer'
 import { TextRenderer } from './TextRenderer'
 import { VideoRenderer } from './VideoRenderer'
 import { WorkflowRenderer } from './WorkflowRenderer'
+export { MediaRenderer } from './MediaRenderer'
+export type { MediaRendererProps } from './MediaRenderer'
 
 export const BATTLE_RENDERERS: Partial<Record<BattleContentType, BattleContentRenderer>> = {
   text: TextRenderer,
