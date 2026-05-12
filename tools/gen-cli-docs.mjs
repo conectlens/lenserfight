@@ -230,8 +230,13 @@ function mergeWithExisting(generated, existingPath) {
   const startIdx = existing.indexOf(SENTINEL_START)
   const endIdx = existing.indexOf(SENTINEL_END)
   if (startIdx === -1 || endIdx === -1) {
-    // No sentinels: append the auto-gen block at the end, preserve the rest.
-    return existing.replace(/\n*$/, '') + '\n\n' + generated.body + '\n'
+    // No sentinels = hand-authored prose page. Leave it alone — contributors
+    // can opt in to auto-gen by adding empty sentinels at the bottom of the
+    // file. Previously this branch appended a generated block, which
+    // (a) overwrote curated prose authors did not opt into, and
+    // (b) caused `gen-cli-docs:check` to "fix" pages without sentinels by
+    // permanently appending machine output.
+    return null
   }
   const before = existing.slice(0, startIdx)
   const after = existing.slice(endIdx + SENTINEL_END.length)
@@ -251,6 +256,7 @@ for (const f of files) {
   const body = renderCommand(meta, src)
   const outPath = join(OUT_DIR, `${meta.name}.md`)
   const merged = mergeWithExisting({ cmdName: meta.name, description: meta.description, body }, outPath)
+  if (merged === null) continue // hand-authored page with no sentinels — opt-in only
   writeFileSync(outPath, merged, 'utf-8')
   generated.push(outPath)
 }
