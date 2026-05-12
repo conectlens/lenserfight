@@ -12,6 +12,7 @@ const BATTLE_TYPE_LABELS: Record<string, string> = {
   human_vs_human_open_votes: 'H vs H · Open',
   human_vs_ai: 'Human vs AI',
   workflow_battle: 'Workflow',
+  lenser_battle: 'Lenser Battle',
 }
 
 function ContenderIcon({ isAi }: { isAi: boolean }) {
