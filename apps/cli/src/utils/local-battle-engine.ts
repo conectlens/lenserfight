@@ -235,8 +235,11 @@ export class LocalBattleLenser {
   ): Promise<{ output: string; tokens: number }> {
     const apiKey = byokKeyResolver.resolve(cfg.provider, { envVar: cfg.keyVar })
     const adapter = getStreamAdapter(cfg.provider as Parameters<typeof getStreamAdapter>[0])
-    const { url, body, headers } = adapter.buildStreamRequest(cfg.model, messages, { maxTokens: 4096 })
+    const { url: baseUrl, body, headers } = adapter.buildStreamRequest(cfg.model, messages, { maxTokens: 4096 })
     const authHeaders = adapter.authHeader(apiKey)
+    const url = adapter.buildStreamUrl
+      ? adapter.buildStreamUrl(cfg.model, apiKey)
+      : baseUrl
 
     const res = await fetch(url, {
       method: 'POST',
@@ -352,8 +355,11 @@ export class LocalAiJudge {
     const apiKey = byokKeyResolver.resolve(provider)
     const adapter = getStreamAdapter(provider as Parameters<typeof getStreamAdapter>[0])
     const messages: ProviderMessage[] = [{ role: 'user', content: buildJudgeUserPrompt(state) }]
-    const { url, body, headers } = adapter.buildStreamRequest(model, messages, { maxTokens: 512 })
+    const { url: baseUrl, body, headers } = adapter.buildStreamRequest(model, messages, { maxTokens: 512 })
     const authHeaders = adapter.authHeader(apiKey)
+    const url = adapter.buildStreamUrl
+      ? adapter.buildStreamUrl(model, apiKey)
+      : baseUrl
 
     const res = await fetch(url, {
       method: 'POST',
