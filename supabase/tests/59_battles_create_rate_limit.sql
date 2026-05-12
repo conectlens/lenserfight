@@ -1,12 +1,10 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- pgTAP: 59_battles_create_rate_limit.sql — Phase BV / J1
+-- pgTAP: 59_battles_create_rate_limit.sql — Phase BV / J1 v2
 --
--- The per-lenser rate limit on public.fn_battles_create is the gate that
--- protects the cloud battles arena from runaway creation. Limited Beta sign-off
--- requires:
+-- Per-lenser rate limit on public.fn_battles_create (20 per rolling hour).
 --
---   1. A normal create returns a UUID and inserts a row.
---   2. The 6th create within a 24-hour window raises battle_rate_limit_exceeded.
+--   1. A normal create returns a UUID.
+--   2. The 21st create within the 1-hour window raises battle_rate_limit_exceeded.
 --   3. A different user is unaffected — the counter is per-lenser, not global.
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN;
@@ -39,21 +37,25 @@ SELECT isnt(
   'first battle: fn_battles_create returns a non-null UUID'
 );
 
--- ── Test 2: 6th create raises battle_rate_limit_exceeded ────────────────────
--- The Phase J1 cap is 5 per rolling 24h window; the 6th call raises.
+-- ── Test 2: 21st create raises battle_rate_limit_exceeded ───────────────────
+-- The J1 v2 cap is 20 per rolling hour; the 21st call raises.
 DO $$
+DECLARE i integer;
 BEGIN
-  PERFORM public.fn_battles_create('BV Battle 2', 'bv-battle-2', 'task');
-  PERFORM public.fn_battles_create('BV Battle 3', 'bv-battle-3', 'task');
-  PERFORM public.fn_battles_create('BV Battle 4', 'bv-battle-4', 'task');
-  PERFORM public.fn_battles_create('BV Battle 5', 'bv-battle-5', 'task');
+  FOR i IN 2..20 LOOP
+    PERFORM public.fn_battles_create(
+      'BV Battle ' || i,
+      'bv-battle-' || i,
+      'task'
+    );
+  END LOOP;
 END $$;
 
 SELECT throws_ok(
-  $$ SELECT public.fn_battles_create('BV Battle 6', 'bv-battle-6', 'task') $$,
-  NULL,                          -- any error message
-  'battle_rate_limit_exceeded',  -- substring match
-  '6th create within 24h raises battle_rate_limit_exceeded'
+  $$ SELECT public.fn_battles_create('BV Battle 21', 'bv-battle-21', 'task') $$,
+  NULL,                          -- any SQLSTATE
+  'battle_rate_limit_exceeded',  -- message substring
+  '21st create within 1 hour raises battle_rate_limit_exceeded'
 );
 
 -- ── Test 3: a different user is unaffected ──────────────────────────────────
