@@ -11,8 +11,7 @@ import {
   LensViewModel,
 } from '@lenserfight/types'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+import { isValidUUID } from '@lenserfight/utils/validation'
 
 interface UseLensDetailControllerOptions {
   includeRelated?: boolean
@@ -53,7 +52,7 @@ export const useLensDetailController = (
 
       return lensDetail
     },
-    enabled: !!lensId && UUID_RE.test(lensId) && !isAuthLoading && !isLenserLoading,
+    enabled: isValidUUID(lensId) && !isAuthLoading && !isLenserLoading,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
     retry: (failureCount, error) => {
