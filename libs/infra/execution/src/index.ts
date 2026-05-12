@@ -94,6 +94,7 @@ export type {
   MemoryFlushSink,
   DelegationPolicy,
   DelegationDispatcher,
+  DEFAULT_MAX_USER_BUDGET_CREDITS,
 } from './lib/workflow-execution.service'
 export {
   SupabaseDelegationHandler,
