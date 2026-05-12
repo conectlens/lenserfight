@@ -85,8 +85,8 @@ SELECT
 FROM lenses.workflow_runs r;
 
 -- ─── 4. vw_ai_models_public ───────────────────────────────────────────────
+-- security_invoker omitted: runs as postgres so anon can read ai.* after revoke.
 CREATE OR REPLACE VIEW public.vw_ai_models_public
-  WITH (security_invoker = 'on')
 AS
 SELECT
   m.id,
@@ -109,8 +109,8 @@ WHERE m.is_active = true
 ORDER BY p.display_name, m.name;
 
 -- ─── 5. vw_xp_leaderboard_season ─────────────────────────────────────────
+-- security_invoker omitted: runs as postgres so anon can read xp.* / lensers.* after revoke.
 CREATE OR REPLACE VIEW public.vw_xp_leaderboard_season
-  WITH (security_invoker = 'on')
 AS
 WITH ranked AS (
   SELECT
