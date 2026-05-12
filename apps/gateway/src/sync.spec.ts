@@ -2,10 +2,18 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { canonicalize, ed25519Sign, generateEd25519Keypair } from '@lenserfight/utils/signing'
 
 import type { GatewayConfig } from './config'
-import { ackCommands, dispatchCommand, pullCommands, type GatewayCommand } from './sync'
+import {
+  ackCommands,
+  dispatchCommand,
+  pullCommands,
+  verifyCommandSignature,
+  type GatewayCommand,
+} from './sync'
 
 function makeConfig(): GatewayConfig {
   return {
@@ -149,5 +157,127 @@ describe('ackCommands', () => {
     })
     expect(count).toBe(0)
     expect(fetchImpl).not.toHaveBeenCalled()
+  })
+})
+
+describe('verifyCommandSignature (Phase BG)', () => {
+  let originalEnv: string | undefined
+  beforeEach(() => {
+    originalEnv = process.env['LF_GATEWAY_SKIP_SIG_VERIFY']
+    delete process.env['LF_GATEWAY_SKIP_SIG_VERIFY']
+  })
+  afterEach(() => {
+    if (originalEnv === undefined) delete process.env['LF_GATEWAY_SKIP_SIG_VERIFY']
+    else process.env['LF_GATEWAY_SKIP_SIG_VERIFY'] = originalEnv
+  })
+
+  function makeSigned(): { cmd: GatewayCommand; publicKey: string } {
+    const kp = generateEd25519Keypair()
+    const cmd: GatewayCommand = {
+      id: 'cmd-sig',
+      device_id: 'dev-1',
+      command_type: 'config_push',
+      payload: { feature_flags: { foo: true } },
+      created_at: '2026-01-01T00:00:00Z',
+      claimed_at: null,
+      acked_at: null,
+      envelope_nonce: 'AAAAAAAAAAAAAAAAAAAAAA',
+    }
+    const canonical = canonicalize({
+      id: cmd.id,
+      device_id: cmd.device_id,
+      command_type: cmd.command_type,
+      payload: cmd.payload,
+      created_at: cmd.created_at,
+      envelope_nonce: cmd.envelope_nonce,
+    })
+    cmd.envelope_sig = ed25519Sign(kp.privateKey, Buffer.from(canonical, 'utf8'))
+    return { cmd, publicKey: kp.publicKey }
+  }
+
+  it('accepts a properly signed envelope', () => {
+    const { cmd, publicKey } = makeSigned()
+    expect(verifyCommandSignature(cmd, publicKey)).toBe(true)
+  })
+
+  it('rejects a tampered payload', () => {
+    const { cmd, publicKey } = makeSigned()
+    cmd.payload = { feature_flags: { foo: false } }
+    expect(verifyCommandSignature(cmd, publicKey)).toBe(false)
+  })
+
+  it('rejects an unsigned command when a public key is configured', () => {
+    const kp = generateEd25519Keypair()
+    const cmd: GatewayCommand = {
+      id: 'cmd-unsigned',
+      device_id: 'dev-1',
+      command_type: 'noop',
+      payload: {},
+      created_at: '2026-01-01T00:00:00Z',
+      claimed_at: null,
+      acked_at: null,
+    }
+    expect(verifyCommandSignature(cmd, kp.publicKey)).toBe(false)
+  })
+
+  it('accepts an unsigned command when no public key is configured (legacy)', () => {
+    const cmd: GatewayCommand = {
+      id: 'cmd-legacy',
+      device_id: 'dev-1',
+      command_type: 'noop',
+      payload: {},
+      created_at: '2026-01-01T00:00:00Z',
+      claimed_at: null,
+      acked_at: null,
+    }
+    expect(verifyCommandSignature(cmd, null)).toBe(true)
+  })
+
+  it('bypasses verification when LF_GATEWAY_SKIP_SIG_VERIFY=true', () => {
+    process.env['LF_GATEWAY_SKIP_SIG_VERIFY'] = 'true'
+    const cmd: GatewayCommand = {
+      id: 'cmd-skip',
+      device_id: 'dev-1',
+      command_type: 'noop',
+      payload: {},
+      created_at: '2026-01-01T00:00:00Z',
+      claimed_at: null,
+      acked_at: null,
+      envelope_sig: 'not-a-real-sig',
+    }
+    expect(verifyCommandSignature(cmd, 'whatever')).toBe(true)
+  })
+
+  it('dispatchCommand acks + drops a command with an invalid sig', async () => {
+    const config = makeConfig()
+    try {
+      const ackFetch = vi.fn().mockResolvedValue(new Response('1', { status: 200 }))
+      const exit = vi.fn()
+      await dispatchCommand(
+        {
+          id: 'cmd-bad-sig',
+          device_id: 'dev-1',
+          command_type: 'kill_switch',
+          payload: {},
+          created_at: '',
+          claimed_at: null,
+          acked_at: null,
+          envelope_sig: 'invalid',
+        },
+        {
+          config,
+          supabaseUrl: 'https://example.supabase.co',
+          anonKey: 'anon',
+          fetchImpl: ackFetch as unknown as typeof fetch,
+          exit,
+          cloudSigningPubKeyB64: generateEd25519Keypair().publicKey,
+        }
+      )
+      // ack was called but exit (kill_switch side-effect) was NOT.
+      expect(ackFetch).toHaveBeenCalled()
+      expect(exit).not.toHaveBeenCalled()
+    } finally {
+      rmSync(config.stateDir, { recursive: true, force: true })
+    }
   })
 })
