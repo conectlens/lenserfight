@@ -7,6 +7,9 @@ export type NotificationType =
   | 'battle_result'
   | 'battle_started'
   | 'vote_reminder'
+  // Battle (Phase BF — template-sourced battles)
+  | 'template_battle_open'
+  | 'template_battle_published'
   // Battle (human-specific)
   | 'vote_received'
   // Battle (AI lenser-specific)
@@ -237,9 +240,11 @@ export interface NotificationRow {
 export type NotificationCategory = 'battle' | 'social' | 'content' | 'agent' | 'system'
 
 export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCategory> = {
-  battle_result:         'battle',
-  battle_started:        'battle',
-  vote_reminder:         'battle',
+  battle_result:              'battle',
+  battle_started:             'battle',
+  vote_reminder:              'battle',
+  template_battle_open:       'battle',
+  template_battle_published:  'battle',
   vote_received:         'battle',
   battle_assigned:       'battle',
   battle_vote_cast:      'battle',
