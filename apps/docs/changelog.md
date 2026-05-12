@@ -4,6 +4,25 @@ description: Full release history for LenserFight — every version, every chang
 layout: doc
 ---
 
+## [0.1.0-rc1] - 2026-05-13
+
+Release candidate for the 2026-06-12 OSS announcement. Closes the BR–BQ pre-launch wave: e2e automation, model conformance, media gates, vote hardening, wizard v2, coverage gate, browse API, anon RLS, plus the BR sign-off sweep.
+
+### Added
+
+- **phase BR**: announcement readiness sign-off table populated; all gate rows ✅ on local Supabase.
+- **phase BS**: announcement copy drafts (`hn-post`, `x-thread`, `linkedin`, `devto`, `github-release-notes`) under `docs/.private/announcements/`; screencap registry placeholder.
+- **phase BT**: `pnpm announcement:dashboard` command (`scripts/announcement-dashboard.sh`) wired with `--once` flag for CI usage; nx target `scripts:announcement-dashboard`.
+- **phase BU**: `scripts/smoke.sh` prints elapsed seconds and hard-fails on >300 s; `.github/workflows/smoke-timing.yml` CI gate.
+- **phase BV**: pgTAP `59_battles_create_rate_limit.sql`, `60_moderation_admin_override.sql`, `61_webhook_outbox_drain.sql`, `62_elo_change_log.sql` (plan 10 total); coverage-gate critical RPC list extended.
+- **phase BW**: `@lenserfight/sdk@0.1.0-alpha.1` package scaffold at `libs/sdk/` with `createClient`, `BattleClient`, `TemplateClient`; reference docs at `docs/en/reference/sdk/index.md`; quickstart at `docs/en/how-to/integrations/sdk-quickstart.md`.
+- **phase BX**: `fn_battles_next_recommendation` SECURITY DEFINER; `BattleResultCTA` component; analytics `battle_cta_clicked` event; pgTAP `63_next_recommendation.sql`.
+
+### Notes
+
+- This RC is cut from `development` and merged to `main` before tagging.
+- `@lenserfight/sdk@0.1.0-alpha.1` publish is a manual T-1 step against the tagged commit.
+
 ## [0.10.0-alpha.2] - 2026-05-09
 
 Pre–first-public OSS publishing pass: permissive license, brand guidelines, docs truth, contributor gates, and release metadata alignment.
@@ -23,7 +42,7 @@ Pre–first-public OSS publishing pass: permissive license, brand guidelines, do
 ### Changed
 
 - **license**: Community Edition relicensed from **BSL 1.1** to **Apache-2.0** (`LICENSE`, root and app `package.json` SPDX fields, OpenAPI `info.license`).
-- **docs**: `open-core-model`, `license`, `governance`, `pricing`, `for-organizations` updated for Apache-2.0; new [Brand guidelines](/explanation/community/brand-guidelines) and root [`BRAND.md`](https://github.com/conectlens/lenserfight/blob/main/BRAND.md); VitePress sidebar link.
+- **docs**: `open-core-model`, `license`, `governance`, `pricing`, `for-organizations` updated for Apache-2.0; new [Brand guidelines](/en/explanation/community/brand-guidelines) and root [`BRAND.md`](https://github.com/conectlens/lenserfight/blob/main/BRAND.md); VitePress sidebar link.
 - **readme**: Day-one scope paragraph, `development` branch note for PRs, Trust Gateway preview framing, Node `>=22` badge, Community links include brand guidelines.
 - **chore**: Root `package.json` `version` set to `0.10.0-alpha.2` to match changelog and future tags.
 
