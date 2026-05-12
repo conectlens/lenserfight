@@ -4,8 +4,13 @@
 -- =============================================================================
 
 -- 1. Recreate v_battle_feed_item with content_type added.
---    This is a REPLACE so no data is lost and existing dependents see the new column.
-CREATE OR REPLACE VIEW "battles"."v_battle_feed_item" AS
+--    DROP + CREATE required: Postgres forbids CREATE OR REPLACE VIEW when column
+--    order changes (existing view had content_type absent; adding it mid-list
+--    triggers "cannot change name of view column" error).
+--    fn_get_battles_feed is recreated below so the CASCADE drop is safe.
+DROP VIEW IF EXISTS "battles"."v_battle_feed_item" CASCADE;
+
+CREATE VIEW "battles"."v_battle_feed_item" AS
   SELECT
     "b"."id",
     "b"."slug",
