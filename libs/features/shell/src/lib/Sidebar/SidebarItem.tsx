@@ -1,4 +1,4 @@
-import { ExternalLink, Lock } from 'lucide-react'
+import { Construction, ExternalLink, Lock } from 'lucide-react'
 import React, { useState } from 'react'
 
 interface SidebarItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -7,6 +7,8 @@ interface SidebarItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
   isActive?: boolean
   collapsed?: boolean
   isComingSoon?: boolean
+  /** Clickable but visually flagged as under construction */
+  wip?: boolean
   /** When set, renders as an <a> tag opening this URL in a new tab instead of a button */
   externalHref?: string
   /** Show a lock indicator and redirect to login/onboarding when clicked */
@@ -23,6 +25,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
   isActive,
   collapsed,
   isComingSoon,
+  wip,
   externalHref,
   locked,
   lockReason,
@@ -64,6 +67,15 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
       opacity-60
       hover:opacity-80 hover:bg-gray-100 dark:hover:bg-gray-800
     `
+  } else if (wip) {
+    // WIP State — clickable, amber-tinted to signal under construction
+    variantClasses = `
+      bg-amber-50/60 dark:bg-amber-900/10
+      border-amber-200/60 dark:border-amber-700/30
+      text-gray-600 dark:text-gray-400
+      hover:bg-amber-100/80 dark:hover:bg-amber-900/20
+      hover:text-gray-900 dark:hover:text-white
+    `
   } else {
     // Inactive Interactive State
     variantClasses = `
@@ -91,14 +103,21 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
             aria-hidden="true"
           />
         )}
-        {locked && !isComingSoon && (
+        {wip && !isComingSoon && (
+          <Construction
+            size={13}
+            className="text-amber-500 dark:text-amber-400 ml-2 flex-shrink-0"
+            aria-hidden="true"
+          />
+        )}
+        {locked && !isComingSoon && !wip && (
           <Lock
             size={12}
             className="text-gray-400 dark:text-gray-600 ml-2 flex-shrink-0"
             aria-hidden="true"
           />
         )}
-        {externalHref && !locked && !isComingSoon && (
+        {externalHref && !locked && !isComingSoon && !wip && (
           <ExternalLink
             size={11}
             className="text-gray-400 dark:text-gray-600 ml-2 flex-shrink-0 opacity-70"
