@@ -46,50 +46,31 @@ function buildResponse(): CapturedResponse {
 const stubReq = {} as IncomingMessage
 
 /**
- * Helper that builds a minimal supabase client mock supporting the chained
- * call shape used by the route:
- *   client.schema(s).from(t).select(...).eq(...).limit(...)
- *   client.schema(s).from(t).select(...).eq(...).order(...)
+ * Helper that builds a minimal supabase client mock supporting the rpc call
+ * shape used by the route:
+ *   client.rpc('fn_get_battle_by_slug', { p_slug })
+ *   client.rpc('fn_get_battle_share_card', { p_battle_id })
  */
-interface QueryResult {
+interface RpcResult {
   data: unknown
   error: { message: string } | null
 }
 
-function buildSupabaseMock(handlers: {
-  battle?: QueryResult
-  contenders?: QueryResult
-  elo?: QueryResult
-}) {
+interface ShareCardHandlers {
+  slugRows?: RpcResult
+  cardRows?: RpcResult
+}
+
+function buildSupabaseMock(handlers: ShareCardHandlers) {
   return {
-    schema: (schemaName: string) => ({
-      from: (table: string) => {
-        const queryBuilder = {
-          _result: { data: null as unknown, error: null as { message: string } | null } as QueryResult,
-          select() {
-            return queryBuilder
-          },
-          eq() {
-            return queryBuilder
-          },
-          order() {
-            return Promise.resolve(queryBuilder._result)
-          },
-          limit() {
-            return Promise.resolve(queryBuilder._result)
-          },
-        }
-
-        if (schemaName === 'battles' && table === 'battles') {
-          queryBuilder._result = handlers.battle ?? { data: null, error: null }
-        } else if (schemaName === 'battles' && table === 'contenders') {
-          queryBuilder._result = handlers.contenders ?? { data: [], error: null }
-        } else if (schemaName === 'reputation' && table === 'elo_battle_log') {
-          queryBuilder._result = handlers.elo ?? { data: [], error: null }
-        }
-
-        return queryBuilder
-      },
+    rpc: jest.fn(async (fnName: string) => {
+      if (fnName === 'fn_get_battle_by_slug') {
+        return handlers.slugRows ?? { data: [], error: null }
+      }
+      if (fnName === 'fn_get_battle_share_card') {
+        return handlers.cardRows ?? { data: [], error: null }
+      }
+      return { data: null, error: null }
     }),
   }
 }
@@ -102,25 +83,28 @@ describe('GET /v1/battles/:slug/share-card.svg', () => {
   it('returns 200 SVG with battle title when the battle exists', async () => {
     mockCreate.mockReturnValue(
       buildSupabaseMock({
-        battle: {
+        slugRows: {
           data: [
             {
               id: 'battle-1',
               slug: 'epic-clash',
-              title: 'Epic Clash',
               status: 'voting',
-              finalized_at: null,
-              winner_contender_id: null,
               deleted_at: null,
-              total_vote_count: 12,
             },
           ],
           error: null,
         },
-        contenders: {
+        cardRows: {
           data: [
-            { id: 'c-a', slot: 'A', display_name: 'Alice' },
-            { id: 'c-b', slot: 'B', display_name: 'Bob' },
+            {
+              title: 'Epic Clash',
+              status: 'voting',
+              total_votes: 12,
+              contenders: [
+                { id: 'c-a', slot: 'A', display_name: 'Alice', is_winner: false, elo_delta: null },
+                { id: 'c-b', slot: 'B', display_name: 'Bob', is_winner: false, elo_delta: null },
+              ],
+            },
           ],
           error: null,
         },
@@ -144,7 +128,7 @@ describe('GET /v1/battles/:slug/share-card.svg', () => {
   it('returns 404 JSON when the battle slug does not resolve', async () => {
     mockCreate.mockReturnValue(
       buildSupabaseMock({
-        battle: { data: [], error: null },
+        slugRows: { data: [], error: null },
       }) as never,
     )
 
