@@ -240,4 +240,3 @@ All error responses follow the [Common Contracts](/en/reference/community-api/co
 - [Token Reference](/en/reference/platform-api/tokens)
 - [Manage Organisation Tokens](manage-org-tokens.md)
 - [Community API Reference](/en/reference/community-api/index)
-- [Pricing & Plans](/en/reference/platform-api/pricing)
