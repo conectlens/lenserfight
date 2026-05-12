@@ -394,6 +394,84 @@ export interface BattlesRepositoryPort {
   createSeries(templateId: string, title: string, roundCount?: number): Promise<BattleSeriesRecord>
   advanceSeries(seriesId: string): Promise<BattleSeriesRecord>
   getSeries(seriesId: string): Promise<SeriesRoundRecord[]>
+  // Phase BJ: model conformance logging
+  logModelTestRun(input: LogModelTestRunInput): Promise<ModelTestRunRecord>
+  getModelTestRuns(battleId: string, limit?: number): Promise<ModelTestRunRecord[]>
+  // Phase BK: media quality gates
+  checkMediaQuality(submissionId: string): Promise<MediaQualityResultRecord>
+  // Phase BM: vote hardening
+  getMyVoteFull(battleId: string): Promise<MyVoteRecord | null>
+  changeVote(battleId: string, newContenderId: string): Promise<{ vote_id: string; updated_at: string }>
+  // Phase BN: structured template prompts
+  renderTemplatePrompt(templateId: string, variables: Record<string, string>): Promise<string>
+  // Phase BP: browse API
+  browseBattles(filters: BrowseFilters, cursor?: BrowseCursor, limit?: number): Promise<BrowseBattleRecord[]>
+}
+
+// Phase BJ — model conformance ledger ----------------------------------------
+export interface LogModelTestRunInput {
+  battleId?: string | null
+  templateId?: string | null
+  modelProvider: string
+  modelId: string
+  promptHash: string
+  passed: boolean
+  durationMs: number | null
+  rawOutput?: unknown
+  violations?: string[]
+}
+
+export interface ModelTestRunRecord {
+  id: string
+  battle_id: string | null
+  template_id: string | null
+  model_provider: string
+  model_id: string
+  prompt_hash: string
+  passed: boolean
+  duration_ms: number | null
+  raw_output: unknown
+  violations: string[]
+  created_at: string
+}
+
+// Phase BK — media quality results -------------------------------------------
+export interface MediaQualityResultRecord {
+  submission_id: string
+  passed: boolean
+  violations: string[]
+  checked_at: string
+}
+
+// Phase BM — vote hardening ---------------------------------------------------
+export interface MyVoteRecord {
+  contender_id: string | null
+  vote_value: string
+  updated_at: string
+}
+
+// Phase BP — browse ----------------------------------------------------------
+export interface BrowseFilters {
+  category?: string | null
+  status?: string | null
+  q?: string | null
+}
+
+export interface BrowseCursor {
+  created_at: string
+  id: string
+}
+
+export interface BrowseBattleRecord {
+  id: string
+  title: string
+  slug: string
+  status: string
+  category: string | null
+  contender_count: number
+  vote_count: number
+  created_at: string
+  template_title: string | null
 }
 
 // --- Supabase Implementation ---
@@ -944,6 +1022,88 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     })
     if (error) this.handleError(error)
     return (data ?? []) as SeriesRoundRecord[]
+  }
+
+  // Phase BJ — model conformance ---------------------------------------------
+  async logModelTestRun(input: LogModelTestRunInput): Promise<ModelTestRunRecord> {
+    const { data, error } = await supabase.rpc('fn_log_model_test_run', {
+      p_battle_id:      input.battleId ?? null,
+      p_template_id:    input.templateId ?? null,
+      p_model_provider: input.modelProvider,
+      p_model_id:       input.modelId,
+      p_prompt_hash:    input.promptHash,
+      p_passed:         input.passed,
+      p_duration_ms:    input.durationMs ?? null,
+      p_raw_output:     input.rawOutput ?? null,
+      p_violations:     input.violations ?? [],
+    })
+    if (error) this.handleError(error)
+    return data as ModelTestRunRecord
+  }
+
+  async getModelTestRuns(battleId: string, limit = 50): Promise<ModelTestRunRecord[]> {
+    const { data, error } = await supabase.rpc('fn_get_model_test_runs', {
+      p_battle_id: battleId,
+      p_limit:     limit,
+    })
+    if (error) this.handleError(error)
+    return (data ?? []) as ModelTestRunRecord[]
+  }
+
+  // Phase BK — media quality gates -------------------------------------------
+  async checkMediaQuality(submissionId: string): Promise<MediaQualityResultRecord> {
+    const { data, error } = await supabase.rpc('fn_check_media_quality', {
+      p_submission_id: submissionId,
+    })
+    if (error) this.handleError(error)
+    return data as MediaQualityResultRecord
+  }
+
+  // Phase BM — vote hardening ------------------------------------------------
+  async getMyVoteFull(battleId: string): Promise<MyVoteRecord | null> {
+    const { data, error } = await supabase.rpc('fn_battles_get_my_vote', {
+      p_battle_id: battleId,
+    })
+    if (error) this.handleError(error)
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as MyVoteRecord | null
+  }
+
+  async changeVote(battleId: string, newContenderId: string): Promise<{ vote_id: string; updated_at: string }> {
+    const { data, error } = await supabase.rpc('fn_battles_change_vote', {
+      p_battle_id:        battleId,
+      p_new_contender_id: newContenderId,
+    })
+    if (error) this.handleError(error)
+    return data as { vote_id: string; updated_at: string }
+  }
+
+  // Phase BN — structured template prompts -----------------------------------
+  async renderTemplatePrompt(templateId: string, variables: Record<string, string>): Promise<string> {
+    const { data, error } = await supabase.rpc('fn_battles_render_prompt', {
+      p_template_id: templateId,
+      p_variables:   variables,
+    })
+    if (error) this.handleError(error)
+    return (data ?? '') as string
+  }
+
+  // Phase BP — browse --------------------------------------------------------
+  async browseBattles(
+    filters: BrowseFilters,
+    cursor?: BrowseCursor,
+    limit = 20,
+  ): Promise<BrowseBattleRecord[]> {
+    const { data, error } = await supabase.rpc('fn_browse_battles', {
+      p_category:      filters.category ?? null,
+      p_status:        filters.status ?? null,
+      p_q:             filters.q ?? null,
+      p_after_created: cursor?.created_at ?? null,
+      p_after_id:      cursor?.id ?? null,
+      p_limit:         Math.min(Math.max(limit, 1), 100),
+    })
+    if (error) this.handleError(error)
+    return (data ?? []) as BrowseBattleRecord[]
   }
 }
 
