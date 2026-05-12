@@ -3,9 +3,10 @@
 // Anonymous-safe. Uses fn_browse_battles via the repository with
 // useInfiniteQuery for keyset pagination on (created_at DESC, id DESC).
 
-import { battlesRepository, type BrowseBattleRecord } from '@lenserfight/data/repositories'
+import { battlesRepository, seoService, type BrowseBattleRecord } from '@lenserfight/data/repositories'
 import { Button } from '@lenserfight/ui/components'
 import { Input } from '@lenserfight/ui/forms'
+import { PageMeta } from '@lenserfight/ui/layout'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -40,9 +41,11 @@ export function BattlesDiscoveryPage() {
   })
 
   const rows = data?.pages.flat() ?? []
+  const battlesMeta = seoService.getBattlesListMeta()
 
   return (
     <div className="mx-auto max-w-4xl p-6 space-y-6">
+      <PageMeta title={battlesMeta.title} description={battlesMeta.description} />
       <header className="space-y-2">
         <h1 className="text-2xl font-bold text-surface-text">Battles</h1>
         <p className="text-sm text-surface-text-muted">
