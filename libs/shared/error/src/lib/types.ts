@@ -34,6 +34,8 @@ export interface ServerError extends AppError {
 
 export interface RateLimitError extends AppError {
   kind: 'rate_limit'
+  /** Seconds to wait before retrying, when the server provides this information. */
+  retryAfter?: number
 }
 
 export interface NetworkError extends AppError {
