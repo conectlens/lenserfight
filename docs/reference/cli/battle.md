@@ -117,6 +117,32 @@ lf battle create \
 
 ---
 
+## `battle new --from-template`
+
+Friendly wrapper around `create-from-template` introduced in Phase AW. Resolves a public template by slug *or* UUID, prompts for title and slug if they are not provided, and creates the new battle.
+
+```
+lf battle new --from-template <slug|uuid> [--title <title>] [--slug <slug>] [--json]
+```
+
+| Flag | Required | Default | Description |
+|---|:---:|---|---|
+| `--from-template` | yes | — | Public template slug *or* UUID |
+| `--title` | no | prompted | Battle title |
+| `--slug` | no | derived | URL-safe slug; defaults to a slugified title |
+| `--json` | no | false | Output JSON |
+
+**Example:**
+```bash
+lf battle new --from-template reasoning-quality-shootout \
+  --title "Reasoning Quality Shootout — May 12" \
+  --slug "reasoning-quality-shootout-2026-05-12"
+```
+
+Backed by `fn_list_public_battle_templates` (slug resolution) and `fn_battles_create_from_template` (creation).
+
+---
+
 ## `battle create-from-template`
 
 Create a new draft battle from a saved template.
