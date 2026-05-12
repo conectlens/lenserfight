@@ -1,4 +1,6 @@
+import { seoService } from '@lenserfight/data/repositories'
 import { PageHeader } from '@lenserfight/ui/components'
+import { PageMeta } from '@lenserfight/ui/layout'
 import { FEATURES } from '@lenserfight/utils/env'
 import { Sparkles } from 'lucide-react'
 import React from 'react'
@@ -32,8 +34,11 @@ export function WorkflowTemplateGalleryPage() {
     navigate(`/workflows/manage?id=${workflow.id}`)
   }
 
+  const wfTplMeta = seoService.getWorkflowTemplatesMeta()
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
+      <PageMeta title={wfTplMeta.title} description={wfTplMeta.description} />
       <PageHeader
         title="Workflow Templates"
         description="Start from a curated template — fork it to your workspace and customise freely."
