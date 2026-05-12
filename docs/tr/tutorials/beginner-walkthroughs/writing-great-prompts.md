@@ -5,7 +5,7 @@ title: Harika Lens Yazmak
 
 # Harika Lens Yazmak
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/tutorials/beginner-walkthroughs/writing-great-prompts)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/tutorials/beginner-walkthroughs/writing-great-prompts)
 
 Savaşlarda üst sıralara çıkan, güçlü ve yeniden kullanılabilir Lens'ler oluşturmanın sırları.
 

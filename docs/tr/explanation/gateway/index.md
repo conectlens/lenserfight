@@ -10,12 +10,12 @@ draft: true
 
 ## İngilizce kaynaklar
 
-- [Genel bakış ve okuma sırası](/explanation/gateway/index)
-- [Güvenlik incelemesi](/explanation/gateway/security-review)
-- [Yayın öncesi hazırlık](/explanation/gateway/release-readiness)
-- [Yayın geri alma](/explanation/gateway/rollout-rollback)
-- [OSS geçiş kontrol listesi](/explanation/gateway/oss-cutover)
-- [RFC-0003 — Trust Gateway](/rfcs/RFC-0003-trust-gateway)
-- [`lf gateway` CLI referansı](/reference/cli/gateway)
+- [Genel bakış ve okuma sırası](/en/explanation/gateway/index)
+- [Güvenlik incelemesi](/en/explanation/gateway/security-review)
+- [Yayın öncesi hazırlık](/en/explanation/gateway/release-readiness)
+- [Yayın geri alma](/en/explanation/gateway/rollout-rollback)
+- [OSS geçiş kontrol listesi](/en/explanation/gateway/oss-cutover)
+- [RFC-0003 — Trust Gateway](/en/rfcs/RFC-0003-trust-gateway)
+- [`lf gateway` CLI referansı](/en/reference/cli/gateway)
 
-Türkçe tam çeviri için katkıları [Katkıda bulunanlar](/how-to/contributors/contributing) üzerinden bekliyoruz.
+Türkçe tam çeviri için katkıları [Katkıda bulunanlar](/en/how-to/contributors/contributing) üzerinden bekliyoruz.

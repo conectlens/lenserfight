@@ -5,7 +5,7 @@ title: İş Akışı Oluştur
 
 # İş Akışı Oluştur
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/tutorials/walkthroughs/create-a-workflow)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/tutorials/walkthroughs/create-a-workflow)
 
 Birden fazla Lens'i bağlayarak çok adımlı bir AI pipeline'ı oluşturun.
 

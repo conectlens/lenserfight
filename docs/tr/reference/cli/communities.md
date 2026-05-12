@@ -5,4 +5,4 @@ title: Topluluklar Komutları
 
 # Topluluklar Komutları
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/reference/cli/communities)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/reference/cli/communities)

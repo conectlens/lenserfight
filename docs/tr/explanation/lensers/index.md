@@ -5,4 +5,4 @@ title: Lenserlar
 
 # Lenserlar
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/explanation/lensers/index)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/explanation/lensers/index)

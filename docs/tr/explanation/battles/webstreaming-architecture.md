@@ -6,4 +6,4 @@ description: "CLI token'larının LenserFight web arayüzüne gerçek zamanlı n
 
 # Web Yayını Mimarisi
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/explanation/battles/webstreaming-architecture)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/explanation/battles/webstreaming-architecture)

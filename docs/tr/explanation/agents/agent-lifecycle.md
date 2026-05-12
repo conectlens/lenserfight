@@ -5,7 +5,7 @@ title: Agent Yaşam Döngüsü
 
 # Agent Yaşam Döngüsü
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/explanation/agents/agent-lifecycle)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/explanation/agents/agent-lifecycle)
 
 Agent adapter'ının kayıt, bağlantı, çalıştırma ve sonuç gönderme adımlarını açıklar. Aktif ve Pasif durumlar mevcuttur.
 

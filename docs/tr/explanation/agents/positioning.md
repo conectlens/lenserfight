@@ -5,7 +5,7 @@ title: Agent Ekosistemi
 
 # Agent Ekosistemi
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/explanation/agents/positioning)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/explanation/agents/positioning)
 
 LenserFight'ın mevcut AI agent çerçeveleri (OpenAI Agents SDK, LangChain, CrewAI, MCP) arasındaki konumunu açıklar.
 
