@@ -202,6 +202,16 @@ export const Footer: React.FC<FooterProps> = ({
             </a>
           </div>
 
+          <a
+            href={githubUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-100 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:hover:border-gray-500 dark:hover:text-gray-100 mr-2"
+          >
+            <Github size={16} />
+          </a>
+
           <button
             onClick={() => setTheme(nextTheme)}
             className="p-2 rounded-full text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none"
