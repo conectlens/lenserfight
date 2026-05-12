@@ -1,3 +1,4 @@
+Dumping schemas from local database...
 
 
 
@@ -18253,23 +18254,28 @@ CREATE OR REPLACE FUNCTION "public"."fn_battles_create"("p_title" "text", "p_slu
     SET "search_path" TO 'public', 'battles', 'lensers'
     AS $$
 DECLARE
-  v_lenser_id uuid;
-  v_battle_id uuid;
-  v_count     integer;
+  v_lenser_id   uuid;
+  v_battle_id   uuid;
+  v_count       integer;
+  v_oldest_at   timestamptz;
+  v_retry_after integer;
 BEGIN
   v_lenser_id := lensers.get_auth_lenser_id();
   IF v_lenser_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
   END IF;
 
-  SELECT count(*) INTO v_count
-  FROM battles.battles
-  WHERE creator_lenser_id = v_lenser_id
-    AND created_at > now() - interval '24 hours';
+  SELECT count(*), min(created_at)
+    INTO v_count, v_oldest_at
+    FROM battles.battles
+   WHERE creator_lenser_id = v_lenser_id
+     AND created_at > now() - interval '1 hour';
 
-  IF v_count >= 5 THEN
+  IF v_count >= 20 THEN
+    v_retry_after := GREATEST(0, EXTRACT(epoch FROM (v_oldest_at + interval '1 hour' - now()))::integer);
     RAISE EXCEPTION 'battle_rate_limit_exceeded'
-      USING HINT = 'p0429';
+      USING HINT   = 'p0429',
+            DETAIL = '{"retry_after":' || v_retry_after || '}';
   END IF;
 
   INSERT INTO battles.battles (creator_lenser_id, title, slug, task_prompt, rubric_id, status)
@@ -29594,34 +29600,37 @@ ALTER FUNCTION "public"."fn_lensers_get_is_in_waitinglist"() OWNER TO "postgres"
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_lensers_get_leaderboard"("p_period" "text" DEFAULT 'all_time'::"text", "p_limit" integer DEFAULT 20) RETURNS TABLE("lenser_id" "uuid", "handle" "text", "display_name" "text", "avatar_url" "text", "total_xp" bigint, "current_level" integer, "lenser_score" double precision, "rank" bigint)
-    LANGUAGE "sql" STABLE
+    LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'lensers', 'xp', 'lenses', 'content'
     AS $$
 WITH ranked AS (
   SELECT
-    lp.id AS lenser_id,
+    lp.id            AS lenser_id,
     lp.handle,
     lp.display_name,
     lp.avatar_url,
-    COALESCE(xt.total_xp, 0)::bigint AS total_xp,
-    COALESCE(xt.current_level, 1) AS current_level,
+    COALESCE(xt.total_xp,      0)::bigint AS total_xp,
+    COALESCE(xt.current_level, 1)          AS current_level,
     ROW_NUMBER() OVER (ORDER BY COALESCE(xt.total_xp, 0) DESC) AS rank
   FROM lensers.profiles lp
   LEFT JOIN (
-    SELECT t.lenser_id, SUM(t.total_xp) AS total_xp, MAX(t.current_level) AS current_level
+    SELECT t.lenser_id,
+           SUM(t.total_xp)       AS total_xp,
+           MAX(t.current_level)  AS current_level
     FROM xp.totals t
     GROUP BY t.lenser_id
   ) xt ON xt.lenser_id = lp.id
-  WHERE lp.status = 'active'
-    AND lp.visibility = 'public'
+  WHERE lp.status              = 'active'
+    AND lp.visibility          = 'public'
     AND lp.deletion_requested_at IS NULL
     AND CASE p_period
-      WHEN 'weekly'  THEN lp.last_active_at > now() - interval '7 days'
-      WHEN 'monthly' THEN lp.last_active_at > now() - interval '30 days'
-      ELSE true
-    END
+          WHEN 'weekly'  THEN lp.last_active_at > now() - interval '7 days'
+          WHEN 'monthly' THEN lp.last_active_at > now() - interval '30 days'
+          ELSE true
+        END
   ORDER BY COALESCE(xt.total_xp, 0) DESC
-  LIMIT LEAST(p_limit, 100)
+  -- clamp: at least 1, at most 100; negative or zero inputs become 1
+  LIMIT GREATEST(1, LEAST(COALESCE(p_limit, 20), 100))
 )
 SELECT
   r.lenser_id,
@@ -29637,7 +29646,8 @@ SELECT
   r.rank
 FROM ranked r
 LEFT JOIN LATERAL (
-  SELECT count(*) AS cnt FROM (
+  SELECT count(*) AS cnt
+  FROM (
     SELECT 1
     FROM content.reactions tr
     JOIN content.threads t ON t.id = tr.entity_id AND t.lenser_id = r.lenser_id
@@ -46431,7 +46441,7 @@ COMMENT ON VIEW "public"."v_workflow_run_timeline" IS 'Phase 6 — Chronological
 
 
 
-CREATE OR REPLACE VIEW "public"."vw_ai_models_public" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_ai_models_public" AS
  SELECT "m"."id",
     "m"."name",
     "m"."key",
@@ -46538,7 +46548,7 @@ CREATE OR REPLACE VIEW "public"."vw_battle_health" WITH ("security_invoker"='on'
 ALTER VIEW "public"."vw_battle_health" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_battle_participation" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_battle_participation" AS
  WITH "weekly_battles" AS (
          SELECT "date_trunc"('week'::"text", "b"."created_at") AS "week",
             "count"(DISTINCT "b"."id") AS "battles_created",
@@ -46574,7 +46584,7 @@ CREATE OR REPLACE VIEW "public"."vw_battle_participation" WITH ("security_invoke
 ALTER VIEW "public"."vw_battle_participation" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_battles_public" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_battles_public" AS
  SELECT "b"."id",
     "b"."title",
     "b"."slug",
@@ -46594,7 +46604,7 @@ CREATE OR REPLACE VIEW "public"."vw_battles_public" WITH ("security_invoker"='on
 ALTER VIEW "public"."vw_battles_public" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_content_tags_public" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_content_tags_public" AS
  SELECT "t"."id",
     "t"."slug",
     COALESCE("tn"."name", "t"."slug") AS "name",
@@ -46610,7 +46620,7 @@ CREATE OR REPLACE VIEW "public"."vw_content_tags_public" WITH ("security_invoker
 ALTER VIEW "public"."vw_content_tags_public" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_content_thread_replies_public" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_content_thread_replies_public" AS
  SELECT "r"."id",
     "r"."thread_id",
     "r"."parent_reply_id",
@@ -46640,7 +46650,7 @@ COMMENT ON VIEW "public"."vw_content_thread_replies_public" IS 'Public view of p
 
 
 
-CREATE OR REPLACE VIEW "public"."vw_content_threads_public" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_content_threads_public" AS
  SELECT "t"."id",
     "t"."lenser_id",
     "prof"."handle" AS "lenser_handle",
@@ -46708,7 +46718,7 @@ CREATE OR REPLACE VIEW "public"."vw_feedback_admin" WITH ("security_invoker"='on
 ALTER VIEW "public"."vw_feedback_admin" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_feedback_user" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_feedback_user" AS
  SELECT "product_tag",
     "page",
     "message",
@@ -46723,7 +46733,7 @@ CREATE OR REPLACE VIEW "public"."vw_feedback_user" WITH ("security_invoker"='on'
 ALTER VIEW "public"."vw_feedback_user" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_global_messages" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_global_messages" AS
  SELECT "id",
     "battle_id",
     "sender_id",
@@ -46750,7 +46760,7 @@ CREATE TABLE IF NOT EXISTS "xp"."levels" (
 ALTER TABLE "xp"."levels" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_lensers_public_recent" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_lensers_public_recent" AS
  SELECT "l"."handle",
     "l"."display_name",
     "l"."avatar_url",
@@ -46797,7 +46807,7 @@ CREATE OR REPLACE VIEW "public"."vw_lensers_social_links_private" WITH ("securit
 ALTER VIEW "public"."vw_lensers_social_links_private" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_lensers_social_links_public" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_lensers_social_links_public" AS
  SELECT "p"."handle",
     "l"."platform",
     "l"."url",
@@ -46810,7 +46820,7 @@ CREATE OR REPLACE VIEW "public"."vw_lensers_social_links_public" WITH ("security
 ALTER VIEW "public"."vw_lensers_social_links_public" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_lenses_public" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_lenses_public" AS
  SELECT "pt"."id",
     "pt"."lenser_id",
     "prof"."handle" AS "lenser_handle",
@@ -46863,7 +46873,7 @@ CREATE OR REPLACE VIEW "public"."vw_lenses_public" WITH ("security_invoker"='on'
 ALTER VIEW "public"."vw_lenses_public" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_tags_public_extended" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_tags_public_extended" AS
  SELECT "t"."id",
     "t"."slug",
     COALESCE("tn"."name", "t"."slug") AS "name",
@@ -46885,7 +46895,7 @@ CREATE OR REPLACE VIEW "public"."vw_tags_public_extended" WITH ("security_invoke
 ALTER VIEW "public"."vw_tags_public_extended" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_tags_public_stats" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_tags_public_stats" AS
  WITH "events_filtered" AS (
          SELECT "e"."tag_id",
             "e"."activity_type",
@@ -46944,7 +46954,7 @@ CREATE OR REPLACE VIEW "public"."vw_tags_public_stats" WITH ("security_invoker"=
 ALTER VIEW "public"."vw_tags_public_stats" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_workflows" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_workflows" AS
  SELECT "id",
     "lenser_id",
     "title",
@@ -46965,7 +46975,7 @@ CREATE OR REPLACE VIEW "public"."vw_workflows" WITH ("security_invoker"='on') AS
 ALTER VIEW "public"."vw_workflows" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."vw_xp_leaderboard_global" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_xp_leaderboard_global" AS
  WITH "ranked" AS (
          SELECT "t"."app_id",
             "t"."lenser_id",
@@ -47031,7 +47041,7 @@ COMMENT ON COLUMN "xp"."seasons"."featured_challenges" IS 'CB: Array of {title, 
 
 
 
-CREATE OR REPLACE VIEW "public"."vw_xp_leaderboard_season" WITH ("security_invoker"='on') AS
+CREATE OR REPLACE VIEW "public"."vw_xp_leaderboard_season" AS
  WITH "ranked" AS (
          SELECT "st"."season_id",
             "s"."slug" AS "season_slug",
@@ -58605,10 +58615,6 @@ CREATE POLICY "xp_totals_leaderboard_select" ON "xp"."totals" FOR SELECT USING (
 ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
 
 
-
-
-
-
 ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "battles"."battles";
 
 
@@ -65846,3 +65852,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "xp" GRANT ALL ON FUNCTIO
 
 
 
+A new version of Supabase CLI is available: v2.98.2 (currently installed v2.75.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
