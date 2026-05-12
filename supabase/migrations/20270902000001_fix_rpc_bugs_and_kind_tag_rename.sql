@@ -11,13 +11,53 @@
 
 
 -- ─── 1. Strip kind prefix from tag slugs ──────────────────────────────────────
-UPDATE content.tags
-SET    slug = substr(slug, 6)         -- drop leading 'kind-' (5 chars)
-WHERE  slug LIKE 'kind-%';
+-- Some kind-* slugs collide with canonical plain slugs already inserted by
+-- 20270812000000_canonical_production_tags.sql (e.g. kind-text → text already
+-- exists). For those, we redirect all FK references to the canonical row then
+-- delete the kind-* row. For non-colliding slugs we rename directly.
 
-UPDATE content.tags
-SET    slug = substr(slug, 6)         -- drop leading 'kind:' (5 chars)
-WHERE  slug LIKE 'kind:%';
+DO $$
+DECLARE
+  r RECORD;
+BEGIN
+  -- Colliding slugs: redirect references then delete the kind-* duplicate
+  FOR r IN
+    SELECT k.id AS kind_id, plain.id AS plain_id
+    FROM   content.tags k
+    JOIN   content.tags plain ON plain.slug = substr(k.slug, 6)
+    WHERE  k.slug LIKE 'kind-%'
+  LOOP
+    UPDATE content.tag_map          SET tag_id = r.plain_id WHERE tag_id = r.kind_id;
+    UPDATE content.tag_suggestions  SET tag_id = r.plain_id WHERE tag_id = r.kind_id;
+    UPDATE content.tag_translations SET tag_id = r.plain_id WHERE tag_id = r.kind_id;
+    UPDATE lensers.tag_follows      SET tag_id = r.plain_id WHERE tag_id = r.kind_id;
+    DELETE FROM content.tags WHERE id = r.kind_id;
+  END LOOP;
+
+  -- Non-colliding slugs: safe to rename directly
+  UPDATE content.tags
+  SET    slug = substr(slug, 6)
+  WHERE  slug LIKE 'kind-%';
+
+  -- Handle kind: prefix (colon variant) — same pattern
+  FOR r IN
+    SELECT k.id AS kind_id, plain.id AS plain_id
+    FROM   content.tags k
+    JOIN   content.tags plain ON plain.slug = substr(k.slug, 6)
+    WHERE  k.slug LIKE 'kind:%'
+  LOOP
+    UPDATE content.tag_map          SET tag_id = r.plain_id WHERE tag_id = r.kind_id;
+    UPDATE content.tag_suggestions  SET tag_id = r.plain_id WHERE tag_id = r.kind_id;
+    UPDATE content.tag_translations SET tag_id = r.plain_id WHERE tag_id = r.kind_id;
+    UPDATE lensers.tag_follows      SET tag_id = r.plain_id WHERE tag_id = r.kind_id;
+    DELETE FROM content.tags WHERE id = r.kind_id;
+  END LOOP;
+
+  UPDATE content.tags
+  SET    slug = substr(slug, 6)
+  WHERE  slug LIKE 'kind:%';
+END;
+$$;
 
 
 -- ─── 2. Fix fn_list_template_workflows ────────────────────────────────────────
