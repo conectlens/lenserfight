@@ -14,6 +14,9 @@ interface ContenderSlotProps {
   contentUrl?: string | null
   voteCount?: number
   votePercentage?: number
+  mediaUrl?: string | null
+  mimeType?: string | null
+  outputModality?: 'text' | 'image' | 'video' | 'audio' | null
 }
 
 interface FightViewProps {
@@ -61,6 +64,9 @@ export function FightView({
               contenderType: contenderA.contender_type,
               contentText: submissionA?.content_text,
               contentUrl: submissionA?.content_url,
+              mediaUrl: submissionA?.media_url ?? null,
+              mimeType: submissionA?.mime_type ?? null,
+              outputModality: submissionA?.output_modality ?? null,
               voteCount: showVotes ? (aggA?.raw_vote_count ?? 0) : undefined,
               votePercentage: showVotes ? pctA : undefined,
             })}
@@ -92,6 +98,9 @@ export function FightView({
               contenderType: contenderB.contender_type,
               contentText: submissionB?.content_text,
               contentUrl: submissionB?.content_url,
+              mediaUrl: submissionB?.media_url ?? null,
+              mimeType: submissionB?.mime_type ?? null,
+              outputModality: submissionB?.output_modality ?? null,
               voteCount: showVotes ? (aggB?.raw_vote_count ?? 0) : undefined,
               votePercentage: showVotes ? pctB : undefined,
             })}
