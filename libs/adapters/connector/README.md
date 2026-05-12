@@ -23,4 +23,4 @@ import {
 } from '@lenserfight/adapters/connector'
 ```
 
-See [docs/reference/connectors](../../../docs/reference/connectors/index.md) for the full reference and [examples/connectors/chainabit-example](../../../examples/connectors/chainabit-example/README.md) for a runnable integration.
+See [docs/en/reference/connectors](../../../docs/en/reference/connectors/index.md) for the full reference and [examples/connectors/chainabit-example](../../../examples/connectors/chainabit-example/README.md) for a runnable integration.
