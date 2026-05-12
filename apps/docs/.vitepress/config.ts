@@ -1958,6 +1958,37 @@ export default defineConfig({
             { text: 'Battle Moderation', link: '/reference/cli/battle-moderation' },
           ],
         },
+        {
+          text: 'Providers & Models',
+          items: [
+            { text: 'Providers', link: '/reference/cli/providers' },
+            { text: 'Models', link: '/reference/cli/models' },
+            { text: 'AI Direct Calls', link: '/reference/cli/ai' },
+            { text: 'BYOK Keys', link: '/reference/cli/byok' },
+          ],
+        },
+        {
+          text: 'Media',
+          items: [{ text: 'Media Commands', link: '/reference/cli/media' }],
+        },
+        {
+          text: 'Operations',
+          items: [
+            { text: 'Policy', link: '/reference/cli/policy' },
+            { text: 'Budget', link: '/reference/cli/budget' },
+            { text: 'Kill Switch', link: '/reference/cli/kill-switch' },
+            { text: 'Dark Launch', link: '/reference/cli/dark-launch' },
+            { text: 'Analytics', link: '/reference/cli/analytics' },
+          ],
+        },
+        {
+          text: 'Maintenance',
+          items: [
+            { text: 'Onboard (alias)', link: '/reference/cli/onboard' },
+            { text: 'Migrate Terminology', link: '/reference/cli/migrate-terminology' },
+            { text: 'What’s New', link: '/reference/cli/whats-new' },
+          ],
+        },
       ],
       '/reference/battles/': [
         {
