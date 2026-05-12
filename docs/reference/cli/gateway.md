@@ -285,6 +285,6 @@ The gateway respects all CLI environment variables described in [`docs/reference
 
 # `lf gateway`
 
-Manage local devices, runners, daemon, identity, peers, sync, policy, and routing.
+Manage local devices, lensers, daemon, identity, peers, sync, policy, and routing.
 
 <!-- AUTO-GEN-END -->
