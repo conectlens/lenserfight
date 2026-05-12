@@ -12,7 +12,7 @@ const mockDlqRpc      = jest.fn()
 
 jest.mock('@lenserfight/data/repositories', () => ({
   chainabitExecutionRepository: {
-    submitBattleJob: (...args: unknown[]) => mockSubmit(...args),
+    submitBattleJob: (arg: unknown) => mockSubmit(arg as Parameters<typeof mockSubmit>[0]),
     pollBattleJob:   (...args: unknown[]) => mockPoll(...args),
   },
 }))
@@ -25,8 +25,8 @@ jest.mock('@lenserfight/providers', () => ({
 jest.mock('../lib/supabase', () => ({
   createServiceSupabaseClient: jest.fn(() => {
     const rpc = jest.fn((name: string) => {
-      if (name === 'fn_claim_battle_execution_job')   return mockClaimRpc()
-      if (name === 'fn_complete_battle_execution_job') return mockCompleteRpc()
+      if (name === 'fn_worker_claim_battle_job')        return mockClaimRpc()
+      if (name === 'fn_worker_complete_battle_job')    return mockCompleteRpc()
       if (name === 'fn_requeue_battle_job_with_backoff') return mockRequeueRpc()
       if (name === 'fn_move_battle_job_to_dlq')        return mockDlqRpc()
       return Promise.resolve({ data: null, error: null })
@@ -61,7 +61,8 @@ const BASE_JOB = {
 
 describe('processNextBattleJob (Chainabit path)', () => {
   beforeEach(() => {
-    jest.resetAllMocks()
+    jest.clearAllMocks()
+    mockPoll.mockReset()
     mockClaimRpc.mockResolvedValue({ data: BASE_JOB, error: null })
     mockCompleteRpc.mockResolvedValue({ error: null })
     mockRequeueRpc.mockResolvedValue({ error: null })
@@ -91,8 +92,9 @@ describe('processNextBattleJob (Chainabit path)', () => {
     let callCount = 0
     jest.spyOn(Date, 'now').mockImplementation(() => {
       callCount++
-      // Return a time far past the 5-minute deadline on the 2nd+ call
-      return callCount === 1 ? realNow() : realNow() + 400_000
+      // calls 1-2: startedAt + deadline both get realNow() so deadline = now + TIMEOUT_MS
+      // call 3+: returns far past deadline so the loop check throws immediately
+      return callCount <= 2 ? realNow() : realNow() + 400_000
     })
 
     const result = await processNextBattleJob()
