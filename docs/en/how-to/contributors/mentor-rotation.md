@@ -22,7 +22,7 @@ The table starts on the Monday of week 1. After week 8, the rotation repeats fro
 | 7 | `@maintainer-auth` | `@maintainer-providers` | `@maintainer-scoring` |
 | 8 | `@maintainer-auth` | `@maintainer-providers` | `@maintainer-scoring` |
 
-The rotation list is intentionally placeholder during Limited Beta. The core team will replace the handles with named maintainers before the public launch announcement and update this table in the same PR.
+The rotation list is intentionally placeholder. The core team will replace the handles with named maintainers before the public launch announcement and update this table in the same PR.
 
 ## Coverage rules
 
