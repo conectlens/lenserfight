@@ -1190,6 +1190,7 @@ export default defineConfig({
             link: '/en/tutorials/agent-walkthroughs/create-your-first-agent',
           },
           { text: 'Battle Walkthroughs', link: '/en/tutorials/battle-walkthroughs/your-first-battle' },
+          { text: 'CLI Tutorials', link: '/en/tutorials/cli/' },
           { text: 'Developer Examples', link: '/en/tutorials/developer-examples/' },
           { text: 'Integrations', link: '/en/tutorials/integrations/openai' },
           { text: 'Deployment', link: '/en/tutorials/deployment/docker' },
@@ -1386,6 +1387,22 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: 'Your First Battle', link: '/en/tutorials/battle-walkthroughs/your-first-battle' },
+            { text: 'Battle Launch Guide', link: '/en/tutorials/battle-walkthroughs/battle-launch-guide' },
+            { text: 'Local Battle Quickstart', link: '/en/tutorials/battle-walkthroughs/local-battle-quickstart' },
+            { text: 'BYOK Cloud Battle Streaming', link: '/en/tutorials/battle-walkthroughs/byok-cloud-battle' },
+            { text: 'Execute a PRIVATE_BATTLE.md', link: '/en/tutorials/battle-walkthroughs/private-battle-execute' },
+          ],
+        },
+        {
+          text: 'CLI Tutorials',
+          collapsed: true,
+          items: [
+            { text: 'CLI Tutorials Overview', link: '/en/tutorials/cli/' },
+            { text: 'CLI: Getting Started (A to Z)', link: '/en/tutorials/cli/cli-getting-started' },
+            { text: 'File-based CLI: Basics', link: '/en/tutorials/cli/file-based-cli-basics' },
+            { text: 'File-based CLI: Global & Monorepo', link: '/en/tutorials/cli/file-based-cli-global-and-monorepo' },
+            { text: 'File-based CLI: PR & Content Workflows', link: '/en/tutorials/cli/file-based-cli-pr-and-content-workflows' },
+            { text: 'File-based CLI: Legal, Finance & Startup', link: '/en/tutorials/cli/file-based-cli-legal-finance-startup' },
           ],
         },
         {
@@ -1468,7 +1485,7 @@ export default defineConfig({
               link: '/en/tutorials/battle-walkthroughs/battle-launch-guide',
             },
             {
-              text: 'Local Battle Quickstart (Ollama)',
+              text: 'Local Battle Quickstart',
               link: '/en/tutorials/battle-walkthroughs/local-battle-quickstart',
             },
             {
@@ -1478,6 +1495,28 @@ export default defineConfig({
             {
               text: 'Execute a PRIVATE_BATTLE.md',
               link: '/en/tutorials/battle-walkthroughs/private-battle-execute',
+            },
+          ],
+        },
+      ],
+      '/en/tutorials/cli/': [
+        {
+          text: 'CLI Tutorials',
+          items: [
+            { text: 'Overview', link: '/en/tutorials/cli/' },
+            { text: 'CLI: Getting Started (A to Z)', link: '/en/tutorials/cli/cli-getting-started' },
+            { text: 'File-based CLI: Basics', link: '/en/tutorials/cli/file-based-cli-basics' },
+            {
+              text: 'File-based CLI: Global & Monorepo',
+              link: '/en/tutorials/cli/file-based-cli-global-and-monorepo',
+            },
+            {
+              text: 'File-based CLI: PR & Content Workflows',
+              link: '/en/tutorials/cli/file-based-cli-pr-and-content-workflows',
+            },
+            {
+              text: 'File-based CLI: Legal, Finance & Startup',
+              link: '/en/tutorials/cli/file-based-cli-legal-finance-startup',
             },
           ],
         },
