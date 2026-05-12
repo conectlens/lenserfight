@@ -16,7 +16,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/arena",
-        "command": "vite build"
+        "command": "vite build && node ../../tools/seo/generate-app-seo.mjs arena"
       },
       "cache": true,
       "dependsOn": ["^build"],
