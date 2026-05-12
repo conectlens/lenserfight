@@ -47,7 +47,8 @@
     "contribute:check": "pnpm smoke && pnpm docs:audit",
     "health:cron": "node tools/health-cron.mjs",
     "gen:status-page": "node tools/gen-status-page.mjs",
-    "announcement:dashboard": "node tools/announcement-dashboard.mjs",
+    "announcement:gates": "node tools/announcement-dashboard.mjs",
+    "announcement:dashboard": "bash scripts/announcement-dashboard.sh",
     "staging-integrity": "node tools/run-staging-integrity-checklist.mjs"
   },
   "config": {
