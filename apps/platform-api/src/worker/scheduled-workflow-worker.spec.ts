@@ -4,6 +4,7 @@ jest.mock('../lib/supabase', () => ({
 jest.mock('@lenserfight/infra/execution', () => ({
   WorkflowExecutionService: jest.fn(),
   getExecutionProvider: jest.fn(() => ({})),
+  SupabaseDelegationHandler: jest.fn(),
 }))
 jest.mock('@lenserfight/utils/logger', () => ({
   nodeLogger: { info: jest.fn(), error: jest.fn() },
@@ -39,40 +40,20 @@ function buildClient(
   const mockUpdateStatus = jest.fn().mockResolvedValue({ data: null, error: null })
   const mockUpsert = jest.fn().mockResolvedValue({ data: null, error: null })
 
-  const schemaClient = {
-    rpc: jest.fn().mockImplementation((name: string) => {
-      if (name === 'fn_claim_scheduled_workflow_run')
-        return Promise.resolve({ data: claimResult ? [claimResult] : [], error: null })
-      return Promise.resolve({ data: null, error: null })
-    }),
-    from: jest.fn().mockImplementation((table: string) => {
-      if (table === 'workflow_nodes') {
-        return {
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnThis(),
-          order: jest.fn().mockResolvedValue({ data: nodes, error: null }),
-        }
-      }
-      if (table === 'workflow_edges') {
-        return {
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockResolvedValue({ data: edges, error: null }),
-        }
-      }
-      if (table === 'workflow_node_results') {
-        return { upsert: mockUpsert }
-      }
-      return { select: jest.fn().mockReturnThis(), eq: jest.fn().mockResolvedValue({ data: [], error: null }) }
-    }),
-  }
+  const mockRpc = jest.fn().mockImplementation(async (name: string, params?: unknown) => {
+    if (name === 'fn_worker_claim_scheduled_workflow_run')
+      return { data: claimResult ? [claimResult] : [], error: null }
+    // Forward all other calls (fn_update_workflow_run_status etc.) to mockUpdateStatus
+    // so existing assertions on mockUpdateStatus continue to work.
+    return mockUpdateStatus(name, params)
+  })
 
   const client = {
-    schema: jest.fn().mockReturnValue(schemaClient),
-    rpc: mockUpdateStatus,
+    rpc: mockRpc,
   }
 
   mockCreate.mockReturnValue(client as unknown as ReturnType<typeof createServiceSupabaseClient>)
-  return { client, schemaClient, mockUpdateStatus, mockExecuteWorkflow, mockUpsert }
+  return { client, mockRpc, mockUpdateStatus, mockExecuteWorkflow, mockUpsert }
 }
 
 beforeEach(() => {
