@@ -1,6 +1,5 @@
 import { Card } from '@lenserfight/ui/components'
-import { motion } from 'framer-motion'
-import { Bot, User, Trophy, Swords, Lock } from 'lucide-react'
+import { Bot, User, Trophy, Swords, Lock, ArrowRight, Vote, Users } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -23,6 +22,29 @@ const VOTER_ELIGIBILITY_RESTRICTED: Set<VoterEligibility> = new Set([
   'lenser_only',
   'ai_only',
 ])
+
+const CONTENT_TYPE_PURPOSE: Record<string, string> = {
+  text: 'Compare written answers',
+  code: 'Compare code solutions',
+  poem: 'Compare creative writing',
+  drawing: 'Compare sketch concepts',
+  image: 'Compare image outputs',
+  video: 'Compare storyboard or video concepts',
+  audio: 'Compare voice or audio concepts',
+  workflow: 'Compare multi-step workflow artifacts',
+  map: 'Compare map outputs',
+  avatar: 'Compare persona and avatar concepts',
+  image_edit: 'Compare image edit directions',
+  kaggle: 'Compare data science submissions',
+}
+
+function getPrimaryAction(status: BattleStatus) {
+  if (status === 'open') return 'Join battle'
+  if (status === 'voting') return 'Vote now'
+  if (status === 'published' || status === 'closed' || status === 'archived') return 'See results'
+  if (status === 'executing' || status === 'scoring') return 'Watch progress'
+  return 'View battle'
+}
 
 function ContenderTypeIcon({ type }: { type: ContenderType | null | undefined }) {
   if (type === 'ai_model' || type === 'ai_agent' || type === 'ai_runner') {
@@ -48,8 +70,6 @@ interface BattleCardProps {
   contenderBType?: ContenderType | null
   winnerSlot?: 'A' | 'B' | null
 }
-
-const MotionLink = motion(Link)
 
 export function BattleCard({
   slug,
@@ -82,11 +102,9 @@ export function BattleCard({
   const isFinished = status === 'published' || status === 'closed' || status === 'archived'
 
   return (
-    <MotionLink
+    <Link
       to={`/battles/${slug}`}
-      className="block hover:shadow-xl transition-shadow"
-      whileHover={{ y: -3 }}
-      transition={{ duration: 0.1, ease: [0.4, 0, 0.2, 1] }}
+      className="block transition-all hover:-translate-y-0.5 hover:shadow-xl"
     >
       <Card className="space-y-3 p-4">
         {/* Badge row */}
@@ -109,9 +127,22 @@ export function BattleCard({
         </div>
 
         {/* Title */}
-        <h3 className="line-clamp-1 text-base font-bold leading-tight text-greyscale-900 dark:text-greyscale-50">
-          {title}
-        </h3>
+        <div>
+          <h3 className="line-clamp-2 text-base font-bold leading-tight text-greyscale-900 dark:text-greyscale-50">
+            {title}
+          </h3>
+          <p className="mt-1 line-clamp-2 text-xs leading-5 text-greyscale-500 dark:text-greyscale-400">
+            {CONTENT_TYPE_PURPOSE[contentType ?? ''] ?? 'Compare submissions'} between competitors, then vote on the strongest output.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-5 items-center gap-1 rounded-xl bg-surface-raised px-2 py-2 text-center text-[10px] font-semibold text-greyscale-500 dark:text-greyscale-400">
+          <span>Task</span>
+          <ArrowRight size={11} className="mx-auto text-greyscale-300" />
+          <span>Compare</span>
+          <ArrowRight size={11} className="mx-auto text-greyscale-300" />
+          <span>Vote</span>
+        </div>
 
         {/* Winner banner */}
         {isFinished && winnerSlot && (
@@ -157,10 +188,22 @@ export function BattleCard({
             <span />
           )}
           <span className="font-semibold text-greyscale-900 dark:text-greyscale-50 flex-shrink-0">
+            <Vote size={11} className="mr-1 inline-block align-[-1px]" />
             {totalVoteCount} vote{totalVoteCount !== 1 ? 's' : ''}
           </span>
         </div>
+
+        <div className="flex items-center justify-between border-t border-surface-border pt-3">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-greyscale-500 dark:text-greyscale-400">
+            <Users size={12} />
+            {hasContenders ? '2 competitors' : 'Open slots'}
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs font-bold text-primary-700 dark:text-primary-yellow-400">
+            {getPrimaryAction(status)}
+            <ArrowRight size={12} />
+          </span>
+        </div>
       </Card>
-    </MotionLink>
+    </Link>
   )
 }
