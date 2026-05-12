@@ -111,30 +111,6 @@ export function HandicapConfigPanel({ value, onChange }: HandicapConfigPanelProp
           label: o.label,
         }))}
       />
-
-      {/* Model tier */}
-      <div className="space-y-2">
-        <span className="text-xs font-semibold text-greyscale-700 dark:text-greyscale-300">
-          Allowed model tier
-        </span>
-        <div className="flex gap-2 flex-wrap">
-          {MODEL_TIER_OPTIONS.map((t) => {
-            const isActive = value.allowed_model_tier === t.value
-            return (
-              <Button
-                key={String(t.value)}
-                type="button"
-                variant={isActive ? 'dark' : 'secondary'}
-                size="sm"
-                onClick={() => update({ allowed_model_tier: t.value })}
-                className="!rounded-full !text-xs !px-3 !py-1.5"
-              >
-                {t.label}
-              </Button>
-            )
-          })}
-        </div>
-      </div>
     </div>
   )
 }
