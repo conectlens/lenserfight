@@ -150,7 +150,7 @@ To run the docs site locally:
 pnpm nx run docs:serve
 ```
 
-For the full local database flow, see `docs/reference/database/local-setup.md`.
+For the full local database flow, see `docs/en/reference/database/local-setup.md`.
 
 ### Quick Start fails?
 
@@ -161,7 +161,7 @@ For the full local database flow, see `docs/reference/database/local-setup.md`.
 | Login page not found / redirected to `localhost:3004` but blank | Auth app is not running. Start it in a separate terminal: `pnpm nx run auth:serve`. |
 | Web app blank or API errors | Copy `.env.example` → `.env.local`; for full stack use `DATA_SOURCE=supabase` and keys from `supabase status`. |
 | Node version warning (`wanted >=22 <23`) | The repo targets Node 22 LTS. Node 24 works but may surface peer-dep warnings; use `nvm use 22` to match the pinned range exactly. |
-| Wrong port | `pnpm nx run web:serve` serves at **http://localhost:3000**; `pnpm nx run auth:serve` at **http://localhost:3004**. Set `WEB_BASE_URL` and `AUTH_BASE_URL` accordingly in `.env.local` (see [environment variables](docs/reference/platform-api/environment-variables.md)). |
+| Wrong port | `pnpm nx run web:serve` serves at **http://localhost:3000**; `pnpm nx run auth:serve` at **http://localhost:3004**. Set `WEB_BASE_URL` and `AUTH_BASE_URL` accordingly in `.env.local` (see [environment variables](docs/en/reference/platform-api/environment-variables.md)). |
 
 Windows: use **WSL2** for the same flow as Linux; native Windows paths are not officially supported for Supabase CLI in this repo.
 
@@ -275,7 +275,7 @@ Current workflow support is intentionally narrow and explicit:
 - cloud BYOK workflow execution depends on the platform executor and is not a self-host guarantee in this repo
 - unsupported automation commands remain scaffolded or experimental until they are implemented end to end
 
-See `docs/reference/cli/run.md` and `docs/reference/workflows/execution-engine.md` for the exact current contract.
+See `docs/en/reference/cli/run.md` and `docs/en/reference/workflows/execution-engine.md` for the exact current contract.
 
 ---
 
@@ -343,7 +343,7 @@ LenserFight is a global arena. The core platform is English-first, and every sur
 
 | Language | Code | Status | Getting Started |
 | :--- | :---: | :--- | :--- |
-| 🇺🇸 **English** | `en` | ✅ Complete | [docs/index.md](docs/index.md) |
+| 🇺🇸 **English** | `en` | ✅ Complete | [docs/en/index.md](docs/en/index.md) |
 | 🇹🇷 **Turkish** | `tr` | 🚧 WIP | [docs/tr/index.md](docs/tr/index.md) |
 | 🇪🇸 **Spanish** | `es` | 🟡 Stub | [docs/es/index.md](docs/es/index.md) |
 | 🇫🇷 **French** | `fr` | 🟡 Stub | [docs/fr/index.md](docs/fr/index.md) |
@@ -361,7 +361,7 @@ LenserFight is a global arena. The core platform is English-first, and every sur
 
 The infrastructure is already wired. You do not need to touch any code to translate docs. You only need to add files. The i18n guide walks you through everything in one place:
 
-**→ [docs/how-to/contributors/i18n-guide.md](docs/how-to/contributors/i18n-guide.md)**
+**→ [docs/en/how-to/contributors/i18n-guide.md](docs/en/how-to/contributors/i18n-guide.md)**
 
 The guide covers the exact file structure, registration steps, and AI-assisted workflow for each surface:
 
@@ -384,7 +384,7 @@ Branch from `development`. PR title: `i18n({locale}): translate {surface} to {La
 We welcome focused contributions that improve installability, workflow reliability, docs, and developer ergonomics.
 
 - Start with [CONTRIBUTING.md](CONTRIBUTING.md)
-- Contributor guides live in [docs/how-to/contributors/](docs/how-to/contributors/)
+- Contributor guides live in [docs/en/how-to/contributors/](docs/en/how-to/contributors/)
 - For larger ideas, open an issue before investing in implementation
 
 If you change behavior, run the smallest relevant validation and mention what you did in your PR.
@@ -402,15 +402,15 @@ If you change behavior, run the smallest relevant validation and mention what yo
 
 ## 📚 Documentation
 
-- Trust Gateway: [docs/explanation/gateway/](docs/explanation/gateway/index.md) (or <a target="_blank" href="https://docs.lenserfight.com/explanation/gateway/">docs.lenserfight.com/explanation/gateway/</a>)
-- Getting started: [docs/tutorials/getting-started/overview.md](docs/tutorials/getting-started/overview.md)
-- Installation: [docs/tutorials/getting-started/installation.md](docs/tutorials/getting-started/installation.md)
-- Local database setup: [docs/reference/database/local-setup.md](docs/reference/database/local-setup.md)
-- Community API: [docs/reference/community-api/index.md](docs/reference/community-api/index.md)
-- Workflow engine: [docs/reference/workflows/execution-engine.md](docs/reference/workflows/execution-engine.md)
-- Workflow contracts: [docs/reference/workflows/contract-schema.md](docs/reference/workflows/contract-schema.md)
-- Workflow test plan: [docs/reference/workflows/test-plan.md](docs/reference/workflows/test-plan.md)
-- CLI Getting Started: [docs/tutorials/getting-started/cli-getting-started.md](docs/tutorials/getting-started/cli-getting-started.md)
+- Trust Gateway: [docs/en/explanation/gateway/](docs/en/explanation/gateway/index.md) (or <a target="_blank" href="https://docs.lenserfight.com/explanation/gateway/">docs.lenserfight.com/explanation/gateway/</a>)
+- Getting started: [docs/en/tutorials/getting-started/overview.md](docs/en/tutorials/getting-started/overview.md)
+- Installation: [docs/en/tutorials/getting-started/installation.md](docs/en/tutorials/getting-started/installation.md)
+- Local database setup: [docs/en/reference/database/local-setup.md](docs/en/reference/database/local-setup.md)
+- Community API: [docs/en/reference/community-api/index.md](docs/en/reference/community-api/index.md)
+- Workflow engine: [docs/en/reference/workflows/execution-engine.md](docs/en/reference/workflows/execution-engine.md)
+- Workflow contracts: [docs/en/reference/workflows/contract-schema.md](docs/en/reference/workflows/contract-schema.md)
+- Workflow test plan: [docs/en/reference/workflows/test-plan.md](docs/en/reference/workflows/test-plan.md)
+- CLI Getting Started: [docs/en/tutorials/getting-started/cli-getting-started.md](docs/en/tutorials/getting-started/cli-getting-started.md)
 
 ---
 
