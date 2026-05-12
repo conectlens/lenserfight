@@ -2,20 +2,20 @@
 
 Thanks for contributing.
 
-This root file exists for GitHub community health features. The canonical contributor docs live under `docs/how-to/contributors/`.
+This root file exists for GitHub community health features. The canonical contributor docs live under `docs/en/how-to/contributors/`.
 
 ## Start here
 
 Canonical site (browse online): [https://docs.lenserfight.com](https://docs.lenserfight.com)
 
-- Contributor guide: [docs.lenserfight.com/how-to/contributors/contributing](https://docs.lenserfight.com/how-to/contributors/contributing) — repo path `docs/how-to/contributors/contributing.md`
-- Development setup: [docs.lenserfight.com/how-to/contributors/development-setup](https://docs.lenserfight.com/how-to/contributors/development-setup) — `docs/how-to/contributors/development-setup.md`
-- Coding standards: [docs.lenserfight.com/how-to/contributors/coding-standards](https://docs.lenserfight.com/how-to/contributors/coding-standards) — `docs/how-to/contributors/coding-standards.md`
-- Branching and versioning: [docs.lenserfight.com/how-to/contributors/branching](https://docs.lenserfight.com/how-to/contributors/branching) — `docs/how-to/contributors/branching.md`
-- Release process: [docs.lenserfight.com/how-to/contributors/release-process](https://docs.lenserfight.com/how-to/contributors/release-process) — `docs/how-to/contributors/release-process.md`
-- Code of conduct: [docs.lenserfight.com/how-to/contributors/code-of-conduct](https://docs.lenserfight.com/how-to/contributors/code-of-conduct) — `docs/how-to/contributors/code-of-conduct.md`
-- Support routing: [docs.lenserfight.com/how-to/contributors/support](https://docs.lenserfight.com/how-to/contributors/support) — `docs/how-to/contributors/support.md`
-- Security reporting: [docs.lenserfight.com/how-to/contributors/security](https://docs.lenserfight.com/how-to/contributors/security) — `docs/how-to/contributors/security.md`
+- Contributor guide: [docs.lenserfight.com/how-to/contributors/contributing](https://docs.lenserfight.com/how-to/contributors/contributing) — repo path `docs/en/how-to/contributors/contributing.md`
+- Development setup: [docs.lenserfight.com/how-to/contributors/development-setup](https://docs.lenserfight.com/how-to/contributors/development-setup) — `docs/en/how-to/contributors/development-setup.md`
+- Coding standards: [docs.lenserfight.com/how-to/contributors/coding-standards](https://docs.lenserfight.com/how-to/contributors/coding-standards) — `docs/en/how-to/contributors/coding-standards.md`
+- Branching and versioning: [docs.lenserfight.com/how-to/contributors/branching](https://docs.lenserfight.com/how-to/contributors/branching) — `docs/en/how-to/contributors/branching.md`
+- Release process: [docs.lenserfight.com/how-to/contributors/release-process](https://docs.lenserfight.com/how-to/contributors/release-process) — `docs/en/how-to/contributors/release-process.md`
+- Code of conduct: [docs.lenserfight.com/how-to/contributors/code-of-conduct](https://docs.lenserfight.com/how-to/contributors/code-of-conduct) — `docs/en/how-to/contributors/code-of-conduct.md`
+- Support routing: [docs.lenserfight.com/how-to/contributors/support](https://docs.lenserfight.com/how-to/contributors/support) — `docs/en/how-to/contributors/support.md`
+- Security reporting: [docs.lenserfight.com/how-to/contributors/security](https://docs.lenserfight.com/how-to/contributors/security) — `docs/en/how-to/contributors/security.md`
 - Brand / trademark: [BRAND.md](BRAND.md) in the repo root (mirrored on the docs site as [Brand guidelines](https://docs.lenserfight.com/explanation/community/brand-guidelines))
 
 ## Quick contribution flow

@@ -2,7 +2,7 @@
 
 LenserFight should be a respectful, constructive, and harassment-free community for everyone.
 
-This root file exists for GitHub’s community health features. The canonical contributor version lives at [docs/how-to/contributors/code-of-conduct.md](docs/how-to/contributors/code-of-conduct.md).
+This root file exists for GitHub’s community health features. The canonical contributor version lives at [docs/en/how-to/contributors/code-of-conduct.md](docs/en/how-to/contributors/code-of-conduct.md).
 
 ## Expected behavior
 
