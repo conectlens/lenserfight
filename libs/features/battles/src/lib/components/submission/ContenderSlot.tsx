@@ -4,6 +4,7 @@ import type { BattleSubmissionMetadata } from '@lenserfight/types'
 import { motion } from 'framer-motion'
 import React from 'react'
 
+import { MediaRenderer } from '../../renderers/MediaRenderer'
 import { SubmissionViewer } from './SubmissionViewer'
 
 interface ContenderSlotProps {
@@ -15,6 +16,9 @@ interface ContenderSlotProps {
   voteCount?: number
   votePercentage?: number
   metadata?: BattleSubmissionMetadata | null
+  mediaUrl?: string | null
+  mimeType?: string | null
+  outputModality?: 'text' | 'image' | 'video' | 'audio' | null
 }
 
 export function ContenderSlot({
@@ -26,6 +30,9 @@ export function ContenderSlot({
   voteCount,
   votePercentage,
   metadata,
+  mediaUrl,
+  mimeType,
+  outputModality,
 }: ContenderSlotProps) {
   const isAI = contenderType !== 'human'
   const attestation = metadata?.attestation
@@ -67,6 +74,15 @@ export function ContenderSlot({
             transition={{ duration: 0.8, ease: 'easeOut' }}
           />
         </div>
+      )}
+
+      {outputModality && outputModality !== 'text' && mediaUrl && (
+        <MediaRenderer
+          modality={outputModality}
+          mediaUrl={mediaUrl}
+          mimeType={mimeType ?? null}
+          altText={`${displayName} (${slot})`}
+        />
       )}
 
       <SubmissionViewer slot={slot} contenderName={displayName} contentText={contentText} contentUrl={contentUrl} />
