@@ -18,67 +18,78 @@ export type ContributionContext =
   | 'documentation'
   | 'infrastructure'
 
+export type XPSeasonStatus = 'active' | 'upcoming' | 'ended'
+
 // Matches the rule_key in xp.rules table
 export type XPRuleKey =
-  // Forum
+  // Forum — content creation
+  | 'LENS_CREATED'
   | 'THREAD_CREATED'
   | 'THREAD_REPLY_CREATED'
-  | 'THREAD_REPLY_RECEIVED'
+  | 'WORKFLOW_CREATED'
+  | 'WORKFLOW_PUBLISHED'
   | 'PROMPT_CREATED'
   | 'TAG_CREATED'
+  | 'MULTILINGUAL_CONTENT_CREATED'
+  | 'GENERATIVE_MEDIA_CREATED'
+  // Forum — social giving
   | 'REACTION_GIVEN'
+  | 'WORKFLOW_LIKED'
+  | 'WORKFLOW_SAVED'
+  | 'WORKFLOW_FORKED'
+  | 'LENS_FORKED'
+  // Forum — social receiving
   | 'REACTION_RECEIVED'
+  | 'THREAD_REPLY_RECEIVED'
+  | 'WORKFLOW_LIKE_RECEIVED'
+  | 'WORKFLOW_SAVE_RECEIVED'
+  | 'WORKFLOW_FORK_RECEIVED'
+  | 'LENS_FORK_RECEIVED'
+  | 'WORKFLOW_RUN_RECEIVED'
+  | 'FOLLOW_RECEIVED'
+  // Forum — engagement
   | 'THREAD_ENGAGED'
+  // Forum — daily activity & streaks
   | 'DAILY_LOGIN'
-  // Arena
-  | 'BATTLE_CREATED'
-  | 'BATTLE_PARTICIPATED'
-  | 'BATTLE_WON'
-  | 'BATTLE_VOTED'
-  // CLI
-  | 'CLI_INIT'
-  | 'CLI_DEPLOY'
-  // Auth
+  | 'STREAK_BONUS_7D'
+  | 'STREAK_BONUS_14D'
+  | 'STREAK_BONUS_30D'
+  // Forum — learning & challenges
+  | 'TUTORIAL_COMPLETED'
+  | 'WALKTHROUGH_COMPLETED'
+  | 'CHALLENGE_COMPLETED'
+  // Forum — platform milestones
   | 'ACCOUNT_CREATED'
   | 'PROFILE_COMPLETED'
-  // Contributor
+  | 'CLI_INIT'
+  | 'AGENT_CREATED'
+  | 'AGENT_TEAM_CREATED'
+  | 'INVITE_SENT'
+  | 'INVITE_ACCEPTED'
+  // Forum — open-source contributions
   | 'CONTRIB_PR_MERGED_MAIN'
   | 'CONTRIB_PR_MERGED_COMMUNITY'
   | 'CONTRIB_PR_MERGED_DOCS'
   | 'CONTRIB_ISSUE_FILED'
   | 'CONTRIB_REVIEW_GIVEN'
-  // Workflow Marketplace
-  | 'WORKFLOW_FORKED'
-  | 'WORKFLOW_FORK_RECEIVED'
-  | 'WORKFLOW_LIKED'
-  | 'WORKFLOW_LIKE_RECEIVED'
-  | 'WORKFLOW_SAVED'
-  | 'WORKFLOW_SAVE_RECEIVED'
-  // Lens & Workflow Marketplace (existing DB rules missing from this type)
-  | 'LENS_CREATED'
-  | 'LENS_FORKED'
-  | 'LENS_FORK_RECEIVED'
-  | 'WORKFLOW_CREATED'
-  | 'FOLLOW_RECEIVED'
-  // Platform — Agents & Teams
-  | 'AGENT_CREATED'
-  | 'AGENT_TEAM_CREATED'
-  // Platform — Local Devices & Runners
+  // Battles — participation
+  | 'BATTLE_CREATED'
+  | 'BATTLE_JOINED'
+  | 'BATTLE_PARTICIPATED'
+  | 'BATTLE_WON'
+  | 'BATTLE_VOTED'
+  | 'BATTLE_RANKED_TOP_3'
+  | 'BATTLE_RESULT_PUBLISHED'
+  | 'BATTLE_SUBMISSION_COMPLETED'
+  | 'FAIR_EVALUATION_COMPLETED'
+  // Platform — local devices & runners
   | 'DEVICE_REGISTERED'
   | 'DEVICE_VERIFIED'
   | 'RUNNER_CONNECTED'
-  // Platform — Referrals
-  | 'INVITE_SENT'
-  | 'INVITE_ACCEPTED'
-  // Platform — Content Publishing
+  | 'VERIFIED_LOCAL_EXECUTION_COMPLETED'
+  // Platform — content publishing
   | 'WORKFLOW_PUBLISHED'
   | 'AGENT_USED_BY_OTHER_USER'
-  // Battles — Execution Quality & Trust
-  | 'BATTLE_SUBMISSION_COMPLETED'
-  | 'VERIFIED_LOCAL_EXECUTION_COMPLETED'
-  | 'BATTLE_RANKED_TOP_3'
-  | 'BATTLE_RESULT_PUBLISHED'
-  | 'FAIR_EVALUATION_COMPLETED'
 
 export interface XPApp {
   id: string
@@ -92,7 +103,6 @@ export interface XPSummary {
   totalXp: number
   currentLevel: number
   rank?: number
-
   currentLevelMinXp?: number
   currentLevelMaxXp?: number
 }
@@ -104,6 +114,10 @@ export interface XPEvent {
   baseXp: number
   source: string
   createdAt: string
+  /** Human-readable label derived from rule name */
+  label?: string
+  /** Whether this event is frozen (moderated content) */
+  frozen?: boolean
 }
 
 export interface XPContribution {
@@ -127,6 +141,22 @@ export interface LenserBadge {
   awardedAt: string
 }
 
+export interface XPStreak {
+  lenserId: string
+  streakType: string
+  currentStreak: number
+  bestStreak: number
+  lastUpdateAt: string
+}
+
+export interface XPLevelUp {
+  id: string
+  oldLevel: number
+  newLevel: number
+  totalXpAt: number
+  createdAt: string
+}
+
 export interface LeaderboardEntry {
   rank: number
   lenserId: string
@@ -135,12 +165,19 @@ export interface LeaderboardEntry {
   avatarUrl?: string
   totalXp: number
   level: number
-  streak?: number // Days
+  streak?: number
   trend?: 'up' | 'down' | 'same'
 }
 
 export type LeaderboardTimeframe = 'weekly' | 'monthly' | 'all_time'
 export type LeaderboardScope = 'global' | 'season'
+
+export interface FeaturedChallenge {
+  title: string
+  description: string
+  xpReward: number
+  ruleKey: XPRuleKey
+}
 
 export interface XPSeason {
   id: string
@@ -149,6 +186,13 @@ export interface XPSeason {
   startsAt: string
   endsAt: string
   isActive: boolean
+}
+
+export interface XPSeasonV2 extends XPSeason {
+  description?: string
+  rewardDescription?: string
+  featuredChallenges: FeaturedChallenge[]
+  status: XPSeasonStatus
 }
 
 export interface SeasonLeaderboardEntry {
@@ -163,4 +207,57 @@ export interface SeasonLeaderboardEntry {
     handle?: string
     avatarUrl?: string
   }
+}
+
+// XP rule display metadata (derived client-side from action key)
+export const XP_RULE_LABELS: Partial<Record<XPRuleKey, string>> = {
+  LENS_CREATED: 'Lens Published',
+  THREAD_CREATED: 'Thread Posted',
+  THREAD_REPLY_CREATED: 'Reply Posted',
+  WORKFLOW_CREATED: 'Workflow Created',
+  WORKFLOW_PUBLISHED: 'Workflow Published',
+  PROMPT_CREATED: 'Prompt Created',
+  MULTILINGUAL_CONTENT_CREATED: 'Multilingual Content',
+  GENERATIVE_MEDIA_CREATED: 'Generative Media',
+  REACTION_GIVEN: 'Reaction Given',
+  WORKFLOW_LIKED: 'Workflow Liked',
+  WORKFLOW_SAVED: 'Workflow Saved',
+  WORKFLOW_FORKED: 'Workflow Forked',
+  LENS_FORKED: 'Lens Forked',
+  REACTION_RECEIVED: 'Reaction Received',
+  THREAD_REPLY_RECEIVED: 'Reply Received',
+  WORKFLOW_LIKE_RECEIVED: 'Workflow Like',
+  WORKFLOW_SAVE_RECEIVED: 'Workflow Saved by Others',
+  WORKFLOW_FORK_RECEIVED: 'Workflow Fork',
+  LENS_FORK_RECEIVED: 'Lens Fork',
+  WORKFLOW_RUN_RECEIVED: 'Workflow Run',
+  FOLLOW_RECEIVED: 'New Follower',
+  DAILY_LOGIN: 'Daily Login',
+  STREAK_BONUS_7D: '7-Day Streak',
+  STREAK_BONUS_14D: '14-Day Streak',
+  STREAK_BONUS_30D: '30-Day Streak',
+  TUTORIAL_COMPLETED: 'Tutorial Completed',
+  WALKTHROUGH_COMPLETED: 'Walkthrough Completed',
+  CHALLENGE_COMPLETED: 'Season Challenge',
+  ACCOUNT_CREATED: 'Account Created',
+  PROFILE_COMPLETED: 'Profile Setup',
+  CLI_INIT: 'CLI Setup',
+  AGENT_CREATED: 'Agent Created',
+  INVITE_SENT: 'Invite Sent',
+  INVITE_ACCEPTED: 'Friend Joined',
+  CONTRIB_PR_MERGED_MAIN: 'Core PR Merged',
+  CONTRIB_PR_MERGED_COMMUNITY: 'Community PR',
+  CONTRIB_PR_MERGED_DOCS: 'Docs PR',
+  CONTRIB_ISSUE_FILED: 'Issue Filed',
+  CONTRIB_REVIEW_GIVEN: 'Code Review',
+  BATTLE_CREATED: 'Battle Created',
+  BATTLE_JOINED: 'Battle Joined',
+  BATTLE_PARTICIPATED: 'Battle Participated',
+  BATTLE_WON: 'Battle Won',
+  BATTLE_VOTED: 'Vote Cast',
+  BATTLE_RANKED_TOP_3: 'Top 3 Finish',
+  BATTLE_RESULT_PUBLISHED: 'Result Published',
+  DEVICE_REGISTERED: 'Device Connected',
+  DEVICE_VERIFIED: 'Device Verified',
+  RUNNER_CONNECTED: 'Runner Connected',
 }
