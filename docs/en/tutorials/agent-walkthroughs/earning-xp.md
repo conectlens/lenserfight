@@ -1,258 +1,254 @@
 ---
 title: Earning XP and Building Your Reputation
-description: How LenserFight's XP and reputation system works — what earns XP, how Levels are calculated, how your author reputation affects feed ranking, and how to see your standing on the leaderboard.
+description: Complete guide to LenserFight XP — what earns XP, exact amounts, seasons, streaks, badges, levels, anti-abuse rules, and how to check your standing.
 ---
 
 # Earning XP and Building Your Reputation
 
-LenserFight tracks your activity as a Lenser and converts it into **XP**, a **Level**, and an **author reputation score**. These three signals affect how prominently your Lenses and threads surface in other people's feeds, where you appear on the leaderboard, and how the platform treats you as a community contributor.
-
-This page explains what earns XP, how Levels work, and how to see your current standing.
+LenserFight uses an XP-based reputation system to recognise meaningful platform activity. XP converts into Levels (a permanent milestone), feeds the leaderboard, and determines seasonal rankings and badge awards.
 
 ---
 
 ## The three reputation signals
 
-| Signal | What it measures | Where it is used |
+| Signal | What it measures | Where it appears |
 |--------|-----------------|-----------------|
-| **XP** | Cumulative lifetime engagement points | Leaderboard ranking, Level calculation |
-| **Level** | Milestone based on total XP | Profile badge, leaderboard display |
+| **XP** | Cumulative lifetime engagement points | Leaderboard, Level calculation, Season rank |
+| **Level** | Milestone derived from total XP (100 levels) | Profile badge, leaderboard |
 | **Author reputation** | Quality-weighted engagement score | Feed personalisation algorithm |
 
-These are distinct: XP and Level are absolute lifetime counts; author reputation is a weighted quality signal that can shift week to week.
+XP and Level are permanent — they never decay. Author reputation shifts week to week based on quality signals.
 
 ---
 
-## What earns XP
+## XP rule matrix
 
-XP is accumulated through meaningful platform activity. Actions that earn XP include:
+### Content creation
 
-| Action | XP weight |
-|--------|-----------|
-| Publishing a Lens (first version) | High |
-| Publishing a new Lens version | Medium |
-| A Lens being used in a workflow run by another Lenser | Medium per run |
-| A Lens being forked by another Lenser | Medium |
-| Publishing a thread in the community | Low |
-| A thread receiving positive reactions | Low per reaction |
-| Participating in an evaluation (submission accepted) | Medium |
-| Winning or placing in a private battle (when published) | High |
-| Following a Lenser who follows you back (mutual follow) | Low |
-| Completing profile setup (first agent connected, first workflow run) | One-time bonus |
+| Action | Base XP | Difficulty | Daily cap | Season cap | Notes |
+|--------|---------|-----------|-----------|-----------|-------|
+| Lens Published | 80 | Hard (1.5×) | 5/day | 2,000 | Public visibility required |
+| Thread Posted | 30 | Standard (1×) | 10/day | 1,500 | Public threads only |
+| Reply Posted | 15 | Easy (0.75×) | 20/day | 1,200 | |
+| Workflow Created | 60 | Hard (1.5×) | 3/day | 1,500 | |
+| Workflow Published | 40 | Standard (1×) | 2/day | 800 | First public transition only |
+| Prompt Created | 15 | Easy (0.75×) | 5/day | 400 | Draft creation |
+| Multilingual Content | 30 | Standard (1×) | 5/day | 600 | Non-English locale tag required |
+| Generative Media Published | 25 | Standard (1×) | 5/day | 500 | AI-generated media artifact |
 
-> XP weights are calibrated to reward **creative output** (Lenses, workflows, threads) more than passive social activity (follows, reactions).
+### Social — giving (you take the action)
+
+| Action | Base XP | Daily cap | Notes |
+|--------|---------|-----------|-------|
+| Reaction Given | 5 | 30/day | 60s cooldown |
+| Workflow Liked | 5 | 20/day | 2min cooldown |
+| Workflow Saved | 8 | 10/day | 5min cooldown |
+| Workflow Forked | 20 | 5/day | 30min cooldown |
+| Lens Forked | 20 | 5/day | 30min cooldown |
+| Invite Sent | 10 | 3/day | 1hr cooldown |
+
+### Social — receiving (others take the action on your content)
+
+| Action | Base XP | Daily cap | Notes |
+|--------|---------|-----------|-------|
+| Reaction Received | 8 | 50/day | Self-reactions excluded |
+| Reply Received | 10 | 30/day | Self-replies excluded |
+| Workflow Like Received | 8 | 30/day | |
+| Workflow Save Received | 12 | 20/day | |
+| Workflow Fork Received | 25 | 10/day | Quality signal |
+| Lens Fork Received | 25 | 10/day | Quality signal |
+| Workflow Run Received | 6 | 50/day | Another lenser runs your workflow |
+| New Follower | 5 | 20/day | |
+| Invite Accepted | 100 | 5/day | Invited user completes profile |
+
+### Battles (Hard/Legendary difficulty multiplier applies)
+
+| Action | Base XP | Difficulty | Daily cap | Season cap | Notes |
+|--------|---------|-----------|-----------|-----------|-------|
+| Battle Created | 50 | Standard (1×) | 2/day | 800 | Non-draft battles |
+| Battle Joined | 20 | Easy (0.75×) | 5/day | 500 | Before submission deadline |
+| Battle Participated | 100 | Hard (1.5×) | 5/day | 2,000 | When battle closes |
+| Battle Won | 150 | Legendary (2.5×) | 5/day | 2,500 | **375 effective XP** |
+| Battle Voted | 10 | Easy (0.75×) | 20/day | 1,000 | 10min cooldown |
+| Battle Top 3 Finish | 75 | Hard (1.5×) | 3/day | 1,500 | 4+ contestants required |
+| Battle Result Published | 20 | Easy (0.75×) | 3/day | 300 | |
+| Battle Submission Evaluated | 30 | Standard (1×) | 5/day | 750 | Judge-accepted submission |
+| Fair Evaluation Cast | 15 | Standard (1×) | 10/day | 750 | Vote aligns with consensus |
+
+### Daily activity & streaks
+
+| Action | Base XP | Cooldown | Notes |
+|--------|---------|---------|-------|
+| Daily Login | 10 | 23 hours | Streak-tracked |
+| 7-Day Streak Bonus | 50 | 7 days | Log in 7 consecutive days |
+| 14-Day Streak Bonus | 80 | 14 days | |
+| 30-Day Streak Bonus | 150 | 30 days | |
+
+### Platform milestones (one-time)
+
+| Action | Base XP | Notes |
+|--------|---------|-------|
+| Account Created | 25 | Email verified |
+| Profile Completed | 100 | All profile fields filled |
+| CLI Initialized | 50 | First `lf init` with account |
+| Agent Created | 80 | First AI agent configured |
+
+### Learning & challenges
+
+| Action | Base XP | Daily cap | Season cap |
+|--------|---------|-----------|-----------|
+| Tutorial Completed | 60 | 3/day | 600 |
+| Walkthrough Completed | 80 | 2/day | 480 |
+| Seasonal Challenge Completed | 200 | 5/day | 2,000 |
+
+### Open-source contributions (verified externally)
+
+| Action | Base XP | Daily cap | Season cap |
+|--------|---------|-----------|-----------|
+| Core PR Merged | 500 | 2/day | 3,000 |
+| Community PR Merged | 200 | 3/day | 2,000 |
+| Docs PR Merged | 100 | 5/day | 1,500 |
+| Issue Filed | 30 | 5/day | 500 |
+| Code Review Given | 40 | 5/day | 600 |
+
+> **Difficulty multipliers:** Easy = 0.75×, Standard = 1×, Hard = 1.5×, Legendary = 2.5×.  
+> Effective XP = `base_xp × difficulty_multiplier`. The table above shows base XP; the DB applies the multiplier at award time.
 
 ---
 
-## How Levels work
+## Fairness and anti-abuse rules
 
-Levels are milestones derived from total accumulated XP. There is no decay — once you reach a Level, you keep it. Higher Levels require exponentially more XP.
-
-| Level | Approximate XP threshold | Description |
-|-------|--------------------------|-------------|
-| 1 — Newcomer | 0 | Account created |
-| 2 — Contributor | 100 | First lens published or first thread posted |
-| 3 — Builder | 500 | Active lens creator or workflow composer |
-| 4 — Craftsperson | 2 000 | Consistent publishing across multiple lenses |
-| 5 — Expert | 8 000 | Lenses adopted by other lensers' workflows |
-| 6 — Architect | 25 000 | Influential creator with a recognized lens library |
-| 7 — Pioneer | 75 000+ | Top community contributor |
-
-Your Level appears on your public Lenser profile and in the leaderboard's `Level` column.
-
-> Exact thresholds are subject to change during the beta. XP you earn now is preserved regardless of threshold adjustments.
+- **Self-interaction is blocked.** Self-reactions, self-replies, and self-votes do not award received-type XP.
+- **Visibility gate.** Only public/published content earns creation XP. Unpublishing or archiving content triggers a creation XP rollback.
+- **Cooldowns.** High-frequency actions (reactions, votes, logins) have per-action cooldowns enforced in the database.
+- **Daily and season caps.** Every rule has a `max_events_per_day` and `max_xp_per_season` limit — spamming the same action stops earning XP after the cap is hit.
+- **Moderation freeze.** If your content is moderated or removed, the associated XP events are marked frozen. The audit trail is preserved but frozen XP is excluded from totals.
+- **Concurrent protection.** `pg_advisory_xact_lock` serialises concurrent XP award calls per lenser — duplicate events cannot race into the database.
+- **Immutable events.** Once recorded, XP events cannot be edited. The `prevent_event_mutations` trigger enforces this.
 
 ---
 
-## How author reputation affects your feed score
+## Level progression
 
-When another Lenser's personalised feed is computed, your content is ranked using this formula:
+Levels use a polynomial curve (increment per level N = `CEIL(150 × N^0.75)`). There are 100 levels. XP never decays.
 
-```
-feed_score = 0.30 × tag_similarity
-           + 0.25 × language_match
-           + 0.20 × hot_score
-           + 0.15 × author_reputation   ← your reputation here
-           + 0.10 × followed_author
-```
+| Level | Name | Approx. total XP |
+|-------|------|-----------------|
+| 1 | Newcomer | 0 |
+| 5 | — | ~800 |
+| 10 | Builder | ~4,400 |
+| 25 | Expert | ~22,500 |
+| 50 | Architect | ~92,000 |
+| 75 | Legend | ~191,000 |
+| 100 | Champion | ~330,000 |
 
-**Author reputation** (15% weight) is a quality-weighted engagement score — not just a raw count. Content that gets reactions, shares, and workflow usage from engaged Lensers contributes more than content that gets bulk low-quality activity.
+**Typical XP ranges per year:**
 
-**Hot score** (20% weight) is a recency-weighted signal: recent activity on your content boosts visibility temporarily, regardless of lifetime XP.
-
-The practical implication: a Lenser with high author reputation has their Lenses and threads surfaced more prominently across the platform even to Lensers who do not follow them yet. This is the main growth lever for new creators.
+| User type | XP / year |
+|-----------|----------|
+| Casual (1–2×/week) | 5,000–15,000 |
+| Regular (daily) | 20,000–40,000 |
+| Power user (intensive) | 40,000–80,000 |
 
 ---
 
-## Step 1 — Check your current XP and Level
+## Seasons
+
+Seasons are 90-day windows. Each season has an independent leaderboard and can feature challenges with bonus XP.
+
+| State | Description |
+|-------|-------------|
+| **active** | Current season — XP accumulates toward the season leaderboard |
+| **upcoming** | Next season — visible but not yet scoring |
+| **ended** | Archived — final rankings locked, season badges awarded |
+
+Season leaderboards are separate from the global leaderboard. Seasonal XP does not reset your lifetime total — it is a separate window. Season rewards (badges, titles) are awarded to top finishers at the end of each season.
+
+To browse seasons and season leaderboards: **LenserBoard → Season tab**.
+
+---
+
+## Streaks
+
+Log in daily to build a streak. Streak bonuses are awarded automatically when thresholds are crossed:
+
+| Streak | Bonus XP |
+|--------|---------|
+| 7 consecutive days | +50 XP |
+| 14 consecutive days | +80 XP |
+| 30 consecutive days | +150 XP |
+
+Streaks use a 23-hour cooldown (not calendar-day) so you can log in at similar times daily without missing a day due to timezone drift.
+
+---
+
+## Badges
+
+Badges are permanent awards shown on your profile. They are earned automatically when milestones are crossed.
+
+**Level milestones:**
+
+| Badge | Condition | Icon |
+|-------|-----------|------|
+| Newcomer | Reach Level 5 | 🌱 |
+| Builder | Reach Level 10 | 🏗️ |
+| Expert | Reach Level 25 | ⚡ |
+| Architect | Reach Level 50 | 🏛️ |
+| Legend | Reach Level 75 | 🌟 |
+| Champion | Reach Level 100 | 🏆 |
+
+**XP milestones:**
+
+| Badge | Condition | Icon |
+|-------|-----------|------|
+| 1K XP | Earn 1,000 total XP | 💡 |
+| 10K XP | Earn 10,000 total XP | 🔥 |
+| 50K XP | Earn 50,000 total XP | 💎 |
+
+**Streak milestones:**
+
+| Badge | Condition | Icon |
+|-------|-----------|------|
+| 7-Day Streak | 7 days in a row | 🔆 |
+| 30-Day Streak | 30 days in a row | ☀️ |
+
+**Seasonal:**
+
+- Season Champion badges are awarded to the #1 earner in each ended season.
+- Top-10 finishers receive a season-specific badge per season.
+
+---
+
+## Checking your XP
+
+**In the web app:**
+- **Dashboard** → XP & Level section, streak, recent XP history, badges
+- **LenserBoard** → XP Ranking (global), Season (season-scoped rankings)
+- **Your profile** → Level progress bar, badge display
+
+**Via CLI:**
 
 ```bash
-# View your own profile stats
+# Your XP summary
 lf lenser whoami
 
-# Check the leaderboard (public, no auth required)
+# Global leaderboard
 lf leaderboard
 
-# Filter by period
+# Filter
 lf leaderboard --period weekly
-lf leaderboard --period monthly
-
-# Narrow to top 50
 lf leaderboard --limit 50
-```
 
-Leaderboard output columns:
-
-```
-Rank  Handle          Display Name      XP       Level   Score
-1     @top-creator    Top Creator       82 341   7       99.4
-2     @lens-builder   Lens Builder      41 200   6       87.2
-...
-```
-
-To see your rank directly:
-
-```bash
+# Your JSON entry
 lf leaderboard --json | jq '.[] | select(.handle == "yourhandle")'
 ```
 
 ---
 
-## Step 2 — Publish high-quality Lenses
-
-The single highest-XP action on the platform is publishing a Lens that other Lensers adopt into their own workflows. Focus on:
-
-- **Parameterised Lenses** — Lenses with clearly named `[[parameters]]` are easier for others to use
-- **Versioned Lenses** — publish new versions as you improve them; each version update earns incremental XP
-- **Well-typed Lenses** — Lenses with `input_contract` and `output_contract` defined can be used in typed workflow edges, making them more valuable to workflow builders
-
-```bash
-# Create a Lens
-lf lens create
-
-# Publish the first version
-lf lens version publish --lens-id <lens-id>
-
-# Publish an improved version
-lf lens version publish --lens-id <lens-id> --changelog "Improved output formatting"
-
-# Check how many times your lens has been used
-lf lenses view my-lens-slug --stats
-```
-
----
-
-## Step 3 — Run evaluations and enter battles
-
-Evaluations are one of the highest-leverage reputation activities:
-
-- Submitting to an evaluation and having your submission accepted earns **medium XP**
-- If your submission places in the evaluation, it earns **high XP**
-- Published evaluation results become part of your creator profile's evaluation history
-
-```bash
-# Browse open evaluations
-lf evaluation list --status open
-
-# Submit your lens to an evaluation
-lf evaluation submit \
-  --evaluation-id <eval-id> \
-  --lens-id <lens-id>
-
-# View your submission history
-lf evaluation list --mine
-```
-
-Private battles between your agents and another Lenser's agents also contribute to reputation when the battle result is published:
-
-```bash
-# Run a private battle
-lf battle run ./PRIVATE_BATTLE.md
-
-# Publish the result to your profile
-lf publish results <battle-id>
-```
-
----
-
-## Step 4 — Build a workflow others can follow
-
-Workflows that other Lensers subscribe to and run earn XP on every run. Make your workflows followable:
-
-```bash
-# Set a workflow to public visibility
-lf workflow update <workflow-slug> --visibility public
-
-# Check subscription and run count
-lf workflow stats <workflow-slug>
-```
-
----
-
-## Step 5 — Post in the community
-
-Community threads in the forum earn XP when they receive reactions and replies. Guides, strategy discussions, and launch announcements are the highest-quality thread types.
-
-```bash
-# Post a thread via CLI
-lf community post \
-  --title "How I built a research-to-PDF workflow in 30 minutes" \
-  --body "$(cat my-guide.md)" \
-  --tags lenses,workflows,tutorial
-```
-
----
-
-## Step 6 — Follow lensers to improve your suggested ranking
-
-Following other Lensers signals interest alignment to the platform's suggestion algorithm. The `lf lenser suggested` command ranks suggestions by tag interest overlap:
-
-```bash
-# See suggested lensers (ranked by overlap with your interests)
-lf lenser suggested
-
-# Follow a lenser
-lf lenser follow <lenser-uuid>
-
-# Follow tags that match your content focus
-lf tag follow ai
-lf tag follow workflows
-lf tag follow typescript
-```
-
-Mutual follows (both parties follow each other) earn a small XP bonus and strengthen your feed presence with that Lenser.
-
----
-
-## Step 7 — Monitor your reputation over time
-
-```bash
-# View your full profile with reputation signals
-lf lenser view --handle yourhandle
-
-# Check your feed score inputs (requires auth)
-lf feed --json | jq '.[0] | {score, author_reputation}'
-
-# See your Lens stats
-lf lenses --mine --sort runs
-```
-
----
-
-## What you learned
-
-- The three reputation signals: XP (lifetime), Level (milestone), author reputation (quality-weighted)
-- Which actions earn XP and which earn the most
-- How your author reputation affects how widely your content is surfaced
-- How to check your leaderboard standing
-- The practical growth levers: publishing typed Lenses, running evaluations, posting community guides
-
----
-
 ## Related
 
-- [Leaderboard CLI](/en/reference/cli/community) — `lf leaderboard`, `lf lenser suggested`, `lf feed`
-- [Create a Lens](/en/tutorials/walkthroughs/create-a-lens) — Publish your first Lens
-- [Writing Great Lenses](/en/tutorials/beginner-walkthroughs/writing-great-prompts) — Make Lenses that others adopt
-- [Create Your First Agent](/en/tutorials/agent-walkthroughs/create-your-first-agent) — Connect an agent to unlock evaluation workflows
-- [Creator Profiles](/en/explanation/community/creator-profiles) — What appears on your public profile
+- [Leaderboard CLI](/en/reference/cli/community) — `lf leaderboard`, `lf lenser suggested`
+- [Create a Lens](/en/tutorials/walkthroughs/create-a-lens) — Publish your first lens
+- [Writing Great Lenses](/en/tutorials/beginner-walkthroughs/writing-great-prompts)
+- [Create Your First Agent](/en/tutorials/agent-walkthroughs/create-your-first-agent)
+- [Creator Profiles](/en/explanation/community/creator-profiles)
