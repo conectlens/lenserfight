@@ -1,16 +1,30 @@
+import { useAuth } from '@lenserfight/features/auth'
 import { Button } from '@lenserfight/ui/components'
 import { sanitizeReturnUrl } from '@lenserfight/utils/dom'
 import { ShieldOff } from 'lucide-react'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 export const NotAuthorizedPage: React.FC = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { isAuthenticated, isLoading } = useAuth()
 
   const returnUrl = sanitizeReturnUrl(searchParams.get('return_url'))
+  const isSafeReturnUrl =
+    returnUrl &&
+    returnUrl !== '/' &&
+    !returnUrl.includes('/not-authorized')
+
+  useEffect(() => {
+    if (isLoading) return
+    if (isAuthenticated && isSafeReturnUrl) {
+      navigate(returnUrl, { replace: true })
+    }
+  }, [isAuthenticated, isLoading, isSafeReturnUrl, returnUrl, navigate])
+
   const loginHref =
-    returnUrl && returnUrl !== '/'
+    isSafeReturnUrl
       ? `/auth/login?return_url=${encodeURIComponent(returnUrl)}`
       : '/auth/login'
 
