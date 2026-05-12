@@ -15,6 +15,8 @@ This document is the operator checklist for **2026-06-12** — the day the Lense
 
 Run these the day before. Do not proceed to announcement if any row is red.
 
+- [ ] `pnpm announcement:gates` passes (static gate matrix audit — Phase BT)
+- [ ] `pnpm announcement:dashboard --once` exits 0 (live runtime health probe — Phase BT)
 - [ ] `pnpm health:cron` passes on staging (all required crons scheduled and ran within 5 min)
 - [ ] `GET /health` returns `{ "status": "ok" }` on the staging deployment
 - [ ] `/admin/kill-switch` page loads for a super-admin account; all three flags show correct state
@@ -37,7 +39,30 @@ Run these the day before. Do not proceed to announcement if any row is red.
 
 ## During: monitoring cadence
 
-Check `pnpm announcement:dashboard` every 30 minutes for the first 8 hours.
+Run `pnpm announcement:dashboard` in a dedicated terminal — it refreshes every 30 s by default and shows colored status rows. Use `--interval 15` to poll faster during the first hour. Use `--once` for a single snapshot suitable for scripting.
+
+```bash
+# Continuous (default 30s refresh)
+pnpm announcement:dashboard
+
+# Single snapshot (CI-friendly, exits non-zero if any row is RED)
+pnpm announcement:dashboard --once
+
+# Faster cadence
+pnpm announcement:dashboard --interval 15
+```
+
+Dashboard rows:
+
+| Row | What it probes | Red when |
+|-----|----------------|----------|
+| `GET /health` | platform-api `/health` returns `{"status":"ok"}` | non-200 or body mismatch |
+| `pnpm health:cron` | required crons ran in last 5 min | health-cron script exits non-zero |
+| `fn_health()` | Supabase RPC returns `ok` | RPC returns non-ok or DB unreachable |
+| `platform.system_flags` | 3 launch flags read | any flag missing or `=false` |
+| `analytics.events` | active user count last 5 min | table missing (yellow), query fails (yellow) |
+| `battles.battles` | open battle count | query fails |
+| `audit.webhook_outbox` | failed events last 5 min | >5 failures in 5 min |
 
 | Signal | OK threshold | Action if breached |
 |--------|-------------|-------------------|
