@@ -1,4 +1,4 @@
-import { BookOpen } from 'lucide-react'
+import { BookOpen, MessageCircle } from 'lucide-react'
 import React from 'react'
 
 import { AGENT_NAV_ZONES, NAV_ITEMS, ZONE_LABELS } from '@lenserfight/features/agents'
@@ -24,6 +24,20 @@ export function buildAgentSidebarSections(handle: string): SidebarNavSectionConf
         }
       }),
   })).filter((section) => section.items.length > 0)
+
+  sections.push({
+    id: 'chat',
+    label: 'Chat',
+    items: [
+      {
+        id: 'chat',
+        label: 'Chat',
+        path: '/chat',
+        icon: <MessageCircle size={20} />,
+        wip: true,
+      },
+    ],
+  })
 
   sections.push({
     id: 'resources',
