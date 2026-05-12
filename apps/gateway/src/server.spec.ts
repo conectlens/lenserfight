@@ -43,6 +43,31 @@ describe('startServer', () => {
     }
   })
 
+  it('serves identity (public_key only, no private key)', async () => {
+    const server = await startServer(config, {
+      daemonVersion: 'test/1',
+      primaryBind: config.bind,
+      onIdentityRead: async () => ({
+        public_key: 'BASE64PUBLICKEY',
+        generated_at: '2026-05-12T00:00:00.000Z',
+        daemon_version: 'test/1',
+      }),
+    })
+    try {
+      const res = await fetch(`${server.url}/identity`)
+      expect(res.status).toBe(200)
+      const json = await res.json()
+      expect(json).toEqual({
+        public_key: 'BASE64PUBLICKEY',
+        generated_at: '2026-05-12T00:00:00.000Z',
+        daemon_version: 'test/1',
+      })
+      expect(JSON.stringify(json)).not.toContain('private')
+    } finally {
+      await server.close()
+    }
+  })
+
   it('refuses extra public binds', async () => {
     await expect(
       startServer(config, {
