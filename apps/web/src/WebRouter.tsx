@@ -383,7 +383,10 @@ export const WebRouter: React.FC = () => {
 
         <Route path="/about" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/about`} />} />
         <Route path="/product" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/product`} />} />
+        <Route path="/faq" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/faq`} />} />
         <Route path="/terms" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies/terms`} />} />
+        <Route path="/privacy" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies/privacy`} />} />
+        <Route path="/cookies" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies/cookies`} />} />
         <Route path="/policies/*" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies`} />} />
 
         <Route
