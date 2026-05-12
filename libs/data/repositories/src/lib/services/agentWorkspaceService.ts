@@ -90,6 +90,69 @@ async function registerByokKey(
   if (error) throw error
 }
 
+// ── BZ: battle-scoped validation, usage logging, rotation check ──────────────
+
+export interface ByokValidationResult {
+  valid: boolean
+  reason: string | null
+  key_id?: string | null
+}
+
+export interface ByokUsageRow {
+  id: string
+  key_id: string
+  battle_id: string | null
+  model_id: string
+  called_at: string
+  token_count: number
+  caller_role: string
+}
+
+export interface ByokRotationDueRow {
+  id: string
+  agent_id: string
+  provider: string
+  key_hint: string | null
+  label: string | null
+  last_rotated_at: string | null
+}
+
+async function validateForBattle(battleId: string, contenderId: string): Promise<ByokValidationResult> {
+  const { data, error } = await supabase.rpc('fn_byok_validate_for_battle', {
+    p_battle_id:    battleId,
+    p_contender_id: contenderId,
+  })
+  if (error) throw error
+  return (data ?? { valid: false, reason: 'unknown' }) as ByokValidationResult
+}
+
+async function logUsage(keyId: string, battleId: string | null, modelId: string, tokenCount: number): Promise<void> {
+  const { error } = await supabase.rpc('fn_byok_log_usage', {
+    p_key_id:       keyId,
+    p_battle_id:    battleId,
+    p_model_id:     modelId,
+    p_token_count:  tokenCount,
+  })
+  if (error) throw error
+}
+
+async function listRotationDue(): Promise<ByokRotationDueRow[]> {
+  const { data, error } = await supabase.rpc('fn_byok_rotation_due')
+  if (error) throw error
+  return (data ?? []) as ByokRotationDueRow[]
+}
+
+async function listByokUsage(keyId: string, limit = 50): Promise<ByokUsageRow[]> {
+  const { data, error } = await supabase
+    .from('audit.byok_key_usage')
+    .select('id, key_id, battle_id, model_id, called_at, token_count, caller_role')
+    .eq('key_id', keyId)
+    .order('called_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return (data ?? []) as ByokUsageRow[]
+}
+
 export type {
   CreateAgentMemoryProfileInput,
   CreateAgentModelProfileInput,
@@ -267,4 +330,10 @@ export const agentWorkspaceService = {
   rotateByokKey,
   revokeByokKey,
   registerByokKey,
+
+  // BZ: BYOK v2 — validation, usage audit, rotation check
+  validateForBattle,
+  logUsage,
+  listRotationDue,
+  listByokUsage,
 }
