@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest'
 import { EchoProvider } from './echo.provider'
 
 describe('EchoProvider', () => {
@@ -26,7 +27,7 @@ describe('EchoProvider', () => {
   })
 
   it('makes no fetch calls', async () => {
-    const spy = jest.spyOn(global, 'fetch')
+    const spy = vi.spyOn(global, 'fetch')
     await provider.execute('m', { prompt: 'test' })
     expect(spy).not.toHaveBeenCalled()
     spy.mockRestore()
