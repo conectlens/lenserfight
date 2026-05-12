@@ -96,6 +96,8 @@ const conectlensUrl = computed(() => appendUtm('https://conectlens.com', 'footer
 const chainabitUrl = computed(() => appendUtm('https://chainabit.com', 'footer_chainabit_partner'))
 const sponsorUrl = computed(() => appendUtm('https://github.com/sponsors/conectlens', 'footer_sponsor_link'))
 const githubUrl = computed(() => appendUtm('https://github.com/conectlens/lenserfight', 'footer_github_link'))
+const ofcsknUrl = computed(() => appendUtm('https://ofcskn.com', 'footer_ofcskn_link'))
+const communityUrl = computed(() => appendUtm('https://github.com/conectlens/lenserfight', 'footer_community_link'))
 const lenserfightUrl = computed(() => appendUtm(webBaseUrl, 'footer_copyright_link'))
 </script>
 
@@ -173,6 +175,13 @@ const lenserfightUrl = computed(() => appendUtm(webBaseUrl, 'footer_copyright_li
 
         <!-- GitHub & Dark mode toggle -->
         <div class="df-right">
+          <span class="df-built-by">
+            built by
+            <a :href="ofcsknUrl" target="_blank" rel="noopener noreferrer" class="df-author">@ofcskn</a>
+            &
+            <a :href="communityUrl" target="_blank" rel="noopener noreferrer" class="df-author">Lenser Community</a>
+          </span>
+
           <a
             :href="githubUrl"
             class="df-link df-github-link"
@@ -373,6 +382,32 @@ const lenserfightUrl = computed(() => appendUtm(webBaseUrl, 'footer_copyright_li
   border-color: var(--vp-c-brand-1);
   background: var(--vp-c-bg-elv);
   transform: translateY(-1px);
+}
+
+.df-built-by {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .df-built-by {
+    display: inline-block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--vp-c-text-3);
+    margin-right: 1.5rem;
+  }
+
+  .df-author {
+    font-weight: 700;
+    color: var(--vp-c-text-2);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .df-author:hover {
+    color: var(--vp-c-text-1);
+  }
 }
 
 /* Bottom row: policy links always on their own line */
