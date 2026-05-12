@@ -8,7 +8,10 @@ import {
   LeaderboardTimeframe,
   LeaderboardScope,
   XPSeason,
+  XPSeasonV2,
   SeasonLeaderboardEntry,
+  XPStreak,
+  XPLevelUp,
 } from '@lenserfight/types'
 import { createXPRepository } from '../factory'
 import { XP_APP_IDS } from '../repositories/xpRepository'
@@ -22,8 +25,8 @@ export const xpService = {
     return repo.getXPSummary(lenserId, appId)
   },
 
-  getHistory: async (lenserId: string): Promise<XPEvent[]> => {
-    return repo.getHistory(lenserId)
+  getHistory: async (lenserId: string, limit = 20): Promise<XPEvent[]> => {
+    return repo.getHistory(lenserId, limit)
   },
 
   getBadges: async (lenserId: string): Promise<LenserBadge[]> => {
@@ -58,5 +61,24 @@ export const xpService = {
     offset = 0
   ): Promise<{ list: SeasonLeaderboardEntry[]; userEntry?: SeasonLeaderboardEntry | null }> => {
     return repo.getSeasonLeaderboard(appId, seasonId, limit, offset)
+  },
+
+  getStreak: async (lenserId: string, streakType = 'daily'): Promise<XPStreak | null> => {
+    return repo.getStreak(lenserId, streakType)
+  },
+
+  getLevelUps: async (lenserId: string, limit = 20): Promise<XPLevelUp[]> => {
+    return repo.getLevelUps(lenserId, limit)
+  },
+
+  getSeasonList: async (appId = XP_APP_IDS.forum): Promise<XPSeasonV2[]> => {
+    return repo.getSeasonList(appId)
+  },
+
+  markTutorialComplete: async (
+    tutorialSlug: string,
+    kind: 'tutorial' | 'walkthrough' = 'tutorial'
+  ): Promise<{ inserted: boolean; tutorialSlug: string; kind: string }> => {
+    return repo.markTutorialComplete(tutorialSlug, kind)
   },
 }
