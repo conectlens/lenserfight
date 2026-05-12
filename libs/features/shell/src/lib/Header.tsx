@@ -5,7 +5,7 @@ import { ShareModal, useShareContext } from '@lenserfight/features/share'
 import { useWallet } from '@lenserfight/features/store'
 import { ActionMenu, Breadcrumbs, Button } from '@lenserfight/ui/components'
 import { useUI } from '@lenserfight/ui/providers'
-import { Bell, ChevronLeft, Menu, Share2, Shield, LogOut, Zap } from 'lucide-react'
+import { Bell, ChevronLeft, Menu, Share2, Shield, LogOut, Zap, Github } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -13,6 +13,9 @@ interface HeaderProps {
   onToggleSidebar: () => void
   isSidebarOpen: boolean
 }
+
+const githubUrl = 'https://github.com/conectlens/lenserfight'
+const chainabitAppUrl = 'https://app.chainabit.com?utm_source=lenserfight&utm_medium=arena_header&utm_campaign=header_chainabit_partner'
 
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { shareConfig } = useShareContext()
@@ -57,6 +60,25 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               <Shield size={20} />
             </button>
           )}
+
+          <a
+            href={githubUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub"
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-colors hover:border-gray-400 hover:text-gray-900 dark:border-gray-700 dark:hover:border-gray-500 dark:hover:text-gray-100"
+          >
+            <Github size={14} />
+          </a>
+
+          <a
+            href={chainabitAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs font-medium text-orange-500 transition-colors hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+          >
+            <img src="/chainabit/favicon-32x32.png" width={20} height={20} alt="" className="rounded shrink-0" />
+          </a>
 
           {shareConfig && (
             <button
