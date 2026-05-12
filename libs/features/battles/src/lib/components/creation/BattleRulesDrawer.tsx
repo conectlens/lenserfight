@@ -17,6 +17,7 @@ const BATTLE_TYPE_LABELS: Record<BattleType, string> = {
   human_vs_human_open_votes: 'Human vs Human · Open Vote',
   human_vs_ai: 'Human vs AI',
   workflow_battle: 'Workflow Battle',
+  lenser_battle: 'Lenser Battle',
 }
 
 const VOTER_ELIGIBILITY_LABELS: Record<VoterEligibility, string> = {
