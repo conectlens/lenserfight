@@ -107,7 +107,7 @@ lf lens resource attach \
 
 # `lf lens`
 
-Manage lenses: versions, resources.
+Manage lenses: create, versions, resources.
 
 ## `lf lens list`
 
