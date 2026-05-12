@@ -3,7 +3,7 @@ import { useToast } from '@lenserfight/shared/error'
 import { FollowsNetworkUser } from '@lenserfight/types'
 import { Avatar } from '@lenserfight/ui/components'
 import { Button } from '@lenserfight/ui/components'
-import { ArrowLeft, UserX } from 'lucide-react'
+import { ArrowLeft, Copy, UserX } from 'lucide-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
@@ -162,11 +162,27 @@ export const FollowersPage: React.FC = () => {
         )}
 
         {!loading && users.length === 0 && !hasMore && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3 text-gray-300 dark:text-gray-600">
+          <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+            <div className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-300 dark:text-gray-600">
               <UserX size={24} />
             </div>
-            <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">No followers yet.</p>
+            <div className="space-y-1">
+              <p className="text-gray-700 dark:text-gray-200 font-semibold text-sm">No followers yet</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs max-w-[220px]">
+                Share your profile to grow your network
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="!w-auto flex items-center gap-1.5"
+              onClick={() => {
+                const url = `${window.location.origin}/lenser/${handle}`
+                navigator.clipboard.writeText(url).catch(() => undefined)
+              }}
+            >
+              <Copy size={13} /> Copy profile link
+            </Button>
           </div>
         )}
       </div>
