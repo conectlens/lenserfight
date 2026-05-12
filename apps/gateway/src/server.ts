@@ -1,4 +1,6 @@
+import { readFile } from 'node:fs/promises'
 import http from 'node:http'
+import path from 'node:path'
 
 import type { GatewayConfig } from './config'
 
@@ -7,6 +9,12 @@ export interface ServerHandle {
   /** Additional URLs the server is bound to (e.g. Tailscale interface). */
   extraUrls: string[]
   close: () => Promise<void>
+}
+
+export interface IdentityReadResult {
+  public_key: string
+  generated_at: string | null
+  daemon_version: string
 }
 
 export interface StartServerOptions {
@@ -26,6 +34,17 @@ export interface StartServerOptions {
    * down. v1 forbids `0.0.0.0` here; callers must validate before calling.
    */
   extraBinds?: string[]
+  /**
+   * Override the identity reader. When omitted, the server reads
+   * `<stateDir>/identity.json` from disk. The private key is never returned.
+   */
+  onIdentityRead?: () => Promise<IdentityReadResult | null>
+  /** Outbox size reporter for `/outbox` and `/sync/pull` UX surfaces. */
+  onOutboxStats?: () => Promise<{ pending: number }>
+  /** Manual sync trigger handler for POST `/sync/pull`. Returns claimed count. */
+  onSyncPull?: () => Promise<{ claimed: number }>
+  /** Path to identity.json. Defaults to `<config.stateDir>/identity.json`. */
+  stateDir?: string
 }
 
 /**
@@ -45,7 +64,10 @@ export async function startServer(
   config: GatewayConfig,
   options: StartServerOptions
 ): Promise<ServerHandle> {
-  const handler = makeHandler(options)
+  const handler = makeHandler({
+    ...options,
+    stateDir: options.stateDir ?? config.stateDir,
+  })
 
   const primary = http.createServer(handler)
   await listen(primary, config.port, config.bind)
@@ -125,8 +147,52 @@ function makeHandler(options: StartServerOptions): http.RequestListener {
       )
       return
     }
+    if (req.url === '/identity' && req.method === 'GET') {
+      const identity = await readIdentity(options)
+      if (!identity) {
+        res.statusCode = 404
+        res.end(JSON.stringify({ error: 'identity_missing' }))
+        return
+      }
+      res.statusCode = 200
+      res.end(JSON.stringify(identity))
+      return
+    }
+    if (req.url === '/outbox' && req.method === 'GET') {
+      const stats = (await options.onOutboxStats?.()) ?? { pending: 0 }
+      res.statusCode = 200
+      res.end(JSON.stringify(stats))
+      return
+    }
+    if (req.url === '/sync/pull' && req.method === 'POST') {
+      const result = (await options.onSyncPull?.()) ?? { claimed: 0 }
+      res.statusCode = 200
+      res.end(JSON.stringify(result))
+      return
+    }
     res.statusCode = 404
     res.end(JSON.stringify({ error: 'not_found' }))
+  }
+}
+
+async function readIdentity(options: StartServerOptions): Promise<IdentityReadResult | null> {
+  if (options.onIdentityRead) return options.onIdentityRead()
+  if (!options.stateDir) return null
+  try {
+    const raw = await readFile(path.join(options.stateDir, 'identity.json'), 'utf8')
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    if (typeof parsed['public_key'] !== 'string') return null
+    return {
+      public_key: parsed['public_key'] as string,
+      generated_at: typeof parsed['generated_at'] === 'string' ? (parsed['generated_at'] as string) : null,
+      daemon_version:
+        typeof parsed['daemon_version'] === 'string'
+          ? (parsed['daemon_version'] as string)
+          : options.daemonVersion,
+    }
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null
+    return null
   }
 }
 
