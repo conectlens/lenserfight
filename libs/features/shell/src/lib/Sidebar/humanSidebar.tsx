@@ -1,6 +1,4 @@
 import {
-  BookOpen,
-  Boxes,
   Brain,
   Cloud,
   Cpu,
@@ -42,7 +40,7 @@ export function buildHumanSidebarSections(
       id: 'chat',
       label: 'Chat',
       items: [
-        { id: 'chat', label: 'Chat', path: '/chat', exact: true, icon: <MessageCircle size={20} /> },
+        { id: 'chat', label: 'Chat', path: '/chat', exact: true, icon: <MessageCircle size={20} />, wip: true },
       ],
     },
     {
