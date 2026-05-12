@@ -235,6 +235,91 @@ lf battle submit abc123 --run-id f3e2d1... --attestation \
 
 ---
 
+## `battle series` (Phase BH)
+
+Run a best-of-N tournament composed of full battles derived from the same template. The series tracks the current round; `advance` promotes the winner of the current round and seeds the next, then stamps `status = complete` after the final round.
+
+```bash
+# Create a 5-round series from a template you own (or any public template).
+lf battle series create --template <template-id> --title "Spring tournament" --rounds 5
+
+# Inspect status — per-round battle slug, status, winner.
+lf battle series view <series-id>
+lf battle series view <series-id> --json
+
+# Promote the current round's winner and seed the next battle.
+# Errors with 22023 'current_round_has_no_winner' if the current round is
+# still in voting / scoring / open; 42501 'series_not_owned' if you are not
+# the creator.
+lf battle series advance <series-id>
+```
+
+The corresponding HTTP route on the web app is `/battles/series/:id`. Owners see an "Advance series" button once the current round's battle reaches `closed`.
+
+---
+
+## `battle template` (Phase BD)
+
+Author and manage your own battle templates. Each subcommand is owner-scoped:
+RPCs raise `42501 template_not_owned` when you try to mutate someone else's.
+
+```bash
+# Create a new private template.
+lf battle template create \
+  --title "Quick poem face-off" \
+  --prompt "Write a 4-line poem on the prompt: {{topic}}" \
+  --category creative
+
+# Publish it (or pass --public at create time).
+lf battle template update <template-id> --public
+
+# Rename a published template — only the fields you pass are touched.
+lf battle template update <template-id> --title "Quick poem duel"
+
+# Soft-delete (sets deleted_at; row remains in the database).
+lf battle template delete <template-id>
+lf battle template delete <template-id> --force
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--title` | Required on create; optional patch on update. |
+| `--prompt` | Required on create; optional patch on update. |
+| `--description` | Short blurb shown in the gallery card. |
+| `--category` | One of `creative\|technical\|business\|gaming`. |
+| `--max-contenders` | Defaults to 2 on create. |
+| `--public` / `--no-public` | Toggle visibility in the public gallery. |
+| `--json` | Print the RPC return row. |
+
+---
+
+## `battle submit-media` (Phase BC)
+
+Upload an image / video / audio file as a contender submission. The file is
+streamed to the private `battles-media` Storage bucket under
+`<battle-id>/<contender-id>/<timestamp>-<name>`, a 24-hour signed URL is
+generated, and the URL is stored on `battles.submissions` together with the
+MIME type and the inferred output modality.
+
+```
+lf battle submit-media <battle-id> --file <path> --contender-id <id> [--modality image|video|audio] [--json]
+```
+
+| Flag | Required | Notes |
+|------|----------|-------|
+| `<battle-id>` | yes | Battle UUID. |
+| `--file` | yes | Local path; ≤ 50 MB. |
+| `--contender-id` | yes | Contender UUID — caller must own it. |
+| `--modality` | no | Forces the modality. By default it is inferred from the file's MIME type prefix. |
+| `--json` | no | Print the submission row as JSON. |
+
+Errors:
+- `42501 contender_not_owned` — you do not own this contender.
+- `22023 invalid_output_modality` — modality is not one of `image|video|audio`.
+- Upload errors from the Storage API are surfaced verbatim.
+
+---
+
 ## `battle vote`
 
 Cast a vote on a battle that is in voting phase.
