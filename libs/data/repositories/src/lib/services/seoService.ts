@@ -13,30 +13,71 @@ export interface SEOMetadata {
   /** Serialized JSON-LD structured data object (not stringified — passed to SEOHead). */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   jsonLd?: Record<string, any>
+  /** Whether crawlers should index this page. Defaults to true in SEOHead. */
+  index?: boolean
 }
 
 const SITE_NAME = 'LenserFight'
-const FORUM_HOST = 'https://forum.lenserfight.com'
+const FORUM_HOST = 'https://moon.lenserfight.com'
 const ARENA_HOST = 'https://arena.lenserfight.com'
+const DOCS_HOST = 'https://docs.lenserfight.com'
 const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
-const ARENA_OG_IMAGE = `${ARENA_HOST}/og-arena-banner.png`
-const DEFAULT_TITLE = 'LenserFight - The AI Lens Engineering Arena'
+const ARENA_OG_IMAGE = `${ARENA_HOST}/og-banner.png`
+const DEFAULT_TITLE = 'LenserFight Community | AI Lenses, Workflows, Battles, and Lensers'
 const DEFAULT_DESC =
-  'Join the LenserFight ecosystem. Discover, battle, and share advanced AI lenses for GPT-5, Gemini, Claude, and Midjourney. Connect with top Lensers and master LLM interactions.'
+  'Discover public AI lens templates, workflow patterns, battle results, rays, and Lenser profiles in the open LenserFight community.'
 
-// Keywords for injection based on context
 const AI_KEYWORDS = [
-  'Generative AI',
-  'LLM',
-  'Prompt Engineering',
-  'GPT-5',
-  'Gemini Ultra',
-  'Claude 3',
-  'Lenser AI',
-  'Midjourney v6',
-  'Stable Diffusion',
-  'Sora',
+  'AI workflows',
+  'AI agents',
+  'prompt engineering',
+  'model comparison',
+  'workflow automation',
+  'developer AI tools',
+  'GitHub workflows',
 ]
+
+const ORGANIZATION_JSON_LD = {
+  '@type': 'Organization',
+  name: SITE_NAME,
+  url: FORUM_HOST,
+  logo: `${FORUM_HOST}/favicons/original/apple-icon.png`,
+  sameAs: ['https://github.com/conectlens/lenserfight', DOCS_HOST],
+}
+
+function clampDescription(value: string, max = 158): string {
+  const clean = value.replace(/\s+/g, ' ').trim()
+  if (clean.length <= max) return clean
+  return `${clean.slice(0, max - 1).trimEnd()}…`
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function compactKeywords(values: Array<string | undefined | null>): string {
+  return Array.from(new Set(values.filter(Boolean).map((value) => value!.trim()).filter(Boolean))).join(', ')
+}
+
+function collectionPageJsonLd(name: string, description: string, url: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name,
+    description,
+    url,
+    publisher: ORGANIZATION_JSON_LD,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: SITE_NAME,
+      url: FORUM_HOST,
+    },
+  }
+}
 
 export const seoService = {
   getHomeMeta: (): SEOMetadata => ({
@@ -72,23 +113,27 @@ export const seoService = {
         ogImage: DEFAULT_OG_IMAGE,
       }
 
-    const tags = prompt.tags?.map((t) => t.name).join(', ') || 'AI'
+    const tags = prompt.tags?.map((t) => t.name).join(', ') || 'AI workflows'
     const author = prompt.author.displayName
     const uses = prompt.usageCount > 0 ? `Used ${prompt.usageCount} times.` : ''
     const pageUrl = `${FORUM_HOST}/lenses/${prompt.id}`
 
-    const desc = `Use the "${prompt.title}" lens template by ${author}. Optimized for ${tags}. ${uses} Copy and remix this lens for GPT-5, Gemini, and Claude on LenserFight.`
+    const desc = clampDescription(
+      prompt.description ||
+        `Use the "${prompt.title}" AI lens template by ${author}. Built for ${tags}. ${uses} Copy, remix, and connect this lens into LenserFight workflows, battles, and agent runs.`,
+    )
 
     return {
-      title: `${prompt.title} - AI Lens Template | ${SITE_NAME}`,
-      description: desc.substring(0, 160),
+      title: `${prompt.title} | AI Lens Template by ${author}`,
+      description: desc,
       url: pageUrl,
       ogImage: DEFAULT_OG_IMAGE,
       jsonLd: {
         '@context': 'https://schema.org',
-        '@type': 'Article',
+        '@type': 'CreativeWork',
         headline: prompt.title,
-        description: desc.substring(0, 160),
+        name: prompt.title,
+        description: desc,
         url: pageUrl,
         author: {
           '@type': 'Person',
@@ -100,8 +145,12 @@ export const seoService = {
           name: SITE_NAME,
           url: FORUM_HOST,
         },
-        keywords: [...(prompt.tags?.map((t) => t.name) ?? []), ...AI_KEYWORDS].join(', '),
+        keywords: compactKeywords([...(prompt.tags?.map((t) => t.name) ?? []), ...AI_KEYWORDS]),
         image: DEFAULT_OG_IMAGE,
+        dateCreated: prompt.createdAt,
+        creativeWorkStatus: prompt.status,
+        about: prompt.outputKind ? `AI ${prompt.outputKind} generation workflow` : 'AI workflow template',
+        isAccessibleForFree: true,
       },
     }
   },
@@ -115,16 +164,18 @@ export const seoService = {
         ogImage: DEFAULT_OG_IMAGE,
       }
 
-    const tags = thread.tags?.map((t) => t.name).join(' ')
+    const tags = thread.tags?.map((t) => t.name).join(', ')
     const replyContext = (thread as ThreadDetailViewModel).replies?.length
       ? `Join the discussion with ${thread.author.displayName} and community experts.`
       : `Read insights from ${thread.author.displayName}.`
     const pageUrl = `${FORUM_HOST}/threads/${thread.id}`
 
-    const desc = `Community thread: ${thread.title}. ${replyContext} Topics: ${tags} #GenerativeAI #LensEngineering. Explore LenserFight for advanced LLM tactics.`
+    const desc = clampDescription(
+      `Community thread: ${thread.title}. ${replyContext} Topics: ${tags || 'AI workflows, lenses, battles, and agents'}.`,
+    )
 
     return {
-      title: `${thread.title} - AI Discussion | ${SITE_NAME}`,
+      title: `${thread.title} | LenserFight Discussion`,
       description: desc,
       url: pageUrl,
       ogImage: DEFAULT_OG_IMAGE,
@@ -144,8 +195,9 @@ export const seoService = {
           name: SITE_NAME,
           url: FORUM_HOST,
         },
-        keywords: [...(thread.tags?.map((t) => t.name) ?? []), ...AI_KEYWORDS].join(', '),
+        keywords: compactKeywords([...(thread.tags?.map((t) => t.name) ?? []), ...AI_KEYWORDS]),
         image: DEFAULT_OG_IMAGE,
+        datePublished: thread.createdAt,
       },
     }
   },
@@ -159,15 +211,17 @@ export const seoService = {
         ogImage: DEFAULT_OG_IMAGE,
       }
 
-    const role = lenser.headline || 'AI Creator'
+    const role = lenser.headline || (lenser.type === 'ai' ? 'AI Lenser agent' : 'AI workflow creator')
     const statText = stats
       ? `${stats.promptsCount} lenses, ${stats.threadsCount} threads.`
       : 'Active Lenser community member.'
     const pageUrl = `${FORUM_HOST}/lenser/${lenser.handle}`
-    const desc = `Check out ${lenser.display_name}'s profile on LenserFight. ${role}. ${statText} Follow for top-tier AI lenses, LLM strategies, and ConectLens ecosystem contributions.`
+    const desc = clampDescription(
+      `${lenser.display_name} (@${lenser.handle}) on LenserFight: ${role}. ${statText} Discover public AI lenses, workflows, battles, and community contributions.`,
+    )
 
     return {
-      title: `${lenser.display_name} (@${lenser.handle}) - ${role} | ${SITE_NAME}`,
+      title: `${lenser.display_name} (@${lenser.handle}) | Public Lenser Profile`,
       description: desc,
       url: pageUrl,
       ogImage: lenser.avatar_url ?? DEFAULT_OG_IMAGE,
@@ -180,7 +234,23 @@ export const seoService = {
         url: pageUrl,
         image: lenser.avatar_url ?? DEFAULT_OG_IMAGE,
         jobTitle: role,
-        sameAs: [`${FORUM_HOST}/lenser/${lenser.handle}`],
+        sameAs: [pageUrl, ...(lenser.website_url ? [lenser.website_url] : [])],
+        interactionStatistic: stats
+          ? [
+              {
+                '@type': 'InteractionCounter',
+                interactionType: 'https://schema.org/CreateAction',
+                userInteractionCount: stats.promptsCount,
+                name: 'Public lenses',
+              },
+              {
+                '@type': 'InteractionCounter',
+                interactionType: 'https://schema.org/FollowAction',
+                userInteractionCount: stats.followersCount,
+                name: 'Followers',
+              },
+            ]
+          : undefined,
       },
     }
   },
@@ -196,37 +266,30 @@ export const seoService = {
 
     const name = tag.name
     const count = tag.count > 0 ? `Over ${tag.count} resources available.` : ''
-    const pageUrl = `${FORUM_HOST}/ray/${name.toLowerCase()}`
-    const desc = `Explore the best ${name} lenses, discussions, and challenges. ${count} Master ${name} workflows with GPT-5, Gemini, and Claude tools on LenserFight.`
+    const pageUrl = `${FORUM_HOST}/ray/${tag.slug || slugify(name)}`
+    const desc = clampDescription(
+      `Explore ${name} AI lenses, discussions, battle templates, and workflows on LenserFight. ${count} Discover public resources for builders and AI teams.`,
+    )
 
     return {
-      title: `Top ${name} AI Lenses & Threads | ${SITE_NAME}`,
+      title: `${name} AI Workflows, Lenses, and Battles | LenserFight Ray`,
       description: desc,
       url: pageUrl,
       ogImage: DEFAULT_OG_IMAGE,
-      jsonLd: {
-        '@context': 'https://schema.org',
-        '@type': 'CollectionPage',
-        name: `${name} AI Lenses & Threads`,
-        description: desc,
-        url: pageUrl,
-        publisher: { '@type': 'Organization', name: SITE_NAME, url: FORUM_HOST },
-      },
+      jsonLd: collectionPageJsonLd(`${name} AI Workflows, Lenses, and Battles`, desc, pageUrl),
     }
   },
 
   getTagCloudMeta: (): SEOMetadata => ({
-    title: `Explore AI Topics & Trends | ${SITE_NAME}`,
-    description: `Browse trending tags in the LenserFight ecosystem. Find lenses for Coding, Art, Writing, Marketing, and more. Optimized for the latest LLMs.`,
+    title: `Ray Cloud | AI Topics, Tags, and Workflow Discovery`,
+    description: `Browse LenserFight rays for AI coding, research, content generation, startup planning, agents, battles, and workflow automation topics.`,
     url: `${FORUM_HOST}/ray`,
     ogImage: DEFAULT_OG_IMAGE,
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'CollectionPage',
-      name: 'AI Topics & Trends',
-      url: `${FORUM_HOST}/ray`,
-      publisher: { '@type': 'Organization', name: SITE_NAME, url: FORUM_HOST },
-    },
+    jsonLd: collectionPageJsonLd(
+      'Ray Cloud',
+      'AI topics, tags, and workflow discovery for LenserFight public content.',
+      `${FORUM_HOST}/ray`,
+    ),
   }),
 
   getBattleMeta: (battle?: { id: string; slug: string; title: string; task_prompt: string; published_at: string | null; og_image_url?: string | null } | null): SEOMetadata => {
@@ -239,7 +302,9 @@ export const seoService = {
       }
     }
 
-    const desc = `${battle.task_prompt}`.substring(0, 155) + (battle.task_prompt.length > 155 ? '…' : '')
+    const desc = clampDescription(
+      `${battle.task_prompt || battle.title}. Compare contenders, judging context, community votes, and public AI battle results on LenserFight Arena.`,
+    )
     const pageUrl = `${ARENA_HOST}/battles/${battle.slug}`
 
     return {
@@ -249,20 +314,16 @@ export const seoService = {
       ogImage: battle.og_image_url ?? ARENA_OG_IMAGE,
       jsonLd: {
         '@context': 'https://schema.org',
-        '@type': 'SportsEvent',
+        '@type': 'CreativeWork',
         name: battle.title,
+        headline: battle.title,
         description: desc,
         url: pageUrl,
-        startDate: battle.published_at ?? undefined,
-        organizer: {
-          '@type': 'Organization',
-          name: SITE_NAME,
-          url: ARENA_HOST,
-        },
-        location: {
-          '@type': 'VirtualLocation',
-          url: pageUrl,
-        },
+        datePublished: battle.published_at ?? undefined,
+        creator: ORGANIZATION_JSON_LD,
+        publisher: ORGANIZATION_JSON_LD,
+        about: ['AI battle', 'model comparison', 'prompt evaluation', 'community judging'],
+        isAccessibleForFree: true,
       },
     }
   },
@@ -272,27 +333,22 @@ export const seoService = {
     description: `Watch AI models and human experts compete head-to-head in real-time battles. Vote on the best responses, track scores, and discover the top AI performers on LenserFight Arena.`,
     url: `${ARENA_HOST}/battles`,
     ogImage: ARENA_OG_IMAGE,
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'CollectionPage',
-      name: 'LenserFight Arena Battles',
-      description: 'Live competitive AI battles',
-      url: `${ARENA_HOST}/battles`,
-      publisher: { '@type': 'Organization', name: SITE_NAME, url: ARENA_HOST },
-    },
+    jsonLd: collectionPageJsonLd(
+      'LenserFight Arena Battles',
+      'Live and recent AI battles, prompt tournaments, model comparisons, and public result pages.',
+      `${ARENA_HOST}/battles`,
+    ),
   }),
 
   getPromptsListMeta: (): SEOMetadata => ({
-    title: `Discover Best AI Lenses | ${SITE_NAME}`,
-    description: `Search and filter thousands of high-quality AI lenses. Categories include Writing, Coding, Art Generation (Midjourney/DALL-E), and Productivity. Boost your LLM workflow.`,
+    title: `AI Lens Templates | Prompt Workflows and Automation Patterns`,
+    description: `Browse public LenserFight lenses for coding, research, startup planning, content generation, AI automation, and reusable prompt workflows.`,
     url: `${FORUM_HOST}/lenses`,
     ogImage: DEFAULT_OG_IMAGE,
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'CollectionPage',
-      name: 'AI Lens Library',
-      url: `${FORUM_HOST}/lenses`,
-      publisher: { '@type': 'Organization', name: SITE_NAME, url: FORUM_HOST },
-    },
+    jsonLd: collectionPageJsonLd(
+      'AI Lens Templates',
+      'Public prompt workflows, automation patterns, and reusable AI lens templates.',
+      `${FORUM_HOST}/lenses`,
+    ),
   }),
 }
