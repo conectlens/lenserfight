@@ -148,8 +148,18 @@ export function BattlesFeedPage() {
         </div>
       ) : sorted.length === 0 ? (
         <EmptyState
-          title="No battles yet."
-          description="Be the first to create one."
+          title="Start your first battle"
+          description="Browse public templates and create a battle in seconds, or start from scratch."
+          action={
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button variant="primary" size="sm" onClick={() => navigate('/battles/templates')}>
+                Browse Templates →
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/battles/create')}>
+                Start from scratch
+              </Button>
+            </div>
+          }
         />
       ) : (
         <AnimatePresence mode="popLayout">
