@@ -305,7 +305,7 @@ List SSE events recorded for a run.
 
 ## `lf execution cancel`
 
-Cancel a running workflow run. Requires `--force` to confirm.
+Cancel a running workflow run. Requires --force to confirm.
 
 | Flag | Type | Required | Description |
 |---|---|---|---|
