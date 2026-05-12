@@ -66,8 +66,12 @@ GRANT ALL ON TABLE "battles"."v_battle_feed_item" TO "service_role";
 
 
 -- 2. Recreate fn_get_battles_feed with content_type added to TABLE return.
---    Preserves all existing filter/pagination behaviour; purely additive.
-CREATE OR REPLACE FUNCTION "public"."fn_get_battles_feed"(
+--    DROP required: Postgres forbids changing a function's return type in place.
+DROP FUNCTION IF EXISTS "public"."fn_get_battles_feed"(
+  "text", "text", integer, timestamp with time zone
+);
+
+CREATE FUNCTION "public"."fn_get_battles_feed"(
   "p_status"      "text"               DEFAULT NULL::"text",
   "p_battle_type" "text"               DEFAULT NULL::"text",
   "p_limit"       integer              DEFAULT 20,
