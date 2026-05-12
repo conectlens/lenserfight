@@ -11,6 +11,9 @@ import {
   CAPTCHA_SITE_KEY,
   WEB_BASE_URL,
 } from '@lenserfight/utils/env'
+
+const seedCredentials = isLocal || isMock ? LOCAL_SEED_CREDENTIALS : null
+const isDevMode = isLocal || isMock
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
@@ -28,11 +31,11 @@ export const RegisterPage: React.FC = () => {
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
-    displayName: isLocal || isMock ? LOCAL_SEED_CREDENTIALS.displayName : '',
-    email: isLocal || isMock ? `newuser_${Date.now()}@lenserfight.local` : '',
-    password: isLocal || isMock ? LOCAL_SEED_CREDENTIALS.password : '',
+    displayName: seedCredentials?.displayName ?? '',
+    email: isDevMode ? `newuser_${Date.now()}@lenserfight.local` : '',
+    password: seedCredentials?.password ?? '',
     preferredLanguage: 'en',
-    agreeTerms: isLocal || isMock,
+    agreeTerms: isDevMode,
   })
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
