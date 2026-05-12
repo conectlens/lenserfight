@@ -53,20 +53,19 @@ function buildResponse(): CapturedResponse {
 const stubReq = { headers: { authorization: 'Bearer fake' } } as IncomingMessage
 
 function buildAuthMock(rowOrError: { row?: Record<string, unknown> | null; error?: { message: string } }): unknown {
-  const maybeSingle = jest.fn().mockResolvedValue(
-    rowOrError.error
-      ? { data: null, error: rowOrError.error }
-      : { data: rowOrError.row, error: null },
-  )
-  const eq = jest.fn().mockReturnValue({ maybeSingle })
-  const select = jest.fn().mockReturnValue({ eq })
-  const from = jest.fn().mockReturnValue({ select })
-  const schema = jest.fn().mockReturnValue({ from })
+  const userRpc = jest.fn(async (fnName: string) => {
+    if (fnName === 'fn_get_media_object') {
+      if (rowOrError.error) return { data: null, error: rowOrError.error }
+      return { data: rowOrError.row !== undefined ? [rowOrError.row] : null, error: null }
+    }
+    return { data: null, error: null }
+  })
+  const serviceRpc = jest.fn().mockResolvedValue({ error: null })
   return {
     accessToken: 'fake',
     user: { id: 'user-1' },
-    userClient: { schema },
-    serviceClient: {},
+    userClient: { rpc: userRpc },
+    serviceClient: { rpc: serviceRpc },
   }
 }
 
