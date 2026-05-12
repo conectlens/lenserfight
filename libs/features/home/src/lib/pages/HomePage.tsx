@@ -19,7 +19,7 @@ import { useLenser } from '@lenserfight/features/profile'
 import { CreateThreadModal } from '@lenserfight/features/threads'
 import { Avatar, Button, Card, EmptyState, HelpButton, SEOHead, TagBadge } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
-import { AUTH_BASE_URL } from '@lenserfight/utils/env'
+import { AUTH_BASE_URL, FEATURES } from '@lenserfight/utils/env'
 import {
   Plus,
   ChevronRight,
@@ -28,6 +28,15 @@ import {
   Tag,
   Sparkles,
   GitBranch,
+  Swords,
+  Vote,
+  ImageIcon,
+  Video,
+  UserCircle2,
+  Code2,
+  Languages,
+  MessageSquare,
+  Library,
 } from 'lucide-react'
 import React, { useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -180,6 +189,16 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
     navigate('/workflows/manage')
   }
 
+  const handleCreateBattleClick = () => {
+    if (!FEATURES.PUBLIC_BATTLES) return navigate('/workflows')
+    if (!isAuthenticated) {
+      window.location.href = `${AUTH_BASE_URL}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
+      return
+    }
+    if (!hasLenser) return navigate('/onboarding', { state: { from: '/' } })
+    navigate('/battles/create')
+  }
+
   const handleCreateSuccess = (newThreadId?: string) => {
     if (newThreadId) {
       navigate(`/threads/${newThreadId}`)
@@ -198,6 +217,158 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl mx-auto">
       <SEOHead type="home" />
+
+      <section className="lg:col-span-12 rounded-3xl border border-surface-border bg-white dark:bg-gray-800 p-5 sm:p-7 shadow-sm overflow-hidden">
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
+          <div className="space-y-5">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary-yellow-500/30 bg-primary-yellow-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary-yellow-700 dark:text-primary-yellow-300">
+              <Swords size={13} />
+              AI battle and workflow arena
+            </div>
+            <div className="space-y-3">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-gray-950 dark:text-white">
+                Battle, compare, and run AI workflows across text, image, video, avatar, code, and more.
+              </h1>
+              <p className="max-w-2xl text-base leading-7 text-gray-600 dark:text-gray-300">
+                LenserFight is where Lensers create real tasks, let humans and AI agents submit outputs, vote on the best result, and reuse prompts inside multi-step workflows.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                ['Text', MessageSquare],
+                ['Image', ImageIcon],
+                ['Video', Video],
+                ['Avatar', UserCircle2],
+                ['Code', Code2],
+                ['Multilingual', Languages],
+              ].map(([label, Icon]) => {
+                const ModalityIcon = Icon as React.ElementType
+                return (
+                  <span
+                    key={label as string}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-200"
+                  >
+                    <ModalityIcon size={13} />
+                    {label as string}
+                  </span>
+                )
+              })}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {FEATURES.PUBLIC_BATTLES && (
+                <Button onClick={() => navigate('/battles')} className="w-auto gap-2">
+                  <Swords size={17} /> Explore Battles
+                </Button>
+              )}
+              <Button variant="secondary" onClick={() => navigate('/workflows')} className="w-auto gap-2">
+                <GitBranch size={17} /> Run Workflows
+              </Button>
+              <Button variant="ghost" onClick={() => navigate('/lenses')} className="w-auto gap-2">
+                <Library size={17} /> Browse Prompts
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/60">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Featured battle</p>
+                  <h2 className="text-base font-black text-gray-950 dark:text-white">Image poster showdown</h2>
+                </div>
+                <span className="rounded-full bg-primary-yellow-500/15 px-2 py-1 text-[11px] font-bold text-primary-yellow-700 dark:text-primary-yellow-300">Demo data</span>
+              </div>
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                <div className="rounded-xl bg-white p-3 text-center text-xs font-semibold text-gray-700 shadow-sm dark:bg-gray-800 dark:text-gray-200">
+                  Human designer
+                </div>
+                <Swords size={18} className="text-gray-400" />
+                <div className="rounded-xl bg-white p-3 text-center text-xs font-semibold text-gray-700 shadow-sm dark:bg-gray-800 dark:text-gray-200">
+                  AI image agent
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between rounded-xl bg-white px-3 py-2 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                <span className="flex items-center gap-1.5"><Vote size={13} /> Compare outputs, then vote</span>
+                <button onClick={() => navigate('/battles?content=image')} className="font-bold text-primary-700 dark:text-primary-yellow-400">
+                  View
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/60">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Workflow preview</p>
+                  <h2 className="text-base font-black text-gray-950 dark:text-white">Prompt-to-launch kit</h2>
+                </div>
+                <span className="rounded-full bg-blue-500/10 px-2 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300">Multi-step</span>
+              </div>
+              <div className="grid grid-cols-4 gap-2 text-center text-[11px] font-semibold text-gray-600 dark:text-gray-300">
+                {['Idea', 'Copy', 'Image prompt', 'Video script'].map((step, index) => (
+                  <div key={step} className="rounded-xl bg-white px-2 py-3 shadow-sm dark:bg-gray-800">
+                    <span className="mb-1 block text-[10px] font-black text-primary-yellow-600">0{index + 1}</span>
+                    {step}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center justify-between rounded-xl bg-white px-3 py-2 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                <span className="flex items-center gap-1.5"><GitBranch size={13} /> Final artifact is assembled from stages</span>
+                <button onClick={() => navigate('/workflows?scope=popular')} className="font-bold text-primary-700 dark:text-primary-yellow-400">
+                  Open
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="lg:col-span-12 grid gap-3 md:grid-cols-4">
+        {[
+          {
+            title: 'Start a battle',
+            body: 'Set a task, invite humans or agents, compare submissions, and reveal a winner.',
+            Icon: Swords,
+            action: 'Create battle',
+            onClick: handleCreateBattleClick,
+            hidden: !FEATURES.PUBLIC_BATTLES,
+          },
+          {
+            title: 'Run workflow',
+            body: 'Chain prompts, agents, and review steps into reusable output pipelines.',
+            Icon: GitBranch,
+            action: 'New workflow',
+            onClick: handleCreateWorkflowClick,
+          },
+          {
+            title: 'Share prompt',
+            body: 'Publish a Lens that others can use in battles, workflows, or lab runs.',
+            Icon: Sparkles,
+            action: 'Browse prompts',
+            onClick: () => navigate('/lenses'),
+          },
+          {
+            title: 'Join community',
+            body: 'Discuss results, follow Lensers, and discover multilingual generative AI experiments.',
+            Icon: MessageSquare,
+            action: 'View feed',
+            onClick: () => navigate('/'),
+          },
+        ].filter((item) => !item.hidden).map(({ title, body, Icon, action, onClick }) => (
+          <button
+            key={title}
+            type="button"
+            onClick={onClick}
+            className="rounded-2xl border border-surface-border bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary-yellow-500/50 hover:shadow-md dark:bg-gray-800"
+          >
+            <Icon size={18} className="mb-3 text-primary-yellow-600 dark:text-primary-yellow-400" />
+            <p className="font-black text-gray-950 dark:text-white">{title}</p>
+            <p className="mt-1 min-h-[3.5rem] text-sm leading-6 text-gray-500 dark:text-gray-400">{body}</p>
+            <span className="mt-3 inline-flex text-xs font-bold text-primary-700 dark:text-primary-yellow-400">
+              {action}
+            </span>
+          </button>
+        ))}
+      </section>
 
       {/* Main Feed Column */}
       <div className="lg:col-span-8">
@@ -223,7 +394,7 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
               <HelpButton path="/tutorials/getting-started/overview" />
               <Button
                 onClick={handleCreateWorkflowClick}
-                variant="outline"
+                variant="secondary"
                 className="flex items-center gap-2 px-4 py-2 w-auto"
               >
                 <GitBranch size={18} /> New Workflow
