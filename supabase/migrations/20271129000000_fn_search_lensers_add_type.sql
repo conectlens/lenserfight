@@ -2,7 +2,10 @@
 -- so the battle creation wizard can distinguish AI lensers from human lensers
 -- in the contender picker (needed for the new lenser_battle battle type).
 
-CREATE OR REPLACE FUNCTION "public"."fn_search_lensers"("p_query" "text", "p_limit" integer DEFAULT 8)
+-- DROP required because CREATE OR REPLACE cannot change a function's return type.
+DROP FUNCTION IF EXISTS "public"."fn_search_lensers"("text", integer);
+
+CREATE FUNCTION "public"."fn_search_lensers"("p_query" "text", "p_limit" integer DEFAULT 8)
   RETURNS TABLE(
     "id"           "uuid",
     "handle"       "text",
