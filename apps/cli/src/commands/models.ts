@@ -266,11 +266,14 @@ const run = defineCommand({
 
       if (args.stream && model.supports_streaming) {
         const streamAdapter = getStreamAdapter(providerKey as TextProvider);
-        const { url, body, headers } = streamAdapter.buildStreamRequest(modelKey, messages, {
+        const { url: baseUrl, body, headers } = streamAdapter.buildStreamRequest(modelKey, messages, {
           maxTokens: 4096,
           tools,
         });
         const authHeaders = streamAdapter.authHeader(apiKey);
+        const url = streamAdapter.buildStreamUrl
+          ? streamAdapter.buildStreamUrl(modelKey, apiKey)
+          : baseUrl;
         const res = await fetch(url, {
           method: 'POST',
           headers: { ...headers, ...authHeaders },
