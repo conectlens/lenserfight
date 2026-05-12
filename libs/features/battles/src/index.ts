@@ -123,6 +123,8 @@ export * from './lib/components/chat/ChatMessage'
 // ── Pages ────────────────────────────────────────────────────────────────────
 export * from './lib/pages/BattlesFeedPage'
 export * from './lib/pages/BattleTemplatesPage'
+export * from './lib/pages/BattleTemplateEditorPage'
+export * from './lib/pages/BattleSeriesPage'
 export { BattleTemplateCard } from './lib/components/BattleTemplateCard'
 export type { BattleTemplateCardProps } from './lib/components/BattleTemplateCard'
 export { TemplateSelectorStep } from './lib/components/creation/TemplateSelectorStep'
