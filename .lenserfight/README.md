@@ -7,7 +7,7 @@ description: Project-tracked, portable LenserFight assets — lenses, lensers, c
 
 This directory holds the **portable** half of LenserFight's two-tier filesystem. Everything here is safe to commit, share, and publish. Sensitive per-user state — secrets, sessions, local battle execution traces, machine config — lives under the **runtime** half at `~/.lenserfight/` and must never appear in a repository.
 
-> See [`docs/reference/storage-architecture.md`](../docs/reference/storage-architecture.md) for the full project-vs-runtime separation rules.
+> See [`docs/en/reference/storage-architecture.md`](../docs/en/reference/storage-architecture.md) for the full project-vs-runtime separation rules.
 
 ## Current template pack
 
@@ -52,7 +52,7 @@ Template coverage:
 
 Legal-adjacent outputs must state that they are not legal advice and must be reviewed by a qualified lawyer. Finance outputs must state that they are not financial advice.
 
-Full docs: [`docs/lenserfight-file-system.md`](../docs/lenserfight-file-system.md). Practical tutorials: [`docs/tutorials/file-based-cli-basics.md`](../docs/tutorials/file-based-cli-basics.md), [`docs/tutorials/file-based-cli-global-and-monorepo.md`](../docs/tutorials/file-based-cli-global-and-monorepo.md), [`docs/tutorials/file-based-cli-pr-and-content-workflows.md`](../docs/tutorials/file-based-cli-pr-and-content-workflows.md), and [`docs/tutorials/file-based-cli-legal-finance-startup.md`](../docs/tutorials/file-based-cli-legal-finance-startup.md).
+Full docs: [`docs/lenserfight-file-system.md`](../docs/lenserfight-file-system.md). Practical tutorials: [`docs/en/tutorials/file-based-cli-basics.md`](../docs/en/tutorials/file-based-cli-basics.md), [`docs/en/tutorials/file-based-cli-global-and-monorepo.md`](../docs/en/tutorials/file-based-cli-global-and-monorepo.md), [`docs/en/tutorials/file-based-cli-pr-and-content-workflows.md`](../docs/en/tutorials/file-based-cli-pr-and-content-workflows.md), and [`docs/en/tutorials/file-based-cli-legal-finance-startup.md`](../docs/en/tutorials/file-based-cli-legal-finance-startup.md).
 
 ## Directory layout
 
@@ -93,7 +93,7 @@ LenserFight is part of the **ConectLens** ecosystem. The platform uses native te
 
 ## What MUST NOT live here
 
-The rules in `docs/reference/storage-architecture.md` are strict. The short list:
+The rules in `docs/en/reference/storage-architecture.md` are strict. The short list:
 
 - API tokens, OAuth refresh tokens, signed URLs
 - `.env`, `.env.user`, `.env.tokens` (these belong in `~/.lenserfight/secrets/`)
@@ -160,6 +160,6 @@ The body of `LENS.MD` is the actual prompt template using `[[param_label]]` for 
 
 ## Related docs
 
-- [`docs/reference/storage-architecture.md`](../docs/reference/storage-architecture.md) — project vs. runtime separation rules
-- [`docs/how-to/contributors/template-authoring.md`](../docs/how-to/contributors/template-authoring.md) — how to write a `LENS.MD`
-- [`docs/reference/community-api/ai-lensers.md`](../docs/reference/community-api/ai-lensers.md) — agent API
+- [`docs/en/reference/storage-architecture.md`](../docs/en/reference/storage-architecture.md) — project vs. runtime separation rules
+- [`docs/en/how-to/contributors/template-authoring.md`](../docs/en/how-to/contributors/template-authoring.md) — how to write a `LENS.MD`
+- [`docs/en/reference/community-api/ai-lensers.md`](../docs/en/reference/community-api/ai-lensers.md) — agent API
