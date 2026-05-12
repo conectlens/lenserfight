@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest'
 import { NullDelegationHandler, SupabaseDelegationHandler } from './delegation-handler'
 
 describe('NullDelegationHandler', () => {
@@ -16,14 +17,13 @@ describe('NullDelegationHandler', () => {
 
 describe('SupabaseDelegationHandler', () => {
   function buildClient(rpcResult: { data: unknown; error: { message: string } | null }) {
-    const rpc = jest.fn().mockResolvedValue(rpcResult)
-    const schema = jest.fn().mockReturnValue({ rpc })
-    return { schema, rpc }
+    const rpc = vi.fn().mockResolvedValue(rpcResult)
+    return { rpc }
   }
 
   it('returns the new team_run id on success', async () => {
-    const { schema, rpc } = buildClient({ data: 'team-run-1', error: null })
-    const handler = new SupabaseDelegationHandler({ schema } as never)
+    const { rpc } = buildClient({ data: 'team-run-1', error: null })
+    const handler = new SupabaseDelegationHandler({ rpc } as never)
 
     const result = await handler.dispatchTeamRun({
       aiLenserId: 'ai-1',
@@ -33,7 +33,6 @@ describe('SupabaseDelegationHandler', () => {
     })
 
     expect(result.teamRunId).toBe('team-run-1')
-    expect(schema).toHaveBeenCalledWith('agents')
     expect(rpc).toHaveBeenCalledWith('fn_start_team_run', expect.objectContaining({
       p_ai_lenser_id: 'ai-1',
       p_workflow_id:  'wf-1',
@@ -43,8 +42,8 @@ describe('SupabaseDelegationHandler', () => {
   })
 
   it('forwards approval_required policy unchanged', async () => {
-    const { schema, rpc } = buildClient({ data: 'team-run-2', error: null })
-    const handler = new SupabaseDelegationHandler({ schema } as never)
+    const { rpc } = buildClient({ data: 'team-run-2', error: null })
+    const handler = new SupabaseDelegationHandler({ rpc } as never)
 
     await handler.dispatchTeamRun({
       aiLenserId: 'ai-1',
@@ -59,8 +58,8 @@ describe('SupabaseDelegationHandler', () => {
   })
 
   it('throws when the RPC raises (e.g. policy=forbidden)', async () => {
-    const { schema } = buildClient({ data: null, error: { message: 'delegation_forbidden' } })
-    const handler = new SupabaseDelegationHandler({ schema } as never)
+    const { rpc } = buildClient({ data: null, error: { message: 'delegation_forbidden' } })
+    const handler = new SupabaseDelegationHandler({ rpc } as never)
 
     await expect(
       handler.dispatchTeamRun({
@@ -73,8 +72,8 @@ describe('SupabaseDelegationHandler', () => {
   })
 
   it('throws when the RPC returns no team_run id', async () => {
-    const { schema } = buildClient({ data: null, error: null })
-    const handler = new SupabaseDelegationHandler({ schema } as never)
+    const { rpc } = buildClient({ data: null, error: null })
+    const handler = new SupabaseDelegationHandler({ rpc } as never)
 
     await expect(
       handler.dispatchTeamRun({
