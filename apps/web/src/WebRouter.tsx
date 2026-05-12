@@ -112,6 +112,10 @@ const LazyBattleSeriesPage = lazy(() =>
 const LazyBattlesFeedPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.BattlesFeedPage }))
 )
+// Phase BP — anon-safe discovery
+const LazyBattlesDiscoveryPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattlesDiscoveryPage }))
+)
 const LazyArenaBattlesDiscoveryPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.ArenaBattlesDiscoveryPage }))
 )
@@ -383,6 +387,14 @@ export const WebRouter: React.FC = () => {
               element={
                 <DashboardFrame>
                   <LazyArenaBattlesDiscoveryPage />
+                </DashboardFrame>
+              }
+            />
+            <Route
+              path="/battles/browse"
+              element={
+                <DashboardFrame>
+                  <LazyBattlesDiscoveryPage />
                 </DashboardFrame>
               }
             />
