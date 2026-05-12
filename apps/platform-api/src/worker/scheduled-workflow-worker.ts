@@ -7,6 +7,36 @@ import type { WorkflowNode, WorkflowEdge, WorkflowExecutionContext, NodeResult }
 
 const WORKER_ID = process.env['BATTLE_WORKER_ID'] ?? `worker-${process.pid}`
 
+// Z10: retry helper for transient Supabase RPC/network errors. Does NOT retry
+// claim operations (those are mutating and non-idempotent).
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
+  let lastErr: unknown
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      if (!isTransientError(err) || attempt === maxAttempts) throw err
+      lastErr = err
+      const delayMs = Math.min(30_000, 500 * Math.pow(2, attempt))
+      await new Promise<void>((r) => setTimeout(r, delayMs))
+    }
+  }
+  throw lastErr
+}
+
+function isTransientError(err: unknown): boolean {
+  const raw = err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err)
+  const msg = raw.toLowerCase()
+  return (
+    msg.includes('network') ||
+    msg.includes('timeout') ||
+    msg.includes('connection') ||
+    msg.includes('econnreset') ||
+    msg.includes('fetch failed') ||
+    msg.includes('socket hang up')
+  )
+}
+
 interface ClaimedScheduledRun {
   run_id: string
   workflow_id: string
@@ -71,10 +101,11 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
   const workspaceId: string | null = wfCtxRow?.workspace_id ?? null
 
   try {
-    const { data: graphData, error: graphError } = await serviceClient
-      .rpc('fn_worker_get_workflow_graph', { p_workflow_id: workflow_id })
-
-    if (graphError) throw graphError
+    const graphData = await withRetry(async () => {
+      const { data, error } = await serviceClient.rpc('fn_worker_get_workflow_graph', { p_workflow_id: workflow_id })
+      if (error) throw error
+      return data
+    })
 
     const graph = graphData as { nodes: DbWorkflowNode[]; edges: DbWorkflowEdge[] } | null
     const nodes: WorkflowNode[] = (graph?.nodes ?? []).map(mapNode)
@@ -149,10 +180,12 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
     const runResult = await service.executeWorkflow(nodes, edges, ctx)
 
     const finalStatus = runResult.status === 'completed' ? 'completed' : 'failed'
-    await serviceClient.rpc('fn_update_workflow_run_status', {
-      p_run_id: run_id,
-      p_status: finalStatus,
-    })
+    await withRetry(() =>
+      serviceClient.rpc('fn_update_workflow_run_status', {
+        p_run_id: run_id,
+        p_status: finalStatus,
+      })
+    )
 
     nodeLogger.info('scheduled workflow run completed', {
       runId: run_id,
@@ -162,11 +195,18 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    await serviceClient.rpc('fn_update_workflow_run_status', {
-      p_run_id: run_id,
-      p_status: 'failed',
-    })
     nodeLogger.error('scheduled workflow run failed', { runId: run_id, workflowId: workflow_id, message })
+    await withRetry(() =>
+      serviceClient.rpc('fn_update_workflow_run_status', {
+        p_run_id: run_id,
+        p_status: 'failed',
+      })
+    ).catch((statusErr) => {
+      nodeLogger.error('could not write failed status for run', {
+        runId: run_id,
+        message: statusErr instanceof Error ? statusErr.message : String(statusErr),
+      })
+    })
   }
 
   return true
