@@ -11,6 +11,7 @@ export interface BattleTemplateRecord {
   max_contenders: number
   created_at: string
   updated_at: string
+  category?: string | null
 }
 
 export type BattleStatus =
@@ -141,6 +142,8 @@ export interface InviteContenderInput {
   contender_type: ContenderType
 }
 
+export type SubmissionOutputModality = 'text' | 'image' | 'video' | 'audio'
+
 export interface SubmissionRecord {
   id: string
   battle_id: string
@@ -148,6 +151,9 @@ export interface SubmissionRecord {
   content_text: string | null
   content_url: string | null
   status: string
+  media_url?: string | null
+  mime_type?: string | null
+  output_modality?: SubmissionOutputModality | null
 }
 
 export interface VoteAggregateRecord {
@@ -326,6 +332,7 @@ export interface BattlesRepositoryPort {
   retryDLQEntry(deadLetterId: string): Promise<void>
   getPublicExecutionJobs(battleId: string): Promise<PublicExecutionJobRecord[]>
   listBattleTemplates(): Promise<BattleTemplateRecord[]>
+  listPublicBattleTemplates(category?: string, limit?: number): Promise<BattleTemplateRecord[]>
   toggleBattleTemplatePublic(id: string, isPublic: boolean): Promise<void>
   createBattleFromTemplate(templateId: string, title: string, slug: string): Promise<string>
 }
@@ -724,6 +731,15 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
 
   async listBattleTemplates(): Promise<BattleTemplateRecord[]> {
     const { data, error } = await supabase.rpc('fn_list_battle_templates', { p_limit: 100 })
+    if (error) this.handleError(error)
+    return (data ?? []) as BattleTemplateRecord[]
+  }
+
+  async listPublicBattleTemplates(category?: string, limit = 20): Promise<BattleTemplateRecord[]> {
+    const { data, error } = await supabase.rpc('fn_list_public_battle_templates', {
+      p_category: category ?? null,
+      p_limit: limit,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as BattleTemplateRecord[]
   }
