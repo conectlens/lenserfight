@@ -50,7 +50,8 @@ export const LensesGrid: React.FC<LensesGridProps> = ({ lenses, isLoading, onOpe
   if (lenses.length === 0) {
     return (
       <EmptyState
-        title="No lenses found matching your criteria."
+        title="No prompts match these filters"
+        description="Try another modality or clear filters. Lens prompts can be reused in battles, workflows, and lab runs."
         className="py-20 bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"
       />
     )
