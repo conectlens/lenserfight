@@ -7,7 +7,7 @@ interface UnauthorizedPageProps {
 
 export const UnauthorizedPage: React.FC<UnauthorizedPageProps> = ({ onDismiss }) => {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 py-16 text-center">
+    <div className="flex flex-col items-center justify-center gap-6 px-4 py-16 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
         <svg
           className="h-8 w-8 text-red-500"
