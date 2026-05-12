@@ -204,9 +204,6 @@ const LazyJoinBattlePage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.JoinBattlePage }))
 )
 
-const RouteFallback: React.FC = () => (
-  <Loader variant="overlay" message="Loading forum..." />
-)
 
 const DashboardFrame: React.FC<{ children: React.ReactNode; fullscreen?: boolean }> = ({
   children,
@@ -246,14 +243,16 @@ const WorkflowBuilderPageRoute: React.FC = () => {
 
 const CreateWorkflowModal: React.FC = () => {
   const navigate = useNavigate()
+  const close = () => navigate('/workflows')
   return (
     <ModalRoute
       accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
       maxWidth="max-w-2xl"
+      onClose={close}
     >
       <LazyCreateWorkflowWizard
         onCreated={(workflowId) => navigate(`/workflows/${workflowId}`)}
-        onCancel={() => navigate('/workflows')}
+        onCancel={close}
       />
     </ModalRoute>
   )
@@ -294,14 +293,16 @@ const LenserAgentSectionRedirect: React.FC<{ section: string }> = ({ section }) 
 
 const CreateBattleRoute: React.FC = () => {
   const navigate = useNavigate()
+  const close = () => navigate('/battles')
   return (
     <ModalRoute
       accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
       maxWidth="max-w-3xl"
+      onClose={close}
     >
       <LazyCreateBattleWizard
         onSuccess={(slug) => navigate(`/battles/${slug}`)}
-        onClose={() => navigate('/battles')}
+        onClose={close}
       />
     </ModalRoute>
   )
@@ -315,7 +316,7 @@ const OnboardingModal: React.FC = () => (
 
 export const WebRouter: React.FC = () => {
   return (
-    <Suspense fallback={<RouteFallback />}>
+    <Suspense fallback={<Loader variant="overlay" />}>
       <Routes>
         <Route path="/s/:shortId" element={<LazyShortLinkRedirect />} />
         <Route path="/auth/login" element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/login`} />} />
