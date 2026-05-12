@@ -203,6 +203,9 @@ const LazyGatewayDaemonsPage = lazy(() =>
 const LazyJoinBattlePage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.JoinBattlePage }))
 )
+const LazyChatPage = lazy(() =>
+  import('@lenserfight/features/chat').then((module) => ({ default: module.ChatPage }))
+)
 
 
 const DashboardFrame: React.FC<{ children: React.ReactNode; fullscreen?: boolean }> = ({
@@ -514,6 +517,15 @@ export const WebRouter: React.FC = () => {
           element={
             <DashboardFrame>
               <LazyLensersPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/chat"
+          element={
+            <DashboardFrame>
+              <LazyChatPage />
             </DashboardFrame>
           }
         />
