@@ -3,6 +3,7 @@ import { Loader } from '@lenserfight/ui/feedback'
 import { AuthExternalRedirect } from '@lenserfight/features/auth'
 import { ShareProvider } from '@lenserfight/features/share'
 import { WalletProvider } from '@lenserfight/features/store'
+import { GlobalErrorRenderer } from '@lenserfight/shared/error'
 import { UIProvider } from '@lenserfight/ui/providers'
 import { ModalRoute } from '@lenserfight/ui/routing'
 import { ARENA_BASE_URL, AUTH_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
@@ -214,7 +215,9 @@ const DashboardFrame: React.FC<{ children: React.ReactNode; fullscreen?: boolean
   <ShareProvider>
     <WalletProvider>
       <UIProvider>
-        <LazyDashboardLayout fullscreen={fullscreen}>{children}</LazyDashboardLayout>
+        <LazyDashboardLayout fullscreen={fullscreen}>
+          <GlobalErrorRenderer>{children}</GlobalErrorRenderer>
+        </LazyDashboardLayout>
       </UIProvider>
     </WalletProvider>
   </ShareProvider>
