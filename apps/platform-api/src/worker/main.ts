@@ -184,7 +184,12 @@ async function runLoop(): Promise<void> {
 
     if (!processed && once) break
     if (once) break
-    if (!processed) await new Promise((resolve) => setTimeout(resolve, intervalMs))
+    // Z10: add ±0–500 ms jitter so multiple worker pods don't pound the DB
+    // in lock-step when the queue is empty.
+    if (!processed) {
+      const jitter = Math.floor(Math.random() * 500)
+      await new Promise((resolve) => setTimeout(resolve, intervalMs + jitter))
+    }
   } while (true)
 
   if (heartbeatTimer) clearInterval(heartbeatTimer)

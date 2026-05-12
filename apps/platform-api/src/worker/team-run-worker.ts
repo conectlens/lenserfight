@@ -20,6 +20,25 @@ import { createServiceSupabaseClient } from '../lib/supabase'
 
 const WORKER_ID = process.env['TEAM_RUN_WORKER_ID'] ?? `team-run-worker-${process.pid}`
 
+// Z10: retry for transient Supabase RPC/network errors on non-claim operations.
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
+  let lastErr: unknown
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      const msg = (err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err)).toLowerCase()
+      const transient =
+        msg.includes('network') || msg.includes('timeout') || msg.includes('connection') ||
+        msg.includes('econnreset') || msg.includes('fetch failed') || msg.includes('socket hang up')
+      if (!transient || attempt === maxAttempts) throw err
+      lastErr = err
+      await new Promise<void>((r) => setTimeout(r, Math.min(30_000, 500 * Math.pow(2, attempt))))
+    }
+  }
+  throw lastErr
+}
+
 interface ClaimedTeamRun {
   id: string
   ai_lenser_id: string
@@ -56,13 +75,14 @@ export async function processNextTeamRun(): Promise<boolean> {
     // child workflow execution path lands alongside AP's modality-aware
     // engine — for AL we exercise the dispatch contract end-to-end without
     // duplicating the engine.
-    const { error: updateError } = await serviceClient.rpc('fn_worker_update_team_run_status', {
-      p_team_run_id: claimed.id,
-      p_status: 'completed',
-      p_error_message: null,
+    await withRetry(async () => {
+      const { error: updateError } = await serviceClient.rpc('fn_worker_update_team_run_status', {
+        p_team_run_id: claimed.id,
+        p_status: 'completed',
+        p_error_message: null,
+      })
+      if (updateError) throw updateError
     })
-
-    if (updateError) throw updateError
 
     return true
   } catch (err) {
@@ -73,10 +93,17 @@ export async function processNextTeamRun(): Promise<boolean> {
       message,
     })
 
-    await serviceClient.rpc('fn_worker_update_team_run_status', {
-      p_team_run_id: claimed.id,
-      p_status: 'failed',
-      p_error_message: message,
+    await withRetry(() =>
+      serviceClient.rpc('fn_worker_update_team_run_status', {
+        p_team_run_id: claimed.id,
+        p_status: 'failed',
+        p_error_message: message,
+      })
+    ).catch((statusErr) => {
+      nodeLogger.error('could not write failed status for team run', {
+        teamRunId: claimed.id,
+        message: statusErr instanceof Error ? statusErr.message : String(statusErr),
+      })
     })
 
     return true
