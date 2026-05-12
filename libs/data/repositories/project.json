@@ -17,6 +17,19 @@
       "options": {
         "reportsDirectory": "../../../coverage/libs/data/repositories"
       }
+    },
+    "coverage": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../../coverage/libs/data/repositories",
+        "coverage": true,
+        "coverageThresholds": {
+          "lines": 80,
+          "statements": 80,
+          "functions": 70
+        }
+      }
     }
   }
 }
