@@ -6,6 +6,10 @@ import { createServiceSupabaseClient } from '../lib/supabase'
 import { processNextBattleJob } from './battle-worker'
 import { processNextScheduledWorkflow } from './scheduled-workflow-worker'
 import { processNextTeamRun } from './team-run-worker'
+import { startVoteAnomalyWorker } from './vote-anomaly-worker'
+import { startBattleAutoPromoteWorker } from './battle-auto-promote-worker'
+import { startWebhookDrainWorker } from './webhook-drain-worker'
+import { startWorkflowEventDispatcher } from './workflow-event-dispatcher'
 
 const WORKER_ID = process.env['BATTLE_WORKER_ID'] ?? `worker-${process.pid}`
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env['WORKER_HEARTBEAT_INTERVAL_MS'] ?? '10000', 10)
@@ -159,6 +163,34 @@ async function runLoop(): Promise<void> {
   const scheduledWorkflowWorkerEnabled = process.env['PLATFORM_API_SCHEDULED_WORKFLOW_WORKER_ENABLED'] === 'true'
   const teamRunWorkerEnabled = process.env['PLATFORM_API_TEAM_RUN_WORKER_ENABLED'] === 'true'
 
+  // CA: Start vote anomaly realtime subscriber
+  const voteAnomalyWorkerEnabled = process.env['PLATFORM_API_VOTE_ANOMALY_WORKER_ENABLED'] !== 'false'
+  let stopVoteAnomalyWorker: (() => void) | undefined
+  if (voteAnomalyWorkerEnabled && !once) {
+    stopVoteAnomalyWorker = startVoteAnomalyWorker()
+  }
+
+  // CB: Start battle auto-promote poller
+  const autoPromoteWorkerEnabled = process.env['PLATFORM_API_AUTO_PROMOTE_WORKER_ENABLED'] !== 'false'
+  let stopAutoPromoteWorker: (() => void) | undefined
+  if (autoPromoteWorkerEnabled && !once) {
+    stopAutoPromoteWorker = startBattleAutoPromoteWorker()
+  }
+
+  // CB: Start webhook drain worker
+  const webhookDrainEnabled = process.env['PLATFORM_API_WEBHOOK_DRAIN_ENABLED'] !== 'false'
+  let stopWebhookDrain: (() => void) | undefined
+  if (webhookDrainEnabled && !once) {
+    stopWebhookDrain = startWebhookDrainWorker()
+  }
+
+  // CD: Start workflow event dispatcher
+  const workflowDispatchEnabled = process.env['PLATFORM_API_WORKFLOW_DISPATCH_ENABLED'] !== 'false'
+  let stopWorkflowDispatch: (() => void) | undefined
+  if (workflowDispatchEnabled && !once) {
+    stopWorkflowDispatch = startWorkflowEventDispatcher()
+  }
+
   // Start heartbeat timer (independent of main loop)
   let heartbeatTimer: ReturnType<typeof setInterval> | undefined
   if (!once) {
@@ -193,6 +225,10 @@ async function runLoop(): Promise<void> {
   } while (true)
 
   if (heartbeatTimer) clearInterval(heartbeatTimer)
+  if (stopVoteAnomalyWorker) stopVoteAnomalyWorker()
+  if (stopAutoPromoteWorker) stopAutoPromoteWorker()
+  if (stopWebhookDrain) stopWebhookDrain()
+  if (stopWorkflowDispatch) stopWorkflowDispatch()
 }
 
 runLoop().catch((error) => {
