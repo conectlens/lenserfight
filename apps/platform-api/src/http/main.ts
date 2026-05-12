@@ -15,6 +15,8 @@ import { handlePartnersSendClaimRoute } from './routes/partners-send-claim.route
 import { handleHealthRoute } from './routes/health.route'
 import { handleBattleShareCardRoute } from './routes/battles-share-card.route'
 import { handleMediaProxyRoute } from './routes/media-proxy.route'
+import { handleGetVoteAnomalies, handleResolveVoteAnomaly } from './routes/admin-moderation.route'
+import { handleWorkflowWebhookTrigger } from './routes/workflow-webhook.route'
 
 // Register partner providers — add new partners here, nothing else changes
 partnerRegistry.register(new ChainbitPartnerProvider())
@@ -125,6 +127,24 @@ const server = createServer(async (req, res) => {
         await handlePartnersSendClaimRoute(req, res, partnerName, requestId, startedAt)
         return
       }
+    }
+
+    // POST /workflows/:id/trigger — HMAC webhook (public, rate-limited)
+    if (req.method === 'POST' && parts[0] === 'workflows' && parts[2] === 'trigger') {
+      await handleWorkflowWebhookTrigger(req, res, parts[1], requestId, startedAt)
+      return
+    }
+
+    // GET /admin/vote-anomalies?status=...
+    if (req.method === 'GET' && parts[0] === 'admin' && parts[1] === 'vote-anomalies' && parts.length === 2) {
+      await handleGetVoteAnomalies(req, res, requestId, startedAt)
+      return
+    }
+
+    // POST /admin/vote-anomalies/:id/resolve
+    if (req.method === 'POST' && parts[0] === 'admin' && parts[1] === 'vote-anomalies' && parts[3] === 'resolve') {
+      await handleResolveVoteAnomaly(req, res, parts[2], requestId, startedAt)
+      return
     }
 
     sendApiError(res, 404, { code: 'not_found', message: 'Route not found' }, requestId, startedAt)
