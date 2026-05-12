@@ -1,9 +1,9 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import type { ByokKeyHint } from '@lenserfight/data/repositories'
+import type { ByokKeyHint, ByokRotationDueRow } from '@lenserfight/data/repositories'
 import { Button } from '@lenserfight/ui/components'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { KeyRound, ShieldCheck, ShieldX, Clock, Plus } from 'lucide-react'
+import { KeyRound, ShieldCheck, ShieldX, Clock, Plus, AlertTriangle } from 'lucide-react'
 import React from 'react'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
@@ -64,6 +64,15 @@ export const ByokSection: React.FC = () => {
     enabled: isOwner && !!aiLenserId,
     staleTime: 30_000,
   })
+
+  const rotationDueQuery = useQuery<ByokRotationDueRow[]>({
+    queryKey: ['byok', 'rotation-due'],
+    queryFn: () => agentWorkspaceService.listRotationDue(),
+    enabled: isOwner,
+    staleTime: 5 * 60_000,
+  })
+
+  const overdueKeys = rotationDueQuery.data ?? []
 
   const revokeMutation = useMutation({
     mutationFn: ({ provider }: { provider: string }) =>
@@ -136,6 +145,25 @@ export const ByokSection: React.FC = () => {
         ) : undefined
       }
     >
+      {isOwner && overdueKeys.length > 0 && (
+        <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 mb-4">
+          <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+              {overdueKeys.length} key{overdueKeys.length > 1 ? 's' : ''} overdue for rotation
+            </p>
+            <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-0.5">
+              Keys should be rotated every 90 days.{' '}
+              {overdueKeys.map((k) => (
+                <span key={k.id} className="font-medium capitalize">{k.provider}</span>
+              )).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, ', ', el], [])}
+              {overdueKeys.length === 1 ? ' is' : ' are'} overdue. Rotate using{' '}
+              <code className="font-mono text-xs">lf byok rotate</code> or the form below.
+            </p>
+          </div>
+        </div>
+      )}
+
       {!isOwner ? (
         <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
           Only the agent owner can manage API keys.
