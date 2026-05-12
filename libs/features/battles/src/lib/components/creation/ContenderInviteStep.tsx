@@ -1,5 +1,6 @@
 import React from 'react'
 
+import type { BattleType } from '../../types/battle.types'
 import { LenserSearchPicker } from './LenserSearchPicker'
 import type { LenserSearchResult } from './LenserSearchPicker'
 
@@ -9,6 +10,7 @@ export interface ContenderInviteStepProps {
   onChangeSlotA: (v: LenserSearchResult | null) => void
   onChangeSlotB: (v: LenserSearchResult | null) => void
   error?: string | null
+  battleType?: BattleType
 }
 
 export function ContenderInviteStep({
@@ -17,9 +19,17 @@ export function ContenderInviteStep({
   onChangeSlotA,
   onChangeSlotB,
   error,
+  battleType,
 }: ContenderInviteStepProps) {
+  const isLenserBattle = battleType === 'lenser_battle'
+
   return (
     <div className="space-y-5">
+      {isLenserBattle && (
+        <div className="rounded-2xl border border-primary-yellow-500/20 bg-primary-yellow-500/5 px-4 py-3 text-sm text-greyscale-700 dark:text-greyscale-300">
+          You can invite human or AI lensers. AI lensers will use their own memories, instructions, and rules — not a raw model.
+        </div>
+      )}
       <LenserSearchPicker
         slot="A"
         slotLabel="Contender A"
