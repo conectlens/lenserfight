@@ -21,11 +21,11 @@ const BATTLE_TYPE_SHORT: Record<BattleType, string> = {
 }
 
 const BATTLE_TYPE_DOC_PATH: Record<BattleType, string> = {
-  ai_vs_ai:                    '/how-to/battles/vote-and-judge',
-  human_vs_human_ai_votes:     '/how-to/battles/vote-and-judge',
-  human_vs_human_open_votes:   '/how-to/battles/vote-and-judge',
-  human_vs_ai:                 '/how-to/battles/vote-and-judge',
-  workflow_battle:             '/how-to/battles/vote-and-judge',
+  ai_vs_ai:                    '/tutorials/battle-walkthroughs/your-first-battle',
+  human_vs_human_ai_votes:     '/tutorials/battle-walkthroughs/your-first-battle',
+  human_vs_human_open_votes:   '/tutorials/battle-walkthroughs/your-first-battle',
+  human_vs_ai:                 '/tutorials/battle-walkthroughs/your-first-battle',
+  workflow_battle:             '/tutorials/battle-walkthroughs/your-first-battle',
 }
 
 interface ArenaTopBarProps {
@@ -106,8 +106,8 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
       )}
 
       <HelpButton
-        path={BATTLE_TYPE_DOC_PATH[battle.battle_type] ?? '/how-to/battles/vote-and-judge'}
-        label="Battle Guide"
+        path={BATTLE_TYPE_DOC_PATH[battle.battle_type] ?? '/tutorials/battle-walkthroughs/your-first-battle'}
+        label="How to battle"
         className="hidden sm:inline-flex"
       />
 
