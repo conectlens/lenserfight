@@ -250,3 +250,40 @@ describe('battle open', () => {
     expect(consolaSuccess).toHaveBeenCalled()
   })
 })
+
+describe('battle new --from-template', () => {
+  it('resolves a slug to a template id and creates the battle', async () => {
+    mockCallRpc
+      .mockResolvedValueOnce([
+        { id: 'tpl-uuid', title: 'Reasoning Quality Shootout' },
+        { id: 'other', title: 'Unrelated' },
+      ])
+      .mockResolvedValueOnce({ id: 'new-battle', slug: 'smoke-1', title: 'Smoke test' })
+
+    const newCmd = await getSubCmd('new')
+    await newCmd.run?.({
+      args: {
+        'from-template': 'reasoning-quality-shootout',
+        title: 'Smoke test',
+        slug: 'smoke-1',
+        json: false,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockCallRpc).toHaveBeenNthCalledWith(
+      1,
+      'fn_list_public_battle_templates',
+      { p_category: null, p_limit: 100 },
+      { requireAuth: false }
+    )
+    expect(mockCallRpc).toHaveBeenNthCalledWith(
+      2,
+      'fn_battles_create_from_template',
+      { p_template_id: 'tpl-uuid', p_title: 'Smoke test', p_slug: 'smoke-1' },
+      { requireAuth: true }
+    )
+    expect(consolaSuccess).toHaveBeenCalledWith('Battle created: /battles/%s', 'smoke-1')
+  })
+})
