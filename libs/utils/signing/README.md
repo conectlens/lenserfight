@@ -28,4 +28,4 @@ const result = verifyEnvelope(publicKey, envelope)
 
 ## Spec
 
-See [RFC-0003 §3](../../../docs/rfcs/RFC-0003-trust-gateway.md#3-signed-envelope) and [security-rules R3](../../../docs/explanation/gateway/security-rules.md#r3--signed-envelopes).
+See [RFC-0003 §3](../../../docs/en/rfcs/RFC-0003-trust-gateway.md#3-signed-envelope) and [security-rules R3](../../../docs/en/explanation/gateway/security-rules.md#r3--signed-envelopes).

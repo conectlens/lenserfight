@@ -20,5 +20,5 @@ This library is consumed by:
 
 ## See also
 
-- [RFC-0003 §7](../../../docs/rfcs/RFC-0003-trust-gateway.md#7-sync-engine)
-- [Sync model](../../../docs/explanation/gateway/sync.md)
+- [RFC-0003 §7](../../../docs/en/rfcs/RFC-0003-trust-gateway.md#7-sync-engine)
+- [Sync model](../../../docs/en/explanation/gateway/sync.md)

@@ -30,4 +30,4 @@ This is a local simulation. It validates the file and writes a run report, but i
 
 ## Tutorial
 
-Follow [Research to Rubric Colens Tutorial](../../../docs/tutorials/developer-examples/research-to-rubric-colens.md).
+Follow [Research to Rubric Colens Tutorial](../../../docs/en/tutorials/developer-examples/research-to-rubric-colens.md).
