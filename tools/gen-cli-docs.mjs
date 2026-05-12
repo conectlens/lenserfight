@@ -5,11 +5,11 @@
  * defineCommand({ meta: { name, description }, args: {...}, subCommands })
  * shape.
  *
- * Output: docs/reference/cli/<name>.md, with manual prose preserved between
+ * Output: docs/en/reference/cli/<name>.md, with manual prose preserved between
  * <!-- AUTO-GEN-START --> and <!-- AUTO-GEN-END --> sentinels.
  *
  * Flags:
- *   --check  Run gen, then `git status --porcelain docs/reference/cli/`. Exit
+ *   --check  Run gen, then `git status --porcelain docs/en/reference/cli/`. Exit
  *            1 if any output changed (CI drift gate).
  *
  * Implementation note: we do not import the compiled CLI at runtime — that
@@ -29,7 +29,7 @@ const __dirname = dirname(__filename)
 const repoRoot = resolve(__dirname, '..')
 
 const COMMANDS_DIR = resolve(repoRoot, 'apps/cli/src/commands')
-const OUT_DIR = resolve(repoRoot, 'docs/reference/cli')
+const OUT_DIR = resolve(repoRoot, 'docs/en/reference/cli')
 const SENTINEL_START = '<!-- AUTO-GEN-START -->'
 const SENTINEL_END = '<!-- AUTO-GEN-END -->'
 
@@ -266,7 +266,7 @@ console.log(`Generated/updated ${generated.length} CLI doc page(s).`)
 if (checkMode) {
   let dirty = ''
   try {
-    dirty = execSync('git status --porcelain docs/reference/cli/', {
+    dirty = execSync('git status --porcelain docs/en/reference/cli/', {
       cwd: repoRoot,
       encoding: 'utf-8',
     })
