@@ -107,6 +107,9 @@ export * from './lib/components/scoring/RubricPanel'
 export * from './lib/components/scoring/ResultBanner'
 export * from './lib/components/scoring/ScoreSystem'
 
+// ── Components — result (retention CTA, Phase BX) ────────────────────────────
+export * from './lib/components/result/BattleResultCTA'
+
 // ── Components — submission (forms and viewers) ───────────────────────────────
 export * from './lib/components/submission/ContenderSlot'
 export * from './lib/components/submission/SubmissionViewer'
