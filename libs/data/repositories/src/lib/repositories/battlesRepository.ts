@@ -97,6 +97,7 @@ export interface BattleRecord {
   voting_duration_hours: number
   vote_velocity: number
   og_image_url: string | null
+  content_type: string | null
 }
 
 export interface TrendingBattleRecord {
@@ -112,6 +113,7 @@ export interface TrendingBattleRecord {
   contender_a_name: string | null
   contender_b_name: string | null
   winner_slot: 'A' | 'B' | null
+  content_type: string | null
 }
 
 export interface TrendingBattlesOptions {
@@ -307,6 +309,7 @@ export interface BattleFeedItemRecord {
   contender_b_name: string | null
   contender_b_type: ContenderType | null
   winner_slot: 'A' | 'B' | null
+  content_type: string | null
 }
 
 export interface BattlesFeedOptions {
