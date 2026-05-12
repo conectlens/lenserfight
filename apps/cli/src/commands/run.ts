@@ -529,12 +529,15 @@ const exec = defineCommand({
       try {
         if (args.stream) {
           const streamAdapter = getStreamAdapter(provider);
-          const { url, body, headers } = streamAdapter.buildStreamRequest(
+          const { url: baseUrl, body, headers } = streamAdapter.buildStreamRequest(
             args.model,
             messages,
             { maxTokens: 4096 }
           );
           const authHeaders = streamAdapter.authHeader(apiKey);
+          const url = streamAdapter.buildStreamUrl
+            ? streamAdapter.buildStreamUrl(args.model, apiKey)
+            : baseUrl;
 
           const res = await fetch(url, {
             method: 'POST',
@@ -570,8 +573,11 @@ const exec = defineCommand({
           process.stdout.write('\n');
         } else {
           const adapter = getAdapter(provider);
-          const { url, body, headers } = adapter.transformRequest(args.model, messages, { maxTokens: 4096 });
+          const { url: baseUrl, body, headers } = adapter.transformRequest(args.model, messages, { maxTokens: 4096 });
           const authHeaders = adapter.authHeader(apiKey);
+          const url = adapter.buildUrl
+            ? adapter.buildUrl(args.model, apiKey)
+            : baseUrl;
 
           const res = await fetch(url, {
             method: 'POST',
