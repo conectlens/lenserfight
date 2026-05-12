@@ -140,6 +140,57 @@ const byokRevoke = defineCommand({
   },
 })
 
+// ─── lf byok setup --provider <name> ──────────────────────────────────────
+//
+// Phase BA: friendly first-run wizard. Reads the key from stdin (never an
+// argv flag), delegates to `lf byok rotate`, then confirms via `lf byok list`.
+const byokSetup = defineCommand({
+  meta: {
+    name: 'setup',
+    description: 'First-run BYOK wizard. Reads key from stdin, rotates, then confirms via list.',
+  },
+  args: {
+    provider: { type: 'string', description: 'Provider key (e.g. openai, anthropic)', required: true },
+    agent: { type: 'string', description: 'agents.ai_lensers.id', required: true },
+    hint: { type: 'string', description: 'Optional display hint (last 4 chars)', default: '' },
+  },
+  async run({ args }) {
+    try {
+      consola.box(`Set up BYOK for provider "${args.provider}"`)
+      const key = await readStdin(`Paste your ${args.provider} API key (stdin): `)
+      if (!key) {
+        consola.error('No key entered. Aborting.')
+        process.exitCode = 1
+        return
+      }
+      const hint = args.hint || key.slice(-4)
+
+      await callRpc<void>(
+        'fn_byok_key_rotate',
+        {
+          p_agent_id: args.agent,
+          p_provider: args.provider,
+          p_new_encrypted: key,
+          p_new_hint: hint,
+        },
+        { requireAuth: true }
+      )
+      consola.success(`Stored ${args.provider} key for agent ${args.agent}.`)
+
+      // Confirm via list (re-uses fn_byok_key_hint).
+      const rows = await callRpc<
+        Array<{ provider: string; key_hint: string | null; is_valid: boolean }>
+      >('fn_byok_key_hint', { p_agent_id: args.agent }, { requireAuth: true })
+      const me = (rows ?? []).find((r) => r.provider === args.provider)
+      if (me) {
+        consola.info(`Confirmed: ${me.provider} ···· ${me.key_hint ?? '????'} (valid=${me.is_valid})`)
+      }
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 // ─── parent ─────────────────────────────────────────────────────────────────
 
 const byokCommand = defineCommand({
@@ -151,6 +202,7 @@ const byokCommand = defineCommand({
     list: byokList,
     rotate: byokRotate,
     revoke: byokRevoke,
+    setup: byokSetup,
   },
 })
 
