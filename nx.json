@@ -2,7 +2,9 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "targetDefaults": {
     "build": {
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "cache": true
     },
     "lint": {
@@ -16,8 +18,13 @@
     },
     "@nx/esbuild:esbuild": {
       "cache": true,
-      "dependsOn": ["^build"],
-      "inputs": ["default", "^default"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "default",
+        "^default"
+      ]
     }
   },
   "plugins": [
@@ -73,7 +80,9 @@
     }
   ],
   "release": {
-    "projects": ["adapters-connector"],
+    "projects": [
+      "adapters-connector"
+    ],
     "version": {
       "conventionalCommits": true
     },
