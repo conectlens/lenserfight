@@ -314,6 +314,7 @@ export class FileLenserRepository implements LenserRepositoryPort {
         handle: p.handle,
         display_name: p.display_name,
         avatar_url: p.avatar_url ?? null,
+        type: (p as { type?: 'human' | 'ai' }).type ?? 'human',
       }))
   }
 }
