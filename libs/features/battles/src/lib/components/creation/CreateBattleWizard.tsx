@@ -1,8 +1,8 @@
 import { Button, SegmentedControl, StepWizard } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Input, TextArea } from '@lenserfight/ui/forms'
-import { battlesService, workflowsService, lensesService, battleExecutionService } from '@lenserfight/data/repositories'
-import type { WorkflowRecord } from '@lenserfight/data/repositories'
+import { battlesService, battlesRepository, workflowsService, lensesService, battleExecutionService } from '@lenserfight/data/repositories'
+import type { BattleTemplateRecord, WorkflowRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
 import { useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
@@ -167,6 +167,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   const battleIdFromUrl = searchParams.get('battleId')
   const preselectedWorkflowId = searchParams.get('workflow_id')
+  const preselectedTemplateId = searchParams.get('template')
 
   const inviteA = useInviteContender(createdBattleId ?? '')
   const inviteB = useInviteContender(createdBattleId ?? '')
@@ -177,6 +178,28 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       goToStep(1)
     }
   }, []) // eslint-disable-line
+
+  // Phase AX — prefill from ?template=<id>: pull the template, hydrate fields
+  // (title, prompt, voter_eligibility, battle_type, max_contenders) and jump
+  // straight to step 1 so the user can keep customizing.
+  useEffect(() => {
+    if (!preselectedTemplateId || battleIdFromUrl) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const all = await battlesRepository.listPublicBattleTemplates(undefined, 100)
+        const tpl: BattleTemplateRecord | undefined = all.find((t) => t.id === preselectedTemplateId)
+        if (!tpl || cancelled) return
+        if (!title) setTitle(tpl.title)
+        if (!description) setDescription(tpl.task_prompt)
+        if (!battleFormat) setBattleFormat('lens')
+        goToStep(1)
+      } catch (e) {
+        console.error('Failed to prefill template', e)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [preselectedTemplateId]) // eslint-disable-line
 
   // ── Fetch existing battle for editing ─────────────────────────────────────
   const isEditMode = !!battleIdFromUrl && step < 5
