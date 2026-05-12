@@ -12,7 +12,7 @@
 CREATE TABLE IF NOT EXISTS agents.gateway_devices (
   device_id       UUID        PRIMARY KEY,
   owner_id        UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  hostname        TEXT,
+  hostname        TEXT        CHECK (hostname IS NULL OR char_length(hostname) <= 253),
   public_key      TEXT        NOT NULL
                     CHECK (char_length(public_key) BETWEEN 32 AND 256),
   daemon_version  TEXT
@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS agents.gateway_devices (
   approved_at     TIMESTAMPTZ,
   revoked_at      TIMESTAMPTZ,
   kill_switch     BOOLEAN     NOT NULL DEFAULT false,
+  key_rotated_at  TIMESTAMPTZ,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -76,8 +77,8 @@ BEGIN
   ON CONFLICT (device_id) DO UPDATE
     SET hostname       = COALESCE(EXCLUDED.hostname,       agents.gateway_devices.hostname),
         daemon_version = COALESCE(EXCLUDED.daemon_version, agents.gateway_devices.daemon_version),
-        public_key     = EXCLUDED.public_key,
         last_seen_at   = now()
+    -- public_key is NOT updated on heartbeat; use fn_gateway_rotate_key for explicit rotation.
     WHERE agents.gateway_devices.owner_id = v_uid
   RETURNING * INTO v_row;
 
@@ -92,7 +93,8 @@ BEGIN
   );
 END $$;
 
-GRANT EXECUTE ON FUNCTION agents.fn_gateway_heartbeat(UUID, TEXT, TEXT, TEXT) TO authenticated;
+-- agents schema is not in exposed_schemas; no direct grant needed for authenticated.
+-- The public wrapper below is the sole PostgREST entry point.
 
 -- Public wrapper so PostgREST exposes it on /rpc/fn_gateway_heartbeat.
 CREATE OR REPLACE FUNCTION public.fn_gateway_heartbeat(
