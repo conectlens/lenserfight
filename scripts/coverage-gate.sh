@@ -44,6 +44,11 @@ CRITICAL_RPCS=(
   fn_log_model_test_run
   fn_battles_render_prompt
   fn_browse_battles
+  fn_battles_create
+  fn_decide_moderation_override
+  fn_dispatch_webhook_outbox
+  fn_compute_elo_after_battle
+  fn_battles_next_recommendation
 )
 RPC_FAIL=0
 for rpc in "${CRITICAL_RPCS[@]}"; do
