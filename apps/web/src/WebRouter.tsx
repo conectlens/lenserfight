@@ -103,6 +103,12 @@ const LazyBenchmarkSuiteDetailPage = lazy(() =>
 const LazyBattleTemplatesPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.BattleTemplatesPage }))
 )
+const LazyBattleTemplateEditorPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattleTemplateEditorPage }))
+)
+const LazyBattleSeriesPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattleSeriesPage }))
+)
 const LazyBattlesFeedPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.BattlesFeedPage }))
 )
@@ -182,6 +188,9 @@ const LazyDeviceListPage = lazy(() =>
 )
 const LazyDeviceDetailPage = lazy(() =>
   import('@lenserfight/features/devices').then((module) => ({ default: module.DeviceDetailPage }))
+)
+const LazyGatewayDaemonsPage = lazy(() =>
+  import('@lenserfight/features/devices').then((module) => ({ default: module.GatewayDaemonsPage }))
 )
 const LazyJoinBattlePage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.JoinBattlePage }))
@@ -383,6 +392,30 @@ export const WebRouter: React.FC = () => {
               element={
                 <DashboardFrame>
                   <LazyBattleTemplatesPage />
+                </DashboardFrame>
+              }
+            />
+            <Route
+              path="/battles/templates/new"
+              element={
+                <DashboardFrame>
+                  <LazyBattleTemplateEditorPage />
+                </DashboardFrame>
+              }
+            />
+            <Route
+              path="/battles/templates/:id/edit"
+              element={
+                <DashboardFrame>
+                  <LazyBattleTemplateEditorPage />
+                </DashboardFrame>
+              }
+            />
+            <Route
+              path="/battles/series/:id"
+              element={
+                <DashboardFrame>
+                  <LazyBattleSeriesPage />
                 </DashboardFrame>
               }
             />
@@ -715,6 +748,15 @@ export const WebRouter: React.FC = () => {
           element={
             <DashboardFrame>
               <LazyDeviceDetailPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/settings/gateway"
+          element={
+            <DashboardFrame>
+              <LazyGatewayDaemonsPage />
             </DashboardFrame>
           }
         />
