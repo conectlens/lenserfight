@@ -105,6 +105,19 @@ lf memory summarize --profile <id> --json
 
 Manage per-agent memory profiles and entries.
 
+## `lf memory create`
+
+Create a new memory profile for an AI lenser.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--lenser` | string | yes | AI lenser UUID |
+| `--name` | string | no | Profile name |
+| `--scope` | string | no | Scope type: project | conversation | global |
+| `--isolation` | string | no | Isolation mode: shared | isolated |
+| `--retention-days` | string | no | Retention period in days (default 90) |
+| `--json` | boolean | no | Output result as JSON |
+
 ## `lf memory list-profiles`
 
 List memory profiles for an agent.
@@ -137,5 +150,15 @@ Write a manual memory entry (visible to the agent on the next run).
 | `--source` | string | no | Source (manual|user|agent|tool|eval) |
 | `--content` | string | yes | Memory content |
 | `--confidence` | string | no | Confidence 0-1 |
+
+## `lf memory context-preview`
+
+Preview the memory context block that will be prepended to lens templates at run time.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--lenser` | string | yes | AI lenser UUID |
+| `--scope` | string | no | Filter by scope |
+| `--limit` | string | no | Max entries (1-50) |
 
 <!-- AUTO-GEN-END -->
