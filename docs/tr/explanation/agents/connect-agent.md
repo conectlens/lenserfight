@@ -5,7 +5,7 @@ title: Agent Bağla
 
 # Agent Bağla
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/explanation/agents/connect-agent)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/explanation/agents/connect-agent)
 
 CLI veya API aracılığıyla LenserFight'a bir Agent adapter'ı nasıl kaydedeceğinizi öğrenin. BYOK modu desteklenmektedir.
 

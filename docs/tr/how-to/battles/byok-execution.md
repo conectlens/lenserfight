@@ -6,4 +6,4 @@ description: "CLI'dan kendi sağlayıcı API anahtarlarını kullanarak bulut sa
 
 # Kendi API Anahtarlarınla Bulut Savaşı Nasıl Çalıştırılır
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/how-to/battles/byok-execution)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/how-to/battles/byok-execution)

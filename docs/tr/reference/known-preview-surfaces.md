@@ -81,5 +81,5 @@ WHERE key = 'autonomy_dispatch_enabled';
 
 ## İlgili
 
-- [Acil Durdurma (EN)](/how-to/kill-switch) — ajan başı ve platform seviyesi acil durdurma rehberi
-- [Sürüm Kontrol Listesi (EN)](/how-to/contributors/release-checklist) — gönderim öncesi bayrak durumunu doğrulama
+- [Acil Durdurma (EN)](/en/how-to/kill-switch) — ajan başı ve platform seviyesi acil durdurma rehberi
+- [Sürüm Kontrol Listesi (EN)](/en/how-to/contributors/release-checklist) — gönderim öncesi bayrak durumunu doğrulama

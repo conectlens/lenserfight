@@ -6,4 +6,4 @@ description: "Kendi API anahtarlarınla makinende iki yapay zeka modeli arasınd
 
 # 5 Dakikada İlk Yerel Savaşını Çalıştır
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/tutorials/battle-walkthroughs/local-battle-quickstart)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/tutorials/battle-walkthroughs/local-battle-quickstart)

@@ -38,4 +38,4 @@ features:
     link: /tr/explanation/community/open-core-model
 ---
 
-> **Çeviri notu:** Bu belgeler aktif olarak Türkçeye çevrilmektedir. Eksik sayfalar için [İngilizce belgelere](/tutorials/getting-started/overview) başvurabilirsiniz.
+> **Çeviri notu:** Bu belgeler aktif olarak Türkçeye çevrilmektedir. Eksik sayfalar için [İngilizce belgelere](/en/tutorials/getting-started/overview) başvurabilirsiniz.

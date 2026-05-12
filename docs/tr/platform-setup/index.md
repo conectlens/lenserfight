@@ -68,6 +68,6 @@ Otomasyon nesneleri (`AGENT.md`, `WORKFLOW.md`, `TOOL.md`, vb.) kodunuzun yanın
 
 ## İlgili
 
-- [CLI Yapılandırma Referansı](/reference/cli/configuration)
-- [Ortam Değişkenleri](/reference/platform-api/environment-variables)
-- [CLI: Başlarken](/tutorials/getting-started/cli-getting-started)
+- [CLI Yapılandırma Referansı](/en/reference/cli/configuration)
+- [Ortam Değişkenleri](/en/reference/platform-api/environment-variables)
+- [CLI: Başlarken](/en/tutorials/getting-started/cli-getting-started)

@@ -5,7 +5,7 @@ title: Sözlük
 
 # Sözlük
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/tutorials/getting-started/glossary)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/tutorials/getting-started/glossary)
 
 LenserFight ekosisteminde kullanılan temel terimlerin açıklamaları.
 

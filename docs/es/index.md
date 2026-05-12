@@ -20,4 +20,4 @@ hero:
       link: https://github.com/conectlens/lenserfight
 ---
 
-> **Nota de traducción:** Esta documentación está siendo traducida al español. Para páginas no traducidas, consulta la [documentación en inglés](/tutorials/getting-started/overview). ¿Hablas español nativo? [¡Contribuye con tu traducción!](/how-to/contributors/i18n-guide)
+> **Nota de traducción:** Esta documentación está siendo traducida al español. Para páginas no traducidas, consulta la [documentación en inglés](/en/tutorials/getting-started/overview). ¿Hablas español nativo? [¡Contribuye con tu traducción!](/en/how-to/contributors/i18n-guide)
