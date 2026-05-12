@@ -45,6 +45,7 @@ export function buildHumanSidebarSections(
         ...(FEATURES.PUBLIC_BATTLES
           ? [
             { id: 'arena', label: 'Arena', path: '/battles', icon: <Swords size={20} /> },
+            { id: 'battle-templates', label: 'Templates', path: '/battles/templates', icon: <LayoutTemplate size={20} /> },
             { id: 'lenserboard', label: 'LenserBoard', path: '/lenserboard', icon: <Trophy size={20} /> },
           ]
           : []),
