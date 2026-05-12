@@ -8,6 +8,7 @@ import { useAIModels } from '@lenserfight/features/generations'
 import { useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { useLenser } from '@lenserfight/features/profile'
 import { useWizardStep } from '@lenserfight/ui/routing'
+import { normalizeError } from '@lenserfight/shared/error'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GitBranch, Layers, Swords } from 'lucide-react'
@@ -394,7 +395,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         await battlesService.scheduleBattle(scheduleInput)
       }
     } catch (e) {
-      setError((e as Error).message ?? 'Something went wrong. Please try again.')
+      setError(normalizeError(e).message)
     } finally {
       setSubmitting(false)
     }
