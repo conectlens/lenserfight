@@ -90,6 +90,20 @@ Use this channel when an automated control fails to contain a real-world inciden
 - **GitHub Issue (sensitive):** open a private security advisory if the report contains user data or credentials.
 - **GitHub Issue (general):** label the issue `limited-beta` and `incident` so it surfaces in the maintainer triage queue.
 
+## Integrity gate verification (Phase BV — 2026-05-12)
+
+The five gates required by [OSS Launch Scope](/explanation/community/oss-launch-scope#limited-beta-gates) are verified by automated tests at the SHA listed in [Announcement Readiness](/explanation/community/announcement-readiness).
+
+| Gate | Test reference | Status |
+|------|----------------|--------|
+| **K4** — `/health` probe returns `ok` | `pnpm announcement:dashboard --once` row `GET /health` | ✅ verified |
+| **J1** — `fn_battles_create` enforces per-lenser daily cap | `supabase/tests/59_battles_create_rate_limit.sql` plan(3) | ✅ verified |
+| **J2** — Battle creator can override moderation | `supabase/tests/60_moderation_admin_override.sql` plan(2) | ✅ verified |
+| **O1** — `audit.webhook_outbox` dispatcher exists and drains | `supabase/tests/61_webhook_outbox_drain.sql` plan(3); end-to-end smoke step 14 in `scripts/smoke.sh` | ✅ verified |
+| **O3** — Every leaderboard mutation writes to ELO change log | `supabase/tests/62_elo_change_log.sql` plan(2); table `reputation.elo_battle_log` | ✅ verified |
+
+All four pgTAP files are added to `scripts/coverage-gate.sh` critical-RPC checks. The gate fails the PR if any of these tests are removed or any of `fn_battles_create`, `fn_decide_moderation_override`, `fn_dispatch_webhook_outbox`, or `fn_compute_elo_after_battle` lose all test references.
+
 ## Related
 
 - [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) — required checks before enabling cloud battles.
