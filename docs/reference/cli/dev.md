@@ -129,5 +129,6 @@ Start local Supabase stack, run migrations, and seed the database.
 | Flag | Type | Required | Description |
 |---|---|---|---|
 | `--reset` | boolean | no | Run db reset instead of start (drops and recreates) |
+| `--echo` | boolean | no | Set USE_ECHO_PROVIDER=true — no real API calls (local testing) |
 
 <!-- AUTO-GEN-END -->
