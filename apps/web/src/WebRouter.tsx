@@ -100,6 +100,9 @@ const LazyBenchmarkSuiteDetailPage = lazy(() =>
     default: module.BenchmarkSuiteDetailPage,
   }))
 )
+const LazyBattleTemplatesPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattleTemplatesPage }))
+)
 const LazyBattlesFeedPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.BattlesFeedPage }))
 )
@@ -375,6 +378,14 @@ export const WebRouter: React.FC = () => {
               }
             />
             <Route path="/battles/lenserboard" element={<LazyBattleLenserboardPage />} />
+            <Route
+              path="/battles/templates"
+              element={
+                <DashboardFrame>
+                  <LazyBattleTemplatesPage />
+                </DashboardFrame>
+              }
+            />
             <Route
               path="/battles/create"
               element={
