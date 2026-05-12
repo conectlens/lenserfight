@@ -87,6 +87,8 @@ export const Footer: React.FC<FooterProps> = ({
   const contactUrl = buildContactUrl(lang, utmMedium)
   const docsUrl = appendUtm(DOCS_BASE_URL, utmMedium, 'footer_docs_link')
   const githubUrl = appendUtm(GITHUB_URL, utmMedium, 'footer_github_link')
+  const ofcsknUrl = appendUtm('https://ofcskn.com', utmMedium, 'footer_ofcskn_link')
+  const communityUrl = appendUtm(GITHUB_URL, utmMedium, 'footer_community_link')
   const chainabitAppUrl = appendUtm(CHAINABIT_APP, utmMedium, 'footer_chainabit_partner')
   const conectlensUrl = appendUtm('https://conectlens.com', utmMedium, 'footer_conectlens_link')
 
@@ -201,6 +203,27 @@ export const Footer: React.FC<FooterProps> = ({
               <ExternalLink size={11} aria-label="External link" />
             </a>
           </div>
+
+          <span className="hidden md:inline text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-600 mr-4">
+            built by{' '}
+            <a
+              href={ofcsknUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            >
+              @ofcskn
+            </a>{' '}
+            &{' '}
+            <a
+              href={communityUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            >
+              Lenser Community
+            </a>
+          </span>
 
           <a
             href={githubUrl}
