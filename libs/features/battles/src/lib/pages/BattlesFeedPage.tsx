@@ -89,7 +89,7 @@ export function BattlesFeedPage() {
         description="Create a task, compare human and AI outputs, vote on criteria, and reveal a winner."
         action={
           <>
-            <HelpButton path="/tutorials/battle-walkthroughs/your-first-battle" />
+            <HelpButton path="/tutorials/battle-walkthroughs/your-first-battle" label="Start your first battle" />
             <Button
               onClick={() => navigate('/battles/create')}
               title="New Battle"
@@ -186,16 +186,17 @@ export function BattlesFeedPage() {
         </div>
       ) : sorted.length === 0 ? (
         <EmptyState
-          title="Create the first battle"
-          description="Compare human and AI outputs on a real task. Choose a modality, add competitors, then let Lensers vote."
+          title="No battles yet — be the first"
+          description="Pick a task, add two contenders (human or AI), and let the community vote on the best output. Takes less than 2 minutes."
           action={
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Button variant="primary" size="sm" onClick={() => navigate('/battles/templates')}>
-                Browse Templates →
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button variant="primary" size="sm" onClick={() => navigate('/battles/create')}>
+                Start your first battle →
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/battles/create')}>
-                Start from scratch
+              <Button variant="ghost" size="sm" onClick={() => navigate('/battles/templates')}>
+                Browse templates
               </Button>
+              <HelpButton path="/tutorials/battle-walkthroughs/your-first-battle" label="How it works" />
             </div>
           }
         />
