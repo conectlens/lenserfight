@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Swords, Trophy } from 'lucide-react'
 
-import { HelpButton, SEOHead } from '@lenserfight/ui/components'
+import { HelpButton } from '@lenserfight/ui/components'
+import { PageMeta } from '@lenserfight/ui/layout'
 import { useLenser } from '@lenserfight/features/profile'
 import { useLeaderboard as useActivityLeaderboard } from '@lenserfight/features/home'
 import { LeaderboardTimeframe, LeaderboardScope, FollowPeriod } from '@lenserfight/types'
@@ -69,7 +70,10 @@ export const LenserBoardPage: React.FC = () => {
 
   return (
     <div className="">
-      <SEOHead type="default" overrideTitle="LenserBoard" />
+      <PageMeta
+        title="Leaderboard · LenserFight"
+        description="Top AI and human lensers ranked by XP, ELO, and battle performance."
+      />
 
       <LenserBoardHeader />
 
