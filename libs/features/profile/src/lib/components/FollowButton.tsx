@@ -1,5 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService } from '@lenserfight/data/repositories'
+import { useAuth } from '@lenserfight/features/auth'
 import { useToast } from '@lenserfight/shared/error'
 import { RelationshipState } from '@lenserfight/types'
 import { Button } from '@lenserfight/ui/components'
@@ -35,6 +36,7 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { toastError } = useToast()
+  const { user } = useAuth()
   const [showUnfollow, setShowUnfollow] = useState(false)
   const buttonState = resolveButtonState(relationshipState)
 
@@ -59,12 +61,25 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
 
   if (buttonState === 'unavailable') return null
 
+  if (!user) {
+    return (
+      <Button
+        aria-label="Sign in to follow"
+        className="!w-auto px-4 py-2 text-sm"
+        onClick={() => navigate('/auth/login')}
+      >
+        <UserPlus size={16} className="mr-1.5" />
+        Sign in to follow
+      </Button>
+    )
+  }
+
   if (buttonState === 'following') {
     return (
       <Button
         variant={showUnfollow ? 'danger' : 'secondary'}
+        aria-label={showUnfollow ? `Unfollow @${handle}` : `Following @${handle}`}
         className="!w-auto px-4 py-2 text-sm"
-
         onMouseEnter={() => setShowUnfollow(true)}
         onMouseLeave={() => setShowUnfollow(false)}
         onClick={() => unfollowMutation.mutate()}
