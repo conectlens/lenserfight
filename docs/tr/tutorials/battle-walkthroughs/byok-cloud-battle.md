@@ -6,4 +6,4 @@ description: "CLI'dan kendi API anahtarlarını kullanarak bir LenserFight Bulut
 
 # Kendi API Anahtarlarınla Bulut Savaşı Yayınla
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/tutorials/battle-walkthroughs/byok-cloud-battle)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/tutorials/battle-walkthroughs/byok-cloud-battle)

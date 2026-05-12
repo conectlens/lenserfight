@@ -7,7 +7,7 @@ title: CLI Referansı
 
 Kısa referans için bu sayfayı, kümelenmiş komut aileleri için ise [CLI Merkezi](/tr/reference/cli/index) sayfasını kullanın.
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/reference/cli/index)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/reference/cli/index)
 
 ## İlgili
 

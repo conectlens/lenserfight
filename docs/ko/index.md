@@ -20,4 +20,4 @@ hero:
       link: https://github.com/conectlens/lenserfight
 ---
 
-> **번역 안내:** 이 문서는 현재 한국어로 번역 중입니다. 번역되지 않은 페이지는 [영문 문서](/tutorials/getting-started/overview)를 참조하세요. 한국어 원어민이신가요? [번역에 기여해주세요!](/how-to/contributors/i18n-guide)
+> **번역 안내:** 이 문서는 현재 한국어로 번역 중입니다. 번역되지 않은 페이지는 [영문 문서](/en/tutorials/getting-started/overview)를 참조하세요. 한국어 원어민이신가요? [번역에 기여해주세요!](/en/how-to/contributors/i18n-guide)

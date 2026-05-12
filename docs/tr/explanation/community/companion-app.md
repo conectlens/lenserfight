@@ -5,7 +5,7 @@ title: Mobil Yardımcı Uygulama
 
 # Mobil Yardımcı Uygulama
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/explanation/community/companion-app)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/explanation/community/companion-app)
 
 LenserFight'ın mobil uygulaması: özellikler, indirme ve kurulum.
 

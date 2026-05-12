@@ -5,7 +5,7 @@ title: Açık Çekirdek Modeli
 
 # Açık Çekirdek Modeli
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/explanation/community/open-core-model)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/explanation/community/open-core-model)
 
 LenserFight'ın açık çekirdek lisanslama modeli: hangi katmanlar açık kaynak, hangiler özel.
 
