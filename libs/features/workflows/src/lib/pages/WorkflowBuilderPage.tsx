@@ -1,9 +1,10 @@
-import { lensesService, workflowsService } from '@lenserfight/data/repositories'
+import { lensesService, workflowsService, seoService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { useLenser } from '@lenserfight/features/profile'
 import { Avatar, Badge, Button } from '@lenserfight/ui/components'
+import { PageMeta } from '@lenserfight/ui/layout'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Bookmark, CalendarClock, ChevronDown, GitBranch, GitFork, History, Layers, Lock, Pencil, Play, Square, Swords, ThumbsUp, X } from 'lucide-react'
@@ -331,8 +332,15 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     )
   }
 
+  const wfMeta = seoService.getWorkflowMeta(workflow)
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-surface-base">
+      <PageMeta
+        title={wfMeta.title}
+        description={wfMeta.description}
+        robots={wfMeta.index === false ? 'noindex,nofollow' : 'index,follow'}
+      />
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <header className="flex flex-shrink-0 items-center gap-3 border-b border-surface-border bg-surface-base px-4 h-[52px]">
 
