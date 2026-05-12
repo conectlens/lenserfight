@@ -106,5 +106,11 @@ export type {
   XPSource,
   XPSummary,
   XPSeason,
+  XPSeasonV2,
+  XPSeasonStatus,
   SeasonLeaderboardEntry,
+  XPStreak,
+  XPLevelUp,
+  FeaturedChallenge,
 } from './lib/xp.types'
+export { XP_RULE_LABELS } from './lib/xp.types'
