@@ -151,21 +151,46 @@ lf top 2>/dev/null
 
 # `lf top`
 
-Real-time runtime telemetry dashboard — CPU, memory, GPU, service health, and battle load.
+Real-time runtime telemetry — CPU, memory, GPU, services, battles. Keys: [e]xpand [g]raph [b]attle [i]nfra [r]efresh [q]uit
+
+## `lf top monitor`
+
+Expanded runtime telemetry — all panels, per-core CPUs, graphs.
 
 | Flag | Type | Required | Description |
 |---|---|---|---|
-| `--mode` | string | no | Initial view mode: compact (default), expanded, battle, infrastructure, graph, stream |
-| `--interval` | string | no | Refresh interval in milliseconds (default: 1000, min: 250) |
+| `--interval` | string | no | Refresh interval in ms |
 
-## Subcommands
+## `lf top battle`
 
-| Subcommand | Description |
-|---|---|
-| `lf top monitor` | Expanded mode — all panels, per-core CPU, rolling graphs |
-| `lf top battle` | Battle operations center — load, agents, resource pressure |
-| `lf top graph` | Rolling 60-second CPU/memory sparkline graphs |
-| `lf top infra` | Infrastructure services panel — connectivity and host info |
-| `lf top stream` | Pipe-friendly scrolling telemetry stream |
+Battle operations center — battle load, agents, resource pressure.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--interval` | string | no | Refresh interval in ms |
+
+## `lf top graph`
+
+Rolling sparkline graphs for CPU and memory (60s window).
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--interval` | string | no | Refresh interval in ms |
+
+## `lf top infra`
+
+Infrastructure view — service connectivity, host info.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--interval` | string | no | Refresh interval in ms |
+
+## `lf top stream`
+
+Scrolling telemetry stream — pipe-friendly, no alt screen.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--interval` | string | no | Refresh interval in ms |
 
 <!-- AUTO-GEN-END -->
