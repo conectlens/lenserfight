@@ -10,6 +10,7 @@ import {
   KeyRound,
   LayoutTemplate,
   Library,
+  Server,
   ShoppingBag,
   Sparkles,
   Swords,
@@ -71,6 +72,7 @@ export function buildHumanSidebarSections(
       label: 'Developer',
       items: [
         { id: 'api-keys', label: 'API Keys', path: '/settings/api-keys', icon: <KeyRound size={20} /> },
+        { id: 'gateway-daemons', label: 'Gateway', path: '/settings/gateway', icon: <Server size={20} /> },
         ...(SURFACE.showBillingAndStore
           ? [{ id: 'billing', label: 'Plans', path: '/billing', icon: <ShoppingBag size={20} /> }]
           : []),
