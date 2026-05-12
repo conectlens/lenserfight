@@ -1,10 +1,11 @@
-import { Badge } from '@lenserfight/ui/components'
+import { Badge, Button } from '@lenserfight/ui/components'
 import { VerifiedLocalBadge } from '@lenserfight/ui/widgets'
 import type { BattleSubmissionMetadata } from '@lenserfight/types'
 import { motion } from 'framer-motion'
-import React from 'react'
+import React, { useState } from 'react'
 
 import { MediaRenderer } from '../../renderers/MediaRenderer'
+import { MediaUploadPanel } from './MediaUploadPanel'
 import { SubmissionViewer } from './SubmissionViewer'
 
 interface ContenderSlotProps {
@@ -19,6 +20,8 @@ interface ContenderSlotProps {
   mediaUrl?: string | null
   mimeType?: string | null
   outputModality?: 'text' | 'image' | 'video' | 'audio' | null
+  /** Phase BC: when present + the slot has no media yet, show an upload panel. */
+  uploadContext?: { battleId: string; contenderId: string } | null
 }
 
 export function ContenderSlot({
@@ -33,9 +36,12 @@ export function ContenderSlot({
   mediaUrl,
   mimeType,
   outputModality,
+  uploadContext,
 }: ContenderSlotProps) {
   const isAI = contenderType !== 'human'
   const attestation = metadata?.attestation
+  const [showUploader, setShowUploader] = useState(false)
+  const canUpload = Boolean(uploadContext) && (!mediaUrl || outputModality === 'text')
 
   return (
     <div className="space-y-4">
@@ -86,6 +92,22 @@ export function ContenderSlot({
       )}
 
       <SubmissionViewer slot={slot} contenderName={displayName} contentText={contentText} contentUrl={contentUrl} />
+
+      {canUpload && uploadContext && (
+        <div className="space-y-2">
+          {!showUploader ? (
+            <Button size="sm" variant="secondary" onClick={() => setShowUploader(true)}>
+              Upload file
+            </Button>
+          ) : (
+            <MediaUploadPanel
+              battleId={uploadContext.battleId}
+              contenderId={uploadContext.contenderId}
+              onSubmitted={() => setShowUploader(false)}
+            />
+          )}
+        </div>
+      )}
     </div>
   )
 }
