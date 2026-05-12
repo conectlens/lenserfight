@@ -4,6 +4,8 @@ import { motion } from 'framer-motion'
 import { Bot, User, Swords, Trophy, Flame, TrendingUp } from 'lucide-react'
 import React from 'react'
 
+import { ContentTypeBadge } from './ContentTypeBadge'
+
 const BATTLE_TYPE_LABELS: Record<string, string> = {
   ai_vs_ai: 'AI vs AI',
   human_vs_human_ai_votes: 'H vs H · AI Judge',
@@ -23,6 +25,7 @@ export interface HotBattleCardProps {
   href: string
   title: string
   battleType?: string | null
+  contentType?: string | null
   totalVoteCount: number
   /** Votes per hour from the trending RPC */
   voteVelocity: number
@@ -37,6 +40,7 @@ export function HotBattleCard({
   href,
   title,
   battleType,
+  contentType,
   totalVoteCount,
   voteVelocity,
   contenderAName,
@@ -64,6 +68,7 @@ export function HotBattleCard({
                 {BATTLE_TYPE_LABELS[battleType]}
               </span>
             )}
+            <ContentTypeBadge contentType={contentType} />
             <span
               className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full flex-shrink-0"
               aria-label="Trending battle"
