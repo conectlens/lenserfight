@@ -12,6 +12,44 @@ export interface BattleTemplateRecord {
   created_at: string
   updated_at: string
   category?: string | null
+  creator_lenser_id?: string | null
+}
+
+export interface CreateTemplateInput {
+  title: string
+  description?: string | null
+  taskPrompt: string
+  category?: string | null
+  maxContenders?: number
+  isPublic?: boolean
+}
+
+// ─── Phase BH: Battle series ───────────────────────────────────────────────
+export interface BattleSeriesRecord {
+  id: string
+  title: string
+  template_id: string
+  creator_lenser_id: string
+  round_count: number
+  current_round: number
+  status: 'active' | 'complete'
+  created_at: string
+  updated_at: string
+}
+
+export interface SeriesRoundRecord {
+  series_id: string
+  title: string
+  template_id: string
+  creator_lenser_id: string
+  round_count: number
+  current_round: number
+  status: 'active' | 'complete'
+  round_number: number
+  battle_id: string
+  battle_slug: string | null
+  battle_status: string | null
+  winner_contender_id: string | null
 }
 
 export type BattleStatus =
@@ -335,6 +373,27 @@ export interface BattlesRepositoryPort {
   listPublicBattleTemplates(category?: string, limit?: number): Promise<BattleTemplateRecord[]>
   toggleBattleTemplatePublic(id: string, isPublic: boolean): Promise<void>
   createBattleFromTemplate(templateId: string, title: string, slug: string): Promise<string>
+  createTemplate(input: CreateTemplateInput): Promise<BattleTemplateRecord>
+  updateTemplate(id: string, input: Partial<CreateTemplateInput>): Promise<BattleTemplateRecord>
+  deleteTemplate(id: string): Promise<void>
+  getTemplateById(id: string): Promise<BattleTemplateRecord>
+  submitMediaEntry(
+    battleId: string,
+    contenderId: string,
+    mediaUrl: string,
+    mimeType: string,
+    outputModality: SubmissionOutputModality
+  ): Promise<SubmissionRecord>
+  uploadSubmissionMedia(
+    battleId: string,
+    contenderId: string,
+    file: File,
+    onProgress?: (pct: number) => void
+  ): Promise<{ publicUrl: string; mimeType: string; outputModality: SubmissionOutputModality }>
+  // Phase BH: battle series
+  createSeries(templateId: string, title: string, roundCount?: number): Promise<BattleSeriesRecord>
+  advanceSeries(seriesId: string): Promise<BattleSeriesRecord>
+  getSeries(seriesId: string): Promise<SeriesRoundRecord[]>
 }
 
 // --- Supabase Implementation ---
@@ -760,6 +819,131 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     })
     if (error) this.handleError(error)
     return data as string
+  }
+
+  async createTemplate(input: CreateTemplateInput): Promise<BattleTemplateRecord> {
+    const { data, error } = await supabase.rpc('fn_battles_create_template', {
+      p_title: input.title,
+      p_description: input.description ?? null,
+      p_task_prompt: input.taskPrompt,
+      p_category: input.category ?? null,
+      p_max_contenders: input.maxContenders ?? 2,
+      p_is_public: input.isPublic ?? false,
+    })
+    if (error) this.handleError(error)
+    return data as BattleTemplateRecord
+  }
+
+  async updateTemplate(id: string, input: Partial<CreateTemplateInput>): Promise<BattleTemplateRecord> {
+    const { data, error } = await supabase.rpc('fn_battles_update_template', {
+      p_template_id: id,
+      p_title: input.title ?? null,
+      p_description: input.description ?? null,
+      p_task_prompt: input.taskPrompt ?? null,
+      p_category: input.category ?? null,
+      p_max_contenders: input.maxContenders ?? null,
+      p_is_public: input.isPublic ?? null,
+    })
+    if (error) this.handleError(error)
+    return data as BattleTemplateRecord
+  }
+
+  async deleteTemplate(id: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_battles_delete_template', {
+      p_template_id: id,
+    })
+    if (error) this.handleError(error)
+  }
+
+  async getTemplateById(id: string): Promise<BattleTemplateRecord> {
+    const { data, error } = await supabase.rpc('fn_battles_get_template', {
+      p_template_id: id,
+    })
+    if (error) this.handleError(error)
+    return data as BattleTemplateRecord
+  }
+
+  async submitMediaEntry(
+    battleId: string,
+    contenderId: string,
+    mediaUrl: string,
+    mimeType: string,
+    outputModality: SubmissionOutputModality
+  ): Promise<SubmissionRecord> {
+    const { data, error } = await supabase.rpc('fn_battles_submit_media', {
+      p_battle_id: battleId,
+      p_contender_id: contenderId,
+      p_media_url: mediaUrl,
+      p_mime_type: mimeType,
+      p_output_modality: outputModality,
+    })
+    if (error) this.handleError(error)
+    return data as SubmissionRecord
+  }
+
+  async uploadSubmissionMedia(
+    battleId: string,
+    contenderId: string,
+    file: File,
+    onProgress?: (pct: number) => void
+  ): Promise<{ publicUrl: string; mimeType: string; outputModality: SubmissionOutputModality }> {
+    const path = `${battleId}/${contenderId}/${Date.now()}-${file.name.replace(/[^\w.\-]+/g, '_')}`
+    onProgress?.(0)
+    const { error: uploadError } = await supabase.storage
+      .from('battles-media')
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type,
+      })
+    if (uploadError) throw uploadError
+    onProgress?.(80)
+
+    const { data: signed, error: signError } = await supabase.storage
+      .from('battles-media')
+      .createSignedUrl(path, 60 * 60 * 24)
+    if (signError) throw signError
+
+    const mt = file.type || 'application/octet-stream'
+    const modality: SubmissionOutputModality = mt.startsWith('image/')
+      ? 'image'
+      : mt.startsWith('video/')
+        ? 'video'
+        : mt.startsWith('audio/')
+          ? 'audio'
+          : 'text'
+    if (modality === 'text') {
+      throw new Error(`unsupported_mime: ${mt}`)
+    }
+    onProgress?.(100)
+    return { publicUrl: signed.signedUrl, mimeType: mt, outputModality: modality }
+  }
+
+  // Phase BH — battle series
+  async createSeries(templateId: string, title: string, roundCount = 3): Promise<BattleSeriesRecord> {
+    const { data, error } = await supabase.rpc('fn_create_battle_series', {
+      p_template_id: templateId,
+      p_title: title,
+      p_round_count: roundCount,
+    })
+    if (error) this.handleError(error)
+    return data as BattleSeriesRecord
+  }
+
+  async advanceSeries(seriesId: string): Promise<BattleSeriesRecord> {
+    const { data, error } = await supabase.rpc('fn_advance_series', {
+      p_series_id: seriesId,
+    })
+    if (error) this.handleError(error)
+    return data as BattleSeriesRecord
+  }
+
+  async getSeries(seriesId: string): Promise<SeriesRoundRecord[]> {
+    const { data, error } = await supabase.rpc('fn_get_series', {
+      p_series_id: seriesId,
+    })
+    if (error) this.handleError(error)
+    return (data ?? []) as SeriesRoundRecord[]
   }
 }
 
