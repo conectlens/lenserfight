@@ -92,5 +92,25 @@
     "select": "Language",
     "en": "English",
     "tr": "Türkçe"
+  },
+  "battles": {
+    "contentTypes": {
+      "text":       "Text",
+      "code":       "Code",
+      "poem":       "Poem",
+      "drawing":    "Drawing",
+      "image":      "Image",
+      "video":      "Video",
+      "audio":      "Audio",
+      "workflow":   "Workflow",
+      "map":        "Map",
+      "avatar":     "Avatar",
+      "image_edit": "Image Edit",
+      "kaggle":     "Kaggle"
+    },
+    "filter": {
+      "allMedia":    "All media",
+      "contentType": "Content type"
+    }
   }
 }
