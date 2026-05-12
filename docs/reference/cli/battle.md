@@ -857,8 +857,11 @@ Execute both contenders locally using BYOK keys.
 | Flag | Type | Required | Description |
 |---|---|---|---|
 | `--id` | string | no | Local battle ID (omit to use most recent) |
+| `--example` | string | no | Load a bundled example spec by name (e.g. haiku-shootout) and run it immediately |
 | `--yes` | boolean | no | Skip cost confirmation prompt |
 | `--json` | boolean | no | Output result as JSON |
+| `--judge` | string | no | Verdict mode: ai (default) — auto-judge after execution | human — skip AI judge, vote manually |
+| `--no-judge` | boolean | no | Skip AI auto-judge and prompt for manual vote (alias for --judge human) |
 
 ## `lf battle vote`
 
