@@ -11,6 +11,8 @@ export interface SidebarNavItemConfig {
   exact?: boolean
   externalHref?: string
   locked?: boolean
+  isComingSoon?: boolean
+  wip?: boolean
 }
 
 export interface SidebarNavSectionConfig {
