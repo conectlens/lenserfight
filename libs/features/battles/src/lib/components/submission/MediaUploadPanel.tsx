@@ -5,6 +5,10 @@ import { toast } from 'sonner'
 import { battlesRepository } from '@lenserfight/data/repositories'
 import type { SubmissionOutputModality, SubmissionRecord } from '@lenserfight/data/repositories'
 import { Button } from '@lenserfight/ui/components'
+import {
+  checkMediaQuality,
+  type MediaQualityRule,
+} from '@lenserfight/utils/text'
 
 // Phase BC — drag-drop or file-picker entry point for image/video/audio
 // contender submissions. Hands the file to battlesRepository.uploadSubmissionMedia,
@@ -15,6 +19,12 @@ export interface MediaUploadPanelProps {
   contenderId: string
   onSubmitted?: (submission: SubmissionRecord) => void
   className?: string
+  /**
+   * Optional per-modality client-side quality rule. When provided, the panel
+   * runs {@link checkMediaQuality} before allowing submit and surfaces the
+   * violations inline. Mirrors fn_check_media_quality (Phase BK).
+   */
+  qualityRule?: MediaQualityRule
 }
 
 interface SelectedFile {
@@ -32,14 +42,15 @@ function inferModality(mime: string): SubmissionOutputModality {
 
 const MAX_BYTES = 50 * 1024 * 1024
 
-export function MediaUploadPanel({ battleId, contenderId, onSubmitted, className }: MediaUploadPanelProps) {
+export function MediaUploadPanel({ battleId, contenderId, onSubmitted, className, qualityRule }: MediaUploadPanelProps) {
   const [selected, setSelected] = useState<SelectedFile | null>(null)
   const [progress, setProgress] = useState(0)
   const [busy, setBusy] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+  const [violations, setViolations] = useState<string[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleSelect = useCallback((file: File) => {
+  const handleSelect = useCallback(async (file: File) => {
     if (file.size > MAX_BYTES) {
       toast.error('File exceeds 50MB limit.')
       return
@@ -52,7 +63,18 @@ export function MediaUploadPanel({ battleId, contenderId, onSubmitted, className
     if (selected?.previewUrl) URL.revokeObjectURL(selected.previewUrl)
     setSelected({ file, previewUrl: URL.createObjectURL(file), modality })
     setProgress(0)
-  }, [selected])
+
+    if (qualityRule && qualityRule.modality === modality) {
+      try {
+        const result = await checkMediaQuality(file, qualityRule)
+        setViolations(result.violations)
+      } catch {
+        setViolations([])
+      }
+    } else {
+      setViolations([])
+    }
+  }, [selected, qualityRule])
 
   const handleDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
@@ -73,6 +95,10 @@ export function MediaUploadPanel({ battleId, contenderId, onSubmitted, className
 
   const handleSubmit = useCallback(async () => {
     if (!selected || busy) return
+    if (violations.length > 0) {
+      toast.error('Media does not meet template quality rules — see violations.')
+      return
+    }
     setBusy(true)
     try {
       const { publicUrl, mimeType, outputModality } = await battlesRepository.uploadSubmissionMedia(
@@ -184,11 +210,22 @@ export function MediaUploadPanel({ battleId, contenderId, onSubmitted, className
             </div>
           )}
 
+          {violations.length > 0 && (
+            <ul
+              role="alert"
+              className="rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 text-xs text-red-300 space-y-0.5"
+            >
+              {violations.map((v) => (
+                <li key={v}>• {v}</li>
+              ))}
+            </ul>
+          )}
+
           <div className="flex items-center justify-end gap-2">
             <Button size="sm" variant="secondary" onClick={handleClear} disabled={busy}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleSubmit} disabled={busy}>
+            <Button size="sm" onClick={handleSubmit} disabled={busy || violations.length > 0}>
               {busy ? 'Submitting…' : 'Submit'}
             </Button>
           </div>
