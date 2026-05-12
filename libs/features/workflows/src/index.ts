@@ -38,6 +38,10 @@ export * from './lib/components/WorkflowTaskCard'
 export * from './lib/components/MediaOutputCard'
 export * from './lib/components/MultimodalRunResult'
 
+// CD: Workflow automation v2 components
+export * from './lib/components/WorkflowTriggerEditor'
+export * from './lib/components/WorkflowRunChain'
+
 // Pages
 export * from './lib/pages/WorkflowsPage'
 export * from './lib/pages/WorkflowBuilderPage'
