@@ -105,16 +105,6 @@ export const Footer: React.FC<FooterProps> = ({
             <span className="font-bold text-gray-900 dark:text-gray-100 tracking-tight text-sm">
               © {currentYear} LenserFight
             </span>
-
-            <a
-              href={githubUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub"
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-colors hover:border-gray-400 hover:text-gray-900 dark:border-gray-700 dark:hover:border-gray-500 dark:hover:text-gray-100"
-            >
-              <Github size={14} />
-            </a>
             <a
               href={appendUtm(GITHUB_SPONSORS_URL, utmMedium, 'footer_sponsor_link')}
               target="_blank"
@@ -136,16 +126,7 @@ export const Footer: React.FC<FooterProps> = ({
               <ExternalLink size={10} aria-label="External link" />
             </a>
             <span className="hidden md:inline text-gray-300 dark:text-gray-700">·</span>
-            <a
-              href={chainabitAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs font-medium text-orange-500 transition-colors hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
-            >
-              <img src="/chainabit/favicon-32x32.png" width={14} height={14} alt="" className="rounded shrink-0" />
-              Sponsored by Chainabit
-              <ExternalLink size={10} aria-label="External link" />
-            </a>
+
           </div>
         </div>
 
