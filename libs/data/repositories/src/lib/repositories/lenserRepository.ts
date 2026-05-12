@@ -107,6 +107,7 @@ export interface LenserSearchResult {
   handle: string
   display_name: string
   avatar_url: string | null
+  type?: 'human' | 'ai'
 }
 
 type AuthProfileGateRow = Pick<Lenser, 'status' | 'deletion_requested_at' | 'onboarding_step'> & {
