@@ -442,6 +442,14 @@ export const WebRouter: React.FC = () => {
                 </DashboardFrame>
               }
             />
+            <Route
+              path="/battles/new"
+              element={
+                <DashboardFrame>
+                  <CreateBattleRoute />
+                </DashboardFrame>
+              }
+            />
             <Route path="/tournaments/:slug" element={<LazyTournamentPage />} />
             <Route path="/admin" element={<LazyAdminDashboardPage />} />
             <Route
