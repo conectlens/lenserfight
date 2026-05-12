@@ -1,4 +1,4 @@
-import { Lock, Copy, Pencil, Trash2, ImageIcon, Video, Music, Mic } from 'lucide-react'
+import { Lock, Copy, Pencil, Trash2, ImageIcon, Video, Music, Mic, Play, Swords, GitBranch } from 'lucide-react'
 import React, { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -102,8 +102,19 @@ export const LensCard: React.FC<LensCardProps> = memo(
 
         <div className="mb-6 flex-1">
           <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed font-normal line-clamp-3">
-            {lens.description || 'No description provided.'}
+            {lens.description || 'Reusable prompt for battles, workflows, and AI lab runs.'}
           </p>
+        </div>
+
+        <div className="mb-5 grid grid-cols-2 gap-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+          <span className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-700/50">
+            <Swords size={11} />
+            Battle-ready
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-700/50">
+            <GitBranch size={11} />
+            Workflow-ready
+          </span>
         </div>
 
         <div className="flex flex-wrap gap-2 mb-6">
@@ -140,6 +151,10 @@ export const LensCard: React.FC<LensCardProps> = memo(
           </div>
 
           <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-1 text-xs font-bold text-primary-700 transition-colors group-hover:text-primary-800 dark:text-primary-yellow-400 sm:flex">
+              <Play size={12} />
+              Use prompt
+            </div>
             {lens.latestVersionNumber != null && lens.latestVersionNumber > 1 && (
               <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded tabular-nums">
                 v{lens.latestVersionNumber}
