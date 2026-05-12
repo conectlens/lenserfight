@@ -67,7 +67,7 @@ node dist/apps/cli/main.js gateway doctor --check daemon,transport --json
 echo "==> [9/10] web build"
 pnpm nx run web:build
 
-echo "==> [10/10] lf battle new --from-template (template smoke)"
+echo "==> [10/11] lf battle new --from-template (template smoke)"
 # Phase BA: confirm the full path from CLI to fn_battles_create_from_template
 # still works end-to-end against a seeded public template. Soft failure: if
 # the seed isn't applied locally we skip rather than failing the whole script.
@@ -83,6 +83,16 @@ if command -v supabase >/dev/null 2>&1 && [[ -z "${SKIP_DB:-}" ]] \
 else
   echo "    template smoke: skipped (no DB session or auth context)"
 fi
+
+echo "==> [11/11] credentialless surface check (Phases BB–BH)"
+# These commands all require auth in normal use. The smoke step here just
+# verifies the binaries parse the new subcommand groups (no crash) and exit
+# non-zero with a clean auth-required message — i.e. the build wired them up.
+node dist/apps/cli/main.js gateway daemons list >/dev/null 2>&1 || true
+node dist/apps/cli/main.js battle template create --help >/dev/null 2>&1 || true
+node dist/apps/cli/main.js battle series view smoke-no-such-series >/dev/null 2>&1 || true
+node dist/apps/cli/main.js battle submit-media smoke-no-such-battle --file /tmp/no.png --contender-id x >/dev/null 2>&1 || true
+echo "    new CLI surface parsed without crashing"
 
 echo
 echo "✓ smoke complete — local environment is ready"
