@@ -543,8 +543,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     : step === 6
       ? { label: 'Skip for now', onClick: () => go(7) }
       : step === 7
-        ? { label: 'Skip for now', onClick: handleFinish }
-        : undefined
+        ? { label: 'Skip for now', onClick: () => go(8) }
+        : step === 8
+          ? { label: 'Skip for now', onClick: handleFinish }
+          : undefined
 
   // Next / complete handler varies by step
   const handleNext = step === 4
@@ -977,6 +979,23 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                 contenderBId={contenderBId}
                 contenderBName={contenderBName}
               />
+            )}
+
+            {/* ── Step 8: Automation (owner-only, requires battle to exist) ── */}
+            {step === 8 && activeBattleId && (
+              <BattleAutomationSettings
+                battleId={activeBattleId}
+                autoAssignContenders={autoAssignContenders}
+                autoPromote={autoPromote}
+                onChangeAutoAssign={setAutoAssignContenders}
+                onChangeAutoPromote={setAutoPromote}
+                onReadinessChange={setAutomationReady}
+              />
+            )}
+            {step === 8 && !activeBattleId && (
+              <p className="py-8 text-center text-sm text-greyscale-400">
+                Complete the previous steps to configure automation settings.
+              </p>
             )}
 
           </motion.div>
