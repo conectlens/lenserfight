@@ -306,6 +306,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       locked={item.locked}
                       lockReason={item.locked ? navLockReason : undefined}
                       onLockedClick={item.locked ? handleLockedNav : undefined}
+                      isComingSoon={item.isComingSoon}
+                      wip={item.wip}
                     />
                   ))}
                 </div>
