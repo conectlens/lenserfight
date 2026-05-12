@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Swords } from 'lucide-react'
+import { Swords, Trophy } from 'lucide-react'
 
 import { HelpButton, SEOHead } from '@lenserfight/ui/components'
 import { useLenser } from '@lenserfight/features/profile'
@@ -13,6 +13,7 @@ import { LenserBoardHeader } from '../components/LenserBoardHeader'
 import { LenserBoardList } from '../components/LenserBoardList'
 import { LenserBoardRow } from '../components/LenserBoardRow'
 import { LenserBoardTabs } from '../components/LenserBoardTabs'
+import { SeasonLeaderboardPanel } from '../components/SeasonLeaderboardPanel'
 import { useLenserBoard } from '../useXP'
 import { useLenserBoardElo } from '../useLenserBoardElo'
 
@@ -22,19 +23,23 @@ const ACTIVITY_PERIOD_LABELS: Record<FollowPeriod, string> = {
   all_time: 'All Time',
 }
 
+type BoardType = 'xp' | 'season' | 'activity' | 'elo'
+
 export const LenserBoardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const { lenser } = useLenser()
   const { setError } = useError()
   const [scope, setScope] = useState<LeaderboardScope>('global')
   const [timeframe, setTimeframe] = useState<LeaderboardTimeframe>('all_time')
-  const boardParam = searchParams.get('board') as 'xp' | 'activity' | 'elo' | null
-  const [board, setBoard] = useState<'xp' | 'activity' | 'elo'>(
-    boardParam === 'activity' || boardParam === 'elo' ? boardParam : 'xp'
+  const boardParam = searchParams.get('board') as BoardType | null
+  const [board, setBoard] = useState<BoardType>(
+    boardParam === 'activity' || boardParam === 'elo' || boardParam === 'season'
+      ? boardParam
+      : 'xp'
   )
   const [activityPeriod, setActivityPeriod] = useState<FollowPeriod>('all_time')
 
-  const handleBoardChange = (b: 'xp' | 'activity' | 'elo') => {
+  const handleBoardChange = (b: BoardType) => {
     setBoard(b)
     setSearchParams(b === 'xp' ? {} : { board: b })
   }
@@ -55,6 +60,13 @@ export const LenserBoardPage: React.FC = () => {
   const lenserBoardList = data?.pages.flatMap((page) => page.list) || []
   const userEntry = data?.pages[0]?.userEntry
 
+  const boardTabs: { key: BoardType; label: string }[] = [
+    { key: 'xp', label: 'XP Ranking' },
+    { key: 'season', label: 'Season' },
+    { key: 'activity', label: 'Activity Score' },
+    ...(FEATURES.AGENTS ? [{ key: 'elo' as BoardType, label: 'ELO Rating' }] : []),
+  ]
+
   return (
     <div className="">
       <SEOHead type="default" overrideTitle="LenserBoard" />
@@ -67,17 +79,18 @@ export const LenserBoardPage: React.FC = () => {
 
       {/* Board type toggle */}
       <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
-        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1 w-fit">
-          {(['xp', 'activity', ...(FEATURES.AGENTS ? ['elo' as const] : [])] as const).map((b) => (
+        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1 w-fit overflow-x-auto">
+          {boardTabs.map(({ key, label }) => (
             <button
-              key={b}
-              onClick={() => handleBoardChange(b)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${board === b
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
+              key={key}
+              onClick={() => handleBoardChange(key)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
+                board === key
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
             >
-              {b === 'xp' ? 'XP Ranking' : b === 'activity' ? 'Activity Score' : 'ELO Rating'}
+              {label}
             </button>
           ))}
         </div>
@@ -102,6 +115,8 @@ export const LenserBoardPage: React.FC = () => {
             isFetchingNextPage={isFetchingNextPage}
           />
         </>
+      ) : board === 'season' ? (
+        <SeasonLeaderboardPanel />
       ) : board === 'activity' ? (
         <>
           {/* Activity period filter */}
@@ -110,10 +125,11 @@ export const LenserBoardPage: React.FC = () => {
               <button
                 key={p}
                 onClick={() => setActivityPeriod(p)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${activityPeriod === p
-                  ? 'bg-primary text-black '
-                  : 'bg-gray-100 dark:bg-gray-800 text-black dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+                  activityPeriod === p
+                    ? 'bg-primary text-black'
+                    : 'bg-gray-100 dark:bg-gray-800 text-black dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
               >
                 {ACTIVITY_PERIOD_LABELS[p]}
               </button>
