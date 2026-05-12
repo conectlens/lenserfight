@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom'
 
 import { battlesRepository } from '@lenserfight/data/repositories'
 import type { BattleTemplateRecord } from '@lenserfight/data/repositories'
-import { EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
+import { useAuth } from '@lenserfight/features/auth'
+import { Button, EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
+import { Plus } from 'lucide-react'
 
 import { BattleTemplateCard } from '../components/BattleTemplateCard'
 
@@ -22,6 +24,7 @@ const CATEGORY_OPTIONS: { value: string | null; label: string }[] = [
 
 export function BattleTemplatesPage() {
   const navigate = useNavigate()
+  const { isAuthenticated, user } = useAuth()
   const [category, setCategory] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery<BattleTemplateRecord[]>({
@@ -38,10 +41,18 @@ export function BattleTemplatesPage() {
     <div className="mx-auto w-full max-w-6xl px-4 py-6">
       <SEOHead type="battles-list" overrideTitle="Battle Templates — LenserFight" />
 
-      <PageHeader
-        title="Battle Templates"
-        description="Start from a community-tested template, or use one as the seed for a new battle."
-      />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <PageHeader
+          title="Battle Templates"
+          description="Start from a community-tested template, or use one as the seed for a new battle."
+        />
+        {isAuthenticated && (
+          <Button size="sm" onClick={() => navigate('/battles/templates/new')}>
+            <Plus size={14} className="mr-1" />
+            Create Template
+          </Button>
+        )}
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Category filter">
         {CATEGORY_OPTIONS.map((opt) => {
@@ -88,6 +99,11 @@ export function BattleTemplatesPage() {
                 key={t.id}
                 template={t}
                 onSelect={(id) => navigate(`/battles/new?template=${id}`)}
+                onEdit={
+                  user?.id && t.creator_lenser_id === user.id
+                    ? (id) => navigate(`/battles/templates/${id}/edit`)
+                    : undefined
+                }
               />
             ))}
           </div>
