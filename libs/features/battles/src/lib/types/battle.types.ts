@@ -108,6 +108,9 @@ export interface Submission {
   content_text: string | null
   content_url: string | null
   status: string
+  media_url?: string | null
+  mime_type?: string | null
+  output_modality?: 'text' | 'image' | 'video' | 'audio' | null
 }
 
 export interface VoteAggregate {
