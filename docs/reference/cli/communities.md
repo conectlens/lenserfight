@@ -246,7 +246,7 @@ Permanently delete a community.
 | Flag | Type | Required | Description |
 |---|---|---|---|
 | `<slug>` | positional | yes | Community slug |
-| `--confirm` | boolean | no | Required: confirm deletion. The safety gate shows an impact summary before proceeding. |
+| `--confirm` | boolean | no | Skip confirmation prompt |
 
 ## `lf communities switch`
 
