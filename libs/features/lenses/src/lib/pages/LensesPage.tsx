@@ -18,8 +18,8 @@ import { useCreateLens } from '../hooks/useCreateLens'
 type OutputKindFilter = 'all' | 'text' | 'image' | 'video' | 'audio' | 'music'
 
 const OUTPUT_KIND_TABS: { value: OutputKindFilter; label: string; Icon: React.ElementType }[] = [
-  { value: 'all',   label: 'All',   Icon: AlignLeft },
-  { value: 'text',  label: 'Text',  Icon: AlignLeft },
+  { value: 'all', label: 'All', Icon: AlignLeft },
+  { value: 'text', label: 'Text', Icon: AlignLeft },
   { value: 'image', label: 'Image', Icon: ImageIcon },
   { value: 'video', label: 'Video', Icon: Video },
   { value: 'audio', label: 'Audio', Icon: Mic },
@@ -164,7 +164,7 @@ export const LensesPage: React.FC = () => {
 
       {/* Page Header */}
       <PageHeader
-        title="Prompts"
+        title="Lenses & Prompts & Skills"
         description="Browse reusable Lens prompts that power battles, workflows, lab runs, and generative media outputs."
         className="sm:mb-8 mt-2"
         action={
@@ -186,10 +186,10 @@ export const LensesPage: React.FC = () => {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
-              How prompts fit the arena
+              How lenses fit the arena
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-greyscale-800 dark:text-greyscale-100">
-              {['Prompt', 'Agent or model', 'Battle or workflow', 'Output'].map((step, index) => (
+              {['Lens', 'Agent or model', 'Battle or workflow', 'Output'].map((step, index) => (
                 <React.Fragment key={step}>
                   <span className="rounded-full bg-surface-raised px-3 py-1">{step}</span>
                   {index < 3 && <ArrowRight size={14} className="text-greyscale-300" />}
@@ -237,11 +237,10 @@ export const LensesPage: React.FC = () => {
               <button
                 key={value}
                 onClick={() => handleKindChange(value)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border ${
-                  isActive
-                    ? 'bg-primary text-white border-primary shadow-sm'
-                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/50 hover:text-primary dark:hover:text-primary-400'
-                }`}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border ${isActive
+                  ? 'bg-primary text-white border-primary shadow-sm'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/50 hover:text-primary dark:hover:text-primary-400'
+                  }`}
               >
                 <Icon size={12} />
                 {label}
