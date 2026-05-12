@@ -1,5 +1,6 @@
 import { validateInputs, validateOutput } from './contract-validator'
 import { detectCycle as validatorDetectCycle, PlaceholderUnboundError } from './validator'
+import { shouldHaltScheduling, type BudgetSnapshot } from './budget-reconciler'
 
 import type {
   ExecutionInput,
@@ -300,6 +301,21 @@ export interface WorkflowExecutionContext {
    * message 'modality_not_allowed'. The engine converts this to node_blocked.
    */
   modalityGuard?: (nodeId: string, modality: WorkflowNodeType) => Promise<void>
+  /**
+   * Z10 — optional budget snapshot provider. Before each wave the engine
+   * calls this; if it returns a snapshot and `shouldHaltScheduling` signals
+   * `cancel`, the run is cancelled with reason `budget_exceeded`. Workers
+   * handling user-triggered runs should provide a snapshot reflecting the
+   * run's `budget_credits` and current `spent_credits`. Service-role workers
+   * that are uncapped may omit this field entirely.
+   */
+  getBudgetSnapshot?: () => BudgetSnapshot | null
+  /**
+   * Z10 — max number of nodes to run concurrently within a single wave.
+   * Defaults to MAX_WAVE_CONCURRENCY (10). Lower values reduce provider
+   * thundering-herd; higher values maximise throughput on large fan-out graphs.
+   */
+  maxWaveConcurrency?: number
 }
 
 export interface MemoryFlushSink {
@@ -341,6 +357,18 @@ const DEFAULT_TIMEOUT_MS = 60_000
 const DEFAULT_ON_PARENT_FAILURE: OnParentFailurePolicy = 'skip'
 const DEFAULT_MERGE: MergeStrategy = 'last_write_wins'
 const DEFAULT_MODERATION: NonNullable<ModerationConfig['policy']> = 'off'
+
+// Z10: concurrency cap — max nodes executed simultaneously within one wave.
+// Prevents thundering-herd on AI providers when a workflow fans out widely.
+const MAX_WAVE_CONCURRENCY = 10
+
+// Z10: context byte ceiling — max serialised size of merged inputs passed to
+// a single node. Prevents MB-scale context accumulation in long chains.
+const MAX_CONTEXT_BYTES = 512 * 1024 // 512 KB
+
+// Z10: exported so workers can reference the same value when building budget
+// snapshots for user-initiated runs.
+export const DEFAULT_MAX_USER_BUDGET_CREDITS = 50_000
 
 // ── Service ───────────────────────────────────────────────────────────────
 
@@ -474,6 +502,10 @@ export class WorkflowExecutionService {
 
     let wave = nodes.filter((n) => (inDegree.get(n.id) ?? 0) === 0).map((n) => n.id)
 
+    // Z10: concurrency limiter — shared across all waves so the total number
+    // of simultaneously-running nodes never exceeds maxWaveConcurrency.
+    const throttle = makeSemaphore(ctx.maxWaveConcurrency ?? MAX_WAVE_CONCURRENCY)
+
     while (wave.length > 0) {
       if (isAborted()) {
         await markRemainingCancelled()
@@ -482,8 +514,26 @@ export class WorkflowExecutionService {
         return cancelledResult
       }
 
+      // Z10: budget check — abort before executing a new wave if the caller
+      // signals that the run's credit budget is exhausted.
+      if (ctx.getBudgetSnapshot) {
+        const snap = ctx.getBudgetSnapshot()
+        if (snap && shouldHaltScheduling(snap)) {
+          await markRemainingCancelled()
+          await emit(ctx, {
+            runId: ctx.runId,
+            nodeId: wave[0] ?? '',
+            name: 'node_failed',
+            metadata: { errorCode: 'budget_exceeded' },
+          })
+          const cancelledResult = finish(ctx.runId, results, 'cancelled')
+          await notifyMemoryRunCompleted(cancelledResult.status)
+          return cancelledResult
+        }
+      }
+
       await Promise.all(
-        wave.map(async (nodeId) => {
+        wave.map((nodeId) => throttle(async () => {
           const node = nodeMap.get(nodeId)
           if (!node) return
 
@@ -614,6 +664,27 @@ export class WorkflowExecutionService {
             (handoff) => provenanceHandoffs.push(handoff),
             ctx.runId,
           )
+
+          // Z10: context size guard — reject inputs that exceed the byte
+          // ceiling before they reach the provider. This prevents a long chain
+          // from accumulating MB-scale context that would inflate token costs.
+          const contextSize = JSON.stringify(renderedInputs).length
+          if (contextSize > MAX_CONTEXT_BYTES) {
+            const ctxTooBig: NodeResult = {
+              nodeId,
+              status: 'failed',
+              error: 'context_too_large',
+            }
+            results.set(nodeId, ctxTooBig)
+            await ctx.onNodeStatusChange(nodeId, ctxTooBig)
+            await emit(ctx, {
+              runId: ctx.runId,
+              nodeId,
+              name: 'node_failed',
+              metadata: { errorCode: 'context_too_large', sizeBytes: contextSize },
+            })
+            return
+          }
 
           // Field-level provenance: emit one record per edge whose value was
           // actually used by this node. Best-effort — provenance writes must
@@ -892,7 +963,7 @@ export class WorkflowExecutionService {
               // Memory flush is observational; never block the run.
             }
           }
-        }),
+        })),
       )
 
       if (isAborted()) {
@@ -921,6 +992,30 @@ export class WorkflowExecutionService {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
+
+// Inline semaphore — avoids an external dependency for a 12-line utility.
+// Returns a wrapper that runs `fn` immediately when a slot is free, or queues
+// it until a running slot finishes.
+function makeSemaphore(limit: number): <T>(fn: () => Promise<T>) => Promise<T> {
+  let active = 0
+  const queue: Array<() => void> = []
+  return function throttle<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const run = () => {
+        active++
+        fn().then(resolve, reject).finally(() => {
+          active--
+          queue.shift()?.()
+        })
+      }
+      if (active < limit) {
+        run()
+      } else {
+        queue.push(run)
+      }
+    })
+  }
+}
 
 function safeStringify(value: unknown): string {
   if (value === undefined || value === null) return ''
