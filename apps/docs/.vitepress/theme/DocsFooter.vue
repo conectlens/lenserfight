@@ -2,6 +2,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 
 const webBaseUrl = import.meta.env.WEB_BASE_URL ?? 'https://lenserfight.com'
+const arenaBaseUrl = import.meta.env.ARENA_URL ?? 'https://lenserfight.com'
 
 const utmSource = 'lenserfight'
 const utmMedium = 'docs_footer'
@@ -79,16 +80,16 @@ onMounted(() => {
 })
 
 const navLinks = [
-  { label: 'About', href: appendUtm(`${webBaseUrl}/about`, 'footer_about_link') },
-  { label: 'Product', href: appendUtm(`${webBaseUrl}/product`, 'footer_product_link') },
-  { label: 'FAQ', href: appendUtm(`${webBaseUrl}/faq`, 'footer_faq_link') },
+  { label: 'About', href: appendUtm(`${arenaBaseUrl}/about`, 'footer_about_link') },
+  { label: 'Product', href: appendUtm(`${arenaBaseUrl}/product`, 'footer_product_link') },
+  { label: 'FAQ', href: appendUtm(`${arenaBaseUrl}/faq`, 'footer_faq_link') },
   { label: 'Contact', href: appendUtm('https://chainabit.com/contact', 'lenserfight_contact') },
 ]
 
 const policyLinks = [
-  { label: 'Terms & Policies', href: appendUtm(`${webBaseUrl}/policies/terms`, 'footer_policy_terms_link') },
-  { label: 'Privacy', href: appendUtm(`${webBaseUrl}/policies/privacy`, 'footer_policy_privacy_link') },
-  { label: 'Cookies', href: appendUtm(`${webBaseUrl}/policies/cookies`, 'footer_policy_cookies_link') },
+  { label: 'Terms & Policies', href: appendUtm(`${arenaBaseUrl}/policies/terms`, 'footer_policy_terms_link') },
+  { label: 'Privacy', href: appendUtm(`${arenaBaseUrl}/policies/privacy`, 'footer_policy_privacy_link') },
+  { label: 'Cookies', href: appendUtm(`${arenaBaseUrl}/policies/cookies`, 'footer_policy_cookies_link') },
 ]
 
 const conectlensUrl = computed(() => appendUtm('https://conectlens.com', 'footer_conectlens_link'))

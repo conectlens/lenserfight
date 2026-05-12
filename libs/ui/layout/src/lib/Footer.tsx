@@ -3,7 +3,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
-import { DOCS_BASE_URL } from '@lenserfight/utils/env'
+import { ARENA_BASE_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
 
 interface FooterProps {
   isDashboard?: boolean
@@ -138,7 +138,7 @@ export const Footer: React.FC<FooterProps> = ({
               navBaseUrl ? (
                 <a
                   key={to}
-                  href={appendUtm(`${navBaseUrl}${to}`, utmMedium, `footer_${to.replace(/\W+/g, '_')}_link`)}
+                  href={appendUtm(`${ARENA_BASE_URL}${to}`, utmMedium, `footer_${to.replace(/\W+/g, '_')}_link`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
@@ -172,7 +172,7 @@ export const Footer: React.FC<FooterProps> = ({
               navBaseUrl ? (
                 <a
                   key={slug}
-                  href={appendUtm(`${navBaseUrl}/policies/${slug}`, utmMedium, `footer_policy_${slug}_link`)}
+                  href={appendUtm(`${ARENA_BASE_URL}/policies/${slug}`, utmMedium, `footer_policy_${slug}_link`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
