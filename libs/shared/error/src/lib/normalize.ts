@@ -30,6 +30,31 @@ function getHint(error: unknown): string | undefined {
   return typeof h === 'string' ? h : undefined
 }
 
+function getDetail(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined
+  const d = (error as Record<string, unknown>)['details'] ?? (error as Record<string, unknown>)['detail']
+  return typeof d === 'string' ? d : undefined
+}
+
+function parseRetryAfter(detail: string | undefined): number | undefined {
+  if (!detail) return undefined
+  try {
+    const parsed = JSON.parse(detail)
+    const v = parsed?.retry_after
+    return typeof v === 'number' && v > 0 ? Math.ceil(v) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function formatRetryMessage(retryAfter: number): string {
+  if (retryAfter >= 60) {
+    const mins = Math.ceil(retryAfter / 60)
+    return `Try again in ${mins} minute${mins !== 1 ? 's' : ''}.`
+  }
+  return `Try again in ${retryAfter} second${retryAfter !== 1 ? 's' : ''}.`
+}
+
 function getMessage(error: unknown): string {
   if (!error || typeof error !== 'object') return ''
   const m = (error as Record<string, unknown>)['message']
@@ -56,7 +81,7 @@ function extractConstraintName(error: unknown): string | undefined {
 
 const CONSTRAINT_VIOLATION_CODES = new Set(['23514', '23505', '23503'])
 
-export function normalizeError(error: unknown): AppError {
+export function normalizeError(error: unknown): UnauthorizedError | ForbiddenError | NotFoundError | RateLimitError | ServerError | NetworkError | ConstraintViolationError | ApiError | UnknownError {
   const status = getStatus(error)
   const code = getCode(error)
   const hint = getHint(error)
@@ -113,21 +138,26 @@ export function normalizeError(error: unknown): AppError {
   }
 
   // ── 429 Rate Limit ─────────────────────────────────────────────────────────
-  // Covers HTTP 429 and Postgres RAISE EXCEPTION with hint 'p0429'
+  // Covers HTTP 429 and Postgres RAISE EXCEPTION with hint 'p0429'.
+  // DETAIL may carry JSON {"retry_after": <seconds>} for countdown messaging.
   if (
     status === 429 ||
     (code === 'P0001' && hint === 'p0429')
   ) {
-    const rateLimitMessages: Record<string, string> = {
-      battle_rate_limit_exceeded: 'You\'ve created too many battles recently. Please wait before creating another.',
+    const detail = getDetail(error)
+    const retryAfter = parseRetryAfter(detail)
+
+    const baseMessages: Record<string, string> = {
+      battle_rate_limit_exceeded: 'You\'ve reached the battle creation limit.',
     }
-    const userMessage =
-      rateLimitMessages[msg] ??
-      'Too many requests. Please wait a moment before trying again.'
+    const base = baseMessages[msg] ?? 'Too many requests.'
+    const suffix = retryAfter != null ? ` ${formatRetryMessage(retryAfter)}` : ' Please wait a moment before trying again.'
+
     return {
       kind: 'rate_limit',
       statusCode: status ?? 429,
-      message: userMessage,
+      message: base + suffix,
+      retryAfter,
       originalError: error,
     } satisfies RateLimitError
   }
