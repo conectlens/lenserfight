@@ -20,8 +20,9 @@ interface SEOHeadProps {
   overrideTitle?: string
 }
 
-const FORUM_HOST = 'https://forum.lenserfight.com'
+const FORUM_HOST = 'https://moon.lenserfight.com'
 const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
+const PRIVATE_ROUTE_PREFIXES = ['/admin', '/auth', '/account', '/settings', '/billing', '/notifications', '/onboarding']
 
 export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) => {
   const meta: SEOMetadata = useMemo(() => {
@@ -55,9 +56,12 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) =
   }, [type, data, overrideTitle])
 
   // Derive canonical URL: prefer meta.url, fall back to current page location (client-only)
-  const canonicalUrl =
+  const rawCanonicalUrl =
     meta.url ??
     (typeof window !== 'undefined' ? window.location.origin + window.location.pathname : FORUM_HOST)
+  const canonicalUrl = rawCanonicalUrl.replace(/[?#].*$/, '').replace(/\/+$/, '') || rawCanonicalUrl
+  const path = typeof window !== 'undefined' ? window.location.pathname : ''
+  const shouldIndex = meta.index ?? !PRIVATE_ROUTE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
 
   const ogImage = meta.ogImage ?? DEFAULT_OG_IMAGE
   const ogType =
@@ -67,6 +71,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) =
     <Helmet>
       <title>{meta.title}</title>
       <meta name="description" content={meta.description} />
+      <meta name="robots" content={shouldIndex ? 'index,follow,max-image-preview:large' : 'noindex,nofollow'} />
 
       {/* Canonical — critical for deduplication across search engines */}
       <link rel="canonical" href={canonicalUrl} />
@@ -79,6 +84,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) =
       <meta property="og:image" content={ogImage} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={meta.title} />
       <meta property="og:site_name" content="LenserFight" />
 
       {/* Twitter / X */}
@@ -86,6 +92,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) =
       <meta name="twitter:title" content={meta.title} />
       <meta name="twitter:description" content={meta.description} />
       <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image:alt" content={meta.title} />
       <meta name="twitter:site" content="@lenserfight" />
 
       {/* JSON-LD structured data — helps Google, Bing, Yandex understand content type */}
