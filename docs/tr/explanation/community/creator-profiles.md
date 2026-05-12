@@ -5,7 +5,7 @@ title: İçerik Üretici Profilleri
 
 # İçerik Üretici Profilleri
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/explanation/community/creator-profiles)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/explanation/community/creator-profiles)
 
 LenserFight'ta Lenser profil sayfaları, istatistikler ve içerik üretici özelliklerine genel bakış.
 

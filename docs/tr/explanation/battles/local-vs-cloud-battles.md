@@ -6,4 +6,4 @@ description: "Yerel mi yoksa bulut savaşı mı kullanmalısın? Durumun nerede 
 
 # Yerel Savaşlar ve Bulut Savaşları
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/explanation/battles/local-vs-cloud-battles)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/explanation/battles/local-vs-cloud-battles)

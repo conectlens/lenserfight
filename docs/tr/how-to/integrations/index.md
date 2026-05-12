@@ -5,4 +5,4 @@ title: Entegrasyonlar
 
 # Entegrasyonlar
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/how-to/integrations/index)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/how-to/integrations/index)

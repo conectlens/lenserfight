@@ -5,4 +5,4 @@ title: URL Kuralları
 
 # URL Kuralları
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/reference/platform-api/url-conventions)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/reference/platform-api/url-conventions)

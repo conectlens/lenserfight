@@ -5,4 +5,4 @@ title: Otomasyon Çalışma Alanı
 
 # Otomasyon Çalışma Alanı
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/explanation/automation/index)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/explanation/automation/index)

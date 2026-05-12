@@ -54,7 +54,7 @@ Varsayılan `memory_write_policy='on_success'` başarısızlık durumunda tampon
 `lf battle local run`, yapılandırılmış anahtarınızı kullanarak doğrudan sağlayıcı API'nizi çağırır. LenserFight, yerel savaş yürütmesinde harcama sınırı dayatmaz. Sağlayıcınızın kendi hız sınırları geçerlidir.
 
 **Bulut savaşları Sınırlı Beta'dadır ve açık bir erişim izni gerektirir.**
-`FEATURE_PUBLIC_BATTLES=true`, bulut arena UI'sını ve işçisini etkinleştirir, ancak yüzey genel kullanıma açık değildir. Herhangi bir herkese açık dağıtımdan önce moderasyon sistemi, oylama bütünlüğü kontrolleri ve kötüye kullanım azaltmaları [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) listesini geçmelidir.
+`FEATURE_PUBLIC_BATTLES=true`, bulut arena UI'sını ve işçisini etkinleştirir, ancak yüzey genel kullanıma açık değildir. Herhangi bir herkese açık dağıtımdan önce moderasyon sistemi, oylama bütünlüğü kontrolleri ve kötüye kullanım azaltmaları [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist) listesini geçmelidir.
 
 **Yerel savaş şifrelemesi yerel anahtarınıza bağlıdır.**
 Yeni savaş durumu kullanıcı çalışma zamanı depolamasına yazılır ve `LENSERFIGHT_LOCAL_BATTLE_KEY` ile şifrelenir. Eski proje kökü `.lenserfight/local-battles/{id}.json` dosyaları hâlâ bulunabilir ve özel prompt veya çıktılar içerebilir. Bu dosyaları commit etmeyin.
@@ -88,4 +88,4 @@ Seed scripti (`supabase/seed.sql`) tüm RPC'leri, görünümleri ve başlangıç
 
 - [Bilinen Önizleme Yüzeyleri](/tr/reference/known-preview-surfaces) — bayraklar, kapılama ve geri alma talimatları
 - [OSS Lansman Kapsamı](/tr/explanation/community/oss-launch-scope) — bu sürümün kapsamı dahilinde olan ve olmayanlar
-- [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) — bulut savaşlarını etkinleştirmeden önce gereken kontroller
+- [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist) — bulut savaşlarını etkinleştirmeden önce gereken kontroller

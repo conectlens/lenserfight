@@ -6,4 +6,4 @@ description: "Bir markdown dosyasında yerel savaş tanımı oluştur, doğrula,
 
 # PRIVATE_BATTLE.md Dosyasını Çalıştır
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/tutorials/battle-walkthroughs/private-battle-execute)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/en/tutorials/battle-walkthroughs/private-battle-execute)

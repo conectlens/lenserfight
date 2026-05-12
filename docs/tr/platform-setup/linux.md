@@ -127,5 +127,5 @@ pnpm lenserfight battle run ./PRIVATE_BATTLE.md --execute
 
 - [Platform Kurulumuna Genel Bakış](./index)
 - [Pardus Kurulumu](./pardus)
-- [CLI Yapılandırma Referansı](/reference/cli/configuration)
-- [PRIVATE_BATTLE.md Nasıl Çalıştırılır](/tutorials/battle-walkthroughs/private-battle-execute)
+- [CLI Yapılandırma Referansı](/en/reference/cli/configuration)
+- [PRIVATE_BATTLE.md Nasıl Çalıştırılır](/en/tutorials/battle-walkthroughs/private-battle-execute)
