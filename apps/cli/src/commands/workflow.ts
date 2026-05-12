@@ -290,6 +290,96 @@ const list = defineCommand({
 })
 
 // ---------------------------------------------------------------------------
+// CD: workflow trigger add
+// ---------------------------------------------------------------------------
+
+const triggerAdd = defineCommand({
+  meta: { name: 'add', description: 'Add a trigger to a workflow.' },
+  args: {
+    id: { type: 'positional', description: 'Workflow UUID', required: true },
+    type: { type: 'string', description: 'cron | battle_event | webhook | manual', default: 'battle_event' },
+    condition: { type: 'string', description: 'JSON condition object', default: '{}' },
+  },
+  async run({ args }) {
+    try {
+      let cond: Record<string, unknown>
+      try { cond = JSON.parse(args.condition) } catch { cond = {} }
+      const result = await callRpc<{ id: string }>(
+        'fn_workflow_trigger_create',
+        { p_workflow_id: args.id, p_trigger_type: args.type, p_condition: cond },
+        { requireAuth: true }
+      )
+      consola.success('Trigger created: %s', typeof result === 'string' ? result : result?.id)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// CD: workflow trigger webhook-url
+const triggerWebhookUrl = defineCommand({
+  meta: { name: 'webhook-url', description: 'Print the webhook trigger URL and secret for a workflow.' },
+  args: {
+    id: { type: 'positional', description: 'Workflow UUID', required: true },
+  },
+  async run({ args }) {
+    try {
+      const baseUrl = process.env['PLATFORM_API_URL'] ?? 'https://api.lenserfight.io'
+      consola.info('Webhook URL: %s/workflows/%s/trigger', baseUrl, args.id)
+      consola.warn('Body must contain { "secret": "<your-webhook-secret>", "payload": {...} }')
+      consola.warn('Treat the secret as a password — do not commit it to source control.')
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// CD: workflow trigger list
+const triggerList = defineCommand({
+  meta: { name: 'list', description: 'List triggers for a workflow.' },
+  args: {
+    id: { type: 'positional', description: 'Workflow UUID', required: true },
+    json: { type: 'boolean', description: 'Output raw JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRpc<Array<{
+        id: string
+        trigger_type: string
+        enabled: boolean
+        last_fired_at: string | null
+      }>>(
+        'fn_workflow_triggers_list',
+        { p_workflow_id: args.id },
+        { requireAuth: true }
+      )
+      if (args.json) { printJson(rows); return }
+      if (!rows.length) { consola.info('No triggers found for workflow %s.', args.id); return }
+      printTable(
+        ['id', 'type', 'enabled', 'last_fired'],
+        rows.map((r) => [
+          r.id.slice(0, 8) + '…',
+          r.trigger_type,
+          r.enabled ? 'yes' : 'no',
+          r.last_fired_at ? new Date(r.last_fired_at).toLocaleDateString() : '—',
+        ])
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const trigger = defineCommand({
+  meta: { name: 'trigger', description: 'Manage workflow triggers.' },
+  subCommands: {
+    add: triggerAdd,
+    'webhook-url': triggerWebhookUrl,
+    list: triggerList,
+  },
+})
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 
@@ -303,5 +393,6 @@ export default defineCommand({
     validate,
     create,
     list,
+    trigger,
   },
 })
