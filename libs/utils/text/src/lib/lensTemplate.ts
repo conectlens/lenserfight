@@ -1,4 +1,4 @@
-import { LensParam } from '@lenserfight/types'
+import type { LensParam, LensVersionParam } from '@lenserfight/types'
 
 // Double-square-bracket syntax [[param_name]] is intentional and injection-safe.
 // Unlike {{param}}, double-square-brackets do not appear in Jinja2/Handlebars/Mustache
@@ -222,4 +222,52 @@ export function validateParamValues(
   }
 
   return errors
+}
+
+// ─── Battle Execution Helpers ─────────────────────────────────────────────────
+
+/**
+ * Normalises [[:uuid]] refs in a raw template body back to [[label]] tokens.
+ * Stored template bodies are served in rendered [[label]] form by fn_render_version_body,
+ * but draft versions may still contain UUID refs. This pass is a safety net.
+ */
+export function resolveUuidRefs(
+  templateBody: string,
+  versionParams: LensVersionParam[],
+): string {
+  const paramById = new Map(versionParams.map((p) => [p.id.toLowerCase(), p.label]))
+  return templateBody.replace(
+    /\[\[:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]\]/gi,
+    (_, id: string) => {
+      const label = paramById.get(id.toLowerCase())
+      return label ? `[[${label}]]` : ''
+    },
+  )
+}
+
+function mapToolTypeToLegacyType(toolType: string): LensParam['type'] {
+  if (['number', 'integer', 'float', 'decimal'].includes(toolType)) return 'number'
+  if (toolType === 'boolean') return 'boolean'
+  if (toolType === 'select') return 'select'
+  return 'string'
+}
+
+/**
+ * Renders a lens template body with a contender's input snapshot, supporting
+ * both [[label]] (normal) and [[:uuid]] (draft fallback) token formats.
+ *
+ * snapshot is keyed by param.label, matching how VersionParamFields stores values.
+ */
+export function renderLensWithSnapshot(
+  templateBody: string,
+  snapshot: Record<string, unknown>,
+  versionParams: LensVersionParam[],
+): string {
+  const normalised = resolveUuidRefs(templateBody, versionParams)
+  const legacyParams: LensParam[] = versionParams.map((p) => ({
+    name: p.label,
+    type: mapToolTypeToLegacyType(p.tool.type),
+    required: p.tool.required,
+  }))
+  return renderLens(normalised, snapshot as Record<string, any>, legacyParams)
 }
