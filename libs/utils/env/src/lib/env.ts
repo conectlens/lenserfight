@@ -43,6 +43,12 @@ export const PLATFORM_API_WORKER_ONCE = (): boolean =>
 // ── Partner — Chainabit ───────────────────────────────────────────────────────
 export const CHAINABIT_API_URL = (): string => required('CHAINABIT_API_URL')
 export const CHAINABIT_PARTNER_API_KEY = (): string => required('CHAINABIT_PARTNER_API_KEY')
+// OAuth 2.0 public client — PKCE replaces client_secret; client_id is not a secret but
+// keeping it server-side prevents fingerprinting and rate-limit abuse on the Chainabit side
+export const CHAINABIT_CLIENT_ID = (): string => required('CHAINABIT_CLIENT_ID')
+// Full redirect URI registered on the Chainabit OAuth client, e.g.
+// https://api.lenserfight.com/v1/partners/chainabit/oauth/callback
+export const CHAINABIT_OAUTH_REDIRECT_URI = (): string => required('CHAINABIT_OAUTH_REDIRECT_URI')
 
 // ── LenserFight Cloud / CLI ───────────────────────────────────────────────────
 export const LENSERFIGHT_CLOUD_API_URL = (): string =>
