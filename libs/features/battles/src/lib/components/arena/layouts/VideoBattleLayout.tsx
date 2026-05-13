@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react'
+import { Layers } from 'lucide-react'
 import type { BattleLayoutContext } from '../../../types/battle-layout.types'
 import { BattleResultsPanel } from '../../results/BattleResultsPanel'
 
@@ -102,6 +103,7 @@ export function VideoBattleLayout(ctx: BattleLayoutContext) {
     currentUserId,
     myVote,
     onVote,
+    lensDetails,
   } = ctx
 
   const [syncTime, setSyncTime] = useState<number | undefined>(undefined)
@@ -159,7 +161,17 @@ export function VideoBattleLayout(ctx: BattleLayoutContext) {
                 <div className="h-7 w-7 rounded-lg bg-primary-yellow-500 flex items-center justify-center text-xs font-black text-dark-900">
                   {contender.slot}
                 </div>
-                <span className="text-sm font-bold text-surface-text truncate flex-1">{contender.display_name}</span>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="text-sm font-bold text-surface-text truncate">{contender.display_name}</span>
+                  {lensDetails[contender.id] && (
+                    <span className="hidden sm:flex items-center gap-1 text-[10px] text-greyscale-400 mt-0.5">
+                      <Layers size={9} className="text-primary-yellow-500 flex-shrink-0" />
+                      {lensDetails[contender.id]!.lensTitle}
+                      {lensDetails[contender.id]!.versionNumber != null && ` v${lensDetails[contender.id]!.versionNumber}`}
+                      {lensDetails[contender.id]!.paramCount > 0 && ` · ${lensDetails[contender.id]!.paramCount}p`}
+                    </span>
+                  )}
+                </div>
                 <span className="text-sm font-bold text-surface-text-muted tabular-nums">{votePercent}%</span>
               </div>
 
