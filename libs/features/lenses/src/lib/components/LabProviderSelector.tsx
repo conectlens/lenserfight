@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react'
 import { SearchSelectField } from '@lenserfight/ui/forms'
 import { AIProviderSelectList, AIModelSelectList } from '@lenserfight/features/generations'
 import { AIProvider, AIProviderModel, FundingSource } from '@lenserfight/types'
+import type { ChainabitAiModel } from '@lenserfight/types'
 import type { OllamaModelInfo } from '../hooks/useOllamaModels'
 
 interface LabProviderSelectorProps {
@@ -23,6 +24,45 @@ interface LabProviderSelectorProps {
   ollamaModels: OllamaModelInfo[]
   ollamaError: string | null
   refetchOllama: () => void
+  chainabitModels?: ChainabitAiModel[] | null
+  chainabitConnected?: boolean
+}
+
+function ChainabitModelPicker({
+  models,
+  selectedModelKey,
+  onModelChange,
+}: {
+  models: ChainabitAiModel[]
+  selectedModelKey: string
+  onModelChange: (key: string) => void
+}) {
+  const active = models.filter((m) => m.active)
+  const providerKeys = [...new Set(active.map((m) => m.provider))]
+  const selectedProvider = active.find((m) => m.modelKey === selectedModelKey)?.provider ?? providerKeys[0] ?? ''
+  const modelsForProvider = active.filter((m) => m.provider === selectedProvider)
+
+  return (
+    <>
+      {providerKeys.length > 1 && (
+        <SearchSelectField
+          value={selectedProvider}
+          onChange={(p) => {
+            const first = active.find((m) => m.provider === p)
+            if (first) onModelChange(first.modelKey)
+          }}
+          placeholder="Select provider…"
+          options={providerKeys.map((p) => ({ value: p, label: p }))}
+        />
+      )}
+      <SearchSelectField
+        value={selectedModelKey}
+        onChange={onModelChange}
+        placeholder="Select Chainabit model…"
+        options={modelsForProvider.map((m) => ({ value: m.modelKey, label: m.name }))}
+      />
+    </>
+  )
 }
 
 export const LabProviderSelector: React.FC<LabProviderSelectorProps> = ({
@@ -43,9 +83,13 @@ export const LabProviderSelector: React.FC<LabProviderSelectorProps> = ({
   ollamaModels,
   ollamaError,
   refetchOllama,
+  chainabitModels,
+  chainabitConnected,
 }) => {
   const isCloudByok = fundingSource === 'user_byok_cloud'
   const isLocalByok = fundingSource === 'user_byok_local'
+  const isPlatformCredit = fundingSource === 'platform_credit'
+  const hasChainabitModels = chainabitConnected && chainabitModels && chainabitModels.length > 0
 
   return (
     <>
@@ -60,8 +104,37 @@ export const LabProviderSelector: React.FC<LabProviderSelectorProps> = ({
         />
       )}
 
-      {/* Wallet (platform credit): provider picker + model picker with lazy load */}
-      {!isCloudByok && !isLocalByok && (
+      {/* Platform credit + Chainabit connected: Chainabit provider + model picker */}
+      {isPlatformCredit && hasChainabitModels && (
+        <ChainabitModelPicker
+          models={chainabitModels!}
+          selectedModelKey={selectedModelKey}
+          onModelChange={onModelChange}
+        />
+      )}
+
+      {/* Platform credit + no Chainabit models: generic provider + model pickers */}
+      {isPlatformCredit && !hasChainabitModels && (
+        <>
+          <AIProviderSelectList
+            providers={providers}
+            isLoading={isLoadingProviders}
+            value={selectedProviderKey}
+            onChange={onProviderChange}
+            onOpen={onProviderDropdownOpen}
+          />
+          <AIModelSelectList
+            models={providerModels}
+            isLoading={isLoadingModels}
+            value={selectedModelKey}
+            onChange={onModelChange}
+            providerSelected={!!selectedProviderKey}
+          />
+        </>
+      )}
+
+      {/* Legacy: non-BYOK, non-platform-credit (fallback for undefined fundingSource) */}
+      {!isCloudByok && !isLocalByok && !isPlatformCredit && (
         <>
           <AIProviderSelectList
             providers={providers}
