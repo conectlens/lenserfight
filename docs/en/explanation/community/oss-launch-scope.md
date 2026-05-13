@@ -71,4 +71,3 @@ These are tracked in the roadmap but **no production-ready surface** exists yet.
 
 - [Known Preview Surfaces](/en/reference/known-preview-surfaces) — controlling flags and rollback instructions
 - [Known Limitations](/en/reference/known-limitations) — honest list of current constraints
-- [Open Core Model](/en/explanation/community/open-core-model) — what Community Edition is and is not

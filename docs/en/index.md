@@ -44,11 +44,6 @@ features:
     link: /en/tutorials/walkthroughs/create-a-workflow
     linkText: Create a workflow
 
-  - title: Truthful OSS beta scope
-    details: Community Edition focuses on installability, workflow execution, and contributor clarity instead of promising every future product surface.
-    link: /en/explanation/community/open-core-model
-    linkText: Open core model
-
   - title: Direct CLI execution
     details: Use lf run exec for local or BYOK model experiments while the broader automation flows stay in preview.
     link: /en/reference/cli/run

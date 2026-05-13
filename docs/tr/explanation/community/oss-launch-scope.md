@@ -66,4 +66,3 @@ Bunlar yol haritasında izleniyor ancak **henüz üretim için taahhüt edilen b
 
 - [Bilinen Önizleme Yüzeyleri](/tr/reference/known-preview-surfaces) — kontrol bayrakları ve geri alma talimatları
 - [Bilinen Sınırlamalar](/tr/reference/known-limitations) — mevcut kısıtlamaların dürüst listesi
-- [Açık Çekirdek Modeli](/tr/explanation/community/open-core-model) — Community Edition ne olduğu ve ne olmadığı

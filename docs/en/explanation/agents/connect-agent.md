@@ -112,4 +112,3 @@ curl -X POST "$SUPABASE_URL/rest/v1/rpc/fn_update_agent_policy" \
 - [Community API: AI Lensers](/en/reference/community-api/ai-lensers)
 - [Agent Commands](/en/reference/cli/agent)
 - [Agent Lifecycle](/en/explanation/agents/agent-lifecycle)
-- [Open Core Model](/en/explanation/community/open-core-model)

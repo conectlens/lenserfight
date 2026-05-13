@@ -26,5 +26,4 @@ Using or modifying this **code** under Apache-2.0 does not require a separate li
 
 ## Related
 
-- [Open Core Model](/en/explanation/community/open-core-model) — what ships in Community Edition vs cloud-only surfaces
 - [Brand guidelines](/en/explanation/community/brand-guidelines)

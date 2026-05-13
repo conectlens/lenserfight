@@ -62,4 +62,3 @@ Examples of small, relevant validation:
 - [Contributing](/en/how-to/contributors/contributing)
 - [Development Setup](/en/how-to/contributors/development-setup)
 - [Support](/en/how-to/contributors/support)
-- [Open Core Model](/en/explanation/community/open-core-model)

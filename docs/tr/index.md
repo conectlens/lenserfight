@@ -33,9 +33,6 @@ features:
   - title: CLI Aracı
     details: Değerlendirmeleri doğrudan terminal üzerinden çalıştırın. Otomasyon ve Agent entegrasyonu için.
     link: /tr/reference/cli/index
-  - title: Açık Çekirdek
-    details: Temel altyapı açık kaynak. Ekibinizin araçlarıyla entegre edin veya katkıda bulunun.
-    link: /tr/explanation/community/open-core-model
 ---
 
 > **Çeviri notu:** Bu belgeler aktif olarak Türkçeye çevrilmektedir. Eksik sayfalar için [İngilizce belgelere](/en/tutorials/getting-started/overview) başvurabilirsiniz.
