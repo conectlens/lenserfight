@@ -7,7 +7,8 @@ import { GitBranch, Layers, Clock, Shield, ChevronDown, ChevronUp } from 'lucide
 import React, { useState } from 'react'
 
 import { BattleStatusBadge } from '../display/BattleStatusBadge'
-import type { Battle, BattleType, VoterEligibility } from '../../types/battle.types'
+import type { Battle, BattleType, Contender, VoterEligibility } from '../../types/battle.types'
+import type { LensContextDetail } from '../../types/battle-layout.types'
 
 // ─── Labels ──────────────────────────────────────────────────────────────────
 
@@ -140,9 +141,11 @@ interface BattleRulesDrawerProps {
   onClose: () => void
   battle: Battle
   isOwner: boolean
+  lensDetails?: Record<string, LensContextDetail | null>
+  contenders?: Contender[]
 }
 
-export function BattleRulesDrawer({ open, onClose, battle, isOwner }: BattleRulesDrawerProps) {
+export function BattleRulesDrawer({ open, onClose, battle, isOwner, lensDetails, contenders }: BattleRulesDrawerProps) {
   return (
     <Drawer
       open={open}
@@ -194,7 +197,7 @@ export function BattleRulesDrawer({ open, onClose, battle, isOwner }: BattleRule
           </Section>
         )}
 
-        {/* Linked workflow / lens */}
+        {/* Linked workflow */}
         {battle.workflow_id && (
           <Section label="Workflow">
             <Badge color="blue" variant="outline">
@@ -203,12 +206,50 @@ export function BattleRulesDrawer({ open, onClose, battle, isOwner }: BattleRule
             </Badge>
           </Section>
         )}
+
+        {/* Linked lens — show per-contender titles when available */}
         {battle.lens_id && (
           <Section label="Lens">
-            <Badge color="yellow" variant="outline">
-              <Layers size={11} className="mr-1" />
-              Lens linked
-            </Badge>
+            {contenders && contenders.length > 0 ? (
+              <div className="space-y-2">
+                {contenders.map((c) => {
+                  const detail = lensDetails?.[c.id]
+                  return (
+                    <div key={c.id} className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-semibold text-greyscale-500 w-10 flex-shrink-0">
+                        Slot {c.slot}
+                      </span>
+                      {detail ? (
+                        <>
+                          <span className="text-sm font-medium text-greyscale-800 dark:text-greyscale-200 truncate">
+                            {detail.lensTitle}
+                          </span>
+                          {detail.versionNumber != null && (
+                            <span className="text-[11px] text-greyscale-400">v{detail.versionNumber}</span>
+                          )}
+                          {detail.paramCount > 0 && (
+                            <Badge color="yellow" variant="outline">
+                              <Layers size={10} className="mr-1" />
+                              {detail.paramCount}p
+                            </Badge>
+                          )}
+                        </>
+                      ) : (
+                        <Badge color="yellow" variant="outline">
+                          <Layers size={11} className="mr-1" />
+                          Lens linked
+                        </Badge>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <Badge color="yellow" variant="outline">
+                <Layers size={11} className="mr-1" />
+                Lens linked
+              </Badge>
+            )}
           </Section>
         )}
 
