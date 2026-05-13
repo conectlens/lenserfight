@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil } from 'lucide-react'
+import { KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil, Loader2 } from 'lucide-react'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
@@ -320,15 +320,16 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   const chainabitConnected = chainabitState === 'connected' || chainabitState === 'no_credits'
   const chainabitActive = chainabitState === 'connected'
   const chainabitNeedsAction = chainabitState === 'no_account' || chainabitState === 'invalid_connection'
+  const chainabitIsDisabled =
+    chainabitState === 'loading' ||
+    chainabitState === 'no_credits' ||
+    chainabitState === 'provider_error'
   const topUpUrl = `${CHAINABIT_APP_URL}/billing?utm_source=lenserfight&utm_medium=toggle&utm_campaign=topup`
 
   const handleChainabitClick = () => {
+    if (chainabitIsDisabled) return
     if (chainabitNeedsAction) {
       onChainabitConnect?.()
-      return
-    }
-    if (chainabitState === 'no_credits') {
-      window.open(topUpUrl, '_blank', 'noopener,noreferrer')
       return
     }
     onFundingSourceChange('platform_credit')
@@ -380,27 +381,34 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           <button
             type="button"
             onClick={handleChainabitClick}
+            disabled={chainabitIsDisabled}
             className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
               isCloud && chainabitActive
                 ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
-                : chainabitNeedsAction
-                  ? 'border-gray-200 dark:border-gray-600 opacity-60 hover:border-orange-300 hover:opacity-100'
-                  : chainabitState === 'no_credits'
-                    ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950 hover:border-amber-400'
+                : chainabitIsDisabled
+                  ? 'border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed'
+                  : chainabitNeedsAction
+                    ? 'border-gray-200 dark:border-gray-600 opacity-60 hover:border-orange-300 hover:opacity-100'
                     : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
             }`}
           >
             <ChainabitLogo size={16} />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Chainabit</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 tabular-nums">
-                {chainabitActive && walletBalance != null
-                  ? `${walletBalance.balance.toLocaleString()} cr`
-                  : chainabitState === 'no_credits'
-                    ? 'No credits'
-                    : chainabitNeedsAction
-                      ? 'Connect'
-                      : '—'}
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 tabular-nums flex items-center gap-1">
+                {chainabitState === 'loading' ? (
+                  <><Loader2 size={10} className="animate-spin" />Checking…</>
+                ) : chainabitState === 'provider_error' ? (
+                  'Unavailable'
+                ) : chainabitActive && walletBalance != null ? (
+                  `${walletBalance.balance.toLocaleString()} cr`
+                ) : chainabitState === 'no_credits' ? (
+                  'No credits'
+                ) : chainabitNeedsAction ? (
+                  'Connect'
+                ) : (
+                  '—'
+                )}
               </p>
             </div>
           </button>
