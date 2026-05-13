@@ -137,6 +137,24 @@ Denormalized vote summaries per contender, kept in sync on every vote.
 
 ---
 
+### `battles.contender_lens_assignments`
+
+Records which Connected Lens version is assigned to each contender slot, and stores the parameter values used at execution time.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `contender_id` | uuid | FK → `battles.contenders` |
+| `lens_id` | uuid | FK → `lenses.lenses` |
+| `version_id` | uuid | FK → `lenses.versions` (null = use latest published) |
+| `input_snapshot` | jsonb | `{ "paramLabel": value }` map — frozen parameter values substituted into `[[param]]` tokens at execution time. `NOT NULL DEFAULT '{}'`. |
+| `assigned_at` | timestamptz | — |
+| `assigned_by` | uuid | FK → `lensers.profiles` |
+
+**`input_snapshot` semantics:** when a lens version declares required `[[param]]` placeholders, the wizard (Step 7) or CLI collects values and stores them here. At execution start the system calls `renderLensWithSnapshot(templateBody, input_snapshot, versionParams)` to produce the final prompt. If any required parameter is absent, execution is blocked with a descriptive error.
+
+---
+
 ### `battles.rubrics` and `battles.rubric_criteria`
 
 Optional evaluation frameworks.
