@@ -4,12 +4,14 @@ export type ChainabitConnectionState =
   | 'invalid_connection'
   | 'no_credits'
   | 'connected'
+  | 'provider_error'
 
 export interface ChainabitAiModel {
   id: string
   modelKey: string
   name: string
   provider: string
+  providerDisplayName?: string
   capabilities: string[]
   active: boolean
   costPer1kTokens?: number

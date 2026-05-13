@@ -42,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   }
 
   const chainabitButtonClass = (() => {
-    if (chainabitState === 'no_account' || chainabitState === 'invalid_connection') {
+    if (chainabitState === 'no_account' || chainabitState === 'invalid_connection' || chainabitState === 'provider_error') {
       return 'flex items-center gap-1.5 text-xs font-medium text-red-500 dark:text-red-400 transition-colors hover:text-red-700 dark:hover:text-red-300'
     }
     if (chainabitState === 'no_credits') {
