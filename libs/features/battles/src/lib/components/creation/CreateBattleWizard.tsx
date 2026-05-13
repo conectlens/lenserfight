@@ -7,6 +7,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
 import { useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { useLenser } from '@lenserfight/features/profile'
+import { useChainabitConnection } from '@lenserfight/features/store'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { normalizeError } from '@lenserfight/shared/error'
 import { isValidUUID } from '@lenserfight/utils/validation'
@@ -171,6 +172,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [selectedModelKey, setSelectedModelKey] = useState('')
   const { models, isLoading: modelsLoading } = useAIModels()
   const battleFunding = useFundingSource(selectedProviderKey)
+  const chainabit = useChainabitConnection()
 
   const battleProviders: AIProvider[] = useMemo(() => {
     const seen = new Set<string>()
@@ -835,8 +837,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       onLocalKeyIdChange={battleFunding.setSelectedLocalKeyId}
                       availableLocalKeys={battleFunding.localKeys}
                       onAddLocalKey={battleFunding.addLocalKey}
+                      onRemoveLocalKey={battleFunding.removeLocalKey}
+                      onUpdateLocalKey={battleFunding.updateLocalKey}
                       walletBalance={battleFunding.walletBalance}
                       canUseBYOK={battleFunding.canUseBYOK}
+                      chainabitState={chainabit.state}
+                      chainabitModels={chainabit.models}
+                      onChainabitConnect={chainabit.reconnect}
                       providers={battleProviders}
                       isLoadingProviders={modelsLoading}
                       providerModels={battleProviderModels}
