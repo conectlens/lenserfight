@@ -5,6 +5,16 @@ import type { PublicExecutionJobRecord } from '../hooks/query/useExecutionJobs'
 import type { BattleScorecardData } from '../hooks/query/useBattleScorecard'
 
 /**
+ * Display-only details for a contender's assigned lens, resolved in the
+ * ImmersiveArenaView controller and passed down to all layout strategies.
+ */
+export interface LensContextDetail {
+  lensTitle: string
+  versionNumber: number | null
+  paramCount: number
+}
+
+/**
  * GRASP: Pure Fabrication — carries all resolved battle data to layout components.
  * Avoids each layout re-fetching the same hooks and decouples data fetching
  * (ImmersiveArenaView) from display (layout strategies).
@@ -31,6 +41,9 @@ export interface BattleLayoutContext {
 
   // Lens assignments keyed by contender_id
   lensAssignments: Record<string, ContenderLensAssignmentRecord | null>
+
+  // Lens display details keyed by contender_id (title, version, param count)
+  lensDetails: Record<string, LensContextDetail | null>
 
   // Actions
   onVote: (value: VoteValue, rationale: string) => Promise<void>
