@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import React from 'react'
+import React, { useState } from 'react'
 
 import { ScoreBar } from '@lenserfight/ui/widgets'
 import { Badge } from '@lenserfight/ui/components'
@@ -172,6 +172,7 @@ export function BattleResultsPanel({
   myVote,
   onVote,
 }: BattleResultsPanelProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const contenderA = contenders.find((c) => c.slot === 'A')
   const contenderB = contenders.find((c) => c.slot === 'B')
 
@@ -206,90 +207,118 @@ export function BattleResultsPanel({
       <div className="flex items-center gap-3">
         <h2 className="text-sm font-bold uppercase tracking-widest text-surface-text-disabled">Results</h2>
         <div className="flex-1 h-px bg-surface-border-subtle" />
-        {isResult && (
-          <span className="rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-emerald-300 dark:border-emerald-700">
-            Final
-          </span>
-        )}
-        {currentPhase === 'voting' && (
-          <span className="rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-blue-300 dark:border-blue-700">
-            Voting open
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {isResult && (
+            <span className="rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-emerald-300 dark:border-emerald-700">
+              Final
+            </span>
+          )}
+          {currentPhase === 'voting' && (
+            <span className="rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-blue-300 dark:border-blue-700">
+              Voting open
+            </span>
+          )}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1 hover:bg-surface-interactive rounded-md transition-colors text-surface-text-disabled hover:text-surface-text"
+            aria-label={isCollapsed ? 'Expand results' : 'Collapse results'}
+          >
+            <svg
+              className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '-rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
-        {currentPhase === 'idle' && (
-          <motion.div key="idle" variants={panelVariants} initial="initial" animate="animate" exit="exit">
-            <div className="rounded-xl border border-surface-border-subtle bg-surface-raised">
-              <IdleState />
+        {!isCollapsed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-6 pt-2">
+              {currentPhase === 'idle' && (
+                <motion.div key="idle" variants={panelVariants} initial="initial" animate="animate" exit="exit">
+                  <div className="rounded-xl border border-surface-border-subtle bg-surface-raised">
+                    <IdleState />
+                  </div>
+                </motion.div>
+              )}
+
+              {currentPhase === 'running' && (
+                <motion.div key="running" variants={panelVariants} initial="initial" animate="animate" exit="exit">
+                  <div className="rounded-xl border border-surface-border-subtle bg-surface-raised">
+                    <RunningState />
+                  </div>
+                </motion.div>
+              )}
+
+              {currentPhase === 'voting' && contenderA && contenderB && (
+                <motion.div key="voting" variants={panelVariants} initial="initial" animate="animate" exit="exit" className="space-y-4">
+                  <VotePanel
+                    battleId={battle.id}
+                    contenderA={{ id: contenderA.id, displayName: contenderA.display_name }}
+                    contenderB={{ id: contenderB.id, displayName: contenderB.display_name }}
+                    disabled={!currentUserId}
+                    voterEligibility={battle.voter_eligibility}
+                    existingVote={(myVote as VoteValue | null) ?? null}
+                    onVote={onVote}
+                  />
+                  {/* Show live vote counts during voting */}
+                  {totalVotes > 0 && (
+                    <div className="rounded-xl border border-surface-border-subtle bg-surface-raised p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-surface-text-disabled mb-3">
+                        Current standings ({totalVotes} vote{totalVotes !== 1 ? 's' : ''})
+                      </p>
+                      <ScoreBar
+                        scoreA={aggA?.raw_vote_count ?? 0}
+                        scoreB={aggB?.raw_vote_count ?? 0}
+                        labelA={contenderA.display_name.slice(0, 12)}
+                        labelB={contenderB.display_name.slice(0, 12)}
+                      />
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {currentPhase === 'result' && (
+                <motion.div key="result" variants={panelVariants} initial="initial" animate="animate" exit="exit" className="space-y-4">
+                  <WinnerAnnouncement
+                    winnerName={winnerName}
+                    winnerSlot={winnerSlot}
+                    voteA={aggA?.raw_vote_count ?? 0}
+                    voteB={aggB?.raw_vote_count ?? 0}
+                    drawCount={drawCount}
+                    totalVotes={totalVotes}
+                    forumThreadId={battle.forum_thread_id}
+                  />
+
+                  {hasScorecardData && (
+                    <ScorecardPanel
+                      scorecardData={scorecardData!}
+                      contenders={contenders}
+                    />
+                  )}
+
+                  {hasExecutionMetadata && (
+                    <ExecutionMetadataPanel
+                      executionJobs={executionJobs}
+                      contenders={contenders}
+                    />
+                  )}
+
+                  <BattleResultCTA battleId={battle.id} enabled={battle.status === 'closed'} />
+                </motion.div>
+              )}
             </div>
-          </motion.div>
-        )}
-
-        {currentPhase === 'running' && (
-          <motion.div key="running" variants={panelVariants} initial="initial" animate="animate" exit="exit">
-            <div className="rounded-xl border border-surface-border-subtle bg-surface-raised">
-              <RunningState />
-            </div>
-          </motion.div>
-        )}
-
-        {currentPhase === 'voting' && contenderA && contenderB && (
-          <motion.div key="voting" variants={panelVariants} initial="initial" animate="animate" exit="exit" className="space-y-4">
-            <VotePanel
-              battleId={battle.id}
-              contenderA={{ id: contenderA.id, displayName: contenderA.display_name }}
-              contenderB={{ id: contenderB.id, displayName: contenderB.display_name }}
-              disabled={!currentUserId}
-              voterEligibility={battle.voter_eligibility}
-              existingVote={(myVote as VoteValue | null) ?? null}
-              onVote={onVote}
-            />
-            {/* Show live vote counts during voting */}
-            {totalVotes > 0 && (
-              <div className="rounded-xl border border-surface-border-subtle bg-surface-raised p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-surface-text-disabled mb-3">
-                  Current standings ({totalVotes} vote{totalVotes !== 1 ? 's' : ''})
-                </p>
-                <ScoreBar
-                  scoreA={aggA?.raw_vote_count ?? 0}
-                  scoreB={aggB?.raw_vote_count ?? 0}
-                  labelA={contenderA.display_name.slice(0, 12)}
-                  labelB={contenderB.display_name.slice(0, 12)}
-                />
-              </div>
-            )}
-          </motion.div>
-        )}
-
-        {currentPhase === 'result' && (
-          <motion.div key="result" variants={panelVariants} initial="initial" animate="animate" exit="exit" className="space-y-4">
-            <WinnerAnnouncement
-              winnerName={winnerName}
-              winnerSlot={winnerSlot}
-              voteA={aggA?.raw_vote_count ?? 0}
-              voteB={aggB?.raw_vote_count ?? 0}
-              drawCount={drawCount}
-              totalVotes={totalVotes}
-              forumThreadId={battle.forum_thread_id}
-            />
-
-            {hasScorecardData && (
-              <ScorecardPanel
-                scorecardData={scorecardData!}
-                contenders={contenders}
-              />
-            )}
-
-            {hasExecutionMetadata && (
-              <ExecutionMetadataPanel
-                executionJobs={executionJobs}
-                contenders={contenders}
-              />
-            )}
-
-            <BattleResultCTA battleId={battle.id} enabled={battle.status === 'closed'} />
           </motion.div>
         )}
       </AnimatePresence>
