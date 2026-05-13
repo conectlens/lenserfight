@@ -1,29 +1,3 @@
-export interface WalletProduct {
-  id: string
-  name: string
-  slug: string
-  description: string | null
-  price_cents: number
-  credits_granted: number
-  pay_what_you_want: boolean
-  buy_now_url: string | null
-  test_mode: boolean
-  variantId: string
-  ls_variant_id: number
-  variant_name: string
-  order_count: number
-}
-
-export interface WalletCheckoutRequest {
-  variantId: string
-  email?: string
-}
-
-export interface WalletCheckoutResponse {
-  checkoutUrl: string
-  checkoutId: string
-}
-
 export interface WalletBalance {
   balance: number
 }
