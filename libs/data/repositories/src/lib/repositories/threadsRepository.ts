@@ -168,14 +168,20 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       | 'view_count'
       | 'thumbnail_url'
       | 'prompt_data'
-    > & { linked_prompt_id?: string | null }
+    > & { linked_prompt_id?: string | null; title?: string; content?: string }
   ): Promise<ThreadRecord> {
+    // fn_list_threads pre-joins title/content from entity_translations so private
+    // threads hydrate correctly. Only fall back to vw_content_threads_public (which
+    // excludes non-public threads) when the fields weren't provided by the caller.
+    const hasTranslation = (baseThread as any).title != null
     const [translationResult, authorProfile, tags, reactionTotals] = await Promise.all([
-      supabase
-        .from('vw_content_threads_public')
-        .select('title, content')
-        .eq('id', baseThread.id)
-        .maybeSingle(),
+      hasTranslation
+        ? Promise.resolve({ data: null as { title: string; content: string } | null, error: null })
+        : supabase
+            .from('vw_content_threads_public')
+            .select('title, content')
+            .eq('id', baseThread.id)
+            .maybeSingle(),
       this.getProfileById(baseThread.lenser_id),
       this.getTagsForEntity('thread', baseThread.id),
       this.getThreadReactionTotals(baseThread.id),
@@ -189,8 +195,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       visibility: baseThread.visibility,
       created_at: baseThread.created_at,
       updated_at: baseThread.updated_at,
-      title: translationResult.data?.title || 'Untitled',
-      content: translationResult.data?.content || '',
+      title: (baseThread as any).title || translationResult.data?.title || 'Untitled',
+      content: (baseThread as any).content || translationResult.data?.content || '',
       author_profile: authorProfile,
       tags,
       reaction_totals: reactionTotals,
