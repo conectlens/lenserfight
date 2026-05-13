@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Layers } from 'lucide-react'
 import type { BattleLayoutContext } from '../../../types/battle-layout.types'
 import { BattleResultsPanel } from '../../results/BattleResultsPanel'
 import { ExecutionStatusBadge } from '../ExecutionStatusBadge'
@@ -28,6 +29,7 @@ export function TextBattleLayout(ctx: BattleLayoutContext) {
     currentUserId,
     myVote,
     onVote,
+    lensDetails,
   } = ctx
 
   const { SubmissionRenderer } = renderer
@@ -89,6 +91,14 @@ export function TextBattleLayout(ctx: BattleLayoutContext) {
                     )}
                     {executionJob && (
                       <ExecutionStatusBadge status={executionJob.status} retryCount={executionJob.retry_count} />
+                    )}
+                    {lensDetails[contender.id] && (
+                      <span className="hidden sm:flex items-center gap-1 text-[10px] text-greyscale-400 bg-surface-raised border border-surface-border px-2 py-0.5 rounded-full">
+                        <Layers size={10} className="text-primary-yellow-500 flex-shrink-0" />
+                        {lensDetails[contender.id]!.lensTitle}
+                        {lensDetails[contender.id]!.versionNumber != null && ` v${lensDetails[contender.id]!.versionNumber}`}
+                        {lensDetails[contender.id]!.paramCount > 0 && ` · ${lensDetails[contender.id]!.paramCount}p`}
+                      </span>
                     )}
                   </div>
                 </div>
