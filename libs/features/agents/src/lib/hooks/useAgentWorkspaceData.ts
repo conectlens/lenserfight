@@ -72,14 +72,14 @@ export function useAgentWorkspaceData({
     queryKey: queryKeys.agents.workspaceBootstrap(handle),
     queryFn: () => agentWorkspaceService.getWorkspaceBootstrap(handle),
     enabled: isAgentOwner && !!agentProfile && !shouldSwitchWorkspace,
-    staleTime: 15_000,
+    staleTime: 30_000,
   })
 
   const schedulesQuery = useQuery<WorkflowScheduleRecord[]>({
     queryKey: queryKeys.workflows.schedules(null),
     queryFn: () => workflowsService.getSchedules(),
     enabled: isAgentOwner && !shouldSwitchWorkspace,
-    staleTime: 15_000,
+    staleTime: 30_000,
   })
 
   // Workflows are owned by the human lenser, not the AI agent.
@@ -108,14 +108,14 @@ export function useAgentWorkspaceData({
     queryKey: queryKeys.agents.lensBindings(agentProfile?.ai_lenser_id ?? ''),
     queryFn: () => agentsService.getLensBindings(agentProfile!.ai_lenser_id),
     enabled: isAgentOwner && !!agentProfile?.ai_lenser_id,
-    staleTime: 30_000,
+    staleTime: 120_000,
   })
 
   const modelBindingsQuery = useQuery<AgentModelBindingRecord[]>({
     queryKey: queryKeys.agents.modelBindings(agentProfile?.ai_lenser_id ?? ''),
     queryFn: () => agentsService.getModelBindings(agentProfile!.ai_lenser_id),
     enabled: isAgentOwner && !!agentProfile?.ai_lenser_id,
-    staleTime: 30_000,
+    staleTime: 120_000,
   })
 
   const bootstrapState: AgentWorkspaceBootstrapState = (() => {
