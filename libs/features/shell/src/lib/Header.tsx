@@ -2,10 +2,13 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useUnreadCount } from '@lenserfight/features/notifications'
 import { useLenser, useLenserWorkspace, useWorkspaceSwitchController } from '@lenserfight/features/profile'
 import { ShareModal, useShareContext } from '@lenserfight/features/share'
-import { useWallet } from '@lenserfight/features/store'
+import { useChainabitConnection } from '@lenserfight/features/store'
+import { ChainabitModal } from '@lenserfight/ui/modals'
 import { ActionMenu, Breadcrumbs, Button } from '@lenserfight/ui/components'
 import { useUI } from '@lenserfight/ui/providers'
-import { Bell, ChevronLeft, Menu, Share2, Shield, LogOut, Zap, Github } from 'lucide-react'
+import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
+import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
+import { Bell, ChevronLeft, Menu, Share2, Shield, LogOut, Github } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -15,7 +18,7 @@ interface HeaderProps {
 }
 
 const githubUrl = 'https://github.com/conectlens/lenserfight'
-const chainabitAppUrl = 'https://app.chainabit.com?utm_source=lenserfight&utm_medium=arena_header&utm_campaign=header_chainabit_partner'
+const topUpUrl = `${CHAINABIT_APP_URL}/billing?utm_source=lenserfight&utm_medium=modal&utm_campaign=topup`
 
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { shareConfig } = useShareContext()
@@ -24,17 +27,28 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { logout, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [isChainabitOpen, setIsChainabitOpen] = useState(false)
   const { activeWorkspace, humanWorkspace } = useLenserWorkspace()
   const { switchToProfile, isSwitching } = useWorkspaceSwitchController()
+  const unreadCount = useUnreadCount()
 
   const isAgentOwner = activeWorkspace?.type === 'ai'
-  const { balance, isLoading: walletLoading } = useWallet()
-  const unreadCount = useUnreadCount()
+  const { state: chainabitState, credits, models, reconnect } = useChainabitConnection()
 
   const handleLogout = async () => {
     await logout()
     navigate('/login')
   }
+
+  const chainabitButtonClass = (() => {
+    if (chainabitState === 'no_account' || chainabitState === 'invalid_connection') {
+      return 'flex items-center gap-1.5 text-xs font-medium text-red-500 dark:text-red-400 transition-colors hover:text-red-700 dark:hover:text-red-300'
+    }
+    if (chainabitState === 'no_credits') {
+      return 'flex items-center gap-1.5 text-xs font-medium text-amber-500 dark:text-amber-400 transition-colors hover:text-amber-700 dark:hover:text-amber-300'
+    }
+    return 'flex items-center gap-1.5 text-xs font-medium text-orange-500 transition-colors hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300'
+  })()
 
   return (
     <header className="sticky top-0 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm transition-all duration-200 w-full border-b border-gray-200/50 dark:border-gray-700">
@@ -71,14 +85,30 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             <Github size={14} />
           </a>
 
-          <a
-            href={chainabitAppUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs font-medium text-orange-500 transition-colors hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
-          >
-            <img src="/chainabit/favicon-32x32.png" width={20} height={20} alt="" className="rounded shrink-0" />
-          </a>
+          {!isAuthenticated && (
+            <button
+              onClick={() => partnerApiClient.startOAuthLogin(window.location.origin).catch(() => {})}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors"
+              title="Sign in with Chainabit"
+            >
+              <img src="/chainabit/favicon-32x32.png" width={16} height={16} alt="" className="rounded shrink-0" />
+              Sign in
+            </button>
+          )}
+
+          {isAuthenticated && (
+            <button
+              onClick={() => setIsChainabitOpen(true)}
+              className={chainabitButtonClass}
+              title="Chainabit — AI execution wallet"
+              aria-label="Chainabit connection"
+            >
+              <img src="/chainabit/favicon-32x32.png" width={20} height={20} alt="" className="rounded shrink-0" />
+              {chainabitState === 'connected' && credits !== null && (
+                <span className="tabular-nums">{credits.toLocaleString()} cr</span>
+              )}
+            </button>
+          )}
 
           {shareConfig && (
             <button
@@ -122,17 +152,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </button>
           )}
 
-          {isAuthenticated && balance !== null && (
-            <button
-              onClick={() => navigate('/billing')}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors"
-              title="Wallet balance — click to top up"
-            >
-              <Zap size={13} className="shrink-0" />
-              {walletLoading ? '…' : balance.toLocaleString()}
-            </button>
-          )}
-
           {isAuthenticated && (
             <button
               onClick={handleLogout}
@@ -153,6 +172,18 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           resourceType={shareConfig.resourceType}
           resourceId={shareConfig.resourceId}
           slug={shareConfig.slug}
+        />
+      )}
+
+      {isAuthenticated && (
+        <ChainabitModal
+          isOpen={isChainabitOpen}
+          onClose={() => setIsChainabitOpen(false)}
+          state={chainabitState}
+          credits={credits}
+          models={models}
+          onReconnect={reconnect}
+          topUpUrl={topUpUrl}
         />
       )}
     </header>
