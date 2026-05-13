@@ -1,4 +1,5 @@
 export type {
+  ChainabitAiModel,
   IPartnerProvider,
   PartnerProvision,
   PartnerBalance,
@@ -7,4 +8,4 @@ export type {
 export { PartnerRegistry, partnerRegistry } from './lib/partner-registry'
 export { ChainbitPartnerProvider } from './lib/providers/chainabit/chainabit.provider'
 export { partnerApiClient } from './lib/partner-api-client'
-export type { PartnerProvisionRecord } from './lib/partner-api-client'
+export type { PartnerProvisionRecord, ChainabitOAuthState } from './lib/partner-api-client'
