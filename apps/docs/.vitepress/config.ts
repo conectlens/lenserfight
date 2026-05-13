@@ -1885,6 +1885,7 @@ export default defineConfig({
         {
           text: 'Battle Guides',
           items: [
+            { text: 'Battle Types', link: '/en/how-to/battles/battle-types' },
             { text: 'Create, Publish & Manage', link: '/en/how-to/battles/create-a-battle' },
             { text: 'Join and Submit', link: '/en/how-to/battles/join-and-submit' },
             { text: 'Vote and Judge', link: '/en/how-to/battles/vote-and-judge' },
