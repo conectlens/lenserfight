@@ -2,6 +2,7 @@ import { lensesService, preferencesService } from '@lenserfight/data/repositorie
 import { useAuth } from '@lenserfight/features/auth'
 import { useReportContent } from '@lenserfight/features/home'
 import { useShareContext } from '@lenserfight/features/share'
+import { useChainabitConnection } from '@lenserfight/features/store'
 import { LenserPreferences } from '@lenserfight/types'
 import { ReportReasonEnum } from '@lenserfight/types'
 import { Button, SEOHead } from '@lenserfight/ui/components'
@@ -73,6 +74,7 @@ export const LensLabPage: React.FC = () => {
   })
 
   const funding = useFundingSource(lab.selectedProviderKey)
+  const chainabit = useChainabitConnection()
   // Keep the ref current so triggerStream always uses the latest decryption function
   resolveLocalKeyRef.current = funding.resolveLocalKey
 
@@ -496,6 +498,9 @@ export const LensLabPage: React.FC = () => {
             onRemoveLocalKey={funding.removeLocalKey}
             onUpdateLocalKey={funding.updateLocalKey}
             onProviderDropdownOpen={handleProviderDropdownOpen}
+            chainabitState={chainabit.state}
+            chainabitModels={chainabit.models}
+            onChainabitConnect={chainabit.reconnect}
             isLocked={!hasActiveLenserProfile}
             onSignIn={ensureProfile}
           />
