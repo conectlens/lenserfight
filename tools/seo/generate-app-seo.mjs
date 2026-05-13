@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   getAppSeo,
   injectSeoIntoHtml,
@@ -16,7 +17,9 @@ if (!appName) {
   process.exit(1)
 }
 
-const outDir = resolve(process.cwd(), `dist/apps/${appName}`)
+// Script lives at tools/seo/, so two levels up is the workspace root
+const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+const outDir = resolve(workspaceRoot, `dist/apps/${appName}`)
 const indexPath = resolve(outDir, 'index.html')
 
 if (!existsSync(indexPath)) {
