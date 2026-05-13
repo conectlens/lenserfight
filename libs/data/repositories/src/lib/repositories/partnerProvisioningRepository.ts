@@ -1,5 +1,5 @@
 import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
-import type { PartnerBalance, PartnerProvisionRecord, PartnerTokenRefreshResult } from '@lenserfight/types'
+import type { ChainabitAiModel, PartnerBalance, PartnerProvisionRecord, PartnerTokenRefreshResult } from '@lenserfight/types'
 
 export const partnerProvisioningRepository = {
   provision(partnerName: string): Promise<PartnerProvisionRecord> {
@@ -16,5 +16,17 @@ export const partnerProvisioningRepository = {
 
   sendClaimEmail(partnerName: string): Promise<void> {
     return partnerApiClient.sendClaimEmail(partnerName)
+  },
+
+  getAiModels(partnerName: string): Promise<ChainabitAiModel[]> {
+    return partnerApiClient.getAiModels(partnerName)
+  },
+
+  revokeToken(partnerName: string): Promise<void> {
+    return partnerApiClient.revokeToken(partnerName)
+  },
+
+  startOAuthConnect(returnUrl?: string): Promise<void> {
+    return partnerApiClient.startOAuthConnect(returnUrl)
   },
 }
