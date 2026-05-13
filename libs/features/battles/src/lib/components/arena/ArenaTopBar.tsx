@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, BookOpen, Timer } from 'lucide-react'
+import { ArrowLeft, BookOpen, Pencil, Timer } from 'lucide-react'
 import { HelpButton } from '@lenserfight/ui/components'
 import type { Battle, BattleType, BattleUIPhase } from '../../types/battle.types'
 import { useCountdown } from '../../hooks/utils/useCountdown'
@@ -35,6 +35,8 @@ interface ArenaTopBarProps {
   currentPhase: BattleUIPhase
   spectatorCount?: number
   onRulesOpen?: () => void
+  isOwner?: boolean
+  myContenderSlot?: 'A' | 'B' | null
 }
 
 export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
@@ -42,6 +44,8 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
   currentPhase,
   spectatorCount,
   onRulesOpen,
+  isOwner,
+  myContenderSlot,
 }) => {
   const { label, color } = PHASE_LABELS[currentPhase]
 
@@ -93,6 +97,25 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
       <span className={`flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full ${color}`}>
         {label}
       </span>
+
+      {/* Fighter slot chip */}
+      {myContenderSlot && (
+        <span className="flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full bg-primary-yellow-500/10 text-primary-yellow-600 border border-primary-yellow-300/50">
+          Slot {myContenderSlot}
+        </span>
+      )}
+
+      {/* Edit button — owner only, editable statuses */}
+      {isOwner && (battle.status === 'draft' || battle.status === 'open') && (
+        <Link
+          to={`/battles/create?battleId=${battle.id}&step=2`}
+          className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100 transition-colors px-2 py-1 rounded-lg hover:bg-surface-raised"
+          aria-label="Edit battle"
+        >
+          <Pencil size={13} />
+          <span className="hidden sm:inline">Edit</span>
+        </Link>
+      )}
 
       {/* Rules button */}
       {onRulesOpen && (
