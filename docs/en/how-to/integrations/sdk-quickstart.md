@@ -155,8 +155,8 @@ The SDK is ESM-only at runtime (with a CJS fallback in the build output). It run
 
 ## Next steps
 
-- [SDK reference](/en/reference/sdk) — full method-by-method docs
-- [`fn_browse_battles` server reference](/en/reference/api/fn-browse-battles) — what the server actually does
+- [SDK reference](/en/reference/sdk/) — full method-by-method docs
+- [RPC reference](/en/reference/database/rpc-reference) — server-side details of `fn_browse_battles` and other public RPCs
 - [GitHub Discussions → SDK feedback](https://github.com/conectlens/lenserfight/discussions/categories/sdk) — the channel for alpha feedback
 
 If something on this page breaks, [open an issue](https://github.com/conectlens/lenserfight/issues/new) and reference `Phase BW — SDK quickstart`.
