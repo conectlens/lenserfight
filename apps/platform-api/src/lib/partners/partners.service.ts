@@ -1,5 +1,5 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js'
-import type { IPartnerProvider, PartnerBalance } from '@lenserfight/infra/partner-provisioning'
+import type { ChainabitAiModel, IPartnerProvider, PartnerBalance } from '@lenserfight/infra/partner-provisioning'
 import type { PartnerProvisionRecord } from '@lenserfight/types'
 
 interface ProvisionRow {
@@ -52,8 +52,51 @@ export class PartnerProvisioningService {
   }
 
   async getBalance(provider: IPartnerProvider, userId: string): Promise<PartnerBalance> {
-    const externalId = await this.requireExternalId(provider.name, userId)
-    return provider.getBalance(externalId)
+    const { data } = await this.serviceClient
+      .from('partner_provisions')
+      .select('external_id, token')
+      .eq('user_id', userId)
+      .eq('partner_name', provider.name)
+      .maybeSingle<{ external_id: string; token: string | null }>()
+
+    if (!data?.external_id) throw new Error(`No provision found for partner ${provider.name}`)
+
+    if (provider.getBalanceWithToken && data.token) {
+      return provider.getBalanceWithToken(data.token)
+    }
+    return provider.getBalance(data.external_id)
+  }
+
+  async getAiModels(provider: IPartnerProvider, userId: string): Promise<ChainabitAiModel[]> {
+    const { data } = await this.serviceClient
+      .from('partner_provisions')
+      .select('token')
+      .eq('user_id', userId)
+      .eq('partner_name', provider.name)
+      .maybeSingle<{ token: string | null }>()
+
+    if (!data?.token) throw new Error(`No developer token for partner ${provider.name}`)
+    if (!provider.getAiModels) throw new Error(`Partner ${provider.name} does not support AI models`)
+
+    return provider.getAiModels(data.token)
+  }
+
+  async revokeToken(provider: IPartnerProvider, userId: string): Promise<void> {
+    const { data } = await this.serviceClient
+      .from('partner_provisions')
+      .select('token')
+      .eq('user_id', userId)
+      .eq('partner_name', provider.name)
+      .maybeSingle<{ token: string | null }>()
+
+    if (!data?.token || !provider.revokeToken) return
+
+    await provider.revokeToken(data.token)
+    await this.serviceClient
+      .from('partner_provisions')
+      .update({ token: null, updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('partner_name', provider.name)
   }
 
   async refreshToken(provider: IPartnerProvider, userId: string): Promise<{ refreshedAt: string }> {
