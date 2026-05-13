@@ -7,6 +7,7 @@ import {
   resolveLensKindFromTagSlugs,
 } from '@lenserfight/features/lens-kinds'
 import { FundingSourceToggle, useFundingSource } from '@lenserfight/features/lenses'
+import { useChainabitConnection } from '@lenserfight/features/store'
 import { Alert, Button, StepWizard } from '@lenserfight/ui/components'
 import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/forms'
 import { DialogFooterContext, DialogHeaderContext, ModalFooter } from '@lenserfight/ui/overlays'
@@ -287,6 +288,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
 
   // Funding source (delegates to useFundingSource from lenses feature)
   const funding = useFundingSource(defaultModelId)
+  const chainabit = useChainabitConnection()
 
   const cronPanelRef = useRef<WorkflowCronPanelRef>(null)
 
@@ -540,9 +542,13 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
             onLocalKeyIdChange={funding.setSelectedLocalKeyId}
             availableLocalKeys={funding.localKeys}
             onAddLocalKey={funding.addLocalKey}
+            onRemoveLocalKey={funding.removeLocalKey}
             onUpdateLocalKey={funding.updateLocalKey}
             walletBalance={funding.walletBalance}
             canUseBYOK={funding.canUseBYOK}
+            chainabitState={chainabit.state}
+            chainabitModels={chainabit.models}
+            onChainabitConnect={chainabit.reconnect}
           />
 
           <SelectField
