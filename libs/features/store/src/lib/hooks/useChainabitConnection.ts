@@ -14,10 +14,17 @@ export interface UseChainabitConnectionResult {
   reconnect: () => Promise<void>
 }
 
-function classifyError(err: unknown): 'no_account' | 'invalid_connection' {
-  const msg = err instanceof Error ? err.message : String(err)
-  if (msg.includes('401') || msg.toLowerCase().includes('unauthenticated')) {
-    return 'invalid_connection'
+function classifyError(err: unknown): 'no_account' | 'invalid_connection' | 'provider_error' {
+  if (err && typeof err === 'object') {
+    const obj = err as Record<string, unknown>
+    const code = obj['error'] as string | undefined
+    if (code === 'unauthorized' || code === 'unauthenticated') return 'invalid_connection'
+    if (code === 'not_provisioned') return 'no_account'
+    if (code === 'provider_error') return 'provider_error'
+  }
+  if (err instanceof Error) {
+    const msg = err.message
+    if (msg.includes('401') || msg.toLowerCase().includes('unauthenticated')) return 'invalid_connection'
   }
   return 'no_account'
 }
