@@ -12,6 +12,10 @@ import { handlePartnersProvisionRoute } from './routes/partners-provision.route'
 import { handlePartnersBalanceRoute } from './routes/partners-balance.route'
 import { handlePartnersRefreshTokenRoute } from './routes/partners-refresh-token.route'
 import { handlePartnersSendClaimRoute } from './routes/partners-send-claim.route'
+import { handlePartnersModelsRoute } from './routes/partners-models.route'
+import { handlePartnersRevokeRoute } from './routes/partners-revoke.route'
+import { handleChainabitLoginRoute } from './routes/partners-oauth-start.route'
+import { handlePartnersOAuthCallbackRoute } from './routes/partners-oauth-callback.route'
 import { handleHealthRoute } from './routes/health.route'
 import { handleBattleShareCardRoute } from './routes/battles-share-card.route'
 import { handleMediaProxyRoute } from './routes/media-proxy.route'
@@ -127,6 +131,26 @@ const server = createServer(async (req, res) => {
         await handlePartnersSendClaimRoute(req, res, partnerName, requestId, startedAt)
         return
       }
+      if (req.method === 'GET' && parts[3] === 'models') {
+        await handlePartnersModelsRoute(req, res, partnerName, requestId, startedAt)
+        return
+      }
+      if (req.method === 'POST' && parts[3] === 'revoke') {
+        await handlePartnersRevokeRoute(req, res, partnerName, requestId, startedAt)
+        return
+      }
+    }
+
+    // GET /v1/partners/:name/oauth/callback — Chainabit redirects here; no JWT (browser redirect)
+    if (req.method === 'GET' && parts[0] === 'v1' && parts[1] === 'partners' && parts[3] === 'oauth' && parts[4] === 'callback') {
+      await handlePartnersOAuthCallbackRoute(req, res)
+      return
+    }
+
+    // GET /v1/auth/chainabit/login — unauthenticated entry for social sign-in via Chainabit
+    if (req.method === 'GET' && parts[0] === 'v1' && parts[1] === 'auth' && parts[2] === 'chainabit' && parts[3] === 'login') {
+      await handleChainabitLoginRoute(req, res)
+      return
     }
 
     // POST /workflows/:id/trigger — HMAC webhook (public, rate-limited)
