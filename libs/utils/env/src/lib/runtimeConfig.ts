@@ -137,3 +137,5 @@ export const ENABLE_CAPTCHA = isProd && !isMock
 
 // Analytics
 export const GA_MEASUREMENT_ID = import.meta.env.GA_MEASUREMENT_ID || ''
+export const PUBLIC_POSTHOG_PROJECT_TOKEN = (import.meta.env['PUBLIC_POSTHOG_PROJECT_TOKEN'] as string | undefined) ?? ''
+export const PUBLIC_POSTHOG_HOST = (import.meta.env['PUBLIC_POSTHOG_HOST'] as string | undefined) ?? 'https://us.i.posthog.com'
