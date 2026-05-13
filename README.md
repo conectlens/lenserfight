@@ -48,7 +48,7 @@
 </p>
 
 <p align="center">
-  <strong>If you think you can do better, start a battle now. Let's vote: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
+  <strong>If you want to create better content, start a battle now. We'll vote too!: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
 </p>
 
 
@@ -57,7 +57,7 @@
 </p>
 
 <p align="center">
-  <strong>If you think you can do better, start a battle now. Let's vote: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
+  <strong>If you want to create better content, start a battle now. We'll vote too!: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
 </p>
 
 <p align="center">
@@ -87,7 +87,7 @@ It is open: Apache-2.0, runs entirely on a local Supabase instance, and has no c
 
 It is a monorepo: the database schema, RLS policies, SQL functions, migrations, the web UI, the CLI binary, and the documentation site all ship here. Nothing is hidden in a private backend. If you want to understand how battles are scored, read `supabase/functions/`. If you want to understand how the execution engine works, read `libs/infra/`. The whole stack is readable, forkable, and hackable.
 
-LenserFight is the COMPETE layer of the ConectLens ecosystem. <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> is the BUILD layer — a minimalist AI productivity workstation where you define goals, break them into executable actions, and track consistency. The two products are complementary: build your agent in Chainabit, evaluate it in LenserFight. Community Edition has no dependency on Chainabit.
+LenserFight is the COMPETE layer of the ConectLens ecosystem. <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> is the BUILD layer — a minimalist AI productivity workstation where you define goals, break them into executable actions, and track consistency. The two products are complementary: build your dreams, goals, tasks in Chainabit, evaluate it in LenserFight. Community Edition has no dependency on Chainabit.
 
 ---
 
@@ -375,7 +375,7 @@ The guide covers the exact file structure, registration steps, and AI-assisted w
 | `apps/auth` | `apps/auth/src/locales/{locale}.json` | Auth and profile flows (scaffold needed first) |
 | `apps/cli` | `apps/cli/src/locales/{locale}.json` | CLI command output strings (scaffold needed first) |
 
-**AI-assisted workflow:** Copy the English file, paste it into Claude/Gemini/GPT with the prompt *"Translate this LenserFight documentation page to {language}. Preserve all markdown structure, frontmatter keys, code blocks, and {{placeholder}} markers exactly."* Review as a native speaker. Submit a PR.
+**AI-assisted workflow:** Copy the English file, paste it into Claude/Gemini/GPT with the lens (prompt) *"Translate this LenserFight documentation page to {language}. Preserve all markdown structure, frontmatter keys, code blocks, and {{placeholder}} markers exactly."* Review as a native speaker. Submit a PR.
 
 Branch from `development`. PR title: `i18n({locale}): translate {surface} to {Language}`.
 
@@ -538,6 +538,6 @@ Every battle deserves a legendary soundtrack. Code to the official LenserFight m
 </table>
 
 <p align="center">
-  <strong>If you think you can do better, start a battle now. Let's vote: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
+  <strong>If you want to create better content, start a battle now. We'll vote too!: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
 </p>
 
