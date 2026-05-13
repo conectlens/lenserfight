@@ -1,4 +1,5 @@
 import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance, LensVersionParam, GenerativeMediaParams } from '@lenserfight/types'
+import type { ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/types'
 import { Button } from '@lenserfight/ui/components'
 import { Loader2, Play, Square } from 'lucide-react'
 import React, { useState } from 'react'
@@ -68,6 +69,10 @@ interface LabExecutionPanelProps {
   onUpdateLocalKey?: (id: string, rawKey: string, label: string) => Promise<void>
   /** Called when the user first opens the provider dropdown — triggers lazy data fetch */
   onProviderDropdownOpen?: () => void
+  // Chainabit connection state (for funding toggle)
+  chainabitState?: ChainabitConnectionState
+  chainabitModels?: ChainabitAiModel[] | null
+  onChainabitConnect?: () => void
 }
 
 export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
@@ -105,6 +110,9 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   onRemoveLocalKey,
   onUpdateLocalKey,
   onProviderDropdownOpen,
+  chainabitState,
+  chainabitModels,
+  onChainabitConnect,
   isLocked = false,
   lockedTitle = 'Run Lens',
   lockedDescription = 'Sign in or register with a Lenser profile to run this lens and manage executions.',
@@ -230,6 +238,9 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               onUpdateLocalKey={onUpdateLocalKey}
               walletBalance={walletBalance}
               canUseBYOK={canUseBYOK ?? false}
+              chainabitState={chainabitState}
+              chainabitModels={chainabitModels}
+              onChainabitConnect={onChainabitConnect}
               providers={providers}
               isLoadingProviders={isLoadingProviders}
               providerModels={providerModels}
