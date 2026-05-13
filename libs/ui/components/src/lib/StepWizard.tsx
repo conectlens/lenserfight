@@ -105,17 +105,18 @@ export const StepWizard: React.FC<StepWizardProps> = ({
 
   const hasSkip = !!skipButton
   const skipLabel = skipButton?.label
+  const hasCancel = !!onCancel
 
   const footerNode = useMemo(() => (
     <ModalFooter
       leftButton={{
-        label: currentStep === 0 && onCancel ? 'Cancel' : '← Back',
+        label: currentStep === 0 && hasCancel ? 'Cancel' : '← Back',
         onClick: () => {
           const { onBack: back, onCancel: cancel } = callbacksRef.current
           if (currentStep === 0 && cancel) cancel()
           else back()
         },
-        disabled: !onCancel && currentStep === 0,
+        disabled: !hasCancel && currentStep === 0,
         variant: 'ghost',
       }}
       rightButtons={
@@ -141,14 +142,16 @@ export const StepWizard: React.FC<StepWizardProps> = ({
             }
       }
     />
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), [currentStep, onCancel, hasSkip, skipLabel, isLastStep, completeIcon, completeLabel,
+  ), [currentStep, hasCancel, hasSkip, skipLabel, isLastStep, completeIcon, completeLabel,
       handlePrimaryAction, canProceed, isCompleting, nextLabel, isNextLoading])
 
   useEffect(() => {
     setFooter(footerNode)
+  }, [footerNode, setFooter])
+
+  useEffect(() => {
     return () => clearFooter()
-  }, [footerNode, setFooter, clearFooter])
+  }, [clearFooter])
 
   return (
     <div className="flex flex-col">
