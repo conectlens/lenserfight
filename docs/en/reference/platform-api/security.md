@@ -69,5 +69,4 @@ User data is stored in the Supabase cloud region chosen at project setup. Lenser
 ## Related
 
 - [RLS Reference](/en/reference/database/rls-reference)
-- [Open Core Model](/en/explanation/community/open-core-model)
 - [Security Policy](/en/how-to/contributors/security)
