@@ -35,6 +35,7 @@ export const RecentIncidentsFeed: React.FC<RecentIncidentsFeedProps> = ({
       return (data ?? []) as RunIncidentRecord[]
     },
     enabled: !!aiLenserId,
+    staleTime: 60_000,
   })
 
   return (
