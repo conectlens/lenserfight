@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import { Button } from '@lenserfight/ui/components'
 import { resolveProductEdition, isLocal as isDevMode } from '@lenserfight/utils/env'
 
 interface OAuthButtonGroupProps {
-  onChainabit: () => void
+  onChainabit: () => void | Promise<void>
   onOAuth: (provider: 'google' | 'github') => void
   isLoading: boolean
   disabled: boolean
@@ -16,6 +17,8 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
   disabled,
 }) => {
   const edition = resolveProductEdition()
+  const [chainabitError, setChainabitError] = useState<string | null>(null)
+  const [chainabitPending, setChainabitPending] = useState(false)
 
   // "Hide others in the 'PRODUCT_EDITION=local' and 'PRODUCT_EDITION=cloud'"
   // "but make visible Chainabit OAUTH if 'PRODUCT_EDITION=cloud'"
@@ -23,6 +26,18 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
 
   const showChainabit = edition === 'cloud' || edition === 'local' || isDevMode
   const showOthers = edition !== 'cloud' && edition !== 'local' && !isDevMode
+
+  const handleChainabit = async () => {
+    setChainabitError(null)
+    setChainabitPending(true)
+    try {
+      await onChainabit()
+    } catch (err: unknown) {
+      setChainabitError(err instanceof Error ? err.message : 'Chainabit sign-in unavailable.')
+    } finally {
+      setChainabitPending(false)
+    }
+  }
 
   return (
     <>
@@ -38,25 +53,33 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
       </div>
 
       {showChainabit && (
-        <Button
-          type="button"
-          onClick={onChainabit}
-          isLoading={isLoading}
-          disabled={disabled}
-          variant="secondary"
-          fullWidth
-          className="flex items-center justify-center gap-3 py-2.5 mb-3 border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm text-orange-700 dark:text-orange-300 rounded-xl"
-          title="Continue with Chainabit"
-        >
-          <img
-            src="/chainabit/favicon-32x32.png"
-            width={20}
-            height={20}
-            alt="Chainabit"
-            style={{ objectFit: 'contain' }}
-          />
-          Continue with Chainabit
-        </Button>
+        <>
+          <Button
+            type="button"
+            onClick={handleChainabit}
+            isLoading={isLoading || chainabitPending}
+            disabled={disabled || chainabitPending}
+            variant="secondary"
+            fullWidth
+            className="flex items-center justify-center gap-3 py-2.5 mb-3 border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm text-emerald-700 dark:text-emerald-300 rounded-xl"
+            title="Continue with Chainabit"
+          >
+            <img
+              src="/chainabit/favicon-32x32.png"
+              width={20}
+              height={20}
+              alt="Chainabit"
+              style={{ objectFit: 'contain' }}
+            />
+            Continue with Chainabit
+          </Button>
+          {chainabitError && (
+            <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs">
+              <AlertTriangle size={13} className="shrink-0" />
+              <span>{chainabitError}</span>
+            </div>
+          )}
+        </>
       )}
 
       {showOthers && (
