@@ -3,9 +3,9 @@ import { KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil } from 'lucide
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
-import { SURFACE } from '@lenserfight/utils/env'
+import { SURFACE, CHAINABIT_APP_URL } from '@lenserfight/utils/env'
 import { Link } from 'react-router-dom'
-import type { LocalKeyMeta } from '@lenserfight/types'
+import type { LocalKeyMeta, ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/types'
 import { LabProviderSelector } from './LabProviderSelector'
 import { useOllamaModels } from '../hooks/useOllamaModels'
 
@@ -26,6 +26,10 @@ interface FundingSourceToggleProps {
   // Common
   walletBalance: WalletBalance | undefined
   canUseBYOK: boolean
+  // Chainabit connection state
+  chainabitState?: ChainabitConnectionState
+  chainabitModels?: ChainabitAiModel[] | null
+  onChainabitConnect?: () => void
   // Optional: Provider/Model selection section (shown when onModelChange is provided)
   providers?: AIProvider[]
   isLoadingProviders?: boolean
@@ -288,6 +292,9 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   onUpdateLocalKey,
   walletBalance,
   canUseBYOK,
+  chainabitState,
+  chainabitModels,
+  onChainabitConnect,
   // Model/Provider selection props
   providers,
   isLoadingProviders,
@@ -309,6 +316,23 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   const localKeyEnabled = true
   const selectableByokCount = availableLocalKeys.length
   const canSelectByok = localKeyEnabled && canUseBYOK
+
+  const chainabitConnected = chainabitState === 'connected' || chainabitState === 'no_credits'
+  const chainabitActive = chainabitState === 'connected'
+  const chainabitNeedsAction = chainabitState === 'no_account' || chainabitState === 'invalid_connection'
+  const topUpUrl = `${CHAINABIT_APP_URL}/billing?utm_source=lenserfight&utm_medium=toggle&utm_campaign=topup`
+
+  const handleChainabitClick = () => {
+    if (chainabitNeedsAction) {
+      onChainabitConnect?.()
+      return
+    }
+    if (chainabitState === 'no_credits') {
+      window.open(topUpUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+    onFundingSourceChange('platform_credit')
+  }
 
   useEffect(() => {
     if (!isCloudEdition && (fundingSource === 'platform_credit' || fundingSource === 'user_byok_cloud')) {
@@ -355,17 +379,28 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         {isCloudEdition && (
           <button
             type="button"
-            onClick={() => onFundingSourceChange('platform_credit')}
-            className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isCloud
+            onClick={handleChainabitClick}
+            className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
+              isCloud && chainabitActive
                 ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
-                : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
-              }`}
+                : chainabitNeedsAction
+                  ? 'border-gray-200 dark:border-gray-600 opacity-60 hover:border-orange-300 hover:opacity-100'
+                  : chainabitState === 'no_credits'
+                    ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950 hover:border-amber-400'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
+            }`}
           >
             <ChainabitLogo size={16} />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Chainabit</p>
               <p className="text-[10px] text-gray-500 dark:text-gray-400 tabular-nums">
-                {walletBalance != null ? `${walletBalance.balance.toLocaleString()} cr` : '—'}
+                {chainabitActive && walletBalance != null
+                  ? `${walletBalance.balance.toLocaleString()} cr`
+                  : chainabitState === 'no_credits'
+                    ? 'No credits'
+                    : chainabitNeedsAction
+                      ? 'Connect'
+                      : '—'}
               </p>
             </div>
           </button>
@@ -513,19 +548,18 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         </p>
       )}
 
-      {!canSelectByok && localKeyEnabled && availableLocalKeys.length === 0 && (
-        <p className="text-xs text-gray-400 dark:text-gray-500">
-          No local keys found. Add one in this panel to get started.
-        </p>
-      )}
-
       {/* Low balance hint */}
-      {isCloudEdition && isCloud && walletBalance != null && walletBalance.balance <= 0 && (
+      {isCloudEdition && isCloud && chainabitState === 'no_credits' && (
         <p className="text-xs text-amber-600 dark:text-amber-400">
           No credits remaining.{' '}
-          <Link to="/billing" className="hover:underline">
-            Add credits
-          </Link>
+          <a
+            href={topUpUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline"
+          >
+            Add credits on Chainabit
+          </a>
         </p>
       )}
 
@@ -549,6 +583,8 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           ollamaModels={ollamaModels}
           ollamaError={ollamaError}
           refetchOllama={refetchOllama}
+          chainabitModels={chainabitModels}
+          chainabitConnected={chainabitConnected}
         />
       )}
     </div>
