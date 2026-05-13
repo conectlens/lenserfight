@@ -71,12 +71,12 @@ lf migrate-terminology --json --no-global > plan.json
 - After importing third-party `.lenserfight/` packs.
 - Before publishing — canonical terminology is required for `lf publish`.
 
-The canonical vocabulary is set out in the [LenserFight file system reference](/lenserfight-file-system).
+The canonical vocabulary is set out in the [LenserFight file system reference](/en/lenserfight-file-system).
 
 ---
 
 ## Related
 
-- [Lenserfight file system](/lenserfight-file-system)
+- [Lenserfight file system](/en/lenserfight-file-system)
 - [`lf validate`](validate.md) — schema-validate canonical objects after migration
 - [`lf import`](import.md) — register migrated objects in the local registry

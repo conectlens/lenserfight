@@ -52,7 +52,7 @@ These are tracked in the roadmap but **no production-ready surface** exists yet.
 
 | Surface | Why out of scope |
 |---------|-----------------|
-| **Stable** public client SDK on npm (`@lenserfight/sdk` v1.0) | Alpha line `0.1.0-alpha.1` is published (Phase BW); v1.0 contract follows 4–6 weeks of feedback. See [SDK reference](/en/reference/sdk). |
+| **Stable** public client SDK on npm (`@lenserfight/sdk` v1.0) | Alpha line `0.1.0-alpha.1` is published (Phase BW); v1.0 contract follows 4–6 weeks of feedback. See [SDK reference](/en/reference/sdk/). |
 | **Stable** connector SDK on npm (`@lenserfight/adapter-connector` v1) | Adapter code and RFC exist in-repo (Phase 10); v1 contract and npm promotion are Phase 16 — see [Connectors](/en/reference/connectors/index). |
 | Connector marketplace | Depends on stable public SDK and governance |
 | Billing and credits | Handled by Chainabit (private commercial API) — not part of OSS |

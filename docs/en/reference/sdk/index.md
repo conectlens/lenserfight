@@ -122,4 +122,4 @@ See [maintainers](https://github.com/conectlens/lenserfight/blob/main/MAINTAINER
 
 - [SDK quickstart](/en/how-to/integrations/sdk-quickstart) — 10-step walkthrough
 - [Connector SDK](/en/reference/connectors/index) — the separate `@lenserfight/adapter-connector` package for building inbound connectors
-- [Anonymous browse RPC](/en/reference/api/fn-browse-battles) — server-side details of `fn_browse_battles`
+- [RPC reference](/en/reference/database/rpc-reference) — server-side details of all public RPCs including `fn_browse_battles`

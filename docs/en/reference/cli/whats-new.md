@@ -49,5 +49,5 @@ lf whats-new --n 5 --json | jq '.[].version'
 
 ## Related
 
-- [Changelog](/en/changelog) — the canonical, hosted release log
+- [Changelog](/changelog) — the canonical, hosted release log
 - [Incident response](/en/how-to/operations/incident-response) — the operational playbook these release notes feed into
