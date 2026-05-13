@@ -14,16 +14,7 @@ function readPublicBaseUrl(envKey: string, fallback: string): string {
  * Also emits a dev-mode warning so the misconfiguration is visible early.
  */
 function stripSupabaseRestPath(url: string): string {
-  const stripped = url.replace(/\/rest\/v\d+\/?$/, '')
-  if (import.meta.env.DEV && stripped !== url) {
-    console.warn(
-      '[env] API_URL contains a Supabase PostgREST path (/rest/v1). ' +
-      'API_URL must point to the LenserFight platform API (e.g. http://localhost:8786), ' +
-      'not the Supabase REST endpoint. The path suffix has been stripped automatically. ' +
-      'Update your .env.local to silence this warning.'
-    )
-  }
-  return stripped
+  return url.replace(/\/rest\/v\d+\/?$/, '')
 }
 
 /** Default local auth origin (`nx serve auth` — see `apps/auth/vite.config.mts`). */
