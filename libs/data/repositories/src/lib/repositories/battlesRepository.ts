@@ -344,6 +344,7 @@ export interface ChatCursor {
 }
 
 export interface BattlesRepositoryPort {
+  getBattleById(id: string): Promise<BattleRecord | null>
   getBattleBySlug(slug: string): Promise<BattleRecord | null>
   getBattlesFeed(filter?: string, limit?: number, battleType?: BattleType, cursor?: string, sortBy?: 'newest' | 'most_votes' | 'trending'): Promise<BattleRecord[]>
   getBattlesFeedItems(options?: BattlesFeedOptions): Promise<BattleFeedItemRecord[]>
@@ -500,6 +501,13 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
 
   private readonly battleSelect =
     'id, slug, title, task_prompt, status, total_vote_count, published_at, voting_opens_at, voting_closes_at, battle_type, voter_eligibility, handicap_config, creator_lenser_id, forum_thread_id, workflow_id, lens_id, execution_starts_at, auto_publish, voting_duration_hours, vote_velocity, og_image_url'
+
+  async getBattleById(id: string): Promise<BattleRecord | null> {
+    const { data, error } = await supabase.rpc('fn_get_battle', { p_battle_id: id })
+    if (error) this.handleError(error)
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as BattleRecord | null
+  }
 
   async getBattleBySlug(slug: string): Promise<BattleRecord | null> {
     const { data, error } = await supabase.rpc('fn_get_battle_by_slug', { p_slug: slug })

@@ -15,6 +15,7 @@ import {
   ContenderLensAssignmentRecord,
   AssignLensInput,
   CreateBattleInput,
+  ScheduleBattleInput,
   ChatCursor,
   AiJudgeVerdictRecord,
   DLQEntryRecord,
@@ -23,7 +24,7 @@ import {
 
 const battlesRepo = new SupabaseBattlesRepository()
 
-export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput, ContenderLensAssignmentRecord, AssignLensInput, CreateBattleInput, ChatCursor, AiJudgeVerdictRecord, DLQEntryRecord, PublicExecutionJobRecord }
+export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput, ContenderLensAssignmentRecord, AssignLensInput, CreateBattleInput, ScheduleBattleInput, ChatCursor, AiJudgeVerdictRecord, DLQEntryRecord, PublicExecutionJobRecord }
 
 export interface BattleContendersData {
   contenders: ContenderRecord[]
@@ -44,11 +45,17 @@ export const battlesService = {
   createBattle: (input: CreateBattleInput): Promise<BattleRecord> =>
     battlesRepo.createBattle(input),
 
+  getBattleById: (id: string): Promise<BattleRecord | null> =>
+    battlesRepo.getBattleById(id),
+
   getBattleBySlug: (slug: string): Promise<BattleRecord | null> =>
     battlesRepo.getBattleBySlug(slug),
 
   updateBattle: (id: string, input: Partial<CreateBattleInput>): Promise<BattleRecord> =>
     battlesRepo.updateBattle(id, input),
+
+  scheduleBattle: (input: ScheduleBattleInput): Promise<BattleRecord> =>
+    battlesRepo.scheduleBattle(input),
 
   getLatestDraftBattleByWorkflowId: (workflowId: string): Promise<BattleRecord | null> =>
     battlesRepo.getLatestDraftBattleByWorkflowId(workflowId),
