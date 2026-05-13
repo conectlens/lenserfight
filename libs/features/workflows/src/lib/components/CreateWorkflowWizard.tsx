@@ -11,19 +11,18 @@ import { Alert, Button, StepWizard } from '@lenserfight/ui/components'
 import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/forms'
 import { DialogFooterContext, DialogHeaderContext, ModalFooter } from '@lenserfight/ui/overlays'
 import { useWizardStep } from '@lenserfight/ui/routing'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { CalendarClock, Check, GitBranch, GitFork, KeyRound, Layers, Sparkles } from 'lucide-react'
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
-
-import { useTemplateWorkflows } from '../hooks/useTemplateWorkflows'
 
 import { useCreateWorkflow } from '../hooks/useCreateWorkflow'
+import { useTemplateWorkflows } from '../hooks/useTemplateWorkflows'
 import { useUpdateWorkflow } from '../hooks/useUpdateWorkflow'
-import type { WorkflowCronPanelRef } from './WorkflowCronPanel'
+
 import { WorkflowCronPanel } from './WorkflowCronPanel'
 
+import type { WorkflowCronPanelRef } from './WorkflowCronPanel'
 import type { LensKind, LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 
@@ -72,6 +71,8 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     icon: <CalendarClock size={20} />,
   },
 ]
+
+const CREATE_WORKFLOW_COMPLETE_ICON = <Sparkles size={14} />
 
 // ─── Lens picker (inline, no new file) ────────────────────────────────────────
 
@@ -402,6 +403,8 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
   const { setHeader, clearHeader } = useContext(DialogHeaderContext)
   const { setFooter, clearFooter } = useContext(DialogFooterContext)
 
+  const stableOnCancel = useCallback(() => onCancel(), [onCancel])
+
   useEffect(() => {
     if (!showTemplatePicker || editMode) return
     setHeader({
@@ -416,15 +419,14 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     })
     setFooter(
       <ModalFooter
-        leftButton={{ label: 'Cancel', onClick: onCancel, variant: 'ghost' }}
+        leftButton={{ label: 'Cancel', onClick: stableOnCancel, variant: 'ghost' }}
       />
     )
     return () => {
       clearHeader()
       clearFooter()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showTemplatePicker, editMode])
+  }, [showTemplatePicker, editMode, stableOnCancel, setHeader, setFooter, clearHeader, clearFooter])
 
   if (showTemplatePicker && !editMode) {
     return (
@@ -476,7 +478,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
       canProceed={step === 0 ? titleValue.length >= 3 : true}
       isCompleting={isSubmitting}
       completeLabel={editMode ? 'Save Changes' : createdWorkflowId ? 'Done' : 'Create workflow'}
-      completeIcon={editMode || createdWorkflowId ? undefined : <Sparkles size={14} />}
+      completeIcon={editMode || createdWorkflowId ? undefined : CREATE_WORKFLOW_COMPLETE_ICON}
       skipButton={
         !editMode && step === 3
           ? { label: 'Skip for now', onClick: () => onCreated(createdWorkflowId!) }
