@@ -74,7 +74,7 @@ export const LoginPage: React.FC = () => {
   }
 
   const handleChainabit = () => {
-    partnerApiClient.startOAuthLogin(window.location.origin).catch(() => {})
+    return partnerApiClient.startOAuthLogin(window.location.origin)
   }
 
   const handleOAuth = async (provider: 'google' | 'github') => {
