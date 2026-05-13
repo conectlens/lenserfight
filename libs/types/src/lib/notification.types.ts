@@ -1,6 +1,6 @@
 // ─── Notification type strings ────────────────────────────────────────────────
 // Single source of truth for the discriminant. Must stay in sync with the SQL
-// CHECK constraint in public.notifications (migration 20270101000000).
+// CHECK constraint in public.notifications (migration 20271209000000).
 
 export type NotificationType =
   // Battle (shared human + AI)
@@ -15,6 +15,11 @@ export type NotificationType =
   // Battle (AI lenser-specific)
   | 'battle_assigned'
   | 'battle_vote_cast'
+  // Battle (Phase CN — differentiated outcomes + social)
+  | 'battle_joined'
+  | 'battle_won'
+  | 'battle_lost'
+  | 'battle_comment'
   // Social (human)
   | 'follow_new'
   | 'follow_request'
@@ -22,10 +27,20 @@ export type NotificationType =
   // Content (human)
   | 'lens_reaction'
   | 'lens_comment'
+  // Content (Phase CN — lens/workflow lifecycle)
+  | 'lens_published'
+  | 'lens_forked'
+  | 'lens_featured'
+  | 'lens_milestone'
+  | 'workflow_published'
+  | 'workflow_forked'
   // Agent ownership (human owner of AI lenser)
   | 'agent_update'
   | 'agent_cron_result'
   | 'agent_critical'
+  // Agent (Phase CN — lifecycle)
+  | 'agent_created'
+  | 'agent_battle_won'
   // Agent runs (AI lenser's own notifications)
   | 'team_run_started'
   | 'team_run_completed'
@@ -39,6 +54,7 @@ export type NotificationType =
   | 'requirement_update'
   // System
   | 'badge_awarded'
+  | 'leaderboard_change'
   | 'system'
 
 // ─── Per-type metadata shapes ─────────────────────────────────────────────────
@@ -192,23 +208,144 @@ export interface BadgeAwardedMetadata {
 
 export type SystemMetadata = Record<string, unknown>
 
+// ─── Phase CN metadata interfaces ────────────────────────────────────────────
+
+export interface LensPublishedMetadata {
+  author_id: string
+  author_handle: string
+  lens_id: string
+  lens_title: string | null
+  visibility: 'public' | 'community'
+}
+
+export interface LensForkedMetadata {
+  forker_id: string
+  forker_handle: string
+  forker_display_name: string | null
+  parent_lens_id: string
+  fork_lens_id: string
+}
+
+export interface LensFeaturedMetadata {
+  lens_id: string
+}
+
+export interface LensMilestoneMetadata {
+  lens_id: string
+  milestone: number
+  metric: 'copy' | 'reaction'
+}
+
+export interface WorkflowPublishedMetadata {
+  author_id: string
+  author_handle: string
+  workflow_id: string
+  workflow_title: string
+}
+
+export interface WorkflowForkedMetadata {
+  forker_id: string
+  forker_handle: string
+  forker_display_name: string | null
+  parent_workflow_id: string
+  fork_workflow_id: string
+  fork_title: string
+}
+
+export interface BattleJoinedMetadata {
+  battle_id: string
+  battle_slug: string
+  contender_id: string
+  joiner_id: string
+  joiner_handle: string
+  joiner_display_name: string | null
+}
+
+export interface BattleWonMetadata {
+  battle_id: string
+  battle_slug: string
+  contender_id: string
+  winner_id: string
+  winner_name: string | null
+  is_winner: true
+}
+
+export interface BattleLostMetadata {
+  battle_id: string
+  battle_slug: string
+  contender_id: string
+  winner_id: string | null
+  winner_name: string | null
+  is_winner: false
+}
+
+export interface BattleCommentMetadata {
+  commenter_id: string
+  commenter_handle: string
+  commenter_display_name: string | null
+  battle_id: string
+  battle_slug: string
+  preview: string
+}
+
+export interface AgentCreatedMetadata {
+  ai_lenser_id: string
+  ai_profile_id: string | null
+  ai_handle: string | null
+}
+
+export interface AgentBattleWonMetadata {
+  ai_lenser_id: string
+  battle_id: string
+  battle_slug: string
+  battle_title: string
+}
+
+export interface LeaderboardChangeMetadata {
+  previous_rank: number
+  new_rank: number
+  delta: number
+}
+
+// ─── Notification preferences row (fn_get_notification_preferences return) ───
+
+export interface NotificationPreference {
+  notification_type: NotificationType
+  enabled: boolean
+  updated_at: string
+}
+
 // ─── Discriminated union (Polymorphism) ───────────────────────────────────────
 
 export type NotificationPayload =
   | { type: 'battle_result';         metadata: BattleResultMetadata }
   | { type: 'battle_started';        metadata: BattleStartedMetadata }
   | { type: 'vote_reminder';         metadata: VoteReminderMetadata }
+  | { type: 'template_battle_open';        metadata: SystemMetadata }
+  | { type: 'template_battle_published';   metadata: SystemMetadata }
   | { type: 'vote_received';         metadata: VoteReceivedMetadata }
   | { type: 'battle_assigned';       metadata: BattleAssignedMetadata }
   | { type: 'battle_vote_cast';      metadata: BattleVoteCastMetadata }
+  | { type: 'battle_joined';         metadata: BattleJoinedMetadata }
+  | { type: 'battle_won';            metadata: BattleWonMetadata }
+  | { type: 'battle_lost';           metadata: BattleLostMetadata }
+  | { type: 'battle_comment';        metadata: BattleCommentMetadata }
   | { type: 'follow_new';            metadata: FollowNewMetadata }
   | { type: 'follow_request';        metadata: FollowRequestMetadata }
   | { type: 'follow_accepted';       metadata: FollowAcceptedMetadata }
   | { type: 'lens_reaction';         metadata: LensReactionMetadata }
   | { type: 'lens_comment';          metadata: LensCommentMetadata }
+  | { type: 'lens_published';        metadata: LensPublishedMetadata }
+  | { type: 'lens_forked';           metadata: LensForkedMetadata }
+  | { type: 'lens_featured';         metadata: LensFeaturedMetadata }
+  | { type: 'lens_milestone';        metadata: LensMilestoneMetadata }
+  | { type: 'workflow_published';    metadata: WorkflowPublishedMetadata }
+  | { type: 'workflow_forked';       metadata: WorkflowForkedMetadata }
   | { type: 'agent_update';          metadata: AgentUpdateMetadata }
   | { type: 'agent_cron_result';     metadata: AgentCronResultMetadata }
   | { type: 'agent_critical';        metadata: AgentCriticalMetadata }
+  | { type: 'agent_created';         metadata: AgentCreatedMetadata }
+  | { type: 'agent_battle_won';      metadata: AgentBattleWonMetadata }
   | { type: 'team_run_started';      metadata: TeamRunMetadata }
   | { type: 'team_run_completed';    metadata: TeamRunMetadata }
   | { type: 'team_run_failed';       metadata: TeamRunMetadata }
@@ -218,6 +355,7 @@ export type NotificationPayload =
   | { type: 'model_binding_changed'; metadata: ModelBindingChangedMetadata }
   | { type: 'requirement_update';    metadata: RequirementUpdateMetadata }
   | { type: 'badge_awarded';         metadata: BadgeAwardedMetadata }
+  | { type: 'leaderboard_change';    metadata: LeaderboardChangeMetadata }
   | { type: 'system';                metadata: SystemMetadata }
 
 // ─── DB row type (matches fn_get_notifications RPC return shape) ──────────────
@@ -240,32 +378,45 @@ export interface NotificationRow {
 export type NotificationCategory = 'battle' | 'social' | 'content' | 'agent' | 'system'
 
 export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCategory> = {
-  battle_result:              'battle',
-  battle_started:             'battle',
-  vote_reminder:              'battle',
-  template_battle_open:       'battle',
-  template_battle_published:  'battle',
-  vote_received:         'battle',
-  battle_assigned:       'battle',
-  battle_vote_cast:      'battle',
-  follow_new:            'social',
-  follow_request:        'social',
-  follow_accepted:       'social',
-  lens_reaction:         'content',
-  lens_comment:          'content',
-  agent_update:          'agent',
-  agent_cron_result:     'agent',
-  agent_critical:        'agent',
-  team_run_started:      'agent',
-  team_run_completed:    'agent',
-  team_run_failed:       'agent',
-  cron_run_completed:    'agent',
-  cron_run_failed:       'agent',
-  policy_updated:        'agent',
-  model_binding_changed: 'agent',
-  requirement_update:    'agent',
-  badge_awarded:         'system',
-  system:                'system',
+  battle_result:             'battle',
+  battle_started:            'battle',
+  vote_reminder:             'battle',
+  template_battle_open:      'battle',
+  template_battle_published: 'battle',
+  vote_received:             'battle',
+  battle_assigned:           'battle',
+  battle_vote_cast:          'battle',
+  battle_joined:             'battle',
+  battle_won:                'battle',
+  battle_lost:               'battle',
+  battle_comment:            'battle',
+  follow_new:                'social',
+  follow_request:            'social',
+  follow_accepted:           'social',
+  lens_reaction:             'content',
+  lens_comment:              'content',
+  lens_published:            'content',
+  lens_forked:               'content',
+  lens_featured:             'content',
+  lens_milestone:            'content',
+  workflow_published:        'content',
+  workflow_forked:           'content',
+  agent_update:              'agent',
+  agent_cron_result:         'agent',
+  agent_critical:            'agent',
+  agent_created:             'agent',
+  agent_battle_won:          'agent',
+  team_run_started:          'agent',
+  team_run_completed:        'agent',
+  team_run_failed:           'agent',
+  cron_run_completed:        'agent',
+  cron_run_failed:           'agent',
+  policy_updated:            'agent',
+  model_binding_changed:     'agent',
+  requirement_update:        'agent',
+  badge_awarded:             'system',
+  leaderboard_change:        'system',
+  system:                    'system',
 }
 
 // ─── Legacy types (deprecated, kept for transition period) ───────────────────
