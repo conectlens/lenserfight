@@ -1,10 +1,9 @@
+// Bootstrap default renderer registrations (mirrors the previous switch statement exactly)
+import '../error-registry/defaultRenderers'
+
 import React from 'react'
 import { useError } from '../error-context/ErrorContext'
-import { UnauthorizedPage } from './UnauthorizedPage'
-import { ForbiddenPage } from './ForbiddenPage'
-import { NotFoundPage } from './NotFoundPage'
-import { NetworkErrorPage } from './NetworkErrorPage'
-import { ServerErrorPage } from './ServerErrorPage'
+import { getErrorEntry } from '../error-registry/registry'
 
 interface GenericErrorPageProps {
   message: string
@@ -50,25 +49,12 @@ export const GlobalErrorRenderer: React.FC<{ children?: React.ReactNode }> = ({ 
 
   if (!error) return <>{children}</>
 
-  switch (error.kind) {
-    case 'unauthorized':
-      return <UnauthorizedPage onDismiss={clearError} />
-    case 'forbidden':
-      return <ForbiddenPage message={error.message} onDismiss={clearError} />
-    case 'not_found':
-      return <NotFoundPage onDismiss={clearError} />
-    case 'server_error':
-      return <ServerErrorPage message={error.message} onRetry={clearError} />
-    case 'rate_limit':
-      return (
-        <ServerErrorPage
-          message="Too many requests. Please wait a moment before trying again."
-          onRetry={clearError}
-        />
-      )
-    case 'network':
-      return <NetworkErrorPage onRetry={clearError} />
-    default:
-      return <GenericErrorPage message={error.message} onDismiss={clearError} />
+  const entry = getErrorEntry(error.kind)
+  if (entry) {
+    const Renderer = entry.renderer
+    return <Renderer error={error} onDismiss={clearError} onRetry={clearError} />
   }
+
+  // Fallback for unregistered kinds — preserves the existing switch default-case behavior
+  return <GenericErrorPage message={error.message} onDismiss={clearError} />
 }
