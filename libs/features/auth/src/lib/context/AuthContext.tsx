@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { queryClient, queryKeys } from '@lenserfight/data/cache'
-import { authService, lenserService } from '@lenserfight/data/repositories'
+import { authService, lenserService, partnerProvisioningRepository } from '@lenserfight/data/repositories'
 import { AuthState, UserMetadata } from '@lenserfight/types'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL, getEnvMetadata } from '@lenserfight/utils/env'
@@ -23,7 +23,6 @@ interface AuthContextType extends AuthState {
   requestPasswordReset: (email: string, captchaToken?: string) => Promise<void>
   resetPassword: (password: string, token?: string) => Promise<void>
   signInWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>
-  signInWithChainabit: () => Promise<void>
   resendSignupConfirmation: (email: string) => Promise<void>
   /** Redirect to the external auth app login page, preserving the current page as return_url. */
   redirectToLogin: (delayMs?: number) => void
@@ -229,6 +228,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     Object.keys(sessionStorage)
       .filter((k) => k.startsWith('acdr_'))
       .forEach((k) => sessionStorage.removeItem(k))
+    // Best-effort: revoke Chainabit developer token before signing out
+    partnerProvisioningRepository.revokeToken('chainabit').catch(() => {})
     try {
       await authService.logout()
     } catch (e) {
@@ -251,16 +252,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithOAuth = useCallback(async (provider: 'google' | 'github' | 'azure') => {
     try {
       await authService.signInWithOAuth(provider)
-    } catch (err: unknown) {
-      const message = getErrorMessage(err)
-      setState((s) => ({ ...s, error: message }))
-      throw err
-    }
-  }, [])
-
-  const signInWithChainabit = useCallback(async () => {
-    try {
-      await authService.signInWithChainabit()
     } catch (err: unknown) {
       const message = getErrorMessage(err)
       setState((s) => ({ ...s, error: message }))
@@ -292,7 +283,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         requestPasswordReset,
         resetPassword,
         signInWithOAuth,
-        signInWithChainabit,
         resendSignupConfirmation,
         redirectToLogin,
       }}
