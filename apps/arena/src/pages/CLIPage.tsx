@@ -11,6 +11,7 @@ import {
   Terminal,
   Zap,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import React from 'react'
 
 const spring = { type: 'spring', stiffness: 260, damping: 22 } as const
@@ -104,15 +105,11 @@ export const CLIPage: React.FC = () => {
                   <ExternalLink size={14} />
                 </Button>
               </a>
-              <a
-                href={`${DOCS_BASE_URL}/tutorials/getting-started/overview?utm_source=lenserfight&utm_medium=arena_cli_page&utm_campaign=cli_quickstart`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link to="/product/cli/quickstart">
                 <Button variant="secondary" size="lg">
                   Quickstart <ArrowRight size={16} />
                 </Button>
-              </a>
+              </Link>
             </motion.div>
           </div>
 
