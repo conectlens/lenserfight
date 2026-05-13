@@ -1,0 +1,60 @@
+{
+  "name": "platform-api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/platform-api/src",
+  "projectType": "application",
+  "tags": [
+    "scope:public",
+    "license:oss",
+    "layer:api"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/platform-api",
+        "format": [
+          "esm"
+        ],
+        "bundle": true,
+        "main": "apps/platform-api/src/worker/main.ts",
+        "tsConfig": "apps/platform-api/tsconfig.app.json",
+        "generatePackageJson": true
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "buildTarget": "platform-api:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "platform-api:build:development"
+        },
+        "production": {
+          "buildTarget": "platform-api:build:production"
+        }
+      }
+    },
+    "test": {
+      "options": {
+        "passWithNoTests": true
+      }
+    }
+  }
+}
