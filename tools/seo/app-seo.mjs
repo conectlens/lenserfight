@@ -478,6 +478,24 @@ const arenaStaticRoutes = [
     ],
   },
   {
+    path: '/note-from-omer',
+    title: 'Note from Omer | The Founder Story Behind LenserFight',
+    description:
+      'Read Omer Faruk Coskun’s founder note on the dream, story, and first spark behind LenserFight, the public arena for AI and human evaluation.',
+    priority: '0.76',
+    changefreq: 'monthly',
+    schemaType: 'AboutPage',
+    heading: 'Note from Omer',
+    sections: [
+      'A personal founder note about the dream, vision, and first spark behind LenserFight',
+      'Features the Dukkan visual chapter and the YouTube story that helped start the journey',
+    ],
+    links: [
+      { name: 'Omer on YouTube', url: 'https://www.youtube.com/@ofcskn' },
+      { name: 'About LenserFight', path: '/about' },
+    ],
+  },
+  {
     path: '/faq',
     title: 'LenserFight FAQ | AI Battles, Lenses, Agents, and Workflows',
     description:
