@@ -603,7 +603,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
         {/* Run results panel — slides in from the right */}
         {showRunPanel && !selectedNodeConfig && (
-          <aside className="flex flex-col w-80 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
+          <aside className="flex flex-col w-100 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
             {/* Panel header with tabs */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-border">
               <div className="flex items-center gap-1">
@@ -694,26 +694,26 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                   {/* Recovery banner — shown when the run terminated with failure */}
                   {runId && !isRunning &&
                     (liveRunState?.status === 'failed' || liveRunState?.status === 'timed_out') && (
-                    <WorkflowRunRecoveryBanner
-                      runStatus={liveRunState!.status}
-                      failedNodeLabel={
-                        liveRunState?.node_results?.find(
-                          (r) => r.status === 'failed' || r.status === 'timed_out'
-                        )?.node_label ?? null
-                      }
-                      errorMessage={
-                        liveRunState?.node_results?.find(
-                          (r) => r.status === 'failed' || r.status === 'timed_out'
-                        )?.error_message ?? null
-                      }
-                      isRetrying={isRetrying}
-                      onRetry={() => {
-                        retryRun(runId).catch(() => {})
-                        setRunPanelTab('run')
-                        setShowRunPanel(true)
-                      }}
-                    />
-                  )}
+                      <WorkflowRunRecoveryBanner
+                        runStatus={liveRunState!.status}
+                        failedNodeLabel={
+                          liveRunState?.node_results?.find(
+                            (r) => r.status === 'failed' || r.status === 'timed_out'
+                          )?.node_label ?? null
+                        }
+                        errorMessage={
+                          liveRunState?.node_results?.find(
+                            (r) => r.status === 'failed' || r.status === 'timed_out'
+                          )?.error_message ?? null
+                        }
+                        isRetrying={isRetrying}
+                        onRetry={() => {
+                          retryRun(runId).catch(() => { })
+                          setRunPanelTab('run')
+                          setShowRunPanel(true)
+                        }}
+                      />
+                    )}
                   {/* Final output banner — shown above progress when run is complete */}
                   {runId && terminalNodeId && !isRunning && (
                     <WorkflowFinalOutputBanner
