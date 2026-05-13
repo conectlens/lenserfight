@@ -9,7 +9,7 @@ import { Feedback, ProductTag, FeedbackStatus } from '@lenserfight/types'
 import { Avatar, Button, Card, DangerZone, HelpButton, Table, Column } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
-import { FEATURES, SURFACE, WEB_BASE_URL } from '@lenserfight/utils/env'
+import { FEATURES, WEB_BASE_URL } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
 import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins, ImageIcon } from 'lucide-react'
 import { AgentsTab } from '../components/AgentsTab'
@@ -358,18 +358,14 @@ export const SettingsPage: React.FC = () => {
                         : '—'}{' '}
                       <span className="text-sm font-normal text-gray-400">cr</span>
                     </span>
-                    {SURFACE.showBillingAndStore ? (
-                      <Link
-                        to="/billing"
-                        className="text-xs font-medium text-primary-700 dark:text-primary-400 hover:underline whitespace-nowrap"
-                      >
-                        Add credits
-                      </Link>
-                    ) : (
-                      <span className="text-xs font-medium text-gray-400 whitespace-nowrap">
-                        Community edition
-                      </span>
-                    )}
+                    <a
+                      href="https://app.chainabit.com/billing?utm_source=lenserfight&utm_medium=settings&utm_campaign=topup"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-primary-700 dark:text-primary-400 hover:underline whitespace-nowrap"
+                    >
+                      Add credits
+                    </a>
                   </div>
                 </div>
 
