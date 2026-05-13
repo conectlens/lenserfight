@@ -523,8 +523,9 @@ export const LenserProfilePage: React.FC = () => {
           score={completionScore}
           bio={viewedProfile.bio}
           avatarUrl={viewedProfile.avatar_url}
-          location={viewedProfile.location}
+          location={(viewedProfile as any).location}
           websiteUrl={(viewedProfile as any).website_url}
+          bannerUrl={viewedProfile.banner_url}
         />
       )}
 
