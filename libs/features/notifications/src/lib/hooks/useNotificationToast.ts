@@ -13,19 +13,36 @@ const TOAST_CONFIG: Partial<Record<NotificationType, {
   duration: number
   fn: ToastFn
 }>> = {
-  battle_result:      { label: 'View Results',  duration: 8000,  fn: toast },
-  battle_started:     { label: 'View Battle',   duration: 6000,  fn: toast },
-  vote_received:      { label: 'View Battle',   duration: 4000,  fn: toast },
-  follow_new:         { label: 'View Profile',  duration: 5000,  fn: toast },
-  follow_request:     { label: 'Review',        duration: 7000,  fn: toast },
-  follow_accepted:    { label: 'View Profile',  duration: 5000,  fn: toast },
-  agent_critical:     { label: 'View Run',      duration: 10000, fn: toast.error },
-  team_run_failed:    { label: 'View Run',      duration: 8000,  fn: toast.error },
-  team_run_completed: { label: 'View Run',      duration: 4000,  fn: toast.success },
-  cron_run_failed:    { label: 'View Workflow', duration: 8000,  fn: toast.error },
-  cron_run_completed: { label: 'View Workflow', duration: 4000,  fn: toast.success },
-  badge_awarded:      { label: 'View Badge',    duration: 8000,  fn: toast.success },
-  policy_updated:     { label: 'View Policy',   duration: 5000,  fn: toast },
+  // Battle
+  battle_result:       { label: 'View Results',   duration: 8000,  fn: toast },
+  battle_started:      { label: 'View Battle',    duration: 6000,  fn: toast },
+  battle_joined:       { label: 'View Battle',    duration: 5000,  fn: toast },
+  battle_won:          { label: 'View Results',   duration: 8000,  fn: toast.success },
+  battle_lost:         { label: 'View Results',   duration: 5000,  fn: toast },
+  battle_comment:      { label: 'View Battle',    duration: 4000,  fn: toast },
+  vote_received:       { label: 'View Battle',    duration: 4000,  fn: toast },
+  // Social
+  follow_new:          { label: 'View Profile',   duration: 5000,  fn: toast },
+  follow_request:      { label: 'Review',         duration: 7000,  fn: toast },
+  follow_accepted:     { label: 'View Profile',   duration: 5000,  fn: toast },
+  // Content
+  lens_comment:        { label: 'View Thread',    duration: 5000,  fn: toast },
+  lens_published:      { label: 'View Lens',      duration: 5000,  fn: toast },
+  lens_forked:         { label: 'View Fork',      duration: 5000,  fn: toast },
+  lens_featured:       { label: 'View Lens',      duration: 8000,  fn: toast.success },
+  workflow_published:  { label: 'View Workflow',  duration: 5000,  fn: toast },
+  workflow_forked:     { label: 'View Fork',      duration: 5000,  fn: toast },
+  // Agent
+  agent_created:       { label: 'View Agent',     duration: 6000,  fn: toast.success },
+  agent_battle_won:    { label: 'View Results',   duration: 8000,  fn: toast.success },
+  agent_critical:      { label: 'View Run',       duration: 10000, fn: toast.error },
+  team_run_failed:     { label: 'View Run',       duration: 8000,  fn: toast.error },
+  team_run_completed:  { label: 'View Run',       duration: 4000,  fn: toast.success },
+  cron_run_failed:     { label: 'View Workflow',  duration: 8000,  fn: toast.error },
+  cron_run_completed:  { label: 'View Workflow',  duration: 4000,  fn: toast.success },
+  // System
+  badge_awarded:       { label: 'View Badge',     duration: 8000,  fn: toast.success },
+  policy_updated:      { label: 'View Policy',    duration: 5000,  fn: toast },
 }
 
 export function useNotificationToast() {
