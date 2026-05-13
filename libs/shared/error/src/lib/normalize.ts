@@ -224,6 +224,39 @@ export function normalizeError(error: unknown): UnauthorizedError | ForbiddenErr
     }
   }
 
+  // ── token_quota_exceeded ────────────────────────────────────────────────────
+  if (
+    (code === 'P0001' && hint?.toLowerCase().includes('quota')) ||
+    status === 402 ||
+    msg.includes('quota exceeded') ||
+    msg.includes('insufficient credits') ||
+    msg.includes('token quota')
+  ) {
+    return {
+      kind: 'token_quota_exceeded',
+      statusCode: status ?? 402,
+      message: "You've exceeded your token quota. Please top up your credits.",
+      retryable: false,
+      originalError: error,
+    }
+  }
+
+  // ── model_unavailable ───────────────────────────────────────────────────────
+  if (
+    msg.includes('model not available') ||
+    msg.includes('model overloaded') ||
+    msg.includes('provider unavailable') ||
+    (status === 503 && (msg.includes('model') || msg.includes('provider')))
+  ) {
+    return {
+      kind: 'model_unavailable',
+      statusCode: status ?? 503,
+      message: 'The selected AI model is currently unavailable. Please try again shortly.',
+      retryable: true,
+      originalError: error,
+    }
+  }
+
   return {
     kind: 'unknown',
     statusCode: status,
