@@ -1,23 +1,40 @@
-import { feedbackService } from '@lenserfight/data/repositories'
-import { lenserService } from '@lenserfight/data/repositories'
+import { feedbackService, lenserService, socialLinksService } from '@lenserfight/data/repositories'
 import { useNotifications } from '@lenserfight/features/notifications'
 import { useAuth } from '@lenserfight/features/auth'
-import { InputField } from '@lenserfight/ui/forms'
+import { InputField, SelectField } from '@lenserfight/ui/forms'
 import { useWallet } from '@lenserfight/features/store'
 import { AvatarSelectionModal, useLenser } from '@lenserfight/features/profile'
-import { Feedback, ProductTag, FeedbackStatus } from '@lenserfight/types'
+import { Feedback, ProductTag, FeedbackStatus, SocialLink, SocialPlatform } from '@lenserfight/types'
 import { Avatar, Button, Card, DangerZone, HelpButton, Table, Column } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
 import { FEATURES, WEB_BASE_URL } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
-import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins, ImageIcon } from 'lucide-react'
+import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins, ImageIcon, Plus, Trash2, Github, Linkedin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react'
 import { AgentsTab } from '../components/AgentsTab'
 import { ApiKeysTab } from '../components/ApiKeysTab'
 import { GeneralTab } from '../components/GeneralTab'
 import { PartnerAccountsTab } from '../components/PartnerAccountsTab'
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, Link, useParams, useNavigate } from 'react-router-dom'
+
+const SOCIAL_PLATFORMS: { value: SocialPlatform; label: string }[] = [
+  { value: 'LinkedIn', label: 'LinkedIn' },
+  { value: 'GitHub', label: 'GitHub' },
+  { value: 'X', label: 'X (Twitter)' },
+  { value: 'Instagram', label: 'Instagram' },
+  { value: 'Facebook', label: 'Facebook' },
+  { value: 'Youtube', label: 'YouTube' },
+]
+
+const SOCIAL_URL_VALIDATORS: Record<string, { regex: RegExp; placeholder: string; example: string }> = {
+  LinkedIn: { regex: /^https:\/\/(www\.)?linkedin\.com\/in\/.+/, placeholder: 'https://linkedin.com/in/username', example: 'https://linkedin.com/in/johndoe' },
+  GitHub:   { regex: /^https:\/\/(www\.)?github\.com\/.+/,   placeholder: 'https://github.com/username',       example: 'https://github.com/johndoe' },
+  X:        { regex: /^https:\/\/(www\.)?(twitter\.com|x\.com)\/.+/, placeholder: 'https://x.com/username',   example: 'https://x.com/johndoe' },
+  Instagram:{ regex: /^https:\/\/(www\.)?instagram\.com\/.+/, placeholder: 'https://instagram.com/username',  example: 'https://instagram.com/johndoe' },
+  Facebook: { regex: /^https:\/\/(www\.)?facebook\.com\/.+/, placeholder: 'https://facebook.com/username',    example: 'https://facebook.com/johndoe' },
+  Youtube:  { regex: /^https:\/\/(www\.)?youtube\.com\/.+/,  placeholder: 'https://youtube.com/@channel',    example: 'https://youtube.com/@johndoe' },
+}
 
 const FEEDBACK_PAGE_SIZE = 5
 
@@ -114,10 +131,21 @@ export const SettingsPage: React.FC = () => {
     displayName: '',
     handle: '',
     bio: '',
+    headline: '',
+    location: '',
+    websiteUrl: '',
     visibility: 'public' as 'public' | 'private' | 'community',
   })
   const [isSaving, setIsSaving] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
+  const [websiteError, setWebsiteError] = useState<string | null>(null)
+
+  // Social Links State
+  const [socialLinks, setSocialLinks] = useState<Partial<SocialLink>[]>([])
+  const [loadingLinks, setLoadingLinks] = useState(false)
+  const [linkErrors, setLinkErrors] = useState<Record<number, string>>({})
+  const isMounted = useRef(true)
+  useEffect(() => { isMounted.current = true; return () => { isMounted.current = false } }, [])
   // Notifications State
   const { notifications, isLoading: notifLoading, markAllRead } = useNotifications(50)
   const [notifTab, setNotifTab] = useState<'All' | 'Unread'>('All')
@@ -146,10 +174,22 @@ export const SettingsPage: React.FC = () => {
         displayName: lenser.display_name || '',
         handle: lenser.handle || '',
         bio: lenser.bio || '',
+        headline: lenser.headline || '',
+        location: lenser.location || '',
+        websiteUrl: lenser.website_url || '',
         visibility: lenser.visibility || 'public',
       })
     }
   }, [lenser])
+
+  useEffect(() => {
+    if (activeTab !== 'profile' || !lenser?.handle) return
+    setLoadingLinks(true)
+    socialLinksService.getLinks(lenser.handle)
+      .then((links) => { if (isMounted.current) setSocialLinks(links.filter((l) => l.platform !== 'Other')) })
+      .catch(() => {})
+      .finally(() => { if (isMounted.current) setLoadingLinks(false) })
+  }, [activeTab, lenser?.handle])
 
   const handleProfileChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -157,13 +197,65 @@ export const SettingsPage: React.FC = () => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  const getAvailablePlatforms = (currentIndex: number) => {
+    const used = socialLinks.map((l, i) => (i === currentIndex ? null : l.platform)).filter(Boolean)
+    return SOCIAL_PLATFORMS.filter((p) => !used.includes(p.value))
+  }
+
+  const handleAddLink = () => {
+    const available = getAvailablePlatforms(-1)
+    if (available.length === 0) return
+    setSocialLinks([...socialLinks, { platform: available[0].value, url: '', label: '' }])
+  }
+
+  const handleRemoveLink = (index: number) => {
+    const updated = [...socialLinks]
+    updated.splice(index, 1)
+    setSocialLinks(updated)
+    const errs = { ...linkErrors }
+    delete errs[index]
+    setLinkErrors(errs)
+  }
+
+  const handleLinkChange = (index: number, field: keyof SocialLink, value: string) => {
+    const updated = [...socialLinks]
+    updated[index] = { ...updated[index], [field]: value }
+    setSocialLinks(updated)
+    if (field === 'url') {
+      const errs = { ...linkErrors }
+      delete errs[index]
+      setLinkErrors(errs)
+    }
+  }
+
   const handleProfileSave = async () => {
     if (!lenser) return
+    setWebsiteError(null)
+    setLinkErrors({})
+
+    const trimmedUrl = formData.websiteUrl.trim()
+    if (trimmedUrl && !/^https?:\/\/.+/.test(trimmedUrl)) {
+      setWebsiteError('Must start with http:// or https://')
+      return
+    }
+
+    const errors: Record<number, string> = {}
+    socialLinks.forEach((link, i) => {
+      if (!link.url?.trim()) { errors[i] = 'URL is required'; return }
+      const v = SOCIAL_URL_VALIDATORS[link.platform!]
+      if (v && !v.regex.test(link.url)) errors[i] = `Invalid format. Example: ${v.example}`
+    })
+    if (Object.keys(errors).length) { setLinkErrors(errors); return }
+
     setIsSaving(true)
     try {
+      await socialLinksService.syncLinks(lenser.handle, socialLinks as any)
       await updateLenserProfile({
         display_name: formData.displayName,
         bio: formData.bio,
+        headline: formData.headline,
+        location: formData.location,
+        website_url: trimmedUrl || undefined,
         visibility: formData.visibility,
       })
     } catch (e) {
@@ -540,6 +632,15 @@ export const SettingsPage: React.FC = () => {
               </div>
 
               <div className="space-y-6">
+                <InputField
+                  label="Headline"
+                  name="headline"
+                  value={formData.headline}
+                  onChange={handleProfileChange}
+                  placeholder="Role, title, or tagline"
+                  maxLength={100}
+                />
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                     Bio
@@ -549,8 +650,86 @@ export const SettingsPage: React.FC = () => {
                     value={formData.bio}
                     onChange={handleProfileChange}
                     rows={4}
+                    maxLength={300}
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors outline-none resize-none"
                   />
+                  <div className="text-right text-xs text-gray-400 dark:text-gray-500 mt-1">{formData.bio.length}/300</div>
+                </div>
+
+                <InputField
+                  label="Location"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleProfileChange}
+                  placeholder="City, Country"
+                  maxLength={100}
+                />
+
+                <InputField
+                  label="Website"
+                  name="websiteUrl"
+                  value={formData.websiteUrl}
+                  onChange={(e) => { handleProfileChange(e); setWebsiteError(null) }}
+                  placeholder="https://yoursite.com"
+                  error={websiteError || undefined}
+                />
+
+                {/* Social Links */}
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="block text-sm font-bold text-gray-900 dark:text-white">Social Links</label>
+                    {getAvailablePlatforms(-1).length > 0 && (
+                      <Button type="button" variant="ghost" onClick={handleAddLink} className="flex items-center gap-1.5 w-auto text-xs">
+                        <Plus size={14} strokeWidth={3} /> Add Link
+                      </Button>
+                    )}
+                  </div>
+                  {loadingLinks ? (
+                    <div className="text-center py-6 text-xs text-gray-400 dark:text-gray-500">Loading…</div>
+                  ) : (
+                    <div className="space-y-4">
+                      {socialLinks.map((link, index) => (
+                        <div key={index} className="flex flex-col gap-1.5">
+                          <div className="flex gap-2 items-start">
+                            <div className="w-1/3 min-w-[130px]">
+                              <SelectField
+                                value={link.platform!}
+                                onChange={(val) => handleLinkChange(index, 'platform', val)}
+                                options={(() => {
+                                  const available = getAvailablePlatforms(index)
+                                  const current = SOCIAL_PLATFORMS.find((p) => p.value === link.platform)
+                                  if (current && !available.some((p) => p.value === current.value)) return [...available, current]
+                                  return available
+                                })()}
+                                className="w-full"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <input
+                                value={link.url}
+                                onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
+                                placeholder={SOCIAL_URL_VALIDATORS[link.platform!]?.placeholder ?? 'https://'}
+                                className={`w-full px-4 py-2.5 rounded-xl border bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500 ${linkErrors[index] ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLink(index)}
+                              className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/30"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                          {linkErrors[index] && <p className="text-xs text-red-500 ml-[34%] pl-2">{linkErrors[index]}</p>}
+                        </div>
+                      ))}
+                      {socialLinks.length === 0 && (
+                        <div className="text-center py-8 border border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/30 dark:bg-gray-800/30">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Connect your social profiles to build trust.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div>
