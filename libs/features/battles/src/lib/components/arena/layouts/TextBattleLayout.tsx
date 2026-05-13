@@ -30,16 +30,6 @@ export function TextBattleLayout(ctx: BattleLayoutContext) {
     onVote,
   } = ctx
 
-  const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set())
-
-  const toggleExpand = (contenderId: string) => {
-    setExpandedSlots((prev) => {
-      const next = new Set(prev)
-      next.has(contenderId) ? next.delete(contenderId) : next.add(contenderId)
-      return next
-    })
-  }
-
   const { SubmissionRenderer } = renderer
 
   return (
@@ -63,7 +53,6 @@ export function TextBattleLayout(ctx: BattleLayoutContext) {
           const executionJob = executionJobs.find((j) => j.contender_id === contender.id)
           const voteCount = aggregate?.raw_vote_count ?? 0
           const votePercent = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0
-          const isExpanded = expandedSlots.has(contender.id)
 
           const isCurrentUserContender =
             !!currentUserId &&
@@ -105,24 +94,12 @@ export function TextBattleLayout(ctx: BattleLayoutContext) {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-sm font-bold text-surface-text tabular-nums">{votePercent}%</span>
-                  {submission && (
-                    <button
-                      type="button"
-                      onClick={() => toggleExpand(contender.id)}
-                      className="text-[10px] font-semibold text-surface-text-muted border border-surface-border-subtle rounded px-1.5 py-0.5 hover:bg-surface-interactive transition-colors"
-                      aria-label={isExpanded ? 'Collapse' : 'Expand'}
-                    >
-                      {isExpanded ? '↑ Collapse' : '↓ Expand'}
-                    </button>
-                  )}
                 </div>
               </div>
 
               {/* Submission content */}
               <div
-                className={`overflow-y-auto p-5 md:p-6 bg-surface-base ${
-                  isExpanded ? '' : 'max-h-[480px] md:max-h-[55vh]'
-                }`}
+                className="p-5 md:p-6 bg-surface-base"
               >
                 {canSubmit ? (
                   <SubmitTextForm battleId={battle.id} contenderId={contender.id} />
