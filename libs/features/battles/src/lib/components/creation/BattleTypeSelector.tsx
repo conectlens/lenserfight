@@ -1,5 +1,6 @@
+import { HelpButton } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
-import { Bot, Brain, GitBranch, Swords, Users } from 'lucide-react'
+import { Bot, Brain, GitBranch, Swords, Trophy, Users } from 'lucide-react'
 import React from 'react'
 
 import type { BattleType } from '../../types/battle.types'
@@ -50,6 +51,13 @@ const TYPES: {
     label: 'Workflow Battle',
     description: 'Chain your lenses into a multi-step workflow and compete end-to-end.',
     defaultEligibility: 'Open voting',
+  },
+  {
+    value: 'lenser_battle',
+    icon: <Trophy size={20} />,
+    label: 'Lenser Battle',
+    description: 'Named lensers compete using their own lens, model, and funding setup.',
+    defaultEligibility: 'Configurable voting',
   },
 ]
 
@@ -110,6 +118,7 @@ export function BattleTypeSelector({ value, onChange }: BattleTypeSelectorProps)
           )
         })}
       </motion.div>
+      <HelpButton path="/how-to/battles/battle-types" label="Learn more about battle types" />
     </div>
   )
 }
