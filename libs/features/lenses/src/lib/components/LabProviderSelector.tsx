@@ -26,6 +26,7 @@ interface LabProviderSelectorProps {
   refetchOllama: () => void
   chainabitModels?: ChainabitAiModel[] | null
   chainabitConnected?: boolean
+  chainabitLoading?: boolean
 }
 
 function ChainabitModelPicker({
@@ -95,6 +96,7 @@ export const LabProviderSelector: React.FC<LabProviderSelectorProps> = ({
   refetchOllama,
   chainabitModels,
   chainabitConnected,
+  chainabitLoading,
 }) => {
   const isCloudByok = fundingSource === 'user_byok_cloud'
   const isLocalByok = fundingSource === 'user_byok_local'
@@ -131,8 +133,9 @@ export const LabProviderSelector: React.FC<LabProviderSelectorProps> = ({
         </div>
       )}
 
-      {/* Platform credit + no Chainabit connection: generic provider + model pickers */}
-      {isPlatformCredit && !hasChainabitModels && !chainabitConnected && (
+      {/* Platform credit + no Chainabit connection: generic provider + model pickers.
+          Suppressed while Chainabit is still loading to avoid premature fetch. */}
+      {isPlatformCredit && !hasChainabitModels && !chainabitConnected && !chainabitLoading && (
         <>
           <AIProviderSelectList
             providers={providers}

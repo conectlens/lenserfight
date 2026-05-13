@@ -342,6 +342,19 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
     }
   }, [isCloudEdition, fundingSource, onFundingSourceChange])
 
+  // When Chainabit is definitively unavailable and the user is on platform_credit,
+  // fall back to local keys so the model selector remains usable.
+  useEffect(() => {
+    const chainabitDefinitelyUnavailable =
+      chainabitState === 'no_credits' ||
+      chainabitState === 'no_account' ||
+      chainabitState === 'invalid_connection' ||
+      chainabitState === 'provider_error'
+    if (isCloudEdition && fundingSource === 'platform_credit' && chainabitDefinitelyUnavailable) {
+      onFundingSourceChange('user_byok_local')
+    }
+  }, [chainabitState, fundingSource, isCloudEdition, onFundingSourceChange])
+
   // Derive effective provider key based on funding mode
   const effectiveProviderKey = isByokCloud
     ? (availableKeys.find((k) => k.id === selectedKeyRefId)?.providerKey ?? '')
@@ -593,6 +606,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           refetchOllama={refetchOllama}
           chainabitModels={chainabitModels}
           chainabitConnected={chainabitConnected}
+          chainabitLoading={chainabitState === 'loading'}
         />
       )}
     </div>
