@@ -1,0 +1,169 @@
+# =============================================================================
+# seed-production.manifest
+# =============================================================================
+# Production-safe seed manifest for LenserFight.
+#
+# POLICY:
+#   ✅ Included — runtime dependencies, reference data, canonical templates,
+#                 reserved platform accounts, AI model catalog, XP ruleset,
+#                 geo lookups, system policy, benchmark/validation queries.
+#   ❌ Excluded — synthetic XP totals (30_scale_xp), inflated vote/reaction
+#                 counts, simulated battle history with fake votes/scorecards
+#                 (05_battles, 06_multimodal_battles, 51_lenser_character_battles),
+#                 analytics stub rows (49_analytics_phase15, 06_analytics),
+#                 dev-only accounts (60_dev_quickstart, 61_dev_byok_stubs),
+#                 e2e test fixtures (52_battle_e2e_seed),
+#                 season v2 badge backdating (48_xp_season_v2_metadata).
+#
+# Run order matters — dependencies flow top-to-bottom.
+# Apply with: pnpm supabase db reset --seed-file supabase/seed-production.sql
+# or combine with: pnpm supabase:combine-seeds --manifest seed-production.manifest
+#
+# After applying, production users start at XP 0, zero battles, zero reactions.
+# All XP is earned organically. Templates and rubrics are the only pre-populated
+# content visible to real users.
+# =============================================================================
+
+# ── [1] CI safety gate — aborts on accidental real API keys in execution.byok_keys
+seeds/00_ci_guard.sql
+
+# ── [2] Core runtime lookups (required by FK triggers before any profile can exist)
+seeds/01_core_languages.sql
+
+# ── [3] AI provider + model catalog (AI lenser profiles, battle contenders, pricing)
+seeds/04_ai_providers.sql
+seeds/04b_ai_models.sql
+seeds/04c_ai_model_pricing.sql
+seeds/07_ai_models.sql
+seeds/08_ai_model_pricing.sql
+
+# ── [4] Lens type system + execution origin lookup
+seeds/15_lens_tools.sql
+seeds/16_origin_types.sql
+
+# ── [5] XP system: apps, levels, rules, difficulty multipliers, policy document
+#    (pure rule configuration — no XP is credited to any lenser)
+seeds/17_xp_ruleset.sql
+
+# ── [6] Reserved production accounts + profiles
+#    @lenserfight / @chainabit / @conectlens
+#    Passwords are placeholder credentials — rotated by deployment pipeline before
+#    any environment is exposed to real traffic. These accounts own all public
+#    templates and are the authorship anchor for every seeded Lens, Workflow,
+#    Battle template, and Agent template.
+seeds/02_auth_users.sql
+seeds/03_lenser_profiles.sql
+
+# ── [7] AI lenser profiles (one per AI model — derived from catalog above)
+seeds/07_ai_lensers.sql
+
+# ── [8] Reserved workspaces + media library stubs for the three platform accounts
+seeds/13_workspaces.sql
+seeds/14_media_objects.sql
+
+# ── [9] Geo reference data (regions → subregions → countries → states)
+seeds/03_regions.sql
+seeds/04_subregions.sql
+seeds/05_countries.sql
+seeds/06_states.sql
+
+# ── [10] Battle rubrics and templates
+#    RUBRICS AND TEMPLATES ONLY — no battles, no contenders, no submissions,
+#    no votes, no scorecards, no synthetic vote_aggregates.
+#    Rubrics from 05_battles.sql:
+#      d4000000-…-001  Code Quality Rubric
+#      d4000000-…-002  Creative Writing Rubric
+#      d4000000-…-003  Workflow Evaluation Rubric
+#    Templates from 05_battles.sql:
+#      fb100000-…-001  Code Challenge Template
+#      fb100000-…-002  Creative Writing Template
+#    Agent adapters from 05_battles.sql (no fake data, just adapter config):
+#      fc200000-…-001  GPT-4o Default Adapter
+#      fc200000-…-002  Claude Sonnet HTTP Adapter
+#      fc200000-…-003  Local Ollama Adapter
+seeds/05_battles_rubrics_and_templates_only.sql
+
+# ── [11] Multimodal rubrics and templates (visual, video/audio, multimodal campaign)
+#    RUBRICS AND TEMPLATES ONLY — no battles, contenders, submissions, votes.
+#    Rubrics from 06_multimodal_battles.sql:
+#      ad000000-…-001  Visual Creation Rubric
+#      ad000000-…-002  Video & Audio Creation Rubric
+#      ad000000-…-003  Multimodal Campaign Rubric
+#    Templates from 06_multimodal_battles.sql:
+#      af000000-…-001  Image Creation Template
+#      af000000-…-002  Video & Audio Concept Template
+#      af000000-…-003  Multimodal Campaign Template
+seeds/06_multimodal_rubrics_and_templates_only.sql
+
+# ── [12] Lenser character design + brand design rubrics and templates
+#    RUBRICS AND TEMPLATES ONLY
+seeds/51_lenser_character_battles.sql
+
+# ── [13] Lens / workflow content templates (authored by reserved platform accounts)
+seeds/40_lens_chain_templates.sql
+seeds/41_developer_lens_templates.sql
+seeds/42_production_workflow_templates.sql
+seeds/43_ai_agent_lens_bindings.sql
+seeds/44_community_profiles.sql
+seeds/45_creator_business_lens_templates.sql
+seeds/46_connectors.sql
+seeds/47_chainabit_productivity_templates.sql
+seeds/48_workflow_templates.sql
+seeds/50_lenser_design_workflows.sql
+
+# ── [14] XP season definitions (S1–S9 slugs and date ranges only — no XP credited)
+#    Seasons need to exist so the cron that marks is_active can run correctly
+#    on first boot and so the UI can display the current season name.
+#    48_xp_season_v2_metadata.sql is EXCLUDED because it backdates badges based
+#    on synthetic xp.totals rows that do not exist in this manifest.
+seeds/30_scale_xp_seasons_only.sql
+
+# ── [15] Benchmark queries + validation report (SELECT-only, no data mutations)
+seeds/40_benchmark.sql
+
+# =============================================================================
+# EXCLUDED FILES — DO NOT ADD BACK WITHOUT REVIEW
+# =============================================================================
+# seeds/05_battles.sql          — 7 demo battles with fake votes, scorecards,
+#                                  winner assignments, and inflated vote_aggregates.
+#                                  Templates and rubrics are extracted to
+#                                  05_battles_rubrics_and_templates_only.sql.
+#
+# seeds/06_multimodal_battles.sql — 8 multimodal demo battles with fake vote
+#                                    counts (up to 23), placehold.co media URLs,
+#                                    and synthetic vote_aggregates.
+#                                    Rubrics/templates extracted above.
+#
+# seeds/06_analytics.sql        — Inserts empty lenser_stats rows for the 3
+#                                  reserved accounts. Harmless but redundant;
+#                                  analytics rows are created by triggers on
+#                                  first real activity.
+#
+# seeds/30_scale_xp.sql         — 2-year XP simulation: 9 seasons of random XP
+#                                  totals, season_totals, monthly_rollup. Gives
+#                                  reserved accounts up to 55,000 XP on day 0.
+#                                  Replaced by 30_scale_xp_seasons_only.sql.
+#
+# seeds/48_xp_season_v2_metadata.sql — Backlabels seasons S7/S8/S9 and awards
+#                                       xp_1k/10k/50k/streak/champion badges
+#                                       derived from the synthetic XP totals.
+#                                       Excluded because those XP rows don't
+#                                       exist in this manifest.
+#
+# seeds/49_analytics_phase15.sql — Inserts 3 hard-coded cost/quality/perf rows
+#                                   for the demo AI lensers with fabricated
+#                                   token counts and credit amounts.
+#
+# seeds/51_lenser_character_battles.sql — Templates and rubrics only. Already
+#                                          included above (entry [12]). No
+#                                          actual battle/vote data.
+#
+# seeds/52_battle_e2e_seed.sql  — e2e test fixtures (e2e_alice, e2e_bob,
+#                                  e2e_voter1, e2e_voter2) and an open battle.
+#                                  Applied only by scripts/e2e-battle.sh.
+#
+# seeds/60_dev_quickstart.sql   — dev@local.test account + two qs-* battles
+#                                  with pre-cast votes. Dev-only.
+#
+# seeds/61_dev_byok_stubs.sql   — Echo provider BYOK stub for dev user. Dev-only.
+# =============================================================================
