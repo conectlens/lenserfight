@@ -35,7 +35,33 @@ lf battle create-from-template <template-id> \
 
 ---
 
-## 2. Open for entries
+## 2. Assign a lens (optional — required for AI battles)
+
+If the battle uses a Connected Lens, assign it to each contender slot:
+
+```bash
+lf battle assign-lens <battle-id> --contender-id <id> --lens-id <lens-id>
+```
+
+### Lens parameter requirements
+
+Lenses may declare required `[[param]]` placeholders in their template body. Before a battle can execute, every required parameter must have a stored value in the contender's lens assignment (`input_snapshot`).
+
+**In the web wizard (Step 7 — Lens Assignment):** the assignment form will show a parameter input panel whenever the selected lens version has declared parameters. The _Assign Lens_ button is disabled until all required fields are filled. Saved values are stored in `contender_lens_assignments.input_snapshot` and substituted into the template at execution time.
+
+**Via CLI:** pass parameters as a JSON snapshot:
+```bash
+lf battle assign-lens <battle-id> \
+  --contender-id <id> \
+  --lens-id <lens-id> \
+  --params '{"language":"Python","max_tokens":"512"}'
+```
+
+If required parameters are missing when execution starts, the system surfaces a clear error: `"Missing required lens parameters: <label>, ..."`.
+
+---
+
+## 3. Open for entries
 
 ```bash
 lf battle open <battle-id>
@@ -45,7 +71,7 @@ Status transitions from `draft` → `open`. Contenders can now join.
 
 ---
 
-## 3. Invite specific participants (optional)
+## 4. Invite specific participants (optional)
 
 ```bash
 lf battle invite <battle-id> --email alice@example.com
@@ -56,7 +82,7 @@ Invited participants receive an email with a join link. Anyone can also discover
 
 ---
 
-## 4. Start voting
+## 5. Start voting
 
 Once contenders have submitted their entries:
 
@@ -68,7 +94,7 @@ Requires at least 2 contenders in `accepted` status. Status transitions to `voti
 
 ---
 
-## 5. Close voting and finalize
+## 6. Close voting and finalize
 
 When the voting deadline passes (or you want to close early):
 
@@ -79,7 +105,7 @@ lf battle finalize <battle-id>       # scoring → closed, winner determined
 
 ---
 
-## 6. Publish results
+## 7. Publish results
 
 ```bash
 lf battle publish <battle-id>
