@@ -4,6 +4,7 @@ import { AuthProvider, SessionBoundary } from '@lenserfight/features/auth'
 import { LenserProvider } from '@lenserfight/features/profile'
 import { AnalyticsProvider, RouteTracker } from '@lenserfight/infra/analytics'
 import { usePartnerProvisioning } from '@lenserfight/features/onboarding'
+import { useNotificationToast } from '@lenserfight/features/notifications'
 import { ErrorProvider, ErrorClearer } from '@lenserfight/shared/error'
 import { AppToaster } from '@lenserfight/ui/components'
 import { ModalQueryDriven } from '@lenserfight/ui/routing'
@@ -25,6 +26,11 @@ function PartnerProvisioningBootstrap() {
   return null
 }
 
+function NotificationToastBootstrap() {
+  useNotificationToast()
+  return null
+}
+
 const App: React.FC = () => {
   return (
     <HelmetProvider>
@@ -43,6 +49,7 @@ const App: React.FC = () => {
                     <AnalyticsProvider>
                       <RouteTracker />
                       <PartnerProvisioningBootstrap />
+                      <NotificationToastBootstrap />
                       <ErrorClearer />
                       <AppToaster />
                       <WebRouter />
