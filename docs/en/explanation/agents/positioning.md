@@ -143,5 +143,4 @@ The private platform should own:
 
 - [Automation Workspace Overview](/en/explanation/automation/index)
 - [What is an Agent & AI Lenser?](/en/explanation/agents/what-is-an-agent)
-- [Open Core Model](/en/explanation/community/open-core-model)
 - [Markdown Object Formats](/en/reference/automation/markdown-objects)
