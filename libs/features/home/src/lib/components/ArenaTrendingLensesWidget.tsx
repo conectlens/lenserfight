@@ -18,10 +18,9 @@ interface ArenaTrendingLensesWidgetProps {
 
 export function ArenaTrendingLensesWidget({ baseUrl = '' }: ArenaTrendingLensesWidgetProps) {
   const { data, isLoading } = useTrendingPrompts()
-
   const lenses = (data?.pages.flatMap((p) => p.data ?? []) ?? [])
     .slice(0, DISPLAY_COUNT)
-
+  console.log(lenses)
   return (
     <Card className="overflow-hidden p-0">
       <div className="flex items-center gap-2 border-b border-surface-border bg-card/60 px-4 py-3">
