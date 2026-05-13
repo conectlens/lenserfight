@@ -313,9 +313,9 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   const [showAddLocalKey, setShowAddLocalKey] = useState(false)
   const [editingKey, setEditingKey] = useState<LocalKeyMeta | null>(null)
   const isCloudEdition = SURFACE.edition === 'cloud'
-  const localKeyEnabled = true
-  const selectableByokCount = availableLocalKeys.length
-  const canSelectByok = localKeyEnabled && canUseBYOK
+  const localKeyEnabled = !isCloudEdition
+  const selectableByokCount = isCloudEdition ? availableKeys.length : availableLocalKeys.length
+  const canSelectByok = canUseBYOK && (isCloudEdition ? true : localKeyEnabled)
 
   const chainabitConnected = chainabitState === 'connected' || chainabitState === 'no_credits'
   const chainabitActive = chainabitState === 'connected'
@@ -343,7 +343,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   }, [isCloudEdition, fundingSource, onFundingSourceChange])
 
   // When Chainabit is definitively unavailable and the user is on platform_credit,
-  // fall back to local keys so the model selector remains usable.
+  // fall back to cloud BYOK keys (cloud edition) or local keys (self-hosted).
   useEffect(() => {
     const chainabitDefinitelyUnavailable =
       chainabitState === 'no_credits' ||
@@ -351,7 +351,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       chainabitState === 'invalid_connection' ||
       chainabitState === 'provider_error'
     if (isCloudEdition && fundingSource === 'platform_credit' && chainabitDefinitelyUnavailable) {
-      onFundingSourceChange('user_byok_local')
+      onFundingSourceChange('user_byok_cloud')
     }
   }, [chainabitState, fundingSource, isCloudEdition, onFundingSourceChange])
 
@@ -375,7 +375,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
 
   const handleMyKeyClick = () => {
     if (!canSelectByok) return
-    if (isCloudEdition && availableKeys.length > 0) {
+    if (isCloudEdition) {
       onFundingSourceChange('user_byok_cloud')
       return
     }
@@ -438,11 +438,13 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         >
           <KeyRound size={16} className={isByok ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Local Keys</p>
+            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+              {isCloudEdition ? 'My Keys' : 'Local Keys'}
+            </p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400">
               {selectableByokCount > 0
                 ? `${selectableByokCount} key${selectableByokCount > 1 ? 's' : ''}`
-                : 'Add a key'}
+                : isCloudEdition ? 'Add in Settings' : 'Add a key'}
             </p>
           </div>
         </button>
