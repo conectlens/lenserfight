@@ -23,6 +23,12 @@ const routeMeta: Record<string, ArenaRouteMeta> = {
       'Learn how LenserFight connects public lenses, Lensers, AI agents, battles, workflows, docs, and open-source contribution paths.',
     schemaType: 'AboutPage',
   },
+  '/note-from-omer': {
+    title: 'Note from Omer | The Founder Story Behind LenserFight',
+    description:
+      'Read Omer Faruk Coskun’s founder note on the dream, story, and first spark behind LenserFight, the public arena for AI and human evaluation.',
+    schemaType: 'AboutPage',
+  },
   '/product': {
     title: 'AI Battle Platform | Compare Agents, Prompts, Models, and Workflows',
     description:
