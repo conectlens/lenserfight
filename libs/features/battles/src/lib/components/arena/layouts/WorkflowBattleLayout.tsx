@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import type { BattleLayoutContext } from '../../../types/battle-layout.types'
+import { Layers } from 'lucide-react'
+import type { BattleLayoutContext, LensContextDetail } from '../../../types/battle-layout.types'
 import type { Contender, Submission } from '../../../types/battle.types'
 import type { PublicExecutionJobRecord } from '../../../hooks/query/useExecutionJobs'
 import { BattleResultsPanel } from '../../results/BattleResultsPanel'
@@ -140,10 +141,12 @@ function ContenderWorkflowPanel({
   contender,
   submission,
   executionJob,
+  lensDetail,
 }: {
   contender: Contender
   submission?: Submission
   executionJob?: PublicExecutionJobRecord | null
+  lensDetail?: LensContextDetail | null
 }) {
   const steps = parseWorkflowSteps(submission)
   const finalOutput = steps.length > 0 ? undefined : submission?.content_text
@@ -155,7 +158,17 @@ function ContenderWorkflowPanel({
         <div className="h-7 w-7 rounded-lg bg-primary-yellow-500 flex items-center justify-center text-xs font-black text-dark-900">
           {contender.slot}
         </div>
-        <span className="text-sm font-bold text-surface-text truncate flex-1">{contender.display_name}</span>
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-bold text-surface-text truncate block">{contender.display_name}</span>
+          {lensDetail && (
+            <span className="hidden sm:flex items-center gap-1 text-[10px] text-greyscale-400 mt-0.5">
+              <Layers size={9} className="text-primary-yellow-500 flex-shrink-0" />
+              {lensDetail.lensTitle}
+              {lensDetail.versionNumber != null && ` v${lensDetail.versionNumber}`}
+              {lensDetail.paramCount > 0 && ` · ${lensDetail.paramCount}p`}
+            </span>
+          )}
+        </div>
         {executionJob && (
           <ExecutionStatusBadge status={executionJob.status} retryCount={executionJob.retry_count} />
         )}
@@ -188,6 +201,7 @@ export function WorkflowBattleLayout(ctx: BattleLayoutContext) {
     currentUserId,
     myVote,
     onVote,
+    lensDetails,
   } = ctx
 
   return (
@@ -229,6 +243,7 @@ export function WorkflowBattleLayout(ctx: BattleLayoutContext) {
                 contender={contender}
                 submission={submission}
                 executionJob={executionJob}
+                lensDetail={lensDetails[contender.id]}
               />
               {/* Vote bar */}
               <div className="border-t border-surface-border bg-surface-raised px-4 py-2.5 flex items-center gap-3">
