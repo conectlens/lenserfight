@@ -20,6 +20,7 @@ import { LandHomePage } from './pages/LandHomePage'
 import { PoliciesPage } from './pages/PoliciesPage'
 import { ProductPage } from './pages/ProductPage'
 import { CLIPage } from './pages/CLIPage'
+import { CLIQuickstartPage } from './pages/CLIQuickstartPage'
 import { MobileComingSoonPage } from './pages/MobileComingSoonPage'
 import { BattleShowcasePage } from './pages/BattleShowcasePage'
 import { RouteSEO } from './seo/RouteSEO'
@@ -61,6 +62,7 @@ const App: React.FC = () => {
                         <Route path="/about" element={<AboutPage />} />
                         <Route path="/product" element={<ProductPage />} />
                         <Route path="/product/cli" element={<CLIPage />} />
+                        <Route path="/product/cli/quickstart" element={<CLIQuickstartPage />} />
                         <Route path="/product/mobile" element={<MobileComingSoonPage />} />
                         <Route path="/faq" element={<FAQPage />} />
                         <Route path="/get-started" element={<GetStartedPage />} />
