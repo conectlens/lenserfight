@@ -72,7 +72,7 @@ CREATE OR REPLACE FUNCTION public.fn_profile_completion_score(p_lenser_id uuid)
 RETURNS integer
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO 'lensers', 'xp', 'public'
+SET search_path TO 'lensers', 'xp', 'battles', 'public'
 AS $$
 DECLARE
   v_score     integer := 0;
@@ -109,12 +109,12 @@ BEGIN
     v_score := v_score + 15;
   END IF;
 
-  -- Battle participation
+  -- Battle participation ('cancelled' is not a valid battles.battle_status_enum value)
   SELECT COUNT(*) INTO v_battles
   FROM battles.contenders bc
   JOIN battles.battles b ON b.id = bc.battle_id
   WHERE bc.contender_ref_id = p_lenser_id
-    AND b.status NOT IN ('draft', 'cancelled');
+    AND b.status <> 'draft'::battles.battle_status_enum;
 
   IF v_battles > 0 THEN
     v_score := v_score + 10;
