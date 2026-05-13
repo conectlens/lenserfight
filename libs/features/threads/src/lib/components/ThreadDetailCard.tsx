@@ -45,20 +45,6 @@ export const ThreadDetailCard: React.FC<ThreadDetailCardProps> = ({ thread, onTo
 
       {/* Content */}
       <div className="mb-8">
-        <div className="mb-4 flex flex-wrap gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-gray-600 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-300">
-            <MessageSquare size={12} />
-            Community discussion
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-semibold text-gray-500 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
-            <Swords size={12} />
-            Battles
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-semibold text-gray-500 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
-            <GitBranch size={12} />
-            Workflows
-          </span>
-        </div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 leading-tight tracking-tight break-words">
           {thread.title}
         </h1>
