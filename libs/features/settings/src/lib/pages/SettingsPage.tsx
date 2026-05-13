@@ -14,6 +14,7 @@ import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins, Ima
 import { AgentsTab } from '../components/AgentsTab'
 import { ApiKeysTab } from '../components/ApiKeysTab'
 import { GeneralTab } from '../components/GeneralTab'
+import { NotificationPreferencesTab } from '../components/NotificationPreferencesTab'
 import { PartnerAccountsTab } from '../components/PartnerAccountsTab'
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, Link, useParams, useNavigate } from 'react-router-dom'
@@ -855,40 +856,7 @@ export const SettingsPage: React.FC = () => {
               </p>
 
               {!FEATURES.NOTIFICATIONS ? (
-                /* Coming Soon — blurred skeleton with overlay */
-                <div className="relative rounded-xl overflow-hidden">
-                  {/* Skeleton rows (blurred) */}
-                  <div className="space-y-3 blur-sm pointer-events-none select-none">
-                    {[
-                      { w: 'w-48', sub: 'w-64' },
-                      { w: 'w-56', sub: 'w-48' },
-                      { w: 'w-40', sub: 'w-72' },
-                      { w: 'w-52', sub: 'w-56' },
-                    ].map((row, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800/50"
-                      >
-                        <div className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" />
-                        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
-                        <div className="flex-1 space-y-2">
-                          <div className={`h-3 rounded bg-gray-200 dark:bg-gray-700 ${row.w}`} />
-                          <div className={`h-2.5 rounded bg-gray-100 dark:bg-gray-800 ${row.sub}`} />
-                        </div>
-                        <div className="w-10 h-2.5 rounded bg-gray-100 dark:bg-gray-800 flex-shrink-0" />
-                      </div>
-                    ))}
-                  </div>
-                  {/* Frosted glass overlay */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 dark:bg-gray-900/60 backdrop-blur-[2px] rounded-xl">
-                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold shadow-lg">
-                      Coming Soon
-                    </span>
-                    <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                      Notifications are on their way.
-                    </p>
-                  </div>
-                </div>
+                <NotificationPreferencesTab />
               ) : (
                 <>
                   <div className="flex gap-2 mb-6">
@@ -946,6 +914,12 @@ export const SettingsPage: React.FC = () => {
                       ))}
                     </div>
                   )}
+                  <div className="mt-10 pt-6 border-t border-gray-100 dark:border-gray-800">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
+                      Notification Preferences
+                    </h3>
+                    <NotificationPreferencesTab />
+                  </div>
                 </>
               )}
             </div>
