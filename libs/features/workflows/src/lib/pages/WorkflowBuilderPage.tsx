@@ -2,6 +2,7 @@ import { lensesService, workflowsService, seoService } from '@lenserfight/data/r
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
+import { useChainabitConnection } from '@lenserfight/features/store'
 import { useLenser } from '@lenserfight/features/profile'
 import { Avatar, Badge, Button } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
@@ -70,6 +71,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
   // ── Funding source (BYOK / platform credit) ────────────────────────────────
   const funding = useFundingSource(selectedProviderKey)
+  const chainabit = useChainabitConnection()
 
   const { startRun, stopRun, retryRun, isPending: starting, isRetrying, runId, nodeResults, isRunning } = useWorkflowRun(workflowId, {
     skipSse: funding.fundingSource === 'user_byok_local',
@@ -670,9 +672,13 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                       onLocalKeyIdChange={funding.setSelectedLocalKeyId}
                       availableLocalKeys={funding.localKeys}
                       onAddLocalKey={funding.addLocalKey}
+                      onRemoveLocalKey={funding.removeLocalKey}
                       onUpdateLocalKey={funding.updateLocalKey}
                       walletBalance={funding.walletBalance}
                       canUseBYOK={funding.canUseBYOK}
+                      chainabitState={chainabit.state}
+                      chainabitModels={chainabit.models}
+                      onChainabitConnect={chainabit.reconnect}
                       providers={providers}
                       isLoadingProviders={modelsLoading}
                       providerModels={providerModels}
