@@ -6,7 +6,7 @@ import { walletService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
-import { SURFACE } from '@lenserfight/utils/env'
+
 
 interface WalletContextType {
   balance: number | null
@@ -32,7 +32,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   } = useQuery({
     queryKey: queryKeys.wallet.balance,
     queryFn: () => walletService.getBalance(),
-    enabled: isAuthenticated && hasLenser && SURFACE.showBillingAndStore,
+    enabled: isAuthenticated && hasLenser,
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
