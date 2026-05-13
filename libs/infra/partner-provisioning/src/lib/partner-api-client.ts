@@ -1,10 +1,10 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { apiFetch, unwrapEnvelope } from '@lenserfight/data/repositories'
-import { CHAINABIT_API_BASE_URL, CHAINABIT_OAUTH_URL, CHAINABIT_OAUTH_CLIENT_ID, CHAINABIT_OAUTH_CALLBACK_URL } from '@lenserfight/utils/env'
+import { API_BASE_URL, CHAINABIT_OAUTH_URL, CHAINABIT_OAUTH_CLIENT_ID, CHAINABIT_OAUTH_CALLBACK_URL } from '@lenserfight/utils/env'
 import type { ChainabitAiModel, PartnerBalance, PartnerProvision, PartnerTokenRefreshResult } from './partner-provider.interface'
 
 // Partner provisioning calls go to LenserFight's platform API (not Chainabit directly).
-const API_BASE = CHAINABIT_API_BASE_URL
+const API_BASE = API_BASE_URL
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession()
@@ -106,6 +106,13 @@ export const partnerApiClient = {
    * on the Login/Register pages. The platform API callback creates the Supabase session.
    */
   async startOAuthLogin(returnUrl: string = window.location.href): Promise<void> {
+    if (!CHAINABIT_OAUTH_CLIENT_ID) {
+      throw new Error('Chainabit OAuth is not configured (missing CHAINABIT_OAUTH_CLIENT_ID).')
+    }
+    if (!CHAINABIT_OAUTH_CALLBACK_URL) {
+      throw new Error('Chainabit OAuth is not configured (missing CHAINABIT_OAUTH_REDIRECT_URI).')
+    }
+
     const codeVerifier = generateCodeVerifier()
     const codeChallenge = await deriveCodeChallenge(codeVerifier)
     const nonce = Array.from(crypto.getRandomValues(new Uint8Array(8)))
