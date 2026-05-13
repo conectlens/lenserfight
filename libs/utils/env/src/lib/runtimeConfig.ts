@@ -7,6 +7,25 @@ function readPublicBaseUrl(envKey: string, fallback: string): string {
   return s
 }
 
+/**
+ * Strips the Supabase PostgREST version path from a URL so that
+ * `API_URL=http://127.0.0.1:54321/rest/v1` doesn't cause double-versioned
+ * paths like `/rest/v1/v1/partners/...` when platform API routes append `/v1/`.
+ * Also emits a dev-mode warning so the misconfiguration is visible early.
+ */
+function stripSupabaseRestPath(url: string): string {
+  const stripped = url.replace(/\/rest\/v\d+\/?$/, '')
+  if (import.meta.env.DEV && stripped !== url) {
+    console.warn(
+      '[env] API_URL contains a Supabase PostgREST path (/rest/v1). ' +
+      'API_URL must point to the LenserFight platform API (e.g. http://localhost:8786), ' +
+      'not the Supabase REST endpoint. The path suffix has been stripped automatically. ' +
+      'Update your .env.local to silence this warning.'
+    )
+  }
+  return stripped
+}
+
 /** Default local auth origin (`nx serve auth` — see `apps/auth/vite.config.mts`). */
 const DEV_AUTH_BASE_URL = 'http://localhost:3004'
 
@@ -54,20 +73,25 @@ export const CHAINABIT_OAUTH_CALLBACK_URL: string = (import.meta.env['CHAINABIT_
  * In development defaults to the ngrok tunnel to bypass CORS restrictions on localhost.
  * Override with `API_URL`.
  */
-export const API_BASE_URL = readPublicBaseUrl(
+export const API_BASE_URL = stripSupabaseRestPath(readPublicBaseUrl(
   'API_URL',
   import.meta.env.DEV ? 'https://wyatt-proportioned-ashlyn.ngrok-free.dev' : 'https://api.lenserfight.com',
-)
+))
 
 /**
- * Chainabit partner API base URL (no trailing slash).
- * Used exclusively for /v1/partners/* provisioning endpoints.
- * In development defaults to the ngrok tunnel. Override with `CHAINABIT_API_URL`.
+ * Chainabit direct API base URL (no trailing slash, no version prefix).
+ * All versioned endpoint construction goes through {@link chainabitUrl}.
  */
-export const CHAINABIT_API_BASE_URL = readPublicBaseUrl(
-  'CHAINABIT_API_URL',
-  import.meta.env.DEV ? 'https://wyatt-proportioned-ashlyn.ngrok-free.dev' : 'https://api.lenserfight.com',
-)
+const _CHAINABIT_API_BASE = readPublicBaseUrl('CHAINABIT_API_URL', 'https://api.chainabit.com')
+
+/**
+ * Versioning adapter for all direct Chainabit API calls.
+ * Builds `{base}/api/v{version}/{path}` — path must NOT start with a slash.
+ * Change `defaultVersion` here to migrate all call sites at once.
+ */
+export function chainabitUrl(path: string, version = 1): string {
+  return `${_CHAINABIT_API_BASE}/api/v${version}/${path}`
+}
 
 // Environment
 export const MODE = import.meta.env.MODE // "development", "production", "test"
