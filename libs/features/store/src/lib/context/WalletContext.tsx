@@ -80,11 +80,15 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   )
 }
 
-export const useWallet = () => {
-  const ctx = useContext(WalletContext)
-  if (!ctx) throw new Error('useWallet must be used within WalletProvider')
-  return ctx
+const WALLET_FALLBACK: WalletContextType = {
+  balance: null,
+  hasBalance: false,
+  isLoading: false,
+  error: null,
+  redirectToStore: () => undefined,
 }
+
+export const useWallet = () => useContext(WalletContext) ?? WALLET_FALLBACK
 
 /**
  * Opt-in hook: redirects to /billing after 2s when the authenticated user has
