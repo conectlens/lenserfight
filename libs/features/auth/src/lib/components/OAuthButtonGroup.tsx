@@ -20,12 +20,8 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
   const [chainabitError, setChainabitError] = useState<string | null>(null)
   const [chainabitPending, setChainabitPending] = useState(false)
 
-  // "Hide others in the 'PRODUCT_EDITION=local' and 'PRODUCT_EDITION=cloud'"
-  // "but make visible Chainabit OAUTH if 'PRODUCT_EDITION=cloud'"
-  // "in the localhost, do not display other OAUTH adapters. Only Chainabit OAUTH will be visible!"
-
   const showChainabit = edition === 'cloud' || edition === 'local' || isDevMode
-  const showOthers = edition !== 'cloud' && edition !== 'local' && !isDevMode
+  const showOthers = true
 
   const handleChainabit = async () => {
     setChainabitError(null)
