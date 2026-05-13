@@ -304,6 +304,12 @@ html.dark .lf-btn-outline {
   background: rgba(22, 163, 74, 0.06);
 }
 
+.lf-copy-btn.failed {
+  border-color: #dc2626;
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.06);
+}
+
 /* ─── Footer: break out of VitePress .VPContent column ─── */
 /*
   layout-bottom renders inside .VPContent which is offset right by the sidebar.
