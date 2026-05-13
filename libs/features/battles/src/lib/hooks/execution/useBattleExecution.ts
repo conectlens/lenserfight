@@ -9,6 +9,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { lensesService, battleExecutionService } from '@lenserfight/data/repositories'
+import { renderLensWithSnapshot } from '@lenserfight/utils/text'
 
 import type {
   BattleExecutionPhase,
@@ -176,7 +177,38 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
         throw new Error('Could not resolve lens content for contenders')
       }
 
-      // 3. Transition battle to executing
+      // 3. Substitute [[param]] tokens using the stored input snapshots.
+      //    Validate that all required parameters have values before execution.
+      const paramsA = (versionA.parameters ?? []) as import('@lenserfight/types').LensVersionParam[]
+      const paramsB = (versionB.parameters ?? []) as import('@lenserfight/types').LensVersionParam[]
+
+      const missingA = paramsA
+        .filter((p) => p.tool?.required)
+        .filter((p) => { const v = (assignA.input_snapshot ?? {})[p.label]; return v === undefined || v === null || v === '' })
+      const missingB = paramsB
+        .filter((p) => p.tool?.required)
+        .filter((p) => { const v = (assignB.input_snapshot ?? {})[p.label]; return v === undefined || v === null || v === '' })
+
+      if (missingA.length > 0 || missingB.length > 0) {
+        const names = [
+          ...missingA.map((p) => `A:${p.label}`),
+          ...missingB.map((p) => `B:${p.label}`),
+        ]
+        throw new Error(`Missing required lens parameters: ${names.join(', ')}`)
+      }
+
+      const renderedContentA = renderLensWithSnapshot(
+        versionA.templateBody,
+        assignA.input_snapshot ?? {},
+        paramsA,
+      )
+      const renderedContentB = renderLensWithSnapshot(
+        versionB.templateBody,
+        assignB.input_snapshot ?? {},
+        paramsB,
+      )
+
+      // 4. Transition battle to executing
       await battleExecutionService.transitionBattleStatus(battle.id, 'executing')
       await battleExecutionService.insertBattleEvent(
         battle.id,
@@ -184,7 +216,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
         currentUserId,
       )
 
-      // 4. Build execution configs
+      // 5. Build execution configs
       const execConfigA: ContenderExecutionConfig = {
         contenderId: contenderA.id,
         slot: 'A',
@@ -193,7 +225,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
         fundingSource: configA.funding_source as ContenderExecutionConfig['fundingSource'],
         byokKeyRefId: configA.byok_key_ref_id,
         lensId: assignA.lens_id,
-        lensContent: versionA.templateBody,
+        lensContent: renderedContentA,
         maxTokens: configA.max_tokens,
       }
 
@@ -205,11 +237,11 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
         fundingSource: configB.funding_source as ContenderExecutionConfig['fundingSource'],
         byokKeyRefId: configB.byok_key_ref_id,
         lensId: assignB.lens_id,
-        lensContent: versionB.templateBody,
+        lensContent: renderedContentB,
         maxTokens: configB.max_tokens,
       }
 
-      // 5. Start both streams simultaneously
+      // 6. Start both streams simultaneously
       setPhase('executing')
       await Promise.all([streamA.start(execConfigA), streamB.start(execConfigB)])
     } catch (err) {
