@@ -272,7 +272,8 @@ html.dark .lf-btn-outline {
 }
 
 .lf-copy-btn,
-.lf-edit-btn {
+.lf-edit-btn,
+.lf-github-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -289,7 +290,8 @@ html.dark .lf-btn-outline {
 }
 
 .lf-copy-btn:hover,
-.lf-edit-btn:hover {
+.lf-edit-btn:hover,
+.lf-github-btn:hover {
   background: var(--vp-c-bg-elv);
   border-color: var(--vp-c-brand-1);
   color: var(--vp-c-text-1);
