@@ -70,7 +70,7 @@ export const LandHomePage: React.FC = () => {
   const heroY = useTransform(scrollY, [0, 400], [0, -60])
 
   return (
-    <div className="relative overflow-hidden bg-surface-base text-surface-text">
+    <div className="relative overflow-x-clip bg-surface-base text-surface-text">
       <div className="absolute inset-x-0 top-0 -z-10 h-[36rem] bg-[radial-gradient(circle_at_top,_rgba(255,222,89,0.18),_transparent_50%),radial-gradient(circle_at_right,_rgba(40,123,255,0.12),_transparent_42%),linear-gradient(180deg,rgba(248,249,250,0.95),transparent)] dark:bg-[radial-gradient(circle_at_top,_rgba(255,222,89,0.12),_transparent_45%),radial-gradient(circle_at_right,_rgba(40,123,255,0.08),_transparent_42%),linear-gradient(180deg,rgba(26,26,26,0.95),transparent)]" />
 
       {/* ─── 1: Hero ───────────────────────────────────────────────── */}
@@ -202,17 +202,30 @@ export const LandHomePage: React.FC = () => {
       </section>
 
       {/* ─── 3.2: Brand Motion ──────────────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
-        <motion.div className="mb-10 space-y-2" variants={fadeLeft} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="yellow" variant="outline">Motion Identity</Badge>
+      <section className="w-full pb-16 lg:pb-20">
+        <motion.div
+          className="mx-auto mb-10 max-w-6xl space-y-2 px-4 sm:px-6 lg:px-8"
+          variants={fadeLeft}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          <Badge color="yellow" variant="outline">
+            Motion Identity
+          </Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
             The visual pulse of the arena
           </h2>
           <p className="max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            Our brand is defined by movement, speed, and precision. Explore the cinematic foundations of LenserFight.
+            Our brand is defined by movement, speed, and precision. Explore the cinematic foundations
+            of LenserFight.
           </p>
         </motion.div>
-        <React.Suspense fallback={<div className="h-[400px] w-full animate-pulse rounded-[2.5rem] bg-surface-raised" />}>
+        <React.Suspense
+          fallback={
+            <div className="mx-auto h-[400px] max-w-6xl animate-pulse rounded-[2.5rem] bg-surface-raised px-4" />
+          }
+        >
           <BrandVideos />
         </React.Suspense>
       </section>
