@@ -127,11 +127,26 @@ const list = defineCommand({
   async run({ args }) {
     const mode = args.assignments ? 'assignments' : args.profiles ? 'profiles' : 'registry'
     try {
-      const rows = await callRpc<Record<string, unknown>[]>(
-        'fn_list_tools',
-        { p_mode: mode, p_ai_lenser_id: args.agent || null },
-        { requireAuth: true },
-      )
+      let rows: Record<string, unknown>[]
+      if (mode === 'registry') {
+        rows = await callRpc<Record<string, unknown>[]>(
+          'fn_list_tools_registry',
+          { p_owner_lenser_id: args.agent || null },
+          { requireAuth: true },
+        )
+      } else if (mode === 'assignments') {
+        rows = await callRpc<Record<string, unknown>[]>(
+          'fn_list_tool_assignments',
+          { p_ai_lenser_id: args.agent || null },
+          { requireAuth: true },
+        )
+      } else {
+        rows = await callRpc<Record<string, unknown>[]>(
+          'fn_list_tool_profiles',
+          { p_ai_lenser_id: args.agent || null },
+          { requireAuth: true },
+        )
+      }
       if (!rows || rows.length === 0) {
         consola.info('No tools found for mode=%s', mode)
         return
