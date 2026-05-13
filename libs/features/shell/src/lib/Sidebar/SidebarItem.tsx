@@ -1,5 +1,6 @@
 import { Construction, ExternalLink, Lock } from 'lucide-react'
 import React, { useState } from 'react'
+import { globalAnalyticsController } from '@lenserfight/infra/analytics'
 
 interface SidebarItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon: React.ReactNode
@@ -248,6 +249,12 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
         rel="noopener noreferrer"
         title={collapsed ? label : undefined}
         className={`${baseClasses} ${variantClasses} no-underline`}
+        onClick={() =>
+          globalAnalyticsController.trackEvent({
+            name: 'external_link_click',
+            properties: { label, href: externalHref, location: 'sidebar' },
+          })
+        }
       >
         <IconWrapper />
         <LabelWrapper />
@@ -260,7 +267,13 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
       className={`${baseClasses} ${variantClasses}`}
       title={collapsed ? label : undefined}
       disabled={disabled}
-      onClick={onClick}
+      onClick={(e) => {
+        globalAnalyticsController.trackEvent({
+          name: 'nav_click',
+          properties: { label, location: 'sidebar' },
+        })
+        onClick?.(e)
+      }}
       {...props}
     >
       <IconWrapper />
