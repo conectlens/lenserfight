@@ -10,14 +10,14 @@ import {
   Library,
   MessageCircle,
   Server,
-  ShoppingBag,
+
   Sparkles,
   Swords,
   Trophy,
   Users,
 } from 'lucide-react'
 
-import { ARENA_BASE_URL, DOCS_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
+import { ARENA_BASE_URL, DOCS_BASE_URL, FEATURES } from '@lenserfight/utils/env'
 
 import type { SidebarNavSectionConfig } from './sidebarModes'
 
@@ -77,9 +77,6 @@ export function buildHumanSidebarSections(
       items: [
         { id: 'api-keys', label: 'API Keys', path: '/settings/api-keys', icon: <KeyRound size={20} /> },
         { id: 'gateway-daemons', label: 'Gateway', path: '/settings/gateway', icon: <Server size={20} /> },
-        ...(SURFACE.showBillingAndStore
-          ? [{ id: 'billing', label: 'Plans', path: '/billing', icon: <ShoppingBag size={20} /> }]
-          : []),
       ],
     },
   ]
