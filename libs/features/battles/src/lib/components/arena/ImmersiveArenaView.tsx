@@ -1,6 +1,8 @@
 import React, { lazy, Suspense, useState } from 'react'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenserOptional } from '@lenserfight/features/profile'
+import { lensesService } from '@lenserfight/data/repositories'
+import { useQuery } from '@tanstack/react-query'
 
 import { useBattle } from '../../hooks/query/useBattle'
 import { useBattleContenders } from '../../hooks/query/useBattleContenders'
@@ -21,7 +23,7 @@ import { resolveBattleLayout } from './layouts/BattleLayoutResolver'
 
 import type { ContenderLensAssignmentRecord, VoteValue } from '../../types/battle.types'
 import type { BattleContentType } from '../../types/battle-renderer.types'
-import type { BattleLayoutContext } from '../../types/battle-layout.types'
+import type { BattleLayoutContext, LensContextDetail } from '../../types/battle-layout.types'
 
 import { Drawer } from '@lenserfight/ui/overlays'
 
@@ -80,6 +82,63 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
 
   const totalVotes = aggregates.reduce((sum, a) => sum + (a.raw_vote_count ?? 0), 0)
   const isOwner = !!(battle?.creator_lenser_id && lenser?.id && battle.creator_lenser_id === lenser.id)
+
+  // Derive fighter slot from contender list — zero extra fetches
+  const myContenderSlot: 'A' | 'B' | null =
+    contenderA?.contender_ref_id === currentUserId ? 'A'
+    : contenderB?.contender_ref_id === currentUserId ? 'B'
+    : null
+
+  // Fetch lens titles for display — share the global 'lens-core' cache
+  const { data: lensCoreA } = useQuery({
+    queryKey: ['lens-core', lensAssignmentA?.lens_id],
+    queryFn: () => lensesService.getLensDetail(lensAssignmentA!.lens_id, currentUserId),
+    enabled: !!lensAssignmentA?.lens_id,
+    staleTime: 300_000,
+  })
+  const { data: lensCoreB } = useQuery({
+    queryKey: ['lens-core', lensAssignmentB?.lens_id],
+    queryFn: () => lensesService.getLensDetail(lensAssignmentB!.lens_id, currentUserId),
+    enabled: !!lensAssignmentB?.lens_id,
+    staleTime: 300_000,
+  })
+
+  // Fetch version detail for param count — reuse the same cache key as LensDetailPage
+  const { data: versionDetailA } = useQuery({
+    queryKey: ['lens-version-detail', lensAssignmentA?.version_id ?? `latest-${lensAssignmentA?.lens_id}`],
+    queryFn: async () => {
+      if (lensAssignmentA!.version_id) return lensesService.getVersionById(lensAssignmentA!.version_id)
+      return lensesService.getLatestPublishedVersion(lensAssignmentA!.lens_id)
+    },
+    enabled: !!lensAssignmentA?.lens_id,
+    staleTime: 300_000,
+  })
+  const { data: versionDetailB } = useQuery({
+    queryKey: ['lens-version-detail', lensAssignmentB?.version_id ?? `latest-${lensAssignmentB?.lens_id}`],
+    queryFn: async () => {
+      if (lensAssignmentB!.version_id) return lensesService.getVersionById(lensAssignmentB!.version_id)
+      return lensesService.getLatestPublishedVersion(lensAssignmentB!.lens_id)
+    },
+    enabled: !!lensAssignmentB?.lens_id,
+    staleTime: 300_000,
+  })
+
+  const lensDetails: Record<string, LensContextDetail | null> = {
+    ...(contenderA?.id && lensAssignmentA ? {
+      [contenderA.id]: lensCoreA ? {
+        lensTitle: lensCoreA.title,
+        versionNumber: versionDetailA?.versionNumber ?? null,
+        paramCount: (versionDetailA?.parameters?.length ?? 0),
+      } : null,
+    } : {}),
+    ...(contenderB?.id && lensAssignmentB ? {
+      [contenderB.id]: lensCoreB ? {
+        lensTitle: lensCoreB.title,
+        versionNumber: versionDetailB?.versionNumber ?? null,
+        paramCount: (versionDetailB?.parameters?.length ?? 0),
+      } : null,
+    } : {}),
+  }
 
   const renderer = getRenderer((battle?.content_type ?? 'text') as BattleContentType)
 
@@ -161,6 +220,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
     isOwner,
     myVote: (myVote?.vote_value as VoteValue) ?? null,
     lensAssignments,
+    lensDetails,
     onVote: handleVote,
     renderer,
   }
@@ -178,6 +238,8 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
           battle={battle}
           currentPhase={currentPhase}
           onRulesOpen={() => setRulesOpen(true)}
+          isOwner={isOwner}
+          myContenderSlot={myContenderSlot}
         />
 
         {/* Main content area + optional desktop chat rail */}
@@ -243,6 +305,8 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
         onClose={() => setRulesOpen(false)}
         battle={battle}
         isOwner={isOwner}
+        lensDetails={lensDetails}
+        contenders={contenders}
       />
     </div>
   )
