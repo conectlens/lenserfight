@@ -60,11 +60,22 @@ append_manifest_sql() {
   done < "$manifest"
 }
 
+# Accept optional --manifest <file> and --out <file> flags.
+# Defaults:  seed.manifest → seed.sql
+# Production: --manifest seed-production.manifest → seed-production.sql
 MANIFEST="${SUPABASE_DIR}/seed.manifest"
 OUT="${SUPABASE_DIR}/seed.sql"
 
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --manifest) MANIFEST="${SUPABASE_DIR}/$2"; shift 2 ;;
+    --out)      OUT="${SUPABASE_DIR}/$2";      shift 2 ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
 if [[ ! -f "$MANIFEST" ]]; then
-  echo "ERROR: missing seed.manifest"
+  echo "ERROR: missing manifest: ${MANIFEST}"
   exit 1
 fi
 
@@ -72,32 +83,40 @@ write_header >"$OUT"
 append_manifest_sql "$MANIFEST" "$OUT"
 echo "Wrote ${OUT} ($(wc -l <"$OUT") lines)"
 
-# Coverage check: every .sql under seeds/ (including subdirs) must appear in seed.manifest.
-missing=0
-shopt -s nullglob
+# Coverage check: every .sql under seeds/ must appear in the default manifest.
+# Skipped when using a non-default manifest (production manifests intentionally
+# exclude demo/dev seeds).
+DEFAULT_MANIFEST="${SUPABASE_DIR}/seed.manifest"
+if [[ "${MANIFEST}" == "${DEFAULT_MANIFEST}" ]]; then
+  missing=0
+  shopt -s nullglob
 
-check_listed() {
-  local rel="$1"
-  grep -qE "^[[:space:]]*${rel}[[:space:]]*(#|\$)" "${MANIFEST}" 2>/dev/null
-}
+  PROD_MANIFEST="${SUPABASE_DIR}/seed-production.manifest"
 
-for f in "${SUPABASE_DIR}"/seeds/*.sql; do
-  base="seeds/$(basename "$f")"
-  if ! check_listed "$base"; then
-    echo "ERROR: ${base} exists on disk but is not listed in seed.manifest"
-    missing=1
+  check_listed() {
+    local rel="$1"
+    grep -qE "^[[:space:]]*${rel}[[:space:]]*(#|\$)" "${DEFAULT_MANIFEST}" 2>/dev/null \
+      || grep -qE "(^|[[:space:]])${rel}([[:space:]]|$)" "${PROD_MANIFEST}" 2>/dev/null
+  }
+
+  for f in "${SUPABASE_DIR}"/seeds/*.sql; do
+    base="seeds/$(basename "$f")"
+    if ! check_listed "$base"; then
+      echo "ERROR: ${base} exists on disk but is not listed in seed.manifest"
+      missing=1
+    fi
+  done
+
+  for f in "${SUPABASE_DIR}"/seeds/performance-data/*.sql; do
+    base="seeds/performance-data/$(basename "$f")"
+    if ! check_listed "$base"; then
+      echo "WARN: ${base} exists on disk but is not listed in seed.manifest (performance-data is opt-in)"
+    fi
+  done
+
+  shopt -u nullglob
+
+  if [[ "$missing" -ne 0 ]]; then
+    exit 1
   fi
-done
-
-for f in "${SUPABASE_DIR}"/seeds/performance-data/*.sql; do
-  base="seeds/performance-data/$(basename "$f")"
-  if ! check_listed "$base"; then
-    echo "WARN: ${base} exists on disk but is not listed in seed.manifest (performance-data is opt-in)"
-  fi
-done
-
-shopt -u nullglob
-
-if [[ "$missing" -ne 0 ]]; then
-  exit 1
 fi
