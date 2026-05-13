@@ -1,34 +1,46 @@
-import posthog from 'posthog-js';
-import { AnalyticsEvent, AnalyticsProvider } from '../types';
-
-const POSTHOG_KEY = import.meta.env['POSTHOG_KEY'] as string | undefined;
-const POSTHOG_HOST = (import.meta.env['POSTHOG_HOST'] as string | undefined) ?? 'https://us.i.posthog.com';
+import posthog from 'posthog-js'
+import { isProd, PUBLIC_POSTHOG_HOST, PUBLIC_POSTHOG_PROJECT_TOKEN } from '@lenserfight/utils/env'
+import { AnalyticsEvent, AnalyticsProvider } from '../types'
 
 export class PostHogProvider implements AnalyticsProvider {
-  private initialized = false;
+  private initialized = false
 
   init() {
-    if (this.initialized || !POSTHOG_KEY) return;
+    if (this.initialized || !PUBLIC_POSTHOG_PROJECT_TOKEN || !isProd) return
 
-    posthog.init(POSTHOG_KEY, {
-      api_host: POSTHOG_HOST,
-      capture_pageview: false, // Handle manually to align with GA4
+    posthog.init(PUBLIC_POSTHOG_PROJECT_TOKEN, {
+      api_host: PUBLIC_POSTHOG_HOST,
+      defaults: '2026-01-30',
+      capture_pageview: false,
       capture_pageleave: true,
       persistence: 'localStorage+cookie',
-    });
+      // Marketing-only: never capture PII
+      sanitize_properties: (props) => {
+        const blocked = ['email', 'name', 'username', 'user_id', 'distinct_id', 'phone', '$email', '$name']
+        const clean: Record<string, unknown> = {}
+        for (const [k, v] of Object.entries(props)) {
+          if (!blocked.includes(k)) clean[k] = v
+        }
+        return clean
+      },
+      // Do not auto-capture IP or geo identifiers
+      ip: false,
+      person_profiles: 'never',
+    })
 
-    this.initialized = true;
+    this.initialized = true
   }
 
   trackPageView(path: string) {
-    if (!this.initialized || !POSTHOG_KEY) return;
-    posthog.capture('$pageview', {
-      $current_url: path,
-    });
+    if (!this.initialized) return
+    posthog.capture('$pageview', { $current_url: path })
   }
 
   trackEvent(event: AnalyticsEvent) {
-    if (!this.initialized || !POSTHOG_KEY) return;
-    posthog.capture(event.name, event.properties);
+    if (!this.initialized) return
+    posthog.capture(event.name, event.properties)
   }
 }
+
+/** Re-export the raw posthog instance for @posthog/react PostHogProvider wiring */
+export { posthog as posthogInstance }
