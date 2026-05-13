@@ -95,158 +95,163 @@ export const Footer: React.FC<FooterProps> = ({
   return (
     <footer className="w-full py-12 px-4 mt-auto border-t border-gray-100 bg-white text-gray-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 transition-colors duration-200">
       <div
-        className={`${isDashboard ? 'w-full' : 'max-w-5xl mx-auto px-6'} flex flex-col md:flex-row justify-between items-center gap-8`}
+        className={`${isDashboard ? 'w-full' : 'max-w-5xl mx-auto px-6'} flex flex-col gap-12`}
       >
-        {/* Left: branding + attribution */}
-        <div className="flex items-center gap-4">
-          {isDashboard && (
-            <div className="hidden md:block w-9 h-9 -ml-2 flex-shrink-0" aria-hidden="true" />
-          )}
+        {/* Top: Branding + Social/Built-by */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+          {/* Left: branding + attribution */}
+          <div className="flex items-center gap-4">
+            {isDashboard && (
+              <div className="hidden md:block w-9 h-9 -ml-2 flex-shrink-0" aria-hidden="true" />
+            )}
 
-          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6">
-            <span className="font-bold text-gray-900 dark:text-gray-100 tracking-tight text-sm">
-              © {currentYear} LenserFight
+            <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
+              <span className="font-bold text-gray-900 dark:text-gray-100 tracking-tight text-sm">
+                © {currentYear} LenserFight
+              </span>
+              <span className="hidden md:inline text-gray-300 dark:text-gray-700">·</span>
+              <a
+                href={appendUtm(GITHUB_SPONSORS_URL, utmMedium, 'footer_sponsor_link')}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Sponsor LenserFight"
+                className="flex items-center gap-1 text-xs text-pink-500 transition-colors hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300"
+              >
+                <Heart size={12} /> Sponsor us
+              </a>
+
+              <span className="hidden md:inline text-gray-300 dark:text-gray-700">·</span>
+              <a
+                href={conectlensUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                Powered by ConectLens
+                <ExternalLink size={10} aria-label="External link" />
+              </a>
+            </div>
+          </div>
+
+          {/* Right: built-by + theme/social icons */}
+          <div className="flex items-center gap-4">
+            <span className="hidden md:inline text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-600">
+              built by{' '}
+              <a
+                href={ofcsknUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              >
+                @ofcskn
+              </a>{' '}
+              &{' '}
+              <a
+                href={communityUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              >
+                Lenser Community
+              </a>
             </span>
-            <a
-              href={appendUtm(GITHUB_SPONSORS_URL, utmMedium, 'footer_sponsor_link')}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Sponsor LenserFight"
-              className="flex items-center gap-1 text-xs text-pink-500 transition-colors hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300"
-            >
-              <Heart size={12} /> Sponsor us
-            </a>
 
-            <span className="hidden md:inline text-gray-300 dark:text-gray-700">|</span>
-            <a
-              href={conectlensUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
-              Powered by ConectLens
-              <ExternalLink size={10} aria-label="External link" />
-            </a>
-            <span className="hidden md:inline text-gray-300 dark:text-gray-700">·</span>
+            <div className="flex items-center gap-2">
+              <a
+                href={githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-100 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:hover:border-gray-500 dark:hover:text-gray-100"
+              >
+                <Github size={16} />
+              </a>
 
+              <button
+                onClick={() => setTheme(nextTheme)}
+                className="p-2 rounded-full text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none"
+                aria-label="Toggle theme"
+                title={THEME_LABELS[themeMode]}
+              >
+                {THEME_ICONS[themeMode]}
+              </button>
+            </div>
+
+            {isDashboard && (
+              <div className="hidden md:block w-9 h-9 -mr-1 flex-shrink-0" aria-hidden="true" />
+            )}
           </div>
         </div>
 
-        {/* Right: nav + theme */}
-        <div className="flex items-center gap-4">
-          <div className="flex flex-wrap justify-center items-center gap-6 text-sm font-medium">
-            {/* About / Product / FAQ — internal when no navBaseUrl, external otherwise */}
-            {NAV_LINKS.map(({ to, label }) =>
-              navBaseUrl ? (
-                <a
-                  key={to}
-                  href={appendUtm(`${ARENA_BASE_URL}${to}`, utmMedium, `footer_${to.replace(/\W+/g, '_')}_link`)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
-                >
-                  {label}
-                </a>
-              ) : (
-                <Link
-                  key={to}
-                  to={to}
-                  className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
-                >
-                  {label}
-                </Link>
-              )
-            )}
+        {/* Bottom Row: Centered Nav Links */}
+        <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4 text-sm font-medium border-t border-gray-50 dark:border-gray-800 pt-8">
+          {/* About / Product / FAQ — internal when no navBaseUrl, external otherwise */}
+          {NAV_LINKS.map(({ to, label }) =>
+            navBaseUrl ? (
+              <a
+                key={to}
+                href={appendUtm(`${ARENA_BASE_URL}${to}`, utmMedium, `footer_${to.replace(/\W+/g, '_')}_link`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+              >
+                {label}
+              </a>
+            ) : (
+              <Link
+                key={to}
+                to={to}
+                className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+              >
+                {label}
+              </Link>
+            )
+          )}
 
-            {/* Contact — always external (Chainabit) with ExternalLink icon and UTM tags */}
-            <a
-              href={contactUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
-            >
-              Contact
-              <ExternalLink size={11} aria-label="External link" />
-            </a>
-
-            {/* Policies — internal when no navBaseUrl, external otherwise */}
-            {POLICY_SLUGS.map(({ slug, label }) =>
-              navBaseUrl ? (
-                <a
-                  key={slug}
-                  href={appendUtm(`${ARENA_BASE_URL}/policies/${slug}`, utmMedium, `footer_policy_${slug}_link`)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
-                >
-                  {label}
-                </a>
-              ) : (
-                <Link
-                  key={slug}
-                  to={`/policies/${slug}`}
-                  className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
-                >
-                  {label}
-                </Link>
-              )
-            )}
-
-            {/* Docs — always external */}
-            <a
-              href={docsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
-            >
-              Docs
-              <ExternalLink size={11} aria-label="External link" />
-            </a>
-          </div>
-
-          <span className="hidden md:inline text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-600 mr-4">
-            built by{' '}
-            <a
-              href={ofcsknUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-            >
-              @ofcskn
-            </a>{' '}
-            &{' '}
-            <a
-              href={communityUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-            >
-              Lenser Community
-            </a>
-          </span>
-
+          {/* Contact — always external (Chainabit) with ExternalLink icon and UTM tags */}
           <a
-            href={githubUrl}
+            href={contactUrl}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="GitHub"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-100 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:hover:border-gray-500 dark:hover:text-gray-100 mr-2"
+            className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
           >
-            <Github size={16} />
+            Contact
+            <ExternalLink size={11} aria-label="External link" />
           </a>
 
-          <button
-            onClick={() => setTheme(nextTheme)}
-            className="p-2 rounded-full text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none"
-            aria-label="Toggle theme"
-            title={THEME_LABELS[themeMode]}
-          >
-            {THEME_ICONS[themeMode]}
-          </button>
-
-          {isDashboard && (
-            <div className="hidden md:block w-9 h-9 -mr-1 flex-shrink-0" aria-hidden="true" />
+          {/* Policies — internal when no navBaseUrl, external otherwise */}
+          {POLICY_SLUGS.map(({ slug, label }) =>
+            navBaseUrl ? (
+              <a
+                key={slug}
+                href={appendUtm(`${ARENA_BASE_URL}/policies/${slug}`, utmMedium, `footer_policy_${slug}_link`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+              >
+                {label}
+              </a>
+            ) : (
+              <Link
+                key={slug}
+                to={`/policies/${slug}`}
+                className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+              >
+                {label}
+              </Link>
+            )
           )}
+
+          {/* Docs — always external */}
+          <a
+            href={docsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+          >
+            Docs
+            <ExternalLink size={11} aria-label="External link" />
+          </a>
         </div>
       </div>
     </footer>
