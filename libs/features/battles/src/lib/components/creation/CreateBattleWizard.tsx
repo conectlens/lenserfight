@@ -1,4 +1,4 @@
-import { Button, SegmentedControl, StepWizard, Tooltip } from '@lenserfight/ui/components'
+import { Badge, Button, HelpButton, SegmentedControl, StepWizard, Tooltip } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Input, TextArea } from '@lenserfight/ui/forms'
 import { battlesService, battlesRepository, workflowsService, lensesService, battleExecutionService } from '@lenserfight/data/repositories'
@@ -43,16 +43,8 @@ const CONFIG_HELP_CONTENT = (
   </span>
 )
 
-const CONFIG_HELP_BUTTON = (
-  <Tooltip content={CONFIG_HELP_CONTENT} position="bottom">
-    <button
-      type="button"
-      aria-label="Battle configuration help"
-      className="flex items-center justify-center rounded-lg p-1.5 text-greyscale-400 hover:text-greyscale-600 hover:bg-greyscale-100 dark:hover:text-greyscale-300 dark:hover:bg-greyscale-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500/50"
-    >
-      <HelpCircle size={16} />
-    </button>
-  </Tooltip>
+const stepAction = (path: string, label: string) => (
+  <HelpButton path={path} label={label} />
 )
 
 const WIZARD_STEPS: WizardStepConfig[] = [
@@ -60,47 +52,73 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     label: 'Format',
     title: 'Choose battle format',
     description: 'Select whether to use a workflow, a single lens prompt, or start a Lenser Battle.',
+    action: (
+      <div className="flex items-center gap-2">
+        <Badge color="purple" variant="outline">Experimental</Badge>
+        {stepAction('/tutorials/battle-walkthroughs/your-first-battle', 'Your first battle')}
+      </div>
+    ),
   },
   {
     label: 'Source',
     title: 'Select your source',
     description: 'Choose which workflow or lens to use for this battle.',
+    action: stepAction('/tutorials/walkthroughs/create-a-workflow', 'Workflows'),
   },
   {
     label: 'Basics',
     title: 'Battle basics',
     description: 'Give your battle a title and description.',
+    action: stepAction('/how-to/battles/create-a-battle', 'Create a battle'),
   },
   {
     label: 'Type',
     title: 'Battle type',
     description: 'Choose who competes and how voting works.',
+    action: stepAction('/how-to/battles/battle-types', 'Battle types'),
   },
   {
     label: 'Config',
     title: 'Battle configuration',
     description: 'Set voter eligibility, AI handicap, and execution context.',
-    action: CONFIG_HELP_BUTTON,
+    action: (
+      <div className="flex items-center gap-1.5">
+        <Tooltip content={CONFIG_HELP_CONTENT} position="bottom">
+          <button
+            type="button"
+            aria-label="Battle configuration help"
+            className="flex items-center justify-center rounded-lg p-1.5 text-greyscale-400 hover:text-greyscale-600 hover:bg-greyscale-100 dark:hover:text-greyscale-300 dark:hover:bg-greyscale-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500/50"
+          >
+            <HelpCircle size={16} />
+          </button>
+        </Tooltip>
+        {stepAction('/tutorials/battle-walkthroughs/byok-cloud-battle', 'Execution context')}
+      </div>
+    ),
   },
   {
     label: 'Schedule',
     title: 'Schedule execution',
     description: 'Set when AI contenders execute automatically. Optional — skip to run manually.',
+    action: stepAction('/tutorials/agent-walkthroughs/cron-scheduling', 'Scheduling'),
   },
   {
     label: 'Contenders',
     title: 'Invite contenders',
     description: 'Add up to two contenders by their lenser handle or display name. You can skip and invite later.',
+    action: stepAction('/how-to/battles/join-and-submit', 'Joining a battle'),
   },
   {
     label: 'Lenses',
     title: 'Assign Lenses',
     description: 'Lenses define how each contender approaches the prompt. Optional — assign later from the battle page.',
+    action: stepAction('/tutorials/walkthroughs/create-a-lens', 'About lenses'),
   },
   {
     label: 'Automation',
     title: 'Battle automation',
     description: 'Configure auto-assign contenders and auto-promote rules.',
+    action: stepAction('/tutorials/battle-walkthroughs/battle-launch-guide', 'Battle automation'),
   },
 ]
 
