@@ -150,7 +150,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
     if (error) this.handleError(error)
 
-    return (data ?? []).reduce<Record<string, number>>((totals, row: any) => {
+    return (Array.isArray(data) ? data : []).reduce<Record<string, number>>((totals, row: any) => {
       totals[row.reaction] = Number(row.count)
       return totals
     }, {})
