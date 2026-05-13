@@ -38,4 +38,3 @@ It does **not** treat private platform workers, public battles, benchmarking, sc
 - [Database RPC Reference](/en/reference/database/rpc-reference)
 - [Workflow Execution Engine](/en/reference/workflows/execution-engine)
 - [CLI Run Commands](/en/reference/cli/run)
-- [Open Core Model](/en/explanation/community/open-core-model)

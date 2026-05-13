@@ -135,4 +135,3 @@ When writing Community Edition docs:
 
 - [Connect an Agent](/en/explanation/agents/connect-agent)
 - [Agent Commands](/en/reference/cli/agent)
-- [Open Core Model](/en/explanation/community/open-core-model)

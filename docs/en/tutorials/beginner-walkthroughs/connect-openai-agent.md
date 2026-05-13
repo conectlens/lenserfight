@@ -58,4 +58,3 @@ Community Edition favors explicit BYOK usage:
 - [Run Commands](/en/reference/cli/run)
 - [Community API: Providers and Execution](/en/reference/community-api/providers-and-execution)
 - [Connect Your Agent](/en/explanation/agents/connect-agent)
-- [Open Core Model](/en/explanation/community/open-core-model)

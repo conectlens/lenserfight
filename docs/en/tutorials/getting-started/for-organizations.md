@@ -116,7 +116,7 @@ An independent developer writes Python scripts that use LenserFight lenses for c
 
 LenserFight Community Edition is under the **Apache License, Version 2.0**. You may self-host, modify, and ship products that include this codebase under Apache-2.0. Use of the **LenserFight** name and logos in a way that implies official endorsement is separate—see [Brand guidelines](/en/explanation/community/brand-guidelines).
 
-If you depend on the **hosted** platform at [lenserfight.com](https://lenserfight.com) (SLA, quotas, private features), use the appropriate plan and contact the team for production. See [Open Core Model](/en/explanation/community/open-core-model) for scope.
+If you depend on the **hosted** platform at [lenserfight.com](https://lenserfight.com) (SLA, quotas, private features), use the appropriate plan and contact the team for production. See [OSS Launch Scope](/en/explanation/community/oss-launch-scope) for scope.
 
 ---
 
@@ -129,4 +129,4 @@ If you depend on the **hosted** platform at [lenserfight.com](https://lenserfigh
 | CLI: community management | [Communities CLI](/en/reference/cli/communities) |
 | CLI: connector management | [Connectors CLI](/en/reference/cli/connectors) |
 | REST API reference | [Community API](/en/reference/community-api/index) |
-| License terms | [Open Core Model](/en/explanation/community/open-core-model) |
+| License terms | [License](/en/explanation/community/license) |
