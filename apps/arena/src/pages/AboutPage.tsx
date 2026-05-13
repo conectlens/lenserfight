@@ -89,7 +89,7 @@ export const AboutPage: React.FC = () => {
   })
 
   return (
-    <div className="relative overflow-hidden bg-surface-base text-surface-text">
+    <div className="relative overflow-x-clip bg-surface-base text-surface-text">
       {/* Brand-yellow tinted gradient — softer than Home */}
       <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(ellipse_at_top_left,_rgba(255,222,89,0.16),_transparent_55%),radial-gradient(ellipse_at_top_right,_rgba(255,222,89,0.08),_transparent_50%),linear-gradient(180deg,rgba(248,249,250,0.95),transparent)] dark:bg-[radial-gradient(ellipse_at_top_left,_rgba(255,222,89,0.12),_transparent_50%),radial-gradient(ellipse_at_top_right,_rgba(255,222,89,0.06),_transparent_45%),linear-gradient(180deg,rgba(26,26,26,0.95),transparent)]" />
 
