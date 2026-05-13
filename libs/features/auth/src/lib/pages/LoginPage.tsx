@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { isMock, isLocal, LOCAL_SEED_CREDENTIALS, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
+import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
 
 const seedCredentials = isLocal || isMock ? LOCAL_SEED_CREDENTIALS : null
 import { useAuth } from '@lenserfight/features/auth'
@@ -19,7 +20,7 @@ import { InputField } from '../components/InputField'
 import { OAuthButtonGroup } from '../components/OAuthButtonGroup'
 
 export const LoginPage: React.FC = () => {
-  const { login, signInWithOAuth, signInWithChainabit } = useAuth()
+  const { login, signInWithOAuth } = useAuth()
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
@@ -72,15 +73,8 @@ export const LoginPage: React.FC = () => {
     }
   }
 
-  const handleChainabit = async () => {
-    setOauthLoading(true)
-    setApiError(null)
-    try {
-      await signInWithChainabit()
-    } catch (err: unknown) {
-      setApiError(normalizeError(err))
-      setOauthLoading(false)
-    }
+  const handleChainabit = () => {
+    partnerApiClient.startOAuthLogin(window.location.origin).catch(() => {})
   }
 
   const handleOAuth = async (provider: 'google' | 'github') => {
