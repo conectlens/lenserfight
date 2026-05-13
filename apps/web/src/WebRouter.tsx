@@ -2,7 +2,7 @@
 import { Loader } from '@lenserfight/ui/feedback'
 import { AuthExternalRedirect } from '@lenserfight/features/auth'
 import { ShareProvider } from '@lenserfight/features/share'
-import { WalletProvider } from '@lenserfight/features/store'
+import { ChainabitWalletGate } from '@lenserfight/features/store'
 import { GlobalErrorRenderer } from '@lenserfight/shared/error'
 import { UIProvider } from '@lenserfight/ui/providers'
 import { ModalRoute } from '@lenserfight/ui/routing'
@@ -211,13 +211,13 @@ const DashboardFrame: React.FC<{ children: React.ReactNode; fullscreen?: boolean
   fullscreen,
 }) => (
   <ShareProvider>
-    <WalletProvider>
+    <ChainabitWalletGate>
       <UIProvider>
         <LazyDashboardLayout fullscreen={fullscreen}>
           <GlobalErrorRenderer>{children}</GlobalErrorRenderer>
         </LazyDashboardLayout>
       </UIProvider>
-    </WalletProvider>
+    </ChainabitWalletGate>
   </ShareProvider>
 )
 
