@@ -4,6 +4,7 @@ import type { Theme } from 'vitepress'
 import './style.css'
 import MermaidDiagram from './MermaidDiagram.vue'
 import CopyPageButton from './CopyPageButton.vue'
+import EditPageButton from './EditPageButton.vue'
 import DocsLogo from './DocsLogo.vue'
 import FeedbackButton from './FeedbackButton.vue'
 import WaitingListButton from './WaitingListButton.vue'
@@ -52,7 +53,10 @@ export default {
   ...DefaultTheme,
   Layout() {
     return h(DefaultTheme.Layout, null, {
-      'doc-before': () => h(CopyPageButton),
+      'doc-before': () => h('div', { class: 'lf-page-actions' }, [
+        h(CopyPageButton),
+        h(EditPageButton),
+      ]),
       'layout-bottom': () => [
         h(DocsFooter),
         h(FeedbackButton),
