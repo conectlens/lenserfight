@@ -160,6 +160,7 @@ function rawMarkdownPlugin() {
 }
 
 const DOCS_HOST = 'https://docs.lenserfight.com'
+const WEB_BASE_URL = process.env.WEB_BASE_URL || 'https://lenserfight.com'
 const OG_BANNER = `${DOCS_HOST}/og-banner.png`
 
 const SITE_DESCRIPTION =
@@ -174,7 +175,7 @@ const SITE_JSON_LD = JSON.stringify({
   publisher: {
     '@type': 'Organization',
     name: 'LenserFight',
-    url: 'https://lenserfight.com',
+    url: WEB_BASE_URL,
     logo: {
       '@type': 'ImageObject',
       url: `${DOCS_HOST}/favicons/original/apple-icon.png`,
@@ -274,12 +275,12 @@ function buildDocsJsonLd(relativePath: string, title: string, description: strin
     author: {
       '@type': 'Organization',
       name: 'LenserFight',
-      url: 'https://lenserfight.com',
+      url: WEB_BASE_URL,
     },
     publisher: {
       '@type': 'Organization',
       name: 'LenserFight',
-      url: 'https://lenserfight.com',
+      url: WEB_BASE_URL,
       logo: {
         '@type': 'ImageObject',
         url: `${DOCS_HOST}/favicons/original/apple-icon.png`,
@@ -583,7 +584,7 @@ export default defineConfig({
       description: 'LenserFight — Lensler, Agentlar, İş Akışları ve Topluluk için belgeler.',
       themeConfig: {
         nav: [
-          { text: '↗ Arena', link: 'https://lenserfight.com' },
+          { text: '↗ Arena', link: `${WEB_BASE_URL}/?utm_source=lenserfight&utm_medium=docs_nav&utm_campaign=header_tr` },
           {
             text: 'Eğitimler',
             items: [
@@ -1323,7 +1324,7 @@ export default defineConfig({
     socialLinks: [{ icon: 'github', link: 'https://github.com/conectlens/lenserfight' }],
 
     nav: [
-      { text: '↗ Arena', link: 'https://lenserfight.com' },
+      { text: '↗ Arena', link: `${WEB_BASE_URL}/?utm_source=lenserfight&utm_medium=docs_nav&utm_campaign=header_en` },
       {
         text: 'Tutorials',
         items: [
@@ -1374,7 +1375,7 @@ export default defineConfig({
         text: 'Explanation',
         items: [
           { text: 'Lensers', link: '/en/explanation/lensers/index' },
-          { text: 'Agents', link: '/en/explanation/agents/index' },
+          { text: 'Agents & AI Lensers', link: '/en/explanation/agents/index' },
           { text: 'Lenses', link: '/en/explanation/lenses/index' },
           { text: 'Workflows', link: '/en/explanation/workflows/workflow-concepts' },
           { text: 'Automation', link: '/en/explanation/automation/index' },
@@ -1866,7 +1867,7 @@ export default defineConfig({
             { text: 'Integrations', link: '/en/how-to/integrations/index' },
             { text: 'Workflow Guides', link: '/en/how-to/workflows/build-a-lens-chain' },
             { text: 'Battle Guides', link: '/en/how-to/battles/create-a-battle' },
-            { text: 'Agents', link: '/en/how-to/agents/build-a-multi-agent-team' },
+            { text: 'Agents & AI Lensers', link: '/en/how-to/agents/build-a-multi-agent-team' },
             { text: 'Operations', link: '/en/how-to/operations/cli-dashboard' },
             { text: 'Contributors & Maintainers', link: '/en/how-to/contributors/contributing' },
           ],
@@ -2286,16 +2287,16 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Agents',
+          text: 'Agents & AI Lensers',
           collapsed: true,
           items: [
             { text: 'Overview', link: '/en/explanation/agents/index' },
-            { text: 'What is an Agent?', link: '/en/explanation/agents/what-is-an-agent' },
-            { text: 'Connect an Agent', link: '/en/explanation/agents/connect-agent' },
-            { text: 'Agent Lifecycle', link: '/en/explanation/agents/agent-lifecycle' },
-            { text: 'Agent Teams', link: '/en/explanation/agents/agent-teams' },
+            { text: 'What is an Agent & AI Lenser?', link: '/en/explanation/agents/what-is-an-agent' },
+            { text: 'Connect an Agent & AI Lenser', link: '/en/explanation/agents/connect-agent' },
+            { text: 'Agent & AI Lenser Lifecycle', link: '/en/explanation/agents/agent-lifecycle' },
+            { text: 'Agent & AI Lenser Teams', link: '/en/explanation/agents/agent-teams' },
             { text: 'Team Coordination', link: '/en/explanation/agents/team-coordination' },
-            { text: 'Agent Boundaries', link: '/en/explanation/agents/agent-boundaries' },
+            { text: 'Agent & AI Lenser Boundaries', link: '/en/explanation/agents/agent-boundaries' },
             { text: 'Executions & Workflow Runs', link: '/en/explanation/agents/executions' },
             { text: 'Memory Architecture', link: '/en/explanation/agents/memory-architecture' },
             { text: 'Tool Sandboxing', link: '/en/explanation/agents/tool-sandboxing' },
@@ -2482,7 +2483,7 @@ export default defineConfig({
           text: 'Agents',
           items: [
             { text: 'Overview', link: '/en/explanation/agents/index' },
-            { text: 'What is an Agent?', link: '/en/explanation/agents/what-is-an-agent' },
+            { text: 'What is an Agent & AI Lenser?', link: '/en/explanation/agents/what-is-an-agent' },
             { text: 'Connect an Agent', link: '/en/explanation/agents/connect-agent' },
             { text: 'Agent Lifecycle', link: '/en/explanation/agents/agent-lifecycle' },
             { text: 'Agent Teams', link: '/en/explanation/agents/agent-teams' },
