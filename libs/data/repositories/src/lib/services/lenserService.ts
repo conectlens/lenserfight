@@ -21,9 +21,7 @@ import {
 import { LensRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
 
-import { shareService } from './shareService'
 import { createLenserRepository, createShareRepository } from '../factory'
-import { isFileDataBackend } from '@lenserfight/utils/env'
 
 
 const lenserRepo = createLenserRepository()
@@ -85,45 +83,9 @@ export const lenserService = {
   updateLenserProfile: async (data: Partial<Lenser>): Promise<Lenser> => {
     if (!data) throw new Error('Lenser handle is required')
 
-    // Skip share-link wrapping in file mode — shareRepository is a stub.
-    if (isFileDataBackend) {
-      return lenserRepo.updateLenser(data)
-    }
-
-    // Moderation Check
-    // TODO: moderation policy will not be used in the beta version
-    // await contentModerationService.validate(data.display_name, data.headline, data.bio);
-
     if (data.website_url) {
-      let url = data.website_url.trim()
-
-      if (!/^https?:\/\//i.test(url)) {
-        url = `https://${url}`
-      }
-
-      const appDomain = window.location.host
-      const isTrackingLink = url.includes(appDomain) && url.includes('/s/')
-
-      if (!isTrackingLink && url.length > 0) {
-        try {
-          const link = await shareService.createOrGetSharedLink({
-            resourceType: 'external',
-            resourceId: crypto.randomUUID(),
-            displayName: url,
-            meta: {
-              original_website: true,
-              targetUrl: url,
-            },
-          })
-
-          data.website_url = shareService.getShareUrl(link.short_id)
-        } catch (error) {
-          console.warn('Failed to generate tracking link for profile website', error)
-          data.website_url = url
-        }
-      } else {
-        data.website_url = url
-      }
+      const url = data.website_url.trim()
+      data.website_url = url && !/^https?:\/\//i.test(url) ? `https://${url}` : url || undefined
     }
 
     const updated = await lenserRepo.updateLenser(data)
