@@ -14,6 +14,18 @@ import AiLenserFamily from './AiLenserFamily.vue'
 import NotFoundActions from './NotFoundActions.vue'
 import { globalAnalyticsController, GA4Provider } from '@lenserfight/infra/analytics'
 
+const KNOWN_LOCALES = new Set(['en', 'tr', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ru', 'pt', 'it'])
+
+function redirectUnprefixedPath(): void {
+  if (typeof window === 'undefined') return
+  const { pathname, search, hash } = window.location
+  const segments = pathname.replace(/^\//, '').split('/')
+  if (KNOWN_LOCALES.has(segments[0])) return
+  // Bare root → English home
+  const rest = pathname === '/' ? '' : pathname
+  window.location.replace(`/en${rest}${search}${hash}`)
+}
+
 const POSTHOG_TOKEN = import.meta.env['PUBLIC_POSTHOG_PROJECT_TOKEN'] as string | undefined
 const POSTHOG_HOST = (import.meta.env['PUBLIC_POSTHOG_HOST'] as string | undefined) ?? 'https://us.i.posthog.com'
 const isProd = import.meta.env.MODE === 'production'
@@ -72,6 +84,19 @@ export default {
     ctx.app.component('DocsLogo', DocsLogo)
     ctx.app.component('HotLenses', HotLenses)
     ctx.app.component('AiLenserFamily', AiLenserFamily)
+
+    // Redirect any path without a locale prefix to /en/:path
+    redirectUnprefixedPath()
+
+    ctx.router.onBeforeRouteChange = (to) => {
+      if (typeof window === 'undefined') return
+      const segments = to.replace(/^\//, '').split('/')
+      if (!KNOWN_LOCALES.has(segments[0])) {
+        const rest = to === '/' ? '' : to
+        window.location.replace(`/en${rest}`)
+        return false
+      }
+    }
 
     ctx.router.onAfterRouteChanged = (to) => {
       if (typeof window !== 'undefined') {
