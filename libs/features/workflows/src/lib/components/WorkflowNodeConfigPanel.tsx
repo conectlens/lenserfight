@@ -135,7 +135,7 @@ export function WorkflowNodeConfigPanel({
   }
 
   return (
-    <aside className="flex flex-col w-72 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
+    <aside className="flex flex-col w-100 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-border">
         <div className="min-w-0">
