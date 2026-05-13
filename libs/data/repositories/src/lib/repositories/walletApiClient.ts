@@ -16,6 +16,8 @@ import { apiFetch, unwrapEnvelope } from '../apiFetch'
 import { API_BASE_URL } from '@lenserfight/utils/env'
 
 const API_BASE = API_BASE_URL
+const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
+const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession()
@@ -28,7 +30,7 @@ async function getAuthHeader(): Promise<Record<string, string>> {
 export const walletApiClient = {
   async getBalance(): Promise<WalletBalance> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${API_BASE}/v1/partners/chainabit/balance`, {
+    const res = await apiFetch(`${EDGE_BASE}/partner-balance`, {
       headers: { ...authHeader },
     })
     return unwrapEnvelope<WalletBalance>(res)
