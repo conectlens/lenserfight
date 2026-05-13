@@ -12,5 +12,6 @@ export function usePolicyLog(aiLenserId: string, options?: ListPolicyLogOptions)
     queryKey: queryKeys.agents.policyLog(aiLenserId, options),
     queryFn: () => repo.listPolicyLog(aiLenserId, options),
     enabled: !!aiLenserId,
+    staleTime: 60_000,
   })
 }
