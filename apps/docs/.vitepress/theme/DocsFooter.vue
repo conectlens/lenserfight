@@ -80,6 +80,8 @@ onMounted(() => {
 })
 
 const navLinks = [
+  { label: 'Arena', href: appendUtm(webBaseUrl, 'footer_arena_link') },
+  { label: 'Battles', href: appendUtm(`${webBaseUrl}/battles`, 'footer_battles_link') },
   { label: 'About', href: appendUtm(`${arenaBaseUrl}/about`, 'footer_about_link') },
   { label: 'Product', href: appendUtm(`${arenaBaseUrl}/product`, 'footer_product_link') },
   { label: 'FAQ', href: appendUtm(`${arenaBaseUrl}/faq`, 'footer_faq_link') },
