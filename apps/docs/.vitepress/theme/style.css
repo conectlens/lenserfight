@@ -1,0 +1,347 @@
+/*
+  Token source:
+  - Reuse LenserFight's Tailwind v4 theme tokens so VitePress variables map to project tokens.
+  - This keeps docs styling aligned with the app without redefining colors here.
+*/
+@import '../../../web/src/index.css';
+
+/* ─── Design tokens (hard-coded fallbacks for VitePress) ─── */
+:root {
+  --lf-brand: #ffde59;
+  --lf-deep: #213f74;
+  --lf-text: #1f2937;
+  --lf-muted: #6b7280;
+  --lf-bg: #ffffff;
+  --lf-surface: #f9fafb;
+  --lf-subtle: #e5e7eb;
+
+  --vp-font-family-base: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand */
+  --vp-c-brand-1: #ffde59;
+  --vp-c-brand-2: #e6c840;
+  --vp-c-brand-3: #b89a20;
+  --vp-c-brand-soft: rgba(255, 222, 89, 0.15);
+
+  /* Light surface */
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-alt: #f9fafb;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-bg-soft: #f3f4f6;
+
+  /* Light text — explicit hex values prevent the CSS-var chain from breaking */
+  --vp-c-text-1: #1f2937;
+  --vp-c-text-2: #4b5563;
+  --vp-c-text-3: #6b7280;
+
+  /* Borders */
+  --vp-c-divider: #e5e7eb;
+  --vp-c-border: #d1d5db;
+
+  /* Nav */
+  --vp-nav-bg-color: #ffffff;
+  --vp-c-bg-navbar: #ffffff;
+}
+
+html.dark {
+  --vp-c-bg: #121212;
+  --vp-c-bg-alt: #1a1a1a;
+  --vp-c-bg-elv: #1a1a1a;
+  --vp-c-bg-soft: #262626;
+
+  --vp-c-text-1: #f9fafb;
+  --vp-c-text-2: #d1d5db;
+  --vp-c-text-3: #9ca3af;
+
+  --vp-c-divider: #2e2e2e;
+  --vp-c-border: #333333;
+
+  --vp-nav-bg-color: #121212;
+  --vp-c-bg-navbar: #121212;
+}
+
+/* ─── Force correct text in light mode (overrides any hardcoded html{} rules) ─── */
+html:not(.dark) {
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
+}
+
+html:not(.dark) .vp-doc,
+html:not(.dark) .VPContent,
+html:not(.dark) .VPSidebar,
+html:not(.dark) .VPNav {
+  color: #1f2937;
+}
+
+html:not(.dark) .vp-doc h1,
+html:not(.dark) .vp-doc h2,
+html:not(.dark) .vp-doc h3,
+html:not(.dark) .vp-doc h4 {
+  color: #111827;
+}
+
+html:not(.dark) .vp-doc p,
+html:not(.dark) .vp-doc li {
+  color: #374151;
+}
+
+html:not(.dark) .vp-doc a {
+  color: #213f74;
+}
+
+html:not(.dark) .vp-doc a:hover {
+  color: #1a3360;
+}
+
+html:not(.dark) code {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+/* ─── Brand accent on links / active nav ─── */
+.VPNavBarTitle .title {
+  font-weight: 700;
+}
+
+.VPSidebarItem.is-active>.item .link .text {
+  color: var(--lf-deep) !important;
+  font-weight: 600;
+}
+
+html.dark .VPSidebarItem.is-active>.item .link .text {
+  color: var(--lf-brand) !important;
+}
+
+/* ─── Home page custom styles ─── */
+.lf-hero-badge {
+  display: inline-block;
+  background: var(--lf-brand);
+  color: var(--lf-deep);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  margin-bottom: 1rem;
+}
+
+.lf-section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 2.5rem 0 1.25rem;
+  color: #111827;
+}
+
+html.dark .lf-section-title {
+  color: #f9fafb;
+}
+
+.lf-prompts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.lf-prompt-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: #ffffff;
+  transition: box-shadow 0.15s, transform 0.15s;
+  cursor: default;
+}
+
+.lf-prompt-card:hover {
+  box-shadow: 0 4px 16px rgba(33, 63, 116, 0.1);
+  transform: translateY(-2px);
+}
+
+html.dark .lf-prompt-card {
+  border-color: #2e2e2e;
+  background: #1a1a1a;
+}
+
+html.dark .lf-prompt-card:hover {
+  box-shadow: 0 4px 16px rgba(255, 222, 89, 0.08);
+}
+
+.lf-prompt-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(255, 222, 89, 0.15);
+  color: #92700a;
+  margin-bottom: 0.6rem;
+}
+
+html.dark .lf-prompt-tag {
+  background: rgba(255, 222, 89, 0.12);
+  color: #f5c842;
+}
+
+.lf-prompt-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #111827;
+  margin-bottom: 0.4rem;
+  line-height: 1.4;
+}
+
+html.dark .lf-prompt-title {
+  color: #f9fafb;
+}
+
+.lf-prompt-meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.lf-prompt-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.lf-cta-row {
+  display: flex;
+  gap: 1rem;
+  margin: 2rem 0 1.5rem;
+  flex-wrap: wrap;
+}
+
+.lf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none !important;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.lf-btn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.lf-btn-primary {
+  background: #213f74;
+  color: #ffde59 !important;
+}
+
+html.dark .lf-btn-primary {
+  background: #ffde59;
+  color: #213f74 !important;
+}
+
+.lf-btn-outline {
+  border: 2px solid #213f74;
+  color: #213f74 !important;
+  background: transparent;
+}
+
+html.dark .lf-btn-outline {
+  border-color: #ffde59;
+  color: #ffde59 !important;
+}
+
+/* ─── Copy button ─── */
+/* ─── Page actions (Copy + Edit) ─── */
+.lf-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  float: right;
+  position: relative;
+  z-index: 1;
+}
+
+.lf-copy-btn,
+.lf-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--vp-c-border);
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+  text-decoration: none !important;
+}
+
+.lf-copy-btn:hover,
+.lf-edit-btn:hover {
+  background: var(--vp-c-bg-elv);
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-text-1);
+  transform: translateY(-1px);
+}
+
+.lf-copy-btn.copied {
+  border-color: #16a34a;
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.06);
+}
+
+/* ─── Footer: break out of VitePress .VPContent column ─── */
+/*
+  layout-bottom renders inside .VPContent which is offset right by the sidebar.
+  We pull the footer back to the left edge of the viewport using position + margins.
+*/
+/* Footer positioning is now handled within the component to avoid breakout issues */
+.df-footer {
+  width: 100%;
+}
+
+/* ─── Home page logo hero ─── */
+.lf-home-logo-hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 0 1rem;
+  gap: 1.5rem;
+}
+
+.lf-home-logo-hero .docs-logo__wordmark {
+  font-size: 2rem;
+}
+
+.partners-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--vp-c-text-3);
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+}
+
+@media (max-width: 640px) {
+  .lf-home-logo-hero {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem 0 0.5rem;
+  }
+
+  .partners-title {
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+  }
+}
