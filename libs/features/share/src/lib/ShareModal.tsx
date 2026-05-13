@@ -37,14 +37,25 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   }, [isOpen, resourceType, resourceId])
 
   const handleCopy = async () => {
-    if (shortUrl) {
-      try {
+    if (!shortUrl) return
+    try {
+      if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(shortUrl)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-      } catch (e) {
-        console.error('Failed to copy', e)
+      } else {
+        const el = document.createElement('textarea')
+        el.value = shortUrl
+        el.style.position = 'fixed'
+        el.style.opacity = '0'
+        document.body.appendChild(el)
+        el.focus()
+        el.select()
+        document.execCommand('copy')
+        document.body.removeChild(el)
       }
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (e) {
+      console.error('Failed to copy', e)
     }
   }
 
