@@ -1,99 +1,63 @@
-import React, { useState, useCallback } from 'react'
+import React from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
-import { 
-  DialogHeaderContext, 
-  DialogFooterContext, 
-  type DialogHeaderSlot 
-} from '@lenserfight/ui/overlays'
-import { Logo, StarBackground } from '@lenserfight/ui/components'
+import { Dialog } from '@lenserfight/ui/overlays'
+import { StarBackground } from '@lenserfight/ui/components'
+import { sanitizeReturnUrl } from '../utils/validateReturnUrl'
 
 /**
  * OnboardingPage hosts the multi-step profile creation wizard in apps/auth.
- * It provides the necessary Dialog contexts for StepWizard to render its 
- * header and footer (buttons) correctly outside of a standard Modal.
+ * It uses the standard Dialog component for a consistent, premium experience.
+ * Users can now close/skip this page to go directly to their return_url.
  */
 export const OnboardingPage: React.FC = () => {
-  const [headerSlot, setHeaderSlot] = useState<DialogHeaderSlot | null>(null)
-  const [footerSlot, setFooterSlot] = useState<React.ReactNode>(null)
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  
+  const rawReturnUrl = searchParams.get('return_url')
+  const returnUrl = sanitizeReturnUrl(rawReturnUrl)
 
-  const setHeader = useCallback((slot: DialogHeaderSlot) => setHeaderSlot(slot), [])
-  const clearHeader = useCallback(() => setHeaderSlot(null), [])
-  const setFooter = useCallback((node: React.ReactNode) => setFooterSlot(node), [])
-  const clearFooter = useCallback(() => setFooterSlot(null), [])
-
-  const activeTitle = headerSlot?.title
-  const activeDesc = headerSlot?.description
-  const activeIcon = headerSlot?.icon
+  const handleClose = () => {
+    // If it's an absolute URL, use window.location.replace
+    if (returnUrl.startsWith('http://') || returnUrl.startsWith('https://')) {
+      window.location.replace(returnUrl)
+    } else {
+      navigate(returnUrl, { replace: true })
+    }
+  }
 
   return (
-    <DialogHeaderContext.Provider value={{ setHeader, clearHeader }}>
-      <DialogFooterContext.Provider value={{ setFooter, clearFooter }}>
-        <div className="relative min-h-screen bg-greyscale-25 dark:bg-greyscale-900 flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden">
-          <StarBackground />
-          
-          {/* Decorative background glow */}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+    <div className="relative min-h-screen bg-greyscale-950 flex items-center justify-center p-4 overflow-hidden">
+      <StarBackground />
+      
+      {/* Decorative background glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary-yellow-500/5 rounded-full blur-[160px] pointer-events-none" />
 
-          {/* Logo / Brand Header */}
-          <div className="mb-8 z-10 animate-in fade-in slide-in-from-top-4 duration-700">
-            <Logo size={32} />
-          </div>
+      <Dialog 
+        open 
+        onClose={handleClose}
+        maxWidth="max-w-xl"
+        containerClassName="!z-0"
+        panelClassName="shadow-[0_0_50px_-12px_rgba(234,179,8,0.15)]"
+      >
+        <CreateLenserProfileModal />
+      </Dialog>
 
-          <div className="relative z-10 w-full max-w-xl bg-surface-raised rounded-2xl border border-surface-border shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-500">
-            {/* Header section (mimics Dialog header) */}
-            {(activeTitle || activeDesc || activeIcon) && (
-              <div className="px-6 py-4 border-b border-surface-border bg-surface-raised/50 backdrop-blur-sm">
-                <div className="flex items-center gap-3">
-                  {activeIcon && (
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary-yellow-500/10 text-primary-yellow-600">
-                      {activeIcon}
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    {activeTitle && (
-                      <h2 className="text-base font-semibold text-greyscale-900 dark:text-greyscale-50 truncate">
-                        {activeTitle}
-                      </h2>
-                    )}
-                    {activeDesc && (
-                      <p className="mt-0.5 text-xs text-greyscale-500 dark:text-greyscale-400 line-clamp-1">
-                        {activeDesc}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto overscroll-contain p-6 min-h-[300px] max-h-[60vh]">
-              <CreateLenserProfileModal />
-            </div>
-
-            {/* Footer section (renders the hoisted ModalFooter from StepWizard) */}
-            {footerSlot && (
-              <div className="px-6 pb-5 bg-surface-raised/50 backdrop-blur-sm">
-                {footerSlot}
-              </div>
-            )}
-          </div>
-          
-          <div className="mt-8 z-10 animate-in fade-in duration-1000 delay-500 flex flex-col items-center gap-2">
-            <p className="text-xs text-greyscale-400 dark:text-greyscale-500">
-              Securely powered by LenserFight Identity
-            </p>
-            <a
-              href="https://app.chainabit.com?utm_source=lenserfight_onboarding"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors font-medium"
-            >
-              <img src="/chainabit/favicon-32x32.png" width={14} height={14} alt="" className="rounded" />
-              Sponsored by Chainabit
-            </a>
-          </div>
-        </div>
-      </DialogFooterContext.Provider>
-    </DialogHeaderContext.Provider>
+      {/* Footer Branding */}
+      <div className="fixed bottom-8 left-0 right-0 z-10 flex flex-col items-center gap-3 animate-in fade-in duration-1000 delay-500">
+        <p className="text-[10px] uppercase tracking-widest text-greyscale-500 font-bold">
+          Securely powered by LenserFight Identity
+        </p>
+        <a
+          href="https://app.chainabit.com?utm_source=lenserfight_onboarding"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/5 border border-orange-500/10 text-[11px] text-orange-500 hover:bg-orange-500/10 transition-all duration-300 font-semibold"
+        >
+          <img src="/chainabit/favicon-32x32.png" width={14} height={14} alt="" className="rounded-sm grayscale hover:grayscale-0 transition-all" />
+          Sponsored by Chainabit
+        </a>
+      </div>
+    </div>
   )
 }
