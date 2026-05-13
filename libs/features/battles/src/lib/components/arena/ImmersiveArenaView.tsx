@@ -169,7 +169,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
   const { Layout } = resolveBattleLayout(battle)
 
   return (
-    <div className="min-h-screen bg-surface-base text-surface-text flex flex-col">
+    <div className="h-screen bg-surface-base text-surface-text flex flex-col overflow-hidden">
       <BattleSEOHead battle={battle} />
 
       {/* Shell: top bar + content + optional chat rail */}

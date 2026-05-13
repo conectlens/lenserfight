@@ -81,7 +81,7 @@ function ContenderPanel({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-5 md:p-6 bg-surface-base">
+      <div className="flex-1 p-5 md:p-6 bg-surface-base">
         {canSubmit ? (
           <div className="space-y-6 max-w-2xl mx-auto">
             {taskPrompt && (
@@ -152,8 +152,8 @@ export function GenericBattleLayout(ctx: BattleLayoutContext) {
 
   return (
     <div className="flex flex-col min-h-0">
-      {/* Contender columns — scrollable on mobile, fixed-height on desktop */}
-      <div className="flex flex-col md:flex-row md:min-h-[420px] md:max-h-[60vh] border-b border-surface-border">
+      {/* Contender columns — scrollable together in the outer immersive view */}
+      <div className="flex flex-col md:flex-row border-b border-surface-border">
         {contenders.length === 0 ? (
           <div className="flex-1 flex items-center justify-center py-20 text-surface-text-muted text-sm">
             No contenders yet.
