@@ -327,6 +327,7 @@ export interface ContenderLensAssignmentRecord {
   lens_id: string
   version_id: string | null
   assigned_at: string
+  input_snapshot: Record<string, unknown>
 }
 
 export interface AssignLensInput {
@@ -334,6 +335,7 @@ export interface AssignLensInput {
   battle_id: string
   lens_id: string
   version_id?: string | null
+  input_snapshot?: Record<string, unknown>
 }
 
 export interface ChatCursor {
@@ -783,10 +785,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
 
   async assignLensToContender(input: AssignLensInput): Promise<ContenderLensAssignmentRecord> {
     const { data, error } = await supabase.rpc('fn_assign_lens_to_contender', {
-      p_contender_id: input.contender_id,
-      p_battle_id: input.battle_id,
-      p_lens_id: input.lens_id,
-      p_version_id: input.version_id ?? null,
+      p_contender_id:   input.contender_id,
+      p_battle_id:      input.battle_id,
+      p_lens_id:        input.lens_id,
+      p_version_id:     input.version_id ?? null,
+      p_input_snapshot: input.input_snapshot ?? {},
     })
     if (error) this.handleError(error)
     const row = Array.isArray(data) ? data[0] : data
