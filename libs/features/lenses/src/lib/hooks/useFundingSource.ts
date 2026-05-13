@@ -4,7 +4,6 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { apiKeysService, walletApiClient } from '@lenserfight/data/repositories'
 import { UserApiKey, FundingSource, WalletBalance } from '@lenserfight/types'
 import { useAuth } from '@lenserfight/features/auth'
-import { SURFACE } from '@lenserfight/utils/env'
 import { useLocalKeyStore } from './useLocalKeyStore'
 import type { LocalKeyMeta } from '@lenserfight/types'
 
@@ -38,7 +37,7 @@ export const useFundingSource = (
   const { data: walletBalance } = useQuery<WalletBalance>({
     queryKey: queryKeys.wallet.balance,
     queryFn: () => walletApiClient.getBalance(),
-    enabled: isAuthenticated && SURFACE.showBillingAndStore,
+    enabled: isAuthenticated,
     staleTime: 1000 * 60 * 2,
   })
 
@@ -54,7 +53,7 @@ export const useFundingSource = (
   // All user cloud BYOK keys
   const availableKeys = useMemo(() => allKeys, [allKeys])
 
-  const canUseBYOK = availableKeys.length > 0 || localKeys.length > 0
+  const canUseBYOK = true
 
   // Reset key selections when provider changes (non-BYOK mode) or BYOK becomes unavailable
   useEffect(() => {
@@ -64,10 +63,7 @@ export const useFundingSource = (
       setSelectedKeyRefId(null)
       setSelectedLocalKeyId(null)
     }
-    if (!canUseBYOK && (fundingSource === 'user_byok_cloud' || fundingSource === 'user_byok_local')) {
-      setFundingSource('platform_credit')
-    }
-  }, [selectedProviderKey, canUseBYOK]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedProviderKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-select first key when switching to cloud BYOK
   useEffect(() => {
