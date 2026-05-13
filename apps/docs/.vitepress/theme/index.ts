@@ -11,6 +11,7 @@ import WaitingListButton from './WaitingListButton.vue'
 import DocsFooter from './DocsFooter.vue'
 import HotLenses from './HotLenses.vue'
 import AiLenserFamily from './AiLenserFamily.vue'
+import NotFoundActions from './NotFoundActions.vue'
 import { globalAnalyticsController, GA4Provider } from '@lenserfight/infra/analytics'
 
 const POSTHOG_TOKEN = import.meta.env['PUBLIC_POSTHOG_PROJECT_TOKEN'] as string | undefined
@@ -62,6 +63,7 @@ export default {
         h(FeedbackButton),
         h(WaitingListButton),
       ],
+      'not-found': () => h(NotFoundActions),
     })
   },
   enhanceApp(ctx) {
