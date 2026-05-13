@@ -32,6 +32,9 @@ importers:
       '@marsidev/react-turnstile':
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@posthog/react':
+        specifier: ^1.9.0
+        version: 1.9.0(@types/react@19.2.14)(posthog-js@1.363.5)(react@19.2.4)
       '@supabase/supabase-js':
         specifier: ^2.100.0
         version: 2.100.0
@@ -2957,6 +2960,16 @@ packages:
 
   '@posthog/core@1.24.1':
     resolution: {integrity: sha512-e8AciAnc6MRFws89ux8lJKFAaI03yEon0ASDoUO7yS91FVqbUGXYekObUUR3LHplcg+pmyiJBI0jolY0SFbGRA==}
+
+  '@posthog/react@1.9.0':
+    resolution: {integrity: sha512-lVdTsWT5+PtHBu44gSQ7QohbLjAYqHkFAIGAQ+HV8Eh9yj+OcnQ7mXCmyhaMlTBD3z7D0H1eWMp4vQaFnsIyWQ==}
+    peerDependencies:
+      '@types/react': '>=16.8.0'
+      posthog-js: '>=1.257.2'
+      react: '>=16.8.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   '@posthog/types@1.363.5':
     resolution: {integrity: sha512-Eu/aVOZRZE3f09ZGG8qyyo8WiBb0+TRhLAsckPpTaertmD1PSQWxmJQ6gY0je4ibotlJqhX26p2wDPhZTOWqyw==}
@@ -15460,6 +15473,13 @@ snapshots:
   '@posthog/core@1.24.1':
     dependencies:
       cross-spawn: 7.0.6
+
+  '@posthog/react@1.9.0(@types/react@19.2.14)(posthog-js@1.363.5)(react@19.2.4)':
+    dependencies:
+      posthog-js: 1.363.5
+      react: 19.2.4
+    optionalDependencies:
+      '@types/react': 19.2.14
 
   '@posthog/types@1.363.5': {}
 
