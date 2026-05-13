@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { SearchSelectField } from '@lenserfight/ui/forms'
 import { AIProviderSelectList, AIModelSelectList } from '@lenserfight/features/generations'
@@ -39,28 +39,38 @@ function ChainabitModelPicker({
 }) {
   const active = models.filter((m) => m.active)
   const providerKeys = [...new Set(active.map((m) => m.provider))]
+  const providerOptions = providerKeys.map((key) => ({
+    value: key,
+    label: active.find((m) => m.provider === key)?.providerDisplayName ?? key,
+  }))
   const selectedProvider = active.find((m) => m.modelKey === selectedModelKey)?.provider ?? providerKeys[0] ?? ''
   const modelsForProvider = active.filter((m) => m.provider === selectedProvider)
 
+  useEffect(() => {
+    if (!selectedModelKey && modelsForProvider.length > 0) {
+      onModelChange(modelsForProvider[0].modelKey)
+    }
+  }, [selectedModelKey, selectedProvider]) // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <>
-      {providerKeys.length > 1 && (
+      <SearchSelectField
+        value={selectedProvider}
+        onChange={(p) => {
+          const first = active.find((m) => m.provider === p)
+          if (first) onModelChange(first.modelKey)
+        }}
+        placeholder="Select Chainabit provider…"
+        options={providerOptions}
+      />
+      {modelsForProvider.length > 0 && (
         <SearchSelectField
-          value={selectedProvider}
-          onChange={(p) => {
-            const first = active.find((m) => m.provider === p)
-            if (first) onModelChange(first.modelKey)
-          }}
-          placeholder="Select provider…"
-          options={providerKeys.map((p) => ({ value: p, label: p }))}
+          value={selectedModelKey}
+          onChange={onModelChange}
+          placeholder="Select model (optional)…"
+          options={modelsForProvider.map((m) => ({ value: m.modelKey, label: m.name }))}
         />
       )}
-      <SearchSelectField
-        value={selectedModelKey}
-        onChange={onModelChange}
-        placeholder="Select Chainabit model…"
-        options={modelsForProvider.map((m) => ({ value: m.modelKey, label: m.name }))}
-      />
     </>
   )
 }
@@ -113,8 +123,16 @@ export const LabProviderSelector: React.FC<LabProviderSelectorProps> = ({
         />
       )}
 
-      {/* Platform credit + no Chainabit models: generic provider + model pickers */}
-      {isPlatformCredit && !hasChainabitModels && (
+      {/* Platform credit + Chainabit connected but models still loading */}
+      {isPlatformCredit && !hasChainabitModels && chainabitConnected && (
+        <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 py-1">
+          <Loader2 size={12} className="animate-spin" />
+          Loading Chainabit models…
+        </div>
+      )}
+
+      {/* Platform credit + no Chainabit connection: generic provider + model pickers */}
+      {isPlatformCredit && !hasChainabitModels && !chainabitConnected && (
         <>
           <AIProviderSelectList
             providers={providers}
