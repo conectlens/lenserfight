@@ -1,0 +1,115 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules
+.pnpm-store
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables — root and per-app (actual values; examples are committed)
+.env
+.env.local
+.env.production
+.env.development
+apps/*/.env
+apps/*/.env.local
+apps/*/.env.production
+apps/*/.env.development
+
+# LenserFight CLI — machine-specific, never commit
+.lenserfight.json
+.lenserfight/local-battles/
+.lenserfight/runs/
+.lenserfight/reports/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+firebase-export-*
+
+# Testing
+coverage/
+*.lcov
+
+# Build files
+build/
+.cache/
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+
+.notes
+
+.data/*
+
+
+
+.nx/cache
+.nx/workspace-data
+vite.config.*.timestamp*
+.nx/polygraph
+vitest.config.*.timestamp*
+
+apps/docs/.vitepress/cache/
+apps/docs/.vitepress/dist/
+.vitepress/cache/
+.vitepress/dist/
+.vite/
+
+# Supabase — ignore local state, track OSS schema files
+supabase/.branches/
+supabase/.temp/
+supabase/functions/.env
+
+# Expo
+node_modules/
+.expo/
+.yarn/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+cache/
+
+.data/
+
+# Generated seed files — do not edit directly; run pnpm supabase:combine-seeds
+supabase/seed.sql
+supabase/seed-data.sql
+
+# Local battle results from older lf battle local runs
+.lf-battle/
+
+/tmp/*
