@@ -260,44 +260,22 @@ Source: [`apps/gateway/README.md`](apps/gateway/README.md). Builds: `pnpm nx run
 
 ---
 
-## ☁️ OSS vs Cloud
+## ☁️ Community Edition vs Cloud
 
-`PRODUCT_EDITION` selects which surfaces compile in. Defaults shown below; any individual flag can be overridden by setting `FEATURE_<NAME>=true|false` in `.env.local`.
+Community Edition is open-source and self-hostable. The hosted cloud product at [lenserfight.com](https://lenserfight.com) adds billing, identity, and the agent execution runtime via [Chainabit](https://chainabit.com) — none of which are required to run locally.
 
-| Surface                                   | `community` (default) | `cloud`        |
-|-------------------------------------------|-----------------------|----------------|
-| Public battles + arena                    | off                   | on             |
-| Benchmark suite                           | off                   | on             |
-| Billing and store                         | off                   | on             |
-| CRON scheduling UI                        | off                   | off (Phase 13) |
-| Waiting list gate                         | off                   | on             |
-| Notifications, network links, agents UI   | off                   | on             |
+| Surface | Community Edition | Cloud |
+|---------|-------------------|-------|
+| Lenses, workflows, CLI (`lf run exec`) | **Stable** | **Stable** |
+| Social graph, notifications, agents UI | **Stable** | **Stable** |
+| CRON scheduling | **Preview** (`FEATURE_CRON_SCHEDULING=true` + pg_cron) | **Stable** |
+| Cloud battles arena + ELO + tournaments | **Stable** (`FEATURE_PUBLIC_BATTLES=true` + full Supabase) | **Stable** |
+| Billing and credits | — | Chainabit |
+| Benchmark suite, advanced analytics | — | Planned |
 
-Phases 12–16 progressively flip more of these flags on for cloud as the corresponding policy/RLS work lands.
+To enable cloud battles on a self-hosted install, set `FEATURE_PUBLIC_BATTLES=true` and follow the [Cloud Battles Operator Runbook](docs/en/explanation/battles/limited-beta-status.md). See `.env.example` for all available flags.
 
-### Self-hosting flags
-
-For self-hosted/community installs, set these in `.env.local` to bypass cloud-only gates:
-
-```env
-PRODUCT_EDITION=community
-FEATURE_PUBLIC_BATTLES=false # keep arena entrypoints hidden
-```
-
-`.env.example` has the full list with comments.
-
----
-
-## 📝 Workflow Execution Notes
-
-Current workflow support is intentionally narrow and explicit:
-
-- in-app workflow runs are the primary supported path
-- local BYOK and platform-credit execution are supported where the provider path already exists
-- cloud BYOK workflow execution depends on the platform executor and is not a self-host guarantee in this repo
-- unsupported automation commands remain scaffolded or experimental until they are implemented end to end
-
-See `docs/en/reference/cli/run.md` and `docs/en/reference/workflows/execution-engine.md` for the exact current contract.
+Full scope details: [OSS Launch Scope](docs/en/explanation/community/oss-launch-scope.md) · [Open Core Model](docs/en/explanation/community/open-core-model.md).
 
 ---
 
@@ -306,16 +284,18 @@ See `docs/en/reference/cli/run.md` and `docs/en/reference/workflows/execution-en
 - lens creation, versioning, and local experimentation
 - workflow creation, forking, and run monitoring in the web app
 - `lf run exec` for direct model execution via Ollama, BYOK, or cloud credits
+- cloud battles, ELO leaderboard, and tournament scoring (requires Supabase + `FEATURE_PUBLIC_BATTLES=true`)
 - Community Edition local Supabase setup
 - documentation, workflow engine, providers, and UI contributions
 
-## 🚧 OSS Scope & Roadmap
+## 🚧 Not Yet Stable
 
-- public battles or public arena navigation
-- benchmark UI in Community Edition
-- enterprise billing, private workspaces, or advanced analytics
-- autonomous `lf run submit`, `lf run vote`, `lf run full`, or `lf run replay`
-- a stable public adapter SDK v1 (the alpha `@lenserfight/adapters/connector` ships in Phase 10; v1 lands in Phase 16)
+- `lf run submit`, `lf run vote`, `lf run full`, `lf run replay` — CLI scaffolds only; no stable contract yet
+- `@lenserfight/sdk` v1.0 on npm — alpha `0.1.0-alpha.1` is published; v1.0 contract follows 4–6 weeks of community feedback
+- Benchmark suite and advanced analytics
+- Billing and enterprise workspaces (handled by Chainabit — not part of this repo)
+
+See [docs/en/reference/cli/run.md](docs/en/reference/cli/run.md) and [docs/en/reference/workflows/execution-engine.md](docs/en/reference/workflows/execution-engine.md) for the exact current CLI and workflow contract.
 
 ---
 
