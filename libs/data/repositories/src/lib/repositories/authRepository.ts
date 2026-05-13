@@ -29,7 +29,6 @@ export interface AuthRepositoryPort {
   requestPasswordReset(email: string, captchaToken?: string): Promise<void>
   resetPassword(password: string, token?: string): Promise<void>
   signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void>
-  signInWithChainabit(): Promise<void>
   resendSignupConfirmation(email: string): Promise<void>
   onAuthStateChange(callback: AuthStateChangeCallback): () => void
   requestDeviceApproval(dto?: DeviceApprovalRequestDTO): Promise<DeviceApprovalRequestResultDTO>
@@ -108,21 +107,6 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     sessionStorage.setItem('auth_return_url', returnUrl)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
-      options: { redirectTo: `${AUTH_BASE_URL}/callback` },
-    })
-    if (error) throw error
-  }
-
-  async signInWithChainabit(): Promise<void> {
-    const returnUrl = buildAuthReturnUrl(
-      new URLSearchParams(window.location.search).get('return_url') ?? window.location.href
-    )
-    sessionStorage.setItem('auth_return_url', returnUrl)
-    // Chainabit is registered in Supabase as the 'keycloak' OIDC provider slot,
-    // configured with CHAINABIT_API_URL as the issuer. The 'keycloak' label is
-    // internal; all user-facing surfaces say "Chainabit".
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'keycloak',
       options: { redirectTo: `${AUTH_BASE_URL}/callback` },
     })
     if (error) throw error
