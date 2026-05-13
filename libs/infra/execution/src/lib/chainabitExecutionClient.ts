@@ -47,25 +47,43 @@ async function chainabitFetch<T>(
 
 export const chainabitExecutionClient = {
   async submitJob(payload: ChainbitSubmitPayload): Promise<string> {
-    const result = await chainabitFetch<{ external_job_id: string }>('/v1/battle-jobs', {
+    const result = await chainabitFetch<{ sessionId: string }>('/v1/sessions', {
       method: 'POST',
       body: JSON.stringify({
-        partner_job_id: payload.jobId,
-        battle_id: payload.battleId,
-        slot: payload.slot,
+        type: 'lens',
+        id: payload.jobId,
         prompt: payload.prompt,
-        system_prompt: payload.systemPrompt ?? null,
-        provider_key: payload.providerKey,
-        model_key: payload.modelKey,
-        api_key: payload.apiKey,
-        max_tokens: payload.maxTokens,
-        temperature: payload.temperature,
+        input: {
+          battle_id: payload.battleId,
+          slot: payload.slot,
+          system_prompt: payload.systemPrompt ?? null,
+          provider_key: payload.providerKey,
+          model_key: payload.modelKey,
+          api_key: payload.apiKey,
+          max_tokens: payload.maxTokens,
+          temperature: payload.temperature,
+        },
+        stream: false,
       }),
     })
-    return result.external_job_id
+    return result.sessionId
   },
 
-  async pollJob(externalJobId: string): Promise<ChainbitJobStatus> {
-    return chainabitFetch<ChainbitJobStatus>(`/v1/battle-jobs/${encodeURIComponent(externalJobId)}`)
+  async pollJob(sessionId: string): Promise<ChainbitJobStatus> {
+    const result = await chainabitFetch<{
+      sessionId: string
+      status: 'pending' | 'running' | 'awaiting_approval' | 'completed' | 'failed'
+      result?: { outputText?: string }
+      error?: string
+    }>(`/v1/sessions/${encodeURIComponent(sessionId)}/result`)
+
+    return {
+      externalJobId: result.sessionId,
+      status: result.status === 'awaiting_approval' ? 'running' :
+              result.status === 'completed' ? 'completed' :
+              result.status === 'failed' ? 'failed' : result.status,
+      outputText: result.result?.outputText,
+      errorMessage: result.error,
+    }
   },
 }
