@@ -1,8 +1,8 @@
 import { useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { partnerProvisioningRepository } from '@lenserfight/data/repositories'
+import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
 import { useAuth } from '@lenserfight/features/auth'
-import { API_BASE_URL } from '@lenserfight/utils/env'
 import type { ChainabitAiModel, ChainabitConnectionState } from '@lenserfight/types'
 
 export type { ChainabitConnectionState }
@@ -49,8 +49,7 @@ export function useChainabitConnection(): UseChainabitConnectionResult {
   })
 
   const reconnect = useCallback(async () => {
-    const returnUrl = encodeURIComponent(window.location.href)
-    window.location.href = `${API_BASE_URL}/v1/partners/chainabit/oauth/start?return_url=${returnUrl}`
+    await partnerApiClient.startOAuthConnect(window.location.href)
   }, [])
 
   return {
