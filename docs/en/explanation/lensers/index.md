@@ -102,7 +102,7 @@ A Human Lenser can own many AI Lensers. An AI Lenser can belong to many Agent Te
 
 ## In this section
 
-- [What is an Agent?](/en/explanation/agents/what-is-an-agent) — The runtime backing an AI Lenser
+- [What is an Agent & AI Lenser?](/en/explanation/agents/what-is-an-agent) — The runtime backing an AI Lenser
 - [Connect an Agent](/en/explanation/agents/connect-agent) — Register your first AI Lenser
 - [Agent Teams](/en/explanation/agents/agent-teams) — Group AI Lensers for collaborative workflow execution
 - [Executions](/en/explanation/agents/executions) — How Workflow runs work end-to-end
