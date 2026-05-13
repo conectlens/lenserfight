@@ -349,23 +349,32 @@ $$;
 ALTER FUNCTION public.fn_list_battle_templates(integer, timestamptz) OWNER TO postgres;
 GRANT EXECUTE ON FUNCTION public.fn_list_battle_templates(integer, timestamptz) TO anon, authenticated, service_role;
 
+-- ─── SCHEMA: contender_lens_assignments.input_snapshot ───────────────────────
+-- Stores user-supplied [[param]] values captured at assignment time.
+-- NOT NULL DEFAULT '{}' keeps existing rows valid; backward-compat for all callers.
+
+ALTER TABLE battles.contender_lens_assignments
+  ADD COLUMN IF NOT EXISTS input_snapshot JSONB NOT NULL DEFAULT '{}';
+
 -- ─── READ: fn_get_lens_assignment ────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION public.fn_get_lens_assignment(p_contender_id uuid)
 RETURNS TABLE(
-  id           uuid,
-  contender_id uuid,
-  battle_id    uuid,
-  lens_id      uuid,
-  version_id   uuid,
-  assigned_at  timestamptz
+  id             uuid,
+  contender_id   uuid,
+  battle_id      uuid,
+  lens_id        uuid,
+  version_id     uuid,
+  assigned_at    timestamptz,
+  input_snapshot jsonb
 )
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path TO 'public', 'battles'
 AS $$
-  SELECT la.id, la.contender_id, la.battle_id, la.lens_id, la.version_id, la.assigned_at
+  SELECT la.id, la.contender_id, la.battle_id, la.lens_id, la.version_id,
+         la.assigned_at, la.input_snapshot
   FROM battles.contender_lens_assignments la
   WHERE la.contender_id = p_contender_id
   LIMIT 1;
@@ -755,35 +764,42 @@ ALTER FUNCTION public.fn_submit_contender_entry(uuid, uuid, text) OWNER TO postg
 GRANT EXECUTE ON FUNCTION public.fn_submit_contender_entry(uuid, uuid, text) TO authenticated, service_role;
 
 -- ─── WRITE: fn_assign_lens_to_contender ──────────────────────────────────────
+-- p_input_snapshot stores captured [[param]] values (DEFAULT '{}' keeps all
+-- existing callers that omit it working without change).
 
 CREATE OR REPLACE FUNCTION public.fn_assign_lens_to_contender(
-  p_contender_id uuid,
-  p_battle_id    uuid,
-  p_lens_id      uuid,
-  p_version_id   uuid DEFAULT NULL
+  p_contender_id   uuid,
+  p_battle_id      uuid,
+  p_lens_id        uuid,
+  p_version_id     uuid  DEFAULT NULL,
+  p_input_snapshot jsonb DEFAULT '{}'
 )
 RETURNS TABLE(
-  id           uuid,
-  contender_id uuid,
-  battle_id    uuid,
-  lens_id      uuid,
-  version_id   uuid,
-  assigned_at  timestamptz
+  id             uuid,
+  contender_id   uuid,
+  battle_id      uuid,
+  lens_id        uuid,
+  version_id     uuid,
+  assigned_at    timestamptz,
+  input_snapshot jsonb
 )
 LANGUAGE sql
 SECURITY DEFINER
 SET search_path TO 'public', 'battles'
 AS $$
-  INSERT INTO battles.contender_lens_assignments (contender_id, battle_id, lens_id, version_id)
-  VALUES (p_contender_id, p_battle_id, p_lens_id, p_version_id)
+  INSERT INTO battles.contender_lens_assignments
+    (contender_id, battle_id, lens_id, version_id, input_snapshot)
+  VALUES
+    (p_contender_id, p_battle_id, p_lens_id, p_version_id, p_input_snapshot)
   ON CONFLICT (contender_id) DO UPDATE
-    SET lens_id    = EXCLUDED.lens_id,
-        version_id = EXCLUDED.version_id
-  RETURNING id, contender_id, battle_id, lens_id, version_id, assigned_at;
+    SET lens_id        = EXCLUDED.lens_id,
+        version_id     = EXCLUDED.version_id,
+        input_snapshot = EXCLUDED.input_snapshot
+  RETURNING id, contender_id, battle_id, lens_id, version_id, assigned_at, input_snapshot;
 $$;
 
-ALTER FUNCTION public.fn_assign_lens_to_contender(uuid, uuid, uuid, uuid) OWNER TO postgres;
-GRANT EXECUTE ON FUNCTION public.fn_assign_lens_to_contender(uuid, uuid, uuid, uuid) TO authenticated, service_role;
+ALTER FUNCTION public.fn_assign_lens_to_contender(uuid, uuid, uuid, uuid, jsonb) OWNER TO postgres;
+GRANT EXECUTE ON FUNCTION public.fn_assign_lens_to_contender(uuid, uuid, uuid, uuid, jsonb) TO authenticated, service_role;
 
 -- ─── WRITE: fn_toggle_battle_template_public ─────────────────────────────────
 
