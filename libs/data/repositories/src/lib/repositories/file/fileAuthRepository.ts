@@ -108,11 +108,6 @@ export class FileAuthRepository implements AuthRepositoryPort {
     saveSession(FILE_MODE_USER)
   }
 
-  async signInWithChainabit(): Promise<void> {
-    // Auto-log in as the local user in file/mock mode.
-    saveSession(FILE_MODE_USER)
-  }
-
   async resendSignupConfirmation(_email: string): Promise<void> {
     // No-op in file mode.
   }
