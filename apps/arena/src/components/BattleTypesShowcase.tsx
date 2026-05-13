@@ -59,7 +59,10 @@ export function BattleTypesShowcase() {
     >
       {TYPES.map(({ icon: Icon, label, description, tag, color, bg }) => (
         <motion.div key={label} variants={itemVariants}>
-          <Card className="h-full space-y-4 p-5">
+          <Card className="relative h-full space-y-4 p-5 pt-11">
+            <span className="absolute right-4 top-4 rounded-full border border-primary-yellow-500/40 bg-primary-yellow-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary-yellow-700 dark:text-primary-yellow-300">
+              Experimental
+            </span>
             <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${bg} ${color}`}>
               <Icon size={22} />
             </div>
