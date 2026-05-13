@@ -65,6 +65,7 @@
     "@google/genai": "^1.46.0",
     "@juristr/nx-tailwind-sync": "^0.0.9",
     "@marsidev/react-turnstile": "^1.4.2",
+    "@posthog/react": "^1.9.0",
     "@supabase/supabase-js": "^2.100.0",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-query": "^5.95.2",
