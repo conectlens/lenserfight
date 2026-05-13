@@ -22,19 +22,13 @@
           "esm"
         ],
         "bundle": true,
-        "main": "apps/platform-api/src/http/main.ts",
+        "main": "apps/platform-api/src/worker/main.ts",
         "tsConfig": "apps/platform-api/tsconfig.app.json",
         "generatePackageJson": true
       },
       "configurations": {
         "development": {},
         "production": {}
-      }
-    },
-    "build-worker": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npx esbuild apps/platform-api/src/worker/main.ts --bundle --platform=node --format=esm --outfile=dist/apps/platform-api/worker.js"
       }
     },
     "serve": {
