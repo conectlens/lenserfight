@@ -14,6 +14,7 @@ describe('arena app SEO prerender metadata', () => {
 
     expect(urls).toContain('https://arena.lenserfight.com/')
     expect(urls).toContain('https://arena.lenserfight.com/battle-showcase')
+    expect(urls).toContain('https://arena.lenserfight.com/note-from-omer')
     expect(urls).toContain('https://arena.lenserfight.com/product/cli')
     expect(urls.length).toBe(new Set(urls).size)
   })
