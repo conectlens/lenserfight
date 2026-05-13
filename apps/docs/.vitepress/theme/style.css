@@ -260,7 +260,19 @@ html.dark .lf-btn-outline {
 }
 
 /* ─── Copy button ─── */
-.lf-copy-btn {
+/* ─── Page actions (Copy + Edit) ─── */
+.lf-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  float: right;
+  position: relative;
+  z-index: 1;
+}
+
+.lf-copy-btn,
+.lf-edit-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -272,17 +284,16 @@ html.dark .lf-btn-outline {
   background: var(--vp-c-bg-soft);
   color: var(--vp-c-text-2);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  margin-bottom: 1.5rem;
-  float: right;
-  position: relative;
-  z-index: 1;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+  text-decoration: none !important;
 }
 
-.lf-copy-btn:hover {
+.lf-copy-btn:hover,
+.lf-edit-btn:hover {
   background: var(--vp-c-bg-elv);
   border-color: var(--vp-c-brand-1);
   color: var(--vp-c-text-1);
+  transform: translateY(-1px);
 }
 
 .lf-copy-btn.copied {
