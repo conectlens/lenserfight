@@ -1,6 +1,7 @@
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAIModels } from '@lenserfight/features/generations'
 import { FundingSourceToggle, LensBodyViewer, useFundingSource, VersionParamFields } from '@lenserfight/features/lenses'
+import { useChainabitConnection } from '@lenserfight/features/store'
 import { Button } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
 import { Pencil, X } from 'lucide-react'
@@ -53,6 +54,7 @@ export function WorkflowNodeConfigPanel({
 
   const { models, isLoading: modelsLoading } = useAIModels()
   const nodeFunding = useFundingSource(selectedProviderKey)
+  const chainabit = useChainabitConnection()
 
   // Load lens version: use explicit versionId, fall back to latest published, then any draft
   const { data: lensVersion, isLoading: versionLoading } = useQuery({
@@ -194,9 +196,13 @@ export function WorkflowNodeConfigPanel({
           onLocalKeyIdChange={nodeFunding.setSelectedLocalKeyId}
           availableLocalKeys={nodeFunding.localKeys}
           onAddLocalKey={nodeFunding.addLocalKey}
+          onRemoveLocalKey={nodeFunding.removeLocalKey}
           onUpdateLocalKey={nodeFunding.updateLocalKey}
           walletBalance={nodeFunding.walletBalance}
           canUseBYOK={nodeFunding.canUseBYOK}
+          chainabitState={chainabit.state}
+          chainabitModels={chainabit.models}
+          onChainabitConnect={chainabit.reconnect}
           providers={providers}
           isLoadingProviders={modelsLoading}
           providerModels={providerModels}
