@@ -4,6 +4,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { AIResultsSection } from '@lenserfight/features/generations'
 import { useReportContent } from '@lenserfight/features/home'
 import { useShareContext } from '@lenserfight/features/share'
+import { useChainabitConnection } from '@lenserfight/features/store'
 import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
 import { SEOHead, Badge, Button, Card, DesktopFrame } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
@@ -76,6 +77,7 @@ export const LensDetailPage: React.FC = () => {
     resolveLocalKey: stableResolveLocalKey,
   })
   const funding = useFundingSource(lab.selectedProviderKey)
+  const chainabit = useChainabitConnection()
   resolveLocalKeyRef.current = funding.resolveLocalKey
 
   // Auto-sync Cloud BYOK key's provider → lab model query
@@ -594,6 +596,9 @@ export const LensDetailPage: React.FC = () => {
                   onRemoveLocalKey={funding.removeLocalKey}
                   onUpdateLocalKey={funding.updateLocalKey}
                   onProviderDropdownOpen={handleProviderDropdownOpen}
+                  chainabitState={chainabit.state}
+                  chainabitModels={chainabit.models}
+                  onChainabitConnect={chainabit.reconnect}
                   isLocked={!hasActiveLenserProfile}
                   onSignIn={ensureProfile}
                 />
