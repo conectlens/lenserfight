@@ -10,8 +10,6 @@ export type AppSurface = {
   readonly edition: ProductEdition
   /** Benchmark suites UI (requires benchmark.* in Supabase — cloud / platform only). */
   readonly showBenchmarkSuite: boolean
-  /** Billing / store UI (requires billing.* / wallet — cloud / platform only). */
-  readonly showBillingAndStore: boolean
 }
 
 function readEdition(): ProductEdition {
@@ -41,16 +39,12 @@ export function resolveProductEdition(): ProductEdition {
 export function resolveAppSurface(): AppSurface {
   const edition = readEdition()
   const isCloud = edition === 'cloud'
-  // import.meta.env.PROD is false during `vite dev` — billing never leaks to local devs
-  const isProd = import.meta.env.PROD
 
   const showBenchmarkSuite = envForceTrue('FEATURE_BENCHMARK_UI') || isCloud
-  const showBillingAndStore = isProd && (envForceTrue('FEATURE_BILLING_UI') || isCloud)
 
   return {
     edition,
     showBenchmarkSuite,
-    showBillingAndStore,
   }
 }
 
