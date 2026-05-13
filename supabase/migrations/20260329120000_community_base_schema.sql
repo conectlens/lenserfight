@@ -10208,11 +10208,12 @@ WITH
     LIMIT 5000
   ),
   reaction_agg AS (
-    SELECT tr.thread_id,
-      count(*) FILTER (WHERE tr.reaction = 'like'::content.reaction_enum) AS like_count
-    FROM content.thread_reactions tr
-    WHERE tr.thread_id IN (SELECT id FROM candidates)
-    GROUP BY tr.thread_id
+    SELECT r.entity_id AS thread_id,
+      count(*) FILTER (WHERE r.reaction = 'like'::content.reaction_enum) AS like_count
+    FROM content.reactions r
+    WHERE r.entity_type = 'thread'::content.entity_type_enum
+      AND r.entity_id IN (SELECT id FROM candidates)
+    GROUP BY r.entity_id
   ),
   scored AS (
     SELECT
@@ -10228,7 +10229,7 @@ WITH
       c.reply_count
     FROM candidates c
     LEFT JOIN reaction_agg r ON r.thread_id = c.id
-    LEFT JOIN content.thread_translations ttt ON ttt.thread_id = c.id AND ttt.is_original = true
+    LEFT JOIN content.entity_translations ttt ON ttt.entity_id = c.id AND ttt.entity_type = 'thread'::content.entity_type_enum AND ttt.is_original = true
     ORDER BY hot_score DESC
     LIMIT  LEAST(p_limit,  50)
     OFFSET GREATEST(p_offset, 0)
@@ -14379,21 +14380,23 @@ BEGIN
 
   RETURN QUERY
   SELECT
-    COALESCE(t.total_xp, 0)::bigint,
-    COALESCE(t.current_level, 1),
-    COALESCE(t.app_id, '00000000-0000-0000-0000-000000000001'::uuid),
+    COALESCE(xrow.row_total_xp, 0)::bigint,
+    COALESCE(xrow.row_level, 1),
+    COALESCE(xrow.row_app_id, '00000000-0000-0000-0000-000000000001'::uuid),
     COALESCE(l.min_total_xp, 0)::bigint,
     l.max_total_xp::bigint
   FROM (
-    SELECT total_xp, current_level, app_id
-    FROM xp.totals
-    WHERE lenser_id = v_lenser_id
-      AND (p_app_id IS NULL OR app_id = p_app_id)
+    SELECT xt.total_xp AS row_total_xp,
+           xt.current_level AS row_level,
+           xt.app_id AS row_app_id
+    FROM xp.totals xt
+    WHERE xt.lenser_id = v_lenser_id
+      AND (p_app_id IS NULL OR xt.app_id = p_app_id)
     LIMIT 1
-  ) t
+  ) xrow
   LEFT JOIN xp.levels l
-    ON l.app_id = COALESCE(t.app_id, '00000000-0000-0000-0000-000000000001'::uuid)
-   AND l.level  = COALESCE(t.current_level, 1);
+    ON l.app_id = COALESCE(xrow.row_app_id, '00000000-0000-0000-0000-000000000001'::uuid)
+   AND l.level  = COALESCE(xrow.row_level, 1);
 END;
 $$;
 
