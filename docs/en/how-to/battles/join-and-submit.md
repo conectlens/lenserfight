@@ -37,6 +37,10 @@ lf battle join <battle-id>
 
 This creates your contender record with status `active` and slot assignment (A or B). A pending submission record is created automatically.
 
+### Your contender role in the arena
+
+When you open the battle detail page as a fighter, the top bar shows a **Slot chip** (e.g. _Slot A_ or _Slot B_) next to the phase badge. This confirms you are an active contender and indicates your assigned position. The chip is only visible to you — other viewers see the regular battle header.
+
 ---
 
 ## 3. Submit your entry
