@@ -11,6 +11,7 @@ import {
   CAPTCHA_SITE_KEY,
   WEB_BASE_URL,
 } from '@lenserfight/utils/env'
+import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
 
 const seedCredentials = isLocal || isMock ? LOCAL_SEED_CREDENTIALS : null
 const isDevMode = isLocal || isMock
@@ -27,7 +28,7 @@ import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
 import { OAuthButtonGroup } from '../components/OAuthButtonGroup'
 
 export const RegisterPage: React.FC = () => {
-  const { register, logout, resendSignupConfirmation, isAuthenticated, signInWithOAuth, signInWithChainabit } = useAuth()
+  const { register, logout, resendSignupConfirmation, isAuthenticated, signInWithOAuth } = useAuth()
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
@@ -140,15 +141,8 @@ export const RegisterPage: React.FC = () => {
     }
   }
 
-  const handleChainabit = async () => {
-    setOauthLoading(true)
-    setApiError(null)
-    try {
-      await signInWithChainabit()
-    } catch (err: unknown) {
-      setApiError(normalizeError(err))
-      setOauthLoading(false)
-    }
+  const handleChainabit = () => {
+    partnerApiClient.startOAuthLogin(window.location.origin).catch(() => {})
   }
 
   const handleOAuth = async (provider: 'google' | 'github') => {
