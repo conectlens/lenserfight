@@ -76,9 +76,7 @@ const LazyThreadDetailPage = lazy(() =>
 const LazyThreadComposePage = lazy(() =>
   import('@lenserfight/features/threads').then((module) => ({ default: module.ThreadComposePage }))
 )
-const LazyStorePage = lazy(() =>
-  import('@lenserfight/features/store').then((module) => ({ default: module.StorePage }))
-)
+
 const LazyAgentManageWizard = lazy(() =>
   import('@lenserfight/features/agents').then((module) => ({ default: module.AgentManageWizard }))
 )
@@ -815,18 +813,7 @@ export const WebRouter: React.FC = () => {
         />
 
 
-        <Route
-          path="/billing"
-          element={
-            SURFACE.showBillingAndStore ? (
-              <DashboardFrame>
-                <LazyStorePage />
-              </DashboardFrame>
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
+        <Route path="/billing" element={<Navigate to="/" replace />} />
 
         <Route
           path="/workflows"
@@ -924,10 +911,7 @@ export const WebRouter: React.FC = () => {
         <Route path="/rays/*" element={<Navigate to="/ray" replace />} />
         <Route path="/len/*" element={<Navigate to="/ray" replace />} />
         <Route path="/leaderboard" element={<Navigate to="/lenserboard" replace />} />
-        <Route
-          path="/store"
-          element={<Navigate to={SURFACE.showBillingAndStore ? '/billing' : '/'} replace />}
-        />
+        <Route path="/store" element={<Navigate to="/" replace />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
