@@ -167,4 +167,5 @@ export interface ContenderLensAssignmentRecord {
   version_id: string | null
   assignment_mode: ContenderAssignmentMode
   assigned_at: string
+  input_snapshot: Record<string, unknown>
 }
