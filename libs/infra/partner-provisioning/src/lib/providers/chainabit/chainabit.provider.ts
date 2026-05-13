@@ -5,7 +5,7 @@ import type {
   PartnerProvision,
   PartnerTokenRefreshResult,
 } from '../../partner-provider.interface'
-import { CHAINABIT_API_URL, CHAINABIT_PARTNER_API_KEY } from '@lenserfight/utils/env'
+import { CHAINABIT_API_URL, CHAINABIT_PARTNER_API_KEY, chainabitUrl } from '@lenserfight/utils/env'
 
 export class ChainbitPartnerProvider implements IPartnerProvider {
   readonly name = 'chainabit'
@@ -99,7 +99,7 @@ export class ChainbitPartnerProvider implements IPartnerProvider {
   }
 
   async getBalanceWithToken(developerToken: string): Promise<PartnerBalance> {
-    const res = await fetch(`${this.apiUrl}/api/v1/wallet/me`, {
+    const res = await fetch(chainabitUrl('wallet/me'), {
       headers: { Authorization: `Bearer ${developerToken}` },
     })
     if (!res.ok) {
@@ -111,7 +111,7 @@ export class ChainbitPartnerProvider implements IPartnerProvider {
   }
 
   async getAiModels(developerToken: string): Promise<ChainabitAiModel[]> {
-    const res = await fetch(`${this.apiUrl}/api/v1/ai/models?isActive=true`, {
+    const res = await fetch(chainabitUrl('ai/models?isActive=true'), {
       headers: { Authorization: `Bearer ${developerToken}` },
     })
     if (!res.ok) {
