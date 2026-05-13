@@ -32,6 +32,23 @@ export const DOCS_BASE_URL = readPublicBaseUrl('DOCS_BASE_URL', 'https://docs.le
 /** Chainabit web app origin — used for deep-links to wallet top-up and partner attribution. Override with `CHAINABIT_APP_URL`. */
 export const CHAINABIT_APP_URL = readPublicBaseUrl('CHAINABIT_APP_URL', 'https://app.chainabit.com')
 
+/** Chainabit OAuth provider base URL — where the authorize/token/userinfo endpoints live. */
+export const CHAINABIT_OAUTH_URL = readPublicBaseUrl('CHAINABIT_API_URL', 'https://api.chainabit.com')
+
+/**
+ * Chainabit OAuth public client ID.
+ * Not a secret — Chainabit uses PKCE (no client_secret for public clients).
+ * Set CHAINABIT_OAUTH_CLIENT_ID in your .env file.
+ */
+export const CHAINABIT_OAUTH_CLIENT_ID: string = (import.meta.env['CHAINABIT_OAUTH_CLIENT_ID'] as string) ?? ''
+
+/**
+ * Full URL of LenserFight's platform API OAuth callback.
+ * Must match the redirect_uri registered on the Chainabit OAuth client.
+ * e.g. https://api.lenserfight.com/v1/partners/chainabit/oauth/callback
+ */
+export const CHAINABIT_OAUTH_CALLBACK_URL: string = (import.meta.env['CHAINABIT_OAUTH_REDIRECT_URI'] as string) ?? ''
+
 /**
  * LenserFight Platform API base URL (no trailing slash).
  * In development defaults to the ngrok tunnel to bypass CORS restrictions on localhost.
