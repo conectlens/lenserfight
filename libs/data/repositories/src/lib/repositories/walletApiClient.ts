@@ -8,10 +8,7 @@ import {
   ExecuteResponse,
   StreamCallbacks,
   WalletBalance,
-  WalletCheckoutRequest,
-  WalletCheckoutResponse,
   WalletPricingModel,
-  WalletProduct,
   WalletTransaction,
 } from '@lenserfight/types'
 import type { ApiResponseEnvelope } from '@lenserfight/api/contracts'
@@ -19,10 +16,6 @@ import { apiFetch, unwrapEnvelope } from '../apiFetch'
 import { API_BASE_URL } from '@lenserfight/utils/env'
 
 const API_BASE = API_BASE_URL
-
-type WalletProductApi = Omit<WalletProduct, 'variantId'> & {
-  variant_id: string
-}
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession()
@@ -35,21 +28,10 @@ async function getAuthHeader(): Promise<Record<string, string>> {
 export const walletApiClient = {
   async getBalance(): Promise<WalletBalance> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${API_BASE}/wallet/balance`, {
+    const res = await apiFetch(`${API_BASE}/v1/partners/chainabit/balance`, {
       headers: { ...authHeader },
     })
     return unwrapEnvelope<WalletBalance>(res)
-  },
-
-  async getProducts(): Promise<{ products: WalletProduct[] }> {
-    const res = await apiFetch(`${API_BASE}/billing/products`)
-    const data = await unwrapEnvelope<{ products: WalletProductApi[] }>(res)
-    return {
-      products: data.products.map(({ variant_id, ...product }) => ({
-        variantId: variant_id,
-        ...product,
-      })),
-    }
   },
 
   async getTransactions(
@@ -76,26 +58,6 @@ export const walletApiClient = {
       headers: { ...authHeader },
     })
     return unwrapEnvelope<{ models: WalletPricingModel[] }>(res)
-  },
-
-  async checkout(req: WalletCheckoutRequest): Promise<WalletCheckoutResponse> {
-    const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${API_BASE}/billing/checkout`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeader,
-      },
-      body: JSON.stringify({
-        variant_id: req.variantId,
-        ...(req.email ? { email: req.email } : {}),
-      }),
-    })
-    const raw = await unwrapEnvelope<{ checkout_url: string; checkout_id: string }>(res)
-    return {
-      checkoutUrl: raw.checkout_url,
-      checkoutId: raw.checkout_id,
-    }
   },
 
   async execute(req: ExecuteRequest): Promise<ExecuteResponse> {
