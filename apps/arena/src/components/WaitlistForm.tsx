@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { ArrowRight, CheckCircle, Loader2 } from 'lucide-react'
-import { CHAINABIT_API_BASE_URL } from '@lenserfight/utils/env'
+import { chainabitUrl } from '@lenserfight/utils/env'
 
 const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
 
@@ -24,7 +24,7 @@ export const WaitlistForm: React.FC<WaitlistFormProps> = ({ className = '' }) =>
     setErrorMsg('')
 
     try {
-      const res = await fetch(`${CHAINABIT_API_BASE_URL}/api/v1/newsletters`, {
+      const res = await fetch(chainabitUrl('newsletters'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
