@@ -7,7 +7,6 @@ interface WebhookSubscription {
   owner_id: string
   webhook_url: string
   event_types: string[]
-  secret_hmac: string
   created_at: string
   revoked_at: string | null
 }
@@ -16,11 +15,9 @@ export function useBattleWebhookSubscriptions(battleId: string) {
   return useQuery<WebhookSubscription[]>({
     queryKey: ['battle-webhooks', battleId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('battle_event_subscriptions')
-        .select('*')
-        .eq('battle_id', battleId)
-        .order('created_at', { ascending: false })
+      const { data, error } = await supabase.rpc('fn_battles_get_subscriptions', {
+        p_battle_id: battleId,
+      })
       if (error) throw error
       return (data ?? []) as WebhookSubscription[]
     },
@@ -52,10 +49,9 @@ export function useSubscribeBattleWebhook() {
 export function useRevokeBattleWebhook() {
   return useMutation({
     mutationFn: async (subscriptionId: string) => {
-      const { error } = await supabase
-        .from('battle_event_subscriptions')
-        .update({ revoked_at: new Date().toISOString() })
-        .eq('id', subscriptionId)
+      const { error } = await supabase.rpc('fn_battles_revoke_webhook', {
+        p_subscription_id: subscriptionId,
+      })
       if (error) throw error
     },
   })
