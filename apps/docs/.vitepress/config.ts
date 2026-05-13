@@ -1470,7 +1470,6 @@ export default defineConfig({
             { text: 'Building Workflows', link: '/en/tutorials/cloud/workflows' },
             { text: 'Scratchpad', link: '/en/tutorials/cloud/scratchpad' },
             { text: 'Team Collaboration', link: '/en/tutorials/cloud/collaboration' },
-            { text: 'Billing & Usage', link: '/en/tutorials/cloud/billing' },
           ],
         },
         {
@@ -1815,7 +1814,6 @@ export default defineConfig({
             { text: 'Building Workflows', link: '/en/tutorials/cloud/workflows' },
             { text: 'Scratchpad', link: '/en/tutorials/cloud/scratchpad' },
             { text: 'Team Collaboration', link: '/en/tutorials/cloud/collaboration' },
-            { text: 'Billing & Usage', link: '/en/tutorials/cloud/billing' },
           ],
         },
       ],
