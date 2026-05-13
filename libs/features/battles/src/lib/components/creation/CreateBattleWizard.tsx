@@ -192,8 +192,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [votingDurationHours, setVotingDurationHours] = useState(24)
   const [autoPublish, setAutoPublish] = useState(true)
 
-  // Post-creation
-  const [createdBattleSlug, setCreatedBattleSlug] = useState<string | null>(null)
+  // Post-creation — slug is persisted in URL so it survives page refresh
+  const [createdBattleSlug, setCreatedBattleSlug] = useState<string | null>(() =>
+    searchParams.get('battleSlug') ?? null
+  )
   const [createdBattleId, setCreatedBattleId] = useState<string | null>(null)
   const [contenderAId, setContenderAId] = useState<string | undefined>()
   const [contenderAName, setContenderAName] = useState<string | undefined>()
@@ -252,7 +254,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     if (battleIdFromUrl && step < 5) {
       const fetchBattleData = async () => {
         try {
-          const battle = await battlesService.getBattleBySlug(battleIdFromUrl)
+          const battle = await battlesService.getBattleById(battleIdFromUrl)
           if (battle && battle.status === 'draft') {
             setTitle(battle.title)
             setDescription(battle.task_prompt.startsWith('Workflow battle: ') || battle.task_prompt.startsWith('Lens battle: ') ? '' : battle.task_prompt)
@@ -430,6 +432,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           const next = new URLSearchParams(prev)
           next.set('step', '5')
           next.set('battleId', battle.id)
+          next.set('battleSlug', battle.slug)
           return next
         },
         { replace: false }
