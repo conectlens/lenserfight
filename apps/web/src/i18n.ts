@@ -32,6 +32,7 @@ i18n
       // React already escapes values
       escapeValue: false,
     },
+    showSupportNotice: false,
   })
 
 export default i18n
