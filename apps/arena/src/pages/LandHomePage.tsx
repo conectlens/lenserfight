@@ -1,6 +1,6 @@
 import { AiLenserFamily, Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowRight, Bolt, CheckCircle, Heart, MessagesSquare, Music, Shield, Star, Swords, Youtube } from 'lucide-react'
+import { ArrowRight, Bolt, CheckCircle, Heart, MessagesSquare, Music, PlayCircle, Shield, Star, Swords, Youtube } from 'lucide-react'
 import React, { useRef } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -59,6 +59,27 @@ const HOW_IT_WORKS = [
   { step: '01', icon: Swords, title: 'Create a battle', description: 'Write a Lens prompt and choose who competes — humans, AI models, or both.' },
   { step: '02', icon: MessagesSquare, title: 'Vote and judge', description: 'The community votes on outputs. AI judges add weighted, structured scores.' },
   { step: '03', icon: Star, title: 'Earn XP and rise', description: 'Every vote, win, and Lens you create earns XP toward your lenser level.' },
+]
+
+const SOUNDTRACKS = [
+  {
+    title: 'Official Soundtrack',
+    description: 'The main fight theme for opening a battle and locking into the arena.',
+    videoId: 'kine5GjALC0',
+    href: 'https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0',
+  },
+  {
+    title: 'Arena Soundtrack II',
+    description: 'A sharper beat for review rounds, votes, and late-night building sessions.',
+    videoId: 'yN_44HCS1tE',
+    href: 'https://www.youtube.com/watch?v=yN_44HCS1tE',
+  },
+  {
+    title: 'Arena Soundtrack III',
+    description: 'A focused track for the final comparison before the winner is revealed.',
+    videoId: 'FM1z-M3DD24',
+    href: 'https://www.youtube.com/watch?v=FM1z-M3DD24',
+  },
 ]
 
 
@@ -393,48 +414,51 @@ export const LandHomePage: React.FC = () => {
         </motion.div>
 
         <motion.div
-          className="group relative overflow-hidden rounded-[2.5rem] border border-surface-border bg-surface-raised p-2 shadow-2xl transition-all hover:border-primary-yellow-500/50"
-          initial={{ opacity: 0, y: 32, scale: 0.98 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          className="grid gap-5 md:grid-cols-3"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
           viewport={viewport}
-          transition={spring}
         >
-          <div className="aspect-video w-full overflow-hidden rounded-[2rem] bg-greyscale-900">
-            <iframe
-              width="100%"
-              height="100%"
-              src="https://www.youtube.com/embed/kine5GjALC0?list=RDkine5GjALC0&autoplay=0&rel=0"
-              title="LenserFight Music"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              className="h-full w-full"
-            ></iframe>
-          </div>
-
-          <div className="flex flex-col items-center justify-between gap-4 p-6 sm:flex-row">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-yellow-500 text-greyscale-900 shadow-lg shadow-primary-yellow-500/20">
-                <Music size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-greyscale-900 dark:text-greyscale-0 text-lg">Official Soundtrack</h3>
-                <p className="text-sm text-greyscale-500 dark:text-greyscale-400">By LenserMusic</p>
-              </div>
-            </div>
-
+          {SOUNDTRACKS.map(({ title, description, videoId, href }) => (
             <motion.a
-              href="https://www.youtube.com/@LenserMusic"
+              key={videoId}
+              href={href}
               target="_blank"
               rel="noopener noreferrer"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-8 py-4 text-sm font-black text-greyscale-0 transition-all hover:bg-greyscale-800 dark:bg-greyscale-0 dark:text-greyscale-900 dark:hover:bg-greyscale-100"
+              variants={cardVariant}
+              whileHover={{ y: -4 }}
+              className="group overflow-hidden rounded-2xl border border-surface-border bg-surface-raised shadow-xl transition-colors hover:border-primary-yellow-500/70 focus:outline-none focus:ring-4 focus:ring-primary-yellow-500/25"
             >
-              <Youtube size={18} className="text-status-red" />
-              Lets Dance
+              <div className="relative aspect-video overflow-hidden bg-greyscale-900">
+                <img
+                  src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                  alt={`${title} thumbnail`}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-greyscale-950/70 via-transparent to-transparent" />
+                <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-greyscale-950/80 px-3 py-1 text-xs font-bold text-greyscale-0 ring-1 ring-white/10">
+                  <Youtube size={14} className="text-status-red" />
+                  LenserMusic
+                </div>
+                <div className="absolute bottom-4 right-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-yellow-500 text-greyscale-900 shadow-lg shadow-primary-yellow-500/20 transition-transform group-hover:scale-105">
+                  <PlayCircle size={24} />
+                </div>
+              </div>
+              <div className="space-y-3 p-5">
+                <h3 className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+                  {title}
+                </h3>
+                <p className="text-sm leading-6 text-greyscale-600 dark:text-greyscale-400">
+                  {description}
+                </p>
+                <span className="inline-flex items-center gap-2 text-sm font-bold text-greyscale-900 dark:text-greyscale-0">
+                  Play on YouTube <ArrowRight size={14} />
+                </span>
+              </div>
             </motion.a>
-          </div>
+          ))}
         </motion.div>
       </section>
     </div>
