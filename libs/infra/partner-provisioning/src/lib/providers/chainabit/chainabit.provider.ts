@@ -1,4 +1,5 @@
 import type {
+  ChainabitAiModel,
   IPartnerProvider,
   PartnerBalance,
   PartnerProvision,
@@ -95,5 +96,44 @@ export class ChainbitPartnerProvider implements IPartnerProvider {
 
   async sendClaimEmail(externalId: string): Promise<void> {
     await this.request(`/partner/provisions/${externalId}/send-claim`, { method: 'POST' })
+  }
+
+  async getBalanceWithToken(developerToken: string): Promise<PartnerBalance> {
+    const res = await fetch(`${this.apiUrl}/api/v1/wallet/me`, {
+      headers: { Authorization: `Bearer ${developerToken}` },
+    })
+    if (!res.ok) {
+      const body = await res.text()
+      throw new Error(`Chainabit wallet/me error ${res.status}: ${body}`)
+    }
+    const body = await res.json() as { data: { balance: { total: number } } }
+    return { credits: body.data.balance.total, accountId: '', currency: 'cr' }
+  }
+
+  async getAiModels(developerToken: string): Promise<ChainabitAiModel[]> {
+    const res = await fetch(`${this.apiUrl}/api/v1/ai/models?isActive=true`, {
+      headers: { Authorization: `Bearer ${developerToken}` },
+    })
+    if (!res.ok) {
+      const body = await res.text()
+      throw new Error(`Chainabit ai/models error ${res.status}: ${body}`)
+    }
+    const body = await res.json() as { data: ChainabitAiModel[] }
+    return body.data
+  }
+
+  async revokeToken(developerToken: string): Promise<void> {
+    const res = await fetch(`${this.apiUrl}/oauth/revoke`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${developerToken}`,
+      },
+      body: JSON.stringify({ token: developerToken }),
+    })
+    if (!res.ok) {
+      const body = await res.text()
+      throw new Error(`Chainabit oauth/revoke error ${res.status}: ${body}`)
+    }
   }
 }
