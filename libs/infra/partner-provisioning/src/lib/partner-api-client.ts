@@ -1,10 +1,11 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { apiFetch, unwrapEnvelope } from '@lenserfight/data/repositories'
-import { API_BASE_URL, CHAINABIT_OAUTH_URL, CHAINABIT_OAUTH_CLIENT_ID, CHAINABIT_OAUTH_CALLBACK_URL } from '@lenserfight/utils/env'
+import { CHAINABIT_OAUTH_URL, CHAINABIT_OAUTH_CLIENT_ID, CHAINABIT_OAUTH_CALLBACK_URL } from '@lenserfight/utils/env'
 import type { ChainabitAiModel, PartnerBalance, PartnerProvision, PartnerTokenRefreshResult } from './partner-provider.interface'
 
-// Partner provisioning calls go to LenserFight's platform API (not Chainabit directly).
-const API_BASE = API_BASE_URL
+// Partner provisioning calls go to Supabase Edge Functions (no platform-api needed).
+const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
+const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession()
@@ -60,7 +61,7 @@ export function encodeOAuthState(state: ChainabitOAuthState): string {
 export const partnerApiClient = {
   async provision(partnerName: string): Promise<PartnerProvisionRecord> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${API_BASE}/v1/partners/${partnerName}/provision`, {
+    const res = await apiFetch(`${EDGE_BASE}/partner-provision`, {
       method: 'POST',
       headers: { ...authHeader },
     })
@@ -69,7 +70,7 @@ export const partnerApiClient = {
 
   async getBalance(partnerName: string): Promise<PartnerBalance> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${API_BASE}/v1/partners/${partnerName}/balance`, {
+    const res = await apiFetch(`${EDGE_BASE}/partner-balance`, {
       headers: { ...authHeader },
     })
     return unwrapEnvelope<PartnerBalance>(res)
@@ -77,7 +78,7 @@ export const partnerApiClient = {
 
   async refreshToken(partnerName: string): Promise<PartnerTokenRefreshResult> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${API_BASE}/v1/partners/${partnerName}/refresh-token`, {
+    const res = await apiFetch(`${EDGE_BASE}/partner-refresh-token`, {
       method: 'POST',
       headers: { ...authHeader },
     })
@@ -86,7 +87,7 @@ export const partnerApiClient = {
 
   async sendClaimEmail(partnerName: string): Promise<void> {
     const authHeader = await getAuthHeader()
-    await apiFetch(`${API_BASE}/v1/partners/${partnerName}/send-claim`, {
+    await apiFetch(`${EDGE_BASE}/partner-send-claim`, {
       method: 'POST',
       headers: { ...authHeader },
     })
@@ -94,7 +95,7 @@ export const partnerApiClient = {
 
   async getAiModels(partnerName: string): Promise<ChainabitAiModel[]> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${API_BASE}/v1/partners/${partnerName}/models`, {
+    const res = await apiFetch(`${EDGE_BASE}/partner-models`, {
       headers: { ...authHeader },
     })
     return unwrapEnvelope<ChainabitAiModel[]>(res)
@@ -135,7 +136,7 @@ export const partnerApiClient = {
 
   async revokeToken(partnerName: string): Promise<void> {
     const authHeader = await getAuthHeader()
-    await apiFetch(`${API_BASE}/v1/partners/${partnerName}/revoke`, {
+    await apiFetch(`${EDGE_BASE}/partner-revoke`, {
       method: 'POST',
       headers: { ...authHeader },
     })
