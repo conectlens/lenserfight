@@ -115,8 +115,8 @@ In Community Edition (`PRODUCT_EDITION=community`), billing, public battles, and
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `POSTHOG_KEY` | No | PostHog project API key. Omit to disable analytics entirely. |
-| `POSTHOG_HOST` | No | PostHog ingestion host. Defaults to `https://us.i.posthog.com`. |
+| `PUBLIC_POSTHOG_PROJECT_TOKEN` | No | PostHog project API key. Omit to disable analytics entirely. |
+| `PUBLIC_POSTHOG_HOST` | No | PostHog ingestion host. Defaults to `https://us.i.posthog.com`. |
 
 ---
 
