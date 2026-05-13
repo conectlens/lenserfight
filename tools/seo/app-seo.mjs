@@ -736,7 +736,7 @@ const renderSeoMain = (route) => {
     .map((link) => `<li><a href="${escapeAttr(link.url)}">${escapeHtml(link.name)}</a></li>`)
     .join('\n        ')
 
-  return `<main id="seo-prerender" aria-label="${escapeAttr(route.heading ?? route.title)}">
+  return `<main id="seo-prerender" aria-hidden="true" style="display:none" aria-label="${escapeAttr(route.heading ?? route.title)}">
       <article>
         <h1>${escapeHtml(route.heading ?? route.title)}</h1>
         <p>${escapeHtml(route.description)}</p>
