@@ -14,54 +14,10 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 
-CREATE SCHEMA IF NOT EXISTS "admin";
-
-
-ALTER SCHEMA "admin" OWNER TO "postgres";
-
-
-CREATE SCHEMA IF NOT EXISTS "agents";
-
-
-ALTER SCHEMA "agents" OWNER TO "postgres";
-
-
-CREATE SCHEMA IF NOT EXISTS "ai";
-
-
-ALTER SCHEMA "ai" OWNER TO "postgres";
-
-
-CREATE SCHEMA IF NOT EXISTS "analytics";
-
-
-ALTER SCHEMA "analytics" OWNER TO "postgres";
-
-
 CREATE SCHEMA IF NOT EXISTS "audit";
 
 
 ALTER SCHEMA "audit" OWNER TO "postgres";
-
-
-CREATE SCHEMA IF NOT EXISTS "authz";
-
-
-ALTER SCHEMA "authz" OWNER TO "postgres";
-
-
-COMMENT ON SCHEMA "authz" IS 'Private schema for device approval requests and time-bounded developer tokens. Not exposed via PostgREST; clients use public RPC wrappers only.';
-
-
-
-CREATE SCHEMA IF NOT EXISTS "automation";
-
-
-ALTER SCHEMA "automation" OWNER TO "postgres";
-
-
-COMMENT ON SCHEMA "automation" IS 'Phase U: event bus + trigger-rule dispatcher. Producer triggers across the platform emit rows into automation.events; automation.trigger_rules + the automation-dispatcher cron drain those events into actions (workflow, webhook via audit.webhook_outbox, notification via public.fn_insert_notification).';
-
 
 
 CREATE SCHEMA IF NOT EXISTS "battles";
@@ -70,47 +26,10 @@ CREATE SCHEMA IF NOT EXISTS "battles";
 ALTER SCHEMA "battles" OWNER TO "postgres";
 
 
-CREATE SCHEMA IF NOT EXISTS "benchmark";
-
-
-ALTER SCHEMA "benchmark" OWNER TO "postgres";
-
-
-CREATE SCHEMA IF NOT EXISTS "billing";
-
-
-ALTER SCHEMA "billing" OWNER TO "postgres";
-
-
-CREATE SCHEMA IF NOT EXISTS "connectors";
-
-
-ALTER SCHEMA "connectors" OWNER TO "postgres";
-
-
 CREATE SCHEMA IF NOT EXISTS "content";
 
 
 ALTER SCHEMA "content" OWNER TO "postgres";
-
-
-CREATE SCHEMA IF NOT EXISTS "core";
-
-
-ALTER SCHEMA "core" OWNER TO "postgres";
-
-
-CREATE EXTENSION IF NOT EXISTS "pg_cron" WITH SCHEMA "pg_catalog";
-
-
-
-
-
-
-CREATE SCHEMA IF NOT EXISTS "devices";
-
-
-ALTER SCHEMA "devices" OWNER TO "postgres";
 
 
 CREATE SCHEMA IF NOT EXISTS "execution";
@@ -121,18 +40,6 @@ ALTER SCHEMA "execution" OWNER TO "postgres";
 
 COMMENT ON SCHEMA "execution" IS 'D12: poll/complete RPCs are service_role only (called by the poll-async-executions Edge Function which uses the service-role key).';
 
-
-
-CREATE SCHEMA IF NOT EXISTS "i18n";
-
-
-ALTER SCHEMA "i18n" OWNER TO "postgres";
-
-
-CREATE SCHEMA IF NOT EXISTS "integrations";
-
-
-ALTER SCHEMA "integrations" OWNER TO "postgres";
 
 
 CREATE SCHEMA IF NOT EXISTS "lensers";
@@ -147,258 +54,26 @@ CREATE SCHEMA IF NOT EXISTS "lenses";
 ALTER SCHEMA "lenses" OWNER TO "postgres";
 
 
-CREATE SCHEMA IF NOT EXISTS "media";
+CREATE SCHEMA IF NOT EXISTS "public";
 
 
-ALTER SCHEMA "media" OWNER TO "postgres";
-
-
-COMMENT ON SCHEMA "media" IS 'Normalized media/file storage layer. Replaces ai.resources as the canonical file registry. Workspace-scoped with explicit lifecycle, visibility, and attachment bindings.';
-
-
-
-CREATE EXTENSION IF NOT EXISTS "pg_net" WITH SCHEMA "extensions";
-
-
-
-
-
-
-CREATE SCHEMA IF NOT EXISTS "organizations";
-
-
-ALTER SCHEMA "organizations" OWNER TO "postgres";
-
-
-CREATE SCHEMA IF NOT EXISTS "platform";
-
-
-ALTER SCHEMA "platform" OWNER TO "postgres";
+ALTER SCHEMA "public" OWNER TO "pg_database_owner";
 
 
 COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 
-CREATE SCHEMA IF NOT EXISTS "reputation";
+CREATE SCHEMA IF NOT EXISTS "storage";
 
 
-ALTER SCHEMA "reputation" OWNER TO "postgres";
-
-
-CREATE SCHEMA IF NOT EXISTS "status";
-
-
-ALTER SCHEMA "status" OWNER TO "postgres";
-
-
-CREATE SCHEMA IF NOT EXISTS "tenancy";
-
-
-ALTER SCHEMA "tenancy" OWNER TO "postgres";
-
-
-COMMENT ON SCHEMA "tenancy" IS 'Workspace tenancy: workspaces, members, roles. Every tenant-owned resource references a workspace_id.';
-
-
-
-CREATE SCHEMA IF NOT EXISTS "wallet";
-
-
-ALTER SCHEMA "wallet" OWNER TO "postgres";
+ALTER SCHEMA "storage" OWNER TO "supabase_admin";
 
 
 CREATE SCHEMA IF NOT EXISTS "xp";
 
 
 ALTER SCHEMA "xp" OWNER TO "postgres";
-
-
-CREATE EXTENSION IF NOT EXISTS "btree_gist" WITH SCHEMA "extensions";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "pg_graphql" WITH SCHEMA "graphql";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA "extensions";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA "extensions";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "pgjwt" WITH SCHEMA "extensions";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
-
-
-
-
-
-
-CREATE TYPE "ai"."ai_capability_enum" AS ENUM (
-    'text',
-    'image',
-    'code',
-    'music'
-);
-
-
-ALTER TYPE "ai"."ai_capability_enum" OWNER TO "postgres";
-
-
-CREATE TYPE "ai"."key_scope_enum" AS ENUM (
-    'agent',
-    'user',
-    'team'
-);
-
-
-ALTER TYPE "ai"."key_scope_enum" OWNER TO "postgres";
-
-
-COMMENT ON TYPE "ai"."key_scope_enum" IS 'Scope of an ai.keys BYOK API key: agent (scoped to an AI actor), user (scoped to a lenser), team (scoped to a team/org).';
-
-
-
-CREATE TYPE "ai"."key_status_enum" AS ENUM (
-    'active',
-    'revoked',
-    'expired'
-);
-
-
-ALTER TYPE "ai"."key_status_enum" OWNER TO "postgres";
-
-
-COMMENT ON TYPE "ai"."key_status_enum" IS 'Lifecycle status of an ai.keys BYOK API key.';
-
-
-
-CREATE TYPE "ai"."media_type" AS ENUM (
-    'text',
-    'image',
-    'audio',
-    'video',
-    'document',
-    'json',
-    'binary'
-);
-
-
-ALTER TYPE "ai"."media_type" OWNER TO "postgres";
-
-
-CREATE TYPE "ai"."model_tier_enum" AS ENUM (
-    'free',
-    'paid',
-    'enterprise'
-);
-
-
-ALTER TYPE "ai"."model_tier_enum" OWNER TO "postgres";
-
-
-COMMENT ON TYPE "ai"."model_tier_enum" IS 'Access tier for AI models (free, paid, enterprise). Relocates public.pricing_tier_enum to the ai schema where it conceptually belongs. Use ai.model_tier_enum for all new code.';
-
-
-
-CREATE TYPE "ai"."provider_enum" AS ENUM (
-    'openai',
-    'anthropic',
-    'google',
-    'custom',
-    'xai',
-    'meta',
-    'mistral',
-    'local'
-);
-
-
-ALTER TYPE "ai"."provider_enum" OWNER TO "postgres";
-
-
-CREATE TYPE "ai"."resource_type" AS ENUM (
-    'attachment',
-    'dataset',
-    'example',
-    'reference'
-);
-
-
-ALTER TYPE "ai"."resource_type" OWNER TO "postgres";
-
-
-CREATE TYPE "ai"."unit_type_enum" AS ENUM (
-    'tokens',
-    'image',
-    'video_second',
-    'audio_second'
-);
-
-
-ALTER TYPE "ai"."unit_type_enum" OWNER TO "postgres";
-
-
-COMMENT ON TYPE "ai"."unit_type_enum" IS 'Billing unit type for AI model pricing. Replaces text CHECK constraint ''model_pricing_unit_type_check'' on ai.model_pricing.unit_type.';
-
-
-
-CREATE TYPE "analytics"."feedback_status_enum" AS ENUM (
-    'pending',
-    'in_progress',
-    'resolved',
-    'closed'
-);
-
-
-ALTER TYPE "analytics"."feedback_status_enum" OWNER TO "postgres";
-
-
-CREATE TYPE "analytics"."product_tag_enum" AS ENUM (
-    'bug',
-    'feature',
-    'ui_ux',
-    'general',
-    'other'
-);
-
-
-ALTER TYPE "analytics"."product_tag_enum" OWNER TO "postgres";
 
 
 CREATE TYPE "audit"."security_event_type_enum" AS ENUM (
@@ -421,27 +96,6 @@ ALTER TYPE "audit"."security_event_type_enum" OWNER TO "postgres";
 
 COMMENT ON TYPE "audit"."security_event_type_enum" IS 'Known security event types. Replaces text CHECK constraint ''security_events_type_check'' on audit.security_events.event_type. Adding new event types requires: ALTER TYPE audit.security_event_type_enum ADD VALUE ''new_type''; This is a non-blocking DDL operation in Postgres.';
 
-
-
-CREATE TYPE "authz"."developer_token_status_enum" AS ENUM (
-    'active',
-    'revoked',
-    'expired'
-);
-
-
-ALTER TYPE "authz"."developer_token_status_enum" OWNER TO "postgres";
-
-
-CREATE TYPE "authz"."device_approval_request_status_enum" AS ENUM (
-    'pending',
-    'approved',
-    'exchanged',
-    'expired'
-);
-
-
-ALTER TYPE "authz"."device_approval_request_status_enum" OWNER TO "postgres";
 
 
 CREATE TYPE "battles"."battle_status_enum" AS ENUM (
@@ -555,29 +209,6 @@ ALTER TYPE "battles"."voter_eligibility_enum" OWNER TO "postgres";
 
 COMMENT ON TYPE "battles"."voter_eligibility_enum" IS 'Who can cast votes in a battle. lenser_only: any lenser profile (not just verified). Syncs with the VotePanel frontend ELIGIBILITY_LABELS map.';
 
-
-
-CREATE TYPE "billing"."order_status_enum" AS ENUM (
-    'pending',
-    'failed',
-    'paid',
-    'refunded',
-    'partial_refund',
-    'fraudulent'
-);
-
-
-ALTER TYPE "billing"."order_status_enum" OWNER TO "postgres";
-
-
-CREATE TYPE "billing"."product_status_enum" AS ENUM (
-    'draft',
-    'published',
-    'archived'
-);
-
-
-ALTER TYPE "billing"."product_status_enum" OWNER TO "postgres";
 
 
 CREATE TYPE "content"."content_status" AS ENUM (
@@ -852,51 +483,6 @@ CREATE TYPE "lenses"."workflow_trigger_type" AS ENUM (
 ALTER TYPE "lenses"."workflow_trigger_type" OWNER TO "postgres";
 
 
-CREATE TYPE "organizations"."address_type_enum" AS ENUM (
-    'headquarters',
-    'billing',
-    'shipping',
-    'branch'
-);
-
-
-ALTER TYPE "organizations"."address_type_enum" OWNER TO "postgres";
-
-
-CREATE TYPE "organizations"."member_role_enum" AS ENUM (
-    'owner',
-    'admin',
-    'manager',
-    'billing',
-    'member',
-    'viewer'
-);
-
-
-ALTER TYPE "organizations"."member_role_enum" OWNER TO "postgres";
-
-
-CREATE TYPE "organizations"."org_type_enum" AS ENUM (
-    'commercial',
-    'nonprofit',
-    'educational'
-);
-
-
-ALTER TYPE "organizations"."org_type_enum" OWNER TO "postgres";
-
-
-CREATE TYPE "organizations"."status_enum" AS ENUM (
-    'active',
-    'inactive',
-    'suspended',
-    'closed'
-);
-
-
-ALTER TYPE "organizations"."status_enum" OWNER TO "postgres";
-
-
 CREATE TYPE "public"."page_view_target_enum" AS ENUM (
     'thread',
     'thread_reply',
@@ -910,85 +496,14 @@ CREATE TYPE "public"."page_view_target_enum" AS ENUM (
 ALTER TYPE "public"."page_view_target_enum" OWNER TO "postgres";
 
 
-CREATE TYPE "status"."incident_impact" AS ENUM (
-    'minor',
-    'partial',
-    'major'
+CREATE TYPE "storage"."buckettype" AS ENUM (
+    'STANDARD',
+    'ANALYTICS',
+    'VECTOR'
 );
 
 
-ALTER TYPE "status"."incident_impact" OWNER TO "postgres";
-
-
-CREATE TYPE "status"."incident_stage" AS ENUM (
-    'investigating',
-    'identified',
-    'monitoring',
-    'resolved',
-    'postmortem_ready'
-);
-
-
-ALTER TYPE "status"."incident_stage" OWNER TO "postgres";
-
-
-CREATE TYPE "status"."maintenance_status" AS ENUM (
-    'scheduled',
-    'in_progress',
-    'completed',
-    'cancelled'
-);
-
-
-ALTER TYPE "status"."maintenance_status" OWNER TO "postgres";
-
-
-CREATE TYPE "status"."status_state" AS ENUM (
-    'operational',
-    'degraded_performance',
-    'partial_outage',
-    'major_outage',
-    'maintenance'
-);
-
-
-ALTER TYPE "status"."status_state" OWNER TO "postgres";
-
-
-CREATE TYPE "status"."status_window" AS ENUM (
-    '24h',
-    '7d',
-    '30d',
-    '90d',
-    '1y'
-);
-
-
-ALTER TYPE "status"."status_window" OWNER TO "postgres";
-
-
-CREATE TYPE "wallet"."charge_status_enum" AS ENUM (
-    'reserved',
-    'settled',
-    'released'
-);
-
-
-ALTER TYPE "wallet"."charge_status_enum" OWNER TO "postgres";
-
-
-CREATE TYPE "wallet"."transaction_type_enum" AS ENUM (
-    'deposit',
-    'spend',
-    'refund',
-    'sponsorship_deposit',
-    'sponsorship_payout',
-    'platform_fee',
-    'adjustment'
-);
-
-
-ALTER TYPE "wallet"."transaction_type_enum" OWNER TO "postgres";
+ALTER TYPE "storage"."buckettype" OWNER TO "supabase_storage_admin";
 
 
 CREATE TYPE "xp"."contribution_context_enum" AS ENUM (
@@ -1028,2059 +543,6 @@ CREATE TYPE "xp"."source_enum" AS ENUM (
 
 
 ALTER TYPE "xp"."source_enum" OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."can_manage_ai_lenser"("p_ai_lenser_id" "uuid") RETURNS boolean
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'agents', 'lensers', 'public'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM agents.ownerships o
-    WHERE o.ai_lenser_id = p_ai_lenser_id
-      AND o.owner_lenser_id = lensers.get_auth_human_lenser_id()
-      AND o.role IN ('owner', 'co_owner')
-      AND o.revoked_at IS NULL
-  );
-$$;
-
-
-ALTER FUNCTION "agents"."can_manage_ai_lenser"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."can_manage_ai_lenser"("p_ai_lenser_id" "uuid") IS 'Owner/co-owner authorization helper for control-room tables and RPCs.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."check_model_binding_single_provider"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'ai', 'public'
-    AS $$
-DECLARE
-  v_binding_mode    text;
-  v_new_provider    text;
-  v_existing_provider text;
-BEGIN
-  -- Resolve model_binding_mode for this agent
-  SELECT pol.model_binding_mode::text INTO v_binding_mode
-  FROM agents.policies pol
-  WHERE pol.ai_lenser_id = NEW.ai_lenser_id
-  LIMIT 1;
-
-  -- If no policy row yet or mode is not 'single', allow
-  IF v_binding_mode IS NULL OR v_binding_mode <> 'single' THEN
-    RETURN NEW;
-  END IF;
-
-  -- Resolve provider key of the incoming model
-  SELECT p.key INTO v_new_provider
-  FROM ai.models m
-  JOIN ai.providers p ON p.id = m.provider_id
-  WHERE m.id = NEW.model_id;
-
-  IF v_new_provider IS NULL THEN
-    RAISE EXCEPTION 'Model % not found in ai.models or its provider is missing.', NEW.model_id;
-  END IF;
-
-  -- Find the provider key of any existing binding (excluding self on UPDATE)
-  SELECT DISTINCT p.key INTO v_existing_provider
-  FROM agents.model_bindings mb
-  JOIN ai.models m ON m.id = mb.model_id
-  JOIN ai.providers p ON p.id = m.provider_id
-  WHERE mb.ai_lenser_id = NEW.ai_lenser_id
-    AND mb.id IS DISTINCT FROM NEW.id
-  LIMIT 1;
-
-  IF v_existing_provider IS NOT NULL AND v_existing_provider <> v_new_provider THEN
-    RAISE EXCEPTION
-      'Provider mismatch: agent is in single-provider mode (current: %). Cannot add model from provider "%" — remove existing bindings first.',
-      v_existing_provider, v_new_provider;
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."check_model_binding_single_provider"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_agent_action"("p_ai_lenser_id" "uuid", "p_action_type" "text", "p_context_type" "text" DEFAULT NULL::"text", "p_context_id" "uuid" DEFAULT NULL::"uuid", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-DECLARE
-  v_policy agents.policies%ROWTYPE;
-  v_quota  agents.quota_snapshots%ROWTYPE;
-  v_result text := 'success';
-BEGIN
-  -- Load policy
-  SELECT * INTO v_policy
-  FROM agents.policies WHERE ai_lenser_id = p_ai_lenser_id;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'no_policy_for_agent: %', p_ai_lenser_id;
-  END IF;
-
-  -- Policy gate
-  IF p_action_type = 'join_battle'   AND NOT v_policy.can_join_battles   THEN v_result := 'blocked_by_policy'; END IF;
-  IF p_action_type = 'cast_vote'     AND NOT v_policy.can_vote            THEN v_result := 'blocked_by_policy'; END IF;
-  IF p_action_type = 'create_battle' AND NOT v_policy.can_create_battles  THEN v_result := 'blocked_by_policy'; END IF;
-
-  -- Quota check (only if policy allows)
-  IF v_result = 'success' THEN
-    -- Lazily create today's quota row
-    INSERT INTO agents.quota_snapshots (ai_lenser_id, period_date)
-    VALUES (p_ai_lenser_id, CURRENT_DATE)
-    ON CONFLICT (ai_lenser_id, period_date) DO NOTHING;
-
-    SELECT * INTO v_quota
-    FROM agents.quota_snapshots
-    WHERE ai_lenser_id = p_ai_lenser_id AND period_date = CURRENT_DATE;
-
-    IF p_action_type = 'join_battle'
-       AND v_policy.max_daily_battles > 0
-       AND v_quota.battles_used >= v_policy.max_daily_battles
-    THEN
-      v_result := 'throttled';
-    END IF;
-
-    IF p_action_type = 'cast_vote'
-       AND v_policy.max_daily_votes > 0
-       AND v_quota.votes_used >= v_policy.max_daily_votes
-    THEN
-      v_result := 'throttled';
-    END IF;
-  END IF;
-
-  -- Always log (including blocked and throttled outcomes)
-  INSERT INTO agents.action_logs (
-    ai_lenser_id, action_type, context_ref_type, context_ref_id, result, metadata
-  )
-  VALUES (
-    p_ai_lenser_id, p_action_type, p_context_type, p_context_id, v_result, p_metadata
-  );
-
-  -- Update quota counters only on success
-  IF v_result = 'success' THEN
-    UPDATE agents.quota_snapshots SET
-      battles_used  = battles_used  + CASE WHEN p_action_type = 'join_battle' THEN 1 ELSE 0 END,
-      votes_used    = votes_used    + CASE WHEN p_action_type = 'cast_vote'   THEN 1 ELSE 0 END,
-      updated_at    = now()
-    WHERE ai_lenser_id = p_ai_lenser_id AND period_date = CURRENT_DATE;
-  END IF;
-
-  RETURN jsonb_build_object(
-    'result',  v_result,
-    'action',  p_action_type,
-    'agent_id', p_ai_lenser_id
-  );
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_agent_action"("p_ai_lenser_id" "uuid", "p_action_type" "text", "p_context_type" "text", "p_context_id" "uuid", "p_metadata" "jsonb") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_agent_action"("p_ai_lenser_id" "uuid", "p_action_type" "text", "p_context_type" "text", "p_context_id" "uuid", "p_metadata" "jsonb") IS 'Single entry point for all AI Lenser autonomous actions. Evaluates policy constraints, daily quota limits, logs the outcome, and increments quota counters on success. Returns: {result: success|blocked_by_policy|throttled|failed, action, agent_id}.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_apply_standing_approval"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-DECLARE
-  v_gate_kind text;
-BEGIN
-  IF NEW.approval_status IS DISTINCT FROM 'pending' THEN
-    RETURN NEW;
-  END IF;
-
-  v_gate_kind := NEW.metadata->>'gate_kind';
-
-  IF agents.fn_has_standing_approval(NEW.ai_lenser_id, NEW.workflow_id, v_gate_kind) THEN
-    NEW.approval_status := 'approved';
-    -- 'queued' is the canonical post-approval status used elsewhere in the
-    -- pipeline (see fn_dispatch_scheduled_workflows). Only flip when the
-    -- caller left it at the blocked-on-approval default.
-    IF NEW.status = 'blocked' THEN
-      NEW.status := 'queued';
-    END IF;
-    NEW.metadata := COALESCE(NEW.metadata, '{}'::jsonb)
-      || jsonb_build_object('standing_approval_used', true);
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_apply_standing_approval"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_apply_standing_approval"() IS 'Phase Q2: BEFORE INSERT trigger on agents.team_runs. Promotes pending rows to approved when agents.fn_has_standing_approval() matches; sets metadata.standing_approval_used=true and unblocks the run.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_build_lenser_prompt_context"("p_ai_lenser_id" "uuid", "p_scope" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 20) RETURNS "text"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-DECLARE
-  v_limit  integer := LEAST(GREATEST(COALESCE(p_limit, 20), 1), 50);
-  v_rows   RECORD;
-  v_lines  text[]  := ARRAY[]::text[];
-BEGIN
-  FOR v_rows IN
-    SELECT scope, source, content
-    FROM   agents.memories
-    WHERE  ai_lenser_id = p_ai_lenser_id
-      AND  is_redacted  = FALSE
-      AND  (p_scope IS NULL OR scope = p_scope)
-      AND  (expires_at IS NULL OR expires_at > now())
-    ORDER  BY created_at DESC
-    LIMIT  v_limit
-  LOOP
-    v_lines := array_append(
-      v_lines,
-      format('- (%s/%s) %s', v_rows.scope, v_rows.source, v_rows.content)
-    );
-  END LOOP;
-
-  IF array_length(v_lines, 1) IS NULL THEN
-    RETURN NULL;
-  END IF;
-
-  RETURN '## Context Memory' || E'\n' || array_to_string(v_lines, E'\n') || E'\n\n';
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_build_lenser_prompt_context"("p_ai_lenser_id" "uuid", "p_scope" "text", "p_limit" integer) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_build_lenser_prompt_context"("p_ai_lenser_id" "uuid", "p_scope" "text", "p_limit" integer) IS 'Phase AJ: Returns a formatted memory context block prepended to lens templates during server-side workflow execution. Returns NULL when no eligible entries exist. SECURITY DEFINER — caller must ensure p_ai_lenser_id is authorized.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb" DEFAULT '{}'::"jsonb") RETURNS integer
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'lenses', 'lensers', 'public'
-    AS $$
-DECLARE
-  v_status      text       := COALESCE(p_filters->>'status', 'pending');
-  v_since_text  text       := COALESCE(p_filters->>'since', '1 hour');
-  v_since       interval;
-  v_workflow_id uuid       := NULLIF(p_filters->>'workflow_id', '')::uuid;
-  v_cutoff      timestamptz;
-  v_actor       uuid;
-  v_now         timestamptz := now();
-  v_approved    integer    := 0;
-  r             RECORD;
-BEGIN
-  v_actor := lensers.get_auth_human_lenser_id();
-  IF v_actor IS NULL THEN
-    RAISE EXCEPTION 'Authentication required.' USING ERRCODE = '42501';
-  END IF;
-
-  BEGIN
-    v_since := v_since_text::interval;
-  EXCEPTION WHEN OTHERS THEN
-    RAISE EXCEPTION 'Invalid since="%". Expected a Postgres interval string.', v_since_text
-      USING ERRCODE = '22023';
-  END;
-
-  v_cutoff := v_now - v_since;
-
-  FOR r IN
-    SELECT tr.id, tr.ai_lenser_id, tr.workflow_run_id, tr.workflow_id, tr.metadata
-    FROM   agents.team_runs tr
-    WHERE  tr.approval_status = v_status
-      AND  tr.created_at      > v_cutoff
-      AND  (v_workflow_id IS NULL OR tr.workflow_id = v_workflow_id)
-      AND  agents.can_manage_ai_lenser(tr.ai_lenser_id)
-    FOR UPDATE SKIP LOCKED
-  LOOP
-    -- Defence-in-depth: only flip if still pending. Skip silently otherwise.
-    UPDATE agents.team_runs
-       SET approval_status = 'approved',
-           status          = 'queued',
-           metadata        = COALESCE(metadata, '{}'::jsonb)
-                               || jsonb_build_object(
-                                    'decision_at',           v_now,
-                                    'decision_by_lenser_id', v_actor,
-                                    'decision_source',       'bulk_approve'
-                                  ),
-           updated_at      = v_now
-     WHERE id = r.id
-       AND approval_status = 'pending';
-
-    IF NOT FOUND THEN
-      CONTINUE;
-    END IF;
-
-    IF r.workflow_run_id IS NOT NULL THEN
-      UPDATE lenses.workflow_runs
-         SET status = 'pending'
-       WHERE id = r.workflow_run_id
-         AND status IN ('pending');
-    END IF;
-
-    INSERT INTO agents.action_logs (
-      ai_lenser_id, action_type, context_ref_type, context_ref_id, result, metadata
-    )
-    VALUES (
-      r.ai_lenser_id,
-      'approval_granted_bulk',
-      'team_run',
-      r.id,
-      'success',
-      jsonb_build_object(
-        'workflow_id',          r.workflow_id,
-        'workflow_run_id',      r.workflow_run_id,
-        'decided_by_lenser_id', v_actor,
-        'filters',              p_filters,
-        'decided_at',           v_now
-      )
-    );
-
-    INSERT INTO agents.agent_run_events (team_run_id, event_type, payload, occurred_at)
-    VALUES (
-      r.id,
-      'approval_granted',
-      jsonb_build_object(
-        'decision',             'approved',
-        'decision_source',      'bulk_approve',
-        'decided_by_lenser_id', v_actor,
-        'workflow_run_id',      r.workflow_run_id
-      ),
-      v_now
-    );
-
-    v_approved := v_approved + 1;
-  END LOOP;
-
-  RETURN v_approved;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb") IS 'Phase Y3: bulk-approve pending team_runs owned by the caller, filtered by jsonb {status, since, workflow_id}. Returns the count of rows transitioned. Rows the caller does not own (per agents.can_manage_ai_lenser) are silently skipped. Idempotent: only approval_status=pending rows are flipped.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "ai_lenser_id" "uuid", "workflow_id" "uuid", "workflow_run_id" "uuid", "metadata" "jsonb")
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-DECLARE
-  v_claim_id uuid;
-BEGIN
-  -- Take ONE queued team run with SKIP LOCKED so concurrent workers don't
-  -- contend. Mirrors execution.fn_poll_async_run.
-  SELECT tr.id INTO v_claim_id
-  FROM agents.team_runs tr
-  WHERE tr.status = 'queued'
-    AND tr.approval_status IN ('not_required', 'approved')
-  ORDER BY tr.created_at
-  FOR UPDATE SKIP LOCKED
-  LIMIT 1;
-
-  IF v_claim_id IS NULL THEN
-    RETURN;
-  END IF;
-
-  UPDATE agents.team_runs tr
-  SET    status     = 'running',
-         started_at = COALESCE(tr.started_at, now()),
-         updated_at = now(),
-         metadata   = tr.metadata || jsonb_build_object(
-           'claimed_by', COALESCE(p_worker_id, 'unknown'),
-           'claimed_at', now()
-         )
-  WHERE  tr.id = v_claim_id;
-
-  INSERT INTO agents.agent_run_events (team_run_id, event_type, payload)
-  VALUES (
-    v_claim_id,
-    'dispatch_started',
-    jsonb_build_object('worker_id', COALESCE(p_worker_id, 'unknown'))
-  );
-
-  RETURN QUERY
-    SELECT tr.id, tr.ai_lenser_id, tr.workflow_id, tr.workflow_run_id, tr.metadata
-    FROM agents.team_runs tr
-    WHERE tr.id = v_claim_id;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text") IS 'D10 fix: disambiguates id by renaming local var to v_claim_id and qualifying WHERE predicates with the table alias. Service-role only.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_create_ai_lenser"("p_owner_lenser_id" "uuid", "p_handle" "text", "p_display_name" "text", "p_ai_model_id" "uuid" DEFAULT NULL::"uuid") RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'lensers', 'audit', 'public'
-    AS $$
-DECLARE
-  v_profile_id uuid;
-  v_lenser_id  uuid;
-BEGIN
-  -- Validate owner exists and is an active human lenser
-  IF NOT EXISTS (
-    SELECT 1 FROM lensers.profiles
-    WHERE id     = p_owner_lenser_id
-      AND type   = 'human'
-      AND status = 'active'
-  ) THEN
-    RAISE EXCEPTION 'owner_must_be_active_human_lenser';
-  END IF;
-
-  -- Enforce max 5 AI agents per owner
-  IF (
-    SELECT COUNT(*)
-    FROM agents.ownerships
-    WHERE owner_lenser_id = p_owner_lenser_id
-      AND role            = 'owner'
-      AND revoked_at      IS NULL
-  ) >= 5 THEN
-    RAISE EXCEPTION 'Maximum 5 AI agents allowed per lenser'
-      USING ERRCODE = 'P0004';
-  END IF;
-
-  -- 1. Create lensers.profiles entry (type = 'ai')
-  --    Explicitly set user_id = NULL: AI lensers have no auth.users row.
-  --    Without this, the column DEFAULT (auth.uid()) would copy the caller's
-  --    UID and violate the profiles_user_id_unique constraint.
-  INSERT INTO lensers.profiles (
-    user_id, handle, display_name, type, ai_model_id,
-    status, visibility, onboarding_step
-  )
-  VALUES (
-    NULL, p_handle, p_display_name, 'ai', p_ai_model_id,
-    'active', 'public', 1
-  )
-  RETURNING id INTO v_profile_id;
-
-  -- 2. Create extension record
-  INSERT INTO agents.ai_lensers (profile_id)
-  VALUES (v_profile_id)
-  RETURNING id INTO v_lenser_id;
-
-  -- 3. Grant primary ownership with full default scope
-  INSERT INTO agents.ownerships (
-    ai_lenser_id, owner_lenser_id, role, permission_scope
-  )
-  VALUES (
-    v_lenser_id, p_owner_lenser_id, 'owner',
-    ARRAY['join_battles', 'vote', 'create_battles', 'spend_credits']
-  );
-
-  -- 4. Bootstrap default policy (all capabilities disabled — owner must enable)
-  INSERT INTO agents.policies (ai_lenser_id)
-  VALUES (v_lenser_id);
-
-  -- 5. Record attestation
-  INSERT INTO audit.attestations (
-    entity_type, entity_id, attested_by, attestation_type, proof_payload
-  )
-  VALUES (
-    'ai_lenser', v_lenser_id, p_owner_lenser_id, 'agent_created',
-    jsonb_build_object(
-      'handle',    p_handle,
-      'owner_id',  p_owner_lenser_id,
-      'model_id',  p_ai_model_id
-    )
-  );
-
-  RETURN jsonb_build_object(
-    'profile_id',   v_profile_id,
-    'ai_lenser_id', v_lenser_id,
-    'status',       'created'
-  );
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_create_ai_lenser"("p_owner_lenser_id" "uuid", "p_handle" "text", "p_display_name" "text", "p_ai_model_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_create_ai_lenser"("p_owner_lenser_id" "uuid", "p_handle" "text", "p_display_name" "text", "p_ai_model_id" "uuid") IS 'Transactionally creates the entire Agent aggregate: lensers.profiles, agents.ai_lensers, agents.ownerships (primary owner), agents.policies (all-disabled defaults), and audit.attestations. Rolls back atomically on any failure. This is the only supported way to create an AI Lenser.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_enforce_team_messages_cap"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-DECLARE
-  v_count integer;
-  v_cap   constant integer := 1000;
-BEGIN
-  SELECT count(*) INTO v_count
-  FROM   agents.team_messages
-  WHERE  team_run_id = NEW.team_run_id;
-
-  IF v_count >= v_cap THEN
-    RAISE EXCEPTION 'team_messages_cap_exceeded: team_run % already has % messages (cap %)',
-      NEW.team_run_id, v_count, v_cap
-      USING ERRCODE = '54000';
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_enforce_team_messages_cap"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_enforce_team_messages_cap"() IS 'Phase X1: BEFORE INSERT guard enforcing 1000 msgs/team_run. Operators needing higher ceilings should bump the constant or add a per-team_run override field; counted via simple count(*) — fine because the partial index on (team_run_id, occurred_at DESC) covers it.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_gateway_ack_commands"("p_command_ids" "uuid"[]) RETURNS integer
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_uid    UUID := auth.uid();
-  v_count  INT;
-BEGIN
-  IF v_uid IS NULL THEN
-    RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
-  END IF;
-  IF p_command_ids IS NULL OR cardinality(p_command_ids) = 0 THEN
-    RETURN 0;
-  END IF;
-  IF cardinality(p_command_ids) > 100 THEN
-    RAISE EXCEPTION 'too_many_ids' USING ERRCODE = '22023';
-  END IF;
-
-  WITH owned AS (
-    SELECT gc.id
-      FROM agents.gateway_commands gc
-      JOIN agents.gateway_devices d ON d.device_id = gc.device_id
-     WHERE d.owner_id = v_uid
-       AND gc.id = ANY(p_command_ids)
-       AND gc.acked_at IS NULL
-  )
-  UPDATE agents.gateway_commands gc
-     SET acked_at = now()
-    FROM owned
-   WHERE gc.id = owned.id;
-
-  GET DIAGNOSTICS v_count = ROW_COUNT;
-  RETURN v_count;
-END $$;
-
-
-ALTER FUNCTION "agents"."fn_gateway_ack_commands"("p_command_ids" "uuid"[]) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_gateway_approve_device"("p_device_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_uid UUID := auth.uid();
-BEGIN
-  IF v_uid IS NULL THEN
-    RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
-  END IF;
-
-  UPDATE agents.gateway_devices
-     SET approved_at = now(),
-         revoked_at  = NULL,
-         kill_switch = false
-   WHERE device_id = p_device_id
-     AND owner_id  = v_uid;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'device_not_owned' USING ERRCODE = '42501';
-  END IF;
-END $$;
-
-
-ALTER FUNCTION "agents"."fn_gateway_approve_device"("p_device_id" "uuid") OWNER TO "postgres";
-
-SET default_tablespace = '';
-
-SET default_table_access_method = "heap";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."gateway_commands" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "device_id" "uuid" NOT NULL,
-    "command_type" "text" NOT NULL,
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "claimed_at" timestamp with time zone,
-    "acked_at" timestamp with time zone,
-    "envelope_sig" "text",
-    "envelope_nonce" "text",
-    CONSTRAINT "gateway_commands_command_type_check" CHECK ((("char_length"("command_type") >= 1) AND ("char_length"("command_type") <= 64))),
-    CONSTRAINT "gateway_commands_envelope_nonce_check" CHECK ((("envelope_nonce" IS NULL) OR (("char_length"("envelope_nonce") >= 16) AND ("char_length"("envelope_nonce") <= 128)))),
-    CONSTRAINT "gateway_commands_envelope_sig_check" CHECK ((("envelope_sig" IS NULL) OR (("char_length"("envelope_sig") >= 16) AND ("char_length"("envelope_sig") <= 512))))
-);
-
-
-ALTER TABLE "agents"."gateway_commands" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."gateway_commands" IS 'Phase AV: outbox of commands queued by the cloud for a specific gateway device. Daemons pull via fn_gateway_claim_commands and confirm via fn_gateway_ack_commands.';
-
-
-
-COMMENT ON COLUMN "agents"."gateway_commands"."envelope_sig" IS 'Phase BG: base64url Ed25519 signature over the canonical JCS encoding of {id, device_id, command_type, payload, created_at, envelope_nonce}. The daemon refuses commands whose signature does not verify against the cloud signing key.';
-
-
-
-COMMENT ON COLUMN "agents"."gateway_commands"."envelope_nonce" IS 'Phase BG: random 128-bit nonce included in the signed envelope so attempted replays of an old (still-valid signature) command can be detected by the daemon.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_gateway_claim_commands"("p_device_id" "uuid", "p_limit" integer DEFAULT 10) RETURNS SETOF "agents"."gateway_commands"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_uid     UUID := auth.uid();
-  v_capped  INT  := LEAST(GREATEST(COALESCE(p_limit, 10), 1), 50);
-BEGIN
-  IF v_uid IS NULL THEN
-    RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM agents.gateway_devices
-     WHERE device_id = p_device_id AND owner_id = v_uid
-  ) THEN
-    RAISE EXCEPTION 'device_not_owned' USING ERRCODE = '42501';
-  END IF;
-
-  RETURN QUERY
-  WITH claimable AS (
-    SELECT id
-      FROM agents.gateway_commands
-     WHERE device_id  = p_device_id
-       AND claimed_at IS NULL
-     ORDER BY created_at ASC
-     LIMIT v_capped
-     FOR UPDATE SKIP LOCKED
-  )
-  UPDATE agents.gateway_commands gc
-     SET claimed_at = now()
-    FROM claimable
-   WHERE gc.id = claimable.id
-   RETURNING gc.*;
-END $$;
-
-
-ALTER FUNCTION "agents"."fn_gateway_claim_commands"("p_device_id" "uuid", "p_limit" integer) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_gateway_claim_commands"("p_device_id" "uuid", "p_limit" integer) IS 'Deprecated since Phase BG. Use fn_gateway_claim_commands_v2 instead — it returns the envelope_sig + envelope_nonce columns the daemon needs to verify a command before dispatching it.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_gateway_claim_commands_v2"("p_device_id" "uuid", "p_limit" integer DEFAULT 10) RETURNS TABLE("id" "uuid", "device_id" "uuid", "command_type" "text", "payload" "jsonb", "created_at" timestamp with time zone, "claimed_at" timestamp with time zone, "acked_at" timestamp with time zone, "envelope_sig" "text", "envelope_nonce" "text")
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_uid    UUID := auth.uid();
-  v_capped INT  := LEAST(GREATEST(COALESCE(p_limit, 10), 1), 50);
-BEGIN
-  IF v_uid IS NULL THEN
-    RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM agents.gateway_devices
-     WHERE device_id = p_device_id AND owner_id = v_uid
-  ) THEN
-    RAISE EXCEPTION 'device_not_owned' USING ERRCODE = '42501';
-  END IF;
-
-  RETURN QUERY
-  WITH claimable AS (
-    SELECT gc.id
-      FROM agents.gateway_commands gc
-     WHERE gc.device_id  = p_device_id
-       AND gc.claimed_at IS NULL
-     ORDER BY gc.created_at ASC
-     LIMIT v_capped
-     FOR UPDATE SKIP LOCKED
-  )
-  UPDATE agents.gateway_commands gc
-     SET claimed_at = now()
-    FROM claimable
-   WHERE gc.id = claimable.id
-   RETURNING gc.id, gc.device_id, gc.command_type, gc.payload, gc.created_at,
-             gc.claimed_at, gc.acked_at, gc.envelope_sig, gc.envelope_nonce;
-END $$;
-
-
-ALTER FUNCTION "agents"."fn_gateway_claim_commands_v2"("p_device_id" "uuid", "p_limit" integer) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_gateway_heartbeat"("p_device_id" "uuid", "p_public_key" "text", "p_hostname" "text" DEFAULT NULL::"text", "p_daemon_version" "text" DEFAULT NULL::"text") RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_uid          UUID := auth.uid();
-  v_row          agents.gateway_devices%ROWTYPE;
-BEGIN
-  IF v_uid IS NULL THEN
-    RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
-  END IF;
-  IF p_public_key IS NULL OR char_length(p_public_key) < 32 THEN
-    RAISE EXCEPTION 'public_key_required' USING ERRCODE = '22023';
-  END IF;
-
-  INSERT INTO agents.gateway_devices (
-    device_id, owner_id, hostname, public_key, daemon_version, last_seen_at
-  ) VALUES (
-    p_device_id, v_uid, p_hostname, p_public_key, p_daemon_version, now()
-  )
-  ON CONFLICT (device_id) DO UPDATE
-    SET hostname       = COALESCE(EXCLUDED.hostname,       agents.gateway_devices.hostname),
-        daemon_version = COALESCE(EXCLUDED.daemon_version, agents.gateway_devices.daemon_version),
-        last_seen_at   = now()
-    -- public_key is NOT updated on heartbeat; use fn_gateway_rotate_key for explicit rotation.
-    WHERE agents.gateway_devices.owner_id = v_uid
-  RETURNING * INTO v_row;
-
-  IF v_row.device_id IS NULL THEN
-    -- ON CONFLICT collided with a row owned by someone else.
-    RAISE EXCEPTION 'device_not_owned' USING ERRCODE = '42501';
-  END IF;
-
-  RETURN jsonb_build_object(
-    'approved',    v_row.approved_at IS NOT NULL AND v_row.revoked_at IS NULL,
-    'kill_switch', COALESCE(v_row.kill_switch, false)
-  );
-END $$;
-
-
-ALTER FUNCTION "agents"."fn_gateway_heartbeat"("p_device_id" "uuid", "p_public_key" "text", "p_hostname" "text", "p_daemon_version" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_gateway_revoke_device"("p_device_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_uid UUID := auth.uid();
-BEGIN
-  IF v_uid IS NULL THEN
-    RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
-  END IF;
-
-  UPDATE agents.gateway_devices
-     SET revoked_at  = now(),
-         kill_switch = true
-   WHERE device_id = p_device_id
-     AND owner_id  = v_uid;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'device_not_owned' USING ERRCODE = '42501';
-  END IF;
-END $$;
-
-
-ALTER FUNCTION "agents"."fn_gateway_revoke_device"("p_device_id" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_get_agent_effective_provider"("p_ai_lenser_id" "uuid") RETURNS "text"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'agents', 'ai', 'public'
-    AS $$
-  SELECT DISTINCT prov.key
-  FROM agents.model_bindings mb
-  JOIN ai.models m ON m.id = mb.model_id
-  JOIN ai.providers prov ON prov.id = m.provider_id
-  WHERE mb.ai_lenser_id = p_ai_lenser_id
-  LIMIT 1;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_get_agent_effective_provider"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_get_agent_effective_provider"("p_ai_lenser_id" "uuid") IS 'Returns the provider key for an agent''s existing model bindings, or NULL if none. Used to enforce single-provider mode in the UI.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_get_team_member_role"("p_team_run_id" "uuid", "p_agent_id" "uuid") RETURNS "text"
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-DECLARE
-  v_role          text;
-  v_ai_lenser_id  uuid;
-  v_is_service    boolean := (current_setting('request.jwt.claim.role', true) = 'service_role');
-BEGIN
-  SELECT tr.ai_lenser_id
-    INTO v_ai_lenser_id
-    FROM agents.team_runs tr
-   WHERE tr.id = p_team_run_id;
-
-  IF v_ai_lenser_id IS NULL THEN
-    -- Unknown team_run — do not distinguish from "not yours".
-    RETURN 'operator';
-  END IF;
-
-  -- Service role keeps full access for the execution engine.
-  IF NOT v_is_service AND NOT agents.can_manage_ai_lenser(v_ai_lenser_id) THEN
-    RETURN 'operator';
-  END IF;
-
-  SELECT tm.role
-    INTO v_role
-    FROM agents.team_runs    tr
-    JOIN agents.team_members tm
-      ON tm.team_id  = tr.team_id
-     AND tm.agent_id = p_agent_id
-   WHERE tr.id = p_team_run_id
-   LIMIT 1;
-
-  RETURN COALESCE(v_role, 'operator');
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_get_team_member_role"("p_team_run_id" "uuid", "p_agent_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_get_team_member_role"("p_team_run_id" "uuid", "p_agent_id" "uuid") IS 'Phase X4 (hardened): returns role only when caller owns the team_run or is service_role. Strangers probing arbitrary IDs receive ''operator'' and learn nothing about cross-tenant team membership.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_has_standing_approval"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_gate_kind" "text") RETURNS boolean
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM   agents.standing_approvals sa
-    WHERE  sa.ai_lenser_id = p_ai_lenser_id
-      AND  sa.revoked_at IS NULL
-      AND  (sa.expires_at IS NULL OR sa.expires_at > now())
-      AND  (
-        (sa.workflow_id IS NOT NULL AND sa.workflow_id = p_workflow_id)
-        OR (sa.gate_kind IS NOT NULL AND sa.gate_kind  = p_gate_kind)
-      )
-  );
-$$;
-
-
-ALTER FUNCTION "agents"."fn_has_standing_approval"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_gate_kind" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_has_standing_approval"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_gate_kind" "text") IS 'Phase Q2: returns true when a non-revoked, non-expired standing approval exists for (ai_lenser_id, workflow_id) or (ai_lenser_id, gate_kind).';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_list_gateway_devices"("p_limit" integer DEFAULT 50) RETURNS TABLE("device_id" "uuid", "hostname" "text", "daemon_version" "text", "last_seen_at" timestamp with time zone, "approved_at" timestamp with time zone, "revoked_at" timestamp with time zone, "kill_switch" boolean, "created_at" timestamp with time zone)
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_uid    UUID := auth.uid();
-  v_capped INT  := LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
-BEGIN
-  IF v_uid IS NULL THEN
-    RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
-  END IF;
-
-  RETURN QUERY
-    SELECT d.device_id, d.hostname, d.daemon_version, d.last_seen_at,
-           d.approved_at, d.revoked_at, d.kill_switch, d.created_at
-      FROM agents.gateway_devices d
-     WHERE d.owner_id = v_uid
-     ORDER BY d.last_seen_at DESC NULLS LAST,
-              d.created_at DESC
-     LIMIT v_capped;
-END $$;
-
-
-ALTER FUNCTION "agents"."fn_list_gateway_devices"("p_limit" integer) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_merge_shared_scratchpad"("p_team_run_id" "uuid", "p_patch" "jsonb", "p_expected_version" integer) RETURNS "jsonb"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-DECLARE
-  v_current_version int;
-  v_new_value       jsonb;
-  v_new_version     int;
-BEGIN
-  IF p_team_run_id IS NULL OR p_patch IS NULL OR p_expected_version IS NULL THEN
-    RAISE EXCEPTION 'arguments required: team_run_id, patch, expected_version'
-      USING ERRCODE = '22023';
-  END IF;
-
-  -- Atomic check-and-update: predicate on shared_scratchpad_version
-  -- guards concurrent writers.
-  UPDATE agents.team_runs
-     SET shared_scratchpad         = shared_scratchpad || p_patch,
-         shared_scratchpad_version = shared_scratchpad_version + 1,
-         updated_at                = now()
-   WHERE id                        = p_team_run_id
-     AND shared_scratchpad_version = p_expected_version
-   RETURNING shared_scratchpad, shared_scratchpad_version
-        INTO v_new_value, v_new_version;
-
-  IF NOT FOUND THEN
-    -- Either the row does not exist, RLS hid it, or version drifted.
-    SELECT shared_scratchpad_version
-      INTO v_current_version
-      FROM agents.team_runs
-     WHERE id = p_team_run_id;
-
-    RAISE EXCEPTION 'scratchpad_version_conflict: expected % current %',
-      p_expected_version, v_current_version
-      USING ERRCODE = '40001';
-  END IF;
-
-  RETURN jsonb_build_object(
-    'shared_scratchpad',         v_new_value,
-    'shared_scratchpad_version', v_new_version
-  );
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_merge_shared_scratchpad"("p_team_run_id" "uuid", "p_patch" "jsonb", "p_expected_version" integer) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_merge_shared_scratchpad"("p_team_run_id" "uuid", "p_patch" "jsonb", "p_expected_version" integer) IS 'Phase X3: optimistic-lock merge into team_runs.shared_scratchpad. Raises 40001 (scratchpad_version_conflict) if expected version drifted. SECURITY INVOKER: existing RLS on agents.team_runs gates the UPDATE.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_node_requires_review"("p_team_run_id" "uuid") RETURNS boolean
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-DECLARE
-  v_exists        boolean;
-  v_ai_lenser_id  uuid;
-  v_is_service    boolean := (current_setting('request.jwt.claim.role', true) = 'service_role');
-BEGIN
-  SELECT tr.ai_lenser_id
-    INTO v_ai_lenser_id
-    FROM agents.team_runs tr
-   WHERE tr.id = p_team_run_id;
-
-  IF v_ai_lenser_id IS NULL THEN
-    RETURN false;
-  END IF;
-
-  IF NOT v_is_service AND NOT agents.can_manage_ai_lenser(v_ai_lenser_id) THEN
-    RETURN false;
-  END IF;
-
-  SELECT EXISTS (
-    SELECT 1
-    FROM   agents.team_runs    tr
-    JOIN   agents.team_members tm ON tm.team_id = tr.team_id
-    WHERE  tr.id        = p_team_run_id
-      AND  tm.role      = 'reviewer'
-      AND  tm.is_active = true
-  )
-  INTO v_exists;
-
-  RETURN COALESCE(v_exists, false);
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_node_requires_review"("p_team_run_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_node_requires_review"("p_team_run_id" "uuid") IS 'Phase X4 (hardened): true only when caller owns the team_run (or is service_role) AND the team has an active reviewer. Returns false to strangers regardless of true state.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_notify_approval_pending"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'audit', 'public'
-    AS $$
-DECLARE
-  v_url     text;
-  v_payload jsonb;
-BEGIN
-  IF NEW.approval_status IS DISTINCT FROM 'pending' THEN
-    RETURN NEW;
-  END IF;
-
-  v_url := NULLIF(current_setting('app.approval_webhook_url', true), '');
-  IF v_url IS NULL THEN
-    RETURN NEW;
-  END IF;
-
-  v_payload := jsonb_build_object(
-    'webhook_version',         1,
-    'event',                   'approval_pending',
-    'team_run_id',             NEW.id,
-    'ai_lenser_id',            NEW.ai_lenser_id,
-    'team_id',                 NEW.team_id,
-    'workflow_id',             NEW.workflow_id,
-    'workflow_run_id',         NEW.workflow_run_id,
-    'workflow_assignment_id',  NEW.workflow_assignment_id,
-    'gate_kind',               NEW.metadata->>'gate_kind',
-    'requested_action',        NEW.metadata->>'requested_action',
-    'pending_since',           to_char(COALESCE(NEW.created_at, now()) AT TIME ZONE 'UTC',
-                                       'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-  );
-
-  INSERT INTO audit.webhook_outbox (event_type, payload, target_url)
-  VALUES ('approval_pending', v_payload, v_url);
-
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_notify_approval_pending"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_notify_approval_pending"() IS 'Phase P3: AFTER INSERT trigger on agents.team_runs. Enqueues an approval_pending webhook row in audit.webhook_outbox when approval_status=pending and app.approval_webhook_url is set. The dispatcher (audit.fn_dispatch_webhook_outbox) handles signing, retries, and POST.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_purge_stale_blocked_team_runs"("p_max_age" interval DEFAULT '30 days'::interval) RETURNS integer
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-DECLARE
-  v_cutoff timestamptz := now() - GREATEST(p_max_age, interval '1 hour');
-  v_purged integer := 0;
-  r RECORD;
-BEGIN
-  FOR r IN
-    SELECT id
-    FROM   agents.team_runs
-    WHERE  status          = 'blocked'
-      AND  approval_status = 'pending'
-      AND  created_at     <  v_cutoff
-    FOR UPDATE SKIP LOCKED
-    LIMIT  500   -- bounded sweep; cron re-runs daily
-  LOOP
-    UPDATE agents.team_runs
-    SET    status          = 'cancelled',
-           approval_status = 'timed_out',
-           completed_at    = now(),
-           updated_at      = now()
-    WHERE  id = r.id;
-
-    INSERT INTO agents.agent_run_events (team_run_id, event_type, payload)
-    VALUES (r.id, 'approval_timed_out',
-            jsonb_build_object('reason', 'stale_blocked_purge',
-                               'cutoff', v_cutoff));
-
-    v_purged := v_purged + 1;
-  END LOOP;
-
-  RETURN v_purged;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_purge_stale_blocked_team_runs"("p_max_age" interval) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_purge_stale_blocked_team_runs"("p_max_age" interval) IS 'D6: daily age-out for blocked team_runs whose approval never arrived. Transitions to status=cancelled, approval_status=timed_out, emits approval_timed_out event. Bounded sweep of 500 per call.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_agent_id" "uuid", "p_kind" "text", "p_to_agent_id" "uuid" DEFAULT NULL::"uuid", "p_payload" "jsonb" DEFAULT '{}'::"jsonb", "p_parent_id" "uuid" DEFAULT NULL::"uuid") RETURNS "uuid"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-DECLARE
-  v_id uuid;
-BEGIN
-  IF p_team_run_id IS NULL THEN
-    RAISE EXCEPTION 'p_team_run_id is required' USING ERRCODE = '22023';
-  END IF;
-  IF p_from_agent_id IS NULL THEN
-    RAISE EXCEPTION 'p_from_agent_id is required' USING ERRCODE = '22023';
-  END IF;
-  IF p_kind NOT IN ('task_request','task_response','info','error') THEN
-    RAISE EXCEPTION 'invalid kind: %', p_kind USING ERRCODE = '22023';
-  END IF;
-
-  INSERT INTO agents.team_messages (
-    team_run_id, from_agent_id, to_agent_id, kind, payload, parent_message_id
-  )
-  VALUES (
-    p_team_run_id, p_from_agent_id, p_to_agent_id, p_kind,
-    COALESCE(p_payload, '{}'::jsonb), p_parent_id
-  )
-  RETURNING id INTO v_id;
-
-  RETURN v_id;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_agent_id" "uuid", "p_kind" "text", "p_to_agent_id" "uuid", "p_payload" "jsonb", "p_parent_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_agent_id" "uuid", "p_kind" "text", "p_to_agent_id" "uuid", "p_payload" "jsonb", "p_parent_id" "uuid") IS 'Phase X1: append a message to the team-run bus. SECURITY INVOKER; RLS on agents.team_messages enforces ownership. Returns the inserted id.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb" DEFAULT '{}'::"jsonb", "p_policy" "text" DEFAULT 'auto'::"text") RETURNS "uuid"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'public'
-    AS $$
-DECLARE
-  v_team_run_id     uuid;
-  v_status          text;
-  v_approval_status text;
-  v_parent_id       uuid;
-  v_parent_depth    integer;
-  v_new_depth       integer;
-BEGIN
-  IF p_ai_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'ai_lenser_id is required'
-      USING ERRCODE = 'check_violation';
-  END IF;
-
-  IF p_policy NOT IN ('auto', 'approval_required', 'forbidden') THEN
-    RAISE EXCEPTION 'Unknown delegation policy: %', p_policy
-      USING ERRCODE = 'check_violation';
-  END IF;
-
-  IF p_policy = 'forbidden' THEN
-    RAISE EXCEPTION 'delegation_forbidden'
-      USING ERRCODE = 'P0001',
-            HINT    = 'Workflow node delegationPolicy=forbidden';
-  END IF;
-
-  -- ── D5: recursion-depth cap ──────────────────────────────────────────────
-  -- Workers pass the parent team_run id via the inputs envelope:
-  --   p_inputs := jsonb_build_object('_parent_team_run_id', <uuid>, ...)
-  IF p_inputs IS NOT NULL AND p_inputs ? '_parent_team_run_id' THEN
-    BEGIN
-      v_parent_id := (p_inputs->>'_parent_team_run_id')::uuid;
-    EXCEPTION WHEN OTHERS THEN
-      v_parent_id := NULL;
-    END;
-  END IF;
-
-  IF v_parent_id IS NOT NULL THEN
-    SELECT recursion_depth INTO v_parent_depth
-    FROM agents.team_runs
-    WHERE id = v_parent_id;
-
-    v_new_depth := COALESCE(v_parent_depth, 0) + 1;
-
-    IF v_new_depth > 8 THEN
-      RAISE EXCEPTION
-        'team_run_recursion_cap_exceeded: depth=% > 8 (parent=%)',
-        v_new_depth, v_parent_id
-        USING ERRCODE = '54000',
-              HINT    = 'D5: agents.fn_start_team_run recursion cap';
-    END IF;
-  ELSE
-    v_new_depth := 0;
-  END IF;
-  -- ── End D5 ───────────────────────────────────────────────────────────────
-
-  IF p_policy = 'approval_required' THEN
-    v_status          := 'blocked';
-    v_approval_status := 'pending';
-  ELSE
-    v_status          := 'queued';
-    v_approval_status := 'not_required';
-  END IF;
-
-  INSERT INTO agents.team_runs (
-    ai_lenser_id, workflow_id, status, approval_status,
-    parent_team_run_id, recursion_depth, metadata
-  )
-  VALUES (
-    p_ai_lenser_id, p_workflow_id, v_status, v_approval_status,
-    v_parent_id, v_new_depth,
-    jsonb_build_object(
-      'inputs',            p_inputs - '_parent_team_run_id',
-      'origin',            'delegate_to_agent',
-      'delegation_policy', p_policy
-    )
-  )
-  RETURNING id INTO v_team_run_id;
-
-  INSERT INTO agents.agent_run_events (team_run_id, event_type, payload)
-  VALUES (
-    v_team_run_id,
-    CASE WHEN p_policy = 'approval_required'
-         THEN 'approval_requested'
-         ELSE 'dispatch_queued'
-    END,
-    jsonb_build_object(
-      'workflow_id',       p_workflow_id,
-      'delegation_policy', p_policy,
-      'requires_approval', p_policy = 'approval_required',
-      'recursion_depth',   v_new_depth
-    )
-  );
-
-  RETURN v_team_run_id;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb", "p_policy" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb", "p_policy" "text") IS 'Service-role-only team-run dispatch. Enforces D5 recursion cap (≤8) when parent passed via inputs._parent_team_run_id. Maps policy → (status, approval_status). SECURITY DEFINER.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_tools_registry_egress_guard"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'agents', 'pg_catalog'
-    AS $$
-BEGIN
-  IF NEW.egress_class = 'write' AND NEW.requires_approval IS DISTINCT FROM true THEN
-    NEW.requires_approval := true;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_tools_registry_egress_guard"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_trigger_post_run_evaluations"("p_workflow_id" "uuid", "p_team_run_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public', 'agents'
-    AS $$
-DECLARE
-  v_eval RECORD;
-BEGIN
-  FOR v_eval IN
-    SELECT id FROM agents.evaluations
-    WHERE target_type = 'workflow'
-      AND target_id = p_workflow_id
-  LOOP
-    PERFORM public.fn_run_evaluation(v_eval.id, NULL);
-  END LOOP;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_trigger_post_run_evaluations"("p_workflow_id" "uuid", "p_team_run_id" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_update_agent_policy"("p_ai_lenser_id" "uuid", "p_updates" "jsonb") RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'lensers', 'public'
-    AS $$
-DECLARE
-  v_caller_human_id uuid;
-  v_is_owner boolean;
-  v_policy_id uuid;
-BEGIN
-  v_caller_human_id := lensers.get_auth_human_lenser_id();
-  IF v_caller_human_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated'
-      USING ERRCODE = 'insufficient_privilege';
-  END IF;
-
-  SELECT EXISTS (
-    SELECT 1
-    FROM agents.ownerships
-    WHERE ai_lenser_id = p_ai_lenser_id
-      AND owner_lenser_id = v_caller_human_id
-      AND role IN ('owner', 'co_owner')
-      AND revoked_at IS NULL
-  ) INTO v_is_owner;
-
-  IF NOT v_is_owner THEN
-    RAISE EXCEPTION 'Only the agent owner or co-owner can update policies'
-      USING ERRCODE = 'insufficient_privilege';
-  END IF;
-
-  SELECT id INTO v_policy_id
-  FROM agents.policies
-  WHERE ai_lenser_id = p_ai_lenser_id;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'No policy found for this AI lenser'
-      USING ERRCODE = 'no_data_found';
-  END IF;
-
-  UPDATE agents.policies SET
-    can_join_battles        = COALESCE((p_updates ->> 'can_join_battles')::boolean, can_join_battles),
-    can_vote                = COALESCE((p_updates ->> 'can_vote')::boolean, can_vote),
-    can_create_battles      = COALESCE((p_updates ->> 'can_create_battles')::boolean, can_create_battles),
-    can_receive_sponsorship = COALESCE((p_updates ->> 'can_receive_sponsorship')::boolean, can_receive_sponsorship),
-    model_binding_mode      = COALESCE(
-      CASE WHEN p_updates ? 'model_binding_mode' THEN (p_updates ->> 'model_binding_mode')::text END,
-      model_binding_mode
-    ),
-    max_daily_battles       = COALESCE((p_updates ->> 'max_daily_battles')::integer, max_daily_battles),
-    max_daily_votes         = COALESCE((p_updates ->> 'max_daily_votes')::integer, max_daily_votes),
-    spending_limit_credits  = COALESCE((p_updates ->> 'spending_limit_credits')::integer, spending_limit_credits),
-    is_public_policy        = COALESCE((p_updates ->> 'is_public_policy')::boolean, is_public_policy),
-    updated_at              = now()
-  WHERE id = v_policy_id;
-
-  INSERT INTO agents.action_logs (
-    ai_lenser_id,
-    action_type,
-    result,
-    metadata
-  ) VALUES (
-    p_ai_lenser_id,
-    'policy_updated',
-    'success',
-    jsonb_build_object('fields', ARRAY(SELECT jsonb_object_keys(p_updates)))
-  );
-
-  RETURN jsonb_build_object('updated', true, 'policy_id', v_policy_id);
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_update_agent_policy"("p_ai_lenser_id" "uuid", "p_updates" "jsonb") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."fn_workspace_settings_paused_sync"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'agents', 'public', 'extensions'
-    AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    -- If exactly one side is set explicitly, mirror to the other.
-    -- Both default to false; if both are false on insert, no-op.
-    IF NEW.runner_paused IS DISTINCT FROM NEW.agent_paused THEN
-      -- Prefer runner_paused if it is non-default and agent_paused is default.
-      -- Otherwise prefer agent_paused (legacy callers).
-      IF NEW.runner_paused = true AND NEW.agent_paused = false THEN
-        NEW.agent_paused := true;
-      ELSIF NEW.agent_paused = true AND NEW.runner_paused = false THEN
-        NEW.runner_paused := true;
-      END IF;
-    END IF;
-    RETURN NEW;
-  END IF;
-
-  IF TG_OP = 'UPDATE' THEN
-    -- If only one column changed, mirror it to the other.
-    IF NEW.runner_paused IS DISTINCT FROM OLD.runner_paused
-       AND NEW.agent_paused = OLD.agent_paused THEN
-      NEW.agent_paused := NEW.runner_paused;
-    ELSIF NEW.agent_paused IS DISTINCT FROM OLD.agent_paused
-          AND NEW.runner_paused = OLD.runner_paused THEN
-      NEW.runner_paused := NEW.agent_paused;
-    END IF;
-    RETURN NEW;
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."fn_workspace_settings_paused_sync"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."has_agent_scope"("p_ai_lenser_id" "uuid", "p_scope" "text") RETURNS boolean
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'agents', 'lensers', 'public'
-    AS $$
-DECLARE
-  v_role text;
-  v_scopes text[];
-BEGIN
-  SELECT o.role, o.permission_scope
-  INTO v_role, v_scopes
-  FROM agents.ownerships o
-  WHERE o.ai_lenser_id = p_ai_lenser_id
-    AND o.owner_lenser_id = lensers.get_auth_human_lenser_id()
-    AND o.revoked_at IS NULL
-  ORDER BY CASE o.role
-    WHEN 'owner' THEN 1
-    WHEN 'co_owner' THEN 2
-    ELSE 3
-  END
-  LIMIT 1;
-
-  IF v_role IS NULL THEN
-    RETURN false;
-  END IF;
-
-  IF v_role IN ('owner', 'co_owner') THEN
-    RETURN true;
-  END IF;
-
-  RETURN COALESCE(v_scopes @> ARRAY[p_scope], false);
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."has_agent_scope"("p_ai_lenser_id" "uuid", "p_scope" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "agents"."has_agent_scope"("p_ai_lenser_id" "uuid", "p_scope" "text") IS 'Returns whether the authenticated human Lenser may perform the requested scoped action on an AI Lenser. owner/co_owner bypass scopes; operator must hold the explicit scope.';
-
-
-
-CREATE OR REPLACE FUNCTION "agents"."trg_notify_model_binding_changed"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'lensers', 'public'
-    AS $$
-DECLARE
-  v_ai_lenser_id  UUID := COALESCE(NEW.ai_lenser_id, OLD.ai_lenser_id);
-  v_ai_profile_id UUID;
-  v_model_id      TEXT;
-BEGIN
-  SELECT profile_id INTO v_ai_profile_id
-  FROM   agents.ai_lensers WHERE id = v_ai_lenser_id;
-
-  IF v_ai_profile_id IS NULL THEN RETURN COALESCE(NEW, OLD); END IF;
-
-  v_model_id := COALESCE(NEW.model_id, OLD.model_id)::text;
-
-  PERFORM public.fn_insert_notification(
-    v_ai_profile_id,
-    'model_binding_changed',
-    'Model binding ' || lower(TG_OP),
-    NULL,
-    '/lenser/' || (SELECT handle FROM lensers.profiles WHERE id = v_ai_profile_id) || '/ag/settings',
-    jsonb_build_object(
-      'ai_lenser_id', v_ai_lenser_id,
-      'model_id',     v_model_id,
-      'is_default',   COALESCE(NEW.is_default, false),
-      'operation',    lower(TG_OP)
-    )
-  );
-
-  RETURN COALESCE(NEW, OLD);
-EXCEPTION WHEN OTHERS THEN
-  RAISE WARNING 'trg_notify_model_binding_changed failed: %', SQLERRM;
-  RETURN COALESCE(NEW, OLD);
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."trg_notify_model_binding_changed"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."trg_notify_policy_updated"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'lensers', 'public'
-    AS $$
-DECLARE
-  v_ai_profile_id UUID;
-  v_changes       JSONB := '{}';
-BEGIN
-  SELECT profile_id INTO v_ai_profile_id
-  FROM   agents.ai_lensers WHERE id = NEW.ai_lenser_id;
-
-  IF v_ai_profile_id IS NULL THEN RETURN NEW; END IF;
-
-  -- Collect meaningfully changed policy fields
-  IF OLD.can_join_battles     IS DISTINCT FROM NEW.can_join_battles     THEN
-    v_changes := v_changes || jsonb_build_object('can_join_battles', NEW.can_join_battles);
-  END IF;
-  IF OLD.can_vote             IS DISTINCT FROM NEW.can_vote             THEN
-    v_changes := v_changes || jsonb_build_object('can_vote', NEW.can_vote);
-  END IF;
-  IF OLD.can_create_battles   IS DISTINCT FROM NEW.can_create_battles   THEN
-    v_changes := v_changes || jsonb_build_object('can_create_battles', NEW.can_create_battles);
-  END IF;
-  IF OLD.max_daily_battles    IS DISTINCT FROM NEW.max_daily_battles    THEN
-    v_changes := v_changes || jsonb_build_object('max_daily_battles', NEW.max_daily_battles);
-  END IF;
-  IF OLD.max_daily_votes      IS DISTINCT FROM NEW.max_daily_votes      THEN
-    v_changes := v_changes || jsonb_build_object('max_daily_votes', NEW.max_daily_votes);
-  END IF;
-  IF OLD.spending_limit_credits IS DISTINCT FROM NEW.spending_limit_credits THEN
-    v_changes := v_changes || jsonb_build_object('spending_limit_credits', NEW.spending_limit_credits);
-  END IF;
-
-  IF v_changes = '{}' THEN RETURN NEW; END IF;  -- No meaningful change
-
-  PERFORM public.fn_insert_notification(
-    v_ai_profile_id,
-    'policy_updated',
-    'Your agent policy has been updated',
-    NULL,
-    '/lenser/' || (SELECT handle FROM lensers.profiles WHERE id = v_ai_profile_id) || '/ag/settings',
-    jsonb_build_object(
-      'ai_lenser_id', NEW.ai_lenser_id,
-      'changes',      v_changes
-    )
-  );
-
-  RETURN NEW;
-EXCEPTION WHEN OTHERS THEN
-  RAISE WARNING 'trg_notify_policy_updated failed: %', SQLERRM;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."trg_notify_policy_updated"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "agents"."trg_notify_team_run_change"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'agents', 'lenses', 'lensers', 'public'
-    AS $$
-DECLARE
-  v_ai_profile_id UUID;
-  v_owner_id      UUID;
-  v_wf_name       TEXT;
-  v_notif_type    TEXT;
-  v_title         TEXT;
-  v_run_url       TEXT;
-BEGIN
-  -- Determine which transition fired
-  IF TG_OP = 'INSERT' AND NEW.status = 'running' THEN
-    v_notif_type := 'team_run_started';
-    v_title      := 'Run started';
-  ELSIF TG_OP = 'UPDATE' AND OLD.status IS DISTINCT FROM NEW.status THEN
-    IF   NEW.status = 'completed' THEN
-      v_notif_type := 'team_run_completed'; v_title := 'Run completed';
-    ELSIF NEW.status = 'failed' THEN
-      v_notif_type := 'team_run_failed';    v_title := 'Run failed';
-    ELSE
-      RETURN NEW;
-    END IF;
-  ELSE
-    RETURN NEW;
-  END IF;
-
-  SELECT profile_id INTO v_ai_profile_id
-  FROM   agents.ai_lensers WHERE id = NEW.ai_lenser_id;
-
-  SELECT owner_lenser_id INTO v_owner_id
-  FROM   agents.ownerships
-  WHERE  ai_lenser_id = NEW.ai_lenser_id
-  AND    role = 'owner'
-  AND    revoked_at IS NULL
-  LIMIT  1;
-
-  IF NEW.workflow_id IS NOT NULL THEN
-    SELECT title INTO v_wf_name FROM lenses.workflows WHERE id = NEW.workflow_id;
-  END IF;
-
-  v_run_url := '/lenser/' ||
-    COALESCE((SELECT handle FROM lensers.profiles WHERE id = v_ai_profile_id), 'unknown') ||
-    '/ag/runs';
-
-  -- Notify AI lenser
-  IF v_ai_profile_id IS NOT NULL THEN
-    PERFORM public.fn_insert_notification(
-      v_ai_profile_id,
-      v_notif_type,
-      v_title || COALESCE(': ' || v_wf_name, ''),
-      NULL,
-      v_run_url,
-      jsonb_build_object(
-        'team_run_id',   NEW.id,
-        'workflow_id',   NEW.workflow_id,
-        'workflow_name', v_wf_name,
-        'status',        NEW.status
-      )
-    );
-  END IF;
-
-  -- Notify human owner on completion or failure only
-  IF v_owner_id IS NOT NULL AND v_notif_type IN ('team_run_completed', 'team_run_failed') THEN
-    PERFORM public.fn_insert_notification(
-      v_owner_id,
-      CASE v_notif_type
-        WHEN 'team_run_failed'    THEN 'agent_critical'
-        WHEN 'team_run_completed' THEN 'agent_update'
-      END,
-      'Agent ' || v_title || COALESCE(': ' || v_wf_name, ''),
-      NULL,
-      v_run_url,
-      jsonb_build_object(
-        'ai_lenser_id',  NEW.ai_lenser_id,
-        'ai_profile_id', v_ai_profile_id,
-        'team_run_id',   NEW.id,
-        'workflow_name', v_wf_name,
-        'status',        NEW.status
-      )
-    );
-  END IF;
-
-  RETURN NEW;
-EXCEPTION WHEN OTHERS THEN
-  RAISE WARNING 'trg_notify_team_run_change failed: %', SQLERRM;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "agents"."trg_notify_team_run_change"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "ai"."cascade_provider_deactivation"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'ai', 'public'
-    AS $$
-BEGIN
-    IF OLD.is_active = true AND NEW.is_active = false THEN
-        UPDATE ai.models
-        SET is_active = false
-        WHERE provider_id = NEW.id
-          AND is_active   = true;
-
-        RAISE NOTICE 'Provider % deactivated: % model(s) set inactive', NEW.key, FOUND;
-    END IF;
-    RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "ai"."cascade_provider_deactivation"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "ai"."cascade_provider_deactivation"() IS 'Trigger function: when a provider is deactivated (is_active → false), automatically sets is_active = false on all of its active models. Runs SECURITY DEFINER so it always has write access to ai.models regardless of invoker.';
-
-
-
-CREATE OR REPLACE FUNCTION "ai"."enforce_active_provider_for_model"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'ai', 'public'
-    AS $$
-DECLARE
-    v_provider_active boolean;
-    v_provider_key    text;
-BEGIN
-    IF NEW.is_active = true THEN
-        SELECT p.is_active, p.key
-          INTO v_provider_active, v_provider_key
-          FROM ai.providers p
-         WHERE p.id = NEW.provider_id;
-
-        IF v_provider_active IS NOT TRUE THEN
-            RAISE EXCEPTION
-                'Cannot activate model "%" — provider "%" (id=%) is inactive or does not exist. '
-                'Activate the provider first.',
-                NEW.key,
-                COALESCE(v_provider_key, 'unknown'),
-                NEW.provider_id
-            USING ERRCODE = 'P0001';
-        END IF;
-    END IF;
-    RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "ai"."enforce_active_provider_for_model"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "ai"."enforce_active_provider_for_model"() IS 'Trigger function: prevents any role from activating a model whose provider is inactive. Raises P0001 with a descriptive message. Applies on BEFORE INSERT OR UPDATE OF is_active.';
-
-
-
-CREATE OR REPLACE FUNCTION "ai"."fn_decrypt_api_key"("p_key_id" "uuid") RETURNS "text"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'ai', 'vault', 'auth', 'public'
-    AS $$
-DECLARE
-    v_encrypted_id uuid;
-    v_decrypted    text;
-BEGIN
-    -- Primary guard: grant restricts to service_role only.
-    -- Secondary guard: verify JWT role as defence-in-depth.
-    IF auth.role() IS DISTINCT FROM 'service_role' THEN
-        RAISE EXCEPTION 'Forbidden: only service_role can decrypt API keys';
-    END IF;
-
-    SELECT encrypted_key_id INTO v_encrypted_id
-    FROM ai.keys
-    WHERE id = p_key_id AND is_active = true;
-
-    IF v_encrypted_id IS NULL THEN
-        RAISE EXCEPTION 'Key not found or revoked';
-    END IF;
-
-    SELECT decrypted_secret INTO v_decrypted
-    FROM vault.decrypted_secrets
-    WHERE id = v_encrypted_id;
-
-    IF v_decrypted IS NULL THEN
-        RAISE EXCEPTION 'Failed to decrypt key from vault';
-    END IF;
-
-    RETURN v_decrypted;
-END;
-$$;
-
-
-ALTER FUNCTION "ai"."fn_decrypt_api_key"("p_key_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "ai"."fn_decrypt_api_key"("p_key_id" "uuid") IS 'Decrypts a BYOK API key from Vault. Restricted to service_role only. Used by the execution backend at runtime. Never exposed to client.';
-
-
-
-CREATE OR REPLACE FUNCTION "ai"."fn_get_my_api_keys"() RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "provider_id" "uuid", "provider_key" "text", "provider_name" "text", "label" "text", "key_suffix" "text", "is_active" boolean, "created_at" timestamp with time zone, "revoked_at" timestamp with time zone)
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'ai', 'lensers', 'public'
-    AS $$
-DECLARE
-  v_lenser_id uuid;
-BEGIN
-  v_lenser_id := lensers.get_auth_lenser_id();
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'Unauthenticated: no lenser profile found';
-  END IF;
-
-  RETURN QUERY
-  SELECT
-    k.id,
-    k.lenser_id,
-    k.provider_id,
-    p.key        AS provider_key,
-    p.display_name AS provider_name,
-    k.label,
-    k.key_suffix,
-    k.is_active,
-    k.created_at,
-    k.revoked_at
-  FROM ai.keys k
-  JOIN ai.providers p ON p.id = k.provider_id
-  WHERE k.lenser_id = v_lenser_id
-    AND k.is_active = true
-  ORDER BY k.created_at DESC;
-END;
-$$;
-
-
-ALTER FUNCTION "ai"."fn_get_my_api_keys"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "ai"."fn_get_my_api_keys"() IS 'Returns active BYOK API keys for the authenticated lenser, joined with provider metadata. SECURITY DEFINER — runs as postgres to bypass table-level restrictions on ai.keys and ai.providers. Decrypted key material is never returned — only the masked suffix.';
-
-
-
-CREATE OR REPLACE FUNCTION "ai"."fn_get_my_api_keys_paged"("p_limit" integer DEFAULT 50, "p_offset" integer DEFAULT 0) RETURNS SETOF "jsonb"
-    LANGUAGE "sql" SECURITY DEFINER
-    SET "search_path" TO ''
-    AS $$
-        SELECT to_jsonb(t)
-        FROM ai.fn_get_my_api_keys() t
-        OFFSET GREATEST(coalesce(p_offset, 0), 0)
-        LIMIT LEAST(GREATEST(coalesce(p_limit, 50), 1), 100)
-      $$;
-
-
-ALTER FUNCTION "ai"."fn_get_my_api_keys_paged"("p_limit" integer, "p_offset" integer) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "ai"."fn_revoke_api_key"("p_key_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'ai', 'lensers', 'public'
-    AS $$
-DECLARE
-    v_lenser_id uuid;
-    v_rows      int;
-BEGIN
-    v_lenser_id := lensers.get_auth_lenser_id();
-    IF v_lenser_id IS NULL THEN
-        RAISE EXCEPTION 'Unauthenticated: no lenser profile found';
-    END IF;
-
-    UPDATE ai.keys
-    SET is_active = false, revoked_at = now()
-    WHERE id = p_key_id
-      AND lenser_id = v_lenser_id
-      AND is_active = true;
-
-    GET DIAGNOSTICS v_rows = ROW_COUNT;
-    IF v_rows = 0 THEN
-        RAISE EXCEPTION 'Key not found or already revoked';
-    END IF;
-END;
-$$;
-
-
-ALTER FUNCTION "ai"."fn_revoke_api_key"("p_key_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "ai"."fn_revoke_api_key"("p_key_id" "uuid") IS 'Soft-revokes a BYOK API key. Only the key owner can revoke. Revoked keys cannot be used for execution.';
-
-
-
-CREATE OR REPLACE FUNCTION "ai"."fn_store_api_key"("p_provider" "text", "p_label" "text" DEFAULT NULL::"text", "p_raw_key" "text" DEFAULT NULL::"text") RETURNS "uuid"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'ai', 'vault', 'lensers', 'public'
-    AS $$
-DECLARE
-    v_lenser_id   uuid;
-    v_secret_id   uuid;
-    v_suffix      text;
-    v_key_id      uuid;
-    v_secret_name text;
-    v_provider_id uuid;
-BEGIN
-    v_lenser_id := lensers.get_auth_lenser_id();
-    IF v_lenser_id IS NULL THEN
-        RAISE EXCEPTION 'Unauthenticated: no lenser profile found';
-    END IF;
-
-    IF p_raw_key IS NULL OR length(trim(p_raw_key)) < 8 THEN
-        RAISE EXCEPTION 'Invalid API key: must be at least 8 characters';
-    END IF;
-
-    SELECT id INTO v_provider_id
-    FROM ai.providers
-    WHERE key = p_provider AND is_active = true;
-
-    IF v_provider_id IS NULL THEN
-        RAISE EXCEPTION 'Unsupported or inactive provider: %', p_provider;
-    END IF;
-
-    v_suffix := right(trim(p_raw_key), 4);
-
-    v_secret_name := 'byok_' || v_lenser_id::text || '_' || p_provider || '_' || gen_random_uuid()::text;
-
-    v_secret_id := vault.create_secret(
-        trim(p_raw_key),
-        v_secret_name,
-        'BYOK API key for ' || p_provider
-    );
-
-    INSERT INTO ai.keys (lenser_id, provider_id, label, encrypted_key_id, key_suffix)
-    VALUES (v_lenser_id, v_provider_id, p_label, v_secret_id, v_suffix)
-    RETURNING id INTO v_key_id;
-
-    RETURN v_key_id;
-END;
-$$;
-
-
-ALTER FUNCTION "ai"."fn_store_api_key"("p_provider" "text", "p_label" "text", "p_raw_key" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "ai"."fn_store_api_key"("p_provider" "text", "p_label" "text", "p_raw_key" "text") IS 'Encrypts and stores a BYOK API key in Vault. Multiple keys per provider per lenser are allowed. The vault secret name includes gen_random_uuid() to guarantee uniqueness and avoid hitting the secrets_name_idx unique constraint. Only the last 4 characters are stored in plain text. Returns the key row UUID.';
-
-
-
-CREATE OR REPLACE FUNCTION "analytics"."fn_aggregate_cost_daily"("p_date" "date" DEFAULT (CURRENT_DATE - 1)) RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'analytics', 'agents', 'lenses', 'ai', 'public'
-    AS $$
-BEGIN
-  INSERT INTO analytics.agent_cost_daily (
-    ai_lenser_id,
-    model_key,
-    provider,
-    period_date,
-    total_tokens_in,
-    total_tokens_out,
-    total_credits,
-    run_count,
-    updated_at
-  )
-  SELECT
-    al.id                                   AS ai_lenser_id,
-    COALESCE(kul.model_key, '')             AS model_key,
-    COALESCE(kul.provider, '')              AS provider,
-    date_trunc('day', kul.created_at)::date AS period_date,
-    SUM(COALESCE(kul.token_input, 0))       AS total_tokens_in,
-    SUM(COALESCE(kul.token_output, 0))      AS total_tokens_out,
-    SUM(COALESCE(kul.credit_cost, 0))       AS total_credits,
-    COUNT(kul.id)                           AS run_count,
-    now()                                   AS updated_at
-  FROM ai.key_usage_log kul
-  JOIN agents.ai_lensers al ON al.profile_id = kul.lenser_id
-  WHERE date_trunc('day', kul.created_at)::date = p_date
-    AND kul.model_key IS NOT NULL
-    AND kul.provider  IS NOT NULL
-  GROUP BY
-    al.id,
-    kul.model_key,
-    kul.provider,
-    date_trunc('day', kul.created_at)::date
-  ON CONFLICT (ai_lenser_id, model_key, period_date) DO UPDATE SET
-    total_tokens_in  = EXCLUDED.total_tokens_in,
-    total_tokens_out = EXCLUDED.total_tokens_out,
-    total_credits    = EXCLUDED.total_credits,
-    run_count        = EXCLUDED.run_count,
-    updated_at       = EXCLUDED.updated_at;
-END;
-$$;
-
-
-ALTER FUNCTION "analytics"."fn_aggregate_cost_daily"("p_date" "date") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "analytics"."fn_aggregate_eval_quality_daily"("p_date" "date" DEFAULT (CURRENT_DATE - 1)) RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'analytics', 'agents', 'lenses', 'ai', 'public'
-    AS $$
-BEGIN
-  INSERT INTO analytics.eval_quality_daily (
-    ai_lenser_id,
-    evaluation_id,
-    period_date,
-    run_count,
-    pass_count,
-    total_cases,
-    passed_cases,
-    mean_score
-  )
-  SELECT
-    e.ai_lenser_id                                                    AS ai_lenser_id,
-    er.evaluation_id                                                  AS evaluation_id,
-    date_trunc('day', er.started_at)::date                           AS period_date,
-    COUNT(DISTINCT er.id)                                             AS run_count,
-    COUNT(DISTINCT er.id) FILTER (WHERE er.score >= 0.7)             AS pass_count,
-    COUNT(ecr.id)                                                     AS total_cases,
-    COUNT(ecr.id) FILTER (WHERE ecr.score >= 0.7)                    AS passed_cases,
-    AVG(er.score)                                                     AS mean_score
-  FROM agents.evaluation_runs er
-  JOIN agents.evaluations e
-    ON e.id = er.evaluation_id
-  LEFT JOIN agents.evaluation_case_results ecr
-    ON ecr.evaluation_run_id = er.id
-  WHERE date_trunc('day', er.started_at)::date = p_date
-    AND e.ai_lenser_id IS NOT NULL
-  GROUP BY
-    e.ai_lenser_id,
-    er.evaluation_id,
-    date_trunc('day', er.started_at)::date
-  ON CONFLICT (ai_lenser_id, evaluation_id, period_date) DO UPDATE SET
-    run_count    = EXCLUDED.run_count,
-    pass_count   = EXCLUDED.pass_count,
-    total_cases  = EXCLUDED.total_cases,
-    passed_cases = EXCLUDED.passed_cases,
-    mean_score   = EXCLUDED.mean_score;
-END;
-$$;
-
-
-ALTER FUNCTION "analytics"."fn_aggregate_eval_quality_daily"("p_date" "date") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "analytics"."fn_aggregate_workflow_perf_daily"("p_date" "date" DEFAULT (CURRENT_DATE - 1)) RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'analytics', 'agents', 'lenses', 'ai', 'public'
-    AS $$
-BEGIN
-  INSERT INTO analytics.workflow_perf_daily (
-    ai_lenser_id,
-    workflow_id,
-    period_date,
-    run_count,
-    failed_count,
-    p50_duration_ms,
-    p95_duration_ms
-  )
-  SELECT
-    tr.ai_lenser_id                                                AS ai_lenser_id,
-    wr.workflow_id                                                 AS workflow_id,
-    date_trunc('day', wr.started_at)::date                       AS period_date,
-    COUNT(DISTINCT wr.id)                                          AS run_count,
-    COUNT(DISTINCT wr.id) FILTER (WHERE wr.status = 'failed')    AS failed_count,
-    percentile_cont(0.50) WITHIN GROUP (
-      ORDER BY
-        EXTRACT(EPOCH FROM (wr.completed_at - wr.started_at)) * 1000
-    )::integer                                                     AS p50_duration_ms,
-    percentile_cont(0.95) WITHIN GROUP (
-      ORDER BY
-        EXTRACT(EPOCH FROM (wr.completed_at - wr.started_at)) * 1000
-    )::integer                                                     AS p95_duration_ms
-  FROM agents.team_runs tr
-  JOIN lenses.workflow_runs wr
-    ON wr.id = tr.workflow_run_id
-  WHERE date_trunc('day', wr.started_at)::date = p_date
-    AND wr.workflow_id   IS NOT NULL
-    AND wr.started_at    IS NOT NULL
-    AND wr.completed_at  IS NOT NULL
-  GROUP BY
-    tr.ai_lenser_id,
-    wr.workflow_id,
-    date_trunc('day', wr.started_at)::date
-  ON CONFLICT (ai_lenser_id, workflow_id, period_date) DO UPDATE SET
-    run_count       = EXCLUDED.run_count,
-    failed_count    = EXCLUDED.failed_count,
-    p50_duration_ms = EXCLUDED.p50_duration_ms,
-    p95_duration_ms = EXCLUDED.p95_duration_ms;
-END;
-$$;
-
-
-ALTER FUNCTION "analytics"."fn_aggregate_workflow_perf_daily"("p_date" "date") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "analytics"."log_tag_view"("p_entity_type" "content"."entity_type_enum", "p_entity_id" "uuid", "p_user_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'analytics', 'content', 'public', 'auth'
-    AS $$BEGIN
-  INSERT INTO analytics.tag_activity_events (tag_id, entity_type, entity_id, activity_type, actor_id)
-  SELECT tag_id, p_entity_type, p_entity_id, 'viewed', p_user_id
-  FROM content.tag_map
-  WHERE entity_type = p_entity_type AND entity_id = p_entity_id;
-END;$$;
-
-
-ALTER FUNCTION "analytics"."log_tag_view"("p_entity_type" "content"."entity_type_enum", "p_entity_id" "uuid", "p_user_id" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "analytics"."protect_feedback_system_fields"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'analytics', 'public', 'auth'
-    AS $$
-BEGIN
-  IF TG_OP = 'UPDATE' THEN
-    IF NEW.start_date <> OLD.start_date
-       OR NEW.end_date <> OLD.end_date
-       OR NEW.created_at <> OLD.created_at THEN
-         RAISE EXCEPTION 'System-managed timestamps cannot be modified.';
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "analytics"."protect_feedback_system_fields"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "analytics"."set_feedback_user_id"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'analytics', 'public', 'auth'
-    AS $$
-begin
-  if auth.uid() is not null then
-    new.user_id := auth.uid();
-  else
-    new.user_id := null;
-  end if;
-
-  return new;
-end;
-$$;
-
-
-ALTER FUNCTION "analytics"."set_feedback_user_id"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "audit"."fn_append_gateway_event"("p_event_type" "text", "p_lenser_id" "uuid", "p_device_id" "uuid", "p_payload" "jsonb") RETURNS "uuid"
@@ -3867,1271 +1329,6 @@ $$;
 
 
 ALTER FUNCTION "audit"."trg_workflow_run_lifecycle_fn"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "authz"."fn_approve_device_request"("p_user_code" "text") RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'pg_catalog', 'authz', 'lensers', 'auth', 'public'
-    AS $$
-DECLARE
-  v_user_id uuid := auth.uid();
-  v_lenser_id uuid := lensers.get_auth_lenser_id();
-  v_request authz.device_approval_requests%ROWTYPE;
-  v_normalized_code text := upper(replace(trim(COALESCE(p_user_code, '')), '-', ''));
-BEGIN
-  IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
-
-  SELECT *
-  INTO v_request
-  FROM authz.device_approval_requests
-  WHERE replace(user_code, '-', '') = v_normalized_code
-  ORDER BY created_at DESC
-  LIMIT 1
-  FOR UPDATE;
-
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object(
-      'requestId', NULL,
-      'status', 'not_found',
-      'approvedAt', NULL,
-      'expiresAt', NULL
-    );
-  END IF;
-
-  IF now() > v_request.expires_at THEN
-    UPDATE authz.device_approval_requests
-    SET status = 'expired'
-    WHERE id = v_request.id
-      AND status <> 'exchanged';
-
-    RETURN jsonb_build_object(
-      'requestId', v_request.id,
-      'status', 'expired',
-      'approvedAt', v_request.approved_at,
-      'expiresAt', v_request.expires_at,
-      'label', v_request.label
-    );
-  END IF;
-
-  IF v_request.status IN ('approved', 'exchanged') THEN
-    RETURN jsonb_build_object(
-      'requestId', v_request.id,
-      'status', 'approved',
-      'approvedAt', v_request.approved_at,
-      'expiresAt', v_request.expires_at,
-      'label', v_request.label
-    );
-  END IF;
-
-  UPDATE authz.device_approval_requests
-  SET status = 'approved',
-      approved_at = COALESCE(approved_at, now()),
-      approved_by_user_id = COALESCE(approved_by_user_id, v_user_id),
-      approved_by_lenser_id = COALESCE(approved_by_lenser_id, v_lenser_id)
-  WHERE id = v_request.id;
-
-  RETURN jsonb_build_object(
-    'requestId', v_request.id,
-    'status', 'approved',
-    'approvedAt', COALESCE(v_request.approved_at, now()),
-    'expiresAt', v_request.expires_at,
-    'label', v_request.label
-  );
-END;
-$$;
-
-
-ALTER FUNCTION "authz"."fn_approve_device_request"("p_user_code" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "authz"."fn_exchange_device_approval"("p_request_id" "uuid", "p_request_secret" "text") RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'pg_catalog', 'authz', 'lensers', 'auth', 'extensions', 'public'
-    AS $$
-DECLARE
-  v_request authz.device_approval_requests%ROWTYPE;
-  v_expected_secret_hash text;
-  v_token_plain text;
-  v_token_hash text;
-  v_token_id uuid;
-  v_token_prefix text;
-  v_token_created_at timestamptz;
-  v_token_expires_at timestamptz;
-  v_poll_interval_seconds integer := 5;
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
-
-  SELECT *
-  INTO v_request
-  FROM authz.device_approval_requests
-  WHERE id = p_request_id
-  FOR UPDATE;
-
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object(
-      'requestId', p_request_id,
-      'status', 'invalid',
-      'pollIntervalSeconds', v_poll_interval_seconds,
-      'expiresAt', NULL
-    );
-  END IF;
-
-  v_expected_secret_hash := encode(digest(COALESCE(p_request_secret, ''), 'sha256'), 'hex');
-
-  IF v_expected_secret_hash IS DISTINCT FROM v_request.request_secret_hash THEN
-    RAISE EXCEPTION 'Invalid device approval request';
-  END IF;
-
-  IF now() > v_request.expires_at THEN
-    UPDATE authz.device_approval_requests
-    SET status = 'expired'
-    WHERE id = v_request.id
-      AND status <> 'exchanged';
-
-    RETURN jsonb_build_object(
-      'requestId', v_request.id,
-      'status', 'expired',
-      'pollIntervalSeconds', v_poll_interval_seconds,
-      'expiresAt', v_request.expires_at
-    );
-  END IF;
-
-  IF v_request.status = 'pending' THEN
-    RETURN jsonb_build_object(
-      'requestId', v_request.id,
-      'status', 'pending',
-      'pollIntervalSeconds', v_poll_interval_seconds,
-      'expiresAt', v_request.expires_at,
-      'approvedAt', v_request.approved_at,
-      'label', v_request.label
-    );
-  END IF;
-
-  v_token_plain := encode(digest(v_request.id::text || ':' || p_request_secret, 'sha256'), 'hex');
-  v_token_hash := encode(digest(v_token_plain, 'sha256'), 'hex');
-  v_token_prefix := left(v_token_plain, 8);
-  v_token_expires_at := now() + make_interval(hours => v_request.requested_token_ttl_hours);
-
-  SELECT id, created_at
-  INTO v_token_id, v_token_created_at
-  FROM authz.developer_tokens
-  WHERE issued_from_request_id = v_request.id
-  LIMIT 1;
-
-  IF v_token_id IS NULL THEN
-    INSERT INTO authz.developer_tokens (
-        lenser_id,
-        label,
-        token_hash,
-        token_prefix,
-        issued_from_request_id,
-        expires_at
-    ) VALUES (
-        COALESCE(v_request.approved_by_lenser_id, v_request.requested_by_lenser_id, lensers.get_auth_lenser_id()),
-        v_request.label,
-        v_token_hash,
-        v_token_prefix,
-        v_request.id,
-        v_token_expires_at
-    )
-    RETURNING id, created_at INTO v_token_id, v_token_created_at;
-
-    UPDATE authz.device_approval_requests
-    SET status = 'exchanged',
-        exchanged_at = now(),
-        developer_token_id = v_token_id
-    WHERE id = v_request.id;
-  ELSE
-    UPDATE authz.device_approval_requests
-    SET status = 'exchanged',
-        exchanged_at = COALESCE(exchanged_at, now()),
-        developer_token_id = COALESCE(developer_token_id, v_token_id)
-    WHERE id = v_request.id;
-  END IF;
-
-  RETURN jsonb_build_object(
-    'requestId', v_request.id,
-    'status', 'approved',
-    'pollIntervalSeconds', v_poll_interval_seconds,
-    'expiresAt', v_token_expires_at,
-    'approvedAt', v_request.approved_at,
-    'tokenId', v_token_id,
-    'token', v_token_plain,
-    'label', v_request.label,
-    'tokenPrefix', v_token_prefix,
-    'createdAt', v_token_created_at
-  );
-END;
-$$;
-
-
-ALTER FUNCTION "authz"."fn_exchange_device_approval"("p_request_id" "uuid", "p_request_secret" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "authz"."fn_exchange_device_login"("p_request_id" "uuid", "p_request_secret" "text") RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'pg_catalog', 'authz', 'extensions', 'public'
-    AS $$
-DECLARE
-  v_request        authz.device_approval_requests%ROWTYPE;
-  v_expected_hash  text;
-  v_poll_interval  integer := 5;
-BEGIN
-  SELECT *
-  INTO v_request
-  FROM authz.device_approval_requests
-  WHERE id = p_request_id
-  FOR UPDATE;
-
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object(
-      'status',              'invalid',
-      'pollIntervalSeconds', v_poll_interval
-    );
-  END IF;
-
-  v_expected_hash := encode(digest(COALESCE(p_request_secret, ''), 'sha256'), 'hex');
-  IF v_expected_hash IS DISTINCT FROM v_request.request_secret_hash THEN
-    RAISE EXCEPTION 'Invalid device login request';
-  END IF;
-
-  IF v_request.status = 'exchanged' THEN
-    RETURN jsonb_build_object(
-      'status',              'invalid',
-      'pollIntervalSeconds', v_poll_interval
-    );
-  END IF;
-
-  IF now() > v_request.expires_at THEN
-    UPDATE authz.device_approval_requests
-    SET status = 'expired'
-    WHERE id = v_request.id
-      AND status <> 'exchanged';
-
-    RETURN jsonb_build_object(
-      'status',              'expired',
-      'pollIntervalSeconds', v_poll_interval,
-      'expiresAt',           v_request.expires_at
-    );
-  END IF;
-
-  IF v_request.status = 'pending' OR v_request.login_access_token IS NULL THEN
-    RETURN jsonb_build_object(
-      'status',              'pending',
-      'pollIntervalSeconds', v_poll_interval,
-      'expiresAt',           v_request.expires_at
-    );
-  END IF;
-
-  UPDATE authz.device_approval_requests
-  SET status              = 'exchanged',
-      exchanged_at        = now(),
-      login_access_token  = NULL,
-      login_refresh_token = NULL
-  WHERE id = v_request.id;
-
-  RETURN jsonb_build_object(
-    'status',              'approved',
-    'accessToken',         v_request.login_access_token,
-    'refreshToken',        v_request.login_refresh_token,
-    'pollIntervalSeconds', v_poll_interval
-  );
-END;
-$$;
-
-
-ALTER FUNCTION "authz"."fn_exchange_device_login"("p_request_id" "uuid", "p_request_secret" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "authz"."fn_generate_user_code"() RETURNS "text"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'pg_catalog', 'authz', 'extensions', 'public'
-    AS $$
-DECLARE
-  v_code text;
-BEGIN
-  v_code := upper(substr(md5(gen_random_uuid()::text), 1, 8));
-  RETURN substr(v_code, 1, 4) || '-' || substr(v_code, 5, 4);
-END;
-$$;
-
-
-ALTER FUNCTION "authz"."fn_generate_user_code"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "authz"."fn_list_developer_tokens"() RETURNS TABLE("id" "uuid", "label" "text", "tokenPrefix" "text", "status" "text", "expiresAt" timestamp with time zone, "createdAt" timestamp with time zone, "revokedAt" timestamp with time zone, "lastUsedAt" timestamp with time zone)
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'pg_catalog', 'authz', 'lensers', 'auth', 'public'
-    AS $$
-DECLARE
-  v_lenser_id uuid := lensers.get_auth_lenser_id();
-BEGIN
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
-
-  RETURN QUERY
-  SELECT
-    t.id,
-    t.label,
-    t.token_prefix AS "tokenPrefix",
-    CASE
-      WHEN t.revoked_at IS NOT NULL THEN 'revoked'
-      WHEN t.expires_at <= now() THEN 'expired'
-      ELSE 'active'
-    END AS status,
-    t.expires_at AS "expiresAt",
-    t.created_at AS "createdAt",
-    t.revoked_at AS "revokedAt",
-    t.last_used_at AS "lastUsedAt"
-  FROM authz.developer_tokens t
-  WHERE t.lenser_id = v_lenser_id
-  ORDER BY t.created_at DESC;
-END;
-$$;
-
-
-ALTER FUNCTION "authz"."fn_list_developer_tokens"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "authz"."fn_list_developer_tokens_paged"("p_limit" integer DEFAULT 50, "p_offset" integer DEFAULT 0) RETURNS SETOF "jsonb"
-    LANGUAGE "sql" SECURITY DEFINER
-    SET "search_path" TO ''
-    AS $$
-  SELECT to_jsonb(t)
-  FROM authz.fn_list_developer_tokens() t
-  OFFSET GREATEST(COALESCE(p_offset, 0), 0)
-  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 100)
-$$;
-
-
-ALTER FUNCTION "authz"."fn_list_developer_tokens_paged"("p_limit" integer, "p_offset" integer) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "authz"."fn_request_device_approval"("p_label" "text" DEFAULT NULL::"text", "p_request_ttl_minutes" integer DEFAULT 10, "p_token_ttl_hours" integer DEFAULT 24) RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'pg_catalog', 'authz', 'lensers', 'auth', 'extensions', 'public'
-    AS $$
-DECLARE
-  v_request_id uuid := gen_random_uuid();
-  v_request_secret text := encode(gen_random_bytes(32), 'hex');
-  v_request_secret_hash text := encode(digest(v_request_secret, 'sha256'), 'hex');
-  v_user_code text := authz.fn_generate_user_code();
-  v_requested_by_user_id uuid := auth.uid();
-  v_requested_by_lenser_id uuid := lensers.get_auth_lenser_id();
-  v_request_ttl_minutes integer := LEAST(GREATEST(COALESCE(p_request_ttl_minutes, 10), 1), 10);
-  v_token_ttl_hours integer := LEAST(GREATEST(COALESCE(p_token_ttl_hours, 24), 1), 24);
-  v_expires_at timestamptz := now() + make_interval(mins => LEAST(GREATEST(COALESCE(p_request_ttl_minutes, 10), 1), 10));
-BEGIN
-  IF v_requested_by_user_id IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
-
-  INSERT INTO authz.device_approval_requests (
-      id,
-      user_code,
-      request_secret_hash,
-      label,
-      requested_by_user_id,
-      requested_by_lenser_id,
-      requested_token_ttl_hours,
-      expires_at
-  ) VALUES (
-      v_request_id,
-      v_user_code,
-      v_request_secret_hash,
-      p_label,
-      v_requested_by_user_id,
-      v_requested_by_lenser_id,
-      v_token_ttl_hours,
-      v_expires_at
-  );
-
-  RETURN jsonb_build_object(
-    'requestId', v_request_id,
-    'requestSecret', v_request_secret,
-    'userCode', v_user_code,
-    'verificationUri', '/device-approval?code=' || v_user_code,
-    'verificationUriComplete', '/device-approval?code=' || v_user_code || '&request_id=' || v_request_id::text,
-    'pollIntervalSeconds', 5,
-    'expiresAt', v_expires_at,
-    'status', 'pending',
-    'label', p_label
-  );
-END;
-$$;
-
-
-ALTER FUNCTION "authz"."fn_request_device_approval"("p_label" "text", "p_request_ttl_minutes" integer, "p_token_ttl_hours" integer) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "authz"."fn_request_device_login"("p_request_ttl_minutes" integer DEFAULT 10) RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'pg_catalog', 'authz', 'extensions', 'public'
-    AS $$
-DECLARE
-  v_request_id          uuid        := gen_random_uuid();
-  v_request_secret      text        := encode(gen_random_bytes(32), 'hex');
-  v_request_secret_hash text        := encode(digest(v_request_secret, 'sha256'), 'hex');
-  v_user_code           text        := authz.fn_generate_user_code();
-  v_ttl                 integer     := LEAST(GREATEST(COALESCE(p_request_ttl_minutes, 10), 1), 10);
-  v_expires_at          timestamptz := now() + make_interval(mins => v_ttl);
-BEGIN
-  -- No auth.uid() check — this is the unauthenticated login initiation path.
-  INSERT INTO authz.device_approval_requests (
-      id,
-      user_code,
-      request_secret_hash,
-      label,
-      requested_by_user_id,
-      requested_by_lenser_id,
-      requested_token_ttl_hours,
-      expires_at
-  ) VALUES (
-      v_request_id,
-      v_user_code,
-      v_request_secret_hash,
-      'CLI Login',
-      NULL,
-      NULL,
-      0,
-      v_expires_at
-  );
-
-  RETURN jsonb_build_object(
-    'requestId',           v_request_id,
-    'requestSecret',       v_request_secret,
-    'userCode',            v_user_code,
-    'verificationUri',     '/device-approval?code=' || v_user_code || '&mode=login',
-    'pollIntervalSeconds', 5,
-    'expiresAt',           v_expires_at,
-    'status',              'pending'
-  );
-END;
-$$;
-
-
-ALTER FUNCTION "authz"."fn_request_device_login"("p_request_ttl_minutes" integer) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "authz"."fn_revoke_developer_token"("p_token_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'pg_catalog', 'authz', 'lensers', 'auth', 'public'
-    AS $$
-DECLARE
-  v_lenser_id uuid := lensers.get_auth_lenser_id();
-  v_rows integer;
-BEGIN
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
-
-  UPDATE authz.developer_tokens
-  SET revoked_at = COALESCE(revoked_at, now()),
-      status = 'revoked'
-  WHERE id = p_token_id
-    AND lenser_id = v_lenser_id
-    AND revoked_at IS NULL;
-
-  GET DIAGNOSTICS v_rows = ROW_COUNT;
-  IF v_rows = 0 THEN
-    RAISE EXCEPTION 'Developer token not found or already revoked';
-  END IF;
-END;
-$$;
-
-
-ALTER FUNCTION "authz"."fn_revoke_developer_token"("p_token_id" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "authz"."fn_store_device_login_session"("p_user_code" "text", "p_access_token" "text", "p_refresh_token" "text") RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'pg_catalog', 'authz', 'auth', 'public'
-    AS $$
-DECLARE
-  v_user_id        uuid := auth.uid();
-  v_normalized     text := upper(replace(trim(COALESCE(p_user_code, '')), '-', ''));
-  v_request        authz.device_approval_requests%ROWTYPE;
-BEGIN
-  IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
-
-  SELECT *
-  INTO v_request
-  FROM authz.device_approval_requests
-  WHERE replace(user_code, '-', '') = v_normalized
-    AND status IN ('pending', 'approved')
-    AND expires_at > now()
-  ORDER BY created_at DESC
-  LIMIT 1
-  FOR UPDATE;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Device login request not found or expired';
-  END IF;
-
-  UPDATE authz.device_approval_requests
-  SET status               = 'approved',
-      approved_at          = COALESCE(approved_at, now()),
-      approved_by_user_id  = COALESCE(approved_by_user_id, v_user_id),
-      login_access_token   = p_access_token,
-      login_refresh_token  = p_refresh_token
-  WHERE id = v_request.id;
-
-  RETURN jsonb_build_object('status', 'stored');
-END;
-$$;
-
-
-ALTER FUNCTION "authz"."fn_store_device_login_session"("p_user_code" "text", "p_access_token" "text", "p_refresh_token" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "automation"."fn_check_filter_keys"("p_filter" "jsonb") RETURNS boolean
-    LANGUAGE "plpgsql" IMMUTABLE
-    SET "search_path" TO 'pg_catalog'
-    AS $_$
-DECLARE
-  v_key text;
-BEGIN
-  IF p_filter IS NULL OR jsonb_typeof(p_filter) <> 'object' THEN
-    RETURN p_filter IS NULL OR p_filter = '{}'::jsonb;
-  END IF;
-
-  FOR v_key IN SELECT jsonb_object_keys(p_filter)
-  LOOP
-    -- '' (root) or '/...' with valid RFC 6901 escapes.
-    IF v_key = '' THEN
-      CONTINUE;
-    END IF;
-    IF v_key !~ '^(/([^/~]|~[01])*)+$' THEN
-      RETURN false;
-    END IF;
-  END LOOP;
-
-  RETURN true;
-END;
-$_$;
-
-
-ALTER FUNCTION "automation"."fn_check_filter_keys"("p_filter" "jsonb") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "automation"."fn_cleanup_cron_runs"("p_retention_days" integer DEFAULT 30) RETURNS integer
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
-    AS $$
-DECLARE
-  deleted_count integer;
-BEGIN
-  DELETE FROM automation.cron_runs
-  WHERE started_at < now() - (p_retention_days || ' days')::interval;
-
-  GET DIAGNOSTICS deleted_count = ROW_COUNT;
-  RETURN deleted_count;
-END $$;
-
-
-ALTER FUNCTION "automation"."fn_cleanup_cron_runs"("p_retention_days" integer) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."fn_cleanup_cron_runs"("p_retention_days" integer) IS 'Z11: deletes automation.cron_runs rows older than p_retention_days (default 30). Called daily by the cleanup-cron-runs pg_cron job.';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."fn_dispatch_action"("p_event_id" "uuid", "p_rule_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'automation', 'lenses', 'audit', 'public', 'pg_catalog'
-    AS $$
-DECLARE
-  v_event   automation.events%ROWTYPE;
-  v_rule    automation.trigger_rules%ROWTYPE;
-  v_run_id  uuid;
-  v_outbox_id uuid;
-  v_url     text;
-  v_payload jsonb;
-  v_title   text;
-  v_body    text;
-BEGIN
-  SELECT * INTO v_event FROM automation.events        WHERE id = p_event_id;
-  IF NOT FOUND THEN
-    UPDATE automation.event_dispatches
-    SET    status = 'skipped', error = 'event_not_found', attempted_at = now()
-    WHERE  event_id = p_event_id AND rule_id = p_rule_id;
-    RETURN;
-  END IF;
-
-  SELECT * INTO v_rule  FROM automation.trigger_rules WHERE id = p_rule_id;
-  IF NOT FOUND OR NOT v_rule.is_active THEN
-    UPDATE automation.event_dispatches
-    SET    status = 'skipped', error = 'rule_inactive_or_missing', attempted_at = now()
-    WHERE  event_id = p_event_id AND rule_id = p_rule_id;
-    RETURN;
-  END IF;
-
-  BEGIN
-    IF v_rule.action_kind = 'dispatch_workflow' THEN
-      INSERT INTO lenses.workflow_runs (
-        workflow_id,
-        triggered_by,
-        status,
-        context_inputs,
-        global_model_id,
-        trigger_mode,
-        metadata
-      ) VALUES (
-        (v_rule.action_config->>'workflow_id')::uuid,
-        v_rule.lenser_id,
-        'pending',
-        COALESCE(v_rule.action_config->'context_inputs', '{}'::jsonb),
-        NULLIF(v_rule.action_config->>'global_model_id', ''),
-        'manual',
-        jsonb_build_object(
-          'origin',          'automation',
-          'trigger_rule_id', v_rule.id,
-          'event_id',        v_event.id,
-          'event_type',      v_event.event_type
-        )
-      )
-      RETURNING id INTO v_run_id;
-
-      INSERT INTO lenses.workflow_node_results (run_id, node_id, status)
-      SELECT v_run_id, n.id, 'pending'
-      FROM   lenses.workflow_nodes n
-      WHERE  n.workflow_id = (v_rule.action_config->>'workflow_id')::uuid;
-
-      UPDATE automation.event_dispatches
-      SET    status = 'dispatched', error = NULL, attempted_at = now()
-      WHERE  event_id = p_event_id AND rule_id = p_rule_id;
-
-    ELSIF v_rule.action_kind = 'webhook' THEN
-      v_url := v_rule.action_config->>'url';
-      IF v_url IS NULL OR v_url = '' THEN
-        UPDATE automation.event_dispatches
-        SET    status = 'failed', error = 'webhook_url_missing', attempted_at = now()
-        WHERE  event_id = p_event_id AND rule_id = p_rule_id;
-        RETURN;
-      END IF;
-
-      v_payload := jsonb_build_object(
-        'webhook_version', 1,
-        'event_type',      v_event.event_type,
-        'event_id',        v_event.id,
-        'rule_id',         v_rule.id,
-        'occurred_at',     v_event.occurred_at,
-        'payload',         v_event.payload
-      );
-
-      INSERT INTO audit.webhook_outbox (event_type, payload, target_url)
-      VALUES ('automation.' || v_event.event_type, v_payload, v_url)
-      RETURNING id INTO v_outbox_id;
-
-      UPDATE automation.event_dispatches
-      SET    status     = 'dispatched',
-             error      = NULL,
-             outbox_id  = v_outbox_id,
-             attempted_at = now()
-      WHERE  event_id = p_event_id AND rule_id = p_rule_id;
-
-    ELSIF v_rule.action_kind = 'notify' THEN
-      v_title := COALESCE(v_rule.action_config->>'title',
-                          'Automation: ' || v_event.event_type);
-      v_body  := v_rule.action_config->>'body';
-
-      PERFORM public.fn_create_automation_notification(
-        v_rule.lenser_id,
-        v_title,
-        v_body,
-        jsonb_build_object(
-          'event_type',      v_event.event_type,
-          'event_id',        v_event.id,
-          'trigger_rule_id', v_rule.id,
-          'source_id',       v_event.source_id,
-          'template',        v_rule.action_config->>'template'
-        )
-      );
-
-      UPDATE automation.event_dispatches
-      SET    status = 'dispatched', error = NULL, attempted_at = now()
-      WHERE  event_id = p_event_id AND rule_id = p_rule_id;
-
-    ELSE
-      UPDATE automation.event_dispatches
-      SET    status = 'failed',
-             error  = 'unknown_action_kind:' || v_rule.action_kind,
-             attempted_at = now()
-      WHERE  event_id = p_event_id AND rule_id = p_rule_id;
-    END IF;
-
-  EXCEPTION WHEN OTHERS THEN
-    UPDATE automation.event_dispatches
-    SET    status = 'failed',
-           error  = left(SQLERRM, 1000),
-           attempted_at = now()
-    WHERE  event_id = p_event_id AND rule_id = p_rule_id;
-  END;
-END;
-$$;
-
-
-ALTER FUNCTION "automation"."fn_dispatch_action"("p_event_id" "uuid", "p_rule_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."fn_dispatch_action"("p_event_id" "uuid", "p_rule_id" "uuid") IS 'Phase U2: execute the action for one (event, rule) pair. Wraps the entire side-effect in BEGIN...EXCEPTION so a failed action marks the dispatch row failed instead of bubbling up and aborting fn_run_dispatcher''s batch loop.';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."fn_emit_event"("p_type" "text", "p_source_schema" "text", "p_source_table" "text", "p_source_id" "uuid", "p_payload" "jsonb" DEFAULT '{}'::"jsonb", "p_source_lenser_id" "uuid" DEFAULT NULL::"uuid") RETURNS "uuid"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'automation', 'public', 'pg_catalog'
-    AS $$
-DECLARE
-  v_id uuid;
-BEGIN
-  INSERT INTO automation.events (
-    event_type, source_schema, source_table, source_id,
-    source_lenser_id, payload
-  )
-  VALUES (
-    p_type, p_source_schema, p_source_table, p_source_id,
-    p_source_lenser_id, COALESCE(p_payload, '{}'::jsonb)
-  )
-  RETURNING id INTO v_id;
-
-  RETURN v_id;
-END;
-$$;
-
-
-ALTER FUNCTION "automation"."fn_emit_event"("p_type" "text", "p_source_schema" "text", "p_source_table" "text", "p_source_id" "uuid", "p_payload" "jsonb", "p_source_lenser_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."fn_emit_event"("p_type" "text", "p_source_schema" "text", "p_source_table" "text", "p_source_id" "uuid", "p_payload" "jsonb", "p_source_lenser_id" "uuid") IS 'Phase U event emitter. SECURITY DEFINER. Callable from producer triggers only — direct invocation by authenticated users is revoked to prevent event spoofing (Phase U security hardening, 20270410200000).';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."fn_eval_filter"("p_filter" "jsonb", "p_payload" "jsonb") RETURNS boolean
-    LANGUAGE "plpgsql" IMMUTABLE
-    SET "search_path" TO 'automation', 'pg_catalog'
-    AS $$
-DECLARE
-  v_pointer  text;
-  v_clause   jsonb;
-  v_op       text;
-  v_operand  jsonb;
-  v_actual   jsonb;
-  v_path     jsonpath;
-BEGIN
-  IF p_filter IS NULL OR p_filter = '{}'::jsonb THEN
-    RETURN true;
-  END IF;
-
-  IF p_payload IS NULL THEN
-    p_payload := '{}'::jsonb;
-  END IF;
-
-  FOR v_pointer, v_clause IN SELECT key, value FROM jsonb_each(p_filter) LOOP
-    BEGIN
-      v_path := automation.fn_jsonpointer_to_jsonpath(v_pointer);
-    EXCEPTION WHEN OTHERS THEN
-      RETURN false;
-    END;
-
-    v_actual := jsonb_path_query_first(p_payload, v_path);
-
-    -- Each clause must itself be an object with exactly one operator key.
-    IF jsonb_typeof(v_clause) <> 'object' THEN
-      RETURN false;
-    END IF;
-
-    SELECT key, value INTO v_op, v_operand
-    FROM   jsonb_each(v_clause)
-    LIMIT  1;
-
-    IF v_op = 'eq' THEN
-      IF v_actual IS DISTINCT FROM v_operand THEN
-        RETURN false;
-      END IF;
-
-    ELSIF v_op = 'neq' THEN
-      IF v_actual IS NOT DISTINCT FROM v_operand THEN
-        RETURN false;
-      END IF;
-
-    ELSIF v_op = 'gt' THEN
-      IF v_actual IS NULL
-         OR jsonb_typeof(v_actual)  <> 'number'
-         OR jsonb_typeof(v_operand) <> 'number' THEN
-        RETURN false;
-      END IF;
-      IF NOT ((v_actual)::text::numeric > (v_operand)::text::numeric) THEN
-        RETURN false;
-      END IF;
-
-    ELSIF v_op = 'lt' THEN
-      IF v_actual IS NULL
-         OR jsonb_typeof(v_actual)  <> 'number'
-         OR jsonb_typeof(v_operand) <> 'number' THEN
-        RETURN false;
-      END IF;
-      IF NOT ((v_actual)::text::numeric < (v_operand)::text::numeric) THEN
-        RETURN false;
-      END IF;
-
-    ELSIF v_op = 'contains' THEN
-      IF v_actual IS NULL THEN
-        RETURN false;
-      END IF;
-
-      IF jsonb_typeof(v_actual) = 'string' AND jsonb_typeof(v_operand) = 'string' THEN
-        IF position(
-             (v_operand #>> '{}') IN (v_actual #>> '{}')
-           ) = 0 THEN
-          RETURN false;
-        END IF;
-
-      ELSIF jsonb_typeof(v_actual) = 'array' THEN
-        IF NOT (v_actual @> jsonb_build_array(v_operand)) THEN
-          RETURN false;
-        END IF;
-
-      ELSE
-        RETURN false;
-      END IF;
-
-    ELSE
-      -- Unknown operator → conservative reject.
-      RETURN false;
-    END IF;
-  END LOOP;
-
-  RETURN true;
-END;
-$$;
-
-
-ALTER FUNCTION "automation"."fn_eval_filter"("p_filter" "jsonb", "p_payload" "jsonb") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."fn_eval_filter"("p_filter" "jsonb", "p_payload" "jsonb") IS 'Phase U2: evaluator for the trigger-rule filter DSL v1. AND-of-clauses; unknown ops fail closed. See 20270410100000_phase_u_trigger_rules.sql header for the grammar.';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."fn_jsonpointer_to_jsonpath"("p_pointer" "text") RETURNS "jsonpath"
-    LANGUAGE "plpgsql" IMMUTABLE
-    SET "search_path" TO 'pg_catalog'
-    AS $_$
-DECLARE
-  v_seg     text;
-  v_parts   text[];
-  v_buf     text := '$';
-BEGIN
-  -- "" → root.
-  IF p_pointer IS NULL OR p_pointer = '' OR p_pointer = '/' THEN
-    RETURN '$'::jsonpath;
-  END IF;
-
-  -- Strip a leading slash; split the remaining string on '/'.
-  v_parts := string_to_array(regexp_replace(p_pointer, '^/', ''), '/');
-
-  FOREACH v_seg IN ARRAY v_parts LOOP
-    -- RFC 6901 unescape: '~1' → '/'  then  '~0' → '~'.
-    v_seg := replace(replace(v_seg, '~1', '/'), '~0', '~');
-
-    IF v_seg ~ '^[0-9]+$' THEN
-      v_buf := v_buf || '[' || v_seg || ']';
-    ELSE
-      -- Quote keys that aren't bare identifiers; jsonpath grammar allows
-      -- $."weird key" form.
-      v_buf := v_buf || '."' || replace(v_seg, '"', '\"') || '"';
-    END IF;
-  END LOOP;
-
-  RETURN v_buf::jsonpath;
-END;
-$_$;
-
-
-ALTER FUNCTION "automation"."fn_jsonpointer_to_jsonpath"("p_pointer" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."fn_jsonpointer_to_jsonpath"("p_pointer" "text") IS 'Phase U2: translate an RFC-6901 JSON Pointer (e.g. "/a/b/0") into a jsonpath value usable by jsonb_path_query_first. Limitations: no slice / wildcard / predicate support — pointers only. Reserved chars handled per RFC 6901: ~0 → ~, ~1 → /.';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."fn_match_rules_for_event"("p_event_id" "uuid") RETURNS TABLE("rule_id" "uuid", "action_kind" "text", "action_config" "jsonb")
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'automation', 'public', 'pg_catalog'
-    AS $$
-DECLARE
-  v_event automation.events%ROWTYPE;
-BEGIN
-  SELECT * INTO v_event FROM automation.events WHERE id = p_event_id;
-  IF NOT FOUND THEN
-    RETURN;
-  END IF;
-
-  -- Insert dispatch ledger rows for matching rules (idempotent).
-  -- A rule matches when:
-  --   match_event_type = event.event_type
-  --   AND is_active
-  --   AND ( source_lenser_id IS NULL  -- system-level event, owner-scoping skipped
-  --         OR rule.lenser_id = source_lenser_id )
-  --   AND fn_eval_filter(match_filter, payload)
-  INSERT INTO automation.event_dispatches (event_id, rule_id, status)
-  SELECT v_event.id, tr.id, 'queued'
-  FROM   automation.trigger_rules tr
-  WHERE  tr.is_active
-    AND  tr.match_event_type = v_event.event_type
-    AND  (v_event.source_lenser_id IS NULL OR tr.lenser_id = v_event.source_lenser_id)
-    AND  automation.fn_eval_filter(tr.match_filter, v_event.payload)
-  ON CONFLICT (event_id, rule_id) DO NOTHING;
-
-  RETURN QUERY
-  SELECT tr.id, tr.action_kind, tr.action_config
-  FROM   automation.trigger_rules tr
-  JOIN   automation.event_dispatches ed
-         ON ed.rule_id  = tr.id
-        AND ed.event_id = v_event.id
-  WHERE  ed.status = 'queued';
-END;
-$$;
-
-
-ALTER FUNCTION "automation"."fn_match_rules_for_event"("p_event_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."fn_match_rules_for_event"("p_event_id" "uuid") IS 'Phase U2: match active rules for the given event, insert (event_id, rule_id, status=queued) rows ON CONFLICT DO NOTHING for idempotency, and return the newly-queued matches. Rules with NULL source_lenser_id on the event are matched without ownership filtering (system events).';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."fn_run_dispatcher"("p_limit" integer DEFAULT 100) RETURNS integer
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'automation', 'public', 'pg_catalog'
-    AS $$
-DECLARE
-  v_event_id uuid;
-  v_match    record;
-  v_actions  int := 0;
-BEGIN
-  -- Phase 1: events that haven't been routed yet (no dispatch rows at all).
-  FOR v_event_id IN
-    SELECT e.id
-    FROM   automation.events e
-    WHERE  NOT EXISTS (
-             SELECT 1 FROM automation.event_dispatches ed WHERE ed.event_id = e.id
-           )
-      AND  EXISTS (
-             SELECT 1 FROM automation.trigger_rules tr
-             WHERE  tr.is_active
-               AND  tr.match_event_type = e.event_type
-           )
-    ORDER BY e.recorded_at ASC
-    LIMIT  p_limit
-    FOR UPDATE OF e SKIP LOCKED
-  LOOP
-    FOR v_match IN
-      SELECT rule_id FROM automation.fn_match_rules_for_event(v_event_id)
-    LOOP
-      PERFORM automation.fn_dispatch_action(v_event_id, v_match.rule_id);
-      v_actions := v_actions + 1;
-    END LOOP;
-  END LOOP;
-
-  -- Phase 2: re-drive dispatch rows that are still in 'queued' state (e.g. the
-  -- previous tick crashed between INSERT-queued and dispatch_action).
-  FOR v_match IN
-    SELECT event_id, rule_id
-    FROM   automation.event_dispatches
-    WHERE  status = 'queued'
-    ORDER  BY attempted_at ASC
-    LIMIT  p_limit
-    FOR UPDATE SKIP LOCKED
-  LOOP
-    PERFORM automation.fn_dispatch_action(v_match.event_id, v_match.rule_id);
-    v_actions := v_actions + 1;
-  END LOOP;
-
-  RETURN v_actions;
-END;
-$$;
-
-
-ALTER FUNCTION "automation"."fn_run_dispatcher"("p_limit" integer) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."fn_run_dispatcher"("p_limit" integer) IS 'Phase U2: dispatcher entrypoint. Two phases: (1) match new events with active rules, (2) re-drive any dispatch rows still in queued state. Returns number of dispatch_action invocations. Cron job automation-dispatcher runs this once per minute.';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."fn_run_with_lock"("p_job_name" "text", "p_sql" "text") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
-    AS $$
-DECLARE
-  got_lock boolean;
-  run_id   bigint;
-BEGIN
-  got_lock := pg_try_advisory_xact_lock(hashtext('cron:' || p_job_name)::bigint);
-
-  IF NOT got_lock THEN
-    INSERT INTO automation.cron_runs (job_name, status, finished_at)
-      VALUES (p_job_name, 'skipped_locked', now());
-    RETURN;
-  END IF;
-
-  -- Hard-cap each cron body to 55 s. pg_cron fires at most once per minute;
-  -- 55 s leaves 5 s of slack before the next tick. The timeout is
-  -- transaction-local and released automatically when the function returns.
-  PERFORM set_config('statement_timeout', '55000', true);
-
-  INSERT INTO automation.cron_runs (job_name) VALUES (p_job_name) RETURNING id INTO run_id;
-  BEGIN
-    EXECUTE p_sql;
-    UPDATE automation.cron_runs
-      SET status = 'ok', finished_at = now()
-      WHERE id = run_id;
-  EXCEPTION WHEN others THEN
-    UPDATE automation.cron_runs
-      SET status = 'error', finished_at = now(), error_msg = SQLERRM
-      WHERE id = run_id;
-    RAISE;
-  END;
-END $$;
-
-
-ALTER FUNCTION "automation"."fn_run_with_lock"("p_job_name" "text", "p_sql" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."fn_run_with_lock"("p_job_name" "text", "p_sql" "text") IS 'Z10: advisory-lock wrapper for pg_cron jobs. Sets statement_timeout=55s after acquiring lock to cap each job body below the 1-min tick window.';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."trg_emit_approval_granted"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'automation', 'public', 'pg_catalog'
-    AS $$
-DECLARE
-  v_owner_lenser_id uuid;
-BEGIN
-  IF OLD.approval_status IS DISTINCT FROM NEW.approval_status
-     AND NEW.approval_status = 'approved' THEN
-
-    SELECT profile_id INTO v_owner_lenser_id
-    FROM   agents.ai_lensers
-    WHERE  id = NEW.ai_lenser_id;
-
-    PERFORM automation.fn_emit_event(
-      'approval.granted',
-      'agents',
-      'team_runs',
-      NEW.id,
-      jsonb_build_object(
-        'ai_lenser_id',    NEW.ai_lenser_id,
-        'team_id',         NEW.team_id,
-        'workflow_id',     NEW.workflow_id,
-        'workflow_run_id', NEW.workflow_run_id,
-        'granted_at',      NEW.updated_at
-      ),
-      v_owner_lenser_id
-    );
-  END IF;
-  RETURN NEW;
-EXCEPTION WHEN OTHERS THEN
-  RAISE WARNING 'trg_emit_approval_granted failed for team_run %: %', NEW.id, SQLERRM;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "automation"."trg_emit_approval_granted"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."trg_emit_approval_granted"() IS 'Phase U1 producer: emits approval.granted into automation.events when agents.team_runs.approval_status transitions to approved (set by public.fn_decide_approval). Reason / modifications are NOT included — they may contain operator commentary; consumers re-read team_runs.metadata.';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."trg_emit_approval_timed_out"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'automation', 'public', 'pg_catalog'
-    AS $$
-DECLARE
-  v_owner_lenser_id uuid;
-BEGIN
-  IF OLD.approval_status IS DISTINCT FROM NEW.approval_status
-     AND NEW.approval_status = 'timed_out' THEN
-
-    -- Resolve the AI lenser's profile_id so source_lenser_id matches the
-    -- pattern used by other producers (the lenser the rule owner expects).
-    SELECT profile_id INTO v_owner_lenser_id
-    FROM   agents.ai_lensers
-    WHERE  id = NEW.ai_lenser_id;
-
-    PERFORM automation.fn_emit_event(
-      'approval.timed_out',
-      'agents',
-      'team_runs',
-      NEW.id,
-      jsonb_build_object(
-        'ai_lenser_id',     NEW.ai_lenser_id,
-        'team_id',          NEW.team_id,
-        'workflow_id',      NEW.workflow_id,
-        'workflow_run_id',  NEW.workflow_run_id,
-        'expired_at',       NEW.completed_at
-      ),
-      v_owner_lenser_id
-    );
-  END IF;
-  RETURN NEW;
-EXCEPTION WHEN OTHERS THEN
-  RAISE WARNING 'trg_emit_approval_timed_out failed for team_run %: %', NEW.id, SQLERRM;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "automation"."trg_emit_approval_timed_out"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."trg_emit_approval_timed_out"() IS 'Phase U1 producer: emits approval.timed_out into automation.events when agents.team_runs.approval_status transitions to timed_out (set by public.fn_expire_stale_approvals). Payload contains IDs only — the gate metadata (which may contain operator notes) is intentionally omitted.';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."trg_emit_battle_finalized"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'automation', 'public', 'pg_catalog'
-    AS $$
-BEGIN
-  IF TG_OP = 'UPDATE'
-     AND OLD.status IS DISTINCT FROM NEW.status
-     AND NEW.status = 'closed' THEN
-    PERFORM automation.fn_emit_event(
-      'battle.finalized',
-      'battles',
-      'battles',
-      NEW.id,
-      jsonb_build_object(
-        'winner_contender_id', NEW.winner_contender_id,
-        'finalized_at',        NEW.finalized_at,
-        'is_draw',             (NEW.winner_contender_id IS NULL)
-      ),
-      NEW.creator_lenser_id
-    );
-  END IF;
-  RETURN NEW;
-EXCEPTION WHEN OTHERS THEN
-  RAISE WARNING 'trg_emit_battle_finalized failed for battle %: %', NEW.id, SQLERRM;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "automation"."trg_emit_battle_finalized"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."trg_emit_battle_finalized"() IS 'Phase U1 producer: emits battle.finalized into automation.events when battles.battles.status transitions to closed. Payload contains winner contender id and finalized_at — no titles or prompts (no PII).';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."trg_emit_moderation_flagged"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'automation', 'public', 'pg_catalog'
-    AS $$
-BEGIN
-  IF NEW.decision_type = 'flagged' THEN
-    PERFORM automation.fn_emit_event(
-      'battle.flagged',
-      NEW.target_entity_schema,
-      NEW.target_entity_table,
-      NEW.target_entity_id,
-      jsonb_build_object(
-        'decision_id',     NEW.id,
-        'is_ai_moderated', NEW.is_ai_moderated,
-        'occurred_at',     NEW.occurred_at
-      ),
-      NEW.moderator_lenser_id
-    );
-  END IF;
-  RETURN NEW;
-EXCEPTION WHEN OTHERS THEN
-  RAISE WARNING 'trg_emit_moderation_flagged failed for decision %: %', NEW.id, SQLERRM;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "automation"."trg_emit_moderation_flagged"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."trg_emit_moderation_flagged"() IS 'Phase U1 producer: emits battle.flagged into automation.events for any audit.moderation_decisions INSERT with decision_type=flagged. Reason text is intentionally NOT included in the payload — it can contain operator commentary; consumers re-read audit.moderation_decisions when needed.';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."trg_emit_workflow_run_state"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'automation', 'public', 'pg_catalog'
-    AS $$
-DECLARE
-  v_event_type text;
-BEGIN
-  IF OLD.status IS NOT DISTINCT FROM NEW.status THEN
-    RETURN NEW;
-  END IF;
-
-  IF NEW.status = 'completed' THEN
-    v_event_type := 'workflow_run.completed';
-  ELSIF NEW.status IN ('failed', 'timed_out') THEN
-    v_event_type := 'workflow_run.failed';
-  ELSE
-    RETURN NEW;
-  END IF;
-
-  PERFORM automation.fn_emit_event(
-    v_event_type,
-    'lenses',
-    'workflow_runs',
-    NEW.id,
-    jsonb_build_object(
-      'workflow_id',  NEW.workflow_id,
-      'status',       NEW.status,
-      'trigger_mode', NEW.trigger_mode,
-      'started_at',   NEW.started_at,
-      'completed_at', NEW.completed_at
-    ),
-    NEW.triggered_by
-  );
-
-  RETURN NEW;
-EXCEPTION WHEN OTHERS THEN
-  RAISE WARNING 'trg_emit_workflow_run_state failed for run %: %', NEW.id, SQLERRM;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "automation"."trg_emit_workflow_run_state"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "automation"."trg_emit_workflow_run_state"() IS 'Phase U1 producer: emits workflow_run.completed / workflow_run.failed into automation.events on lenses.workflow_runs status transitions. Failure also fires for status=timed_out (terminal failure mode introduced by Phase K). Payload contains IDs and timestamps; never node outputs or prompt text.';
-
-
-
-CREATE OR REPLACE FUNCTION "automation"."trg_trigger_rules_touch_updated_at"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'automation', 'pg_catalog'
-    AS $$
-BEGIN
-  NEW.updated_at := now();
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "automation"."trg_trigger_rules_touch_updated_at"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "battles"."award_battle_xp"() RETURNS "trigger"
@@ -7013,206 +3210,6 @@ $$;
 ALTER FUNCTION "battles"."trg_submissions_validate_execution_link"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint DEFAULT 0, "p_output_tokens" bigint DEFAULT 0, "p_units" integer DEFAULT 1) RETURNS bigint
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'billing', 'ai', 'wallet'
-    AS $_$
-DECLARE
-    v_raw_usd           numeric;
-    v_markup_usd        numeric;
-    v_credits           bigint;
-    v_markup_percent    numeric;
-    v_fixed_fee_usd     numeric;
-    v_rounding_mode     text;
-    v_min_credits       integer;
-    v_max_credits       integer;
-    v_unit_type         text;
-    v_input_cost_1k     numeric;
-    v_output_cost_1k    numeric;
-    v_cost_per_unit     numeric;
-    v_credits_per_usd   numeric;
-BEGIN
-    -- Read dynamic credit valuation rate
-    SELECT cvp.baseline_credits_per_usd INTO v_credits_per_usd
-    FROM wallet.credit_valuation_policy cvp
-    WHERE cvp.singleton = true
-    LIMIT 1;
-
-    IF v_credits_per_usd IS NULL THEN
-        v_credits_per_usd := 100;  -- safe default: 1 credit = $0.01
-    END IF;
-
-    -- Get most recent pricing row for model
-    SELECT pt.unit_type, pt.input_cost_per_1k_tokens, pt.output_cost_per_1k_tokens, pt.cost_per_unit
-    INTO v_unit_type, v_input_cost_1k, v_output_cost_1k, v_cost_per_unit
-    FROM ai.model_pricing pt
-    WHERE pt.model_id = p_model_id
-        AND pt.effective_from <= now()
-        AND (pt.effective_to IS NULL OR pt.effective_to > now())
-    ORDER BY pt.effective_from DESC
-    LIMIT 1;
-
-    IF v_unit_type IS NULL THEN
-        RAISE EXCEPTION 'PRICING_NOT_FOUND: no pricing available for model %', p_model_id;
-    END IF;
-
-    -- Calculate raw USD based on unit type
-    IF v_unit_type = 'tokens' THEN
-        v_raw_usd := (p_input_tokens::numeric / 1000 * v_input_cost_1k) +
-                     (p_output_tokens::numeric / 1000 * v_output_cost_1k);
-    ELSIF v_unit_type IN ('image', 'video_second', 'audio_second') THEN
-        v_raw_usd := p_units::numeric * v_cost_per_unit;
-    ELSE
-        RAISE EXCEPTION 'INVALID_UNIT_TYPE: %', v_unit_type;
-    END IF;
-
-    -- Get margin policy: model-specific first, then global default (model_id IS NULL).
-    -- FIX: added (emp.model_id = p_model_id OR emp.model_id IS NULL) so only
-    -- applicable policies are considered. ORDER BY model_id NULLS LAST ensures
-    -- model-specific rows win over the global default row.
-    SELECT emp.markup_percent, emp.fixed_fee_usd, emp.rounding_mode,
-           emp.min_charge_credits, emp.max_charge_credits
-    INTO v_markup_percent, v_fixed_fee_usd, v_rounding_mode, v_min_credits, v_max_credits
-    FROM billing.execution_margin_policies emp
-    WHERE emp.is_active = true
-        AND (emp.model_id = p_model_id OR emp.model_id IS NULL)
-        AND emp.effective_from <= now()
-        AND (emp.effective_to IS NULL OR emp.effective_to > now())
-    ORDER BY emp.model_id NULLS LAST, emp.effective_from DESC
-    LIMIT 1;
-
-    IF v_markup_percent IS NULL THEN
-        v_markup_percent := 0;
-        v_fixed_fee_usd  := 0;
-        v_rounding_mode  := 'ceil';
-        v_min_credits    := 1;
-        v_max_credits    := NULL;
-    END IF;
-
-    -- Apply markup
-    v_markup_usd := v_raw_usd * (1 + v_markup_percent / 100) + v_fixed_fee_usd;
-
-    -- Convert to credits using dynamic rate
-    v_credits := v_markup_usd * v_credits_per_usd;
-
-    -- Apply rounding
-    IF v_rounding_mode = 'ceil' THEN
-        v_credits := ceil(v_credits)::bigint;
-    ELSIF v_rounding_mode = 'floor' THEN
-        v_credits := floor(v_credits)::bigint;
-    ELSIF v_rounding_mode = 'round' THEN
-        v_credits := round(v_credits)::bigint;
-    ELSE
-        v_credits := ceil(v_credits)::bigint;
-    END IF;
-
-    -- Clamp to min/max
-    IF v_min_credits IS NOT NULL THEN
-        v_credits := GREATEST(v_credits, v_min_credits::bigint);
-    END IF;
-    IF v_max_credits IS NOT NULL THEN
-        v_credits := LEAST(v_credits, v_max_credits::bigint);
-    END IF;
-
-    RETURN GREATEST(v_credits, 0);
-END;
-$_$;
-
-
-ALTER FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) IS 'Pricing engine: convert raw model costs to credits with markup and rounding. Reads credit rate from wallet.credit_valuation_policy (default 100 credits/USD). Reads margin policy scoped to (model_id = p_model_id OR model_id IS NULL). Returns bigint credits. Raises: PRICING_NOT_FOUND, INVALID_UNIT_TYPE.';
-
-
-
-CREATE OR REPLACE FUNCTION "connectors"."fn_active_workspace_id"() RETURNS "uuid"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public', 'tenancy', 'lensers'
-    AS $$
-    SELECT w.id
-    FROM tenancy.workspaces w
-    WHERE w.owner_lenser_id = lensers.get_auth_lenser_id()
-      AND w.type = 'personal'
-      AND w.status = 'active'
-    ORDER BY w.created_at ASC
-    LIMIT 1
-$$;
-
-
-ALTER FUNCTION "connectors"."fn_active_workspace_id"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "connectors"."fn_assert_known_scopes"("p_scopes" "text"[]) RETURNS "void"
-    LANGUAGE "plpgsql" IMMUTABLE
-    SET "search_path" TO 'connectors', 'pg_catalog'
-    AS $$
-DECLARE
-    v_unknown text[];
-BEGIN
-    SELECT array_agg(s)
-      INTO v_unknown
-      FROM unnest(p_scopes) s
-     WHERE s <> ALL ("connectors"."fn_valid_scopes"());
-    IF v_unknown IS NOT NULL THEN
-        RAISE EXCEPTION 'unknown scopes: %', array_to_string(v_unknown, ',')
-              USING ERRCODE = '22023';
-    END IF;
-END
-$$;
-
-
-ALTER FUNCTION "connectors"."fn_assert_known_scopes"("p_scopes" "text"[]) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "connectors"."fn_assert_scope"("p_granted" "text"[], "p_required" "text") RETURNS "void"
-    LANGUAGE "plpgsql" IMMUTABLE
-    SET "search_path" TO 'connectors', 'pg_catalog'
-    AS $$
-BEGIN
-    IF p_required IS NULL OR p_required = '' THEN
-        RETURN;
-    END IF;
-    IF p_granted IS NULL OR p_required <> ALL (p_granted) THEN
-        RAISE EXCEPTION 'connector token missing required scope: %', p_required
-              USING ERRCODE = '42501';
-    END IF;
-END
-$$;
-
-
-ALTER FUNCTION "connectors"."fn_assert_scope"("p_granted" "text"[], "p_required" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "connectors"."fn_hash_token"("p_token" "text") RETURNS "text"
-    LANGUAGE "sql" IMMUTABLE
-    SET "search_path" TO 'connectors', 'pg_catalog'
-    AS $$
-    SELECT encode(extensions.digest(p_token, 'sha256'), 'hex')
-$$;
-
-
-ALTER FUNCTION "connectors"."fn_hash_token"("p_token" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "connectors"."fn_valid_scopes"() RETURNS "text"[]
-    LANGUAGE "sql" IMMUTABLE
-    SET "search_path" TO 'connectors', 'pg_catalog'
-    AS $$
-    SELECT ARRAY[
-        'lenses:read', 'lenses:write',
-        'agents:read', 'agents:write',
-        'workflows:read', 'workflows:write',
-        'threads:read', 'threads:write',
-        'community:read', 'community:write',
-        'connectors:read', 'connectors:write'
-    ]::text[]
-$$;
-
-
-ALTER FUNCTION "connectors"."fn_valid_scopes"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "content"."ensure_public_tag"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'content', 'lensers', 'public', 'auth'
@@ -7568,6 +3565,10 @@ $$;
 
 ALTER FUNCTION "lensers"."get_auth_lenser_id"() OWNER TO "postgres";
 
+SET default_tablespace = '';
+
+SET default_table_access_method = "heap";
+
 
 CREATE TABLE IF NOT EXISTS "content"."thread_replies" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
@@ -7824,732 +3825,6 @@ CREATE OR REPLACE FUNCTION "content"."user_owns_thread"("thread_id" "uuid") RETU
 
 
 ALTER FUNCTION "content"."user_owns_thread"("thread_id" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_acquire_leader_lease"("p_lease_kind" "text", "p_device_id" "uuid", "p_lease_seconds" integer DEFAULT 30) RETURNS TABLE("holder_device_id" "uuid", "holder_acquired" boolean, "expires_at" timestamp with time zone)
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-  v_now       TIMESTAMPTZ := now();
-  v_holder    UUID;
-  v_expires   TIMESTAMPTZ;
-  v_acquired  BOOLEAN := false;
-BEGIN
-  SELECT lp.id INTO v_lenser_id
-  FROM lensers.profiles lp
-  WHERE lp.user_id = auth.uid() AND lp.status = 'active'
-  LIMIT 1;
-
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'active_lenser_required' USING ERRCODE = '42501';
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM devices.registered_devices
-    WHERE id = p_device_id
-      AND lenser_id = v_lenser_id
-      AND trust_level IN ('approved','trusted')
-  ) THEN
-    RAISE EXCEPTION 'device_not_trusted' USING ERRCODE = '42501';
-  END IF;
-
-  p_lease_seconds := GREATEST(LEAST(COALESCE(p_lease_seconds, 30), 600), 5);
-  v_expires := v_now + make_interval(secs => p_lease_seconds);
-
-  INSERT INTO devices.peer_leases (lease_kind, lenser_id, device_id, acquired_at, expires_at)
-  VALUES (p_lease_kind, v_lenser_id, p_device_id, v_now, v_expires)
-  ON CONFLICT (lease_kind, lenser_id) DO UPDATE
-    SET device_id   = CASE
-                        WHEN devices.peer_leases.expires_at < v_now
-                          OR devices.peer_leases.device_id = EXCLUDED.device_id
-                        THEN EXCLUDED.device_id
-                        ELSE devices.peer_leases.device_id
-                      END,
-        acquired_at = CASE
-                        WHEN devices.peer_leases.expires_at < v_now
-                          OR devices.peer_leases.device_id = EXCLUDED.device_id
-                        THEN v_now
-                        ELSE devices.peer_leases.acquired_at
-                      END,
-        expires_at  = CASE
-                        WHEN devices.peer_leases.expires_at < v_now
-                          OR devices.peer_leases.device_id = EXCLUDED.device_id
-                        THEN v_expires
-                        ELSE devices.peer_leases.expires_at
-                      END
-  RETURNING device_id, expires_at INTO v_holder, v_expires;
-
-  v_acquired := (v_holder = p_device_id);
-
-  RETURN QUERY SELECT v_holder, v_acquired, v_expires;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_acquire_leader_lease"("p_lease_kind" "text", "p_device_id" "uuid", "p_lease_seconds" integer) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "devices"."fn_acquire_leader_lease"("p_lease_kind" "text", "p_device_id" "uuid", "p_lease_seconds" integer) IS 'Acquire or renew a per-Lenser gateway leader lease for a trusted device. The current holder may renew before expiry; other devices may acquire only after expiry.';
-
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_chain_on_device_registered"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'audit', 'public'
-    AS $$
-BEGIN
-  PERFORM audit.fn_append_gateway_event_safe(
-    'GATEWAY_DEVICE_REGISTERED',
-    NEW.lenser_id,
-    NEW.id,
-    jsonb_build_object(
-      'name',          NEW.name,
-      'device_type',   NEW.device_type,
-      'os',            NEW.os,
-      'cli_version',   NEW.cli_version
-    )
-  );
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_chain_on_device_registered"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_chain_on_device_trust_changed"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'audit', 'public'
-    AS $$
-BEGIN
-  IF NEW.trust_level IS DISTINCT FROM OLD.trust_level THEN
-    PERFORM audit.fn_append_gateway_event_safe(
-      'GATEWAY_DEVICE_TRUST_CHANGED',
-      NEW.lenser_id,
-      NEW.id,
-      jsonb_build_object(
-        'from', OLD.trust_level,
-        'to',   NEW.trust_level
-      )
-    );
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_chain_on_device_trust_changed"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_device_approve"("p_device_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-  v_device    devices.registered_devices%ROWTYPE;
-  v_challenge devices.device_challenges%ROWTYPE;
-BEGIN
-  SELECT id INTO v_lenser_id
-  FROM lensers.profiles
-  WHERE user_id = auth.uid() AND status = 'active'
-  LIMIT 1;
-
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'active_lenser_required' USING ERRCODE = '42501';
-  END IF;
-
-  SELECT * INTO v_device
-  FROM devices.registered_devices
-  WHERE id = p_device_id
-    AND lenser_id = v_lenser_id;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'device_not_found' USING ERRCODE = 'P0002';
-  END IF;
-
-  IF v_device.trust_level <> 'pending' THEN
-    RAISE EXCEPTION 'device_not_pending' USING ERRCODE = 'P0001';
-  END IF;
-
-  -- Two-step path: device has a public_key, require an answered challenge.
-  IF v_device.public_key IS NOT NULL THEN
-    SELECT * INTO v_challenge
-    FROM devices.device_challenges
-    WHERE device_id = p_device_id
-      AND lenser_id = v_lenser_id
-      AND status    = 'answered'
-      AND expires_at > now()
-    ORDER BY created_at DESC
-    LIMIT 1;
-
-    IF v_challenge.id IS NULL THEN
-      RAISE EXCEPTION 'awaiting_device_challenge' USING ERRCODE = 'P0001';
-    END IF;
-
-    UPDATE devices.device_challenges
-       SET status = 'approved'
-     WHERE id = v_challenge.id;
-  END IF;
-
-  UPDATE devices.registered_devices
-     SET trust_level = 'approved'
-   WHERE id = p_device_id;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_device_approve"("p_device_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "devices"."fn_device_approve"("p_device_id" "uuid") IS 'Two-step approve: devices with a recorded public_key require an answered challenge from devices.device_challenges. Legacy devices (no public_key) continue to work with single-step approve for one release window.';
-
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_device_heartbeat"("p_device_id" "uuid", "p_daemon_version" "text" DEFAULT NULL::"text", "p_envelope_sig" "text" DEFAULT NULL::"text", "p_gateway_status" "text" DEFAULT 'connected'::"text") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-BEGIN
-  SELECT id INTO v_lenser_id
-  FROM lensers.profiles
-  WHERE user_id = auth.uid()
-  LIMIT 1;
-
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
-  END IF;
-
-  UPDATE devices.registered_devices
-     SET last_heartbeat_at = now(),
-         last_seen_at      = now(),
-         daemon_version    = COALESCE(p_daemon_version, daemon_version),
-         gateway_status    = COALESCE(p_gateway_status, gateway_status)
-   WHERE id = p_device_id
-     AND lenser_id = v_lenser_id;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'device_not_found' USING ERRCODE = 'P0002';
-  END IF;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_device_heartbeat"("p_device_id" "uuid", "p_daemon_version" "text", "p_envelope_sig" "text", "p_gateway_status" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_device_list"("p_trust_level" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 50, "p_cursor" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "name" "text", "device_type" "text", "os" "text", "arch" "text", "cli_version" "text", "runner_version" "text", "capabilities" "jsonb", "trust_level" "text", "gateway_status" "text", "last_seen_at" timestamp with time zone, "created_at" timestamp with time zone)
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-BEGIN
-  SELECT id INTO v_lenser_id
-  FROM lensers.profiles
-  WHERE user_id = auth.uid()
-  LIMIT 1;
-
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'auth_required';
-  END IF;
-
-  p_limit := LEAST(p_limit, 100);
-
-  RETURN QUERY
-  SELECT
-    d.id, d.name, d.device_type, d.os, d.arch,
-    d.cli_version, d.runner_version, d.capabilities,
-    d.trust_level, d.gateway_status, d.last_seen_at, d.created_at
-  FROM devices.registered_devices d
-  WHERE d.lenser_id = v_lenser_id
-    AND (p_trust_level IS NULL OR d.trust_level = p_trust_level)
-    AND (p_cursor IS NULL OR d.id > p_cursor)
-  ORDER BY d.created_at DESC
-  LIMIT p_limit;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_device_list"("p_trust_level" "text", "p_limit" integer, "p_cursor" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_device_post_challenge"("p_device_id" "uuid", "p_signature" "text", "p_signed_iat" timestamp with time zone DEFAULT "now"()) RETURNS "uuid"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-  v_challenge devices.device_challenges%ROWTYPE;
-BEGIN
-  SELECT id INTO v_lenser_id
-  FROM lensers.profiles
-  WHERE user_id = auth.uid()
-  LIMIT 1;
-
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
-  END IF;
-
-  SELECT * INTO v_challenge
-  FROM devices.device_challenges
-  WHERE device_id = p_device_id
-    AND lenser_id = v_lenser_id
-    AND status    = 'pending'
-    AND expires_at > now()
-  ORDER BY created_at DESC
-  LIMIT 1;
-
-  IF v_challenge.id IS NULL THEN
-    RAISE EXCEPTION 'no_pending_challenge' USING ERRCODE = 'P0002';
-  END IF;
-
-  UPDATE devices.device_challenges
-     SET status     = 'answered',
-         signature  = p_signature,
-         signed_iat = p_signed_iat
-   WHERE id = v_challenge.id;
-
-  RETURN v_challenge.id;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_device_post_challenge"("p_device_id" "uuid", "p_signature" "text", "p_signed_iat" timestamp with time zone) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_device_register"("p_name" "text", "p_device_type" "text" DEFAULT 'other'::"text", "p_os" "text" DEFAULT NULL::"text", "p_arch" "text" DEFAULT NULL::"text", "p_cli_version" "text" DEFAULT NULL::"text", "p_capabilities" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-  v_device_id UUID;
-BEGIN
-  SELECT id INTO v_lenser_id
-  FROM lensers.profiles
-  WHERE user_id = auth.uid() AND status = 'active'
-  LIMIT 1;
-
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'active_lenser_required';
-  END IF;
-
-  INSERT INTO devices.registered_devices (
-    lenser_id, name, device_type, os, arch, cli_version, capabilities
-  ) VALUES (
-    v_lenser_id, p_name, p_device_type, p_os, p_arch, p_cli_version, p_capabilities
-  )
-  RETURNING id INTO v_device_id;
-
-  RETURN v_device_id;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_device_register"("p_name" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_capabilities" "jsonb") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_device_register_with_key"("p_name" "text", "p_public_key" "text", "p_device_type" "text" DEFAULT 'other'::"text", "p_os" "text" DEFAULT NULL::"text", "p_arch" "text" DEFAULT NULL::"text", "p_cli_version" "text" DEFAULT NULL::"text", "p_daemon_version" "text" DEFAULT NULL::"text", "p_capabilities" "jsonb" DEFAULT '{}'::"jsonb") RETURNS TABLE("device_id" "uuid", "challenge_id" "uuid", "challenge_nonce" "text", "challenge_expires_at" timestamp with time zone)
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-  v_device_id UUID;
-  v_challenge_id UUID;
-  v_nonce TEXT;
-  v_expires TIMESTAMPTZ;
-BEGIN
-  IF p_public_key IS NULL OR char_length(p_public_key) < 32 THEN
-    RAISE EXCEPTION 'public_key_required' USING ERRCODE = '22023';
-  END IF;
-
-  SELECT id INTO v_lenser_id
-  FROM lensers.profiles
-  WHERE user_id = auth.uid() AND status = 'active'
-  LIMIT 1;
-
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'active_lenser_required' USING ERRCODE = '42501';
-  END IF;
-
-  INSERT INTO devices.registered_devices (
-    lenser_id, name, device_type, os, arch, cli_version,
-    capabilities, public_key, signing_algo, daemon_version
-  ) VALUES (
-    v_lenser_id, p_name, p_device_type, p_os, p_arch, p_cli_version,
-    p_capabilities, p_public_key, 'ed25519', p_daemon_version
-  )
-  RETURNING id INTO v_device_id;
-
-  v_nonce   := encode(extensions.gen_random_bytes(16), 'base64');
-  v_expires := now() + interval '24 hours';
-
-  INSERT INTO devices.device_challenges (device_id, lenser_id, nonce, expires_at)
-  VALUES (v_device_id, v_lenser_id, v_nonce, v_expires)
-  RETURNING id INTO v_challenge_id;
-
-  RETURN QUERY SELECT v_device_id, v_challenge_id, v_nonce, v_expires;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_device_register_with_key"("p_name" "text", "p_public_key" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_daemon_version" "text", "p_capabilities" "jsonb") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_device_revoke"("p_device_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-BEGIN
-  SELECT id INTO v_lenser_id
-  FROM lensers.profiles
-  WHERE user_id = auth.uid() AND status = 'active'
-  LIMIT 1;
-
-  UPDATE devices.registered_devices
-  SET trust_level = 'revoked', revoked_at = now()
-  WHERE id = p_device_id
-    AND lenser_id = v_lenser_id
-    AND trust_level NOT IN ('revoked','blocked');
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'device_not_found_or_already_revoked';
-  END IF;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_device_revoke"("p_device_id" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_sync_pull"("p_envelope" "jsonb", "p_object_classes" "text"[], "p_limit" integer DEFAULT 100) RETURNS TABLE("id" "uuid", "object_class" "text", "object_id" "text", "op" "text", "payload" "jsonb", "vclock" "jsonb", "created_at" timestamp with time zone)
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-  v_device_id UUID;
-  v_kid       TEXT;
-  v_nonce     TEXT;
-  v_iat       BIGINT;
-  v_class     TEXT;
-  v_max_class_ts TIMESTAMPTZ;
-  v_now       TIMESTAMPTZ := now();
-BEGIN
-  SELECT lp.id INTO v_lenser_id
-  FROM lensers.profiles lp
-  WHERE lp.user_id = auth.uid() AND lp.status = 'active'
-  LIMIT 1;
-
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'active_lenser_required' USING ERRCODE = '42501';
-  END IF;
-
-  v_kid   := p_envelope->>'kid';
-  v_nonce := p_envelope->>'nonce';
-  v_iat   := (p_envelope->>'iat')::BIGINT;
-
-  IF v_kid IS NULL OR v_nonce IS NULL THEN
-    RAISE EXCEPTION 'malformed_envelope' USING ERRCODE = '22023';
-  END IF;
-
-  IF v_iat IS NULL OR ABS(EXTRACT(EPOCH FROM v_now)::BIGINT - v_iat) > 300 THEN
-    RAISE EXCEPTION 'iat_window' USING ERRCODE = '22023';
-  END IF;
-
-  v_device_id := v_kid::UUID;
-  IF NOT EXISTS (
-    SELECT 1 FROM devices.registered_devices
-    WHERE id = v_device_id
-      AND lenser_id = v_lenser_id
-      AND trust_level IN ('approved','trusted')
-  ) THEN
-    RAISE EXCEPTION 'kid_mismatch' USING ERRCODE = '42501';
-  END IF;
-
-  BEGIN
-    INSERT INTO devices.nonce_cache (nonce, device_id, expires_at)
-    VALUES (v_nonce, v_device_id, v_now + interval '10 minutes');
-  EXCEPTION WHEN unique_violation THEN
-    RAISE EXCEPTION 'nonce_replay' USING ERRCODE = '23505';
-  END;
-
-  p_limit := LEAST(COALESCE(p_limit, 100), 200);
-
-  -- Return rows from the requested classes that are newer than the device's
-  -- per-class watermark, then advance each watermark.
-  CREATE TEMP TABLE _sync_pull_result ON COMMIT DROP AS
-  SELECT
-    o.id,
-    o.object_class,
-    o.object_id,
-    o.op,
-    o.payload,
-    o.vclock,
-    o.created_at
-  FROM devices.sync_outbox o
-  LEFT JOIN devices.sync_watermarks w
-    ON w.device_id    = v_device_id
-   AND w.object_class = o.object_class
-  WHERE o.lenser_id = v_lenser_id
-    AND o.device_id <> v_device_id
-    AND o.object_class = ANY(p_object_classes)
-    AND o.created_at > COALESCE(w.watermark, '-infinity'::timestamptz)
-  ORDER BY o.created_at ASC
-  LIMIT p_limit;
-
-  -- Advance watermarks atomically per class (max created_at returned).
-  FOR v_class IN SELECT DISTINCT r.object_class FROM _sync_pull_result r
-  LOOP
-    SELECT MAX(created_at) INTO v_max_class_ts
-    FROM _sync_pull_result
-    WHERE object_class = v_class;
-
-    INSERT INTO devices.sync_watermarks (lenser_id, device_id, object_class, watermark, updated_at)
-    VALUES (v_lenser_id, v_device_id, v_class, v_max_class_ts, v_now)
-    ON CONFLICT (device_id, object_class) DO UPDATE
-      SET watermark = GREATEST(devices.sync_watermarks.watermark, EXCLUDED.watermark),
-          updated_at = v_now;
-  END LOOP;
-
-  RETURN QUERY SELECT * FROM _sync_pull_result ORDER BY created_at ASC;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_sync_pull"("p_envelope" "jsonb", "p_object_classes" "text"[], "p_limit" integer) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_sync_push"("p_envelope" "jsonb") RETURNS TABLE("applied_count" integer, "rejected_count" integer, "rejections" "jsonb")
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-  v_device_id UUID;
-  v_kid       TEXT;
-  v_nonce     TEXT;
-  v_iat       BIGINT;
-  v_entries   JSONB;
-  v_entry     JSONB;
-  v_class     TEXT;
-  v_object_id TEXT;
-  v_op        TEXT;
-  v_payload   JSONB;
-  v_vclock    JSONB;
-  v_applied   INT := 0;
-  v_rejected  INT := 0;
-  v_reasons   JSONB := '[]';
-BEGIN
-  SELECT id INTO v_lenser_id
-  FROM lensers.profiles
-  WHERE user_id = auth.uid() AND status = 'active'
-  LIMIT 1;
-
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'active_lenser_required' USING ERRCODE = '42501';
-  END IF;
-
-  v_kid   := p_envelope->>'kid';
-  v_nonce := p_envelope->>'nonce';
-  v_iat   := (p_envelope->>'iat')::BIGINT;
-  v_entries := p_envelope->'body'->'entries';
-
-  IF v_kid IS NULL OR v_nonce IS NULL OR v_entries IS NULL THEN
-    RAISE EXCEPTION 'malformed_envelope' USING ERRCODE = '22023';
-  END IF;
-
-  -- iat ±300s window
-  IF v_iat IS NULL OR ABS(EXTRACT(EPOCH FROM now())::BIGINT - v_iat) > 300 THEN
-    RAISE EXCEPTION 'iat_window' USING ERRCODE = '22023';
-  END IF;
-
-  -- Resolve device + ownership.
-  v_device_id := v_kid::UUID;
-  IF NOT EXISTS (
-    SELECT 1 FROM devices.registered_devices
-    WHERE id = v_device_id
-      AND lenser_id = v_lenser_id
-      AND trust_level IN ('approved','trusted')
-  ) THEN
-    RAISE EXCEPTION 'kid_mismatch' USING ERRCODE = '42501';
-  END IF;
-
-  -- Replay protection via nonce_cache.
-  BEGIN
-    INSERT INTO devices.nonce_cache (nonce, device_id, expires_at)
-    VALUES (v_nonce, v_device_id, now() + interval '10 minutes');
-  EXCEPTION WHEN unique_violation THEN
-    RAISE EXCEPTION 'nonce_replay' USING ERRCODE = '23505';
-  END;
-
-  FOR v_entry IN SELECT * FROM jsonb_array_elements(v_entries)
-  LOOP
-    v_class := v_entry->>'object_class';
-    v_object_id := v_entry->>'object_id';
-    v_op := v_entry->>'op';
-    v_payload := COALESCE(v_entry->'payload', '{}'::jsonb);
-    v_vclock := COALESCE(v_entry->'vclock', '{}'::jsonb);
-
-    IF v_class IS NULL OR v_object_id IS NULL OR v_op IS NULL THEN
-      v_rejected := v_rejected + 1;
-      v_reasons  := v_reasons || jsonb_build_object('object_id', v_object_id, 'reason', 'malformed_entry');
-      CONTINUE;
-    END IF;
-
-    -- Reject cloud-authoritative classes (write attempts on edges).
-    IF v_class IN ('xp_total','trust_evaluation','battle_result','policy',
-                   'budget','kill_switch','dark_launch','ai_catalog') THEN
-      v_rejected := v_rejected + 1;
-      v_reasons  := v_reasons || jsonb_build_object('object_id', v_object_id, 'reason', 'cloud_authoritative');
-      CONTINUE;
-    END IF;
-
-    -- Reject local-only classes (must never be pushed).
-    IF v_class IN ('byok_key','local_battle','scratchpad_draft',
-                   'keychain_entry','private_key') THEN
-      v_rejected := v_rejected + 1;
-      v_reasons  := v_reasons || jsonb_build_object('object_id', v_object_id, 'reason', 'local_only_class');
-      CONTINUE;
-    END IF;
-
-    INSERT INTO devices.sync_outbox (
-      lenser_id, device_id, object_class, object_id, op, payload, vclock
-    ) VALUES (
-      v_lenser_id, v_device_id, v_class, v_object_id, v_op, v_payload, v_vclock
-    );
-    v_applied := v_applied + 1;
-  END LOOP;
-
-  RETURN QUERY SELECT v_applied, v_rejected, v_reasons;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_sync_push"("p_envelope" "jsonb") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_sync_resolve_conflict"("p_outbox_id" "uuid", "p_winner" "jsonb") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-BEGIN
-  SELECT lp.id INTO v_lenser_id
-  FROM lensers.profiles lp
-  WHERE lp.user_id = auth.uid() AND lp.status = 'active'
-  LIMIT 1;
-
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'active_lenser_required' USING ERRCODE = '42501';
-  END IF;
-
-  UPDATE devices.sync_outbox
-     SET payload   = p_winner,
-         applied_at = now()
-   WHERE id = p_outbox_id
-     AND lenser_id = v_lenser_id;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'conflict_not_found' USING ERRCODE = 'P0002';
-  END IF;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_sync_resolve_conflict"("p_outbox_id" "uuid", "p_winner" "jsonb") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_sync_status"("p_device_id" "uuid") RETURNS TABLE("object_class" "text", "watermark" timestamp with time zone, "outbox_depth" bigint, "last_error" "text")
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'lensers', 'public', 'extensions'
-    AS $$
-DECLARE
-  v_lenser_id UUID;
-BEGIN
-  SELECT lp.id INTO v_lenser_id
-  FROM lensers.profiles lp
-  WHERE lp.user_id = auth.uid()
-  LIMIT 1;
-
-  IF v_lenser_id IS NULL THEN
-    RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
-  END IF;
-
-  RETURN QUERY
-  SELECT
-    w.object_class,
-    w.watermark,
-    (SELECT COUNT(*)
-       FROM devices.sync_outbox o
-      WHERE o.device_id = p_device_id
-        AND o.object_class = w.object_class
-        AND o.applied_at IS NULL)::BIGINT AS outbox_depth,
-    NULL::TEXT AS last_error
-  FROM devices.sync_watermarks w
-  WHERE w.lenser_id = v_lenser_id
-    AND w.device_id = p_device_id
-  ORDER BY w.object_class;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_sync_status"("p_device_id" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_xp_on_device_registered"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'xp', 'execution', 'public', 'extensions'
-    AS $$
-BEGIN
-  PERFORM execution.fn_xp_apply_safe(
-    NEW.lenser_id,
-    'DEVICE_REGISTERED',
-    'system'::xp.source_enum,
-    'device',
-    NEW.id,
-    '00000000-0000-0000-0000-000000000003'::uuid
-  );
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_xp_on_device_registered"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "devices"."fn_xp_on_device_trust_elevated"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'devices', 'xp', 'execution', 'public', 'extensions'
-    AS $$
-BEGIN
-  IF NEW.trust_level IN ('approved', 'trusted')
-     AND COALESCE(OLD.trust_level, 'pending') NOT IN ('approved', 'trusted')
-  THEN
-    PERFORM execution.fn_xp_apply_safe(
-      NEW.lenser_id,
-      'DEVICE_VERIFIED',
-      'system'::xp.source_enum,
-      'device',
-      NEW.id,
-      '00000000-0000-0000-0000-000000000003'::uuid
-    );
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "devices"."fn_xp_on_device_trust_elevated"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "execution"."fn_async_run_idempotent_complete"("p_run_id" "uuid", "p_media_url" "text", "p_mime_type" "text", "p_bytes" bigint DEFAULT NULL::bigint, "p_width" integer DEFAULT NULL::integer, "p_height" integer DEFAULT NULL::integer, "p_duration_s" numeric DEFAULT NULL::numeric) RETURNS boolean
@@ -10596,21 +5871,6 @@ $$;
 ALTER FUNCTION "execution"."trg_runs_set_completed_at"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "i18n"."fn_is_supported_language"("p_code" "text") RETURNS boolean
-    LANGUAGE "sql" IMMUTABLE PARALLEL SAFE
-    SET "search_path" TO 'i18n', 'pg_catalog'
-    AS $$
-  SELECT p_code IS NULL OR p_code IN (
-    'en','tr','es','fr','de','it','pt','pt-BR','nl','pl','ru','uk','cs',
-    'sv','no','da','fi','hu','ro','el','ar','he','fa','hi','bn','ur',
-    'zh','zh-CN','zh-TW','ja','ko','vi','th','id','ms','tl'
-  );
-$$;
-
-
-ALTER FUNCTION "i18n"."fn_is_supported_language"("p_code" "text") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "lensers"."anonymize_join_log"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'lensers', 'analytics'
@@ -11211,6 +6471,53 @@ $$;
 
 
 ALTER FUNCTION "lensers"."fn_sync_relationship_counts"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "lensers"."fn_xp_on_follow"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'lensers', 'xp', 'public'
+    AS $$
+DECLARE
+  v_app_id uuid;
+BEGIN
+  -- Only award XP when the relationship status becomes 'accepted'
+  IF NEW.status != 'accepted' THEN
+    RETURN NEW;
+  END IF;
+  -- Skip if this is an UPDATE and the status was already 'accepted'
+  IF TG_OP = 'UPDATE' AND OLD.status = 'accepted' THEN
+    RETURN NEW;
+  END IF;
+
+  -- Resolve platform app_id; fall back to forum app
+  SELECT id INTO v_app_id FROM xp.apps WHERE slug = 'platform' LIMIT 1;
+  IF v_app_id IS NULL THEN
+    SELECT id INTO v_app_id FROM xp.apps WHERE slug = 'forum' LIMIT 1;
+  END IF;
+  IF v_app_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- Award XP to the follower (source). xp.apply enforces daily cap idempotently.
+  BEGIN
+    PERFORM xp.apply(
+      NEW.source_profile_id,
+      'INVITE_ACCEPTED',
+      'social'::xp.source_enum,
+      'relationship',
+      NEW.id,
+      v_app_id
+    );
+  EXCEPTION WHEN OTHERS THEN
+    NULL; -- non-fatal; never block the follow
+  END;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "lensers"."fn_xp_on_follow"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "lensers"."get_auth_human_lenser_id"() RETURNS "uuid"
@@ -14862,563 +10169,6 @@ $$;
 ALTER FUNCTION "lenses"."trg_workflow_version_immutable_fn"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "media"."set_updated_at"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'media', 'public'
-    AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "media"."set_updated_at"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "media"."trg_fn_audit_visibility"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'media', 'audit', 'public'
-    AS $$
-BEGIN
-  IF OLD.visibility IS DISTINCT FROM NEW.visibility THEN
-    INSERT INTO audit.events (event_type, actor_type, severity, payload)
-    VALUES (
-      'media.visibility_changed',
-      'user',
-      'info',
-      jsonb_build_object(
-        'object_id',      NEW.id,
-        'old_visibility', OLD.visibility,
-        'new_visibility', NEW.visibility,
-        'changed_at',     now()
-      )
-    );
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "media"."trg_fn_audit_visibility"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "organizations"."fn_create_org_workspace"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'organizations', 'tenancy', 'lensers', 'public'
-    AS $$
-DECLARE
-    v_workspace_id uuid;
-    v_slug         text;
-    v_suffix       int := 0;
-BEGIN
-    -- Build a unique workspace slug
-    v_slug := NEW.slug || '-org';
-    WHILE EXISTS (SELECT 1 FROM tenancy.workspaces WHERE slug = v_slug) LOOP
-        v_suffix := v_suffix + 1;
-        v_slug   := NEW.slug || '-org-' || v_suffix;
-    END LOOP;
-
-    -- org row is now committed (AFTER trigger), org_id FK is safe
-    INSERT INTO tenancy.workspaces (slug, type, display_name, org_id)
-    VALUES (v_slug, 'organization', NEW.display_name, NEW.id)
-    RETURNING id INTO v_workspace_id;
-
-    -- Stamp workspace_id back onto the org row
-    UPDATE organizations.organizations
-    SET    workspace_id = v_workspace_id
-    WHERE  id = NEW.id;
-
-    RETURN NULL; -- AFTER trigger return value is ignored
-END;
-$$;
-
-
-ALTER FUNCTION "organizations"."fn_create_org_workspace"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "organizations"."fn_create_org_workspace"() IS 'AFTER INSERT trigger on organizations.organizations. Automatically creates an organization-type workspace in tenancy.workspaces and stamps workspace_id on the new org row. Must be AFTER INSERT so the org primary key exists before the workspaces_org_fkey FK is checked.';
-
-
-
-CREATE TABLE IF NOT EXISTS "organizations"."organizations" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "status" "organizations"."status_enum" DEFAULT 'active'::"organizations"."status_enum" NOT NULL,
-    "org_type" "organizations"."org_type_enum" DEFAULT 'commercial'::"organizations"."org_type_enum" NOT NULL,
-    "created_by" "uuid" NOT NULL,
-    "slug" character varying(64) NOT NULL,
-    "display_name" character varying(180) NOT NULL,
-    "legal_name" character varying(180),
-    "website" "text",
-    "industry" character varying(120),
-    "billing_email" "text",
-    "default_timezone" character varying(120) DEFAULT 'UTC'::character varying,
-    "avatar_url" "text",
-    "kill_switch_reason" "text",
-    "kill_switched_at" timestamp with time zone,
-    "kill_switched_by" "uuid",
-    "trial_expires_at" timestamp with time zone,
-    "trial_used" boolean DEFAULT false NOT NULL,
-    "trial_used_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "workspace_id" "uuid"
-);
-
-
-ALTER TABLE "organizations"."organizations" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "organizations"."organizations" IS 'Top-level commercial / nonprofit / educational entity. One row per organization. Slug is globally unique.';
-
-
-
-COMMENT ON COLUMN "organizations"."organizations"."status" IS 'Lifecycle state: active, inactive, suspended, closed. suspended blocks all operations; closed is terminal.';
-
-
-
-COMMENT ON COLUMN "organizations"."organizations"."slug" IS 'URL-safe unique identifier. Used in routes like /org/<slug>. Format: 4-64 chars, lowercase alphanumeric with hyphens/underscores.';
-
-
-
-COMMENT ON COLUMN "organizations"."organizations"."kill_switch_reason" IS 'Admin-provided reason when an organization is force-suspended. NULL when not kill-switched.';
-
-
-
-COMMENT ON COLUMN "organizations"."organizations"."trial_expires_at" IS 'When the organization trial period ends. NULL if no trial or trial already used.';
-
-
-
-COMMENT ON COLUMN "organizations"."organizations"."workspace_id" IS 'The organization-type workspace that scopes all resources (keys, executions, media) belonging to this org. Created automatically on org creation.';
-
-
-
-CREATE OR REPLACE FUNCTION "organizations"."fn_create_organization"("p_display_name" character varying, "p_slug" character varying, "p_org_type" "text" DEFAULT 'commercial'::"text", "p_legal_name" character varying DEFAULT NULL::character varying, "p_website" "text" DEFAULT NULL::"text", "p_industry" character varying DEFAULT NULL::character varying, "p_billing_email" "text" DEFAULT NULL::"text") RETURNS "organizations"."organizations"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'organizations', 'lensers'
-    AS $_$
-DECLARE
-    v_lenser_id uuid;
-    v_org organizations.organizations;
-BEGIN
-    v_lenser_id := lensers.get_auth_lenser_id();
-    IF v_lenser_id IS NULL THEN
-        RAISE EXCEPTION 'Authentication required';
-    END IF;
-
-    -- Validate org_type
-    IF p_org_type NOT IN ('commercial', 'nonprofit', 'educational') THEN
-        RAISE EXCEPTION 'Invalid org_type: %. Must be commercial, nonprofit, or educational.', p_org_type;
-    END IF;
-
-    -- Validate slug format
-    IF p_slug !~ '^[a-z0-9][a-z0-9_-]{2,62}[a-z0-9]$' THEN
-        RAISE EXCEPTION 'Invalid slug format. Must be 4-64 chars, lowercase alphanumeric with hyphens/underscores.';
-    END IF;
-
-    -- Create organization
-    INSERT INTO organizations.organizations (
-        display_name, slug, org_type, legal_name,
-        website, industry, billing_email, created_by
-    )
-    VALUES (
-        p_display_name, p_slug, p_org_type::organizations.org_type_enum, p_legal_name,
-        p_website, p_industry, p_billing_email, v_lenser_id
-    )
-    RETURNING * INTO v_org;
-
-    -- Auto-insert creator as owner
-    INSERT INTO organizations.members (org_id, lenser_id, role)
-    VALUES (v_org.id, v_lenser_id, 'owner');
-
-    -- Log creation
-    INSERT INTO organizations.audit_logs (org_id, lenser_id, action, metadata)
-    VALUES (v_org.id, v_lenser_id, 'created', jsonb_build_object(
-        'display_name', p_display_name,
-        'slug', p_slug,
-        'org_type', p_org_type
-    ));
-
-    RETURN v_org;
-END;
-$_$;
-
-
-ALTER FUNCTION "organizations"."fn_create_organization"("p_display_name" character varying, "p_slug" character varying, "p_org_type" "text", "p_legal_name" character varying, "p_website" "text", "p_industry" character varying, "p_billing_email" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "organizations"."fn_create_organization"("p_display_name" character varying, "p_slug" character varying, "p_org_type" "text", "p_legal_name" character varying, "p_website" "text", "p_industry" character varying, "p_billing_email" "text") IS 'SECURITY DEFINER helper to create an organization. Validates slug format and org_type, creates the org record, auto-inserts the caller as owner, and logs the creation event. Requires authentication via lensers.get_auth_lenser_id().';
-
-
-
-CREATE TABLE IF NOT EXISTS "organizations"."members" (
-    "org_id" "uuid" NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "role" "organizations"."member_role_enum" DEFAULT 'member'::"organizations"."member_role_enum" NOT NULL,
-    "invited_by" "uuid",
-    "joined_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "organizations"."members" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "organizations"."members" IS 'Organization membership. Composite PK (org_id, lenser_id). Exactly one owner per org enforced by partial unique index.';
-
-
-
-COMMENT ON COLUMN "organizations"."members"."role" IS 'Member role within the org. owner has full control; admin can manage members; manager, billing, member, viewer have decreasing permissions. Exactly one owner per org enforced by partial unique index.';
-
-
-
-COMMENT ON COLUMN "organizations"."members"."invited_by" IS 'Profile that invited this member. NULL for the founding owner. ON DELETE SET NULL preserves membership even if inviter is deleted.';
-
-
-
-CREATE OR REPLACE FUNCTION "organizations"."fn_invite_member"("p_org_id" "uuid", "p_lenser_id" "uuid", "p_role" "text" DEFAULT 'member'::"text") RETURNS "organizations"."members"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'organizations', 'lensers'
-    AS $$
-DECLARE
-    v_caller_id uuid;
-    v_caller_role text;
-    v_member organizations.members;
-BEGIN
-    v_caller_id := lensers.get_auth_lenser_id();
-    IF v_caller_id IS NULL THEN
-        RAISE EXCEPTION 'Authentication required';
-    END IF;
-
-    -- Check caller is owner or admin
-    SELECT role::text INTO v_caller_role
-    FROM organizations.members
-    WHERE org_id = p_org_id AND lenser_id = v_caller_id;
-
-    IF v_caller_role IS NULL OR v_caller_role NOT IN ('owner', 'admin') THEN
-        RAISE EXCEPTION 'Only org owners and admins can invite members';
-    END IF;
-
-    -- Validate role
-    IF p_role NOT IN ('admin', 'manager', 'billing', 'member', 'viewer') THEN
-        RAISE EXCEPTION 'Invalid role: %. Cannot assign owner role via invite.', p_role;
-    END IF;
-
-    -- Check target lenser exists
-    IF NOT EXISTS (SELECT 1 FROM lensers.profiles WHERE id = p_lenser_id) THEN
-        RAISE EXCEPTION 'Lenser not found: %', p_lenser_id;
-    END IF;
-
-    -- Check not already a member
-    IF EXISTS (SELECT 1 FROM organizations.members WHERE org_id = p_org_id AND lenser_id = p_lenser_id) THEN
-        RAISE EXCEPTION 'Lenser is already a member of this organization';
-    END IF;
-
-    -- Insert member
-    INSERT INTO organizations.members (org_id, lenser_id, role, invited_by)
-    VALUES (p_org_id, p_lenser_id, p_role::organizations.member_role_enum, v_caller_id)
-    RETURNING * INTO v_member;
-
-    -- Log invite
-    INSERT INTO organizations.audit_logs (org_id, lenser_id, action, entity_type, entity_id, metadata)
-    VALUES (p_org_id, v_caller_id, 'member_added', 'member', p_lenser_id, jsonb_build_object(
-        'invited_lenser_id', p_lenser_id,
-        'role', p_role
-    ));
-
-    RETURN v_member;
-END;
-$$;
-
-
-ALTER FUNCTION "organizations"."fn_invite_member"("p_org_id" "uuid", "p_lenser_id" "uuid", "p_role" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "organizations"."fn_invite_member"("p_org_id" "uuid", "p_lenser_id" "uuid", "p_role" "text") IS 'SECURITY DEFINER helper to invite a member to an organization. Validates caller is owner/admin, target lenser exists, and is not already a member. Cannot assign owner role via invite. Logs the invitation to audit_logs.';
-
-
-
-CREATE OR REPLACE FUNCTION "organizations"."trg_audit_logs_immutable"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'organizations'
-    AS $$
-BEGIN
-    IF TG_OP = 'DELETE' THEN
-        RAISE EXCEPTION 'Organization audit logs are immutable. Deletion is not permitted.';
-    ELSIF TG_OP = 'UPDATE' THEN
-        RAISE EXCEPTION 'Organization audit logs are immutable. Updates are not permitted.';
-    END IF;
-    RETURN NULL;
-END;
-$$;
-
-
-ALTER FUNCTION "organizations"."trg_audit_logs_immutable"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "organizations"."trg_audit_logs_immutable"() IS 'Defense-in-depth trigger preventing UPDATE/DELETE on organizations.audit_logs. Mirrors wallet.trg_transactions_immutable() pattern.';
-
-
-
-CREATE OR REPLACE FUNCTION "organizations"."trg_audit_membership"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
-    AS $$
-BEGIN
-    PERFORM audit.log_event_v2(
-        TG_OP::text,                                            -- event_type
-        'lenser',                                                -- actor_type
-        COALESCE(NEW.lenser_id, OLD.lenser_id),                 -- actor_id
-        'organizations',                                         -- entity_schema
-        'members',                                               -- entity_table
-        COALESCE(NEW.org_id, OLD.org_id),                       -- entity_id
-        jsonb_build_object(
-            'lenser_id', COALESCE(NEW.lenser_id, OLD.lenser_id),
-            'role', COALESCE(NEW.role::text, OLD.role::text),
-            'operation', TG_OP
-        ),                                                       -- payload
-        'info'                                                   -- severity
-    );
-    RETURN COALESCE(NEW, OLD);
-END;
-$$;
-
-
-ALTER FUNCTION "organizations"."trg_audit_membership"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "platform"."fn_get_platform_system_flags"() RETURNS "jsonb"
-    LANGUAGE "sql" SECURITY DEFINER
-    SET "search_path" TO 'platform', 'public'
-    AS $$
-  SELECT jsonb_object_agg(key, (value::boolean))
-  FROM   platform.system_flags
-  WHERE  key IN (
-    'autonomy_dispatch_enabled',
-    'public_battles_enabled',
-    'webhook_outbox_enabled'
-  )
-$$;
-
-
-ALTER FUNCTION "platform"."fn_get_platform_system_flags"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "platform"."fn_get_platform_system_flags"() IS 'Return a jsonb map of the three core platform.system_flags as booleans. service_role only.';
-
-
-
-CREATE OR REPLACE FUNCTION "platform"."fn_get_worker_health"() RETURNS TABLE("worker_id" "text", "worker_type" "text", "last_seen_at" timestamp with time zone, "is_healthy" boolean, "seconds_since" numeric)
-    LANGUAGE "sql" SECURITY DEFINER
-    SET "search_path" TO 'platform'
-    AS $$
-  SELECT
-    worker_id,
-    worker_type,
-    last_seen_at,
-    (EXTRACT(EPOCH FROM (now() - last_seen_at)) < 30) AS is_healthy,
-    ROUND(EXTRACT(EPOCH FROM (now() - last_seen_at))::NUMERIC, 1) AS seconds_since
-  FROM platform.api_worker_heartbeats
-  ORDER BY last_seen_at DESC;
-$$;
-
-
-ALTER FUNCTION "platform"."fn_get_worker_health"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "platform"."fn_queue_stats"() RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'platform', 'lenses', 'automation', 'audit', 'public'
-    AS $$
-DECLARE
-  v_in_flight        integer;
-  v_automation       integer;
-  v_scheduled        integer;
-  v_outbox_pending   integer;
-  v_outbox_dead      integer;
-  v_autonomy_enabled boolean;
-BEGIN
-  SELECT COUNT(*) INTO v_in_flight
-  FROM   lenses.workflow_runs
-  WHERE  status IN ('pending', 'running');
-
-  SELECT COUNT(*) INTO v_automation
-  FROM   automation.events e
-  LEFT JOIN automation.event_dispatches d ON d.event_id = e.id
-  WHERE  d.event_id IS NULL;
-
-  SELECT COUNT(*) INTO v_scheduled
-  FROM   lenses.workflow_schedules
-  WHERE  is_active = true
-    AND  (last_run_at IS NULL OR last_run_at < now() - interval '5 minutes');
-
-  SELECT COUNT(*) INTO v_outbox_pending
-  FROM   audit.webhook_outbox
-  WHERE  delivered_at IS NULL
-    AND  dead_lettered_at IS NULL;
-
-  SELECT COUNT(*) INTO v_outbox_dead
-  FROM   audit.webhook_outbox
-  WHERE  dead_lettered_at IS NOT NULL;
-
-  SELECT COALESCE((value)::text::boolean, true) INTO v_autonomy_enabled
-  FROM   platform.system_flags
-  WHERE  key = 'autonomy_dispatch_enabled';
-
-  IF v_autonomy_enabled IS NULL THEN
-    -- No row -> treat as enabled (matches dispatch-gate default).
-    v_autonomy_enabled := true;
-  END IF;
-
-  RETURN jsonb_build_object(
-    'workers',            jsonb_build_object('active', 0, 'idle', 0),
-    'in_flight_runs',     v_in_flight,
-    'dispatcher_backlog', jsonb_build_object(
-      'automation',                 v_automation,
-      'scheduled',                  v_scheduled,
-      'webhook_outbox_undelivered', v_outbox_pending,
-      'webhook_outbox_dead_lettered', v_outbox_dead
-    ),
-    'system_flags', jsonb_build_object(
-      'autonomy_dispatch_enabled', v_autonomy_enabled
-    )
-  );
-END;
-$$;
-
-
-ALTER FUNCTION "platform"."fn_queue_stats"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "platform"."fn_queue_stats"() IS 'Phase Y5: admin-only platform health snapshot (in-flight runs, dispatcher backlog, webhook outbox health, autonomy_dispatch_enabled flag). service_role only.';
-
-
-
-CREATE OR REPLACE FUNCTION "platform"."fn_recent_audit_events"("p_since" interval DEFAULT '00:05:00'::interval) RETURNS TABLE("occurred_at" timestamp with time zone, "source" "text", "kind" "text", "summary" "text")
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'platform', 'audit', 'agents', 'automation', 'public'
-    AS $$
-  WITH cutoff AS (SELECT now() - p_since AS t)
-  SELECT * FROM (
-    SELECT
-      md.occurred_at                                                AS occurred_at,
-      'audit.moderation_decisions'::text                            AS source,
-      'moderation'::text                                            AS kind,
-      (md.decision_type
-        || COALESCE(' ' || left(md.target_entity_id::text, 8), ''))::text AS summary
-    FROM audit.moderation_decisions md, cutoff
-    WHERE md.occurred_at > cutoff.t
-
-    UNION ALL
-
-    SELECT
-      COALESCE(wo.dead_lettered_at, wo.created_at)                  AS occurred_at,
-      'audit.webhook_outbox'::text                                  AS source,
-      'webhook_failure'::text                                       AS kind,
-      COALESCE(wo.last_error, '(no error captured)')                AS summary
-    FROM audit.webhook_outbox wo, cutoff
-    WHERE (wo.dead_lettered_at IS NOT NULL AND wo.dead_lettered_at > cutoff.t)
-       OR (wo.delivered_at IS NULL AND wo.last_error IS NOT NULL AND wo.created_at > cutoff.t)
-
-    UNION ALL
-
-    SELECT
-      al.occurred_at                                                AS occurred_at,
-      'agents.action_logs'::text                                    AS source,
-      'action'::text                                                AS kind,
-      al.action_type                                                AS summary
-    FROM agents.action_logs al, cutoff
-    WHERE al.occurred_at > cutoff.t
-
-    UNION ALL
-
-    SELECT
-      ev.occurred_at                                                AS occurred_at,
-      'automation.events'::text                                     AS source,
-      'automation_event'::text                                      AS kind,
-      ev.event_type                                                 AS summary
-    FROM automation.events ev, cutoff
-    WHERE ev.occurred_at > cutoff.t
-  ) merged
-  ORDER BY occurred_at DESC
-  LIMIT 200;
-$$;
-
-
-ALTER FUNCTION "platform"."fn_recent_audit_events"("p_since" interval) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "platform"."fn_recent_audit_events"("p_since" interval) IS 'Phase Y5: admin-only flat stream of recent audit + automation + agent action events for tail-logs. Capped at 200 rows. service_role only.';
-
-
-
-CREATE OR REPLACE FUNCTION "platform"."fn_set_autonomy_dispatch_enabled"("p_enabled" boolean) RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'platform', 'public'
-    AS $$
-BEGIN
-  IF p_enabled IS NULL THEN
-    RAISE EXCEPTION 'p_enabled must not be NULL.' USING ERRCODE = '22023';
-  END IF;
-
-  INSERT INTO platform.system_flags (key, value, updated_at)
-  VALUES ('autonomy_dispatch_enabled', to_jsonb(p_enabled), now())
-  ON CONFLICT (key) DO UPDATE
-    SET value      = EXCLUDED.value,
-        updated_at = EXCLUDED.updated_at;
-END;
-$$;
-
-
-ALTER FUNCTION "platform"."fn_set_autonomy_dispatch_enabled"("p_enabled" boolean) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "platform"."fn_set_autonomy_dispatch_enabled"("p_enabled" boolean) IS 'Phase Y5: flip platform.system_flags.autonomy_dispatch_enabled. Backs `lf platform pause-dispatch` / `resume-dispatch`. service_role only.';
-
-
-
-CREATE OR REPLACE FUNCTION "platform"."fn_set_platform_flag"("p_key" "text", "p_enabled" boolean) RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'platform', 'public'
-    AS $$
-BEGIN
-  IF p_key NOT IN ('autonomy_dispatch_enabled', 'public_battles_enabled', 'webhook_outbox_enabled') THEN
-    RAISE EXCEPTION 'Unknown platform flag: %', p_key USING ERRCODE = 'invalid_parameter_value';
-  END IF;
-
-  INSERT INTO platform.system_flags (key, value, updated_at)
-  VALUES (p_key, p_enabled::text, now())
-  ON CONFLICT (key) DO UPDATE
-    SET value      = EXCLUDED.value,
-        updated_at = now();
-END;
-$$;
-
-
-ALTER FUNCTION "platform"."fn_set_platform_flag"("p_key" "text", "p_enabled" boolean) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "platform"."fn_set_platform_flag"("p_key" "text", "p_enabled" boolean) IS 'Toggle one of the three core platform.system_flags. service_role only. Allowed keys: autonomy_dispatch_enabled, public_battles_enabled, webhook_outbox_enabled.';
-
-
-
-CREATE OR REPLACE FUNCTION "platform"."fn_upsert_worker_heartbeat"("p_worker_id" "text", "p_worker_type" "text" DEFAULT 'workflow'::"text", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'platform'
-    AS $$
-BEGIN
-  INSERT INTO platform.api_worker_heartbeats (worker_id, worker_type, last_seen_at, metadata)
-  VALUES (p_worker_id, p_worker_type, now(), p_metadata)
-  ON CONFLICT (worker_id) DO UPDATE
-  SET last_seen_at = now(),
-      worker_type  = EXCLUDED.worker_type,
-      metadata     = EXCLUDED.metadata;
-END;
-$$;
-
-
-ALTER FUNCTION "platform"."fn_upsert_worker_heartbeat"("p_worker_id" "text", "p_worker_type" "text", "p_metadata" "jsonb") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint DEFAULT 0, "p_output_tokens" bigint DEFAULT 0, "p_units" integer DEFAULT 1) RETURNS bigint
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
@@ -16241,55 +10991,6 @@ $$;
 ALTER FUNCTION "public"."fn_analytics_share_events_log"("p_short_id" "text", "p_event_type" "text", "p_ip_hash" "text", "p_user_agent" "text", "p_referer" "text", "p_country" "text", "p_city" "text") OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "analytics"."shared_links" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "short_id" "text" NOT NULL,
-    "resource_type" "text" NOT NULL,
-    "resource_id" "uuid" NOT NULL,
-    "slug" "text",
-    "creator_lenser_id" "uuid",
-    "channel" "text" DEFAULT 'in_app'::"text" NOT NULL,
-    "campaign_key" "text",
-    "experiment_key" "text",
-    "experiment_variant" "text",
-    "meta" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "display_name" "text",
-    "expires_at" timestamp with time zone,
-    "max_uses" integer,
-    "use_count" integer DEFAULT 0 NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    CONSTRAINT "ck_analytics_shared_links_use_count_nonneg" CHECK ((("use_count" IS NULL) OR ("use_count" >= 0)))
-);
-
-
-ALTER TABLE "analytics"."shared_links" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "analytics"."shared_links" IS 'Configuration for shareable short links in LenserFight (per resource, per Lenser, per campaign).';
-
-
-
-COMMENT ON COLUMN "analytics"."shared_links"."creator_lenser_id" IS 'FK to lensers.id; used for RLS (each Lenser sees only their own links).';
-
-
-
-COMMENT ON COLUMN "analytics"."shared_links"."expires_at" IS 'When this link expires. NULL = no expiry. Used for invitation links.';
-
-
-
-COMMENT ON COLUMN "analytics"."shared_links"."max_uses" IS 'Maximum number of times this link can be consumed. NULL = unlimited.';
-
-
-
-COMMENT ON COLUMN "analytics"."shared_links"."use_count" IS 'Number of times this link has been consumed. Incremented by fn_analytics_shared_links_consume.';
-
-
-
-COMMENT ON COLUMN "analytics"."shared_links"."is_active" IS 'Whether this link is active. Deactivated links return 410 Gone.';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."fn_analytics_shared_links_consume"("p_short_id" "text") RETURNS "analytics"."shared_links"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'analytics'
@@ -16717,33 +11418,23 @@ COMMENT ON FUNCTION "public"."fn_assert_modality_allowed"("p_agent_id" "uuid", "
 
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "contender_id" "uuid", "battle_id" "uuid", "lens_id" "uuid", "version_id" "uuid", "assigned_at" timestamp with time zone)
+CREATE OR REPLACE FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid" DEFAULT NULL::"uuid", "p_input_snapshot" "jsonb" DEFAULT '{}'::"jsonb") RETURNS TABLE("id" "uuid", "contender_id" "uuid", "battle_id" "uuid", "lens_id" "uuid", "version_id" "uuid", "assigned_at" timestamp with time zone, "input_snapshot" "jsonb")
     LANGUAGE "sql" SECURITY DEFINER
     SET "search_path" TO 'public', 'battles'
     AS $$
-  INSERT INTO battles.contender_lens_assignments (contender_id, battle_id, lens_id, version_id)
-  VALUES (p_contender_id, p_battle_id, p_lens_id, p_version_id)
+  INSERT INTO battles.contender_lens_assignments
+    (contender_id, battle_id, lens_id, version_id, input_snapshot)
+  VALUES
+    (p_contender_id, p_battle_id, p_lens_id, p_version_id, p_input_snapshot)
   ON CONFLICT (contender_id) DO UPDATE
-    SET lens_id    = EXCLUDED.lens_id,
-        version_id = EXCLUDED.version_id
-  RETURNING id, contender_id, battle_id, lens_id, version_id, assigned_at;
+    SET lens_id        = EXCLUDED.lens_id,
+        version_id     = EXCLUDED.version_id,
+        input_snapshot = EXCLUDED.input_snapshot
+  RETURNING id, contender_id, battle_id, lens_id, version_id, assigned_at, input_snapshot;
 $$;
 
 
-ALTER FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid") OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."tool_assignments" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "tool_id" "uuid" NOT NULL,
-    "profile_id" "uuid",
-    "allowed" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "agents"."tool_assignments" OWNER TO "postgres";
+ALTER FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid", "p_input_snapshot" "jsonb") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_assign_tool"("p_ai_lenser_id" "uuid", "p_tool_id" "uuid", "p_profile_id" "uuid" DEFAULT NULL::"uuid", "p_allowed" boolean DEFAULT true) RETURNS "agents"."tool_assignments"
@@ -18678,6 +13369,42 @@ $$;
 ALTER FUNCTION "public"."fn_battles_get_public"("p_battle_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_battles_get_subscriptions"("p_battle_id" "uuid") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "owner_id" "uuid", "webhook_url" "text", "event_types" "text"[], "created_at" timestamp with time zone, "revoked_at" timestamp with time zone)
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'battles', 'public'
+    AS $$
+DECLARE
+  v_actor UUID;
+BEGIN
+  v_actor := auth.uid();
+  IF v_actor IS NULL THEN
+    RAISE EXCEPTION 'Authentication required' USING ERRCODE = 'P0001';
+  END IF;
+
+  RETURN QUERY
+    SELECT
+      s.id,
+      s.battle_id,
+      s.owner_id,
+      s.webhook_url,
+      s.event_types,
+      s.created_at,
+      s.revoked_at
+    FROM battles.battle_event_subscriptions s
+   WHERE s.battle_id = p_battle_id
+     AND s.owner_id  = v_actor
+   ORDER BY s.created_at DESC;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_battles_get_subscriptions"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_battles_get_subscriptions"("p_battle_id" "uuid") IS 'Returns caller-owned webhook subscriptions for a battle. secret_hmac excluded.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_battles_get_template"("p_template_id" "uuid") RETURNS "battles"."templates"
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'battles', 'extensions'
@@ -19267,6 +13994,42 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_battles_retract"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_battles_revoke_webhook"("p_subscription_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'battles', 'public'
+    AS $$
+DECLARE
+  v_actor UUID;
+  v_rows  INT;
+BEGIN
+  v_actor := auth.uid();
+  IF v_actor IS NULL THEN
+    RAISE EXCEPTION 'Authentication required' USING ERRCODE = 'P0001';
+  END IF;
+
+  UPDATE battles.battle_event_subscriptions
+     SET revoked_at = now()
+   WHERE id       = p_subscription_id
+     AND owner_id = v_actor
+     AND revoked_at IS NULL;
+
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+
+  IF v_rows = 0 THEN
+    RAISE EXCEPTION 'Subscription not found or already revoked'
+      USING ERRCODE = 'P0002';
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_battles_revoke_webhook"("p_subscription_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_battles_revoke_webhook"("p_subscription_id" "uuid") IS 'Soft-revokes a caller-owned webhook subscription. Idempotent-safe (raises P0002 if already revoked).';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_battles_series_create"("p_name" "text", "p_seed_battle_id" "uuid", "p_cron_expr" "text") RETURNS "uuid"
@@ -21044,32 +15807,6 @@ $$;
 ALTER FUNCTION "public"."fn_complete_onboarding"("p_handle" "text", "p_display_name" "text") OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "agents"."scratchpad_runs" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "actor_lenser_id" "uuid" NOT NULL,
-    "prompt" "text" NOT NULL,
-    "model_id" "uuid",
-    "tool_calls" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
-    "output" "text",
-    "status" "text" DEFAULT 'queued'::"text" NOT NULL,
-    "error" "text",
-    "cost_credits" integer DEFAULT 0 NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "started_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "completed_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "scratchpad_runs_status_check" CHECK (("status" = ANY (ARRAY['queued'::"text", 'running'::"text", 'completed'::"text", 'failed'::"text", 'cancelled'::"text"])))
-);
-
-
-ALTER TABLE "agents"."scratchpad_runs" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."scratchpad_runs" IS 'One-off owner-driven scratchpad runs. Owner-only via RLS. Promote outputs into memory_profiles via fn_promote_scratchpad_to_memory.';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."fn_complete_scratchpad_run"("p_run_id" "uuid", "p_output" "text", "p_status" "text" DEFAULT 'completed'::"text", "p_cost_credits" integer DEFAULT 0, "p_error" "text" DEFAULT NULL::"text") RETURNS "agents"."scratchpad_runs"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'agents'
@@ -22157,17 +16894,18 @@ WITH
     LIMIT 5000
   ),
   reaction_agg AS (
-    SELECT tr.thread_id,
-      count(*) FILTER (WHERE tr.reaction = 'like'::content.reaction_enum) AS like_count
-    FROM content.thread_reactions tr
-    WHERE tr.thread_id IN (SELECT id FROM candidates)
-    GROUP BY tr.thread_id
+    SELECT r.entity_id AS thread_id,
+      count(*) FILTER (WHERE r.reaction = 'like'::content.reaction_enum) AS like_count
+    FROM content.reactions r
+    WHERE r.entity_type = 'thread'::content.entity_type_enum
+      AND r.entity_id IN (SELECT id FROM candidates)
+    GROUP BY r.entity_id
   ),
   scored AS (
     SELECT
       c.id,
       log(greatest(1,
-        2.0 * coalesce(r.like_count, 0)
+        2.0 * coalesce(ra.like_count, 0)
       + 3.0 * c.reply_count
       + 0.5 * c.view_count
       )) / pow(extract(epoch from (now() - c.created_at)) / 3600.0 + 2, 1.5)
@@ -22176,8 +16914,8 @@ WITH
       ttt.language_code AS primary_language,
       c.reply_count
     FROM candidates c
-    LEFT JOIN reaction_agg r ON r.thread_id = c.id
-    LEFT JOIN content.thread_translations ttt ON ttt.thread_id = c.id AND ttt.is_original = true
+    LEFT JOIN reaction_agg ra ON ra.thread_id = c.id
+    LEFT JOIN content.entity_translations ttt ON ttt.entity_id = c.id AND ttt.entity_type = 'thread'::content.entity_type_enum AND ttt.is_original = true
     ORDER BY hot_score DESC
     LIMIT  LEAST(p_limit,  50)
     OFFSET GREATEST(p_offset, 0)
@@ -26456,65 +21194,6 @@ COMMENT ON COLUMN "lensers"."profiles"."referral_source" IS 'UTM / referral toke
 
 
 
-CREATE TABLE IF NOT EXISTS "reputation"."contender_ratings" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "category" "text" NOT NULL,
-    "elo_rating" numeric(10,4) DEFAULT 1000 NOT NULL,
-    "uncertainty" numeric(10,4) DEFAULT 350 NOT NULL,
-    "battles_played" integer DEFAULT 0 NOT NULL,
-    "wins" integer DEFAULT 0 NOT NULL,
-    "draws" integer DEFAULT 0 NOT NULL,
-    "losses" integer DEFAULT 0 NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "sigma" numeric(10,6) DEFAULT 0.06 NOT NULL,
-    "tau" numeric(10,6) DEFAULT 0.0833 NOT NULL,
-    "beta" numeric(10,6) DEFAULT 4.1667 NOT NULL,
-    CONSTRAINT "ck_reputation_contender_ratings_elo_rating_nonneg" CHECK ((("elo_rating" IS NULL) OR ("elo_rating" >= (0)::numeric))),
-    CONSTRAINT "contender_ratings_draws_nonneg" CHECK (("draws" >= 0)),
-    CONSTRAINT "contender_ratings_losses_nonneg" CHECK (("losses" >= 0)),
-    CONSTRAINT "contender_ratings_played_nonneg" CHECK (("battles_played" >= 0)),
-    CONSTRAINT "contender_ratings_wins_nonneg" CHECK (("wins" >= 0))
-);
-
-
-ALTER TABLE "reputation"."contender_ratings" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "reputation"."contender_ratings" IS 'Per-category ELO battle performance. One row per (lenser_id, category). battles_played = wins + draws + losses must hold after each update (enforced by the trigger, not a CHECK constraint). category is free text to avoid enum rigidity; standardize via app logic.';
-
-
-
-COMMENT ON COLUMN "reputation"."contender_ratings"."sigma" IS 'Glicko-2 volatility σ (default 0.06). Updated after each battle via fn_update_elo_on_finalize.';
-
-
-
-COMMENT ON COLUMN "reputation"."contender_ratings"."tau" IS 'TrueSkill dynamics factor (sigma/3): models skill drift over time between battles.';
-
-
-
-COMMENT ON COLUMN "reputation"."contender_ratings"."beta" IS 'TrueSkill performance variance: models the randomness of a single game performance.';
-
-
-
-CREATE TABLE IF NOT EXISTS "reputation"."lenser_scores" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "score_type" "text" NOT NULL,
-    "score" numeric(10,4) DEFAULT 1000 NOT NULL,
-    "uncertainty" numeric(10,4) DEFAULT 350 NOT NULL,
-    "computed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "lenser_scores_type_check" CHECK (("score_type" = ANY (ARRAY['elo'::"text", 'trust'::"text", 'composite'::"text"])))
-);
-
-
-ALTER TABLE "reputation"."lenser_scores" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "reputation"."lenser_scores" IS 'Overall reputation score per lenser. One row per (lenser_id, score_type). Updated by service_role after battle finalization or scheduled recomputation. uncertainty is the Glicko-2 rating deviation (RD): lower = more confident.';
-
-
-
 CREATE TABLE IF NOT EXISTS "xp"."totals" (
     "lenser_id" "uuid" NOT NULL,
     "app_id" "uuid" NOT NULL,
@@ -26587,11 +21266,12 @@ COMMENT ON FUNCTION "public"."fn_get_leaderboard"("p_order_by" "text", "p_limit"
 
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_get_lens_assignment"("p_contender_id" "uuid") RETURNS TABLE("id" "uuid", "contender_id" "uuid", "battle_id" "uuid", "lens_id" "uuid", "version_id" "uuid", "assigned_at" timestamp with time zone)
+CREATE OR REPLACE FUNCTION "public"."fn_get_lens_assignment"("p_contender_id" "uuid") RETURNS TABLE("id" "uuid", "contender_id" "uuid", "battle_id" "uuid", "lens_id" "uuid", "version_id" "uuid", "assigned_at" timestamp with time zone, "input_snapshot" "jsonb")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'battles'
     AS $$
-  SELECT la.id, la.contender_id, la.battle_id, la.lens_id, la.version_id, la.assigned_at
+  SELECT la.id, la.contender_id, la.battle_id, la.lens_id, la.version_id,
+         la.assigned_at, la.input_snapshot
   FROM battles.contender_lens_assignments la
   WHERE la.contender_id = p_contender_id
   LIMIT 1;
@@ -26980,29 +21660,6 @@ ALTER FUNCTION "public"."fn_get_lenser_profile_brief"("p_handle" "text", "p_lens
 
 COMMENT ON FUNCTION "public"."fn_get_lenser_profile_brief"("p_handle" "text", "p_lenser_id" "uuid") IS 'Security wrapper: minimal profile (id, handle, display_name, avatar_url) by handle OR lenser_id. Pass exactly one parameter.';
 
-
-
-CREATE TABLE IF NOT EXISTS "analytics"."lenser_stats" (
-    "lenser_id" "uuid" NOT NULL,
-    "thread_count" integer DEFAULT 0 NOT NULL,
-    "lens_count" integer DEFAULT 0 NOT NULL,
-    "follower_count" integer DEFAULT 0 NOT NULL,
-    "following_count" integer DEFAULT 0 NOT NULL,
-    "xp" bigint DEFAULT 0 NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "mutuals_count" integer DEFAULT 0 NOT NULL,
-    "badges_count" integer DEFAULT 0 NOT NULL,
-    CONSTRAINT "ck_analytics_lenser_stats_badges_count_nonneg" CHECK ((("badges_count" IS NULL) OR ("badges_count" >= 0))),
-    CONSTRAINT "ck_analytics_lenser_stats_follower_count_nonneg" CHECK ((("follower_count" IS NULL) OR ("follower_count" >= 0))),
-    CONSTRAINT "ck_analytics_lenser_stats_following_count_nonneg" CHECK ((("following_count" IS NULL) OR ("following_count" >= 0))),
-    CONSTRAINT "ck_analytics_lenser_stats_lens_count_nonneg" CHECK ((("lens_count" IS NULL) OR ("lens_count" >= 0))),
-    CONSTRAINT "ck_analytics_lenser_stats_mutuals_count_nonneg" CHECK ((("mutuals_count" IS NULL) OR ("mutuals_count" >= 0))),
-    CONSTRAINT "ck_analytics_lenser_stats_thread_count_nonneg" CHECK ((("thread_count" IS NULL) OR ("thread_count" >= 0))),
-    CONSTRAINT "ck_analytics_lenser_stats_xp_nonneg" CHECK ((("xp" IS NULL) OR ("xp" >= 0)))
-);
-
-
-ALTER TABLE "analytics"."lenser_stats" OWNER TO "postgres";
 
 
 CREATE OR REPLACE VIEW "lensers"."v_lenser_profile_full" AS
@@ -27621,32 +22278,6 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_get_pending_requests"("p_limit" integer, "p_offset" integer) OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."provider_configs" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "provider_key" "text" NOT NULL,
-    "ai_key_id" "uuid",
-    "base_url" "text",
-    "status" "text" DEFAULT 'unconfigured'::"text" NOT NULL,
-    "last_checked_at" timestamp with time zone,
-    "configured_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "provider_configs_status_check" CHECK (("status" = ANY (ARRAY['healthy'::"text", 'error'::"text", 'unconfigured'::"text"])))
-);
-
-
-ALTER TABLE "agents"."provider_configs" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."provider_configs" IS 'Per-agent BYOK provider configuration. Stores ai_key_id reference to ai.keys (not the key itself), status from the last health check, and optional base_url override for self-hosted providers. Raw API keys live in vault.secrets.';
-
-
-
-COMMENT ON COLUMN "agents"."provider_configs"."ai_key_id" IS 'References ai.keys(id). NULL until the agent owner stores a key via fn_store_api_key. ON DELETE SET NULL — revoking a key marks the config as unconfigured without deleting it.';
-
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_get_provider_configs"("p_ai_lenser_id" "uuid") RETURNS SETOF "agents"."provider_configs"
@@ -28804,130 +23435,6 @@ COMMENT ON FUNCTION "public"."fn_heartbeat_workflow_run"("p_run_id" "uuid", "p_w
 
 
 
-CREATE TABLE IF NOT EXISTS "agents"."agent_run_events" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "team_run_id" "uuid" NOT NULL,
-    "agent_run_step_id" "uuid",
-    "event_type" "text" NOT NULL,
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "occurred_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "agents"."agent_run_events" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."ai_lensers" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "profile_id" "uuid" NOT NULL,
-    "runtime_pref" "text" DEFAULT 'cloud'::"text" NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "suspended_at" timestamp with time zone,
-    "suspended_reason" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "personality_note" "text",
-    CONSTRAINT "ai_lensers_runtime_check" CHECK (("runtime_pref" = ANY (ARRAY['cloud'::"text", 'local'::"text", 'hybrid'::"text"])))
-);
-
-
-ALTER TABLE "agents"."ai_lensers" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."ai_lensers" IS 'Extension record for AI Lenser profiles. 1:1 with lensers.profiles (type=''ai''). Holds runtime state only. All autonomous behavior policies live in agents.policies. Created atomically via agents.fn_create_ai_lenser.';
-
-
-
-COMMENT ON COLUMN "agents"."ai_lensers"."personality_note" IS 'Free-text role/tone/behavior description authored by the agent owner. Injected as meta-context alongside the default lens system prompt at agent runtime.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."ownerships" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "owner_lenser_id" "uuid" NOT NULL,
-    "role" "text" DEFAULT 'owner'::"text" NOT NULL,
-    "permission_scope" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "granted_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "revoked_at" timestamp with time zone,
-    CONSTRAINT "ownerships_role_check" CHECK (("role" = ANY (ARRAY['owner'::"text", 'co_owner'::"text", 'operator'::"text"])))
-);
-
-
-ALTER TABLE "agents"."ownerships" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."ownerships" IS 'Owner/operator delegation from a human lenser to an AI Lenser. A partial unique index enforces exactly one active primary owner. co_owner and operator roles may be granted freely.';
-
-
-
-COMMENT ON COLUMN "agents"."ownerships"."permission_scope" IS 'Array of permitted actions, e.g. ''{join_battles, vote, create_battles, spend_credits}''. Empty array = no delegation beyond existence.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."team_runs" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "team_id" "uuid",
-    "workflow_id" "uuid",
-    "workflow_run_id" "uuid",
-    "workflow_assignment_id" "uuid",
-    "status" "text" DEFAULT 'queued'::"text" NOT NULL,
-    "approval_status" "text" DEFAULT 'pending'::"text" NOT NULL,
-    "scratchpad" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "started_at" timestamp with time zone,
-    "completed_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "shared_scratchpad" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "shared_scratchpad_version" integer DEFAULT 0 NOT NULL,
-    "parent_team_run_id" "uuid",
-    "recursion_depth" integer DEFAULT 0 NOT NULL,
-    CONSTRAINT "team_runs_approval_status_check" CHECK (("approval_status" = ANY (ARRAY['pending'::"text", 'approved'::"text", 'rejected'::"text", 'not_required'::"text", 'timed_out'::"text"]))),
-    CONSTRAINT "team_runs_recursion_depth_range" CHECK ((("recursion_depth" >= 0) AND ("recursion_depth" <= 8))),
-    CONSTRAINT "team_runs_status_check" CHECK (("status" = ANY (ARRAY['queued'::"text", 'running'::"text", 'completed'::"text", 'failed'::"text", 'cancelled'::"text", 'blocked'::"text"])))
-);
-
-
-ALTER TABLE "agents"."team_runs" OWNER TO "postgres";
-
-
-COMMENT ON COLUMN "agents"."team_runs"."shared_scratchpad" IS 'Phase X3: shared multi-agent JSON scratchpad. Mutated only via agents.fn_merge_shared_scratchpad with optimistic locking.';
-
-
-
-COMMENT ON COLUMN "agents"."team_runs"."shared_scratchpad_version" IS 'Phase X3: monotonic version counter for optimistic locking. Starts at 0.';
-
-
-
-COMMENT ON COLUMN "agents"."team_runs"."parent_team_run_id" IS 'D5: parent team_run that delegated to this run; used to enforce recursion cap.';
-
-
-
-COMMENT ON COLUMN "agents"."team_runs"."recursion_depth" IS 'D5: cached depth in parent_team_run_id chain; rejected at start when > 8.';
-
-
-
-CREATE OR REPLACE VIEW "agents"."v_human_fleet_logs" AS
- SELECT "o"."owner_lenser_id" AS "human_lenser_id",
-    "ev"."id" AS "event_id",
-    "ev"."team_run_id",
-    "tr"."ai_lenser_id",
-    "p"."handle" AS "agent_handle",
-    "ev"."event_type",
-    "ev"."payload",
-    "ev"."occurred_at"
-   FROM (((("agents"."ownerships" "o"
-     JOIN "agents"."ai_lensers" "al" ON (("al"."id" = "o"."ai_lenser_id")))
-     JOIN "lensers"."profiles" "p" ON (("p"."id" = "al"."profile_id")))
-     JOIN "agents"."team_runs" "tr" ON (("tr"."ai_lenser_id" = "al"."id")))
-     JOIN "agents"."agent_run_events" "ev" ON (("ev"."team_run_id" = "tr"."id")));
-
-
-ALTER VIEW "agents"."v_human_fleet_logs" OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."fn_human_fleet_logs"("p_human_lenser_id" "uuid", "p_run_id" "uuid" DEFAULT NULL::"uuid", "p_event_type" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 100, "p_offset" integer DEFAULT 0) RETURNS SETOF "agents"."v_human_fleet_logs"
     LANGUAGE "sql" STABLE
     SET "search_path" TO 'public', 'agents'
@@ -28945,28 +23452,6 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_human_fleet_logs"("p_human_lenser_id" "uuid", "p_run_id" "uuid", "p_event_type" "text", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
-
-
-CREATE OR REPLACE VIEW "agents"."v_human_fleet_runs" AS
- SELECT "o"."owner_lenser_id" AS "human_lenser_id",
-    "tr"."id" AS "run_id",
-    "tr"."ai_lenser_id",
-    "p"."handle" AS "agent_handle",
-    "tr"."team_id",
-    "tr"."workflow_id",
-    "tr"."status",
-    "tr"."approval_status",
-    "tr"."metadata",
-    "tr"."created_at",
-    "tr"."started_at",
-    "tr"."completed_at"
-   FROM ((("agents"."ownerships" "o"
-     JOIN "agents"."ai_lensers" "al" ON (("al"."id" = "o"."ai_lenser_id")))
-     JOIN "lensers"."profiles" "p" ON (("p"."id" = "al"."profile_id")))
-     JOIN "agents"."team_runs" "tr" ON (("tr"."ai_lenser_id" = "al"."id")));
-
-
-ALTER VIEW "agents"."v_human_fleet_runs" OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_human_fleet_runs"("p_human_lenser_id" "uuid", "p_status" "text" DEFAULT NULL::"text", "p_agent_id" "uuid" DEFAULT NULL::"uuid", "p_since" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_limit" integer DEFAULT 50, "p_offset" integer DEFAULT 0) RETURNS SETOF "agents"."v_human_fleet_runs"
@@ -30472,6 +24957,30 @@ $$;
 ALTER FUNCTION "public"."fn_list_agent_action_logs"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_list_agent_incidents"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 20, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(ri.*)
+  FROM   agents.run_incidents ri
+  WHERE  ri.ai_lenser_id = p_ai_lenser_id
+    AND  (p_cursor IS NULL OR ri.created_at < p_cursor)
+    AND  (
+           agents.can_manage_ai_lenser(p_ai_lenser_id)
+           OR public.fn_is_super_admin()
+         )
+  ORDER BY ri.created_at DESC
+  LIMIT  LEAST(GREATEST(COALESCE(p_limit, 20), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_agent_incidents"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_list_agent_incidents"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) IS 'Keyset-paginated list of run_incidents for an AI lenser. Returns up to p_limit rows (max 200) ordered by created_at DESC. Caller must own the agent or be a super admin.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_list_agent_lens_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 50, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "ai_lenser_id" "uuid", "lens_id" "uuid", "version_id" "uuid", "is_default" boolean, "category_tags" "text"[], "created_at" timestamp with time zone)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'agents', 'lensers'
@@ -31025,6 +25534,30 @@ $$;
 ALTER FUNCTION "public"."fn_list_personality_profiles"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_list_policy_evaluations"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 100, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(pe.*)
+  FROM   agents.policy_evaluations pe
+  WHERE  pe.ai_lenser_id = p_ai_lenser_id
+    AND  (p_cursor IS NULL OR pe.evaluated_at < p_cursor)
+    AND  (
+           agents.can_manage_ai_lenser(p_ai_lenser_id)
+           OR public.fn_is_super_admin()
+         )
+  ORDER BY pe.evaluated_at DESC
+  LIMIT  LEAST(GREATEST(COALESCE(p_limit, 100), 1), 500);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_policy_evaluations"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_list_policy_evaluations"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) IS 'Keyset-paginated list of policy_evaluations for an AI lenser ordered by evaluated_at DESC. Returns up to p_limit rows (max 500). Caller must own the agent or be a super admin.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_list_public_battle_templates"("p_category" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 20) RETURNS TABLE("id" "uuid", "title" "text", "description" "text", "task_prompt" "text", "category" "text", "is_public" boolean, "max_contenders" integer, "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'battles'
@@ -31223,7 +25756,7 @@ COMMENT ON FUNCTION "public"."fn_list_template_workflows"("p_limit" integer, "p_
 
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_list_threads"("p_cursor" "uuid" DEFAULT NULL::"uuid", "p_limit" integer DEFAULT 20, "p_tag_slug" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "author_lenser_id" "uuid", "lenser_id" "uuid", "visibility" "text", "created_at" timestamp with time zone, "updated_at" timestamp with time zone, "reply_count" integer, "view_count" integer, "thumbnail_url" "text", "linked_lens_id" "uuid", "lens_data" "jsonb")
+CREATE OR REPLACE FUNCTION "public"."fn_list_threads"("p_cursor" "uuid" DEFAULT NULL::"uuid", "p_limit" integer DEFAULT 20, "p_tag_slug" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "author_lenser_id" "uuid", "lenser_id" "uuid", "visibility" "text", "title" "text", "content" "text", "lenser_handle" "text", "created_at" timestamp with time zone, "updated_at" timestamp with time zone, "reply_count" integer, "view_count" integer, "thumbnail_url" "text", "linked_lens_id" "uuid", "lens_data" "jsonb")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'content', 'lensers'
     AS $$
@@ -31232,6 +25765,9 @@ CREATE OR REPLACE FUNCTION "public"."fn_list_threads"("p_cursor" "uuid" DEFAULT 
     t.lenser_id  AS author_lenser_id,
     t.lenser_id,
     t.visibility::text,
+    COALESCE(et.title, 'Untitled') AS title,
+    COALESCE(et.content, '')       AS content,
+    prof.handle                    AS lenser_handle,
     t.created_at,
     t.updated_at,
     t.reply_count,
@@ -31240,6 +25776,11 @@ CREATE OR REPLACE FUNCTION "public"."fn_list_threads"("p_cursor" "uuid" DEFAULT 
     t.linked_lens_id,
     t.lens_data
   FROM content.threads t
+  LEFT JOIN content.entity_translations et
+         ON et.entity_id   = t.id
+        AND et.entity_type = 'thread'::content.entity_type_enum
+        AND et.is_original = true
+  LEFT JOIN lensers.profiles prof ON prof.id = t.lenser_id
   WHERE t.lenser_id = lensers.get_auth_lenser_id()
     AND (
       p_cursor IS NULL
@@ -31251,8 +25792,8 @@ CREATE OR REPLACE FUNCTION "public"."fn_list_threads"("p_cursor" "uuid" DEFAULT 
         SELECT 1
         FROM content.tag_map tm
         JOIN content.tags tg ON tg.id = tm.tag_id
-        WHERE tm.entity_id  = t.id
-          AND tm.entity_type::text = 'thread'
+        WHERE tm.entity_id   = t.id
+          AND tm.entity_type = 'thread'::content.entity_type_enum
           AND tg.slug = p_tag_slug
       )
     )
@@ -31264,7 +25805,7 @@ $$;
 ALTER FUNCTION "public"."fn_list_threads"("p_cursor" "uuid", "p_limit" integer, "p_tag_slug" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."fn_list_threads"("p_cursor" "uuid", "p_limit" integer, "p_tag_slug" "text") IS 'Lists threads owned by the current authenticated user (all visibilities). Used by threadsRepository.getByLenser(includePrivate=true) when the viewer is the profile owner. Supports cursor pagination and optional tag-slug filtering.';
+COMMENT ON FUNCTION "public"."fn_list_threads"("p_cursor" "uuid", "p_limit" integer, "p_tag_slug" "text") IS 'Lists threads owned by the current authenticated user (all visibilities) with title, content, and lenser_handle pre-joined. Used by threadsRepository.getByLenser(includePrivate=true) when the viewer is the profile owner. Supports cursor pagination and optional tag-slug filtering. Title/content come from entity_translations so private threads hydrate correctly without a second public-view lookup.';
 
 
 
@@ -31308,6 +25849,17 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_list_tool_profiles"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_tools"("p_category" "text" DEFAULT NULL::"text") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses'
+    AS $$
+  SELECT lenses.fn_list_tools(p_category);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_tools"("p_category" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_list_tools_registry"("p_owner_lenser_id" "uuid") RETURNS SETOF "jsonb"
@@ -32080,25 +26632,75 @@ COMMENT ON FUNCTION "public"."fn_post_global_message"("p_battle_id" "uuid", "p_b
 
 
 
-CREATE TABLE IF NOT EXISTS "agents"."memory_profiles" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "scope_type" "text" DEFAULT 'project'::"text" NOT NULL,
-    "isolation_mode" "text" DEFAULT 'isolated'::"text" NOT NULL,
-    "retention_days" integer DEFAULT 30 NOT NULL,
-    "visibility" "text" DEFAULT 'private'::"text" NOT NULL,
-    "summary_strategy" "text" DEFAULT 'rolling_summary'::"text" NOT NULL,
-    "reset_policy" "text" DEFAULT 'manual'::"text" NOT NULL,
-    "is_default" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "seed" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
-    CONSTRAINT "memory_profiles_retention_days_check" CHECK (("retention_days" >= 0))
-);
+CREATE OR REPLACE FUNCTION "public"."fn_profile_completion_score"("p_lenser_id" "uuid") RETURNS integer
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'lensers', 'xp', 'battles', 'public'
+    AS $$
+DECLARE
+  v_score     integer := 0;
+  v_bio       text;
+  v_avatar    text;
+  v_location  text;
+  v_website   text;
+  v_battles   bigint;
+  v_total_xp  bigint;
+BEGIN
+  SELECT
+    p.bio,
+    p.avatar_url,
+    p.location,
+    p.website_url
+  INTO v_bio, v_avatar, v_location, v_website
+  FROM lensers.profiles p
+  WHERE p.id = p_lenser_id;
+
+  IF NOT FOUND THEN
+    RETURN 0;
+  END IF;
+
+  IF v_bio IS NOT NULL AND length(trim(v_bio)) > 0 THEN
+    v_score := v_score + 25;
+  END IF;
+  IF v_avatar IS NOT NULL AND length(trim(v_avatar)) > 0 THEN
+    v_score := v_score + 25;
+  END IF;
+  IF v_location IS NOT NULL AND length(trim(v_location)) > 0 THEN
+    v_score := v_score + 15;
+  END IF;
+  IF v_website IS NOT NULL AND length(trim(v_website)) > 0 THEN
+    v_score := v_score + 15;
+  END IF;
+
+  -- Battle participation ('cancelled' is not a valid battles.battle_status_enum value)
+  SELECT COUNT(*) INTO v_battles
+  FROM battles.contenders bc
+  JOIN battles.battles b ON b.id = bc.battle_id
+  WHERE bc.contender_ref_id = p_lenser_id
+    AND b.status <> 'draft'::battles.battle_status_enum;
+
+  IF v_battles > 0 THEN
+    v_score := v_score + 10;
+  END IF;
+
+  -- XP earned (any positive amount)
+  SELECT COALESCE(SUM(xp), 0) INTO v_total_xp
+  FROM xp.events
+  WHERE lenser_id = p_lenser_id;
+
+  IF v_total_xp > 0 THEN
+    v_score := v_score + 10;
+  END IF;
+
+  RETURN LEAST(v_score, 100);
+END;
+$$;
 
 
-ALTER TABLE "agents"."memory_profiles" OWNER TO "postgres";
+ALTER FUNCTION "public"."fn_profile_completion_score"("p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_profile_completion_score"("p_lenser_id" "uuid") IS 'Returns a 0–100 profile completion score. Breakdown: bio +25, avatar +25, location +15, website +15, battles >0 +10, XP >0 +10.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_promote_scratchpad_to_memory"("p_run_id" "uuid", "p_memory_profile_id" "uuid") RETURNS "agents"."memory_profiles"
@@ -32269,33 +26871,6 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_purge_due_accounts"() OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."memories" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "profile_id" "uuid" NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "scope" "text" NOT NULL,
-    "source" "text" NOT NULL,
-    "content" "text" NOT NULL,
-    "embedding_metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "confidence" numeric DEFAULT 0.5 NOT NULL,
-    "expires_at" timestamp with time zone,
-    "team_run_id" "uuid",
-    "is_redacted" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "ck_agents_memories_content_len" CHECK ((("content" IS NULL) OR ("length"("content") <= 20000))),
-    CONSTRAINT "memories_confidence_check" CHECK ((("confidence" >= (0)::numeric) AND ("confidence" <= (1)::numeric))),
-    CONSTRAINT "memories_scope_check" CHECK (("scope" = ANY (ARRAY['project'::"text", 'conversation'::"text", 'global'::"text"]))),
-    CONSTRAINT "memories_source_check" CHECK (("source" = ANY (ARRAY['user'::"text", 'agent'::"text", 'tool'::"text", 'eval'::"text", 'manual'::"text"])))
-);
-
-
-ALTER TABLE "agents"."memories" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."memories" IS 'Per-agent memory entries. Profile carries config; entries carry content. Writes are gated to successful runs; reads are logged.';
-
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_read_memory_entries"("p_profile_id" "uuid", "p_scope" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 10, "p_team_run_id" "uuid" DEFAULT NULL::"uuid") RETURNS SETOF "agents"."memories"
@@ -32513,39 +27088,6 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_redact_memory_entry"("p_memory_id" "uuid", "p_reason" "text") OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."tools_registry" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "owner_lenser_id" "uuid" NOT NULL,
-    "key" "text" NOT NULL,
-    "name" "text" NOT NULL,
-    "description" "text",
-    "category" "text" DEFAULT 'general'::"text" NOT NULL,
-    "schema_input" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "schema_output" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "auth_method" "text" DEFAULT 'none'::"text" NOT NULL,
-    "requires_approval" boolean DEFAULT false NOT NULL,
-    "is_dangerous" boolean DEFAULT false NOT NULL,
-    "status" "text" DEFAULT 'active'::"text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "egress_class" "text" DEFAULT 'none'::"text" NOT NULL,
-    CONSTRAINT "tools_registry_auth_method_check" CHECK (("auth_method" = ANY (ARRAY['none'::"text", 'api_key'::"text", 'oauth'::"text", 'service_account'::"text"]))),
-    CONSTRAINT "tools_registry_egress_class_check" CHECK (("egress_class" = ANY (ARRAY['none'::"text", 'read_only'::"text", 'write'::"text"]))),
-    CONSTRAINT "tools_registry_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'disabled'::"text", 'deprecated'::"text"])))
-);
-
-
-ALTER TABLE "agents"."tools_registry" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."tools_registry" IS 'Per-owner registry of tool definitions. Tool assignments bind a registered tool to an agent.';
-
-
-
-COMMENT ON COLUMN "agents"."tools_registry"."egress_class" IS 'Sandbox classification: none (compute-only), read_only (outbound reads), write (mutations). write auto-forces requires_approval.';
-
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_register_tool"("p_key" "text", "p_name" "text", "p_description" "text" DEFAULT NULL::"text", "p_category" "text" DEFAULT 'general'::"text", "p_schema_input" "jsonb" DEFAULT '{}'::"jsonb", "p_schema_output" "jsonb" DEFAULT '{}'::"jsonb", "p_auth_method" "text" DEFAULT 'none'::"text", "p_requires_approval" boolean DEFAULT false, "p_is_dangerous" boolean DEFAULT false) RETURNS "agents"."tools_registry"
@@ -32919,45 +27461,6 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_request_follow"("p_target_profile_id" "uuid") OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."workspace_settings" (
-    "ai_lenser_id" "uuid" NOT NULL,
-    "default_model_id" "uuid",
-    "default_provider_key" "text",
-    "approval_default" "text" DEFAULT 'require_human'::"text" NOT NULL,
-    "retention_days" integer DEFAULT 90 NOT NULL,
-    "max_daily_credits" integer DEFAULT 1000 NOT NULL,
-    "webhooks" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
-    "api_access_enabled" boolean DEFAULT false NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "max_parallel_runs" integer DEFAULT 5 NOT NULL,
-    "global_kill_switch" boolean DEFAULT false NOT NULL,
-    "agent_paused" boolean DEFAULT false NOT NULL,
-    "dark_launch_enabled" boolean DEFAULT false NOT NULL,
-    "dark_launch_pct" integer DEFAULT 0 NOT NULL,
-    "budget_enforce" boolean DEFAULT true NOT NULL,
-    "runner_paused" boolean DEFAULT false NOT NULL,
-    CONSTRAINT "workspace_settings_approval_default_check" CHECK (("approval_default" = ANY (ARRAY['auto'::"text", 'require_human'::"text", 'deny'::"text"]))),
-    CONSTRAINT "workspace_settings_dark_launch_pct_check" CHECK ((("dark_launch_pct" >= 0) AND ("dark_launch_pct" <= 100)))
-);
-
-
-ALTER TABLE "agents"."workspace_settings" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."workspace_settings" IS 'Per-agent workspace settings: default model/provider, approval default, retention, daily budget, webhooks, API access. Owner-only via RLS.';
-
-
-
-COMMENT ON COLUMN "agents"."workspace_settings"."agent_paused" IS 'DEPRECATED: use runner_paused. Kept in sync via trigger fn_workspace_settings_paused_sync. Will be removed in a future major migration; do not write directly.';
-
-
-
-COMMENT ON COLUMN "agents"."workspace_settings"."runner_paused" IS 'Canonical pause flag for the workspace runner. Replaces agent_paused (deprecated).';
-
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_request_workspace_deletion"("p_ai_lenser_id" "uuid", "p_reason" "text" DEFAULT NULL::"text") RETURNS "agents"."workspace_settings"
@@ -35473,24 +29976,6 @@ $$;
 ALTER FUNCTION "public"."fn_update_workspace_settings"("p_ai_lenser_id" "uuid", "p_patch" "jsonb") OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "agents"."lens_bindings" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "lens_id" "uuid" NOT NULL,
-    "version_id" "uuid",
-    "is_default" boolean DEFAULT false NOT NULL,
-    "category_tags" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "agents"."lens_bindings" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."lens_bindings" IS 'Which lenses an AI Lenser may use in battles. version_id NULL means the agent always uses the current head version. Pin version_id for reproducible benchmark submissions.';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."fn_upsert_agent_lens_binding"("p_ai_lenser_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid" DEFAULT NULL::"uuid", "p_is_default" boolean DEFAULT true) RETURNS SETOF "agents"."lens_bindings"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'agents', 'lensers', 'lenses'
@@ -35659,34 +30144,6 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_upsert_agent_lens_binding"("p_ai_lenser_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid", "p_is_default" boolean, "p_category_tags" "text"[]) OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."model_bindings" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "model_id" "uuid" NOT NULL,
-    "is_default" boolean DEFAULT false NOT NULL,
-    "category_tags" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "byok_adapter" "text",
-    "ollama_endpoint" "text",
-    CONSTRAINT "model_bindings_byok_adapter_check" CHECK (("byok_adapter" = ANY (ARRAY['openai'::"text", 'anthropic'::"text", 'mistral'::"text", 'google'::"text", 'cohere'::"text", 'custom'::"text"])))
-);
-
-
-ALTER TABLE "agents"."model_bindings" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."model_bindings" IS 'Which AI models an AI Lenser is allowed to use. category_tags narrows selection by battle category. is_default selects the fallback when no category match exists.';
-
-
-
-COMMENT ON COLUMN "agents"."model_bindings"."byok_adapter" IS 'Provider key for BYOK execution — keys are stored in execution.byok_keys, not here.';
-
-
-
-COMMENT ON COLUMN "agents"."model_bindings"."ollama_endpoint" IS 'Local Ollama endpoint URL (e.g. http://localhost:11434). Never proxied to cloud.';
-
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_upsert_agent_model_binding"("p_ai_lenser_id" "uuid", "p_model_id" "uuid", "p_is_default" boolean DEFAULT true) RETURNS SETOF "agents"."model_bindings"
@@ -37467,7 +31924,6 @@ CREATE OR REPLACE FUNCTION "public"."fn_xp_get_summary"("p_lenser_id" "uuid" DEF
 DECLARE
   v_lenser_id uuid;
 BEGIN
-  -- Resolve caller lenser_id from JWT if not supplied
   IF p_lenser_id IS NULL THEN
     SELECT id INTO v_lenser_id FROM lensers.profiles WHERE user_id = auth.uid();
   ELSE
@@ -37476,21 +31932,23 @@ BEGIN
 
   RETURN QUERY
   SELECT
-    COALESCE(t.total_xp, 0)::bigint,
-    COALESCE(t.current_level, 1),
-    COALESCE(t.app_id, '00000000-0000-0000-0000-000000000001'::uuid),
+    COALESCE(xrow.row_total_xp, 0)::bigint,
+    COALESCE(xrow.row_level, 1),
+    COALESCE(xrow.row_app_id, '00000000-0000-0000-0000-000000000001'::uuid),
     COALESCE(l.min_total_xp, 0)::bigint,
     l.max_total_xp::bigint
   FROM (
-    SELECT total_xp, current_level, app_id
-    FROM xp.totals
-    WHERE lenser_id = v_lenser_id
-      AND (p_app_id IS NULL OR app_id = p_app_id)
+    SELECT xt.total_xp AS row_total_xp,
+           xt.current_level AS row_level,
+           xt.app_id AS row_app_id
+    FROM xp.totals xt
+    WHERE xt.lenser_id = v_lenser_id
+      AND (p_app_id IS NULL OR xt.app_id = p_app_id)
     LIMIT 1
-  ) t
+  ) xrow
   LEFT JOIN xp.levels l
-    ON l.app_id = COALESCE(t.app_id, '00000000-0000-0000-0000-000000000001'::uuid)
-   AND l.level  = COALESCE(t.current_level, 1);
+    ON l.app_id = COALESCE(xrow.row_app_id, '00000000-0000-0000-0000-000000000001'::uuid)
+   AND l.level  = COALESCE(xrow.row_level, 1);
 END;
 $$;
 
@@ -37680,1535 +32138,895 @@ COMMENT ON FUNCTION "public"."set_updated_at"() IS 'Shared BEFORE UPDATE trigger
 
 
 
-CREATE OR REPLACE FUNCTION "reputation"."fn_seed_vote_risk"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'battles', 'reputation', 'net', 'public'
+CREATE OR REPLACE FUNCTION "storage"."allow_any_operation"("expected_operations" "text"[]) RETURNS boolean
+    LANGUAGE "sql" STABLE
     AS $$
-DECLARE
-  v_url             text;
-  v_service_key     text;
-BEGIN
-  -- ── Step 1: Synchronous zero-risk seed ─────────────────────────────────────
-  -- Always runs. Ensures the FK row exists for immediate joins in aggregations.
-  INSERT INTO reputation.vote_risk_scores (vote_id, risk_score, risk_factors)
-  VALUES (NEW.id, 0, '{}')
-  ON CONFLICT (vote_id) DO NOTHING;
-
-  -- ── Step 2: Async risk enrichment via pg_net ────────────────────────────────
-  -- Only fires when app.supabase_url is set (i.e. hosted Supabase environment).
-  -- In local dev without this GUC configured the seed-only path is sufficient.
-  v_url         := current_setting('app.supabase_url',      true);
-  v_service_key := current_setting('app.service_role_key',  true);
-
-  IF v_url IS NOT NULL AND v_url <> '' AND v_service_key IS NOT NULL THEN
-    PERFORM net.http_post(
-      url     := v_url || '/functions/v1/score-vote-risk',
-      body    := jsonb_build_object(
-                   'vote_id',    NEW.id,
-                   'battle_id',  NEW.battle_id,
-                   'voter_id',   NEW.voter_lenser_id,
-                   'voted_for',  NEW.voted_contender_id,
-                   'vote_value', NEW.vote_value::text,
-                   'is_draw',    NEW.is_draw
-                 ),
-      headers := jsonb_build_object(
-                   'Content-Type',  'application/json',
-                   'Authorization', 'Bearer ' || v_service_key
-                 )
-    );
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "reputation"."fn_seed_vote_risk"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "reputation"."fn_seed_vote_risk"() IS 'AFTER INSERT trigger on battles.votes. Phase F: seeds zero-risk row synchronously then enqueues async HTTP POST to score-vote-risk Edge Function via pg_net when app.supabase_url is configured. Gracefully degrades to seed-only in local dev when GUC is unset. GRASP Protected Variations: DB trigger is decoupled from risk model logic.';
-
-
-
-CREATE OR REPLACE FUNCTION "reputation"."fn_trueskill_update"("p_mu1" numeric, "p_sigma1" numeric, "p_mu2" numeric, "p_sigma2" numeric, "p_outcome" numeric, "p_tau" numeric DEFAULT 0.0833, "p_beta" numeric DEFAULT 4.1667) RETURNS TABLE("new_mu1" numeric, "new_sigma1" numeric, "new_mu2" numeric, "new_sigma2" numeric)
-    LANGUAGE "plpgsql" IMMUTABLE SECURITY DEFINER
-    SET "search_path" TO 'reputation', 'public'
-    AS $$
-DECLARE
-  v_sigma1_sq numeric;
-  v_sigma2_sq numeric;
-  v_c         numeric;  -- Total performance uncertainty
-  v_t         numeric;  -- Standardized difference
-  v_v         numeric;  -- Mean additive correction (truncated Gaussian)
-  v_w         numeric;  -- Variance multiplicative correction
-  v_epsilon   numeric := 0.0;  -- Draw margin (0 for no-draw model)
-  v_pdf_val   numeric;
-  v_cdf_val   numeric;
-  v_sign      numeric;
-BEGIN
-  -- Apply dynamics (tau) to account for skill drift
-  v_sigma1_sq := p_sigma1 * p_sigma1 + p_tau * p_tau;
-  v_sigma2_sq := p_sigma2 * p_sigma2 + p_tau * p_tau;
-
-  -- Total uncertainty: c = sqrt(2*beta^2 + sigma1^2 + sigma2^2)
-  v_c := sqrt(2.0 * p_beta * p_beta + v_sigma1_sq + v_sigma2_sq);
-
-  IF p_outcome >= 0.99 THEN
-    -- Player 1 wins
-    v_t := (p_mu1 - p_mu2) / v_c;
-
-    v_pdf_val := reputation.std_normal_pdf(v_t);
-    v_cdf_val := reputation.std_normal_cdf(v_t);
-
-    -- Guard against division by zero
-    IF v_cdf_val < 0.000001 THEN v_cdf_val := 0.000001; END IF;
-
-    v_v := v_pdf_val / v_cdf_val;
-    v_w := v_v * (v_v + v_t);
-
-    RETURN QUERY SELECT
-      (p_mu1 + (v_sigma1_sq / v_c) * v_v)::numeric,
-      (sqrt(v_sigma1_sq * (1.0 - (v_sigma1_sq / (v_c * v_c)) * v_w)))::numeric,
-      (p_mu2 - (v_sigma2_sq / v_c) * v_v)::numeric,
-      (sqrt(v_sigma2_sq * (1.0 - (v_sigma2_sq / (v_c * v_c)) * v_w)))::numeric;
-
-  ELSIF p_outcome <= 0.01 THEN
-    -- Player 2 wins: swap perspective
-    v_t := (p_mu2 - p_mu1) / v_c;
-
-    v_pdf_val := reputation.std_normal_pdf(v_t);
-    v_cdf_val := reputation.std_normal_cdf(v_t);
-
-    IF v_cdf_val < 0.000001 THEN v_cdf_val := 0.000001; END IF;
-
-    v_v := v_pdf_val / v_cdf_val;
-    v_w := v_v * (v_v + v_t);
-
-    RETURN QUERY SELECT
-      (p_mu1 - (v_sigma1_sq / v_c) * v_v)::numeric,
-      (sqrt(v_sigma1_sq * (1.0 - (v_sigma1_sq / (v_c * v_c)) * v_w)))::numeric,
-      (p_mu2 + (v_sigma2_sq / v_c) * v_v)::numeric,
-      (sqrt(v_sigma2_sq * (1.0 - (v_sigma2_sq / (v_c * v_c)) * v_w)))::numeric;
-
-  ELSE
-    -- Draw: use draw factor (v and w for draws differ)
-    v_t := abs(p_mu1 - p_mu2) / v_c;
-
-    v_pdf_val := reputation.std_normal_pdf(v_t);
-    v_cdf_val := reputation.std_normal_cdf(v_t);
-
-    -- For draws, both players move toward each other
-    IF v_cdf_val < 0.000001 THEN v_cdf_val := 0.000001; END IF;
-
-    v_v := v_pdf_val / v_cdf_val;
-    v_w := v_v * (v_v + v_t);
-
-    -- Symmetric update: both move toward the mean
-    v_sign := CASE WHEN p_mu1 > p_mu2 THEN -1.0 ELSE 1.0 END;
-
-    RETURN QUERY SELECT
-      (p_mu1 + v_sign * (v_sigma1_sq / v_c) * v_v * 0.5)::numeric,
-      (sqrt(v_sigma1_sq * (1.0 - (v_sigma1_sq / (v_c * v_c)) * v_w * 0.5)))::numeric,
-      (p_mu2 - v_sign * (v_sigma2_sq / v_c) * v_v * 0.5)::numeric,
-      (sqrt(v_sigma2_sq * (1.0 - (v_sigma2_sq / (v_c * v_c)) * v_w * 0.5)))::numeric;
-  END IF;
-END;
-$$;
-
-
-ALTER FUNCTION "reputation"."fn_trueskill_update"("p_mu1" numeric, "p_sigma1" numeric, "p_mu2" numeric, "p_sigma2" numeric, "p_outcome" numeric, "p_tau" numeric, "p_beta" numeric) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "reputation"."fn_trueskill_update"("p_mu1" numeric, "p_sigma1" numeric, "p_mu2" numeric, "p_sigma2" numeric, "p_outcome" numeric, "p_tau" numeric, "p_beta" numeric) IS 'TrueSkill factor graph update for 1v1 matches. Returns updated (mu, sigma) for both players. Uses tau for dynamics and beta for performance variance.';
-
-
-
-CREATE OR REPLACE FUNCTION "reputation"."fn_update_elo_on_finalize"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'battles', 'reputation', 'public'
-    AS $$
-DECLARE
-  v_contender_a     RECORD;
-  v_contender_b     RECORD;
-  v_score_a         numeric;
-  v_score_b         numeric;
-  v_lenser_a        uuid;
-  v_lenser_b        uuid;
-  v_rating_a        RECORD;
-  v_rating_b        RECORD;
-  v_new_a           RECORD;
-  v_new_b           RECORD;
-  v_category        text;
-  v_use_trueskill   boolean;
-BEGIN
-  -- Only fire on status transition → 'closed'
-  IF NEW.status <> 'closed' OR OLD.status = 'closed' THEN
-    RETURN NEW;
-  END IF;
-
-  -- ── Resolve contenders via entity map (1v1 assumption) ──────────────────
-  SELECT em.contender_id, COALESCE(em.profile_id, em.ai_lenser_id) AS lenser_id
-  INTO v_contender_a
-  FROM battles.contenders c
-  JOIN battles.contender_entity_map em ON em.contender_id = c.id
-  WHERE c.battle_id = NEW.id AND c.contender_status = 'active'
-    AND COALESCE(em.profile_id, em.ai_lenser_id) IS NOT NULL
-  ORDER BY c.created_at ASC
-  LIMIT 1;
-
-  SELECT em.contender_id, COALESCE(em.profile_id, em.ai_lenser_id) AS lenser_id
-  INTO v_contender_b
-  FROM battles.contenders c
-  JOIN battles.contender_entity_map em ON em.contender_id = c.id
-  WHERE c.battle_id = NEW.id AND c.contender_status = 'active'
-    AND COALESCE(em.profile_id, em.ai_lenser_id) IS NOT NULL
-    AND c.id <> v_contender_a.contender_id
-  ORDER BY c.created_at ASC
-  LIMIT 1;
-
-  IF v_contender_a.lenser_id IS NULL OR v_contender_b.lenser_id IS NULL THEN
-    RETURN NEW;
-  END IF;
-
-  v_lenser_a := v_contender_a.lenser_id;
-  v_lenser_b := v_contender_b.lenser_id;
-
-  -- ── Determine outcomes ───────────────────────────────────────────────────
-  IF NEW.winner_contender_id IS NULL THEN
-    v_score_a := 0.5;
-    v_score_b := 0.5;
-  ELSIF NEW.winner_contender_id = v_contender_a.contender_id THEN
-    v_score_a := 1.0;
-    v_score_b := 0.0;
-  ELSE
-    v_score_a := 0.0;
-    v_score_b := 1.0;
-  END IF;
-
-  -- ── Derive category from battle_type (fallback to 'general') ────────────
-  v_category := coalesce(NEW.content_type, NEW.battle_type::text, 'general');
-
-  -- ── Upsert ratings for both players ─────────────────────────────────────
-  INSERT INTO reputation.contender_ratings (lenser_id, category)
-  VALUES (v_lenser_a, v_category)
-  ON CONFLICT (lenser_id, category) DO NOTHING;
-
-  INSERT INTO reputation.contender_ratings (lenser_id, category)
-  VALUES (v_lenser_b, v_category)
-  ON CONFLICT (lenser_id, category) DO NOTHING;
-
-  -- Load current ratings
-  SELECT * INTO v_rating_a
-  FROM reputation.contender_ratings
-  WHERE lenser_id = v_lenser_a AND category = v_category;
-
-  SELECT * INTO v_rating_b
-  FROM reputation.contender_ratings
-  WHERE lenser_id = v_lenser_b AND category = v_category;
-
-  -- ── Decide: TrueSkill (tau > 0) or Glicko-2 ────────────────────────────
-  v_use_trueskill := (v_rating_a.tau > 0 OR v_rating_b.tau > 0);
-
-  IF v_use_trueskill THEN
-    -- TrueSkill update
-    SELECT * INTO v_new_a
-    FROM reputation.fn_trueskill_update(
-      v_rating_a.elo_rating, v_rating_a.uncertainty,
-      v_rating_b.elo_rating, v_rating_b.uncertainty,
-      v_score_a,
-      greatest(v_rating_a.tau, v_rating_b.tau),
-      greatest(v_rating_a.beta, v_rating_b.beta)
-    );
-
-    -- Update player A
-    UPDATE reputation.contender_ratings SET
-      elo_rating     = v_new_a.new_mu1,
-      uncertainty    = v_new_a.new_sigma1,
-      battles_played = battles_played + 1,
-      wins           = wins + CASE WHEN v_score_a >= 0.99 THEN 1 ELSE 0 END,
-      draws          = draws + CASE WHEN v_score_a > 0.01 AND v_score_a < 0.99 THEN 1 ELSE 0 END,
-      losses         = losses + CASE WHEN v_score_a <= 0.01 THEN 1 ELSE 0 END,
-      updated_at     = now()
-    WHERE lenser_id = v_lenser_a AND category = v_category;
-
-    -- Update player B
-    UPDATE reputation.contender_ratings SET
-      elo_rating     = v_new_a.new_mu2,
-      uncertainty    = v_new_a.new_sigma2,
-      battles_played = battles_played + 1,
-      wins           = wins + CASE WHEN v_score_b >= 0.99 THEN 1 ELSE 0 END,
-      draws          = draws + CASE WHEN v_score_b > 0.01 AND v_score_b < 0.99 THEN 1 ELSE 0 END,
-      losses         = losses + CASE WHEN v_score_b <= 0.01 THEN 1 ELSE 0 END,
-      updated_at     = now()
-    WHERE lenser_id = v_lenser_b AND category = v_category;
-
-  ELSE
-    -- Glicko-2 update (existing behavior)
-    SELECT * INTO v_new_a
-    FROM reputation.glicko2_update(
-      v_rating_a.elo_rating, v_rating_a.uncertainty, v_rating_a.sigma,
-      v_rating_b.elo_rating, v_rating_b.uncertainty,
-      v_score_a
-    );
-
-    SELECT * INTO v_new_b
-    FROM reputation.glicko2_update(
-      v_rating_b.elo_rating, v_rating_b.uncertainty, v_rating_b.sigma,
-      v_rating_a.elo_rating, v_rating_a.uncertainty,
-      v_score_b
-    );
-
-    UPDATE reputation.contender_ratings SET
-      elo_rating     = v_new_a.new_r,
-      uncertainty    = v_new_a.new_rd,
-      sigma          = v_new_a.new_sigma,
-      battles_played = battles_played + 1,
-      wins           = wins + CASE WHEN v_score_a >= 0.99 THEN 1 ELSE 0 END,
-      draws          = draws + CASE WHEN v_score_a > 0.01 AND v_score_a < 0.99 THEN 1 ELSE 0 END,
-      losses         = losses + CASE WHEN v_score_a <= 0.01 THEN 1 ELSE 0 END,
-      updated_at     = now()
-    WHERE lenser_id = v_lenser_a AND category = v_category;
-
-    UPDATE reputation.contender_ratings SET
-      elo_rating     = v_new_b.new_r,
-      uncertainty    = v_new_b.new_rd,
-      sigma          = v_new_b.new_sigma,
-      battles_played = battles_played + 1,
-      wins           = wins + CASE WHEN v_score_b >= 0.99 THEN 1 ELSE 0 END,
-      draws          = draws + CASE WHEN v_score_b > 0.01 AND v_score_b < 0.99 THEN 1 ELSE 0 END,
-      losses         = losses + CASE WHEN v_score_b <= 0.01 THEN 1 ELSE 0 END,
-      updated_at     = now()
-    WHERE lenser_id = v_lenser_b AND category = v_category;
-  END IF;
-
-  -- ── Upsert lenser_scores with latest ELO ────────────────────────────────
-  INSERT INTO reputation.lenser_scores (lenser_id, score_type, score, uncertainty, computed_at)
-  VALUES (v_lenser_a, 'elo', v_rating_a.elo_rating, v_rating_a.uncertainty, now())
-  ON CONFLICT (lenser_id, score_type) DO UPDATE SET
-    score       = EXCLUDED.score,
-    uncertainty = EXCLUDED.uncertainty,
-    computed_at = now();
-
-  INSERT INTO reputation.lenser_scores (lenser_id, score_type, score, uncertainty, computed_at)
-  VALUES (v_lenser_b, 'elo', v_rating_b.elo_rating, v_rating_b.uncertainty, now())
-  ON CONFLICT (lenser_id, score_type) DO UPDATE SET
-    score       = EXCLUDED.score,
-    uncertainty = EXCLUDED.uncertainty,
-    computed_at = now();
-
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "reputation"."fn_update_elo_on_finalize"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "reputation"."fn_update_elo_on_finalize"() IS 'AFTER UPDATE trigger on battles.battles. Fires on status → ''closed''. Supports both Glicko-2 and TrueSkill: uses TrueSkill when contender_ratings.tau > 0, otherwise Glicko-2. Updates elo_rating, uncertainty, sigma/tau for both contenders. Also upserts reputation.lenser_scores.';
-
-
-
-CREATE OR REPLACE FUNCTION "reputation"."glicko2_update"("p_r" numeric, "p_rd" numeric, "p_sigma" numeric, "p_opp_r" numeric, "p_opp_rd" numeric, "p_score" numeric) RETURNS TABLE("new_r" numeric, "new_rd" numeric, "new_sigma" numeric)
-    LANGUAGE "plpgsql" IMMUTABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-DECLARE
-  -- Glicko-2 constants
-  v_tau    CONSTANT numeric := 0.5;       -- system volatility constant τ
-  v_scale  CONSTANT numeric := 173.7178;  -- Glicko-2 → Elo conversion factor
-  v_eps    CONSTANT numeric := 0.000001;  -- Illinois convergence tolerance
-
-  -- Glicko-2 internal scale
-  v_mu     numeric;
-  v_phi    numeric;
-  v_mu_j   numeric;
-  v_phi_j  numeric;
-
-  -- Intermediate computation
-  v_g      numeric;   -- g(φ_j)
-  v_E      numeric;   -- E(μ, μ_j, φ_j)
-  v_v      numeric;   -- estimated variance
-  v_delta  numeric;   -- improvement Δ
-
-  -- Illinois algorithm variables
-  v_a      numeric;
-  v_alpha  numeric;
-  v_B      numeric;
-  v_fA     numeric;
-  v_fB     numeric;
-  v_C      numeric;
-  v_fC     numeric;
-  v_iter   integer;
-  v_ex     numeric;
-  v_denom  numeric;
-
-  -- New values
-  v_sigma2    numeric;
-  v_phi_star  numeric;
-  v_phi_new   numeric;
-  v_mu_new    numeric;
-BEGIN
-  -- Guard: RD must be positive
-  p_rd     := GREATEST(p_rd,     1.0);
-  p_opp_rd := GREATEST(p_opp_rd, 1.0);
-  p_sigma  := GREATEST(p_sigma,  0.001);
-
-  -- Step 1: Convert to Glicko-2 internal scale
-  v_mu    := (p_r     - 1500.0) / v_scale;
-  v_phi   := p_rd     / v_scale;
-  v_mu_j  := (p_opp_r - 1500.0) / v_scale;
-  v_phi_j := p_opp_rd / v_scale;
-
-  -- Step 2: Compute g(φ_j) and E(μ, μ_j, φ_j)
-  v_g := 1.0 / sqrt(1.0 + 3.0 * v_phi_j^2 / pi()^2);
-  v_E := 1.0 / (1.0 + exp(-v_g * (v_mu - v_mu_j)));
-
-  -- Step 3: Estimated variance v = 1 / (g² · E · (1 - E))
-  v_v := 1.0 / GREATEST(v_g^2 * v_E * (1.0 - v_E), 0.0001);
-
-  -- Step 4: Improvement Δ = v · g · (s - E)
-  v_delta := v_v * v_g * (p_score - v_E);
-
-  -- Step 5: Illinois algorithm to find new volatility σ'
-  v_a := ln(p_sigma^2);
-  v_alpha := v_a;
-
-  IF v_delta^2 > v_phi^2 + v_v THEN
-    v_B := ln(v_delta^2 - v_phi^2 - v_v);
-  ELSE
-    v_B := v_a - v_tau;
-    v_iter := 0;
-    LOOP
-      v_ex    := exp(v_B);
-      v_denom := v_phi^2 + v_v + v_ex;
-      v_fB    := v_ex * (v_delta^2 - v_phi^2 - v_v - v_ex) / (2.0 * v_denom^2)
-                 - (v_B - v_a) / v_tau^2;
-      EXIT WHEN v_fB < 0 OR v_iter >= 200;
-      v_B    := v_B - v_tau;
-      v_iter := v_iter + 1;
-    END LOOP;
-  END IF;
-
-  -- Compute f(A) and f(B)
-  v_ex   := exp(v_alpha);
-  v_denom := v_phi^2 + v_v + v_ex;
-  v_fA   := v_ex * (v_delta^2 - v_phi^2 - v_v - v_ex) / (2.0 * v_denom^2)
-             - (v_alpha - v_a) / v_tau^2;
-
-  v_ex   := exp(v_B);
-  v_denom := v_phi^2 + v_v + v_ex;
-  v_fB   := v_ex * (v_delta^2 - v_phi^2 - v_v - v_ex) / (2.0 * v_denom^2)
-             - (v_B - v_a) / v_tau^2;
-
-  -- Illinois iteration
-  v_iter := 0;
-  WHILE abs(v_B - v_alpha) > v_eps AND v_iter < 500 LOOP
-    v_C    := v_alpha + (v_alpha - v_B) * v_fA / NULLIF(v_fB - v_fA, 0);
-    v_C    := COALESCE(v_C, (v_alpha + v_B) / 2.0);
-
-    v_ex   := exp(v_C);
-    v_denom := v_phi^2 + v_v + v_ex;
-    v_fC   := v_ex * (v_delta^2 - v_phi^2 - v_v - v_ex) / (2.0 * v_denom^2)
-               - (v_C - v_a) / v_tau^2;
-
-    IF v_fC * v_fB < 0 THEN
-      v_alpha  := v_B;
-      v_fA := v_fB;
-    ELSE
-      v_fA := v_fA / 2.0;
-    END IF;
-    v_B    := v_C;
-    v_fB   := v_fC;
-    v_iter := v_iter + 1;
-  END LOOP;
-
-  v_sigma2 := exp(v_alpha / 2.0);
-
-  -- Step 6: Pre-rating period RD: φ* = sqrt(φ² + σ'²)
-  v_phi_star := sqrt(v_phi^2 + v_sigma2^2);
-
-  -- Step 7: New φ' = 1 / sqrt(1/φ*² + 1/v)
-  v_phi_new := 1.0 / sqrt(1.0 / v_phi_star^2 + 1.0 / v_v);
-
-  -- Step 8: New μ' = μ + φ'² · g · (s - E)
-  v_mu_new := v_mu + v_phi_new^2 * v_g * (p_score - v_E);
-
-  -- Convert back to external Elo scale and return
-  RETURN QUERY SELECT
-    ROUND(v_scale * v_mu_new + 1500.0, 4)::numeric,
-    ROUND(GREATEST(v_scale * v_phi_new, 30.0), 4)::numeric,  -- floor RD at 30
-    ROUND(LEAST(GREATEST(v_sigma2, 0.001), 0.1), 6)::numeric; -- clamp σ ∈ [0.001, 0.1]
-END;
-$$;
-
-
-ALTER FUNCTION "reputation"."glicko2_update"("p_r" numeric, "p_rd" numeric, "p_sigma" numeric, "p_opp_r" numeric, "p_opp_rd" numeric, "p_score" numeric) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "reputation"."glicko2_update"("p_r" numeric, "p_rd" numeric, "p_sigma" numeric, "p_opp_r" numeric, "p_opp_rd" numeric, "p_score" numeric) IS 'Computes one Glicko-2 rating period update for a single player against a single opponent. Inputs/outputs are in external Elo scale (same units as contender_ratings.elo_rating and .uncertainty). Uses Illinois algorithm for volatility convergence. GRASP Information Expert: all ELO math is encapsulated here.';
-
-
-
-CREATE OR REPLACE FUNCTION "reputation"."std_normal_cdf"("x" numeric) RETURNS numeric
-    LANGUAGE "plpgsql" IMMUTABLE
-    SET "search_path" TO 'reputation', 'pg_catalog'
-    AS $$
-DECLARE
-  v_t   numeric;
-  v_d   numeric;
-  v_abs numeric;
-BEGIN
-  v_abs := abs(x);
-  v_t := 1.0 / (1.0 + 0.2316419 * v_abs);
-  v_d := 0.3989422804014327 * exp(-0.5 * v_abs * v_abs);
-  v_d := v_d * v_t * (0.3193815 + v_t * (-0.3565638 + v_t * (1.781478 + v_t * (-1.821256 + v_t * 1.330274))));
-
-  IF x >= 0 THEN
-    RETURN 1.0 - v_d;
-  ELSE
-    RETURN v_d;
-  END IF;
-END;
-$$;
-
-
-ALTER FUNCTION "reputation"."std_normal_cdf"("x" numeric) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "reputation"."std_normal_pdf"("x" numeric) RETURNS numeric
-    LANGUAGE "sql" IMMUTABLE
-    SET "search_path" TO 'reputation', 'pg_catalog'
-    AS $$
-  SELECT (1.0 / sqrt(2.0 * pi())) * exp(-0.5 * x * x);
-$$;
-
-
-ALTER FUNCTION "reputation"."std_normal_pdf"("x" numeric) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'status', 'public'
-    AS $$
-select
-  to_jsonb(i) || jsonb_build_object(
-    'updates',
-    coalesce((
-      select jsonb_agg(to_jsonb(u) order by u.created_at asc)
-      from status.v_public_incident_updates u
-      where u.incident_id = i.id
-    ), '[]'::jsonb)
+  WITH current_operation AS (
+    SELECT storage.operation() AS raw_operation
+  ),
+  normalized AS (
+    SELECT CASE
+      WHEN raw_operation LIKE 'storage.%' THEN substr(raw_operation, 9)
+      ELSE raw_operation
+    END AS current_operation
+    FROM current_operation
   )
-from status.v_public_incidents i
-where i.id = p_id
-limit 1;
-$$;
-
-
-ALTER FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "status"."fn_status_service_detail"("p_slug" "text") RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'status', 'public'
-    AS $$
-with service_row as (
-  select *
-  from status.v_public_services
-  where slug = p_slug
-  limit 1
-)
-select case
-  when exists (select 1 from service_row) then (
-    select jsonb_build_object(
-      'service', to_jsonb(s),
-      'components', coalesce((
-        select jsonb_agg(to_jsonb(c) order by c.sort_order, c.name)
-        from status.v_public_components c
-        where c.service_id = s.id
-      ), '[]'::jsonb),
-      'incidents', coalesce((
-        select jsonb_agg(to_jsonb(i) order by i.started_at desc, i.created_at desc)
-        from status.v_public_incidents i
-        where i.service_id = s.id
-      ), '[]'::jsonb),
-      'maintenance', coalesce((
-        select jsonb_agg(to_jsonb(m) order by m.starts_at asc)
-        from status.v_public_maintenance_windows m
-        where m.service_id = s.id
-      ), '[]'::jsonb),
-      'uptime', coalesce((
-        select jsonb_object_agg(r.rollup_window::text, r.uptime_percent order by r.rollup_window)
-        from status.uptime_rollups r
-        where r.scope_type = 'service'
-          and r.scope_key = s.slug
-      ), '{}'::jsonb)
-    )
-    from service_row s
-  )
-  else null
-end;
-$$;
-
-
-ALTER FUNCTION "status"."fn_status_service_detail"("p_slug" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "status"."fn_status_snapshot"("p_snapshot_date" "date", "p_scope_type" "text" DEFAULT 'platform'::"text", "p_scope_key" "text" DEFAULT 'global'::"text") RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'status', 'public'
-    AS $$
-select to_jsonb(s)
-from status.daily_snapshots s
-where s.snapshot_date = p_snapshot_date
-  and s.scope_type = p_scope_type
-  and s.scope_key = p_scope_key
-limit 1;
-$$;
-
-
-ALTER FUNCTION "status"."fn_status_snapshot"("p_snapshot_date" "date", "p_scope_type" "text", "p_scope_key" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "status"."fn_status_summary"() RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'status', 'public'
-    AS $$
-with public_services as (
-  select *
-  from status.v_public_services
-  order by sort_order, name
-),
-active_incidents as (
-  select *
-  from status.v_public_incidents
-  where status in ('investigating', 'identified', 'monitoring')
-  order by started_at desc, created_at desc
-),
-active_maintenance as (
-  select *
-  from status.v_public_maintenance_windows
-  where status in ('scheduled', 'in_progress')
-  order by starts_at asc
-),
-platform_status as (
-  select
-    case
-      when exists (
-        select 1 from public_services where current_status = 'major_outage'
-      ) then 'major_outage'::text
-      when exists (
-        select 1 from public_services where current_status = 'partial_outage'
-      ) then 'partial_outage'::text
-      when exists (
-        select 1 from public_services where current_status = 'degraded_performance'
-      ) then 'degraded_performance'::text
-      when exists (
-        select 1 from public_services where current_status = 'maintenance'
-      ) then 'maintenance'::text
-      else 'operational'::text
-    end as overall_status
-)
-select jsonb_build_object(
-  'headline',
-    case
-      when not exists (select 1 from public_services) then 'Public status surface is initializing'
-      when (select overall_status from platform_status) = 'operational' then 'All systems operational'
-      when (select overall_status from platform_status) = 'degraded_performance' then 'Some systems experiencing degraded performance'
-      when (select overall_status from platform_status) = 'partial_outage' then 'Some systems experiencing a partial outage'
-      when (select overall_status from platform_status) = 'major_outage' then 'Major outage affecting one or more systems'
-      when (select overall_status from platform_status) = 'maintenance' then 'Scheduled maintenance in progress'
-      else 'Status unavailable'
-    end,
-  'status', (select overall_status from platform_status),
-  'indicator',
-    case
-      when (select overall_status from platform_status) = 'operational' then 'none'
-      when (select overall_status from platform_status) = 'degraded_performance' then 'minor'
-      when (select overall_status from platform_status) = 'partial_outage' then 'major'
-      when (select overall_status from platform_status) = 'major_outage' then 'critical'
-      when (select overall_status from platform_status) = 'maintenance' then 'maintenance'
-      else 'none'
-    end,
-  'services', coalesce(
-    (select jsonb_agg(to_jsonb(ps) order by ps.sort_order, ps.name) from public_services ps),
-    '[]'::jsonb
-  ),
-  'incidents', coalesce(
-    (select jsonb_agg(to_jsonb(ai) order by ai.started_at desc, ai.created_at desc) from active_incidents ai),
-    '[]'::jsonb
-  ),
-  'maintenance', coalesce(
-    (select jsonb_agg(to_jsonb(am) order by am.starts_at asc) from active_maintenance am),
-    '[]'::jsonb
-  ),
-  'updated_at', coalesce((select max(updated_at) from public_services), now())
-);
-$$;
-
-
-ALTER FUNCTION "status"."fn_status_summary"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "status"."fn_status_uptime_rollup"("p_window" "status"."status_window", "p_scope_type" "text" DEFAULT 'platform'::"text", "p_scope_key" "text" DEFAULT 'global'::"text") RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'status', 'public'
-    AS $$
-select to_jsonb(r)
-from status.uptime_rollups r
-where r.rollup_window = p_window
-  and r.scope_type = p_scope_type
-  and r.scope_key = p_scope_key
-limit 1;
-$$;
-
-
-ALTER FUNCTION "status"."fn_status_uptime_rollup"("p_window" "status"."status_window", "p_scope_type" "text", "p_scope_key" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "status"."touch_updated_at"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'status'
-    AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "status"."touch_updated_at"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tenancy"."fn_create_personal_workspace"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'tenancy', 'lensers', 'public'
-    AS $$
-DECLARE
-    v_workspace_id uuid;
-    v_slug         text;
-BEGIN
-    IF EXISTS (
-        SELECT 1 FROM tenancy.workspaces
-        WHERE owner_lenser_id = NEW.id AND type = 'personal'
-    ) THEN
-        RETURN NEW;
-    END IF;
-
-    -- Map profile handle → workspace slug (no dots; collapse runs of separators).
-    v_slug := trim(both '_' FROM regexp_replace(
-        regexp_replace(lower(NEW.handle), '[^a-z0-9]+', '_', 'g'),
-        '_+', '_', 'g'
-    ));
-
-    IF v_slug IS NULL OR length(v_slug) < 3 THEN
-        v_slug := 'lwf_' || replace(NEW.id::text, '-', '');
-    END IF;
-
-    v_slug := left(v_slug, 64);
-
-    BEGIN
-        INSERT INTO tenancy.workspaces (slug, type, display_name, owner_lenser_id)
-        VALUES (v_slug, 'personal', COALESCE(NEW.display_name, NEW.handle), NEW.id)
-        RETURNING id INTO v_workspace_id;
-
-    EXCEPTION WHEN unique_violation THEN
-        v_slug := left(
-            regexp_replace(
-                v_slug || '_' || replace(NEW.id::text, '-', ''),
-                '_+', '_', 'g'
-            ),
-            64
-        );
-
-        INSERT INTO tenancy.workspaces (slug, type, display_name, owner_lenser_id)
-        VALUES (v_slug, 'personal', COALESCE(NEW.display_name, NEW.handle), NEW.id)
-        RETURNING id INTO v_workspace_id;
-    END;
-
-    INSERT INTO tenancy.workspace_members (workspace_id, lenser_id, role)
-    VALUES (v_workspace_id, NEW.id, 'owner')
-    ON CONFLICT (workspace_id, lenser_id) DO NOTHING;
-
-    RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "tenancy"."fn_create_personal_workspace"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "tenancy"."fn_create_personal_workspace"() IS 'AFTER INSERT OR UPDATE on lensers.profiles. Creates a personal workspace slug derived from handle (workspace-safe: dots and repeated separators normalized). Idempotent.';
-
-
-
-CREATE OR REPLACE FUNCTION "tenancy"."fn_guard_personal_workspace"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'tenancy', 'lensers', 'public'
-    AS $$
-BEGIN
-    -- Forbid directly deleting a personal workspace while the owning profile exists
-    IF OLD.type = 'personal' AND EXISTS (
-        SELECT 1 FROM lensers.profiles WHERE id = OLD.owner_lenser_id
-    ) THEN
-        RAISE EXCEPTION
-            'Cannot delete personal workspace % while lenser profile % still exists. '
-            'Delete the lensers.profiles row instead — the workspace will cascade.',
-            OLD.id, OLD.owner_lenser_id
-            USING ERRCODE = 'restrict_violation';
-    END IF;
-
-    RETURN OLD;
-END;
-$$;
-
-
-ALTER FUNCTION "tenancy"."fn_guard_personal_workspace"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "tenancy"."fn_guard_personal_workspace"() IS 'BEFORE DELETE guard on tenancy.workspaces. Blocks direct deletion of a personal workspace while the owning lenser profile still exists. Cascade deletes via lensers.profiles are still allowed because the profile row is gone by then.';
-
-
-
-CREATE OR REPLACE FUNCTION "tenancy"."fn_guard_personal_workspace_status"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'tenancy', 'lensers', 'public'
-    AS $$
-BEGIN
-    IF OLD.type = 'personal'
-       AND NEW.status IS DISTINCT FROM 'active'
-       AND OLD.status = 'active'
-       AND EXISTS (
-           SELECT 1 FROM lensers.profiles WHERE id = OLD.owner_lenser_id
-       )
-    THEN
-        RAISE EXCEPTION
-            'Cannot deactivate personal workspace % while lenser profile % still exists. '
-            'Update lensers.profiles.status instead.',
-            OLD.id, OLD.owner_lenser_id
-            USING ERRCODE = 'restrict_violation';
-    END IF;
-
-    RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "tenancy"."fn_guard_personal_workspace_status"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "tenancy"."fn_guard_personal_workspace_status"() IS 'BEFORE UPDATE guard on tenancy.workspaces. Blocks status changes away from ''active'' on a personal workspace while the owning lenser profile still exists. Prevents the workspace_not_found error in execute routes that query status=active.';
-
-
-
-CREATE OR REPLACE FUNCTION "tenancy"."is_workspace_admin"("p_workspace_id" "uuid") RETURNS boolean
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'tenancy', 'lensers', 'public'
-    AS $$
-    SELECT EXISTS (
-        SELECT 1 FROM tenancy.workspace_members wm
-        WHERE wm.workspace_id = p_workspace_id
-          AND wm.lenser_id = lensers.get_auth_lenser_id()
-          AND wm.role IN ('owner', 'admin')
-    );
-$$;
-
-
-ALTER FUNCTION "tenancy"."is_workspace_admin"("p_workspace_id" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tenancy"."is_workspace_member"("p_workspace_id" "uuid") RETURNS boolean
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'tenancy', 'lensers', 'public'
-    AS $$
-    SELECT EXISTS (
-        SELECT 1 FROM tenancy.workspace_members wm
-        WHERE wm.workspace_id = p_workspace_id
-          AND wm.lenser_id = lensers.get_auth_lenser_id()
-    );
-$$;
-
-
-ALTER FUNCTION "tenancy"."is_workspace_member"("p_workspace_id" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tenancy"."set_updated_at"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'tenancy', 'public'
-    AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "tenancy"."set_updated_at"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text" DEFAULT NULL::"text", "p_reference_id" "uuid" DEFAULT NULL::"uuid", "p_description" "text" DEFAULT NULL::"text", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'wallet'
-    AS $$
-DECLARE
-    v_account_id  uuid;
-    v_new_balance bigint;
-    v_tx_id       uuid;
-BEGIN
-    -- Validate credit transaction types
-    IF p_tx_type NOT IN ('deposit', 'refund', 'sponsorship_payout', 'adjustment') THEN
-        RAISE EXCEPTION 'INVALID_CREDIT_TYPE: % is not a valid credit transaction type', p_tx_type;
-    END IF;
-
-    -- Validate amount
-    IF p_amount <= 0 THEN
-        RAISE EXCEPTION 'INVALID_AMOUNT: amount must be positive, got %', p_amount;
-    END IF;
-
-    -- Lock the account row (or create if first deposit)
-    SELECT "id" INTO v_account_id
-    FROM "wallet"."accounts"
-    WHERE "lenser_id" = p_lenser_id
-    FOR UPDATE;
-
-    IF v_account_id IS NULL THEN
-        -- Auto-create account on first deposit
-        INSERT INTO "wallet"."accounts" ("lenser_id", "balance", "lifetime_deposits")
-        VALUES (p_lenser_id, 0, 0)
-        RETURNING "id" INTO v_account_id;
-    ELSE
-        -- Check frozen status
-        IF (SELECT "frozen" FROM "wallet"."accounts" WHERE "id" = v_account_id) THEN
-            RAISE EXCEPTION 'ACCOUNT_FROZEN: wallet account for lenser % is frozen', p_lenser_id;
-        END IF;
-    END IF;
-
-    -- Update balance and lifetime deposits
-    UPDATE "wallet"."accounts"
-    SET "balance"           = "balance" + p_amount,
-        "lifetime_deposits" = "lifetime_deposits" + p_amount,
-        "updated_at"        = now()
-    WHERE "id" = v_account_id
-    RETURNING "balance" INTO v_new_balance;
-
-    -- Insert transaction record
-    INSERT INTO "wallet"."transactions" (
-        "account_id", "tx_type", "amount", "direction", "balance_after",
-        "reference_type", "reference_id", "description", "metadata"
-    )
-    VALUES (
-        v_account_id, p_tx_type, p_amount, 1, v_new_balance,
-        p_reference_type, p_reference_id, p_description, p_metadata
-    )
-    RETURNING "id" INTO v_tx_id;
-
-    RETURN v_tx_id;
-END;
-$$;
-
-
-ALTER FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") IS 'Atomically credit a wallet account. Auto-creates account on first deposit. Validates credit types: deposit, refund, sponsorship_payout, adjustment.';
-
-
-
-CREATE OR REPLACE FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text" DEFAULT NULL::"text", "p_reference_id" "uuid" DEFAULT NULL::"uuid", "p_description" "text" DEFAULT NULL::"text", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'wallet'
-    AS $$
-DECLARE
-    v_account_id     uuid;
-    v_current_balance bigint;
-    v_frozen         boolean;
-    v_new_balance    bigint;
-    v_tx_id          uuid;
-    v_limit_rec      RECORD;
-BEGIN
-    -- Validate debit transaction types
-    IF p_tx_type NOT IN ('spend', 'sponsorship_deposit', 'platform_fee', 'adjustment') THEN
-        RAISE EXCEPTION 'INVALID_DEBIT_TYPE: % is not a valid debit transaction type', p_tx_type;
-    END IF;
-
-    -- Validate amount
-    IF p_amount <= 0 THEN
-        RAISE EXCEPTION 'INVALID_AMOUNT: amount must be positive, got %', p_amount;
-    END IF;
-
-    -- Lock the account row
-    SELECT "id", "balance", "frozen"
-    INTO v_account_id, v_current_balance, v_frozen
-    FROM "wallet"."accounts"
-    WHERE "lenser_id" = p_lenser_id
-    FOR UPDATE;
-
-    IF v_account_id IS NULL THEN
-        RAISE EXCEPTION 'WALLET_NOT_FOUND: no wallet account for lenser %', p_lenser_id;
-    END IF;
-
-    IF v_frozen THEN
-        RAISE EXCEPTION 'ACCOUNT_FROZEN: wallet account for lenser % is frozen', p_lenser_id;
-    END IF;
-
-    -- Check balance
-    IF v_current_balance < p_amount THEN
-        RAISE EXCEPTION 'INSUFFICIENT_BALANCE: balance=%, requested=%', v_current_balance, p_amount;
-    END IF;
-
-    -- Check spending limits (only for spend type — not for platform fees or adjustments)
-    IF p_tx_type = 'spend' THEN
-        FOR v_limit_rec IN
-            SELECT "id", "period", "limit_credits", "current_usage", "period_start"
-            FROM "wallet"."spending_limits"
-            WHERE "account_id" = v_account_id
-            FOR UPDATE
-        LOOP
-            -- Check if the period is still active
-            IF (v_limit_rec.period = 'daily' AND v_limit_rec.period_start > now() - interval '1 day')
-                OR (v_limit_rec.period = 'monthly' AND v_limit_rec.period_start > now() - interval '1 month')
-            THEN
-                IF v_limit_rec.current_usage + p_amount > v_limit_rec.limit_credits THEN
-                    RAISE EXCEPTION 'SPENDING_LIMIT_EXCEEDED: % limit=%, usage=%, requested=%',
-                        v_limit_rec.period, v_limit_rec.limit_credits, v_limit_rec.current_usage, p_amount;
-                END IF;
-
-                -- Update usage
-                UPDATE "wallet"."spending_limits"
-                SET "current_usage" = "current_usage" + p_amount,
-                    "updated_at"    = now()
-                WHERE "id" = v_limit_rec.id;
-            END IF;
-        END LOOP;
-    END IF;
-
-    -- Debit the account
-    UPDATE "wallet"."accounts"
-    SET "balance"        = "balance" - p_amount,
-        "lifetime_spent" = "lifetime_spent" + p_amount,
-        "updated_at"     = now()
-    WHERE "id" = v_account_id
-    RETURNING "balance" INTO v_new_balance;
-
-    -- Insert transaction record
-    INSERT INTO "wallet"."transactions" (
-        "account_id", "tx_type", "amount", "direction", "balance_after",
-        "reference_type", "reference_id", "description", "metadata"
-    )
-    VALUES (
-        v_account_id, p_tx_type, p_amount, -1, v_new_balance,
-        p_reference_type, p_reference_id, p_description, p_metadata
-    )
-    RETURNING "id" INTO v_tx_id;
-
-    RETURN v_tx_id;
-END;
-$$;
-
-
-ALTER FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") IS 'Atomically debit a wallet account. Enforces balance >= 0 and spending limits. Validates debit types: spend, sponsorship_deposit, platform_fee, adjustment.';
-
-
-
-CREATE OR REPLACE FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") RETURNS bigint
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'wallet'
-    AS $$
-  SELECT COALESCE(
-    (SELECT balance FROM wallet.accounts WHERE lenser_id = p_lenser_id),
-    0
+  SELECT EXISTS (
+    SELECT 1
+    FROM normalized n
+    CROSS JOIN LATERAL unnest(expected_operations) AS expected_operation
+    WHERE expected_operation IS NOT NULL
+      AND expected_operation <> ''
+      AND n.current_operation = CASE
+        WHEN expected_operation LIKE 'storage.%' THEN substr(expected_operation, 9)
+        ELSE expected_operation
+      END
   );
 $$;
 
 
-ALTER FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "storage"."allow_any_operation"("expected_operations" "text"[]) OWNER TO "supabase_storage_admin";
 
 
-COMMENT ON FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") IS 'Returns current credit balance for a lenser. Returns 0 if no wallet account exists.';
-
-
-
-CREATE OR REPLACE FUNCTION "wallet"."get_credits_per_usd"() RETURNS numeric
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'wallet'
+CREATE OR REPLACE FUNCTION "storage"."allow_only_operation"("expected_operation" "text") RETURNS boolean
+    LANGUAGE "sql" STABLE
     AS $$
-    SELECT COALESCE(
-        (SELECT baseline_credits_per_usd
-         FROM wallet.credit_valuation_policy
-         WHERE singleton = true
-         LIMIT 1),
-        100  -- safe default
-    );
-$$;
-
-
-ALTER FUNCTION "wallet"."get_credits_per_usd"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "wallet"."get_credits_per_usd"() IS 'Returns the current baseline credits-per-USD rate from wallet.credit_valuation_policy. Falls back to 100 if no policy row exists.';
-
-
-
-CREATE OR REPLACE FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") RETURNS TABLE("available_balance" bigint, "pending_reserved" bigint, "total_balance" bigint, "lifetime_deposits" bigint, "lifetime_spent" bigint, "remaining_pct" numeric)
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'wallet'
-    AS $$
+  WITH current_operation AS (
+    SELECT storage.operation() AS raw_operation
+  ),
+  normalized AS (
     SELECT
-        a.balance                                                           AS available_balance,
-        COALESCE(SUM(pc.reserved_amount), 0)::bigint                       AS pending_reserved,
-        (a.balance + COALESCE(SUM(pc.reserved_amount), 0))::bigint         AS total_balance,
-        a.lifetime_deposits,
-        a.lifetime_spent,
-        CASE
-            WHEN a.lifetime_deposits = 0 THEN 100.00
-            ELSE ROUND((a.balance::numeric / a.lifetime_deposits::numeric) * 100, 2)
-        END                                                                 AS remaining_pct
-    FROM wallet.accounts a
-    LEFT JOIN wallet.pending_charges pc
-           ON pc.account_id = a.id
-          AND pc.status = 'reserved'
-    WHERE a.lenser_id = p_lenser_id
-    GROUP BY a.id, a.balance, a.lifetime_deposits, a.lifetime_spent;
+      CASE
+        WHEN raw_operation LIKE 'storage.%' THEN substr(raw_operation, 9)
+        ELSE raw_operation
+      END AS current_operation,
+      CASE
+        WHEN expected_operation LIKE 'storage.%' THEN substr(expected_operation, 9)
+        ELSE expected_operation
+      END AS requested_operation
+    FROM current_operation
+  )
+  SELECT CASE
+    WHEN requested_operation IS NULL OR requested_operation = '' THEN FALSE
+    ELSE COALESCE(current_operation = requested_operation, FALSE)
+  END
+  FROM normalized;
 $$;
 
 
-ALTER FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "storage"."allow_only_operation"("expected_operation" "text") OWNER TO "supabase_storage_admin";
 
 
-COMMENT ON FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") IS 'Returns enriched wallet balance for a lenser: available_balance (spendable), pending_reserved (held), total_balance, lifetime_deposits, lifetime_spent, remaining_pct (available as % of deposits). Returns no rows if the lenser has no wallet account.';
-
-
-
-CREATE OR REPLACE FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'wallet'
+CREATE OR REPLACE FUNCTION "storage"."can_insert_object"("bucketid" "text", "name" "text", "owner" "uuid", "metadata" "jsonb") RETURNS "void"
+    LANGUAGE "plpgsql"
     AS $$
-DECLARE
-    v_charge      "wallet"."pending_charges"%ROWTYPE;
-    v_new_balance bigint;
 BEGIN
-    -- Lock and fetch pending charge
-    SELECT * INTO v_charge
-    FROM "wallet"."pending_charges"
-    WHERE "id" = p_reservation_id
-    FOR UPDATE;
-
-    IF v_charge.id IS NULL THEN
-        RAISE EXCEPTION 'RESERVATION_NOT_FOUND: reservation % does not exist', p_reservation_id;
-    END IF;
-
-    IF v_charge.status != 'reserved'::charge_status_enum THEN
-        RAISE EXCEPTION 'RESERVATION_ALREADY_FINALIZED: reservation % is already % (not reserved)',
-            p_reservation_id, v_charge.status;
-    END IF;
-
-    -- Full refund
-    UPDATE "wallet"."accounts"
-    SET "balance" = "balance" + v_charge.reserved_amount,
-        "updated_at" = now()
-    WHERE "id" = v_charge.account_id
-    RETURNING "balance" INTO v_new_balance;
-
-    -- Insert refund transaction
-    INSERT INTO "wallet"."transactions" (
-        "account_id", "tx_type", "amount", "direction", "balance_after",
-        "reference_type", "reference_id", "description"
-    )
-    VALUES (
-        v_charge.account_id, 'refund'::wallet.transaction_type_enum,
-        v_charge.reserved_amount, 1, v_new_balance,
-        'wallet.pending_charges'::text, p_reservation_id,
-        'Full refund on execution failure'
-    );
-
-    -- Mark charge as released
-    UPDATE "wallet"."pending_charges"
-    SET "status" = 'released'::charge_status_enum,
-        "settled_at" = now()
-    WHERE "id" = p_reservation_id;
-END;
+  INSERT INTO "storage"."objects" ("bucket_id", "name", "owner", "metadata") VALUES (bucketid, name, owner, metadata);
+  -- hack to rollback the successful insert
+  RAISE sqlstate 'PT200' using
+  message = 'ROLLBACK',
+  detail = 'rollback successful insert';
+END
 $$;
 
 
-ALTER FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "storage"."can_insert_object"("bucketid" "text", "name" "text", "owner" "uuid", "metadata" "jsonb") OWNER TO "supabase_storage_admin";
 
 
-COMMENT ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") IS 'Fully refund reservation on execution failure. Raises: RESERVATION_NOT_FOUND, RESERVATION_ALREADY_FINALIZED.';
-
-
-
-CREATE OR REPLACE FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid" DEFAULT NULL::"uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'wallet'
+CREATE OR REPLACE FUNCTION "storage"."enforce_bucket_name_length"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
     AS $$
-DECLARE
-    v_charge      "wallet"."pending_charges"%ROWTYPE;
-    v_new_balance bigint;
-BEGIN
-    -- Lock and fetch pending charge
-    SELECT * INTO v_charge
-    FROM "wallet"."pending_charges"
-    WHERE "id" = p_reservation_id
-    FOR UPDATE;
-
-    IF v_charge.id IS NULL THEN
-        RAISE EXCEPTION 'RESERVATION_NOT_FOUND: reservation % does not exist', p_reservation_id;
-    END IF;
-
-    -- Ownership check (optional but enforced when caller supplies a lenser_id)
-    IF p_expected_lenser_id IS NOT NULL
-       AND v_charge.lenser_id IS DISTINCT FROM p_expected_lenser_id THEN
-        RAISE EXCEPTION 'UNAUTHORIZED_RELEASE: reservation % does not belong to lenser %',
-            p_reservation_id, p_expected_lenser_id;
-    END IF;
-
-    IF v_charge.status != 'reserved'::charge_status_enum THEN
-        RAISE EXCEPTION 'RESERVATION_ALREADY_FINALIZED: reservation % is already % (not reserved)',
-            p_reservation_id, v_charge.status;
-    END IF;
-
-    -- Full refund
-    UPDATE "wallet"."accounts"
-    SET "balance" = "balance" + v_charge.reserved_amount,
-        "updated_at" = now()
-    WHERE "id" = v_charge.account_id
-    RETURNING "balance" INTO v_new_balance;
-
-    -- Insert refund transaction
-    INSERT INTO "wallet"."transactions" (
-        "account_id", "tx_type", "amount", "direction", "balance_after",
-        "reference_type", "reference_id", "description"
-    )
-    VALUES (
-        v_charge.account_id, 'refund'::wallet.transaction_type_enum,
-        v_charge.reserved_amount, 1, v_new_balance,
-        'wallet.pending_charges'::text, p_reservation_id,
-        'Full refund on execution failure'
-    );
-
-    -- Mark charge as released
-    UPDATE "wallet"."pending_charges"
-    SET "status" = 'released'::charge_status_enum,
-        "settled_at" = now()
-    WHERE "id" = p_reservation_id;
-END;
-$$;
-
-
-ALTER FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") IS 'Fully refund reservation on execution failure. p_expected_lenser_id: when supplied, raises UNAUTHORIZED_RELEASE if the reservation owner does not match — prevents cross-user refund manipulation with a leaked platform key. Raises: RESERVATION_NOT_FOUND, RESERVATION_ALREADY_FINALIZED, UNAUTHORIZED_RELEASE.';
-
-
-
-CREATE OR REPLACE FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text" DEFAULT NULL::"text") RETURNS "uuid"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'wallet'
-    AS $$
-DECLARE
-    v_account_id     uuid;
-    v_reservation_id uuid;
-    v_new_balance    bigint;
-BEGIN
-    -- Validate amount
-    IF p_amount <= 0 THEN
-        RAISE EXCEPTION 'INVALID_AMOUNT: amount must be positive, got %', p_amount;
-    END IF;
-
-    -- Lock the account row (must exist)
-    SELECT "id" INTO v_account_id
-    FROM "wallet"."accounts"
-    WHERE "lenser_id" = p_lenser_id
-    FOR UPDATE;
-
-    IF v_account_id IS NULL THEN
-        RAISE EXCEPTION 'WALLET_NOT_FOUND: no wallet for lenser %', p_lenser_id;
-    END IF;
-
-    -- Check frozen status
-    IF (SELECT "frozen" FROM "wallet"."accounts" WHERE "id" = v_account_id) THEN
-        RAISE EXCEPTION 'ACCOUNT_FROZEN: wallet account for lenser % is frozen', p_lenser_id;
-    END IF;
-
-    -- Check sufficient balance
-    IF (SELECT "balance" FROM "wallet"."accounts" WHERE "id" = v_account_id) < p_amount THEN
-        RAISE EXCEPTION 'INSUFFICIENT_BALANCE: requested %, available %',
-            p_amount, (SELECT "balance" FROM "wallet"."accounts" WHERE "id" = v_account_id);
-    END IF;
-
-    -- Debit account
-    UPDATE "wallet"."accounts"
-    SET "balance" = "balance" - p_amount,
-        "updated_at" = now()
-    WHERE "id" = v_account_id
-    RETURNING "balance" INTO v_new_balance;
-
-    -- Insert transaction
-    INSERT INTO "wallet"."transactions" (
-        "account_id", "tx_type", "amount", "direction", "balance_after",
-        "reference_type", "reference_id", "description"
-    )
-    VALUES (
-        v_account_id, 'spend'::wallet.transaction_type_enum, p_amount, -1, v_new_balance,
-        'wallet.pending_charges'::text, p_reference_id, p_description
-    );
-
-    -- Insert pending charge (UNIQUE constraint prevents duplicate)
-    INSERT INTO "wallet"."pending_charges" (
-        "account_id", "lenser_id", "reserved_amount", "status",
-        "reference_id", "description"
-    )
-    VALUES (
-        v_account_id, p_lenser_id, p_amount, 'reserved'::charge_status_enum,
-        p_reference_id, p_description
-    )
-    RETURNING "id" INTO v_reservation_id;
-
-    RETURN v_reservation_id;
-END;
-$$;
-
-
-ALTER FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") IS 'Atomically debit credits and create reservation. Returns reservation_id (UUID). Raises: WALLET_NOT_FOUND, ACCOUNT_FROZEN, INSUFFICIENT_BALANCE.';
-
-
-
-CREATE OR REPLACE FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text" DEFAULT NULL::"text") RETURNS "uuid"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
-    AS $$
-declare
-  v_ref_uuid uuid;
 begin
-  begin
-    v_ref_uuid := p_reference_id::uuid;
-  exception when invalid_text_representation then
-    raise exception 'INVALID_REFERENCE_ID: reference_id must be a valid UUID, got: %', p_reference_id;
-  end;
-
-  return "wallet"."reserve_credits"(p_lenser_id, p_amount, v_ref_uuid, p_description);
+    if length(new.name) > 100 then
+        raise exception 'bucket name "%" is too long (% characters). Max is 100.', new.name, length(new.name);
+    end if;
+    return new;
 end;
 $$;
 
 
-ALTER FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") OWNER TO "postgres";
+ALTER FUNCTION "storage"."enforce_bucket_name_length"() OWNER TO "supabase_storage_admin";
 
 
-COMMENT ON FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") IS 'Wrapper around reserve_credits that validates p_reference_id is a valid UUID before casting. Use this from application code to get a clear error on malformed reference IDs.';
-
-
-
-CREATE OR REPLACE FUNCTION "wallet"."reset_spending_period"("p_period" "text") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'wallet'
-    AS $$
-BEGIN
-    IF p_period NOT IN ('daily', 'monthly') THEN
-        RAISE EXCEPTION 'INVALID_PERIOD: must be daily or monthly, got %', p_period;
-    END IF;
-
-    UPDATE "wallet"."spending_limits"
-    SET "current_usage" = 0,
-        "period_start"  = now(),
-        "updated_at"    = now()
-    WHERE "period" = p_period
-      AND (
-          (p_period = 'daily'   AND "period_start" <= now() - interval '1 day')
-          OR
-          (p_period = 'monthly' AND "period_start" <= now() - interval '1 month')
-      );
-END;
-$$;
-
-
-ALTER FUNCTION "wallet"."reset_spending_period"("p_period" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "wallet"."reset_spending_period"("p_period" "text") IS 'Resets current_usage to 0 for all spending limits where the period has elapsed. Called by pg_cron.';
-
-
-
-CREATE OR REPLACE FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'wallet', 'execution'
+CREATE OR REPLACE FUNCTION "storage"."extension"("name" "text") RETURNS "text"
+    LANGUAGE "plpgsql" IMMUTABLE
     AS $$
 DECLARE
-    v_charge       wallet.pending_charges%ROWTYPE;
-    v_delta        bigint;
-    v_new_balance  bigint;
-    v_overrun      bigint;
+    _parts text[];
+    _filename text;
 BEGIN
-    -- Validate actual amount
-    IF p_actual_amount < 0 THEN
-        RAISE EXCEPTION 'INVALID_AMOUNT: actual amount must be non-negative, got %', p_actual_amount;
-    END IF;
-
-    -- Lock and fetch pending charge
-    SELECT * INTO v_charge
-    FROM wallet.pending_charges
-    WHERE id = p_reservation_id
-    FOR UPDATE;
-
-    IF v_charge.id IS NULL THEN
-        RAISE EXCEPTION 'RESERVATION_NOT_FOUND: reservation % does not exist', p_reservation_id;
-    END IF;
-
-    IF v_charge.status != 'reserved'::wallet.charge_status_enum THEN
-        RAISE EXCEPTION 'RESERVATION_ALREADY_FINALIZED: reservation % is already % (not reserved)',
-            p_reservation_id, v_charge.status;
-    END IF;
-
-    -- Detect cost overrun (actual > reserved) before capping.
-    -- This means the token estimation was too low — tag for monitoring.
-    v_overrun := p_actual_amount - v_charge.reserved_amount;
-    IF v_overrun > 0 THEN
-        RAISE WARNING 'COST_OVERRUN: reservation % actual=% reserved=% overrun=%',
-            p_reservation_id, p_actual_amount, v_charge.reserved_amount, v_overrun;
-
-        -- Tag the overrun run for monitoring (best-effort, non-blocking)
-        BEGIN
-            INSERT INTO execution.execution_tags (run_id, tag, severity, metadata)
-            VALUES (
-                p_reservation_id,
-                'cost_overrun',
-                'warn',
-                jsonb_build_object(
-                    'reserved_credits', v_charge.reserved_amount,
-                    'actual_credits',   p_actual_amount,
-                    'overrun_credits',  v_overrun
-                )
-            );
-        EXCEPTION WHEN OTHERS THEN
-            -- run_id FK may not match execution.runs; ignore silently
-            NULL;
-        END;
-    END IF;
-
-    -- Cap actual at reserved (user never pays more than they reserved)
-    p_actual_amount := LEAST(p_actual_amount, v_charge.reserved_amount);
-
-    -- Calculate refund delta
-    v_delta := v_charge.reserved_amount - p_actual_amount;
-
-    -- If refund needed, credit back to account
-    IF v_delta > 0 THEN
-        UPDATE wallet.accounts
-        SET balance    = balance + v_delta,
-            updated_at = now()
-        WHERE id = v_charge.account_id
-        RETURNING balance INTO v_new_balance;
-
-        -- Insert refund transaction
-        INSERT INTO wallet.transactions (
-            account_id, tx_type, amount, direction, balance_after,
-            reference_type, reference_id, description
-        )
-        VALUES (
-            v_charge.account_id, 'refund'::wallet.transaction_type_enum,
-            v_delta, 1, v_new_balance,
-            'wallet.pending_charges'::text, p_reservation_id,
-            'Refund from charge settlement'
-        );
-    END IF;
-
-    -- Update lifetime_spent with the amount actually charged (not the reserved amount)
-    UPDATE wallet.accounts
-    SET lifetime_spent = lifetime_spent + p_actual_amount,
-        updated_at     = now()
-    WHERE id = v_charge.account_id;
-
-    -- Mark charge as settled
-    UPDATE wallet.pending_charges
-    SET status         = 'settled'::wallet.charge_status_enum,
-        settled_amount = p_actual_amount,
-        settled_at     = now()
-    WHERE id = p_reservation_id;
-END;
+    -- Split on "/" to get path segments
+    SELECT string_to_array(name, '/') INTO _parts;
+    -- Get the last path segment (the actual filename)
+    SELECT _parts[array_length(_parts, 1)] INTO _filename;
+    -- Extract extension: reverse, split on '.', then reverse again
+    RETURN reverse(split_part(reverse(_filename), '.', 1));
+END
 $$;
 
 
-ALTER FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) OWNER TO "postgres";
+ALTER FUNCTION "storage"."extension"("name" "text") OWNER TO "supabase_storage_admin";
 
 
-COMMENT ON FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) IS 'Finalize charge with actual amount. Refunds delta if actual < reserved. Updates lifetime_spent on wallet.accounts with the settled amount. Logs a cost_overrun tag to execution.execution_tags if actual > reserved. Raises: RESERVATION_NOT_FOUND, RESERVATION_ALREADY_FINALIZED.';
-
-
-
-CREATE OR REPLACE FUNCTION "wallet"."trg_auto_create_account"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'wallet', 'lensers'
-    AS $$
-BEGIN
-  INSERT INTO wallet.accounts (lenser_id)
-  VALUES (NEW.id)
-  ON CONFLICT (lenser_id) DO NOTHING;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "wallet"."trg_auto_create_account"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "wallet"."trg_transactions_immutable"() RETURNS "trigger"
+CREATE OR REPLACE FUNCTION "storage"."filename"("name" "text") RETURNS "text"
     LANGUAGE "plpgsql"
-    SET "search_path" TO 'wallet'
+    AS $$
+DECLARE
+_parts text[];
+BEGIN
+	select string_to_array(name, '/') into _parts;
+	return _parts[array_length(_parts,1)];
+END
+$$;
+
+
+ALTER FUNCTION "storage"."filename"("name" "text") OWNER TO "supabase_storage_admin";
+
+
+CREATE OR REPLACE FUNCTION "storage"."foldername"("name" "text") RETURNS "text"[]
+    LANGUAGE "plpgsql" IMMUTABLE
+    AS $$
+DECLARE
+    _parts text[];
+BEGIN
+    -- Split on "/" to get path segments
+    SELECT string_to_array(name, '/') INTO _parts;
+    -- Return everything except the last segment
+    RETURN _parts[1 : array_length(_parts,1) - 1];
+END
+$$;
+
+
+ALTER FUNCTION "storage"."foldername"("name" "text") OWNER TO "supabase_storage_admin";
+
+
+CREATE OR REPLACE FUNCTION "storage"."get_common_prefix"("p_key" "text", "p_prefix" "text", "p_delimiter" "text") RETURNS "text"
+    LANGUAGE "sql" IMMUTABLE
+    AS $$
+SELECT CASE
+    WHEN position(p_delimiter IN substring(p_key FROM length(p_prefix) + 1)) > 0
+    THEN left(p_key, length(p_prefix) + position(p_delimiter IN substring(p_key FROM length(p_prefix) + 1)))
+    ELSE NULL
+END;
+$$;
+
+
+ALTER FUNCTION "storage"."get_common_prefix"("p_key" "text", "p_prefix" "text", "p_delimiter" "text") OWNER TO "supabase_storage_admin";
+
+
+CREATE OR REPLACE FUNCTION "storage"."get_size_by_bucket"() RETURNS TABLE("size" bigint, "bucket_id" "text")
+    LANGUAGE "plpgsql" STABLE
     AS $$
 BEGIN
-    IF TG_OP = 'DELETE' THEN
-        RAISE EXCEPTION 'Wallet transactions are immutable. Deletion is not permitted.';
-    ELSIF TG_OP = 'UPDATE' THEN
-        RAISE EXCEPTION 'Wallet transactions are immutable. Updates are not permitted.';
+    return query
+        select sum((metadata->>'size')::bigint)::bigint as size, obj.bucket_id
+        from "storage".objects as obj
+        group by obj.bucket_id;
+END
+$$;
+
+
+ALTER FUNCTION "storage"."get_size_by_bucket"() OWNER TO "supabase_storage_admin";
+
+
+CREATE OR REPLACE FUNCTION "storage"."list_multipart_uploads_with_delimiter"("bucket_id" "text", "prefix_param" "text", "delimiter_param" "text", "max_keys" integer DEFAULT 100, "next_key_token" "text" DEFAULT ''::"text", "next_upload_token" "text" DEFAULT ''::"text") RETURNS TABLE("key" "text", "id" "text", "created_at" timestamp with time zone)
+    LANGUAGE "plpgsql"
+    AS $_$
+BEGIN
+    RETURN QUERY EXECUTE
+        'SELECT DISTINCT ON(key COLLATE "C") * from (
+            SELECT
+                CASE
+                    WHEN position($2 IN substring(key from length($1) + 1)) > 0 THEN
+                        substring(key from 1 for length($1) + position($2 IN substring(key from length($1) + 1)))
+                    ELSE
+                        key
+                END AS key, id, created_at
+            FROM
+                storage.s3_multipart_uploads
+            WHERE
+                bucket_id = $5 AND
+                key ILIKE $1 || ''%'' AND
+                CASE
+                    WHEN $4 != '''' AND $6 = '''' THEN
+                        CASE
+                            WHEN position($2 IN substring(key from length($1) + 1)) > 0 THEN
+                                substring(key from 1 for length($1) + position($2 IN substring(key from length($1) + 1))) COLLATE "C" > $4
+                            ELSE
+                                key COLLATE "C" > $4
+                            END
+                    ELSE
+                        true
+                END AND
+                CASE
+                    WHEN $6 != '''' THEN
+                        id COLLATE "C" > $6
+                    ELSE
+                        true
+                    END
+            ORDER BY
+                key COLLATE "C" ASC, created_at ASC) as e order by key COLLATE "C" LIMIT $3'
+        USING prefix_param, delimiter_param, max_keys, next_key_token, bucket_id, next_upload_token;
+END;
+$_$;
+
+
+ALTER FUNCTION "storage"."list_multipart_uploads_with_delimiter"("bucket_id" "text", "prefix_param" "text", "delimiter_param" "text", "max_keys" integer, "next_key_token" "text", "next_upload_token" "text") OWNER TO "supabase_storage_admin";
+
+
+CREATE OR REPLACE FUNCTION "storage"."list_objects_with_delimiter"("_bucket_id" "text", "prefix_param" "text", "delimiter_param" "text", "max_keys" integer DEFAULT 100, "start_after" "text" DEFAULT ''::"text", "next_token" "text" DEFAULT ''::"text", "sort_order" "text" DEFAULT 'asc'::"text") RETURNS TABLE("name" "text", "id" "uuid", "metadata" "jsonb", "updated_at" timestamp with time zone, "created_at" timestamp with time zone, "last_accessed_at" timestamp with time zone)
+    LANGUAGE "plpgsql" STABLE
+    AS $_$
+DECLARE
+    v_peek_name TEXT;
+    v_current RECORD;
+    v_common_prefix TEXT;
+
+    -- Configuration
+    v_is_asc BOOLEAN;
+    v_prefix TEXT;
+    v_start TEXT;
+    v_upper_bound TEXT;
+    v_file_batch_size INT;
+
+    -- Seek state
+    v_next_seek TEXT;
+    v_count INT := 0;
+
+    -- Dynamic SQL for batch query only
+    v_batch_query TEXT;
+
+BEGIN
+    -- ========================================================================
+    -- INITIALIZATION
+    -- ========================================================================
+    v_is_asc := lower(coalesce(sort_order, 'asc')) = 'asc';
+    v_prefix := coalesce(prefix_param, '');
+    v_start := CASE WHEN coalesce(next_token, '') <> '' THEN next_token ELSE coalesce(start_after, '') END;
+    v_file_batch_size := LEAST(GREATEST(max_keys * 2, 100), 1000);
+
+    -- Calculate upper bound for prefix filtering (bytewise, using COLLATE "C")
+    IF v_prefix = '' THEN
+        v_upper_bound := NULL;
+    ELSIF right(v_prefix, 1) = delimiter_param THEN
+        v_upper_bound := left(v_prefix, -1) || chr(ascii(delimiter_param) + 1);
+    ELSE
+        v_upper_bound := left(v_prefix, -1) || chr(ascii(right(v_prefix, 1)) + 1);
+    END IF;
+
+    -- Build batch query (dynamic SQL - called infrequently, amortized over many rows)
+    IF v_is_asc THEN
+        IF v_upper_bound IS NOT NULL THEN
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND o.name COLLATE "C" >= $2 ' ||
+                'AND o.name COLLATE "C" < $3 ORDER BY o.name COLLATE "C" ASC LIMIT $4';
+        ELSE
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND o.name COLLATE "C" >= $2 ' ||
+                'ORDER BY o.name COLLATE "C" ASC LIMIT $4';
+        END IF;
+    ELSE
+        IF v_upper_bound IS NOT NULL THEN
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND o.name COLLATE "C" < $2 ' ||
+                'AND o.name COLLATE "C" >= $3 ORDER BY o.name COLLATE "C" DESC LIMIT $4';
+        ELSE
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND o.name COLLATE "C" < $2 ' ||
+                'ORDER BY o.name COLLATE "C" DESC LIMIT $4';
+        END IF;
+    END IF;
+
+    -- ========================================================================
+    -- SEEK INITIALIZATION: Determine starting position
+    -- ========================================================================
+    IF v_start = '' THEN
+        IF v_is_asc THEN
+            v_next_seek := v_prefix;
+        ELSE
+            -- DESC without cursor: find the last item in range
+            IF v_upper_bound IS NOT NULL THEN
+                SELECT o.name INTO v_next_seek FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" >= v_prefix AND o.name COLLATE "C" < v_upper_bound
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            ELSIF v_prefix <> '' THEN
+                SELECT o.name INTO v_next_seek FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" >= v_prefix
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            ELSE
+                SELECT o.name INTO v_next_seek FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            END IF;
+
+            IF v_next_seek IS NOT NULL THEN
+                v_next_seek := v_next_seek || delimiter_param;
+            ELSE
+                RETURN;
+            END IF;
+        END IF;
+    ELSE
+        -- Cursor provided: determine if it refers to a folder or leaf
+        IF EXISTS (
+            SELECT 1 FROM storage.objects o
+            WHERE o.bucket_id = _bucket_id
+              AND o.name COLLATE "C" LIKE v_start || delimiter_param || '%'
+            LIMIT 1
+        ) THEN
+            -- Cursor refers to a folder
+            IF v_is_asc THEN
+                v_next_seek := v_start || chr(ascii(delimiter_param) + 1);
+            ELSE
+                v_next_seek := v_start || delimiter_param;
+            END IF;
+        ELSE
+            -- Cursor refers to a leaf object
+            IF v_is_asc THEN
+                v_next_seek := v_start || delimiter_param;
+            ELSE
+                v_next_seek := v_start;
+            END IF;
+        END IF;
+    END IF;
+
+    -- ========================================================================
+    -- MAIN LOOP: Hybrid peek-then-batch algorithm
+    -- Uses STATIC SQL for peek (hot path) and DYNAMIC SQL for batch
+    -- ========================================================================
+    LOOP
+        EXIT WHEN v_count >= max_keys;
+
+        -- STEP 1: PEEK using STATIC SQL (plan cached, very fast)
+        IF v_is_asc THEN
+            IF v_upper_bound IS NOT NULL THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" >= v_next_seek AND o.name COLLATE "C" < v_upper_bound
+                ORDER BY o.name COLLATE "C" ASC LIMIT 1;
+            ELSE
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" >= v_next_seek
+                ORDER BY o.name COLLATE "C" ASC LIMIT 1;
+            END IF;
+        ELSE
+            IF v_upper_bound IS NOT NULL THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" < v_next_seek AND o.name COLLATE "C" >= v_prefix
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            ELSIF v_prefix <> '' THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" < v_next_seek AND o.name COLLATE "C" >= v_prefix
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            ELSE
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" < v_next_seek
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            END IF;
+        END IF;
+
+        EXIT WHEN v_peek_name IS NULL;
+
+        -- STEP 2: Check if this is a FOLDER or FILE
+        v_common_prefix := storage.get_common_prefix(v_peek_name, v_prefix, delimiter_param);
+
+        IF v_common_prefix IS NOT NULL THEN
+            -- FOLDER: Emit and skip to next folder (no heap access needed)
+            name := rtrim(v_common_prefix, delimiter_param);
+            id := NULL;
+            updated_at := NULL;
+            created_at := NULL;
+            last_accessed_at := NULL;
+            metadata := NULL;
+            RETURN NEXT;
+            v_count := v_count + 1;
+
+            -- Advance seek past the folder range
+            IF v_is_asc THEN
+                v_next_seek := left(v_common_prefix, -1) || chr(ascii(delimiter_param) + 1);
+            ELSE
+                v_next_seek := v_common_prefix;
+            END IF;
+        ELSE
+            -- FILE: Batch fetch using DYNAMIC SQL (overhead amortized over many rows)
+            -- For ASC: upper_bound is the exclusive upper limit (< condition)
+            -- For DESC: prefix is the inclusive lower limit (>= condition)
+            FOR v_current IN EXECUTE v_batch_query USING _bucket_id, v_next_seek,
+                CASE WHEN v_is_asc THEN COALESCE(v_upper_bound, v_prefix) ELSE v_prefix END, v_file_batch_size
+            LOOP
+                v_common_prefix := storage.get_common_prefix(v_current.name, v_prefix, delimiter_param);
+
+                IF v_common_prefix IS NOT NULL THEN
+                    -- Hit a folder: exit batch, let peek handle it
+                    v_next_seek := v_current.name;
+                    EXIT;
+                END IF;
+
+                -- Emit file
+                name := v_current.name;
+                id := v_current.id;
+                updated_at := v_current.updated_at;
+                created_at := v_current.created_at;
+                last_accessed_at := v_current.last_accessed_at;
+                metadata := v_current.metadata;
+                RETURN NEXT;
+                v_count := v_count + 1;
+
+                -- Advance seek past this file
+                IF v_is_asc THEN
+                    v_next_seek := v_current.name || delimiter_param;
+                ELSE
+                    v_next_seek := v_current.name;
+                END IF;
+
+                EXIT WHEN v_count >= max_keys;
+            END LOOP;
+        END IF;
+    END LOOP;
+END;
+$_$;
+
+
+ALTER FUNCTION "storage"."list_objects_with_delimiter"("_bucket_id" "text", "prefix_param" "text", "delimiter_param" "text", "max_keys" integer, "start_after" "text", "next_token" "text", "sort_order" "text") OWNER TO "supabase_storage_admin";
+
+
+CREATE OR REPLACE FUNCTION "storage"."operation"() RETURNS "text"
+    LANGUAGE "plpgsql" STABLE
+    AS $$
+BEGIN
+    RETURN current_setting('storage.operation', true);
+END;
+$$;
+
+
+ALTER FUNCTION "storage"."operation"() OWNER TO "supabase_storage_admin";
+
+
+CREATE OR REPLACE FUNCTION "storage"."protect_delete"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    -- Check if storage.allow_delete_query is set to 'true'
+    IF COALESCE(current_setting('storage.allow_delete_query', true), 'false') != 'true' THEN
+        RAISE EXCEPTION 'Direct deletion from storage tables is not allowed. Use the Storage API instead.'
+            USING HINT = 'This prevents accidental data loss from orphaned objects.',
+                  ERRCODE = '42501';
     END IF;
     RETURN NULL;
 END;
 $$;
 
 
-ALTER FUNCTION "wallet"."trg_transactions_immutable"() OWNER TO "postgres";
+ALTER FUNCTION "storage"."protect_delete"() OWNER TO "supabase_storage_admin";
 
 
-CREATE OR REPLACE FUNCTION "wallet"."trg_verify_balance_after"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+CREATE OR REPLACE FUNCTION "storage"."search"("prefix" "text", "bucketname" "text", "limits" integer DEFAULT 100, "levels" integer DEFAULT 1, "offsets" integer DEFAULT 0, "search" "text" DEFAULT ''::"text", "sortcolumn" "text" DEFAULT 'name'::"text", "sortorder" "text" DEFAULT 'asc'::"text") RETURNS TABLE("name" "text", "id" "uuid", "updated_at" timestamp with time zone, "created_at" timestamp with time zone, "last_accessed_at" timestamp with time zone, "metadata" "jsonb")
+    LANGUAGE "plpgsql" STABLE
+    AS $_$
+DECLARE
+    v_peek_name TEXT;
+    v_current RECORD;
+    v_common_prefix TEXT;
+    v_delimiter CONSTANT TEXT := '/';
+
+    -- Configuration
+    v_limit INT;
+    v_prefix TEXT;
+    v_prefix_lower TEXT;
+    v_is_asc BOOLEAN;
+    v_order_by TEXT;
+    v_sort_order TEXT;
+    v_upper_bound TEXT;
+    v_file_batch_size INT;
+
+    -- Dynamic SQL for batch query only
+    v_batch_query TEXT;
+
+    -- Seek state
+    v_next_seek TEXT;
+    v_count INT := 0;
+    v_skipped INT := 0;
+BEGIN
+    -- ========================================================================
+    -- INITIALIZATION
+    -- ========================================================================
+    v_limit := LEAST(coalesce(limits, 100), 1500);
+    v_prefix := coalesce(prefix, '') || coalesce(search, '');
+    v_prefix_lower := lower(v_prefix);
+    v_is_asc := lower(coalesce(sortorder, 'asc')) = 'asc';
+    v_file_batch_size := LEAST(GREATEST(v_limit * 2, 100), 1000);
+
+    -- Validate sort column
+    CASE lower(coalesce(sortcolumn, 'name'))
+        WHEN 'name' THEN v_order_by := 'name';
+        WHEN 'updated_at' THEN v_order_by := 'updated_at';
+        WHEN 'created_at' THEN v_order_by := 'created_at';
+        WHEN 'last_accessed_at' THEN v_order_by := 'last_accessed_at';
+        ELSE v_order_by := 'name';
+    END CASE;
+
+    v_sort_order := CASE WHEN v_is_asc THEN 'asc' ELSE 'desc' END;
+
+    -- ========================================================================
+    -- NON-NAME SORTING: Use path_tokens approach (unchanged)
+    -- ========================================================================
+    IF v_order_by != 'name' THEN
+        RETURN QUERY EXECUTE format(
+            $sql$
+            WITH folders AS (
+                SELECT path_tokens[$1] AS folder
+                FROM storage.objects
+                WHERE objects.name ILIKE $2 || '%%'
+                  AND bucket_id = $3
+                  AND array_length(objects.path_tokens, 1) <> $1
+                GROUP BY folder
+                ORDER BY folder %s
+            )
+            (SELECT folder AS "name",
+                   NULL::uuid AS id,
+                   NULL::timestamptz AS updated_at,
+                   NULL::timestamptz AS created_at,
+                   NULL::timestamptz AS last_accessed_at,
+                   NULL::jsonb AS metadata FROM folders)
+            UNION ALL
+            (SELECT path_tokens[$1] AS "name",
+                   id, updated_at, created_at, last_accessed_at, metadata
+             FROM storage.objects
+             WHERE objects.name ILIKE $2 || '%%'
+               AND bucket_id = $3
+               AND array_length(objects.path_tokens, 1) = $1
+             ORDER BY %I %s)
+            LIMIT $4 OFFSET $5
+            $sql$, v_sort_order, v_order_by, v_sort_order
+        ) USING levels, v_prefix, bucketname, v_limit, offsets;
+        RETURN;
+    END IF;
+
+    -- ========================================================================
+    -- NAME SORTING: Hybrid skip-scan with batch optimization
+    -- ========================================================================
+
+    -- Calculate upper bound for prefix filtering
+    IF v_prefix_lower = '' THEN
+        v_upper_bound := NULL;
+    ELSIF right(v_prefix_lower, 1) = v_delimiter THEN
+        v_upper_bound := left(v_prefix_lower, -1) || chr(ascii(v_delimiter) + 1);
+    ELSE
+        v_upper_bound := left(v_prefix_lower, -1) || chr(ascii(right(v_prefix_lower, 1)) + 1);
+    END IF;
+
+    -- Build batch query (dynamic SQL - called infrequently, amortized over many rows)
+    IF v_is_asc THEN
+        IF v_upper_bound IS NOT NULL THEN
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND lower(o.name) COLLATE "C" >= $2 ' ||
+                'AND lower(o.name) COLLATE "C" < $3 ORDER BY lower(o.name) COLLATE "C" ASC LIMIT $4';
+        ELSE
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND lower(o.name) COLLATE "C" >= $2 ' ||
+                'ORDER BY lower(o.name) COLLATE "C" ASC LIMIT $4';
+        END IF;
+    ELSE
+        IF v_upper_bound IS NOT NULL THEN
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND lower(o.name) COLLATE "C" < $2 ' ||
+                'AND lower(o.name) COLLATE "C" >= $3 ORDER BY lower(o.name) COLLATE "C" DESC LIMIT $4';
+        ELSE
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND lower(o.name) COLLATE "C" < $2 ' ||
+                'ORDER BY lower(o.name) COLLATE "C" DESC LIMIT $4';
+        END IF;
+    END IF;
+
+    -- Initialize seek position
+    IF v_is_asc THEN
+        v_next_seek := v_prefix_lower;
+    ELSE
+        -- DESC: find the last item in range first (static SQL)
+        IF v_upper_bound IS NOT NULL THEN
+            SELECT o.name INTO v_peek_name FROM storage.objects o
+            WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" >= v_prefix_lower AND lower(o.name) COLLATE "C" < v_upper_bound
+            ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+        ELSIF v_prefix_lower <> '' THEN
+            SELECT o.name INTO v_peek_name FROM storage.objects o
+            WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" >= v_prefix_lower
+            ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+        ELSE
+            SELECT o.name INTO v_peek_name FROM storage.objects o
+            WHERE o.bucket_id = bucketname
+            ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+        END IF;
+
+        IF v_peek_name IS NOT NULL THEN
+            v_next_seek := lower(v_peek_name) || v_delimiter;
+        ELSE
+            RETURN;
+        END IF;
+    END IF;
+
+    -- ========================================================================
+    -- MAIN LOOP: Hybrid peek-then-batch algorithm
+    -- Uses STATIC SQL for peek (hot path) and DYNAMIC SQL for batch
+    -- ========================================================================
+    LOOP
+        EXIT WHEN v_count >= v_limit;
+
+        -- STEP 1: PEEK using STATIC SQL (plan cached, very fast)
+        IF v_is_asc THEN
+            IF v_upper_bound IS NOT NULL THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" >= v_next_seek AND lower(o.name) COLLATE "C" < v_upper_bound
+                ORDER BY lower(o.name) COLLATE "C" ASC LIMIT 1;
+            ELSE
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" >= v_next_seek
+                ORDER BY lower(o.name) COLLATE "C" ASC LIMIT 1;
+            END IF;
+        ELSE
+            IF v_upper_bound IS NOT NULL THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" < v_next_seek AND lower(o.name) COLLATE "C" >= v_prefix_lower
+                ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+            ELSIF v_prefix_lower <> '' THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" < v_next_seek AND lower(o.name) COLLATE "C" >= v_prefix_lower
+                ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+            ELSE
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" < v_next_seek
+                ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+            END IF;
+        END IF;
+
+        EXIT WHEN v_peek_name IS NULL;
+
+        -- STEP 2: Check if this is a FOLDER or FILE
+        v_common_prefix := storage.get_common_prefix(lower(v_peek_name), v_prefix_lower, v_delimiter);
+
+        IF v_common_prefix IS NOT NULL THEN
+            -- FOLDER: Handle offset, emit if needed, skip to next folder
+            IF v_skipped < offsets THEN
+                v_skipped := v_skipped + 1;
+            ELSE
+                name := split_part(rtrim(storage.get_common_prefix(v_peek_name, v_prefix, v_delimiter), v_delimiter), v_delimiter, levels);
+                id := NULL;
+                updated_at := NULL;
+                created_at := NULL;
+                last_accessed_at := NULL;
+                metadata := NULL;
+                RETURN NEXT;
+                v_count := v_count + 1;
+            END IF;
+
+            -- Advance seek past the folder range
+            IF v_is_asc THEN
+                v_next_seek := lower(left(v_common_prefix, -1)) || chr(ascii(v_delimiter) + 1);
+            ELSE
+                v_next_seek := lower(v_common_prefix);
+            END IF;
+        ELSE
+            -- FILE: Batch fetch using DYNAMIC SQL (overhead amortized over many rows)
+            -- For ASC: upper_bound is the exclusive upper limit (< condition)
+            -- For DESC: prefix_lower is the inclusive lower limit (>= condition)
+            FOR v_current IN EXECUTE v_batch_query
+                USING bucketname, v_next_seek,
+                    CASE WHEN v_is_asc THEN COALESCE(v_upper_bound, v_prefix_lower) ELSE v_prefix_lower END, v_file_batch_size
+            LOOP
+                v_common_prefix := storage.get_common_prefix(lower(v_current.name), v_prefix_lower, v_delimiter);
+
+                IF v_common_prefix IS NOT NULL THEN
+                    -- Hit a folder: exit batch, let peek handle it
+                    v_next_seek := lower(v_current.name);
+                    EXIT;
+                END IF;
+
+                -- Handle offset skipping
+                IF v_skipped < offsets THEN
+                    v_skipped := v_skipped + 1;
+                ELSE
+                    -- Emit file
+                    name := split_part(v_current.name, v_delimiter, levels);
+                    id := v_current.id;
+                    updated_at := v_current.updated_at;
+                    created_at := v_current.created_at;
+                    last_accessed_at := v_current.last_accessed_at;
+                    metadata := v_current.metadata;
+                    RETURN NEXT;
+                    v_count := v_count + 1;
+                END IF;
+
+                -- Advance seek past this file
+                IF v_is_asc THEN
+                    v_next_seek := lower(v_current.name) || v_delimiter;
+                ELSE
+                    v_next_seek := lower(v_current.name);
+                END IF;
+
+                EXIT WHEN v_count >= v_limit;
+            END LOOP;
+        END IF;
+    END LOOP;
+END;
+$_$;
+
+
+ALTER FUNCTION "storage"."search"("prefix" "text", "bucketname" "text", "limits" integer, "levels" integer, "offsets" integer, "search" "text", "sortcolumn" "text", "sortorder" "text") OWNER TO "supabase_storage_admin";
+
+
+CREATE OR REPLACE FUNCTION "storage"."search_by_timestamp"("p_prefix" "text", "p_bucket_id" "text", "p_limit" integer, "p_level" integer, "p_start_after" "text", "p_sort_order" "text", "p_sort_column" "text", "p_sort_column_after" "text") RETURNS TABLE("key" "text", "name" "text", "id" "uuid", "updated_at" timestamp with time zone, "created_at" timestamp with time zone, "last_accessed_at" timestamp with time zone, "metadata" "jsonb")
+    LANGUAGE "plpgsql" STABLE
+    AS $_$
+DECLARE
+    v_cursor_op text;
+    v_query text;
+    v_prefix text;
+BEGIN
+    v_prefix := coalesce(p_prefix, '');
+
+    IF p_sort_order = 'asc' THEN
+        v_cursor_op := '>';
+    ELSE
+        v_cursor_op := '<';
+    END IF;
+
+    v_query := format($sql$
+        WITH raw_objects AS (
+            SELECT
+                o.name AS obj_name,
+                o.id AS obj_id,
+                o.updated_at AS obj_updated_at,
+                o.created_at AS obj_created_at,
+                o.last_accessed_at AS obj_last_accessed_at,
+                o.metadata AS obj_metadata,
+                storage.get_common_prefix(o.name, $1, '/') AS common_prefix
+            FROM storage.objects o
+            WHERE o.bucket_id = $2
+              AND o.name COLLATE "C" LIKE $1 || '%%'
+        ),
+        -- Aggregate common prefixes (folders)
+        -- Both created_at and updated_at use MIN(obj_created_at) to match the old prefixes table behavior
+        aggregated_prefixes AS (
+            SELECT
+                rtrim(common_prefix, '/') AS name,
+                NULL::uuid AS id,
+                MIN(obj_created_at) AS updated_at,
+                MIN(obj_created_at) AS created_at,
+                NULL::timestamptz AS last_accessed_at,
+                NULL::jsonb AS metadata,
+                TRUE AS is_prefix
+            FROM raw_objects
+            WHERE common_prefix IS NOT NULL
+            GROUP BY common_prefix
+        ),
+        leaf_objects AS (
+            SELECT
+                obj_name AS name,
+                obj_id AS id,
+                obj_updated_at AS updated_at,
+                obj_created_at AS created_at,
+                obj_last_accessed_at AS last_accessed_at,
+                obj_metadata AS metadata,
+                FALSE AS is_prefix
+            FROM raw_objects
+            WHERE common_prefix IS NULL
+        ),
+        combined AS (
+            SELECT * FROM aggregated_prefixes
+            UNION ALL
+            SELECT * FROM leaf_objects
+        ),
+        filtered AS (
+            SELECT *
+            FROM combined
+            WHERE (
+                $5 = ''
+                OR ROW(
+                    date_trunc('milliseconds', %I),
+                    name COLLATE "C"
+                ) %s ROW(
+                    COALESCE(NULLIF($6, '')::timestamptz, 'epoch'::timestamptz),
+                    $5
+                )
+            )
+        )
+        SELECT
+            split_part(name, '/', $3) AS key,
+            name,
+            id,
+            updated_at,
+            created_at,
+            last_accessed_at,
+            metadata
+        FROM filtered
+        ORDER BY
+            COALESCE(date_trunc('milliseconds', %I), 'epoch'::timestamptz) %s,
+            name COLLATE "C" %s
+        LIMIT $4
+    $sql$,
+        p_sort_column,
+        v_cursor_op,
+        p_sort_column,
+        p_sort_order,
+        p_sort_order
+    );
+
+    RETURN QUERY EXECUTE v_query
+    USING v_prefix, p_bucket_id, p_level, p_limit, p_start_after, p_sort_column_after;
+END;
+$_$;
+
+
+ALTER FUNCTION "storage"."search_by_timestamp"("p_prefix" "text", "p_bucket_id" "text", "p_limit" integer, "p_level" integer, "p_start_after" "text", "p_sort_order" "text", "p_sort_column" "text", "p_sort_column_after" "text") OWNER TO "supabase_storage_admin";
+
+
+CREATE OR REPLACE FUNCTION "storage"."search_v2"("prefix" "text", "bucket_name" "text", "limits" integer DEFAULT 100, "levels" integer DEFAULT 1, "start_after" "text" DEFAULT ''::"text", "sort_order" "text" DEFAULT 'asc'::"text", "sort_column" "text" DEFAULT 'name'::"text", "sort_column_after" "text" DEFAULT ''::"text") RETURNS TABLE("key" "text", "name" "text", "id" "uuid", "updated_at" timestamp with time zone, "created_at" timestamp with time zone, "last_accessed_at" timestamp with time zone, "metadata" "jsonb")
+    LANGUAGE "plpgsql" STABLE
     AS $$
 DECLARE
-    v_current_balance bigint;
-    v_expected_balance bigint;
+    v_sort_col text;
+    v_sort_ord text;
+    v_limit int;
 BEGIN
-    -- Get the current account balance
-    SELECT balance INTO v_current_balance
-    FROM wallet.accounts
-    WHERE id = NEW.account_id
-    FOR UPDATE;  -- lock row to prevent concurrent corruption
+    -- Cap limit to maximum of 1500 records
+    v_limit := LEAST(coalesce(limits, 100), 1500);
 
-    IF v_current_balance IS NULL THEN
-        RAISE EXCEPTION 'WALLET_ACCOUNT_NOT_FOUND: No wallet account with id=%', NEW.account_id;
+    -- Validate and normalize sort_order
+    v_sort_ord := lower(coalesce(sort_order, 'asc'));
+    IF v_sort_ord NOT IN ('asc', 'desc') THEN
+        v_sort_ord := 'asc';
     END IF;
 
-    -- Expected balance = current balance + (amount * direction)
-    -- Note: the wallet functions update the account balance BEFORE inserting the
-    -- transaction, so current balance should already reflect this transaction.
-    -- We verify balance_after matches the current (already-updated) balance.
-    IF NEW.balance_after <> v_current_balance THEN
-        RAISE EXCEPTION 'BALANCE_MISMATCH: balance_after (%) does not match account balance (%) for account_id=%. '
-            'This indicates a bug in the wallet function that inserted this transaction.',
-            NEW.balance_after, v_current_balance, NEW.account_id;
+    -- Validate and normalize sort_column
+    v_sort_col := lower(coalesce(sort_column, 'name'));
+    IF v_sort_col NOT IN ('name', 'updated_at', 'created_at') THEN
+        v_sort_col := 'name';
     END IF;
 
-    RETURN NEW;
+    -- Route to appropriate implementation
+    IF v_sort_col = 'name' THEN
+        -- Use list_objects_with_delimiter for name sorting (most efficient: O(k * log n))
+        RETURN QUERY
+        SELECT
+            split_part(l.name, '/', levels) AS key,
+            l.name AS name,
+            l.id,
+            l.updated_at,
+            l.created_at,
+            l.last_accessed_at,
+            l.metadata
+        FROM storage.list_objects_with_delimiter(
+            bucket_name,
+            coalesce(prefix, ''),
+            '/',
+            v_limit,
+            start_after,
+            '',
+            v_sort_ord
+        ) l;
+    ELSE
+        -- Use aggregation approach for timestamp sorting
+        -- Not efficient for large datasets but supports correct pagination
+        RETURN QUERY SELECT * FROM storage.search_by_timestamp(
+            prefix, bucket_name, v_limit, levels, start_after,
+            v_sort_ord, v_sort_col, sort_column_after
+        );
+    END IF;
 END;
 $$;
 
 
-ALTER FUNCTION "wallet"."trg_verify_balance_after"() OWNER TO "postgres";
+ALTER FUNCTION "storage"."search_v2"("prefix" "text", "bucket_name" "text", "limits" integer, "levels" integer, "start_after" "text", "sort_order" "text", "sort_column" "text", "sort_column_after" "text") OWNER TO "supabase_storage_admin";
+
+
+CREATE OR REPLACE FUNCTION "storage"."update_updated_at_column"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW; 
+END;
+$$;
+
+
+ALTER FUNCTION "storage"."update_updated_at_column"() OWNER TO "supabase_storage_admin";
 
 
 CREATE OR REPLACE FUNCTION "xp"."apply"("p_lenser_id" "uuid", "p_rule_key" "text", "p_source" "xp"."source_enum", "p_source_ref_type" "text", "p_source_ref_id" "uuid", "p_app_id" "uuid" DEFAULT '00000000-0000-0000-0000-000000000000'::"uuid") RETURNS "void"
@@ -40674,96 +34492,6 @@ END;$$;
 ALTER FUNCTION "xp"."verify_signature"("p_signature" "text", "p_payload" "jsonb") OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "admin"."kill_switches" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "scope" "text" NOT NULL,
-    "target_id" "uuid",
-    "operator_id" "uuid" NOT NULL,
-    "reason" "text" NOT NULL,
-    "expires_at" timestamp with time zone,
-    "activated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "lifted_at" timestamp with time zone,
-    CONSTRAINT "kill_switch_target_or_system" CHECK ((("scope" = 'system'::"text") OR ("target_id" IS NOT NULL))),
-    CONSTRAINT "kill_switches_reason_check" CHECK (("char_length"("reason") >= 3)),
-    CONSTRAINT "kill_switches_scope_check" CHECK (("scope" = ANY (ARRAY['run'::"text", 'battle'::"text", 'agent'::"text", 'system'::"text"])))
-);
-
-
-ALTER TABLE "admin"."kill_switches" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "admin"."kill_switches" IS 'Platform-wide emergency stops. scope=system halts all autonomous operations. Append-only via RPCs; never updated directly.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."action_logs" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "action_type" "text" NOT NULL,
-    "context_ref_type" "text",
-    "context_ref_id" "uuid",
-    "result" "text" DEFAULT 'success'::"text" NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "occurred_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "action_logs_result_check" CHECK (("result" = ANY (ARRAY['success'::"text", 'blocked_by_policy'::"text", 'failed'::"text", 'throttled'::"text"]))),
-    CONSTRAINT "action_logs_type_check" CHECK (("action_type" = ANY (ARRAY['join_battle'::"text", 'cast_vote'::"text", 'submit_entry'::"text", 'create_battle'::"text", 'spend_credits'::"text", 'dispatch_schedule'::"text", 'schedule_skipped'::"text", 'policy_updated'::"text", 'run_lens'::"text", 'run_workflow'::"text", 'pause_schedule'::"text", 'resume_schedule'::"text", 'binding_updated'::"text", 'standing_approval_granted'::"text", 'standing_approval_revoked'::"text", 'approval_granted_bulk'::"text"])))
-);
-
-
-ALTER TABLE "agents"."action_logs" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."action_logs" IS 'Append-only audit trail for AI Lenser autonomous actions. Created by agents.fn_agent_action only. Structural triggers prevent UPDATE and DELETE — this is a trust record, not a mutable log.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."agent_run_steps" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "team_run_id" "uuid" NOT NULL,
-    "team_member_id" "uuid",
-    "workflow_node_id" "uuid",
-    "lane" integer DEFAULT 0 NOT NULL,
-    "title" "text" DEFAULT 'Task'::"text" NOT NULL,
-    "current_task" "text",
-    "recent_output_summary" "text",
-    "blocker_summary" "text",
-    "status" "text" DEFAULT 'queued'::"text" NOT NULL,
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "started_at" timestamp with time zone,
-    "completed_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "agent_run_steps_status_check" CHECK (("status" = ANY (ARRAY['queued'::"text", 'running'::"text", 'completed'::"text", 'failed'::"text", 'blocked'::"text", 'skipped'::"text"])))
-);
-
-
-ALTER TABLE "agents"."agent_run_steps" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."workflow_assignments" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "workflow_id" "uuid" NOT NULL,
-    "assignee_kind" "text" DEFAULT 'agent'::"text" NOT NULL,
-    "assignee_ai_lenser_id" "uuid",
-    "assignee_team_id" "uuid",
-    "approval_policy" "jsonb" DEFAULT '{"requiresApproval": true}'::"jsonb" NOT NULL,
-    "retry_policy" "jsonb" DEFAULT '{"maxRetries": 1}'::"jsonb" NOT NULL,
-    "failure_policy" "jsonb" DEFAULT '{"mode": "isolate"}'::"jsonb" NOT NULL,
-    "queue_policy" "jsonb" DEFAULT '{"mode": "parallel"}'::"jsonb" NOT NULL,
-    "output_destination" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "workflow_assignments_assignee_check" CHECK (((("assignee_kind" = 'agent'::"text") AND ("assignee_ai_lenser_id" IS NOT NULL) AND ("assignee_team_id" IS NULL)) OR (("assignee_kind" = 'team'::"text") AND ("assignee_team_id" IS NOT NULL) AND ("assignee_ai_lenser_id" IS NULL)) OR (("assignee_kind" = 'evaluator'::"text") AND ("assignee_ai_lenser_id" IS NOT NULL) AND ("assignee_team_id" IS NULL)))),
-    CONSTRAINT "workflow_assignments_assignee_kind_check" CHECK (("assignee_kind" = ANY (ARRAY['agent'::"text", 'team'::"text", 'evaluator'::"text"]))),
-    CONSTRAINT "workflow_assignments_target_check" CHECK (((("assignee_kind" = 'agent'::"text") AND ("assignee_ai_lenser_id" IS NOT NULL) AND ("assignee_team_id" IS NULL)) OR (("assignee_kind" = 'team'::"text") AND ("assignee_team_id" IS NOT NULL) AND ("assignee_ai_lenser_id" IS NULL))))
-);
-
-
-ALTER TABLE "agents"."workflow_assignments" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "lenses"."workflows" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "lenser_id" "uuid" NOT NULL,
@@ -40789,727 +34517,6 @@ ALTER TABLE "lenses"."workflows" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "lenses"."workflows" IS 'A Connected Lens workflow — a DAG of lens versions whose outputs feed into each other. battle_count is a denormalised counter incremented when a workflow is used in a battle.';
-
-
-
-CREATE OR REPLACE VIEW "agents"."approval_requests_v" AS
- SELECT "tr"."id" AS "request_id",
-    "tr"."ai_lenser_id",
-    "tr"."team_id",
-    "tr"."workflow_id",
-    "tr"."workflow_assignment_id",
-    "tr"."workflow_run_id",
-    "tr"."status" AS "run_status",
-    "tr"."approval_status",
-    "tr"."metadata",
-    ("tr"."metadata" ->> 'gate_kind'::"text") AS "gate_kind",
-    ("tr"."metadata" ->> 'requested_action'::"text") AS "requested_action",
-    ("tr"."metadata" ->> 'requester_agent_id'::"text") AS "requester_agent_id",
-    "tr"."created_at" AS "requested_at",
-    "tr"."started_at",
-    "tr"."completed_at",
-    "wa"."assignee_kind",
-    "wa"."approval_policy",
-    "wa"."retry_policy",
-    "wa"."failure_policy",
-    "w"."title" AS "workflow_title"
-   FROM (("agents"."team_runs" "tr"
-     LEFT JOIN "agents"."workflow_assignments" "wa" ON (("wa"."id" = "tr"."workflow_assignment_id")))
-     LEFT JOIN "lenses"."workflows" "w" ON (("w"."id" = "tr"."workflow_id")))
-  WHERE "agents"."can_manage_ai_lenser"("tr"."ai_lenser_id");
-
-
-ALTER VIEW "agents"."approval_requests_v" OWNER TO "postgres";
-
-
-COMMENT ON VIEW "agents"."approval_requests_v" IS 'Owner-only projection of team_runs with assignment + workflow metadata for the approval queue UI. RLS-safe via agents.can_manage_ai_lenser().';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."battle_subscriptions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "agent_id" "uuid" NOT NULL,
-    "category" "text",
-    "execution_mode" "text" DEFAULT 'cloud'::"text" NOT NULL,
-    "workflow_id" "uuid",
-    "require_owner_approval" boolean DEFAULT false NOT NULL,
-    "max_joins_per_day" integer DEFAULT 5 NOT NULL,
-    "active" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "battle_subscriptions_execution_mode_check" CHECK (("execution_mode" = ANY (ARRAY['local'::"text", 'cloud'::"text", 'hybrid'::"text"]))),
-    CONSTRAINT "battle_subscriptions_max_joins_per_day_check" CHECK ((("max_joins_per_day" >= 1) AND ("max_joins_per_day" <= 20)))
-);
-
-
-ALTER TABLE "agents"."battle_subscriptions" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."evaluation_baselines" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "evaluation_id" "uuid" NOT NULL,
-    "run_id" "uuid" NOT NULL,
-    "score" numeric,
-    "set_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "set_by" "uuid"
-);
-
-
-ALTER TABLE "agents"."evaluation_baselines" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."evaluation_baselines" IS 'Golden-run snapshot per evaluation. Used to compute regression deltas in the UI.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."evaluation_case_results" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "evaluation_run_id" "uuid" NOT NULL,
-    "case_id" "uuid" NOT NULL,
-    "score" numeric,
-    "output" "jsonb",
-    "error" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "passed" boolean
-);
-
-
-ALTER TABLE "agents"."evaluation_case_results" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."evaluation_cases" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "evaluation_id" "uuid" NOT NULL,
-    "input" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "expected" "jsonb",
-    "weight" numeric DEFAULT 1 NOT NULL,
-    "tags" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "agents"."evaluation_cases" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."evaluation_runs" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "evaluation_id" "uuid" NOT NULL,
-    "model_id" "uuid",
-    "status" "text" DEFAULT 'queued'::"text" NOT NULL,
-    "score" numeric,
-    "summary" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "started_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "completed_at" timestamp with time zone,
-    "rubric_id" "uuid",
-    CONSTRAINT "evaluation_runs_status_check" CHECK (("status" = ANY (ARRAY['queued'::"text", 'running'::"text", 'completed'::"text", 'failed'::"text", 'cancelled'::"text"])))
-);
-
-
-ALTER TABLE "agents"."evaluation_runs" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."evaluations" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "owner_lenser_id" "uuid" NOT NULL,
-    "ai_lenser_id" "uuid",
-    "target_type" "text" NOT NULL,
-    "target_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "description" "text",
-    "scoring_rules" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "dataset_uri" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "evaluations_target_type_check" CHECK (("target_type" = ANY (ARRAY['lens'::"text", 'workflow'::"text", 'agent'::"text", 'team'::"text"])))
-);
-
-
-ALTER TABLE "agents"."evaluations" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."evaluations" IS 'Owner-defined evaluation suites for lenses, workflows, agents, or teams. Run via fn_run_evaluation.';
-
-
-
-CREATE OR REPLACE VIEW "agents"."evaluation_results_v" AS
- SELECT "cr"."id" AS "result_id",
-    "r"."id" AS "run_id",
-    "r"."evaluation_id",
-    "r"."status" AS "run_status",
-    "r"."score" AS "run_score",
-    "r"."started_at",
-    "r"."completed_at",
-    "c"."id" AS "case_id",
-    "c"."input",
-    "c"."expected",
-    "c"."weight",
-    "c"."tags",
-    "cr"."score" AS "case_score",
-    "cr"."output" AS "case_output",
-    "cr"."error" AS "case_error",
-    "cr"."passed"
-   FROM ((("agents"."evaluation_case_results" "cr"
-     JOIN "agents"."evaluation_runs" "r" ON (("r"."id" = "cr"."evaluation_run_id")))
-     JOIN "agents"."evaluation_cases" "c" ON (("c"."id" = "cr"."case_id")))
-     JOIN "agents"."evaluations" "e" ON (("e"."id" = "r"."evaluation_id")))
-  WHERE (("e"."owner_lenser_id" = "auth"."uid"()) OR (("e"."ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("e"."ai_lenser_id")));
-
-
-ALTER VIEW "agents"."evaluation_results_v" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."evaluation_rubrics" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "evaluation_id" "uuid" NOT NULL,
-    "version" integer DEFAULT 1 NOT NULL,
-    "criteria" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
-    "is_current" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "agents"."evaluation_rubrics" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."evaluation_rubrics" IS 'Versioned scoring criteria for an evaluation. Each call to createEvaluationRubric bumps version and marks prior rows is_current=false.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."gateway_devices" (
-    "device_id" "uuid" NOT NULL,
-    "owner_id" "uuid" NOT NULL,
-    "hostname" "text",
-    "public_key" "text" NOT NULL,
-    "daemon_version" "text",
-    "last_seen_at" timestamp with time zone,
-    "approved_at" timestamp with time zone,
-    "revoked_at" timestamp with time zone,
-    "kill_switch" boolean DEFAULT false NOT NULL,
-    "key_rotated_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "gateway_devices_daemon_version_check" CHECK ((("daemon_version" IS NULL) OR ("char_length"("daemon_version") <= 64))),
-    CONSTRAINT "gateway_devices_hostname_check" CHECK ((("hostname" IS NULL) OR ("char_length"("hostname") <= 253))),
-    CONSTRAINT "gateway_devices_public_key_check" CHECK ((("char_length"("public_key") >= 32) AND ("char_length"("public_key") <= 256)))
-);
-
-
-ALTER TABLE "agents"."gateway_devices" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."gateway_devices" IS 'Phase AU: long-running gateway daemon registrations. The daemon upserts its row on every heartbeat and reacts to the {approved, kill_switch} flags returned by fn_gateway_heartbeat.';
-
-
-
-CREATE OR REPLACE VIEW "agents"."memories_v" AS
- SELECT "m"."id",
-    "m"."profile_id",
-    "p"."name" AS "profile_name",
-    "m"."ai_lenser_id",
-    "m"."scope",
-    "m"."source",
-    "m"."content",
-    "m"."embedding_metadata",
-    "m"."confidence",
-    "m"."expires_at",
-    "m"."team_run_id",
-    "m"."is_redacted",
-    "m"."created_at"
-   FROM ("agents"."memories" "m"
-     JOIN "agents"."memory_profiles" "p" ON (("p"."id" = "m"."profile_id")))
-  WHERE "agents"."can_manage_ai_lenser"("m"."ai_lenser_id");
-
-
-ALTER VIEW "agents"."memories_v" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."memory_access_logs" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "memory_id" "uuid" NOT NULL,
-    "team_run_id" "uuid",
-    "action" "text" NOT NULL,
-    "context" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "accessed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "memory_access_logs_action_check" CHECK (("action" = ANY (ARRAY['read'::"text", 'write'::"text", 'redact'::"text"])))
-);
-
-
-ALTER TABLE "agents"."memory_access_logs" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."memory_access_logs" IS 'Audit trail for read/write/redact actions on agents.memories. One row per access.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."model_profiles" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "provider_key" "text",
-    "model_id" "uuid",
-    "model_key" "text",
-    "support_level" "text" DEFAULT 'runnable'::"text" NOT NULL,
-    "params" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "is_default" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "agents"."model_profiles" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."personality_profiles" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "tone" "text" DEFAULT 'balanced'::"text" NOT NULL,
-    "expertise_level" "text" DEFAULT 'specialist'::"text" NOT NULL,
-    "risk_tolerance" "text" DEFAULT 'moderate'::"text" NOT NULL,
-    "autonomy_level" "text" DEFAULT 'guided'::"text" NOT NULL,
-    "communication_style" "text" DEFAULT 'concise'::"text" NOT NULL,
-    "decision_style" "text" DEFAULT 'evidence_first'::"text" NOT NULL,
-    "escalation_behavior" "text" DEFAULT 'ask_when_blocked'::"text" NOT NULL,
-    "system_prompt_patch" "text" DEFAULT ''::"text" NOT NULL,
-    "is_default" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "agents"."personality_profiles" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."policies" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "can_join_battles" boolean DEFAULT false NOT NULL,
-    "can_vote" boolean DEFAULT false NOT NULL,
-    "can_create_battles" boolean DEFAULT false NOT NULL,
-    "can_receive_sponsorship" boolean DEFAULT false NOT NULL,
-    "model_binding_mode" "text" DEFAULT 'single'::"text" NOT NULL,
-    "max_daily_battles" integer DEFAULT 0 NOT NULL,
-    "max_daily_votes" integer DEFAULT 0 NOT NULL,
-    "allowed_battle_types" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "spending_limit_credits" bigint DEFAULT 0 NOT NULL,
-    "is_public_policy" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "allowed_output_modalities" "text"[] DEFAULT ARRAY['text'::"text"] NOT NULL,
-    CONSTRAINT "policies_binding_mode_check" CHECK (("model_binding_mode" = ANY (ARRAY['single'::"text", 'multi'::"text", 'dynamic'::"text"]))),
-    CONSTRAINT "policies_max_battles_nonneg" CHECK (("max_daily_battles" >= 0)),
-    CONSTRAINT "policies_max_votes_nonneg" CHECK (("max_daily_votes" >= 0)),
-    CONSTRAINT "policies_spending_nonneg" CHECK (("spending_limit_credits" >= 0))
-);
-
-
-ALTER TABLE "agents"."policies" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."policies" IS 'Autonomous action constraints for an AI Lenser. All behavioral flags live here — never on agents.ai_lensers. Default state is fully disabled. Owner must explicitly enable each capability after creation.';
-
-
-
-COMMENT ON COLUMN "agents"."policies"."model_binding_mode" IS 'single = use only the default model. multi  = use any model in model_bindings. dynamic = select model per battle category via category_tags.';
-
-
-
-COMMENT ON COLUMN "agents"."policies"."allowed_battle_types" IS 'Empty array = any battle type allowed. Non-empty = agent may only join battle_types in this list.';
-
-
-
-COMMENT ON COLUMN "agents"."policies"."is_public_policy" IS 'When true, this agent''s policy record (capabilities, spending limits, quotas) is readable via the public read policy. Defaults to FALSE — owners must explicitly opt in to public policy transparency. Changed from original default of true in 20260326050000_agents_policy_default_hardening.';
-
-
-
-COMMENT ON COLUMN "agents"."policies"."allowed_output_modalities" IS 'Modalities this agent is permitted to request. Defaults to [''text''] so existing agents are unaffected. Add ''image'', ''video'', ''audio'', ''music'' to unlock generative media for this agent.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."policy_evaluations" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "team_run_id" "uuid",
-    "tool_invocation_id" "uuid",
-    "evaluation_point" "text" NOT NULL,
-    "policy_type" "text" NOT NULL,
-    "verdict" "text" NOT NULL,
-    "reason" "text",
-    "context" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "evaluated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "policy_evaluations_evaluation_point_check" CHECK (("evaluation_point" = ANY (ARRAY['pre_run'::"text", 'pre_side_effect'::"text", 'pre_tool'::"text"]))),
-    CONSTRAINT "policy_evaluations_policy_type_check" CHECK (("policy_type" = ANY (ARRAY['budget'::"text", 'kill_switch'::"text", 'pause'::"text", 'parallel_limit'::"text", 'dark_launch'::"text", 'approval'::"text"]))),
-    CONSTRAINT "policy_evaluations_verdict_check" CHECK (("verdict" = ANY (ARRAY['allow'::"text", 'deny'::"text", 'pause'::"text", 'require_approval'::"text"])))
-);
-
-
-ALTER TABLE "agents"."policy_evaluations" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."policy_evaluations" IS 'Immutable audit log of pre-run, pre-side-effect, and pre-tool policy verdicts. One row per evaluation point; never updated after insert.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."quota_snapshots" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "period_date" "date" DEFAULT CURRENT_DATE NOT NULL,
-    "battles_used" integer DEFAULT 0 NOT NULL,
-    "votes_used" integer DEFAULT 0 NOT NULL,
-    "credits_spent" bigint DEFAULT 0 NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "quota_battles_nonneg" CHECK (("battles_used" >= 0)),
-    CONSTRAINT "quota_credits_nonneg" CHECK (("credits_spent" >= 0)),
-    CONSTRAINT "quota_votes_nonneg" CHECK (("votes_used" >= 0))
-);
-
-
-ALTER TABLE "agents"."quota_snapshots" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."quota_snapshots" IS 'Daily usage counters per AI Lenser. Upserted atomically by agents.fn_agent_action. Avoids scanning action_logs for quota checks. One row per (ai_lenser_id, date). Row is lazily created on first action.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."run_incidents" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "run_report_id" "uuid" NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "incident_type" "text" NOT NULL,
-    "severity" "text" NOT NULL,
-    "title" "text" NOT NULL,
-    "description" "text",
-    "context" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "resolved_at" timestamp with time zone,
-    "resolution" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "run_incidents_incident_type_check" CHECK (("incident_type" = ANY (ARRAY['tool_failure'::"text", 'budget_exceeded'::"text", 'policy_violation'::"text", 'timeout'::"text", 'step_failure'::"text", 'approval_rejected'::"text", 'kill_switch'::"text"]))),
-    CONSTRAINT "run_incidents_severity_check" CHECK (("severity" = ANY (ARRAY['low'::"text", 'medium'::"text", 'high'::"text", 'critical'::"text"])))
-);
-
-
-ALTER TABLE "agents"."run_incidents" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."run_incidents" IS 'Incident log attached to a run report. Records tool failures, budget overruns, policy violations, timeouts, and kill-switch events with severity classification.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."run_reports" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "team_run_id" "uuid",
-    "workflow_run_id" "uuid",
-    "title" "text" NOT NULL,
-    "summary" "text",
-    "metrics" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "total_steps" integer DEFAULT 0 NOT NULL,
-    "total_tool_invocations" integer DEFAULT 0 NOT NULL,
-    "total_memory_writes" integer DEFAULT 0 NOT NULL,
-    "total_cost_estimate" numeric DEFAULT 0 NOT NULL,
-    "evaluation_score" numeric,
-    "outcome" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "ck_agents_run_reports_evaluation_score_nonneg" CHECK ((("evaluation_score" IS NULL) OR ("evaluation_score" >= (0)::numeric))),
-    CONSTRAINT "ck_agents_run_reports_total_cost_estimate_nonneg" CHECK ((("total_cost_estimate" IS NULL) OR ("total_cost_estimate" >= (0)::numeric))),
-    CONSTRAINT "ck_agents_run_reports_total_memory_writes_nonneg" CHECK ((("total_memory_writes" IS NULL) OR ("total_memory_writes" >= 0))),
-    CONSTRAINT "ck_agents_run_reports_total_steps_nonneg" CHECK ((("total_steps" IS NULL) OR ("total_steps" >= 0))),
-    CONSTRAINT "ck_agents_run_reports_total_tool_invocations_nonneg" CHECK ((("total_tool_invocations" IS NULL) OR ("total_tool_invocations" >= 0))),
-    CONSTRAINT "run_reports_outcome_check" CHECK (("outcome" = ANY (ARRAY['success'::"text", 'partial'::"text", 'failed'::"text", 'cancelled'::"text", 'killed'::"text"]))),
-    CONSTRAINT "run_reports_total_cost_estimate_check" CHECK (("total_cost_estimate" >= (0)::numeric)),
-    CONSTRAINT "run_reports_total_memory_writes_check" CHECK (("total_memory_writes" >= 0)),
-    CONSTRAINT "run_reports_total_steps_check" CHECK (("total_steps" >= 0)),
-    CONSTRAINT "run_reports_total_tool_invocations_check" CHECK (("total_tool_invocations" >= 0))
-);
-
-
-ALTER TABLE "agents"."run_reports" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."run_reports" IS 'Immutable post-run summary records. One report per terminal team run. Aggregates steps, tool invocations, memory writes, cost, and evaluation score at the moment of report creation.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."standing_approvals" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "workflow_id" "uuid",
-    "gate_kind" "text",
-    "expires_at" timestamp with time zone,
-    "created_by" "uuid" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "revoked_at" timestamp with time zone,
-    CONSTRAINT "standing_approvals_target_required" CHECK ((("workflow_id" IS NOT NULL) OR ("gate_kind" IS NOT NULL)))
-);
-
-
-ALTER TABLE "agents"."standing_approvals" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."standing_approvals" IS 'Phase Q2: pre-granted approvals for AI lenser workflow dispatches. A row matches when ai_lenser_id matches and (workflow_id or gate_kind) aligns. NULL expires_at means the approval never expires until revoked.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."team_edges" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "team_id" "uuid" NOT NULL,
-    "source_member_id" "uuid" NOT NULL,
-    "target_member_id" "uuid" NOT NULL,
-    "edge_type" "text" DEFAULT 'delegates'::"text" NOT NULL,
-    "is_blocking" boolean DEFAULT false NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "team_edges_edge_type_check" CHECK (("edge_type" = ANY (ARRAY['delegates'::"text", 'reviews'::"text", 'reports_to'::"text", 'shares_context'::"text", 'handoff'::"text"]))),
-    CONSTRAINT "team_edges_no_self_loop" CHECK (("source_member_id" <> "target_member_id"))
-);
-
-
-ALTER TABLE "agents"."team_edges" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."team_members" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "team_id" "uuid" NOT NULL,
-    "agent_id" "uuid" NOT NULL,
-    "role" "text" DEFAULT 'operator'::"text" NOT NULL,
-    "responsibility" "text" DEFAULT ''::"text" NOT NULL,
-    "lane" integer DEFAULT 0 NOT NULL,
-    "personality_profile_id" "uuid",
-    "memory_profile_id" "uuid",
-    "tool_profile_id" "uuid",
-    "model_profile_id" "uuid",
-    "sort_order" integer DEFAULT 0 NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "team_members_role_check" CHECK (("role" = ANY (ARRAY['leader'::"text", 'executor'::"text", 'reviewer'::"text", 'observer'::"text", 'operator'::"text"])))
-);
-
-
-ALTER TABLE "agents"."team_members" OWNER TO "postgres";
-
-
-COMMENT ON CONSTRAINT "team_members_role_check" ON "agents"."team_members" IS 'Phase X4: restricted role enum. Pre-existing rows with non-conforming roles must be backfilled before this CHECK can be re-validated; new inserts are constrained immediately. Operators outside the enum are silently bypassed by fn_node_requires_review and similar gates.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."team_messages" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "team_run_id" "uuid" NOT NULL,
-    "from_agent_id" "uuid" NOT NULL,
-    "to_agent_id" "uuid",
-    "kind" "text" NOT NULL,
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "parent_message_id" "uuid",
-    "occurred_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "team_messages_kind_check" CHECK (("kind" = ANY (ARRAY['task_request'::"text", 'task_response'::"text", 'info'::"text", 'error'::"text"])))
-);
-
-
-ALTER TABLE "agents"."team_messages" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."team_messages" IS 'Phase X1 inter-agent message bus. Append-only log scoped to a team_run. NULL to_agent_id == broadcast to all members of the team_run. Hard cap 1000 rows per team_run enforced by BEFORE INSERT trigger.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."teams" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "description" "text",
-    "status" "text" DEFAULT 'active'::"text" NOT NULL,
-    "scratchpad" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "teams_name_length_check" CHECK ((("char_length"(TRIM(BOTH FROM "name")) >= 1) AND ("char_length"(TRIM(BOTH FROM "name")) <= 120))),
-    CONSTRAINT "teams_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'paused'::"text", 'archived'::"text"])))
-);
-
-
-ALTER TABLE "agents"."teams" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."teams" IS 'Owner-managed agent teams for an AI workspace control room.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."tool_invocations" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "team_run_id" "uuid" NOT NULL,
-    "agent_run_step_id" "uuid",
-    "tool_id" "uuid" NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "input" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "output" "jsonb",
-    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
-    "approval_status" "text" DEFAULT 'not_required'::"text" NOT NULL,
-    "approval_required" boolean DEFAULT false NOT NULL,
-    "approval_decided_by" "uuid",
-    "approval_reason" "text",
-    "error" "text",
-    "cost_estimate" numeric,
-    "started_at" timestamp with time zone,
-    "completed_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "tool_invocations_approval_status_check" CHECK (("approval_status" = ANY (ARRAY['pending'::"text", 'approved'::"text", 'rejected'::"text", 'not_required'::"text"]))),
-    CONSTRAINT "tool_invocations_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'approved'::"text", 'rejected'::"text", 'running'::"text", 'completed'::"text", 'failed'::"text"])))
-);
-
-
-ALTER TABLE "agents"."tool_invocations" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."tool_invocations" IS 'Per-call log of tool executions during agent runs. Carries approval state, I/O, cost, and timing.';
-
-
-
-CREATE OR REPLACE VIEW "agents"."tool_invocations_v" AS
- SELECT "inv"."id",
-    "inv"."team_run_id",
-    "inv"."agent_run_step_id",
-    "inv"."tool_id",
-    "inv"."ai_lenser_id",
-    "tr"."key" AS "tool_key",
-    "tr"."name" AS "tool_name",
-    "tr"."category" AS "tool_category",
-    "tr"."egress_class",
-    "tr"."is_dangerous",
-    "step"."title" AS "step_title",
-    "inv"."input",
-    "inv"."output",
-    "inv"."status",
-    "inv"."approval_status",
-    "inv"."approval_required",
-    "inv"."approval_decided_by",
-    "inv"."approval_reason",
-    "inv"."error",
-    "inv"."cost_estimate",
-    "inv"."started_at",
-    "inv"."completed_at",
-    "inv"."created_at"
-   FROM (("agents"."tool_invocations" "inv"
-     JOIN "agents"."tools_registry" "tr" ON (("tr"."id" = "inv"."tool_id")))
-     LEFT JOIN "agents"."agent_run_steps" "step" ON (("step"."id" = "inv"."agent_run_step_id")))
-  WHERE "agents"."can_manage_ai_lenser"("inv"."ai_lenser_id");
-
-
-ALTER VIEW "agents"."tool_invocations_v" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "agents"."tool_profiles" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "allow_tools" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "deny_tools" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "tool_groups" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "provider_overrides" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "requires_approval" boolean DEFAULT true NOT NULL,
-    "is_default" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "agents"."tool_profiles" OWNER TO "postgres";
-
-
-CREATE OR REPLACE VIEW "agents"."v_agent_profile" AS
- SELECT "a"."id",
-    "a"."id" AS "ai_lenser_id",
-    "a"."profile_id",
-    "p"."handle",
-    "p"."display_name",
-    "p"."avatar_url",
-    "p"."type" AS "lenser_type",
-    "a"."runtime_pref",
-    "a"."is_active",
-    "a"."suspended_at",
-    "a"."suspended_reason",
-    "a"."personality_note",
-    "a"."created_at",
-    "pol"."can_join_battles",
-    "pol"."can_vote",
-    "pol"."can_create_battles",
-    "pol"."can_receive_sponsorship",
-    "pol"."model_binding_mode",
-    "pol"."max_daily_battles",
-    "pol"."max_daily_votes",
-    "pol"."spending_limit_credits",
-    "pol"."allowed_battle_types",
-    "pol"."is_public_policy",
-    ( SELECT "count"(*) AS "count"
-           FROM "agents"."model_bindings" "mb"
-          WHERE ("mb"."ai_lenser_id" = "a"."id")) AS "model_count",
-    ( SELECT "count"(*) AS "count"
-           FROM "agents"."lens_bindings" "lb"
-          WHERE ("lb"."ai_lenser_id" = "a"."id")) AS "lens_count",
-    COALESCE("qs"."battles_used", 0) AS "battles_used",
-    COALESCE("qs"."votes_used", 0) AS "votes_used",
-    COALESCE("qs"."credits_spent", (0)::bigint) AS "credits_spent",
-    "own"."owner_lenser_id",
-    "op"."handle" AS "owner_handle",
-    "op"."display_name" AS "owner_display_name",
-    "op"."avatar_url" AS "owner_avatar_url",
-    COALESCE(( SELECT "count"(*) AS "count"
-           FROM ("battles"."contenders" "c"
-             JOIN "battles"."battles" "b" ON (("b"."id" = "c"."battle_id")))
-          WHERE (("c"."contender_ref_id" = "a"."id") AND ("b"."status" = ANY (ARRAY['published'::"battles"."battle_status_enum", 'closed'::"battles"."battle_status_enum"])))), (0)::bigint) AS "total_battles",
-    COALESCE(( SELECT "count"(*) AS "count"
-           FROM ("battles"."contenders" "c"
-             JOIN "battles"."battles" "b" ON (("b"."id" = "c"."battle_id")))
-          WHERE (("c"."contender_ref_id" = "a"."id") AND ("b"."winner_contender_id" = "c"."id"))), (0)::bigint) AS "battles_won",
-    COALESCE(( SELECT "count"(*) AS "count"
-           FROM ("battles"."contenders" "c"
-             JOIN "battles"."battles" "b" ON (("b"."id" = "c"."battle_id")))
-          WHERE (("c"."contender_ref_id" = "a"."id") AND ("b"."status" = ANY (ARRAY['published'::"battles"."battle_status_enum", 'closed'::"battles"."battle_status_enum"])) AND ("b"."winner_contender_id" IS NOT NULL) AND ("b"."winner_contender_id" <> "c"."id"))), (0)::bigint) AS "battles_lost",
-    "round"((((COALESCE(( SELECT "count"(*) AS "count"
-           FROM ("battles"."contenders" "c"
-             JOIN "battles"."battles" "b" ON (("b"."id" = "c"."battle_id")))
-          WHERE (("c"."contender_ref_id" = "a"."id") AND ("b"."winner_contender_id" = "c"."id"))), (0)::bigint))::numeric * 100.0) / (NULLIF(COALESCE(( SELECT "count"(*) AS "count"
-           FROM ("battles"."contenders" "c"
-             JOIN "battles"."battles" "b" ON (("b"."id" = "c"."battle_id")))
-          WHERE (("c"."contender_ref_id" = "a"."id") AND ("b"."status" = ANY (ARRAY['published'::"battles"."battle_status_enum", 'closed'::"battles"."battle_status_enum"])))), (0)::bigint), 0))::numeric), 1) AS "win_rate"
-   FROM ((((("agents"."ai_lensers" "a"
-     JOIN "lensers"."profiles" "p" ON (("p"."id" = "a"."profile_id")))
-     LEFT JOIN "agents"."policies" "pol" ON (("pol"."ai_lenser_id" = "a"."id")))
-     LEFT JOIN "agents"."quota_snapshots" "qs" ON ((("qs"."ai_lenser_id" = "a"."id") AND ("qs"."period_date" = CURRENT_DATE))))
-     LEFT JOIN "agents"."ownerships" "own" ON ((("own"."ai_lenser_id" = "a"."id") AND ("own"."role" = 'owner'::"text") AND ("own"."revoked_at" IS NULL))))
-     LEFT JOIN "lensers"."profiles" "op" ON (("op"."id" = "own"."owner_lenser_id")));
-
-
-ALTER VIEW "agents"."v_agent_profile" OWNER TO "postgres";
-
-
-COMMENT ON VIEW "agents"."v_agent_profile" IS 'Full AI Lenser management profile. Includes personality_note, battle stats, policy, quota, and ownership fields. Uses owner join to enable human-owner auth checks in SECURITY DEFINER RPCs.';
-
-
-
-CREATE OR REPLACE VIEW "agents"."v_gateway_device_health" AS
- SELECT "d"."device_id",
-    "d"."owner_id",
-    "d"."hostname",
-    "d"."daemon_version",
-    "d"."last_seen_at",
-    "d"."approved_at",
-    "d"."revoked_at",
-    "d"."kill_switch",
-    "d"."created_at",
-    COALESCE("c"."pending_commands", (0)::bigint) AS "pending_commands",
-    COALESCE("c"."unacked_commands", (0)::bigint) AS "unacked_commands"
-   FROM ("agents"."gateway_devices" "d"
-     LEFT JOIN LATERAL ( SELECT "count"(*) FILTER (WHERE ("gc"."claimed_at" IS NULL)) AS "pending_commands",
-            "count"(*) FILTER (WHERE ("gc"."acked_at" IS NULL)) AS "unacked_commands"
-           FROM "agents"."gateway_commands" "gc"
-          WHERE ("gc"."device_id" = "d"."device_id")) "c" ON (true));
-
-
-ALTER VIEW "agents"."v_gateway_device_health" OWNER TO "postgres";
-
-
-COMMENT ON VIEW "agents"."v_gateway_device_health" IS 'Phase BE: per-device daemon health snapshot (heartbeat + outbox depth).';
 
 
 
@@ -41598,31 +34605,6 @@ COMMENT ON COLUMN "lenses"."workflow_schedules"."inputs_rotation" IS 'Phase W3: 
 
 
 COMMENT ON COLUMN "lenses"."workflow_schedules"."last_rotation_index" IS 'Phase W3: monotonic counter incremented each tick the rotation array is used. The selected entry index is (last_rotation_index % array_length). Reset to 0 by the operator if the rotation array shape changes.';
-
-
-
-CREATE OR REPLACE VIEW "agents"."v_human_fleet_overview" AS
- SELECT "o"."owner_lenser_id" AS "human_lenser_id",
-    "count"(DISTINCT "al"."id") AS "agents_total",
-    "count"(DISTINCT "al"."id") FILTER (WHERE ("al"."is_active" AND ("al"."suspended_at" IS NULL))) AS "agents_active",
-    COALESCE("sum"("qs"."credits_spent"), (0)::numeric) AS "credits_30d",
-    "count"(DISTINCT "tr"."id") FILTER (WHERE ("tr"."created_at" >= ("now"() - '24:00:00'::interval))) AS "runs_24h",
-    "count"(DISTINCT "tr"."id") FILTER (WHERE ("tr"."approval_status" = 'pending'::"text")) AS "approvals_pending",
-    "count"(DISTINCT "ws"."id") FILTER (WHERE "ws"."is_active") AS "schedules_active"
-   FROM (((("agents"."ownerships" "o"
-     JOIN "agents"."ai_lensers" "al" ON (("al"."id" = "o"."ai_lenser_id")))
-     LEFT JOIN "agents"."team_runs" "tr" ON (("tr"."ai_lenser_id" = "al"."id")))
-     LEFT JOIN "agents"."quota_snapshots" "qs" ON ((("qs"."ai_lenser_id" = "al"."id") AND ("qs"."period_date" >= (CURRENT_DATE - '30 days'::interval)))))
-     LEFT JOIN "lenses"."workflow_schedules" "ws" ON (((("ws"."assignee_type" = 'agent'::"text") AND ("ws"."assignee_id" = "al"."id")) OR (("ws"."assignee_type" = 'team'::"text") AND ("ws"."assignee_id" IN ( SELECT "t"."id"
-           FROM "agents"."teams" "t"
-          WHERE ("t"."ai_lenser_id" = "al"."id")))))))
-  GROUP BY "o"."owner_lenser_id";
-
-
-ALTER VIEW "agents"."v_human_fleet_overview" OWNER TO "postgres";
-
-
-COMMENT ON VIEW "agents"."v_human_fleet_overview" IS 'Per-human-owner fleet aggregations across owned agents. Used by the human-mode Overview section.';
 
 
 
@@ -41739,621 +34721,6 @@ COMMENT ON COLUMN "lenses"."workflow_runs"."idempotency_expires_at" IS 'D4: idem
 
 COMMENT ON CONSTRAINT "workflow_runs_status_check" ON "lenses"."workflow_runs" IS 'Aligns with the engine state machine (Phase 1 §5). `recovered` is a transient status written by the crash-recovery loop before the run resumes. Terminal states: completed, failed, cancelled, timed_out.';
 
-
-
-CREATE OR REPLACE VIEW "agents"."v_run_unified" AS
- SELECT "tr"."id" AS "run_id",
-    'team'::"text" AS "run_type",
-    "tr"."ai_lenser_id",
-    "tr"."status",
-    "tr"."approval_status",
-    COALESCE("ti_agg"."total_cost", (0)::numeric) AS "total_cost",
-    COALESCE("step_agg"."step_count", (0)::bigint) AS "step_count",
-    COALESCE("mem_agg"."memory_write_count", (0)::bigint) AS "memory_write_count",
-    "eval_agg"."latest_score" AS "latest_evaluation_score",
-    "tr"."started_at",
-    "tr"."completed_at",
-        CASE
-            WHEN (("tr"."started_at" IS NOT NULL) AND ("tr"."completed_at" IS NOT NULL)) THEN EXTRACT(epoch FROM ("tr"."completed_at" - "tr"."started_at"))
-            ELSE NULL::numeric
-        END AS "duration_seconds"
-   FROM (((("agents"."team_runs" "tr"
-     LEFT JOIN ( SELECT "tool_invocations"."team_run_id",
-            "sum"("tool_invocations"."cost_estimate") AS "total_cost"
-           FROM "agents"."tool_invocations"
-          GROUP BY "tool_invocations"."team_run_id") "ti_agg" ON (("ti_agg"."team_run_id" = "tr"."id")))
-     LEFT JOIN ( SELECT "agent_run_steps"."team_run_id",
-            "count"(*) AS "step_count"
-           FROM "agents"."agent_run_steps"
-          GROUP BY "agent_run_steps"."team_run_id") "step_agg" ON (("step_agg"."team_run_id" = "tr"."id")))
-     LEFT JOIN ( SELECT "memories"."team_run_id",
-            "count"(*) AS "memory_write_count"
-           FROM "agents"."memories"
-          WHERE ("memories"."source" = ANY (ARRAY['agent'::"text", 'tool'::"text"]))
-          GROUP BY "memories"."team_run_id") "mem_agg" ON (("mem_agg"."team_run_id" = "tr"."id")))
-     LEFT JOIN LATERAL ( SELECT "er"."score" AS "latest_score"
-           FROM ("agents"."evaluation_runs" "er"
-             JOIN "agents"."evaluations" "e" ON (("e"."id" = "er"."evaluation_id")))
-          WHERE (("e"."target_type" = 'workflow'::"text") AND ("e"."target_id" = "tr"."workflow_id") AND ("er"."status" = 'completed'::"text"))
-          ORDER BY "er"."completed_at" DESC NULLS LAST
-         LIMIT 1) "eval_agg" ON (true))
-  WHERE (("tr"."workflow_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("tr"."ai_lenser_id"))
-UNION ALL
- SELECT "wr"."id" AS "run_id",
-    'workflow'::"text" AS "run_type",
-    "wr"."ai_lenser_id",
-    "wr"."status",
-    NULL::"text" AS "approval_status",
-    COALESCE("wr"."spent_credits", 0) AS "total_cost",
-    0 AS "step_count",
-    0 AS "memory_write_count",
-    NULL::numeric AS "latest_evaluation_score",
-    "wr"."started_at",
-    "wr"."completed_at",
-        CASE
-            WHEN (("wr"."started_at" IS NOT NULL) AND ("wr"."completed_at" IS NOT NULL)) THEN EXTRACT(epoch FROM ("wr"."completed_at" - "wr"."started_at"))
-            ELSE NULL::numeric
-        END AS "duration_seconds"
-   FROM "lenses"."workflow_runs" "wr"
-  WHERE (("wr"."ai_lenser_id" IS NOT NULL) AND (NOT (EXISTS ( SELECT 1
-           FROM "agents"."team_runs" "tr2"
-          WHERE ("tr2"."workflow_run_id" = "wr"."id")))) AND "agents"."can_manage_ai_lenser"("wr"."ai_lenser_id"));
-
-
-ALTER VIEW "agents"."v_run_unified" OWNER TO "postgres";
-
-
-CREATE OR REPLACE VIEW "agents"."v_team_run_conversation" WITH ("security_invoker"='on') AS
- WITH RECURSIVE "thread" AS (
-         SELECT "m"."team_run_id",
-            "m"."id" AS "message_id",
-            "m"."parent_message_id",
-            "m"."from_agent_id",
-            "m"."to_agent_id",
-            "m"."kind",
-            "m"."payload",
-            "m"."occurred_at",
-            0 AS "depth"
-           FROM "agents"."team_messages" "m"
-          WHERE ("m"."parent_message_id" IS NULL)
-        UNION ALL
-         SELECT "m"."team_run_id",
-            "m"."id",
-            "m"."parent_message_id",
-            "m"."from_agent_id",
-            "m"."to_agent_id",
-            "m"."kind",
-            "m"."payload",
-            "m"."occurred_at",
-            ("t"."depth" + 1)
-           FROM ("agents"."team_messages" "m"
-             JOIN "thread" "t" ON ((("m"."parent_message_id" = "t"."message_id") AND ("m"."team_run_id" = "t"."team_run_id"))))
-          WHERE ("t"."depth" < 50)
-        )
- SELECT "team_run_id",
-    "message_id",
-    "parent_message_id",
-    "from_agent_id",
-    "to_agent_id",
-    "kind",
-    "payload",
-    "occurred_at",
-    "depth"
-   FROM "thread";
-
-
-ALTER VIEW "agents"."v_team_run_conversation" OWNER TO "postgres";
-
-
-COMMENT ON VIEW "agents"."v_team_run_conversation" IS 'Phase X1 (hardened): security_invoker=on. SELECT through this view is evaluated under the caller''s RLS context against agents.team_messages.';
-
-
-
-CREATE TABLE IF NOT EXISTS "agents"."workspace_switches" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "human_lenser_id" "uuid" NOT NULL,
-    "from_ai_lenser_id" "uuid",
-    "to_ai_lenser_id" "uuid",
-    "switched_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "agents"."workspace_switches" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "agents"."workspace_switches" IS 'Append-only audit trail of workspace (profile) switches. from_ai_lenser_id NULL means
-   the user was on their human workspace; to_ai_lenser_id NULL means they returned to it.';
-
-
-
-CREATE TABLE IF NOT EXISTS "ai"."key_usage_log" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "key_id" "uuid" NOT NULL,
-    "run_id" "uuid",
-    "lenser_id" "uuid" NOT NULL,
-    "workspace_id" "uuid",
-    "token_input" integer,
-    "token_output" integer,
-    "credit_cost" bigint,
-    "provider" "text",
-    "model_key" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "ai"."key_usage_log" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "ai"."key_usage_log" IS 'Immutable BYOK key usage audit. One row per completed run that used a BYOK key. Written exclusively by cloud worker (service_role) after run completion. Never updated or deleted by authenticated users. Enables per-key billing aggregation, abuse detection, and key rotation safety checks (find all runs using a key before revoking it).';
-
-
-
-COMMENT ON COLUMN "ai"."key_usage_log"."key_id" IS 'The BYOK key used for this run. ON DELETE RESTRICT prevents key deletion while usage records exist — rotate keys via revoke (ai.keys.status=revoked), not hard-delete.';
-
-
-
-COMMENT ON COLUMN "ai"."key_usage_log"."run_id" IS 'The execution run that consumed the key. SET NULL on run deletion (soft-deleted runs set is_active=false; hard deletion is exceptional). NULL indicates the run record was removed after the log was written.';
-
-
-
-COMMENT ON COLUMN "ai"."key_usage_log"."workspace_id" IS 'Tenant context at the time of execution. Enables per-workspace BYOK usage reports. NULL for legacy runs before workspace scoping.';
-
-
-
-COMMENT ON COLUMN "ai"."key_usage_log"."token_input" IS 'Input tokens consumed by the provider for this run. Written by cloud worker.';
-
-
-
-COMMENT ON COLUMN "ai"."key_usage_log"."token_output" IS 'Output tokens generated by the provider for this run. Written by cloud worker.';
-
-
-
-COMMENT ON COLUMN "ai"."key_usage_log"."credit_cost" IS 'Platform credit cost computed from token usage. NULL for BYOK runs where the lenser supplies their own key and platform credits are not consumed.';
-
-
-
-CREATE TABLE IF NOT EXISTS "ai"."keys" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "label" "text",
-    "encrypted_key_id" "uuid" NOT NULL,
-    "key_suffix" "text" NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "revoked_at" timestamp with time zone,
-    "scope" "ai"."key_scope_enum" DEFAULT 'user'::"ai"."key_scope_enum",
-    "scoped_entity_id" "uuid",
-    "status" "ai"."key_status_enum" DEFAULT 'active'::"ai"."key_status_enum",
-    "last_used_at" timestamp with time zone,
-    "expires_at" timestamp with time zone,
-    "key_prefix" "text",
-    "provider_id" "uuid" NOT NULL,
-    CONSTRAINT "keys_suffix_check" CHECK ((("char_length"("key_suffix") >= 1) AND ("char_length"("key_suffix") <= 4)))
-);
-
-
-ALTER TABLE "ai"."keys" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "ai"."keys" IS 'Encrypted BYOK API keys for AI providers. Raw keys are stored in vault.secrets via pgsodium; only the last 4 characters (key_suffix) are stored in plain text for masked display. The encrypted_key_id column references vault.secrets(id).';
-
-
-
-COMMENT ON COLUMN "ai"."keys"."encrypted_key_id" IS 'Reference to vault.secrets(id). The raw API key is encrypted at rest via pgsodium. Decryption is restricted to service_role only.';
-
-
-
-COMMENT ON COLUMN "ai"."keys"."key_suffix" IS 'Last 4 characters of the API key, stored in plain text for masked display (e.g., ••••abcd). Never store more than 4 characters.';
-
-
-
-COMMENT ON COLUMN "ai"."keys"."provider_id" IS 'FK to ai.providers(id). NULL if provider row is later removed.';
-
-
-
-CREATE TABLE IF NOT EXISTS "ai"."modality_pricing" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "model_id" "uuid" NOT NULL,
-    "output_modality" "text" NOT NULL,
-    "credit_rate" numeric NOT NULL,
-    "rate_unit" "text" NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "modality_pricing_credit_rate_check" CHECK (("credit_rate" >= (0)::numeric)),
-    CONSTRAINT "modality_pricing_output_modality_check" CHECK (("output_modality" = ANY (ARRAY['text'::"text", 'image'::"text", 'video'::"text", 'audio'::"text", 'music'::"text"]))),
-    CONSTRAINT "modality_pricing_rate_unit_check" CHECK (("rate_unit" = ANY (ARRAY['per_image'::"text", 'per_second'::"text", 'per_1k_chars'::"text", 'per_request'::"text"])))
-);
-
-
-ALTER TABLE "ai"."modality_pricing" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "ai"."modality_pricing" IS 'Credit pricing per output unit for each model+modality combination. fn_complete_async_run() reads this to compute credit_cost at completion time.';
-
-
-
-CREATE TABLE IF NOT EXISTS "ai"."model_pricing" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "model_id" "uuid" NOT NULL,
-    "input_cost_per_1k_tokens" numeric(12,8) NOT NULL,
-    "output_cost_per_1k_tokens" numeric(12,8) NOT NULL,
-    "effective_from" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "effective_to" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "unit_type" "ai"."unit_type_enum" DEFAULT 'tokens'::"ai"."unit_type_enum" NOT NULL,
-    "cost_per_unit" numeric(18,10),
-    CONSTRAINT "model_pricing_costs_nonneg" CHECK ((("input_cost_per_1k_tokens" >= (0)::numeric) AND ("output_cost_per_1k_tokens" >= (0)::numeric))),
-    CONSTRAINT "model_pricing_dates_valid" CHECK ((("effective_to" IS NULL) OR ("effective_to" > "effective_from")))
-);
-
-
-ALTER TABLE "ai"."model_pricing" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "ai"."model_pricing" IS 'Provider list prices per 1K tokens. Append-only time-series; close rows by setting effective_to.';
-
-
-
-COMMENT ON COLUMN "ai"."model_pricing"."unit_type" IS 'Type of billing unit: tokens (text/chat), image (per image), video_second (per second), audio_second (per second). Typed as ai.unit_type_enum.';
-
-
-
-COMMENT ON COLUMN "ai"."model_pricing"."cost_per_unit" IS 'Cost per unit (USD) for non-token models. NULL for token-based pricing. For image: cost_per_image; for video/audio: cost_per_second.';
-
-
-
-CREATE TABLE IF NOT EXISTS "ai"."models" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "name" "text" NOT NULL,
-    "version" "text",
-    "provider_url" "text",
-    "description" "text" DEFAULT ''::"text" NOT NULL,
-    "temperature" numeric DEFAULT 0.7 NOT NULL,
-    "max_tokens" integer DEFAULT 4096 NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "key" "text",
-    "provider_id" "uuid" NOT NULL,
-    "context_window_tokens" integer,
-    "supports_tools" boolean DEFAULT false NOT NULL,
-    "supports_json_schema" boolean DEFAULT false NOT NULL,
-    "supports_vision" boolean DEFAULT false NOT NULL,
-    "is_active" boolean DEFAULT false NOT NULL,
-    "capabilities" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "input_modalities" "text"[] DEFAULT ARRAY['text'::"text"] NOT NULL,
-    "output_modalities" "text"[] DEFAULT ARRAY['text'::"text"] NOT NULL,
-    "docs_url" "text",
-    "support_level" "text" DEFAULT 'runnable'::"text" NOT NULL,
-    "supports_streaming" boolean DEFAULT false NOT NULL,
-    "status" "text" DEFAULT 'active'::"text" NOT NULL,
-    "use_cases" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "developer_summary" "text" DEFAULT ''::"text" NOT NULL,
-    "user_summary" "text" DEFAULT ''::"text" NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    CONSTRAINT "models_capabilities_check" CHECK (("capabilities" <@ ARRAY['chat'::"text", 'reasoning'::"text", 'tools'::"text", 'vision'::"text", 'json_schema'::"text", 'image_generation'::"text", 'video_generation'::"text", 'audio_generation'::"text", 'music_generation'::"text", 'code'::"text", 'text'::"text", 'image'::"text", 'music'::"text"])),
-    CONSTRAINT "models_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'preview'::"text", 'deprecated'::"text", 'legacy'::"text"]))),
-    CONSTRAINT "models_support_level_check" CHECK (("support_level" = ANY (ARRAY['runnable'::"text", 'byok_only'::"text", 'catalog_only'::"text", 'deprecated'::"text"])))
-);
-
-
-ALTER TABLE "ai"."models" OWNER TO "postgres";
-
-
-COMMENT ON COLUMN "ai"."models"."key" IS 'Unique provider API identifier (e.g. ''gpt-4o'', ''claude-sonnet-4-6''). Renamed from model_key in migration 20260322000059.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."provider_id" IS 'FK to ai.providers when using the extended schema.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."context_window_tokens" IS 'Max context window in tokens.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."is_active" IS 'Whether this model is available for platform use.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."input_modalities" IS 'Extensible input modality list. Source of truth for CapabilityMapper validation. Replaces rigid supports_vision boolean for new code paths. Valid values: text, image, document, audio, video. Extend freely — no CHECK constraint.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."output_modalities" IS 'Extensible output modality list. Valid values: text, image, audio, video. Extend freely — no CHECK constraint.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."docs_url" IS 'Canonical upstream documentation URL for this model entry.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."support_level" IS 'Catalog support tier for the model: runnable, byok_only, catalog_only, deprecated.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."supports_streaming" IS 'Whether LenserFight can stream this model through a supported invocation path.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."status" IS 'Catalog lifecycle state: active, preview, deprecated, legacy.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."use_cases" IS 'Normalized recommended use-case tags for UI cards and CLI filtering.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."developer_summary" IS 'Developer-facing explanation for when and how to use the model.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."user_summary" IS 'User-facing explanation for what the model is best at.';
-
-
-
-COMMENT ON COLUMN "ai"."models"."metadata" IS 'Flexible metadata for source provenance, auth mode, platform/gateway compatibility, pricing snapshots, and provider-specific notes.';
-
-
-
-CREATE TABLE IF NOT EXISTS "ai"."providers" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "key" "text" NOT NULL,
-    "display_name" "text" NOT NULL,
-    "base_url" "text",
-    "docs_url" "text",
-    "is_active" boolean DEFAULT true NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "support_level" "text" DEFAULT 'runnable'::"text" NOT NULL,
-    "logo_slug" "text",
-    CONSTRAINT "providers_support_level_check" CHECK (("support_level" = ANY (ARRAY['runnable'::"text", 'byok_only'::"text", 'catalog_only'::"text", 'deprecated'::"text"])))
-);
-
-
-ALTER TABLE "ai"."providers" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "ai"."providers" IS 'AI provider registry. OSS-safe: no secrets, metadata only.';
-
-
-
-COMMENT ON COLUMN "ai"."providers"."key" IS 'Short machine key, e.g. openai, anthropic, google.';
-
-
-
-COMMENT ON COLUMN "ai"."providers"."base_url" IS 'Override for self-hosted or proxy endpoints.';
-
-
-
-COMMENT ON COLUMN "ai"."providers"."support_level" IS 'Catalog support tier for the provider: runnable, byok_only, catalog_only, deprecated.';
-
-
-
-COMMENT ON COLUMN "ai"."providers"."logo_slug" IS 'Stable UI asset slug for provider logos/cards.';
-
-
-
-CREATE TABLE IF NOT EXISTS "analytics"."agent_cost_daily" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "model_key" "text" NOT NULL,
-    "provider" "text" NOT NULL,
-    "period_date" "date" NOT NULL,
-    "total_tokens_in" bigint DEFAULT 0 NOT NULL,
-    "total_tokens_out" bigint DEFAULT 0 NOT NULL,
-    "total_credits" numeric DEFAULT 0 NOT NULL,
-    "run_count" integer DEFAULT 0 NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "acd_run_count_nonneg" CHECK (("run_count" >= 0)),
-    CONSTRAINT "acd_total_credits_nonneg" CHECK (("total_credits" >= (0)::numeric)),
-    CONSTRAINT "ck_analytics_agent_cost_daily_run_count_nonneg" CHECK ((("run_count" IS NULL) OR ("run_count" >= 0))),
-    CONSTRAINT "ck_analytics_agent_cost_daily_total_credits_nonneg" CHECK ((("total_credits" IS NULL) OR ("total_credits" >= (0)::numeric))),
-    CONSTRAINT "ck_analytics_agent_cost_daily_total_tokens_in_nonneg" CHECK ((("total_tokens_in" IS NULL) OR ("total_tokens_in" >= 0))),
-    CONSTRAINT "ck_analytics_agent_cost_daily_total_tokens_out_nonneg" CHECK ((("total_tokens_out" IS NULL) OR ("total_tokens_out" >= 0)))
-);
-
-
-ALTER TABLE "analytics"."agent_cost_daily" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "analytics"."contact" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid",
-    "name" "text" NOT NULL,
-    "email" "text" NOT NULL,
-    "subject" "text" NOT NULL,
-    "message" "text" NOT NULL,
-    "kvkk_approved" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "ip_address" "inet",
-    "user_agent" "text",
-    CONSTRAINT "contact_email_check" CHECK (("email" ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::"text"))
-);
-
-
-ALTER TABLE "analytics"."contact" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "analytics"."eval_quality_daily" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "evaluation_id" "uuid" NOT NULL,
-    "period_date" "date" NOT NULL,
-    "run_count" integer DEFAULT 0 NOT NULL,
-    "pass_count" integer DEFAULT 0 NOT NULL,
-    "total_cases" integer DEFAULT 0 NOT NULL,
-    "passed_cases" integer DEFAULT 0 NOT NULL,
-    "mean_score" numeric,
-    CONSTRAINT "ck_analytics_eval_quality_daily_mean_score_nonneg" CHECK ((("mean_score" IS NULL) OR ("mean_score" >= (0)::numeric))),
-    CONSTRAINT "ck_analytics_eval_quality_daily_pass_count_nonneg" CHECK ((("pass_count" IS NULL) OR ("pass_count" >= 0))),
-    CONSTRAINT "ck_analytics_eval_quality_daily_run_count_nonneg" CHECK ((("run_count" IS NULL) OR ("run_count" >= 0))),
-    CONSTRAINT "ck_analytics_eval_quality_daily_total_cases_nonneg" CHECK ((("total_cases" IS NULL) OR ("total_cases" >= 0)))
-);
-
-
-ALTER TABLE "analytics"."eval_quality_daily" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "analytics"."lenser_activity" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "activity_type" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "context" "jsonb" DEFAULT '{}'::"jsonb",
-    "entity_type" "text",
-    "entity_id" "uuid",
-    "ip_hash" "text",
-    CONSTRAINT "lenser_activity_type_check" CHECK (("activity_type" = ANY (ARRAY['login'::"text", 'page_view'::"text", 'ray_run'::"text", 'battle_vote'::"text", 'thread_create'::"text", 'follow'::"text", 'agent_deploy'::"text", 'battle_create'::"text", 'submission'::"text", 'profile_update'::"text"])))
-);
-
-
-ALTER TABLE "analytics"."lenser_activity" OWNER TO "postgres";
-
-
-COMMENT ON COLUMN "analytics"."lenser_activity"."context" IS 'Arbitrary metadata: page, referrer, device, user_agent_hash, etc.';
-
-
-
-COMMENT ON COLUMN "analytics"."lenser_activity"."entity_type" IS 'Type of entity the activity relates to: prompt_template, thread, battle, etc.';
-
-
-
-COMMENT ON COLUMN "analytics"."lenser_activity"."entity_id" IS 'ID of the entity the activity relates to.';
-
-
-
-COMMENT ON COLUMN "analytics"."lenser_activity"."ip_hash" IS 'SHA-256 hash of IP address for GDPR-safe geo/fraud context.';
-
-
-
-CREATE TABLE IF NOT EXISTS "analytics"."lenser_join_log" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid",
-    "joined_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "join_order" bigint NOT NULL
-);
-
-
-ALTER TABLE "analytics"."lenser_join_log" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "analytics"."lenser_join_sequence"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "analytics"."lenser_join_sequence" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "analytics"."lenser_join_sequence" OWNED BY "analytics"."lenser_join_log"."join_order";
-
-
-
-CREATE TABLE IF NOT EXISTS "analytics"."page_views" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid",
-    "user_id" "uuid",
-    "target_type" "public"."page_view_target_enum" NOT NULL,
-    "target_id" "text",
-    "path" "text" NOT NULL,
-    "referrer" "text",
-    "user_agent" "text",
-    "client_ip" "inet",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "analytics"."page_views" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "analytics"."product_feedback" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "product_tag" "analytics"."product_tag_enum" DEFAULT 'general'::"analytics"."product_tag_enum" NOT NULL,
-    "page" "text",
-    "user_id" "uuid",
-    "message" "text",
-    "start_date" timestamp with time zone,
-    "end_date" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "status" "analytics"."feedback_status_enum" DEFAULT 'pending'::"analytics"."feedback_status_enum" NOT NULL,
-    CONSTRAINT "feedback_message_check" CHECK ((("message" IS NULL) OR (("btrim"("message") = "message") AND (("char_length"("message") >= 10) AND ("char_length"("message") <= 2000)))))
-);
-
-
-ALTER TABLE "analytics"."product_feedback" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "analytics"."share_events" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "shared_link_id" "uuid" NOT NULL,
-    "event_type" "text" NOT NULL,
-    "viewer_lenser_id" "uuid",
-    "viewer_session_id" "text",
-    "ip_hash" "text",
-    "country" "text",
-    "city" "text",
-    "user_agent" "text",
-    "referer" "text",
-    "ref_host" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "analytics"."share_events" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "analytics"."share_events" IS 'Telemetry for shared link usage (generated/opened/etc.), with privacy-aware IP and geo, RLS via link owner.';
-
-
-
-CREATE TABLE IF NOT EXISTS "analytics"."tag_activity_events" (
-    "id" bigint NOT NULL,
-    "tag_id" "uuid" NOT NULL,
-    "entity_type" "content"."entity_type_enum" NOT NULL,
-    "entity_id" "uuid" NOT NULL,
-    "actor_id" "uuid",
-    "activity_type" "text" NOT NULL,
-    "occurred_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "tag_activity_events_activity_type_check" CHECK (("activity_type" = ANY (ARRAY['created'::"text", 'viewed'::"text", 'reacted'::"text", 'replied'::"text", 'shared'::"text", 'bookmarked'::"text", 'commented'::"text"])))
-);
-
-
-ALTER TABLE "analytics"."tag_activity_events" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "analytics"."tag_activity_events_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "analytics"."tag_activity_events_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "analytics"."tag_activity_events_id_seq" OWNED BY "analytics"."tag_activity_events"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "analytics"."workflow_perf_daily" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "workflow_id" "uuid" NOT NULL,
-    "period_date" "date" NOT NULL,
-    "run_count" integer DEFAULT 0 NOT NULL,
-    "failed_count" integer DEFAULT 0 NOT NULL,
-    "p50_duration_ms" integer,
-    "p95_duration_ms" integer,
-    CONSTRAINT "ck_analytics_workflow_perf_daily_failed_count_nonneg" CHECK ((("failed_count" IS NULL) OR ("failed_count" >= 0))),
-    CONSTRAINT "ck_analytics_workflow_perf_daily_run_count_nonneg" CHECK ((("run_count" IS NULL) OR ("run_count" >= 0)))
-);
-
-
-ALTER TABLE "analytics"."workflow_perf_daily" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "audit"."account_lifecycle" (
@@ -42708,158 +35075,6 @@ COMMENT ON TABLE "audit"."webhook_outbox" IS 'CB: Pending webhook deliveries. Dr
 
 
 
-CREATE TABLE IF NOT EXISTS "authz"."developer_tokens" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "label" "text",
-    "token_hash" "text" NOT NULL,
-    "token_prefix" "text" NOT NULL,
-    "status" "authz"."developer_token_status_enum" DEFAULT 'active'::"authz"."developer_token_status_enum" NOT NULL,
-    "issued_from_request_id" "uuid",
-    "expires_at" timestamp with time zone NOT NULL,
-    "revoked_at" timestamp with time zone,
-    "last_used_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "authz"."developer_tokens" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "authz"."device_approval_requests" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "user_code" "text" NOT NULL,
-    "request_secret_hash" "text" NOT NULL,
-    "label" "text",
-    "requested_by_user_id" "uuid",
-    "requested_by_lenser_id" "uuid",
-    "requested_token_ttl_hours" integer DEFAULT 24 NOT NULL,
-    "status" "authz"."device_approval_request_status_enum" DEFAULT 'pending'::"authz"."device_approval_request_status_enum" NOT NULL,
-    "approved_at" timestamp with time zone,
-    "approved_by_user_id" "uuid",
-    "approved_by_lenser_id" "uuid",
-    "developer_token_id" "uuid",
-    "expires_at" timestamp with time zone NOT NULL,
-    "exchanged_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "login_access_token" "text",
-    "login_refresh_token" "text"
-);
-
-
-ALTER TABLE "authz"."device_approval_requests" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "automation"."cron_runs" (
-    "id" bigint NOT NULL,
-    "job_name" "text" NOT NULL,
-    "started_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "finished_at" timestamp with time zone,
-    "status" "text" DEFAULT 'running'::"text" NOT NULL,
-    "error_msg" "text",
-    CONSTRAINT "cron_runs_status_check" CHECK (("status" = ANY (ARRAY['running'::"text", 'ok'::"text", 'skipped_locked'::"text", 'error'::"text"])))
-);
-
-
-ALTER TABLE "automation"."cron_runs" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "automation"."cron_runs" IS 'D1: cron job execution audit. RLS-enabled; service_role only. Read-only from any other role.';
-
-
-
-CREATE SEQUENCE IF NOT EXISTS "automation"."cron_runs_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "automation"."cron_runs_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "automation"."cron_runs_id_seq" OWNED BY "automation"."cron_runs"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "automation"."event_dispatches" (
-    "event_id" "uuid" NOT NULL,
-    "rule_id" "uuid" NOT NULL,
-    "status" "text" NOT NULL,
-    "attempted_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "error" "text",
-    "outbox_id" "uuid",
-    CONSTRAINT "event_dispatches_status_check" CHECK (("status" = ANY (ARRAY['queued'::"text", 'dispatched'::"text", 'failed'::"text", 'skipped'::"text"])))
-);
-
-
-ALTER TABLE "automation"."event_dispatches" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "automation"."event_dispatches" IS 'Phase U2: idempotency ledger. PK (event_id, rule_id) prevents an event firing the same rule twice. outbox_id is a soft pointer to audit.webhook_outbox.id when action_kind=webhook; not a real FK so the audit schema stays decoupled.';
-
-
-
-CREATE TABLE IF NOT EXISTS "automation"."events" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "event_type" "text" NOT NULL,
-    "source_schema" "text",
-    "source_table" "text",
-    "source_id" "uuid",
-    "source_lenser_id" "uuid",
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "occurred_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "recorded_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "automation"."events" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "automation"."events" IS 'Phase U1: append-only event log. Producer triggers call automation.fn_emit_event. source_lenser_id is denormalized at emit time so owner-only RLS does not need cross-schema joins. Payloads carry IDs and timestamps only; no PII or user-supplied content.';
-
-
-
-COMMENT ON COLUMN "automation"."events"."event_type" IS 'Dot-namespaced event type, e.g. battle.finalized, workflow_run.completed, workflow_run.failed, approval.timed_out, approval.granted, battle.flagged.';
-
-
-
-COMMENT ON COLUMN "automation"."events"."source_lenser_id" IS 'Denormalized owner of the source row at emit time. NULL means system-level / no obvious owner. Trigger rules with NULL filter ignore ownership.';
-
-
-
-CREATE TABLE IF NOT EXISTS "automation"."trigger_rules" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "match_event_type" "text" NOT NULL,
-    "match_filter" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "action_kind" "text" NOT NULL,
-    "action_config" "jsonb" NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "trigger_rules_action_kind_check" CHECK (("action_kind" = ANY (ARRAY['dispatch_workflow'::"text", 'webhook'::"text", 'notify'::"text"]))),
-    CONSTRAINT "trigger_rules_match_filter_keys_valid" CHECK ("automation"."fn_check_filter_keys"("match_filter"))
-);
-
-
-ALTER TABLE "automation"."trigger_rules" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "automation"."trigger_rules" IS 'Phase U2: lenser-owned trigger rules. Match an automation.events row by event_type + filter DSL, then dispatch action_kind in (dispatch_workflow, webhook, notify). Action shape is in action_config; see fn_dispatch_action.';
-
-
-
-COMMENT ON COLUMN "automation"."trigger_rules"."match_filter" IS 'Frozen v1 DSL: { "<json-pointer>": { "<op>": <value> } } AND-ed. Ops: eq, neq, gt, lt, contains. Empty object or NULL matches all events of the given type.';
-
-
-
-COMMENT ON COLUMN "automation"."trigger_rules"."action_config" IS 'Per-kind shape. dispatch_workflow: { workflow_id, context_inputs?, global_model_id? }. webhook: { url, extra_headers? }. notify: { type?, title, body?, action_url?, metadata? }.';
-
-
-
 CREATE TABLE IF NOT EXISTS "battles"."ai_handicap_policies" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "battle_id" "uuid" NOT NULL,
@@ -42984,6 +35199,7 @@ CREATE TABLE IF NOT EXISTS "battles"."contender_lens_assignments" (
     "version_id" "uuid",
     "assignment_mode" "text" DEFAULT 'manual'::"text" NOT NULL,
     "assigned_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "input_snapshot" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     CONSTRAINT "cla_mode_check" CHECK (("assignment_mode" = ANY (ARRAY['manual'::"text", 'auto_agent'::"text", 'battle_required'::"text"])))
 );
 
@@ -43539,425 +35755,6 @@ COMMENT ON TABLE "battles"."votes" IS 'Vote records. Direct INSERT restricted to
 
 
 
-CREATE TABLE IF NOT EXISTS "benchmark"."invalidations" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "result_set_id" "uuid" NOT NULL,
-    "reason" "text" NOT NULL,
-    "invalidated_by" "uuid" NOT NULL,
-    "invalidated_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "benchmark"."invalidations" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."invalidations" IS 'Append-only invalidation record for a benchmark result_set. UNIQUE(result_set_id): a result_set can only be invalidated once. To check if a result is valid: NOT EXISTS(SELECT 1 FROM benchmark.invalidations WHERE result_set_id = <id>). Structural triggers prevent mutation — invalidations are permanent decisions.';
-
-
-
-CREATE TABLE IF NOT EXISTS "benchmark"."protocol_versions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "suite_id" "uuid" NOT NULL,
-    "version" "text" NOT NULL,
-    "rules_json" "jsonb" NOT NULL,
-    "frozen_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "frozen_by" "uuid" NOT NULL
-);
-
-
-ALTER TABLE "benchmark"."protocol_versions" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."protocol_versions" IS 'Append-only frozen snapshot of a benchmark suite at a specific version. rules_json captures the complete suite + task definitions at freeze time. All result_sets must reference a protocol_version to be considered valid. UNIQUE(suite_id, version) ensures no version collisions. Structural triggers prevent mutation — this is a research-grade record.';
-
-
-
-CREATE TABLE IF NOT EXISTS "benchmark"."result_sets" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "suite_id" "uuid" NOT NULL,
-    "task_id" "uuid" NOT NULL,
-    "battle_id" "uuid" NOT NULL,
-    "protocol_version_id" "uuid" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "benchmark"."result_sets" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."result_sets" IS 'Append-only record linking a battle result to a benchmark task + protocol. No is_valid column — immutability is structural. Invalidity is expressed via benchmark.invalidations (separate concern). UNIQUE(battle_id, task_id): one result per battle per task.';
-
-
-
-CREATE TABLE IF NOT EXISTS "benchmark"."significance_tests" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "result_set_id" "uuid" NOT NULL,
-    "test_type" "text" NOT NULL,
-    "contender_a_id" "uuid",
-    "contender_b_id" "uuid",
-    "p_value" numeric(10,8),
-    "effect_size" numeric(10,6),
-    "confidence_lower" numeric(10,6),
-    "confidence_upper" numeric(10,6),
-    "is_significant" boolean,
-    "sample_size" integer,
-    "computed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "significance_tests_sample_positive" CHECK ((("sample_size" IS NULL) OR ("sample_size" > 0))),
-    CONSTRAINT "significance_tests_type_check" CHECK (("test_type" = ANY (ARRAY['wilcoxon'::"text", 'ttest_paired'::"text", 'ttest_independent'::"text", 'bootstrap'::"text", 'effect_size_cohens_d'::"text", 'krippendorffs_alpha'::"text", 'cohens_kappa'::"text"])))
-);
-
-
-ALTER TABLE "benchmark"."significance_tests" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."significance_tests" IS 'Statistical significance records for benchmark result sets. is_significant = (p_value < 0.05 AND effect_size > 0.2) by convention. contender_a_id vs contender_b_id: NULL means the test is suite-wide. Computed by edge function or external pipeline, inserted via service_role.';
-
-
-
-CREATE TABLE IF NOT EXISTS "benchmark"."suites" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "title" "text" NOT NULL,
-    "description" "text",
-    "creator_lenser_id" "uuid" NOT NULL,
-    "category" "text",
-    "status" "text" DEFAULT 'draft'::"text" NOT NULL,
-    "version" "text" DEFAULT '0.1.0'::"text" NOT NULL,
-    "is_public" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "suites_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'active'::"text", 'archived'::"text"])))
-);
-
-
-ALTER TABLE "benchmark"."suites" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."suites" IS 'Named benchmark collections. A suite is the top-level grouping for related evaluation tasks. status=active + is_public=true means the suite is published and visible in the benchmark directory.';
-
-
-
-CREATE TABLE IF NOT EXISTS "benchmark"."tasks" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "suite_id" "uuid" NOT NULL,
-    "title" "text" NOT NULL,
-    "prompt_template" "text" NOT NULL,
-    "evaluation_protocol" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "required_repetitions" integer DEFAULT 1 NOT NULL,
-    "ordinal" integer DEFAULT 0 NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "workflow_id" "uuid",
-    CONSTRAINT "tasks_ordinal_nonneg" CHECK (("ordinal" >= 0)),
-    CONSTRAINT "tasks_repetitions_positive" CHECK (("required_repetitions" >= 1))
-);
-
-
-ALTER TABLE "benchmark"."tasks" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."tasks" IS 'Individual evaluation tasks within a benchmark suite. prompt_template may contain {{variable}} placeholders for parameterized runs. evaluation_protocol captures the evaluation config frozen at task creation: {rubric_id, required_repetitions, random_seed, temperature, scoring_method}.';
-
-
-
-COMMENT ON COLUMN "benchmark"."tasks"."workflow_id" IS 'Optional Connected Lens workflow attached to this task. When set, the WorkflowCard is rendered inline in the task detail UI. Benchmark execution runs the full workflow pipeline instead of a direct lens prompt.';
-
-
-
-CREATE OR REPLACE VIEW "benchmark"."v_workflow_result_sets" AS
- SELECT "rs"."id" AS "result_set_id",
-    "rs"."suite_id",
-    "rs"."task_id",
-    "rs"."battle_id",
-    "rs"."protocol_version_id",
-    "rs"."created_at",
-    "bt"."title" AS "task_title",
-    "bt"."workflow_id" AS "task_workflow_id",
-    "wr"."id" AS "workflow_run_id",
-    "wr"."status" AS "run_status",
-    "wr"."spent_credits" AS "run_credits",
-    "wr"."started_at" AS "run_started_at",
-    "wr"."completed_at" AS "run_completed_at",
-    "b"."title" AS "battle_title",
-    "b"."status" AS "battle_status",
-    "b"."winner_contender_id"
-   FROM ((("benchmark"."result_sets" "rs"
-     JOIN "benchmark"."tasks" "bt" ON (("bt"."id" = "rs"."task_id")))
-     JOIN "battles"."battles" "b" ON (("b"."id" = "rs"."battle_id")))
-     LEFT JOIN "lenses"."workflow_runs" "wr" ON ((("wr"."workflow_id" = "bt"."workflow_id") AND ("wr"."status" = ANY (ARRAY['completed'::"text", 'failed'::"text"])))))
-  WHERE ("bt"."workflow_id" IS NOT NULL);
-
-
-ALTER VIEW "benchmark"."v_workflow_result_sets" OWNER TO "postgres";
-
-
-COMMENT ON VIEW "benchmark"."v_workflow_result_sets" IS 'Benchmark result sets that use workflow-based tasks, joined with their latest workflow runs.';
-
-
-
-CREATE TABLE IF NOT EXISTS "billing"."checkout_sessions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "variant_id" "uuid" NOT NULL,
-    "ls_checkout_url" "text",
-    "custom_price_cents" bigint,
-    "status" "text" DEFAULT 'created'::"text" NOT NULL,
-    "expires_at" timestamp with time zone,
-    "test_mode" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "completed_at" timestamp with time zone,
-    CONSTRAINT "checkout_sessions_custom_price_check" CHECK ((("custom_price_cents" IS NULL) OR ("custom_price_cents" > 0))),
-    CONSTRAINT "checkout_sessions_status_check" CHECK (("status" = ANY (ARRAY['created'::"text", 'completed'::"text", 'expired'::"text", 'abandoned'::"text"])))
-);
-
-
-ALTER TABLE "billing"."checkout_sessions" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "billing"."checkout_sessions" IS 'Tracks LemonSqueezy checkout creation. Maps lenser_id to checkout URL. Status updated when webhook confirms payment.';
-
-
-
-CREATE TABLE IF NOT EXISTS "billing"."execution_margin_policies" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "model_id" "uuid",
-    "markup_percent" numeric(5,2) DEFAULT 0 NOT NULL,
-    "fixed_fee_usd" numeric(12,8) DEFAULT 0 NOT NULL,
-    "rounding_mode" "text" DEFAULT 'ceil'::"text" NOT NULL,
-    "min_charge_credits" integer DEFAULT 1 NOT NULL,
-    "max_charge_credits" integer,
-    "effective_from" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "effective_to" timestamp with time zone,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "billing_margin_policies_markup_nonneg" CHECK ((("markup_percent" >= (0)::numeric) AND ("fixed_fee_usd" >= (0)::numeric))),
-    CONSTRAINT "billing_margin_policies_max_gte_min" CHECK ((("max_charge_credits" IS NULL) OR ("max_charge_credits" >= "min_charge_credits"))),
-    CONSTRAINT "billing_margin_policies_min_credits_nonneg" CHECK (("min_charge_credits" >= 0)),
-    CONSTRAINT "billing_margin_policies_rounding_check" CHECK (("rounding_mode" = ANY (ARRAY['ceil'::"text", 'floor'::"text", 'round'::"text"])))
-);
-
-
-ALTER TABLE "billing"."execution_margin_policies" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "billing"."execution_margin_policies" IS 'Platform markup policies applied on top of AI provider cost. model_id=NULL = global default policy. SERVICE_ROLE ONLY. Cross-schema FK to ai.models(id) — billing schema depends on ai schema for model identity.';
-
-
-
-CREATE TABLE IF NOT EXISTS "billing"."orders" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ls_order_id" bigint NOT NULL,
-    "ls_identifier" "text" NOT NULL,
-    "webhook_event_id" "uuid" NOT NULL,
-    "store_id" bigint NOT NULL,
-    "ls_customer_id" bigint NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "order_number" integer NOT NULL,
-    "user_name" "text",
-    "user_email" "text" NOT NULL,
-    "currency" "text" DEFAULT 'USD'::"text" NOT NULL,
-    "currency_rate" numeric(10,6) DEFAULT 1.0 NOT NULL,
-    "status" "billing"."order_status_enum" DEFAULT 'pending'::"billing"."order_status_enum" NOT NULL,
-    "subtotal_cents" bigint NOT NULL,
-    "tax_cents" bigint DEFAULT 0 NOT NULL,
-    "total_cents" bigint NOT NULL,
-    "total_usd_cents" bigint NOT NULL,
-    "product_id" "uuid",
-    "variant_id" "uuid",
-    "product_name" "text" NOT NULL,
-    "variant_name" "text",
-    "credits_granted" bigint DEFAULT 0 NOT NULL,
-    "first_order" boolean DEFAULT false NOT NULL,
-    "test_mode" boolean DEFAULT false NOT NULL,
-    "refunded" boolean DEFAULT false NOT NULL,
-    "refunded_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "ck_billing_orders_total_cents_nonneg" CHECK ((("total_cents" IS NULL) OR ("total_cents" >= 0))),
-    CONSTRAINT "ck_billing_orders_total_usd_cents_nonneg" CHECK ((("total_usd_cents" IS NULL) OR ("total_usd_cents" >= 0)))
-);
-
-
-ALTER TABLE "billing"."orders" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "billing"."orders" IS 'Processed LemonSqueezy orders mapped to lenser_id. lenser_id resolved from checkout_data.custom.user_id in webhook payload.';
-
-
-
-COMMENT ON COLUMN "billing"."orders"."ls_identifier" IS 'LemonSqueezy UUID identifier for the order. Useful as external reference.';
-
-
-
-COMMENT ON COLUMN "billing"."orders"."lenser_id" IS 'Resolved from checkout_data.custom.user_id. ON DELETE RESTRICT — cannot delete profile with paid orders.';
-
-
-
-COMMENT ON COLUMN "billing"."orders"."credits_granted" IS 'Credits credited to wallet from this order. Sourced from billing.products.credits_granted.';
-
-
-
-CREATE TABLE IF NOT EXISTS "billing"."products" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ls_product_id" bigint NOT NULL,
-    "store_id" bigint NOT NULL,
-    "name" "text" NOT NULL,
-    "slug" "text" NOT NULL,
-    "status" "billing"."product_status_enum" DEFAULT 'draft'::"billing"."product_status_enum" NOT NULL,
-    "price_cents" bigint NOT NULL,
-    "credits_granted" bigint NOT NULL,
-    "pay_what_you_want" boolean DEFAULT false NOT NULL,
-    "buy_now_url" "text",
-    "description" "text",
-    "test_mode" boolean DEFAULT false NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "products_credits_granted_check" CHECK (("credits_granted" > 0)),
-    CONSTRAINT "products_price_cents_check" CHECK (("price_cents" >= 0))
-);
-
-
-ALTER TABLE "billing"."products" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "billing"."products" IS 'LemonSqueezy credit pack products. 1 credit = $0.01 USD (100 credits per USD).';
-
-
-
-COMMENT ON COLUMN "billing"."products"."ls_product_id" IS 'LemonSqueezy product ID (integer). Used to match webhook payloads.';
-
-
-
-COMMENT ON COLUMN "billing"."products"."credits_granted" IS 'Number of wallet credits granted when this product is purchased.';
-
-
-
-CREATE TABLE IF NOT EXISTS "billing"."variants" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ls_variant_id" bigint NOT NULL,
-    "product_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "slug" "text" NOT NULL,
-    "status" "text" DEFAULT 'active'::"text" NOT NULL,
-    "has_license_keys" boolean DEFAULT false NOT NULL,
-    "test_mode" boolean DEFAULT false NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "variants_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'inactive'::"text"])))
-);
-
-
-ALTER TABLE "billing"."variants" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "billing"."variants" IS 'Mirror of LemonSqueezy variants. Each product has at least one variant.';
-
-
-
-CREATE OR REPLACE VIEW "billing"."vw_products" AS
- SELECT "p"."id",
-    "p"."ls_product_id",
-    "p"."name",
-    "p"."slug",
-    "p"."description",
-    "p"."price_cents",
-    "p"."credits_granted",
-    "p"."pay_what_you_want",
-    "p"."buy_now_url",
-    "p"."test_mode",
-    "p"."metadata",
-    "v"."id" AS "variant_id",
-    "v"."ls_variant_id",
-    "v"."name" AS "variant_name",
-    COALESCE("o"."order_count", (0)::bigint) AS "order_count"
-   FROM (("billing"."products" "p"
-     JOIN LATERAL ( SELECT "variants"."id",
-            "variants"."ls_variant_id",
-            "variants"."name"
-           FROM "billing"."variants"
-          WHERE (("variants"."product_id" = "p"."id") AND ("variants"."status" = 'active'::"text"))
-          ORDER BY "variants"."ls_variant_id"
-         LIMIT 1) "v" ON (true))
-     LEFT JOIN ( SELECT "orders"."product_id",
-            "count"(*) AS "order_count"
-           FROM "billing"."orders"
-          WHERE ("orders"."status" = 'paid'::"billing"."order_status_enum")
-          GROUP BY "orders"."product_id") "o" ON (("o"."product_id" = "p"."id")))
-  WHERE ("p"."status" = 'published'::"billing"."product_status_enum")
-  ORDER BY "p"."price_cents";
-
-
-ALTER VIEW "billing"."vw_products" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "billing"."webhook_events" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ls_event_id" "text" NOT NULL,
-    "event_name" "text" NOT NULL,
-    "payload" "jsonb" NOT NULL,
-    "processed" boolean DEFAULT false NOT NULL,
-    "processed_at" timestamp with time zone,
-    "error_message" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "billing"."webhook_events" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "billing"."webhook_events" IS 'Raw LemonSqueezy webhook event log. ls_event_id is the idempotency key — duplicate webhooks are rejected by UNIQUE constraint.';
-
-
-
-COMMENT ON COLUMN "billing"."webhook_events"."payload" IS 'Full JSON:API envelope from LemonSqueezy webhook.';
-
-
-
-CREATE TABLE IF NOT EXISTS "connectors"."connector_tokens" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "connector_id" "uuid" NOT NULL,
-    "token_hash" "text" NOT NULL,
-    "token_prefix" "text" NOT NULL,
-    "scopes" "text"[] NOT NULL,
-    "revoked_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "connector_tokens_scopes_nonempty" CHECK (("cardinality"("scopes") > 0))
-);
-
-
-ALTER TABLE "connectors"."connector_tokens" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "connectors"."connector_tokens" IS 'Hashed service tokens for connectors. Raw tokens are returned only once; lookup uses token_hash = sha256(token).';
-
-
-
-CREATE TABLE IF NOT EXISTS "connectors"."connectors" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "workspace_id" "uuid" NOT NULL,
-    "slug" "text" NOT NULL,
-    "name" "text" NOT NULL,
-    "description" "text",
-    "kind" "text" DEFAULT 'api'::"text" NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_by" "uuid",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "last_used_at" timestamp with time zone,
-    CONSTRAINT "connectors_kind_check" CHECK (("kind" = ANY (ARRAY['api'::"text", 'webhook'::"text"]))),
-    CONSTRAINT "connectors_slug_format" CHECK ((("slug" ~ '^[a-z0-9]+([_-][a-z0-9]+)*$'::"text") AND (("char_length"("slug") >= 3) AND ("char_length"("slug") <= 64))))
-);
-
-
-ALTER TABLE "connectors"."connectors" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "connectors"."connectors" IS 'Workspace-scoped service connectors. One row per registered integration; tokens stored separately.';
-
-
-
 CREATE TABLE IF NOT EXISTS "content"."entity_translations" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "entity_type" "content"."entity_type_enum" NOT NULL,
@@ -44247,398 +36044,6 @@ CREATE OR REPLACE VIEW "content"."vw_threads_hot_scores" AS
 
 
 ALTER VIEW "content"."vw_threads_hot_scores" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "core"."cities" (
-    "id" bigint NOT NULL,
-    "name" character varying(255) NOT NULL,
-    "state_id" bigint NOT NULL,
-    "state_code" character varying(255) NOT NULL,
-    "country_id" bigint NOT NULL,
-    "country_code" character(2) NOT NULL,
-    "type" character varying(191),
-    "level" integer,
-    "parent_id" bigint,
-    "latitude" numeric(10,8) NOT NULL,
-    "longitude" numeric(11,8) NOT NULL,
-    "native" character varying(255),
-    "population" bigint,
-    "timezone" character varying(255),
-    "translations" "text",
-    "created_at" timestamp(6) without time zone DEFAULT '2014-01-01 12:01:01'::timestamp without time zone,
-    "updated_at" timestamp(6) without time zone DEFAULT "now"(),
-    "flag" smallint DEFAULT 1 NOT NULL,
-    "wikiDataId" character varying(255)
-);
-
-
-ALTER TABLE "core"."cities" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "core"."cities" IS 'City reference with geo coordinates and timezone. Belongs to a state and country. ~150K rows seeded from world-cities dataset.';
-
-
-
-CREATE SEQUENCE IF NOT EXISTS "core"."cities_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "core"."cities_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "core"."cities_id_seq" OWNED BY "core"."cities"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "core"."countries" (
-    "id" bigint NOT NULL,
-    "name" character varying(100) NOT NULL,
-    "iso3" character(3),
-    "numeric_code" character(3),
-    "iso2" character(2) NOT NULL,
-    "phonecode" character varying(255),
-    "capital" character varying(255),
-    "currency" character varying(255),
-    "currency_name" character varying(255),
-    "currency_symbol" character varying(255),
-    "tld" character varying(255),
-    "native" character varying(255),
-    "population" bigint,
-    "gdp" bigint,
-    "region" character varying(255),
-    "region_id" bigint,
-    "subregion" character varying(255),
-    "subregion_id" bigint,
-    "nationality" character varying(255),
-    "area_sq_km" double precision,
-    "postal_code_format" character varying(255),
-    "postal_code_regex" character varying(255),
-    "timezones" "text",
-    "translations" "text",
-    "latitude" numeric(10,8),
-    "longitude" numeric(11,8),
-    "emoji" character varying(191),
-    "emojiU" character varying(191),
-    "created_at" timestamp(6) without time zone,
-    "updated_at" timestamp(6) without time zone DEFAULT "now"(),
-    "flag" smallint DEFAULT 1 NOT NULL,
-    "wikiDataId" character varying(255)
-);
-
-
-ALTER TABLE "core"."countries" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "core"."countries" IS 'Country reference with ISO codes, phone codes, currency info, geo coordinates, emoji flags, timezones, and translations. Seeded from world-cities dataset.';
-
-
-
-CREATE SEQUENCE IF NOT EXISTS "core"."countries_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "core"."countries_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "core"."countries_id_seq" OWNED BY "core"."countries"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "core"."currencies" (
-    "code" character(3) NOT NULL,
-    "name" "text" NOT NULL
-);
-
-
-ALTER TABLE "core"."currencies" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "core"."currencies" IS 'ISO 4217 currency codes and display names. Read-only reference table.';
-
-
-
-CREATE TABLE IF NOT EXISTS "core"."languages" (
-    "code" "text" NOT NULL,
-    "name" "text" NOT NULL,
-    "native_name" "text" NOT NULL,
-    "is_default" boolean DEFAULT false,
-    "is_active" boolean DEFAULT true,
-    "direction" "text" DEFAULT 'ltr'::"text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "languages_code_check" CHECK (("code" ~ '^[a-z]{2}(-[A-Z]{2})?$'::"text")),
-    CONSTRAINT "languages_direction_check" CHECK (("direction" = ANY (ARRAY['ltr'::"text", 'rtl'::"text"])))
-);
-
-
-ALTER TABLE "core"."languages" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "core"."regions" (
-    "id" bigint NOT NULL,
-    "name" character varying(100) NOT NULL,
-    "translations" "text",
-    "created_at" timestamp(6) without time zone,
-    "updated_at" timestamp(6) without time zone DEFAULT "now"(),
-    "flag" smallint DEFAULT 1 NOT NULL,
-    "wikiDataId" character varying(255)
-);
-
-
-ALTER TABLE "core"."regions" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "core"."regions" IS 'Geographic region reference (e.g. Africa, Americas, Asia, Europe, Oceania). Seeded from world-cities dataset. Read-only for clients.';
-
-
-
-CREATE SEQUENCE IF NOT EXISTS "core"."regions_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "core"."regions_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "core"."regions_id_seq" OWNED BY "core"."regions"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "core"."states" (
-    "id" bigint NOT NULL,
-    "name" character varying(255) NOT NULL,
-    "country_id" bigint NOT NULL,
-    "country_code" character(2) NOT NULL,
-    "fips_code" character varying(255),
-    "iso2" character varying(255),
-    "iso3166_2" character varying(10),
-    "type" character varying(191),
-    "level" integer,
-    "parent_id" bigint,
-    "native" character varying(255),
-    "latitude" numeric(10,8),
-    "longitude" numeric(11,8),
-    "timezone" character varying(255),
-    "translations" "text",
-    "created_at" timestamp(6) without time zone,
-    "updated_at" timestamp(6) without time zone DEFAULT "now"(),
-    "flag" smallint DEFAULT 1 NOT NULL,
-    "wikiDataId" character varying(255),
-    "population" character varying(255)
-);
-
-
-ALTER TABLE "core"."states" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "core"."states" IS 'State/province/territory reference. Belongs to a country. Includes ISO 3166-2 codes and geo coordinates.';
-
-
-
-CREATE SEQUENCE IF NOT EXISTS "core"."states_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "core"."states_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "core"."states_id_seq" OWNED BY "core"."states"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "core"."subregions" (
-    "id" bigint NOT NULL,
-    "name" character varying(100) NOT NULL,
-    "translations" "text",
-    "region_id" bigint NOT NULL,
-    "created_at" timestamp(6) without time zone,
-    "updated_at" timestamp(6) without time zone DEFAULT "now"(),
-    "flag" smallint DEFAULT 1 NOT NULL,
-    "wikiDataId" character varying(255)
-);
-
-
-ALTER TABLE "core"."subregions" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "core"."subregions" IS 'Geographic subregion reference (e.g. Northern Europe, Southeast Asia). Belongs to a region. Seeded from world-cities dataset.';
-
-
-
-CREATE SEQUENCE IF NOT EXISTS "core"."subregions_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "core"."subregions_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "core"."subregions_id_seq" OWNED BY "core"."subregions"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "devices"."device_challenges" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "device_id" "uuid" NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "nonce" "text" NOT NULL,
-    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
-    "signature" "text",
-    "signed_iat" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "expires_at" timestamp with time zone DEFAULT ("now"() + '24:00:00'::interval) NOT NULL,
-    CONSTRAINT "device_challenges_signature_check" CHECK ((("signature" IS NULL) OR ("char_length"("signature") <= 256))),
-    CONSTRAINT "device_challenges_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'answered'::"text", 'approved'::"text", 'rejected'::"text", 'expired'::"text"])))
-);
-
-
-ALTER TABLE "devices"."device_challenges" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "devices"."device_challenges" IS 'One-time challenge nonces issued during fn_device_register_with_key. The pending device signs the nonce with its private key and posts the envelope via fn_device_post_challenge before the owner can approve.';
-
-
-
-CREATE TABLE IF NOT EXISTS "devices"."nonce_cache" (
-    "nonce" "text" NOT NULL,
-    "device_id" "uuid" NOT NULL,
-    "expires_at" timestamp with time zone DEFAULT ("now"() + '00:10:00'::interval) NOT NULL
-);
-
-
-ALTER TABLE "devices"."nonce_cache" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "devices"."nonce_cache" IS 'Replay-protection cache for SignedEnvelope nonces. Retention 10 minutes; matches the iat ±300s window with overlap.';
-
-
-
-CREATE TABLE IF NOT EXISTS "devices"."peer_leases" (
-    "lease_kind" "text" NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "device_id" "uuid" NOT NULL,
-    "acquired_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "expires_at" timestamp with time zone NOT NULL,
-    CONSTRAINT "peer_leases_lease_kind_check" CHECK ((("char_length"("lease_kind") >= 1) AND ("char_length"("lease_kind") <= 64)))
-);
-
-
-ALTER TABLE "devices"."peer_leases" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "devices"."peer_leases" IS 'Time-bounded leases for cross-device coordination (e.g. sync_flush). One lease per (lease_kind, lenser_id). Acquired via fn_acquire_leader_lease.';
-
-
-
-CREATE TABLE IF NOT EXISTS "devices"."registered_devices" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "device_type" "text" DEFAULT 'other'::"text" NOT NULL,
-    "os" "text",
-    "arch" "text",
-    "cli_version" "text",
-    "runner_version" "text",
-    "capabilities" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "trust_level" "text" DEFAULT 'pending'::"text" NOT NULL,
-    "gateway_status" "text" DEFAULT 'disconnected'::"text" NOT NULL,
-    "last_seen_at" timestamp with time zone,
-    "revoked_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "public_key" "text",
-    "signing_algo" "text",
-    "last_heartbeat_at" timestamp with time zone,
-    "daemon_version" "text",
-    CONSTRAINT "registered_devices_arch_check" CHECK (("char_length"("arch") <= 32)),
-    CONSTRAINT "registered_devices_cli_version_check" CHECK (("char_length"("cli_version") <= 32)),
-    CONSTRAINT "registered_devices_daemon_version_check" CHECK ((("daemon_version" IS NULL) OR ("char_length"("daemon_version") <= 32))),
-    CONSTRAINT "registered_devices_device_type_check" CHECK (("device_type" = ANY (ARRAY['desktop'::"text", 'laptop'::"text", 'server'::"text", 'cloud'::"text", 'other'::"text"]))),
-    CONSTRAINT "registered_devices_gateway_status_check" CHECK (("char_length"("gateway_status") <= 32)),
-    CONSTRAINT "registered_devices_name_check" CHECK ((("char_length"("name") >= 1) AND ("char_length"("name") <= 100))),
-    CONSTRAINT "registered_devices_os_check" CHECK (("char_length"("os") <= 64)),
-    CONSTRAINT "registered_devices_public_key_check" CHECK ((("public_key" IS NULL) OR (("char_length"("public_key") >= 32) AND ("char_length"("public_key") <= 256)))),
-    CONSTRAINT "registered_devices_runner_version_check" CHECK (("char_length"("runner_version") <= 32)),
-    CONSTRAINT "registered_devices_signing_algo_check" CHECK ((("signing_algo" IS NULL) OR ("signing_algo" = 'ed25519'::"text"))),
-    CONSTRAINT "registered_devices_trust_level_check" CHECK (("trust_level" = ANY (ARRAY['pending'::"text", 'approved'::"text", 'trusted'::"text", 'offline'::"text", 'revoked'::"text", 'blocked'::"text", 'unhealthy'::"text"]))),
-    CONSTRAINT "revoked_at_requires_revoked_state" CHECK ((("revoked_at" IS NULL) OR ("trust_level" = ANY (ARRAY['revoked'::"text", 'blocked'::"text"]))))
-);
-
-
-ALTER TABLE "devices"."registered_devices" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "devices"."registered_devices" IS 'Persistent registry of developer-owned local machines approved for trusted execution. Created and mutated only via SECURITY DEFINER RPCs — no direct INSERT/UPDATE from clients.';
-
-
-
-COMMENT ON COLUMN "devices"."registered_devices"."public_key" IS 'Base64-encoded raw Ed25519 public key (32 bytes). Recorded during the two-step approve flow (fn_device_register_with_key + fn_device_post_challenge).';
-
-
-
-COMMENT ON COLUMN "devices"."registered_devices"."signing_algo" IS 'Signature algorithm for envelopes; v1 is always ed25519.';
-
-
-
-COMMENT ON COLUMN "devices"."registered_devices"."last_heartbeat_at" IS 'Updated by fn_device_heartbeat; used to derive offline / unhealthy state.';
-
-
-
-CREATE TABLE IF NOT EXISTS "devices"."sync_outbox" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "device_id" "uuid" NOT NULL,
-    "object_class" "text" NOT NULL,
-    "object_id" "text" NOT NULL,
-    "op" "text" NOT NULL,
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "vclock" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "applied_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "sync_outbox_object_class_check" CHECK ((("char_length"("object_class") >= 1) AND ("char_length"("object_class") <= 64))),
-    CONSTRAINT "sync_outbox_object_id_check" CHECK ((("char_length"("object_id") >= 1) AND ("char_length"("object_id") <= 128))),
-    CONSTRAINT "sync_outbox_op_check" CHECK (("op" = ANY (ARRAY['upsert'::"text", 'delete'::"text"])))
-);
-
-
-ALTER TABLE "devices"."sync_outbox" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "devices"."sync_outbox" IS 'Append-only log of pending local→cloud changes per device. Written by devices.fn_sync_push after envelope verification. 30-day retention; records are archived to audit.events after applied_at + 30 days.';
-
-
-
-CREATE TABLE IF NOT EXISTS "devices"."sync_watermarks" (
-    "lenser_id" "uuid" NOT NULL,
-    "device_id" "uuid" NOT NULL,
-    "object_class" "text" NOT NULL,
-    "watermark" timestamp with time zone DEFAULT '-infinity'::timestamp with time zone NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "sync_watermarks_object_class_check" CHECK ((("char_length"("object_class") >= 1) AND ("char_length"("object_class") <= 64)))
-);
-
-
-ALTER TABLE "devices"."sync_watermarks" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "devices"."sync_watermarks" IS 'Per-(device, object_class) cursor into the cloud changefeed for pull. Updated by devices.fn_sync_pull after a successful row return. Idempotent replay returns the same set.';
-
 
 
 CREATE TABLE IF NOT EXISTS "execution"."artifact_medias" (
@@ -45193,47 +36598,6 @@ ALTER VIEW "execution"."vw_workflow_run_timeline" OWNER TO "postgres";
 
 
 COMMENT ON VIEW "execution"."vw_workflow_run_timeline" IS 'Chronological event stream for a workflow run: run_started, run_completed, node_started, node_completed. Consumed by the observability UI (Phase 6) to render Gantt-style timelines without client-side joins. Respects the underlying RLS on lenses.workflow_runs and lenses.workflow_node_results.';
-
-
-
-CREATE TABLE IF NOT EXISTS "integrations"."tool_allowlist" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "tool_id" "uuid" NOT NULL,
-    "config_override" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "granted_by" "uuid" NOT NULL,
-    "granted_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "integrations"."tool_allowlist" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "integrations"."tool_allowlist" IS 'Per-agent tool permission grants (renamed from agent_tool_allowlist).';
-
-
-
-CREATE TABLE IF NOT EXISTS "integrations"."tools" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "key" "text" NOT NULL,
-    "display_name" "text" NOT NULL,
-    "description" "text",
-    "schema_version" "text" DEFAULT '1.0'::"text" NOT NULL,
-    "input_schema" "jsonb",
-    "output_schema" "jsonb",
-    "is_system" boolean DEFAULT false NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "integrations"."tools" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "integrations"."tools" IS 'Agent tool registry. OSS-safe: schemas only, no credentials.';
-
-
-
-COMMENT ON COLUMN "integrations"."tools"."is_system" IS 'true = platform-owned tool; false = community-contributed.';
 
 
 
@@ -46009,308 +37373,6 @@ ALTER TABLE "lenses"."workflow_versions" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "lenses"."workflow_versions" IS 'Versioned snapshots of workflow DAG state. Each version freezes the nodes and edges at a point in time.';
-
-
-
-CREATE TABLE IF NOT EXISTS "media"."attachments" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "object_id" "uuid" NOT NULL,
-    "entity_type" "text" NOT NULL,
-    "entity_id" "uuid" NOT NULL,
-    "binding_key" "text" DEFAULT '_default'::"text" NOT NULL,
-    "attached_by" "uuid",
-    "attached_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "media"."attachments" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "media"."attachments" IS 'Binds media objects to business entities (lenses, threads, profiles, etc.) via named slots. binding_key matches prompt template placeholders.';
-
-
-
-CREATE TABLE IF NOT EXISTS "media"."objects" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "workspace_id" "uuid" NOT NULL,
-    "owner_lenser_id" "uuid" NOT NULL,
-    "bucket" "text",
-    "object_key" "text",
-    "content_text" "text",
-    "external_url" "text",
-    "mime_type" "text",
-    "media_type" "text" NOT NULL,
-    "name" "text" NOT NULL,
-    "byte_size" bigint,
-    "checksum_sha256" "text",
-    "visibility" "text" DEFAULT 'private'::"text" NOT NULL,
-    "lifecycle_state" "text" DEFAULT 'pending'::"text" NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_by" "uuid",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "request_id" "uuid",
-    "duration_seconds" numeric,
-    "video_width" integer,
-    "video_height" integer,
-    "audio_sample_rate" integer,
-    "audio_channels" smallint,
-    "expires_at" timestamp with time zone,
-    "access_count" integer DEFAULT 0 NOT NULL,
-    CONSTRAINT "objects_audio_channels_range" CHECK ((("audio_channels" IS NULL) OR (("audio_channels" >= 1) AND ("audio_channels" <= 8)))),
-    CONSTRAINT "objects_audio_sample_rate_positive" CHECK ((("audio_sample_rate" IS NULL) OR ("audio_sample_rate" > 0))),
-    CONSTRAINT "objects_duration_positive" CHECK ((("duration_seconds" IS NULL) OR (("duration_seconds" > (0)::numeric) AND ("duration_seconds" <= (300)::numeric)))),
-    CONSTRAINT "objects_lifecycle_check" CHECK (("lifecycle_state" = ANY (ARRAY['pending'::"text", 'active'::"text", 'archived'::"text", 'deleted'::"text"]))),
-    CONSTRAINT "objects_media_type_check" CHECK (("media_type" = ANY (ARRAY['text'::"text", 'image'::"text", 'audio'::"text", 'video'::"text", 'document'::"text", 'json'::"text", 'binary'::"text"]))),
-    CONSTRAINT "objects_one_payload" CHECK (((("bucket" IS NOT NULL) AND ("object_key" IS NOT NULL) AND ("content_text" IS NULL) AND ("external_url" IS NULL)) OR (("content_text" IS NOT NULL) AND ("bucket" IS NULL) AND ("object_key" IS NULL) AND ("external_url" IS NULL)) OR (("external_url" IS NOT NULL) AND ("bucket" IS NULL) AND ("object_key" IS NULL) AND ("content_text" IS NULL)) OR (("bucket" IS NULL) AND ("object_key" IS NULL) AND ("content_text" IS NULL) AND ("external_url" IS NULL)))),
-    CONSTRAINT "objects_video_height_positive" CHECK ((("video_height" IS NULL) OR ("video_height" > 0))),
-    CONSTRAINT "objects_video_width_positive" CHECK ((("video_width" IS NULL) OR ("video_width" > 0))),
-    CONSTRAINT "objects_visibility_check" CHECK (("visibility" = ANY (ARRAY['public'::"text", 'private'::"text", 'unlisted'::"text"])))
-);
-
-
-ALTER TABLE "media"."objects" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "media"."objects" IS 'Canonical file/media registry. Every file, inline text, or external URL is a media object. Workspace-scoped. Replaces ai.resources.';
-
-
-
-COMMENT ON COLUMN "media"."objects"."bucket" IS 'Supabase Storage bucket name. NULL for inline (content_text) or external (external_url) objects.';
-
-
-
-COMMENT ON COLUMN "media"."objects"."object_key" IS 'Supabase Storage object key. Upload flow: create row → get signed URL → upload → finalize.';
-
-
-
-COMMENT ON COLUMN "media"."objects"."mime_type" IS 'IANA MIME type. Source of truth for provider capability validation.';
-
-
-
-COMMENT ON COLUMN "media"."objects"."media_type" IS 'High-level media category. Extensible TEXT. Values: text | image | audio | video | document | json | binary';
-
-
-
-COMMENT ON COLUMN "media"."objects"."checksum_sha256" IS 'SHA-256 hash of the file content. Set during finalization for integrity verification.';
-
-
-
-COMMENT ON COLUMN "media"."objects"."lifecycle_state" IS 'pending: created but upload not finalized. active: ready for use. archived: soft-archived. deleted: soft-deleted.';
-
-
-
-COMMENT ON COLUMN "media"."objects"."duration_seconds" IS 'AN: Duration in seconds for video/audio media. NULL for images. Max 300 (5 min).';
-
-
-
-COMMENT ON COLUMN "media"."objects"."video_width" IS 'AN: Pixel width of video/image. NULL when unknown.';
-
-
-
-COMMENT ON COLUMN "media"."objects"."video_height" IS 'AN: Pixel height of video/image. NULL when unknown.';
-
-
-
-COMMENT ON COLUMN "media"."objects"."audio_sample_rate" IS 'AO: Sample rate in Hz (e.g. 44100, 48000). NULL for non-audio media.';
-
-
-
-COMMENT ON COLUMN "media"."objects"."audio_channels" IS 'AO: Number of audio channels (1=mono, 2=stereo). NULL for non-audio media.';
-
-
-
-COMMENT ON COLUMN "media"."objects"."expires_at" IS 'AT: When set, fn_expire_media_objects will archive this object after this timestamp.';
-
-
-
-COMMENT ON COLUMN "media"."objects"."access_count" IS 'AT: Running count of proxy-routed accesses. Incremented by fn_media_proxy_log.';
-
-
-
-CREATE TABLE IF NOT EXISTS "organizations"."activity_log" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "org_id" "uuid" NOT NULL,
-    "lenser_id" "uuid",
-    "device_id" "uuid",
-    "client_type" "text" DEFAULT 'web'::"text",
-    "action" "text" NOT NULL,
-    "resource_type" "text",
-    "resource_id" "uuid",
-    "payload" "jsonb" DEFAULT '{}'::"jsonb",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "chk_activity_client_type" CHECK (("client_type" = ANY (ARRAY['web'::"text", 'mobile'::"text", 'api'::"text", 'cli'::"text"])))
-);
-
-
-ALTER TABLE "organizations"."activity_log" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "organizations"."activity_log" IS 'Detailed activity feed for organization members. Tracks device, client type, and action payload.';
-
-
-
-COMMENT ON COLUMN "organizations"."activity_log"."client_type" IS 'Client that generated this activity. CHECK: web, mobile, api, cli.';
-
-
-
-CREATE TABLE IF NOT EXISTS "organizations"."addresses" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "company_id" "uuid" NOT NULL,
-    "address_type" "organizations"."address_type_enum" DEFAULT 'headquarters'::"organizations"."address_type_enum" NOT NULL,
-    "line1" "text" NOT NULL,
-    "line2" "text",
-    "postal_code" "text",
-    "country_iso2_code" character(2) NOT NULL,
-    "state_id" bigint,
-    "city_id" bigint,
-    "city_name" "text",
-    "is_default" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "organizations"."addresses" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "organizations"."addresses" IS 'Physical addresses for organization companies. One default per company enforced by partial unique index.';
-
-
-
-COMMENT ON COLUMN "organizations"."addresses"."is_default" IS 'Whether this is the default address for the company. At most one default per company enforced by partial unique index.';
-
-
-
-CREATE TABLE IF NOT EXISTS "organizations"."audit_logs" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "org_id" "uuid" NOT NULL,
-    "lenser_id" "uuid",
-    "action" "text" NOT NULL,
-    "entity_type" "text",
-    "entity_id" "uuid",
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb",
-    "occurred_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "organizations"."audit_logs" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "organizations"."audit_logs" IS 'Immutable audit trail for organization-level actions. UPDATE and DELETE are blocked by trigger.';
-
-
-
-COMMENT ON COLUMN "organizations"."audit_logs"."action" IS 'Machine-readable action identifier (e.g. created, member_added, settings_changed).';
-
-
-
-COMMENT ON COLUMN "organizations"."audit_logs"."entity_type" IS 'Type of entity affected (e.g. member, company, preference). Combined with entity_id for full reference.';
-
-
-
-CREATE TABLE IF NOT EXISTS "organizations"."companies" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "org_id" "uuid" NOT NULL,
-    "legal_name" character varying(180) NOT NULL,
-    "trade_name" character varying(180),
-    "website" "text",
-    "industry" character varying(120),
-    "tax_iso2_code" character(2),
-    "tax_number" "text",
-    "vat_id" "text",
-    "registration_number" "text",
-    "billing_contact_email" "text",
-    "sales_contact_email" "text",
-    "contact_email" "text",
-    "contact_phone" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "organizations"."companies" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "organizations"."companies" IS 'Legal entity details for an organization. One company per org (unique org_id).';
-
-
-
-COMMENT ON COLUMN "organizations"."companies"."tax_iso2_code" IS 'Country of tax registration. FK to core.countries(iso2).';
-
-
-
-COMMENT ON COLUMN "organizations"."companies"."vat_id" IS 'EU VAT identification number or equivalent. NULL if not applicable.';
-
-
-
-CREATE TABLE IF NOT EXISTS "organizations"."preferences" (
-    "org_id" "uuid" NOT NULL,
-    "iso2_code" character(2),
-    "timezone" character varying(120) DEFAULT 'UTC'::character varying,
-    "preferred_language" "text" DEFAULT 'en'::"text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "ck_organizations_preferences_preferred_language_bcp47" CHECK ("i18n"."fn_is_supported_language"("preferred_language"))
-);
-
-
-ALTER TABLE "organizations"."preferences" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "organizations"."preferences" IS 'Per-org locale and regional preferences. One row per organization.';
-
-
-
-COMMENT ON COLUMN "organizations"."preferences"."iso2_code" IS 'Country code for regional defaults (date format, currency display). FK to core.countries(iso2).';
-
-
-
-CREATE TABLE IF NOT EXISTS "platform"."api_worker_heartbeats" (
-    "worker_id" "text" NOT NULL,
-    "worker_type" "text" DEFAULT 'workflow'::"text" NOT NULL,
-    "last_seen_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL
-);
-
-
-ALTER TABLE "platform"."api_worker_heartbeats" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "platform"."system_flags" (
-    "key" "text" NOT NULL,
-    "value" "jsonb" NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_by" "uuid"
-);
-
-
-ALTER TABLE "platform"."system_flags" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "platform"."system_flags" IS 'Platform-level feature/kill-switch flags. Keyed by name, value is jsonb. service_role has full access; authenticated users have read-only access.';
-
-
-
-CREATE TABLE IF NOT EXISTS "platform"."tool_invocation_logs" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "ai_lenser_id" "uuid" NOT NULL,
-    "run_id" "uuid",
-    "tool_name" "text" NOT NULL,
-    "tool_input" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "tool_output" "jsonb",
-    "approval_status" "text" DEFAULT 'auto_approved'::"text" NOT NULL,
-    "invoked_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "decided_at" timestamp with time zone,
-    "decided_by" "uuid",
-    CONSTRAINT "tool_invocation_logs_approval_status_check" CHECK (("approval_status" = ANY (ARRAY['auto_approved'::"text", 'awaiting_approval'::"text", 'approved'::"text", 'rejected'::"text"])))
-);
-
-
-ALTER TABLE "platform"."tool_invocation_logs" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "platform"."tool_invocation_logs" IS 'Audit log of tool invocations by ai_lensers during workflow runs. RLS: owner SELECT only; writes go through fn_decide_tool_invocation.';
 
 
 
@@ -47094,569 +38156,167 @@ UNION
 ALTER VIEW "public"."vw_xp_leaderboard_season" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "reputation"."elo_battle_log" (
-    "battle_id" "uuid" NOT NULL,
-    "computed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "winner_lenser_id" "uuid",
-    "loser_lenser_id" "uuid",
-    "is_draw" boolean DEFAULT false NOT NULL,
-    "winner_score_before" numeric(10,4),
-    "winner_score_after" numeric(10,4),
-    "loser_score_before" numeric(10,4),
-    "loser_score_after" numeric(10,4),
-    "k_factor" integer DEFAULT 32 NOT NULL
-);
-
-ALTER TABLE ONLY "reputation"."elo_battle_log" FORCE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "reputation"."elo_battle_log" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "reputation"."elo_battle_log" IS 'Phase O3: idempotency + audit log for per-battle ELO updates. PK on battle_id ensures each battle is scored at most once.';
-
-
-
-CREATE TABLE IF NOT EXISTS "reputation"."judge_calibrations" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "calibration_score" numeric(5,4) DEFAULT 0.5 NOT NULL,
-    "total_judgments" integer DEFAULT 0 NOT NULL,
-    "agreement_rate" numeric(5,4) DEFAULT 0.5 NOT NULL,
-    "kappa_score" numeric(5,4),
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "agreement_rate_range" CHECK ((("agreement_rate" >= (0)::numeric) AND ("agreement_rate" <= (1)::numeric))),
-    CONSTRAINT "calibration_judgments_nonneg" CHECK (("total_judgments" >= 0)),
-    CONSTRAINT "calibration_score_range" CHECK ((("calibration_score" >= (0)::numeric) AND ("calibration_score" <= (1)::numeric))),
-    CONSTRAINT "ck_reputation_judge_calibrations_calibration_score_nonneg" CHECK ((("calibration_score" IS NULL) OR ("calibration_score" >= (0)::numeric))),
-    CONSTRAINT "ck_reputation_judge_calibrations_kappa_score_nonneg" CHECK ((("kappa_score" IS NULL) OR ("kappa_score" >= (0)::numeric))),
-    CONSTRAINT "ck_reputation_judge_calibrations_total_judgments_nonneg" CHECK ((("total_judgments" IS NULL) OR ("total_judgments" >= 0))),
-    CONSTRAINT "kappa_range" CHECK ((("kappa_score" IS NULL) OR (("kappa_score" >= ('-1'::integer)::numeric) AND ("kappa_score" <= (1)::numeric))))
-);
-
-
-ALTER TABLE "reputation"."judge_calibrations" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "reputation"."judge_calibrations" IS 'Vote quality metrics for each judge (human or AI). calibration_score: overall judge reliability [0..1]. agreement_rate: fraction of votes agreeing with eventual battle consensus. kappa_score: Cohen''s kappa against expert panel (NULL until calibrated). Used to weight votes in trust-adjusted benchmark scoring.';
-
-
-
-CREATE OR REPLACE VIEW "reputation"."v_trueskill_leaderboard" AS
- SELECT "cr"."lenser_id",
-    "cr"."category",
-    ("cr"."elo_rating" - (3.0 * "cr"."uncertainty")) AS "conservative_rating",
-    "cr"."elo_rating" AS "mu",
-    "cr"."uncertainty" AS "sigma",
-    "cr"."tau",
-    "cr"."beta",
-    "cr"."battles_played",
-    "cr"."wins",
-    "cr"."draws",
-    "cr"."losses",
-    "cr"."updated_at",
-    "p"."handle",
-    "p"."display_name",
-    "p"."avatar_url",
-    "p"."type" AS "lenser_type",
-    "dense_rank"() OVER (PARTITION BY "cr"."category" ORDER BY ("cr"."elo_rating" - (3.0 * "cr"."uncertainty")) DESC) AS "rank"
-   FROM ("reputation"."contender_ratings" "cr"
-     JOIN "lensers"."profiles" "p" ON (("p"."id" = "cr"."lenser_id")))
-  WHERE (("cr"."battles_played" >= 3) AND ("p"."status" = 'active'::"lensers"."lenser_status"))
-  ORDER BY ("cr"."elo_rating" - (3.0 * "cr"."uncertainty")) DESC;
-
-
-ALTER VIEW "reputation"."v_trueskill_leaderboard" OWNER TO "postgres";
-
-
-COMMENT ON VIEW "reputation"."v_trueskill_leaderboard" IS 'TrueSkill conservative rating leaderboard. Rating = mu - 3*sigma. Min 3 battles to appear.';
-
-
-
-CREATE TABLE IF NOT EXISTS "reputation"."vote_risk_scores" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "vote_id" "uuid" NOT NULL,
-    "risk_score" numeric(5,4) DEFAULT 0 NOT NULL,
-    "risk_factors" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "review_status" "text" DEFAULT 'cleared'::"text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "ck_reputation_vote_risk_scores_risk_score_nonneg" CHECK ((("risk_score" IS NULL) OR ("risk_score" >= (0)::numeric))),
-    CONSTRAINT "risk_review_status_check" CHECK (("review_status" = ANY (ARRAY['cleared'::"text", 'flagged'::"text", 'excluded'::"text", 'appealed'::"text"]))),
-    CONSTRAINT "risk_score_range" CHECK ((("risk_score" >= (0)::numeric) AND ("risk_score" <= (1)::numeric)))
-);
-
-
-ALTER TABLE "reputation"."vote_risk_scores" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "reputation"."vote_risk_scores" IS 'Fraud risk assessment per vote. Computed asynchronously after vote insert. risk_score=0 = low risk, 1 = high risk. review_status=excluded means vote is removed from aggregation. Future: split into vote_risk_scores (computation) + vote_reviews (workflow).';
-
-
-
-CREATE TABLE IF NOT EXISTS "status"."components" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "service_id" "uuid" NOT NULL,
-    "slug" "text" NOT NULL,
+CREATE TABLE IF NOT EXISTS "storage"."buckets" (
+    "id" "text" NOT NULL,
     "name" "text" NOT NULL,
-    "description" "text",
-    "current_status" "status"."status_state" DEFAULT 'operational'::"status"."status_state" NOT NULL,
-    "indicator" "text" DEFAULT 'none'::"text" NOT NULL,
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "sort_order" integer DEFAULT 0 NOT NULL,
-    "is_public" boolean DEFAULT true NOT NULL,
+    "owner" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "public" boolean DEFAULT false,
+    "avif_autodetection" boolean DEFAULT false,
+    "file_size_limit" bigint,
+    "allowed_mime_types" "text"[],
+    "owner_id" "text",
+    "type" "storage"."buckettype" DEFAULT 'STANDARD'::"storage"."buckettype" NOT NULL
+);
+
+
+ALTER TABLE "storage"."buckets" OWNER TO "supabase_storage_admin";
+
+
+COMMENT ON COLUMN "storage"."buckets"."owner" IS 'Field is deprecated, use owner_id instead';
+
+
+
+CREATE TABLE IF NOT EXISTS "storage"."buckets_analytics" (
+    "name" "text" NOT NULL,
+    "type" "storage"."buckettype" DEFAULT 'ANALYTICS'::"storage"."buckettype" NOT NULL,
+    "format" "text" DEFAULT 'ICEBERG'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "deleted_at" timestamp with time zone
+);
+
+
+ALTER TABLE "storage"."buckets_analytics" OWNER TO "supabase_storage_admin";
+
+
+CREATE TABLE IF NOT EXISTS "storage"."buckets_vectors" (
+    "id" "text" NOT NULL,
+    "type" "storage"."buckettype" DEFAULT 'VECTOR'::"storage"."buckettype" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
-ALTER TABLE ONLY "status"."components" FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE "storage"."buckets_vectors" OWNER TO "supabase_storage_admin";
 
 
-ALTER TABLE "status"."components" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "status"."daily_snapshots" (
-    "snapshot_date" "date" NOT NULL,
-    "scope_type" "text" NOT NULL,
-    "scope_key" "text" NOT NULL,
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "computed_at" timestamp with time zone DEFAULT "now"() NOT NULL
+CREATE TABLE IF NOT EXISTS "storage"."iceberg_namespaces" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "bucket_name" "text" NOT NULL,
+    "name" "text" NOT NULL COLLATE "pg_catalog"."C",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "catalog_id" "uuid" NOT NULL
 );
 
-ALTER TABLE ONLY "status"."daily_snapshots" FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE "storage"."iceberg_namespaces" OWNER TO "supabase_storage_admin";
 
 
-ALTER TABLE "status"."daily_snapshots" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "status"."incident_updates" (
+CREATE TABLE IF NOT EXISTS "storage"."iceberg_tables" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "incident_id" "uuid" NOT NULL,
-    "status" "status"."incident_stage" NOT NULL,
-    "message" "text" NOT NULL,
-    "author_name" "text",
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "namespace_id" "uuid" NOT NULL,
+    "bucket_name" "text" NOT NULL,
+    "name" "text" NOT NULL COLLATE "pg_catalog"."C",
+    "location" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "remote_table_id" "text",
+    "shard_key" "text",
+    "shard_id" "text",
+    "catalog_id" "uuid" NOT NULL
+);
+
+
+ALTER TABLE "storage"."iceberg_tables" OWNER TO "supabase_storage_admin";
+
+
+CREATE TABLE IF NOT EXISTS "storage"."migrations" (
+    "id" integer NOT NULL,
+    "name" character varying(100) NOT NULL,
+    "hash" character varying(40) NOT NULL,
+    "executed_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE "storage"."migrations" OWNER TO "supabase_storage_admin";
+
+
+CREATE TABLE IF NOT EXISTS "storage"."objects" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "bucket_id" "text",
+    "name" "text",
+    "owner" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "last_accessed_at" timestamp with time zone DEFAULT "now"(),
+    "metadata" "jsonb",
+    "path_tokens" "text"[] GENERATED ALWAYS AS ("string_to_array"("name", '/'::"text")) STORED,
+    "version" "text",
+    "owner_id" "text",
+    "user_metadata" "jsonb"
+);
+
+
+ALTER TABLE "storage"."objects" OWNER TO "supabase_storage_admin";
+
+
+COMMENT ON COLUMN "storage"."objects"."owner" IS 'Field is deprecated, use owner_id instead';
+
+
+
+CREATE TABLE IF NOT EXISTS "storage"."s3_multipart_uploads" (
+    "id" "text" NOT NULL,
+    "in_progress_size" bigint DEFAULT 0 NOT NULL,
+    "upload_signature" "text" NOT NULL,
+    "bucket_id" "text" NOT NULL,
+    "key" "text" NOT NULL COLLATE "pg_catalog"."C",
+    "version" "text" NOT NULL,
+    "owner_id" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "user_metadata" "jsonb",
+    "metadata" "jsonb"
+);
+
+
+ALTER TABLE "storage"."s3_multipart_uploads" OWNER TO "supabase_storage_admin";
+
+
+CREATE TABLE IF NOT EXISTS "storage"."s3_multipart_uploads_parts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "upload_id" "text" NOT NULL,
+    "size" bigint DEFAULT 0 NOT NULL,
+    "part_number" integer NOT NULL,
+    "bucket_id" "text" NOT NULL,
+    "key" "text" NOT NULL COLLATE "pg_catalog"."C",
+    "etag" "text" NOT NULL,
+    "owner_id" "text",
+    "version" "text" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
-ALTER TABLE ONLY "status"."incident_updates" FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE "storage"."s3_multipart_uploads_parts" OWNER TO "supabase_storage_admin";
 
 
-ALTER TABLE "status"."incident_updates" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "status"."incidents" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "slug" "text" NOT NULL,
-    "title" "text" NOT NULL,
-    "status" "status"."incident_stage" DEFAULT 'investigating'::"status"."incident_stage" NOT NULL,
-    "impact" "status"."incident_impact" DEFAULT 'minor'::"status"."incident_impact" NOT NULL,
-    "severity" "text",
-    "description" "text",
-    "service_id" "uuid",
-    "published" boolean DEFAULT true NOT NULL,
-    "started_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "resolved_at" timestamp with time zone,
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+CREATE TABLE IF NOT EXISTS "storage"."vector_indexes" (
+    "id" "text" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL COLLATE "pg_catalog"."C",
+    "bucket_id" "text" NOT NULL,
+    "data_type" "text" NOT NULL,
+    "dimension" integer NOT NULL,
+    "distance_metric" "text" NOT NULL,
+    "metadata_configuration" "jsonb",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
-ALTER TABLE ONLY "status"."incidents" FORCE ROW LEVEL SECURITY;
 
-
-ALTER TABLE "status"."incidents" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "status"."maintenance_windows" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "slug" "text" NOT NULL,
-    "title" "text" NOT NULL,
-    "status" "status"."maintenance_status" DEFAULT 'scheduled'::"status"."maintenance_status" NOT NULL,
-    "service_id" "uuid",
-    "starts_at" timestamp with time zone NOT NULL,
-    "ends_at" timestamp with time zone NOT NULL,
-    "published" boolean DEFAULT true NOT NULL,
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "maintenance_windows_valid_range" CHECK (("ends_at" > "starts_at"))
-);
-
-ALTER TABLE ONLY "status"."maintenance_windows" FORCE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "status"."maintenance_windows" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "status"."services" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "slug" "text" NOT NULL,
-    "name" "text" NOT NULL,
-    "description" "text",
-    "current_status" "status"."status_state" DEFAULT 'operational'::"status"."status_state" NOT NULL,
-    "indicator" "text" DEFAULT 'none'::"text" NOT NULL,
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "sort_order" integer DEFAULT 0 NOT NULL,
-    "is_public" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-ALTER TABLE ONLY "status"."services" FORCE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "status"."services" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "status"."uptime_rollups" (
-    "scope_type" "text" NOT NULL,
-    "scope_key" "text" NOT NULL,
-    "rollup_window" "status"."status_window" NOT NULL,
-    "uptime_percent" numeric(6,3) DEFAULT 100 NOT NULL,
-    "downtime_minutes" numeric(10,2) DEFAULT 0 NOT NULL,
-    "incident_count" integer DEFAULT 0 NOT NULL,
-    "computed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "ck_status_uptime_rollups_incident_count_nonneg" CHECK ((("incident_count" IS NULL) OR ("incident_count" >= 0))),
-    CONSTRAINT "downtime_minutes_nonnegative" CHECK (("downtime_minutes" >= (0)::numeric)),
-    CONSTRAINT "incident_count_nonnegative" CHECK (("incident_count" >= 0)),
-    CONSTRAINT "uptime_percent_range" CHECK ((("uptime_percent" >= (0)::numeric) AND ("uptime_percent" <= (100)::numeric)))
-);
-
-ALTER TABLE ONLY "status"."uptime_rollups" FORCE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "status"."uptime_rollups" OWNER TO "postgres";
-
-
-CREATE OR REPLACE VIEW "status"."v_public_components" WITH ("security_invoker"='true') AS
- SELECT "c"."id",
-    "c"."slug",
-    "c"."name",
-    "c"."description",
-    "c"."current_status",
-    "c"."indicator",
-    "c"."service_id",
-    "c"."payload",
-    "c"."sort_order",
-    "c"."is_public",
-    "c"."created_at",
-    "c"."updated_at"
-   FROM ("status"."components" "c"
-     JOIN "status"."services" "s" ON (("s"."id" = "c"."service_id")))
-  WHERE (("c"."is_public" = true) AND ("s"."is_public" = true));
-
-
-ALTER VIEW "status"."v_public_components" OWNER TO "postgres";
-
-
-CREATE OR REPLACE VIEW "status"."v_public_incident_updates" WITH ("security_invoker"='true') AS
- SELECT "u"."id",
-    "u"."incident_id",
-    "u"."status",
-    "u"."message",
-    "u"."author_name",
-    "u"."payload",
-    "u"."created_at"
-   FROM (("status"."incident_updates" "u"
-     JOIN "status"."incidents" "i" ON (("i"."id" = "u"."incident_id")))
-     LEFT JOIN "status"."services" "s" ON (("s"."id" = "i"."service_id")))
-  WHERE (("i"."published" = true) AND (("i"."service_id" IS NULL) OR ("s"."is_public" = true)));
-
-
-ALTER VIEW "status"."v_public_incident_updates" OWNER TO "postgres";
-
-
-CREATE OR REPLACE VIEW "status"."v_public_incidents" WITH ("security_invoker"='true') AS
- SELECT "i"."id",
-    "i"."slug",
-    "i"."title",
-    "i"."status",
-    "i"."impact",
-    "i"."severity",
-    "i"."description",
-    "i"."service_id",
-    "i"."published",
-    "i"."started_at",
-    "i"."resolved_at",
-    "i"."payload",
-    "i"."created_at",
-    "i"."updated_at"
-   FROM ("status"."incidents" "i"
-     LEFT JOIN "status"."services" "s" ON (("s"."id" = "i"."service_id")))
-  WHERE (("i"."published" = true) AND (("i"."service_id" IS NULL) OR ("s"."is_public" = true)));
-
-
-ALTER VIEW "status"."v_public_incidents" OWNER TO "postgres";
-
-
-CREATE OR REPLACE VIEW "status"."v_public_maintenance_windows" WITH ("security_invoker"='true') AS
- SELECT "m"."id",
-    "m"."slug",
-    "m"."title",
-    "m"."status",
-    "m"."service_id",
-    "m"."starts_at",
-    "m"."ends_at",
-    "m"."published",
-    "m"."payload",
-    "m"."created_at",
-    "m"."updated_at"
-   FROM ("status"."maintenance_windows" "m"
-     LEFT JOIN "status"."services" "s" ON (("s"."id" = "m"."service_id")))
-  WHERE (("m"."published" = true) AND (("m"."service_id" IS NULL) OR ("s"."is_public" = true)));
-
-
-ALTER VIEW "status"."v_public_maintenance_windows" OWNER TO "postgres";
-
-
-CREATE OR REPLACE VIEW "status"."v_public_services" WITH ("security_invoker"='true') AS
- SELECT "id",
-    "slug",
-    "name",
-    "description",
-    "current_status",
-    "indicator",
-    "payload",
-    "sort_order",
-    "is_public",
-    "created_at",
-    "updated_at",
-    COALESCE(( SELECT "jsonb_object_agg"(("r"."rollup_window")::"text", "r"."uptime_percent" ORDER BY "r"."rollup_window") AS "jsonb_object_agg"
-           FROM "status"."uptime_rollups" "r"
-          WHERE (("r"."scope_type" = 'service'::"text") AND ("r"."scope_key" = "s"."slug"))), '{}'::"jsonb") AS "uptime"
-   FROM "status"."services" "s"
-  WHERE ("is_public" = true);
-
-
-ALTER VIEW "status"."v_public_services" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "tenancy"."workspace_members" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "workspace_id" "uuid" NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "role" "text" DEFAULT 'member'::"text" NOT NULL,
-    "invited_by" "uuid",
-    "joined_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "workspace_members_role_check" CHECK (("role" = ANY (ARRAY['owner'::"text", 'admin'::"text", 'member'::"text", 'viewer'::"text"])))
-);
-
-
-ALTER TABLE "tenancy"."workspace_members" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "tenancy"."workspace_members" IS 'Workspace membership with roles. Owner has full control, admin can manage members, member has read/write, viewer has read-only.';
-
-
-
-CREATE TABLE IF NOT EXISTS "tenancy"."workspaces" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "slug" "text" NOT NULL,
-    "type" "text" NOT NULL,
-    "display_name" "text" NOT NULL,
-    "owner_lenser_id" "uuid",
-    "org_id" "uuid",
-    "status" "text" DEFAULT 'active'::"text" NOT NULL,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "workspaces_slug_format" CHECK ((("slug" ~ '^[a-z0-9]+([_-][a-z0-9]+)*$'::"text") AND (("char_length"("slug") >= 3) AND ("char_length"("slug") <= 64)))),
-    CONSTRAINT "workspaces_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'suspended'::"text", 'archived'::"text"]))),
-    CONSTRAINT "workspaces_type_check" CHECK (("type" = ANY (ARRAY['personal'::"text", 'organization'::"text"])))
-);
-
-
-ALTER TABLE "tenancy"."workspaces" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "tenancy"."workspaces" IS 'Canonical tenant boundary. Every lenser gets a personal workspace; organizations map to organization-type workspaces. Media, keys, executions, and audit records are workspace-scoped.';
-
-
-
-CREATE TABLE IF NOT EXISTS "wallet"."accounts" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "balance" bigint DEFAULT 0 NOT NULL,
-    "lifetime_deposits" bigint DEFAULT 0 NOT NULL,
-    "lifetime_spent" bigint DEFAULT 0 NOT NULL,
-    "frozen" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "accounts_balance_non_negative" CHECK (("balance" >= 0))
-);
-
-
-ALTER TABLE "wallet"."accounts" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "wallet"."accounts" IS 'Wallet account per lenser. balance >= 0 enforced at DB level. ON DELETE RESTRICT — close wallet before deleting profile.';
-
-
-
-COMMENT ON COLUMN "wallet"."accounts"."balance" IS 'Current credit balance. Always >= 0. Updated atomically by wallet functions.';
-
-
-
-COMMENT ON COLUMN "wallet"."accounts"."lifetime_deposits" IS 'Cumulative credits deposited (monotonically increasing).';
-
-
-
-COMMENT ON COLUMN "wallet"."accounts"."lifetime_spent" IS 'Cumulative credits spent (monotonically increasing).';
-
-
-
-COMMENT ON COLUMN "wallet"."accounts"."frozen" IS 'Admin suspension flag. Frozen accounts cannot transact.';
-
-
-
-CREATE TABLE IF NOT EXISTS "wallet"."credit_valuation_policy" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "singleton" boolean DEFAULT true NOT NULL,
-    "baseline_credits_per_usd" numeric(12,4) NOT NULL,
-    "tier_small_step" numeric(12,6),
-    "tier_large_threshold" numeric(12,6),
-    "tier_large_step" numeric(12,6),
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "credit_valuation_rate_positive" CHECK (("baseline_credits_per_usd" > (0)::numeric)),
-    CONSTRAINT "credit_valuation_singleton_true" CHECK (("singleton" = true))
-);
-
-
-ALTER TABLE "wallet"."credit_valuation_policy" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "wallet"."credit_valuation_policy" IS 'Singleton table holding the global credit-to-USD conversion rate. 1 credit = 1 / baseline_credits_per_usd USD. With baseline_credits_per_usd = 100, 1 credit = $0.01.';
-
-
-
-CREATE TABLE IF NOT EXISTS "wallet"."organization_accounts" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "org_id" "uuid" NOT NULL,
-    "balance" bigint DEFAULT 0 NOT NULL,
-    "lifetime_deposits" bigint DEFAULT 0 NOT NULL,
-    "lifetime_spent" bigint DEFAULT 0 NOT NULL,
-    "frozen" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "org_accounts_balance_non_negative" CHECK (("balance" >= 0))
-);
-
-
-ALTER TABLE "wallet"."organization_accounts" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "wallet"."organization_accounts" IS 'Wallet account per organization (team/community). Mirrors wallet.accounts structure. Functions deferred — table created for schema readiness.';
-
-
-
-COMMENT ON COLUMN "wallet"."organization_accounts"."org_id" IS 'FK to actors.organizations. ON DELETE RESTRICT — close wallet before deleting org.';
-
-
-
-CREATE TABLE IF NOT EXISTS "wallet"."pending_charges" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "account_id" "uuid" NOT NULL,
-    "lenser_id" "uuid" NOT NULL,
-    "reserved_amount" bigint NOT NULL,
-    "settled_amount" bigint,
-    "status" "wallet"."charge_status_enum" DEFAULT 'reserved'::"wallet"."charge_status_enum" NOT NULL,
-    "reference_id" "uuid" NOT NULL,
-    "description" "text",
-    "reserved_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "settled_at" timestamp with time zone,
-    CONSTRAINT "pending_charges_reserved_positive" CHECK (("reserved_amount" > 0)),
-    CONSTRAINT "pending_charges_settled_non_negative" CHECK ((("settled_amount" IS NULL) OR ("settled_amount" >= 0)))
-);
-
-
-ALTER TABLE "wallet"."pending_charges" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "wallet"."pending_charges" IS 'Pre-authorization ledger for execution runs. Tracks reserved → settled/released lifecycle. Enforces idempotency via reference_id UNIQUE constraint.';
-
-
-
-COMMENT ON COLUMN "wallet"."pending_charges"."reserved_amount" IS 'Credits debited from account when reservation created. Remains until charge settled or released.';
-
-
-
-COMMENT ON COLUMN "wallet"."pending_charges"."settled_amount" IS 'Actual credits charged after execution completes. NULL until settled. If NULL at release, full refund applied.';
-
-
-
-COMMENT ON COLUMN "wallet"."pending_charges"."reference_id" IS 'FK to execution.runs.id. UNIQUE constraint prevents double-charging on Worker retry.';
-
-
-
-CREATE TABLE IF NOT EXISTS "wallet"."spending_limits" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "account_id" "uuid" NOT NULL,
-    "period" "text" NOT NULL,
-    "limit_credits" bigint NOT NULL,
-    "current_usage" bigint DEFAULT 0 NOT NULL,
-    "period_start" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "spending_limits_limit_check" CHECK (("limit_credits" > 0)),
-    CONSTRAINT "spending_limits_period_check" CHECK (("period" = ANY (ARRAY['daily'::"text", 'monthly'::"text"])))
-);
-
-
-ALTER TABLE "wallet"."spending_limits" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "wallet"."spending_limits" IS 'Optional per-account spending caps. current_usage reset to 0 by pg_cron at period boundaries.';
-
-
-
-CREATE TABLE IF NOT EXISTS "wallet"."transactions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "account_id" "uuid" NOT NULL,
-    "tx_type" "wallet"."transaction_type_enum" NOT NULL,
-    "amount" bigint NOT NULL,
-    "direction" smallint NOT NULL,
-    "balance_after" bigint NOT NULL,
-    "reference_type" "text",
-    "reference_id" "uuid",
-    "description" "text",
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "idempotency_key" "text",
-    CONSTRAINT "transactions_amount_positive" CHECK (("amount" > 0)),
-    CONSTRAINT "transactions_direction_check" CHECK (("direction" = ANY (ARRAY[1, '-1'::integer])))
-);
-
-
-ALTER TABLE "wallet"."transactions" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "wallet"."transactions" IS 'Append-only wallet transaction ledger. No UPDATE/DELETE allowed. balance_after enables audit verification: balance_after[n] = balance_after[n-1] + (amount * direction).';
-
-
-
-COMMENT ON COLUMN "wallet"."transactions"."amount" IS 'Always positive. Effective amount = amount * direction.';
-
-
-
-COMMENT ON COLUMN "wallet"."transactions"."direction" IS '+1 for credits (deposit, refund, sponsorship_payout), -1 for debits (spend, sponsorship_deposit, platform_fee).';
-
-
-
-COMMENT ON COLUMN "wallet"."transactions"."balance_after" IS 'Account balance after this transaction. Enables full audit trail verification.';
-
-
-
-COMMENT ON COLUMN "wallet"."transactions"."reference_type" IS 'Source entity type, e.g. billing.orders, execution.runs, battles.sponsorship_contributions.';
-
-
-
-COMMENT ON COLUMN "wallet"."transactions"."reference_id" IS 'Source entity UUID. Combined with reference_type for cross-schema tracing.';
-
-
-
-COMMENT ON COLUMN "wallet"."transactions"."idempotency_key" IS 'Optional idempotency key for dedup. When set, prevents duplicate transactions from retried API calls. SHA-256 hash of scope|actor|operation context.';
-
+ALTER TABLE "storage"."vector_indexes" OWNER TO "supabase_storage_admin";
 
 
 CREATE TABLE IF NOT EXISTS "xp"."apps" (
@@ -47829,438 +38489,11 @@ ALTER SEQUENCE "xp"."xp_levels_id_seq" OWNED BY "xp"."levels"."id";
 
 
 
-ALTER TABLE ONLY "analytics"."lenser_join_log" ALTER COLUMN "join_order" SET DEFAULT "nextval"('"analytics"."lenser_join_sequence"'::"regclass");
-
-
-
-ALTER TABLE ONLY "analytics"."tag_activity_events" ALTER COLUMN "id" SET DEFAULT "nextval"('"analytics"."tag_activity_events_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "audit"."dedupe_log" ALTER COLUMN "id" SET DEFAULT "nextval"('"audit"."dedupe_log_id_seq"'::"regclass");
 
 
 
-ALTER TABLE ONLY "automation"."cron_runs" ALTER COLUMN "id" SET DEFAULT "nextval"('"automation"."cron_runs_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "core"."cities" ALTER COLUMN "id" SET DEFAULT "nextval"('"core"."cities_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "core"."countries" ALTER COLUMN "id" SET DEFAULT "nextval"('"core"."countries_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "core"."regions" ALTER COLUMN "id" SET DEFAULT "nextval"('"core"."regions_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "core"."states" ALTER COLUMN "id" SET DEFAULT "nextval"('"core"."states_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "core"."subregions" ALTER COLUMN "id" SET DEFAULT "nextval"('"core"."subregions_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "xp"."levels" ALTER COLUMN "id" SET DEFAULT "nextval"('"xp"."xp_levels_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "admin"."kill_switches"
-    ADD CONSTRAINT "kill_switches_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."action_logs"
-    ADD CONSTRAINT "action_logs_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."agent_run_events"
-    ADD CONSTRAINT "agent_run_events_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."agent_run_steps"
-    ADD CONSTRAINT "agent_run_steps_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."ai_lensers"
-    ADD CONSTRAINT "ai_lensers_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."ai_lensers"
-    ADD CONSTRAINT "ai_lensers_profile_id_key" UNIQUE ("profile_id");
-
-
-
-ALTER TABLE ONLY "agents"."battle_subscriptions"
-    ADD CONSTRAINT "battle_subscriptions_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_baselines"
-    ADD CONSTRAINT "evaluation_baselines_one_per_eval" UNIQUE ("evaluation_id");
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_baselines"
-    ADD CONSTRAINT "evaluation_baselines_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_case_results"
-    ADD CONSTRAINT "evaluation_case_results_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_cases"
-    ADD CONSTRAINT "evaluation_cases_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_rubrics"
-    ADD CONSTRAINT "evaluation_rubrics_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_runs"
-    ADD CONSTRAINT "evaluation_runs_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."evaluations"
-    ADD CONSTRAINT "evaluations_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."gateway_commands"
-    ADD CONSTRAINT "gateway_commands_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."gateway_devices"
-    ADD CONSTRAINT "gateway_devices_pkey" PRIMARY KEY ("device_id");
-
-
-
-ALTER TABLE ONLY "agents"."lens_bindings"
-    ADD CONSTRAINT "lens_bindings_ai_lenser_id_lens_id_key" UNIQUE ("ai_lenser_id", "lens_id");
-
-
-
-ALTER TABLE ONLY "agents"."lens_bindings"
-    ADD CONSTRAINT "lens_bindings_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."memories"
-    ADD CONSTRAINT "memories_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."memory_access_logs"
-    ADD CONSTRAINT "memory_access_logs_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."memory_profiles"
-    ADD CONSTRAINT "memory_profiles_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."model_bindings"
-    ADD CONSTRAINT "model_bindings_ai_lenser_id_model_id_key" UNIQUE ("ai_lenser_id", "model_id");
-
-
-
-ALTER TABLE ONLY "agents"."model_bindings"
-    ADD CONSTRAINT "model_bindings_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."model_profiles"
-    ADD CONSTRAINT "model_profiles_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."ownerships"
-    ADD CONSTRAINT "ownerships_ai_lenser_id_owner_lenser_id_key" UNIQUE ("ai_lenser_id", "owner_lenser_id");
-
-
-
-ALTER TABLE ONLY "agents"."ownerships"
-    ADD CONSTRAINT "ownerships_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."personality_profiles"
-    ADD CONSTRAINT "personality_profiles_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."policies"
-    ADD CONSTRAINT "policies_ai_lenser_id_key" UNIQUE ("ai_lenser_id");
-
-
-
-ALTER TABLE ONLY "agents"."policies"
-    ADD CONSTRAINT "policies_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."policy_evaluations"
-    ADD CONSTRAINT "policy_evaluations_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."provider_configs"
-    ADD CONSTRAINT "provider_configs_ai_lenser_id_provider_key_key" UNIQUE ("ai_lenser_id", "provider_key");
-
-
-
-ALTER TABLE ONLY "agents"."provider_configs"
-    ADD CONSTRAINT "provider_configs_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."quota_snapshots"
-    ADD CONSTRAINT "quota_snapshots_ai_lenser_id_period_date_key" UNIQUE ("ai_lenser_id", "period_date");
-
-
-
-ALTER TABLE ONLY "agents"."quota_snapshots"
-    ADD CONSTRAINT "quota_snapshots_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."run_incidents"
-    ADD CONSTRAINT "run_incidents_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."run_reports"
-    ADD CONSTRAINT "run_reports_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."scratchpad_runs"
-    ADD CONSTRAINT "scratchpad_runs_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."standing_approvals"
-    ADD CONSTRAINT "standing_approvals_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."team_edges"
-    ADD CONSTRAINT "team_edges_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."team_members"
-    ADD CONSTRAINT "team_members_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."team_members"
-    ADD CONSTRAINT "team_members_unique_agent" UNIQUE ("team_id", "agent_id");
-
-
-
-ALTER TABLE ONLY "agents"."team_messages"
-    ADD CONSTRAINT "team_messages_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."team_runs"
-    ADD CONSTRAINT "team_runs_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."teams"
-    ADD CONSTRAINT "teams_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."tool_assignments"
-    ADD CONSTRAINT "tool_assignments_ai_lenser_id_tool_id_key" UNIQUE ("ai_lenser_id", "tool_id");
-
-
-
-ALTER TABLE ONLY "agents"."tool_assignments"
-    ADD CONSTRAINT "tool_assignments_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."tool_invocations"
-    ADD CONSTRAINT "tool_invocations_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."tool_profiles"
-    ADD CONSTRAINT "tool_profiles_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."tools_registry"
-    ADD CONSTRAINT "tools_registry_owner_lenser_id_key_key" UNIQUE ("owner_lenser_id", "key");
-
-
-
-ALTER TABLE ONLY "agents"."tools_registry"
-    ADD CONSTRAINT "tools_registry_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."workflow_assignments"
-    ADD CONSTRAINT "workflow_assignments_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "agents"."workspace_settings"
-    ADD CONSTRAINT "workspace_settings_pkey" PRIMARY KEY ("ai_lenser_id");
-
-
-
-ALTER TABLE ONLY "agents"."workspace_switches"
-    ADD CONSTRAINT "workspace_switches_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "ai"."models"
-    ADD CONSTRAINT "ai_models_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "ai"."key_usage_log"
-    ADD CONSTRAINT "key_usage_log_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "ai"."keys"
-    ADD CONSTRAINT "keys_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "ai"."modality_pricing"
-    ADD CONSTRAINT "modality_pricing_model_id_output_modality_key" UNIQUE ("model_id", "output_modality");
-
-
-
-ALTER TABLE ONLY "ai"."modality_pricing"
-    ADD CONSTRAINT "modality_pricing_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "ai"."model_pricing"
-    ADD CONSTRAINT "model_pricing_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "ai"."models"
-    ADD CONSTRAINT "models_key_unique" UNIQUE ("key");
-
-
-
-ALTER TABLE ONLY "ai"."providers"
-    ADD CONSTRAINT "providers_key_unique" UNIQUE ("key");
-
-
-
-ALTER TABLE ONLY "ai"."providers"
-    ADD CONSTRAINT "providers_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."agent_cost_daily"
-    ADD CONSTRAINT "acd_lenser_model_date" UNIQUE ("ai_lenser_id", "model_key", "period_date");
-
-
-
-ALTER TABLE ONLY "analytics"."agent_cost_daily"
-    ADD CONSTRAINT "agent_cost_daily_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."contact"
-    ADD CONSTRAINT "contact_messages_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."eval_quality_daily"
-    ADD CONSTRAINT "eqd_lenser_eval_date" UNIQUE ("ai_lenser_id", "evaluation_id", "period_date");
-
-
-
-ALTER TABLE ONLY "analytics"."eval_quality_daily"
-    ADD CONSTRAINT "eval_quality_daily_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."product_feedback"
-    ADD CONSTRAINT "feedback_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."lenser_activity"
-    ADD CONSTRAINT "lenser_activity_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."lenser_stats"
-    ADD CONSTRAINT "lenser_engagement_totals_pkey" PRIMARY KEY ("lenser_id");
-
-
-
-ALTER TABLE ONLY "analytics"."lenser_join_log"
-    ADD CONSTRAINT "lenser_join_log_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."lenser_join_log"
-    ADD CONSTRAINT "lenser_join_log_unique_lenser" UNIQUE ("lenser_id");
-
-
-
-ALTER TABLE ONLY "analytics"."page_views"
-    ADD CONSTRAINT "page_views_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."share_events"
-    ADD CONSTRAINT "share_events_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."shared_links"
-    ADD CONSTRAINT "shared_links_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."shared_links"
-    ADD CONSTRAINT "shared_links_short_id_key" UNIQUE ("short_id");
-
-
-
-ALTER TABLE ONLY "analytics"."tag_activity_events"
-    ADD CONSTRAINT "tag_activity_events_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."workflow_perf_daily"
-    ADD CONSTRAINT "workflow_perf_daily_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "analytics"."workflow_perf_daily"
-    ADD CONSTRAINT "wpd_lenser_workflow_date" UNIQUE ("ai_lenser_id", "workflow_id", "period_date");
 
 
 
@@ -48331,61 +38564,6 @@ ALTER TABLE ONLY "audit"."vote_anomalies"
 
 ALTER TABLE ONLY "audit"."webhook_outbox"
     ADD CONSTRAINT "webhook_outbox_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "authz"."developer_tokens"
-    ADD CONSTRAINT "developer_tokens_issued_from_request_id_key" UNIQUE ("issued_from_request_id");
-
-
-
-ALTER TABLE ONLY "authz"."developer_tokens"
-    ADD CONSTRAINT "developer_tokens_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "authz"."developer_tokens"
-    ADD CONSTRAINT "developer_tokens_token_hash_key" UNIQUE ("token_hash");
-
-
-
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_developer_token_id_key" UNIQUE ("developer_token_id");
-
-
-
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_request_secret_hash_key" UNIQUE ("request_secret_hash");
-
-
-
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_user_code_key" UNIQUE ("user_code");
-
-
-
-ALTER TABLE ONLY "automation"."cron_runs"
-    ADD CONSTRAINT "cron_runs_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "automation"."event_dispatches"
-    ADD CONSTRAINT "event_dispatches_pkey" PRIMARY KEY ("event_id", "rule_id");
-
-
-
-ALTER TABLE ONLY "automation"."events"
-    ADD CONSTRAINT "events_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "automation"."trigger_rules"
-    ADD CONSTRAINT "trigger_rules_pkey" PRIMARY KEY ("id");
 
 
 
@@ -48743,116 +38921,6 @@ ALTER TABLE ONLY "battles"."votes"
 
 
 
-ALTER TABLE ONLY "benchmark"."invalidations"
-    ADD CONSTRAINT "invalidations_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."invalidations"
-    ADD CONSTRAINT "invalidations_result_set_id_key" UNIQUE ("result_set_id");
-
-
-
-ALTER TABLE ONLY "benchmark"."protocol_versions"
-    ADD CONSTRAINT "protocol_versions_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."protocol_versions"
-    ADD CONSTRAINT "protocol_versions_suite_id_version_key" UNIQUE ("suite_id", "version");
-
-
-
-ALTER TABLE ONLY "benchmark"."result_sets"
-    ADD CONSTRAINT "result_sets_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."significance_tests"
-    ADD CONSTRAINT "significance_tests_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."suites"
-    ADD CONSTRAINT "suites_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."tasks"
-    ADD CONSTRAINT "tasks_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "billing"."execution_margin_policies"
-    ADD CONSTRAINT "billing_execution_margin_policies_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "billing"."checkout_sessions"
-    ADD CONSTRAINT "checkout_sessions_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "billing"."orders"
-    ADD CONSTRAINT "orders_ls_order_id_key" UNIQUE ("ls_order_id");
-
-
-
-ALTER TABLE ONLY "billing"."orders"
-    ADD CONSTRAINT "orders_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "billing"."products"
-    ADD CONSTRAINT "products_ls_product_id_key" UNIQUE ("ls_product_id");
-
-
-
-ALTER TABLE ONLY "billing"."products"
-    ADD CONSTRAINT "products_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "billing"."variants"
-    ADD CONSTRAINT "variants_ls_variant_id_key" UNIQUE ("ls_variant_id");
-
-
-
-ALTER TABLE ONLY "billing"."variants"
-    ADD CONSTRAINT "variants_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "billing"."webhook_events"
-    ADD CONSTRAINT "webhook_events_ls_event_id_key" UNIQUE ("ls_event_id");
-
-
-
-ALTER TABLE ONLY "billing"."webhook_events"
-    ADD CONSTRAINT "webhook_events_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "connectors"."connector_tokens"
-    ADD CONSTRAINT "connector_tokens_hash_unique" UNIQUE ("token_hash");
-
-
-
-ALTER TABLE ONLY "connectors"."connector_tokens"
-    ADD CONSTRAINT "connector_tokens_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "connectors"."connectors"
-    ADD CONSTRAINT "connectors_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "connectors"."connectors"
-    ADD CONSTRAINT "connectors_workspace_slug_unique" UNIQUE ("workspace_id", "slug");
-
-
-
 ALTER TABLE ONLY "content"."entity_translations"
     ADD CONSTRAINT "entity_translations_entity_lang_key" UNIQUE ("entity_type", "entity_id", "language_code");
 
@@ -48930,81 +38998,6 @@ ALTER TABLE ONLY "content"."thread_replies"
 
 ALTER TABLE ONLY "content"."threads"
     ADD CONSTRAINT "threads_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "core"."cities"
-    ADD CONSTRAINT "cities_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "core"."countries"
-    ADD CONSTRAINT "countries_iso2_unique" UNIQUE ("iso2");
-
-
-
-ALTER TABLE ONLY "core"."countries"
-    ADD CONSTRAINT "countries_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "core"."currencies"
-    ADD CONSTRAINT "currencies_pkey" PRIMARY KEY ("code");
-
-
-
-ALTER TABLE ONLY "core"."languages"
-    ADD CONSTRAINT "languages_code_pkey" PRIMARY KEY ("code");
-
-
-
-ALTER TABLE ONLY "core"."regions"
-    ADD CONSTRAINT "regions_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "core"."states"
-    ADD CONSTRAINT "states_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "core"."subregions"
-    ADD CONSTRAINT "subregions_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "devices"."device_challenges"
-    ADD CONSTRAINT "device_challenges_nonce_key" UNIQUE ("nonce");
-
-
-
-ALTER TABLE ONLY "devices"."device_challenges"
-    ADD CONSTRAINT "device_challenges_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "devices"."nonce_cache"
-    ADD CONSTRAINT "nonce_cache_pkey" PRIMARY KEY ("nonce");
-
-
-
-ALTER TABLE ONLY "devices"."peer_leases"
-    ADD CONSTRAINT "peer_leases_pkey" PRIMARY KEY ("lease_kind", "lenser_id");
-
-
-
-ALTER TABLE ONLY "devices"."registered_devices"
-    ADD CONSTRAINT "registered_devices_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "devices"."sync_outbox"
-    ADD CONSTRAINT "sync_outbox_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "devices"."sync_watermarks"
-    ADD CONSTRAINT "sync_watermarks_pkey" PRIMARY KEY ("device_id", "object_class");
 
 
 
@@ -49125,21 +39118,6 @@ ALTER TABLE ONLY "execution"."trust_evaluations"
 
 ALTER TABLE ONLY "execution"."trust_evaluations"
     ADD CONSTRAINT "trust_evaluations_submission_id_key" UNIQUE ("submission_id");
-
-
-
-ALTER TABLE ONLY "integrations"."tool_allowlist"
-    ADD CONSTRAINT "agent_tool_allowlist_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "integrations"."tools"
-    ADD CONSTRAINT "tools_key_unique" UNIQUE ("key");
-
-
-
-ALTER TABLE ONLY "integrations"."tools"
-    ADD CONSTRAINT "tools_pkey" PRIMARY KEY ("id");
 
 
 
@@ -49398,258 +39376,63 @@ ALTER TABLE ONLY "lenses"."workflows"
 
 
 
-ALTER TABLE ONLY "media"."attachments"
-    ADD CONSTRAINT "attachments_entity_binding_unique" UNIQUE ("entity_type", "entity_id", "binding_key");
-
-
-
-ALTER TABLE ONLY "media"."attachments"
-    ADD CONSTRAINT "attachments_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "media"."objects"
-    ADD CONSTRAINT "objects_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "organizations"."activity_log"
-    ADD CONSTRAINT "activity_log_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "organizations"."addresses"
-    ADD CONSTRAINT "addresses_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "organizations"."audit_logs"
-    ADD CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "organizations"."companies"
-    ADD CONSTRAINT "companies_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "organizations"."members"
-    ADD CONSTRAINT "members_pkey" PRIMARY KEY ("org_id", "lenser_id");
-
-
-
-ALTER TABLE ONLY "organizations"."organizations"
-    ADD CONSTRAINT "organizations_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "organizations"."preferences"
-    ADD CONSTRAINT "preferences_pkey" PRIMARY KEY ("org_id");
-
-
-
-ALTER TABLE ONLY "organizations"."companies"
-    ADD CONSTRAINT "uq_companies_org" UNIQUE ("org_id");
-
-
-
-ALTER TABLE ONLY "organizations"."organizations"
-    ADD CONSTRAINT "uq_organizations_slug" UNIQUE ("slug");
-
-
-
-ALTER TABLE ONLY "platform"."api_worker_heartbeats"
-    ADD CONSTRAINT "api_worker_heartbeats_pkey" PRIMARY KEY ("worker_id");
-
-
-
-ALTER TABLE ONLY "platform"."system_flags"
-    ADD CONSTRAINT "system_flags_pkey" PRIMARY KEY ("key");
-
-
-
-ALTER TABLE ONLY "platform"."tool_invocation_logs"
-    ADD CONSTRAINT "tool_invocation_logs_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "reputation"."contender_ratings"
-    ADD CONSTRAINT "contender_ratings_lenser_id_category_key" UNIQUE ("lenser_id", "category");
+ALTER TABLE ONLY "storage"."buckets_analytics"
+    ADD CONSTRAINT "buckets_analytics_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "reputation"."contender_ratings"
-    ADD CONSTRAINT "contender_ratings_pkey" PRIMARY KEY ("id");
+ALTER TABLE ONLY "storage"."buckets"
+    ADD CONSTRAINT "buckets_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "reputation"."elo_battle_log"
-    ADD CONSTRAINT "elo_battle_log_pkey" PRIMARY KEY ("battle_id");
+ALTER TABLE ONLY "storage"."buckets_vectors"
+    ADD CONSTRAINT "buckets_vectors_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "reputation"."judge_calibrations"
-    ADD CONSTRAINT "judge_calibrations_lenser_id_key" UNIQUE ("lenser_id");
+ALTER TABLE ONLY "storage"."iceberg_namespaces"
+    ADD CONSTRAINT "iceberg_namespaces_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "reputation"."judge_calibrations"
-    ADD CONSTRAINT "judge_calibrations_pkey" PRIMARY KEY ("id");
+ALTER TABLE ONLY "storage"."iceberg_tables"
+    ADD CONSTRAINT "iceberg_tables_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "reputation"."lenser_scores"
-    ADD CONSTRAINT "lenser_scores_lenser_id_score_type_key" UNIQUE ("lenser_id", "score_type");
+ALTER TABLE ONLY "storage"."migrations"
+    ADD CONSTRAINT "migrations_name_key" UNIQUE ("name");
 
 
 
-ALTER TABLE ONLY "reputation"."lenser_scores"
-    ADD CONSTRAINT "lenser_scores_pkey" PRIMARY KEY ("id");
+ALTER TABLE ONLY "storage"."migrations"
+    ADD CONSTRAINT "migrations_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "reputation"."vote_risk_scores"
-    ADD CONSTRAINT "vote_risk_scores_pkey" PRIMARY KEY ("id");
+ALTER TABLE ONLY "storage"."objects"
+    ADD CONSTRAINT "objects_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "reputation"."vote_risk_scores"
-    ADD CONSTRAINT "vote_risk_scores_vote_id_key" UNIQUE ("vote_id");
+ALTER TABLE ONLY "storage"."s3_multipart_uploads_parts"
+    ADD CONSTRAINT "s3_multipart_uploads_parts_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "status"."components"
-    ADD CONSTRAINT "components_pkey" PRIMARY KEY ("id");
+ALTER TABLE ONLY "storage"."s3_multipart_uploads"
+    ADD CONSTRAINT "s3_multipart_uploads_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "status"."components"
-    ADD CONSTRAINT "components_service_slug_key" UNIQUE ("service_id", "slug");
-
-
-
-ALTER TABLE ONLY "status"."daily_snapshots"
-    ADD CONSTRAINT "daily_snapshots_pkey" PRIMARY KEY ("snapshot_date", "scope_type", "scope_key");
-
-
-
-ALTER TABLE ONLY "status"."incident_updates"
-    ADD CONSTRAINT "incident_updates_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "status"."incidents"
-    ADD CONSTRAINT "incidents_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "status"."incidents"
-    ADD CONSTRAINT "incidents_slug_key" UNIQUE ("slug");
-
-
-
-ALTER TABLE ONLY "status"."maintenance_windows"
-    ADD CONSTRAINT "maintenance_windows_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "status"."maintenance_windows"
-    ADD CONSTRAINT "maintenance_windows_slug_key" UNIQUE ("slug");
-
-
-
-ALTER TABLE ONLY "status"."services"
-    ADD CONSTRAINT "services_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "status"."services"
-    ADD CONSTRAINT "services_slug_key" UNIQUE ("slug");
-
-
-
-ALTER TABLE ONLY "status"."uptime_rollups"
-    ADD CONSTRAINT "uptime_rollups_pkey" PRIMARY KEY ("scope_type", "scope_key", "rollup_window");
-
-
-
-ALTER TABLE ONLY "tenancy"."workspace_members"
-    ADD CONSTRAINT "workspace_members_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "tenancy"."workspace_members"
-    ADD CONSTRAINT "workspace_members_unique" UNIQUE ("workspace_id", "lenser_id");
-
-
-
-ALTER TABLE ONLY "tenancy"."workspaces"
-    ADD CONSTRAINT "workspaces_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "tenancy"."workspaces"
-    ADD CONSTRAINT "workspaces_slug_unique" UNIQUE ("slug");
-
-
-
-ALTER TABLE ONLY "wallet"."accounts"
-    ADD CONSTRAINT "accounts_lenser_id_key" UNIQUE ("lenser_id");
-
-
-
-ALTER TABLE ONLY "wallet"."accounts"
-    ADD CONSTRAINT "accounts_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "wallet"."credit_valuation_policy"
-    ADD CONSTRAINT "credit_valuation_policy_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "wallet"."credit_valuation_policy"
-    ADD CONSTRAINT "credit_valuation_singleton" UNIQUE ("singleton");
-
-
-
-ALTER TABLE ONLY "wallet"."organization_accounts"
-    ADD CONSTRAINT "organization_accounts_org_id_key" UNIQUE ("org_id");
-
-
-
-ALTER TABLE ONLY "wallet"."organization_accounts"
-    ADD CONSTRAINT "organization_accounts_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "wallet"."pending_charges"
-    ADD CONSTRAINT "pending_charges_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "wallet"."pending_charges"
-    ADD CONSTRAINT "pending_charges_reference_unique" UNIQUE ("reference_id");
-
-
-
-ALTER TABLE ONLY "wallet"."spending_limits"
-    ADD CONSTRAINT "spending_limits_account_period_key" UNIQUE ("account_id", "period");
-
-
-
-ALTER TABLE ONLY "wallet"."spending_limits"
-    ADD CONSTRAINT "spending_limits_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "wallet"."transactions"
-    ADD CONSTRAINT "transactions_pkey" PRIMARY KEY ("id");
+ALTER TABLE ONLY "storage"."vector_indexes"
+    ADD CONSTRAINT "vector_indexes_pkey" PRIMARY KEY ("id");
 
 
 
@@ -49745,398 +39528,6 @@ ALTER TABLE ONLY "xp"."streaks"
 
 ALTER TABLE ONLY "xp"."totals"
     ADD CONSTRAINT "xp_totals_pkey" PRIMARY KEY ("lenser_id", "app_id");
-
-
-
-CREATE INDEX "idx_kill_switches_active" ON "admin"."kill_switches" USING "btree" ("scope", "target_id") WHERE ("lifted_at" IS NULL);
-
-
-
-CREATE INDEX "idx_agent_action_logs_context" ON "agents"."action_logs" USING "btree" ("context_ref_type", "context_ref_id") WHERE ("context_ref_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_agent_action_logs_lenser_time" ON "agents"."action_logs" USING "btree" ("ai_lenser_id", "occurred_at" DESC);
-
-
-
-CREATE UNIQUE INDEX "idx_agent_lens_default_instruction" ON "agents"."lens_bindings" USING "btree" ("ai_lenser_id") WHERE (("is_default" = true) AND (NOT ('personality'::"text" = ANY ("category_tags"))));
-
-
-
-CREATE UNIQUE INDEX "idx_agent_lens_default_personality" ON "agents"."lens_bindings" USING "btree" ("ai_lenser_id") WHERE (("is_default" = true) AND ('personality'::"text" = ANY ("category_tags")));
-
-
-
-CREATE UNIQUE INDEX "idx_agent_model_one_default" ON "agents"."model_bindings" USING "btree" ("ai_lenser_id") WHERE ("is_default" = true);
-
-
-
-CREATE INDEX "idx_agents_agent_run_events_team_run" ON "agents"."agent_run_events" USING "btree" ("team_run_id", "occurred_at" DESC);
-
-
-
-CREATE INDEX "idx_agents_agent_run_steps_team_run" ON "agents"."agent_run_steps" USING "btree" ("team_run_id", "lane", "created_at");
-
-
-
-CREATE INDEX "idx_agents_memories_agent_expires" ON "agents"."memories" USING "btree" ("ai_lenser_id", "expires_at");
-
-
-
-CREATE INDEX "idx_agents_memories_fts" ON "agents"."memories" USING "gin" ("to_tsvector"('"english"'::"regconfig", "content"));
-
-
-
-COMMENT ON INDEX "agents"."idx_agents_memories_fts" IS 'Phase N1: GIN index on to_tsvector(english, content) for full-text search via fn_search_memory_entries.';
-
-
-
-CREATE INDEX "idx_agents_memories_profile_scope" ON "agents"."memories" USING "btree" ("profile_id", "scope", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_agents_memory_access_logs_memory" ON "agents"."memory_access_logs" USING "btree" ("memory_id", "accessed_at" DESC);
-
-
-
-CREATE UNIQUE INDEX "idx_agents_ownerships_primary" ON "agents"."ownerships" USING "btree" ("ai_lenser_id") WHERE (("role" = 'owner'::"text") AND ("revoked_at" IS NULL));
-
-
-
-CREATE INDEX "idx_agents_team_members_team" ON "agents"."team_members" USING "btree" ("team_id", "sort_order", "lane");
-
-
-
-CREATE INDEX "idx_agents_team_runs_ai_lenser" ON "agents"."team_runs" USING "btree" ("ai_lenser_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_agents_teams_ai_lenser" ON "agents"."teams" USING "btree" ("ai_lenser_id", "updated_at" DESC);
-
-
-
-CREATE INDEX "idx_agents_workflow_assignments_ai_lenser" ON "agents"."workflow_assignments" USING "btree" ("ai_lenser_id", "workflow_id");
-
-
-
-CREATE INDEX "idx_battle_subscriptions_agent" ON "agents"."battle_subscriptions" USING "btree" ("agent_id") WHERE ("active" = true);
-
-
-
-CREATE INDEX "idx_evaluation_case_results_run" ON "agents"."evaluation_case_results" USING "btree" ("evaluation_run_id");
-
-
-
-CREATE INDEX "idx_evaluation_cases_eval" ON "agents"."evaluation_cases" USING "btree" ("evaluation_id");
-
-
-
-CREATE INDEX "idx_evaluation_rubrics_eval" ON "agents"."evaluation_rubrics" USING "btree" ("evaluation_id", "version" DESC);
-
-
-
-CREATE INDEX "idx_evaluation_runs_eval" ON "agents"."evaluation_runs" USING "btree" ("evaluation_id", "started_at" DESC);
-
-
-
-CREATE INDEX "idx_evaluations_ai_lenser" ON "agents"."evaluations" USING "btree" ("ai_lenser_id");
-
-
-
-CREATE INDEX "idx_evaluations_owner" ON "agents"."evaluations" USING "btree" ("owner_lenser_id");
-
-
-
-CREATE INDEX "idx_fk_lens_bindings_lens_id" ON "agents"."lens_bindings" USING "btree" ("lens_id");
-
-
-
-CREATE INDEX "idx_fk_lens_bindings_version_id" ON "agents"."lens_bindings" USING "btree" ("version_id");
-
-
-
-CREATE INDEX "idx_fk_model_bindings_model_id" ON "agents"."model_bindings" USING "btree" ("model_id");
-
-
-
-CREATE INDEX "idx_fk_ownerships_owner_lenser_id" ON "agents"."ownerships" USING "btree" ("owner_lenser_id");
-
-
-
-CREATE INDEX "idx_gateway_commands_pending" ON "agents"."gateway_commands" USING "btree" ("device_id", "created_at") WHERE ("claimed_at" IS NULL);
-
-
-
-CREATE INDEX "idx_gateway_commands_unacked" ON "agents"."gateway_commands" USING "btree" ("device_id") WHERE ("acked_at" IS NULL);
-
-
-
-CREATE INDEX "idx_gateway_devices_last_seen" ON "agents"."gateway_devices" USING "btree" ("last_seen_at" DESC NULLS LAST);
-
-
-
-CREATE INDEX "idx_gateway_devices_owner" ON "agents"."gateway_devices" USING "btree" ("owner_id");
-
-
-
-CREATE INDEX "idx_model_bindings_ai_lenser_id" ON "agents"."model_bindings" USING "btree" ("ai_lenser_id");
-
-
-
-CREATE INDEX "idx_policy_evals_agent_at" ON "agents"."policy_evaluations" USING "btree" ("ai_lenser_id", "evaluated_at" DESC);
-
-
-
-CREATE INDEX "idx_policy_evals_deny" ON "agents"."policy_evaluations" USING "btree" ("ai_lenser_id", "evaluated_at" DESC) WHERE ("verdict" = 'deny'::"text");
-
-
-
-CREATE INDEX "idx_policy_evals_team_run" ON "agents"."policy_evaluations" USING "btree" ("team_run_id") WHERE ("team_run_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_provider_configs_ai_lenser" ON "agents"."provider_configs" USING "btree" ("ai_lenser_id");
-
-
-
-CREATE INDEX "idx_run_incidents_agent_type" ON "agents"."run_incidents" USING "btree" ("ai_lenser_id", "incident_type");
-
-
-
-CREATE INDEX "idx_run_incidents_report" ON "agents"."run_incidents" USING "btree" ("run_report_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_run_incidents_severity" ON "agents"."run_incidents" USING "btree" ("severity", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_run_reports_ai_lenser" ON "agents"."run_reports" USING "btree" ("ai_lenser_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_run_reports_outcome" ON "agents"."run_reports" USING "btree" ("outcome", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_run_reports_team_run" ON "agents"."run_reports" USING "btree" ("team_run_id") WHERE ("team_run_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_scratchpad_runs_ai_lenser_started" ON "agents"."scratchpad_runs" USING "btree" ("ai_lenser_id", "started_at" DESC);
-
-
-
-CREATE INDEX "idx_standing_approvals_active" ON "agents"."standing_approvals" USING "btree" ("ai_lenser_id", "workflow_id", "gate_kind") WHERE ("revoked_at" IS NULL);
-
-
-
-CREATE INDEX "idx_team_messages_team_run_occurred" ON "agents"."team_messages" USING "btree" ("team_run_id", "occurred_at" DESC);
-
-
-
-CREATE INDEX "idx_team_messages_team_run_parent" ON "agents"."team_messages" USING "btree" ("team_run_id", "parent_message_id");
-
-
-
-CREATE INDEX "idx_team_messages_to_agent" ON "agents"."team_messages" USING "btree" ("to_agent_id") WHERE ("to_agent_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_team_runs_parent" ON "agents"."team_runs" USING "btree" ("parent_team_run_id") WHERE ("parent_team_run_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_tool_assignments_agent" ON "agents"."tool_assignments" USING "btree" ("ai_lenser_id");
-
-
-
-CREATE INDEX "idx_tool_invocations_agent_status" ON "agents"."tool_invocations" USING "btree" ("ai_lenser_id", "status");
-
-
-
-CREATE INDEX "idx_tool_invocations_pending_approval" ON "agents"."tool_invocations" USING "btree" ("ai_lenser_id", "created_at" DESC) WHERE ("approval_status" = 'pending'::"text");
-
-
-
-CREATE INDEX "idx_tool_invocations_team_run" ON "agents"."tool_invocations" USING "btree" ("team_run_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_tool_invocations_tool" ON "agents"."tool_invocations" USING "btree" ("tool_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_tools_registry_egress" ON "agents"."tools_registry" USING "btree" ("egress_class");
-
-
-
-CREATE INDEX "idx_tools_registry_owner" ON "agents"."tools_registry" USING "btree" ("owner_lenser_id");
-
-
-
-CREATE INDEX "idx_workspace_switches_human" ON "agents"."workspace_switches" USING "btree" ("human_lenser_id", "switched_at" DESC);
-
-
-
-CREATE UNIQUE INDEX "idx_ai_model_pricing_active_unique" ON "ai"."model_pricing" USING "btree" ("model_id") WHERE ("effective_to" IS NULL);
-
-
-
-CREATE INDEX "idx_ai_model_pricing_model_active" ON "ai"."model_pricing" USING "btree" ("model_id") WHERE ("effective_to" IS NULL);
-
-
-
-CREATE INDEX "idx_ai_models_active" ON "ai"."models" USING "btree" ("is_active", "provider_id") WHERE ("is_active" = true);
-
-
-
-CREATE UNIQUE INDEX "idx_ai_models_key" ON "ai"."models" USING "btree" ("key") WHERE ("key" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_ai_models_key_active" ON "ai"."models" USING "btree" ("key") WHERE ("is_active" = true);
-
-
-
-COMMENT ON INDEX "ai"."idx_ai_models_key_active" IS 'Partial index for active model_key lookups — used in get_model_info and execution routing.';
-
-
-
-CREATE INDEX "idx_ai_models_provider_active" ON "ai"."models" USING "btree" ("provider_id", "is_active") WHERE ("is_active" = true);
-
-
-
-COMMENT ON INDEX "ai"."idx_ai_models_provider_active" IS 'Partial index for (provider_id, is_active=true) — used in cascade trigger + get_active_models_by_provider.';
-
-
-
-CREATE INDEX "idx_ai_models_provider_id" ON "ai"."models" USING "btree" ("provider_id") WHERE ("provider_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_ai_providers_is_active" ON "ai"."providers" USING "btree" ("is_active") WHERE ("is_active" = true);
-
-
-
-COMMENT ON INDEX "ai"."idx_ai_providers_is_active" IS 'Partial index to accelerate active-provider scans used by public functions.';
-
-
-
-CREATE INDEX "idx_fk_keys_provider_id" ON "ai"."keys" USING "btree" ("provider_id");
-
-
-
-CREATE INDEX "idx_key_usage_log_key_created" ON "ai"."key_usage_log" USING "btree" ("key_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_key_usage_log_lenser_created" ON "ai"."key_usage_log" USING "btree" ("lenser_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_key_usage_log_run" ON "ai"."key_usage_log" USING "btree" ("run_id") WHERE ("run_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_key_usage_log_workspace_created" ON "ai"."key_usage_log" USING "btree" ("workspace_id", "created_at" DESC) WHERE ("workspace_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_keys_expires_at" ON "ai"."keys" USING "btree" ("expires_at") WHERE ("expires_at" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_keys_lenser_active" ON "ai"."keys" USING "btree" ("lenser_id") WHERE ("is_active" = true);
-
-
-
-CREATE INDEX "idx_keys_scope" ON "ai"."keys" USING "btree" ("scope") WHERE ("scope" <> 'user'::"ai"."key_scope_enum");
-
-
-
-CREATE INDEX "idx_keys_status" ON "ai"."keys" USING "btree" ("status");
-
-
-
-CREATE INDEX "idx_model_pricing_model_active" ON "ai"."model_pricing" USING "btree" ("model_id", "effective_from" DESC) WHERE ("effective_to" IS NULL);
-
-
-
-CREATE INDEX "idx_model_pricing_unit_type" ON "ai"."model_pricing" USING "btree" ("unit_type");
-
-
-
-CREATE INDEX "acd_lenser_date_idx" ON "analytics"."agent_cost_daily" USING "btree" ("ai_lenser_id", "period_date" DESC);
-
-
-
-CREATE INDEX "eqd_lenser_date_idx" ON "analytics"."eval_quality_daily" USING "btree" ("ai_lenser_id", "period_date" DESC);
-
-
-
-CREATE INDEX "idx_fk_contact_lenser_id" ON "analytics"."contact" USING "btree" ("lenser_id");
-
-
-
-CREATE INDEX "idx_fk_page_views_lenser_id" ON "analytics"."page_views" USING "btree" ("lenser_id");
-
-
-
-CREATE INDEX "idx_fk_page_views_user_id" ON "analytics"."page_views" USING "btree" ("user_id");
-
-
-
-CREATE INDEX "idx_fk_product_feedback_user_id" ON "analytics"."product_feedback" USING "btree" ("user_id");
-
-
-
-CREATE INDEX "idx_fk_share_events_shared_link_id" ON "analytics"."share_events" USING "btree" ("shared_link_id");
-
-
-
-CREATE INDEX "idx_fk_share_events_viewer_lenser_id" ON "analytics"."share_events" USING "btree" ("viewer_lenser_id");
-
-
-
-CREATE INDEX "idx_fk_shared_links_creator_lenser_id" ON "analytics"."shared_links" USING "btree" ("creator_lenser_id");
-
-
-
-CREATE INDEX "idx_fk_tag_activity_events_actor_id" ON "analytics"."tag_activity_events" USING "btree" ("actor_id");
-
-
-
-CREATE INDEX "idx_lenser_activity_type_created" ON "analytics"."lenser_activity" USING "btree" ("lenser_id", "activity_type", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_shared_links_expires_at" ON "analytics"."shared_links" USING "btree" ("expires_at") WHERE (("expires_at" IS NOT NULL) AND ("is_active" = true));
-
-
-
-CREATE INDEX "idx_shared_links_resource_type_active" ON "analytics"."shared_links" USING "btree" ("resource_type", "is_active") WHERE ("is_active" = true);
-
-
-
-CREATE INDEX "idx_tag_activity_events_tag_id" ON "analytics"."tag_activity_events" USING "btree" ("tag_id");
-
-
-
-CREATE INDEX "idx_tag_activity_events_tag_occurred" ON "analytics"."tag_activity_events" USING "btree" ("tag_id", "occurred_at");
-
-
-
-CREATE INDEX "lenser_engagement_totals_lenser_id_idx" ON "analytics"."lenser_stats" USING "btree" ("lenser_id");
-
-
-
-CREATE INDEX "tag_activity_events_entity_idx" ON "analytics"."tag_activity_events" USING "btree" ("entity_type", "entity_id");
-
-
-
-CREATE INDEX "wpd_lenser_date_idx" ON "analytics"."workflow_perf_daily" USING "btree" ("ai_lenser_id", "period_date" DESC);
 
 
 
@@ -50261,58 +39652,6 @@ CREATE INDEX "idx_hash_chains_kind_subject_seq" ON "audit"."hash_chains" USING "
 
 
 CREATE INDEX "idx_webhook_outbox_pending_due" ON "audit"."webhook_outbox" USING "btree" ("next_attempt_at") WHERE (("delivered_at" IS NULL) AND ("dead_lettered_at" IS NULL));
-
-
-
-CREATE INDEX "idx_developer_tokens_lenser_id_created_at" ON "authz"."developer_tokens" USING "btree" ("lenser_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_developer_tokens_revoked_at" ON "authz"."developer_tokens" USING "btree" ("revoked_at");
-
-
-
-CREATE INDEX "idx_developer_tokens_status_expires_at" ON "authz"."developer_tokens" USING "btree" ("status", "expires_at");
-
-
-
-CREATE INDEX "idx_device_approval_requests_approved_by_user_id" ON "authz"."device_approval_requests" USING "btree" ("approved_by_user_id");
-
-
-
-CREATE INDEX "idx_device_approval_requests_requested_by_user_id" ON "authz"."device_approval_requests" USING "btree" ("requested_by_user_id");
-
-
-
-CREATE INDEX "idx_device_approval_requests_status_expires_at" ON "authz"."device_approval_requests" USING "btree" ("status", "expires_at");
-
-
-
-CREATE INDEX "idx_automation_events_source_id" ON "automation"."events" USING "btree" ("source_id") WHERE ("source_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_automation_events_source_lenser" ON "automation"."events" USING "btree" ("source_lenser_id") WHERE ("source_lenser_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_automation_events_type_time" ON "automation"."events" USING "btree" ("event_type", "occurred_at" DESC);
-
-
-
-CREATE INDEX "idx_cron_runs_job_started" ON "automation"."cron_runs" USING "btree" ("job_name", "started_at" DESC);
-
-
-
-CREATE INDEX "idx_event_dispatches_status" ON "automation"."event_dispatches" USING "btree" ("status", "attempted_at");
-
-
-
-CREATE INDEX "idx_trigger_rules_event_type_active" ON "automation"."trigger_rules" USING "btree" ("match_event_type") WHERE "is_active";
-
-
-
-CREATE INDEX "idx_trigger_rules_lenser_active" ON "automation"."trigger_rules" USING "btree" ("lenser_id", "is_active");
 
 
 
@@ -50692,138 +40031,6 @@ CREATE UNIQUE INDEX "uq_sponsorship_payouts_pool_tx" ON "battles"."sponsorship_p
 
 
 
-CREATE INDEX "idx_benchmark_protocol_suite" ON "benchmark"."protocol_versions" USING "btree" ("suite_id", "frozen_at" DESC);
-
-
-
-CREATE UNIQUE INDEX "idx_benchmark_result_battle_task" ON "benchmark"."result_sets" USING "btree" ("battle_id", "task_id");
-
-
-
-CREATE INDEX "idx_benchmark_result_suite" ON "benchmark"."result_sets" USING "btree" ("suite_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_benchmark_suites_public" ON "benchmark"."suites" USING "btree" ("category", "created_at" DESC) WHERE (("is_public" = true) AND ("status" = 'active'::"text"));
-
-
-
-CREATE INDEX "idx_benchmark_tasks_suite" ON "benchmark"."tasks" USING "btree" ("suite_id", "ordinal");
-
-
-
-CREATE INDEX "idx_benchmark_tasks_workflow" ON "benchmark"."tasks" USING "btree" ("workflow_id") WHERE ("workflow_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_fk_invalidations_invalidated_by" ON "benchmark"."invalidations" USING "btree" ("invalidated_by");
-
-
-
-CREATE INDEX "idx_fk_protocol_versions_frozen_by" ON "benchmark"."protocol_versions" USING "btree" ("frozen_by");
-
-
-
-CREATE INDEX "idx_fk_result_sets_protocol_version_id" ON "benchmark"."result_sets" USING "btree" ("protocol_version_id");
-
-
-
-CREATE INDEX "idx_fk_result_sets_task_id" ON "benchmark"."result_sets" USING "btree" ("task_id");
-
-
-
-CREATE INDEX "idx_fk_significance_tests_contender_a_id" ON "benchmark"."significance_tests" USING "btree" ("contender_a_id");
-
-
-
-CREATE INDEX "idx_fk_significance_tests_contender_b_id" ON "benchmark"."significance_tests" USING "btree" ("contender_b_id");
-
-
-
-CREATE INDEX "idx_fk_suites_creator_lenser_id" ON "benchmark"."suites" USING "btree" ("creator_lenser_id");
-
-
-
-CREATE INDEX "idx_significance_tests_result" ON "benchmark"."significance_tests" USING "btree" ("result_set_id", "test_type");
-
-
-
-CREATE INDEX "idx_billing_checkout_active" ON "billing"."checkout_sessions" USING "btree" ("status") WHERE ("status" = 'created'::"text");
-
-
-
-CREATE INDEX "idx_billing_checkout_lenser" ON "billing"."checkout_sessions" USING "btree" ("lenser_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_billing_execution_margin_policies_active" ON "billing"."execution_margin_policies" USING "btree" ("model_id", "effective_from" DESC) WHERE (("is_active" = true) AND ("effective_to" IS NULL));
-
-
-
-CREATE INDEX "idx_billing_margin_policies_active" ON "billing"."execution_margin_policies" USING "btree" ("model_id", "is_active") WHERE (("is_active" = true) AND ("effective_to" IS NULL));
-
-
-
-CREATE INDEX "idx_billing_orders_lenser" ON "billing"."orders" USING "btree" ("lenser_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_billing_orders_ls_id" ON "billing"."orders" USING "btree" ("ls_order_id");
-
-
-
-CREATE INDEX "idx_billing_orders_product_paid" ON "billing"."orders" USING "btree" ("product_id", "status") WHERE ("status" = 'paid'::"billing"."order_status_enum");
-
-
-
-CREATE INDEX "idx_billing_orders_status" ON "billing"."orders" USING "btree" ("status", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_billing_orders_webhook" ON "billing"."orders" USING "btree" ("webhook_event_id");
-
-
-
-CREATE INDEX "idx_billing_products_ls_id" ON "billing"."products" USING "btree" ("ls_product_id");
-
-
-
-CREATE INDEX "idx_billing_products_status" ON "billing"."products" USING "btree" ("status") WHERE ("status" = 'published'::"billing"."product_status_enum");
-
-
-
-CREATE INDEX "idx_billing_variants_ls_id" ON "billing"."variants" USING "btree" ("ls_variant_id");
-
-
-
-CREATE INDEX "idx_billing_variants_product" ON "billing"."variants" USING "btree" ("product_id");
-
-
-
-CREATE INDEX "idx_billing_webhook_event_name" ON "billing"."webhook_events" USING "btree" ("event_name", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_billing_webhook_unprocessed" ON "billing"."webhook_events" USING "btree" ("processed", "created_at") WHERE ("processed" = false);
-
-
-
-CREATE INDEX "idx_fk_checkout_sessions_variant_id" ON "billing"."checkout_sessions" USING "btree" ("variant_id");
-
-
-
-CREATE INDEX "idx_fk_orders_variant_id" ON "billing"."orders" USING "btree" ("variant_id");
-
-
-
-CREATE INDEX "connector_tokens_connector_active_idx" ON "connectors"."connector_tokens" USING "btree" ("connector_id") WHERE ("revoked_at" IS NULL);
-
-
-
-CREATE INDEX "connectors_workspace_active_idx" ON "connectors"."connectors" USING "btree" ("workspace_id") WHERE ("is_active" = true);
-
-
-
 CREATE INDEX "idx_entity_translations_entity" ON "content"."entity_translations" USING "btree" ("entity_type", "entity_id");
 
 
@@ -50933,82 +40140,6 @@ CREATE INDEX "idx_threads_public_published" ON "content"."threads" USING "btree"
 
 
 CREATE UNIQUE INDEX "reactions_unique_non_copy" ON "content"."reactions" USING "btree" ("entity_type", "entity_id", "lenser_id", "reaction") WHERE ("reaction" <> 'copy'::"content"."reaction_enum");
-
-
-
-CREATE INDEX "idx_cities_country_id" ON "core"."cities" USING "btree" ("country_id");
-
-
-
-CREATE INDEX "idx_cities_state_id" ON "core"."cities" USING "btree" ("state_id");
-
-
-
-CREATE INDEX "idx_countries_region_id" ON "core"."countries" USING "btree" ("region_id");
-
-
-
-CREATE INDEX "idx_countries_subregion_id" ON "core"."countries" USING "btree" ("subregion_id");
-
-
-
-CREATE INDEX "idx_states_country_id" ON "core"."states" USING "btree" ("country_id");
-
-
-
-CREATE INDEX "idx_subregions_region_id" ON "core"."subregions" USING "btree" ("region_id");
-
-
-
-CREATE INDEX "idx_device_challenges_device" ON "devices"."device_challenges" USING "btree" ("device_id");
-
-
-
-CREATE INDEX "idx_device_challenges_status" ON "devices"."device_challenges" USING "btree" ("status");
-
-
-
-CREATE INDEX "idx_devices_last_heartbeat" ON "devices"."registered_devices" USING "btree" ("last_heartbeat_at" DESC NULLS LAST);
-
-
-
-CREATE INDEX "idx_devices_last_seen" ON "devices"."registered_devices" USING "btree" ("last_seen_at" DESC NULLS LAST);
-
-
-
-CREATE INDEX "idx_devices_lenser_id" ON "devices"."registered_devices" USING "btree" ("lenser_id");
-
-
-
-CREATE INDEX "idx_devices_trust_level" ON "devices"."registered_devices" USING "btree" ("trust_level") WHERE ("trust_level" <> ALL (ARRAY['revoked'::"text", 'blocked'::"text"]));
-
-
-
-CREATE INDEX "idx_nonce_cache_expires_at" ON "devices"."nonce_cache" USING "btree" ("expires_at");
-
-
-
-CREATE INDEX "idx_peer_leases_device" ON "devices"."peer_leases" USING "btree" ("device_id");
-
-
-
-CREATE INDEX "idx_sync_outbox_class" ON "devices"."sync_outbox" USING "btree" ("object_class", "applied_at");
-
-
-
-CREATE INDEX "idx_sync_outbox_device" ON "devices"."sync_outbox" USING "btree" ("device_id", "created_at");
-
-
-
-CREATE INDEX "idx_sync_outbox_lenser" ON "devices"."sync_outbox" USING "btree" ("lenser_id", "created_at");
-
-
-
-CREATE INDEX "idx_sync_outbox_unapplied" ON "devices"."sync_outbox" USING "btree" ("lenser_id", "created_at") WHERE ("applied_at" IS NULL);
-
-
-
-CREATE INDEX "idx_sync_watermarks_lenser" ON "devices"."sync_watermarks" USING "btree" ("lenser_id");
 
 
 
@@ -51257,14 +40388,6 @@ CREATE INDEX "idx_trust_evals_submission_id" ON "execution"."trust_evaluations" 
 
 
 CREATE INDEX "idx_trust_evals_trust_level" ON "execution"."trust_evaluations" USING "btree" ("trust_level");
-
-
-
-CREATE INDEX "idx_fk_tool_allowlist_granted_by" ON "integrations"."tool_allowlist" USING "btree" ("granted_by");
-
-
-
-CREATE INDEX "idx_fk_tool_allowlist_tool_id" ON "integrations"."tool_allowlist" USING "btree" ("tool_id");
 
 
 
@@ -51716,134 +40839,6 @@ CREATE UNIQUE INDEX "uq_schedule_calendars_lenser_name" ON "lenses"."schedule_ca
 
 
 
-CREATE INDEX "idx_attachments_entity" ON "media"."attachments" USING "btree" ("entity_type", "entity_id");
-
-
-
-CREATE INDEX "idx_attachments_object" ON "media"."attachments" USING "btree" ("object_id");
-
-
-
-CREATE INDEX "idx_fk_attachments_attached_by" ON "media"."attachments" USING "btree" ("attached_by");
-
-
-
-CREATE INDEX "idx_fk_objects_created_by" ON "media"."objects" USING "btree" ("created_by");
-
-
-
-CREATE INDEX "idx_media_objects_request_id" ON "media"."objects" USING "btree" ("request_id") WHERE ("request_id" IS NOT NULL);
-
-
-
-CREATE UNIQUE INDEX "idx_objects_bucket_key" ON "media"."objects" USING "btree" ("bucket", "object_key") WHERE (("bucket" IS NOT NULL) AND ("object_key" IS NOT NULL));
-
-
-
-CREATE INDEX "idx_objects_lifecycle_active" ON "media"."objects" USING "btree" ("lifecycle_state") WHERE ("lifecycle_state" <> 'deleted'::"text");
-
-
-
-CREATE INDEX "idx_objects_media_type" ON "media"."objects" USING "btree" ("media_type");
-
-
-
-CREATE INDEX "idx_objects_owner" ON "media"."objects" USING "btree" ("owner_lenser_id");
-
-
-
-CREATE INDEX "idx_objects_workspace" ON "media"."objects" USING "btree" ("workspace_id");
-
-
-
-CREATE INDEX "idx_activity_org_created" ON "organizations"."activity_log" USING "btree" ("org_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_addresses_company" ON "organizations"."addresses" USING "btree" ("company_id");
-
-
-
-CREATE INDEX "idx_addresses_country" ON "organizations"."addresses" USING "btree" ("country_iso2_code");
-
-
-
-CREATE INDEX "idx_audit_org_occurred" ON "organizations"."audit_logs" USING "btree" ("org_id", "occurred_at" DESC);
-
-
-
-CREATE INDEX "idx_fk_activity_log_lenser_id" ON "organizations"."activity_log" USING "btree" ("lenser_id");
-
-
-
-CREATE INDEX "idx_fk_addresses_city_id" ON "organizations"."addresses" USING "btree" ("city_id");
-
-
-
-CREATE INDEX "idx_fk_addresses_state_id" ON "organizations"."addresses" USING "btree" ("state_id");
-
-
-
-CREATE INDEX "idx_fk_companies_tax_iso2_code" ON "organizations"."companies" USING "btree" ("tax_iso2_code");
-
-
-
-CREATE INDEX "idx_fk_members_invited_by" ON "organizations"."members" USING "btree" ("invited_by");
-
-
-
-CREATE INDEX "idx_fk_org_audit_logs_lenser_id" ON "organizations"."audit_logs" USING "btree" ("lenser_id");
-
-
-
-CREATE INDEX "idx_fk_organizations_kill_switched_by" ON "organizations"."organizations" USING "btree" ("kill_switched_by");
-
-
-
-CREATE INDEX "idx_fk_organizations_workspace_id" ON "organizations"."organizations" USING "btree" ("workspace_id");
-
-
-
-CREATE INDEX "idx_members_lenser" ON "organizations"."members" USING "btree" ("lenser_id");
-
-
-
-CREATE INDEX "idx_members_org_role" ON "organizations"."members" USING "btree" ("org_id", "role");
-
-
-
-CREATE INDEX "idx_org_created_by" ON "organizations"."organizations" USING "btree" ("created_by");
-
-
-
-CREATE INDEX "idx_org_status_active" ON "organizations"."organizations" USING "btree" ("status") WHERE ("status" = 'active'::"organizations"."status_enum");
-
-
-
-CREATE INDEX "idx_prefs_country" ON "organizations"."preferences" USING "btree" ("iso2_code");
-
-
-
-CREATE UNIQUE INDEX "uq_addresses_one_default_per_company" ON "organizations"."addresses" USING "btree" ("company_id") WHERE ("is_default" = true);
-
-
-
-CREATE UNIQUE INDEX "uq_members_one_owner_per_org" ON "organizations"."members" USING "btree" ("org_id") WHERE ("role" = 'owner'::"organizations"."member_role_enum");
-
-
-
-CREATE INDEX "idx_tool_invocation_logs_lenser_time" ON "platform"."tool_invocation_logs" USING "btree" ("ai_lenser_id", "invoked_at" DESC);
-
-
-
-CREATE INDEX "idx_tool_invocation_logs_pending" ON "platform"."tool_invocation_logs" USING "btree" ("ai_lenser_id", "invoked_at" DESC) WHERE ("approval_status" = 'awaiting_approval'::"text");
-
-
-
-CREATE INDEX "idx_tool_invocation_logs_run" ON "platform"."tool_invocation_logs" USING "btree" ("run_id") WHERE ("run_id" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_notifications_lenser_all" ON "public"."notifications" USING "btree" ("lenser_id", "created_at" DESC);
 
 
@@ -51852,115 +40847,47 @@ CREATE INDEX "idx_notifications_lenser_unread" ON "public"."notifications" USING
 
 
 
-CREATE INDEX "idx_contender_ratings_category_elo" ON "reputation"."contender_ratings" USING "btree" ("category", "elo_rating" DESC);
+CREATE UNIQUE INDEX "bname" ON "storage"."buckets" USING "btree" ("name");
 
 
 
-CREATE INDEX "idx_reputation_scores_type_rank" ON "reputation"."lenser_scores" USING "btree" ("score_type", "score" DESC);
+CREATE UNIQUE INDEX "bucketid_objname" ON "storage"."objects" USING "btree" ("bucket_id", "name");
 
 
 
-CREATE INDEX "idx_vote_risk_flagged" ON "reputation"."vote_risk_scores" USING "btree" ("review_status", "risk_score" DESC) WHERE ("review_status" = ANY (ARRAY['flagged'::"text", 'excluded'::"text"]));
+CREATE UNIQUE INDEX "buckets_analytics_unique_name_idx" ON "storage"."buckets_analytics" USING "btree" ("name") WHERE ("deleted_at" IS NULL);
 
 
 
-CREATE UNIQUE INDEX "uniq_lenser_scores_lenser_type" ON "reputation"."lenser_scores" USING "btree" ("lenser_id", "score_type");
+CREATE UNIQUE INDEX "idx_iceberg_namespaces_bucket_id" ON "storage"."iceberg_namespaces" USING "btree" ("catalog_id", "name");
 
 
 
-CREATE INDEX "idx_status_components_service_id" ON "status"."components" USING "btree" ("service_id");
+CREATE UNIQUE INDEX "idx_iceberg_tables_location" ON "storage"."iceberg_tables" USING "btree" ("location");
 
 
 
-CREATE INDEX "idx_status_components_status" ON "status"."components" USING "btree" ("current_status", "sort_order");
+CREATE UNIQUE INDEX "idx_iceberg_tables_namespace_id" ON "storage"."iceberg_tables" USING "btree" ("catalog_id", "namespace_id", "name");
 
 
 
-CREATE INDEX "idx_status_incident_updates_incident_created_at" ON "status"."incident_updates" USING "btree" ("incident_id", "created_at" DESC);
+CREATE INDEX "idx_multipart_uploads_list" ON "storage"."s3_multipart_uploads" USING "btree" ("bucket_id", "key", "created_at");
 
 
 
-CREATE INDEX "idx_status_incidents_service_id" ON "status"."incidents" USING "btree" ("service_id", "started_at" DESC);
+CREATE INDEX "idx_objects_bucket_id_name" ON "storage"."objects" USING "btree" ("bucket_id", "name" COLLATE "C");
 
 
 
-CREATE INDEX "idx_status_incidents_status_started_at" ON "status"."incidents" USING "btree" ("status", "started_at" DESC);
+CREATE INDEX "idx_objects_bucket_id_name_lower" ON "storage"."objects" USING "btree" ("bucket_id", "lower"("name") COLLATE "C");
 
 
 
-CREATE INDEX "idx_status_maintenance_service_id" ON "status"."maintenance_windows" USING "btree" ("service_id", "starts_at");
+CREATE INDEX "name_prefix_search" ON "storage"."objects" USING "btree" ("name" "text_pattern_ops");
 
 
 
-CREATE INDEX "idx_status_maintenance_status" ON "status"."maintenance_windows" USING "btree" ("status", "starts_at");
-
-
-
-CREATE INDEX "idx_status_services_public" ON "status"."services" USING "btree" ("is_public", "sort_order") WHERE ("is_public" = true);
-
-
-
-CREATE INDEX "idx_status_services_status_sort_order" ON "status"."services" USING "btree" ("current_status", "sort_order");
-
-
-
-CREATE INDEX "idx_status_snapshots_scope_date" ON "status"."daily_snapshots" USING "btree" ("scope_type", "scope_key", "snapshot_date" DESC);
-
-
-
-CREATE INDEX "idx_status_uptime_rollups_scope_window" ON "status"."uptime_rollups" USING "btree" ("scope_type", "scope_key", "rollup_window");
-
-
-
-CREATE INDEX "idx_fk_workspace_members_invited_by" ON "tenancy"."workspace_members" USING "btree" ("invited_by");
-
-
-
-CREATE INDEX "idx_workspace_members_lenser" ON "tenancy"."workspace_members" USING "btree" ("lenser_id");
-
-
-
-CREATE INDEX "idx_workspaces_org" ON "tenancy"."workspaces" USING "btree" ("org_id") WHERE ("org_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_workspaces_owner" ON "tenancy"."workspaces" USING "btree" ("owner_lenser_id");
-
-
-
-CREATE INDEX "idx_pending_charges_account" ON "wallet"."pending_charges" USING "btree" ("account_id", "status");
-
-
-
-CREATE INDEX "idx_pending_charges_lenser" ON "wallet"."pending_charges" USING "btree" ("lenser_id", "reserved_at" DESC);
-
-
-
-CREATE INDEX "idx_pending_charges_status" ON "wallet"."pending_charges" USING "btree" ("status") WHERE ("status" = 'reserved'::"wallet"."charge_status_enum");
-
-
-
-CREATE INDEX "idx_transactions_account_time" ON "wallet"."transactions" USING "btree" ("account_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_wallet_spending_account" ON "wallet"."spending_limits" USING "btree" ("account_id", "period");
-
-
-
-CREATE UNIQUE INDEX "idx_wallet_tx_idempotency" ON "wallet"."transactions" USING "btree" ("idempotency_key") WHERE ("idempotency_key" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_wallet_tx_reference" ON "wallet"."transactions" USING "btree" ("reference_type", "reference_id") WHERE ("reference_id" IS NOT NULL);
-
-
-
-CREATE UNIQUE INDEX "idx_wallet_tx_reference_idempotency" ON "wallet"."transactions" USING "btree" ("reference_type", "reference_id") WHERE ("reference_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_wallet_tx_type_created" ON "wallet"."transactions" USING "btree" ("tx_type", "created_at" DESC);
+CREATE UNIQUE INDEX "vector_indexes_name_bucket_id_idx" ON "storage"."vector_indexes" USING "btree" ("name", "bucket_id");
 
 
 
@@ -52045,102 +40972,6 @@ CREATE OR REPLACE VIEW "lenses"."vw_lens_version_history" AS
 
 
 
-CREATE OR REPLACE TRIGGER "no_delete_action_logs" BEFORE DELETE ON "agents"."action_logs" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "no_update_action_logs" BEFORE UPDATE ON "agents"."action_logs" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_emit_approval_granted" AFTER UPDATE OF "approval_status" ON "agents"."team_runs" FOR EACH ROW EXECUTE FUNCTION "automation"."trg_emit_approval_granted"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_emit_approval_timed_out" AFTER UPDATE OF "approval_status" ON "agents"."team_runs" FOR EACH ROW EXECUTE FUNCTION "automation"."trg_emit_approval_timed_out"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_model_binding_provider_check" BEFORE INSERT OR UPDATE OF "model_id" ON "agents"."model_bindings" FOR EACH ROW EXECUTE FUNCTION "agents"."check_model_binding_single_provider"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_notify_model_binding_changed" AFTER INSERT OR DELETE OR UPDATE OF "is_default" ON "agents"."model_bindings" FOR EACH ROW EXECUTE FUNCTION "agents"."trg_notify_model_binding_changed"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_notify_policy_updated" AFTER UPDATE ON "agents"."policies" FOR EACH ROW EXECUTE FUNCTION "agents"."trg_notify_policy_updated"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_notify_team_run_change" AFTER INSERT OR UPDATE OF "status" ON "agents"."team_runs" FOR EACH ROW EXECUTE FUNCTION "agents"."trg_notify_team_run_change"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_team_messages_cap" BEFORE INSERT ON "agents"."team_messages" FOR EACH ROW EXECUTE FUNCTION "agents"."fn_enforce_team_messages_cap"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_team_runs_apply_standing_approval" BEFORE INSERT ON "agents"."team_runs" FOR EACH ROW WHEN (("new"."approval_status" = 'pending'::"text")) EXECUTE FUNCTION "agents"."fn_apply_standing_approval"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_team_runs_approval_pending_webhook" AFTER INSERT ON "agents"."team_runs" FOR EACH ROW WHEN (("new"."approval_status" = 'pending'::"text")) EXECUTE FUNCTION "agents"."fn_notify_approval_pending"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_tools_registry_egress_guard" BEFORE INSERT OR UPDATE ON "agents"."tools_registry" FOR EACH ROW EXECUTE FUNCTION "agents"."fn_tools_registry_egress_guard"();
-
-
-
-CREATE OR REPLACE TRIGGER "workspace_settings_paused_sync" BEFORE INSERT OR UPDATE ON "agents"."workspace_settings" FOR EACH ROW EXECUTE FUNCTION "agents"."fn_workspace_settings_paused_sync"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_ai_providers_updated_at" BEFORE UPDATE ON "ai"."providers" FOR EACH ROW EXECUTE FUNCTION "battles"."set_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_model_active_provider_guard" BEFORE INSERT OR UPDATE OF "is_active" ON "ai"."models" FOR EACH ROW EXECUTE FUNCTION "ai"."enforce_active_provider_for_model"();
-
-
-
-COMMENT ON TRIGGER "trg_model_active_provider_guard" ON "ai"."models" IS 'Fires before INSERT or UPDATE of is_active on ai.models. Rejects activation of a model whose provider is currently inactive.';
-
-
-
-CREATE OR REPLACE TRIGGER "trg_provider_deactivation_cascade" AFTER UPDATE OF "is_active" ON "ai"."providers" FOR EACH ROW EXECUTE FUNCTION "ai"."cascade_provider_deactivation"();
-
-
-
-COMMENT ON TRIGGER "trg_provider_deactivation_cascade" ON "ai"."providers" IS 'Fires after UPDATE of is_active on ai.providers. Cascades deactivation to all models of the deactivated provider.';
-
-
-
-CREATE OR REPLACE TRIGGER "trg_lenser_join_award_badges" AFTER INSERT ON "analytics"."lenser_join_log" FOR EACH ROW EXECUTE FUNCTION "lensers"."trg_award_founder_badges"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_no_delete_lenser_join_log" BEFORE DELETE ON "analytics"."lenser_join_log" FOR EACH ROW EXECUTE FUNCTION "lensers"."prevent_lenser_join_log_delete"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_no_update_lenser_join_log" BEFORE UPDATE ON "analytics"."lenser_join_log" FOR EACH ROW EXECUTE FUNCTION "lensers"."prevent_lenser_join_log_update"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_protect_feedback_system_fields" BEFORE UPDATE ON "analytics"."product_feedback" FOR EACH ROW EXECUTE FUNCTION "analytics"."protect_feedback_system_fields"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_set_feedback_user_id" BEFORE INSERT ON "analytics"."product_feedback" FOR EACH ROW EXECUTE FUNCTION "analytics"."set_feedback_user_id"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_sync_join_order" AFTER INSERT ON "analytics"."lenser_join_log" FOR EACH ROW EXECUTE FUNCTION "lensers"."sync_join_order"();
-
-
-
 CREATE OR REPLACE TRIGGER "no_delete_attestations" BEFORE DELETE ON "audit"."attestations" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
 
 
@@ -52194,10 +41025,6 @@ CREATE OR REPLACE TRIGGER "trg_prevent_delete_moderation" BEFORE DELETE ON "audi
 
 
 CREATE OR REPLACE TRIGGER "trg_prevent_delete_security" BEFORE DELETE ON "audit"."security_events" FOR EACH ROW EXECUTE FUNCTION "audit"."trg_prevent_delete"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_trigger_rules_touch_updated_at" BEFORE UPDATE ON "automation"."trigger_rules" FOR EACH ROW EXECUTE FUNCTION "automation"."trg_trigger_rules_touch_updated_at"();
 
 
 
@@ -52357,38 +41184,6 @@ ALTER TABLE "battles"."battles" DISABLE TRIGGER "trg_xp_battle_published";
 
 
 
-CREATE OR REPLACE TRIGGER "no_delete_invalidations" BEFORE DELETE ON "benchmark"."invalidations" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "no_delete_protocol_versions" BEFORE DELETE ON "benchmark"."protocol_versions" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "no_delete_result_sets" BEFORE DELETE ON "benchmark"."result_sets" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "no_update_invalidations" BEFORE UPDATE ON "benchmark"."invalidations" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "no_update_protocol_versions" BEFORE UPDATE ON "benchmark"."protocol_versions" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "no_update_result_sets" BEFORE UPDATE ON "benchmark"."result_sets" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_billing_margin_policies_updated_at" BEFORE UPDATE ON "billing"."execution_margin_policies" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_billing_products_updated_at" BEFORE UPDATE ON "billing"."products" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
-
-
-
 CREATE OR REPLACE TRIGGER "thread_replies_after_delete" AFTER DELETE ON "content"."thread_replies" FOR EACH ROW EXECUTE FUNCTION "content"."thread_replies_after_delete_trigger"();
 
 
@@ -52450,22 +41245,6 @@ CREATE OR REPLACE TRIGGER "trg_xp_on_workflow_reaction" AFTER INSERT ON "content
 
 
 CREATE OR REPLACE TRIGGER "trg_xp_thread_visibility_changed" AFTER UPDATE OF "visibility", "status" ON "content"."threads" FOR EACH ROW EXECUTE FUNCTION "xp"."on_thread_visibility_changed"();
-
-
-
-CREATE OR REPLACE TRIGGER "chain_on_device_registered" AFTER INSERT ON "devices"."registered_devices" FOR EACH ROW EXECUTE FUNCTION "devices"."fn_chain_on_device_registered"();
-
-
-
-CREATE OR REPLACE TRIGGER "chain_on_device_trust_changed" AFTER UPDATE OF "trust_level" ON "devices"."registered_devices" FOR EACH ROW EXECUTE FUNCTION "devices"."fn_chain_on_device_trust_changed"();
-
-
-
-CREATE OR REPLACE TRIGGER "xp_on_device_registered" AFTER INSERT ON "devices"."registered_devices" FOR EACH ROW EXECUTE FUNCTION "devices"."fn_xp_on_device_registered"();
-
-
-
-CREATE OR REPLACE TRIGGER "xp_on_device_trust_elevated" AFTER UPDATE OF "trust_level" ON "devices"."registered_devices" FOR EACH ROW EXECUTE FUNCTION "devices"."fn_xp_on_device_trust_elevated"();
 
 
 
@@ -52613,6 +41392,10 @@ CREATE OR REPLACE TRIGGER "trg_sync_profile_from_auth_metadata" BEFORE INSERT ON
 
 
 
+CREATE OR REPLACE TRIGGER "trg_xp_on_follow" AFTER INSERT OR UPDATE OF "status" ON "lensers"."relationships" FOR EACH ROW EXECUTE FUNCTION "lensers"."fn_xp_on_follow"();
+
+
+
 CREATE OR REPLACE TRIGGER "tg_xp_lens_created" AFTER INSERT ON "lenses"."lenses" FOR EACH ROW EXECUTE FUNCTION "xp"."on_lens_created"();
 
 
@@ -52723,103 +41506,19 @@ COMMENT ON TRIGGER "xp_on_workflow_run_received" ON "lenses"."workflow_runs" IS 
 
 
 
-CREATE OR REPLACE TRIGGER "trg_media_audit_visibility" AFTER UPDATE ON "media"."objects" FOR EACH ROW EXECUTE FUNCTION "media"."trg_fn_audit_visibility"();
+CREATE OR REPLACE TRIGGER "enforce_bucket_name_length_trigger" BEFORE INSERT OR UPDATE OF "name" ON "storage"."buckets" FOR EACH ROW EXECUTE FUNCTION "storage"."enforce_bucket_name_length"();
 
 
 
-COMMENT ON TRIGGER "trg_media_audit_visibility" ON "media"."objects" IS 'AT: Writes audit.events row when visibility changes.';
+CREATE OR REPLACE TRIGGER "protect_buckets_delete" BEFORE DELETE ON "storage"."buckets" FOR EACH STATEMENT EXECUTE FUNCTION "storage"."protect_delete"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_objects_set_updated_at" BEFORE UPDATE ON "media"."objects" FOR EACH ROW EXECUTE FUNCTION "media"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "protect_objects_delete" BEFORE DELETE ON "storage"."objects" FOR EACH STATEMENT EXECUTE FUNCTION "storage"."protect_delete"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_addresses_updated_at" BEFORE UPDATE ON "organizations"."addresses" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_audit_logs_no_delete" BEFORE DELETE ON "organizations"."audit_logs" FOR EACH ROW EXECUTE FUNCTION "organizations"."trg_audit_logs_immutable"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_audit_logs_no_update" BEFORE UPDATE ON "organizations"."audit_logs" FOR EACH ROW EXECUTE FUNCTION "organizations"."trg_audit_logs_immutable"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_audit_org_membership" AFTER INSERT OR DELETE OR UPDATE ON "organizations"."members" FOR EACH ROW EXECUTE FUNCTION "organizations"."trg_audit_membership"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_companies_updated_at" BEFORE UPDATE ON "organizations"."companies" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_organizations_create_workspace" AFTER INSERT ON "organizations"."organizations" FOR EACH ROW EXECUTE FUNCTION "organizations"."fn_create_org_workspace"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_organizations_updated_at" BEFORE UPDATE ON "organizations"."organizations" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_preferences_updated_at" BEFORE UPDATE ON "organizations"."preferences" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_status_components_touch_updated_at" BEFORE UPDATE ON "status"."components" FOR EACH ROW EXECUTE FUNCTION "status"."touch_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_status_incidents_touch_updated_at" BEFORE UPDATE ON "status"."incidents" FOR EACH ROW EXECUTE FUNCTION "status"."touch_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_status_maintenance_touch_updated_at" BEFORE UPDATE ON "status"."maintenance_windows" FOR EACH ROW EXECUTE FUNCTION "status"."touch_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_status_services_touch_updated_at" BEFORE UPDATE ON "status"."services" FOR EACH ROW EXECUTE FUNCTION "status"."touch_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_workspaces_guard_personal" BEFORE DELETE ON "tenancy"."workspaces" FOR EACH ROW EXECUTE FUNCTION "tenancy"."fn_guard_personal_workspace"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_workspaces_guard_personal_status" BEFORE UPDATE ON "tenancy"."workspaces" FOR EACH ROW EXECUTE FUNCTION "tenancy"."fn_guard_personal_workspace_status"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_workspaces_set_updated_at" BEFORE UPDATE ON "tenancy"."workspaces" FOR EACH ROW EXECUTE FUNCTION "tenancy"."set_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_audit_wallet_account" AFTER UPDATE ON "wallet"."accounts" FOR EACH ROW EXECUTE FUNCTION "audit"."trg_fn_audit_wallet_account"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_org_accounts_updated_at" BEFORE UPDATE ON "wallet"."organization_accounts" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_transactions_no_delete" BEFORE DELETE ON "wallet"."transactions" FOR EACH ROW EXECUTE FUNCTION "wallet"."trg_transactions_immutable"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_transactions_no_update" BEFORE UPDATE ON "wallet"."transactions" FOR EACH ROW EXECUTE FUNCTION "wallet"."trg_transactions_immutable"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_verify_balance_after" BEFORE INSERT ON "wallet"."transactions" FOR EACH ROW EXECUTE FUNCTION "wallet"."trg_verify_balance_after"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_wallet_accounts_updated_at" BEFORE UPDATE ON "wallet"."accounts" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_wallet_spending_limits_updated_at" BEFORE UPDATE ON "wallet"."spending_limits" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "update_objects_updated_at" BEFORE UPDATE ON "storage"."objects" FOR EACH ROW EXECUTE FUNCTION "storage"."update_updated_at_column"();
 
 
 
@@ -52840,576 +41539,6 @@ CREATE OR REPLACE TRIGGER "trg_xp_levelup_badge_check" AFTER INSERT ON "xp"."lev
 
 
 COMMENT ON TRIGGER "trg_xp_levelup_badge_check" ON "xp"."level_ups" IS 'CB: Fires fn_badge_check_and_award after each level-up insert.';
-
-
-
-ALTER TABLE ONLY "admin"."kill_switches"
-    ADD CONSTRAINT "kill_switches_operator_id_fkey" FOREIGN KEY ("operator_id") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
-
-
-
-ALTER TABLE ONLY "agents"."action_logs"
-    ADD CONSTRAINT "action_logs_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id");
-
-
-
-ALTER TABLE ONLY "agents"."agent_run_events"
-    ADD CONSTRAINT "agent_run_events_agent_run_step_id_fkey" FOREIGN KEY ("agent_run_step_id") REFERENCES "agents"."agent_run_steps"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."agent_run_events"
-    ADD CONSTRAINT "agent_run_events_team_run_id_fkey" FOREIGN KEY ("team_run_id") REFERENCES "agents"."team_runs"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."agent_run_steps"
-    ADD CONSTRAINT "agent_run_steps_team_member_id_fkey" FOREIGN KEY ("team_member_id") REFERENCES "agents"."team_members"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."agent_run_steps"
-    ADD CONSTRAINT "agent_run_steps_team_run_id_fkey" FOREIGN KEY ("team_run_id") REFERENCES "agents"."team_runs"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."agent_run_steps"
-    ADD CONSTRAINT "agent_run_steps_workflow_node_id_fkey" FOREIGN KEY ("workflow_node_id") REFERENCES "lenses"."workflow_nodes"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."ai_lensers"
-    ADD CONSTRAINT "ai_lensers_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."battle_subscriptions"
-    ADD CONSTRAINT "battle_subscriptions_agent_id_fkey" FOREIGN KEY ("agent_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."battle_subscriptions"
-    ADD CONSTRAINT "battle_subscriptions_workflow_id_fkey" FOREIGN KEY ("workflow_id") REFERENCES "lenses"."workflows"("id");
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_baselines"
-    ADD CONSTRAINT "evaluation_baselines_evaluation_id_fkey" FOREIGN KEY ("evaluation_id") REFERENCES "agents"."evaluations"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_baselines"
-    ADD CONSTRAINT "evaluation_baselines_run_id_fkey" FOREIGN KEY ("run_id") REFERENCES "agents"."evaluation_runs"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_baselines"
-    ADD CONSTRAINT "evaluation_baselines_set_by_fkey" FOREIGN KEY ("set_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_case_results"
-    ADD CONSTRAINT "evaluation_case_results_case_id_fkey" FOREIGN KEY ("case_id") REFERENCES "agents"."evaluation_cases"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_case_results"
-    ADD CONSTRAINT "evaluation_case_results_evaluation_run_id_fkey" FOREIGN KEY ("evaluation_run_id") REFERENCES "agents"."evaluation_runs"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_cases"
-    ADD CONSTRAINT "evaluation_cases_evaluation_id_fkey" FOREIGN KEY ("evaluation_id") REFERENCES "agents"."evaluations"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_rubrics"
-    ADD CONSTRAINT "evaluation_rubrics_evaluation_id_fkey" FOREIGN KEY ("evaluation_id") REFERENCES "agents"."evaluations"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_runs"
-    ADD CONSTRAINT "evaluation_runs_evaluation_id_fkey" FOREIGN KEY ("evaluation_id") REFERENCES "agents"."evaluations"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."evaluation_runs"
-    ADD CONSTRAINT "evaluation_runs_rubric_id_fkey" FOREIGN KEY ("rubric_id") REFERENCES "agents"."evaluation_rubrics"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."evaluations"
-    ADD CONSTRAINT "evaluations_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."gateway_commands"
-    ADD CONSTRAINT "gateway_commands_device_id_fkey" FOREIGN KEY ("device_id") REFERENCES "agents"."gateway_devices"("device_id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."gateway_devices"
-    ADD CONSTRAINT "gateway_devices_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."lens_bindings"
-    ADD CONSTRAINT "lens_bindings_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."lens_bindings"
-    ADD CONSTRAINT "lens_bindings_lens_id_fkey" FOREIGN KEY ("lens_id") REFERENCES "lenses"."lenses"("id");
-
-
-
-ALTER TABLE ONLY "agents"."lens_bindings"
-    ADD CONSTRAINT "lens_bindings_version_id_fkey" FOREIGN KEY ("version_id") REFERENCES "lenses"."versions"("id");
-
-
-
-ALTER TABLE ONLY "agents"."memories"
-    ADD CONSTRAINT "memories_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."memories"
-    ADD CONSTRAINT "memories_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "agents"."memory_profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."memories"
-    ADD CONSTRAINT "memories_team_run_id_fkey" FOREIGN KEY ("team_run_id") REFERENCES "agents"."team_runs"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."memory_access_logs"
-    ADD CONSTRAINT "memory_access_logs_memory_id_fkey" FOREIGN KEY ("memory_id") REFERENCES "agents"."memories"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."memory_access_logs"
-    ADD CONSTRAINT "memory_access_logs_team_run_id_fkey" FOREIGN KEY ("team_run_id") REFERENCES "agents"."team_runs"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."memory_profiles"
-    ADD CONSTRAINT "memory_profiles_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."model_bindings"
-    ADD CONSTRAINT "model_bindings_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."model_bindings"
-    ADD CONSTRAINT "model_bindings_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "ai"."models"("id");
-
-
-
-ALTER TABLE ONLY "agents"."model_profiles"
-    ADD CONSTRAINT "model_profiles_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."model_profiles"
-    ADD CONSTRAINT "model_profiles_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "ai"."models"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."ownerships"
-    ADD CONSTRAINT "ownerships_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."ownerships"
-    ADD CONSTRAINT "ownerships_owner_lenser_id_fkey" FOREIGN KEY ("owner_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."personality_profiles"
-    ADD CONSTRAINT "personality_profiles_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."policies"
-    ADD CONSTRAINT "policies_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."policy_evaluations"
-    ADD CONSTRAINT "policy_evaluations_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."policy_evaluations"
-    ADD CONSTRAINT "policy_evaluations_team_run_id_fkey" FOREIGN KEY ("team_run_id") REFERENCES "agents"."team_runs"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."policy_evaluations"
-    ADD CONSTRAINT "policy_evaluations_tool_invocation_id_fkey" FOREIGN KEY ("tool_invocation_id") REFERENCES "agents"."tool_invocations"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."provider_configs"
-    ADD CONSTRAINT "provider_configs_ai_key_id_fkey" FOREIGN KEY ("ai_key_id") REFERENCES "ai"."keys"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."provider_configs"
-    ADD CONSTRAINT "provider_configs_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."quota_snapshots"
-    ADD CONSTRAINT "quota_snapshots_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."run_incidents"
-    ADD CONSTRAINT "run_incidents_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."run_incidents"
-    ADD CONSTRAINT "run_incidents_run_report_id_fkey" FOREIGN KEY ("run_report_id") REFERENCES "agents"."run_reports"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."run_reports"
-    ADD CONSTRAINT "run_reports_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."run_reports"
-    ADD CONSTRAINT "run_reports_team_run_id_fkey" FOREIGN KEY ("team_run_id") REFERENCES "agents"."team_runs"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."run_reports"
-    ADD CONSTRAINT "run_reports_workflow_run_id_fkey" FOREIGN KEY ("workflow_run_id") REFERENCES "lenses"."workflow_runs"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."scratchpad_runs"
-    ADD CONSTRAINT "scratchpad_runs_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."standing_approvals"
-    ADD CONSTRAINT "standing_approvals_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."standing_approvals"
-    ADD CONSTRAINT "standing_approvals_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "lensers"."profiles"("id");
-
-
-
-ALTER TABLE ONLY "agents"."standing_approvals"
-    ADD CONSTRAINT "standing_approvals_workflow_id_fkey" FOREIGN KEY ("workflow_id") REFERENCES "lenses"."workflows"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."team_edges"
-    ADD CONSTRAINT "team_edges_source_member_id_fkey" FOREIGN KEY ("source_member_id") REFERENCES "agents"."team_members"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."team_edges"
-    ADD CONSTRAINT "team_edges_target_member_id_fkey" FOREIGN KEY ("target_member_id") REFERENCES "agents"."team_members"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."team_edges"
-    ADD CONSTRAINT "team_edges_team_id_fkey" FOREIGN KEY ("team_id") REFERENCES "agents"."teams"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."team_members"
-    ADD CONSTRAINT "team_members_agent_id_fkey" FOREIGN KEY ("agent_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."team_members"
-    ADD CONSTRAINT "team_members_memory_profile_id_fkey" FOREIGN KEY ("memory_profile_id") REFERENCES "agents"."memory_profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."team_members"
-    ADD CONSTRAINT "team_members_model_profile_id_fkey" FOREIGN KEY ("model_profile_id") REFERENCES "agents"."model_profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."team_members"
-    ADD CONSTRAINT "team_members_personality_profile_id_fkey" FOREIGN KEY ("personality_profile_id") REFERENCES "agents"."personality_profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."team_members"
-    ADD CONSTRAINT "team_members_team_id_fkey" FOREIGN KEY ("team_id") REFERENCES "agents"."teams"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."team_members"
-    ADD CONSTRAINT "team_members_tool_profile_id_fkey" FOREIGN KEY ("tool_profile_id") REFERENCES "agents"."tool_profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."team_messages"
-    ADD CONSTRAINT "team_messages_parent_message_id_fkey" FOREIGN KEY ("parent_message_id") REFERENCES "agents"."team_messages"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."team_messages"
-    ADD CONSTRAINT "team_messages_team_run_id_fkey" FOREIGN KEY ("team_run_id") REFERENCES "agents"."team_runs"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."team_runs"
-    ADD CONSTRAINT "team_runs_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."team_runs"
-    ADD CONSTRAINT "team_runs_parent_team_run_id_fkey" FOREIGN KEY ("parent_team_run_id") REFERENCES "agents"."team_runs"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."team_runs"
-    ADD CONSTRAINT "team_runs_team_id_fkey" FOREIGN KEY ("team_id") REFERENCES "agents"."teams"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."team_runs"
-    ADD CONSTRAINT "team_runs_workflow_assignment_id_fkey" FOREIGN KEY ("workflow_assignment_id") REFERENCES "agents"."workflow_assignments"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."team_runs"
-    ADD CONSTRAINT "team_runs_workflow_id_fkey" FOREIGN KEY ("workflow_id") REFERENCES "lenses"."workflows"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."team_runs"
-    ADD CONSTRAINT "team_runs_workflow_run_id_fkey" FOREIGN KEY ("workflow_run_id") REFERENCES "lenses"."workflow_runs"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."teams"
-    ADD CONSTRAINT "teams_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."tool_assignments"
-    ADD CONSTRAINT "tool_assignments_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."tool_assignments"
-    ADD CONSTRAINT "tool_assignments_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "agents"."tool_profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."tool_assignments"
-    ADD CONSTRAINT "tool_assignments_tool_id_fkey" FOREIGN KEY ("tool_id") REFERENCES "agents"."tools_registry"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."tool_invocations"
-    ADD CONSTRAINT "tool_invocations_agent_run_step_id_fkey" FOREIGN KEY ("agent_run_step_id") REFERENCES "agents"."agent_run_steps"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."tool_invocations"
-    ADD CONSTRAINT "tool_invocations_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."tool_invocations"
-    ADD CONSTRAINT "tool_invocations_approval_decided_by_fkey" FOREIGN KEY ("approval_decided_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "agents"."tool_invocations"
-    ADD CONSTRAINT "tool_invocations_team_run_id_fkey" FOREIGN KEY ("team_run_id") REFERENCES "agents"."team_runs"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."tool_invocations"
-    ADD CONSTRAINT "tool_invocations_tool_id_fkey" FOREIGN KEY ("tool_id") REFERENCES "agents"."tools_registry"("id") ON DELETE RESTRICT;
-
-
-
-ALTER TABLE ONLY "agents"."tool_profiles"
-    ADD CONSTRAINT "tool_profiles_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."workflow_assignments"
-    ADD CONSTRAINT "workflow_assignments_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."workflow_assignments"
-    ADD CONSTRAINT "workflow_assignments_assignee_ai_lenser_id_fkey" FOREIGN KEY ("assignee_ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."workflow_assignments"
-    ADD CONSTRAINT "workflow_assignments_assignee_team_id_fkey" FOREIGN KEY ("assignee_team_id") REFERENCES "agents"."teams"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."workflow_assignments"
-    ADD CONSTRAINT "workflow_assignments_workflow_id_fkey" FOREIGN KEY ("workflow_id") REFERENCES "lenses"."workflows"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."workspace_settings"
-    ADD CONSTRAINT "workspace_settings_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "agents"."workspace_switches"
-    ADD CONSTRAINT "workspace_switches_from_ai_lenser_id_fkey" FOREIGN KEY ("from_ai_lenser_id") REFERENCES "agents"."ai_lensers"("id");
-
-
-
-ALTER TABLE ONLY "agents"."workspace_switches"
-    ADD CONSTRAINT "workspace_switches_human_lenser_id_fkey" FOREIGN KEY ("human_lenser_id") REFERENCES "lensers"."profiles"("id");
-
-
-
-ALTER TABLE ONLY "agents"."workspace_switches"
-    ADD CONSTRAINT "workspace_switches_to_ai_lenser_id_fkey" FOREIGN KEY ("to_ai_lenser_id") REFERENCES "agents"."ai_lensers"("id");
-
-
-
-ALTER TABLE ONLY "ai"."key_usage_log"
-    ADD CONSTRAINT "key_usage_log_key_id_fkey" FOREIGN KEY ("key_id") REFERENCES "ai"."keys"("id") ON DELETE RESTRICT;
-
-
-
-ALTER TABLE ONLY "ai"."key_usage_log"
-    ADD CONSTRAINT "key_usage_log_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "ai"."key_usage_log"
-    ADD CONSTRAINT "key_usage_log_run_id_fkey" FOREIGN KEY ("run_id") REFERENCES "execution"."runs"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "ai"."key_usage_log"
-    ADD CONSTRAINT "key_usage_log_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "tenancy"."workspaces"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "ai"."keys"
-    ADD CONSTRAINT "keys_lenser_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "ai"."keys"
-    ADD CONSTRAINT "keys_provider_id_fkey" FOREIGN KEY ("provider_id") REFERENCES "ai"."providers"("id") ON DELETE RESTRICT;
-
-
-
-ALTER TABLE ONLY "ai"."modality_pricing"
-    ADD CONSTRAINT "modality_pricing_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "ai"."models"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "ai"."model_pricing"
-    ADD CONSTRAINT "model_pricing_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "ai"."models"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "ai"."models"
-    ADD CONSTRAINT "models_provider_id_fkey" FOREIGN KEY ("provider_id") REFERENCES "ai"."providers"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "analytics"."agent_cost_daily"
-    ADD CONSTRAINT "agent_cost_daily_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "analytics"."contact"
-    ADD CONSTRAINT "contact_messages_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "analytics"."eval_quality_daily"
-    ADD CONSTRAINT "eval_quality_daily_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "analytics"."eval_quality_daily"
-    ADD CONSTRAINT "eval_quality_daily_evaluation_id_fkey" FOREIGN KEY ("evaluation_id") REFERENCES "agents"."evaluations"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "analytics"."product_feedback"
-    ADD CONSTRAINT "feedback_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "analytics"."lenser_activity"
-    ADD CONSTRAINT "lenser_activity_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "analytics"."lenser_stats"
-    ADD CONSTRAINT "lenser_engagement_totals_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "analytics"."lenser_join_log"
-    ADD CONSTRAINT "lenser_join_log_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "analytics"."page_views"
-    ADD CONSTRAINT "page_views_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "analytics"."page_views"
-    ADD CONSTRAINT "page_views_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "analytics"."share_events"
-    ADD CONSTRAINT "share_events_shared_link_id_fkey" FOREIGN KEY ("shared_link_id") REFERENCES "analytics"."shared_links"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "analytics"."share_events"
-    ADD CONSTRAINT "share_events_viewer_lenser_id_fkey" FOREIGN KEY ("viewer_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "analytics"."shared_links"
-    ADD CONSTRAINT "shared_links_creator_lenser_id_fkey" FOREIGN KEY ("creator_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "analytics"."tag_activity_events"
-    ADD CONSTRAINT "tag_activity_events_actor_id_fkey" FOREIGN KEY ("actor_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "analytics"."workflow_perf_daily"
-    ADD CONSTRAINT "workflow_perf_daily_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "analytics"."workflow_perf_daily"
-    ADD CONSTRAINT "workflow_perf_daily_workflow_id_fkey" FOREIGN KEY ("workflow_id") REFERENCES "lenses"."workflows"("id") ON DELETE CASCADE;
 
 
 
@@ -53460,36 +41589,6 @@ ALTER TABLE ONLY "audit"."vote_anomalies"
 
 ALTER TABLE ONLY "audit"."vote_anomalies"
     ADD CONSTRAINT "vote_anomalies_voter_lenser_id_fkey" FOREIGN KEY ("voter_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "authz"."developer_tokens"
-    ADD CONSTRAINT "developer_tokens_issued_from_request_id_fkey" FOREIGN KEY ("issued_from_request_id") REFERENCES "authz"."device_approval_requests"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "authz"."developer_tokens"
-    ADD CONSTRAINT "developer_tokens_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_approved_by_lenser_id_fkey" FOREIGN KEY ("approved_by_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_requested_by_lenser_id_fkey" FOREIGN KEY ("requested_by_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "automation"."event_dispatches"
-    ADD CONSTRAINT "event_dispatches_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "automation"."events"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "automation"."event_dispatches"
-    ADD CONSTRAINT "event_dispatches_rule_id_fkey" FOREIGN KEY ("rule_id") REFERENCES "automation"."trigger_rules"("id") ON DELETE CASCADE;
 
 
 
@@ -53993,131 +42092,6 @@ ALTER TABLE ONLY "battles"."votes"
 
 
 
-ALTER TABLE ONLY "benchmark"."invalidations"
-    ADD CONSTRAINT "invalidations_invalidated_by_fkey" FOREIGN KEY ("invalidated_by") REFERENCES "lensers"."profiles"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."invalidations"
-    ADD CONSTRAINT "invalidations_result_set_id_fkey" FOREIGN KEY ("result_set_id") REFERENCES "benchmark"."result_sets"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."protocol_versions"
-    ADD CONSTRAINT "protocol_versions_frozen_by_fkey" FOREIGN KEY ("frozen_by") REFERENCES "lensers"."profiles"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."protocol_versions"
-    ADD CONSTRAINT "protocol_versions_suite_id_fkey" FOREIGN KEY ("suite_id") REFERENCES "benchmark"."suites"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."result_sets"
-    ADD CONSTRAINT "result_sets_battle_id_fkey" FOREIGN KEY ("battle_id") REFERENCES "battles"."battles"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."result_sets"
-    ADD CONSTRAINT "result_sets_protocol_version_id_fkey" FOREIGN KEY ("protocol_version_id") REFERENCES "benchmark"."protocol_versions"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."result_sets"
-    ADD CONSTRAINT "result_sets_suite_id_fkey" FOREIGN KEY ("suite_id") REFERENCES "benchmark"."suites"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."result_sets"
-    ADD CONSTRAINT "result_sets_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "benchmark"."tasks"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."significance_tests"
-    ADD CONSTRAINT "significance_tests_contender_a_id_fkey" FOREIGN KEY ("contender_a_id") REFERENCES "battles"."contenders"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."significance_tests"
-    ADD CONSTRAINT "significance_tests_contender_b_id_fkey" FOREIGN KEY ("contender_b_id") REFERENCES "battles"."contenders"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."significance_tests"
-    ADD CONSTRAINT "significance_tests_result_set_id_fkey" FOREIGN KEY ("result_set_id") REFERENCES "benchmark"."result_sets"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "benchmark"."suites"
-    ADD CONSTRAINT "suites_creator_lenser_id_fkey" FOREIGN KEY ("creator_lenser_id") REFERENCES "lensers"."profiles"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."tasks"
-    ADD CONSTRAINT "tasks_suite_id_fkey" FOREIGN KEY ("suite_id") REFERENCES "benchmark"."suites"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "benchmark"."tasks"
-    ADD CONSTRAINT "tasks_workflow_id_fkey" FOREIGN KEY ("workflow_id") REFERENCES "lenses"."workflows"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "billing"."execution_margin_policies"
-    ADD CONSTRAINT "billing_margin_policies_model_fkey" FOREIGN KEY ("model_id") REFERENCES "ai"."models"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "billing"."checkout_sessions"
-    ADD CONSTRAINT "checkout_sessions_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "billing"."checkout_sessions"
-    ADD CONSTRAINT "checkout_sessions_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "billing"."variants"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "billing"."orders"
-    ADD CONSTRAINT "orders_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
-
-
-
-ALTER TABLE ONLY "billing"."orders"
-    ADD CONSTRAINT "orders_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "billing"."products"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "billing"."orders"
-    ADD CONSTRAINT "orders_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "billing"."variants"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "billing"."orders"
-    ADD CONSTRAINT "orders_webhook_event_id_fkey" FOREIGN KEY ("webhook_event_id") REFERENCES "billing"."webhook_events"("id");
-
-
-
-ALTER TABLE ONLY "billing"."variants"
-    ADD CONSTRAINT "variants_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "billing"."products"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "connectors"."connector_tokens"
-    ADD CONSTRAINT "connector_tokens_connector_id_fkey" FOREIGN KEY ("connector_id") REFERENCES "connectors"."connectors"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "connectors"."connectors"
-    ADD CONSTRAINT "connectors_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "connectors"."connectors"
-    ADD CONSTRAINT "connectors_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "tenancy"."workspaces"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "content"."entity_translations"
     ADD CONSTRAINT "entity_translations_language_code_fk" FOREIGN KEY ("language_code") REFERENCES "core"."languages"("code") ON DELETE RESTRICT;
 
@@ -54175,86 +42149,6 @@ ALTER TABLE ONLY "content"."threads"
 
 ALTER TABLE ONLY "content"."threads"
     ADD CONSTRAINT "threads_linked_lens_id_fkey" FOREIGN KEY ("linked_lens_id") REFERENCES "lenses"."lenses"("id") ON DELETE SET NULL NOT VALID;
-
-
-
-ALTER TABLE ONLY "core"."cities"
-    ADD CONSTRAINT "cities_country_fk" FOREIGN KEY ("country_id") REFERENCES "core"."countries"("id");
-
-
-
-ALTER TABLE ONLY "core"."cities"
-    ADD CONSTRAINT "cities_state_fk" FOREIGN KEY ("state_id") REFERENCES "core"."states"("id");
-
-
-
-ALTER TABLE ONLY "core"."countries"
-    ADD CONSTRAINT "countries_region_fk" FOREIGN KEY ("region_id") REFERENCES "core"."regions"("id");
-
-
-
-ALTER TABLE ONLY "core"."countries"
-    ADD CONSTRAINT "countries_subregion_fk" FOREIGN KEY ("subregion_id") REFERENCES "core"."subregions"("id");
-
-
-
-ALTER TABLE ONLY "core"."states"
-    ADD CONSTRAINT "states_country_fk" FOREIGN KEY ("country_id") REFERENCES "core"."countries"("id");
-
-
-
-ALTER TABLE ONLY "core"."subregions"
-    ADD CONSTRAINT "subregions_region_fk" FOREIGN KEY ("region_id") REFERENCES "core"."regions"("id");
-
-
-
-ALTER TABLE ONLY "devices"."device_challenges"
-    ADD CONSTRAINT "device_challenges_device_id_fkey" FOREIGN KEY ("device_id") REFERENCES "devices"."registered_devices"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "devices"."device_challenges"
-    ADD CONSTRAINT "device_challenges_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "devices"."nonce_cache"
-    ADD CONSTRAINT "nonce_cache_device_id_fkey" FOREIGN KEY ("device_id") REFERENCES "devices"."registered_devices"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "devices"."peer_leases"
-    ADD CONSTRAINT "peer_leases_device_id_fkey" FOREIGN KEY ("device_id") REFERENCES "devices"."registered_devices"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "devices"."peer_leases"
-    ADD CONSTRAINT "peer_leases_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "devices"."registered_devices"
-    ADD CONSTRAINT "registered_devices_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "devices"."sync_outbox"
-    ADD CONSTRAINT "sync_outbox_device_id_fkey" FOREIGN KEY ("device_id") REFERENCES "devices"."registered_devices"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "devices"."sync_outbox"
-    ADD CONSTRAINT "sync_outbox_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "devices"."sync_watermarks"
-    ADD CONSTRAINT "sync_watermarks_device_id_fkey" FOREIGN KEY ("device_id") REFERENCES "devices"."registered_devices"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "devices"."sync_watermarks"
-    ADD CONSTRAINT "sync_watermarks_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
 
 
 
@@ -54440,16 +42334,6 @@ ALTER TABLE ONLY "execution"."trust_evaluations"
 
 ALTER TABLE ONLY "execution"."trust_evaluations"
     ADD CONSTRAINT "trust_evaluations_submission_id_fkey" FOREIGN KEY ("submission_id") REFERENCES "battles"."submissions"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "integrations"."tool_allowlist"
-    ADD CONSTRAINT "tool_allowlist_granted_by_fkey" FOREIGN KEY ("granted_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "integrations"."tool_allowlist"
-    ADD CONSTRAINT "tool_allowlist_tool_fkey" FOREIGN KEY ("tool_id") REFERENCES "integrations"."tools"("id") ON DELETE CASCADE;
 
 
 
@@ -54845,243 +42729,48 @@ ALTER TABLE ONLY "lenses"."workflow_version_nodes"
 
 
 
-ALTER TABLE ONLY "media"."attachments"
-    ADD CONSTRAINT "attachments_attached_by_fkey" FOREIGN KEY ("attached_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "media"."attachments"
-    ADD CONSTRAINT "attachments_object_fkey" FOREIGN KEY ("object_id") REFERENCES "media"."objects"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "media"."objects"
-    ADD CONSTRAINT "media_objects_request_id_fkey" FOREIGN KEY ("request_id") REFERENCES "execution"."requests"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "media"."objects"
-    ADD CONSTRAINT "objects_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "media"."objects"
-    ADD CONSTRAINT "objects_owner_fkey" FOREIGN KEY ("owner_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "media"."objects"
-    ADD CONSTRAINT "objects_workspace_fkey" FOREIGN KEY ("workspace_id") REFERENCES "tenancy"."workspaces"("id");
-
-
-
-ALTER TABLE ONLY "organizations"."activity_log"
-    ADD CONSTRAINT "activity_log_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "organizations"."activity_log"
-    ADD CONSTRAINT "activity_log_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "organizations"."addresses"
-    ADD CONSTRAINT "addresses_city_id_fkey" FOREIGN KEY ("city_id") REFERENCES "core"."cities"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "organizations"."addresses"
-    ADD CONSTRAINT "addresses_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "organizations"."companies"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "organizations"."addresses"
-    ADD CONSTRAINT "addresses_country_iso2_code_fkey" FOREIGN KEY ("country_iso2_code") REFERENCES "core"."countries"("iso2") ON DELETE RESTRICT;
-
-
-
-ALTER TABLE ONLY "organizations"."addresses"
-    ADD CONSTRAINT "addresses_state_id_fkey" FOREIGN KEY ("state_id") REFERENCES "core"."states"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "organizations"."audit_logs"
-    ADD CONSTRAINT "audit_logs_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "organizations"."audit_logs"
-    ADD CONSTRAINT "audit_logs_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "organizations"."companies"
-    ADD CONSTRAINT "companies_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "organizations"."companies"
-    ADD CONSTRAINT "companies_tax_iso2_code_fkey" FOREIGN KEY ("tax_iso2_code") REFERENCES "core"."countries"("iso2");
-
-
-
-ALTER TABLE ONLY "organizations"."members"
-    ADD CONSTRAINT "members_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "organizations"."members"
-    ADD CONSTRAINT "members_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "organizations"."members"
-    ADD CONSTRAINT "members_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "organizations"."organizations"
-    ADD CONSTRAINT "organizations_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
-
-
-
-ALTER TABLE ONLY "organizations"."organizations"
-    ADD CONSTRAINT "organizations_kill_switched_by_fkey" FOREIGN KEY ("kill_switched_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "organizations"."organizations"
-    ADD CONSTRAINT "organizations_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "tenancy"."workspaces"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "organizations"."preferences"
-    ADD CONSTRAINT "preferences_iso2_code_fkey" FOREIGN KEY ("iso2_code") REFERENCES "core"."countries"("iso2");
-
-
-
-ALTER TABLE ONLY "organizations"."preferences"
-    ADD CONSTRAINT "preferences_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "platform"."system_flags"
-    ADD CONSTRAINT "system_flags_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "platform"."tool_invocation_logs"
-    ADD CONSTRAINT "tool_invocation_logs_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "platform"."tool_invocation_logs"
-    ADD CONSTRAINT "tool_invocation_logs_decided_by_fkey" FOREIGN KEY ("decided_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "platform"."tool_invocation_logs"
-    ADD CONSTRAINT "tool_invocation_logs_run_id_fkey" FOREIGN KEY ("run_id") REFERENCES "lenses"."workflow_runs"("id") ON DELETE SET NULL;
-
-
-
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "reputation"."contender_ratings"
-    ADD CONSTRAINT "contender_ratings_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "storage"."iceberg_namespaces"
+    ADD CONSTRAINT "iceberg_namespaces_catalog_id_fkey" FOREIGN KEY ("catalog_id") REFERENCES "storage"."buckets_analytics"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "reputation"."judge_calibrations"
-    ADD CONSTRAINT "judge_calibrations_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "storage"."iceberg_tables"
+    ADD CONSTRAINT "iceberg_tables_catalog_id_fkey" FOREIGN KEY ("catalog_id") REFERENCES "storage"."buckets_analytics"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "reputation"."lenser_scores"
-    ADD CONSTRAINT "lenser_scores_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "storage"."iceberg_tables"
+    ADD CONSTRAINT "iceberg_tables_namespace_id_fkey" FOREIGN KEY ("namespace_id") REFERENCES "storage"."iceberg_namespaces"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "reputation"."vote_risk_scores"
-    ADD CONSTRAINT "vote_risk_scores_vote_id_fkey" FOREIGN KEY ("vote_id") REFERENCES "battles"."votes"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "storage"."objects"
+    ADD CONSTRAINT "objects_bucketId_fkey" FOREIGN KEY ("bucket_id") REFERENCES "storage"."buckets"("id");
 
 
 
-ALTER TABLE ONLY "status"."components"
-    ADD CONSTRAINT "components_service_id_fkey" FOREIGN KEY ("service_id") REFERENCES "status"."services"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "storage"."s3_multipart_uploads"
+    ADD CONSTRAINT "s3_multipart_uploads_bucket_id_fkey" FOREIGN KEY ("bucket_id") REFERENCES "storage"."buckets"("id");
 
 
 
-ALTER TABLE ONLY "status"."incident_updates"
-    ADD CONSTRAINT "incident_updates_incident_id_fkey" FOREIGN KEY ("incident_id") REFERENCES "status"."incidents"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "storage"."s3_multipart_uploads_parts"
+    ADD CONSTRAINT "s3_multipart_uploads_parts_bucket_id_fkey" FOREIGN KEY ("bucket_id") REFERENCES "storage"."buckets"("id");
 
 
 
-ALTER TABLE ONLY "status"."incidents"
-    ADD CONSTRAINT "incidents_service_id_fkey" FOREIGN KEY ("service_id") REFERENCES "status"."services"("id") ON DELETE SET NULL;
+ALTER TABLE ONLY "storage"."s3_multipart_uploads_parts"
+    ADD CONSTRAINT "s3_multipart_uploads_parts_upload_id_fkey" FOREIGN KEY ("upload_id") REFERENCES "storage"."s3_multipart_uploads"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "status"."maintenance_windows"
-    ADD CONSTRAINT "maintenance_windows_service_id_fkey" FOREIGN KEY ("service_id") REFERENCES "status"."services"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "tenancy"."workspace_members"
-    ADD CONSTRAINT "workspace_members_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "tenancy"."workspace_members"
-    ADD CONSTRAINT "workspace_members_lenser_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "tenancy"."workspace_members"
-    ADD CONSTRAINT "workspace_members_workspace_fkey" FOREIGN KEY ("workspace_id") REFERENCES "tenancy"."workspaces"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "tenancy"."workspaces"
-    ADD CONSTRAINT "workspaces_org_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "tenancy"."workspaces"
-    ADD CONSTRAINT "workspaces_owner_fkey" FOREIGN KEY ("owner_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "wallet"."accounts"
-    ADD CONSTRAINT "accounts_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
-
-
-
-ALTER TABLE ONLY "wallet"."organization_accounts"
-    ADD CONSTRAINT "organization_accounts_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE RESTRICT;
-
-
-
-ALTER TABLE ONLY "wallet"."pending_charges"
-    ADD CONSTRAINT "pending_charges_account_fkey" FOREIGN KEY ("account_id") REFERENCES "wallet"."accounts"("id") ON DELETE RESTRICT;
-
-
-
-ALTER TABLE ONLY "wallet"."pending_charges"
-    ADD CONSTRAINT "pending_charges_lenser_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
-
-
-
-ALTER TABLE ONLY "wallet"."spending_limits"
-    ADD CONSTRAINT "spending_limits_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "wallet"."accounts"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "wallet"."transactions"
-    ADD CONSTRAINT "transactions_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "wallet"."accounts"("id") ON DELETE RESTRICT;
+ALTER TABLE ONLY "storage"."vector_indexes"
+    ADD CONSTRAINT "vector_indexes_bucket_id_fkey" FOREIGN KEY ("bucket_id") REFERENCES "storage"."buckets_vectors"("id");
 
 
 
@@ -55142,633 +42831,6 @@ ALTER TABLE ONLY "xp"."streaks"
 
 ALTER TABLE ONLY "xp"."totals"
     ADD CONSTRAINT "xp_totals_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE "admin"."kill_switches" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "kill_switches_deny_all" ON "admin"."kill_switches" AS RESTRICTIVE TO "authenticated", "anon" USING (false);
-
-
-
-ALTER TABLE "agents"."action_logs" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "action_logs_owner_read" ON "agents"."action_logs" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "agents"."ownerships" "o"
-  WHERE (("o"."ai_lenser_id" = "action_logs"."ai_lenser_id") AND ("o"."owner_lenser_id" = "lensers"."get_auth_human_lenser_id"()) AND ("o"."revoked_at" IS NULL)))));
-
-
-
-CREATE POLICY "action_logs_service_insert" ON "agents"."action_logs" FOR INSERT TO "service_role" WITH CHECK (true);
-
-
-
-ALTER TABLE "agents"."agent_run_events" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "agent_run_events_owner_all" ON "agents"."agent_run_events" TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "agents"."team_runs" "tr"
-  WHERE (("tr"."id" = "agent_run_events"."team_run_id") AND "agents"."can_manage_ai_lenser"("tr"."ai_lenser_id"))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "agents"."team_runs" "tr"
-  WHERE (("tr"."id" = "agent_run_events"."team_run_id") AND "agents"."can_manage_ai_lenser"("tr"."ai_lenser_id")))));
-
-
-
-ALTER TABLE "agents"."agent_run_steps" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "agent_run_steps_owner_all" ON "agents"."agent_run_steps" TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "agents"."team_runs" "tr"
-  WHERE (("tr"."id" = "agent_run_steps"."team_run_id") AND "agents"."can_manage_ai_lenser"("tr"."ai_lenser_id"))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "agents"."team_runs" "tr"
-  WHERE (("tr"."id" = "agent_run_steps"."team_run_id") AND "agents"."can_manage_ai_lenser"("tr"."ai_lenser_id")))));
-
-
-
-ALTER TABLE "agents"."ai_lensers" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "ai_lensers_public_read" ON "agents"."ai_lensers" FOR SELECT USING ((("is_active" = true) AND ("suspended_at" IS NULL)));
-
-
-
-CREATE POLICY "ai_lensers_service_write" ON "agents"."ai_lensers" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "agents"."battle_subscriptions" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "agents"."evaluation_baselines" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "evaluation_baselines_owner_all" ON "agents"."evaluation_baselines" USING ((EXISTS ( SELECT 1
-   FROM "agents"."evaluations" "e"
-  WHERE (("e"."id" = "evaluation_baselines"."evaluation_id") AND (("e"."owner_lenser_id" = "auth"."uid"()) OR (("e"."ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("e"."ai_lenser_id"))))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "agents"."evaluations" "e"
-  WHERE (("e"."id" = "evaluation_baselines"."evaluation_id") AND (("e"."owner_lenser_id" = "auth"."uid"()) OR (("e"."ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("e"."ai_lenser_id")))))));
-
-
-
-ALTER TABLE "agents"."evaluation_case_results" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "evaluation_case_results_owner_all" ON "agents"."evaluation_case_results" USING ((EXISTS ( SELECT 1
-   FROM ("agents"."evaluation_runs" "r"
-     JOIN "agents"."evaluations" "e" ON (("e"."id" = "r"."evaluation_id")))
-  WHERE (("r"."id" = "evaluation_case_results"."evaluation_run_id") AND (("e"."owner_lenser_id" = "auth"."uid"()) OR (("e"."ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("e"."ai_lenser_id"))))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM ("agents"."evaluation_runs" "r"
-     JOIN "agents"."evaluations" "e" ON (("e"."id" = "r"."evaluation_id")))
-  WHERE (("r"."id" = "evaluation_case_results"."evaluation_run_id") AND (("e"."owner_lenser_id" = "auth"."uid"()) OR (("e"."ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("e"."ai_lenser_id")))))));
-
-
-
-ALTER TABLE "agents"."evaluation_cases" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "evaluation_cases_owner_all" ON "agents"."evaluation_cases" USING ((EXISTS ( SELECT 1
-   FROM "agents"."evaluations" "e"
-  WHERE (("e"."id" = "evaluation_cases"."evaluation_id") AND (("e"."owner_lenser_id" = "auth"."uid"()) OR (("e"."ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("e"."ai_lenser_id"))))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "agents"."evaluations" "e"
-  WHERE (("e"."id" = "evaluation_cases"."evaluation_id") AND (("e"."owner_lenser_id" = "auth"."uid"()) OR (("e"."ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("e"."ai_lenser_id")))))));
-
-
-
-ALTER TABLE "agents"."evaluation_rubrics" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "evaluation_rubrics_owner_all" ON "agents"."evaluation_rubrics" USING ((EXISTS ( SELECT 1
-   FROM "agents"."evaluations" "e"
-  WHERE (("e"."id" = "evaluation_rubrics"."evaluation_id") AND (("e"."owner_lenser_id" = "auth"."uid"()) OR (("e"."ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("e"."ai_lenser_id"))))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "agents"."evaluations" "e"
-  WHERE (("e"."id" = "evaluation_rubrics"."evaluation_id") AND (("e"."owner_lenser_id" = "auth"."uid"()) OR (("e"."ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("e"."ai_lenser_id")))))));
-
-
-
-ALTER TABLE "agents"."evaluation_runs" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "evaluation_runs_owner_all" ON "agents"."evaluation_runs" USING ((EXISTS ( SELECT 1
-   FROM "agents"."evaluations" "e"
-  WHERE (("e"."id" = "evaluation_runs"."evaluation_id") AND (("e"."owner_lenser_id" = "auth"."uid"()) OR (("e"."ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("e"."ai_lenser_id"))))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "agents"."evaluations" "e"
-  WHERE (("e"."id" = "evaluation_runs"."evaluation_id") AND (("e"."owner_lenser_id" = "auth"."uid"()) OR (("e"."ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("e"."ai_lenser_id")))))));
-
-
-
-ALTER TABLE "agents"."evaluations" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "evaluations_owner_all" ON "agents"."evaluations" USING ((("owner_lenser_id" = "auth"."uid"()) OR (("ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("ai_lenser_id")))) WITH CHECK ((("owner_lenser_id" = "auth"."uid"()) OR (("ai_lenser_id" IS NOT NULL) AND "agents"."can_manage_ai_lenser"("ai_lenser_id"))));
-
-
-
-ALTER TABLE "agents"."gateway_commands" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "gateway_commands_owner_select" ON "agents"."gateway_commands" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "agents"."gateway_devices" "d"
-  WHERE (("d"."device_id" = "gateway_commands"."device_id") AND ("d"."owner_id" = "auth"."uid"())))));
-
-
-
-ALTER TABLE "agents"."gateway_devices" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "gateway_devices_owner_select" ON "agents"."gateway_devices" FOR SELECT USING (("owner_id" = "auth"."uid"()));
-
-
-
-ALTER TABLE "agents"."lens_bindings" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "lens_bindings_public_read" ON "agents"."lens_bindings" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "lens_bindings_service_write" ON "agents"."lens_bindings" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "agents"."memories" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "memories_owner_all" ON "agents"."memories" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."memory_access_logs" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "memory_access_logs_owner_all" ON "agents"."memory_access_logs" USING ((EXISTS ( SELECT 1
-   FROM "agents"."memories" "m"
-  WHERE (("m"."id" = "memory_access_logs"."memory_id") AND "agents"."can_manage_ai_lenser"("m"."ai_lenser_id"))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "agents"."memories" "m"
-  WHERE (("m"."id" = "memory_access_logs"."memory_id") AND "agents"."can_manage_ai_lenser"("m"."ai_lenser_id")))));
-
-
-
-ALTER TABLE "agents"."memory_profiles" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "memory_profiles_owner_all" ON "agents"."memory_profiles" TO "authenticated" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."model_bindings" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "model_bindings_public_read" ON "agents"."model_bindings" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "model_bindings_service_write" ON "agents"."model_bindings" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "agents"."model_profiles" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "model_profiles_owner_all" ON "agents"."model_profiles" TO "authenticated" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."ownerships" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "ownerships_read_own" ON "agents"."ownerships" FOR SELECT USING (("owner_lenser_id" = "lensers"."get_auth_human_lenser_id"()));
-
-
-
-CREATE POLICY "ownerships_service_write" ON "agents"."ownerships" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "agents"."personality_profiles" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "personality_profiles_owner_all" ON "agents"."personality_profiles" TO "authenticated" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."policies" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "policies_public_read" ON "agents"."policies" FOR SELECT USING (("is_public_policy" = true));
-
-
-
-CREATE POLICY "policies_service_write" ON "agents"."policies" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "agents"."policy_evaluations" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "policy_evaluations_owner_insert" ON "agents"."policy_evaluations" FOR INSERT WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-CREATE POLICY "policy_evaluations_owner_select" ON "agents"."policy_evaluations" FOR SELECT USING ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."provider_configs" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "provider_configs_owner_all" ON "agents"."provider_configs" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."quota_snapshots" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "quota_snapshots_owner_read" ON "agents"."quota_snapshots" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "agents"."ownerships" "o"
-  WHERE (("o"."ai_lenser_id" = "quota_snapshots"."ai_lenser_id") AND ("o"."owner_lenser_id" = "lensers"."get_auth_human_lenser_id"()) AND ("o"."revoked_at" IS NULL)))));
-
-
-
-CREATE POLICY "quota_snapshots_service_write" ON "agents"."quota_snapshots" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "agents"."run_incidents" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "run_incidents_owner_all" ON "agents"."run_incidents" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."run_reports" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "run_reports_owner_insert" ON "agents"."run_reports" FOR INSERT WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-CREATE POLICY "run_reports_owner_select" ON "agents"."run_reports" FOR SELECT USING ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."scratchpad_runs" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "scratchpad_runs_owner_select" ON "agents"."scratchpad_runs" FOR SELECT USING ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-CREATE POLICY "scratchpad_runs_owner_write" ON "agents"."scratchpad_runs" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."standing_approvals" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "standing_approvals_owner_all" ON "agents"."standing_approvals" TO "authenticated" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-CREATE POLICY "sub_owner_all" ON "agents"."battle_subscriptions" USING ((EXISTS ( SELECT 1
-   FROM ("agents"."ai_lensers" "al"
-     JOIN "lensers"."profiles" "p" ON (("p"."id" = "al"."profile_id")))
-  WHERE (("al"."id" = "battle_subscriptions"."agent_id") AND ("p"."user_id" = "auth"."uid"())))));
-
-
-
-ALTER TABLE "agents"."team_edges" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "team_edges_owner_all" ON "agents"."team_edges" TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "agents"."teams" "t"
-  WHERE (("t"."id" = "team_edges"."team_id") AND "agents"."can_manage_ai_lenser"("t"."ai_lenser_id"))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "agents"."teams" "t"
-  WHERE (("t"."id" = "team_edges"."team_id") AND "agents"."can_manage_ai_lenser"("t"."ai_lenser_id")))));
-
-
-
-ALTER TABLE "agents"."team_members" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "team_members_owner_all" ON "agents"."team_members" TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "agents"."teams" "t"
-  WHERE (("t"."id" = "team_members"."team_id") AND "agents"."can_manage_ai_lenser"("t"."ai_lenser_id"))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "agents"."teams" "t"
-  WHERE (("t"."id" = "team_members"."team_id") AND "agents"."can_manage_ai_lenser"("t"."ai_lenser_id")))));
-
-
-
-ALTER TABLE "agents"."team_messages" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "team_messages_owner_insert" ON "agents"."team_messages" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
-   FROM ("agents"."team_runs" "tr"
-     JOIN "agents"."team_members" "tm" ON ((("tm"."team_id" = "tr"."team_id") AND ("tm"."agent_id" = "team_messages"."from_agent_id"))))
-  WHERE (("tr"."id" = "team_messages"."team_run_id") AND "agents"."can_manage_ai_lenser"("tr"."ai_lenser_id")))));
-
-
-
-COMMENT ON POLICY "team_messages_owner_insert" ON "agents"."team_messages" IS 'Phase X1 (hardened): owner may INSERT only if from_agent_id is a member of the team backing the team_run. Prevents forged sender attribution.';
-
-
-
-CREATE POLICY "team_messages_owner_select" ON "agents"."team_messages" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "agents"."team_runs" "tr"
-  WHERE (("tr"."id" = "team_messages"."team_run_id") AND "agents"."can_manage_ai_lenser"("tr"."ai_lenser_id")))));
-
-
-
-ALTER TABLE "agents"."team_runs" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "team_runs_owner_all" ON "agents"."team_runs" TO "authenticated" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."teams" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "teams_owner_all" ON "agents"."teams" TO "authenticated" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."tool_assignments" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "tool_assignments_owner_all" ON "agents"."tool_assignments" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."tool_invocations" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "tool_invocations_owner_all" ON "agents"."tool_invocations" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."tool_profiles" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "tool_profiles_owner_all" ON "agents"."tool_profiles" TO "authenticated" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."tools_registry" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "tools_registry_owner_all" ON "agents"."tools_registry" USING (("owner_lenser_id" = "lensers"."get_auth_human_lenser_id"())) WITH CHECK (("owner_lenser_id" = "lensers"."get_auth_human_lenser_id"()));
-
-
-
-ALTER TABLE "agents"."workflow_assignments" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "workflow_assignments_owner_all" ON "agents"."workflow_assignments" TO "authenticated" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."workspace_settings" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "workspace_settings_owner_all" ON "agents"."workspace_settings" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id")) WITH CHECK ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "agents"."workspace_switches" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "ws_insert_own" ON "agents"."workspace_switches" FOR INSERT WITH CHECK (("human_lenser_id" = "lensers"."get_auth_lenser_id"()));
-
-
-
-CREATE POLICY "ws_select_own" ON "agents"."workspace_switches" FOR SELECT USING (("human_lenser_id" = "lensers"."get_auth_lenser_id"()));
-
-
-
-CREATE POLICY "ai_models_delete_admin_only" ON "ai"."models" FOR DELETE TO "authenticated" USING ("public"."is_admin"());
-
-
-
-CREATE POLICY "ai_models_insert_admin_only" ON "ai"."models" FOR INSERT TO "authenticated" WITH CHECK ("public"."is_admin"());
-
-
-
-CREATE POLICY "ai_models_select" ON "ai"."models" FOR SELECT USING ((("is_active" = true) OR "public"."is_admin"()));
-
-
-
-CREATE POLICY "ai_models_update_admin_only" ON "ai"."models" FOR UPDATE TO "authenticated" USING ("public"."is_admin"()) WITH CHECK ("public"."is_admin"());
-
-
-
-CREATE POLICY "ai_providers_select" ON "ai"."providers" FOR SELECT USING ((("is_active" = true) OR "public"."is_admin"()));
-
-
-
-ALTER TABLE "ai"."key_usage_log" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "key_usage_log_select_own" ON "ai"."key_usage_log" FOR SELECT TO "authenticated" USING (("lenser_id" = "lensers"."get_auth_lenser_id"()));
-
-
-
-CREATE POLICY "key_usage_log_service_all" ON "ai"."key_usage_log" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "ai"."keys" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "keys_select_own_fallback" ON "ai"."keys" FOR SELECT TO "authenticated" USING (("lenser_id" = "lensers"."get_auth_lenser_id"()));
-
-
-
-ALTER TABLE "ai"."model_pricing" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "model_pricing_select_active" ON "ai"."model_pricing" FOR SELECT TO "authenticated", "anon" USING (("effective_to" IS NULL));
-
-
-
-CREATE POLICY "model_pricing_service_all" ON "ai"."model_pricing" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "ai"."models" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "ai"."providers" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "providers_service_all" ON "ai"."providers" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "service_role_all" ON "ai"."keys" TO "service_role" USING ((( SELECT "auth"."role"() AS "role") = 'service_role'::"text"));
-
-
-
-CREATE POLICY "acd_owner_read" ON "analytics"."agent_cost_daily" FOR SELECT TO "authenticated" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "analytics"."agent_cost_daily" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "allow_system_read_lenser_activity" ON "analytics"."lenser_activity" FOR SELECT TO "service_role" USING (true);
-
-
-
-CREATE POLICY "auth_user_can_select_own_feedback" ON "analytics"."product_feedback" FOR SELECT TO "authenticated" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
-
-
-
-CREATE POLICY "deny_delete_join_log" ON "analytics"."lenser_join_log" FOR DELETE USING (false);
-
-
-
-CREATE POLICY "deny_insert_join_log" ON "analytics"."lenser_join_log" FOR INSERT WITH CHECK (false);
-
-
-
-CREATE POLICY "deny_update_join_log" ON "analytics"."lenser_join_log" FOR UPDATE USING (false) WITH CHECK (false);
-
-
-
-CREATE POLICY "eqd_owner_read" ON "analytics"."eval_quality_daily" FOR SELECT TO "authenticated" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
-
-
-
-ALTER TABLE "analytics"."eval_quality_daily" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "events_deny_delete" ON "analytics"."tag_activity_events" FOR DELETE USING (false);
-
-
-
-CREATE POLICY "events_deny_update" ON "analytics"."tag_activity_events" FOR UPDATE USING (false) WITH CHECK (false);
-
-
-
-CREATE POLICY "events_insert_deny" ON "analytics"."tag_activity_events" FOR INSERT WITH CHECK (false);
-
-
-
-CREATE POLICY "events_insert_service" ON "analytics"."tag_activity_events" FOR INSERT TO "service_role" WITH CHECK (true);
-
-
-
-CREATE POLICY "events_public_select" ON "analytics"."tag_activity_events" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "join_log_public_select" ON "analytics"."lenser_join_log" FOR SELECT USING (true);
-
-
-
-ALTER TABLE "analytics"."lenser_activity" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "lenser_activity_service_insert" ON "analytics"."lenser_activity" FOR INSERT WITH CHECK ((( SELECT "auth"."role"() AS "role") = 'service_role'::"text"));
-
-
-
-ALTER TABLE "analytics"."lenser_join_log" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "analytics"."lenser_stats" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "p_feedback_insert_public" ON "analytics"."product_feedback" FOR INSERT TO "authenticated", "anon" WITH CHECK ((("message" IS NULL) OR ("char_length"("btrim"("message")) >= 10)));
-
-
-
-ALTER TABLE "analytics"."page_views" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "page_views_insert_secure" ON "analytics"."page_views" FOR INSERT TO "authenticated", "anon" WITH CHECK ((("path" IS NOT NULL) AND ("length"("path") > 0)));
-
-
-
-CREATE POLICY "page_views_no_delete" ON "analytics"."page_views" FOR DELETE USING (false);
-
-
-
-CREATE POLICY "page_views_no_select" ON "analytics"."page_views" FOR SELECT USING (false);
-
-
-
-CREATE POLICY "page_views_no_update" ON "analytics"."page_views" FOR UPDATE USING (false) WITH CHECK (false);
-
-
-
-CREATE POLICY "page_views_select_service_role" ON "analytics"."page_views" FOR SELECT TO "service_role" USING (true);
-
-
-
-ALTER TABLE "analytics"."product_feedback" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "public_can_read_engagement" ON "analytics"."lenser_stats" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "service_all_activity" ON "analytics"."lenser_activity" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "service_role_full_access_feedback" ON "analytics"."product_feedback" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "analytics"."share_events" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "share_events_select_by_link_owner" ON "analytics"."share_events" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM ("analytics"."shared_links" "sl"
-     JOIN "lensers"."profiles" "l" ON (("l"."id" = "sl"."creator_lenser_id")))
-  WHERE (("sl"."id" = "share_events"."shared_link_id") AND ("l"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
-
-
-
-ALTER TABLE "analytics"."shared_links" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "shared_links_delete_own" ON "analytics"."shared_links" FOR DELETE USING ((EXISTS ( SELECT 1
-   FROM "lensers"."profiles" "l"
-  WHERE (("l"."id" = "shared_links"."creator_lenser_id") AND ("l"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
-
-
-
-CREATE POLICY "shared_links_insert_own" ON "analytics"."shared_links" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
-   FROM "lensers"."profiles" "l"
-  WHERE (("l"."id" = "shared_links"."creator_lenser_id") AND ("l"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
-
-
-
-CREATE POLICY "shared_links_select_own" ON "analytics"."shared_links" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "lensers"."profiles" "l"
-  WHERE (("l"."id" = "shared_links"."creator_lenser_id") AND ("l"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
-
-
-
-CREATE POLICY "shared_links_update_own" ON "analytics"."shared_links" FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM "lensers"."profiles" "l"
-  WHERE (("l"."id" = "shared_links"."creator_lenser_id") AND ("l"."user_id" = ( SELECT "auth"."uid"() AS "uid")))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "lensers"."profiles" "l"
-  WHERE (("l"."id" = "shared_links"."creator_lenser_id") AND ("l"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
-
-
-
-ALTER TABLE "analytics"."tag_activity_events" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "analytics"."workflow_perf_daily" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "wpd_owner_read" ON "analytics"."workflow_perf_daily" FOR SELECT TO "authenticated" USING ("agents"."can_manage_ai_lenser"("ai_lenser_id"));
 
 
 
@@ -55918,48 +42980,6 @@ CREATE POLICY "webhook_outbox_service" ON "audit"."webhook_outbox" TO "service_r
 
 
 CREATE POLICY "webhook_outbox_service_role_all" ON "audit"."webhook_outbox" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "automation_events_owner_select" ON "automation"."events" FOR SELECT TO "authenticated" USING (("source_lenser_id" = "auth"."uid"()));
-
-
-
-ALTER TABLE "automation"."cron_runs" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "cron_runs_service_only" ON "automation"."cron_runs" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "automation"."event_dispatches" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "event_dispatches_owner_select" ON "automation"."event_dispatches" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "automation"."trigger_rules" "tr"
-  WHERE (("tr"."id" = "event_dispatches"."rule_id") AND ("tr"."lenser_id" = "auth"."uid"())))));
-
-
-
-ALTER TABLE "automation"."events" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "automation"."trigger_rules" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "trigger_rules_owner_delete" ON "automation"."trigger_rules" FOR DELETE TO "authenticated" USING (("lenser_id" = "auth"."uid"()));
-
-
-
-CREATE POLICY "trigger_rules_owner_insert" ON "automation"."trigger_rules" FOR INSERT TO "authenticated" WITH CHECK (("lenser_id" = "auth"."uid"()));
-
-
-
-CREATE POLICY "trigger_rules_owner_select" ON "automation"."trigger_rules" FOR SELECT TO "authenticated" USING (("lenser_id" = "auth"."uid"()));
-
-
-
-CREATE POLICY "trigger_rules_owner_update" ON "automation"."trigger_rules" FOR UPDATE TO "authenticated" USING (("lenser_id" = "auth"."uid"())) WITH CHECK (("lenser_id" = "auth"."uid"()));
 
 
 
@@ -56617,151 +43637,6 @@ CREATE POLICY "votes_select" ON "battles"."votes" FOR SELECT USING (((EXISTS ( S
 
 
 
-ALTER TABLE "benchmark"."invalidations" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "invalidations_public_read" ON "benchmark"."invalidations" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "invalidations_service_insert" ON "benchmark"."invalidations" FOR INSERT TO "service_role" WITH CHECK (true);
-
-
-
-ALTER TABLE "benchmark"."protocol_versions" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "protocol_versions_public_read" ON "benchmark"."protocol_versions" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "benchmark"."suites" "s"
-  WHERE (("s"."id" = "protocol_versions"."suite_id") AND ("s"."is_public" = true)))));
-
-
-
-CREATE POLICY "protocol_versions_service_write" ON "benchmark"."protocol_versions" FOR INSERT TO "service_role" WITH CHECK (true);
-
-
-
-ALTER TABLE "benchmark"."result_sets" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "result_sets_public_read" ON "benchmark"."result_sets" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "benchmark"."suites" "s"
-  WHERE (("s"."id" = "result_sets"."suite_id") AND ("s"."is_public" = true)))));
-
-
-
-CREATE POLICY "result_sets_service_insert" ON "benchmark"."result_sets" FOR INSERT TO "service_role" WITH CHECK (true);
-
-
-
-ALTER TABLE "benchmark"."significance_tests" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "significance_tests_public_read" ON "benchmark"."significance_tests" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM ("benchmark"."result_sets" "rs"
-     JOIN "benchmark"."suites" "s" ON (("s"."id" = "rs"."suite_id")))
-  WHERE (("rs"."id" = "significance_tests"."result_set_id") AND ("s"."is_public" = true)))));
-
-
-
-CREATE POLICY "significance_tests_service_write" ON "benchmark"."significance_tests" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "benchmark"."suites" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "suites_creator_update" ON "benchmark"."suites" FOR UPDATE TO "authenticated" USING (("creator_lenser_id" = "lensers"."get_auth_lenser_id"()));
-
-
-
-CREATE POLICY "suites_creator_write" ON "benchmark"."suites" FOR INSERT TO "authenticated" WITH CHECK (("creator_lenser_id" = "lensers"."get_auth_lenser_id"()));
-
-
-
-CREATE POLICY "suites_read" ON "benchmark"."suites" FOR SELECT USING (((("is_public" = true) AND ("status" = 'active'::"text")) OR ("creator_lenser_id" = "lensers"."get_auth_lenser_id"())));
-
-
-
-CREATE POLICY "suites_service_write" ON "benchmark"."suites" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "benchmark"."tasks" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "tasks_creator_write" ON "benchmark"."tasks" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
-   FROM "benchmark"."suites" "s"
-  WHERE (("s"."id" = "tasks"."suite_id") AND ("s"."creator_lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "tasks_public_read" ON "benchmark"."tasks" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "benchmark"."suites" "s"
-  WHERE (("s"."id" = "tasks"."suite_id") AND ("s"."is_public" = true)))));
-
-
-
-CREATE POLICY "tasks_service_write" ON "benchmark"."tasks" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "billing_margin_policies_service_all" ON "billing"."execution_margin_policies" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "billing"."checkout_sessions" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "checkout_sessions_service_all" ON "billing"."checkout_sessions" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "billing"."execution_margin_policies" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "billing"."orders" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "orders_service_all" ON "billing"."orders" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "billing"."products" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "products_service_all" ON "billing"."products" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "billing"."variants" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "variants_service_all" ON "billing"."variants" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "billing"."webhook_events" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "webhook_events_service_all" ON "billing"."webhook_events" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "connectors"."connector_tokens" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "connector_tokens_deny_all" ON "connectors"."connector_tokens" AS RESTRICTIVE TO "authenticated", "anon" USING (false);
-
-
-
-ALTER TABLE "connectors"."connectors" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "connectors_deny_all" ON "connectors"."connectors" AS RESTRICTIVE TO "authenticated", "anon" USING (false);
-
-
-
 CREATE POLICY "Public can read tag maps" ON "content"."tag_map" FOR SELECT USING (true);
 
 
@@ -56965,147 +43840,6 @@ CREATE POLICY "threads_service_role_all" ON "content"."threads" TO "service_role
 
 
 
-ALTER TABLE "core"."cities" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "cities_select_public" ON "core"."cities" FOR SELECT TO "authenticated", "anon" USING (true);
-
-
-
-CREATE POLICY "cities_service_all" ON "core"."cities" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "core"."countries" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "countries_select_public" ON "core"."countries" FOR SELECT TO "authenticated", "anon" USING (true);
-
-
-
-CREATE POLICY "countries_service_all" ON "core"."countries" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "core"."currencies" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "currencies_select_public" ON "core"."currencies" FOR SELECT TO "authenticated", "anon" USING (true);
-
-
-
-CREATE POLICY "currencies_service_all" ON "core"."currencies" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "core"."languages" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "languages_select_active" ON "core"."languages" FOR SELECT TO "authenticated", "anon" USING (("is_active" = true));
-
-
-
-CREATE POLICY "languages_service_all" ON "core"."languages" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "core"."regions" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "regions_select_public" ON "core"."regions" FOR SELECT TO "authenticated", "anon" USING (true);
-
-
-
-CREATE POLICY "regions_service_all" ON "core"."regions" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "core"."states" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "states_select_public" ON "core"."states" FOR SELECT TO "authenticated", "anon" USING (true);
-
-
-
-CREATE POLICY "states_service_all" ON "core"."states" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "core"."subregions" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "subregions_select_public" ON "core"."subregions" FOR SELECT TO "authenticated", "anon" USING (true);
-
-
-
-CREATE POLICY "subregions_service_all" ON "core"."subregions" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "devices"."device_challenges" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "device_challenges_owner_select" ON "devices"."device_challenges" FOR SELECT USING (("lenser_id" = ( SELECT "profiles"."id"
-   FROM "lensers"."profiles"
-  WHERE ("profiles"."user_id" = "auth"."uid"())
- LIMIT 1)));
-
-
-
-CREATE POLICY "devices_owner_delete" ON "devices"."registered_devices" FOR DELETE USING (("lenser_id" = ( SELECT "profiles"."id"
-   FROM "lensers"."profiles"
-  WHERE ("profiles"."user_id" = "auth"."uid"())
- LIMIT 1)));
-
-
-
-CREATE POLICY "devices_owner_select" ON "devices"."registered_devices" FOR SELECT USING (("lenser_id" = ( SELECT "profiles"."id"
-   FROM "lensers"."profiles"
-  WHERE ("profiles"."user_id" = "auth"."uid"())
- LIMIT 1)));
-
-
-
-ALTER TABLE "devices"."nonce_cache" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "nonce_cache_deny_all" ON "devices"."nonce_cache" AS RESTRICTIVE TO "authenticated", "anon" USING (false);
-
-
-
-ALTER TABLE "devices"."peer_leases" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "peer_leases_owner_select" ON "devices"."peer_leases" FOR SELECT USING (("lenser_id" = ( SELECT "profiles"."id"
-   FROM "lensers"."profiles"
-  WHERE ("profiles"."user_id" = "auth"."uid"())
- LIMIT 1)));
-
-
-
-ALTER TABLE "devices"."registered_devices" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "devices"."sync_outbox" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "sync_outbox_owner_select" ON "devices"."sync_outbox" FOR SELECT USING (("lenser_id" = ( SELECT "profiles"."id"
-   FROM "lensers"."profiles"
-  WHERE ("profiles"."user_id" = "auth"."uid"())
- LIMIT 1)));
-
-
-
-ALTER TABLE "devices"."sync_watermarks" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "sync_watermarks_owner_select" ON "devices"."sync_watermarks" FOR SELECT USING (("lenser_id" = ( SELECT "profiles"."id"
-   FROM "lensers"."profiles"
-  WHERE ("profiles"."user_id" = "auth"."uid"())
- LIMIT 1)));
-
-
-
 ALTER TABLE "execution"."artifact_medias" ENABLE ROW LEVEL SECURITY;
 
 
@@ -57292,24 +44026,6 @@ CREATE POLICY "trust_evals_owner_select" ON "execution"."trust_evaluations" FOR 
 
 
 ALTER TABLE "execution"."trust_evaluations" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "integrations"."tool_allowlist" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "tool_allowlist_service_all" ON "integrations"."tool_allowlist" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "integrations"."tools" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "tools_select_active" ON "integrations"."tools" FOR SELECT TO "authenticated", "anon" USING (("is_active" = true));
-
-
-
-CREATE POLICY "tools_service_all" ON "integrations"."tools" TO "service_role" USING (true) WITH CHECK (true);
-
 
 
 CREATE POLICY "Public can read badges" ON "lensers"."badges" FOR SELECT USING (true);
@@ -57989,269 +44705,6 @@ CREATE POLICY "wvn_service_all" ON "lenses"."workflow_version_nodes" TO "service
 
 
 
-CREATE POLICY "anon_select_public" ON "media"."objects" FOR SELECT TO "anon" USING (("visibility" = 'public'::"text"));
-
-
-
-CREATE POLICY "anon_select_public_attachments" ON "media"."attachments" FOR SELECT TO "anon" USING ((EXISTS ( SELECT 1
-   FROM "media"."objects" "o"
-  WHERE (("o"."id" = "attachments"."object_id") AND ("o"."visibility" = 'public'::"text")))));
-
-
-
-ALTER TABLE "media"."attachments" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "authenticated_delete_attachments" ON "media"."attachments" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "media"."objects" "o"
-  WHERE (("o"."id" = "attachments"."object_id") AND ("o"."owner_lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "authenticated_delete_own" ON "media"."objects" FOR DELETE TO "authenticated" USING (("owner_lenser_id" = "lensers"."get_auth_lenser_id"()));
-
-
-
-CREATE POLICY "authenticated_insert_attachments" ON "media"."attachments" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
-   FROM "media"."objects" "o"
-  WHERE (("o"."id" = "attachments"."object_id") AND ("o"."owner_lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "authenticated_insert_own" ON "media"."objects" FOR INSERT TO "authenticated" WITH CHECK ((("owner_lenser_id" = "lensers"."get_auth_lenser_id"()) AND "tenancy"."is_workspace_member"("workspace_id")));
-
-
-
-CREATE POLICY "authenticated_select_attachments" ON "media"."attachments" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "media"."objects" "o"
-  WHERE (("o"."id" = "attachments"."object_id") AND (("o"."owner_lenser_id" = "lensers"."get_auth_lenser_id"()) OR ("o"."visibility" = 'public'::"text") OR "tenancy"."is_workspace_member"("o"."workspace_id"))))));
-
-
-
-CREATE POLICY "authenticated_select_own_or_public" ON "media"."objects" FOR SELECT TO "authenticated" USING ((("owner_lenser_id" = "lensers"."get_auth_lenser_id"()) OR ("visibility" = 'public'::"text") OR "tenancy"."is_workspace_member"("workspace_id")));
-
-
-
-CREATE POLICY "authenticated_update_own" ON "media"."objects" FOR UPDATE TO "authenticated" USING (("owner_lenser_id" = "lensers"."get_auth_lenser_id"()));
-
-
-
-ALTER TABLE "media"."objects" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "organizations"."activity_log" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "activity_log_insert_admin" ON "organizations"."activity_log" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "activity_log"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-CREATE POLICY "activity_log_select_member" ON "organizations"."activity_log" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "activity_log"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "activity_log_service_all" ON "organizations"."activity_log" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "activity_log_update_admin" ON "organizations"."activity_log" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "activity_log"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-ALTER TABLE "organizations"."addresses" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "addresses_insert_admin" ON "organizations"."addresses" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
-   FROM ("organizations"."companies" "c"
-     JOIN "organizations"."members" "m" ON (("m"."org_id" = "c"."org_id")))
-  WHERE (("c"."id" = "addresses"."company_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-CREATE POLICY "addresses_select_member" ON "organizations"."addresses" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM ("organizations"."companies" "c"
-     JOIN "organizations"."members" "m" ON (("m"."org_id" = "c"."org_id")))
-  WHERE (("c"."id" = "addresses"."company_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "addresses_service_all" ON "organizations"."addresses" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "addresses_update_admin" ON "organizations"."addresses" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM ("organizations"."companies" "c"
-     JOIN "organizations"."members" "m" ON (("m"."org_id" = "c"."org_id")))
-  WHERE (("c"."id" = "addresses"."company_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-ALTER TABLE "organizations"."audit_logs" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "audit_logs_insert_admin" ON "organizations"."audit_logs" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "audit_logs"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-CREATE POLICY "audit_logs_select_member" ON "organizations"."audit_logs" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "audit_logs"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "audit_logs_service_all" ON "organizations"."audit_logs" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "organizations"."companies" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "companies_insert_admin" ON "organizations"."companies" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "companies"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-CREATE POLICY "companies_select_member" ON "organizations"."companies" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "companies"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "companies_service_all" ON "organizations"."companies" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "companies_update_admin" ON "organizations"."companies" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "companies"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-ALTER TABLE "organizations"."members" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "members_manage_delete" ON "organizations"."members" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "members"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-CREATE POLICY "members_manage_insert" ON "organizations"."members" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "members"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-CREATE POLICY "members_manage_update" ON "organizations"."members" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "members"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"])))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "members"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-CREATE POLICY "members_select_member" ON "organizations"."members" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "members"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "members_service_all" ON "organizations"."members" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "organizations"."organizations" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "organizations_insert_own" ON "organizations"."organizations" FOR INSERT TO "authenticated" WITH CHECK (("created_by" = "lensers"."get_auth_lenser_id"()));
-
-
-
-CREATE POLICY "organizations_select_member" ON "organizations"."organizations" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "organizations"."id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "organizations_service_all" ON "organizations"."organizations" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "organizations_update_admin" ON "organizations"."organizations" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "organizations"."id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-ALTER TABLE "organizations"."preferences" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "preferences_insert_admin" ON "organizations"."preferences" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "preferences"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-CREATE POLICY "preferences_select_member" ON "organizations"."preferences" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "preferences"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "preferences_service_all" ON "organizations"."preferences" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "preferences_update_admin" ON "organizations"."preferences" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "m"
-  WHERE (("m"."org_id" = "preferences"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
-
-
-
-ALTER TABLE "platform"."api_worker_heartbeats" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "heartbeats_service_all" ON "platform"."api_worker_heartbeats" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "platform"."system_flags" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "system_flags_deny_write" ON "platform"."system_flags" TO "authenticated" USING (false) WITH CHECK (false);
-
-
-
-CREATE POLICY "system_flags_read" ON "platform"."system_flags" FOR SELECT TO "authenticated" USING (true);
-
-
-
-ALTER TABLE "platform"."tool_invocation_logs" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "tool_log_deny_direct_insert" ON "platform"."tool_invocation_logs" FOR INSERT TO "authenticated" WITH CHECK (false);
-
-
-
-CREATE POLICY "tool_log_deny_direct_update" ON "platform"."tool_invocation_logs" FOR UPDATE TO "authenticated" USING (false);
-
-
-
-CREATE POLICY "tool_log_owner_select" ON "platform"."tool_invocation_logs" FOR SELECT TO "authenticated" USING (("ai_lenser_id" IN ( SELECT "al"."id"
-   FROM "agents"."ai_lensers" "al"
-  WHERE ("al"."profile_id" = "lensers"."get_auth_lenser_id"()))));
-
-
-
 ALTER TABLE "public"."notifications" ENABLE ROW LEVEL SECURITY;
 
 
@@ -58267,219 +44720,86 @@ CREATE POLICY "notifications_service_insert" ON "public"."notifications" FOR INS
 
 
 
-ALTER TABLE "reputation"."contender_ratings" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "auth_delete_own_objects" ON "storage"."objects" FOR DELETE TO "authenticated" USING ((("storage"."foldername"("name"))[1] = ("auth"."uid"())::"text"));
 
 
-CREATE POLICY "contender_ratings_service_write" ON "reputation"."contender_ratings" TO "service_role" USING (true) WITH CHECK (true);
 
+CREATE POLICY "auth_read_own_artifacts" ON "storage"."objects" FOR SELECT TO "authenticated" USING ((("bucket_id" = 'artifacts'::"text") AND (("storage"."foldername"("name"))[1] = ("auth"."uid"())::"text")));
 
 
-ALTER TABLE "reputation"."elo_battle_log" ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "auth_read_own_lens_resources" ON "storage"."objects" FOR SELECT TO "authenticated" USING ((("bucket_id" = 'lens-resources'::"text") AND (("storage"."foldername"("name"))[1] = ("auth"."uid"())::"text")));
 
-CREATE POLICY "elo_battle_log_service_role_all" ON "reputation"."elo_battle_log" TO "service_role" USING (true) WITH CHECK (true);
 
 
+CREATE POLICY "auth_read_own_user_media" ON "storage"."objects" FOR SELECT TO "authenticated" USING ((("bucket_id" = 'user-media'::"text") AND (("storage"."foldername"("name"))[1] = ("auth"."uid"())::"text")));
 
-ALTER TABLE "reputation"."judge_calibrations" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "judge_calibrations_public_read" ON "reputation"."judge_calibrations" FOR SELECT USING (true);
+CREATE POLICY "auth_upload_artifacts" ON "storage"."objects" FOR INSERT TO "authenticated" WITH CHECK (("bucket_id" = 'artifacts'::"text"));
 
 
 
-CREATE POLICY "judge_calibrations_service_write" ON "reputation"."judge_calibrations" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "auth_upload_lens_resources" ON "storage"."objects" FOR INSERT TO "authenticated" WITH CHECK (("bucket_id" = 'lens-resources'::"text"));
 
 
 
-ALTER TABLE "reputation"."lenser_scores" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "auth_upload_public_assets" ON "storage"."objects" FOR INSERT TO "authenticated" WITH CHECK (("bucket_id" = 'public-assets'::"text"));
 
 
-CREATE POLICY "lenser_scores_service_write" ON "reputation"."lenser_scores" TO "service_role" USING (true) WITH CHECK (true);
 
+CREATE POLICY "auth_upload_user_media" ON "storage"."objects" FOR INSERT TO "authenticated" WITH CHECK (("bucket_id" = 'user-media'::"text"));
 
 
-CREATE POLICY "service_role_all" ON "reputation"."contender_ratings" TO "service_role" USING (true) WITH CHECK (true);
 
+CREATE POLICY "battles_media_read_published" ON "storage"."objects" FOR SELECT TO "authenticated" USING ((("bucket_id" = 'battles-media'::"text") AND (EXISTS ( SELECT 1
+   FROM "battles"."battles" "b"
+  WHERE ((("b"."id")::"text" = ("storage"."foldername"("objects"."name"))[1]) AND (("b"."status")::"text" = ANY (ARRAY['voting'::"text", 'scoring'::"text", 'closed'::"text", 'published'::"text"])))))));
 
 
-CREATE POLICY "service_role_all" ON "reputation"."lenser_scores" TO "service_role" USING (true) WITH CHECK (true);
 
+CREATE POLICY "battles_media_upload" ON "storage"."objects" FOR INSERT TO "authenticated" WITH CHECK ((("bucket_id" = 'battles-media'::"text") AND ("auth"."uid"() IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM ("battles"."contenders" "c"
+     JOIN "battles"."contender_entity_map" "cem" ON (("cem"."contender_id" = "c"."id")))
+  WHERE ((("c"."battle_id")::"text" = ("storage"."foldername"("objects"."name"))[1]) AND (("c"."id")::"text" = ("storage"."foldername"("objects"."name"))[2]) AND ("cem"."profile_id" = "auth"."uid"()))))));
 
 
-ALTER TABLE "reputation"."vote_risk_scores" ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE "storage"."buckets" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "vote_risk_scores_service_only" ON "reputation"."vote_risk_scores" TO "service_role" USING (true) WITH CHECK (true);
 
+ALTER TABLE "storage"."buckets_analytics" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "status"."components" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "storage"."buckets_vectors" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "status"."daily_snapshots" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "generated_media_owner_read" ON "storage"."objects" FOR SELECT TO "authenticated" USING ((("bucket_id" = 'generated-media'::"text") AND (EXISTS ( SELECT 1
+   FROM ("media"."objects" "mo"
+     JOIN "lensers"."profiles" "p" ON (("p"."id" = "mo"."owner_lenser_id")))
+  WHERE (("mo"."bucket" = 'generated-media'::"text") AND ("mo"."object_key" = "objects"."name") AND ("p"."user_id" = "auth"."uid"()))))));
 
 
-ALTER TABLE "status"."incident_updates" ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE "storage"."iceberg_namespaces" ENABLE ROW LEVEL SECURITY;
 
-ALTER TABLE "status"."incidents" ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE "storage"."iceberg_tables" ENABLE ROW LEVEL SECURITY;
 
-ALTER TABLE "status"."maintenance_windows" ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE "storage"."migrations" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "public read components" ON "status"."components" FOR SELECT TO "authenticated", "anon" USING ((("is_public" = true) AND (EXISTS ( SELECT 1
-   FROM "status"."services" "s"
-  WHERE (("s"."id" = "components"."service_id") AND ("s"."is_public" = true))))));
 
+ALTER TABLE "storage"."objects" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "public read daily_snapshots" ON "status"."daily_snapshots" FOR SELECT TO "authenticated", "anon" USING (true);
+ALTER TABLE "storage"."s3_multipart_uploads" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "storage"."s3_multipart_uploads_parts" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "public read incident_updates" ON "status"."incident_updates" FOR SELECT TO "authenticated", "anon" USING ((EXISTS ( SELECT 1
-   FROM ("status"."incidents" "i"
-     LEFT JOIN "status"."services" "s" ON (("s"."id" = "i"."service_id")))
-  WHERE (("i"."id" = "incident_updates"."incident_id") AND ("i"."published" = true) AND (("i"."service_id" IS NULL) OR ("s"."is_public" = true))))));
 
-
-
-CREATE POLICY "public read incidents" ON "status"."incidents" FOR SELECT TO "authenticated", "anon" USING ((("published" = true) AND (("service_id" IS NULL) OR (EXISTS ( SELECT 1
-   FROM "status"."services" "s"
-  WHERE (("s"."id" = "incidents"."service_id") AND ("s"."is_public" = true)))))));
-
-
-
-CREATE POLICY "public read maintenance_windows" ON "status"."maintenance_windows" FOR SELECT TO "authenticated", "anon" USING ((("published" = true) AND (("service_id" IS NULL) OR (EXISTS ( SELECT 1
-   FROM "status"."services" "s"
-  WHERE (("s"."id" = "maintenance_windows"."service_id") AND ("s"."is_public" = true)))))));
-
-
-
-CREATE POLICY "public read services" ON "status"."services" FOR SELECT TO "authenticated", "anon" USING (("is_public" = true));
-
-
-
-CREATE POLICY "public read uptime_rollups" ON "status"."uptime_rollups" FOR SELECT TO "authenticated", "anon" USING (true);
-
-
-
-CREATE POLICY "service_role full access components" ON "status"."components" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "service_role full access daily_snapshots" ON "status"."daily_snapshots" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "service_role full access incident_updates" ON "status"."incident_updates" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "service_role full access incidents" ON "status"."incidents" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "service_role full access maintenance_windows" ON "status"."maintenance_windows" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "service_role full access services" ON "status"."services" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "service_role full access uptime_rollups" ON "status"."uptime_rollups" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "status"."services" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "status"."uptime_rollups" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "admin_delete_members" ON "tenancy"."workspace_members" FOR DELETE TO "authenticated" USING ("tenancy"."is_workspace_admin"("workspace_id"));
-
-
-
-CREATE POLICY "admin_insert_members" ON "tenancy"."workspace_members" FOR INSERT TO "authenticated" WITH CHECK ("tenancy"."is_workspace_admin"("workspace_id"));
-
-
-
-CREATE POLICY "admin_update_workspace" ON "tenancy"."workspaces" FOR UPDATE TO "authenticated" USING ("tenancy"."is_workspace_admin"("id"));
-
-
-
-CREATE POLICY "authenticated_insert_workspace" ON "tenancy"."workspaces" FOR INSERT TO "authenticated" WITH CHECK (("owner_lenser_id" = "lensers"."get_auth_lenser_id"()));
-
-
-
-CREATE POLICY "members_select_own_workspaces" ON "tenancy"."workspaces" FOR SELECT TO "authenticated" USING ("tenancy"."is_workspace_member"("id"));
-
-
-
-CREATE POLICY "members_select_same_workspace" ON "tenancy"."workspace_members" FOR SELECT TO "authenticated" USING ("tenancy"."is_workspace_member"("workspace_id"));
-
-
-
-ALTER TABLE "tenancy"."workspace_members" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "tenancy"."workspaces" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "wallet"."accounts" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "accounts_service_all" ON "wallet"."accounts" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "wallet"."credit_valuation_policy" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "credit_valuation_service_all" ON "wallet"."credit_valuation_policy" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "org_accounts_select_member" ON "wallet"."organization_accounts" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "organizations"."members" "om"
-  WHERE (("om"."org_id" = "organization_accounts"."org_id") AND ("om"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "org_accounts_service_all" ON "wallet"."organization_accounts" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "wallet"."organization_accounts" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "wallet"."pending_charges" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "pending_charges_service_all" ON "wallet"."pending_charges" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "wallet"."spending_limits" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "spending_limits_service_all" ON "wallet"."spending_limits" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "wallet"."transactions" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "transactions_service_insert" ON "wallet"."transactions" FOR INSERT TO "service_role" WITH CHECK (true);
-
-
-
-CREATE POLICY "transactions_service_select" ON "wallet"."transactions" FOR SELECT TO "service_role" USING (true);
-
+ALTER TABLE "storage"."vector_indexes" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "Authenticated can read xp levels" ON "xp"."levels" FOR SELECT TO "authenticated" USING (true);
@@ -58610,62 +44930,8 @@ CREATE POLICY "xp_totals_leaderboard_select" ON "xp"."totals" FOR SELECT USING (
 
 
 
-
-
-ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "battles"."battles";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "battles"."comments";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "battles"."global_messages";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "battles"."vote_aggregates";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "lenses"."workflow_node_results";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "lenses"."workflow_runs";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."notifications";
-
-
-
-GRANT USAGE ON SCHEMA "agents" TO "anon";
-GRANT USAGE ON SCHEMA "agents" TO "authenticated";
-GRANT USAGE ON SCHEMA "agents" TO "service_role";
-
-
-
-GRANT USAGE ON SCHEMA "ai" TO "anon";
-GRANT USAGE ON SCHEMA "ai" TO "authenticated";
-
-
-
-GRANT USAGE ON SCHEMA "analytics" TO "service_role";
-GRANT USAGE ON SCHEMA "analytics" TO "authenticated";
-
-
-
 GRANT USAGE ON SCHEMA "audit" TO "authenticated";
 GRANT USAGE ON SCHEMA "audit" TO "service_role";
-
-
-
-GRANT USAGE ON SCHEMA "automation" TO "authenticated";
-GRANT USAGE ON SCHEMA "automation" TO "service_role";
 
 
 
@@ -58675,42 +44941,14 @@ GRANT USAGE ON SCHEMA "battles" TO "service_role";
 
 
 
-GRANT USAGE ON SCHEMA "billing" TO "service_role";
-
-
-
-GRANT USAGE ON SCHEMA "connectors" TO "authenticated";
-GRANT USAGE ON SCHEMA "connectors" TO "service_role";
-
-
-
 GRANT USAGE ON SCHEMA "content" TO "authenticated";
 GRANT USAGE ON SCHEMA "content" TO "anon";
-
-
-
-GRANT USAGE ON SCHEMA "core" TO "anon";
-GRANT USAGE ON SCHEMA "core" TO "authenticated";
-GRANT USAGE ON SCHEMA "core" TO "service_role";
-
-
-
-
-
-
-GRANT USAGE ON SCHEMA "devices" TO "authenticated";
 
 
 
 GRANT USAGE ON SCHEMA "execution" TO "anon";
 GRANT USAGE ON SCHEMA "execution" TO "authenticated";
 GRANT USAGE ON SCHEMA "execution" TO "service_role";
-
-
-
-GRANT USAGE ON SCHEMA "integrations" TO "authenticated";
-GRANT USAGE ON SCHEMA "integrations" TO "anon";
-GRANT USAGE ON SCHEMA "integrations" TO "service_role";
 
 
 
@@ -58726,21 +44964,6 @@ GRANT USAGE ON SCHEMA "lenses" TO "anon";
 
 
 
-GRANT USAGE ON SCHEMA "media" TO "anon";
-GRANT USAGE ON SCHEMA "media" TO "authenticated";
-GRANT USAGE ON SCHEMA "media" TO "service_role";
-
-
-
-
-
-
-GRANT USAGE ON SCHEMA "organizations" TO "anon";
-GRANT USAGE ON SCHEMA "organizations" TO "authenticated";
-GRANT USAGE ON SCHEMA "organizations" TO "service_role";
-
-
-
 GRANT USAGE ON SCHEMA "public" TO "postgres";
 GRANT USAGE ON SCHEMA "public" TO "anon";
 GRANT USAGE ON SCHEMA "public" TO "authenticated";
@@ -58748,25 +44971,12 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
-GRANT USAGE ON SCHEMA "reputation" TO "anon";
-GRANT USAGE ON SCHEMA "reputation" TO "authenticated";
-GRANT USAGE ON SCHEMA "reputation" TO "service_role";
-
-
-
-GRANT USAGE ON SCHEMA "status" TO "anon";
-GRANT USAGE ON SCHEMA "status" TO "authenticated";
-GRANT USAGE ON SCHEMA "status" TO "service_role";
-
-
-
-GRANT USAGE ON SCHEMA "tenancy" TO "anon";
-GRANT USAGE ON SCHEMA "tenancy" TO "authenticated";
-GRANT USAGE ON SCHEMA "tenancy" TO "service_role";
-
-
-
-GRANT USAGE ON SCHEMA "wallet" TO "service_role";
+GRANT USAGE ON SCHEMA "storage" TO "postgres" WITH GRANT OPTION;
+GRANT USAGE ON SCHEMA "storage" TO "anon";
+GRANT USAGE ON SCHEMA "storage" TO "authenticated";
+GRANT USAGE ON SCHEMA "storage" TO "service_role";
+GRANT ALL ON SCHEMA "storage" TO "supabase_storage_admin" WITH GRANT OPTION;
+GRANT ALL ON SCHEMA "storage" TO "dashboard_user";
 
 
 
@@ -58776,199 +44986,12 @@ GRANT USAGE ON SCHEMA "xp" TO "authenticated";
 
 
 
-GRANT ALL ON TYPE "ai"."key_scope_enum" TO "authenticated";
-GRANT ALL ON TYPE "ai"."key_scope_enum" TO "anon";
-
-
-
-GRANT ALL ON TYPE "ai"."key_status_enum" TO "authenticated";
-GRANT ALL ON TYPE "ai"."key_status_enum" TO "anon";
-
-
-
 GRANT ALL ON TYPE "content"."payment_method_enum" TO "authenticated";
 GRANT ALL ON TYPE "content"."payment_method_enum" TO "anon";
 
 
 
 GRANT ALL ON TYPE "content"."reaction_enum" TO "authenticated";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-GRANT ALL ON FUNCTION "agents"."can_manage_ai_lenser"("p_ai_lenser_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "agents"."can_manage_ai_lenser"("p_ai_lenser_id" "uuid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "agents"."fn_agent_action"("p_ai_lenser_id" "uuid", "p_action_type" "text", "p_context_type" "text", "p_context_id" "uuid", "p_metadata" "jsonb") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "agents"."fn_build_lenser_prompt_context"("p_ai_lenser_id" "uuid", "p_scope" "text", "p_limit" integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION "agents"."fn_build_lenser_prompt_context"("p_ai_lenser_id" "uuid", "p_scope" "text", "p_limit" integer) TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb") FROM PUBLIC;
-GRANT ALL ON FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "agents"."fn_create_ai_lenser"("p_owner_lenser_id" "uuid", "p_handle" "text", "p_display_name" "text", "p_ai_model_id" "uuid") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "agents"."fn_gateway_approve_device"("p_device_id" "uuid") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "agents"."fn_gateway_revoke_device"("p_device_id" "uuid") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "agents"."fn_get_team_member_role"("p_team_run_id" "uuid", "p_agent_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "agents"."fn_get_team_member_role"("p_team_run_id" "uuid", "p_agent_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "agents"."fn_get_team_member_role"("p_team_run_id" "uuid", "p_agent_id" "uuid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "agents"."fn_has_standing_approval"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_gate_kind" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "agents"."fn_has_standing_approval"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_gate_kind" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "agents"."fn_list_gateway_devices"("p_limit" integer) TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "agents"."fn_merge_shared_scratchpad"("p_team_run_id" "uuid", "p_patch" "jsonb", "p_expected_version" integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION "agents"."fn_merge_shared_scratchpad"("p_team_run_id" "uuid", "p_patch" "jsonb", "p_expected_version" integer) TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "agents"."fn_node_requires_review"("p_team_run_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "agents"."fn_node_requires_review"("p_team_run_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "agents"."fn_node_requires_review"("p_team_run_id" "uuid") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "agents"."fn_purge_stale_blocked_team_runs"("p_max_age" interval) FROM PUBLIC;
-GRANT ALL ON FUNCTION "agents"."fn_purge_stale_blocked_team_runs"("p_max_age" interval) TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_agent_id" "uuid", "p_kind" "text", "p_to_agent_id" "uuid", "p_payload" "jsonb", "p_parent_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_agent_id" "uuid", "p_kind" "text", "p_to_agent_id" "uuid", "p_payload" "jsonb", "p_parent_id" "uuid") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb", "p_policy" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb", "p_policy" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "agents"."fn_trigger_post_run_evaluations"("p_workflow_id" "uuid", "p_team_run_id" "uuid") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "agents"."has_agent_scope"("p_ai_lenser_id" "uuid", "p_scope" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "agents"."has_agent_scope"("p_ai_lenser_id" "uuid", "p_scope" "text") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "ai"."fn_decrypt_api_key"("p_key_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "ai"."fn_decrypt_api_key"("p_key_id" "uuid") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "ai"."fn_get_my_api_keys"() FROM PUBLIC;
-GRANT ALL ON FUNCTION "ai"."fn_get_my_api_keys"() TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "ai"."fn_revoke_api_key"("p_key_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "ai"."fn_revoke_api_key"("p_key_id" "uuid") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "ai"."fn_store_api_key"("p_provider" "text", "p_label" "text", "p_raw_key" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "ai"."fn_store_api_key"("p_provider" "text", "p_label" "text", "p_raw_key" "text") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "analytics"."fn_aggregate_cost_daily"("p_date" "date") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "analytics"."fn_aggregate_eval_quality_daily"("p_date" "date") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "analytics"."fn_aggregate_workflow_perf_daily"("p_date" "date") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "analytics"."log_tag_view"("p_entity_type" "content"."entity_type_enum", "p_entity_id" "uuid", "p_user_id" "uuid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "analytics"."protect_feedback_system_fields"() TO "anon";
-GRANT ALL ON FUNCTION "analytics"."protect_feedback_system_fields"() TO "authenticated";
-GRANT ALL ON FUNCTION "analytics"."protect_feedback_system_fields"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "analytics"."set_feedback_user_id"() TO "anon";
-GRANT ALL ON FUNCTION "analytics"."set_feedback_user_id"() TO "authenticated";
-GRANT ALL ON FUNCTION "analytics"."set_feedback_user_id"() TO "service_role";
 
 
 
@@ -59010,78 +45033,6 @@ GRANT ALL ON FUNCTION "audit"."log_event"("p_event_type" "text", "p_entity_schem
 REVOKE ALL ON FUNCTION "audit"."log_event_v2"("p_event_type" "text", "p_actor_type" "text", "p_actor_id" "uuid", "p_entity_schema" "text", "p_entity_table" "text", "p_entity_id" "uuid", "p_payload" "jsonb", "p_severity" "text", "p_ip_hash" "text", "p_user_agent_hash" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "audit"."log_event_v2"("p_event_type" "text", "p_actor_type" "text", "p_actor_id" "uuid", "p_entity_schema" "text", "p_entity_table" "text", "p_entity_id" "uuid", "p_payload" "jsonb", "p_severity" "text", "p_ip_hash" "text", "p_user_agent_hash" "text") TO "service_role";
 GRANT ALL ON FUNCTION "audit"."log_event_v2"("p_event_type" "text", "p_actor_type" "text", "p_actor_id" "uuid", "p_entity_schema" "text", "p_entity_table" "text", "p_entity_id" "uuid", "p_payload" "jsonb", "p_severity" "text", "p_ip_hash" "text", "p_user_agent_hash" "text") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "authz"."fn_approve_device_request"("p_user_code" "text") FROM PUBLIC;
-
-
-
-REVOKE ALL ON FUNCTION "authz"."fn_exchange_device_approval"("p_request_id" "uuid", "p_request_secret" "text") FROM PUBLIC;
-
-
-
-REVOKE ALL ON FUNCTION "authz"."fn_exchange_device_login"("p_request_id" "uuid", "p_request_secret" "text") FROM PUBLIC;
-
-
-
-REVOKE ALL ON FUNCTION "authz"."fn_generate_user_code"() FROM PUBLIC;
-
-
-
-REVOKE ALL ON FUNCTION "authz"."fn_list_developer_tokens"() FROM PUBLIC;
-
-
-
-REVOKE ALL ON FUNCTION "authz"."fn_request_device_approval"("p_label" "text", "p_request_ttl_minutes" integer, "p_token_ttl_hours" integer) FROM PUBLIC;
-
-
-
-REVOKE ALL ON FUNCTION "authz"."fn_request_device_login"("p_request_ttl_minutes" integer) FROM PUBLIC;
-
-
-
-REVOKE ALL ON FUNCTION "authz"."fn_revoke_developer_token"("p_token_id" "uuid") FROM PUBLIC;
-
-
-
-REVOKE ALL ON FUNCTION "authz"."fn_store_device_login_session"("p_user_code" "text", "p_access_token" "text", "p_refresh_token" "text") FROM PUBLIC;
-
-
-
-REVOKE ALL ON FUNCTION "automation"."fn_check_filter_keys"("p_filter" "jsonb") FROM PUBLIC;
-
-
-
-REVOKE ALL ON FUNCTION "automation"."fn_dispatch_action"("p_event_id" "uuid", "p_rule_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "automation"."fn_dispatch_action"("p_event_id" "uuid", "p_rule_id" "uuid") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "automation"."fn_emit_event"("p_type" "text", "p_source_schema" "text", "p_source_table" "text", "p_source_id" "uuid", "p_payload" "jsonb", "p_source_lenser_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "automation"."fn_emit_event"("p_type" "text", "p_source_schema" "text", "p_source_table" "text", "p_source_id" "uuid", "p_payload" "jsonb", "p_source_lenser_id" "uuid") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "automation"."fn_eval_filter"("p_filter" "jsonb", "p_payload" "jsonb") FROM PUBLIC;
-GRANT ALL ON FUNCTION "automation"."fn_eval_filter"("p_filter" "jsonb", "p_payload" "jsonb") TO "service_role";
-GRANT ALL ON FUNCTION "automation"."fn_eval_filter"("p_filter" "jsonb", "p_payload" "jsonb") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "automation"."fn_jsonpointer_to_jsonpath"("p_pointer" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "automation"."fn_jsonpointer_to_jsonpath"("p_pointer" "text") TO "service_role";
-GRANT ALL ON FUNCTION "automation"."fn_jsonpointer_to_jsonpath"("p_pointer" "text") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "automation"."fn_match_rules_for_event"("p_event_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "automation"."fn_match_rules_for_event"("p_event_id" "uuid") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "automation"."fn_run_dispatcher"("p_limit" integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION "automation"."fn_run_dispatcher"("p_limit" integer) TO "service_role";
 
 
 
@@ -59278,11 +45229,6 @@ GRANT ALL ON FUNCTION "battles"."trg_submissions_validate_execution_link"() TO "
 
 
 
-REVOKE ALL ON FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "content"."ensure_public_tag"() TO "anon";
 GRANT ALL ON FUNCTION "content"."ensure_public_tag"() TO "authenticated";
 GRANT ALL ON FUNCTION "content"."ensure_public_tag"() TO "service_role";
@@ -59358,76 +45304,6 @@ GRANT ALL ON FUNCTION "content"."toggle_reaction"("p_lenser_id" "uuid", "p_targe
 GRANT ALL ON FUNCTION "content"."user_owns_thread"("thread_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "content"."user_owns_thread"("thread_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "content"."user_owns_thread"("thread_id" "uuid") TO "service_role";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-REVOKE ALL ON FUNCTION "devices"."fn_acquire_leader_lease"("p_lease_kind" "text", "p_device_id" "uuid", "p_lease_seconds" integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION "devices"."fn_acquire_leader_lease"("p_lease_kind" "text", "p_device_id" "uuid", "p_lease_seconds" integer) TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "devices"."fn_device_approve"("p_device_id" "uuid") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "devices"."fn_device_heartbeat"("p_device_id" "uuid", "p_daemon_version" "text", "p_envelope_sig" "text", "p_gateway_status" "text") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "devices"."fn_device_list"("p_trust_level" "text", "p_limit" integer, "p_cursor" "uuid") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "devices"."fn_device_post_challenge"("p_device_id" "uuid", "p_signature" "text", "p_signed_iat" timestamp with time zone) TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "devices"."fn_device_register"("p_name" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_capabilities" "jsonb") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "devices"."fn_device_register_with_key"("p_name" "text", "p_public_key" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_daemon_version" "text", "p_capabilities" "jsonb") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "devices"."fn_device_revoke"("p_device_id" "uuid") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "devices"."fn_sync_pull"("p_envelope" "jsonb", "p_object_classes" "text"[], "p_limit" integer) TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "devices"."fn_sync_push"("p_envelope" "jsonb") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "devices"."fn_sync_resolve_conflict"("p_outbox_id" "uuid", "p_winner" "jsonb") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "devices"."fn_sync_status"("p_device_id" "uuid") TO "authenticated";
 
 
 
@@ -59536,804 +45412,6 @@ GRANT ALL ON FUNCTION "execution"."fn_verify_attestation_signature"("p_kid" "uui
 
 REVOKE ALL ON FUNCTION "execution"."fn_xp_apply_safe"("p_lenser_id" "uuid", "p_rule_key" "text", "p_source" "xp"."source_enum", "p_source_ref_type" "text", "p_source_ref_id" "uuid", "p_app_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "execution"."fn_xp_apply_safe"("p_lenser_id" "uuid", "p_rule_key" "text", "p_source" "xp"."source_enum", "p_source_ref_type" "text", "p_source_ref_id" "uuid", "p_app_id" "uuid") TO "service_role";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -60551,65 +45629,6 @@ GRANT ALL ON FUNCTION "lenses"."fn_upsert_workflow_schedule_internal"("p_workflo
 
 
 
-GRANT ALL ON FUNCTION "media"."set_updated_at"() TO "anon";
-GRANT ALL ON FUNCTION "media"."set_updated_at"() TO "authenticated";
-GRANT ALL ON FUNCTION "media"."set_updated_at"() TO "service_role";
-
-
-
-
-
-
-
-
-
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "organizations"."organizations" TO "anon";
-GRANT ALL ON TABLE "organizations"."organizations" TO "authenticated";
-GRANT ALL ON TABLE "organizations"."organizations" TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "organizations"."fn_create_organization"("p_display_name" character varying, "p_slug" character varying, "p_org_type" "text", "p_legal_name" character varying, "p_website" "text", "p_industry" character varying, "p_billing_email" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "organizations"."fn_create_organization"("p_display_name" character varying, "p_slug" character varying, "p_org_type" "text", "p_legal_name" character varying, "p_website" "text", "p_industry" character varying, "p_billing_email" "text") TO "service_role";
-
-
-
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "organizations"."members" TO "anon";
-GRANT ALL ON TABLE "organizations"."members" TO "authenticated";
-GRANT ALL ON TABLE "organizations"."members" TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "organizations"."fn_invite_member"("p_org_id" "uuid", "p_lenser_id" "uuid", "p_role" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "organizations"."fn_invite_member"("p_org_id" "uuid", "p_lenser_id" "uuid", "p_role" "text") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "platform"."fn_get_platform_system_flags"() FROM PUBLIC;
-GRANT ALL ON FUNCTION "platform"."fn_get_platform_system_flags"() TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "platform"."fn_queue_stats"() FROM PUBLIC;
-GRANT ALL ON FUNCTION "platform"."fn_queue_stats"() TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "platform"."fn_recent_audit_events"("p_since" interval) FROM PUBLIC;
-GRANT ALL ON FUNCTION "platform"."fn_recent_audit_events"("p_since" interval) TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "platform"."fn_set_autonomy_dispatch_enabled"("p_enabled" boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION "platform"."fn_set_autonomy_dispatch_enabled"("p_enabled" boolean) TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "platform"."fn_set_platform_flag"("p_key" "text", "p_enabled" boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION "platform"."fn_set_platform_flag"("p_key" "text", "p_enabled" boolean) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) TO "service_role";
@@ -60771,10 +45790,6 @@ GRANT ALL ON FUNCTION "public"."fn_analytics_share_events_log"("p_short_id" "tex
 
 
 
-GRANT ALL ON TABLE "analytics"."shared_links" TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."fn_analytics_shared_links_consume"("p_short_id" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_analytics_shared_links_consume"("p_short_id" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_analytics_shared_links_consume"("p_short_id" "text") TO "service_role";
@@ -60838,14 +45853,9 @@ GRANT ALL ON FUNCTION "public"."fn_assert_modality_allowed"("p_agent_id" "uuid",
 
 
 
-GRANT ALL ON FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid") TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."tool_assignments" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."tool_assignments" TO "service_role";
+GRANT ALL ON FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid", "p_input_snapshot" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid", "p_input_snapshot" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid", "p_input_snapshot" "jsonb") TO "service_role";
 
 
 
@@ -61095,6 +46105,12 @@ GRANT ALL ON FUNCTION "public"."fn_battles_get_public"("p_battle_id" "uuid") TO 
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_battles_get_subscriptions"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_battles_get_subscriptions"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_battles_get_subscriptions"("p_battle_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_battles_get_template"("p_template_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_battles_get_template"("p_template_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_battles_get_template"("p_template_id" "uuid") TO "service_role";
@@ -61170,6 +46186,12 @@ GRANT ALL ON FUNCTION "public"."fn_battles_render_prompt"("p_template_id" "uuid"
 GRANT ALL ON FUNCTION "public"."fn_battles_retract"("p_battle_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_battles_retract"("p_battle_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_battles_retract"("p_battle_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_battles_revoke_webhook"("p_subscription_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_battles_revoke_webhook"("p_subscription_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_battles_revoke_webhook"("p_subscription_id" "uuid") TO "service_role";
 
 
 
@@ -61385,11 +46407,6 @@ REVOKE ALL ON FUNCTION "public"."fn_complete_onboarding"("p_handle" "text", "p_d
 GRANT ALL ON FUNCTION "public"."fn_complete_onboarding"("p_handle" "text", "p_display_name" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_complete_onboarding"("p_handle" "text", "p_display_name" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_complete_onboarding"("p_handle" "text", "p_display_name" "text") TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."scratchpad_runs" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."scratchpad_runs" TO "service_role";
 
 
 
@@ -62286,16 +47303,6 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "lensers"."profiles" TO "authenticate
 
 
 
-GRANT SELECT ON TABLE "reputation"."contender_ratings" TO "authenticated";
-GRANT SELECT ON TABLE "reputation"."contender_ratings" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "reputation"."lenser_scores" TO "authenticated";
-GRANT SELECT ON TABLE "reputation"."lenser_scores" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "xp"."totals" TO "service_role";
 GRANT SELECT ON TABLE "xp"."totals" TO "authenticated";
 
@@ -62370,11 +47377,6 @@ GRANT ALL ON FUNCTION "public"."fn_get_lenser_language_preference"() TO "service
 GRANT ALL ON FUNCTION "public"."fn_get_lenser_profile_brief"("p_handle" "text", "p_lenser_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_lenser_profile_brief"("p_handle" "text", "p_lenser_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_lenser_profile_brief"("p_handle" "text", "p_lenser_id" "uuid") TO "service_role";
-
-
-
-GRANT ALL ON TABLE "analytics"."lenser_stats" TO "service_role";
-GRANT SELECT ON TABLE "analytics"."lenser_stats" TO "authenticated";
 
 
 
@@ -62483,11 +47485,6 @@ GRANT ALL ON FUNCTION "public"."fn_get_notifications"("p_limit" integer, "p_curs
 GRANT ALL ON FUNCTION "public"."fn_get_pending_requests"("p_limit" integer, "p_offset" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_pending_requests"("p_limit" integer, "p_offset" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_pending_requests"("p_limit" integer, "p_offset" integer) TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."provider_configs" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."provider_configs" TO "service_role";
 
 
 
@@ -62727,37 +47724,9 @@ GRANT ALL ON FUNCTION "public"."fn_heartbeat_workflow_run"("p_run_id" "uuid", "p
 
 
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."agent_run_events" TO "authenticated";
-
-
-
-GRANT SELECT ON TABLE "agents"."ai_lensers" TO "authenticated";
-GRANT ALL ON TABLE "agents"."ai_lensers" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "agents"."ownerships" TO "authenticated";
-GRANT ALL ON TABLE "agents"."ownerships" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."team_runs" TO "authenticated";
-
-
-
-GRANT SELECT ON TABLE "agents"."v_human_fleet_logs" TO "authenticated";
-GRANT SELECT ON TABLE "agents"."v_human_fleet_logs" TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."fn_human_fleet_logs"("p_human_lenser_id" "uuid", "p_run_id" "uuid", "p_event_type" "text", "p_limit" integer, "p_offset" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_human_fleet_logs"("p_human_lenser_id" "uuid", "p_run_id" "uuid", "p_event_type" "text", "p_limit" integer, "p_offset" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_human_fleet_logs"("p_human_lenser_id" "uuid", "p_run_id" "uuid", "p_event_type" "text", "p_limit" integer, "p_offset" integer) TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "agents"."v_human_fleet_runs" TO "authenticated";
-GRANT SELECT ON TABLE "agents"."v_human_fleet_runs" TO "service_role";
 
 
 
@@ -63013,6 +47982,12 @@ GRANT ALL ON FUNCTION "public"."fn_list_agent_action_logs"("p_ai_lenser_id" "uui
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_list_agent_incidents"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_incidents"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_incidents"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_list_agent_lens_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_list_agent_lens_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_list_agent_lens_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "service_role";
@@ -63163,6 +48138,12 @@ GRANT ALL ON FUNCTION "public"."fn_list_personality_profiles"("p_ai_lenser_id" "
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_list_policy_evaluations"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_policy_evaluations"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_policy_evaluations"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_list_public_battle_templates"("p_category" "text", "p_limit" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_list_public_battle_templates"("p_category" "text", "p_limit" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_list_public_battle_templates"("p_category" "text", "p_limit" integer) TO "service_role";
@@ -63220,6 +48201,12 @@ GRANT ALL ON FUNCTION "public"."fn_list_tool_assignments"("p_ai_lenser_id" "uuid
 GRANT ALL ON FUNCTION "public"."fn_list_tool_profiles"("p_ai_lenser_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_list_tool_profiles"("p_ai_lenser_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_list_tool_profiles"("p_ai_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_tools"("p_category" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_tools"("p_category" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_tools"("p_category" "text") TO "service_role";
 
 
 
@@ -63363,7 +48350,9 @@ GRANT ALL ON FUNCTION "public"."fn_post_global_message"("p_battle_id" "uuid", "p
 
 
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."memory_profiles" TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_profile_completion_score"("p_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_profile_completion_score"("p_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_profile_completion_score"("p_lenser_id" "uuid") TO "service_role";
 
 
 
@@ -63382,11 +48371,6 @@ GRANT ALL ON FUNCTION "public"."fn_publish_battle"("p_battle_id" "uuid") TO "ser
 GRANT ALL ON FUNCTION "public"."fn_purge_due_accounts"() TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_purge_due_accounts"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_purge_due_accounts"() TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."memories" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."memories" TO "service_role";
 
 
 
@@ -63425,11 +48409,6 @@ GRANT ALL ON FUNCTION "public"."fn_record_signed_attestation"("p_run_id" "uuid",
 GRANT ALL ON FUNCTION "public"."fn_redact_memory_entry"("p_memory_id" "uuid", "p_reason" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_redact_memory_entry"("p_memory_id" "uuid", "p_reason" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_redact_memory_entry"("p_memory_id" "uuid", "p_reason" "text") TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."tools_registry" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."tools_registry" TO "service_role";
 
 
 
@@ -63495,11 +48474,6 @@ GRANT ALL ON FUNCTION "public"."fn_reorder_workflow_tasks"("p_phase_id" "uuid", 
 GRANT ALL ON FUNCTION "public"."fn_request_follow"("p_target_profile_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_request_follow"("p_target_profile_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_request_follow"("p_target_profile_id" "uuid") TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."workspace_settings" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."workspace_settings" TO "service_role";
 
 
 
@@ -63964,11 +48938,6 @@ GRANT ALL ON FUNCTION "public"."fn_update_workspace_settings"("p_ai_lenser_id" "
 
 
 
-GRANT SELECT ON TABLE "agents"."lens_bindings" TO "authenticated";
-GRANT ALL ON TABLE "agents"."lens_bindings" TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."fn_upsert_agent_lens_binding"("p_ai_lenser_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid", "p_is_default" boolean) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_upsert_agent_lens_binding"("p_ai_lenser_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid", "p_is_default" boolean) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_upsert_agent_lens_binding"("p_ai_lenser_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid", "p_is_default" boolean) TO "service_role";
@@ -63978,11 +48947,6 @@ GRANT ALL ON FUNCTION "public"."fn_upsert_agent_lens_binding"("p_ai_lenser_id" "
 GRANT ALL ON FUNCTION "public"."fn_upsert_agent_lens_binding"("p_ai_lenser_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid", "p_is_default" boolean, "p_category_tags" "text"[]) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_upsert_agent_lens_binding"("p_ai_lenser_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid", "p_is_default" boolean, "p_category_tags" "text"[]) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_upsert_agent_lens_binding"("p_ai_lenser_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid", "p_is_default" boolean, "p_category_tags" "text"[]) TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "agents"."model_bindings" TO "authenticated";
-GRANT ALL ON TABLE "agents"."model_bindings" TO "service_role";
 
 
 
@@ -64377,119 +49341,6 @@ GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "service_role";
 
 
 
-REVOKE ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "status"."fn_status_service_detail"("p_slug" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "status"."fn_status_service_detail"("p_slug" "text") TO "anon";
-GRANT ALL ON FUNCTION "status"."fn_status_service_detail"("p_slug" "text") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "status"."fn_status_snapshot"("p_snapshot_date" "date", "p_scope_type" "text", "p_scope_key" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "status"."fn_status_snapshot"("p_snapshot_date" "date", "p_scope_type" "text", "p_scope_key" "text") TO "anon";
-GRANT ALL ON FUNCTION "status"."fn_status_snapshot"("p_snapshot_date" "date", "p_scope_type" "text", "p_scope_key" "text") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "status"."fn_status_summary"() FROM PUBLIC;
-GRANT ALL ON FUNCTION "status"."fn_status_summary"() TO "anon";
-GRANT ALL ON FUNCTION "status"."fn_status_summary"() TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "status"."fn_status_uptime_rollup"("p_window" "status"."status_window", "p_scope_type" "text", "p_scope_key" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "status"."fn_status_uptime_rollup"("p_window" "status"."status_window", "p_scope_type" "text", "p_scope_key" "text") TO "anon";
-GRANT ALL ON FUNCTION "status"."fn_status_uptime_rollup"("p_window" "status"."status_window", "p_scope_type" "text", "p_scope_key" "text") TO "authenticated";
-
-
-
-GRANT ALL ON FUNCTION "tenancy"."fn_create_personal_workspace"() TO "anon";
-GRANT ALL ON FUNCTION "tenancy"."fn_create_personal_workspace"() TO "authenticated";
-GRANT ALL ON FUNCTION "tenancy"."fn_create_personal_workspace"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "tenancy"."is_workspace_admin"("p_workspace_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "tenancy"."is_workspace_admin"("p_workspace_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "tenancy"."is_workspace_admin"("p_workspace_id" "uuid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "tenancy"."is_workspace_member"("p_workspace_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "tenancy"."is_workspace_member"("p_workspace_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "tenancy"."is_workspace_member"("p_workspace_id" "uuid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "tenancy"."set_updated_at"() TO "anon";
-GRANT ALL ON FUNCTION "tenancy"."set_updated_at"() TO "authenticated";
-GRANT ALL ON FUNCTION "tenancy"."set_updated_at"() TO "service_role";
-
-
-
-
-
-
-
-
-
-
-
-
-REVOKE ALL ON FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") FROM PUBLIC;
-GRANT ALL ON FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") FROM PUBLIC;
-GRANT ALL ON FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "wallet"."reset_spending_period"("p_period" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "wallet"."reset_spending_period"("p_period" "text") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) FROM PUBLIC;
-GRANT ALL ON FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) TO "service_role";
-
-
-
 REVOKE ALL ON FUNCTION "xp"."apply"("p_lenser_id" "uuid", "p_rule_key" "text", "p_source" "xp"."source_enum", "p_source_ref_type" "text", "p_source_ref_id" "uuid", "p_app_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "xp"."apply"("p_lenser_id" "uuid", "p_rule_key" "text", "p_source" "xp"."source_enum", "p_source_ref_type" "text", "p_source_ref_id" "uuid", "p_app_id" "uuid") TO "service_role";
 
@@ -64653,244 +49504,11 @@ GRANT ALL ON FUNCTION "xp"."verify_signature"("p_signature" "text", "p_payload" 
 
 
 
-GRANT SELECT ON TABLE "admin"."kill_switches" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "agents"."action_logs" TO "authenticated";
-GRANT ALL ON TABLE "agents"."action_logs" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."agent_run_steps" TO "authenticated";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."workflow_assignments" TO "authenticated";
-
-
-
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "lenses"."workflows" TO "authenticated";
 
 
 
-GRANT SELECT ON TABLE "agents"."approval_requests_v" TO "authenticated";
-GRANT SELECT ON TABLE "agents"."approval_requests_v" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluation_baselines" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluation_baselines" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluation_case_results" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluation_case_results" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluation_cases" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluation_cases" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluation_runs" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluation_runs" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluations" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluations" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "agents"."evaluation_results_v" TO "authenticated";
-GRANT SELECT ON TABLE "agents"."evaluation_results_v" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluation_rubrics" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."evaluation_rubrics" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "agents"."memories_v" TO "authenticated";
-GRANT SELECT ON TABLE "agents"."memories_v" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."memory_access_logs" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."memory_access_logs" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."model_profiles" TO "authenticated";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."personality_profiles" TO "authenticated";
-
-
-
-GRANT SELECT,UPDATE ON TABLE "agents"."policies" TO "authenticated";
-GRANT ALL ON TABLE "agents"."policies" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."policy_evaluations" TO "service_role";
-GRANT SELECT,INSERT ON TABLE "agents"."policy_evaluations" TO "authenticated";
-
-
-
-GRANT SELECT ON TABLE "agents"."quota_snapshots" TO "authenticated";
-GRANT ALL ON TABLE "agents"."quota_snapshots" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."run_incidents" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."run_incidents" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."run_reports" TO "service_role";
-GRANT SELECT,INSERT ON TABLE "agents"."run_reports" TO "authenticated";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."standing_approvals" TO "authenticated";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."team_edges" TO "authenticated";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."team_members" TO "authenticated";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."teams" TO "authenticated";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."tool_invocations" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."tool_invocations" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "agents"."tool_invocations_v" TO "authenticated";
-GRANT SELECT ON TABLE "agents"."tool_invocations_v" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "agents"."tool_profiles" TO "authenticated";
-
-
-
-GRANT SELECT ON TABLE "agents"."v_agent_profile" TO "authenticated";
-GRANT SELECT ON TABLE "agents"."v_agent_profile" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "agents"."v_human_fleet_overview" TO "authenticated";
-GRANT SELECT ON TABLE "agents"."v_human_fleet_overview" TO "service_role";
-
-
-
 GRANT SELECT,INSERT ON TABLE "lenses"."workflow_runs" TO "authenticated";
-
-
-
-GRANT SELECT ON TABLE "agents"."v_run_unified" TO "authenticated";
-GRANT SELECT ON TABLE "agents"."v_run_unified" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "agents"."v_team_run_conversation" TO "authenticated";
-GRANT SELECT ON TABLE "agents"."v_team_run_conversation" TO "service_role";
-
-
-
-GRANT SELECT,INSERT ON TABLE "agents"."workspace_switches" TO "authenticated";
-
-
-
-GRANT SELECT ON TABLE "ai"."key_usage_log" TO "authenticated";
-GRANT ALL ON TABLE "ai"."key_usage_log" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "ai"."keys" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "ai"."model_pricing" TO "authenticated";
-GRANT ALL ON TABLE "ai"."model_pricing" TO "service_role";
-
-
-
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "ai"."models" TO "anon";
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "ai"."models" TO "authenticated";
-GRANT ALL ON TABLE "ai"."models" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "ai"."providers" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "analytics"."agent_cost_daily" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "analytics"."agent_cost_daily" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "analytics"."eval_quality_daily" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "analytics"."eval_quality_daily" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "analytics"."lenser_activity" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "analytics"."lenser_join_log" TO "service_role";
-GRANT SELECT ON TABLE "analytics"."lenser_join_log" TO "authenticated";
-
-
-
-GRANT ALL ON SEQUENCE "analytics"."lenser_join_sequence" TO "anon";
-GRANT ALL ON SEQUENCE "analytics"."lenser_join_sequence" TO "authenticated";
-GRANT ALL ON SEQUENCE "analytics"."lenser_join_sequence" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "analytics"."page_views" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "analytics"."product_feedback" TO "service_role";
-GRANT INSERT ON TABLE "analytics"."product_feedback" TO "anon";
-GRANT SELECT,INSERT ON TABLE "analytics"."product_feedback" TO "authenticated";
-
-
-
-GRANT ALL ON TABLE "analytics"."share_events" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "analytics"."tag_activity_events" TO "service_role";
-GRANT SELECT ON TABLE "analytics"."tag_activity_events" TO "authenticated";
-
-
-
-GRANT ALL ON SEQUENCE "analytics"."tag_activity_events_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "analytics"."tag_activity_events_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "analytics"."tag_activity_events_id_seq" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "analytics"."workflow_perf_daily" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "analytics"."workflow_perf_daily" TO "service_role";
 
 
 
@@ -64917,20 +49535,6 @@ GRANT SELECT ON TABLE "audit"."security_events" TO "authenticated";
 
 
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "audit"."webhook_outbox" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,UPDATE ON TABLE "automation"."cron_runs" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "automation"."event_dispatches" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "automation"."event_dispatches" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "automation"."trigger_rules" TO "authenticated";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "automation"."trigger_rules" TO "service_role";
 
 
 
@@ -65107,48 +49711,6 @@ GRANT ALL ON TABLE "battles"."votes" TO "service_role";
 
 
 
-GRANT SELECT ON TABLE "benchmark"."v_workflow_result_sets" TO "authenticated";
-GRANT SELECT ON TABLE "benchmark"."v_workflow_result_sets" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "billing"."checkout_sessions" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "billing"."execution_margin_policies" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "billing"."orders" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "billing"."products" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "billing"."variants" TO "service_role";
-
-
-
-GRANT SELECT ON TABLE "billing"."vw_products" TO "service_role";
-GRANT SELECT ON TABLE "billing"."vw_products" TO "authenticated";
-
-
-
-GRANT ALL ON TABLE "billing"."webhook_events" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "connectors"."connector_tokens" TO "service_role";
-
-
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "connectors"."connectors" TO "service_role";
-
-
-
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "content"."entity_translations" TO "anon";
 GRANT ALL ON TABLE "content"."entity_translations" TO "authenticated";
 GRANT ALL ON TABLE "content"."entity_translations" TO "service_role";
@@ -65200,78 +49762,6 @@ GRANT SELECT ON TABLE "content"."vw_tag_cross_lang" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "core"."cities" TO "service_role";
-GRANT SELECT ON TABLE "core"."cities" TO "authenticated";
-
-
-
-GRANT ALL ON SEQUENCE "core"."cities_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "core"."cities_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "core"."cities_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "core"."countries" TO "service_role";
-GRANT SELECT ON TABLE "core"."countries" TO "authenticated";
-
-
-
-GRANT ALL ON SEQUENCE "core"."countries_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "core"."countries_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "core"."countries_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "core"."currencies" TO "service_role";
-GRANT SELECT ON TABLE "core"."currencies" TO "authenticated";
-
-
-
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "core"."languages" TO "anon";
-GRANT ALL ON TABLE "core"."languages" TO "authenticated";
-GRANT ALL ON TABLE "core"."languages" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "core"."regions" TO "service_role";
-GRANT SELECT ON TABLE "core"."regions" TO "authenticated";
-
-
-
-GRANT ALL ON SEQUENCE "core"."regions_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "core"."regions_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "core"."regions_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "core"."states" TO "service_role";
-GRANT SELECT ON TABLE "core"."states" TO "authenticated";
-
-
-
-GRANT ALL ON SEQUENCE "core"."states_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "core"."states_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "core"."states_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "core"."subregions" TO "service_role";
-GRANT SELECT ON TABLE "core"."subregions" TO "authenticated";
-
-
-
-GRANT ALL ON SEQUENCE "core"."subregions_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "core"."subregions_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "core"."subregions_id_seq" TO "service_role";
-
-
-
-
-
-
-
-
-
 GRANT ALL ON TABLE "execution"."artifact_medias" TO "service_role";
 
 
@@ -65312,25 +49802,6 @@ GRANT INSERT,UPDATE ON TABLE "lenses"."workflow_node_results" TO "service_role";
 
 GRANT SELECT ON TABLE "execution"."vw_workflow_run_timeline" TO "authenticated";
 GRANT SELECT ON TABLE "execution"."vw_workflow_run_timeline" TO "service_role";
-
-
-
-
-
-
-
-
-
-
-
-
-GRANT ALL ON TABLE "integrations"."tool_allowlist" TO "service_role";
-GRANT SELECT ON TABLE "integrations"."tool_allowlist" TO "authenticated";
-
-
-
-GRANT ALL ON TABLE "integrations"."tools" TO "service_role";
-GRANT SELECT ON TABLE "integrations"."tools" TO "authenticated";
 
 
 
@@ -65440,48 +49911,6 @@ GRANT ALL ON TABLE "lenses"."workflow_version_nodes" TO "service_role";
 
 GRANT SELECT,INSERT,UPDATE ON TABLE "lenses"."workflow_versions" TO "authenticated";
 GRANT ALL ON TABLE "lenses"."workflow_versions" TO "service_role";
-
-
-
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "media"."attachments" TO "anon";
-GRANT ALL ON TABLE "media"."attachments" TO "authenticated";
-GRANT ALL ON TABLE "media"."attachments" TO "service_role";
-
-
-
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "media"."objects" TO "anon";
-GRANT ALL ON TABLE "media"."objects" TO "authenticated";
-GRANT ALL ON TABLE "media"."objects" TO "service_role";
-
-
-
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "organizations"."activity_log" TO "anon";
-GRANT ALL ON TABLE "organizations"."activity_log" TO "authenticated";
-GRANT ALL ON TABLE "organizations"."activity_log" TO "service_role";
-
-
-
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "organizations"."addresses" TO "anon";
-GRANT ALL ON TABLE "organizations"."addresses" TO "authenticated";
-GRANT ALL ON TABLE "organizations"."addresses" TO "service_role";
-
-
-
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "organizations"."audit_logs" TO "anon";
-GRANT ALL ON TABLE "organizations"."audit_logs" TO "authenticated";
-GRANT ALL ON TABLE "organizations"."audit_logs" TO "service_role";
-
-
-
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "organizations"."companies" TO "anon";
-GRANT ALL ON TABLE "organizations"."companies" TO "authenticated";
-GRANT ALL ON TABLE "organizations"."companies" TO "service_role";
-
-
-
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "organizations"."preferences" TO "anon";
-GRANT ALL ON TABLE "organizations"."preferences" TO "authenticated";
-GRANT ALL ON TABLE "organizations"."preferences" TO "service_role";
 
 
 
@@ -65656,73 +50085,59 @@ GRANT ALL ON TABLE "public"."vw_xp_leaderboard_season" TO "service_role";
 
 
 
-GRANT SELECT ON TABLE "reputation"."v_trueskill_leaderboard" TO "authenticated";
-GRANT SELECT ON TABLE "reputation"."v_trueskill_leaderboard" TO "service_role";
+GRANT ALL ON TABLE "storage"."buckets" TO "postgres" WITH GRANT OPTION;
+GRANT ALL ON TABLE "storage"."buckets" TO "service_role";
+GRANT ALL ON TABLE "storage"."buckets" TO "authenticated";
+GRANT ALL ON TABLE "storage"."buckets" TO "anon";
 
 
 
-GRANT SELECT ON TABLE "status"."v_public_components" TO "anon";
-GRANT SELECT ON TABLE "status"."v_public_components" TO "authenticated";
+GRANT ALL ON TABLE "storage"."buckets_analytics" TO "service_role";
+GRANT ALL ON TABLE "storage"."buckets_analytics" TO "authenticated";
+GRANT ALL ON TABLE "storage"."buckets_analytics" TO "anon";
 
 
 
-GRANT SELECT ON TABLE "status"."v_public_incident_updates" TO "anon";
-GRANT SELECT ON TABLE "status"."v_public_incident_updates" TO "authenticated";
+GRANT SELECT ON TABLE "storage"."buckets_vectors" TO "service_role";
+GRANT SELECT ON TABLE "storage"."buckets_vectors" TO "authenticated";
+GRANT SELECT ON TABLE "storage"."buckets_vectors" TO "anon";
 
 
 
-GRANT SELECT ON TABLE "status"."v_public_incidents" TO "anon";
-GRANT SELECT ON TABLE "status"."v_public_incidents" TO "authenticated";
+GRANT ALL ON TABLE "storage"."iceberg_namespaces" TO "service_role";
+GRANT SELECT ON TABLE "storage"."iceberg_namespaces" TO "authenticated";
+GRANT SELECT ON TABLE "storage"."iceberg_namespaces" TO "anon";
 
 
 
-GRANT SELECT ON TABLE "status"."v_public_maintenance_windows" TO "anon";
-GRANT SELECT ON TABLE "status"."v_public_maintenance_windows" TO "authenticated";
+GRANT ALL ON TABLE "storage"."iceberg_tables" TO "service_role";
+GRANT SELECT ON TABLE "storage"."iceberg_tables" TO "authenticated";
+GRANT SELECT ON TABLE "storage"."iceberg_tables" TO "anon";
 
 
 
-GRANT SELECT ON TABLE "status"."v_public_services" TO "anon";
-GRANT SELECT ON TABLE "status"."v_public_services" TO "authenticated";
+GRANT ALL ON TABLE "storage"."objects" TO "postgres" WITH GRANT OPTION;
+GRANT ALL ON TABLE "storage"."objects" TO "service_role";
+GRANT ALL ON TABLE "storage"."objects" TO "authenticated";
+GRANT ALL ON TABLE "storage"."objects" TO "anon";
 
 
 
-GRANT ALL ON TABLE "tenancy"."workspace_members" TO "anon";
-GRANT ALL ON TABLE "tenancy"."workspace_members" TO "authenticated";
-GRANT ALL ON TABLE "tenancy"."workspace_members" TO "service_role";
+GRANT ALL ON TABLE "storage"."s3_multipart_uploads" TO "service_role";
+GRANT SELECT ON TABLE "storage"."s3_multipart_uploads" TO "authenticated";
+GRANT SELECT ON TABLE "storage"."s3_multipart_uploads" TO "anon";
 
 
 
-GRANT ALL ON TABLE "tenancy"."workspaces" TO "anon";
-GRANT ALL ON TABLE "tenancy"."workspaces" TO "authenticated";
-GRANT ALL ON TABLE "tenancy"."workspaces" TO "service_role";
+GRANT ALL ON TABLE "storage"."s3_multipart_uploads_parts" TO "service_role";
+GRANT SELECT ON TABLE "storage"."s3_multipart_uploads_parts" TO "authenticated";
+GRANT SELECT ON TABLE "storage"."s3_multipart_uploads_parts" TO "anon";
 
 
 
-
-
-
-
-
-
-GRANT ALL ON TABLE "wallet"."accounts" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "wallet"."organization_accounts" TO "anon";
-GRANT ALL ON TABLE "wallet"."organization_accounts" TO "authenticated";
-GRANT ALL ON TABLE "wallet"."organization_accounts" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "wallet"."pending_charges" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "wallet"."spending_limits" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "wallet"."transactions" TO "service_role";
+GRANT SELECT ON TABLE "storage"."vector_indexes" TO "service_role";
+GRANT SELECT ON TABLE "storage"."vector_indexes" TO "authenticated";
+GRANT SELECT ON TABLE "storage"."vector_indexes" TO "anon";
 
 
 
@@ -65823,31 +50238,28 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON SEQUENCES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON SEQUENCES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON SEQUENCES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON SEQUENCES TO "service_role";
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON FUNCTIONS TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON FUNCTIONS TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON FUNCTIONS TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON FUNCTIONS TO "service_role";
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON TABLES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON TABLES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON TABLES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "storage" GRANT ALL ON TABLES TO "service_role";
+
+
+
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "xp" GRANT ALL ON FUNCTIONS TO "service_role";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
