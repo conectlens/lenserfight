@@ -8,7 +8,7 @@ import { defineConfig } from 'vite'
 export default defineConfig(() => ({
   root: import.meta.dirname,
   envDir: import.meta.dirname,
-  envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'API_', 'CHAINABIT_API_URL', 'AUTH_', 'ARENA_', 'WEB_', 'DOCS_', 'STATUS_', 'OLLAMA_', 'POSTHOG_', 'CAPTCHA_', 'PRODUCT_', 'FEATURE_', 'MOCK', 'DATA_SOURCE', 'ENABLE_', 'ALLOWED_', 'GOOGLE_'],
+  envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'API_', 'CHAINABIT_API_URL', 'CHAINABIT_OAUTH_', 'AUTH_', 'ARENA_', 'WEB_', 'DOCS_', 'STATUS_', 'OLLAMA_', 'POSTHOG_', 'CAPTCHA_', 'PRODUCT_', 'FEATURE_', 'MOCK', 'DATA_SOURCE', 'ENABLE_', 'ALLOWED_', 'GOOGLE_'],
   cacheDir: '../../node_modules/.vite/apps/web',
   server: {
     port: 3000,

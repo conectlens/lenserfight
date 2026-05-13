@@ -8,8 +8,9 @@ import { ActionMenu, Breadcrumbs, Button } from '@lenserfight/ui/components'
 import { useUI } from '@lenserfight/ui/providers'
 import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
 import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
-import { Bell, ChevronLeft, Menu, Share2, Shield, LogOut, Github, AlertTriangle } from 'lucide-react'
+import { Bell, ChevronLeft, Menu, Share2, Shield, LogOut, Github } from 'lucide-react'
 import React, { useState } from 'react'
+import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 
 interface HeaderProps {
@@ -28,7 +29,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const navigate = useNavigate()
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isChainabitOpen, setIsChainabitOpen] = useState(false)
-  const [chainabitLoginError, setChainabitLoginError] = useState<string | null>(null)
   const { activeWorkspace, humanWorkspace } = useLenserWorkspace()
   const { switchToProfile, isSwitching } = useWorkspaceSwitchController()
   const unreadCount = useUnreadCount()
@@ -87,31 +87,20 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </a>
 
           {!isAuthenticated && (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() =>
-                  partnerApiClient
-                    .startOAuthLogin(window.location.origin)
-                    .catch((err: unknown) =>
-                      setChainabitLoginError(err instanceof Error ? err.message : 'Chainabit sign-in unavailable.')
-                    )
-                }
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
-                title="Sign in with Chainabit"
-              >
-                <img src="/chainabit/favicon-32x32.png" width={16} height={16} alt="" className="rounded shrink-0" />
-                Sign in
-              </button>
-              {chainabitLoginError && (
-                <button
-                  onClick={() => setChainabitLoginError(null)}
-                  className="flex items-center gap-1 text-xs text-red-500 dark:text-red-400 hover:text-red-700 transition-colors"
-                  title={chainabitLoginError}
-                >
-                  <AlertTriangle size={14} />
-                </button>
-              )}
-            </div>
+            <button
+              onClick={() =>
+                partnerApiClient
+                  .startOAuthLogin(window.location.origin)
+                  .catch((err: unknown) =>
+                    toast.error(err instanceof Error ? err.message : 'Chainabit sign-in unavailable.')
+                  )
+              }
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+              title="Sign in with Chainabit"
+            >
+              <img src="/chainabit/favicon-32x32.png" width={16} height={16} alt="" className="rounded shrink-0" />
+              Sign in
+            </button>
           )}
 
           {isAuthenticated && (
