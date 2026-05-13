@@ -51,8 +51,8 @@ export const DOCS_BASE_URL = readPublicBaseUrl('DOCS_BASE_URL', 'https://docs.le
 /** Chainabit web app origin — used for deep-links to wallet top-up and partner attribution. Override with `CHAINABIT_APP_URL`. */
 export const CHAINABIT_APP_URL = readPublicBaseUrl('CHAINABIT_APP_URL', 'https://app.chainabit.com')
 
-/** Chainabit OAuth provider base URL — where the authorize/token/userinfo endpoints live. */
-export const CHAINABIT_OAUTH_URL = readPublicBaseUrl('CHAINABIT_API_URL', 'https://api.chainabit.com')
+/** Chainabit API v1 base URL — all endpoints live under /api/v1/. Override with CHAINABIT_API_URL. */
+export const CHAINABIT_OAUTH_URL = readPublicBaseUrl('CHAINABIT_API_URL', 'https://api.chainabit.com') + '/api/v1'
 
 /**
  * Chainabit OAuth public client ID.
