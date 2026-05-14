@@ -131,6 +131,16 @@ const DEFAULT_HANDICAP: AIHandicapConfig = {
 }
 
 const AI_BATTLE_TYPES: BattleType[] = ['ai_vs_ai', 'human_vs_ai', 'human_vs_human_ai_votes', 'lenser_battle']
+const AUTO_EXEC_TYPES: BattleType[] = ['ai_vs_ai', 'workflow_battle']
+
+// URLSearchParams.set coerces non-strings via String(), so writing `undefined`
+// produces the literal "undefined" — which then reads back as a truthy value
+// and corrupts every downstream check. Treat those sentinels as missing.
+const readSearchParam = (params: URLSearchParams, key: string): string | null => {
+  const value = params.get(key)
+  if (!value || value === 'undefined' || value === 'null') return null
+  return value
+}
 
 const slideVariants = {
   enter: (dir: number) => ({ opacity: 0, x: dir > 0 ? 32 : -32 }),
@@ -153,10 +163,6 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { step, goToStep } = useWizardStep({ maxStep: WIZARD_STEPS.length })
-  const AUTO_EXEC_TYPES: BattleType[] = ['ai_vs_ai', 'workflow_battle']
-
-  // Whether this format skips source selection (step 1) and type selection (step 3)
-  const isLenserBattleFormat = (fmt: 'workflow' | 'lens' | 'lenser_battle' | null) => fmt === 'lenser_battle'
 
   const [direction, setDirection] = useState(1)
   const [submitting, setSubmitting] = useState(false)
@@ -166,13 +172,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // Step 0 — format choice (lazy-init from URL so query is enabled on first render)
   const [battleFormat, setBattleFormat] = useState<'workflow' | 'lens' | 'lenser_battle' | null>(() =>
-    searchParams.get('workflow_id') ? 'workflow' : null
+    readSearchParam(searchParams, 'workflow_id') ? 'workflow' : null
   )
 
   // Step 1 — source selection (lazy-init from URL)
   const [workflowScope, setWorkflowScope] = useState<'mine' | 'popular'>('mine')
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(() =>
-    searchParams.get('workflow_id') ?? null
+    readSearchParam(searchParams, 'workflow_id')
   )
   const [selectedWorkflowTitle, setSelectedWorkflowTitle] = useState('')
   const [selectedLensId, setSelectedLensId] = useState<string | null>(null)
@@ -214,7 +220,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // Post-creation — slug is persisted in URL so it survives page refresh
   const [createdBattleSlug, setCreatedBattleSlug] = useState<string | null>(() =>
-    searchParams.get('battleSlug') ?? null
+    readSearchParam(searchParams, 'battleSlug')
   )
   const [createdBattleId, setCreatedBattleId] = useState<string | null>(null)
   const [contenderAId, setContenderAId] = useState<string | undefined>()
@@ -231,9 +237,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [autoPromote, setAutoPromote] = useState(false)
   const [automationReady, setAutomationReady] = useState(true)
 
-  const battleIdFromUrl = searchParams.get('battleId')
-  const preselectedWorkflowId = searchParams.get('workflow_id')
-  const preselectedTemplateId = searchParams.get('template')
+  const rawBattleIdParam = readSearchParam(searchParams, 'battleId')
+  // Treat anything that isn't a real UUID as missing — protects every
+  // downstream consumer (isEditMode, the edit-mode fetch effect, activeBattleId).
+  const battleIdFromUrl = isValidUUID(rawBattleIdParam) ? rawBattleIdParam : null
+  const preselectedWorkflowId = readSearchParam(searchParams, 'workflow_id')
+  const preselectedTemplateId = readSearchParam(searchParams, 'template')
 
   const inviteA = useInviteContender(createdBattleId ?? '')
   const inviteB = useInviteContender(createdBattleId ?? '')
@@ -307,12 +316,32 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }, [battleIdFromUrl]) // eslint-disable-line
 
-  // Guard: if URL claims step >= 6 but there's no battleId, reset to step 0
+  // Guard: if URL claims step >= 6 but there's no (valid) battleId, reset to
+  // step 0. Also strips literal "undefined" / "null" leftovers from the URL so
+  // the user lands in a clean state.
   useEffect(() => {
+    const battleIdRaw = searchParams.get('battleId')
+    const slugRaw = searchParams.get('battleSlug')
+    const hasBogusBattleId = battleIdRaw !== null && !isValidUUID(battleIdRaw)
+    const hasBogusSlug = slugRaw === 'undefined' || slugRaw === 'null'
+
     if (step >= 6 && !battleIdFromUrl) {
       navigate('/battles/create', { replace: true })
+      return
     }
-  }, []) // eslint-disable-line
+
+    if (hasBogusBattleId || hasBogusSlug) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          if (hasBogusBattleId) next.delete('battleId')
+          if (hasBogusSlug) next.delete('battleSlug')
+          return next
+        },
+        { replace: true }
+      )
+    }
+  }, [step, battleIdFromUrl, searchParams, navigate, setSearchParams])
 
   // Sync createdBattleId from URL when navigating back to post-creation steps
   useEffect(() => {
@@ -428,6 +457,14 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         battle = await battlesService.updateBattle(createdBattleId, battleInput)
       } else {
         battle = await battlesService.createBattle(battleInput)
+      }
+
+      // The service contract guarantees id + slug on success, but defend the
+      // URL anyway — writing `undefined` here propagates as the literal string
+      // "undefined" and breaks every downstream step (isEditMode, lens assignment,
+      // automation, the parent's success navigation).
+      if (!battle?.id || !isValidUUID(battle.id) || !battle?.slug) {
+        throw new Error('Battle creation succeeded but the response is missing id or slug.')
       }
 
       // Persist execution config for AI battles
@@ -556,7 +593,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }
 
-  const handleFinish = () => onSuccess(createdBattleSlug!)
+  const handleFinish = () => {
+    if (!createdBattleSlug) {
+      setError('Cannot finish: battle slug is missing. Please re-create the battle.')
+      return
+    }
+    onSuccess(createdBattleSlug)
+  }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
