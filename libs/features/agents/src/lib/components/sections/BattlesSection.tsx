@@ -201,7 +201,7 @@ export const BattlesSection: React.FC = () => {
           {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className="h-24 animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
+              className="h-24 animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-700"
             />
           ))}
         </div>
@@ -244,7 +244,7 @@ export const BattlesSection: React.FC = () => {
                   key={sub.id}
                   sub={sub}
                   canManage={false}
-                  onDeactivate={() => {}}
+                  onDeactivate={() => { }}
                   isDeactivating={false}
                 />
               ))}
@@ -277,11 +277,10 @@ function SubscriptionCard({ sub, canManage, onDeactivate, isDeactivating }: Subs
               {EXECUTION_MODE_LABELS[sub.execution_mode] ?? sub.execution_mode}
             </span>
             <span
-              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
-                sub.active
+              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${sub.active
                   ? 'border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
                   : 'border-gray-200 text-gray-400 dark:border-gray-700 dark:text-gray-500'
-              }`}
+                }`}
             >
               {sub.active ? 'Active' : 'Inactive'}
             </span>
