@@ -42,8 +42,8 @@ SELECT has_function(
 -- 5. fn_assert_modality_allowed raises for disallowed modality
 -- Create a temp agent without any policies (allowed_output_modalities defaults to ['text'])
 SELECT throws_ok(
-  $$
-    DO $$
+  $test$
+    DO $do$
     DECLARE
       v_agent_id UUID;
     BEGIN
@@ -51,9 +51,10 @@ SELECT throws_ok(
       v_agent_id := '00000000-0000-0000-0000-000000000099'::uuid;
       PERFORM public.fn_assert_modality_allowed(v_agent_id, 'video');
     END;
-    $$
-  $$,
+    $do$
+  $test$,
   'P0001',
+  NULL,
   'fn_assert_modality_allowed should raise P0001 for unknown agent + video modality'
 );
 
