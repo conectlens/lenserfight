@@ -42,7 +42,7 @@ const RunRow: React.FC<{
   const canCancel = run.status === 'running' || run.status === 'queued'
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-950">
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-700">
       <div className="flex items-center gap-3 overflow-hidden">
         <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300">
           {run.run_id.slice(0, 8)}
