@@ -16,7 +16,7 @@ SELECT ok(
     WHERE n.nspname  = 'public'
       AND cl.relname = 'notifications'
       AND c.conname  = 'notifications_type_check'
-      AND c.consrc   LIKE '%battle_won%'
+      AND pg_get_constraintdef(c.oid) LIKE '%battle_won%'
   ),
   'notifications_type_check constraint includes battle_won'
 );
@@ -30,7 +30,7 @@ SELECT ok(
     WHERE n.nspname  = 'public'
       AND cl.relname = 'notifications'
       AND c.conname  = 'notifications_type_check'
-      AND c.consrc   LIKE '%lens_published%'
+      AND pg_get_constraintdef(c.oid) LIKE '%lens_published%'
   ),
   'notifications_type_check constraint includes lens_published'
 );
@@ -44,7 +44,7 @@ SELECT ok(
     WHERE n.nspname  = 'public'
       AND cl.relname = 'notifications'
       AND c.conname  = 'notifications_type_check'
-      AND c.consrc   LIKE '%agent_created%'
+      AND pg_get_constraintdef(c.oid) LIKE '%agent_created%'
   ),
   'notifications_type_check constraint includes agent_created'
 );
