@@ -14,21 +14,21 @@ SELECT plan(3);
 -- ── Fixtures ────────────────────────────────────────────────────────────────
 INSERT INTO auth.users (id, email)
 VALUES
-  ('11111111-bv01-1111-1111-111111111111', 'bv-creator-a@test.local'),
-  ('22222222-bv01-2222-2222-222222222222', 'bv-creator-b@test.local')
+  ('11111111-b501-1111-1111-111111111111', 'bv-creator-a@test.local'),
+  ('22222222-b501-2222-2222-222222222222', 'bv-creator-b@test.local')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO lensers.profiles (id, user_id, handle, display_name, type)
 VALUES
-  ('11111111-bv01-1111-1111-111111111111',
-   '11111111-bv01-1111-1111-111111111111', 'bv_creator_a', 'BV Creator A', 'human'),
-  ('22222222-bv01-2222-2222-222222222222',
-   '22222222-bv01-2222-2222-222222222222', 'bv_creator_b', 'BV Creator B', 'human')
+  ('11111111-b501-1111-1111-111111111111',
+   '11111111-b501-1111-1111-111111111111', 'bv_creator_a', 'BV Creator A', 'human'),
+  ('22222222-b501-2222-2222-222222222222',
+   '22222222-b501-2222-2222-222222222222', 'bv_creator_b', 'BV Creator B', 'human')
 ON CONFLICT (id) DO NOTHING;
 
 -- ── Test 1: a normal create returns a UUID ──────────────────────────────────
 SET LOCAL "request.jwt.claims" TO
-  '{"sub":"11111111-bv01-1111-1111-111111111111","role":"authenticated"}';
+  '{"sub":"11111111-b501-1111-1111-111111111111","role":"authenticated"}';
 SET LOCAL ROLE authenticated;
 
 SELECT isnt(
@@ -61,7 +61,7 @@ SELECT throws_ok(
 -- ── Test 3: a different user is unaffected ──────────────────────────────────
 RESET ROLE;
 SET LOCAL "request.jwt.claims" TO
-  '{"sub":"22222222-bv01-2222-2222-222222222222","role":"authenticated"}';
+  '{"sub":"22222222-b501-2222-2222-222222222222","role":"authenticated"}';
 SET LOCAL ROLE authenticated;
 
 SELECT isnt(
