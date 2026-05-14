@@ -83,3 +83,48 @@ SELECT
   input_cost_per_1k_tokens,
   output_cost_per_1k_tokens
 FROM resolved;
+
+WITH modality_seed AS (
+  SELECT *
+  FROM (
+    VALUES
+      ('openai',     'sora-2.0',      'video', 0.2500000000::numeric, 'per_second'),
+      ('google',     'veo-3',         'video', 0.2000000000::numeric, 'per_second'),
+      ('kling',      'kling-2.0',     'video', 0.1800000000::numeric, 'per_second'),
+      ('elevenlabs', 'elevenlabs-v4', 'audio', 0.0012000000::numeric, 'per_second'),
+      ('suno',       'suno-v5',       'audio', 0.0250000000::numeric, 'per_second'),
+      ('google',     'lyria-2',       'audio', 0.0300000000::numeric, 'per_second')
+  ) AS t(provider_key, model_key, output_modality, credit_rate, rate_unit)
+),
+resolved_modalities AS (
+  SELECT
+    m.id AS model_id,
+    modality_seed.output_modality,
+    modality_seed.credit_rate,
+    modality_seed.rate_unit
+  FROM modality_seed
+  JOIN ai.providers p
+    ON p.key = modality_seed.provider_key
+  JOIN ai.models m
+    ON m.provider_id = p.id
+   AND m.key = modality_seed.model_key
+)
+INSERT INTO ai.modality_pricing (
+  model_id,
+  output_modality,
+  credit_rate,
+  rate_unit,
+  is_active
+)
+SELECT
+  model_id,
+  output_modality,
+  credit_rate,
+  rate_unit,
+  TRUE
+FROM resolved_modalities
+ON CONFLICT (model_id, output_modality) DO UPDATE
+SET credit_rate = EXCLUDED.credit_rate,
+    rate_unit   = EXCLUDED.rate_unit,
+    is_active   = TRUE,
+    updated_at  = now();
