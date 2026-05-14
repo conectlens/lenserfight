@@ -257,6 +257,31 @@ export function normalizeError(error: unknown): UnauthorizedError | ForbiddenErr
     }
   }
 
+  // ── PostgreSQL RAISE EXCEPTION (P0001) not matched above — surface the message
+  if (code === 'P0001') {
+    const rawMsg = error && typeof error === 'object'
+      ? ((error as Record<string, unknown>)['message'] as string | undefined)?.trim() ?? ''
+      : ''
+    if (rawMsg) {
+      return {
+        kind: 'api',
+        statusCode: status ?? 400,
+        message: rawMsg.charAt(0).toUpperCase() + rawMsg.slice(1),
+        originalError: error,
+      } satisfies ApiError
+    }
+  }
+
+  // ── Plain JS Error instance — surface its message directly ──────────────────
+  if (error instanceof Error && error.message.trim()) {
+    return {
+      kind: 'unknown',
+      statusCode: undefined,
+      message: error.message.trim(),
+      originalError: error,
+    } satisfies UnknownError
+  }
+
   return {
     kind: 'unknown',
     statusCode: status,
