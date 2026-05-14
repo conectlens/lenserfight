@@ -111,6 +111,7 @@ the v2 BYOK resolve path.
 
 ## Pointers
 
+- RFC: [RFC-0004: AI Cost Governance & BYOK](../../rfcs/RFC-0004-cost-governance.md)
 - Migration: `supabase/migrations/20271217000000_phase_cg1_cost_governance.sql`
 - pgTAP coverage: `supabase/tests/87_cg1_billing_ledger.sql`,
   `88_cg1_reservation_lifecycle.sql`, `89_cg1_byok_reservation_binding.sql`
