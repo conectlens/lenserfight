@@ -69,13 +69,15 @@ SELECT ok(
 SET LOCAL ROLE service_role;
 
 INSERT INTO media.objects (
-  id, owner_lenser_id, bucket, object_key,
-  mime_type, media_type, visibility, lifecycle_state
+  id, workspace_id, owner_lenser_id, bucket, object_key,
+  name, mime_type, media_type, visibility, lifecycle_state
 )
 VALUES (
   'cccccccc-0000-0000-0000-000000000001',
+  'c3000000-0000-0000-0000-000000000001',
   'b2000000-0000-0000-0000-000000000001',
   'generated-media',
+  'sync/test-fixture.png',
   'sync/test-fixture.png',
   'image/png',
   'image',
@@ -146,12 +148,13 @@ RESET ROLE;
 -- AT: fn_toggle_media_visibility raises P0001 for non-owner
 SELECT throws_ok(
   $$
-    PERFORM public.fn_toggle_media_visibility(
+    SELECT public.fn_toggle_media_visibility(
       '00000000-0000-0000-0000-000000000099'::uuid,  -- non-existent
       'public'
     )
   $$,
   'P0001',
+  NULL,
   'fn_toggle_media_visibility should raise for non-existent object'
 );
 
