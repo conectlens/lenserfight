@@ -1950,6 +1950,7 @@ export default defineConfig({
             { text: 'How to Contribute', link: '/en/how-to/contributors/how-to-contribute' },
             { text: 'Development Setup', link: '/en/how-to/contributors/development-setup' },
             { text: 'Coding Standards', link: '/en/how-to/contributors/coding-standards' },
+            { text: 'UI Refactor Guide', link: '/en/how-to/contributors/ui-refactor-guide' },
             { text: 'Branching and Versioning', link: '/en/how-to/contributors/branching' },
             { text: 'Release Process', link: '/en/how-to/contributors/release-process' },
             { text: 'Release Checklist', link: '/en/how-to/contributors/release-checklist' },
