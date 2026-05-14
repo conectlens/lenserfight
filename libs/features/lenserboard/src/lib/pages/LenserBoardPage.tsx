@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Swords, Trophy } from 'lucide-react'
 
-import { HelpButton } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { useLenser } from '@lenserfight/features/profile'
 import { useLeaderboard as useActivityLeaderboard } from '@lenserfight/features/home'
@@ -77,22 +76,18 @@ export const LenserBoardPage: React.FC = () => {
 
       <LenserBoardHeader />
 
-      <div className="flex justify-end mb-2">
-        <HelpButton path="/tutorials/agent-walkthroughs/earning-xp" label="Earning XP" />
-      </div>
 
       {/* Board type toggle */}
-      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
+      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-2 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1 w-fit overflow-x-auto">
           {boardTabs.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => handleBoardChange(key)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
-                board === key
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${board === key
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
             >
               {label}
             </button>
@@ -102,7 +97,7 @@ export const LenserBoardPage: React.FC = () => {
 
       {board === 'xp' ? (
         <>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 bg-transparent py-2">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-3 bg-transparent py-2">
             <LenserBoardTabs activeScope={scope} onChange={setScope} />
             <div className="w-full md:w-auto overflow-x-auto scrollbar-hide pb-1 md:pb-0">
               <LenserBoardFilters activeTimeframe={timeframe} onChange={setTimeframe} />
@@ -129,11 +124,10 @@ export const LenserBoardPage: React.FC = () => {
               <button
                 key={p}
                 onClick={() => setActivityPeriod(p)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                  activityPeriod === p
-                    ? 'bg-primary text-black'
-                    : 'bg-gray-100 dark:bg-gray-800 text-black dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${activityPeriod === p
+                  ? 'bg-primary text-black'
+                  : 'bg-gray-100 dark:bg-gray-800 text-black dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
               >
                 {ACTIVITY_PERIOD_LABELS[p]}
               </button>
