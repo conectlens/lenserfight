@@ -1,4 +1,4 @@
--- Fix 5 RPC bugs surfaced after phase AN-AT rollout:
+-- Fix 6 RPC bugs surfaced after phase AN-AT rollout:
 --
 -- 1. public.fn_clone_lens            → PostgREST wrapper for lenses.fn_clone_lens
 -- 2. public.fn_list_agent_tools      → Missing function (was referenced but never created)
@@ -6,6 +6,11 @@
 --                                       but callers pass agents.ai_lensers.id, not profile_id
 -- 4. public.fn_byok_key_register     → Same ownership pattern bug; now uses ownerships table
 -- 5. public.fn_byok_key_revoke       → Same ownership pattern bug; now uses ownerships table
+-- 6. public.fn_byok_key_hint         → Same ownership pattern bug missed by the original fix;
+--                                       joined lensers.profiles on al.profile_id and checked
+--                                       p.user_id = auth.uid(), which always filters every row
+--                                       because AI profiles have no user_id. Fixed to use
+--                                       agents.ownerships via get_auth_human_lenser_id().
 
 
 -- ─── 1. public.fn_clone_lens ─────────────────────────────────────────────────
@@ -199,3 +204,39 @@ $$;
 
 ALTER FUNCTION public.fn_byok_key_revoke(uuid, text) OWNER TO postgres;
 GRANT EXECUTE ON FUNCTION public.fn_byok_key_revoke(uuid, text) TO authenticated;
+
+
+-- ─── 6. fn_byok_key_hint ──────────────────────────────────────────────────────
+-- Root cause: joined lensers.profiles on al.profile_id then checked p.user_id = auth.uid().
+-- AI profiles never have a user_id, so the WHERE always filtered every row → [].
+-- Fixed to use agents.ownerships consistent with fn_byok_key_register / fn_byok_key_revoke.
+
+CREATE OR REPLACE FUNCTION public.fn_byok_key_hint(p_agent_id uuid)
+RETURNS TABLE (
+  provider text,
+  key_hint text,
+  label    text,
+  is_valid boolean
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = execution, agents, lensers, public
+AS $$
+  SELECT
+    bk.provider,
+    bk.key_hint,
+    bk.label,
+    (bk.revoked_at IS NULL AND (bk.expires_at IS NULL OR bk.expires_at > now())) AS is_valid
+  FROM execution.byok_keys bk
+  WHERE bk.agent_id = p_agent_id
+    AND EXISTS (
+      SELECT 1 FROM agents.ownerships o
+      WHERE o.ai_lenser_id    = p_agent_id
+        AND o.owner_lenser_id = lensers.get_auth_human_lenser_id()
+        AND o.revoked_at IS NULL
+    );
+$$;
+
+ALTER FUNCTION public.fn_byok_key_hint(uuid) OWNER TO postgres;
+GRANT EXECUTE ON FUNCTION public.fn_byok_key_hint(uuid) TO authenticated;
