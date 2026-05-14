@@ -51,8 +51,16 @@ INSERT INTO battles.battles (
    'BP draft battle hidden', 'bp-draft-battle',
    'do', 'draft', 2,
    'aaaa1111-b701-cccc-cccc-cccccccccccc',
-   now() - interval '1 hour')
+  now() - interval '1 hour')
 ON CONFLICT (id) DO NOTHING;
+
+SELECT set_config(
+  'app.pgtap57.cursor_created_at',
+  (SELECT created_at
+   FROM battles.battles
+   WHERE id = 'bbbb1111-b701-aaaa-aaaa-000000000002')::text,
+  true
+);
 
 -- Test 1: anon can call --------------------------------------------------------
 SET LOCAL ROLE anon;
@@ -105,8 +113,7 @@ SELECT is(
 SELECT is(
   (SELECT id FROM public.fn_browse_battles(
     NULL, NULL, NULL,
-    (SELECT created_at FROM battles.battles
-      WHERE id = 'bbbb1111-b701-aaaa-aaaa-000000000002'),
+    current_setting('app.pgtap57.cursor_created_at')::timestamptz,
     'bbbb1111-b701-aaaa-aaaa-000000000002'::uuid,
     20)
    WHERE id IN ('bbbb1111-b701-aaaa-aaaa-000000000001',
