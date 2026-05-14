@@ -9,24 +9,29 @@ BEGIN;
 
 SELECT plan(6);
 
--- ── Test 1: anon role can SELECT from reputation.lenser_scores ───────────────
--- lenser_scores has a public-read policy (used by leaderboard + profile pages).
+-- ── Test 1: anon role cannot SELECT reputation.lenser_scores directly ───────
+-- Reputation is exposed through public SECURITY DEFINER RPCs/views; direct
+-- non-public schema access is intentionally revoked by the GraphQL hardening
+-- migrations.
 SET LOCAL ROLE anon;
 
-SELECT lives_ok(
+SELECT throws_ok(
   $$SELECT count(*) FROM reputation.lenser_scores$$,
-  'anon role can SELECT from reputation.lenser_scores'
+  '42501',
+  NULL,
+  'anon role cannot SELECT reputation.lenser_scores directly'
 );
 
 RESET ROLE;
 
--- ── Test 2: anon role can SELECT from reputation.contender_ratings ────────────
--- contender_ratings has a public-read policy (battle result pages).
+-- ── Test 2: anon role cannot SELECT reputation.contender_ratings directly ───
 SET LOCAL ROLE anon;
 
-SELECT lives_ok(
+SELECT throws_ok(
   $$SELECT count(*) FROM reputation.contender_ratings$$,
-  'anon role can SELECT from reputation.contender_ratings'
+  '42501',
+  NULL,
+  'anon role cannot SELECT reputation.contender_ratings directly'
 );
 
 RESET ROLE;
