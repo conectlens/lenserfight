@@ -112,7 +112,7 @@ export const RunDetailDrawer: React.FC<Props> = ({ open, onClose, run, aiLenserI
     <Drawer open={open} onClose={onClose} side="right" width="w-[560px]" title="Run detail">
       {run && (
         <div className="space-y-5">
-          <div className="rounded-[20px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
+          <div className="rounded-[20px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-700">
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
@@ -174,11 +174,10 @@ export const RunDetailDrawer: React.FC<Props> = ({ open, onClose, run, aiLenserI
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 rounded-[14px] px-3 py-1.5 text-xs font-semibold capitalize transition ${
-                    activeTab === tab
+                  className={`flex-1 rounded-[14px] px-3 py-1.5 text-xs font-semibold capitalize transition ${activeTab === tab
                       ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white'
                       : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                  }`}
+                    }`}
                 >
                   {tab}
                   {tab === 'steps' && steps.data ? ` (${steps.data.length})` : ''}
@@ -198,7 +197,7 @@ export const RunDetailDrawer: React.FC<Props> = ({ open, onClose, run, aiLenserI
                   ))}
                 </div>
               ) : (steps.data ?? []).length === 0 ? (
-                <p className="rounded-[16px] border border-gray-100 bg-gray-50 px-4 py-5 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-950">
+                <p className="rounded-[16px] border border-gray-100 bg-gray-50 px-4 py-5 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-700">
                   No steps recorded for this run.
                 </p>
               ) : (
@@ -221,7 +220,7 @@ export const RunDetailDrawer: React.FC<Props> = ({ open, onClose, run, aiLenserI
                   ))}
                 </div>
               ) : (events.data ?? []).length === 0 ? (
-                <p className="rounded-[16px] border border-gray-100 bg-gray-50 px-4 py-5 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-950">
+                <p className="rounded-[16px] border border-gray-100 bg-gray-50 px-4 py-5 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-700">
                   No events recorded for this run.
                 </p>
               ) : (
@@ -278,7 +277,7 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
 const EventRow: React.FC<{ event: AgentRunEventRecord }> = ({ event }) => {
   const colorClass = EVENT_TYPE_COLORS[event.event_type] ?? 'border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400'
   return (
-    <div className="flex items-center gap-3 rounded-[12px] border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-950">
+    <div className="flex items-center gap-3 rounded-[12px] border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-700">
       <span
         className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${colorClass}`}
       >
