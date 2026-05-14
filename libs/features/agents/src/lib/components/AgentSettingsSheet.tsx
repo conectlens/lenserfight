@@ -254,11 +254,10 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                 key={t.id}
                 type="button"
                 onClick={() => setTab(t.id)}
-                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
-                  tab === t.id
+                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${tab === t.id
                     ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
                     : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 {t.label}
               </button>
@@ -334,7 +333,7 @@ export const AgentSettingsSheet: React.FC<Props> = ({
 
           {tab === 'runtime' && (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300">
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-300">
                 Runtime pref: <span className="font-semibold text-gray-900 dark:text-white">{agent.runtime_pref}</span>
                 {' · '}Mode: <span className="font-semibold text-gray-900 dark:text-white">{agent.model_binding_mode}</span>
               </div>
@@ -434,11 +433,10 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                         </p>
                         <div className="mt-1 flex items-center gap-2">
                           <span
-                            className={`text-[11px] font-semibold ${
-                              s.is_active
+                            className={`text-[11px] font-semibold ${s.is_active
                                 ? 'text-emerald-600 dark:text-emerald-400'
                                 : 'text-gray-400'
-                            }`}
+                              }`}
                           >
                             {s.is_active ? 'Active' : 'Paused'}
                           </span>
