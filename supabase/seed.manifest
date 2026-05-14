@@ -1,0 +1,71 @@
+# Phase T5: seed manifest (cold-boot required + opt-in demo data).
+#
+# This manifest produces seed.sql and is applied by `supabase db reset`.
+# The schema-required block MUST stay small enough to run cold in well under
+# 30 seconds. Demo / sample data is clearly marked below and is also included
+# in the combined seed.sql for convenience; skip those sections in CI if you
+# need a faster cold-boot target.
+#
+# Order matters. Run: pnpm supabase:combine-seeds
+
+# ── CI guard — runs first to abort on accidental secrets in CI ────────────
+seeds/00_ci_guard.sql
+
+# ── Lookups the runtime depends on ──────────────────────────────────────────
+# core.languages MUST load before lensers.profiles (preferences trigger FK).
+seeds/01_core_languages.sql
+
+# AI provider/model catalog — referenced by FKs from ai_lensers, ai bindings
+# and pricing-aware UI even when no demo lensers are loaded.
+seeds/04_ai_providers.sql
+seeds/04b_ai_models.sql
+seeds/04c_ai_model_pricing.sql
+seeds/07_ai_models.sql
+seeds/08_ai_model_pricing.sql
+
+# Lens type system + execution origin lookup
+seeds/15_lens_tools.sql
+seeds/16_origin_types.sql
+
+# ── System policy / flag rows ──────────────────────────────────────────────
+seeds/17_xp_ruleset.sql
+
+# ── Demo accounts and profiles (opt-in) ───────────────────────────────────
+seeds/02_auth_users.sql
+seeds/03_lenser_profiles.sql
+seeds/07_ai_lensers.sql
+
+# Canonical Lenser Family AI Lensers (@lenso, @lensa, @lense, @lola)
+# Owned by @lenserfight. See docs/en/explanation/lensers/family/.
+seeds/08_lenser_family.sql
+
+seeds/13_workspaces.sql
+seeds/14_media_objects.sql
+
+# ── Lens / workflow demo content (opt-in) ─────────────────────────────────
+seeds/40_lens_chain_templates.sql
+seeds/41_developer_lens_templates.sql
+seeds/42_production_workflow_templates.sql
+seeds/43_ai_agent_lens_bindings.sql
+seeds/44_community_profiles.sql
+seeds/45_creator_business_lens_templates.sql
+seeds/46_connectors.sql
+seeds/47_chainabit_productivity_templates.sql
+seeds/48_workflow_templates.sql
+
+# ── Geo lookups (countries only — community edition) ──────────────────────
+seeds/03_regions.sql
+seeds/04_subregions.sql
+seeds/05_countries.sql
+seeds/06_states.sql
+
+# ── Demo battles / analytics / benchmark (opt-in) ─────────────────────────
+seeds/05_battles.sql
+seeds/49_analytics_phase15.sql
+seeds/06_analytics.sql
+seeds/30_scale_xp.sql
+seeds/40_benchmark.sql
+seeds/50_lenser_design_workflows.sql
+seeds/51_lenser_character_battles.sql
+seeds/06_multimodal_battles.sql
+seeds/52_battle_e2e_seed.sql
