@@ -227,7 +227,7 @@ const EvalRunHistory: React.FC<{
     <div className="space-y-3">
       {/* Regression chart */}
       {chartData.length >= 2 && (
-        <div className="rounded-[16px] border border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950">
+        <div className="rounded-[16px] border border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-700">
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
             Score history
           </p>
@@ -272,7 +272,7 @@ const EvalRunHistory: React.FC<{
           return (
             <div
               key={run.id}
-              className="flex flex-wrap items-center gap-2 rounded-[14px] border border-gray-100 bg-gray-50 px-3 py-2 text-xs dark:border-gray-800 dark:bg-gray-950"
+              className="flex flex-wrap items-center gap-2 rounded-[14px] border border-gray-100 bg-gray-50 px-3 py-2 text-xs dark:border-gray-800 dark:bg-gray-700"
             >
               <span className="font-mono text-gray-500 dark:text-gray-400">
                 {run.id.slice(0, 8)}
@@ -292,11 +292,10 @@ const EvalRunHistory: React.FC<{
               )}
               {delta !== null && (
                 <span
-                  className={`rounded-full px-2 py-0.5 font-semibold ${
-                    delta >= 0
-                      ? 'border border-green-200 text-green-700 dark:border-green-500/30 dark:text-green-300'
-                      : 'border border-red-200 text-red-600 dark:border-red-500/30 dark:text-red-400'
-                  }`}
+                  className={`rounded-full px-2 py-0.5 font-semibold ${delta >= 0
+                    ? 'border border-green-200 text-green-700 dark:border-green-500/30 dark:text-green-300'
+                    : 'border border-red-200 text-red-600 dark:border-red-500/30 dark:text-red-400'
+                    }`}
                 >
                   {delta >= 0 ? '+' : ''}{delta.toFixed(3)}
                 </span>
@@ -330,11 +329,10 @@ const EvalRunHistory: React.FC<{
                 <button
                   type="button"
                   onClick={() => onSelectRun(run)}
-                  className={`rounded-xl border px-2 py-1 font-semibold transition ${
-                    selectedRunId === run.id
-                      ? 'border-amber-300 text-amber-700 dark:border-amber-500/30 dark:text-amber-300'
-                      : 'border-gray-200 text-gray-600 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-400'
-                  }`}
+                  className={`rounded-xl border px-2 py-1 font-semibold transition ${selectedRunId === run.id
+                    ? 'border-amber-300 text-amber-700 dark:border-amber-500/30 dark:text-amber-300'
+                    : 'border-gray-200 text-gray-600 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-400'
+                    }`}
                 >
                   Results
                 </button>
@@ -410,7 +408,7 @@ export const EvaluationsSection: React.FC = () => {
       }
     >
       {isOwner && (
-        <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-5 dark:border-gray-800 dark:bg-gray-950">
+        <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-5 dark:border-gray-800 dark:bg-gray-700">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">What are evaluations?</h3>
           <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
             An evaluation suite is a named collection of test cases. Each case defines an expected
