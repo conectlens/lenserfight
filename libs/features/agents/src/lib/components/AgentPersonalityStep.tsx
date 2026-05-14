@@ -3,8 +3,8 @@ import { TextArea, Field, SearchSelectField } from '@lenserfight/ui/forms'
 import { Button } from '@lenserfight/ui/components'
 import type { LensViewModel } from '@lenserfight/types'
 import { BookOpen, Plus } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import React, { useEffect, useState, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 
 export interface AgentPersonalityStepProps {
   /** Runtime ID of the AI lenser (agents.ai_lensers.id) */
@@ -37,8 +37,11 @@ export const AgentPersonalityStep: React.FC<AgentPersonalityStepProps> = ({
   onLensSelect,
   onCreateLens,
 }) => {
+  const queryClient = useQueryClient()
   const [note, setNote] = useState(currentPersonalityNote ?? '')
   const [selectedLensId, setSelectedLensId] = useState<string>(currentDefaultLensId ?? '')
+  const [lenses, setLenses] = useState<LensViewModel[]>([])
+  const [isLoadingLenses, setIsLoadingLenses] = useState(false)
 
   // Keep local state in sync with parent
   useEffect(() => { setNote(currentPersonalityNote ?? '') }, [currentPersonalityNote])
@@ -54,12 +57,32 @@ export const AgentPersonalityStep: React.FC<AgentPersonalityStepProps> = ({
     onLensSelect(lensId || null)
   }
 
-  const { data: lenses = [], isLoading: isLoadingLenses } = useQuery<LensViewModel[]>({
-    queryKey: ['agent-lenses', agentHandle],
-    queryFn: () => lensesService.getLenserLenses(agentHandle, 0, 50),
-    enabled: !!agentHandle,
-    staleTime: 1000 * 60,
-  })
+  const handleDropdownOpen = useCallback(async () => {
+    if (lenses.length > 0 || isLoadingLenses) return
+    const cacheKey = ['instruction-lens-options', agentHandle]
+    const cached = queryClient.getQueryData<LensViewModel[]>(cacheKey)
+    if (cached) { setLenses(cached); return }
+
+    setIsLoadingLenses(true)
+    try {
+      const [ownerResult, popularResult] = await Promise.all([
+        lensesService.getLenserLenses(agentHandle, 0, 50),
+        lensesService.sort('popular', 0, 50),
+      ])
+      const ownerLenses: LensViewModel[] = ownerResult ?? []
+      const popularLenses: LensViewModel[] = popularResult.data ?? []
+
+      const ownerIds = new Set(ownerLenses.map((l) => l.id))
+      const merged = [
+        ...ownerLenses,
+        ...popularLenses.filter((l) => !ownerIds.has(l.id)),
+      ]
+      queryClient.setQueryData(cacheKey, merged)
+      setLenses(merged)
+    } finally {
+      setIsLoadingLenses(false)
+    }
+  }, [agentHandle, lenses.length, isLoadingLenses, queryClient])
 
   const selectedLens = lenses.find((l) => l.id === selectedLensId)
 
@@ -83,8 +106,8 @@ export const AgentPersonalityStep: React.FC<AgentPersonalityStepProps> = ({
 
       <Field
         id="agent-instruction-lens"
-        label="Instruction lens (system prompt)"
-        hint="Select a lens owned by this agent's workspace to use as its default system prompt."
+        label="Instruction lens"
+        hint="Select a lens to use as this agent's default system prompt. Your lenses appear first, followed by popular public lenses."
       >
         <SearchSelectField
           id="agent-instruction-lens"
@@ -93,8 +116,9 @@ export const AgentPersonalityStep: React.FC<AgentPersonalityStepProps> = ({
           onChange={handleLensChange}
           options={lenses.map((l) => ({ value: l.id, label: l.title }))}
           placeholder="Select a lens (optional)"
-          searchPlaceholder="Search agent lenses…"
-          disabled={isLoadingLenses}
+          searchPlaceholder="Search lenses…"
+          isLoading={isLoadingLenses}
+          onOpen={handleDropdownOpen}
         />
 
         {selectedLens && (
@@ -111,12 +135,6 @@ export const AgentPersonalityStep: React.FC<AgentPersonalityStepProps> = ({
               </p>
             )}
           </div>
-        )}
-
-        {lenses.length === 0 && !isLoadingLenses && (
-          <p className="mt-1.5 text-xs text-greyscale-400">
-            No lenses found in this agent's workspace. Create one below, or switch to the agent workspace and add lenses there.
-          </p>
         )}
 
         <div className="mt-2">
