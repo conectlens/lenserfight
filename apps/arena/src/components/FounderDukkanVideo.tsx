@@ -4,7 +4,7 @@ import { Film, Sparkles, Youtube } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 
 const DUKKAN_VIDEO = {
-  url: 'https://cdn.lenserfight.com/brand/gifs/dukkan.gif',
+  url: 'https://cdn.lenserfight.com/brand/gifs/dukkan.png',
   title: 'This is my Dukkan!',
   description: 'My dream started with a YouTube video.',
   tag: 'Founder note',
