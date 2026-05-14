@@ -2060,6 +2060,7 @@ export default defineConfig({
             { text: 'RFC-0002: Scoring Plugin', link: '/en/rfcs/RFC-0002-scoring-plugin' },
             { text: 'RFC-0003: Trust Gateway', link: '/en/rfcs/RFC-0003-trust-gateway' },
             { text: 'RFC-0004: AI Cost Governance & BYOK', link: '/en/rfcs/RFC-0004-cost-governance' },
+            { text: 'RFC-0005: Namespace Governance', link: '/en/rfcs/RFC-0005-namespace-governance' },
           ],
         },
       ],
@@ -2424,6 +2425,7 @@ export default defineConfig({
           text: 'Architecture',
           collapsed: true,
           items: [
+            { text: 'Namespace Governance', link: '/en/explanation/architecture/namespace-governance' },
             { text: 'AI Cost Governance & BYOK', link: '/en/explanation/architecture/cost-governance' },
             { text: 'Universal Export System', link: '/en/explanation/architecture/universal-export-system' },
           ],
@@ -2433,8 +2435,10 @@ export default defineConfig({
         {
           text: 'Architecture',
           items: [
+            { text: 'Namespace Governance', link: '/en/explanation/architecture/namespace-governance' },
             { text: 'AI Cost Governance & BYOK', link: '/en/explanation/architecture/cost-governance' },
             { text: 'Universal Export System', link: '/en/explanation/architecture/universal-export-system' },
+            { text: 'RFC-0005: Namespace Governance', link: '/en/rfcs/RFC-0005-namespace-governance' },
             { text: 'RFC-0004: AI Cost Governance', link: '/en/rfcs/RFC-0004-cost-governance' },
           ],
         },
