@@ -154,6 +154,9 @@
       "@lenserfight/infra/storage": [
         "libs/infra/storage/src/index.ts"
       ],
+      "@lenserfight/infra/asset-cache": [
+        "libs/infra/asset-cache/src/index.ts"
+      ],
       "@lenserfight/infra/simulation": [
         "libs/infra/simulation/src/index.ts"
       ],
@@ -210,6 +213,9 @@
       ],
       "@lenserfight/utils/storage": [
         "libs/utils/storage/src/index.ts"
+      ],
+      "@lenserfight/utils/cdn-url": [
+        "libs/utils/cdn-url/src/index.ts"
       ],
       "@lenserfight/utils/validation": [
         "libs/utils/validation/src/index.ts"
