@@ -62,7 +62,8 @@ export const ByokSection: React.FC = () => {
     queryKey: ['byok', 'keys', aiLenserId],
     queryFn: () => agentWorkspaceService.listByokKeyHints(aiLenserId),
     enabled: isOwner && !!aiLenserId,
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
   })
 
   const rotationDueQuery = useQuery<ByokRotationDueRow[]>({
@@ -70,6 +71,7 @@ export const ByokSection: React.FC = () => {
     queryFn: () => agentWorkspaceService.listRotationDue(),
     enabled: isOwner,
     staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
   })
 
   const overdueKeys = rotationDueQuery.data ?? []
@@ -77,8 +79,11 @@ export const ByokSection: React.FC = () => {
   const revokeMutation = useMutation({
     mutationFn: ({ provider }: { provider: string }) =>
       agentWorkspaceService.revokeByokKey(aiLenserId, provider),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['byok', 'keys', aiLenserId] })
+    onSuccess: (_, { provider }) => {
+      queryClient.setQueryData<ByokKeyHint[]>(
+        ['byok', 'keys', aiLenserId],
+        (prev = []) => prev.map((k) => k.provider === provider ? { ...k, is_valid: false } : k),
+      )
     },
   })
 
@@ -95,8 +100,15 @@ export const ByokSection: React.FC = () => {
       const hint = key.length >= 4 ? key.slice(-4) : key
       return agentWorkspaceService.registerByokKey(aiLenserId, provider, key, hint, label || undefined)
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['byok', 'keys', aiLenserId] })
+    onSuccess: (_, { provider, key, label }) => {
+      const hint = key.length >= 4 ? key.slice(-4) : key
+      queryClient.setQueryData<ByokKeyHint[]>(
+        ['byok', 'keys', aiLenserId],
+        (prev = []) => {
+          const without = prev.filter((k) => k.provider !== provider)
+          return [...without, { provider, key_hint: hint, label: label || null, is_valid: true }]
+        },
+      )
       setDialogOpen(false)
       setForm(EMPTY_FORM)
       setFormError(null)
