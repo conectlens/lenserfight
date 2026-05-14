@@ -85,7 +85,7 @@ SELECT ok(
     WHERE n.nspname  = 'public'
       AND cl.relname = 'notifications'
       AND c.conname  = 'notifications_type_check'
-      AND c.consrc   LIKE '%agent_created%'
+      AND pg_get_constraintdef(c.oid) LIKE '%agent_created%'
   ),
   'agent_created is present in notifications_type_check'
 );
