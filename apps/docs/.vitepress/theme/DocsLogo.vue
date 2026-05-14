@@ -48,8 +48,8 @@ onMounted(() => {
 const computedSrc = computed(() => {
   if (props.imageUrl) return props.imageUrl
   return isDark.value
-    ? '/favicons/white/ms-icon-150x150.png'
-    : '/favicons/original/ms-icon-150x150.png'
+    ? 'https://cdn.lenserfight.com/brand/favicons/white/ms-icon-150x150.png'
+    : 'https://cdn.lenserfight.com/brand/favicons/original/ms-icon-150x150.png'
 })
 
 </script>
