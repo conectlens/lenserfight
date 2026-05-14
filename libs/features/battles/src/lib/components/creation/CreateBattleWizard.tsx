@@ -13,7 +13,7 @@ import { normalizeError } from '@lenserfight/shared/error'
 import { isValidUUID } from '@lenserfight/utils/validation'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitBranch, HelpCircle, Layers, Swords, Trophy } from 'lucide-react'
+import { GitBranch, HelpCircle, Info, Layers, Swords, Trophy } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { AIProvider, AIProviderModel } from '@lenserfight/types'
@@ -27,20 +27,32 @@ import type { LenserSearchResult } from './LenserSearchPicker'
 import { VoterEligibilitySelector } from './VoterEligibilitySelector'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../../types/battle.types'
-import type { ScheduleBattleInput } from '@lenserfight/data/repositories'
 import type { LensViewModel } from '@lenserfight/types'
 import { useInviteContender } from '../../hooks/mutations/useInviteContender'
 
 // ─── Step config ─────────────────────────────────────────────────────────────
 
 const CONFIG_HELP_CONTENT = (
-  <span className="max-w-[220px] whitespace-normal block text-left">
-    <strong>Voter eligibility</strong> controls who can vote on the battle outcome.
-    <br /><br />
-    <strong>AI handicap</strong> limits model speed or context to level the playing field.
-    <br /><br />
-    <strong>Execution context</strong> sets which AI provider, model, and funding source runs this battle.
-  </span>
+  <div className="space-y-3 p-1 text-left leading-relaxed">
+    <div>
+      <strong className="text-primary-yellow-600 dark:text-primary-yellow-400">Voter eligibility</strong>
+      <p className="mt-0.5 text-greyscale-600 dark:text-greyscale-300">
+        Controls who can vote on the battle outcome.
+      </p>
+    </div>
+    <div>
+      <strong className="text-primary-yellow-600 dark:text-primary-yellow-400">AI handicap</strong>
+      <p className="mt-0.5 text-greyscale-600 dark:text-greyscale-300">
+        Limits model speed or context to level the playing field.
+      </p>
+    </div>
+    <div>
+      <strong className="text-primary-yellow-600 dark:text-primary-yellow-400">Execution context</strong>
+      <p className="mt-0.5 text-greyscale-600 dark:text-greyscale-300">
+        Sets which AI provider, model, and funding source runs this battle.
+      </p>
+    </div>
+  </div>
 )
 
 const stepAction = (path: string, label: string) => (
@@ -83,7 +95,11 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     description: 'Set voter eligibility, AI handicap, and execution context.',
     action: (
       <div className="flex items-center gap-1.5">
-        <Tooltip content={CONFIG_HELP_CONTENT} position="bottom">
+        <Tooltip
+          content={CONFIG_HELP_CONTENT}
+          position="bottom"
+          contentClassName="whitespace-normal w-72 p-3 !text-[11px]"
+        >
           <button
             type="button"
             aria-label="Battle configuration help"
@@ -494,15 +510,6 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         },
         { replace: false }
       )
-      if (scheduleEnabled && executionStartsAt && AUTO_EXEC_TYPES.includes(resolvedBattleType)) {
-        const scheduleInput: ScheduleBattleInput = {
-          battle_id:             battle.id,
-          execution_starts_at:   executionStartsAt,
-          voting_duration_hours: votingDurationHours,
-          auto_publish:          autoPublish,
-        }
-        await battlesService.scheduleBattle(scheduleInput)
-      }
     } catch (e) {
       setError(normalizeError(e).message)
     } finally {
@@ -593,6 +600,30 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }
 
+  // ── Schedule submission (step 5 → 6) ─────────────────────────────────────
+
+  const handleScheduleAndNext = async () => {
+    if (scheduleEnabled && executionStartsAt && activeBattleId && AUTO_EXEC_TYPES.includes(battleType)) {
+      setSubmitting(true)
+      setError(null)
+      try {
+        await battlesService.scheduleBattle({
+          battle_id:             activeBattleId,
+          execution_starts_at:   executionStartsAt,
+          voting_duration_hours: votingDurationHours,
+          auto_publish:          autoPublish,
+        })
+      } catch (e) {
+        setError(normalizeError(e).message)
+        setSubmitting(false)
+        return
+      } finally {
+        setSubmitting(false)
+      }
+    }
+    go(6)
+  }
+
   const handleFinish = () => {
     if (!createdBattleSlug) {
       setError('Cannot finish: battle slug is missing. Please re-create the battle.')
@@ -617,9 +648,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // Next / complete handler varies by step
   const handleNext = step === 4
     ? handleCreateBattle
-    : step === 6
-      ? handleInvite
-      : () => go(step + 1)
+    : step === 5
+      ? handleScheduleAndNext
+      : step === 6
+        ? handleInvite
+        : () => go(step + 1)
 
   const handleComplete = handleFinish
 
@@ -633,8 +666,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         onComplete={handleComplete}
         onCancel={onClose}
         canProceed={canProceed}
-        isCompleting={step === 4 ? submitting : step === 6 ? inviting : false}
-        isNextLoading={step === 4 ? submitting : step === 6 ? inviting : false}
+        isCompleting={step === 4 ? submitting : step === 5 ? submitting : step === 6 ? inviting : false}
+        isNextLoading={step === 4 ? submitting : step === 5 ? submitting : step === 6 ? inviting : false}
         completeLabel="Go to Battle"
         completeIcon={<Swords size={15} className="mr-1.5" />}
         nextLabel={step === 4 ? (isEditMode ? 'Update Battle' : 'Create Battle') : step === 6 ? 'Invite' : 'Next'}
@@ -655,77 +688,92 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             {/* ── Step 0: Format chooser ────────────────────────────── */}
             {step === 0 && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setBattleFormat('lenser_battle')}
-                  className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
-                    battleFormat === 'lenser_battle'
-                      ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
-                      : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
-                  }`}
-                >
-                  <Trophy
-                    size={28}
-                    className={battleFormat === 'lenser_battle' ? 'text-primary-yellow-600' : 'text-greyscale-400'}
-                  />
-                  <div>
-                    <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
-                      Lenser Battle
-                    </p>
-                    <p className="text-xs text-greyscale-400 mt-0.5">
-                      Named lensers compete with their own setup
-                    </p>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setBattleFormat('lenser_battle')}
+                    className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
+                      battleFormat === 'lenser_battle'
+                        ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
+                        : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
+                    }`}
+                  >
+                    <Trophy
+                      size={28}
+                      className={battleFormat === 'lenser_battle' ? 'text-primary-yellow-600' : 'text-greyscale-400'}
+                    />
+                    <div>
+                      <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
+                        Lenser Battle
+                      </p>
+                      <p className="text-xs text-greyscale-400 mt-0.5">
+                        Named lensers compete with their own setup
+                      </p>
+                    </div>
+                  </Button>
+                  <div className="flex justify-center">
+                    <HelpButton path="/tutorials/battle-walkthroughs/lenser-battle" label="About Lenser Battles" />
                   </div>
-                </Button>
+                </div>
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setBattleFormat('workflow')}
-                  className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
-                    battleFormat === 'workflow'
-                      ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
-                      : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
-                  }`}
-                >
-                  <GitBranch
-                    size={28}
-                    className={battleFormat === 'workflow' ? 'text-primary-yellow-600' : 'text-greyscale-400'}
-                  />
-                  <div>
-                    <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
-                      Workflow Battle
-                    </p>
-                    <p className="text-xs text-greyscale-400 mt-0.5">
-                      Use a connected lens workflow
-                    </p>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setBattleFormat('workflow')}
+                    className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
+                      battleFormat === 'workflow'
+                        ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
+                        : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
+                    }`}
+                  >
+                    <GitBranch
+                      size={28}
+                      className={battleFormat === 'workflow' ? 'text-primary-yellow-600' : 'text-greyscale-400'}
+                    />
+                    <div>
+                      <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
+                        Workflow Battle
+                      </p>
+                      <p className="text-xs text-greyscale-400 mt-0.5">
+                        Use a connected lens workflow
+                      </p>
+                    </div>
+                  </Button>
+                  <div className="flex justify-center">
+                    <HelpButton path="/tutorials/battle-walkthroughs/workflow-battle" label="About Workflow Battles" />
                   </div>
-                </Button>
+                </div>
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setBattleFormat('lens')}
-                  className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
-                    battleFormat === 'lens'
-                      ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
-                      : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
-                  }`}
-                >
-                  <Layers
-                    size={28}
-                    className={battleFormat === 'lens' ? 'text-primary-yellow-600' : 'text-greyscale-400'}
-                  />
-                  <div>
-                    <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
-                      Lens Battle
-                    </p>
-                    <p className="text-xs text-greyscale-400 mt-0.5">
-                      Use a single prompt lens
-                    </p>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setBattleFormat('lens')}
+                    className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
+                      battleFormat === 'lens'
+                        ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
+                        : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
+                    }`}
+                  >
+                    <Layers
+                      size={28}
+                      className={battleFormat === 'lens' ? 'text-primary-yellow-600' : 'text-greyscale-400'}
+                    />
+                    <div>
+                      <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
+                        Lens Battle
+                      </p>
+                      <p className="text-xs text-greyscale-400 mt-0.5">
+                        Use a single prompt lens
+                      </p>
+                    </div>
+                  </Button>
+                  <div className="flex justify-center">
+                    <HelpButton path="/tutorials/battle-walkthroughs/lens-battle" label="About Lens Battles" />
                   </div>
-                </Button>
+                </div>
               </div>
             )}
 
@@ -868,9 +916,18 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             {step === 4 && (
               <div className="space-y-6">
                 <div>
-                  <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-greyscale-400">
-                    Voter &amp; Performance Settings
-                  </h4>
+                  <div className="mb-4 flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-greyscale-400">
+                      Voter &amp; Performance Settings
+                    </h4>
+                    <Tooltip
+                      content="Controls who can vote and whether an AI handicap applies to level the playing field."
+                      position="right"
+                      contentClassName="whitespace-normal w-56 text-[11px]"
+                    >
+                      <Info size={13} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
+                    </Tooltip>
+                  </div>
                   <div className="space-y-6">
                     <VoterEligibilitySelector
                       battleType={battleFormat === 'lenser_battle' ? 'lenser_battle' : battleType}
@@ -885,9 +942,18 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
                 {battleFormat !== 'lenser_battle' && (
                   <div className="border-t border-surface-border pt-6">
-                    <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-greyscale-400">
-                      Execution Context
-                    </h4>
+                    <div className="mb-4 flex items-center gap-1.5">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-greyscale-400">
+                        Execution Context
+                      </h4>
+                      <Tooltip
+                        content="Sets which AI provider, model, and funding source runs this battle. Use BYOK to bring your own API key."
+                        position="right"
+                        contentClassName="whitespace-normal w-60 text-[11px]"
+                      >
+                        <Info size={13} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
+                      </Tooltip>
+                    </div>
                     <FundingSourceToggle
                       fundingSource={battleFunding.fundingSource}
                       onFundingSourceChange={battleFunding.setFundingSource}
