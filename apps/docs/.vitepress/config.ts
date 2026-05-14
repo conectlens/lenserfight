@@ -2059,6 +2059,7 @@ export default defineConfig({
             { text: 'RFC-0001: Connector Interface', link: '/en/rfcs/RFC-0001-connector-interface' },
             { text: 'RFC-0002: Scoring Plugin', link: '/en/rfcs/RFC-0002-scoring-plugin' },
             { text: 'RFC-0003: Trust Gateway', link: '/en/rfcs/RFC-0003-trust-gateway' },
+            { text: 'RFC-0004: AI Cost Governance & BYOK', link: '/en/rfcs/RFC-0004-cost-governance' },
           ],
         },
       ],
@@ -2417,6 +2418,24 @@ export default defineConfig({
               link: '/en/explanation/battles/rematches-and-series',
             },
             { text: 'Limited Beta Status', link: '/en/explanation/battles/limited-beta-status' },
+          ],
+        },
+        {
+          text: 'Architecture',
+          collapsed: true,
+          items: [
+            { text: 'AI Cost Governance & BYOK', link: '/en/explanation/architecture/cost-governance' },
+            { text: 'Universal Export System', link: '/en/explanation/architecture/universal-export-system' },
+          ],
+        },
+      ],
+      '/en/explanation/architecture/': [
+        {
+          text: 'Architecture',
+          items: [
+            { text: 'AI Cost Governance & BYOK', link: '/en/explanation/architecture/cost-governance' },
+            { text: 'Universal Export System', link: '/en/explanation/architecture/universal-export-system' },
+            { text: 'RFC-0004: AI Cost Governance', link: '/en/rfcs/RFC-0004-cost-governance' },
           ],
         },
       ],
