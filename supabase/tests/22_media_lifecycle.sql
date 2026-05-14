@@ -59,15 +59,16 @@ SELECT has_function(
 
 -- 8. fn_delete_media_object raises for non-owner
 SELECT throws_ok(
-  $$
-    DO $$
+  $test$
+    DO $do$
     BEGIN
       -- Random object_id that does not exist → should raise media_object_not_found
       PERFORM public.fn_delete_media_object('00000000-0000-0000-0000-000000000099'::uuid);
     END;
-    $$
-  $$,
+    $do$
+  $test$,
   'P0001',
+  NULL,
   'fn_delete_media_object should raise P0001 for unknown object'
 );
 
