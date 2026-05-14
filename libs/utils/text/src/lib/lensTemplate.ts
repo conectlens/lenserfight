@@ -131,6 +131,29 @@ export function parseContentSegments(content: string): LensContentSegment[] {
   return segments
 }
 
+/**
+ * Renders lens content the way `LensContentReadonly` displays it: normalizes
+ * `{{param}}` → `[[param]]`, resolves `[[:uuid]]` refs to `[[label]]` via the
+ * supplied version params, and leaves text untouched. Use this when copying
+ * displayed lens content to the clipboard so the user gets what they see.
+ */
+export function renderLensContentForCopy(
+  rawContent: string,
+  versionParams: LensVersionParam[] = [],
+): string {
+  if (!rawContent) return ''
+  const normalized = rawContent.replace(/\{\{(\w+)\}\}/g, '[[$1]]')
+  const paramById = new Map(versionParams.map((vp) => [vp.id, vp]))
+  return parseContentSegments(normalized)
+    .map((seg) => {
+      if (seg.type === 'text') return seg.content
+      if (seg.type === 'param') return `[[${seg.name}]]`
+      const vp = paramById.get(seg.id)
+      return `[[${vp?.label ?? seg.id.slice(0, 8)}]]`
+    })
+    .join('')
+}
+
 // ─── Mismatch Detection ──────────────────────────────────────────────────
 
 export interface ParamMismatch {
