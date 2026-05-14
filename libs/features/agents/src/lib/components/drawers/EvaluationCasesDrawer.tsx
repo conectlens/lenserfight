@@ -185,7 +185,7 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
             ))}
           </div>
         ) : caseList.length === 0 && !addingCase ? (
-          <p className="rounded-[16px] border border-gray-100 bg-gray-50 px-4 py-6 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-950">
+          <p className="rounded-[16px] border border-gray-100 bg-gray-50 px-4 py-6 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-700">
             No test cases yet. Add cases to define expected behavior.
           </p>
         ) : (
