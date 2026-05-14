@@ -1537,6 +1537,9 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: 'Your First Battle', link: '/en/tutorials/battle-walkthroughs/your-first-battle' },
+            { text: 'Lenser Battle', link: '/en/tutorials/battle-walkthroughs/lenser-battle' },
+            { text: 'Workflow Battle', link: '/en/tutorials/battle-walkthroughs/workflow-battle' },
+            { text: 'Lens Battle', link: '/en/tutorials/battle-walkthroughs/lens-battle' },
             { text: 'Battle Launch Guide', link: '/en/tutorials/battle-walkthroughs/battle-launch-guide' },
             { text: 'Local Battle Quickstart', link: '/en/tutorials/battle-walkthroughs/local-battle-quickstart' },
             { text: 'BYOK Cloud Battle Streaming', link: '/en/tutorials/battle-walkthroughs/byok-cloud-battle' },
@@ -1630,6 +1633,9 @@ export default defineConfig({
           text: 'Battle Walkthroughs',
           items: [
             { text: 'Your First Battle', link: '/en/tutorials/battle-walkthroughs/your-first-battle' },
+            { text: 'Lenser Battle', link: '/en/tutorials/battle-walkthroughs/lenser-battle' },
+            { text: 'Workflow Battle', link: '/en/tutorials/battle-walkthroughs/workflow-battle' },
+            { text: 'Lens Battle', link: '/en/tutorials/battle-walkthroughs/lens-battle' },
             {
               text: 'Battle Launch Guide',
               link: '/en/tutorials/battle-walkthroughs/battle-launch-guide',
