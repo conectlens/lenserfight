@@ -32,7 +32,7 @@ import { useNavigate } from 'react-router-dom'
 import { AILenserWorkflowPanel } from '../components/AILenserWorkflowPanel'
 import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserProfileHeader } from '../components/LenserProfileHeader'
-import { LenserTabs, type LenserTabDefinition, type LenserTabId } from '../components/LenserTabs'
+import { LenserTabContent, LenserTabs, type LenserTabDefinition, type LenserTabId } from '../components/LenserTabs'
 import { useWorkspaceSwitchController } from '../useWorkspaceSwitchController'
 
 const AgentManageWizard = React.lazy(() =>
@@ -119,7 +119,7 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
     if (tab === activeTab) return
     const shortcode = AI_REVERSE_TAB_MAP[tab]
     if (!shortcode) return
-    navigate(`/lenser/${handle}/${shortcode}`)
+    navigate(`/lenser/${handle}/${shortcode}`, { preventScrollReset: true })
   }
 
   const { data: agentProfile = null, isLoading: agentLoading } = useQuery({
@@ -173,6 +173,7 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
         relationshipState={relationshipState}
         onEditAgent={() => setShowAgentWizard(true)}
         onControlRoom={() => switchToProfile(viewedProfile)}
+        agentLenserId={agentProfile?.id}
       />
 
 
@@ -181,6 +182,7 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
         <LenserTabs activeTab={activeTab} onChange={handleTabChange} tabs={AI_TABS} />
 
 
+        <LenserTabContent activeTab={activeTab}>
         <div className="min-h-[300px]">
           {activeTab === 'ai_threads' && (
             <ThreadsTab
@@ -251,6 +253,7 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
           )}
 
         </div>
+        </LenserTabContent>
       </div>
 
       {agentProfile && (
