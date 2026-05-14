@@ -28,7 +28,7 @@ import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserActivityHeatmap } from '../components/LenserActivityHeatmap'
 import { LenserProfileHeader } from '../components/LenserProfileHeader'
 import { LenserStatsRow } from '../components/LenserStatsRow'
-import { LenserTabs, type LenserTabDefinition, type LenserTabId } from '../components/LenserTabs'
+import { LenserTabContent, LenserTabs, type LenserTabDefinition, type LenserTabId } from '../components/LenserTabs'
 import { OwnerRecoveryBanner } from '../components/OwnerRecoveryBanner'
 import { ProfileCompletionBanner } from '../components/ProfileCompletionBanner'
 import { RestrictedProfileShell } from '../components/RestrictedProfileShell'
@@ -342,7 +342,7 @@ export const LenserProfilePage: React.FC = () => {
     if (newTab === activeTab) return
     const shortcode = REVERSE_TAB_MAP[newTab]
     if (!shortcode) return
-    navigate(`/lenser/${handle}/${shortcode}`)
+    navigate(`/lenser/${handle}/${shortcode}`, { preventScrollReset: true })
   }
 
   const handleProfileUpdate = (_updatedLenser: Lenser) => {
@@ -558,6 +558,7 @@ export const LenserProfilePage: React.FC = () => {
           <LenserTabs activeTab={activeTab} onChange={handleTabChange} tabs={tabs} />
         </div>
 
+        <LenserTabContent activeTab={activeTab}>
         <div className="min-h-[300px] px-4 md:px-0">
           {activeStandardTab && !authUser && !isAuthLoading && (
             <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
@@ -700,6 +701,7 @@ export const LenserProfilePage: React.FC = () => {
 
           {authUser && <div ref={lastElementRef} className="h-4" />}
         </div>
+        </LenserTabContent>
       </div>
 
       <CreateLensModal
