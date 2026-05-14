@@ -34,6 +34,11 @@ seeds/17_xp_ruleset.sql
 seeds/02_auth_users.sql
 seeds/03_lenser_profiles.sql
 seeds/07_ai_lensers.sql
+
+# Canonical Lenser Family AI Lensers (@lenso, @lensa, @lense, @lola)
+# Owned by @lenserfight. See docs/en/explanation/lensers/family/.
+seeds/08_lenser_family.sql
+
 seeds/13_workspaces.sql
 seeds/14_media_objects.sql
 
