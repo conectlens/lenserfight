@@ -1,0 +1,20 @@
+{
+  "name": "infra-byok",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/infra/byok/src",
+  "projectType": "library",
+  "tags": [
+    "layer:infra",
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../../coverage/libs/infra/byok"
+      }
+    }
+  }
+}
