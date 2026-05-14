@@ -130,7 +130,6 @@ export const RegisterPage: React.FC = () => {
             message: 'Account already exists. If your email was not confirmed, we have sent another confirmation link.',
           })
         } catch (resendErr) {
-          console.log('Resend failed or not needed', resendErr)
           setApiError({ ...normalized, message: 'This email is already associated with an account.' })
         }
       } else {
