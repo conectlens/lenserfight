@@ -1,12 +1,11 @@
-import { Copy, Eye, Lock, Pencil, GitFork, Check, Loader2 } from 'lucide-react'
-import React from 'react'
-import { Link } from 'react-router-dom'
-
+import { LensDetailViewModel } from '@lenserfight/types'
 import { Avatar } from '@lenserfight/ui/components'
 import { Button } from '@lenserfight/ui/components'
-import { LensDetailViewModel } from '@lenserfight/types'
 import { timeAgo } from '@lenserfight/utils/date'
 import { copyTextToClipboard } from '@lenserfight/utils/text'
+import { Check, Copy, Eye, GitFork, Loader2, Lock, Pencil } from 'lucide-react'
+import React from 'react'
+import { Link } from 'react-router-dom'
 
 import { LensReactionBar } from './LensReactionBar'
 import { LensTagsBar } from './LensTagsBar'
