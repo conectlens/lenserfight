@@ -49,7 +49,6 @@ export const ForgotPasswordPage: React.FC = () => {
     try {
       await requestPasswordReset(formData.email, captchaToken || undefined)
       setSuccess(true)
-      // For mock purposes, console.log is handled in repository
     } catch (err: any) {
       setApiError(err.message || 'Failed to send reset email')
       if (ENABLE_CAPTCHA) setCaptchaToken(null)
