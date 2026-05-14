@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
               title="Sign in with Chainabit"
             >
-              <img src="/chainabit/favicon-32x32.png" width={16} height={16} alt="" className="rounded shrink-0" />
+              <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={16} height={16} alt="" className="rounded shrink-0" />
               Sign in
             </button>
           )}
@@ -110,7 +110,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               title="Chainabit — AI execution wallet"
               aria-label="Chainabit connection"
             >
-              <img src="/chainabit/favicon-32x32.png" width={20} height={20} alt="" className="rounded shrink-0" />
+              <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={20} height={20} alt="" className="rounded shrink-0" />
               {chainabitState === 'connected' && credits !== null && (
                 <span className="tabular-nums">{credits.toLocaleString()} cr</span>
               )}
