@@ -368,8 +368,16 @@ describe('SupabaseBattlesRepository', () => {
   // createBattle
   // ---------------------------------------------------------------------------
   describe('createBattle', () => {
+    // fn_battles_create returns a UUID; createBattle then calls fn_update_battle
+    // to apply remaining settings and get back the full BattleRecord.
+    const setupCreateMocks = () => {
+      mockRpc
+        .mockResolvedValueOnce({ data: BATTLE_ID, error: null })    // fn_battles_create → UUID
+        .mockResolvedValueOnce({ data: [fakeBattle], error: null })  // fn_update_battle → record
+    }
+
     it('calls fn_battles_create with title, slug, task_prompt', async () => {
-      mockRpc.mockResolvedValue({ data: [fakeBattle], error: null })
+      setupCreateMocks()
       await repo.createBattle({ title: 'My Battle', task_prompt: 'Do something', battle_type: 'ai_vs_ai', voter_eligibility: 'open' })
       expect(mockRpc).toHaveBeenCalledWith('fn_battles_create', expect.objectContaining({
         p_title: 'My Battle',
@@ -379,14 +387,14 @@ describe('SupabaseBattlesRepository', () => {
     })
 
     it('generates a slug from the title', async () => {
-      mockRpc.mockResolvedValue({ data: [fakeBattle], error: null })
+      setupCreateMocks()
       await repo.createBattle({ title: 'My Battle!', task_prompt: 'x', battle_type: 'ai_vs_ai', voter_eligibility: 'open' })
       const call = mockRpc.mock.calls[0]
       expect(call[1].p_slug).toMatch(/^my-battle-[a-z0-9]{6}$/)
     })
 
     it('returns the created battle record', async () => {
-      mockRpc.mockResolvedValue({ data: [fakeBattle], error: null })
+      setupCreateMocks()
       const result = await repo.createBattle({ title: 'T', task_prompt: 'P', battle_type: 'ai_vs_ai', voter_eligibility: 'open' })
       expect(result).toEqual(fakeBattle)
     })
