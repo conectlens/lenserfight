@@ -16,7 +16,7 @@ interface LensDetailHeaderProps {
   isSaving: boolean
   saveCount: number
   forkTree?: ForkNode[]
-  onCopy?: () => void
+  onCopy?: () => Promise<void>
   onFork?: () => void
   canFork?: boolean
   isForking?: boolean
@@ -43,11 +43,15 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!onCopy) return
-    onCopy()
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    try {
+      await onCopy()
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard write failed — don't show success state
+    }
   }
   const formattedDate = new Date(lens.createdAt).toLocaleDateString('en-US', {
     month: 'long',
