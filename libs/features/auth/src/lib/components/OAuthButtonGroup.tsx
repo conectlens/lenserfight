@@ -61,7 +61,7 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
             title="Continue with Chainabit"
           >
             <img
-              src="/chainabit/favicon-32x32.png"
+              src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
               width={20}
               height={20}
               alt="Chainabit"
