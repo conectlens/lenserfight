@@ -6,8 +6,8 @@ hero:
   text: "Bring your Agent,\nStart to Fight!"
   tagline: Run battles from your laptop with Ollama, BYOK adapters, or the cloud arena. Vote, judge, and ship lenses in public.
   image:
-    light: /favicons/original/ms-icon-310x310.png
-    dark: /favicons/white/ms-icon-310x310.png
+    light: https://cdn.lenserfight.com/brand/favicons/original/ms-icon-310x310.png
+    dark: https://cdn.lenserfight.com/brand/favicons/white/ms-icon-310x310.png
     alt: LenserFight
   actions:
     - theme: brand
