@@ -1,12 +1,13 @@
 -- Phase BD — Battle template authoring (create / update / delete).
 --
 -- Lets an authenticated user manage their own battles.templates rows. Owner
--- model: creator_lenser_id = auth.uid() (lenser profile id == user id).
+-- model: creator_lenser_id = lensers.get_auth_lenser_id() (lenser profile id,
+-- not the raw auth user UUID — templates_creator_fk references lensers.profiles).
 --
--- - create: stamps creator_lenser_id from auth.uid(); validates category.
+-- - create: stamps creator_lenser_id from lensers.get_auth_lenser_id(); validates category.
 -- - update: only the creator may mutate; COALESCE for optional patches.
 -- - delete: soft delete; subsequent calls are no-ops.
--- All three are SECURITY DEFINER + raise 42501 on ownership violation.
+-- All four are SECURITY DEFINER + raise 42501 on ownership violation.
 
 -- ── 1. fn_battles_create_template ───────────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.fn_battles_create_template(
@@ -20,13 +21,13 @@ CREATE OR REPLACE FUNCTION public.fn_battles_create_template(
 RETURNS battles.templates
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, battles, extensions
+SET search_path = public, battles, lensers, extensions
 AS $$
 DECLARE
-  v_uid UUID := auth.uid();
-  v_row battles.templates%ROWTYPE;
+  v_lenser_id UUID := lensers.get_auth_lenser_id();
+  v_row       battles.templates%ROWTYPE;
 BEGIN
-  IF v_uid IS NULL THEN
+  IF v_lenser_id IS NULL THEN
     RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
   END IF;
   IF p_title IS NULL OR char_length(trim(p_title)) = 0 THEN
@@ -47,7 +48,7 @@ BEGIN
     creator_lenser_id, title, description, task_prompt,
     category, max_contenders, is_public
   ) VALUES (
-    v_uid, p_title, p_description, p_task_prompt,
+    v_lenser_id, p_title, p_description, p_task_prompt,
     p_category, p_max_contenders, COALESCE(p_is_public, false)
   )
   RETURNING * INTO v_row;
@@ -72,13 +73,13 @@ CREATE OR REPLACE FUNCTION public.fn_battles_update_template(
 RETURNS battles.templates
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, battles, extensions
+SET search_path = public, battles, lensers, extensions
 AS $$
 DECLARE
-  v_uid UUID := auth.uid();
-  v_row battles.templates%ROWTYPE;
+  v_lenser_id UUID := lensers.get_auth_lenser_id();
+  v_row       battles.templates%ROWTYPE;
 BEGIN
-  IF v_uid IS NULL THEN
+  IF v_lenser_id IS NULL THEN
     RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
   END IF;
   IF p_category IS NOT NULL
@@ -98,7 +99,7 @@ BEGIN
          is_public      = COALESCE(p_is_public,      t.is_public),
          updated_at     = now()
    WHERE t.id                = p_template_id
-     AND t.creator_lenser_id = v_uid
+     AND t.creator_lenser_id = v_lenser_id
      AND t.deleted_at IS NULL
    RETURNING * INTO v_row;
 
@@ -120,12 +121,12 @@ CREATE OR REPLACE FUNCTION public.fn_battles_delete_template(
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, battles, extensions
+SET search_path = public, battles, lensers, extensions
 AS $$
 DECLARE
-  v_uid UUID := auth.uid();
+  v_lenser_id UUID := lensers.get_auth_lenser_id();
 BEGIN
-  IF v_uid IS NULL THEN
+  IF v_lenser_id IS NULL THEN
     RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
   END IF;
 
@@ -134,7 +135,7 @@ BEGIN
          updated_at = now(),
          is_public  = false
    WHERE id                = p_template_id
-     AND creator_lenser_id = v_uid
+     AND creator_lenser_id = v_lenser_id
      AND deleted_at IS NULL;
 
   IF NOT FOUND THEN
@@ -154,20 +155,20 @@ RETURNS battles.templates
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path = public, battles, extensions
+SET search_path = public, battles, lensers, extensions
 AS $$
 DECLARE
-  v_uid UUID := auth.uid();
-  v_row battles.templates%ROWTYPE;
+  v_lenser_id UUID := lensers.get_auth_lenser_id();
+  v_row       battles.templates%ROWTYPE;
 BEGIN
-  IF v_uid IS NULL THEN
+  IF v_lenser_id IS NULL THEN
     RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
   END IF;
   SELECT * INTO v_row
     FROM battles.templates
    WHERE id = p_template_id
      AND deleted_at IS NULL
-     AND (creator_lenser_id = v_uid OR is_public = true);
+     AND (creator_lenser_id = v_lenser_id OR is_public = true);
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'template_not_found' USING ERRCODE = '42501';
