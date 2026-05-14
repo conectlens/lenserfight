@@ -13,7 +13,7 @@ import { sanitizeReturnUrl } from '../utils/validateReturnUrl'
 export const OnboardingPage: React.FC = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  
+
   const rawReturnUrl = searchParams.get('return_url')
   const returnUrl = sanitizeReturnUrl(rawReturnUrl)
 
@@ -27,18 +27,18 @@ export const OnboardingPage: React.FC = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-greyscale-950 flex items-center justify-center p-4 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
       <StarBackground />
-      
-      {/* Decorative background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary-yellow-500/5 rounded-full blur-[160px] pointer-events-none" />
 
-      <Dialog 
-        open 
+      {/* Decorative background glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-[160px] pointer-events-none" />
+
+      <Dialog
+        open
         onClose={handleClose}
         maxWidth="max-w-xl"
         containerClassName="!z-0"
-        panelClassName="shadow-[0_0_50px_-12px_rgba(234,179,8,0.15)]"
+        panelClassName=""
       >
         <CreateLenserProfileModal />
       </Dialog>
