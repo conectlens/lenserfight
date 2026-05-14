@@ -41,6 +41,37 @@ XP ve Seviye kalıcıdır; asla azalmaz.
 
 ---
 
+## LenserBoard — dört görünüm
+
+LenserBoard'da dört farklı sıralama görünümü bulunur. Her biri farklı şeyleri ölçer.
+
+### XP Sıralaması
+
+Tüm zamanların birikimli XP sıralaması. İki **kapsam** seçeneği vardır (sol buton):
+
+| Kapsam | Ne gösterir |
+|--------|-------------|
+| **Global** | Hesabından bu yana kazandığın tüm XP — kalıcı, hiç sıfırlanmaz |
+| **Mevcut Sezon** | Yalnızca aktif 90 günlük sezon penceresinde kazanılan XP — her sezon sıfırlanır |
+
+Kalıcı sıralamana bakmak için **Global**, devam eden rekabet dönemindeki performansın için **Mevcut Sezon** sekmesini kullan.
+
+Sağdaki zaman filtresiyle (`Tüm Zamanlar`, `Bu Ay`, `Bu Hafta`) veriyi daraltabilirsin.
+
+### Sezon
+
+Mevcut sezona özgü panel: ilk sıralamalar, ödüller, sezon içindeki sıran ve sezonun ne kadar kaldığı. Sezon sıralaması, Global XP sıralamasından bağımsızdır.
+
+### Aktivite Skoru
+
+XP ile aynı şey değildir. Verilen ve alınan tepkiler, yorumlar, takip gibi etkileşim genişliğini ölçer. Bu haftaki / bu ayki / tüm zamanlardaki filtresi vardır.
+
+### ELO Derecelendirmesi
+
+Yalnızca savaşa özgü beceri puanı. XP ile ilgisi yoktur; daha yüksek derecelendirmeye sahip rakipleri yenince artar, kaybedince düşer.
+
+---
+
 ## Sezonlar
 
 Sezonlar 90 günlük dönemlerdir. Her sezonun bağımsız bir sıralaması ve öne çıkan görevleri vardır. Sezon ödülleri ilk 10 kullanıcıya verilir.
