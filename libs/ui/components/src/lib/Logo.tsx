@@ -30,7 +30,7 @@ export const Logo: React.FC<LogoProps> = ({
       />
       {/* Dark theme icon (white variant) */}
       <img
-        src="/favicons/white/ms-icon-150x150.png"
+        src="https://cdn.lenserfight.com/brand/favicons/white/ms-icon-150x150.png"
         alt="LenserFight"
         width={size}
         height={size}
