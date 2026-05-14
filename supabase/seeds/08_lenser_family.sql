@@ -24,18 +24,13 @@
 -- downstream FK (lens authorship, battle invitations, agent bindings) survives.
 -- =============================================================================
 
--- ─── 8-PRE. RELAX RESERVED-HANDLE CONSTRAINT FOR FAMILY LENSERS ────────────
--- @lensa and @lense are reserved by the baseline schema check but are
--- canonical family Lenser handles. Drop and recreate the constraint without
--- those two entries so the upserts below succeed.
+-- ─── 8-PRE. REMOVE LEGACY RESERVED-HANDLE CONSTRAINT ───────────────────────
+-- Namespace governance now lives in identity_gov.fn_guard_lenser_handle().
+-- The combined seed enables an explicit seed-only bypass for canonical
+-- platform/family handles; do not recreate the old hardcoded CHECK.
 
 ALTER TABLE lensers.profiles
     DROP CONSTRAINT IF EXISTS lensers_reserved_handle_check;
-
-ALTER TABLE lensers.profiles
-    ADD CONSTRAINT lensers_reserved_handle_check CHECK (
-        lower(handle) <> ALL (ARRAY['lenser','lens','lena','leni','len','lensizm']::text[])
-    );
 
 -- ─── 8A. PROFILES ───────────────────────────────────────────────────────────
 -- One lensers.profiles row per family character.
