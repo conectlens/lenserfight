@@ -43,7 +43,7 @@ export interface LenserRepositoryPort {
     limit?: number,
     viewerId?: string
   ): Promise<ThreadRecord[]>
-  getActivityTimeline(lenserId: string): Promise<LenserActivityPoint[]>
+  getActivityTimeline(handle: string): Promise<LenserActivityPoint[]>
 
   getPublicLenserProfile(handle: string): Promise<LenserProfileDTO>
   getActiveLenser(): Promise<Lenser | null>
@@ -306,8 +306,15 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     return data as ThreadRecord[]
   }
 
-  async getActivityTimeline(_lenserId: string): Promise<LenserActivityPoint[]> {
-    return []
+  async getActivityTimeline(handle: string): Promise<LenserActivityPoint[]> {
+    const { data, error } = await supabase.rpc('fn_get_lenser_activity_timeline', {
+      p_handle: handle,
+    })
+    if (error) throw error
+    return ((data ?? []) as Array<{ date: string; count: number }>).map((row) => ({
+      date: row.date,
+      count: Number(row.count),
+    }))
   }
   async getLenserActions(_lenserId: string): Promise<ActionRecord[]> {
     return []
