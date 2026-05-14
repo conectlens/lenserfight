@@ -15,33 +15,35 @@ SELECT plan(5);
 
 -- ── Fixtures ────────────────────────────────────────────────────────────────
 INSERT INTO auth.users (id, email)
-VALUES ('aaaaaaaa-bh01-aaaa-aaaa-aaaaaaaaaaaa', 'bh-owner@test.local')
+VALUES ('aaaaaaaa-b801-aaaa-aaaa-aaaaaaaaaaaa', 'bh-owner@test.local')
 ON CONFLICT (id) DO NOTHING;
 INSERT INTO auth.users (id, email)
-VALUES ('bbbbbbbb-bh01-bbbb-bbbb-bbbbbbbbbbbb', 'bh-other@test.local')
+VALUES ('bbbbbbbb-b801-bbbb-bbbb-bbbbbbbbbbbb', 'bh-other@test.local')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.lenser_profiles (id, handle, display_name, type)
+INSERT INTO lensers.profiles (id, user_id, handle, display_name, type)
 VALUES
-  ('aaaaaaaa-bh01-aaaa-aaaa-aaaaaaaaaaaa', 'bh_owner', 'BH Owner', 'human'),
-  ('bbbbbbbb-bh01-bbbb-bbbb-bbbbbbbbbbbb', 'bh_other', 'BH Other', 'human')
+  ('aaaaaaaa-b801-aaaa-aaaa-aaaaaaaaaaaa', 'aaaaaaaa-b801-aaaa-aaaa-aaaaaaaaaaaa', 'bh_owner', 'BH Owner', 'human'),
+  ('bbbbbbbb-b801-bbbb-bbbb-bbbbbbbbbbbb', 'bbbbbbbb-b801-bbbb-bbbb-bbbbbbbbbbbb', 'bh_other', 'BH Other', 'human')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO battles.templates (id, creator_lenser_id, title, task_prompt, is_public)
-VALUES ('11111111-bh01-1111-1111-111111111111',
-        'aaaaaaaa-bh01-aaaa-aaaa-aaaaaaaaaaaa',
+VALUES ('11111111-b801-1111-1111-111111111111',
+        'aaaaaaaa-b801-aaaa-aaaa-aaaaaaaaaaaa',
         'BH Template', 'do the thing', true)
 ON CONFLICT (id) DO NOTHING;
 
-SET LOCAL "request.jwt.claims" TO '{"sub":"aaaaaaaa-bh01-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+SET LOCAL "request.jwt.claims" TO '{"sub":"aaaaaaaa-b801-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
 SET LOCAL ROLE authenticated;
 
 -- ── Test 1: create_series populates round 1 ─────────────────────────────────
 SELECT public.fn_create_battle_series(
-  '11111111-bh01-1111-1111-111111111111'::uuid,
+  '11111111-b801-1111-1111-111111111111'::uuid,
   'BH Series',
   2
 );
+
+RESET ROLE;
 
 DO $$
 DECLARE v_id UUID;
@@ -65,23 +67,23 @@ SELECT is(
 INSERT INTO battles.contenders (
   id, battle_id, slot, contender_type, contender_ref_id, display_name
 )
-SELECT 'dddddddd-bh01-dddd-dddd-dddddddddddd', sr.battle_id, 'A',
+SELECT 'dddddddd-b801-dddd-dddd-dddddddddddd', sr.battle_id, 'A',
        'human'::battles.contender_type_enum,
-       'aaaaaaaa-bh01-aaaa-aaaa-aaaaaaaaaaaa', 'BH Owner'
+       'aaaaaaaa-b801-aaaa-aaaa-aaaaaaaaaaaa', 'BH Owner'
   FROM battles.series_rounds sr
  WHERE sr.series_id = current_setting('lf_test.series_id')::uuid
    AND sr.round_number = 1
 ON CONFLICT (id) DO NOTHING;
 
 UPDATE battles.battles
-   SET winner_contender_id = 'dddddddd-bh01-dddd-dddd-dddddddddddd'
+   SET winner_contender_id = 'dddddddd-b801-dddd-dddd-dddddddddddd'
  WHERE id = (
    SELECT battle_id FROM battles.series_rounds
     WHERE series_id = current_setting('lf_test.series_id')::uuid
       AND round_number = 1
  );
 
-SET LOCAL "request.jwt.claims" TO '{"sub":"aaaaaaaa-bh01-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+SET LOCAL "request.jwt.claims" TO '{"sub":"aaaaaaaa-b801-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
 SET LOCAL ROLE authenticated;
 
 SELECT is(
@@ -95,16 +97,16 @@ SELECT is(
 INSERT INTO battles.contenders (
   id, battle_id, slot, contender_type, contender_ref_id, display_name
 )
-SELECT 'dddddddd-bh02-dddd-dddd-dddddddddddd', sr.battle_id, 'A',
+SELECT 'dddddddd-b802-dddd-dddd-dddddddddddd', sr.battle_id, 'A',
        'human'::battles.contender_type_enum,
-       'aaaaaaaa-bh01-aaaa-aaaa-aaaaaaaaaaaa', 'BH Owner'
+       'aaaaaaaa-b801-aaaa-aaaa-aaaaaaaaaaaa', 'BH Owner'
   FROM battles.series_rounds sr
  WHERE sr.series_id = current_setting('lf_test.series_id')::uuid
    AND sr.round_number = 2
 ON CONFLICT (id) DO NOTHING;
 
 UPDATE battles.battles
-   SET winner_contender_id = 'dddddddd-bh02-dddd-dddd-dddddddddddd'
+   SET winner_contender_id = 'dddddddd-b802-dddd-dddd-dddddddddddd'
  WHERE id = (
    SELECT battle_id FROM battles.series_rounds
     WHERE series_id = current_setting('lf_test.series_id')::uuid
@@ -126,7 +128,7 @@ SELECT is(
 
 -- ── Test 5: non-owner advance raises 42501 ──────────────────────────────────
 RESET ROLE;
-SET LOCAL "request.jwt.claims" TO '{"sub":"bbbbbbbb-bh01-bbbb-bbbb-bbbbbbbbbbbb","role":"authenticated"}';
+SET LOCAL "request.jwt.claims" TO '{"sub":"bbbbbbbb-b801-bbbb-bbbb-bbbbbbbbbbbb","role":"authenticated"}';
 SET LOCAL ROLE authenticated;
 
 SELECT throws_ok(
