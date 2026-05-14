@@ -16,7 +16,7 @@ interface ChainabitModalProps {
 function ChainabitLogo() {
   return (
     <img
-      src="/chainabit/favicon-32x32.png"
+      src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
       width={28}
       height={28}
       alt="Chainabit"
@@ -71,9 +71,9 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
 
   const title =
     state === 'no_account' ? 'Connect Chainabit' :
-    state === 'invalid_connection' ? 'Reconnect Chainabit' :
-    state === 'no_credits' ? 'No credits remaining' :
-    'Chainabit'
+      state === 'invalid_connection' ? 'Reconnect Chainabit' :
+        state === 'no_credits' ? 'No credits remaining' :
+          'Chainabit'
 
   return (
     <Dialog
@@ -84,37 +84,37 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
       maxWidth="max-w-md"
       footer={
         state === 'loading' ? undefined :
-        state === 'no_account' || state === 'invalid_connection' ? (
-          <ModalFooter
-            border={false}
-            leftButton={{ label: 'Cancel', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
-            primaryButton={{
-              label: reconnecting ? 'Redirecting…' : (state === 'invalid_connection' ? 'Reconnect' : 'Connect Chainabit'),
-              onClick: handleReconnect,
-              isLoading: reconnecting,
-              className: 'flex-1',
-            }}
-          />
-        ) : state === 'no_credits' ? (
-          <ModalFooter
-            border={false}
-            leftButton={{ label: 'Close', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
-            primaryButton={{
-              label: 'Top up on Chainabit',
-              onClick: () => window.open(topUpUrl, '_blank', 'noopener,noreferrer'),
-              className: 'flex-1',
-            }}
-          />
-        ) : (
-          <ModalFooter
-            border={false}
-            leftButton={{ label: 'Close', onClick: onClose, variant: 'secondary' }}
-            primaryButton={{
-              label: 'Top up',
-              onClick: () => window.open(topUpUrl, '_blank', 'noopener,noreferrer'),
-            }}
-          />
-        )
+          state === 'no_account' || state === 'invalid_connection' ? (
+            <ModalFooter
+              border={false}
+              leftButton={{ label: 'Cancel', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
+              primaryButton={{
+                label: reconnecting ? 'Redirecting…' : (state === 'invalid_connection' ? 'Reconnect' : 'Connect Chainabit'),
+                onClick: handleReconnect,
+                isLoading: reconnecting,
+                className: 'flex-1',
+              }}
+            />
+          ) : state === 'no_credits' ? (
+            <ModalFooter
+              border={false}
+              leftButton={{ label: 'Close', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
+              primaryButton={{
+                label: 'Top up on Chainabit',
+                onClick: () => window.open(topUpUrl, '_blank', 'noopener,noreferrer'),
+                className: 'flex-1',
+              }}
+            />
+          ) : (
+            <ModalFooter
+              border={false}
+              leftButton={{ label: 'Close', onClick: onClose, variant: 'secondary' }}
+              primaryButton={{
+                label: 'Top up',
+                onClick: () => window.open(topUpUrl, '_blank', 'noopener,noreferrer'),
+              }}
+            />
+          )
       }
     >
       {state === 'loading' && (
