@@ -208,10 +208,6 @@ BEGIN
      'One-time welcome XP when a new account is created and email is verified.',
      25, NULL, 1, 25, 25, 'easy', NULL, true),
 
-    (v_forum_app, 'PROFILE_COMPLETED', 'Profile Completed',
-     'One-time XP for completing your lenser profile.',
-     100, NULL, 1, 100, 100, 'standard', NULL, true),
-
     (v_forum_app, 'CLI_INIT', 'CLI Initialized',
      'One-time XP for initializing the LenserFight CLI with a valid account.',
      50, NULL, 1, 50, 50, 'standard', NULL, true),
