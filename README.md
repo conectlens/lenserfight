@@ -37,7 +37,7 @@
       </td>
       <td align="center">
         <img src="https://cdn.lenserfight.com/brand/lensers/LENSE_DNA.png" height="90" alt="LENSE" /><br/>
-        <b>LENSE · Core</b>
+        <b>LENSE · Analytical</b>
       </td>
       <td align="center">
         <img src="https://cdn.lenserfight.com/brand/lensers/LOLA_DNA.png" height="90" alt="LOLA" /><br/>
