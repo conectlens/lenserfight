@@ -39,29 +39,26 @@ SELECT is(
 
 -- 4. fn_profile_completion_score returns > 0 for a profile with bio + avatar
 --    (use a temp profile with known data; roll back at the end of the transaction)
-DO $$
-DECLARE
-  v_lenser_id uuid := gen_random_uuid();
-  v_auth_id   uuid := gen_random_uuid();
-BEGIN
-  -- Minimal insert into lensers.profiles — only fields required by check constraints
-  INSERT INTO lensers.profiles (id, auth_user_id, handle, display_name, bio, avatar_url)
-  VALUES (
-    v_lenser_id,
-    v_auth_id,
-    'test_pgchk_' || left(v_lenser_id::text, 8),
-    'Test pgTAP User',
-    'Hello world bio',
-    'https://example.com/avatar.png'
-  )
-  ON CONFLICT DO NOTHING;
+INSERT INTO auth.users (id, email)
+VALUES ('81818181-0000-0000-0000-000000000001', 'pgchk-completion@test.local')
+ON CONFLICT (id) DO NOTHING;
 
-  PERFORM ok(
-    public.fn_profile_completion_score(v_lenser_id) > 0,
-    'fn_profile_completion_score > 0 for profile with bio + avatar'
-  );
-END;
-$$;
+-- Minimal insert into lensers.profiles — only fields required by check constraints
+INSERT INTO lensers.profiles (id, user_id, handle, display_name, bio, avatar_url)
+VALUES (
+  '81818181-0000-0000-0000-000000000002',
+  '81818181-0000-0000-0000-000000000001',
+  'test_pgchk_completion',
+  'Test pgTAP User',
+  'Hello world bio',
+  'https://example.com/avatar.png'
+)
+ON CONFLICT DO NOTHING;
+
+SELECT ok(
+  public.fn_profile_completion_score('81818181-0000-0000-0000-000000000002') > 0,
+  'fn_profile_completion_score > 0 for profile with bio + avatar'
+);
 
 SELECT * FROM finish();
 ROLLBACK;
