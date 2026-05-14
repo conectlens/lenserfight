@@ -482,13 +482,14 @@ BEGIN
   END IF;
 
   -- Reuse a recent snapshot for the same source pricing row when present
-  -- (under 5 min old) to avoid table bloat on hot paths.
-  SELECT id
+  -- (under 5 min old) to avoid table bloat on hot paths. Alias the table so
+  -- the OUT-column `taken_at` does not collide with the table column.
+  SELECT ps.id
   INTO   v_snap_id
-  FROM   billing.pricing_snapshots
-  WHERE  source_pricing_id = v_pricing.id
-    AND  taken_at > now() - interval '5 minutes'
-  ORDER  BY taken_at DESC
+  FROM   billing.pricing_snapshots ps
+  WHERE  ps.source_pricing_id = v_pricing.id
+    AND  ps.taken_at > now() - interval '5 minutes'
+  ORDER  BY ps.taken_at DESC
   LIMIT  1;
 
   IF v_snap_id IS NULL THEN
@@ -581,23 +582,23 @@ BEGIN
   v_ttl := COALESCE(p_ttl, v_settings.reservation_default_ttl);
 
   -- Idempotency short-circuit — replay returns the original row unchanged.
-  SELECT * INTO v_existing
-  FROM   billing.cost_reservations
-  WHERE  ai_lenser_id = p_ai_lenser_id
-    AND  idempotency_key = p_idempotency_key;
+  SELECT cr.* INTO v_existing
+  FROM   billing.cost_reservations cr
+  WHERE  cr.ai_lenser_id = p_ai_lenser_id
+    AND  cr.idempotency_key = p_idempotency_key;
   IF FOUND THEN
     RETURN QUERY
     SELECT v_existing.id, v_existing.status, v_existing.held_until, v_existing.shadow_mode;
     RETURN;
   END IF;
 
-  SELECT * INTO v_snap FROM billing.pricing_snapshots WHERE id = p_pricing_snapshot_id;
+  SELECT ps.* INTO v_snap FROM billing.pricing_snapshots ps WHERE ps.id = p_pricing_snapshot_id;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'fn_cost_reserve: pricing_snapshot % not found', p_pricing_snapshot_id
       USING ERRCODE = '23503';
   END IF;
 
-  SELECT * INTO v_lenser FROM agents.ai_lensers WHERE id = p_ai_lenser_id;
+  SELECT al.* INTO v_lenser FROM agents.ai_lensers al WHERE al.id = p_ai_lenser_id;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'fn_cost_reserve: ai_lenser % not found', p_ai_lenser_id
       USING ERRCODE = '23503';
@@ -608,12 +609,12 @@ BEGIN
   END IF;
 
   -- Workspace kill switch + budget enforcement flag (both on workspace_settings).
-  SELECT COALESCE(global_kill_switch, false),
-         COALESCE(agent_paused,       false),
-         COALESCE(budget_enforce,     false)
+  SELECT COALESCE(ws.global_kill_switch, false),
+         COALESCE(ws.agent_paused,       false),
+         COALESCE(ws.budget_enforce,     false)
   INTO   v_kill_switch, v_paused, v_budget_enforce
-  FROM   agents.workspace_settings
-  WHERE  ai_lenser_id = p_ai_lenser_id;
+  FROM   agents.workspace_settings ws
+  WHERE  ws.ai_lenser_id = p_ai_lenser_id;
   IF v_kill_switch OR v_paused THEN
     RAISE EXCEPTION 'E_KILL_SWITCH: workspace or agent is paused'
       USING ERRCODE = 'P0001';
@@ -622,25 +623,25 @@ BEGIN
   -- Legacy daily-credit limit (agents.policies.spending_limit_credits).
   -- CG2 supersedes by consulting billing.budget_policies.
   IF v_budget_enforce THEN
-    SELECT spending_limit_credits
+    SELECT pol.spending_limit_credits
     INTO   v_policy_limit
-    FROM   agents.policies
-    WHERE  ai_lenser_id = p_ai_lenser_id;
+    FROM   agents.policies pol
+    WHERE  pol.ai_lenser_id = p_ai_lenser_id;
   END IF;
 
   IF v_policy_limit IS NOT NULL AND v_settings.enforce THEN
-    SELECT COALESCE(SUM(reserved_credits), 0)
+    SELECT COALESCE(SUM(cr.reserved_credits), 0)
     INTO   v_already_held
-    FROM   billing.cost_reservations
-    WHERE  ai_lenser_id = p_ai_lenser_id
-      AND  status = 'held'
-      AND  held_until > now();
+    FROM   billing.cost_reservations cr
+    WHERE  cr.ai_lenser_id = p_ai_lenser_id
+      AND  cr.status = 'held'
+      AND  cr.held_until > now();
 
-    SELECT COALESCE(credits_spent, 0)
+    SELECT COALESCE(qs.credits_spent, 0)
     INTO   v_already_today
-    FROM   agents.quota_snapshots
-    WHERE  ai_lenser_id = p_ai_lenser_id
-      AND  period_date  = CURRENT_DATE;
+    FROM   agents.quota_snapshots qs
+    WHERE  qs.ai_lenser_id = p_ai_lenser_id
+      AND  qs.period_date  = CURRENT_DATE;
 
     IF (COALESCE(v_already_held, 0) + COALESCE(v_already_today, 0) + p_reserved_credits) > v_policy_limit THEN
       RAISE EXCEPTION
@@ -733,8 +734,8 @@ BEGIN
       USING ERRCODE = '22023';
   END IF;
 
-  SELECT * INTO v_row FROM billing.cost_reservations
-  WHERE id = p_reservation_id FOR UPDATE;
+  SELECT cr.* INTO v_row FROM billing.cost_reservations cr
+  WHERE cr.id = p_reservation_id FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'fn_cost_meter_tick: reservation % not found', p_reservation_id
       USING ERRCODE = '23503';
@@ -745,12 +746,13 @@ BEGIN
       USING ERRCODE = 'P0001';
   END IF;
 
-  SELECT meter_headroom_pct INTO v_headroom FROM billing.runtime_settings WHERE id = 1;
+  SELECT rs.meter_headroom_pct INTO v_headroom
+  FROM billing.runtime_settings rs WHERE rs.id = 1;
   v_over := p_running_credits > v_row.reserved_credits * (1 + v_headroom::numeric / 100);
 
-  UPDATE billing.cost_reservations
-     SET running_credits = GREATEST(running_credits, p_running_credits)
-   WHERE id = p_reservation_id;
+  UPDATE billing.cost_reservations cr
+     SET running_credits = GREATEST(cr.running_credits, p_running_credits)
+   WHERE cr.id = p_reservation_id;
 
   RETURN QUERY
   SELECT v_row.status, v_over, v_row.reserved_credits, GREATEST(v_row.running_credits, p_running_credits);
@@ -793,8 +795,8 @@ BEGIN
       USING ERRCODE = '22023';
   END IF;
 
-  SELECT * INTO v_row FROM billing.cost_reservations
-  WHERE id = p_reservation_id FOR UPDATE;
+  SELECT cr.* INTO v_row FROM billing.cost_reservations cr
+  WHERE cr.id = p_reservation_id FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'fn_cost_commit: reservation % not found', p_reservation_id
       USING ERRCODE = '23503';
@@ -823,19 +825,19 @@ BEGIN
     (v_row.id, v_row.ai_lenser_id, v_row.org_id, 'debit_commit',
        p_actual_credits, p_actual_usd);
 
-  UPDATE billing.cost_reservations
+  UPDATE billing.cost_reservations cr
      SET status            = 'committed',
          committed_credits = p_actual_credits,
          committed_usd     = p_actual_usd,
          committed_at      = now()
-   WHERE id = v_row.id;
+   WHERE cr.id = v_row.id;
 
   -- Settle into the legacy daily snapshot (kept as a materialized projection
   -- of the ledger so existing budget readers keep working).
-  INSERT INTO agents.quota_snapshots (ai_lenser_id, period_date, credits_spent)
+  INSERT INTO agents.quota_snapshots AS qs (ai_lenser_id, period_date, credits_spent)
   VALUES (v_row.ai_lenser_id, CURRENT_DATE, v_credits)
   ON CONFLICT (ai_lenser_id, period_date) DO UPDATE
-    SET credits_spent = agents.quota_snapshots.credits_spent + EXCLUDED.credits_spent,
+    SET credits_spent = qs.credits_spent + EXCLUDED.credits_spent,
         updated_at    = now();
 
   PERFORM automation.fn_emit_event(
@@ -886,8 +888,8 @@ BEGIN
       USING ERRCODE = '22023';
   END IF;
 
-  SELECT * INTO v_row FROM billing.cost_reservations
-  WHERE id = p_reservation_id FOR UPDATE;
+  SELECT cr.* INTO v_row FROM billing.cost_reservations cr
+  WHERE cr.id = p_reservation_id FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'fn_cost_release: reservation % not found', p_reservation_id
       USING ERRCODE = '23503';
@@ -910,11 +912,11 @@ BEGIN
     -v_row.reserved_credits, -v_row.reserved_usd
   );
 
-  UPDATE billing.cost_reservations
+  UPDATE billing.cost_reservations cr
      SET status           = 'released',
          reason_released  = p_reason,
          released_at      = now()
-   WHERE id = v_row.id;
+   WHERE cr.id = v_row.id;
 
   PERFORM automation.fn_emit_event(
     'billing.budget_released',
@@ -1067,7 +1069,16 @@ BEGIN
       USING ERRCODE = 'P0001';
   END IF;
 
-  PERFORM public.fn_byok_log_usage(v_key.id, NULL, p_model_id, 0);
+  -- Audit row: prefer caller-supplied model id, else fall back to the model
+  -- key bound by the reservation. fn_byok_log_usage demands NOT NULL.
+  IF p_model_id IS NOT NULL AND LENGTH(p_model_id) > 0 THEN
+    PERFORM public.fn_byok_log_usage(v_key.id, NULL, p_model_id, 0);
+  ELSIF v_model_key IS NOT NULL THEN
+    PERFORM public.fn_byok_log_usage(v_key.id, NULL, v_model_key, 0);
+  ELSE
+    SELECT m.key INTO v_model_key FROM ai.models m WHERE m.id = v_res.model_id;
+    PERFORM public.fn_byok_log_usage(v_key.id, NULL, COALESCE(v_model_key, 'unknown'), 0);
+  END IF;
 
   RETURN v_key.key_encrypted;
 END;
@@ -1183,10 +1194,9 @@ COMMENT ON FUNCTION public.fn_get_my_cost_reservations IS
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
-    PERFORM cron.unschedule('cg1-cost-reservation-expiry')
-      WHERE EXISTS (
-        SELECT 1 FROM cron.job WHERE jobname = 'cg1-cost-reservation-expiry'
-      );
+    IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'cg1-cost-reservation-expiry') THEN
+      PERFORM cron.unschedule('cg1-cost-reservation-expiry');
+    END IF;
 
     PERFORM cron.schedule(
       'cg1-cost-reservation-expiry',
