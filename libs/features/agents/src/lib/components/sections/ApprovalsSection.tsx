@@ -25,52 +25,52 @@ const PERMISSION_SCOPE_OPTIONS: Array<{
   label: string
   description: string
 }> = [
-  {
-    scope: 'approvals:decide',
-    label: 'Approvals',
-    description: 'Approve, reject, or modify blocked autonomous runs.',
-  },
-  {
-    scope: 'team:manage',
-    label: 'Team builder',
-    description: 'Create crews, edit members, and manage handoff topology.',
-  },
-  {
-    scope: 'workflow:assign',
-    label: 'Workflow assignments',
-    description: 'Attach reusable workflows to the agent or a team.',
-  },
-  {
-    scope: 'schedule:manage',
-    label: 'Schedules',
-    description: 'Create and pause CRON dispatch for agent and team runs.',
-  },
-  {
-    scope: 'memory:manage',
-    label: 'Memory',
-    description: 'Create memory profiles and write or redact entries.',
-  },
-  {
-    scope: 'tools:manage',
-    label: 'Tools',
-    description: 'Register tools, edit policies, and manage assignments.',
-  },
-  {
-    scope: 'models:manage',
-    label: 'Models',
-    description: 'Manage provider bindings, model profiles, and defaults.',
-  },
-  {
-    scope: 'settings:manage',
-    label: 'Settings',
-    description: 'Edit agent settings, provider config, and control-room defaults.',
-  },
-  {
-    scope: 'logs:view',
-    label: 'Logs',
-    description: 'Read run reports, incidents, and audit trails.',
-  },
-]
+    {
+      scope: 'approvals:decide',
+      label: 'Approvals',
+      description: 'Approve, reject, or modify blocked autonomous runs.',
+    },
+    {
+      scope: 'team:manage',
+      label: 'Team builder',
+      description: 'Create crews, edit members, and manage handoff topology.',
+    },
+    {
+      scope: 'workflow:assign',
+      label: 'Workflow assignments',
+      description: 'Attach reusable workflows to the agent or a team.',
+    },
+    {
+      scope: 'schedule:manage',
+      label: 'Schedules',
+      description: 'Create and pause CRON dispatch for agent and team runs.',
+    },
+    {
+      scope: 'memory:manage',
+      label: 'Memory',
+      description: 'Create memory profiles and write or redact entries.',
+    },
+    {
+      scope: 'tools:manage',
+      label: 'Tools',
+      description: 'Register tools, edit policies, and manage assignments.',
+    },
+    {
+      scope: 'models:manage',
+      label: 'Models',
+      description: 'Manage provider bindings, model profiles, and defaults.',
+    },
+    {
+      scope: 'settings:manage',
+      label: 'Settings',
+      description: 'Edit agent settings, provider config, and control-room defaults.',
+    },
+    {
+      scope: 'logs:view',
+      label: 'Logs',
+      description: 'Read run reports, incidents, and audit trails.',
+    },
+  ]
 
 type LenserSearchResult = {
   id: string
@@ -314,11 +314,10 @@ export const ApprovalsSection: React.FC = () => {
             key={tabItem.id}
             type="button"
             onClick={() => setTab(tabItem.id)}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
-              tab === tabItem.id
+            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${tab === tabItem.id
                 ? 'border-amber-500 text-amber-700 dark:text-amber-300'
                 : 'border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-            }`}
+              }`}
           >
             {tabItem.label}
             {tabItem.badge ? (
@@ -352,7 +351,7 @@ export const ApprovalsSection: React.FC = () => {
             subtitle="Owner and co-owner roles have full control. Operators must be explicitly scoped."
           >
             <div className="space-y-4">
-              <div className="rounded-[20px] border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-600 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
+              <div className="rounded-[20px] border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
                 Think of this like an Instagram account: one primary owner, optional co-owners for
                 full administration, and operators for scoped tasks only (e.g., approve runs, view
                 logs, assign workflows).
@@ -387,11 +386,10 @@ export const ApprovalsSection: React.FC = () => {
                             )
                             setDelegateQuery(result.handle)
                           }}
-                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                            selectedDelegateId === result.id
+                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm transition ${selectedDelegateId === result.id
                               ? 'border-amber-300 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10'
                               : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
-                          }`}
+                            }`}
                         >
                           <div>
                             <p className="font-semibold text-gray-900 dark:text-white">
@@ -427,7 +425,7 @@ export const ApprovalsSection: React.FC = () => {
                         <option value="co_owner">co_owner</option>
                       </select>
                     </label>
-                    <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300">
+                    <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-300">
                       {selectedDelegateId
                         ? `Selected: ${selectedDelegateLabel}`
                         : 'Select a human Lenser to grant access.'}
@@ -602,7 +600,7 @@ export const ApprovalsSection: React.FC = () => {
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-16 animate-pulse rounded-[20px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
+                  className="h-16 animate-pulse rounded-[20px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-700"
                 />
               ))}
             </div>
@@ -631,13 +629,12 @@ export const ApprovalsSection: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                          item.approval_status === 'approved'
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${item.approval_status === 'approved'
                             ? 'border border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
                             : item.approval_status === 'rejected'
-                            ? 'border border-red-200 text-red-700 dark:border-red-500/30 dark:text-red-300'
-                            : 'border border-amber-200 text-amber-700 dark:border-amber-500/30 dark:text-amber-300'
-                        }`}
+                              ? 'border border-red-200 text-red-700 dark:border-red-500/30 dark:text-red-300'
+                              : 'border border-amber-200 text-amber-700 dark:border-amber-500/30 dark:text-amber-300'
+                          }`}
                       >
                         {item.approval_status}
                       </span>
