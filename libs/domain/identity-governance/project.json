@@ -1,0 +1,13 @@
+{
+  "name": "identity-governance",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/identity-governance/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:identity-governance",
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {}
+}
