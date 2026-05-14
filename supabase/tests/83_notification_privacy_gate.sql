@@ -59,8 +59,9 @@ SELECT is(
    JOIN   pg_catalog.pg_namespace n ON n.oid = p.pronamespace
    WHERE  n.nspname = 'public'
      AND  p.proname = 'fn_insert_notification'
+     AND  p.pronargs = 7
    LIMIT  1),
-  7,
+  7::smallint,
   'fn_insert_notification has 7 parameters (p_actor_id added)'
 );
 
