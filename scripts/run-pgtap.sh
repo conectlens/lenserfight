@@ -67,7 +67,7 @@ run_file() {
   if [[ -n "${DB_URL:-}" ]]; then
     psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$f"
   else
-    cd "$REPO_ROOT" && supabase db test --db-url "${LOCAL_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}" < "$f"
+    cd "$REPO_ROOT" && supabase db test --db-url "${LOCAL_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}" "$f"
   fi
 }
 
@@ -77,9 +77,17 @@ export REPO_ROOT DB_URL="${DB_URL:-}"
 if $PARALLEL; then
   printf '%s\n' "${FILES[@]}" | xargs -P 4 -I{} bash -c 'run_file "$@"' _ {}
 else
+  EXIT_CODE=0
   for f in "${FILES[@]}"; do
-    run_file "$f"
+    if ! run_file "$f"; then
+      EXIT_CODE=1
+    fi
   done
+fi
+
+if [[ "${EXIT_CODE:-0}" -ne 0 ]]; then
+  echo "[test:db] One or more pgTAP suites failed." >&2
+  exit "$EXIT_CODE"
 fi
 
 echo "[test:db] All pgTAP suites passed."
