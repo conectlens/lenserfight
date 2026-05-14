@@ -202,7 +202,7 @@ const MetaItem: React.FC<{ icon: React.ReactNode; label: string; value: string }
   label,
   value,
 }) => (
-  <div className="rounded-[16px] border border-gray-100 bg-gray-50 px-3 py-2.5 dark:border-gray-800 dark:bg-gray-950">
+  <div className="rounded-[16px] border border-gray-100 bg-gray-50 px-3 py-2.5 dark:border-gray-800 dark:bg-gray-700">
     <div className="flex items-center gap-1 text-gray-400 dark:text-gray-500">
       {icon}
       <span className="text-[10px] font-semibold uppercase tracking-[0.16em]">{label}</span>
