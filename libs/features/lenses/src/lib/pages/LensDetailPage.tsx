@@ -6,7 +6,9 @@ import { useReportContent } from '@lenserfight/features/home'
 import { useShareContext } from '@lenserfight/features/share'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
-import { ExportButton } from '@lenserfight/features/exports'
+import { ExportModal, useExportRunner, LocalDownloadTransport, CloudDownloadTransport } from '@lenserfight/features/exports'
+import { SupabaseExportsRepository } from '@lenserfight/data/exports'
+import { supabase } from '@lenserfight/data/supabase'
 import { SEOHead, Badge, Button, Card, DesktopFrame } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { SelectField } from '@lenserfight/ui/forms'
@@ -40,7 +42,7 @@ export const LensDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { lenser, hasLenser } = useAuthenticatedLenser()
-  const { isLoading: authLoading, isAuthenticated, redirectToLogin } = useAuth()
+  const { isLoading: authLoading, isAuthenticated, redirectToLogin, user } = useAuth()
   const { setShareConfig } = useShareContext()
   const { setPageActions, setPageTitle } = useUI()
   const queryClient = useQueryClient()
@@ -53,6 +55,7 @@ export const LensDetailPage: React.FC = () => {
   const reportContent = useReportContent()
 
   const [isSaving, setIsSaving] = useState(false)
+  const [isExportOpen, setIsExportOpen] = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [reportReason, setReportReason] = useState<ReportReasonEnum>('spam')
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -167,6 +170,33 @@ export const LensDetailPage: React.FC = () => {
   } = useCreateLens()
 
   const isOwner = !!(lenser && lens && lens.author.id === lenser.id)
+
+  const buildExportContext = useCallback(() => ({
+    userId: user?.id ?? null,
+    tenantId: null,
+    via: 'web' as const,
+    host: window.location.host,
+    isOwner,
+    isAuthenticated,
+  }), [user?.id, isOwner, isAuthenticated])
+
+  const resolveExportTransport = useCallback((id: 'cloud-download' | 'local-download' | 'local-workspace') => {
+    if (id === 'local-download') return new LocalDownloadTransport()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return new CloudDownloadTransport(new SupabaseExportsRepository(supabase as any))
+  }, [])
+
+  const runExportInner = useExportRunner({
+    kind: 'lens',
+    slug: lens?.id ?? '',
+    fetchPayload: async () => lens,
+    buildContext: buildExportContext,
+    resolveTransport: resolveExportTransport,
+  })
+  const runExport = useCallback(
+    async (input: { format: import('@lenserfight/domain/exports').ExportFormat; destination: import('@lenserfight/features/exports').TransportId }) => { await runExportInner(input) },
+    [runExportInner],
+  )
 
   const ensureProfile = useCallback((): boolean => {
     if (!isAuthenticated) {
@@ -400,14 +430,16 @@ export const LensDetailPage: React.FC = () => {
               onFork={() => cloneLens(previewVersionId ?? null)}
               canFork={hasActiveLenserProfile}
               isForking={isCloning}
-              exportSlot={
-                <ExportButton
+              onExport={() => setIsExportOpen(true)}
+              exportModal={
+                <ExportModal
+                  open={isExportOpen}
+                  onClose={() => setIsExportOpen(false)}
                   kind="lens"
                   slug={lens.id}
                   title={lens.title ?? undefined}
                   fetchPayload={async () => lens}
-                  className="rounded-2xl p-2.5"
-                  label=""
+                  onConfirm={runExport}
                 />
               }
             />
