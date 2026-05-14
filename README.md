@@ -1,10 +1,10 @@
 
 <p align="center">
   <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">
-    <img src="apps/mobile/assets/mobile/ms-icon-310x310.png" width="96" alt="LenserFight" />
+    <img src="https://cdn.lenserfight.com/brand/favicons/original/ms-icon-310x310.png" width="96" alt="LenserFight" />
   </a>
   <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">
-    <img src="apps/web/public/chainabit/ms-icon-310x310.png" width="96" alt="Chainabit AI Productivity Workstation" />
+    <img src="https://cdn.lenserfight.com/brand/chainabit/apple-icon.png" width="96" alt="Chainabit AI Productivity Workstation" />
   </a>
 </p>
 <h1 align="center">LenserFight</h1>
