@@ -1,0 +1,14 @@
+{
+  "name": "domain-exports",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/exports/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:exports",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project domain-exports --web",
+  "targets": {}
+}
