@@ -54,7 +54,7 @@ export const OnboardingPage: React.FC = () => {
           rel="noopener noreferrer"
           className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/5 border border-orange-500/10 text-[11px] text-orange-500 hover:bg-orange-500/10 transition-all duration-300 font-semibold"
         >
-          <img src="/chainabit/favicon-32x32.png" width={14} height={14} alt="" className="rounded-sm grayscale hover:grayscale-0 transition-all" />
+          <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={14} height={14} alt="" className="rounded-sm grayscale hover:grayscale-0 transition-all" />
           Sponsored by Chainabit
         </a>
       </div>

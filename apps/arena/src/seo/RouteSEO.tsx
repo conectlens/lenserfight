@@ -119,7 +119,7 @@ export function RouteSEO() {
       '@type': 'Organization',
       name: 'LenserFight',
       url: 'https://lenserfight.com',
-      logo: `${ARENA_HOST}/favicons/original/apple-icon.png`,
+      logo: 'https://cdn.lenserfight.com/brand/lenserfight-logo.png',
     },
     isPartOf: {
       '@type': 'WebSite',
