@@ -2,7 +2,7 @@ import { ForkNode, LensDetailViewModel } from '@lenserfight/types'
 import { Avatar, HelpButton } from '@lenserfight/ui/components'
 import { TagBadge } from '@lenserfight/ui/components'
 import { formatCount } from '@lenserfight/utils/number'
-import { GitFork, Lock, Bookmark, Pencil, Copy, Check, Loader2 } from 'lucide-react'
+import { GitFork, Lock, Bookmark, Pencil, Copy, Check, Loader2, Download } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -20,7 +20,8 @@ interface LensDetailHeaderProps {
   onFork?: () => void
   canFork?: boolean
   isForking?: boolean
-  exportSlot?: React.ReactNode
+  onExport?: () => void
+  exportModal?: React.ReactNode
 }
 
 export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
@@ -36,7 +37,8 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
   onFork,
   canFork = false,
   isForking = false,
-  exportSlot,
+  onExport,
+  exportModal,
 }) => {
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
@@ -102,6 +104,19 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
             </button>
           )}
 
+          {onExport && (
+            <button
+              type="button"
+              onClick={onExport}
+              className="group flex-shrink-0 rounded-2xl border border-surface-border bg-surface-base p-2.5 text-greyscale-500 transition-colors hover:border-primary-yellow-500 hover:text-primary-yellow-600"
+              aria-label="Export lens"
+              title="Export"
+            >
+              <Download size={18} className="transition-transform duration-200 group-active:scale-95" />
+            </button>
+          )}
+          {exportModal}
+
           {/* Fork — authenticated users with lenser profile */}
           {onFork && (
             <button
@@ -123,8 +138,6 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
               )}
             </button>
           )}
-
-          {exportSlot}
 
           {/* Save Action - Top Right */}
           <button
