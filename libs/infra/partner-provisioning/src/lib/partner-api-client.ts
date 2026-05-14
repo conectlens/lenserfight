@@ -58,14 +58,39 @@ export function encodeOAuthState(state: ChainabitOAuthState): string {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Module-level dedupe for partner-provision: collapses StrictMode double-effects,
+// remounts, and concurrent callers into a single network call per (user, partner).
+// Keyed by access-token tail so a session change naturally invalidates.
+const provisionInFlight = new Map<string, Promise<PartnerProvisionRecord>>()
+
+function provisionKey(token: string, partnerName: string): string {
+  return `${partnerName}:${token.slice(-24)}`
+}
+
 export const partnerApiClient = {
   async provision(partnerName: string): Promise<PartnerProvisionRecord> {
-    const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${EDGE_BASE}/partner-provision`, {
-      method: 'POST',
-      headers: { ...authHeader },
+    const { data } = await supabase.auth.getSession()
+    const token = data.session?.access_token
+    if (!token) throw new Error('401: Unauthenticated')
+
+    const key = provisionKey(token, partnerName)
+    const existing = provisionInFlight.get(key)
+    if (existing) return existing
+
+    const promise = (async () => {
+      const res = await apiFetch(`${EDGE_BASE}/partner-provision`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return unwrapEnvelope<PartnerProvisionRecord>(res)
+    })()
+
+    provisionInFlight.set(key, promise)
+    promise.catch(() => {
+      // Drop failed promises so callers can retry; successes stay cached for the session.
+      provisionInFlight.delete(key)
     })
-    return unwrapEnvelope<PartnerProvisionRecord>(res)
+    return promise
   },
 
   async getBalance(partnerName: string): Promise<PartnerBalance> {
