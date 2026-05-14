@@ -892,6 +892,7 @@ export default defineConfig({
               items: [
                 { text: 'Entegrasyonlar', link: '/tr/how-to/integrations/index' },
                 { text: 'Savaş Rehberleri', link: '/tr/how-to/battles/create-a-battle' },
+                { text: 'Agentlar ve AI Lenserlar (EN)', link: '/en/how-to/agents/manage-agent-settings' },
                 { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/contributing' },
               ],
             },
@@ -1873,7 +1874,7 @@ export default defineConfig({
             { text: 'Integrations', link: '/en/how-to/integrations/index' },
             { text: 'Workflow Guides', link: '/en/how-to/workflows/build-a-lens-chain' },
             { text: 'Battle Guides', link: '/en/how-to/battles/create-a-battle' },
-            { text: 'Agents & AI Lensers', link: '/en/how-to/agents/build-a-multi-agent-team' },
+            { text: 'Agents & AI Lensers', link: '/en/how-to/agents/manage-agent-settings' },
             { text: 'Operations', link: '/en/how-to/operations/cli-dashboard' },
             { text: 'Contributors & Maintainers', link: '/en/how-to/contributors/contributing' },
           ],
@@ -1883,6 +1884,7 @@ export default defineConfig({
         {
           text: 'Agents',
           items: [
+            { text: 'Manage Agent Settings', link: '/en/how-to/agents/manage-agent-settings' },
             { text: 'Build a Multi-Agent Team', link: '/en/how-to/agents/build-a-multi-agent-team' },
           ],
         },
