@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { BarChart3, BookOpen, Clock, Sparkles, ToggleRight } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Button, StepWizard, Badge } from '@lenserfight/ui/components'
+import { Button, StepWizard, Badge, Tooltip, HelpButton } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Switch } from '@lenserfight/ui/forms'
 import { AgentIdentityCard } from '@lenserfight/ui/modals'
@@ -18,6 +18,19 @@ import { AgentQuotaBar } from './AgentQuotaBar'
 import { AgentPersonalityStep } from './AgentPersonalityStep'
 
 const MODEL_MODES: AgentModelBindingMode[] = ['single', 'multi', 'dynamic']
+
+const POLICY_TOOLTIPS: Record<string, string> = {
+  can_join_battles: 'Allow this agent to participate in battle submissions as a lenser.',
+  can_vote: 'Allow this agent to cast votes during judging phases.',
+  can_create_battles: 'Allow this agent to open new battle threads autonomously.',
+  can_receive_sponsorship: 'Make this agent profile eligible for sponsorship links.',
+}
+
+const MODEL_MODE_TOOLTIPS: Record<string, string> = {
+  single: 'Always use one pinned model. Predictable cost and latency.',
+  multi: 'Switch between a fixed set of models per task type.',
+  dynamic: 'Select the best-fit model at inference time. Requires a gateway with multi-model routing.',
+}
 
 const WIZARD_STEPS: WizardStepConfig[] = [
   {
@@ -109,7 +122,9 @@ const QuotaEditForm: React.FC<QuotaEditFormProps> = ({ agentId, agent, queryClie
           />
         </div>
         <div>
-          <p className="text-greyscale-400 text-xs mb-1">Credits</p>
+          <Tooltip content="Spending cap in platform credits. Adjust this at account level." position="top">
+            <p className="text-greyscale-400 text-xs mb-1 cursor-default">Credits</p>
+          </Tooltip>
           <p className="font-bold text-greyscale-900 dark:text-greyscale-50 py-1">
             {agent.spending_limit_credits.toLocaleString()}
           </p>
@@ -205,6 +220,12 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
     <div className="space-y-4">
       {identityCard}
 
+      <HelpButton
+        path="/how-to/agents/manage-agent-settings"
+        label="Permissions guide"
+        className="mb-1"
+      />
+
       {/* Policy toggles */}
       <div className="space-y-1 divide-y divide-surface-border">
         {([
@@ -214,7 +235,9 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
           { field: 'can_receive_sponsorship', label: 'Can receive sponsorship', value: agent.can_receive_sponsorship },
         ] as const).map(({ field, label, value }) => (
           <div key={field} className="flex items-center justify-between py-3">
-            <span className="text-sm text-greyscale-700 dark:text-greyscale-300">{label}</span>
+            <Tooltip content={POLICY_TOOLTIPS[field]} position="right">
+              <span className="text-sm text-greyscale-700 dark:text-greyscale-300 cursor-default">{label}</span>
+            </Tooltip>
             <Switch
               checked={value}
               onChange={(v) => handleTogglePolicy(field, v)}
@@ -228,22 +251,28 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
       {/* Model binding mode */}
       <div className="pt-2">
         <div className="flex items-center gap-1.5 mb-2">
-          <span className="text-xs font-medium text-greyscale-500 dark:text-greyscale-400 uppercase tracking-wide">
-            Model Mode
-          </span>
+          <Tooltip
+            content="Controls how this agent selects AI models at inference time."
+            position="right"
+          >
+            <span className="text-xs font-medium text-greyscale-500 dark:text-greyscale-400 uppercase tracking-wide cursor-default">
+              Model Mode
+            </span>
+          </Tooltip>
         </div>
         <div className="flex gap-2">
           {MODEL_MODES.map((mode) => (
-            <Button
-              key={mode}
-              variant={agent.model_binding_mode === mode ? 'dark' : 'secondary'}
-              size="sm"
-              disabled={policyLoading}
-              onClick={() => handleTogglePolicy('model_binding_mode', mode)}
-              className="capitalize w-auto"
-            >
-              {mode}
-            </Button>
+            <Tooltip key={mode} content={MODEL_MODE_TOOLTIPS[mode]} position="top">
+              <Button
+                variant={agent.model_binding_mode === mode ? 'dark' : 'secondary'}
+                size="sm"
+                disabled={policyLoading}
+                onClick={() => handleTogglePolicy('model_binding_mode', mode)}
+                className="capitalize w-auto"
+              >
+                {mode}
+              </Button>
+            </Tooltip>
           ))}
         </div>
       </div>
@@ -251,6 +280,11 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
   ) : step === 1 ? (
     <div className="space-y-4">
       {identityCard}
+      <HelpButton
+        path="/how-to/agents/manage-agent-settings#step-2--personality--instruction-lens"
+        label="Personality guide"
+        className="mb-1"
+      />
       <AgentPersonalityStep
         aiLenserId={agentId}
         agentHandle={handle}
@@ -268,13 +302,23 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
     <div className="space-y-4">
       {identityCard}
 
+      <HelpButton
+        path="/how-to/agents/manage-agent-settings#step-3--status--limits"
+        label="Quota guide"
+        className="mb-1"
+      />
+
       {/* Today's quota */}
       <div className="bg-surface-raised border border-surface-border rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3">
-          <BarChart3 size={14} className="text-greyscale-500" />
-          <span className="text-xs font-medium text-greyscale-500 dark:text-greyscale-400 uppercase tracking-wide">
-            Today's Usage
-          </span>
+          <Tooltip content="Usage counters reset at UTC midnight via the platform CRON job." position="right">
+            <span className="flex items-center gap-2 cursor-default">
+              <BarChart3 size={14} className="text-greyscale-500" />
+              <span className="text-xs font-medium text-greyscale-500 dark:text-greyscale-400 uppercase tracking-wide">
+                Today's Usage
+              </span>
+            </span>
+          </Tooltip>
         </div>
         <AgentQuotaBar
           battlesUsed={agent.battles_used}
