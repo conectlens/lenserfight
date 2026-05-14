@@ -13,13 +13,66 @@ const { mockCreateBattle, mockListWorkflows, mockGetPersonalFeed } = vi.hoisted(
 }))
 
 vi.mock('@lenserfight/data/repositories', () => ({
-  battlesService: { createBattle: mockCreateBattle },
-  workflowsService: { listByLenser: mockListWorkflows },
+  battlesService: {
+    createBattle: mockCreateBattle,
+    updateBattle: vi.fn(),
+    getBattleById: vi.fn(),
+    getContenders: vi.fn().mockResolvedValue([]),
+    removeContender: vi.fn(),
+    scheduleBattle: vi.fn(),
+  },
+  battlesRepository: {
+    listPublicBattleTemplates: vi.fn().mockResolvedValue([]),
+  },
+  workflowsService: {
+    listByLenser: mockListWorkflows,
+    listByLenserPaginated: vi.fn().mockResolvedValue({ data: [{ id: 'wf-1', title: 'My Workflow', description: 'Test workflow', lenser_id: 'user-1', visibility: 'private', battle_count: 0, created_at: '', updated_at: '' }] }),
+    getPopular: vi.fn().mockResolvedValue({ data: [] }),
+  },
   lensesService: { getPersonalFeed: mockGetPersonalFeed },
+  battleExecutionService: { upsertExecutionConfig: vi.fn() },
+  // Theme controller transitively imports this from the data barrel; a stub is
+  // enough since the wizard doesn't read theme prefs.
+  SupabasePreferencesRepository: class {
+    getTheme = vi.fn().mockResolvedValue(null)
+    setTheme = vi.fn().mockResolvedValue(undefined)
+  },
 }))
 
 vi.mock('@lenserfight/features/auth', () => ({
   useAuth: () => ({ user: { id: 'user-1' } }),
+}))
+
+vi.mock('@lenserfight/features/generations', () => ({
+  useAIProviders: () => ({ data: [], isLoading: false }),
+  useAIModelsByProvider: () => ({ data: [], isLoading: false }),
+}))
+
+vi.mock('@lenserfight/features/lenses', () => ({
+  useFundingSource: () => ({
+    fundingSource: 'platform_credit',
+    setFundingSource: vi.fn(),
+    selectedKeyRefId: null,
+    setSelectedKeyRefId: vi.fn(),
+    availableKeys: [],
+    selectedLocalKeyId: null,
+    setSelectedLocalKeyId: vi.fn(),
+    localKeys: [],
+    addLocalKey: vi.fn(),
+    removeLocalKey: vi.fn(),
+    updateLocalKey: vi.fn(),
+    walletBalance: 0,
+    canUseBYOK: false,
+  }),
+  FundingSourceToggle: () => null,
+}))
+
+vi.mock('@lenserfight/features/profile', () => ({
+  useLenser: () => ({ lenser: { id: 'lenser-1' } }),
+}))
+
+vi.mock('@lenserfight/features/store', () => ({
+  useChainabitConnection: () => ({ state: { status: 'disconnected' }, models: [], reconnect: vi.fn() }),
 }))
 
 import { CreateBattleWizard } from './CreateBattleWizard'
@@ -126,12 +179,45 @@ describe('CreateBattleWizard', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
 
-    // Step 3: next (battle type, no interaction needed)
+    // Step 3: pick Workflow Battle type (matrix-compatible with workflow
+    // format AND not in AI_BATTLE_TYPES — avoids needing a configured
+    // provider/model at step 4 just to satisfy aiExecutionValid).
+    await waitFor(() => screen.getByTestId('battle-type-card-workflow_battle'))
+    fireEvent.click(screen.getByTestId('battle-type-card-workflow_battle'))
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
 
     // Step 4: click "Create Battle"
     fireEvent.click(screen.getByRole('button', { name: /create battle/i }))
 
     await waitFor(() => expect(screen.getByText('Server error')).toBeInTheDocument())
+  })
+
+  it('disables incompatible battle types based on the selected format', async () => {
+    renderWizard()
+
+    // Step 0 → Workflow
+    fireEvent.click(screen.getByText('Workflow Battle'))
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+
+    // Step 1 → workflow
+    await waitFor(() => screen.getByText('My Workflow'))
+    fireEvent.click(screen.getByText('My Workflow'))
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+
+    // Step 2 → title
+    fireEvent.change(screen.getByPlaceholderText(/battle title|e\.g\. GPT/i), {
+      target: { value: 'Compatibility Test' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+
+    // Step 3: Human vs Human is unavailable for the workflow format.
+    await waitFor(() => screen.getByTestId('battle-type-card-human_vs_human_open_votes'))
+    const hvh = screen.getByTestId('battle-type-card-human_vs_human_open_votes')
+    expect(hvh).toBeDisabled()
+    expect(hvh.getAttribute('aria-disabled')).toBe('true')
+
+    // AI vs AI must remain enabled (flagship for the workflow format).
+    const aiVsAi = screen.getByTestId('battle-type-card-ai_vs_ai')
+    expect(aiVsAi).not.toBeDisabled()
   })
 })
