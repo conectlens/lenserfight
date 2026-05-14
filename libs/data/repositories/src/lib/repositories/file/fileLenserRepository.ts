@@ -181,7 +181,7 @@ export class FileLenserRepository implements LenserRepositoryPort {
     return []
   }
 
-  async getActivityTimeline(_lenserId: string): Promise<LenserActivityPoint[]> {
+  async getActivityTimeline(_handle: string): Promise<LenserActivityPoint[]> {
     return []
   }
 
