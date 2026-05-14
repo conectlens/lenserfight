@@ -343,10 +343,25 @@ describe('SupabaseLenserRepository', () => {
   // Stub methods — return [] unconditionally
   // ---------------------------------------------------------------------------
   describe('getActivityTimeline', () => {
-    it('returns empty array without calling Supabase', async () => {
-      const result = await repo.getActivityTimeline(LENSER_ID)
-      expect(result).toEqual([])
-      expect(mockRpc).not.toHaveBeenCalled()
+    it('calls fn_get_lenser_activity_timeline with p_handle', async () => {
+      const rows = [
+        { date: '2026-01-01', count: 3 },
+        { date: '2026-01-02', count: 0 },
+      ]
+      mockRpc.mockResolvedValue({ data: rows, error: null })
+      const result = await repo.getActivityTimeline(HANDLE)
+      expect(mockRpc).toHaveBeenCalledWith('fn_get_lenser_activity_timeline', {
+        p_handle: HANDLE,
+      })
+      expect(result).toEqual([
+        { date: '2026-01-01', count: 3 },
+        { date: '2026-01-02', count: 0 },
+      ])
+    })
+
+    it('throws when RPC returns an error', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: new Error('rpc failed') })
+      await expect(repo.getActivityTimeline(HANDLE)).rejects.toThrow('rpc failed')
     })
   })
 
