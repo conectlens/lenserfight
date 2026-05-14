@@ -8,6 +8,7 @@ import { useShareContext } from '@lenserfight/features/share'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { LenserPreferences } from '@lenserfight/types'
 import { ReportReasonEnum } from '@lenserfight/types'
+import { copyTextToClipboard, renderLensContentForCopy } from '@lenserfight/utils/text'
 import { Button, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { SelectField } from '@lenserfight/ui/forms'
@@ -275,11 +276,7 @@ export const LensLabPage: React.FC = () => {
 
   const handleCopy = async () => {
     if (!lens) return
-    try {
-      await navigator.clipboard.writeText(activeLensContent)
-    } catch (error) {
-      void error
-    }
+    await copyTextToClipboard(renderLensContentForCopy(activeLensContent, activeVersionParams ?? []))
   }
 
   const handleSave = async () => {

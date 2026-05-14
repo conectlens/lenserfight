@@ -6,6 +6,7 @@ import { Avatar } from '@lenserfight/ui/components'
 import { Button } from '@lenserfight/ui/components'
 import { LensDetailViewModel } from '@lenserfight/types'
 import { timeAgo } from '@lenserfight/utils/date'
+import { copyTextToClipboard } from '@lenserfight/utils/text'
 
 import { LensReactionBar } from './LensReactionBar'
 import { LensTagsBar } from './LensTagsBar'
@@ -15,7 +16,7 @@ interface LensDetailCardProps {
   onUse: () => void
   canEdit?: boolean
   onEdit?: () => void
-  onCopy?: () => void
+  onCopy?: () => Promise<void>
   onFork?: () => void
   canFork?: boolean
   isForking?: boolean
@@ -32,12 +33,20 @@ export const LensDetailCard: React.FC<LensDetailCardProps> = ({
   isForking = false,
 }) => {
   const [copied, setCopied] = React.useState(false)
+  const canCopy = Boolean(onCopy || lens.content)
 
-  const handleCopy = () => {
-    if (!onCopy) return
-    onCopy()
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const handleCopy = async () => {
+    try {
+      if (onCopy) {
+        await onCopy()
+      } else {
+        await copyTextToClipboard(lens.content)
+      }
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard write failed — don't show success state
+    }
   }
 
   return (
@@ -154,7 +163,7 @@ export const LensDetailCard: React.FC<LensDetailCardProps> = ({
                 Fork
               </button>
             )}
-            {onCopy && (
+            {canCopy && (
               <button
                 type="button"
                 onClick={handleCopy}
