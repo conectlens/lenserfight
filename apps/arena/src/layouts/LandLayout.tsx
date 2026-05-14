@@ -263,7 +263,7 @@ export const LandLayout: React.FC = () => {
               onClick={() => trackExternal('Chainabit', CHAINABIT_APP_URL)}
               className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-80"
             >
-              <img src="/chainabit/favicon-32x32.png" width={20} height={20} alt="Chainabit" className="rounded" />
+              <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={20} height={20} alt="Chainabit" className="rounded" />
             </a>
             <div className="mx-1 h-4 w-px bg-surface-border" />
             <Link to="/get-started" onClick={() => trackCta('Get Started', 'arena_header')}>
@@ -404,7 +404,7 @@ export const LandLayout: React.FC = () => {
                 onClick={() => trackExternal('Chainabit', CHAINABIT_APP_URL, 'arena_header_mobile')}
                 className="flex h-8 items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-2.5 text-xs font-semibold text-greyscale-700 dark:text-greyscale-300"
               >
-                <img src="/chainabit/favicon-32x32.png" width={18} height={18} alt="" className="rounded shrink-0" />
+                <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={18} height={18} alt="" className="rounded shrink-0" />
                 Chainabit
                 <ExternalLink size={11} aria-label="External link" />
               </a>

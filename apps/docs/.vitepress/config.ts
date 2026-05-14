@@ -178,7 +178,7 @@ const SITE_JSON_LD = JSON.stringify({
     url: WEB_BASE_URL,
     logo: {
       '@type': 'ImageObject',
-      url: `${DOCS_HOST}/favicons/original/apple-icon.png`,
+      url: 'https://cdn.lenserfight.com/brand/lenserfight-logo.png',
     },
   },
   inLanguage: ['en', 'tr', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ru', 'pt', 'it'],
@@ -283,7 +283,7 @@ function buildDocsJsonLd(relativePath: string, title: string, description: strin
       url: WEB_BASE_URL,
       logo: {
         '@type': 'ImageObject',
-        url: `${DOCS_HOST}/favicons/original/apple-icon.png`,
+        url: 'https://cdn.lenserfight.com/brand/lenserfight-logo.png',
       },
     },
     isPartOf: {
@@ -367,26 +367,26 @@ export default defineConfig({
     // ── Favicons ────────────────────────────────────────────────────────────
     [
       'link',
-      { rel: 'apple-touch-icon', sizes: '57x57', href: '/favicons/original/apple-icon-57x57.png' },
+      { rel: 'apple-touch-icon', sizes: '57x57', href: 'https://cdn.lenserfight.com/brand/favicons/original/apple-icon-57x57.png' },
     ],
     [
       'link',
-      { rel: 'apple-touch-icon', sizes: '60x60', href: '/favicons/original/apple-icon-60x60.png' },
+      { rel: 'apple-touch-icon', sizes: '60x60', href: 'https://cdn.lenserfight.com/brand/favicons/original/apple-icon-60x60.png' },
     ],
     [
       'link',
-      { rel: 'apple-touch-icon', sizes: '72x72', href: '/favicons/original/apple-icon-72x72.png' },
+      { rel: 'apple-touch-icon', sizes: '72x72', href: 'https://cdn.lenserfight.com/brand/favicons/original/apple-icon-72x72.png' },
     ],
     [
       'link',
-      { rel: 'apple-touch-icon', sizes: '76x76', href: '/favicons/original/apple-icon-76x76.png' },
+      { rel: 'apple-touch-icon', sizes: '76x76', href: 'https://cdn.lenserfight.com/brand/favicons/original/apple-icon-76x76.png' },
     ],
     [
       'link',
       {
         rel: 'apple-touch-icon',
         sizes: '114x114',
-        href: '/favicons/original/apple-icon-114x114.png',
+        href: 'https://cdn.lenserfight.com/brand/favicons/original/apple-icon-114x114.png',
       },
     ],
     [
@@ -394,7 +394,7 @@ export default defineConfig({
       {
         rel: 'apple-touch-icon',
         sizes: '120x120',
-        href: '/favicons/original/apple-icon-120x120.png',
+        href: 'https://cdn.lenserfight.com/brand/favicons/original/apple-icon-120x120.png',
       },
     ],
     [
@@ -402,7 +402,7 @@ export default defineConfig({
       {
         rel: 'apple-touch-icon',
         sizes: '144x144',
-        href: '/favicons/original/apple-icon-144x144.png',
+        href: 'https://cdn.lenserfight.com/brand/favicons/original/apple-icon-144x144.png',
       },
     ],
     [
@@ -410,7 +410,7 @@ export default defineConfig({
       {
         rel: 'apple-touch-icon',
         sizes: '152x152',
-        href: '/favicons/original/apple-icon-152x152.png',
+        href: 'https://cdn.lenserfight.com/brand/favicons/original/apple-icon-152x152.png',
       },
     ],
     [
@@ -418,7 +418,7 @@ export default defineConfig({
       {
         rel: 'apple-touch-icon',
         sizes: '180x180',
-        href: '/favicons/original/apple-icon-180x180.png',
+        href: 'https://cdn.lenserfight.com/brand/favicons/original/apple-icon-180x180.png',
       },
     ],
     [
@@ -427,7 +427,7 @@ export default defineConfig({
         rel: 'icon',
         type: 'image/png',
         sizes: '192x192',
-        href: '/favicons/original/android-icon-192x192.png',
+        href: 'https://cdn.lenserfight.com/brand/favicons/original/android-icon-192x192.png',
       },
     ],
     [
@@ -436,7 +436,7 @@ export default defineConfig({
         rel: 'icon',
         type: 'image/png',
         sizes: '96x96',
-        href: '/favicons/original/favicon-96x96.png',
+        href: 'https://cdn.lenserfight.com/brand/favicons/original/favicon-96x96.png',
       },
     ],
     [
@@ -445,7 +445,7 @@ export default defineConfig({
         rel: 'icon',
         type: 'image/png',
         sizes: '32x32',
-        href: '/favicons/original/favicon-32x32.png',
+        href: 'https://cdn.lenserfight.com/brand/favicons/original/favicon-32x32.png',
       },
     ],
     [
@@ -454,14 +454,14 @@ export default defineConfig({
         rel: 'icon',
         type: 'image/png',
         sizes: '16x16',
-        href: '/favicons/original/favicon-16x16.png',
+        href: 'https://cdn.lenserfight.com/brand/favicons/original/favicon-16x16.png',
       },
     ],
-    ['link', { rel: 'manifest', href: '/favicons/manifest.json' }],
+    ['link', { rel: 'manifest', href: 'https://cdn.lenserfight.com/brand/favicons/original/manifest.json' }],
     ['meta', { name: 'msapplication-TileColor', content: '#ffffff' }],
     [
       'meta',
-      { name: 'msapplication-TileImage', content: '/favicons/original/ms-icon-144x144.png' },
+      { name: 'msapplication-TileImage', content: 'https://cdn.lenserfight.com/brand/favicons/original/ms-icon-144x144.png' },
     ],
     ['meta', { name: 'theme-color', content: '#ffffff' }],
     // ── Fonts ────────────────────────────────────────────────────────────────
@@ -1312,8 +1312,8 @@ export default defineConfig({
 
   themeConfig: {
     logo: {
-      light: '/favicons/original/ms-icon-150x150.png',
-      dark: '/favicons/white/ms-icon-150x150.png',
+      light: 'https://cdn.lenserfight.com/brand/favicons/original/ms-icon-150x150.png',
+      dark: 'https://cdn.lenserfight.com/brand/favicons/white/ms-icon-150x150.png',
       alt: 'LenserFight',
     },
 
