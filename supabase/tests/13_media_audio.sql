@@ -24,11 +24,12 @@ SELECT throws_ok(
       workspace_id, owner_lenser_id, media_type, name, audio_sample_rate, external_url
     )
     SELECT
-      (SELECT id FROM lensers.profiles LIMIT 1),
+      (SELECT id FROM tenancy.workspaces LIMIT 1),
       (SELECT id FROM lensers.profiles LIMIT 1),
       'audio', 'test-bad-rate', 0, 'https://example.com/test.mp3'
   $$,
-  'P0001',
+  '23514',
+  NULL,
   'audio_sample_rate = 0 should violate CHECK constraint'
 );
 
@@ -84,11 +85,12 @@ SELECT throws_ok(
       workspace_id, owner_lenser_id, media_type, name, audio_channels, external_url
     )
     SELECT
-      (SELECT id FROM lensers.profiles LIMIT 1),
+      (SELECT id FROM tenancy.workspaces LIMIT 1),
       (SELECT id FROM lensers.profiles LIMIT 1),
       'audio', 'test-bad-channels', 0, 'https://example.com/test.mp3'
   $$,
-  'P0001',
+  '23514',
+  NULL,
   'audio_channels = 0 should violate CHECK constraint'
 );
 
@@ -100,7 +102,7 @@ SELECT lives_ok(
       audio_sample_rate, audio_channels, external_url
     )
     SELECT
-      (SELECT id FROM lensers.profiles LIMIT 1),
+      (SELECT id FROM tenancy.workspaces LIMIT 1),
       (SELECT id FROM lensers.profiles LIMIT 1),
       'image', 'test-image-no-audio', NULL, NULL, 'https://example.com/test.png'
   $$,
