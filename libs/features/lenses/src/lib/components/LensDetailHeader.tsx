@@ -20,6 +20,7 @@ interface LensDetailHeaderProps {
   onFork?: () => void
   canFork?: boolean
   isForking?: boolean
+  exportSlot?: React.ReactNode
 }
 
 export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
@@ -35,6 +36,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
   onFork,
   canFork = false,
   isForking = false,
+  exportSlot,
 }) => {
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
@@ -121,6 +123,8 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
               )}
             </button>
           )}
+
+          {exportSlot}
 
           {/* Save Action - Top Right */}
           <button
