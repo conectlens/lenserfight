@@ -4478,10 +4478,13 @@ CREATE OR REPLACE FUNCTION "public"."fn_byok_key_hint"("p_agent_id" "uuid") RETU
     bk.label,
     (bk.revoked_at IS NULL AND (bk.expires_at IS NULL OR bk.expires_at > now())) AS is_valid
   FROM execution.byok_keys bk
-  JOIN agents.ai_lensers al ON al.id = bk.agent_id
-  JOIN lensers.profiles   p  ON p.id  = al.profile_id
-  WHERE bk.agent_id    = p_agent_id
-  AND   p.user_id = auth.uid();
+  WHERE bk.agent_id = p_agent_id
+    AND EXISTS (
+      SELECT 1 FROM agents.ownerships o
+      WHERE o.ai_lenser_id    = p_agent_id
+        AND o.owner_lenser_id = lensers.get_auth_human_lenser_id()
+        AND o.revoked_at IS NULL
+    );
 $$;
 
 
@@ -19518,9 +19521,9 @@ BEGIN
     SELECT 1
     FROM lenses.lenses l
     WHERE l.id = p_lens_id
-      AND l.lenser_id = v_profile_id
+      AND (l.lenser_id = v_profile_id OR l.lenser_id = v_caller_human_id)
   ) THEN
-    RAISE EXCEPTION 'Main lens must be owned by the active AI workspace'
+    RAISE EXCEPTION 'Lens must be owned by the AI workspace or its co-owner'
       USING ERRCODE = '42501';
   END IF;
 
@@ -19596,11 +19599,15 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
+  -- Accept lenses owned by the AI workspace profile OR by the calling human co-owner.
+  -- The wizard flow does not switch the active workspace before binding, so human-owned
+  -- lenses are valid when the caller has ownership of the AI workspace.
   IF NOT EXISTS (
     SELECT 1 FROM lenses.lenses l
-    WHERE l.id = p_lens_id AND l.lenser_id = v_profile_id
+    WHERE l.id = p_lens_id
+      AND (l.lenser_id = v_profile_id OR l.lenser_id = v_caller_human_id)
   ) THEN
-    RAISE EXCEPTION 'Main lens must be owned by the active AI workspace'
+    RAISE EXCEPTION 'Lens must be owned by the AI workspace or its co-owner'
       USING ERRCODE = '42501';
   END IF;
 
