@@ -178,7 +178,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const { lenser } = useLenser()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { step, goToStep } = useWizardStep({ maxStep: WIZARD_STEPS.length })
+  const { step, goToStep } = useWizardStep({ maxStep: WIZARD_STEPS.length - 1 })
 
   const [direction, setDirection] = useState(1)
   const [submitting, setSubmitting] = useState(false)
@@ -260,8 +260,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const preselectedWorkflowId = readSearchParam(searchParams, 'workflow_id')
   const preselectedTemplateId = readSearchParam(searchParams, 'template')
 
-  const inviteA = useInviteContender(createdBattleId ?? '')
-  const inviteB = useInviteContender(createdBattleId ?? '')
+  const invite = useInviteContender(createdBattleId ?? '')
 
   // Auto-advance to step 1 when arriving with ?workflow_id param
   useEffect(() => {
@@ -419,28 +418,49 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     goToStep(target)
   }
 
+  // Computed up-front so canProceed / stepValidity (which run on every render)
+  // can read it without tripping the TDZ on `activeBattleId` further below.
+  const computedActiveBattleId = isValidUUID(createdBattleId)
+    ? createdBattleId
+    : isValidUUID(battleIdFromUrl)
+      ? battleIdFromUrl
+      : null
+
+  // Step 4 needs an execution context (provider + model) when the battle will
+  // run AI contenders managed by the platform. Lenser Battles bring their own
+  // model binding, so no execution context is required there.
+  const aiExecutionRequired = battleFormat !== 'lenser_battle' && AI_BATTLE_TYPES.includes(battleType)
+  const aiExecutionValid = !aiExecutionRequired || (!!selectedProviderKey && !!selectedModelKey)
+
+  const sourceValid = battleFormat === 'lenser_battle'
+    ? true
+    : battleFormat === 'workflow'
+      ? !!selectedWorkflowId
+      : !!selectedLensId
+
   const canProceed = (() => {
     if (step === 0) return battleFormat !== null
-    if (step === 1) {
-      return battleFormat === 'workflow' ? !!selectedWorkflowId : !!selectedLensId
-    }
+    if (step === 1) return sourceValid
     if (step === 2) return title.trim().length >= 3
-    if (step === 8) return automationReady
-    // Steps 3–7 are always skippable / valid
+    if (step === 4) return aiExecutionValid
+    // Step 8 (automation) requires the battle to actually exist so we have a
+    // target to attach automation rules to. Otherwise users can press
+    // "Complete" with no battle and trip the missing-slug guard in handleFinish.
+    if (step === 8) return automationReady && !!computedActiveBattleId
+    // Steps 3, 5–7 are always skippable / valid
     return true
   })()
 
-  const sourceValid = battleFormat === 'lenser_battle' ? true : battleFormat === 'workflow' ? !!selectedWorkflowId : !!selectedLensId
   const stepValidity: boolean[] = [
     battleFormat !== null,
     sourceValid,
     title.trim().length >= 3,
-    true, // type step always valid
-    true, // config step always valid
-    true, // schedule always skippable
-    true, // contenders always skippable
-    true, // lenses always skippable
-    automationReady, // automation step gates on readiness
+    true,                                  // type step always valid
+    aiExecutionValid,                      // config step gates on AI execution context
+    true,                                  // schedule always skippable
+    true,                                  // contenders always skippable
+    true,                                  // lenses always skippable
+    automationReady && !!computedActiveBattleId, // automation requires battle + readiness
   ]
 
   // ── Create battle (step 4 → 5) ───────────────────────────────────────────
@@ -519,11 +539,14 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // ── Invite contenders (step 6 → 7) ───────────────────────────────────────
 
-  const activeBattleId = isValidUUID(createdBattleId) ? createdBattleId : isValidUUID(battleIdFromUrl) ? battleIdFromUrl : null
+  const activeBattleId = computedActiveBattleId
 
   const handleInvite = async () => {
     if (!activeBattleId) {
-      go(7)
+      // No battle to attach contenders to — surface the cause rather than
+      // silently skipping ahead, which previously looked like a successful
+      // invite to the user.
+      setInviteError('Cannot invite contenders: battle has not been created yet. Go back and complete the configuration step.')
       return
     }
     setInviting(true)
@@ -545,7 +568,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             // Different lenser selected — remove stale record first
             await battlesService.removeContender(existingA.id)
           }
-          const result = await inviteA.mutateAsync({
+          const result = await invite.mutateAsync({
             battle_id: activeBattleId,
             slot: 'A',
             contender_ref_id: slotA.id,
@@ -571,7 +594,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           if (existingB) {
             await battlesService.removeContender(existingB.id)
           }
-          const result = await inviteB.mutateAsync({
+          const result = await invite.mutateAsync({
             battle_id: activeBattleId,
             slot: 'B',
             contender_ref_id: slotB.id,
@@ -666,8 +689,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         onComplete={handleComplete}
         onCancel={onClose}
         canProceed={canProceed}
-        isCompleting={step === 4 ? submitting : step === 5 ? submitting : step === 6 ? inviting : false}
-        isNextLoading={step === 4 ? submitting : step === 5 ? submitting : step === 6 ? inviting : false}
+        isCompleting={(step === 4 || step === 5) ? submitting : step === 6 ? inviting : false}
+        isNextLoading={(step === 4 || step === 5) ? submitting : step === 6 ? inviting : false}
         completeLabel="Go to Battle"
         completeIcon={<Swords size={15} className="mr-1.5" />}
         nextLabel={step === 4 ? (isEditMode ? 'Update Battle' : 'Create Battle') : step === 6 ? 'Invite' : 'Next'}
@@ -896,11 +919,15 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   </label>
                   <TextArea
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e) => setDescription(e.target.value.slice(0, 1000))}
                     placeholder="Add context for participants and voters, e.g. what success looks like."
                     minRows={4}
+                    maxLength={1000}
                     autoResize={false}
                   />
+                  <p className="mt-1 text-right text-xs text-greyscale-400">
+                    {description.length}/1000
+                  </p>
                 </div>
               </div>
             )}
@@ -1037,7 +1064,16 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                             type="datetime-local"
                             value={executionStartsAt}
                             onChange={(e) => setExecutionStartsAt(e.target.value)}
-                            min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
+                            // datetime-local interprets the value in the browser's
+                            // local timezone. toISOString() returns UTC, which
+                            // would be off by the user's tz offset and could let
+                            // them pick a past time. Compute "now + 1m" in local
+                            // time instead.
+                            min={(() => {
+                              const d = new Date(Date.now() + 60_000)
+                              const pad = (n: number) => String(n).padStart(2, '0')
+                              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+                            })()}
                             className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
                           />
                         </div>
