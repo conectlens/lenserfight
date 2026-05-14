@@ -127,7 +127,7 @@ export function TeamBoard({
         {lanes.map((lane) => (
           <div
             key={lane}
-            className="rounded-[24px] border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-950"
+            className="rounded-[24px] border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700"
           >
             <p className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
               Lane {lane + 1}
@@ -160,7 +160,7 @@ export function TeamBoard({
         ))}
       </div>
       {edges.length > 0 && (
-        <div className="mt-6 rounded-[24px] border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-950">
+        <div className="mt-6 rounded-[24px] border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700">
           <p className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
             Delegation and handoff edges
           </p>
