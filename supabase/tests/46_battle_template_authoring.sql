@@ -12,7 +12,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN;
 
-SELECT plan(6);
+SELECT plan(7);
 
 -- ── Fixtures ────────────────────────────────────────────────────────────────
 INSERT INTO auth.users (id, email)
@@ -22,10 +22,10 @@ INSERT INTO auth.users (id, email)
 VALUES ('bbbbbbbb-bd01-bbbb-bbbb-bbbbbbbbbbbb', 'bd-other@test.local')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.lenser_profiles (id, handle, display_name, type)
+INSERT INTO lensers.profiles (id, user_id, handle, display_name, type)
 VALUES
-  ('aaaaaaaa-bd01-aaaa-aaaa-aaaaaaaaaaaa', 'bd_owner', 'BD Owner', 'human'),
-  ('bbbbbbbb-bd01-bbbb-bbbb-bbbbbbbbbbbb', 'bd_other', 'BD Other', 'human')
+  ('aaaaaaaa-bd01-aaaa-aaaa-aaaaaaaaaaaa', 'aaaaaaaa-bd01-aaaa-aaaa-aaaaaaaaaaaa', 'bd_owner', 'BD Owner', 'human'),
+  ('bbbbbbbb-bd01-bbbb-bbbb-bbbbbbbbbbbb', 'bbbbbbbb-bd01-bbbb-bbbb-bbbbbbbbbbbb', 'bd_other', 'BD Other', 'human')
 ON CONFLICT (id) DO NOTHING;
 
 SET LOCAL "request.jwt.claims" TO '{"sub":"aaaaaaaa-bd01-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
