@@ -1,7 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, BookOpen, Pencil, Timer } from 'lucide-react'
+import { ArrowLeft, BookOpen, Pencil, Settings, Timer } from 'lucide-react'
 import { HelpButton } from '@lenserfight/ui/components'
+import { ExportButton } from '@lenserfight/features/exports'
 import type { Battle, BattleType, BattleUIPhase } from '../../types/battle.types'
 import { useCountdown } from '../../hooks/utils/useCountdown'
 
@@ -32,18 +33,22 @@ const BATTLE_TYPE_DOC_PATH: Record<BattleType, string> = {
 
 interface ArenaTopBarProps {
   battle: Battle
+  slug: string
   currentPhase: BattleUIPhase
   spectatorCount?: number
   onRulesOpen?: () => void
+  onWebhooksOpen?: () => void
   isOwner?: boolean
   myContenderSlot?: 'A' | 'B' | null
 }
 
 export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
   battle,
+  slug,
   currentPhase,
   spectatorCount,
   onRulesOpen,
+  onWebhooksOpen,
   isOwner,
   myContenderSlot,
 }) => {
@@ -127,6 +132,31 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
         >
           <BookOpen size={13} />
           <span className="hidden sm:inline">Rules</span>
+        </button>
+      )}
+
+      {/* Export Button */}
+      <div className="flex-shrink-0">
+        <ExportButton
+          kind="battle"
+          slug={slug}
+          title={battle.title ?? undefined}
+          fetchPayload={async () => battle}
+          className="!h-7 !px-2 !text-[11px] !font-semibold !bg-transparent hover:!bg-surface-raised !border-none !text-greyscale-500 hover:!text-greyscale-900 dark:hover:!text-greyscale-100 !transition-colors !shadow-none"
+          label="Export"
+        />
+      </div>
+
+      {/* Webhooks button — owner only */}
+      {isOwner && onWebhooksOpen && (
+        <button
+          type="button"
+          onClick={onWebhooksOpen}
+          className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100 transition-colors px-2 py-1 rounded-lg hover:bg-surface-raised"
+          aria-label="Manage webhooks"
+        >
+          <Settings size={13} />
+          <span className="hidden sm:inline">Webhooks</span>
         </button>
       )}
 
