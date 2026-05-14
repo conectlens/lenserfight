@@ -6,6 +6,7 @@ import { useReportContent } from '@lenserfight/features/home'
 import { useShareContext } from '@lenserfight/features/share'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
+import { copyTextToClipboard, renderLensContentForCopy } from '@lenserfight/utils/text'
 import { ExportModal, useExportRunner, LocalDownloadTransport, CloudDownloadTransport } from '@lenserfight/features/exports'
 import { SupabaseExportsRepository } from '@lenserfight/data/exports'
 import { supabase } from '@lenserfight/data/supabase'
@@ -273,11 +274,10 @@ export const LensDetailPage: React.FC = () => {
 
   const handleCopy = async () => {
     if (!lens) return
-    try {
-      await navigator.clipboard.writeText(previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content)
-    } catch (error) {
-      void error
-    }
+    const activeVersion = previewVersion ?? latestPublishedDetail ?? lens.latestPublishedVersion ?? null
+    const rawContent = activeVersion?.templateBody ?? lens.content
+    const params = activeVersion?.parameters ?? activeVersionParams ?? []
+    await copyTextToClipboard(renderLensContentForCopy(rawContent, params))
   }
 
   const handleSave = async () => {
@@ -510,6 +510,7 @@ export const LensDetailPage: React.FC = () => {
               <LensBodyViewer
                 content={previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content}
                 versionParams={activeVersionParams}
+                onCopy={handleCopy}
               />
             </DesktopFrame>
           </Card>

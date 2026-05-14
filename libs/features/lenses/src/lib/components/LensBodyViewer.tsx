@@ -1,4 +1,5 @@
 import { LensVersionParam } from '@lenserfight/types'
+import { copyTextToClipboard, renderLensContentForCopy } from '@lenserfight/utils/text'
 import { Check, Copy, GitFork, Loader2, Terminal } from 'lucide-react'
 import React from 'react'
 
@@ -8,7 +9,7 @@ interface LensBodyViewerProps {
   content?: string | null
   /** Rich version params — forwarded to LensContentReadonly for tooltip display. */
   versionParams?: LensVersionParam[]
-  onCopy?: () => void
+  onCopy?: () => Promise<void>
   onFork?: () => void
   canFork?: boolean
   isForking?: boolean
@@ -24,12 +25,20 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({
 }) => {
   const safeContent = content ?? ''
   const [copied, setCopied] = React.useState(false)
+  const canCopy = Boolean(onCopy || safeContent)
 
-  const handleCopy = () => {
-    if (!onCopy) return
-    onCopy()
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const handleCopy = async () => {
+    try {
+      if (onCopy) {
+        await onCopy()
+      } else {
+        await copyTextToClipboard(renderLensContentForCopy(safeContent, versionParams ?? []))
+      }
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard write failed — don't show success state
+    }
   }
 
   return (
@@ -40,6 +49,21 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({
           <div className="absolute left-4 top-4 select-none text-greyscale-400 opacity-30 pointer-events-none">
             <Terminal size={16} />
           </div>
+          {canCopy && (
+            <button
+              type="button"
+              onClick={handleCopy}
+              className={`absolute right-3 top-3 z-10 rounded-xl border p-1.5 transition-colors ${
+                copied
+                  ? 'border-status-green/30 bg-status-green/10 text-status-green'
+                  : 'border-surface-border bg-surface-base text-greyscale-400 hover:border-primary-yellow-500 hover:text-primary-yellow-600'
+              }`}
+              aria-label="Copy lens content"
+              title="Copy content"
+            >
+              {copied ? <Check size={14} strokeWidth={3} /> : <Copy size={14} />}
+            </button>
+          )}
           <div className="pl-6">
             {safeContent ? (
               <LensContentReadonly
