@@ -63,7 +63,7 @@ export const RecentIncidentsFeed: React.FC<RecentIncidentsFeedProps> = ({
             return (
               <div
                 key={incident.id}
-                className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-950"
+                className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-700"
               >
                 <span
                   className={`mt-0.5 flex-shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${severityClass}`}
@@ -76,11 +76,10 @@ export const RecentIncidentsFeed: React.FC<RecentIncidentsFeedProps> = ({
                       {incident.incident_type}
                     </span>
                     <span
-                      className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                        isResolved
+                      className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${isResolved
                           ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300'
                           : 'border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400'
-                      }`}
+                        }`}
                     >
                       {isResolved ? 'resolved' : 'open'}
                     </span>
