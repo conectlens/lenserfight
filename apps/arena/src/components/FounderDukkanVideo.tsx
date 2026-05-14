@@ -1,4 +1,4 @@
-import { Badge } from '@lenserfight/ui/components'
+import { Badge, Button } from '@lenserfight/ui/components'
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { Film, Sparkles, Youtube } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
@@ -114,15 +114,15 @@ export const FounderDukkanVideo: React.FC = () => {
                   </p>
                 </div>
 
-                <a
-                  href={DUKKAN_VIDEO.youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-primary-yellow-500/30 bg-primary-yellow-500 px-5 py-3 text-sm font-black text-greyscale-950 shadow-[0_0_24px_rgba(234,179,8,0.25)] transition-all hover:bg-primary-yellow-400 hover:shadow-[0_0_32px_rgba(234,179,8,0.34)]"
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => window.open(DUKKAN_VIDEO.youtubeUrl, '_blank', 'noopener,noreferrer')}
+                  className="rounded-full font-black shadow-[0_0_24px_rgba(234,179,8,0.25)] hover:shadow-[0_0_32px_rgba(234,179,8,0.34)]"
                 >
                   <Youtube size={17} />
                   YouTube
-                </a>
+                </Button>
               </div>
             </div>
 
