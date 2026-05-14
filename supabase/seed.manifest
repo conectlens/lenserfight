@@ -29,6 +29,7 @@ seeds/16_origin_types.sql
 
 # ── System policy / flag rows ──────────────────────────────────────────────
 seeds/17_xp_ruleset.sql
+seeds/18_identity_gov_namespaces.sql
 
 # ── Demo accounts and profiles (opt-in) ───────────────────────────────────
 seeds/02_auth_users.sql
