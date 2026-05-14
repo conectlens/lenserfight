@@ -16,7 +16,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN;
 
-SELECT plan(11);
+SELECT plan(13);
 
 -- ── Fixture ────────────────────────────────────────────────────────────────
 -- Use a synthetic Alice workflow with a fresh node so the dispatcher has
@@ -174,16 +174,9 @@ SELECT ok(
   'idx_workflow_schedules_active partial index exists (D7)'
 );
 
-SELECT * FROM finish();
-ROLLBACK;
-
 -- ─────────────────────────────────────────────────────────────────────────────
--- Wrapper kill-switch test (separate transaction so the flag change is
--- isolated from the rest of the suite).
+-- Wrapper kill-switch test.
 -- ─────────────────────────────────────────────────────────────────────────────
-BEGIN;
-
-SELECT plan(2);
 
 -- Toggle the autonomy_dispatch_enabled flag OFF. Direct UPDATE works because
 -- this transaction never elevates to authenticated role (system_flags has
