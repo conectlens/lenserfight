@@ -88,6 +88,9 @@
       "@lenserfight/domain/lens-governance": [
         "libs/domain/lens-governance/src/index.ts"
       ],
+      "@lenserfight/domain/identity-governance": [
+        "libs/domain/identity-governance/src/index.ts"
+      ],
       "@lenserfight/domain/reactions": [
         "libs/domain/reactions/src/index.ts"
       ],
