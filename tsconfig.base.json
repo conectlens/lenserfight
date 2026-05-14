@@ -1,0 +1,261 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "experimentalDecorators": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@lenserfight/features/threads": [
+        "libs/features/threads/src/index.ts"
+      ],
+      "@lenserfight/features/home": [
+        "libs/features/home/src/index.ts"
+      ],
+      "@lenserfight/features/settings": [
+        "libs/features/settings/src/index.ts"
+      ],
+      "@lenserfight/features/share": [
+        "libs/features/share/src/index.ts"
+      ],
+      "@lenserfight/features/waiting-list": [
+        "libs/features/waiting-list/src/index.ts"
+      ],
+      "@lenserfight/features/store": [
+        "libs/features/store/src/index.ts"
+      ],
+      "@lenserfight/features/feedback": [
+        "libs/features/feedback/src/index.ts"
+      ],
+      "@lenserfight/features/generations": [
+        "libs/features/generations/src/index.ts"
+      ],
+      "@lenserfight/features/onboarding": [
+        "libs/features/onboarding/src/index.ts"
+      ],
+      "@lenserfight/features/lenses": [
+        "libs/features/lenses/src/index.ts"
+      ],
+      "@lenserfight/features/exports": [
+        "libs/features/exports/src/index.ts"
+      ],
+      "@lenserfight/features/workflows": [
+        "libs/features/workflows/src/index.ts"
+      ],
+      "@lenserfight/features/lens-kinds": [
+        "libs/features/lens-kinds/src/index.ts"
+      ],
+      "@lenserfight/features/battles": [
+        "libs/features/battles/src/index.ts"
+      ],
+      "@lenserfight/features/agents": [
+        "libs/features/agents/src/index.ts"
+      ],
+      "@lenserfight/features/benchmark": [
+        "libs/features/benchmark/src/index.ts"
+      ],
+      "@lenserfight/features/tags": [
+        "libs/features/tags/src/index.ts"
+      ],
+      "@lenserfight/utils/number": [
+        "libs/utils/number/src/index.ts"
+      ],
+      "@lenserfight/utils/dom": [
+        "libs/utils/dom/src/index.ts"
+      ],
+      "@lenserfight/utils/keychain": [
+        "libs/utils/keychain/src/index.ts"
+      ],
+      "@lenserfight/utils/signing": [
+        "libs/utils/signing/src/index.ts"
+      ],
+      "@lenserfight/utils/text": [
+        "libs/utils/text/src/index.ts"
+      ],
+      "@lenserfight/domain/lenses": [
+        "libs/domain/lenses/src/index.ts"
+      ],
+      "@lenserfight/domain/reactions": [
+        "libs/domain/reactions/src/index.ts"
+      ],
+      "@lenserfight/domain/tags": [
+        "libs/domain/tags/src/index.ts"
+      ],
+      "@lenserfight/domain/threads": [
+        "libs/domain/threads/src/index.ts"
+      ],
+      "@lenserfight/domain/user": [
+        "libs/domain/user/src/index.ts"
+      ],
+      "@lenserfight/domain/exports": [
+        "libs/domain/exports/src/index.ts"
+      ],
+      "@lenserfight/features/auth": [
+        "libs/features/auth/src/index.ts"
+      ],
+      "@lenserfight/features/lenserboard": [
+        "libs/features/lenserboard/src/index.ts"
+      ],
+      "@lenserfight/features/notifications": [
+        "libs/features/notifications/src/index.ts"
+      ],
+      "@lenserfight/features/automation": [
+        "libs/features/automation/src/index.ts"
+      ],
+      "@lenserfight/features/profile": [
+        "libs/features/profile/src/index.ts"
+      ],
+      "@lenserfight/data/cache": [
+        "libs/data/cache/src/index.ts"
+      ],
+      "@lenserfight/data/repositories": [
+        "libs/data/repositories/src/index.ts"
+      ],
+      "@lenserfight/data/supabase": [
+        "libs/data/supabase/src/index.ts"
+      ],
+      "@lenserfight/data/exports": [
+        "libs/data/exports/src/index.ts"
+      ],
+      "@lenserfight/infra/analytics": [
+        "libs/infra/analytics/src/index.ts"
+      ],
+      "@lenserfight/infra/execution": [
+        "libs/infra/execution/src/index.ts"
+      ],
+      "@lenserfight/infra/gateway": [
+        "libs/infra/gateway/src/index.ts"
+      ],
+      "@lenserfight/infra/moderation": [
+        "libs/infra/moderation/src/index.ts"
+      ],
+      "@lenserfight/infra/storage": [
+        "libs/infra/storage/src/index.ts"
+      ],
+      "@lenserfight/infra/simulation": [
+        "libs/infra/simulation/src/index.ts"
+      ],
+      "@lenserfight/infra/partner-provisioning": [
+        "libs/infra/partner-provisioning/src/index.ts"
+      ],
+      "@lenserfight/adapters/connector": [
+        "libs/adapters/connector/src/index.ts"
+      ],
+      "@lenserfight/sdk": [
+        "libs/sdk/src/index.ts"
+      ],
+      "@lenserfight/plugins/scoring": [
+        "libs/plugins/scoring/src/index.ts"
+      ],
+      "@lenserfight/api/contracts": [
+        "libs/api/contracts/src/index.ts"
+      ],
+      "@lenserfight/api/dto": [
+        "libs/api/dto/src/index.ts"
+      ],
+      "@lenserfight/api/exports": [
+        "libs/api/exports/src/index.ts"
+      ],
+      "@lenserfight/types": [
+        "libs/types/src/index.ts"
+      ],
+      "@lenserfight/ui/components": [
+        "libs/ui/components/src/index.ts"
+      ],
+      "@lenserfight/ui/forms": [
+        "libs/ui/forms/src/index.ts"
+      ],
+      "@lenserfight/ui/layout": [
+        "libs/ui/layout/src/index.ts"
+      ],
+      "@lenserfight/ui/modals": [
+        "libs/ui/modals/src/index.ts"
+      ],
+      "@lenserfight/ui/theme": [
+        "libs/ui/theme/src/index.ts"
+      ],
+      "@lenserfight/ui/tokens": [
+        "libs/ui/tokens/src/index.ts"
+      ],
+      "@lenserfight/utils/date": [
+        "libs/utils/date/src/index.ts"
+      ],
+      "@lenserfight/utils/env": [
+        "libs/utils/env/src/index.ts"
+      ],
+      "@lenserfight/utils/logger": [
+        "libs/utils/logger/src/index.ts"
+      ],
+      "@lenserfight/utils/storage": [
+        "libs/utils/storage/src/index.ts"
+      ],
+      "@lenserfight/utils/validation": [
+        "libs/utils/validation/src/index.ts"
+      ],
+      "@lenserfight/utils/webhook-signing": [
+        "libs/utils/webhook-signing/src/index.ts"
+      ],
+      "@lenserfight/features/shell": [
+        "libs/features/shell/src/index.ts"
+      ],
+      "@lenserfight/shared/error": [
+        "libs/shared/error/src/index.ts"
+      ],
+      "@lenserfight/shared/serializers": [
+        "libs/shared/serializers/src/index.ts"
+      ],
+      "@lenserfight/features/lensers": [
+        "libs/features/lensers/src/index.ts"
+      ],
+      "@lenserfight/features/devices": [
+        "libs/features/devices/src/index.ts"
+      ],
+      "@lenserfight/features/account": [
+        "libs/features/account/src/index.ts"
+      ],
+      "@lenserfight/providers": [
+        "libs/providers/src/index.ts"
+      ],
+      "@lenserfight/ui/primitives": [
+        "libs/ui/primitives/src/index.ts"
+      ],
+      "@lenserfight/ui/feedback": [
+        "libs/ui/feedback/src/index.ts"
+      ],
+      "@lenserfight/ui/navigation": [
+        "libs/ui/navigation/src/index.ts"
+      ],
+      "@lenserfight/ui/data-display": [
+        "libs/ui/data-display/src/index.ts"
+      ],
+      "@lenserfight/ui/overlays": [
+        "libs/ui/overlays/src/index.ts"
+      ],
+      "@lenserfight/ui/routing": [
+        "libs/ui/routing/src/index.ts"
+      ],
+      "@lenserfight/ui/providers": [
+        "libs/ui/providers/src/index.ts"
+      ],
+      "@lenserfight/ui/widgets": [
+        "libs/ui/widgets/src/index.ts"
+      ],
+      "@lenserfight/ui/media": [
+        "libs/ui/media/src/index.ts"
+      ],
+      "@lenserfight/features/chat": [
+        "libs/features/chat/src/index.ts"
+      ]
+    }
+  }
+}
