@@ -188,7 +188,7 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
               {Array.from({ length: 3 }).map((_, index) => (
                 <div
                   key={index}
-                  className="h-16 animate-pulse rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-950"
+                  className="h-16 animate-pulse rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-700"
                 />
               ))}
             </div>
@@ -201,11 +201,10 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
                 return (
                   <label
                     key={agent.ai_lenser_id}
-                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 text-sm transition ${
-                      selected
+                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 text-sm transition ${selected
                         ? 'border-amber-300 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10'
                         : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
-                    }`}
+                      }`}
                   >
                     <input
                       type="checkbox"
