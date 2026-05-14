@@ -176,7 +176,7 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="h-28 animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
+              className="h-28 animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-700"
             />
           ))}
         </div>
