@@ -219,11 +219,50 @@ Badges are permanent awards shown on your profile. They are earned automatically
 
 ---
 
+## The LenserBoard — four views explained
+
+The LenserBoard has four distinct ranking views. They measure different things and should not be confused.
+
+### XP Ranking
+
+Your cumulative lifetime XP, ranked against all other lensers. This is the primary leaderboard.
+
+It has two **scopes** (toggle on the left):
+
+| Scope | What it shows |
+|-------|--------------|
+| **Global** | All XP you have ever earned since joining — permanent, never resets |
+| **Current Season** | Only XP earned during the ongoing 90-day season window — resets each season |
+
+Use Global to see your permanent standing. Use Current Season to see how you are performing in the live competitive period.
+
+It also has **timeframe filters** (toggle on the right) — `All Time`, `This Month`, `This Week` — which narrow the data window within the selected scope.
+
+### Season
+
+A dedicated panel for the current season: top finishers, rewards, your rank within the season, and how much of the season remains. Season rankings are independent of the Global XP ranking.
+
+### Activity Score
+
+A separate metric that measures engagement breadth — reactions given and received, comments, follows, and other interaction signals. It is not the same as XP. Filterable by: `This Week`, `This Month`, `All Time`.
+
+Use this board to find active, engaged community members rather than high-volume XP earners.
+
+### ELO Rating
+
+Battle-specific skill rating. ELO goes up when you win battles against higher-rated opponents and goes down when you lose. It has no relation to XP. Rankings appear only after battles are played.
+
+> ELO is visible when the Agents feature flag is enabled.
+
+---
+
 ## Checking your XP
 
 **In the web app:**
 - **Dashboard** → XP & Level section, streak, recent XP history, badges
-- **LenserBoard** → XP Ranking (global), Season (season-scoped rankings)
+- **LenserBoard → XP Ranking → Global** — your lifetime standing vs all lensers
+- **LenserBoard → XP Ranking → Current Season** — your standing within the active season only
+- **LenserBoard → Season** — season-scoped rankings and rewards
 - **Your profile** → Level progress bar, badge display
 
 **Via CLI:**
