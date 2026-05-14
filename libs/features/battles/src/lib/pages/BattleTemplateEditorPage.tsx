@@ -2,15 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { FileText, Settings2, Trash2 } from 'lucide-react'
+import { BookOpen, Settings2, Trash2 } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 
 import { battlesRepository } from '@lenserfight/data/repositories'
 import type { BattleTemplateRecord, CreateTemplateInput } from '@lenserfight/data/repositories'
-import { Button } from '@lenserfight/ui/components'
-import { StepWizard } from '@lenserfight/ui/components'
+import { Badge, Button, HelpButton, StepWizard } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Input, TextArea } from '@lenserfight/ui/forms'
-import { AnimatePresence, motion } from 'framer-motion'
 
 export interface BattleTemplateEditorPageProps {
   onSuccess?: () => void
@@ -24,22 +23,19 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     label: 'Brief',
     title: 'Task brief',
     description: 'Give your template a title and write the task prompt that contenders will respond to.',
-    icon: <FileText size={16} />,
+    action: (
+      <div className="flex items-center gap-2">
+        <Badge color="purple" variant="outline">Template</Badge>
+        <HelpButton path="/tutorials/battle-walkthroughs/your-first-battle" label="About templates" />
+      </div>
+    ),
   },
   {
     label: 'Settings',
     title: 'Template settings',
     description: 'Choose a category, contender limit, and whether to share publicly.',
-    icon: <Settings2 size={16} />,
+    action: <HelpButton path="/how-to/battles/create-a-battle" label="Battle templates" />,
   },
-]
-
-const CATEGORY_OPTIONS = [
-  { value: '', label: 'Uncategorized' },
-  { value: 'creative', label: 'Creative' },
-  { value: 'technical', label: 'Technical' },
-  { value: 'business', label: 'Business' },
-  { value: 'gaming', label: 'Gaming' },
 ]
 
 interface FormState {
@@ -59,6 +55,16 @@ const INITIAL: FormState = {
   maxContenders: 2,
   isPublic: false,
 }
+
+const CATEGORY_OPTIONS: { value: string; label: string; description: string }[] = [
+  { value: '', label: 'Uncategorized', description: 'No specific category' },
+  { value: 'creative', label: 'Creative', description: 'Writing, art, storytelling' },
+  { value: 'technical', label: 'Technical', description: 'Code, engineering, data' },
+  { value: 'business', label: 'Business', description: 'Strategy, marketing, ops' },
+  { value: 'gaming', label: 'Gaming', description: 'Game design, narratives' },
+]
+
+const CONTENDER_OPTIONS = [2, 4, 8, 16]
 
 function recordToForm(rec: BattleTemplateRecord): FormState {
   return {
@@ -196,6 +202,7 @@ export function BattleTemplateEditorPage({ onSuccess, onClose }: BattleTemplateE
         isCompleting={busy}
         nextLabel="Next"
         completeLabel={isEdit ? 'Save Template' : 'Create Template'}
+        completeIcon={<BookOpen size={15} className="mr-1.5" />}
         stepValidity={stepValidity}
         onStepClick={go}
       >
@@ -208,12 +215,13 @@ export function BattleTemplateEditorPage({ onSuccess, onClose }: BattleTemplateE
             animate="center"
             exit="exit"
           >
+
             {/* ── Step 0: Task brief ──────────────────────────────────── */}
             {step === 0 && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                    Title <span className="text-status-red">*</span>
+                    Template title
                   </label>
                   <Input
                     type="text"
@@ -244,70 +252,95 @@ export function BattleTemplateEditorPage({ onSuccess, onClose }: BattleTemplateE
                   <TextArea
                     value={form.taskPrompt}
                     onChange={(e) => setForm((s) => ({ ...s, taskPrompt: e.target.value }))}
-                    placeholder="Write the full task brief that contenders will receive. Be specific about what a great response looks like."
-                    minRows={6}
+                    placeholder="Add context for participants and voters, e.g. what success looks like."
+                    minRows={4}
                     autoResize={false}
-                    className="font-mono text-sm"
                   />
-                  <p className="mt-1.5 text-xs text-greyscale-400">
-                    {form.taskPrompt.length.toLocaleString()} / 32,000 characters
-                  </p>
                 </div>
               </div>
             )}
 
             {/* ── Step 1: Settings ────────────────────────────────────── */}
             {step === 1 && (
-              <div className="space-y-5">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                      Category
-                    </label>
-                    <select
-                      value={form.category}
-                      onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))}
-                      className="w-full rounded-xl border border-surface-border bg-surface-base px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
-                    >
-                      {CATEGORY_OPTIONS.map((opt) => (
-                        <option key={opt.value || 'none'} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              <div className="space-y-6">
 
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                      Max contenders
-                    </label>
-                    <input
-                      type="number"
-                      min={2}
-                      max={16}
-                      value={form.maxContenders}
-                      onChange={(e) =>
-                        setForm((s) => ({ ...s, maxContenders: Math.max(2, Number(e.target.value) || 2) }))
-                      }
-                      className="w-full rounded-xl border border-surface-border bg-surface-base px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
-                    />
+                <div>
+                  <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-greyscale-400">
+                    Category
+                  </h4>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {CATEGORY_OPTIONS.map((opt) => (
+                      <Button
+                        key={opt.value || 'none'}
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setForm((s) => ({ ...s, category: opt.value }))}
+                        className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
+                          form.category === opt.value
+                            ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
+                            : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-semibold ${form.category === opt.value ? 'text-primary-yellow-600 dark:text-primary-yellow-400' : 'text-greyscale-900 dark:text-greyscale-50'}`}>
+                            {opt.label}
+                          </p>
+                          <p className="text-xs text-greyscale-400 mt-0.5">{opt.description}</p>
+                        </div>
+                      </Button>
+                    ))}
                   </div>
                 </div>
 
-                <label className="flex items-center gap-3 rounded-2xl border border-surface-border bg-surface-base px-4 py-3 cursor-pointer hover:border-greyscale-400 dark:hover:border-greyscale-600 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={form.isPublic}
-                    onChange={(e) => setForm((s) => ({ ...s, isPublic: e.target.checked }))}
-                    className="h-4 w-4 accent-primary-yellow-500"
-                  />
-                  <div className="text-sm">
-                    <div className="font-semibold text-greyscale-900 dark:text-greyscale-50">Public template</div>
-                    <div className="text-xs text-greyscale-400 mt-0.5">
-                      Anyone can find this template in the public gallery and start a battle from it.
-                    </div>
+                <div className="border-t border-surface-border pt-6">
+                  <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-greyscale-400">
+                    Max contenders
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {CONTENDER_OPTIONS.map((n) => (
+                      <Button
+                        key={n}
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setForm((s) => ({ ...s, maxContenders: n }))}
+                        className={`!rounded-xl !border-2 !px-4 !py-2 !text-sm !font-semibold !transition-colors ${
+                          form.maxContenders === n
+                            ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 !text-primary-yellow-600 hover:!bg-primary-yellow-500/5 dark:!text-primary-yellow-400'
+                            : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent !text-greyscale-700 dark:!text-greyscale-300'
+                        }`}
+                      >
+                        {n}
+                      </Button>
+                    ))}
                   </div>
-                </label>
+                </div>
+
+                <div className="border-t border-surface-border pt-6">
+                  <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-greyscale-400">
+                    Visibility
+                  </h4>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setForm((s) => ({ ...s, isPublic: !s.isPublic }))}
+                    className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
+                      form.isPublic
+                        ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
+                        : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold ${form.isPublic ? 'text-primary-yellow-600 dark:text-primary-yellow-400' : 'text-greyscale-900 dark:text-greyscale-50'}`}>
+                        {form.isPublic ? 'Public template' : 'Private template'}
+                      </p>
+                      <p className="text-xs text-greyscale-400 mt-0.5">
+                        {form.isPublic
+                          ? 'Anyone can find this template in the public gallery and start a battle from it.'
+                          : 'Only you can see and use this template.'}
+                      </p>
+                    </div>
+                  </Button>
+                </div>
 
                 {isEdit && (
                   <div className="border-t border-surface-border pt-4">
@@ -324,6 +357,7 @@ export function BattleTemplateEditorPage({ onSuccess, onClose }: BattleTemplateE
                 )}
               </div>
             )}
+
           </motion.div>
         </AnimatePresence>
       </StepWizard>
