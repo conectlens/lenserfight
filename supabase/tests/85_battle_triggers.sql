@@ -97,7 +97,7 @@ SELECT ok(
     WHERE n.nspname  = 'public'
       AND cl.relname = 'notifications'
       AND c.conname  = 'notifications_type_check'
-      AND c.consrc   LIKE '%battle_won%'
+      AND pg_get_constraintdef(c.oid) LIKE '%battle_won%'
   ),
   'battle_won is present in notifications_type_check'
 );
