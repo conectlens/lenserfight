@@ -43,6 +43,8 @@ interface LenserProfileHeaderProps {
   onManageAgents?: () => void
   onEditAgent?: () => void
   onControlRoom?: () => void
+  /** agents.ai_lensers.id — required for AI profiles so fn_update_agent_profile receives the correct ID */
+  agentLenserId?: string
 }
 
 export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
@@ -55,6 +57,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
   onManageAgents,
   onEditAgent,
   onControlRoom,
+  agentLenserId,
 }) => {
   const { updateLenserProfile } = useLenser()
 
@@ -92,7 +95,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
       let updated: Lenser
       if (lenser.type === 'ai') {
         // AI agent profiles are edited via the secure ownership-checked RPC
-        await agentsService.updateAgentProfile(lenser.id, {
+        await agentsService.updateAgentProfile(agentLenserId ?? lenser.id, {
           display_name: data.display_name,
           avatar_url: data.avatar_url,
           banner_url: data.banner_url,
