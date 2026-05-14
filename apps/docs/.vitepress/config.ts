@@ -2089,6 +2089,27 @@ export default defineConfig({
             { text: 'Trigger Rule Schema', link: '/en/reference/automation/trigger-rule-schema' },
           ],
         },
+        {
+          text: 'Canonical Formats',
+          collapsed: true,
+          items: [
+            { text: 'LENS.MD (native)', link: '/en/reference/automation/formats/lens-md' },
+            { text: 'LENSER.MD (native)', link: '/en/reference/automation/formats/lenser-md-native' },
+            { text: 'COLENS.MD (native)', link: '/en/reference/automation/formats/colens-md-native' },
+            { text: 'BATTLE.MD', link: '/en/reference/automation/formats/battle-md' },
+            { text: 'TEAM.MD', link: '/en/reference/automation/formats/team-md' },
+            { text: 'LENS.md (legacy)', link: '/en/reference/automation/formats/lens-md-legacy' },
+            { text: 'LENSER.MD (legacy)', link: '/en/reference/automation/formats/lenser-md-legacy' },
+            { text: 'AGENT_TEAM.md', link: '/en/reference/automation/formats/agent-team-md' },
+            { text: 'TOOL.md', link: '/en/reference/automation/formats/tool-md' },
+            { text: 'COLENS.MD (legacy)', link: '/en/reference/automation/formats/colens-md-legacy' },
+            { text: 'PRIVATE_BATTLE.md', link: '/en/reference/automation/formats/private-battle-md' },
+            { text: 'SKILL.md', link: '/en/reference/automation/formats/skill-md' },
+            { text: 'MEMORY_POLICY.md', link: '/en/reference/automation/formats/memory-policy-md' },
+            { text: 'EVALUATION.md', link: '/en/reference/automation/formats/evaluation-md' },
+            { text: 'RUN_REPORT.md', link: '/en/reference/automation/formats/run-report-md' },
+          ],
+        },
       ],
       '/en/reference/community-api/': [
         {
