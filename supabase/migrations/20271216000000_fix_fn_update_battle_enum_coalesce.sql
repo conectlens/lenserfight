@@ -1,18 +1,35 @@
--- Fix COALESCE type mismatch in fn_update_battle.
--- p_battle_type and p_voter_eligibility are text params but the table columns are
--- battles.battle_type_enum and battles.voter_eligibility_enum respectively.
--- Cast the text params to the enum types so COALESCE can match them.
+-- Fix COALESCE type mismatches in fn_update_battle.
+--
+--   1. p_battle_type / p_voter_eligibility arrive as text but the underlying
+--      columns are battles.battle_type_enum / battles.voter_eligibility_enum.
+--      Cast the text params to the enum types so COALESCE can match them.
+--
+--   2. battles.battles.forum_thread_id is uuid (FK -> content.threads.id), so
+--      declaring p_forum_thread_id as text breaks COALESCE at plan time with
+--      "COALESCE types text and uuid cannot be matched" — this fails every
+--      battle update from the wizard, including draft autosaves. Receive the
+--      parameter as uuid, and cast the returned column back to text so the
+--      RETURNS TABLE shape (forum_thread_id text) stays stable for callers
+--      that already consume the JSON string form.
+--
+-- The OR REPLACE keeps the function identity (same arg names, same arg list);
+-- the prior text overload is removed below to prevent PostgREST resolving an
+-- ambiguous signature.
+
+DROP FUNCTION IF EXISTS "public"."fn_update_battle"(
+  uuid, text, text, text, text, jsonb, uuid, uuid, text
+);
 
 CREATE OR REPLACE FUNCTION "public"."fn_update_battle"(
   "p_battle_id"        uuid,
-  "p_title"            text    DEFAULT NULL,
-  "p_task_prompt"      text    DEFAULT NULL,
-  "p_battle_type"      text    DEFAULT NULL,
-  "p_voter_eligibility" text   DEFAULT NULL,
-  "p_handicap_config"  jsonb   DEFAULT NULL,
-  "p_workflow_id"      uuid    DEFAULT NULL,
-  "p_lens_id"          uuid    DEFAULT NULL,
-  "p_forum_thread_id"  text    DEFAULT NULL
+  "p_title"            text  DEFAULT NULL,
+  "p_task_prompt"      text  DEFAULT NULL,
+  "p_battle_type"      text  DEFAULT NULL,
+  "p_voter_eligibility" text DEFAULT NULL,
+  "p_handicap_config"  jsonb DEFAULT NULL,
+  "p_workflow_id"      uuid  DEFAULT NULL,
+  "p_lens_id"          uuid  DEFAULT NULL,
+  "p_forum_thread_id"  uuid  DEFAULT NULL
 )
 RETURNS TABLE(
   "id"                   uuid,
@@ -59,8 +76,8 @@ BEGIN
     battle_type       = COALESCE(p_battle_type::battles.battle_type_enum,              b.battle_type),
     voter_eligibility = COALESCE(p_voter_eligibility::battles.voter_eligibility_enum,  b.voter_eligibility),
     handicap_config   = COALESCE(p_handicap_config,                                    b.handicap_config),
-    workflow_id       = COALESCE(p_workflow_id,                                         b.workflow_id),
-    lens_id           = COALESCE(p_lens_id,                                             b.lens_id),
+    workflow_id       = COALESCE(p_workflow_id,                                        b.workflow_id),
+    lens_id           = COALESCE(p_lens_id,                                            b.lens_id),
     forum_thread_id   = COALESCE(p_forum_thread_id,                                    b.forum_thread_id)
   WHERE b.id = p_battle_id
     AND b.creator_lenser_id = v_lenser_id
@@ -68,9 +85,21 @@ BEGIN
     b.id, b.slug, b.title, b.task_prompt, b.status::text, b.total_vote_count,
     b.published_at, b.voting_opens_at, b.voting_closes_at,
     b.battle_type::text, b.voter_eligibility::text, b.handicap_config,
-    b.creator_lenser_id, b.forum_thread_id, b.workflow_id, b.lens_id,
+    b.creator_lenser_id, b.forum_thread_id::text, b.workflow_id, b.lens_id,
     b.execution_starts_at, b.auto_publish, b.voting_duration_hours,
     b.vote_velocity, b.og_image_url, b.winner_contender_id,
     b.parent_battle_id, b.deleted_at;
 END;
 $$;
+
+ALTER FUNCTION "public"."fn_update_battle"(
+  uuid, text, text, text, text, jsonb, uuid, uuid, uuid
+) OWNER TO postgres;
+
+REVOKE ALL ON FUNCTION "public"."fn_update_battle"(
+  uuid, text, text, text, text, jsonb, uuid, uuid, uuid
+) FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION "public"."fn_update_battle"(
+  uuid, text, text, text, text, jsonb, uuid, uuid, uuid
+) TO authenticated, service_role;
