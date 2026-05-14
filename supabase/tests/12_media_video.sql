@@ -31,14 +31,15 @@ SELECT throws_ok(
       duration_seconds, external_url
     )
     SELECT
-      (SELECT id FROM lensers.profiles LIMIT 1),
+      (SELECT id FROM tenancy.workspaces LIMIT 1),
       (SELECT id FROM lensers.profiles LIMIT 1),
       'video',
       'test-zero-duration',
       0,
       'https://example.com/test.mp4'
   $$,
-  'P0001',
+  '23514',
+  NULL,
   'duration_seconds = 0 should violate CHECK constraint'
 );
 
@@ -50,14 +51,15 @@ SELECT throws_ok(
       duration_seconds, external_url
     )
     SELECT
-      (SELECT id FROM lensers.profiles LIMIT 1),
+      (SELECT id FROM tenancy.workspaces LIMIT 1),
       (SELECT id FROM lensers.profiles LIMIT 1),
       'video',
       'test-too-long-duration',
       301,
       'https://example.com/test.mp4'
   $$,
-  'P0001',
+  '23514',
+  NULL,
   'duration_seconds = 301 should violate CHECK constraint'
 );
 
@@ -69,7 +71,7 @@ SELECT lives_ok(
       duration_seconds, external_url
     )
     SELECT
-      (SELECT id FROM lensers.profiles LIMIT 1),
+      (SELECT id FROM tenancy.workspaces LIMIT 1),
       (SELECT id FROM lensers.profiles LIMIT 1),
       'image',
       'test-null-duration',
