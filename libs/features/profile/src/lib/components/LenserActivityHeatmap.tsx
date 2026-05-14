@@ -8,6 +8,7 @@ interface LenserActivityHeatmapProps {
 }
 
 export const LenserActivityHeatmap: React.FC<LenserActivityHeatmapProps> = ({ data }) => {
+  const currentYear = new Date().getFullYear()
   const months = [
     'Jan',
     'Feb',
@@ -32,14 +33,14 @@ export const LenserActivityHeatmap: React.FC<LenserActivityHeatmapProps> = ({ da
 
   const sortedData = [...data]
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(-364)
+    .slice(-365)
 
   return (
     <Card className="p-6 mb-8 overflow-hidden">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-bold text-gray-900 dark:text-white">Lenser Activity</h3>
         <div className="text-sm text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1 flex items-center gap-2">
-          2024 <span className="text-xs">▼</span>
+          {currentYear} <span className="text-xs">▼</span>
         </div>
       </div>
 
@@ -60,8 +61,8 @@ export const LenserActivityHeatmap: React.FC<LenserActivityHeatmapProps> = ({ da
               <span>Fri</span>
             </div>
 
-            <div className="flex-1 flex gap-1 h-[100px] flex-wrap flex-col content-start">
-              {sortedData.map((point, idx) => (
+            <div className="flex-1 flex gap-1 h-[108px] flex-wrap flex-col content-start">
+              {sortedData.map((point) => (
                 <div
                   key={point.date}
                   className={`w-3 h-3 rounded-sm ${getColor(point.count)}`}
