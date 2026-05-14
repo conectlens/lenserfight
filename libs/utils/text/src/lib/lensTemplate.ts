@@ -154,6 +154,40 @@ export function renderLensContentForCopy(
     .join('')
 }
 
+export async function copyTextToClipboard(text: string): Promise<void> {
+  let clipboardError: unknown
+
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return
+    } catch (error) {
+      clipboardError = error
+    }
+  }
+
+  if (typeof document !== 'undefined') {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.setAttribute('readonly', '')
+    textarea.style.position = 'fixed'
+    textarea.style.top = '-9999px'
+    textarea.style.left = '-9999px'
+    document.body.appendChild(textarea)
+    textarea.select()
+
+    try {
+      if (document.execCommand('copy')) {
+        return
+      }
+    } finally {
+      document.body.removeChild(textarea)
+    }
+  }
+
+  throw clipboardError instanceof Error ? clipboardError : new Error('Clipboard write failed')
+}
+
 // ─── Mismatch Detection ──────────────────────────────────────────────────
 
 export interface ParamMismatch {
