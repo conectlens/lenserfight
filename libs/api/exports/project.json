@@ -1,0 +1,9 @@
+{
+  "name": "api-exports",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api/exports/src",
+  "projectType": "library",
+  "tags": ["layer:api", "scope:public", "license:shared"],
+  "// targets": "to see all targets run: nx show project api-exports --web",
+  "targets": {}
+}
