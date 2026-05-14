@@ -1,6 +1,6 @@
 import { LensVersionParam } from '@lenserfight/types'
 import { copyTextToClipboard, renderLensContentForCopy } from '@lenserfight/utils/text'
-import { Check, Copy, GitFork, Loader2, Terminal } from 'lucide-react'
+import { Check, Copy, Terminal } from 'lucide-react'
 import React from 'react'
 
 import { LensContentReadonly } from './LensContentReadonly'
@@ -19,9 +19,6 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({
   content,
   versionParams,
   onCopy,
-  onFork,
-  canFork = false,
-  isForking = false,
 }) => {
   const safeContent = content ?? ''
   const [copied, setCopied] = React.useState(false)

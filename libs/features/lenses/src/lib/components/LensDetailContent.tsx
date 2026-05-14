@@ -1,8 +1,8 @@
-import { Pencil } from 'lucide-react'
-import { Copy, GitFork, Check, Loader2 } from 'lucide-react'
-import React from 'react'
 import { LensVersionParam } from '@lenserfight/types'
 import { copyTextToClipboard, renderLensContentForCopy } from '@lenserfight/utils/text'
+import { Check, Copy, GitFork, Loader2, Pencil } from 'lucide-react'
+import React from 'react'
+
 import { LensContentReadonly } from './LensContentReadonly'
 
 interface LensDetailContentProps {
