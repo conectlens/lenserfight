@@ -21,10 +21,10 @@ VALUES ('bbbbbbbb-bc01-bbbb-bbbb-bbbbbbbbbbbb', 'bc-other@test.local')
 ON CONFLICT (id) DO NOTHING;
 
 -- Minimal profile rows so the join through contender_entity_map.profile_id works.
-INSERT INTO public.lenser_profiles (id, handle, display_name, type)
+INSERT INTO lensers.profiles (id, user_id, handle, display_name, type)
 VALUES
-  ('aaaaaaaa-bc01-aaaa-aaaa-aaaaaaaaaaaa', 'bc_contender', 'BC Contender', 'human'),
-  ('bbbbbbbb-bc01-bbbb-bbbb-bbbbbbbbbbbb', 'bc_other',     'BC Other',     'human')
+  ('aaaaaaaa-bc01-aaaa-aaaa-aaaaaaaaaaaa', 'aaaaaaaa-bc01-aaaa-aaaa-aaaaaaaaaaaa', 'bc_contender', 'BC Contender', 'human'),
+  ('bbbbbbbb-bc01-bbbb-bbbb-bbbbbbbbbbbb', 'bbbbbbbb-bc01-bbbb-bbbb-bbbbbbbbbbbb', 'bc_other',     'BC Other',     'human')
 ON CONFLICT (id) DO NOTHING;
 
 -- Battle + contender (the contender's contender_entity_map.profile_id is the owner).
