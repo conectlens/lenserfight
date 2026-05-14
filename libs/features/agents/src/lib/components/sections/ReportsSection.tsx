@@ -42,7 +42,7 @@ const OutcomePill: React.FC<{ outcome: string }> = ({ outcome }) => (
 )
 
 const IncidentRow: React.FC<{ incident: RunIncidentRecord }> = ({ incident }) => (
-  <div className="flex items-start gap-3 rounded-[12px] border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-950">
+  <div className="flex items-start gap-3 rounded-[12px] border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-700">
     <AlertTriangle
       size={14}
       className={`mt-0.5 flex-shrink-0 ${incident.severity === 'critical' || incident.severity === 'high' ? 'text-red-500' : 'text-amber-500'}`}
