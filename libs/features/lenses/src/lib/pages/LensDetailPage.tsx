@@ -122,7 +122,7 @@ export const LensDetailPage: React.FC = () => {
   })
   const { data: latestPublishedDetail, isLoading: isLoadingLatestDetail } = useLensVersionDetail(
     latestPublished?.id,
-    { enabled: shouldLoadLatestVersionDetail, staleTime: 120_000 }
+    { enabled: !!latestPublished, staleTime: 120_000 }
   )
 
   // Explicit version selection takes precedence; falls back to latest published
