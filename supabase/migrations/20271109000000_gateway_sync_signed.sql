@@ -53,8 +53,8 @@ BEGIN
     RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
   END IF;
   IF NOT EXISTS (
-    SELECT 1 FROM agents.gateway_devices
-     WHERE device_id = p_device_id AND owner_id = v_uid
+    SELECT 1 FROM agents.gateway_devices d
+     WHERE d.device_id = p_device_id AND d.owner_id = v_uid
   ) THEN
     RAISE EXCEPTION 'device_not_owned' USING ERRCODE = '42501';
   END IF;
