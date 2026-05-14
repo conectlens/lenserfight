@@ -1,0 +1,13 @@
+{
+  "name": "lens-governance",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/lens-governance/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:lens-governance",
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {}
+}
