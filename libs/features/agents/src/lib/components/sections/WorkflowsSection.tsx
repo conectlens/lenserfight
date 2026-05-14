@@ -278,7 +278,7 @@ const LinkCard: React.FC<{
 }> = ({ to, title, description }) => (
   <Link
     to={to}
-    className="rounded-[22px] border border-gray-200 bg-gray-50 p-4 transition hover:border-amber-300 hover:bg-amber-50/60 dark:border-gray-800 dark:bg-gray-950 dark:hover:border-amber-500/40 dark:hover:bg-amber-500/10"
+    className="rounded-[22px] border border-gray-200 bg-gray-50 p-4 transition hover:border-amber-300 hover:bg-amber-50/60 dark:border-gray-800 dark:bg-gray-700 dark:hover:border-amber-500/40 dark:hover:bg-amber-500/10"
   >
     <div className="text-sm font-semibold text-gray-900 dark:text-white">{title}</div>
     <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
@@ -318,143 +318,142 @@ const WorkflowLibraryCard: React.FC<{
   onDeleteAssignment,
   builderHref,
 }) => (
-  <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {workflow.title}
-          </h3>
-          <span className="rounded-full border border-gray-200 px-2.5 py-0.5 text-[11px] font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300">
-            {workflow.visibility}
-          </span>
-          {workflow.parent_workflow_id && (
-            <span className="rounded-full border border-amber-200 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
-              Fork
+    <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              {workflow.title}
+            </h3>
+            <span className="rounded-full border border-gray-200 px-2.5 py-0.5 text-[11px] font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300">
+              {workflow.visibility}
             </span>
-          )}
-        </div>
-        <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
-          {workflow.description || 'No workflow description yet.'}
-        </p>
-      </div>
-
-      <Link
-        to={builderHref}
-        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
-      >
-        Open builder
-      </Link>
-    </div>
-
-    <div className="mt-4 grid gap-3 md:grid-cols-4">
-      <SummaryChip label="Nodes" value={String(workflow.node_count ?? 0)} />
-      <SummaryChip label="Assignments" value={String(assignments.length)} />
-      <SummaryChip label="Schedules" value={String(scheduleCount)} />
-      <SummaryChip
-        label="Latest dispatch"
-        value={latestSchedule?.last_dispatch_status ?? 'Not scheduled'}
-      />
-    </div>
-
-    <div className="mt-4 rounded-[20px] border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
-      <div className="grid gap-2 md:grid-cols-2">
-        <span>
-          Updated {formatDateTime(workflow.updated_at)}
-        </span>
-        <span>
-          Next schedule {latestSchedule?.next_run_at ? formatDateTime(latestSchedule.next_run_at) : 'Not scheduled'}
-        </span>
-      </div>
-      {latestSchedule?.last_run_at && (
-        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-          Last run {formatDateTime(latestSchedule.last_run_at)}
-        </p>
-      )}
-    </div>
-
-    {isAgentOwner && (
-      <div className="mt-4 space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={onNewAssignment}
-            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
-          >
-            <Plus size={12} />
-            New assignment
-          </button>
+            {workflow.parent_workflow_id && (
+              <span className="rounded-full border border-amber-200 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                Fork
+              </span>
+            )}
+          </div>
+          <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+            {workflow.description || 'No workflow description yet.'}
+          </p>
         </div>
 
-        {assignments.length === 0 ? (
-          <div className="rounded-[18px] border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-            No assignments yet. Assign this workflow to the selected AI lenser or to a builder team before scheduling it.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {assignments.map((assignment) => (
-              <div
-                key={assignment.id}
-                className="flex items-center justify-between rounded-[18px] border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-800 dark:bg-gray-950"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    {assignment.assignee_kind}
-                  </span>
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                      assignment.is_active
-                        ? 'border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
-                        : 'border-gray-200 text-gray-500 dark:border-gray-700 dark:text-gray-400'
-                    }`}
-                  >
-                    {assignment.is_active ? 'active' : 'paused'}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  {assignment.is_active && (
-                    <button
-                      type="button"
-                      disabled={isDispatching}
-                      onClick={() => onRunNow(assignment)}
-                      className="inline-flex items-center gap-1.5 rounded-2xl border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-500/30 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
-                    >
-                      {isDispatching ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
-                      Run
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => onEditAssignment(assignment)}
-                    className="rounded-2xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDeleteAssignment(assignment)}
-                    className="rounded-2xl border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+        <Link
+          to={builderHref}
+          className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+        >
+          Open builder
+        </Link>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-4">
+        <SummaryChip label="Nodes" value={String(workflow.node_count ?? 0)} />
+        <SummaryChip label="Assignments" value={String(assignments.length)} />
+        <SummaryChip label="Schedules" value={String(scheduleCount)} />
+        <SummaryChip
+          label="Latest dispatch"
+          value={latestSchedule?.last_dispatch_status ?? 'Not scheduled'}
+        />
+      </div>
+
+      <div className="mt-4 rounded-[20px] border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+        <div className="grid gap-2 md:grid-cols-2">
+          <span>
+            Updated {formatDateTime(workflow.updated_at)}
+          </span>
+          <span>
+            Next schedule {latestSchedule?.next_run_at ? formatDateTime(latestSchedule.next_run_at) : 'Not scheduled'}
+          </span>
+        </div>
+        {latestSchedule?.last_run_at && (
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Last run {formatDateTime(latestSchedule.last_run_at)}
+          </p>
         )}
       </div>
-    )}
 
-    {!isAgentOwner && isOwner && assignments.length > 0 && (
-      <div className="mt-4 rounded-[18px] border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
-        Assignment controls are only available inside the selected AI lenser control room.
-      </div>
-    )}
-  </div>
-)
+      {isAgentOwner && (
+        <div className="mt-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={onNewAssignment}
+              className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+            >
+              <Plus size={12} />
+              New assignment
+            </button>
+          </div>
+
+          {assignments.length === 0 ? (
+            <div className="rounded-[18px] border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              No assignments yet. Assign this workflow to the selected AI lenser or to a builder team before scheduling it.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {assignments.map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="flex items-center justify-between rounded-[18px] border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-800 dark:bg-gray-700"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {assignment.assignee_kind}
+                    </span>
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${assignment.is_active
+                          ? 'border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
+                          : 'border-gray-200 text-gray-500 dark:border-gray-700 dark:text-gray-400'
+                        }`}
+                    >
+                      {assignment.is_active ? 'active' : 'paused'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    {assignment.is_active && (
+                      <button
+                        type="button"
+                        disabled={isDispatching}
+                        onClick={() => onRunNow(assignment)}
+                        className="inline-flex items-center gap-1.5 rounded-2xl border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-500/30 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
+                      >
+                        {isDispatching ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
+                        Run
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => onEditAssignment(assignment)}
+                      className="rounded-2xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteAssignment(assignment)}
+                      className="rounded-2xl border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!isAgentOwner && isOwner && assignments.length > 0 && (
+        <div className="mt-4 rounded-[18px] border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+          Assignment controls are only available inside the selected AI lenser control room.
+        </div>
+      )}
+    </div>
+  )
 
 const SummaryChip: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="rounded-[18px] border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+  <div className="rounded-[18px] border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-700">
     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
       {label}
     </p>
