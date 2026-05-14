@@ -14,7 +14,7 @@ import { isValidUUID } from '@lenserfight/utils/validation'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GitBranch, HelpCircle, Info, Layers, Swords, Trophy } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { BattleAutomationSettings } from './BattleAutomationSettings'
@@ -24,6 +24,14 @@ import { HandicapConfigPanel } from './HandicapConfigPanel'
 import { LensAssignmentStep } from './LensAssignmentStep'
 import type { LenserSearchResult } from './LenserSearchPicker'
 import { VoterEligibilitySelector } from './VoterEligibilitySelector'
+import {
+  type BattleFormat,
+  FORMAT_LABEL,
+  getDefaultBattleTypeForFormat,
+  getTypeStepCopy,
+  isBattleTypeAllowedForFormat,
+  isCompatibleCombination,
+} from './battleCompatibility'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../../types/battle.types'
 import type { LensViewModel } from '@lenserfight/types'
@@ -58,17 +66,12 @@ const stepAction = (path: string, label: string) => (
   <HelpButton path={path} label={label} />
 )
 
-const WIZARD_STEPS: WizardStepConfig[] = [
+const BASE_WIZARD_STEPS: WizardStepConfig[] = [
   {
     label: 'Format',
     title: 'Choose battle format',
     description: 'Select whether to use a workflow, a single lens prompt, or start a Lenser Battle.',
-    action: (
-      <div className="flex items-center gap-2">
-        <Badge color="purple" variant="outline">Experimental</Badge>
-        {stepAction('/tutorials/battle-walkthroughs/your-first-battle', 'Your first battle')}
-      </div>
-    ),
+    action: stepAction('/tutorials/battle-walkthroughs/your-first-battle', 'Your first battle'),
   },
   {
     label: 'Source',
@@ -148,6 +151,48 @@ const DEFAULT_HANDICAP: AIHandicapConfig = {
 const AI_BATTLE_TYPES: BattleType[] = ['ai_vs_ai', 'human_vs_ai', 'human_vs_human_ai_votes', 'lenser_battle']
 const AUTO_EXEC_TYPES: BattleType[] = ['ai_vs_ai', 'workflow_battle']
 
+// Step 0 format cards — declarative so visual hierarchy lives in data, not
+// triplicated JSX. `tier` drives the Recommended / Experimental badge surface.
+interface FormatCardConfig {
+  value: BattleFormat
+  title: string
+  subtitle: string
+  Icon: React.ComponentType<{ size?: number; className?: string }>
+  helpLabel: string
+  docsPath: string
+  tier: 'flagship' | 'standard' | 'experimental'
+}
+
+const FORMAT_CARDS: FormatCardConfig[] = [
+  {
+    value: 'workflow',
+    title: 'Workflow Battle',
+    subtitle: 'Multi-step lens workflow — ideal for AI benchmarking',
+    Icon: GitBranch,
+    helpLabel: 'About Workflow Battles',
+    docsPath: '/tutorials/battle-walkthroughs/workflow-battle',
+    tier: 'flagship',
+  },
+  {
+    value: 'lens',
+    title: 'Lens Battle',
+    subtitle: 'Use a single prompt lens',
+    Icon: Layers,
+    helpLabel: 'About Lens Battles',
+    docsPath: '/tutorials/battle-walkthroughs/lens-battle',
+    tier: 'standard',
+  },
+  {
+    value: 'lenser_battle',
+    title: 'Lenser Battle',
+    subtitle: 'Named lensers compete with their own setup',
+    Icon: Trophy,
+    helpLabel: 'About Lenser Battles',
+    docsPath: '/tutorials/battle-walkthroughs/lenser-battle',
+    tier: 'experimental',
+  },
+]
+
 // URLSearchParams.set coerces non-strings via String(), so writing `undefined`
 // produces the literal "undefined" — which then reads back as a truthy value
 // and corrupts every downstream check. Treat those sentinels as missing.
@@ -177,7 +222,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const { lenser } = useLenser()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { step, goToStep } = useWizardStep({ maxStep: WIZARD_STEPS.length - 1 })
+  const { step, goToStep } = useWizardStep({ maxStep: BASE_WIZARD_STEPS.length - 1 })
 
   const [direction, setDirection] = useState(1)
   const [submitting, setSubmitting] = useState(false)
@@ -202,9 +247,20 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // Steps 2–4 — battle config
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [battleType, setBattleType] = useState<BattleType>('human_vs_human_open_votes')
+  // Default executor: AI vs AI reinforces LenserFight's AI-arena positioning.
+  // Auto-corrected via useEffect below if it becomes incompatible with the
+  // selected format (e.g. on Lenser Battle).
+  const [battleType, setBattleType] = useState<BattleType>('ai_vs_ai')
   const [voterEligibility, setVoterEligibility] = useState<VoterEligibility>('open')
   const [handicap, setHandicap] = useState<AIHandicapConfig>(DEFAULT_HANDICAP)
+  // Non-blocking note shown when a Format change auto-cleared an incompatible
+  // Battle Type selection. Reframes the change as "updated for compatibility",
+  // not "we removed your choice".
+  const [compatibilityNote, setCompatibilityNote] = useState<{
+    previous: BattleType
+    next: BattleType
+    formatLabel: string
+  } | null>(null)
 
   // Execution context (funding source + model selection for AI battles)
   const [selectedProviderKey, setSelectedProviderKey] = useState('')
@@ -235,6 +291,22 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       setSelectedModelKey('')
     }
   }, [battleFunding.fundingSource, battleFunding.selectedLocalKeyId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Format → Type compatibility enforcement. When Format changes and the
+  // current Type is no longer in the matrix, snap to the format's recommended
+  // default and surface a non-blocking note. Deps are intentionally narrow
+  // (battleFormat only) so we don't loop on battleType changes.
+  useEffect(() => {
+    if (!battleFormat) return
+    if (isBattleTypeAllowedForFormat(battleFormat, battleType)) return
+    const recommended = getDefaultBattleTypeForFormat(battleFormat)
+    setCompatibilityNote({
+      previous: battleType,
+      next: recommended,
+      formatLabel: FORMAT_LABEL[battleFormat],
+    })
+    setBattleType(recommended)
+  }, [battleFormat]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Step 4 — scheduling (optional, only for ai_vs_ai / workflow_battle)
   const [scheduleEnabled, setScheduleEnabled] = useState(false)
@@ -402,7 +474,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // ── Navigation ───────────────────────────────────────────────────────────
 
   const handleBattleTypeChange = (type: BattleType) => {
+    // Defense-in-depth: matrix lives in the type selector, but reject any
+    // disallowed value here too in case a future caller bypasses the UI.
+    if (!isBattleTypeAllowedForFormat(battleFormat, type)) return
     setBattleType(type)
+    setCompatibilityNote(null)
     if (type === 'human_vs_human_ai_votes') {
       setVoterEligibility('ai_only')
     } else if (voterEligibility === 'ai_only') {
@@ -479,6 +555,16 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     setError(null)
     try {
       const resolvedBattleType: BattleType = battleFormat === 'lenser_battle' ? 'lenser_battle' : battleType
+
+      // Final compatibility gate — third validation tier matching the matrix.
+      // If this ever fires it means the UI permitted an invalid state; fail
+      // safely with a structured-ish error rather than corrupting a battle.
+      if (!isCompatibleCombination(battleFormat as BattleFormat | null, resolvedBattleType)) {
+        throw new Error(
+          `Battle type "${resolvedBattleType}" is not allowed for format "${battleFormat}". ` +
+          `Go back to the Type step and pick a compatible option.`
+        )
+      }
 
       const resolvedPrompt = description.trim() || (battleFormat === 'workflow'
         ? `Workflow battle: ${selectedWorkflowTitle || selectedWorkflowId}`
@@ -687,10 +773,19 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   const handleComplete = handleFinish
 
+  // Step 3 (Type) heading + description mutate with Format so users read
+  // Step 4 as a refinement of Step 1, not a parallel decision.
+  const wizardSteps = useMemo<WizardStepConfig[]>(() => {
+    const typeCopy = getTypeStepCopy(battleFormat)
+    return BASE_WIZARD_STEPS.map((s, idx) =>
+      idx === 3 ? { ...s, title: typeCopy.title, description: typeCopy.description } : s
+    )
+  }, [battleFormat])
+
   return (
     <div className="w-full">
       <StepWizard
-        steps={WIZARD_STEPS}
+        steps={wizardSteps}
         currentStep={step}
         onNext={handleNext}
         onBack={() => go(step - 1)}
@@ -719,92 +814,62 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             {/* ── Step 0: Format chooser ────────────────────────────── */}
             {step === 0 && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="flex flex-col gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setBattleFormat('lenser_battle')}
-                    className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
-                      battleFormat === 'lenser_battle'
-                        ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
-                        : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
-                    }`}
-                  >
-                    <Trophy
-                      size={28}
-                      className={battleFormat === 'lenser_battle' ? 'text-primary-yellow-600' : 'text-greyscale-400'}
-                    />
-                    <div>
-                      <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
-                        Lenser Battle
-                      </p>
-                      <p className="text-xs text-greyscale-400 mt-0.5">
-                        Named lensers compete with their own setup
-                      </p>
+                {FORMAT_CARDS.map((card) => {
+                  const isSelected = battleFormat === card.value
+                  return (
+                    <div key={card.value} className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setBattleFormat(card.value)}
+                        aria-pressed={isSelected}
+                        className={`relative !flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
+                          isSelected
+                            ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
+                            : card.tier === 'flagship'
+                              ? '!border-primary-yellow-500/40 hover:!border-primary-yellow-500 !bg-primary-yellow-500/[0.03] hover:!bg-primary-yellow-500/5'
+                              : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
+                        }`}
+                      >
+                        {card.tier === 'flagship' && (
+                          <span className="absolute right-3 top-3">
+                            <Badge color="yellow" variant="solid" size="sm">
+                              Recommended
+                            </Badge>
+                          </span>
+                        )}
+                        {card.tier === 'experimental' && (
+                          <span className="absolute right-3 top-3">
+                            <Badge color="purple" variant="outline" size="sm">
+                              Experimental
+                            </Badge>
+                          </span>
+                        )}
+                        <card.Icon
+                          size={28}
+                          className={
+                            isSelected
+                              ? 'text-primary-yellow-600'
+                              : card.tier === 'flagship'
+                                ? 'text-primary-yellow-500'
+                                : 'text-greyscale-400'
+                          }
+                        />
+                        <div>
+                          <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
+                            {card.title}
+                          </p>
+                          <p className="text-xs text-greyscale-400 mt-0.5">
+                            {card.subtitle}
+                          </p>
+                        </div>
+                      </Button>
+                      <div className="flex justify-center">
+                        <HelpButton path={card.docsPath} label={card.helpLabel} />
+                      </div>
                     </div>
-                  </Button>
-                  <div className="flex justify-center">
-                    <HelpButton path="/tutorials/battle-walkthroughs/lenser-battle" label="About Lenser Battles" />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setBattleFormat('workflow')}
-                    className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
-                      battleFormat === 'workflow'
-                        ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
-                        : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
-                    }`}
-                  >
-                    <GitBranch
-                      size={28}
-                      className={battleFormat === 'workflow' ? 'text-primary-yellow-600' : 'text-greyscale-400'}
-                    />
-                    <div>
-                      <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
-                        Workflow Battle
-                      </p>
-                      <p className="text-xs text-greyscale-400 mt-0.5">
-                        Use a connected lens workflow
-                      </p>
-                    </div>
-                  </Button>
-                  <div className="flex justify-center">
-                    <HelpButton path="/tutorials/battle-walkthroughs/workflow-battle" label="About Workflow Battles" />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setBattleFormat('lens')}
-                    className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
-                      battleFormat === 'lens'
-                        ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
-                        : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
-                    }`}
-                  >
-                    <Layers
-                      size={28}
-                      className={battleFormat === 'lens' ? 'text-primary-yellow-600' : 'text-greyscale-400'}
-                    />
-                    <div>
-                      <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
-                        Lens Battle
-                      </p>
-                      <p className="text-xs text-greyscale-400 mt-0.5">
-                        Use a single prompt lens
-                      </p>
-                    </div>
-                  </Button>
-                  <div className="flex justify-center">
-                    <HelpButton path="/tutorials/battle-walkthroughs/lens-battle" label="About Lens Battles" />
-                  </div>
-                </div>
+                  )
+                })}
               </div>
             )}
 
@@ -943,7 +1008,24 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             {/* ── Step 3: Battle Type ───────────────────────────────── */}
             {step === 3 && (
               <div className="space-y-4">
-                <BattleTypeSelector value={battleType} onChange={handleBattleTypeChange} />
+                {compatibilityNote && (
+                  <div
+                    role="status"
+                    className="rounded-2xl border border-primary-yellow-500/30 bg-primary-yellow-500/5 px-4 py-3 text-sm text-greyscale-700 dark:text-greyscale-200"
+                  >
+                    <p className="font-semibold">Selection updated for compatibility</p>
+                    <p className="mt-0.5 text-xs text-greyscale-500 dark:text-greyscale-400">
+                      {compatibilityNote.formatLabel} doesn&apos;t support that battle type, so we switched to{' '}
+                      the recommended option. You can change it below.
+                    </p>
+                  </div>
+                )}
+                <BattleTypeSelector
+                  value={battleType}
+                  onChange={handleBattleTypeChange}
+                  battleFormat={battleFormat}
+                  onChangeFormat={() => go(0)}
+                />
               </div>
             )}
 
