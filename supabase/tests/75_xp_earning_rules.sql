@@ -63,7 +63,7 @@ SELECT is(
   (SELECT base_xp FROM xp.rules
    WHERE action_key = 'TUTORIAL_COMPLETED'
      AND app_id = '00000000-0000-0000-0000-000000000001'),
-  60::numeric,
+  60,
   'TUTORIAL_COMPLETED base_xp should be 60'
 );
 
@@ -83,7 +83,7 @@ SELECT is(
   (SELECT cooldown_seconds FROM xp.rules
    WHERE action_key = 'STREAK_BONUS_14D'
      AND app_id = '00000000-0000-0000-0000-000000000001'),
-  1209600::numeric,
+  1209600,
   'STREAK_BONUS_14D cooldown_seconds should be 1209600 (14 days)'
 );
 
@@ -92,7 +92,7 @@ SELECT is(
   (SELECT base_xp FROM xp.rules
    WHERE action_key = 'INVITE_ACCEPTED'
      AND app_id = '00000000-0000-0000-0000-000000000001'),
-  100::numeric,
+  100,
   'INVITE_ACCEPTED base_xp should be 100'
 );
 
@@ -198,7 +198,8 @@ SELECT trigger_is(
   'xp',
   'level_ups',
   'trg_xp_levelup_badge_check',
-  'xp.fn_trigger_badge_check',
+  'xp',
+  'fn_trigger_badge_check',
   'trg_xp_levelup_badge_check should call xp.fn_trigger_badge_check'
 );
 
