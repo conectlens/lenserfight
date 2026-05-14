@@ -17,7 +17,7 @@ SELECT has_function(
 SELECT has_function(
   'execution',
   'fn_complete_async_run',
-  ARRAY['uuid', 'text', 'text', 'numeric', 'integer', 'integer', 'integer', 'smallint'],
+  ARRAY['uuid', 'text', 'text', 'bigint', 'integer', 'integer', 'numeric'],
   'execution.fn_complete_async_run should exist with AN columns'
 );
 
@@ -35,7 +35,7 @@ SELECT ok(
 SELECT ok(
   NOT has_function_privilege(
     'authenticated',
-    'execution.fn_complete_async_run(uuid, text, text, numeric, integer, integer, integer, smallint)',
+    'execution.fn_complete_async_run(uuid, text, text, bigint, integer, integer, numeric)',
     'EXECUTE'
   ),
   'fn_complete_async_run should NOT be executable by authenticated'
