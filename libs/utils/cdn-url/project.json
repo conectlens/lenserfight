@@ -1,0 +1,14 @@
+{
+  "name": "cdn-url",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/utils/cdn-url/src",
+  "projectType": "library",
+  "tags": [
+    "layer:utils",
+    "util:cdn",
+    "scope:shared",
+    "license:shared"
+  ],
+  "// targets": "to see all targets run: nx show project cdn-url --web",
+  "targets": {}
+}
