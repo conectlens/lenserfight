@@ -6,6 +6,7 @@ import { useReportContent } from '@lenserfight/features/home'
 import { useShareContext } from '@lenserfight/features/share'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
+import { ExportButton } from '@lenserfight/features/exports'
 import { SEOHead, Badge, Button, Card, DesktopFrame } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { SelectField } from '@lenserfight/ui/forms'
@@ -399,6 +400,16 @@ export const LensDetailPage: React.FC = () => {
               onFork={() => cloneLens(previewVersionId ?? null)}
               canFork={hasActiveLenserProfile}
               isForking={isCloning}
+              exportSlot={
+                <ExportButton
+                  kind="lens"
+                  slug={lens.id}
+                  title={lens.title ?? undefined}
+                  fetchPayload={async () => lens}
+                  className="rounded-2xl p-2.5"
+                  label=""
+                />
+              }
             />
           </Card>
 
@@ -456,6 +467,7 @@ export const LensDetailPage: React.FC = () => {
                     : 'Version history'}
                 </span>
               </button>
+
             </div>
 
             <DesktopFrame
