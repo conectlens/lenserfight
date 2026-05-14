@@ -16,6 +16,7 @@ const TYPES: {
   label: string
   description: string
   defaultEligibility: string
+  docsPath: string
 }[] = [
   {
     value: 'human_vs_human_open_votes',
@@ -23,6 +24,7 @@ const TYPES: {
     label: 'Human vs Human',
     description: 'Two human lensers compete. The community votes openly.',
     defaultEligibility: 'Open voting',
+    docsPath: '/how-to/battles/battle-types#human-vs-human',
   },
   {
     value: 'human_vs_ai',
@@ -30,6 +32,7 @@ const TYPES: {
     label: 'Human vs AI',
     description: 'Direct face-off between a human lenser and an AI model. Everyone can vote.',
     defaultEligibility: 'Open voting',
+    docsPath: '/how-to/battles/battle-types#human-vs-ai',
   },
   {
     value: 'ai_vs_ai',
@@ -37,6 +40,7 @@ const TYPES: {
     label: 'AI vs AI',
     description: 'Two AI models compete on the same Lens. The community judges the outputs.',
     defaultEligibility: 'Open voting',
+    docsPath: '/how-to/battles/battle-types#ai-vs-ai',
   },
   {
     value: 'human_vs_human_ai_votes',
@@ -44,6 +48,7 @@ const TYPES: {
     label: 'AI Judge',
     description: 'Two humans compete. An AI lenser casts weighted judging votes.',
     defaultEligibility: 'AI judge only',
+    docsPath: '/how-to/battles/battle-types#ai-judge',
   },
   {
     value: 'workflow_battle',
@@ -51,6 +56,7 @@ const TYPES: {
     label: 'Workflow Battle',
     description: 'Chain your lenses into a multi-step workflow and compete end-to-end.',
     defaultEligibility: 'Open voting',
+    docsPath: '/how-to/battles/battle-types#workflow-battle',
   },
   {
     value: 'lenser_battle',
@@ -58,6 +64,7 @@ const TYPES: {
     label: 'Lenser Battle',
     description: 'Named lensers compete using their own lens, model, and funding setup.',
     defaultEligibility: 'Configurable voting',
+    docsPath: '/how-to/battles/battle-types#lenser-battle',
   },
 ]
 
@@ -109,16 +116,24 @@ export function BattleTypeSelector({ value, onChange }: BattleTypeSelectorProps)
               }`}>
                 {t.description}
               </p>
-              <p className={`mt-2 text-xs font-semibold ${
-                isSelected ? 'opacity-60' : 'text-primary-yellow-600'
-              }`}>
-                {t.defaultEligibility}
-              </p>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <p className={`text-xs font-semibold ${
+                  isSelected ? 'opacity-60' : 'text-primary-yellow-600'
+                }`}>
+                  {t.defaultEligibility}
+                </p>
+                <span onClick={(e) => e.stopPropagation()}>
+                  <HelpButton
+                    path={t.docsPath}
+                    label="Learn more"
+                    className={isSelected ? 'opacity-60 hover:opacity-100' : ''}
+                  />
+                </span>
+              </div>
             </motion.button>
           )
         })}
       </motion.div>
-      <HelpButton path="/how-to/battles/battle-types" label="Learn more about battle types" />
     </div>
   )
 }
