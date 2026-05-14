@@ -65,7 +65,7 @@ export const FounderNotePage: React.FC = () => {
         className="absolute inset-x-0 top-0 -z-10 h-[60rem] pointer-events-none"
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(255,222,89,0.15),transparent_70%)] dark:bg-[radial-gradient(circle_at_50%_-20%,rgba(255,222,89,0.08),transparent_70%)]" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] brightness-100 contrast-150" />
+        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.03] brightness-100 contrast-150" />
         <div className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px]" />
       </motion.div>
 
