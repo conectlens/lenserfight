@@ -617,6 +617,8 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   async createBattle(input: CreateBattleInput): Promise<BattleRecord> {
+    // fn_battles_create returns a UUID, not a full record — get the id then apply
+    // all remaining settings via fn_update_battle which returns the complete row.
     const { data, error } = await supabase.rpc('fn_battles_create', {
       p_title: input.title,
       p_slug: this.generateSlug(input.title),
@@ -624,8 +626,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       p_rubric_id: null,
     })
     if (error) this.handleError(error)
-    const row = Array.isArray(data) ? data[0] : data
-    return row as BattleRecord
+    const battleId = Array.isArray(data) ? data[0] : data
+    if (!battleId || typeof battleId !== 'string') {
+      throw new Error('Battle creation failed: server returned no record.')
+    }
+    return this.updateBattle(battleId, input)
   }
 
   async updateBattle(id: string, input: Partial<CreateBattleInput>): Promise<BattleRecord> {
