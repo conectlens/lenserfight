@@ -426,6 +426,7 @@ export const LensLabPage: React.FC = () => {
 
           <LensBodyViewer
             content={activeLensContent}
+            versionParams={activeVersionParams}
             onCopy={handleCopy}
             onFork={() => forkLens({})}
             canFork={hasActiveLenserProfile}
