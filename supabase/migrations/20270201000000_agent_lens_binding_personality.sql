@@ -2,6 +2,11 @@
 -- extend fn_upsert_agent_lens_binding with optional p_category_tags.
 -- OCP: existing 4-arg callers continue to work — p_category_tags defaults to '{}',
 -- which satisfies the instruction partial index unchanged.
+--
+-- Also fixes lens-ownership check: accept lenses owned by the AI workspace profile
+-- OR by the calling human co-owner. The wizard flow (AgentManageWizard) does not
+-- switch the active workspace before binding, so human-owned lenses are valid when
+-- the caller has ownership of the AI workspace.
 
 -- 1. Drop the old single-default partial index
 DROP INDEX IF EXISTS agents.idx_agent_lens_one_default;
@@ -58,9 +63,10 @@ BEGIN
 
   IF NOT EXISTS (
     SELECT 1 FROM lenses.lenses l
-    WHERE l.id = p_lens_id AND l.lenser_id = v_profile_id
+    WHERE l.id = p_lens_id
+      AND (l.lenser_id = v_profile_id OR l.lenser_id = v_caller_human_id)
   ) THEN
-    RAISE EXCEPTION 'Main lens must be owned by the active AI workspace'
+    RAISE EXCEPTION 'Lens must be owned by the AI workspace or its co-owner'
       USING ERRCODE = '42501';
   END IF;
 
