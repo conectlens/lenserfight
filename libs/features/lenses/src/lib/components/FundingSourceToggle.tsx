@@ -45,7 +45,7 @@ interface FundingSourceToggleProps {
 function ChainabitLogo({ size = 16 }: { size?: number }) {
   return (
     <img
-      src="/chainabit/favicon-32x32.png"
+      src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
       width={size}
       height={size}
       alt="Chainabit"
@@ -395,15 +395,14 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
             type="button"
             onClick={handleChainabitClick}
             disabled={chainabitIsDisabled}
-            className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
-              isCloud && chainabitActive
+            className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isCloud && chainabitActive
                 ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
                 : chainabitIsDisabled
                   ? 'border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed'
                   : chainabitNeedsAction
                     ? 'border-gray-200 dark:border-gray-600 opacity-60 hover:border-orange-300 hover:opacity-100'
                     : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
-            }`}
+              }`}
           >
             <ChainabitLogo size={16} />
             <div className="min-w-0 flex-1">
@@ -432,8 +431,8 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           onClick={handleMyKeyClick}
           disabled={!canSelectByok}
           className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isByok
-              ? 'border-primary bg-primary/5 ring-1 ring-primary'
-              : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+            ? 'border-primary bg-primary/5 ring-1 ring-primary'
+            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
             } ${!canSelectByok ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
         >
           <KeyRound size={16} className={isByok ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
@@ -457,8 +456,8 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
             type="button"
             onClick={() => onFundingSourceChange('user_byok_cloud')}
             className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${isByokCloud
-                ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
-                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+              ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
+              : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
               }`}
           >
             <Globe size={12} />
@@ -473,8 +472,8 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
               type="button"
               onClick={() => onFundingSourceChange('user_byok_local')}
               className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${isByokLocal
-                  ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
-                  : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
+                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
                 }`}
             >
               <HardDrive size={12} />
