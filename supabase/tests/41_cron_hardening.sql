@@ -106,19 +106,19 @@ SELECT is(
 
 -- ── Test 7: fn_run_with_lock records ok status on successful execution ────────
 
+DO $$
+BEGIN
+  PERFORM automation.fn_run_with_lock(
+    'pgtap-lock-test',
+    $sql$SELECT 1$sql$
+  );
+END $$;
+
 SELECT is(
-  (
-    WITH run AS (
-      SELECT automation.fn_run_with_lock(
-        'pgtap-lock-test',
-        $sql$SELECT 1$sql$
-      )
-    )
-    SELECT status FROM automation.cron_runs
-    WHERE job_name = 'pgtap-lock-test'
-    ORDER BY started_at DESC
-    LIMIT 1
-  ),
+  (SELECT status FROM automation.cron_runs
+   WHERE job_name = 'pgtap-lock-test'
+   ORDER BY started_at DESC
+   LIMIT 1),
   'ok',
   'fn_run_with_lock records status=ok on success (Z10)'
 );
