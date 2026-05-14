@@ -121,7 +121,7 @@ export const FounderDukkanVideo: React.FC = () => {
                   className="inline-flex items-center gap-2 rounded-full border border-primary-yellow-500/30 bg-primary-yellow-500 px-5 py-3 text-sm font-black text-greyscale-950 shadow-[0_0_24px_rgba(234,179,8,0.25)] transition-all hover:bg-primary-yellow-400 hover:shadow-[0_0_32px_rgba(234,179,8,0.34)]"
                 >
                   <Youtube size={17} />
-                  Watch Omer on YouTube
+                  YouTube
                 </a>
               </div>
             </div>
@@ -136,15 +136,6 @@ export const FounderDukkanVideo: React.FC = () => {
                 </span>
               </div>
               <div className="h-16 w-px bg-gradient-to-b from-transparent via-primary-yellow-500/30 to-transparent" />
-            </div>
-          </div>
-
-          <div className="flex h-[62vh] w-[20vw] shrink-0 items-center justify-center opacity-20 sm:h-[65vh] lg:h-[70vh]">
-            <div className="flex flex-col items-center gap-4">
-              <div className="h-px w-24 bg-primary-yellow-500" />
-              <span className="text-xs font-black uppercase tracking-[0.5em] text-primary-yellow-500">
-                More soon
-              </span>
             </div>
           </div>
         </motion.div>
