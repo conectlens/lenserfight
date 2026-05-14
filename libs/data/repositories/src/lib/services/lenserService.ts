@@ -115,8 +115,8 @@ export const lenserService = {
     return lenserRepo.getThreadsByLenser(lenserId, offset, limit, viewerId)
   },
 
-  getLenserActivity: async (lenserId: string): Promise<LenserActivityPoint[]> => {
-    return lenserRepo.getActivityTimeline(lenserId)
+  getLenserActivity: async (handle: string): Promise<LenserActivityPoint[]> => {
+    return lenserRepo.getActivityTimeline(handle)
   },
 
   getRecentlyActiveLensers: async (limit: number = 5): Promise<Lenser[]> => {
