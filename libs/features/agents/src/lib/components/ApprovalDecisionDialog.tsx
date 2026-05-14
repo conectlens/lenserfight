@@ -94,7 +94,7 @@ export const ApprovalDecisionDialog: React.FC<ApprovalDecisionDialogProps> = ({
       dismissOnBackdrop={!isSubmitting}
     >
       <div className="space-y-4 p-6">
-        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200">
+        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200">
           <div className="grid grid-cols-2 gap-x-4 gap-y-1">
             <span className="font-semibold">Gate</span>
             <span>{request.gate_kind ?? '—'}</span>
@@ -159,11 +159,10 @@ export const ApprovalDecisionDialog: React.FC<ApprovalDecisionDialogProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className={`rounded-2xl px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-50 ${
-              decision === 'rejected'
+            className={`rounded-2xl px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-50 ${decision === 'rejected'
                 ? 'bg-red-600 hover:bg-red-500'
                 : 'bg-amber-600 hover:bg-amber-500'
-            }`}
+              }`}
           >
             {isSubmitting ? 'Submitting…' : meta.cta}
           </button>
