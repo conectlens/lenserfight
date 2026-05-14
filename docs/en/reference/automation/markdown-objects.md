@@ -31,21 +31,21 @@ tags: []
 
 | Format | Purpose | Required fields | Validation |
 |---|---|---|---|
-| `LENS.MD` | Native ConnectLens lens/task unit | `name`, `description`; parameterized files also need `parameters[].label` + `tool_id` | frontmatter + parameter + disclosure checks |
-| `LENSER.MD` | Native ConnectLens agent/LENSER definition | `name`, `description` | frontmatter + disclosure checks |
-| `COLENS.MD` | Native ConnectLens workflow/COLENS | `name`, `description` | frontmatter + disclosure checks |
-| `BATTLE.MD` | Native orchestration/comparison document | `name`, `description`, participants or orchestration references | frontmatter + battle reference checks |
-| `TEAM.MD` | Native LENSER team definition | `name`, `description` | frontmatter + disclosure checks |
-| `LENS.md` | Legacy portable lens/task unit | `id`, `name`, prompt body, input/output schema | frontmatter + section checks |
-| `LENSER.MD` | Legacy compatibility alias for a portable agent definition | metadata, instructions, permissions | frontmatter + section checks |
-| `AGENT_TEAM.md` | Portable team definition | members, purpose, collaboration rules | frontmatter + section checks |
-| `TOOL.md` | Portable tool contract | input/output schema, auth, risk | frontmatter + section checks |
-| `COLENS.MD` | Legacy compatibility alias for a portable workflow | triggers, inputs, steps, outputs | frontmatter + section checks |
-| `PRIVATE_BATTLE.md` | Portable comparison spec | participants, evaluation, report | frontmatter + section checks |
-| `SKILL.md` | Portable reusable capability | purpose, when to use, workflow | frontmatter + section checks |
-| `MEMORY_POLICY.md` | Portable memory rules | scope, retention, promotion | frontmatter + section checks |
-| `EVALUATION.md` | Portable eval suite | rubric, dataset, metrics, judging | frontmatter + section checks |
-| `RUN_REPORT.md` | Portable execution report | summary, inputs, results | frontmatter + section checks |
+| [`LENS.MD`](./formats/lens-md) | Native ConnectLens lens/task unit | `name`, `description`; parameterized files also need `parameters[].label` + `tool_id` | frontmatter + parameter + disclosure checks |
+| [`LENSER.MD`](./formats/lenser-md-native) | Native ConnectLens agent/LENSER definition | `name`, `description` | frontmatter + disclosure checks |
+| [`COLENS.MD`](./formats/colens-md-native) | Native ConnectLens workflow/COLENS | `name`, `description` | frontmatter + disclosure checks |
+| [`BATTLE.MD`](./formats/battle-md) | Native orchestration/comparison document | `name`, `description`, participants or orchestration references | frontmatter + battle reference checks |
+| [`TEAM.MD`](./formats/team-md) | Native LENSER team definition | `name`, `description` | frontmatter + disclosure checks |
+| [`LENS.md`](./formats/lens-md-legacy) | Legacy portable lens/task unit | `id`, `name`, prompt body, input/output schema | frontmatter + section checks |
+| [`LENSER.MD`](./formats/lenser-md-legacy) | Legacy compatibility alias for a portable agent definition | metadata, instructions, permissions | frontmatter + section checks |
+| [`AGENT_TEAM.md`](./formats/agent-team-md) | Portable team definition | members, purpose, collaboration rules | frontmatter + section checks |
+| [`TOOL.md`](./formats/tool-md) | Portable tool contract | input/output schema, auth, risk | frontmatter + section checks |
+| [`COLENS.MD`](./formats/colens-md-legacy) | Legacy compatibility alias for a portable workflow | triggers, inputs, steps, outputs | frontmatter + section checks |
+| [`PRIVATE_BATTLE.md`](./formats/private-battle-md) | Portable comparison spec | participants, evaluation, report | frontmatter + section checks |
+| [`SKILL.md`](./formats/skill-md) | Portable reusable capability | purpose, when to use, workflow | frontmatter + section checks |
+| [`MEMORY_POLICY.md`](./formats/memory-policy-md) | Portable memory rules | scope, retention, promotion | frontmatter + section checks |
+| [`EVALUATION.md`](./formats/evaluation-md) | Portable eval suite | rubric, dataset, metrics, judging | frontmatter + section checks |
+| [`RUN_REPORT.md`](./formats/run-report-md) | Portable execution report | summary, inputs, results | frontmatter + section checks |
 
 ## CLI support
 
