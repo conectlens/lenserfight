@@ -46,6 +46,9 @@
       "@lenserfight/features/lenses": [
         "libs/features/lenses/src/index.ts"
       ],
+      "@lenserfight/features/exports": [
+        "libs/features/exports/src/index.ts"
+      ],
       "@lenserfight/features/workflows": [
         "libs/features/workflows/src/index.ts"
       ],
@@ -94,6 +97,9 @@
       "@lenserfight/domain/user": [
         "libs/domain/user/src/index.ts"
       ],
+      "@lenserfight/domain/exports": [
+        "libs/domain/exports/src/index.ts"
+      ],
       "@lenserfight/features/auth": [
         "libs/features/auth/src/index.ts"
       ],
@@ -117,6 +123,9 @@
       ],
       "@lenserfight/data/supabase": [
         "libs/data/supabase/src/index.ts"
+      ],
+      "@lenserfight/data/exports": [
+        "libs/data/exports/src/index.ts"
       ],
       "@lenserfight/infra/analytics": [
         "libs/infra/analytics/src/index.ts"
@@ -153,6 +162,9 @@
       ],
       "@lenserfight/api/dto": [
         "libs/api/dto/src/index.ts"
+      ],
+      "@lenserfight/api/exports": [
+        "libs/api/exports/src/index.ts"
       ],
       "@lenserfight/types": [
         "libs/types/src/index.ts"
@@ -198,6 +210,9 @@
       ],
       "@lenserfight/shared/error": [
         "libs/shared/error/src/index.ts"
+      ],
+      "@lenserfight/shared/serializers": [
+        "libs/shared/serializers/src/index.ts"
       ],
       "@lenserfight/features/lensers": [
         "libs/features/lensers/src/index.ts"
