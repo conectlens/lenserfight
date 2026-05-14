@@ -308,7 +308,7 @@ export const SettingsSection: React.FC = () => {
                 subtitle="Execution defaults apply unless a workflow or builder assignment overrides them."
               >
                 <div className="space-y-4">
-                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300">
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-300">
                     Runtime preference:{' '}
                     <span className="font-semibold text-gray-900 dark:text-white">
                       {agentProfile?.runtime_pref ?? 'unknown'}
