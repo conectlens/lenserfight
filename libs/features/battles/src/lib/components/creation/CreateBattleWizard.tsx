@@ -816,6 +816,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {FORMAT_CARDS.map((card) => {
                   const isSelected = battleFormat === card.value
+                  // Two orthogonal visual channels so users never confuse
+                  // "this is selected" with "this is recommended":
+                  //   • Selected → greyscale ring + tinted neutral surface (state)
+                  //   • Recommended → yellow badge + soft yellow icon  (tier)
+                  // Yellow is reserved for tier; greyscale carries selection.
                   return (
                     <div key={card.value} className="flex flex-col gap-2">
                       <Button
@@ -825,10 +830,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                         aria-pressed={isSelected}
                         className={`relative !flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
                           isSelected
-                            ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
+                            ? '!border-greyscale-900 !bg-greyscale-900/[0.04] dark:!border-greyscale-0 dark:!bg-greyscale-0/[0.06] !ring-2 !ring-greyscale-900/10 dark:!ring-greyscale-0/10'
                             : card.tier === 'flagship'
-                              ? '!border-primary-yellow-500/40 hover:!border-primary-yellow-500 !bg-primary-yellow-500/[0.03] hover:!bg-primary-yellow-500/5'
-                              : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
+                              ? '!border-primary-yellow-500/30 hover:!border-greyscale-400 dark:hover:!border-greyscale-500 !bg-transparent'
+                              : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent'
                         }`}
                       >
                         {card.tier === 'flagship' && (
@@ -849,7 +854,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                           size={28}
                           className={
                             isSelected
-                              ? 'text-primary-yellow-600'
+                              ? 'text-greyscale-900 dark:text-greyscale-0'
                               : card.tier === 'flagship'
                                 ? 'text-primary-yellow-500'
                                 : 'text-greyscale-400'

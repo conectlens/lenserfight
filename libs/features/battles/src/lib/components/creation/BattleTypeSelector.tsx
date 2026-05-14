@@ -141,16 +141,18 @@ export function BattleTypeSelector({ value, onChange, battleFormat, onChangeForm
               aria-disabled={isDisabled}
               disabled={isDisabled}
               data-testid={`battle-type-card-${t.value}`}
+              // Yellow = tier (Recommended). Greyscale dark inverse = state
+              // (Selected). The two channels never share a hue, so a
+              // recommended-but-unselected card can never be mistaken for the
+              // selected one.
               className={`relative rounded-2xl border p-4 text-left transition-colors ${
                 isDisabled
                   ? 'cursor-not-allowed border-surface-border bg-surface-base opacity-50'
                   : isSelected
-                    ? isRecommended
-                      ? 'border-primary-yellow-500 bg-primary-yellow-500/10 ring-2 ring-primary-yellow-500/30'
-                      : 'border-greyscale-900 bg-greyscale-900 text-greyscale-0 dark:border-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
+                    ? 'border-greyscale-900 bg-greyscale-900 text-greyscale-0 dark:border-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
                     : isRecommended
-                      ? 'border-primary-yellow-500/50 bg-primary-yellow-500/5 hover:border-primary-yellow-500'
-                      : 'border-surface-border bg-surface-base hover:border-primary-yellow-500'
+                      ? 'border-primary-yellow-500/40 bg-primary-yellow-500/[0.04] hover:border-greyscale-400 dark:hover:border-greyscale-500'
+                      : 'border-surface-border bg-surface-base hover:border-greyscale-300 dark:hover:border-greyscale-600'
               }`}
             >
               {/* Badge row, top-right */}
@@ -175,19 +177,17 @@ export function BattleTypeSelector({ value, onChange, battleFormat, onChangeForm
               </div>
 
               <div className={`mb-2 flex h-9 w-9 items-center justify-center rounded-xl ${
-                isSelected && !isRecommended
+                isSelected
                   ? 'bg-greyscale-0/15 dark:bg-greyscale-900/15'
                   : isRecommended
-                    ? 'bg-primary-yellow-500/20 text-primary-yellow-600'
+                    ? 'bg-primary-yellow-500/15 text-primary-yellow-600'
                     : 'bg-surface-raised'
               }`}>
                 {t.icon}
               </div>
               <p className="pr-20 text-sm font-bold">{t.label}</p>
               <p className={`mt-1 pr-2 text-xs leading-5 ${
-                isSelected && !isRecommended
-                  ? 'opacity-80'
-                  : 'text-greyscale-500 dark:text-greyscale-400'
+                isSelected ? 'opacity-80' : 'text-greyscale-500 dark:text-greyscale-400'
               }`}>
                 {t.description}
               </p>
@@ -202,7 +202,7 @@ export function BattleTypeSelector({ value, onChange, battleFormat, onChangeForm
               {!isDisabled && (
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <p className={`text-xs font-semibold ${
-                    isSelected && !isRecommended
+                    isSelected
                       ? 'opacity-60'
                       : isRecommended
                         ? 'text-primary-yellow-700 dark:text-primary-yellow-400'
@@ -214,7 +214,7 @@ export function BattleTypeSelector({ value, onChange, battleFormat, onChangeForm
                     <HelpButton
                       path={t.docsPath}
                       label="Learn more"
-                      className={isSelected && !isRecommended ? 'opacity-60 hover:opacity-100' : ''}
+                      className={isSelected ? 'opacity-60 hover:opacity-100' : ''}
                     />
                   </span>
                 </div>
