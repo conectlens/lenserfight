@@ -85,6 +85,9 @@
       "@lenserfight/domain/lenses": [
         "libs/domain/lenses/src/index.ts"
       ],
+      "@lenserfight/domain/lens-governance": [
+        "libs/domain/lens-governance/src/index.ts"
+      ],
       "@lenserfight/domain/reactions": [
         "libs/domain/reactions/src/index.ts"
       ],
@@ -129,6 +132,12 @@
       ],
       "@lenserfight/infra/analytics": [
         "libs/infra/analytics/src/index.ts"
+      ],
+      "@lenserfight/infra/byok": [
+        "libs/infra/byok/src/index.ts"
+      ],
+      "@lenserfight/infra/cost": [
+        "libs/infra/cost/src/index.ts"
       ],
       "@lenserfight/infra/execution": [
         "libs/infra/execution/src/index.ts"
