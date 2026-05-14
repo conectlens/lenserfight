@@ -16,12 +16,7 @@ ALTER TABLE ai.providers
 
 ALTER TABLE ai.providers
   ADD CONSTRAINT providers_support_level_check
-  CHECK (support_level = ANY (ARRAY[
-    'runnable'::text,
-    'byok_only'::text,
-    'catalog_only'::text,
-    'deprecated'::text
-  ]));
+  CHECK (support_level IN ('runnable', 'byok_only', 'catalog_only', 'deprecated'));
 
 COMMENT ON COLUMN ai.providers.support_level IS
   'Catalog support tier for the provider: runnable, byok_only, catalog_only, deprecated.';
@@ -44,24 +39,14 @@ ALTER TABLE ai.models
 
 ALTER TABLE ai.models
   ADD CONSTRAINT models_support_level_check
-  CHECK (support_level = ANY (ARRAY[
-    'runnable'::text,
-    'byok_only'::text,
-    'catalog_only'::text,
-    'deprecated'::text
-  ]));
+  CHECK (support_level IN ('runnable', 'byok_only', 'catalog_only', 'deprecated'));
 
 ALTER TABLE ai.models
   DROP CONSTRAINT IF EXISTS models_status_check;
 
 ALTER TABLE ai.models
   ADD CONSTRAINT models_status_check
-  CHECK (status = ANY (ARRAY[
-    'active'::text,
-    'preview'::text,
-    'deprecated'::text,
-    'legacy'::text
-  ]));
+  CHECK (status IN ('active', 'preview', 'deprecated', 'legacy'));
 
 COMMENT ON COLUMN ai.models.docs_url IS
   'Canonical upstream documentation URL for this model entry.';
@@ -125,7 +110,7 @@ CREATE TABLE IF NOT EXISTS agents.teams (
   is_active boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT teams_status_check CHECK (status = ANY (ARRAY['active'::text, 'paused'::text, 'archived'::text])),
+  CONSTRAINT teams_status_check CHECK (status IN ('active', 'paused', 'archived')),
   CONSTRAINT teams_name_length_check CHECK (char_length(trim(name)) BETWEEN 1 AND 120)
 );
 
@@ -221,13 +206,9 @@ CREATE TABLE IF NOT EXISTS agents.team_edges (
   metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT team_edges_edge_type_check CHECK (edge_type = ANY (ARRAY[
-    'delegates'::text,
-    'reviews'::text,
-    'reports_to'::text,
-    'shares_context'::text,
-    'handoff'::text
-  ])),
+  CONSTRAINT team_edges_edge_type_check CHECK (edge_type IN (
+    'delegates', 'reviews', 'reports_to', 'shares_context', 'handoff'
+  )),
   CONSTRAINT team_edges_no_self_loop CHECK (source_member_id <> target_member_id)
 );
 
@@ -246,7 +227,7 @@ CREATE TABLE IF NOT EXISTS agents.workflow_assignments (
   is_active boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT workflow_assignments_assignee_kind_check CHECK (assignee_kind = ANY (ARRAY['agent'::text, 'team'::text])),
+  CONSTRAINT workflow_assignments_assignee_kind_check CHECK (assignee_kind IN ('agent', 'team')),
   CONSTRAINT workflow_assignments_target_check CHECK (
     (assignee_kind = 'agent' AND assignee_ai_lenser_id IS NOT NULL AND assignee_team_id IS NULL) OR
     (assignee_kind = 'team' AND assignee_team_id IS NOT NULL AND assignee_ai_lenser_id IS NULL)
@@ -268,20 +249,12 @@ CREATE TABLE IF NOT EXISTS agents.team_runs (
   completed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT team_runs_status_check CHECK (status = ANY (ARRAY[
-    'queued'::text,
-    'running'::text,
-    'completed'::text,
-    'failed'::text,
-    'cancelled'::text,
-    'blocked'::text
-  ])),
-  CONSTRAINT team_runs_approval_status_check CHECK (approval_status = ANY (ARRAY[
-    'pending'::text,
-    'approved'::text,
-    'rejected'::text,
-    'not_required'::text
-  ]))
+  CONSTRAINT team_runs_status_check CHECK (status IN (
+    'queued', 'running', 'completed', 'failed', 'cancelled', 'blocked'
+  )),
+  CONSTRAINT team_runs_approval_status_check CHECK (approval_status IN (
+    'pending', 'approved', 'rejected', 'not_required'
+  ))
 );
 
 CREATE TABLE IF NOT EXISTS agents.agent_run_steps (
@@ -300,14 +273,9 @@ CREATE TABLE IF NOT EXISTS agents.agent_run_steps (
   completed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT agent_run_steps_status_check CHECK (status = ANY (ARRAY[
-    'queued'::text,
-    'running'::text,
-    'completed'::text,
-    'failed'::text,
-    'blocked'::text,
-    'skipped'::text
-  ]))
+  CONSTRAINT agent_run_steps_status_check CHECK (status IN (
+    'queued', 'running', 'completed', 'failed', 'blocked', 'skipped'
+  ))
 );
 
 CREATE TABLE IF NOT EXISTS agents.agent_run_events (
@@ -346,7 +314,7 @@ ALTER TABLE lenses.workflow_schedules
 
 ALTER TABLE lenses.workflow_schedules
   ADD CONSTRAINT workflow_schedules_assignee_type_check
-  CHECK (assignee_type = ANY (ARRAY['agent'::text, 'team'::text]));
+  CHECK (assignee_type IN ('agent', 'team'));
 
 ALTER TABLE lenses.workflow_schedules
   DROP CONSTRAINT IF EXISTS workflow_schedules_workflow_assignment_id_fkey;
