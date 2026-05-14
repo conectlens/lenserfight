@@ -4,7 +4,7 @@ import { Input, TextArea } from '@lenserfight/ui/forms'
 import { battlesService, battlesRepository, workflowsService, lensesService, battleExecutionService } from '@lenserfight/data/repositories'
 import type { BattleTemplateRecord, WorkflowRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
-import { useAIModels } from '@lenserfight/features/generations'
+import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
 import { useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { useLenser } from '@lenserfight/features/profile'
 import { useChainabitConnection } from '@lenserfight/features/store'
@@ -14,9 +14,8 @@ import { isValidUUID } from '@lenserfight/utils/validation'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GitBranch, HelpCircle, Info, Layers, Swords, Trophy } from 'lucide-react'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 
 import { BattleAutomationSettings } from './BattleAutomationSettings'
 import { BattleTypeSelector } from './BattleTypeSelector'
@@ -210,23 +209,32 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // Execution context (funding source + model selection for AI battles)
   const [selectedProviderKey, setSelectedProviderKey] = useState('')
   const [selectedModelKey, setSelectedModelKey] = useState('')
-  const { models, isLoading: modelsLoading } = useAIModels()
+  const { data: battleProviders = [], isLoading: isLoadingProviders } = useAIProviders()
+  const { data: battleProviderModels = [], isLoading: isLoadingModels } = useAIModelsByProvider(
+    selectedProviderKey || null,
+  )
   const battleFunding = useFundingSource(selectedProviderKey)
   const chainabit = useChainabitConnection()
 
-  const battleProviders: AIProvider[] = useMemo(() => {
-    const seen = new Set<string>()
-    return models
-      .filter((m) => m.is_active && !!m.key && !seen.has(m.provider) && (seen.add(m.provider), true))
-      .map((m) => ({ key: m.provider, display_name: m.providerDisplayName ?? m.provider, id: m.provider_id ?? '' }))
-  }, [models])
+  // Mirror LensDetailPage: when a BYOK key is selected, sync its provider into
+  // selectedProviderKey so the models query fires and the picker populates.
+  useEffect(() => {
+    if (battleFunding.fundingSource !== 'user_byok_cloud') return
+    const key = battleFunding.availableKeys.find((k) => k.id === battleFunding.selectedKeyRefId)
+    if (key && key.providerKey !== selectedProviderKey) {
+      setSelectedProviderKey(key.providerKey)
+      setSelectedModelKey('')
+    }
+  }, [battleFunding.fundingSource, battleFunding.selectedKeyRefId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const battleProviderModels: AIProviderModel[] = useMemo(() => {
-    if (!selectedProviderKey) return []
-    return models
-      .filter((m) => m.is_active && !!m.key && m.provider === selectedProviderKey)
-      .map((m) => ({ key: m.key, name: m.name, inputModalities: m.input_modalities }))
-  }, [models, selectedProviderKey])
+  useEffect(() => {
+    if (battleFunding.fundingSource !== 'user_byok_local') return
+    const localKey = battleFunding.localKeys.find((k) => k.id === battleFunding.selectedLocalKeyId)
+    if (localKey && localKey.provider !== 'ollama' && localKey.provider !== selectedProviderKey) {
+      setSelectedProviderKey(localKey.provider)
+      setSelectedModelKey('')
+    }
+  }, [battleFunding.fundingSource, battleFunding.selectedLocalKeyId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Step 4 — scheduling (optional, only for ai_vs_ai / workflow_battle)
   const [scheduleEnabled, setScheduleEnabled] = useState(false)
@@ -999,9 +1007,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       chainabitModels={chainabit.models}
                       onChainabitConnect={chainabit.reconnect}
                       providers={battleProviders}
-                      isLoadingProviders={modelsLoading}
+                      isLoadingProviders={isLoadingProviders}
                       providerModels={battleProviderModels}
-                      isLoadingModels={modelsLoading}
+                      isLoadingModels={isLoadingModels}
                       selectedProviderKey={selectedProviderKey}
                       onProviderChange={(key) => { setSelectedProviderKey(key); setSelectedModelKey('') }}
                       selectedModelKey={selectedModelKey}
