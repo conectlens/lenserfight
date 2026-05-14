@@ -19037,7 +19037,7 @@ COMMENT ON FUNCTION "public"."fn_update_agent_profile"("p_ai_lenser_id" "uuid", 
 
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text" DEFAULT NULL::"text", "p_task_prompt" "text" DEFAULT NULL::"text", "p_battle_type" "text" DEFAULT NULL::"text", "p_voter_eligibility" "text" DEFAULT NULL::"text", "p_handicap_config" "jsonb" DEFAULT NULL::"jsonb", "p_workflow_id" "uuid" DEFAULT NULL::"uuid", "p_lens_id" "uuid" DEFAULT NULL::"uuid", "p_forum_thread_id" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "task_prompt" "text", "status" "text", "total_vote_count" integer, "published_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "handicap_config" "jsonb", "creator_lenser_id" "uuid", "forum_thread_id" "text", "workflow_id" "uuid", "lens_id" "uuid", "execution_starts_at" timestamp with time zone, "auto_publish" boolean, "voting_duration_hours" integer, "vote_velocity" numeric, "og_image_url" "text", "winner_contender_id" "uuid", "parent_battle_id" "uuid", "deleted_at" timestamp with time zone)
+CREATE OR REPLACE FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text" DEFAULT NULL::"text", "p_task_prompt" "text" DEFAULT NULL::"text", "p_battle_type" "text" DEFAULT NULL::"text", "p_voter_eligibility" "text" DEFAULT NULL::"text", "p_handicap_config" "jsonb" DEFAULT NULL::"jsonb", "p_workflow_id" "uuid" DEFAULT NULL::"uuid", "p_lens_id" "uuid" DEFAULT NULL::"uuid", "p_forum_thread_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "task_prompt" "text", "status" "text", "total_vote_count" integer, "published_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "handicap_config" "jsonb", "creator_lenser_id" "uuid", "forum_thread_id" "text", "workflow_id" "uuid", "lens_id" "uuid", "execution_starts_at" timestamp with time zone, "auto_publish" boolean, "voting_duration_hours" integer, "vote_velocity" numeric, "og_image_url" "text", "winner_contender_id" "uuid", "parent_battle_id" "uuid", "deleted_at" timestamp with time zone)
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'battles', 'lensers'
     AS $$
@@ -19065,7 +19065,7 @@ BEGIN
     b.id, b.slug, b.title, b.task_prompt, b.status::text, b.total_vote_count,
     b.published_at, b.voting_opens_at, b.voting_closes_at,
     b.battle_type::text, b.voter_eligibility::text, b.handicap_config,
-    b.creator_lenser_id, b.forum_thread_id, b.workflow_id, b.lens_id,
+    b.creator_lenser_id, b.forum_thread_id::text, b.workflow_id, b.lens_id,
     b.execution_starts_at, b.auto_publish, b.voting_duration_hours,
     b.vote_velocity, b.og_image_url, b.winner_contender_id,
     b.parent_battle_id, b.deleted_at;
@@ -19073,7 +19073,7 @@ END;
 $$;
 
 
-ALTER FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid", "p_forum_thread_id" "text") OWNER TO "postgres";
+ALTER FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid", "p_forum_thread_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_update_battle_execution_settings"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer, "p_auto_publish" boolean) RETURNS "void"
@@ -25730,9 +25730,8 @@ GRANT ALL ON FUNCTION "public"."fn_update_agent_profile"("p_ai_lenser_id" "uuid"
 
 
 
-GRANT ALL ON FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid", "p_forum_thread_id" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid", "p_forum_thread_id" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid", "p_forum_thread_id" "text") TO "service_role";
+GRANT EXECUTE ON FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid", "p_forum_thread_id" "uuid") TO "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid", "p_forum_thread_id" "uuid") TO "service_role";
 
 
 
