@@ -1,4 +1,7 @@
 import { lensesService, preferencesService } from '@lenserfight/data/repositories'
+import { ExportModal, useExportRunner, LocalDownloadTransport, CloudDownloadTransport } from '@lenserfight/features/exports'
+import { SupabaseExportsRepository } from '@lenserfight/data/exports'
+import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
 import { useReportContent } from '@lenserfight/features/home'
 import { useShareContext } from '@lenserfight/features/share'
@@ -37,7 +40,7 @@ export const LensLabPage: React.FC = () => {
   const navigate = useNavigate()
   const { lenser, hasLenser } = useAuthenticatedLenser()
   const drawerRouter = useDrawerRouter()
-  const { isLoading: authLoading, isAuthenticated, redirectToLogin } = useAuth()
+  const { isLoading: authLoading, isAuthenticated, redirectToLogin, user } = useAuth()
   const { setShareConfig } = useShareContext()
   const { setPageActions, setPageTitle } = useUI()
   const queryClient = useQueryClient()
@@ -120,6 +123,7 @@ export const LensLabPage: React.FC = () => {
   const reportContent = useReportContent()
 
   const [isSaving, setIsSaving] = useState(false)
+  const [isExportOpen, setIsExportOpen] = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [reportReason, setReportReason] = useState<ReportReasonEnum>('spam')
 
@@ -155,6 +159,33 @@ export const LensLabPage: React.FC = () => {
   }, [hasActiveLenserProfile, isAuthenticated, navigate, redirectToLogin])
 
   const isOwner = !!(lenser && lens && lens.author.id === lenser.id)
+
+  const buildExportContext = useCallback(() => ({
+    userId: user?.id ?? null,
+    tenantId: null,
+    via: 'web' as const,
+    host: window.location.host,
+    isOwner,
+    isAuthenticated,
+  }), [user?.id, isOwner, isAuthenticated])
+
+  const resolveExportTransport = useCallback((id: 'cloud-download' | 'local-download' | 'local-workspace') => {
+    if (id === 'local-download') return new LocalDownloadTransport()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return new CloudDownloadTransport(new SupabaseExportsRepository(supabase as any))
+  }, [])
+
+  const runExportInner = useExportRunner({
+    kind: 'lens',
+    slug: lens?.id ?? '',
+    fetchPayload: async () => lens,
+    buildContext: buildExportContext,
+    resolveTransport: resolveExportTransport,
+  })
+  const runExport = useCallback(
+    async (input: { format: import('@lenserfight/domain/exports').ExportFormat; destination: import('@lenserfight/features/exports').TransportId }) => { await runExportInner(input) },
+    [runExportInner],
+  )
 
   const handleDeleteClick = useCallback((targetId: string) => {
     setDeleteTargetId(targetId)
@@ -347,6 +378,18 @@ export const LensLabPage: React.FC = () => {
         onFork={() => forkLens({})}
         canFork={hasActiveLenserProfile}
         isForking={isForking}
+        onExport={() => setIsExportOpen(true)}
+        exportModal={
+          <ExportModal
+            open={isExportOpen}
+            onClose={() => setIsExportOpen(false)}
+            kind="lens"
+            slug={lens.id}
+            title={lens.title ?? undefined}
+            fetchPayload={async () => lens}
+            onConfirm={runExport}
+          />
+        }
       />
 
       {/* Lens body + Execution panel row */}
