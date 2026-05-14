@@ -134,9 +134,6 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ lensId }) =>
       setIsDeleting(false)
     }
   }
-
-  // Extract existing URLs for duplicate prevention
-  console.log(generations)
   const existingUrls = generations.map((g) => g.media?.url).filter((url): url is string => !!url)
 
   if (!hasLenser) return null
