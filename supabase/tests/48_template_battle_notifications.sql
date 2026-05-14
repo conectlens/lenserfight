@@ -17,8 +17,8 @@ INSERT INTO auth.users (id, email)
 VALUES ('aaaaaaaa-bf01-aaaa-aaaa-aaaaaaaaaaaa', 'bf-owner@test.local')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.lenser_profiles (id, handle, display_name, type)
-VALUES ('aaaaaaaa-bf01-aaaa-aaaa-aaaaaaaaaaaa', 'bf_owner', 'BF Owner', 'human')
+INSERT INTO lensers.profiles (id, user_id, handle, display_name, type)
+VALUES ('aaaaaaaa-bf01-aaaa-aaaa-aaaaaaaaaaaa', 'aaaaaaaa-bf01-aaaa-aaaa-aaaaaaaaaaaa', 'bf_owner', 'BF Owner', 'human')
 ON CONFLICT (id) DO NOTHING;
 
 -- Source template
@@ -71,6 +71,18 @@ SELECT is(
 );
 
 -- ── Test 2: status → 'published' fires template_battle_published ────────────
+UPDATE battles.battles
+   SET status = 'voting'::battles.battle_status_enum
+ WHERE id = 'cccccccc-bf01-cccc-cccc-cccccccccccc';
+
+UPDATE battles.battles
+   SET status = 'scoring'::battles.battle_status_enum
+ WHERE id = 'cccccccc-bf01-cccc-cccc-cccccccccccc';
+
+UPDATE battles.battles
+   SET status = 'closed'::battles.battle_status_enum
+ WHERE id = 'cccccccc-bf01-cccc-cccc-cccccccccccc';
+
 UPDATE battles.battles
    SET status = 'published'::battles.battle_status_enum
  WHERE id = 'cccccccc-bf01-cccc-cccc-cccccccccccc';
