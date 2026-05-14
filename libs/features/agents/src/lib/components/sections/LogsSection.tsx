@@ -81,7 +81,7 @@ const RunEventsAccordion: React.FC<{
                 return (
                   <div
                     key={ev.id}
-                    className="rounded-[14px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
+                    className="rounded-[14px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-700"
                   >
                     <button
                       type="button"
