@@ -4,6 +4,7 @@ import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { useLenser } from '@lenserfight/features/profile'
+import { ExportButton } from '@lenserfight/features/exports'
 import { Avatar, Badge, Button } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { Dialog } from '@lenserfight/ui/overlays'
@@ -450,6 +451,16 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 >
                   <Pencil size={12} /> Edit
                 </Button>
+              )}
+
+              {workflow && (
+                <ExportButton
+                  kind="workflow"
+                  slug={workflowId}
+                  title={workflow.title ?? undefined}
+                  fetchPayload={async () => workflow}
+                  className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
+                />
               )}
 
               {workflow.parent_workflow_id && (
