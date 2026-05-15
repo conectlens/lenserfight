@@ -195,17 +195,17 @@ export const AboutPage: React.FC = () => {
 
           <motion.div
             variants={fadeUp}
-            className="relative overflow-hidden rounded-[2.25rem] bg-greyscale-950 p-5 shadow-[0_32px_100px_rgba(0,0,0,0.28)] ring-1 ring-white/10"
+            className="relative overflow-hidden rounded-[2.25rem] bg-white dark:bg-greyscale-950 p-5 shadow-2xl ring-1 ring-black/5 dark:ring-white/10"
           >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary-yellow-500/70 to-transparent" />
-            <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-5">
+            <div className="rounded-[1.75rem] border border-black/5 dark:border-white/10 bg-black/[0.01] dark:bg-white/[0.03] p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.28em] text-primary-yellow-500">
                     <Radio size={13} />
                     Public Arena
                   </div>
-                  <h2 className="mt-3 text-2xl font-black tracking-tight text-white">
+                  <h2 className="mt-3 text-2xl font-black tracking-tight text-greyscale-900 dark:text-white">
                     The benchmark result should explain itself.
                   </h2>
                 </div>
@@ -216,12 +216,12 @@ export const AboutPage: React.FC = () => {
 
               <div className="mt-6 space-y-3">
                 {HERO_SIGNALS.map(({ label, detail }) => (
-                  <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div key={label} className="rounded-2xl border border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] p-4">
                     <div className="flex items-start gap-3">
                       <CheckCircle size={16} className="mt-0.5 shrink-0 text-primary-yellow-500" />
                       <div>
-                        <p className="text-sm font-bold text-white">{label}</p>
-                        <p className="mt-1 text-xs leading-5 text-greyscale-400">{detail}</p>
+                        <p className="text-sm font-bold text-greyscale-900 dark:text-white">{label}</p>
+                        <p className="mt-1 text-xs leading-5 text-greyscale-600 dark:text-greyscale-400">{detail}</p>
                       </div>
                     </div>
                   </div>
@@ -232,7 +232,7 @@ export const AboutPage: React.FC = () => {
                 {['Lens', 'Vote', 'Result'].map((step, index) => (
                   <div key={step} className="text-center">
                     <p className="font-mono text-xs font-black text-primary-yellow-500">0{index + 1}</p>
-                    <p className="mt-1 text-xs font-bold text-greyscale-300">{step}</p>
+                    <p className="mt-1 text-xs font-bold text-greyscale-500 dark:text-greyscale-300">{step}</p>
                   </div>
                 ))}
               </div>
@@ -242,14 +242,14 @@ export const AboutPage: React.FC = () => {
       </section>
 
       {/* ── ORIGIN STORY / TIMELINE ────────────────────────────────────── */}
-      <section className="bg-greyscale-950 py-20 text-white lg:py-28">
+      <section className="bg-surface-base dark:bg-greyscale-950 py-20 text-surface-text dark:text-white lg:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
             <Badge color="purple" variant="outline">Our story</Badge>
-            <h2 className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-white sm:text-4xl">
+            <h2 className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-greyscale-900 dark:text-white sm:text-4xl">
               Built from frustration, refined by community.
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-greyscale-400">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
               We didn't want another benchmark nobody could reproduce. We wanted a platform where anyone
               could run the test, inspect the result, and argue about the outcome.
             </p>
@@ -264,7 +264,7 @@ export const AboutPage: React.FC = () => {
           >
             {TIMELINE.map(({ year, title, description }, index) => (
               <motion.div key={`${year}-${title}`} variants={fadeUp}>
-                <div className="h-full rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-6">
+                <div className="h-full rounded-[1.75rem] border border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] p-6">
                   <div className="flex items-center justify-between gap-4">
                     <span className="font-mono text-xs font-black uppercase tracking-widest text-primary-yellow-500">
                       {year}
@@ -273,8 +273,8 @@ export const AboutPage: React.FC = () => {
                       Phase 0{index + 1}
                     </span>
                   </div>
-                  <p className="mt-5 text-lg font-black tracking-tight text-white">{title}</p>
-                  <p className="mt-3 text-sm leading-7 text-greyscale-400">{description}</p>
+                  <p className="mt-5 text-lg font-black tracking-tight text-greyscale-900 dark:text-white">{title}</p>
+                  <p className="mt-3 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
                 </div>
               </motion.div>
             ))}
@@ -350,15 +350,15 @@ export const AboutPage: React.FC = () => {
           viewport={viewport}
           transition={spring}
         >
-          <Card className="relative overflow-hidden bg-greyscale-900 p-10">
+          <Card className="relative overflow-hidden bg-white dark:bg-greyscale-900 p-10 ring-1 ring-black/5 dark:ring-white/10">
             <div className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_left,_rgba(255,222,89,1),_transparent_60%),radial-gradient(ellipse_at_bottom_right,_rgba(255,222,89,0.6),_transparent_55%)]" />
             <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
               <div className="space-y-4">
                 <Lightbulb size={28} className="text-primary-yellow-500" />
-                <blockquote className="text-2xl font-black leading-tight tracking-tight text-greyscale-0 sm:text-3xl">
+                <blockquote className="text-2xl font-black leading-tight tracking-tight text-greyscale-950 dark:text-greyscale-0 sm:text-3xl">
                   "Quality should win — not branding, not speed, not speculation about which AI is currently hot."
                 </blockquote>
-                <p className="text-sm text-greyscale-400">
+                <p className="text-sm text-greyscale-600 dark:text-greyscale-400">
                   The core promise that every LenserFight feature is built to deliver.
                 </p>
               </div>
@@ -373,7 +373,7 @@ export const AboutPage: React.FC = () => {
                     variant="ghost"
                     size="lg"
                     fullWidth
-                    className="text-greyscale-300 hover:bg-greyscale-800 hover:text-greyscale-0"
+                    className="text-greyscale-600 dark:text-greyscale-300 hover:bg-black/5 dark:hover:bg-greyscale-800 hover:text-greyscale-900 dark:hover:text-greyscale-0"
                   >
                     Talk to us <ExternalLink size={14} />
                   </Button>
