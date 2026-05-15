@@ -250,10 +250,12 @@ export interface DLQEntryRecord {
 export interface PublicExecutionJobRecord {
   id: string
   battle_id: string
+  contender_id: string | null
   slot: 'A' | 'B'
   status: 'queued' | 'claimed' | 'running' | 'completed' | 'failed'
   claimed_at: string | null
   completed_at: string | null
+  error_message: string | null
   retry_count: number
   created_at: string
 }
@@ -320,12 +322,15 @@ export interface BattlesFeedOptions {
   cursor?: string
 }
 
+export type ContenderAssignmentMode = 'manual' | 'auto_agent' | 'battle_required'
+
 export interface ContenderLensAssignmentRecord {
   id: string
   contender_id: string
   battle_id: string
   lens_id: string
   version_id: string | null
+  assignment_mode: ContenderAssignmentMode
   assigned_at: string
   input_snapshot: Record<string, unknown>
 }
