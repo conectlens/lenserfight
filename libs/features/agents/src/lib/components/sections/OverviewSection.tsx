@@ -1,7 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import { useLenserWorkspace } from '@lenserfight/features/profile'
-import { HelpButton } from '@lenserfight/ui/components'
+import { Button, Card } from '@lenserfight/ui/components'
 import { useModalRouter } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -44,6 +44,7 @@ export const OverviewSection: React.FC = () => {
     defaultInstructionBinding,
   } = ctx
   const { open } = useModalRouter()
+  const navigate = useNavigate()
 
   // Phase 8: Autonomous Agent OS — hooks must be called unconditionally
   const agentId = bootstrap?.ai_lenser_id ?? ''
@@ -61,6 +62,8 @@ export const OverviewSection: React.FC = () => {
     return (
       <SectionPage
         eyebrow="Public agents"
+        docsPath="/how-to/agents/workspace/overview"
+        docsTip="Read-only public mirror of the agents this profile has published. Operational controls remain owner-only."
         title={`Agents by @${profile.handle}`}
         description="A read-only view of the public AI lensers published by this profile."
       >
@@ -85,6 +88,8 @@ export const OverviewSection: React.FC = () => {
     return (
       <SectionPage
         eyebrow="Agent overview"
+        docsPath="/how-to/agents/workspace/overview"
+        docsTip="Public profile surface for this AI lenser. Stats are visible to anyone; operational editing, builder access, and approval controls stay owner-only."
         title={profile.display_name || `@${profile.handle}`}
         description="Public profile surface for this AI lenser. Operational editing, builder access, and approval controls remain owner-only."
       >
@@ -143,18 +148,19 @@ export const OverviewSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Agent control room"
+      docsPath="/how-to/agents/workspace/overview"
+      docsTip="Daily control room — instruction binding, active builder team, workflows, schedule health, active runs, pending approvals, and the kill-switch banner all aggregate here."
       title={`@${profile.handle}`}
       description="Operational home for this AI lenser. Keep the default instruction source, active builder graph, workflow library, approvals, and runtime health aligned here."
       toolbar={
         <div className="flex flex-wrap gap-2">
-          <HelpButton path="/tutorials/agent-walkthroughs/create-your-first-agent" />
-          <Link
-            to={`/lenser/${profile.handle}/ag/scratchpad`}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+          <Button
+            type="button"
+            onClick={() => navigate(`/lenser/${profile.handle}/ag/scratchpad`)}
           >
             <Brain size={14} />
             Open workbench
-          </Link>
+          </Button>
           <Link
             to={`/lenser/${profile.handle}/ag/team`}
             className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
@@ -311,13 +317,14 @@ export const OverviewSection: React.FC = () => {
         title="Your agents"
         subtitle="All AI lensers you own. Open one to enter its control room."
         toolbar={
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => open('create-agent')}
-            className="rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
           >
             Create agent
-          </button>
+          </Button>
         }
       >
         {ownerFleetAgentsLoading ? (
@@ -366,16 +373,18 @@ const HumanOwnerOverview: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Your agent fleet"
+      docsPath="/how-to/agents/workspace/overview"
+      docsTip="Fleet-level owner surface. Create new agents and audit cross-agent activity without dropping into a single AI lenser."
       title={`@${profile.handle}`}
       description="Fleet-level owner surface for the human workspace. Create new agents here and audit recent cross-agent activity without dropping into a single AI lenser."
       toolbar={
-        <button
+        <Button
           type="button"
+          variant="dark"
           onClick={() => open('create-agent')}
-          className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
         >
           Create agent
-        </button>
+        </Button>
       }
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -406,13 +415,14 @@ const HumanOwnerOverview: React.FC = () => {
           title="Agents"
           subtitle="Create or jump into any AI lenser you own."
           toolbar={
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => navigate('/lensers?type=ai')}
-              className="rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
             >
               Browse all
-            </button>
+            </Button>
           }
         >
           {ownerFleetAgentsLoading ? (
@@ -457,16 +467,15 @@ const QuickLinkCard: React.FC<{
   title: string
   description: string
 }> = ({ to, icon, title, description }) => (
-  <Link
-    to={to}
-    className="rounded-[24px] border border-gray-200 bg-white p-4 transition-all hover:border-amber-300 hover:shadow-md dark:border-gray-800 dark:bg-[#111111] dark:hover:border-amber-500/30 dark:hover:bg-amber-500/5"
-  >
-    <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-      {icon}
-      {title}
-    </div>
-    <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
-      {description}
-    </p>
+  <Link to={to} className="block">
+    <Card className="!p-4 transition hover:border-amber-300 dark:hover:border-amber-500/40">
+      <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+        {icon}
+        {title}
+      </div>
+      <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+        {description}
+      </p>
+    </Card>
   </Link>
 )
