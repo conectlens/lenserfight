@@ -14,12 +14,19 @@ export interface UseChainabitConnectionResult {
   reconnect: () => Promise<void>
 }
 
-function classifyError(err: unknown): 'no_account' | 'invalid_connection' | 'provider_error' {
+function isNotProvisioned(err: unknown): boolean {
   if (err && typeof err === 'object') {
-    const obj = err as Record<string, unknown>
-    const code = obj['error'] as string | undefined
+    const code = (err as Record<string, unknown>)['error']
+    if (code === 'not_provisioned') return true
+  }
+  return false
+}
+
+function classifyError(err: unknown): 'no_account' | 'invalid_connection' | 'provider_error' {
+  if (isNotProvisioned(err)) return 'no_account'
+  if (err && typeof err === 'object') {
+    const code = (err as Record<string, unknown>)['error'] as string | undefined
     if (code === 'unauthorized' || code === 'unauthenticated') return 'invalid_connection'
-    if (code === 'not_provisioned') return 'no_account'
     if (code === 'provider_error') return 'provider_error'
   }
   if (err instanceof Error) {
@@ -37,7 +44,10 @@ export function useChainabitConnection(): UseChainabitConnectionResult {
     queryFn: () => partnerProvisioningRepository.getBalance('chainabit'),
     enabled: isAuthenticated,
     staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 5,
     retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
 
   const state: ChainabitConnectionState = (() => {
@@ -53,6 +63,7 @@ export function useChainabitConnection(): UseChainabitConnectionResult {
     enabled: state === 'connected' || state === 'no_credits',
     staleTime: 1000 * 60 * 10,
     retry: false,
+    refetchOnWindowFocus: false,
   })
 
   const reconnect = useCallback(async () => {
