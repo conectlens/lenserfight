@@ -934,6 +934,16 @@ export default defineConfig({
               text: 'Katkıda Bulunanlar',
               items: [
                 { text: 'Katkıda Bulunma', link: '/tr/how-to/contributors/contributing' },
+                { text: 'Sohbet Özelliği Katkısı', link: '/tr/how-to/contributors/chat-feature-contribution' },
+                { text: 'SSS', link: '/tr/how-to/contributors/faq' },
+                { text: 'Wave 2 Planı', link: '/tr/how-to/contributors/wave-2-plan' },
+              ],
+            },
+            {
+              text: 'Yerelleştirme',
+              items: [
+                { text: 'i18n Rehberi', link: '/tr/how-to/contributors/i18n-rehberi' },
+                { text: 'Dil Ekleme', link: '/tr/how-to/contributors/dil-ekleme' },
               ],
             },
           ],
@@ -2005,6 +2015,13 @@ export default defineConfig({
               text: 'Task Schema Contribution Guide',
               link: '/en/how-to/contributors/task-schema-contribution-guide',
             },
+          ],
+        },
+        {
+          text: 'Localization',
+          items: [
+            { text: 'i18n Guide', link: '/en/how-to/contributors/i18n-guide' },
+            { text: 'Adding a Language', link: '/en/how-to/contributors/adding-a-language' },
           ],
         },
       ],
