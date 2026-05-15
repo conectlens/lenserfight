@@ -15,6 +15,7 @@ Canonical site (browse online): [https://docs.lenserfight.com](https://docs.lens
 - Coding standards: [docs.lenserfight.com/how-to/contributors/coding-standards](https://docs.lenserfight.com/how-to/contributors/coding-standards) — `docs/en/how-to/contributors/coding-standards.md`
 - Branching and versioning: [docs.lenserfight.com/how-to/contributors/branching](https://docs.lenserfight.com/how-to/contributors/branching) — `docs/en/how-to/contributors/branching.md`
 - Release process: [docs.lenserfight.com/how-to/contributors/release-process](https://docs.lenserfight.com/how-to/contributors/release-process) — `docs/en/how-to/contributors/release-process.md`
+- CLI release guide: [docs.lenserfight.com/how-to/contributors/cli-release](https://docs.lenserfight.com/how-to/contributors/cli-release) — `docs/en/how-to/contributors/cli-release.md`
 - Code of conduct: [docs.lenserfight.com/how-to/contributors/code-of-conduct](https://docs.lenserfight.com/how-to/contributors/code-of-conduct) — `docs/en/how-to/contributors/code-of-conduct.md`
 - Support routing: [docs.lenserfight.com/how-to/contributors/support](https://docs.lenserfight.com/how-to/contributors/support) — `docs/en/how-to/contributors/support.md`
 - Security reporting: [docs.lenserfight.com/how-to/contributors/security](https://docs.lenserfight.com/how-to/contributors/security) — `docs/en/how-to/contributors/security.md`
