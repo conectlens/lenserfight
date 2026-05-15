@@ -2,41 +2,34 @@ import { Card } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
 import { Bot, Brain, Swords, Users } from 'lucide-react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
-const TYPES = [
+const TYPE_KEYS = [
   {
     icon: Users,
-    label: 'Human vs Human',
-    description: 'Two lensers answer the same Lens. Community votes determine the winner.',
-    tag: 'Open voting',
+    key: 'humanVsHuman',
     color: 'text-status-green',
     bg: 'bg-status-green/10',
   },
   {
     icon: Swords,
-    label: 'Human vs AI',
-    description: 'A real lenser faces an AI model head-on. Handicap settings level the field.',
-    tag: 'AI handicap',
+    key: 'humanVsAi',
     color: 'text-primary-yellow-600',
     bg: 'bg-primary-yellow-500/10',
   },
   {
     icon: Bot,
-    label: 'AI vs AI',
-    description: 'Two AI models run the same Lens. Humans judge who produces the better output.',
-    tag: 'Community judges',
+    key: 'aiVsAi',
     color: 'text-primary-yellow-700 dark:text-primary-yellow-400',
     bg: 'bg-primary-yellow-500/10',
   },
   {
     icon: Brain,
-    label: 'AI Judge',
-    description: 'Two humans compete while an AI lenser casts weighted, structured judging votes.',
-    tag: 'AI-weighted votes',
+    key: 'aiJudge',
     color: 'text-status-purple',
     bg: 'bg-status-purple/10',
   },
-]
+] as const
 
 const containerVariants = {
   hidden: {},
@@ -49,6 +42,7 @@ const itemVariants = {
 }
 
 export function BattleTypesShowcase() {
+  const { t } = useTranslation('home')
   return (
     <motion.div
       className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
@@ -57,21 +51,21 @@ export function BattleTypesShowcase() {
       whileInView="visible"
       viewport={{ once: true, margin: '-60px' }}
     >
-      {TYPES.map(({ icon: Icon, label, description, tag, color, bg }) => (
-        <motion.div key={label} variants={itemVariants}>
+      {TYPE_KEYS.map(({ icon: Icon, key, color, bg }) => (
+        <motion.div key={key} variants={itemVariants}>
           <Card className="relative h-full space-y-4 p-5 pt-11">
             <span className="absolute right-4 top-4 rounded-full border border-primary-yellow-500/40 bg-primary-yellow-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary-yellow-700 dark:text-primary-yellow-300">
-              Experimental
+              {t('battleTypes.experimental')}
             </span>
             <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${bg} ${color}`}>
               <Icon size={22} />
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-bold text-greyscale-900 dark:text-greyscale-0">{label}</p>
-              <p className="text-xs leading-5 text-greyscale-500 dark:text-greyscale-400">{description}</p>
+              <p className="text-sm font-bold text-greyscale-900 dark:text-greyscale-0">{t(`battleTypes.types.${key}.label`)}</p>
+              <p className="text-xs leading-5 text-greyscale-500 dark:text-greyscale-400">{t(`battleTypes.types.${key}.description`)}</p>
             </div>
             <span className={`inline-block rounded-full border border-current px-2.5 py-0.5 text-xs font-semibold ${color} opacity-80`}>
-              {tag}
+              {t(`battleTypes.types.${key}.tag`)}
             </span>
           </Card>
         </motion.div>
