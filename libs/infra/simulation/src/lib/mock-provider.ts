@@ -11,6 +11,7 @@ import type {
   ExecutionResult,
   IExecutionProvider,
   IStreamingExecutionProvider,
+  MediaType,
   StreamChunk,
 } from '@lenserfight/infra/execution'
 import type { LensKind, NodeOutputEnvelope } from '@lenserfight/types'
@@ -50,6 +51,9 @@ const KIND_DEFAULT_TEXT: Record<LensKind, string> = {
  * so the full streaming path can be exercised without a provider SDK.
  */
 export class MockProvider implements IExecutionProvider, IStreamingExecutionProvider {
+  readonly id = 'mock'
+  readonly supportedMediaTypes: MediaType[] = ['text', 'image', 'audio', 'video']
+
   constructor(private readonly options: MockProviderOptions = {}) {}
 
   async execute(
