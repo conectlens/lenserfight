@@ -12,11 +12,12 @@ export function MarketplacePage() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
 
-  const { data: lenses = [], isLoading } = useQuery({
+  const { data: lensesEnvelope, isLoading } = useQuery({
     queryKey: ['marketplace', 'popular'],
     queryFn: () => lensesService.sort('popular', 0, 48),
     staleTime: 1000 * 60 * 5,
   })
+  const lenses = lensesEnvelope?.data ?? []
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
