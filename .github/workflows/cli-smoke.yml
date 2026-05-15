@@ -1,0 +1,152 @@
+name: CLI smoke
+
+on:
+  pull_request:
+    paths:
+      - 'apps/cli/**'
+      - 'apps/gateway/**'
+      - 'libs/providers/**'
+      - 'libs/utils/env/**'
+      - 'libs/utils/keychain/**'
+      - 'libs/utils/signing/**'
+      - 'libs/infra/gateway/**'
+      - 'libs/data/repositories/**'
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+      - 'docs/explanation/gateway/**'
+      - 'docs/tr/explanation/gateway/**'
+      - 'docs/reference/cli/gateway.md'
+      - '.github/workflows/cli-smoke.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  push:
+    branches:
+      - main
+      - development
+    paths:
+      - 'apps/cli/**'
+      - 'apps/gateway/**'
+      - 'libs/providers/**'
+      - 'libs/utils/env/**'
+      - 'libs/utils/keychain/**'
+      - 'libs/utils/signing/**'
+      - 'libs/infra/gateway/**'
+      - 'libs/data/repositories/**'
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+      - 'docs/explanation/gateway/**'
+      - 'docs/tr/explanation/gateway/**'
+      - 'docs/reference/cli/gateway.md'
+      - '.github/workflows/cli-smoke.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+
+jobs:
+  cli-dry-run:
+    name: lf run exec --dry-run (no credentials)
+    runs-on: ubuntu-latest
+    env:
+      # Phase 9 acceptance: dry-run must succeed with all *_API_KEY env vars unset.
+      OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      GOOGLE_API_KEY: ''
+      MISTRAL_API_KEY: ''
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
+        with:
+          version: 9
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run CLI unit tests (includes credentialless dry-run spec)
+        run: pnpm nx test cli --testPathPatterns="run.spec.ts"
+
+      - name: Build CLI
+        run: pnpm nx build cli
+
+      - name: Smoke: lf run exec --dry-run
+        run: |
+          node dist/apps/cli/main.js run exec \
+            --prompt "hello" \
+            --model "gpt-4o-mini" \
+            --dry-run
+
+  gateway-doctor:
+    name: lf gateway doctor (Trust Gateway preflight)
+    runs-on: ubuntu-latest
+    env:
+      # The doctor checks that we are NOT running with privileged credentials.
+      SUPABASE_SERVICE_ROLE_KEY: ''
+      # File-backed keychain (CI must not require a real OS keyring).
+      LF_GATEWAY_KEY_FILE_FALLBACK: '1'
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
+        with:
+          version: 9
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm nx build cli
+
+      - name: Test gateway libraries and daemon
+        run: pnpm nx run-many -t test -p gateway,infra-gateway,util-signing,util-keychain
+
+      - name: Build gateway daemon (lf-gatewayd)
+        run: pnpm nx run gateway:build
+
+      - name: Build gateway initializer (lf-gateway-init)
+        run: pnpm nx run gateway:build-init
+
+      # CI has no disposable Postgres for pgTAP. This step asserts migration + test
+      # artifacts exist. Maintainers MUST run `supabase db test --db-url $LOCAL_DB_URL`
+      # before tagging (see scripts/smoke.sh step 2b and docs/explanation/gateway/release-readiness.md).
+      - name: Gateway SQL release gate (artifact presence; pgTAP is pre-tag only)
+        run: |
+          echo '::notice::Trust Gateway: run locally before tag: supabase db test --db-url $LOCAL_DB_URL (07_gateway_security.sql, 08_gateway_xp_audit.sql)'
+          test -f supabase/migrations/20270513000001_pre_oss_gateway_security_hardening.sql
+          grep -R "chain_verify_owner_required" supabase/migrations/20270513000001_pre_oss_gateway_security_hardening.sql
+          test -f supabase/tests/07_gateway_security.sql
+          test -f supabase/tests/08_gateway_xp_audit.sql
+
+      - name: Smoke: lf gateway doctor (offline checks only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://example.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'ci-anon-key-placeholder' }}
+        run: |
+          # Run only the offline-safe subset; ci does not have an Ed25519
+          # keypair or a Supabase session, so identity/sync/policy are
+          # expected to be skipped or fail. We assert the *daemon binary*
+          # check passes, which proves apps/gateway built successfully.
+          node dist/apps/cli/main.js gateway doctor \
+            --check daemon,transport \
+            --json | tee doctor-report.json
+          node -e "
+          const r = require('./doctor-report.json');
+          const required = ['daemon', 'transport'];
+          for (const id of required) {
+            const c = r.checks.find(x => x.id === id);
+            if (!c) { console.error('missing check:', id); process.exit(1); }
+            if (c.status !== 'pass') {
+              console.error('check failed:', id, c.message);
+              process.exit(2);
+            }
+          }
+          console.log('gateway doctor offline checks: ok');
+          "
