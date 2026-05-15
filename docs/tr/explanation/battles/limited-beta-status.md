@@ -5,6 +5,9 @@ description: Bulut Savaşları yüzeyi için operatör çalışma kitabı — ö
 
 # Bulut Savaşları — Operatör Çalışma Kitabı
 
+<ExperimentalBadge title="Battles" description="Battles hâlâ inşa ediliyor. Eşleştirme, oylama ve sonuç akışları değişebilir — denemenizi bekliyoruz, hatalı durumları geri bildirin." />
+
+
 Bu sayfa, Cloud Battles yüzeyini çalıştırmaya yönelik operatör çalışma kitabıdır. Dağıtımın Phase O webhook outbox migration'ını uyguladığı ve `pg_cron` ile `pg_net` mevcut olan barındırılan bir Supabase örneğinin bulunduğu varsayılır.
 
 Yüzeyin bayrak çevrilmeden önce geçmesi gereken bütün bütünlük kontrolleri için bkz. [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist).
