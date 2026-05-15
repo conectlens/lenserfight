@@ -9,14 +9,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
-const CONTENT_VISIBILITY_OPTIONS = [
-  { value: 'public', label: 'Public — visible to everyone' },
-  { value: 'community', label: 'Community — visible to registered users' },
-  { value: 'private', label: 'Private — only visible to you' },
-]
-
 export const GeneralTab: React.FC = () => {
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation()
+  const contentVisibilityOptions = [
+    { value: 'public', label: t('settings.privacy.public') },
+    { value: 'community', label: t('settings.privacy.community') },
+    { value: 'private', label: t('settings.privacy.private') },
+  ]
   const { lenser } = useLenser()
   const queryClient = useQueryClient()
   const { setTheme: applyTheme } = useTheme()
@@ -161,7 +160,7 @@ export const GeneralTab: React.FC = () => {
           <SelectField
             value={contentVisibility}
             onChange={(v) => setContentVisibility(v as typeof contentVisibility)}
-            options={CONTENT_VISIBILITY_OPTIONS}
+            options={contentVisibilityOptions}
           />
         </div>
 
