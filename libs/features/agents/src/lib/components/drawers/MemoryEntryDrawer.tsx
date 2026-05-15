@@ -14,6 +14,8 @@ import { Brain, ShieldOff } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { DrawerDocsLink } from './DrawerDocsLink'
+
 type Mode = 'view' | 'create'
 
 interface MemoryEntryDrawerProps {
@@ -153,6 +155,10 @@ export const MemoryEntryDrawer: React.FC<MemoryEntryDrawerProps> = ({
       title={mode === 'create' ? 'Write memory entry' : 'Memory entry'}
     >
       <div className="space-y-5">
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/memory-entry"
+          tip="Inspect or edit a single short-lived memory entry. Content, recall score (decays with age), source run, TTL, and tags."
+        />
         {mode === 'view' && entry ? (
           <>
             <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
