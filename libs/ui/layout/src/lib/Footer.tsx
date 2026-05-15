@@ -93,7 +93,7 @@ export const Footer: React.FC<FooterProps> = ({
   const conectlensUrl = appendUtm('https://conectlens.com', utmMedium, 'footer_conectlens_link')
 
   return (
-    <footer className="w-full py-12 px-4 mt-auto border-t border-greyscale-100 bg-white text-greyscale-500 dark:bg-greyscale-950 dark:border-greyscale-800 dark:text-greyscale-400 transition-colors duration-200">
+    <footer className="w-full py-12 px-4 mt-auto border-t border-surface-border-subtle bg-surface-base text-surface-text-muted dark:bg-greyscale-950 dark:border-surface-border transition-colors duration-200">
       <div
         className={`${isDashboard ? 'w-full' : 'max-w-5xl mx-auto px-6'} flex flex-col gap-12`}
       >
@@ -184,7 +184,7 @@ export const Footer: React.FC<FooterProps> = ({
         </div>
 
         {/* Bottom Row: Centered Nav Links */}
-        <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4 text-sm font-medium border-t border-greyscale-50 dark:border-greyscale-800 pt-8">
+        <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4 text-sm font-medium border-t border-surface-border-subtle pt-8">
           {/* About / Product / FAQ — internal when no navBaseUrl, external otherwise */}
           {NAV_LINKS.map(({ to, label }) =>
             navBaseUrl ? (
