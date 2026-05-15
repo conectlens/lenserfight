@@ -4,6 +4,8 @@ import React from 'react'
 
 import { useRunUnified } from '../hooks/useRunUnified'
 import { useWorkspaceControls } from '../hooks/useWorkspaceControls'
+import { Button } from '@lenserfight/ui/components'
+
 
 interface ActiveRunsPanelProps {
   aiLenserId: string
@@ -62,7 +64,7 @@ const RunRow: React.FC<{
         </span>
       </div>
       {canCancel && (
-        <button
+        <Button
           type="button"
           onClick={() => onCancel(run.run_id)}
           disabled={isCancelling}
@@ -70,7 +72,7 @@ const RunRow: React.FC<{
           className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl border border-gray-200 text-gray-400 transition hover:border-red-300 hover:text-red-500 disabled:opacity-40 dark:border-gray-700 dark:text-gray-500 dark:hover:border-red-600 dark:hover:text-red-400"
         >
           <X size={13} />
-        </button>
+        </Button>
       )}
     </div>
   )
