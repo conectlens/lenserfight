@@ -1,4 +1,4 @@
-import { Button, EmptyState, HelpButton, InfiniteScrollSentinel, PageHeader, SEOHead } from '@lenserfight/ui/components'
+import { Button, EmptyState, ExperimentalBadge, HelpButton, InfiniteScrollSentinel, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import React from 'react'
 import { useNavigate, Outlet, useSearchParams } from 'react-router-dom'
@@ -85,7 +85,7 @@ export function BattlesFeedPage() {
     <div className="">
       <SEOHead type="battles-list" />
       <PageHeader
-        title="Battles"
+        title={<span className="inline-flex items-center gap-2">Battles <ExperimentalBadge mode="inline" title="Experimental" /></span>}
         description="Create a task, compare human and AI outputs, vote on criteria, and reveal a winner."
         action={
           <>
@@ -100,6 +100,11 @@ export function BattlesFeedPage() {
             </Button>
           </>
         }
+      />
+      <ExperimentalBadge
+        title="Battles"
+        description="Battles work end-to-end, but matchmaking, voting and result flows haven't been fully tested. Please try them and report anything that feels wrong — I'd rather hear it from you than miss it."
+        className="mb-4"
       />
       <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         <div className="flex flex-wrap items-center gap-3">
