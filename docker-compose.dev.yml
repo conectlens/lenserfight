@@ -28,7 +28,10 @@ services:
       PGRST_DB_URI: postgres://postgres:postgres@supabase-db:5432/postgres
       PGRST_DB_SCHEMA: public
       PGRST_DB_ANON_ROLE: anon
-      PGRST_JWT_SECRET: super-secret-jwt-token-for-dev
+      # Generate a per-developer secret with `openssl rand -base64 48` and
+      # export PGRST_JWT_SECRET in your shell or .env.local. The fallback is
+      # intentionally non-functional so misconfigured stacks fail loudly.
+      PGRST_JWT_SECRET: ${PGRST_JWT_SECRET:?set PGRST_JWT_SECRET in .env.local before running docker-compose.dev.yml}
 
   platform-api:
     build:
