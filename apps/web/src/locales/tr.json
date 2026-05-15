@@ -33,7 +33,20 @@
     "trending": "Trend",
     "forYou": "Senin İçin",
     "suggestedLensers": "Önerilen Lensers",
-    "trendingTopics": "Trend Konular"
+    "trendingTopics": "Trend Konular",
+    "feedTabs": {
+      "forYou": "Senin İçin",
+      "following": "Takip",
+      "trending": "Trend"
+    }
+  },
+  "auth": {
+    "notAuthorized": {
+      "title": "Erişim engellendi",
+      "message": "Bu sayfaya erişmek için Lenser profili ile giriş yapmanız gerekiyor.",
+      "goBack": "Geri dön",
+      "signIn": "Giriş yap"
+    }
   },
   "prompts": {
     "title": "Promptlar",
@@ -80,7 +93,12 @@
     "theme": "Tema",
     "dark": "Koyu",
     "light": "Açık",
-    "system": "Sistem"
+    "system": "Sistem",
+    "privacy": {
+      "public": "Herkese açık — herkese görünür",
+      "community": "Topluluk — kayıtlı kullanıcılara görünür",
+      "private": "Özel — yalnızca sana görünür"
+    }
   },
   "errors": {
     "generic": "Bir hata oluştu. Lütfen tekrar deneyin.",
