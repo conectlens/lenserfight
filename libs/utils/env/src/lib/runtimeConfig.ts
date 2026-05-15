@@ -59,14 +59,19 @@ export const CHAINABIT_OAUTH_CLIENT_ID: string = (import.meta.env['CHAINABIT_OAU
  */
 export const CHAINABIT_OAUTH_CALLBACK_URL: string = (import.meta.env['CHAINABIT_OAUTH_REDIRECT_URI'] as string) ?? ''
 
+/** Default local Platform API origin (`pnpm nx serve platform-api`). */
+const DEV_API_BASE_URL = 'http://localhost:8786'
+
 /**
  * LenserFight Platform API base URL (no trailing slash).
- * In development defaults to the ngrok tunnel to bypass CORS restrictions on localhost.
- * Override with `API_URL`.
+ * In development, defaults to the local platform-api server. To proxy through a
+ * tunnel (e.g. ngrok) for CORS or webhook testing, set `API_URL` in your
+ * `.env.local`. Production resolves to `https://api.lenserfight.com` unless
+ * `API_URL` is provided.
  */
 export const API_BASE_URL = stripSupabaseRestPath(readPublicBaseUrl(
   'API_URL',
-  import.meta.env.DEV ? 'https://wyatt-proportioned-ashlyn.ngrok-free.dev' : 'https://api.lenserfight.com',
+  import.meta.env.DEV ? DEV_API_BASE_URL : 'https://api.lenserfight.com',
 ))
 
 /**
@@ -104,12 +109,26 @@ export const isMock = import.meta.env.MOCK === 'true'
 // Local development flag (Vite dev server)
 export const isLocal = MODE === 'development'
 
-// Seed credentials for local auto-fill (matches supabase/seed.sql)
-export const LOCAL_SEED_CREDENTIALS = {
-  email: 'hey@lenserfight.com',
-  password: 'LenserFight#DevSeed2026!',
-  displayName: 'LenserFight',
-} as const
+export type LocalSeedCredentials = {
+  email: string
+  password: string
+  displayName: string
+}
+
+/**
+ * Loads local-only seed credentials for auto-filling the login/register forms
+ * during development. The credentials live in a sibling module that is loaded
+ * exclusively via dynamic `import()` behind an `import.meta.env.DEV` check, so
+ * Vite's static replacement of `DEV` with `false` in production builds
+ * eliminates the entire branch — the strings never reach the production bundle.
+ *
+ * Returns `null` in production / non-DEV / non-MOCK builds.
+ */
+export async function loadDevSeedCredentials(): Promise<LocalSeedCredentials | null> {
+  if (!import.meta.env.DEV && !isMock) return null
+  const mod = await import('./devSeedCredentials')
+  return mod.LOCAL_SEED_CREDENTIALS
+}
 
 function featureEnabled(envKey: string, editionDefault: boolean): boolean {
   const v = import.meta.env[envKey]
