@@ -4,11 +4,14 @@ import {
   type CreateEvaluationCaseInput,
 } from '@lenserfight/data/repositories'
 import type { EvaluationCaseRecord, EvaluationRecord } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
 import { AlertDialog, Drawer } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
+
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface Props {
   open: boolean
@@ -25,7 +28,7 @@ const CaseRow: React.FC<{
   const expectedSummary = caseRecord.expected ? JSON.stringify(caseRecord.expected) : null
 
   return (
-    <div className="rounded-[16px] border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="truncate font-mono text-xs text-gray-700 dark:text-gray-300">
@@ -43,21 +46,21 @@ const CaseRow: React.FC<{
             {(caseRecord.tags ?? []).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-amber-200 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300"
+                className="rounded-full border border-primary-yellow-200 px-2 py-0.5 text-[11px] font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300"
               >
                 {tag}
               </span>
             ))}
           </div>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onDelete}
           aria-label="Delete case"
           className="mt-0.5 shrink-0 rounded-xl border border-gray-200 p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:hover:bg-red-500/10 dark:hover:text-red-400"
         >
           <Trash2 size={13} />
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -156,6 +159,10 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
       title="Test cases"
     >
       <div className="space-y-4">
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/evaluation-cases"
+          tip="CRUD over the case list. Each case is one input + one assertion (substring/regex/jsonpath/score_gte) with a weight. Bulk-import via the JSON paste field."
+        />
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {evaluation?.name}{' '}
@@ -164,14 +171,15 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
             )}
           </p>
           {!addingCase && (
-            <button
+            <Button
               type="button"
+              variant="dark"
+              size="sm"
               onClick={() => setAddingCase(true)}
-              className="inline-flex items-center gap-1.5 rounded-2xl bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
             >
-              <Plus size={13} />
+              <Plus size={13} className="mr-1.5 inline" />
               Add case
-            </button>
+            </Button>
           )}
         </div>
 
@@ -180,12 +188,12 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-16 animate-pulse rounded-[16px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
+                className="h-16 animate-pulse rounded-xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
               />
             ))}
           </div>
         ) : caseList.length === 0 && !addingCase ? (
-          <p className="rounded-[16px] border border-gray-100 bg-gray-50 px-4 py-6 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-700">
+          <p className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-6 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-700">
             No test cases yet. Add cases to define expected behavior.
           </p>
         ) : (
@@ -201,8 +209,8 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
         )}
 
         {addingCase && (
-          <div className="space-y-3 rounded-[20px] border border-amber-200/70 bg-amber-50/50 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
+          <div className="space-y-3 rounded-2xl border border-primary-yellow-200/70 bg-primary-yellow-50/50 p-4 dark:border-primary-yellow-500/20 dark:bg-primary-yellow-500/5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-yellow-700 dark:text-primary-yellow-300">
               New case
             </p>
             <Field label="Input (JSON)">
@@ -249,24 +257,27 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
               </p>
             )}
             <div className="flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   setAddingCase(false)
                   setAddError(null)
                 }}
-                className="rounded-2xl border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="dark"
+                size="sm"
                 onClick={handleAddCase}
                 disabled={submitting}
-                className="rounded-2xl bg-gray-900 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+                isLoading={submitting}
               >
                 {submitting ? 'Adding…' : 'Add'}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -289,7 +300,7 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="block">
