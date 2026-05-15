@@ -82,10 +82,10 @@ function buildAiOptions(): string[] {
 }
 
 function buildHumanOptions(): string[] {
-  const styles: HairStyle[] = ['bald', 'bob', 'long', 'pixie']
+  const styles: HairStyle[] = ['bald', 'bob', 'long', 'pixie', 'pigtails']
   
-  // 4 hair styles × 6 skin tones × 4 core colors = 96 options
-  return styles.flatMap((hairStyle) =>
+  // 5 hair styles × 6 skin tones × 4 core colors = 120 options
+  const options = styles.flatMap((hairStyle) =>
     LENSER_SKIN_TONES.flatMap((skinTone, si) =>
       AI_CORE_COLORS.map((coreColor, ci) =>
         createLenserDnaAvatarUri({
@@ -99,6 +99,9 @@ function buildHumanOptions(): string[] {
       )
     )
   )
+
+  // Shuffle randomly to ensure equal representation of styles
+  return options.sort(() => Math.random() - 0.5)
 }
 
 // ── Lenser DNA panel ──────────────────────────────────────────────────────────
