@@ -10,6 +10,7 @@ import {
   type LocaleCode,
 } from '@lenserfight/utils/locale'
 import { LOCALE_STORAGE_KEY } from './constants'
+import { writeSharedLocaleCookie } from './cookie'
 
 export interface UseLocaleResult {
   locale: LocaleCode
@@ -39,6 +40,9 @@ export function useLocale(): UseLocaleResult {
       } catch {
         // localStorage may be unavailable (private mode, SSR) — ignore.
       }
+      // Mirror the choice to the cross-app cookie so apps/web (URL-stable) and
+      // apps/docs (VitePress) pick it up on their next visit.
+      writeSharedLocaleCookie(next)
       const target =
         withLocale(stripLocale(location.pathname), next) +
         (location.search ?? '') +
