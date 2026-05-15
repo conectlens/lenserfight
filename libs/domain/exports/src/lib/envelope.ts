@@ -77,13 +77,6 @@ export function validateEnvelope(env: ExportEnvelope<unknown>): ValidationIssue[
   if (!/^[0-9a-f]{64}$/.test(env.checksum)) {
     issues.push({ path: 'checksum', message: 'checksum must be 64-char lowercase hex' })
   }
-  if (env.visibility !== 'owner' && env.redactions.length === 0) {
-    issues.push({
-      path: 'redactions',
-      message:
-        'redactions must be non-empty when visibility !== "owner" (caller lacks owner scope)',
-    })
-  }
   if (!Number.isFinite(Date.parse(env.generatedAt))) {
     issues.push({ path: 'generatedAt', message: 'generatedAt must be an ISO-8601 timestamp' })
   }
