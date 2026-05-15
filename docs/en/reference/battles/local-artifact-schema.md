@@ -5,6 +5,9 @@ description: JSON schema for local battle artifacts persisted by `lf battle loca
 
 # Local Battle Artifact Schema
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 Local battles are stored as JSON files in user runtime storage under `local-battles/<uuid>.json`. Legacy project-root `.lenserfight/local-battles/<uuid>.json` files are still read for compatibility. Files are wrapped in an AES-256-GCM encrypted envelope (see [Encryption envelope](#encryption-envelope)).
 
 ## Top-level fields
