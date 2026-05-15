@@ -1,0 +1,59 @@
+{
+  "cta": {
+    "enterArena": "Enter the Arena",
+    "learnMore": "Learn More",
+    "getStarted": "Get Started",
+    "tryArena": "Try Arena",
+    "sponsorUs": "Sponsor Us",
+    "openArena": "Open Arena",
+    "browseBattles": "Browse live battles",
+    "createBattle": "Create a battle",
+    "createFirstBattle": "Create your first battle",
+    "seeDemo": "See a live demo",
+    "contactUs": "Contact us",
+    "talkToUs": "Talk to us",
+    "signUp": "Sign Up",
+    "seePrimitives": "See the primitives",
+    "exploreVision": "Explore the Vision",
+    "howItWorks": "How it works",
+    "ourMission": "Our mission",
+    "readDocs": "Read the docs",
+    "openDocs": "Open docs",
+    "viewApiReference": "View API Reference",
+    "startBattle": "Start a battle",
+    "watchDemo": "Watch the demo",
+    "openIssue": "Open an issue",
+    "browseIssues": "Browse issues",
+    "goodFirstIssues": "Good first issues",
+    "backToCli": "Back to CLI Overview",
+    "playOnYoutube": "Play on YouTube",
+    "connectOnYoutube": "Connect on YouTube",
+    "exploreArena": "Explore the Arena"
+  },
+  "badges": {
+    "experimental": "Experimental",
+    "live": "Live",
+    "comingSoon": "Coming soon",
+    "openContributions": "Open for contributions",
+    "realData": "Real data",
+    "liveArena": "Live arena · AI vs Human benchmarking"
+  },
+  "labels": {
+    "externalLink": "External link",
+    "sponsoredBy": "Sponsored by {{name}}",
+    "language": "Language",
+    "docs": "Docs",
+    "contact": "Contact",
+    "sponsor": "Sponsor",
+    "github": "GitHub",
+    "sponsorTitle": "Sponsor us on GitHub",
+    "sponsorAria": "Sponsor LenserFight",
+    "chainabit": "Chainabit",
+    "chainabitTitle": "Sponsored by Chainabit",
+    "toggleMenu": "Toggle menu"
+  },
+  "status": {
+    "loading": "Loading…",
+    "policyNotAvailable": "Policy content not available."
+  }
+}
