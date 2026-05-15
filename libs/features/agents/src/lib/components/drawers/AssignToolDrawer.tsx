@@ -72,6 +72,12 @@ export const AssignToolDrawer: React.FC<Props> = ({
       side="right" 
       width="w-[420px]" 
       title="Assign tool to agent"
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/assign-tool"
+          tip="Allow or deny a registered tool for this agent. Pick a tool, toggle Allowed, save. Idempotent — re-assigning the same tool overwrites the allow flag."
+        />
+      }
       footer={
         <DrawerFooter
           onCancel={onClose}
@@ -84,10 +90,6 @@ export const AssignToolDrawer: React.FC<Props> = ({
       }
     >
       <div className="space-y-4">
-        <DrawerDocsLink
-          path="/how-to/agents/workspace/drawers/assign-tool"
-          tip="Allow or deny a registered tool for this agent. Pick a tool, toggle Allowed, save. Idempotent — re-assigning the same tool overwrites the allow flag."
-        />
         {registry.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">
             No tools registered yet. Register a tool first.
