@@ -40,6 +40,17 @@ export const useHandleCheck = (minLength = 3) => {
     debounceRef.current = setTimeout(async () => {
       setIsCheckingHandle(true)
       try {
+        const governance = await lenserService.checkHandle(normalized)
+        if (governance.verdict === 'deny') {
+          const reason = governance.class_hit
+            ? `This handle is reserved (${governance.class_hit}). Please choose a different one.`
+            : 'This handle is reserved or protected. Please choose a different one.'
+          setHandleError(reason)
+          setSuggestions([])
+          setIsHandleUnique(false)
+          return
+        }
+
         const existing = await lenserService.getLenserByHandle(normalized)
         if (existing) {
           setHandleError('Handle is already taken.')
