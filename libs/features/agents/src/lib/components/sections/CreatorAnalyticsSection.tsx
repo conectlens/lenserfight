@@ -1,4 +1,4 @@
-import { agentAnalyticsRepository } from '@lenserfight/data/repositories'
+import { agentAnalyticsRepository, type CreatorTimeseriesRow } from '@lenserfight/data/repositories'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart2 } from 'lucide-react'
@@ -19,7 +19,7 @@ import { SectionPage } from './SectionPage'
 
 export const CreatorAnalyticsSection: React.FC = () => {
   const { bootstrap } = useAgentWorkspace()
-  const lenserId = bootstrap?.lenser_id ?? null
+  const lenserId = bootstrap?.ai_lenser_id ?? null
 
   const timeseries = useQuery({
     queryKey: ['creator-timeseries', lenserId, 30],
@@ -44,7 +44,7 @@ export const CreatorAnalyticsSection: React.FC = () => {
     )
   }
 
-  const rows = timeseries.data ?? []
+  const rows: CreatorTimeseriesRow[] = timeseries.data ?? []
   const hasData = rows.some((r) => r.battles > 0 || r.xp_earned > 0)
 
   return (
