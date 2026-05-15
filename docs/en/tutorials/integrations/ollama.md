@@ -7,12 +7,12 @@ head:
       content: Ollama Integration — LenserFight
   - - meta
     - name: og:description
-      content: Run free, private AI models locally with Ollama on LenserFight.
+      content: Run local AI models with Ollama on LenserFight.
 ---
 
 # Ollama Integration
 
-Ollama lets you run AI models entirely on your machine — no API keys, no cloud, no cost. This is the recommended setup for local development and privacy-sensitive workflows.
+Ollama lets you run supported AI models on your machine without LenserFight cloud execution or hosted provider API keys. This is the recommended setup for local development and privacy-sensitive workflows, provided you understand Ollama's own model download, update, logging, and network behavior.
 
 ## Setup
 
