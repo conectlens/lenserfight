@@ -17,6 +17,10 @@ const CHAINABIT_CLIENT_ID = Deno.env.get('CHAINABIT_CLIENT_ID') ?? ''
 const CHAINABIT_OAUTH_REDIRECT_URI = Deno.env.get('CHAINABIT_OAUTH_REDIRECT_URI') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+// Auth app callback — Supabase magic link must redirect here so the browser
+// lands via a user-initiated navigation (not a cross-origin 302 chain), which
+// prevents browsers from sending Origin: null on subsequent API calls.
+const AUTH_CALLBACK_URL = Deno.env.get('AUTH_CALLBACK_URL') ?? 'https://auth.lenserfight.com/callback'
 
 interface ChainabitOAuthState {
   flowType: 'login' | 'connect'
@@ -123,11 +127,16 @@ Deno.serve(async (req: Request) => {
   const userInfo = await getUserInfo(tokens.access_token)
   if (!userInfo?.email) return errorRedirect('userinfo_failed', state.returnUrl)
 
+  // redirectTo must point to auth.lenserfight.com/callback, not the final returnUrl
+  // directly. A magic-link chain: supabase/auth/v1/verify → direct-to-app produces
+  // 3+ cross-origin 302 hops, causing browsers to send Origin: null on all subsequent
+  // fetches from the landing page. Routing through the auth callback breaks the chain.
+  const authCallbackWithReturn = `${AUTH_CALLBACK_URL}?return_url=${encodeURIComponent(state.returnUrl)}`
   const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
     type: 'magiclink',
     email: userInfo.email,
     options: {
-      redirectTo: state.returnUrl,
+      redirectTo: authCallbackWithReturn,
       data: {
         display_name: userInfo.name ?? userInfo.preferred_username ?? userInfo.email,
         chainabit_id: userInfo.sub,
