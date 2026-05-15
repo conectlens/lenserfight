@@ -45,7 +45,12 @@
       "title": "Erişim engellendi",
       "message": "Bu sayfaya erişmek için Lenser profili ile giriş yapmanız gerekiyor.",
       "goBack": "Geri dön",
-      "signIn": "Giriş yap"
+      "signIn": "Giriş yap",
+      "noProfile": {
+        "title": "Profil gerekiyor",
+        "message": "Giriş yaptınız, ancak bu sayfaya erişmek için bir Lenser profiline ihtiyacınız var.",
+        "createProfile": "Profil oluştur"
+      }
     }
   },
   "prompts": {
