@@ -7,12 +7,12 @@ import {
   ResetPasswordPage,
 } from '@lenserfight/features/auth'
 import { OAuthCallbackPage } from '../pages/OAuthCallbackPage'
-import { OnboardingPage } from '../pages/OnboardingPage'
 import { AccountRecoveryPage } from '../pages/AccountRecoveryPage'
 import { AccountUnavailablePage } from '../pages/AccountUnavailablePage'
 import { DeviceApprovalPage } from '../pages/DeviceApprovalPage'
 import { GatewayGuard } from '../components/GatewayGuard'
 import { OnboardingGuard } from '../components/OnboardingGuard'
+import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 
 export const AuthRouter: React.FC = () => {
   return (
@@ -40,7 +40,7 @@ export const AuthRouter: React.FC = () => {
           path="/onboarding"
           element={
             <OnboardingGuard>
-              <OnboardingPage />
+              <CreateLenserProfileModal />
             </OnboardingGuard>
           }
         />
