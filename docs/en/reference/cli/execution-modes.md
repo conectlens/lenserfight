@@ -6,14 +6,14 @@
 
 ### Ollama (local inference)
 
-Runs against a local [Ollama](https://ollama.com) instance. No API key required. No network calls outside your machine.
+Runs against a local [Ollama](https://ollama.com) instance. No hosted provider API key is required for the LenserFight call path. Review Ollama's own model download, update, logging, and network behavior before using this mode for sensitive workflows.
 
 ```bash
 # Default base URL: http://localhost:11434
 lenserfight run exec --ollama --model llama3.2 --prompt "Explain GRASP patterns"
 
-# Custom base URL
-lenserfight run exec --ollama --base-url http://192.168.1.10:11434 \
+# Custom base URL (e.g. a remote Ollama on your LAN — replace with your host)
+lenserfight run exec --ollama --base-url http://ollama.local:11434 \
   --model mistral --prompt "Summarize: {{text}}"
 ```
 
