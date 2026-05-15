@@ -101,7 +101,7 @@
     "system": "Sistem",
     "privacy": {
       "public": "Herkese açık — herkese görünür",
-      "community": "Topluluk — kayıtlı kullanıcılara görünür",
+      "community": "Topluluk — kayıtlı Lenserlara görünür",
       "private": "Özel — yalnızca sana görünür"
     }
   },
@@ -118,21 +118,21 @@
   },
   "battles": {
     "contentTypes": {
-      "text":       "Metin",
-      "code":       "Kod",
-      "poem":       "Şiir",
-      "drawing":    "Çizim",
-      "image":      "Görsel",
-      "video":      "Video",
-      "audio":      "Ses",
-      "workflow":   "İş Akışı",
-      "map":        "Harita",
-      "avatar":     "Avatar",
+      "text": "Metin",
+      "code": "Kod",
+      "poem": "Şiir",
+      "drawing": "Çizim",
+      "image": "Görsel",
+      "video": "Video",
+      "audio": "Ses",
+      "workflow": "İş Akışı",
+      "map": "Harita",
+      "avatar": "Avatar",
       "image_edit": "Görsel Düzenleme",
-      "kaggle":     "Kaggle"
+      "kaggle": "Kaggle"
     },
     "filter": {
-      "allMedia":    "Tüm medya",
+      "allMedia": "Tüm medya",
       "contentType": "İçerik türü"
     }
   }
