@@ -8,7 +8,7 @@ import { UIProvider } from '@lenserfight/ui/providers'
 import { ModalRoute } from '@lenserfight/ui/routing'
 import { ARENA_BASE_URL, AUTH_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
 import React, { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 const LazyDashboardLayout = lazy(() =>
   import('@lenserfight/features/shell').then((module) => ({ default: module.DashboardLayout }))
@@ -221,6 +221,13 @@ const DashboardFrame: React.FC<{ children: React.ReactNode; fullscreen?: boolean
   </ShareProvider>
 )
 
+const PolicyExternalRedirect: React.FC = () => {
+  const location = useLocation()
+  const suffix = location.pathname.replace(/^\/policies\/?/, '')
+  const policyPath = suffix ? `/policies/${suffix}` : '/policies/terms'
+  return <AuthExternalRedirect to={`${ARENA_BASE_URL}${policyPath}${location.search}`} />
+}
+
 const WorkflowsPageRoute: React.FC = () => {
   const navigate = useNavigate()
   return <LazyWorkflowsPage onCreateWorkflow={() => navigate('/workflows/manage')} />
@@ -385,7 +392,8 @@ export const WebRouter: React.FC = () => {
         <Route path="/terms" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies/terms`} />} />
         <Route path="/privacy" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies/privacy`} />} />
         <Route path="/cookies" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies/cookies`} />} />
-        <Route path="/policies/*" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies`} />} />
+        <Route path="/policies" element={<PolicyExternalRedirect />} />
+        <Route path="/policies/*" element={<PolicyExternalRedirect />} />
 
         <Route
           path="/lenserboard"
