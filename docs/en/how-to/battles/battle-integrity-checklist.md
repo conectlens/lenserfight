@@ -5,6 +5,9 @@ description: Required checks before enabling cloud battles or public arena featu
 
 # Battle Integrity Checklist
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 ::: warning Private Alpha
 Cloud battles, the public arena, and the ELO leaderboard are **Private Alpha** surfaces. This checklist defines the minimum integrity checks that must pass before any of them are enabled. Do not bypass this list.
 
