@@ -1,5 +1,5 @@
 import { useLenserWorkspace } from '@lenserfight/features/profile'
-import { HelpButton } from '@lenserfight/ui/components'
+import { HelpButton, Button } from '@lenserfight/ui/components'
 import { Field, Input } from '@lenserfight/ui/forms'
 import { DialogHeaderContext, ModalFooter } from '@lenserfight/ui/overlays'
 import { ArrowRight, Check, Loader2, Sparkles, X } from 'lucide-react'
@@ -142,14 +142,14 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
               <p className="text-xs text-greyscale-500 mb-1.5">Suggestions:</p>
               <div className="flex flex-wrap gap-1.5">
                 {suggestions.map((s) => (
-                  <button
+                  <Button
                     key={s}
                     type="button"
                     onClick={() => setHandle(s)}
                     className="px-2.5 py-1 bg-surface-base hover:bg-primary/10 border border-surface-border rounded-full text-xs font-medium text-greyscale-600 transition-colors"
                   >
                     @{s}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
