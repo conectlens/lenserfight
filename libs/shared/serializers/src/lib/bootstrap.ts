@@ -1,16 +1,28 @@
 import type { ExportFormat, ExportKind } from '@lenserfight/domain/exports'
 
-import { BattleJsonSerializer, BattleMarkdownSerializer } from './adapters/battle'
-import { LensJsonSerializer, LensMarkdownSerializer } from './adapters/lens'
-import { WorkflowJsonSerializer, WorkflowMarkdownSerializer } from './adapters/workflow'
+import {
+  BattleJsonSerializer,
+  BattleMarkdownSerializer,
+  BattleYamlSerializer,
+} from './adapters/battle'
+import {
+  LensJsonSerializer,
+  LensMarkdownSerializer,
+  LensYamlSerializer,
+} from './adapters/lens'
+import {
+  WorkflowJsonSerializer,
+  WorkflowMarkdownSerializer,
+  WorkflowYamlSerializer,
+} from './adapters/workflow'
 import type { Serializer } from './Serializer'
 import { getDefaultRegistry, SerializerRegistry } from './SerializerRegistry'
 
 /**
- * Bootstrap serializer registry with the EX-1 set:
- *   - battle:   json, markdown
- *   - lens:     json, markdown
- *   - workflow: json, markdown
+ * Bootstrap serializer registry with the full adapter set:
+ *   - battle:   json, markdown, yaml
+ *   - lens:     json, markdown, yaml
+ *   - workflow: json, markdown, yaml
  *
  * Truly idempotent: state lives in the registry itself, not in a
  * separate module-scoped flag. This survives HMR reloads, dual module
@@ -19,10 +31,13 @@ import { getDefaultRegistry, SerializerRegistry } from './SerializerRegistry'
 const BUILTINS: Array<() => Serializer<unknown>> = [
   () => new BattleJsonSerializer() as unknown as Serializer<unknown>,
   () => new BattleMarkdownSerializer() as unknown as Serializer<unknown>,
+  () => new BattleYamlSerializer() as unknown as Serializer<unknown>,
   () => new LensJsonSerializer() as unknown as Serializer<unknown>,
   () => new LensMarkdownSerializer() as unknown as Serializer<unknown>,
+  () => new LensYamlSerializer() as unknown as Serializer<unknown>,
   () => new WorkflowJsonSerializer() as unknown as Serializer<unknown>,
   () => new WorkflowMarkdownSerializer() as unknown as Serializer<unknown>,
+  () => new WorkflowYamlSerializer() as unknown as Serializer<unknown>,
 ]
 
 export function bootstrapSerializers(

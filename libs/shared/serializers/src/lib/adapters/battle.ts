@@ -2,6 +2,7 @@ import type { ExportEnvelope, ExportKind } from '@lenserfight/domain/exports'
 
 import { JsonSerializer } from './JsonSerializer'
 import { MarkdownSerializerBase } from './MarkdownSerializer'
+import { YamlSerializer } from './YamlSerializer'
 import { escapeMarkdown, stripHtml } from '../util/markdownEscape'
 
 /**
@@ -28,6 +29,12 @@ export interface BattleExportPayload {
 const BATTLE_KIND: ExportKind = 'battle'
 
 export class BattleJsonSerializer extends JsonSerializer<BattleExportPayload> {
+  constructor() {
+    super(BATTLE_KIND)
+  }
+}
+
+export class BattleYamlSerializer extends YamlSerializer<BattleExportPayload> {
   constructor() {
     super(BATTLE_KIND)
   }

@@ -2,6 +2,7 @@ import type { ExportEnvelope, ExportKind } from '@lenserfight/domain/exports'
 
 import { JsonSerializer } from './JsonSerializer'
 import { MarkdownSerializerBase } from './MarkdownSerializer'
+import { YamlSerializer } from './YamlSerializer'
 import { escapeMarkdown, stripHtml } from '../util/markdownEscape'
 
 export interface WorkflowExportPayload {
@@ -22,6 +23,12 @@ export interface WorkflowExportPayload {
 const WORKFLOW_KIND: ExportKind = 'workflow'
 
 export class WorkflowJsonSerializer extends JsonSerializer<WorkflowExportPayload> {
+  constructor() {
+    super(WORKFLOW_KIND)
+  }
+}
+
+export class WorkflowYamlSerializer extends YamlSerializer<WorkflowExportPayload> {
   constructor() {
     super(WORKFLOW_KIND)
   }
