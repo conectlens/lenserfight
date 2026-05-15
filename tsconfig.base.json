@@ -282,6 +282,9 @@
       ],
       "@lenserfight/features/chat": [
         "libs/features/chat/src/index.ts"
+      ],
+      "@lenserfight/features/connectors": [
+        "libs/features/connectors/src/index.ts"
       ]
     }
   }
