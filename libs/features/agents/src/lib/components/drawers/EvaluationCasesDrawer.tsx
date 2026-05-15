@@ -157,12 +157,14 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
       side="right"
       width="w-[560px]"
       title="Test cases"
-    >
-      <div className="space-y-4">
+      headerExtra={
         <DrawerDocsLink
           path="/how-to/agents/workspace/drawers/evaluation-cases"
           tip="CRUD over the case list. Each case is one input + one assertion (substring/regex/jsonpath/score_gte) with a weight. Bulk-import via the JSON paste field."
         />
+      }
+    >
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {evaluation?.name}{' '}
