@@ -1,3 +1,4 @@
+import { Card } from '@lenserfight/ui/components'
 import { Bot, ChevronRight } from 'lucide-react'
 import React from 'react'
 
@@ -24,7 +25,7 @@ export function StatCard({
   action?: React.ReactNode
 }) {
   return (
-    <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-amber-200 dark:border-gray-800 dark:bg-[#0c0c0c] dark:hover:border-amber-500/10">
+    <Card className="transition-all hover:border-primary-yellow-200 dark:hover:border-primary-yellow-500/10">
       <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
         {label}
       </p>
@@ -33,7 +34,7 @@ export function StatCard({
       </p>
       <p className="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">{detail}</p>
       {action && <div className="mt-3">{action}</div>}
-    </div>
+    </Card>
   )
 }
 
@@ -49,7 +50,7 @@ export function ProfileCard({
   toolbar?: React.ReactNode
 }) {
   return (
-    <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#0c0c0c]">
+    <Card>
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
@@ -62,7 +63,7 @@ export function ProfileCard({
         {toolbar}
       </div>
       <div className="mt-5">{children}</div>
-    </div>
+    </Card>
   )
 }
 
@@ -78,16 +79,16 @@ export function TeamBoard({
   if (members.length <= 1) {
     const member = members[0]
     return (
-      <div className="rounded-[28px] border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <Card>
         <p className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
           Single agent operating view
         </p>
         <h3 className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
           {team.name}
         </h3>
-        <div className="mt-6 rounded-[24px] border border-gray-100 bg-gray-50/50 p-5 dark:border-amber-500/10 dark:bg-amber-500/5">
+        <div className="mt-6 rounded-2xl border border-gray-100 bg-gray-50/50 p-5 dark:border-primary-yellow-500/10 dark:bg-primary-yellow-500/5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-yellow-500 text-white shadow-lg shadow-primary-yellow-500/20">
               <Bot size={20} />
             </div>
             <div>
@@ -100,7 +101,7 @@ export function TeamBoard({
             </div>
           </div>
         </div>
-      </div>
+      </Card>
     )
   }
 
@@ -109,7 +110,7 @@ export function TeamBoard({
   )
 
   return (
-    <div className="rounded-[28px] border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <Card>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
@@ -127,7 +128,7 @@ export function TeamBoard({
         {lanes.map((lane) => (
           <div
             key={lane}
-            className="rounded-[24px] border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700"
+            className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800"
           >
             <p className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
               Lane {lane + 1}
@@ -136,9 +137,9 @@ export function TeamBoard({
               {members
                 .filter((m) => m.lane === lane)
                 .map((member) => (
-                  <div
+                  <Card
                     key={member.id}
-                    className="rounded-2xl border border-amber-200 bg-white p-4 dark:border-amber-500/20 dark:bg-gray-900"
+                    className="border-primary-yellow-200 dark:border-primary-yellow-500/20"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
@@ -153,14 +154,14 @@ export function TeamBoard({
                         Sort {member.sort_order}
                       </span>
                     </div>
-                  </div>
+                  </Card>
                 ))}
             </div>
           </div>
         ))}
       </div>
       {edges.length > 0 && (
-        <div className="mt-6 rounded-[24px] border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700">
+        <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
           <p className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
             Delegation and handoff edges
           </p>
@@ -179,6 +180,6 @@ export function TeamBoard({
           </div>
         </div>
       )}
-    </div>
+    </Card>
   )
 }
