@@ -278,7 +278,7 @@ Vote for the submission you believe is better. Include a rationale — it is sho
 lf battle vote a1b2c3d4-... \
   --contender 55f1... \
   --value contender_a \
-  --rationale "Handles edge cases with a clean try/except — production-ready"
+  --rationale "Handles edge cases with a clean try/except — review-ready"
 ```
 
 Rules enforced by the platform:
