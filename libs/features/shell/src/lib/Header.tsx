@@ -80,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           )}
 
           <LocaleLanguageSelect
-            className="mr-1 w-32"
+            className="mr-1"
             value={locale}
             onChange={setLocale}
           />
