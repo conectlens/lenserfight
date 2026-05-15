@@ -1,14 +1,20 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { FileDown } from 'lucide-react'
 
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { HelpButton } from '@lenserfight/ui/components'
 import { InlineNotice } from '@lenserfight/ui/feedback'
 
-import type { ExportFormat, ExportKind } from '@lenserfight/domain/exports'
+import type { ExportContext, ExportFormat, ExportKind } from '@lenserfight/domain/exports'
+import { supabase } from '@lenserfight/data/supabase'
+import { SupabaseExportsRepository } from '@lenserfight/data/exports'
+import { useAuth } from '@lenserfight/features/auth'
 
 import { useRuntimeMode } from '../hooks/useRuntimeMode'
+import { useExportRunner } from '../hooks/useExportRunner'
 import type { TransportId } from '../transport/ExportTransport'
+import { CloudDownloadTransport } from '../transport/CloudDownloadTransport'
+import { LocalDownloadTransport } from '../transport/LocalDownloadTransport'
 import { DestinationSelector } from './DestinationSelector'
 import { FormatSelector } from './FormatSelector'
 
@@ -19,6 +25,8 @@ export interface ExportModalProps<T> {
   slug: string
   title?: string
   fetchPayload: () => Promise<T>
+  /** True when the current user owns this entity (affects redaction). */
+  isOwner?: boolean
   /** Formats this entity supports (EX-1: markdown + json only). */
   availableFormats?: ExportFormat[]
   /** Override the run-export handler — primarily for tests / Storybook. */
@@ -30,14 +38,8 @@ export interface ExportModalProps<T> {
  * ModalFooter, SegmentedControl (via FormatSelector + DestinationSelector),
  * InlineNotice, HelpButton — instead of raw HTML.
  *
- * The HelpButton points to the docs path that matches the entity kind so
- * users can read the format/security guarantees without leaving the
- * modal.
- *
- * GRASP: Controller. The modal coordinates user input → orchestrator
- * call; it never serializes, never fetches the entity itself. The
- * `fetchPayload` thunk is the only IO it touches, and that is provided
- * by the caller (the entity page knows how to load itself).
+ * GRASP: Controller. Coordinates user input → orchestrator call via
+ * useExportRunner. onConfirm overrides the runner for tests / Storybook.
  */
 export function ExportModal<T>({
   open,
@@ -46,16 +48,35 @@ export function ExportModal<T>({
   slug,
   title,
   fetchPayload,
+  isOwner = false,
   availableFormats,
   onConfirm,
 }: ExportModalProps<T>) {
   const mode = useRuntimeMode()
+  const { user, isAuthenticated } = useAuth()
   const [format, setFormat] = useState<ExportFormat>('markdown')
   const [destination, setDestination] = useState<TransportId>(
     mode === 'cloud' ? 'cloud-download' : 'local-download',
   )
   const [isRunning, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const buildContext = useCallback((): ExportContext => ({
+    userId: user?.id ?? null,
+    tenantId: null,
+    via: 'web',
+    host: typeof window !== 'undefined' ? window.location.host : '',
+    isOwner,
+    isAuthenticated,
+  }), [user?.id, isOwner, isAuthenticated])
+
+  const resolveTransport = useCallback((id: TransportId) => {
+    if (id === 'local-download') return new LocalDownloadTransport()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return new CloudDownloadTransport(new SupabaseExportsRepository(supabase as any))
+  }, [])
+
+  const runExportDefault = useExportRunner<T>({ kind, slug, fetchPayload, buildContext, resolveTransport })
 
   const helpPath = useMemo(() => {
     const map: Record<ExportKind, string> = {
@@ -75,9 +96,7 @@ export function ExportModal<T>({
       if (onConfirm) {
         await onConfirm({ format, destination })
       } else {
-        // EX-1: confirm without an injected handler is a no-op preview.
-        // The host page wires the orchestrator in via onConfirm.
-        await fetchPayload()
+        await runExportDefault({ format, destination })
       }
       onClose()
     } catch (err) {
