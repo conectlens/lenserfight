@@ -41,6 +41,7 @@ export * from './lib/Logo'
 // Brand components
 export * from './lib/Alert'
 export * from './lib/Badge'
+export * from './lib/ExperimentalBadge'
 export * from './lib/Tooltip'
 export * from './lib/Progress'
 export * from './lib/Accordion'
