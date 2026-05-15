@@ -27,7 +27,7 @@ export interface LocaleDefinition {
 
 export const LOCALES: readonly LocaleDefinition[] = [
   { code: 'en', englishName: 'English',    nativeName: 'English',    direction: 'ltr', status: 'stable', countryCode: 'GB' },
-  { code: 'tr', englishName: 'Turkish',    nativeName: 'Türkçe',     direction: 'ltr', status: 'stable', countryCode: 'TR' },
+  { code: 'tr', englishName: 'Turkish',    nativeName: 'Türkçe',     direction: 'ltr', status: 'wip',    countryCode: 'TR' },
   { code: 'es', englishName: 'Spanish',    nativeName: 'Español',    direction: 'ltr', status: 'stub',   countryCode: 'ES' },
   { code: 'fr', englishName: 'French',     nativeName: 'Français',   direction: 'ltr', status: 'stub',   countryCode: 'FR' },
   { code: 'de', englishName: 'German',     nativeName: 'Deutsch',    direction: 'ltr', status: 'stub',   countryCode: 'DE' },
