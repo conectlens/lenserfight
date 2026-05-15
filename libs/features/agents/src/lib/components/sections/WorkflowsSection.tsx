@@ -2,11 +2,12 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import type { AgentTeamRecord, AgentWorkflowAssignmentRecord } from '@lenserfight/types'
+import { Button, Card } from '@lenserfight/ui/components'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GitBranch, Loader2, Play, Plus, Trash2 } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
@@ -21,6 +22,7 @@ export const WorkflowsSection: React.FC = () => {
   const { workflows, schedules, profile, viewMode, bootstrap, activeTeamId } =
     useAgentWorkspace()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const isOwner = viewMode === 'agent_owner' || viewMode === 'human_owner'
   const isAgentOwner = viewMode === 'agent_owner'
   const aiLenserId = bootstrap?.ai_lenser_id ?? ''
@@ -95,6 +97,8 @@ export const WorkflowsSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Workflows"
+      docsPath="/how-to/agents/workspace/workflows"
+      docsTip="Saved automation library. Each workflow is a typed graph with a JSON I/O contract; bind it to schedules, webhooks, or teams via the assignment drawer."
       title="Workflow library"
       description={
         isAgentOwner
@@ -104,16 +108,16 @@ export const WorkflowsSection: React.FC = () => {
       toolbar={
         isOwner ? (
           <div className="flex flex-wrap gap-2">
-            <Link
-              to="/workflows/manage"
-              className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+            <Button
+              type="button"
+              onClick={() => navigate('/workflows/manage')}
             >
               <Plus size={14} />
               Create workflow
-            </Link>
+            </Button>
             <Link
               to="/workflows"
-              className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+              className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200"
             >
               Browse templates
             </Link>
@@ -121,49 +125,6 @@ export const WorkflowsSection: React.FC = () => {
         ) : undefined
       }
     >
-      {isAgentOwner && (
-        <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <ProfileCard
-            title="Why workflows still exist"
-            subtitle="Builder and workflows are related, but they are not duplicates."
-          >
-            <div className="space-y-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
-              <p>
-                Builder is the live team topology: who participates, who reviews,
-                and how agents hand work off.
-              </p>
-              <p>
-                Workflows are the saved automation library: reusable graph logic,
-                schedules, templates, and run entry points you can assign to the
-                selected agent or to {focusedTeamName}.
-              </p>
-            </div>
-          </ProfileCard>
-
-          <ProfileCard
-            title="Workflow actions"
-            subtitle="Start from a template, fork an existing graph, or assign a workflow to the active builder team."
-          >
-            <div className="grid gap-3 sm:grid-cols-3">
-              <LinkCard
-                to="/workflows"
-                title="Templates"
-                description="Browse reusable workflow starters."
-              />
-              <LinkCard
-                to="/workflows?scope=mine"
-                title="My library"
-                description="Review the owner’s saved automation graphs."
-              />
-              <LinkCard
-                to={`/lenser/${profile.handle}/ag/team`}
-                title="Open builder"
-                description="Adjust the live team topology before assigning workflows."
-              />
-            </div>
-          </ProfileCard>
-        </div>
-      )}
 
       <div className="space-y-4">
         {cards.length === 0 ? (
@@ -176,13 +137,13 @@ export const WorkflowsSection: React.FC = () => {
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <Link
                   to="/workflows/manage"
-                  className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+                  className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-yellow-600 dark:bg-white dark:text-gray-900"
                 >
                   Create workflow
                 </Link>
                 <Link
                   to="/workflows"
-                  className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+                  className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200"
                 >
                   Browse templates
                 </Link>
@@ -278,7 +239,7 @@ const LinkCard: React.FC<{
 }> = ({ to, title, description }) => (
   <Link
     to={to}
-    className="rounded-[22px] border border-gray-200 bg-gray-50 p-4 transition hover:border-amber-300 hover:bg-amber-50/60 dark:border-gray-800 dark:bg-gray-700 dark:hover:border-amber-500/40 dark:hover:bg-amber-500/10"
+    className="rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-primary-yellow-300 hover:bg-primary-yellow-50/60 dark:border-gray-800 dark:bg-gray-700 dark:hover:border-primary-yellow-500/40 dark:hover:bg-primary-yellow-500/10"
   >
     <div className="text-sm font-semibold text-gray-900 dark:text-white">{title}</div>
     <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
@@ -318,7 +279,7 @@ const WorkflowLibraryCard: React.FC<{
   onDeleteAssignment,
   builderHref,
 }) => (
-    <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -329,7 +290,7 @@ const WorkflowLibraryCard: React.FC<{
               {workflow.visibility}
             </span>
             {workflow.parent_workflow_id && (
-              <span className="rounded-full border border-amber-200 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+              <span className="rounded-full border border-primary-yellow-200 px-2.5 py-0.5 text-[11px] font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300">
                 Fork
               </span>
             )}
@@ -341,7 +302,7 @@ const WorkflowLibraryCard: React.FC<{
 
         <Link
           to={builderHref}
-          className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+          className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200"
         >
           Open builder
         </Link>
@@ -357,7 +318,7 @@ const WorkflowLibraryCard: React.FC<{
         />
       </div>
 
-      <div className="mt-4 rounded-[20px] border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+      <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
         <div className="grid gap-2 md:grid-cols-2">
           <span>
             Updated {formatDateTime(workflow.updated_at)}
@@ -376,18 +337,18 @@ const WorkflowLibraryCard: React.FC<{
       {isAgentOwner && (
         <div className="mt-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <button
+            <Button
               type="button"
               onClick={onNewAssignment}
-              className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+              className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200"
             >
               <Plus size={12} />
               New assignment
-            </button>
+            </Button>
           </div>
 
           {assignments.length === 0 ? (
-            <div className="rounded-[18px] border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <div className="rounded-xl border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
               No assignments yet. Assign this workflow to the selected AI lenser or to a builder team before scheduling it.
             </div>
           ) : (
@@ -395,7 +356,7 @@ const WorkflowLibraryCard: React.FC<{
               {assignments.map((assignment) => (
                 <div
                   key={assignment.id}
-                  className="flex items-center justify-between rounded-[18px] border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-800 dark:bg-gray-700"
+                  className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-800 dark:bg-gray-700"
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-gray-900 dark:text-white">
@@ -403,8 +364,8 @@ const WorkflowLibraryCard: React.FC<{
                     </span>
                     <span
                       className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${assignment.is_active
-                          ? 'border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
-                          : 'border-gray-200 text-gray-500 dark:border-gray-700 dark:text-gray-400'
+                        ? 'border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
+                        : 'border-gray-200 text-gray-500 dark:border-gray-700 dark:text-gray-400'
                         }`}
                     >
                       {assignment.is_active ? 'active' : 'paused'}
@@ -412,7 +373,7 @@ const WorkflowLibraryCard: React.FC<{
                   </div>
                   <div className="flex gap-2">
                     {assignment.is_active && (
-                      <button
+                      <Button
                         type="button"
                         disabled={isDispatching}
                         onClick={() => onRunNow(assignment)}
@@ -420,22 +381,22 @@ const WorkflowLibraryCard: React.FC<{
                       >
                         {isDispatching ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
                         Run
-                      </button>
+                      </Button>
                     )}
-                    <button
+                    <Button
                       type="button"
                       onClick={() => onEditAssignment(assignment)}
-                      className="rounded-2xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+                      className="rounded-2xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200"
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={() => onDeleteAssignment(assignment)}
                       className="rounded-2xl border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10"
                     >
                       <Trash2 size={12} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -445,7 +406,7 @@ const WorkflowLibraryCard: React.FC<{
       )}
 
       {!isAgentOwner && isOwner && assignments.length > 0 && (
-        <div className="mt-4 rounded-[18px] border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+        <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
           Assignment controls are only available inside the selected AI lenser control room.
         </div>
       )}
@@ -453,7 +414,7 @@ const WorkflowLibraryCard: React.FC<{
   )
 
 const SummaryChip: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="rounded-[18px] border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-700">
+  <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-700">
     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
       {label}
     </p>
