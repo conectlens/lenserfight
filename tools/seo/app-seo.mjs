@@ -35,10 +35,23 @@ const __arenaLocalesDir = resolve(__seoDir, '../../apps/arena/src/locales')
 const arenaSeoCache = new Map()
 function loadArenaSeoStrings(locale) {
   if (arenaSeoCache.has(locale)) return arenaSeoCache.get(locale)
-  const filePath = resolve(__arenaLocalesDir, `${locale}.json`)
-  const raw = readFileSync(filePath, 'utf-8')
-  const parsed = JSON.parse(raw)
-  const seo = parsed?.seo ?? {}
+  // New layout: apps/arena/src/locales/<locale>/seo.json
+  const namespacedPath = resolve(__arenaLocalesDir, `${locale}/seo.json`)
+  // Legacy layout fallback: apps/arena/src/locales/<locale>.json
+  const legacyPath = resolve(__arenaLocalesDir, `${locale}.json`)
+  let seo = {}
+  try {
+    const raw = readFileSync(namespacedPath, 'utf-8')
+    seo = JSON.parse(raw) ?? {}
+  } catch {
+    try {
+      const raw = readFileSync(legacyPath, 'utf-8')
+      const parsed = JSON.parse(raw)
+      seo = parsed?.seo ?? {}
+    } catch {
+      seo = {}
+    }
+  }
   arenaSeoCache.set(locale, seo)
   return seo
 }
