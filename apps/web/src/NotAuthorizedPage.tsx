@@ -3,10 +3,12 @@ import { Button } from '@lenserfight/ui/components'
 import { sanitizeReturnUrl } from '@lenserfight/utils/dom'
 import { ShieldOff } from 'lucide-react'
 import React, { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 export const NotAuthorizedPage: React.FC = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const { isAuthenticated, isLoading } = useAuth()
 
@@ -34,17 +36,17 @@ export const NotAuthorizedPage: React.FC = () => {
         <ShieldOff size={28} className="text-greyscale-400" />
       </div>
       <h1 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 mb-2">
-        Access denied
+        {t('auth.notAuthorized.title')}
       </h1>
       <p className="text-sm text-greyscale-500 dark:text-greyscale-400 max-w-sm mb-8">
-        You need to be signed in with a Lenser profile to access this page.
+        {t('auth.notAuthorized.message')}
       </p>
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          Go back
+          {t('auth.notAuthorized.goBack')}
         </Button>
         <Button onClick={() => navigate(loginHref)} className="w-auto">
-          Sign in
+          {t('auth.notAuthorized.signIn')}
         </Button>
       </div>
     </div>

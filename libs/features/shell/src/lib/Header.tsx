@@ -8,6 +8,8 @@ import { ActionMenu, Breadcrumbs, Button } from '@lenserfight/ui/components'
 import { useUI } from '@lenserfight/ui/providers'
 import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
 import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
+import { useLocale } from '@lenserfight/shared/i18n-locale'
+import { LocaleLanguageSelect } from '@lenserfight/ui/forms'
 import { Bell, ChevronLeft, Menu, Share2, Shield, LogOut, Github } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
@@ -32,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { activeWorkspace, humanWorkspace } = useLenserWorkspace()
   const { switchToProfile, isSwitching } = useWorkspaceSwitchController()
   const unreadCount = useUnreadCount()
+  const { locale, setLocale } = useLocale()
 
   const isAgentOwner = activeWorkspace?.type === 'ai'
   const { state: chainabitState, credits, models, reconnect } = useChainabitConnection()
@@ -75,6 +78,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               <Shield size={20} />
             </button>
           )}
+
+          <LocaleLanguageSelect
+            className="mr-1 w-32"
+            value={locale}
+            onChange={setLocale}
+          />
 
           <a
             href={githubUrl}

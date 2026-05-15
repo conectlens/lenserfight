@@ -16,6 +16,7 @@ export type ArtifactKind =
   | 'image'
   | 'audio'
   | 'video'
+  | 'pdf'
   | 'json'
   | 'trace'
   | 'tool_log'

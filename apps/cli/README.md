@@ -21,6 +21,21 @@ Built on [citty](https://github.com/unjs/citty) and [consola](https://github.com
 
 ---
 
+## Installation
+
+```bash
+npm install -g lenserfight
+lenserfight --version
+
+npx lenserfight --help
+npx lf --version
+
+npm install --save-dev lenserfight
+```
+
+The package supports global installs, `npx`/`npm exec`, local project installs,
+CI runners, and Docker-style Node environments. Node `>=22` is required.
+
 ## Installation (for contributors)
 
 ```bash
@@ -28,6 +43,13 @@ Built on [citty](https://github.com/unjs/citty) and [consola](https://github.com
 pnpm nx run cli:build       # build → dist/apps/cli/main.js
 pnpm nx run cli:link        # npm link — makes `lf` available globally
 lf --version
+```
+
+Release packaging checks:
+
+```bash
+pnpm nx run cli:validate-package
+pnpm nx run cli:smoke-install
 ```
 
 Shell completion (one-time setup):
@@ -268,5 +290,6 @@ pnpm nx run cli:test --testFile=apps/cli/src/commands/battle.spec.ts
 ## Related
 
 - [CLI reference docs](../../docs/reference/cli/) — full command documentation
+- [CLI release guide](../../docs/en/how-to/contributors/cli-release.md) — maintainer publishing, rollback, and provenance workflow
 - [Root README](../../README.md) — repository overview, architecture, and Quick Start
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) — contribution guidelines

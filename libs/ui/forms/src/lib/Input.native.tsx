@@ -17,6 +17,7 @@ import { useNativeTheme } from '@lenserfight/ui/providers'
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {
   error?:           boolean
+  disabled?:        boolean
   startAdornment?:  React.ReactNode
   endAdornment?:    React.ReactNode
   style?:           ViewStyle

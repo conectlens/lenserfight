@@ -93,7 +93,7 @@ export const Footer: React.FC<FooterProps> = ({
   const conectlensUrl = appendUtm('https://conectlens.com', utmMedium, 'footer_conectlens_link')
 
   return (
-    <footer className="w-full py-12 px-4 mt-auto border-t border-gray-100 bg-white text-gray-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 transition-colors duration-200">
+    <footer className="w-full py-12 px-4 mt-auto border-t border-greyscale-100 bg-white text-greyscale-500 dark:bg-greyscale-950 dark:border-greyscale-800 dark:text-greyscale-400 transition-colors duration-200">
       <div
         className={`${isDashboard ? 'w-full' : 'max-w-5xl mx-auto px-6'} flex flex-col gap-12`}
       >
@@ -106,10 +106,10 @@ export const Footer: React.FC<FooterProps> = ({
             )}
 
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
-              <span className="font-bold text-gray-900 dark:text-gray-100 tracking-tight text-sm">
+              <span className="font-bold text-greyscale-900 dark:text-greyscale-100 tracking-tight text-sm">
                 © {currentYear} LenserFight
               </span>
-              <span className="hidden md:inline text-gray-300 dark:text-gray-700">·</span>
+              <span className="hidden md:inline text-greyscale-300 dark:text-greyscale-700">·</span>
               <a
                 href={appendUtm(GITHUB_SPONSORS_URL, utmMedium, 'footer_sponsor_link')}
                 target="_blank"
@@ -120,12 +120,12 @@ export const Footer: React.FC<FooterProps> = ({
                 <Heart size={12} /> Sponsor us
               </a>
 
-              <span className="hidden md:inline text-gray-300 dark:text-gray-700">·</span>
+              <span className="hidden md:inline text-greyscale-300 dark:text-greyscale-700">·</span>
               <a
                 href={conectlensUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="flex items-center gap-1 text-xs text-greyscale-400 dark:text-greyscale-500 hover:text-greyscale-600 dark:hover:text-greyscale-300 transition-colors"
               >
                 Powered by ConectLens
                 <ExternalLink size={10} aria-label="External link" />
@@ -135,13 +135,13 @@ export const Footer: React.FC<FooterProps> = ({
 
           {/* Right: built-by + theme/social icons */}
           <div className="flex items-center gap-4">
-            <span className="hidden md:inline text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-600">
+            <span className="hidden md:inline text-[10px] uppercase tracking-widest text-greyscale-400 dark:text-greyscale-600">
               built by{' '}
               <a
                 href={ofcsknUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                className="font-bold hover:text-greyscale-900 dark:hover:text-greyscale-100 transition-colors"
               >
                 @ofcskn
               </a>{' '}
@@ -150,7 +150,7 @@ export const Footer: React.FC<FooterProps> = ({
                 href={communityUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                className="font-bold hover:text-greyscale-900 dark:hover:text-greyscale-100 transition-colors"
               >
                 Lenser Community
               </a>
@@ -162,14 +162,14 @@ export const Footer: React.FC<FooterProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="GitHub"
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-100 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:hover:border-gray-500 dark:hover:text-gray-100"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-greyscale-100 text-greyscale-400 transition-colors hover:border-greyscale-300 hover:text-greyscale-900 dark:border-greyscale-700 dark:hover:border-greyscale-500 dark:hover:text-greyscale-100"
               >
                 <Github size={16} />
               </a>
 
               <button
                 onClick={() => setTheme(nextTheme)}
-                className="p-2 rounded-full text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none"
+                className="p-2 rounded-full text-greyscale-400 hover:text-greyscale-900 hover:bg-greyscale-100 dark:hover:text-greyscale-100 dark:hover:bg-greyscale-800 transition-colors focus:outline-none"
                 aria-label="Toggle theme"
                 title={THEME_LABELS[themeMode]}
               >
@@ -247,7 +247,7 @@ export const Footer: React.FC<FooterProps> = ({
             href={docsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+            className="flex items-center gap-1 hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
           >
             Docs
             <ExternalLink size={11} aria-label="External link" />

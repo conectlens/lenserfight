@@ -68,7 +68,7 @@ export function validateOutput(
   }
 
   for (const key of NODE_OUTPUT_ENVELOPE_REQUIRED_FIELDS) {
-    if (!isPresent((envelope as Record<string, unknown>)[key])) {
+    if (!isPresent((envelope as unknown as Record<string, unknown>)[key])) {
       errors.push({ field: key, reason: 'missing_required' })
     }
   }

@@ -42,7 +42,7 @@ Validation: `lf validate`.
 
 Common mistakes: letting the thumbnail prompt contradict the script, skipping audience definition.
 
-Expected outcome: a production-ready content kit.
+Expected outcome: a review-ready content kit.
 
 ## Validate templates before committing
 

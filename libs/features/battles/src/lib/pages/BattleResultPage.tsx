@@ -116,7 +116,7 @@ export function BattleResultPage() {
   const { slug } = useParams<{ slug: string }>()
   const { data: battle } = useBattle(slug ?? '')
 
-  const submissionIds = (battle?.submissions as Array<{ id: string }> | undefined)
+  const submissionIds = ((battle as unknown as { submissions?: Array<{ id: string }> } | undefined)?.submissions)
     ?.map((s) => s.id) ?? []
   const { data: trustEvaluations = [] } = useTrustEvaluations(submissionIds)
   const verifiedSubmissions = trustEvaluations.filter(

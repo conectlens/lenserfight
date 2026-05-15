@@ -14,7 +14,7 @@ import {
   Animated,
   StyleSheet,
 } from 'react-native'
-import type { ViewStyle } from 'react-native'
+import type { StyleProp, ViewStyle } from 'react-native'
 
 // Optional expo-haptics integration
 let Haptics: { impactAsync: (style?: string) => Promise<void> } | null = null
@@ -32,7 +32,7 @@ export interface PressableProps {
   haptic?:      boolean
   /** Pressed opacity (0–1). Default: 0.7 */
   pressedOpacity?: number
-  style?:       ViewStyle
+  style?:       StyleProp<ViewStyle>
   children?:    React.ReactNode
   testID?:      string
   accessible?:  boolean

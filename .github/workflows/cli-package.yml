@@ -1,0 +1,100 @@
+name: CLI package validation
+
+on:
+  pull_request:
+    paths:
+      - 'apps/cli/**'
+      - 'libs/**'
+      - 'tools/cli-release/**'
+      - 'nx.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/cli-package.yml'
+  push:
+    branches:
+      - main
+      - development
+    paths:
+      - 'apps/cli/**'
+      - 'libs/**'
+      - 'tools/cli-release/**'
+      - 'nx.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/cli-package.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: cli-package-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@595b5aeba73380359d98a5e087f648dbb0edce1b # v4.7.3
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-1.0, AGPL-3.0
+
+  package:
+    name: Package on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit production dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm audit --prod --audit-level high
+
+      - name: Test CLI release-critical paths
+        run: pnpm nx run cli:test --testPathPatterns="run.spec.ts|auth.spec.ts|local-battle-engine.spec.ts|exec-context.spec.ts"
+
+      - name: Build, validate, and smoke install package
+        run: pnpm nx run cli:smoke-install
+
+      - name: Generate SBOM
+        if: matrix.os == 'ubuntu-latest'
+        run: npm sbom --omit dev --sbom-format cyclonedx > dist/apps/cli/cli-sbom.cyclonedx.json
+
+      - name: Upload package validation artifacts
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cli-package-validation
+          path: |
+            dist/apps/cli/package-validation.json
+            dist/apps/cli/package-smoke.json
+            dist/apps/cli/cli-sbom.cyclonedx.json

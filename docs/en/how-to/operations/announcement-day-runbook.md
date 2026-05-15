@@ -187,9 +187,9 @@ These are normal on announcement day:
 
 ## Escalation contact
 
-- **Primary**: `ofcskn1@gmail.com` (repository maintainer)
+- **Primary**: `maintainers@lenserfight.com` (repository maintainer rotation)
 - **Security incidents**: `security@lenserfight.com` (see `SECURITY.md`)
-- **GitHub**: open an issue with label `announcement-incident` — maintainer monitors during the 8-hour window
+- **GitHub**: open an issue with label `announcement-incident` — maintainers monitor during the 8-hour window
 
 ---
 

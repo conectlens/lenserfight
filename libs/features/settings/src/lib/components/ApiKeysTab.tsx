@@ -26,9 +26,9 @@ export const ApiKeysTab: React.FC = () => {
   const [revokeTarget, setRevokeTarget] = useState<UserApiKey | null>(null)
 
   const handleStore = () => {
-    if (!provider || !rawKey.trim()) return
+    if (!provider || provider === 'ollama' || !rawKey.trim()) return
     storeKey(
-      { provider: provider as ByokProvider, label: label.trim() || undefined, rawKey: rawKey.trim() },
+      { provider, label: label.trim() || undefined, rawKey: rawKey.trim() },
       {
         onSuccess: () => {
           setRawKey('')

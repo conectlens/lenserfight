@@ -16,7 +16,7 @@ interface RowData {
   rank: number
   handle: string
   displayName: string
-  avatarUrl: string | undefined
+  avatarUrl: string | null | undefined
   statPrimary: string
   statSecondary: string
   badge?: React.ReactNode
@@ -242,7 +242,7 @@ export const LenserBoardRow: React.FC<LenserBoardRowProps> = (props) => {
   return (
     <UnifiedRow
       rank={rank}
-      handle={handle}
+      handle={handle ?? ''}
       displayName={displayName}
       avatarUrl={avatarUrl}
       statPrimary={`${formatCount(totalXp)} XP`}

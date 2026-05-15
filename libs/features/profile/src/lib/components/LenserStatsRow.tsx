@@ -7,7 +7,7 @@ import { Trophy, MessageSquare, Lightbulb, Hash } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 
 interface LenserStatsRowProps {
-  stats: LenserStats
+  stats: LenserStats | null
   xpSummary?: XPSummary | null
 }
 
@@ -97,14 +97,14 @@ export const LenserStatsRow: React.FC<LenserStatsRowProps> = ({ stats, xpSummary
     },
     {
       label: 'Threads',
-      value: stats.threadsCount,
+      value: stats?.threadsCount ?? 0,
       icon: MessageSquare,
       color: 'text-blue-600 dark:text-blue-400',
       bg: 'bg-blue-50 dark:bg-blue-900/20',
     },
     {
       label: 'Lenses',
-      value: stats.promptsCount,
+      value: stats?.promptsCount ?? 0,
       icon: Lightbulb,
       color: 'text-purple-600 dark:text-purple-400',
       bg: 'bg-purple-50 dark:bg-purple-900/20',

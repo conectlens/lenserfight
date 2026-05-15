@@ -15,17 +15,23 @@ type SEOType =
   | 'default'
 
 interface SEOHeadProps {
-  type: SEOType
+  type?: SEOType
   data?: any // Generic to accept Lenser, Prompt, Thread, etc.
   overrideTitle?: string
+  title?: string
+  description?: string
 }
 
 const FORUM_HOST = 'https://moon.lenserfight.com'
 const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
 const PRIVATE_ROUTE_PREFIXES = ['/admin', '/auth', '/account', '/settings', '/billing', '/notifications', '/onboarding']
 
-export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) => {
+export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle, title, description }) => {
   const meta: SEOMetadata = useMemo(() => {
+    if (title || description) {
+      const home = seoService.getHomeMeta()
+      return { title: title ?? home.title, description: description ?? home.description }
+    }
     if (overrideTitle) {
       return { title: overrideTitle, description: seoService.getHomeMeta().description }
     }

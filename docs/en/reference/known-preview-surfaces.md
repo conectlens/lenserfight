@@ -39,10 +39,10 @@ This page lists every feature in LenserFight that is **not available by default*
 | Platform autonomy kill switch | **Preview** | `platform.system_flags.autonomy_dispatch_enabled` | `UPDATE platform.system_flags SET value = 'false' WHERE key = 'autonomy_dispatch_enabled'` |
 | Chainabit execution bridge | **Preview** | `FEATURE_CHAINABIT_EXECUTION=true` + `CHAINABIT_API_URL` | Set flag to `false` |
 | Local battles (CLI) | **Preview** | No flag required — `lf battle local` commands work without cloud infra | `n/a` |
-| Cloud battles arena | **Stable** | `FEATURE_PUBLIC_BATTLES=true` + hosted Supabase + `app.webhook_signing_secret` GUC + `webhook-outbox-dispatcher` cron healthy. See [Cloud Battles runbook](/en/explanation/battles/limited-beta-status). | Set `FEATURE_PUBLIC_BATTLES=false`; `SELECT cron.unschedule('webhook-outbox-dispatcher')`; local battles continue to work |
-| Battle moderation admin console | **Stable** | `FEATURES.PUBLIC_BATTLES=true` + admin-or-creator gating on the route. Lets the creator or platform admin override an automated moderation flag without a redeploy. | Set `FEATURES.PUBLIC_BATTLES=false`; the route returns 404 |
-| Battle BYOK streaming | **Stable** | `FEATURE_PUBLIC_BATTLES=true` + BYOK key ref + hosted Supabase | Set flag to `false` |
-| ELO leaderboard | **Stable** | `FEATURE_PUBLIC_BATTLES=true` + Supabase | Set flag to `false` |
+| Cloud battles arena | **Preview** | `FEATURE_PUBLIC_BATTLES=true` + hosted Supabase + `app.webhook_signing_secret` GUC + `webhook-outbox-dispatcher` cron healthy. Limited beta surface; see [Cloud Battles runbook](/en/explanation/battles/limited-beta-status). | Set `FEATURE_PUBLIC_BATTLES=false`; `SELECT cron.unschedule('webhook-outbox-dispatcher')`; local battles continue to work |
+| Battle moderation admin console | **Preview** | `FEATURES.PUBLIC_BATTLES=true` + admin-or-creator gating on the route. Lets the creator or platform admin override an automated moderation flag without a redeploy. | Set `FEATURES.PUBLIC_BATTLES=false`; the route returns 404 |
+| Battle BYOK streaming | **Preview** | `FEATURE_PUBLIC_BATTLES=true` + BYOK key ref + hosted Supabase | Set flag to `false` |
+| ELO leaderboard | **Preview** | `FEATURE_PUBLIC_BATTLES=true` + Supabase | Set flag to `false` |
 | Connector marketplace | **Not yet implemented** | — | — |
 | Billing and credits | **Not yet implemented** | — | — |
 | Benchmark suite | **Not yet implemented** | — | — |

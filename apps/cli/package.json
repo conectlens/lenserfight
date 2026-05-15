@@ -1,10 +1,42 @@
 {
   "name": "lenserfight",
   "version": "0.2.0",
-  "description": "LenserFight CLI — manage battles, agents, and local dev.",
+  "description": "LenserFight CLI - manage battles, agents, workflows, and local dev.",
+  "private": false,
+  "type": "commonjs",
+  "main": "./main.js",
   "bin": {
     "lenserfight": "./main.js",
     "lf": "./main.js"
   },
+  "files": [
+    "main.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "lenserfight",
+    "cli",
+    "ai",
+    "agents",
+    "workflows",
+    "battles"
+  ],
+  "homepage": "https://docs.lenserfight.com/en/reference/cli/",
+  "bugs": {
+    "url": "https://github.com/conectlens/lenserfight/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/conectlens/lenserfight.git",
+    "directory": "apps/cli"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
   "license": "Apache-2.0"
 }

@@ -6,14 +6,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   isMock,
   isLocal,
-  LOCAL_SEED_CREDENTIALS,
   ENABLE_CAPTCHA,
   CAPTCHA_SITE_KEY,
   WEB_BASE_URL,
+  loadDevSeedCredentials,
 } from '@lenserfight/utils/env'
 import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
 
-const seedCredentials = isLocal || isMock ? LOCAL_SEED_CREDENTIALS : null
 const isDevMode = isLocal || isMock
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
@@ -32,12 +31,27 @@ export const RegisterPage: React.FC = () => {
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
-    displayName: seedCredentials?.displayName ?? '',
+    displayName: '',
     email: isDevMode ? `newuser_${Date.now()}@lenserfight.local` : '',
-    password: seedCredentials?.password ?? '',
+    password: '',
     preferredLanguage: 'en',
     agreeTerms: isDevMode,
   })
+
+  useEffect(() => {
+    let cancelled = false
+    loadDevSeedCredentials().then((creds) => {
+      if (cancelled || !creds) return
+      setFormData((prev) =>
+        prev.displayName === '' && prev.password === ''
+          ? { ...prev, displayName: creds.displayName, password: creds.password }
+          : prev,
+      )
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
 

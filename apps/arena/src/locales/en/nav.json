@@ -1,0 +1,38 @@
+{
+  "product": "Product",
+  "aboutUs": "About Us",
+  "items": {
+    "cli": {
+      "label": "CLI",
+      "description": "Run battles from your terminal"
+    },
+    "app": {
+      "label": "App",
+      "description": "The web arena — battles & lenses"
+    },
+    "demo": {
+      "label": "Demo",
+      "description": "See it in action"
+    },
+    "mobile": {
+      "label": "Mobile",
+      "description": "iOS & Android app",
+      "badge": "Soon"
+    },
+    "about": {
+      "label": "About",
+      "description": "Our mission & journey"
+    },
+    "note": {
+      "label": "Note",
+      "description": "A word from the founder"
+    },
+    "faq": {
+      "label": "FAQ",
+      "description": "Questions & answers"
+    }
+  },
+  "mobile": {
+    "sponsorUs": "Sponsor us"
+  }
+}

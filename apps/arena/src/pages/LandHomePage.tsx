@@ -2,7 +2,8 @@ import { AiLenserFamily, Badge, Card, DesktopFrame } from '@lenserfight/ui/compo
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Bolt, CheckCircle, Heart, MessagesSquare, Music, PlayCircle, Shield, Star, Swords, Youtube } from 'lucide-react'
 import React, { useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
 import { ArenaPulseSection } from '../components/ArenaPulseSection'
 import { BattleTypesShowcase } from '../components/BattleTypesShowcase'
@@ -49,43 +50,19 @@ const viewport = { once: true, margin: '-60px' }
 
 // ── Static data ──────────────────────────────────────────────────────────────
 
-const HERO_BULLETS = [
-  'Create a battle in 3 steps — no code required.',
-  'AI handicap settings level the playing field fairly.',
-  'Every result is public, citable, and auditable.',
-]
-
-const HOW_IT_WORKS = [
-  { step: '01', icon: Swords, title: 'Create a battle', description: 'Write a Lens prompt and choose who competes — humans, AI models, or both.' },
-  { step: '02', icon: MessagesSquare, title: 'Vote and judge', description: 'The community votes on outputs. AI judges add weighted, structured scores.' },
-  { step: '03', icon: Star, title: 'Earn XP and rise', description: 'Every vote, win, and Lens you create earns XP toward your lenser level.' },
-]
-
+const HERO_BULLET_INDICES = [0, 1, 2] as const
+const HOW_IT_WORKS_ICONS = [Swords, MessagesSquare, Star] as const
 const SOUNDTRACKS = [
-  {
-    title: 'Official Soundtrack',
-    description: 'The main fight theme for opening a battle and locking into the arena.',
-    videoId: 'kine5GjALC0',
-    href: 'https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0',
-  },
-  {
-    title: 'Arena Soundtrack II',
-    description: 'A sharper beat for review rounds, votes, and late-night building sessions.',
-    videoId: 'yN_44HCS1tE',
-    href: 'https://www.youtube.com/watch?v=yN_44HCS1tE',
-  },
-  {
-    title: 'Arena Soundtrack III',
-    description: 'A focused track for the final comparison before the winner is revealed.',
-    videoId: 'FM1z-M3DD24',
-    href: 'https://www.youtube.com/watch?v=FM1z-M3DD24',
-  },
-]
+  { videoId: 'kine5GjALC0', href: 'https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0' },
+  { videoId: 'yN_44HCS1tE', href: 'https://www.youtube.com/watch?v=yN_44HCS1tE' },
+  { videoId: 'FM1z-M3DD24', href: 'https://www.youtube.com/watch?v=FM1z-M3DD24' },
+] as const
 
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export const LandHomePage: React.FC = () => {
+  const { t } = useTranslation(['home', 'common'])
   const heroRef = useRef<HTMLElement>(null)
   const { scrollY } = useScroll()
   const heroY = useTransform(scrollY, [0, 400], [0, -60])
@@ -111,17 +88,16 @@ export const LandHomePage: React.FC = () => {
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               className="inline-block"
             >
-              <Badge color="yellow" variant="outline">Live arena · AI vs Human benchmarking</Badge>
+              <Badge color="yellow" variant="outline">{t('common:badges.liveArena')}</Badge>
             </motion.div>
           </motion.div>
 
           <motion.div className="space-y-4" variants={fadeUp} initial="hidden" animate="visible">
             <h1 className="max-w-3xl text-5xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-6xl lg:text-7xl">
-              Bring Your Agent! Start the Fight!
+              {t('home:hero.headline')}
             </h1>
             <p className="max-w-2xl text-lg leading-8 text-greyscale-600 dark:text-greyscale-400">
-              LenserFight is the open benchmark arena where AI models and human lensers compete on the same Lens.
-              Community votes, AI judges, and shareable result pages make quality legible — no black boxes.
+              {t('home:hero.subheadline')}
             </p>
           </motion.div>
 
@@ -131,16 +107,19 @@ export const LandHomePage: React.FC = () => {
             initial="hidden"
             animate="visible"
           >
-            {HERO_BULLETS.map((point) => (
-              <motion.li
-                key={point}
-                variants={fadeLeft}
-                className="flex items-start gap-3 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400"
-              >
-                <CheckCircle size={16} className="mt-1 shrink-0 text-status-green" />
-                <span>{point}</span>
-              </motion.li>
-            ))}
+            {HERO_BULLET_INDICES.map((i) => {
+              const point = t(`home:hero.bullets.${i}`)
+              return (
+                <motion.li
+                  key={i}
+                  variants={fadeLeft}
+                  className="flex items-start gap-3 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400"
+                >
+                  <CheckCircle size={16} className="mt-1 shrink-0 text-status-green" />
+                  <span>{point}</span>
+                </motion.li>
+              )
+            })}
           </motion.ul>
 
           <motion.div variants={fadeUp} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
@@ -155,7 +134,7 @@ export const LandHomePage: React.FC = () => {
             transition={{ delay: 0.28 }}
             className="inline-flex items-center gap-2 text-sm font-medium text-greyscale-500 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-0"
           >
-            Browse live battles <ArrowRight size={14} />
+            {t('common:cta.browseBattles')} <ArrowRight size={14} />
           </motion.a>
         </motion.div>
 
@@ -164,7 +143,7 @@ export const LandHomePage: React.FC = () => {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ ...spring, delay: 0.12 }}
         >
-          <DesktopFrame title="Live battle preview" url="lenserfight.com/battles" label="Auto-cycling demo">
+          <DesktopFrame title={t('home:preview.demoTitle')} url="lenserfight.com/battles" label={t('home:preview.demoFrameLabel')}>
             <HeroFightPreview />
           </DesktopFrame>
         </motion.div>
@@ -178,12 +157,12 @@ export const LandHomePage: React.FC = () => {
       {/* ─── 2: Battle types ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
         <motion.div className="mb-8 space-y-2" variants={fadeLeft} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="yellow" variant="outline">Four battle types</Badge>
+          <Badge color="yellow" variant="outline">{t('home:battleTypes.badge')}</Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            Every combination of human and AI
+            {t('home:battleTypes.title')}
           </h2>
           <p className="max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            Whether you want humans judging AI outputs, AI judging human writing, or a pure AI benchmark — there is a battle type for it.
+            {t('home:battleTypes.subtitle')}
           </p>
         </motion.div>
         <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={viewport}>
@@ -194,8 +173,8 @@ export const LandHomePage: React.FC = () => {
       {/* ─── 3: How it works ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
         <motion.div className="mb-8 space-y-2" variants={fadeRight} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="green" variant="outline">How it works</Badge>
-          <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">A battle in three steps</h2>
+          <Badge color="green" variant="outline">{t('home:howItWorks.badge')}</Badge>
+          <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">{t('home:howItWorks.title')}</h2>
         </motion.div>
         <motion.div
           className="relative grid gap-5 md:grid-cols-3"
@@ -205,20 +184,25 @@ export const LandHomePage: React.FC = () => {
           viewport={viewport}
         >
           <div className="absolute inset-x-0 top-10 hidden h-px bg-surface-border md:block" />
-          {HOW_IT_WORKS.map(({ step, icon: Icon, title, description }) => (
-            <motion.div key={step} variants={cardVariant}>
-              <Card className="relative space-y-4 p-6">
-                <div className="flex items-center gap-3">
-                  <div className="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-yellow-500 text-greyscale-900">
-                    <Icon size={18} />
+          {HOW_IT_WORKS_ICONS.map((Icon, i) => {
+            const step = `0${i + 1}`
+            const title = t(`home:howItWorks.steps.${i}.title`)
+            const description = t(`home:howItWorks.steps.${i}.description`)
+            return (
+              <motion.div key={i} variants={cardVariant}>
+                <Card className="relative space-y-4 p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-yellow-500 text-greyscale-900">
+                      <Icon size={18} />
+                    </div>
+                    <span className="text-xs font-black tracking-widest text-greyscale-400">{step}</span>
                   </div>
-                  <span className="text-xs font-black tracking-widest text-greyscale-400">{step}</span>
-                </div>
-                <h3 className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">{title}</h3>
-                <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">{description}</p>
-              </Card>
-            </motion.div>
-          ))}
+                  <h3 className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">{title}</h3>
+                  <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">{description}</p>
+                </Card>
+              </motion.div>
+            )
+          })}
         </motion.div>
       </section>
 
@@ -232,14 +216,13 @@ export const LandHomePage: React.FC = () => {
           viewport={viewport}
         >
           <Badge color="yellow" variant="outline">
-            Motion Identity
+            {t('home:brandMotion.badge')}
           </Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            The visual pulse of the arena
+            {t('home:brandMotion.title')}
           </h2>
           <p className="max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            Our brand is defined by movement, speed, and precision. Explore the cinematic foundations
-            of LenserFight.
+            {t('home:brandMotion.subtitle')}
           </p>
         </motion.div>
         <React.Suspense
@@ -259,12 +242,12 @@ export const LandHomePage: React.FC = () => {
       {/* ─── 4: Gamification ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
         <motion.div className="mb-8 space-y-2" variants={fadeLeft} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="yellow" variant="outline">Progression system</Badge>
+          <Badge color="yellow" variant="outline">{t('home:gamification.badge')}</Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            Earn XP, unlock badges, climb the leaderboard
+            {t('home:gamification.title')}
           </h2>
           <p className="max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            Every vote you cast, every battle you win, and every Lens you create earns XP. Seasons reset every 90 days.
+            {t('home:gamification.subtitle')}
           </p>
         </motion.div>
         <motion.div
@@ -288,26 +271,24 @@ export const LandHomePage: React.FC = () => {
           viewport={viewport}
           transition={spring}
         >
-          <Card className="grid gap-6 p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <Card className="grid gap-6 p-8 lg:grid-cols-[1fr_auto] lg:items-center bg-white dark:bg-surface-raised ring-1 ring-black/5 dark:ring-white/10">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Shield size={18} className="text-[var(--cl-yellow-500)]" />
-                <Badge color="yellow" variant="outline">AI fairness</Badge>
+                <Badge color="yellow" variant="outline">{t('home:fairness.badge')}</Badge>
               </div>
               <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-                AI is faster — so we slow it down.
+                {t('home:fairness.title')}
               </h2>
               <p className="max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-                When a human competes against an AI model, the handicap system injects a configurable delay, caps the
-                time budget, and optionally restricts context size — so the contest is about quality, not raw speed.
-                Every handicap applied is fully audited on the result page.
+                {t('home:fairness.description')}
               </p>
             </div>
             <Link
               to="/battle-showcase"
               className="inline-flex shrink-0 items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
             >
-              See a live demo
+              {t('common:cta.seeDemo')}
             </Link>
           </Card>
         </motion.div>
@@ -324,10 +305,10 @@ export const LandHomePage: React.FC = () => {
         >
           <div className="space-y-1">
             <p className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">
-              Help keep the arena running
+              {t('home:sponsor.title')}
             </p>
             <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
-              LenserFight is open source. Your sponsorship funds infrastructure, AI credits, and new features.
+              {t('home:sponsor.description')}
             </p>
           </div>
           <a
@@ -336,7 +317,7 @@ export const LandHomePage: React.FC = () => {
             rel="noopener noreferrer"
             className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary-yellow-500 px-6 py-2.5 text-sm font-bold text-greyscale-900 transition-all hover:bg-primary-yellow-400 hover:scale-105"
           >
-            <Heart size={15} /> Sponsor Us
+            <Heart size={15} /> {t('common:cta.sponsorUs')}
           </a>
         </motion.div>
       </section>
@@ -344,7 +325,7 @@ export const LandHomePage: React.FC = () => {
       {/* ─── 7: CTA ─────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
         <motion.div
-          className="relative overflow-hidden rounded-3xl bg-greyscale-900 p-10 text-center"
+          className="relative overflow-hidden rounded-3xl bg-white dark:bg-greyscale-900 p-10 text-center ring-1 ring-black/5 dark:ring-white/10 shadow-2xl"
           initial={{ opacity: 0, y: 32, scale: 0.96 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={viewport}
@@ -360,34 +341,36 @@ export const LandHomePage: React.FC = () => {
               backgroundSize: '200% 200%',
             }}
           />
-          <p className="relative text-4xl font-black tracking-tight text-greyscale-0 sm:text-5xl">
-            Ready to fight?
-          </p>
-          <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-greyscale-400">
-            Create your first battle, challenge an AI model, or just vote on what&apos;s live. The arena is waiting.
+          <h2 className="relative text-4xl font-black tracking-tight text-greyscale-950 dark:text-greyscale-0 sm:text-5xl">
+            {t('home:cta.title')}
+          </h2>
+          <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            {t('home:cta.description')}
           </p>
           <motion.div
-            className="relative mt-8 flex flex-wrap justify-center gap-3"
+            className="relative mt-8 flex flex-wrap items-center justify-center gap-4"
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
             viewport={viewport}
           >
-            <motion.a
-              href={`${ARENA_APP_URL}/battles/create`}
-              variants={cardVariant}
-              whileHover={{ scale: 1.04, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
-              className="inline-flex items-center gap-2 rounded-full bg-greyscale-0 px-6 py-3 text-sm font-bold text-greyscale-900 transition-colors hover:opacity-90"
-            >
-              <Swords size={16} /> Create your first battle
+              <motion.a
+                href={`${ARENA_APP_URL}/battles/create`}
+                variants={cardVariant}
+                whileHover={{ scale: 1.05, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 rounded-full bg-primary-yellow-500 px-8 py-3.5 text-sm font-bold text-greyscale-900 shadow-lg shadow-primary-yellow-500/20 transition-all hover:bg-primary-yellow-400"
+              >
+              <Swords size={18} /> {t('common:cta.createFirstBattle')}
             </motion.a>
-            <motion.a
-              href={`${ARENA_APP_URL}/battles`}
-              variants={cardVariant}
-              whileHover={{ scale: 1.04, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
-              className="inline-flex items-center gap-2 rounded-full border border-greyscale-700 px-6 py-3 text-sm font-semibold text-greyscale-300 transition-colors hover:border-greyscale-400"
-            >
-              Browse live battles <Bolt size={14} />
+              <motion.a
+                href={`${ARENA_APP_URL}/battles`}
+                variants={cardVariant}
+                whileHover={{ scale: 1.05, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 rounded-full border-2 border-greyscale-200 dark:border-greyscale-700 bg-transparent px-8 py-3 text-sm font-bold text-greyscale-700 dark:text-greyscale-300 transition-all hover:border-primary-yellow-500 hover:text-greyscale-950 dark:hover:border-greyscale-400 dark:hover:text-greyscale-0"
+              >
+              {t('common:cta.browseBattles')} <ArrowRight size={18} />
             </motion.a>
           </motion.div>
         </motion.div>
@@ -403,13 +386,13 @@ export const LandHomePage: React.FC = () => {
           viewport={viewport}
         >
           <Badge color="yellow" variant="outline">
-            <Music size={12} className="mr-1" /> Arena Soundtrack
+            <Music size={12} className="mr-1" /> {t('home:music.badge')}
           </Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            Lenser Beats: The Fight Music
+            {t('home:music.title')}
           </h2>
           <p className="mx-auto max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            Every battle deserves a legendary soundtrack. Listen to the official LenserFight music and get in the zone.
+            {t('home:music.subtitle')}
           </p>
         </motion.div>
 
@@ -420,7 +403,10 @@ export const LandHomePage: React.FC = () => {
           whileInView="visible"
           viewport={viewport}
         >
-          {SOUNDTRACKS.map(({ title, description, videoId, href }) => (
+          {SOUNDTRACKS.map(({ videoId, href }, i) => {
+            const title = t(`home:music.tracks.${i}.title`)
+            const description = t(`home:music.tracks.${i}.description`)
+            return (
             <motion.a
               key={videoId}
               href={href}
@@ -433,14 +419,14 @@ export const LandHomePage: React.FC = () => {
               <div className="relative aspect-video overflow-hidden bg-greyscale-900">
                 <img
                   src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-                  alt={`${title} thumbnail`}
+                  alt={t('home:soundtracks.thumbnailAlt', { title })}
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-greyscale-950/70 via-transparent to-transparent" />
                 <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-greyscale-950/80 px-3 py-1 text-xs font-bold text-greyscale-0 ring-1 ring-white/10">
                   <Youtube size={14} className="text-status-red" />
-                  LenserMusic
+                  {t('home:soundtracks.musicLabel')}
                 </div>
                 <div className="absolute bottom-4 right-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-yellow-500 text-greyscale-900 shadow-lg shadow-primary-yellow-500/20 transition-transform group-hover:scale-105">
                   <PlayCircle size={24} />
@@ -454,11 +440,12 @@ export const LandHomePage: React.FC = () => {
                   {description}
                 </p>
                 <span className="inline-flex items-center gap-2 text-sm font-bold text-greyscale-900 dark:text-greyscale-0">
-                  Play on YouTube <ArrowRight size={14} />
+                  {t('common:cta.playOnYoutube')} <ArrowRight size={14} />
                 </span>
               </div>
             </motion.a>
-          ))}
+            )
+          })}
         </motion.div>
       </section>
     </div>

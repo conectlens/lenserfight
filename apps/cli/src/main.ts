@@ -1,6 +1,28 @@
 import { defineCommand, runMain } from 'citty';
 import consola from 'consola';
+import { existsSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { setExecContext, getExecContext } from './lib/exec-context';
+
+function readCliVersion(): string {
+  const packageJsonPaths = [
+    join(__dirname, 'package.json'),
+    resolve(__dirname, '../package.json'),
+    resolve(process.cwd(), 'apps/cli/package.json'),
+  ];
+
+  for (const packageJsonPath of packageJsonPaths) {
+    if (!existsSync(packageJsonPath)) continue;
+    try {
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version?: string };
+      if (packageJson.version) return packageJson.version;
+    } catch {
+      // Fall through to the static fallback below.
+    }
+  }
+
+  return '0.0.0-dev';
+}
 
 // Parse --local and --debug before citty takes over so they activate even
 // when placed after the subcommand name (e.g. `lf cmd --local`).
@@ -36,7 +58,7 @@ async function defaultRun(ctx: { rawArgs?: string[] }) {
 const main = defineCommand({
   meta: {
     name: 'lenserfight',
-    version: '0.2.0',
+    version: readCliVersion(),
     description:
       'LenserFight CLI — manage lenses, battles, agents, workflows, and local dev.',
   },

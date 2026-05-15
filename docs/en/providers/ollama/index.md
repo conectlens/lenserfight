@@ -8,7 +8,7 @@ description: Ollama on LenserFight — local model execution, support tier, and 
 **Provider key:** `ollama`  
 **Support tier:** `runnable` (local execution only)
 
-Ollama enables running open-weight models entirely on your own machine. No data leaves your device, making it ideal for sensitive workflows, offline use, and cost-free local development.
+Ollama enables running supported open-weight models on your own machine. It can reduce LenserFight-hosted data sharing and provider API cost for local development, but operators should still review Ollama's own model download, update, logging, and network behavior before using it for sensitive workflows.
 
 ## How it works
 

@@ -1,0 +1,59 @@
+{
+  "cta": {
+    "enterArena": "Arenaya Gir",
+    "learnMore": "Daha Fazla",
+    "getStarted": "Başla",
+    "tryArena": "Arenayı Dene",
+    "sponsorUs": "Bize Sponsor Ol",
+    "openArena": "Arenayı Aç",
+    "browseBattles": "Canlı savaşlara göz at",
+    "createBattle": "Savaş oluştur",
+    "createFirstBattle": "İlk savaşını oluştur",
+    "seeDemo": "Canlı demoyu gör",
+    "contactUs": "Bize ulaşın",
+    "talkToUs": "Bizimle konuşun",
+    "signUp": "Kayıt Ol",
+    "seePrimitives": "Temel yapıları gör",
+    "exploreVision": "Vizyonu Keşfet",
+    "howItWorks": "Nasıl çalışır",
+    "ourMission": "Misyonumuz",
+    "readDocs": "Belgeleri oku",
+    "openDocs": "Belgeleri aç",
+    "viewApiReference": "API Referansını Gör",
+    "startBattle": "Savaş başlat",
+    "watchDemo": "Demoyu izle",
+    "openIssue": "Sorun aç",
+    "browseIssues": "Sorunlara göz at",
+    "goodFirstIssues": "İlk katkı sorunları",
+    "backToCli": "CLI Genel Bakışa Dön",
+    "playOnYoutube": "YouTube'da Oynat",
+    "connectOnYoutube": "YouTube'da Bağlan",
+    "exploreArena": "Arenayı Keşfet"
+  },
+  "badges": {
+    "experimental": "Deneysel",
+    "live": "Canlı",
+    "comingSoon": "Yakında",
+    "openContributions": "Katkıya açık",
+    "realData": "Gerçek veri",
+    "liveArena": "Canlı arena · YZ ve İnsan karşılaştırması"
+  },
+  "labels": {
+    "externalLink": "Harici bağlantı",
+    "sponsoredBy": "{{name}} sponsorluğunda",
+    "language": "Dil",
+    "docs": "Belgeler",
+    "contact": "İletişim",
+    "sponsor": "Sponsor",
+    "github": "GitHub",
+    "sponsorTitle": "GitHub'da bize sponsor olun",
+    "sponsorAria": "LenserFight'a sponsor ol",
+    "chainabit": "Chainabit",
+    "chainabitTitle": "Chainabit sponsorluğunda",
+    "toggleMenu": "Menüyü aç/kapa"
+  },
+  "status": {
+    "loading": "Yükleniyor…",
+    "policyNotAvailable": "Politika içeriği mevcut değil."
+  }
+}

@@ -41,7 +41,8 @@ export class GeminiProvider implements IExecutionProvider {
 
     const response = await genAI.models.generateContent({
       model: modelId,
-      contents: [{ role: 'user', parts }],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      contents: [{ role: 'user', parts }] as any,
     })
 
     const text = response.text ?? ''

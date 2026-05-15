@@ -5,7 +5,7 @@ import type { AiJudgeVerdictRecord } from '../../hooks/query/useAiJudgeVerdicts'
 
 interface Criterion {
   id: string
-  name: string
+  title: string
   description?: string
   weight: number
 }
@@ -69,7 +69,7 @@ export function RubricPanel({ criteria, scorecardA = [], scorecardB = [], verdic
             <div key={c.id} className="rounded-2xl border border-surface-border bg-surface-raised p-4">
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_140px_140px] md:items-start">
                 <div className="space-y-1">
-                  <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{c.name}</p>
+                  <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{c.title}</p>
                   {c.description && (
                     <p className="text-xs leading-6 text-greyscale-500 dark:text-greyscale-400">
                       {c.description}

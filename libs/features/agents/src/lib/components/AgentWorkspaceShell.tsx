@@ -90,6 +90,7 @@ function getSectionComponent(section: AgentSection): React.ComponentType {
     case 'analytics': return AnalyticsSection
     case 'settings': return SettingsSection
     case 'battles': return BattlesSection
+    default: return OverviewSection
   }
 }
 

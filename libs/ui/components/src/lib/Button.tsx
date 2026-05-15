@@ -2,7 +2,7 @@ import React from 'react'
 import { toast } from 'sonner'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'dark' | 'ghost' | 'danger'
+  variant?: 'primary' | 'secondary' | 'dark' | 'ghost' | 'danger' | 'outline'
   size?: 'sm' | 'md' | 'lg'
   isLoading?: boolean
   /** When set, visually disables the button but keeps it clickable — shows this message as an error toast on click. */
@@ -22,6 +22,8 @@ const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
     'bg-transparent border border-transparent text-greyscale-600 hover:bg-greyscale-100 hover:border-greyscale-200 hover:text-greyscale-900 active:bg-greyscale-200 focus-visible:ring-greyscale-300/60 dark:text-greyscale-400 dark:hover:bg-greyscale-800 dark:hover:border-greyscale-700 dark:hover:text-greyscale-100 dark:active:bg-greyscale-700',
   danger:
     'bg-status-red border border-transparent text-white hover:brightness-110 active:brightness-90 focus-visible:ring-status-red/40 shadow-sm',
+  outline:
+    'bg-transparent border border-greyscale-300 text-greyscale-800 hover:bg-greyscale-50 active:bg-greyscale-100 focus-visible:ring-greyscale-300/60 dark:border-greyscale-600 dark:text-greyscale-100 dark:hover:bg-greyscale-800',
 }
 
 const sizeClasses: Record<NonNullable<ButtonProps['size']>, string> = {

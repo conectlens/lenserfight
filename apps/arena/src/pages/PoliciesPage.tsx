@@ -1,4 +1,6 @@
 import { Card } from '@lenserfight/ui/components'
+import { useLocale } from '@lenserfight/shared/i18n-routing'
+import { DEFAULT_LOCALE } from '@lenserfight/utils/locale'
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, Navigate } from 'react-router-dom'
@@ -8,7 +10,7 @@ import { MarkdownRenderer } from '../utils/MarkdownRenderer'
 const VALID_POLICIES = ['terms', 'privacy', 'cookies', 'acceptable-use'] as const
 type PolicySlug = (typeof VALID_POLICIES)[number]
 
-// Vite glob: load all policy markdowns as raw strings
+// Vite glob: load all policy markdowns as raw strings.
 const policyModules = import.meta.glob(
   '../locales/*/policies/*.md',
   { query: '?raw', import: 'default', eager: false }
@@ -20,13 +22,10 @@ function resolveModuleKey(lang: string, policy: string): string {
 
 export const PoliciesPage: React.FC = () => {
   const { policy } = useParams<{ policy: string }>()
-  const { i18n } = useTranslation()
+  const { locale } = useLocale()
+  const { t } = useTranslation('common')
   const [content, setContent] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-
-  const lang = i18n.language?.slice(0, 2) ?? 'en'
-  const validLangs = ['en', 'tr']
-  const resolvedLang = validLangs.includes(lang) ? lang : 'en'
 
   useEffect(() => {
     if (!policy || !VALID_POLICIES.includes(policy as PolicySlug)) return
@@ -46,14 +45,14 @@ export const PoliciesPage: React.FC = () => {
       return false
     }
 
-    tryLoad(resolvedLang)
-      .then(ok => { if (!ok) return tryLoad('en') })
+    tryLoad(locale)
+      .then(ok => { if (!ok && locale !== DEFAULT_LOCALE) return tryLoad(DEFAULT_LOCALE) })
       .then(ok => { if (!ok) setLoading(false) })
       .catch(() => setLoading(false))
-  }, [policy, resolvedLang])
+  }, [policy, locale])
 
   if (!policy || !VALID_POLICIES.includes(policy as PolicySlug)) {
-    return <Navigate to="/policies/terms" replace />
+    return <Navigate to={`/${locale}/policies/terms`} replace />
   }
 
   return (
@@ -73,7 +72,7 @@ export const PoliciesPage: React.FC = () => {
       )}
       {!loading && !content && (
         <Card className="p-6">
-          <p className="text-greyscale-500 dark:text-greyscale-400">Policy content not available.</p>
+          <p className="text-greyscale-500 dark:text-greyscale-400">{t('status.policyNotAvailable')}</p>
         </Card>
       )}
     </div>

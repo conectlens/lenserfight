@@ -9,7 +9,7 @@ export interface LFTelemetry {
 
 export function getLFTelemetry(): LFTelemetry | null {
   if (typeof window === 'undefined') return null
-  const tel = (window as Record<string, unknown>)['__lf_telemetry']
+  const tel = (window as unknown as Record<string, unknown>)['__lf_telemetry']
   if (!tel || typeof tel !== 'object') return null
   return tel as LFTelemetry
 }

@@ -1,9 +1,10 @@
+import { vi, type MockInstance } from 'vitest'
 import type { AsyncGenerationResponse, GenerativeMediaResult } from '@lenserfight/providers'
 
 // ─── Result builders ─────────────────────────────────────────────────────────
 
 export function makePendingResult(taskId: string): AsyncGenerationResponse {
-  return { status: 'pending', providerTaskId: taskId }
+  return { status: 'pending', taskId }
 }
 
 export function makeCompletedImageResult(
@@ -51,8 +52,8 @@ export interface FetchMockRoute {
   status?: number
 }
 
-export function mockFetch(routes: FetchMockRoute[]): jest.SpyInstance {
-  return jest.spyOn(global, 'fetch').mockImplementation((input: RequestInfo | URL) => {
+export function mockFetch(routes: FetchMockRoute[]): MockInstance {
+  return vi.spyOn(global, 'fetch').mockImplementation((input: RequestInfo | URL) => {
     const url = typeof input === 'string' ? input : input.toString()
     const route = routes.find((r) => r.url.test(url))
     if (!route) {
@@ -68,6 +69,6 @@ export function mockFetch(routes: FetchMockRoute[]): jest.SpyInstance {
   })
 }
 
-export function resetFetchMock(spy: jest.SpyInstance): void {
+export function resetFetchMock(spy: MockInstance): void {
   spy.mockRestore()
 }

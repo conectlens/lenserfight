@@ -40,6 +40,7 @@ import {
   Library,
 } from 'lucide-react'
 import React, { useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import { FollowingLensesCarousel } from '../components/FollowingLensesCarousel'
@@ -57,6 +58,7 @@ interface HomePageProps {
 
 export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { isAuthenticated } = useAuth()
   const { lenser, hasLenser } = useLenser()
   const lenserId = lenser?.id
@@ -274,16 +276,24 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
         <div className="flex items-center justify-between mb-6">
           {showForYou ? (
             <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
-              {(['for_you', 'following', 'trending'] as const).map((tab) => (
-                <Button
-                  key={tab}
-                  variant={activeTab === tab ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setFeedTab(tab)}
-                >
-                  {tab === 'for_you' ? 'For You' : tab === 'following' ? 'Following' : 'Trending'}
-                </Button>
-              ))}
+              {(['for_you', 'following', 'trending'] as const).map((tab) => {
+                const labelKey =
+                  tab === 'for_you'
+                    ? 'home.feedTabs.forYou'
+                    : tab === 'following'
+                      ? 'home.feedTabs.following'
+                      : 'home.feedTabs.trending'
+                return (
+                  <Button
+                    key={tab}
+                    variant={activeTab === tab ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setFeedTab(tab)}
+                  >
+                    {t(labelKey)}
+                  </Button>
+                )
+              })}
             </div>
           ) : (
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Your Feed</h1>

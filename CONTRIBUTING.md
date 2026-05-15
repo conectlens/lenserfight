@@ -15,9 +15,12 @@ Canonical site (browse online): [https://docs.lenserfight.com](https://docs.lens
 - Coding standards: [docs.lenserfight.com/how-to/contributors/coding-standards](https://docs.lenserfight.com/how-to/contributors/coding-standards) — `docs/en/how-to/contributors/coding-standards.md`
 - Branching and versioning: [docs.lenserfight.com/how-to/contributors/branching](https://docs.lenserfight.com/how-to/contributors/branching) — `docs/en/how-to/contributors/branching.md`
 - Release process: [docs.lenserfight.com/how-to/contributors/release-process](https://docs.lenserfight.com/how-to/contributors/release-process) — `docs/en/how-to/contributors/release-process.md`
+- CLI release guide: [docs.lenserfight.com/how-to/contributors/cli-release](https://docs.lenserfight.com/how-to/contributors/cli-release) — `docs/en/how-to/contributors/cli-release.md`
 - Code of conduct: [docs.lenserfight.com/how-to/contributors/code-of-conduct](https://docs.lenserfight.com/how-to/contributors/code-of-conduct) — `docs/en/how-to/contributors/code-of-conduct.md`
 - Support routing: [docs.lenserfight.com/how-to/contributors/support](https://docs.lenserfight.com/how-to/contributors/support) — `docs/en/how-to/contributors/support.md`
 - Security reporting: [docs.lenserfight.com/how-to/contributors/security](https://docs.lenserfight.com/how-to/contributors/security) — `docs/en/how-to/contributors/security.md`
+- Translations & i18n: [docs.lenserfight.com/how-to/contributors/i18n-guide](https://docs.lenserfight.com/how-to/contributors/i18n-guide) — `docs/en/how-to/contributors/i18n-guide.md`
+- Adding a new language: [docs.lenserfight.com/how-to/contributors/adding-a-language](https://docs.lenserfight.com/how-to/contributors/adding-a-language) — `docs/en/how-to/contributors/adding-a-language.md`
 - Brand / trademark: [BRAND.md](BRAND.md) in the repo root
 
 ## Maintainer triage labels
@@ -72,6 +75,14 @@ pnpm nx test <project> --testFile=path/to/file.spec.ts
 
 Never run `pnpm nx test cli` without `--testFile` — the CLI test suite includes integration specs that time out on most developer machines.
 
+## Contribution license and safety expectations
+
+Unless you explicitly state otherwise, contributions intentionally submitted to this repository are provided under the repository license, currently Apache-2.0. Do not submit code, docs, prompts, templates, media, generated output, or data that you do not have the right to contribute.
+
+Do not include secrets, private keys, provider credentials, customer data, regulated data, private prompts, non-public third-party content, or exploit details in issues, pull requests, examples, screenshots, logs, or generated fixtures. Report vulnerabilities privately through [SECURITY.md](SECURITY.md).
+
+Maintainers should consider adding a DCO sign-off or CLA only if contribution provenance becomes hard to audit or commercial relicensing is planned. Until then, Apache-2.0 section 5 plus clear PR provenance expectations are the lightweight baseline.
+
 ## PR checklist
 
 Before opening a pull request, verify:
@@ -83,6 +94,8 @@ Before opening a pull request, verify:
 - [ ] No direct SQL changes to already-migrated tables without a migration file
 - [ ] Public library API changes are reflected in the lib's `src/index.ts`
 - [ ] Screenshots included for UI changes
+- [ ] No secrets, private data, or unsupported legal/security/privacy claims were added
+- [ ] Agent, workflow, BYOK, provider, or automation changes document cost, permission, privacy, and misuse risks
 
 ## Code of conduct
 

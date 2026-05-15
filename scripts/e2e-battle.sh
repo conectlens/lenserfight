@@ -50,7 +50,11 @@ fi
 supabase start >/dev/null
 
 echo "[e2e-battle] (2/4) load e2e seed"
-psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$REPO_ROOT/supabase/seeds/52_battle_e2e_seed.sql"
+# Inject the e2e password via a PostgreSQL session GUC so it never lives in the
+# committed seed file. Override by exporting E2E_SEED_PASSWORD before invoking.
+E2E_SEED_PASSWORD="${E2E_SEED_PASSWORD:-E2E#TestSeed!}"
+PGOPTIONS="-c seed.e2e_password=$E2E_SEED_PASSWORD" \
+  psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$REPO_ROOT/supabase/seeds/52_battle_e2e_seed.sql"
 
 echo "[e2e-battle] (3/4) pgTAP lifecycle suite"
 LOCAL_DB_URL="$DB_URL" "$REPO_ROOT/scripts/run-pgtap.sh" --filter "51_battle_lifecycle_e2e"

@@ -1,0 +1,27 @@
+{
+  "xp": {
+    "yourLevel": "Seviyeniz",
+    "level": "Seviye {{level}}",
+    "noLevel": "—",
+    "xpLabel": "{{xp}} XP",
+    "noXp": "— XP",
+    "progressToLevel": "Seviye {{level}} ilerlemesi",
+    "xpProgress": "XP İlerlemesi",
+    "signInToTrack": "XP takibi için giriş yapın"
+  },
+  "stats": {
+    "votesCast": "Verilen oylar",
+    "battlesWon": "Kazanılan savaşlar",
+    "lensesCreated": "Oluşturulan lensler",
+    "streak": "Seri"
+  },
+  "badges": {
+    "earnBadges": "Savaşlarda yarışarak rozetler kazanın.",
+    "signInBadges": "Rozetlerinizi görmek için giriş yapın."
+  },
+  "leaderboard": {
+    "title": "Sezon Sıralama Tablosu",
+    "seasonResets": "Sezon {{days}} gün sonra sıfırlanır · Oy vererek, oluşturarak ve kazanarak XP kazanın",
+    "earnXp": "Oy vererek, oluşturarak ve kazanarak XP kazanın"
+  }
+}

@@ -39,7 +39,7 @@ export function ScorecardPanel({ scorecardData, contenders }: ScorecardPanelProp
                 className="w-full flex items-center justify-between px-3 py-2.5 text-left bg-surface-base hover:bg-surface-interactive transition-colors"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xs font-semibold text-surface-text truncate">{criterion.name}</span>
+                  <span className="text-xs font-semibold text-surface-text truncate">{criterion.title}</span>
                   {criterion.weight !== 1 && (
                     <span className="flex-shrink-0 rounded px-1 py-0.5 bg-surface-interactive text-[10px] font-bold text-surface-text-muted">
                       ×{criterion.weight}

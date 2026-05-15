@@ -374,7 +374,7 @@ export const ScratchpadSection: React.FC = () => {
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1.5"><Terminal size={14} className="text-gray-400" /> Version Hash</span>
                       <span className="font-mono text-[10px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
-                        {defaultInstructionBinding?.version_id.slice(0, 8) || 'latest'}
+                        {defaultInstructionBinding?.version_id?.slice(0, 8) || 'latest'}
                       </span>
                     </div>
                   </div>

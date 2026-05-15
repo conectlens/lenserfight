@@ -1,19 +1,19 @@
+import { useLocale } from '@lenserfight/shared/i18n-routing'
 import React, { useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { chainabitContactUrl } from '../utils/chainabitUrls'
 
 export const ChainabitContactRedirect: React.FC = () => {
-  const { i18n } = useTranslation()
+  const { locale } = useLocale()
 
   useEffect(() => {
     const target = chainabitContactUrl({
-      lang: i18n.language,
+      lang: locale,
       utmMedium: 'redirect',
       utmCampaign: 'arena_contact_redirect',
     })
     window.location.replace(target)
-  }, [i18n.language])
+  }, [locale])
 
   return null
 }

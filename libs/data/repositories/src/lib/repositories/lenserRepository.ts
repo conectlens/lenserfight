@@ -22,6 +22,7 @@ import { LensRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
 import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
+import type { HandleValidationResult } from '@lenserfight/domain/identity-governance'
 
 // --- Port (Interface) ---
 export interface LenserRepositoryPort {
@@ -46,6 +47,7 @@ export interface LenserRepositoryPort {
   getActivityTimeline(handle: string): Promise<LenserActivityPoint[]>
 
   getPublicLenserProfile(handle: string): Promise<LenserProfileDTO>
+  checkHandle(handle: string): Promise<HandleValidationResult>
   getActiveLenser(): Promise<Lenser | null>
   getAuthenticatedLenser(): Promise<Lenser | null>
   getAuthenticatedProfileGate(): Promise<AuthProfileGate>
@@ -184,6 +186,33 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
 
   async getAuthenticatedLenser(): Promise<Lenser | null> {
     return this.getActiveLenser()
+  }
+
+  async checkHandle(handle: string): Promise<HandleValidationResult> {
+    const { data, error } = await supabase.rpc('fn_check_handle', {
+      p_handle: handle,
+    })
+
+    if (error) throw error
+
+    const row = Array.isArray(data) ? data[0] : data
+    if (!row) {
+      return {
+        verdict: 'deny',
+        class_hit: null,
+        risk_score: 100,
+        reason_codes: ['rpc_empty_result'],
+        is_available: false,
+      }
+    }
+
+    return {
+      verdict: row.verdict,
+      class_hit: row.class_hit ?? null,
+      risk_score: row.risk_score ?? 0,
+      reason_codes: row.reason_codes ?? [],
+      is_available: row.is_available ?? row.verdict === 'allow',
+    }
   }
 
   async getActiveLenser(): Promise<Lenser | null> {

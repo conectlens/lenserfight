@@ -1,0 +1,59 @@
+{
+  "hero": {
+    "badge": "Misyonumuz",
+    "headline": "YZ değerlendirmesi kamuya açık bir arenayı hak ediyor.",
+    "subheadline": "Kapalı kıyaslamalar akıl yürütmeyi gizler. Özel sıralama tabloları topluluğu gizler. LenserFight her karşılaştırmayı kamuya açık, her oyu görünür ve her sonucu paylaşılabilir kılar.",
+    "signals": {
+      "0": { "value": "4", "label": "Savaş formatı", "detail": "İnsan, YZ, karma ve yargılanmış eşleşmeler tek bir kamuya açık sonuç modelini paylaşır." },
+      "1": { "value": "%100", "label": "Kamuya açık iz", "detail": "Oylar, değerlendirme kriterleri, yarışmacılar ve zamanlama bağlamı savaştan sonra denetlenebilir kalır." },
+      "2": { "value": "Açık", "label": "Değerlendirme katmanı", "detail": "Akıl yürütmeyi gizlemeden çıktıları karşılaştırmak için yeniden kullanılabilir bir arena." }
+    }
+  },
+  "heroCard": {
+    "publicArena": "Kamuya Açık Arena",
+    "headline": "Kıyaslama sonucu kendini açıklamalı.",
+    "steps": { "0": "Lens", "1": "Oy", "2": "Sonuç" }
+  },
+  "timeline": {
+    "badge": "Hikâyemiz",
+    "title": "Hayal kırıklığından doğdu, toplulukla şekillendi.",
+    "subtitle": "Kimsenin yeniden üretemeyeceği bir kıyaslama daha istemedik. Herkesin testi çalıştırabileceği, sonucu inceleyebileceği ve sonuç hakkında tartışabileceği bir platform istedik.",
+    "phaseLabel": "Aşama {{num}}",
+    "entries": {
+      "0": { "year": "2025", "title": "Forum ve Lensler", "description": "Topluluk forumu ve Lens ilkel yapısı ile başladık — herkesin oluşturabileceği, paylaşabileceği ve üzerine inşa edebileceği yeniden kullanılabilir bir istem formatı." },
+      "1": { "year": "2026", "title": "Arena savaşları", "description": "Lensler üzerine inşa edilmiş birebir YZ savaşlarına genişledik. Topluluk nihayet testi çalıştırabilir, sonucu inceleyebilir ve sonuç hakkında tartışabilirdi." },
+      "2": { "year": "2026", "title": "Tam platform", "description": "Turnuvalar, YZ jüri puanlaması, XP ilerlemesi ve tam Lens ilkel yapı ekosistemi — arena canlı." }
+    }
+  },
+  "values": {
+    "badge": "Çalışma ilkeleri",
+    "title": "Güven bir ürün yüzeyidir.",
+    "subtitle": "Arena heyecan verici hissettirmeli, ama altındaki sistem karşılaştırmaları okunabilir, adil ve tekrarlanabilir kılmalı. Bunlar her özelliğin arkasındaki korkuluklardır.",
+    "operating": {
+      "0": { "title": "Karşılaştırılabilir koşullar", "description": "Her yarışmacı aynı Lens karşısında yargılanır, YZ handikap ayarları sonuçta görünür." },
+      "1": { "title": "Yapılandırılmış sinyal", "description": "Topluluk oyları ve YZ jüri puanları ayrı sinyallerdir, böylece kaliteyi incelemek ve tartışmak daha kolaydır." },
+      "2": { "title": "Yeniden kullanılabilir meydan okumalar", "description": "Lensler, kıyaslama istemlerinin tek kullanımlık metin olmasını önleyen sürümlü, çatallanabilir görev tanımlarıdır." },
+      "3": { "title": "Açık kaynak pisti", "description": "Platform, özel sıralamalar değil, yeniden üretilebilir karşılaştırmalar isteyen insanlar için kamusal altyapı olarak inşa edilmiştir." }
+    },
+    "core": {
+      "0": { "title": "Radikal şeffaflık", "description": "Her savaş sonucu — kimin oy verdiği, değerlendirme kriterinin ne söylediği ve hangi modelin kazandığı — sonsuza kadar kamuya açık ve denetlenebilir." },
+      "1": { "title": "Adil rekabet", "description": "YZ handikap ayarları hız avantajlarını normalleştirir, böylece kalite kazananı belirleyen tek şeydir." },
+      "2": { "title": "Açık değerlendirme", "description": "Herkes bir Lens oluşturabilir, savaş yapabilir veya oy verebilir — kapalı ekosistem yok, satıcı kilidi yok." },
+      "3": { "title": "Topluluk sahipliği", "description": "Neyin en iyi olduğuna topluluk karar verir. YZ jürileri yapı ekler; insan oyları bağlam ekler. Her ikisi de önemlidir." }
+    }
+  },
+  "quote": {
+    "text": "\"Kalite kazanmalı — marka değil, hız değil, hangi YZ'nin şu anda popüler olduğuna dair spekülasyon değil.\"",
+    "caption": "Her LenserFight özelliğinin sunmak için tasarlandığı temel söz."
+  },
+  "brand": {
+    "badge": "Marka Sineması",
+    "title": "Hareket kimliği",
+    "subtitle": "Sinematik kıyaslamalar sinematik kimlik gerektirir. Bu hareket varlıkları LenserFight deneyiminin görünümünü tanımlar."
+  },
+  "sponsors": {
+    "badge": "Sponsorlar",
+    "title": "Destekleyen",
+    "chainabit": "LenserFight arenası için yürütme kredileri."
+  }
+}

@@ -7,6 +7,7 @@ interface WebhookSubscription {
   owner_id: string
   webhook_url: string
   event_types: string[]
+  secret_hmac: string | null
   created_at: string
   revoked_at: string | null
 }
