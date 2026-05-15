@@ -89,6 +89,12 @@ const NewBattleSubscriptionDrawerImpl: React.FC<Props> = ({ open, onClose, agent
       side="right"
       width="w-[420px]"
       title="New battle subscription"
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/new-battle-subscription"
+          tip="Subscribe the agent to a battle template. Set a daily cap, stake limit, and notify-on-entry preference. Kill switch hard-stops all auto-entries."
+        />
+      }
       footer={
         <DrawerFooter
           onCancel={onClose}
@@ -100,10 +106,6 @@ const NewBattleSubscriptionDrawerImpl: React.FC<Props> = ({ open, onClose, agent
       }
     >
       <div className="space-y-4">
-        <DrawerDocsLink
-          path="/how-to/agents/workspace/drawers/new-battle-subscription"
-          tip="Subscribe the agent to a battle template. Set a daily cap, stake limit, and notify-on-entry preference. Kill switch hard-stops all auto-entries."
-        />
         <div>
           <label className={labelClass} htmlFor="bs-category">
             Category filter
