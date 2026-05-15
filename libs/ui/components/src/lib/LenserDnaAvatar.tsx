@@ -4,7 +4,7 @@ export type LenserType = 'ai' | 'human'
 export type AntennaTip = 'star' | 'heart' | 'ring' | 'orbit' | 'broadcast'
 export type SmileStyle = 'neutral' | 'curved' | 'sharp' | 'wide'
 
-export type HairStyle = 'bald' | 'bob' | 'long' | 'pixie'
+export type HairStyle = 'bald' | 'bob' | 'long' | 'pixie' | 'pigtails'
 export type HairColor = 'black' | 'brown' | 'blonde' | 'red' | 'blue'
 
 export interface LenserDnaAvatarConfig {
@@ -107,26 +107,35 @@ function hairSvg(style: HairStyle, color: string): string {
   if (style === 'bald') return ''
   
   const fill = color
+  const highlight = `<path d="M60,45 Q100,35 130,45" stroke="white" stroke-width="4" fill="none" opacity="0.15" stroke-linecap="round"/>`
   
   switch (style) {
     case 'bob':
       return `
         <!-- Bob hair -->
-        <path d="M34,105 Q34,32 100,32 Q166,32 166,105 L166,135 Q166,145 156,145 L145,145 Q135,145 135,135 Q135,115 100,115 Q65,115 65,135 Q65,145 55,145 L44,145 Q34,145 34,135 Z" fill="${fill}"/>
-        <path d="M60,35 Q100,35 140,55" stroke="white" stroke-width="3" fill="none" opacity="0.1" stroke-linecap="round"/>
+        <path d="M 28,125 C 28,20 172,20 172,125 C 172,145 152,145 152,125 C 142,80 58,80 48,125 C 48,145 28,145 28,125 Z" fill="${fill}"/>
+        ${highlight}
       `
     case 'long':
       return `
-        <!-- Long hair -->
-        <path d="M34,105 Q34,32 100,32 Q166,32 166,105 L178,200 L22,200 Z" fill="${fill}"/>
-        <path d="M34,105 Q34,32 100,32 Q166,32 166,105 L155,140 Q145,145 135,135 Q135,115 100,115 Q65,115 65,135 Q55,145 45,140 Z" fill="${fill}"/>
-        <path d="M100,32 L100,60" stroke="black" stroke-width="1" opacity="0.1"/>
+        <!-- Long hair front -->
+        <path d="M 32,100 C 32,25 168,25 168,100 C 168,120 152,110 152,90 C 132,65 68,65 48,90 C 48,110 32,120 32,100 Z" fill="${fill}"/>
+        ${highlight}
       `
     case 'pixie':
       return `
         <!-- Pixie hair -->
-        <path d="M37,95 Q37,35 100,35 Q163,35 163,95 L163,105 Q150,90 130,90 Q110,110 100,90 Q90,110 70,90 Q50,90 37,105 Z" fill="${fill}"/>
-        <path d="M80,45 L95,40 M110,48 L125,42" stroke="white" stroke-width="2" opacity="0.1" stroke-linecap="round"/>
+        <path d="M 35,95 C 35,15 165,15 165,95 C 165,100 145,80 145,80 C 120,55 80,55 55,80 C 55,80 35,100 35,95 Z" fill="${fill}"/>
+        <path d="M 70,30 L 60,10 L 90,25 L 115,5 L 120,25" fill="${fill}"/>
+        ${highlight}
+      `
+    case 'pigtails':
+      return `
+        <!-- Pigtails -->
+        <circle cx="25" cy="80" r="22" fill="${fill}"/>
+        <circle cx="175" cy="80" r="22" fill="${fill}"/>
+        <path d="M 40,90 C 40,25 160,25 160,90 C 160,105 145,95 145,80 C 125,60 75,60 55,80 C 55,95 40,105 40,90 Z" fill="${fill}"/>
+        ${highlight}
       `
     default:
       return ''
@@ -232,7 +241,7 @@ function buildHumanHead(cfg: {
     <rect width="200" height="200" fill="${base}"/>
 
     <!-- Back hair (for long styles) -->
-    ${hairStyle === 'long' ? `<path d="M25,100 L25,200 L175,200 L175,100 Q100,80 25,100" fill="${hairColor}" opacity="0.8"/>` : ''}
+    ${hairStyle === 'long' ? `<path d="M 37,100 C 37,240 163,240 163,100 Z" fill="${hairColor}"/>` : ''}
 
     <!-- Cape + shoulders -->
     <path d="M42,152 L15,200 L185,200 L158,152 Q100,147 42,152Z" fill="#213f74"/>
@@ -314,7 +323,7 @@ function buildSvg(cfg: LenserDnaAvatarConfig, uid: string): string {
     : SKIN_TONES[h % SKIN_TONES.length]
   const eyeColor = cfgEye ?? EYE_COLORS[h % EYE_COLORS.length]
   
-  const hairStyle: HairStyle = cfgHair ?? (['bald', 'bald', 'bob', 'long', 'pixie'][h % 5] as HairStyle)
+  const hairStyle: HairStyle = cfgHair ?? (['bald', 'bob', 'long', 'pixie', 'pigtails'][h % 5] as HairStyle)
   const hairColorNames = Object.keys(HAIR_COLORS) as HairColor[]
   const hairColor = cfgHairColor ? HAIR_COLORS[cfgHairColor] : HAIR_COLORS[hairColorNames[h % hairColorNames.length]]
 
