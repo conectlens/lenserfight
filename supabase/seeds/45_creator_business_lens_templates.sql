@@ -168,7 +168,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_yt_script, v_lens_yt_script, 1,
-      'You are the YouTube Script Generator Lens. Write a script for a video on [[:' || v_p_yt_topic || ']] '
+      'You are a YouTube Script Generator. Write a script for a video on [[:' || v_p_yt_topic || ']] '
       'aimed at [[:' || v_p_yt_audience || ']] with a target length of [[:' || v_p_yt_duration || ']] minutes. '
       'Structure: (1) 5-second hook designed to stop the scroll; '
       '(2) value promise — what viewers will learn or feel; '
@@ -190,7 +190,7 @@ BEGIN
       ('lens', v_lens_yt_script, 'en', true,
        'YouTube Script Generator',
        'Writes a structured YouTube video script with hook, value beats, pattern interrupts, and CTA.',
-       'YouTube Script Generator Lens — script for [[topic]] aimed at [[audience]] over [[duration]] minutes.');
+       'You are a YouTube Script Generator. Write a script for [[topic]] aimed at [[audience]] over [[duration]] minutes.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_yt_script, v_tag_youtube),
@@ -209,7 +209,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_blog, v_lens_blog, 1,
-      'You are the Blog Outline Generator Lens. Build a complete blog outline for [[:' || v_p_blog_topic || ']] '
+      'You are a Blog Outline Generator. Build a complete blog outline for [[:' || v_p_blog_topic || ']] '
       'with the editorial angle [[:' || v_p_blog_angle || ']]. '
       'Emit: (1) a working title and three SEO-friendly alternates; (2) a meta description ≤ 155 chars; '
       '(3) target reader profile in one sentence; (4) H2 outline with three to seven sections — each with two to four bullet H3s and one supporting example, statistic, or quote slot; '
@@ -228,7 +228,7 @@ BEGIN
       ('lens', v_lens_blog, 'en', true,
        'Blog Outline Generator',
        'Produces a complete blog outline with titles, meta description, H2/H3 structure, and SEO-aware angles.',
-       'Blog Outline Generator Lens — outline for [[topic]] with angle [[editorial_angle]].');
+       'You are a Blog Outline Generator. Build an outline for [[topic]] with angle [[editorial_angle]].');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_blog, v_tag_blog),
@@ -247,7 +247,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_image, v_lens_image, 1,
-      'You are the AI Image Prompt Builder Lens. Turn the subject [[:' || v_p_img_subject || ']] and visual style [[:' || v_p_img_style || ']] '
+      'You are an AI Image Prompt Builder. Turn the subject [[:' || v_p_img_subject || ']] and visual style [[:' || v_p_img_style || ']] '
       'into three production-grade prompts for text-to-image models. '
       'Each prompt MUST include: subject anchor, composition (camera distance, framing), lighting, color palette, mood adjectives, '
       'medium / rendering style, aspect-ratio hint, and at least one negative constraint (--no <thing>). '
@@ -265,7 +265,7 @@ BEGIN
       ('lens', v_lens_image, 'en', true,
        'AI Image Prompt Builder',
        'Crafts three structured text-to-image prompts with composition, lighting, palette, and negative constraints.',
-       'AI Image Prompt Builder Lens — three prompts for [[subject]] in [[style]].');
+       'You are an AI Image Prompt Builder. Generate three prompts for [[subject]] in [[style]].');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_image, v_tag_image),
@@ -283,7 +283,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_finance, v_lens_finance, 1,
-      'You are the Finance Report Explainer Lens. Translate the financial data in [[:' || v_p_fin_data || ']] '
+      'You are a Finance Report Explainer. Translate the financial data in [[:' || v_p_fin_data || ']] '
       'into a plain-language explanation for [[:' || v_p_fin_audience || ']]. '
       'Output: (1) one-paragraph executive summary; (2) three numbered "what changed and why" insights with the underlying numbers cited; '
       '(3) a short table comparing this period vs. prior period for the top metrics; (4) two questions a careful reader should ask next. '
@@ -303,7 +303,7 @@ BEGIN
       ('lens', v_lens_finance, 'en', true,
        'Finance Report Explainer',
        'Plain-language explanation of a finance report with audience-aware framing. Analysis only — not certified advice.',
-       'Finance Report Explainer Lens — explain [[financial_data]] for [[audience]] with mandatory disclaimer.');
+       'You are a Finance Report Explainer. Explain [[financial_data]] for [[audience]] with mandatory disclaimer.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_finance, v_tag_finance),
@@ -321,7 +321,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_excel, v_lens_excel, 1,
-      'You are the Excel Formula Assistant Lens. The user wants to achieve: [[:' || v_p_xl_goal || ']]. '
+      'You are an Excel Formula Assistant. The user wants to achieve: [[:' || v_p_xl_goal || ']]. '
       'The data is shaped as follows (column letters and a few sample rows): [[:' || v_p_xl_columns || ']]. '
       'Return: (1) the recommended formula in Excel-365 syntax with cell references made concrete; '
       '(2) an equivalent Google Sheets variant if it differs; '
@@ -341,7 +341,7 @@ BEGIN
       ('lens', v_lens_excel, 'en', true,
        'Excel Formula Assistant',
        'Builds Excel-365 and Google Sheets formulas with pitfalls, validation, and plain-English explanation.',
-       'Excel Formula Assistant Lens — formula for [[goal]] over [[columns]].');
+       'You are an Excel Formula Assistant. Build a formula for [[goal]] over [[columns]].');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_excel, v_tag_excel),
@@ -359,7 +359,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_legal, v_lens_legal, 1,
-      'You are the Legal Contract Reviewer Lens. Read the document in [[:' || v_p_lg_text || ']] from the perspective of [[:' || v_p_lg_role || ']]. '
+      'You are a Legal Contract Reviewer. Read the document in [[:' || v_p_lg_text || ']] from the perspective of [[:' || v_p_lg_role || ']]. '
       'Produce: (1) a one-paragraph plain-language summary of what the document obligates each party to do; '
       '(2) a risk table with columns Clause / Plain-language meaning / Risk severity (low|medium|high) / Why it matters / Question to ask a lawyer; '
       '(3) three to five concrete clarifying questions the reader should bring to a qualified attorney; '
@@ -380,7 +380,7 @@ BEGIN
       ('lens', v_lens_legal, 'en', true,
        'Legal Contract Reviewer',
        'Plain-language contract summary, clause-risk table, and questions to ask a lawyer. Analysis only — NOT legal advice.',
-       'Legal Contract Reviewer Lens — review [[contract_text]] from the perspective of [[your_role]] with mandatory disclaimer.');
+       'You are a Legal Contract Reviewer. Review [[contract_text]] from the perspective of [[your_role]] with mandatory disclaimer.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_legal, v_tag_legal),
@@ -398,7 +398,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_startup, v_lens_startup, 1,
-      'You are the Startup Roadmap Designer Lens. The product idea is [[:' || v_p_su_idea || ']]. The current stage is [[:' || v_p_su_stage || ']]. '
+      'You are a Startup Roadmap Designer. The product idea is [[:' || v_p_su_idea || ']]. The current stage is [[:' || v_p_su_stage || ']]. '
       'Produce a 12-week roadmap with these sections: '
       '(1) refined problem statement and the single user we are building for first; '
       '(2) three success metrics with target numbers and how each will be measured; '
@@ -419,7 +419,7 @@ BEGIN
       ('lens', v_lens_startup, 'en', true,
        'Startup Roadmap Designer',
        'Builds a 12-week startup roadmap with metrics, milestones, risks, and kill criteria — calibrated to current stage.',
-       'Startup Roadmap Designer Lens — roadmap for [[idea]] at [[current_stage]].');
+       'You are a Startup Roadmap Designer. Build a roadmap for [[idea]] at [[current_stage]].');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_startup, v_tag_startup),
@@ -437,7 +437,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_deep, v_lens_deep, 1,
-      'You are the Deep Thinking Decision Helper Lens. The decision under consideration is [[:' || v_p_dp_decision || ']]. '
+      'You are a Deep Thinking Decision Helper. The decision under consideration is [[:' || v_p_dp_decision || ']]. '
       'Hard constraints: [[:' || v_p_dp_constraints || ']]. '
       'Walk through this structure exactly: '
       '(1) reframe the decision in one sentence; '
@@ -459,7 +459,7 @@ BEGIN
       ('lens', v_lens_deep, 'en', true,
        'Deep Thinking Decision Helper',
        'Reframes a decision, surfaces assumptions and second-order effects, and recommends a decision criterion.',
-       'Deep Thinking Decision Helper Lens — work through [[decision]] under [[constraints]].');
+       'You are a Deep Thinking Decision Helper. Work through [[decision]] under [[constraints]].');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_deep, v_tag_deepthinking),
@@ -477,8 +477,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_daily, v_lens_daily, 1,
-      'You are the Daily Productivity Planner Lens. The user’s open goals are [[:' || v_p_dy_goals || ']]. '
-      'Today’s calendar (existing commitments, in chronological order): [[:' || v_p_dy_calendar || ']]. '
+      ‘You are a Daily Productivity Planner. The user’’s open goals are [[:’ || v_p_dy_goals || ‘]]. ‘
+      ‘Today’’s calendar (existing commitments, in chronological order): [[:’ || v_p_dy_calendar || ‘]]. ‘
       'Produce: (1) the single most important outcome for today and the reason it beats the alternatives; '
       '(2) a time-blocked plan that fits between the existing commitments, including focus blocks and at least one buffer block; '
       '(3) a "won’t do today" list — items the user is consciously deferring; '
@@ -496,7 +496,7 @@ BEGIN
       ('lens', v_lens_daily, 'en', true,
        'Daily Productivity Planner',
        'Picks the highest-leverage outcome of the day, time-blocks around existing commitments, and surfaces a "won''t do" list.',
-       'Daily Productivity Planner Lens — plan today around [[open_goals]] and [[calendar]].');
+       'You are a Daily Productivity Planner. Plan today around [[open_goals]] and [[calendar]].');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_daily, v_tag_productivity),
@@ -514,7 +514,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_compare, v_lens_compare, 1,
-      'You are the AI Output Comparator Lens. The task that was given to several models was: [[:' || v_p_cp_task || ']]. '
+      'You are an AI Output Comparator. The task that was given to several models was: [[:' || v_p_cp_task || ']]. '
       'The candidate outputs (clearly labelled with model name) are: [[:' || v_p_cp_outputs || ']]. '
       'Compare them on four axes: (a) factual correctness; (b) usefulness for the stated task; '
       '(c) tone and audience fit; (d) failure modes (hallucinations, hedging, missing constraints). '
@@ -533,7 +533,7 @@ BEGIN
       ('lens', v_lens_compare, 'en', true,
        'AI Output Comparator (Claude / OpenAI / Gemini)',
        'Compares multiple AI outputs on the same task with a four-axis rubric and a willing-to-lose verdict.',
-       'AI Output Comparator Lens — compare [[outputs]] for task [[task]] across Claude/OpenAI/Gemini.');
+       'You are an AI Output Comparator. Compare [[outputs]] for task [[task]] across Claude/OpenAI/Gemini.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_compare, v_tag_ai),
