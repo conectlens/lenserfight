@@ -340,7 +340,6 @@ const WorkflowLibraryCard: React.FC<{
             <Button
               type="button"
               onClick={onNewAssignment}
-              className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200"
             >
               <Plus size={12} />
               New assignment
