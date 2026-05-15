@@ -5,6 +5,7 @@ import {
   type LocaleCode,
 } from '@lenserfight/utils/locale'
 import { LOCALE_STORAGE_KEY } from './constants'
+import { readSharedLocaleCookie } from './cookie'
 
 export function detectLocale(): LocaleCode {
   if (typeof window === 'undefined') return DEFAULT_LOCALE
@@ -16,6 +17,13 @@ export function detectLocale(): LocaleCode {
     }
   } catch {
     // localStorage may be unavailable — ignore.
+  }
+
+  // Shared parent-domain cookie set by apps/web or apps/docs — lets arena
+  // hydrate the locale chosen elsewhere in the ecosystem on first visit.
+  const cookieValue = readSharedLocaleCookie()
+  if (cookieValue && isLocaleCode(cookieValue) && isLocaleEnabled(cookieValue)) {
+    return cookieValue
   }
 
   const navLang = window.navigator?.language
