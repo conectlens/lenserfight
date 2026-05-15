@@ -12,9 +12,8 @@ function NotificationRow({ n, onRead }: { n: NotificationRecord; onRead: (id: st
     <div
       role="button"
       tabIndex={0}
-      className={`flex items-start gap-4 px-5 py-4 border-b border-surface-border cursor-pointer hover:bg-surface-raised transition-colors ${
-        n.read_at ? 'opacity-60' : ''
-      }`}
+      className={`flex items-start gap-4 px-5 py-4 border-b border-surface-border cursor-pointer hover:bg-surface-raised transition-colors ${n.read_at ? 'opacity-60' : ''
+        }`}
       onClick={() => {
         onRead(n.id)
         if (n.action_url) window.location.href = n.action_url
@@ -57,13 +56,13 @@ export function NotificationsPage() {
   })
 
   const tabs: { id: FilterTab; label: string }[] = [
-    { id: 'all',     label: 'All' },
-    { id: 'unread',  label: `Unread${unreadCount > 0 ? ` (${unreadCount})` : ''}` },
-    { id: 'battle',  label: 'Battles' },
-    { id: 'social',  label: 'Social' },
+    { id: 'all', label: 'All' },
+    { id: 'unread', label: `Unread${unreadCount > 0 ? ` (${unreadCount})` : ''}` },
+    { id: 'battle', label: 'Battles' },
+    { id: 'social', label: 'Social' },
     { id: 'content', label: 'Content' },
-    { id: 'agent',   label: 'Agent' },
-    { id: 'system',  label: 'System' },
+    { id: 'agent', label: 'Agent' },
+    { id: 'system', label: 'System' },
   ]
 
   return (
@@ -96,11 +95,10 @@ export function NotificationsPage() {
             key={t.id}
             type="button"
             onClick={() => { setTab(t.id); setPage(1) }}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
-              tab === t.id
+            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${tab === t.id
                 ? 'border-primary-yellow-500 text-greyscale-900 dark:text-greyscale-50'
                 : 'border-transparent text-greyscale-500 hover:text-greyscale-700 dark:hover:text-greyscale-300'
-            }`}
+              }`}
           >
             {t.label}
           </button>
