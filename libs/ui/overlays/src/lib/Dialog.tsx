@@ -22,6 +22,8 @@ export interface DialogProps {
   panelClassName?: string
   /** Optional class for the outermost fixed container (e.g. to override z-index) */
   containerClassName?: string
+  /** Optional class applied to the Backdrop (e.g. to make it transparent) */
+  backdropClassName?: string
   /** Sticky footer rendered outside the scrollable body. Pass <ModalFooter .../> here. */
   footer?: React.ReactNode
 }
@@ -49,6 +51,7 @@ export const Dialog: React.FC<DialogProps> = ({
   dismissOnBackdrop = true,
   panelClassName = '',
   containerClassName = '',
+  backdropClassName = '',
   footer,
 }) => {
   // Children (e.g. StepWizard) can override the header slot via context
@@ -116,7 +119,7 @@ export const Dialog: React.FC<DialogProps> = ({
           aria-labelledby={safeTitle ? 'dialog-title' : undefined}
           aria-describedby={safeDesc ? 'dialog-desc' : undefined}
         >
-          <Backdrop visible onDismiss={dismissOnBackdrop ? onClose : undefined} blur />
+          <Backdrop visible onDismiss={dismissOnBackdrop ? onClose : undefined} blur className={backdropClassName} />
 
           <div
             ref={panelRef}
