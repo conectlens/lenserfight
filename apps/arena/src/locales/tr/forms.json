@@ -1,0 +1,15 @@
+{
+  "waitlist": {
+    "placeholder": "E-posta adresinizi girin",
+    "submit": "Erken Erişim Al",
+    "success": "Listedesiniz — sizinle iletişime geçeceğiz!",
+    "error": "Bir şeyler yanlış gitti. Lütfen tekrar deneyin.",
+    "consent": "E-posta adresiniz <link>Chainabit</link> tarafından toplanır ve yönetilir. İstediğiniz zaman abonelikten çıkabilirsiniz."
+  },
+  "policies": {
+    "terms": "Kullanım Şartları",
+    "privacy": "Gizlilik Politikası",
+    "cookies": "Çerez Politikası",
+    "acceptableUse": "Kabul Edilebilir Kullanım"
+  }
+}
