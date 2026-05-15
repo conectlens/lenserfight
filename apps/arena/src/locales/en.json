@@ -1,0 +1,110 @@
+{
+  "nav": {
+    "whatIs": "What is LenserFight?",
+    "product": "Product",
+    "mission": "Mission",
+    "demo": "Demo",
+    "getStarted": "Get Started",
+    "tryArena": "Try Arena",
+    "battles": "Battles",
+    "language": "Language"
+  },
+  "policies": {
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy",
+    "acceptableUse": "Acceptable Use"
+  },
+  "home": {
+    "headline": "The AI Battle Arena",
+    "subheadline": "Compare AI models. Watch them fight. Vote for the best.",
+    "cta": "Enter the Arena",
+    "ctaSecondary": "Learn More"
+  },
+  "demo": {
+    "title": "Live Demo",
+    "subtitle": "Watch real AI battles in action"
+  },
+  "getStarted": {
+    "title": "Get Started",
+    "subtitle": "Join the arena and start battling",
+    "cta": "Open Arena"
+  },
+  "arena": {
+    "pulse": {
+      "title": "Arena Pulse",
+      "subtitle": "Live battles, trending fights, hot threads, and rising lenses — happening right now.",
+      "live": "Live Battles",
+      "hot": "Hot Battles",
+      "threads": "Hot Threads",
+      "lenses": "Trending Lenses",
+      "cta": "Explore the Arena",
+      "noLive": "No live battles right now",
+      "noHot": "No trending battles yet",
+      "noThreads": "No hot threads yet",
+      "noLenses": "No trending lenses yet"
+    }
+  },
+  "seo": {
+    "home": {
+      "title": "LenserFight Arena | AI Battles, Prompt Tournaments, and Model Comparisons",
+      "description": "LenserFight Arena is the public home for AI battles, prompt tournaments, model comparisons, community judging, and battle-ready workflows."
+    },
+    "about": {
+      "title": "About LenserFight | Open AI Battle and Lens Workflow Community",
+      "description": "Learn how LenserFight connects public lenses, Lensers, AI agents, battles, workflows, docs, and open-source contribution paths."
+    },
+    "founder_note": {
+      "title": "Note from Omer | The Founder Story Behind LenserFight",
+      "description": "Read Omer Faruk Coskun's founder note on the dream, story, and first spark behind LenserFight, the public arena for AI and human evaluation."
+    },
+    "product": {
+      "title": "AI Battle Platform | Compare Agents, Prompts, Models, and Workflows",
+      "description": "Explore LenserFight product capabilities for AI battle creation, prompt evaluation, model comparison, judging, replay, and workflow publishing."
+    },
+    "product_cli": {
+      "title": "LenserFight CLI | Local AI Battles, Automation, and Developer Workflows",
+      "description": "Use the LenserFight CLI to run local AI battles, publish lenses, manage Lensers, inspect workflows, and automate AI evaluation from GitHub-friendly tooling."
+    },
+    "product_cli_quickstart": {
+      "title": "LenserFight CLI Quickstart | First Battle in Five Minutes",
+      "description": "Install the LenserFight CLI, sign in, and run your first AI battle from your local terminal in under five minutes."
+    },
+    "product_mobile": {
+      "title": "LenserFight Mobile | AI Battle Companion App",
+      "description": "Follow AI battles, review public results, track Lensers, and participate in the LenserFight community from the upcoming mobile companion app."
+    },
+    "faq": {
+      "title": "LenserFight FAQ | AI Battles, Lenses, Agents, and Workflows",
+      "description": "Answers about LenserFight battles, AI lenses, Lensers, workflow automation, judging, public profiles, GitHub contribution, and local execution."
+    },
+    "get_started": {
+      "title": "Get Started with LenserFight | Create Lenses, Battles, and AI Workflows",
+      "description": "Start using LenserFight to create AI lens templates, run battles, compare models, publish workflows, and join the public AI builder community."
+    },
+    "demo": {
+      "title": "LenserFight Demo | See AI Battles and Workflow Evaluation in Action",
+      "description": "Try the LenserFight demo flow for AI battle creation, prompt comparison, voting, judging, result sharing, and workflow discovery."
+    },
+    "battle_showcase": {
+      "title": "AI Battle Showcase | Prompt, Agent, and Model Evaluation Examples",
+      "description": "Preview public LenserFight battle formats for prompt tournaments, AI model comparisons, code challenges, media generation, and workflow evaluation."
+    },
+    "policy_terms": {
+      "title": "LenserFight Terms | Public AI Battle and Community Platform Rules",
+      "description": "Read the LenserFight terms for experimental AI agents, public battles, workflow publishing, accounts, OSS community participation, and hosted platform access."
+    },
+    "policy_privacy": {
+      "title": "LenserFight Privacy Policy | Community, Battle, and Workflow Data",
+      "description": "Review how LenserFight handles account, community, battle, workflow, analytics, security log, AI interaction, and public profile data."
+    },
+    "policy_cookies": {
+      "title": "LenserFight Cookie Policy | Site Analytics and Product Preferences",
+      "description": "Learn how LenserFight uses cookies and similar technologies for authentication, documentation, analytics, account preferences, security, and platform reliability."
+    },
+    "policy_acceptable_use": {
+      "title": "LenserFight Acceptable Use | AI Battle and Community Safety Rules",
+      "description": "Understand acceptable use for LenserFight public battles, AI agents, workflow templates, generated media, community content, and API access."
+    }
+  }
+}
