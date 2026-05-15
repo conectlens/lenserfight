@@ -153,12 +153,14 @@ export const MemoryEntryDrawer: React.FC<MemoryEntryDrawerProps> = ({
       side="right"
       width="w-[560px]"
       title={mode === 'create' ? 'Write memory entry' : 'Memory entry'}
-    >
-      <div className="space-y-5">
+      headerExtra={
         <DrawerDocsLink
           path="/how-to/agents/workspace/drawers/memory-entry"
           tip="Inspect or edit a single short-lived memory entry. Content, recall score (decays with age), source run, TTL, and tags."
         />
+      }
+    >
+      <div className="space-y-5">
         {mode === 'view' && entry ? (
           <>
             <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
