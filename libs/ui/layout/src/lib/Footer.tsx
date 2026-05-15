@@ -184,7 +184,7 @@ export const Footer: React.FC<FooterProps> = ({
         </div>
 
         {/* Bottom Row: Centered Nav Links */}
-        <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4 text-sm font-medium border-t border-gray-50 dark:border-gray-800 pt-8">
+        <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4 text-sm font-medium border-t border-greyscale-50 dark:border-greyscale-800 pt-8">
           {/* About / Product / FAQ — internal when no navBaseUrl, external otherwise */}
           {NAV_LINKS.map(({ to, label }) =>
             navBaseUrl ? (
@@ -193,7 +193,7 @@ export const Footer: React.FC<FooterProps> = ({
                 href={appendUtm(`${ARENA_BASE_URL}${to}`, utmMedium, `footer_${to.replace(/\W+/g, '_')}_link`)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                className="hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
               >
                 {label}
               </a>
@@ -201,7 +201,7 @@ export const Footer: React.FC<FooterProps> = ({
               <Link
                 key={to}
                 to={to}
-                className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                className="hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
               >
                 {label}
               </Link>
@@ -213,7 +213,7 @@ export const Footer: React.FC<FooterProps> = ({
             href={contactUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+            className="flex items-center gap-1 hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
           >
             Contact
             <ExternalLink size={11} aria-label="External link" />
@@ -227,7 +227,7 @@ export const Footer: React.FC<FooterProps> = ({
                 href={appendUtm(`${ARENA_BASE_URL}/policies/${slug}`, utmMedium, `footer_policy_${slug}_link`)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                className="hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
               >
                 {label}
               </a>
@@ -235,7 +235,7 @@ export const Footer: React.FC<FooterProps> = ({
               <Link
                 key={slug}
                 to={`/policies/${slug}`}
-                className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                className="hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
               >
                 {label}
               </Link>
