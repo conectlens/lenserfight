@@ -1,6 +1,7 @@
 
-import { agentsService, socialLinksService } from '@lenserfight/data/repositories'
-import { Lenser, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
+import { queryKeys } from '@lenserfight/data/cache'
+import { agentsService, socialLinksService, xpService } from '@lenserfight/data/repositories'
+import { Lenser, LenserBadge, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
 import { XPSummary } from '@lenserfight/types'
 import { Avatar, Badge, Button, HelpButton } from '@lenserfight/ui/components'
 import { FEATURES } from '@lenserfight/utils/env'
@@ -23,6 +24,7 @@ import {
   Bot,
   LayoutDashboard,
 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import React, { useState, useEffect } from 'react'
 
 import { useLenser } from '../context/LenserContext'
@@ -69,6 +71,20 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
 
   const [networkType, setNetworkType] = useState<'followers' | 'following' | null>(null)
+
+  const FOUNDING_TYPES = new Set([
+    'founding_10', 'founding_100', 'founding_1000',
+    'prestige_first_10', 'prestige_first_100', 'prestige_first_1000',
+  ])
+
+  const { data: allBadges = [] } = useQuery<LenserBadge[]>({
+    queryKey: queryKeys.xp.badges(lenser.id),
+    queryFn: () => xpService.getBadges(lenser.id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!lenser.id,
+  })
+
+  const foundingBadges = allBadges.filter((b) => FOUNDING_TYPES.has(b.type.toLowerCase()))
 
   useEffect(() => {
     const fetchLinks = async () => {
@@ -455,6 +471,21 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                   <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 leading-relaxed max-w-3xl whitespace-pre-wrap">
                     {lenser.bio}
                   </p>
+                )}
+
+                {foundingBadges.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 mt-1">
+                    {foundingBadges.map((badge) => (
+                      <span
+                        key={badge.id}
+                        title={badge.description ?? badge.label}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700"
+                      >
+                        {badge.icon && <span className="text-sm leading-none">{badge.icon}</span>}
+                        {badge.label}
+                      </span>
+                    ))}
+                  </div>
                 )}
 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-2">
