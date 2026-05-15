@@ -2,6 +2,8 @@ import type { AgentTeamEdgeType } from '@lenserfight/types'
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react'
 import { Settings2 } from 'lucide-react'
 import React from 'react'
+import { Button } from '@lenserfight/ui/components'
+
 
 export interface AgentEdgeData extends Record<string, unknown> {
   edge_type?: AgentTeamEdgeType
@@ -10,7 +12,7 @@ export interface AgentEdgeData extends Record<string, unknown> {
 }
 
 const EDGE_COLOR: Record<AgentTeamEdgeType, string> = {
-  handoff:       'var(--color-amber-400, #fbbf24)',
+  handoff:       'var(--color-primary-yellow-400, #fbbf24)',
   delegates:     'var(--color-sky-400, #38bdf8)',
   reviews:       'var(--color-purple-400, #c084fc)',
   reports_to:    'var(--color-gray-400, #9ca3af)',
@@ -18,7 +20,7 @@ const EDGE_COLOR: Record<AgentTeamEdgeType, string> = {
 }
 
 const EDGE_COLOR_SELECTED: Record<AgentTeamEdgeType, string> = {
-  handoff:       'var(--color-amber-500, #f59e0b)',
+  handoff:       'var(--color-primary-yellow-500, #f59e0b)',
   delegates:     'var(--color-sky-500, #0ea5e9)',
   reviews:       'var(--color-purple-500, #a855f7)',
   reports_to:    'var(--color-gray-500, #6b7280)',
@@ -78,14 +80,14 @@ export const AgentEdgeLine: React.FC<EdgeProps> = ({
             {edgeType.replace(/_/g, ' ')}
           </span>
           {d.onConfigure && selected && (
-            <button
+            <Button
               type="button"
               title="Configure edge"
               onClick={() => d.onConfigure!(id)}
-              className="flex size-5 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-amber-300 hover:text-amber-600 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-amber-500 dark:hover:text-amber-400"
+              className="flex size-5 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-primary-yellow-300 hover:text-primary-yellow-600 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-primary-yellow-500 dark:hover:text-primary-yellow-400"
             >
               <Settings2 size={10} />
-            </button>
+            </Button>
           )}
         </div>
       </EdgeLabelRenderer>
