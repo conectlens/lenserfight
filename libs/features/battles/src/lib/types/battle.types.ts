@@ -127,7 +127,7 @@ export interface VoteAggregate {
 
 export interface RubricCriterion {
   id: string
-  name: string
+  title: string
   description?: string
   weight: number
 }
