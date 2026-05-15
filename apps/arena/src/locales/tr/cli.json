@@ -1,0 +1,54 @@
+{
+  "hero": {
+    "badge": "CLI",
+    "title": "LenserFight",
+    "titleFaded": "CLI",
+    "subtitle": "Savaşları yönetin, lensleri kontrol edin ve arenayı pipeline'larınıza entegre edin — terminalden.",
+    "quickstart": "Hızlı Başlangıç"
+  },
+  "features": {
+    "badge": "Neler yapabilirsiniz",
+    "title": "Arena, script edilebilir.",
+    "subtitle": "Web uygulamasında mevcut olan her eylem CLI üzerinden sunulur — böylece otomatikleştirebilir, entegre edebilir ve daha hızlı yineleyebilirsiniz.",
+    "items": {
+      "0": { "title": "Terminalden savaş çalıştırın", "description": "İş akışınızı terk etmeden savaşları tetikleyin, izleyin ve çözün. Çıktıyı doğrudan betiklere yönlendirin." },
+      "1": { "title": "Lens ve yürütmeleri yönetin", "description": "Sürümlü lensler oluşturun, yürütmeler gönderin ve sonuçları sorgulayın — hepsi birleştirilebilir bir CLI API'si aracılığıyla." },
+      "2": { "title": "CI/CD dostu", "description": "LenserFight'ı değerlendirme pipeline'larınıza entegre edin. Otomatik model regresyon takibi için idealdir." }
+    }
+  },
+  "commands": {
+    "0": { "cmd": "lenserfight battle create --lens <id>", "desc": "Bir lense karşı yeni savaş başlat" },
+    "1": { "cmd": "lenserfight execution run --model gpt-4o", "desc": "Bir model yürütmesi gönder" },
+    "2": { "cmd": "lenserfight battle status <slug>", "desc": "Bir savaş sonucunu sorgula" },
+    "3": { "cmd": "lenserfight lens list --trending", "desc": "Trend lenslere göz at" }
+  },
+  "install": {
+    "badge": "Kurulum",
+    "title": "Başlamak için tek komut.",
+    "command": "npm install -g @lenserfight/cli",
+    "requirements": { "0": "Node.js 18+", "1": "macOS, Linux, Windows'ta çalışır", "2": "Tam TypeScript desteği" }
+  },
+  "reference": {
+    "badge": "Tam referans",
+    "title": "Her bayrak, her komut.",
+    "description": "Tam CLI referansı belgelerde bulunur — kimlik doğrulama, sayfalama, çıktı formatları ve entegrasyon örnekleri."
+  },
+  "quickstart": {
+    "badge": "Hızlı Başlangıç",
+    "title": "Saniyeler içinde çalışmaya başlayın",
+    "titleHighlight": "saniyeler.",
+    "subtitle": "LenserFight'ı yerel geliştirme iş akışınıza ve CI/CD pipeline'larınıza entegre etmek için bu dört basit adımı izleyin.",
+    "steps": {
+      "0": { "title": "Kurulum", "description": "Tercih ettiğiniz paket yöneticisini kullanarak LenserFight CLI'ı makinenize global olarak kurun." },
+      "1": { "title": "Kimlik Doğrulama", "description": "Lenslerinize ve verilerinize erişmek için terminalinizi LenserFight hesabınızla doğrulayın." },
+      "2": { "title": "Kurulumu Doğrulama", "description": "CLI'ın doğru şekilde kurulduğunu ve arenaya bağlı olduğunu kontrol edin." },
+      "3": { "title": "Savaş Başlat", "description": "İlk model savaşınızı doğrudan komut satırından tetikleyin." }
+    },
+    "cta": {
+      "title": "Daha fazlası için hazır mısınız?",
+      "description": "Gelişmiş komutları, CI/CD entegrasyonlarını ve LenserFight API'sini keşfetmek için tam belgelere dalın."
+    },
+    "copyCommand": "Komutu kopyala",
+    "stepLabel": "Adım {{num}}"
+  }
+}
