@@ -227,15 +227,14 @@ export const ToolsSection: React.FC = () => {
     >
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2 dark:border-gray-800">
         {tabs.map((tabItem) => (
-          <Button
+          <button
             key={tabItem.id}
             type="button"
             onClick={() => setTab(tabItem.id)}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
-              tab === tabItem.id
-                ? 'border-primary-yellow-500 text-primary-yellow-700 dark:text-primary-yellow-300'
-                : 'border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-            }`}
+            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${tab === tabItem.id
+              ? 'border-primary-yellow-500 text-primary-yellow-700 dark:text-primary-yellow-300'
+              : 'border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+              }`}
           >
             {tabItem.label}
             {tabItem.badge ? (
@@ -243,7 +242,7 @@ export const ToolsSection: React.FC = () => {
                 {tabItem.badge}
               </span>
             ) : null}
-          </Button>
+          </button>
         ))}
       </div>
 
@@ -319,7 +318,6 @@ export const ToolsSection: React.FC = () => {
               <Button
                 type="button"
                 onClick={() => openRegisterDrawer(null)}
-                className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200"
               >
                 Register custom tool
               </Button>
@@ -330,11 +328,10 @@ export const ToolsSection: React.FC = () => {
             {registry.map((tool) => (
               <div
                 key={tool.id}
-                className={`rounded-2xl border bg-white p-5 shadow-sm transition dark:bg-gray-900 ${
-                  selectedRegistryToolId === tool.id
-                    ? 'border-primary-yellow-300 ring-2 ring-primary-yellow-200 dark:border-primary-yellow-500/40 dark:ring-primary-yellow-500/20'
-                    : 'border-gray-200 dark:border-gray-800'
-                }`}
+                className={`rounded-2xl border bg-white p-5 shadow-sm transition dark:bg-gray-900 ${selectedRegistryToolId === tool.id
+                  ? 'border-primary-yellow-300 ring-2 ring-primary-yellow-200 dark:border-primary-yellow-500/40 dark:ring-primary-yellow-500/20'
+                  : 'border-gray-200 dark:border-gray-800'
+                  }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
