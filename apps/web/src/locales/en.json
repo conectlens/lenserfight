@@ -45,7 +45,12 @@
       "title": "Access denied",
       "message": "You need to be signed in with a Lenser profile to access this page.",
       "goBack": "Go back",
-      "signIn": "Sign in"
+      "signIn": "Sign in",
+      "noProfile": {
+        "title": "Profile required",
+        "message": "You're signed in, but you need a Lenser profile to access this page.",
+        "createProfile": "Create profile"
+      }
     }
   },
   "prompts": {
