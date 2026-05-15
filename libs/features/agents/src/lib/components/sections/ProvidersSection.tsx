@@ -13,6 +13,8 @@ import {
 } from '../drawers/ConfigureProviderDrawer'
 
 import { SectionPage } from './SectionPage'
+import { Button } from '@lenserfight/ui/components'
+
 
 const KNOWN_PROVIDERS: Pick<ProviderInfo, 'key' | 'name'>[] = [
   { key: 'anthropic', name: 'Anthropic' },
@@ -65,6 +67,8 @@ export const ProvidersSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Providers"
+      docsPath="/how-to/agents/workspace/providers"
+      docsTip="Per-provider BYOK keys (encrypted at rest), region binding, and reachability status. Add a default model to skip per-workflow picking."
       title="Runtime providers"
       description="Anthropic, OpenAI, Mistral, Gemini, fal.ai, ElevenLabs, Stability AI, Ollama, and others. Configure per-provider BYOK API keys, run health checks, and sync models."
     >
@@ -73,7 +77,7 @@ export const ProvidersSection: React.FC = () => {
           {providers.map((p) => (
             <div
               key={p.key}
-              className="flex items-center justify-between rounded-[20px] border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+              className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900"
             >
               <div>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -83,14 +87,14 @@ export const ProvidersSection: React.FC = () => {
                   {STATUS_LABEL[p.status ?? 'unconfigured']}
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => setConfigTarget(p)}
                 aria-label={`Configure ${p.name}`}
-                className="rounded-xl border border-gray-200 p-1.5 text-gray-500 hover:border-amber-300 hover:text-amber-600 dark:border-gray-700 dark:text-gray-400"
+                className="rounded-xl border border-gray-200 p-1.5 text-gray-500 hover:border-primary-yellow-300 hover:text-primary-yellow-600 dark:border-gray-700 dark:text-gray-400"
               >
                 <Settings2 size={14} />
-              </button>
+              </Button>
             </div>
           ))}
         </div>
