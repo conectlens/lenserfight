@@ -23,11 +23,11 @@ export const DrawerDocsLink: React.FC<DrawerDocsLinkProps> = ({
   label = 'Docs',
   className = '',
 }) => (
-  <div className={`mb-4 flex justify-end ${className}`}>
+  <div className={className}>
     <Tooltip
       content={tip}
       position="bottom"
-      contentClassName="max-w-xs whitespace-normal text-left leading-5"
+      contentClassName="w-max max-w-[280px] whitespace-normal text-left leading-5"
     >
       <HelpButton path={path} label={label} />
     </Tooltip>
