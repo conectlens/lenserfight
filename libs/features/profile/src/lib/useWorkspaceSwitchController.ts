@@ -3,9 +3,15 @@ import { useNavigate } from 'react-router-dom'
 
 import { useLenserWorkspace } from './useLenserWorkspace'
 
-import type { WorkspaceIdentity } from '@lenserfight/types'
+import type { LenserType } from '@lenserfight/types'
 
-function getProfileDestination(profile: WorkspaceIdentity): string {
+export interface WorkspaceSwitchTarget {
+  id: string
+  handle: string
+  type?: LenserType
+}
+
+function getProfileDestination(profile: WorkspaceSwitchTarget): string {
   return profile.type === 'ai'
     ? `/lenser/${profile.handle}/ag/overview`
     : `/lenser/${profile.handle}`
@@ -16,7 +22,7 @@ export function useWorkspaceSwitchController() {
   const { workspaces, switchWorkspace, isSwitching } = useLenserWorkspace()
 
   const switchToProfile = useCallback(
-    async (target: WorkspaceIdentity | string | null | undefined) => {
+    async (target: WorkspaceSwitchTarget | string | null | undefined) => {
       const targetProfile =
         typeof target === 'string'
           ? workspaces.find((profile) => profile.id === target) ?? null
