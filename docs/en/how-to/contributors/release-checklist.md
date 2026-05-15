@@ -7,6 +7,34 @@ description: Nine-step ordered checklist before tagging any LenserFight release.
 
 Follow these steps in order before tagging any release.
 
+## Public beta legal, security, and privacy gate
+
+Complete this gate before any public beta, hosted arena, cloud battle, BYOK streaming, public profile, leaderboard, comment, like, notification, or agent/tool-execution launch.
+
+1. **Licensed attorney review complete**
+   A licensed attorney for the relevant jurisdictions has reviewed hosted Terms, Privacy, Cookie, Acceptable Use, Disclaimer, indemnity, liability cap, governing law, international transfer, consumer, export, and professional-use language. Record the review date and reviewer in the release issue. Maintainers must not mark this gate complete based only on AI-generated text.
+
+2. **Agent/tool execution controls verified**
+   Confirm least-privilege tool registration, write-class approval gates, sandbox/egress limitations, kill switch behavior, workflow-loop limits, and spending limits for the release surface. Link the evidence to the release issue.
+
+3. **Privacy implementation matches policy**
+   Verify prompts, outputs, attachments, logs, telemetry, BYOK records, public profiles, comments, likes, votes, leaderboards, deletion requests, retention windows, and backup exceptions match the published Privacy Policy.
+
+4. **Misuse and abuse controls verified**
+   Verify rate limits, spam controls, scraping limits, moderation queues, abuse-report routing, credential-leak handling, and incident escalation for public/community surfaces.
+
+5. **OSS compliance review complete**
+   Confirm Apache-2.0 headers/metadata are consistent, third-party licenses are compatible, generated assets have provenance, and a root `NOTICE` file is added only if required by third-party attribution or project notices.
+
+6. **Governance decision recorded**
+   Confirm contribution provenance expectations remain sufficient or adopt DCO/CLA before launch. Confirm Code of Conduct, moderation, support, takedown, and security-reporting paths are discoverable.
+
+7. **Unsupported-claim scan clean**
+   Search docs and app copy for unsupported claims such as `production-ready`, `secure by default`, `safe`, `guaranteed`, `anonymous`, `encrypted`, `compliant`, `enterprise-ready`, `no data stored`, `zero risk`, `fully isolated`, `no data leaves`, and `no network calls`. Replace claims with precise, qualified language or document evidence.
+
+8. **Risk register accepted**
+   Review [Public Beta Release Risk Register](/en/explanation/community/beta-release-risk-register). Every `BLOCKER` and `HIGH` item must have an owner, evidence link, and explicit accept/fix/defer decision before release.
+
 1. **All tests pass**
    Run `pnpm nx run-many -t test` and confirm zero failures across affected projects.
 
