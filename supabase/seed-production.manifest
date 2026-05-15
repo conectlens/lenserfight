@@ -57,9 +57,11 @@ seeds/03_lenser_profiles.sql
 # ── [7] AI lenser profiles (one per AI model — derived from catalog above)
 seeds/07_ai_lensers.sql
 
-# ── [8] Reserved workspaces + media library stubs for the three platform accounts
+# ── [8] Reserved workspaces for the three platform accounts
+#    media.objects is NOT seeded — real users have empty libraries on day 0
+#    and the reserved trio should too. The dev/test fixtures in
+#    14_media_objects.sql are intentionally excluded from production.
 seeds/13_workspaces.sql
-seeds/14_media_objects.sql
 
 # ── [9] Geo reference data (regions → subregions → countries → states)
 seeds/03_regions.sql
@@ -106,7 +108,6 @@ seeds/42_production_workflow_templates.sql
 seeds/43_ai_agent_lens_bindings.sql
 seeds/44_community_profiles.sql
 seeds/45_creator_business_lens_templates.sql
-seeds/46_connectors.sql
 seeds/47_chainabit_productivity_templates.sql
 seeds/48_workflow_templates.sql
 seeds/50_lenser_design_workflows.sql
@@ -138,6 +139,18 @@ seeds/40_benchmark.sql
 #                                  reserved accounts. Harmless but redundant;
 #                                  analytics rows are created by triggers on
 #                                  first real activity.
+#
+# seeds/14_media_objects.sql    — Inserts a sample text resource and a pending
+#                                  image into @lenserfight's workspace ("Sample
+#                                  media objects for testing upload lifecycle").
+#                                  Excluded so the reserved trio start with
+#                                  empty media libraries, same as every real
+#                                  user.
+#
+# seeds/46_connectors.sql       — Inserts a revoked demo connector + token for
+#                                  the OSS quickstart so `lenserfight connectors
+#                                  list` is non-empty in dev. Excluded: real
+#                                  workspaces start with zero connectors.
 #
 # seeds/30_scale_xp.sql         — 2-year XP simulation: 9 seasons of random XP
 #                                  totals, season_totals, monthly_rollup. Gives
