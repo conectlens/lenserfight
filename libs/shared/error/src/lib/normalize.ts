@@ -9,6 +9,8 @@ import type {
   ApiError,
   ConstraintViolationError,
   UnknownError,
+  TokenQuotaExceededError,
+  ModelUnavailableError,
 } from './types'
 import { CONSTRAINT_MESSAGES, DEFAULT_CONSTRAINT_MESSAGE } from './constraint-messages'
 
@@ -81,7 +83,7 @@ function extractConstraintName(error: unknown): string | undefined {
 
 const CONSTRAINT_VIOLATION_CODES = new Set(['23514', '23505', '23503'])
 
-export function normalizeError(error: unknown): UnauthorizedError | ForbiddenError | NotFoundError | RateLimitError | ServerError | NetworkError | ConstraintViolationError | ApiError | UnknownError {
+export function normalizeError(error: unknown): UnauthorizedError | ForbiddenError | NotFoundError | RateLimitError | ServerError | NetworkError | ConstraintViolationError | ApiError | TokenQuotaExceededError | ModelUnavailableError | UnknownError {
   const status = getStatus(error)
   const code = getCode(error)
   const hint = getHint(error)
