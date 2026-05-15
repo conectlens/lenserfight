@@ -42,37 +42,23 @@ function trackExternal(label: string, href: string, location = 'arena_header') {
 import { chainabitContactUrl } from '../utils/chainabitUrls'
 
 const NAV_LINKS = [
-  { to: '/about', label: 'About', description: 'Our mission & journey' },
-  { to: '/note-from-omer', label: 'Note', description: 'A word from the founder' },
-  { to: '/faq', label: 'FAQ', description: 'Questions & answers' },
-]
+  { to: '/about', key: 'about' },
+  { to: '/note-from-omer', key: 'note' },
+  { to: '/faq', key: 'faq' },
+] as const
 
-const PRODUCT_ITEMS = [
-  {
-    to: '/product/cli',
-    label: 'CLI',
-    icon: Terminal,
-    description: 'Run battles from your terminal',
-  },
-  {
-    to: '/product',
-    label: 'App',
-    icon: Zap,
-    description: 'The web arena — battles & lenses',
-  },
-  {
-    to: '/demo',
-    label: 'Demo',
-    icon: Sparkles,
-    description: 'See it in action',
-  },
-  {
-    to: '/product/mobile',
-    label: 'Mobile',
-    icon: Smartphone,
-    description: 'iOS & Android app',
-    badge: 'Soon' as const,
-  },
+interface ProductItem {
+  to: string
+  key: string
+  icon: typeof Terminal
+  hasBadge?: boolean
+}
+
+const PRODUCT_ITEMS: ProductItem[] = [
+  { to: '/product/cli', key: 'cli', icon: Terminal },
+  { to: '/product', key: 'app', icon: Zap },
+  { to: '/demo', key: 'demo', icon: Sparkles },
+  { to: '/product/mobile', key: 'mobile', icon: Smartphone, hasBadge: true },
 ]
 
 const ArenaHeaderLocaleSelect: React.FC = () => {
@@ -102,7 +88,7 @@ export const LandLayout: React.FC = () => {
   const [mobileStoryOpen, setMobileStoryOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const storyDropdownRef = useRef<HTMLDivElement>(null)
-  const { i18n, t } = useTranslation()
+  const { i18n, t } = useTranslation(['nav', 'common'])
   const contactUrl = chainabitContactUrl({
     lang: i18n.language,
     utmMedium: 'arena_header',
@@ -142,7 +128,7 @@ export const LandLayout: React.FC = () => {
                 aria-haspopup="true"
                 aria-expanded={productOpen}
               >
-                Product
+                {t('nav:product')}
                 <ChevronDown
                   size={13}
                   className={`transition-transform duration-150 ${productOpen ? 'rotate-180' : ''}`}
@@ -152,7 +138,12 @@ export const LandLayout: React.FC = () => {
               {productOpen && (
                 <div className="absolute left-0 top-full pt-1.5">
                   <div className="w-64 rounded-2xl border border-surface-border bg-surface-base shadow-xl ring-1 ring-black/5 dark:ring-white/5 overflow-hidden">
-                    {PRODUCT_ITEMS.map(({ to, label, icon: Icon, description, badge }) => (
+                    {PRODUCT_ITEMS.map((item) => {
+                      const { to, key, icon: Icon, hasBadge } = item
+                      const label = t(`nav:items.${key}.label`)
+                      const description = t(`nav:items.${key}.description`)
+                      const badge = hasBadge ? t(`nav:items.${key}.badge`) : undefined
+                      return (
                       <Link
                         key={to}
                         to={to}
@@ -179,7 +170,8 @@ export const LandLayout: React.FC = () => {
                           </p>
                         </div>
                       </Link>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -200,7 +192,7 @@ export const LandLayout: React.FC = () => {
                 aria-haspopup="true"
                 aria-expanded={storyOpen}
               >
-                About Us
+                {t('nav:aboutUs')}
                 <ChevronDown
                   size={13}
                   className={`transition-transform duration-150 ${storyOpen ? 'rotate-180' : ''}`}
@@ -210,7 +202,10 @@ export const LandLayout: React.FC = () => {
               {storyOpen && (
                 <div className="absolute left-0 top-full pt-1.5">
                   <div className="w-64 rounded-2xl border border-surface-border bg-surface-base shadow-xl ring-1 ring-black/5 dark:ring-white/5 overflow-hidden">
-                    {NAV_LINKS.map(({ to, label, description }) => (
+                    {NAV_LINKS.map(({ to, key }) => {
+                      const label = t(`nav:items.${key}.label`)
+                      const description = t(`nav:items.${key}.description`)
+                      return (
                       <Link
                         key={to}
                         to={to}
@@ -227,7 +222,8 @@ export const LandLayout: React.FC = () => {
                           </p>
                         </div>
                       </Link>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -240,8 +236,8 @@ export const LandLayout: React.FC = () => {
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-greyscale-500 transition-colors hover:bg-surface-raised hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
             >
               <BookOpen size={14} />
-              Docs
-              <ExternalLink size={11} aria-label="External link" />
+              {t('common:labels.docs')}
+              <ExternalLink size={11} aria-label={t('common:labels.externalLink')} />
             </a>
             <a
               href={contactUrl}
@@ -250,8 +246,8 @@ export const LandLayout: React.FC = () => {
               onClick={() => trackExternal('Contact', contactUrl)}
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-greyscale-500 transition-colors hover:bg-surface-raised hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
             >
-              Contact
-              <ExternalLink size={11} aria-label="External link" />
+              {t('common:labels.contact')}
+              <ExternalLink size={11} aria-label={t('common:labels.externalLink')} />
             </a>
           </nav>
 
@@ -261,7 +257,7 @@ export const LandLayout: React.FC = () => {
               href={GITHUB_URL}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="GitHub"
+              aria-label={t('common:labels.github')}
               onClick={() => trackExternal('GitHub', GITHUB_URL)}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-surface-border text-greyscale-500 transition-colors hover:border-greyscale-400 hover:text-greyscale-900 dark:hover:text-greyscale-0"
             >
@@ -271,8 +267,8 @@ export const LandLayout: React.FC = () => {
               href={`${GITHUB_SPONSORS_URL}?utm_source=lenserfight&utm_medium=arena_header&utm_campaign=sponsor_cta`}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Sponsor LenserFight"
-              title="Sponsor us on GitHub"
+              aria-label={t('common:labels.sponsorAria')}
+              title={t('common:labels.sponsorTitle')}
               onClick={() => trackCta('Sponsor', 'arena_header')}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-surface-border text-greyscale-500 transition-colors hover:border-primary-yellow-500 hover:text-primary-yellow-500"
             >
@@ -282,22 +278,22 @@ export const LandLayout: React.FC = () => {
               href={`${CHAINABIT_APP_URL}?utm_source=lenserfight&utm_medium=arena_header&utm_campaign=arena_chainabit_partner`}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Chainabit"
-              title="Sponsored by Chainabit"
+              aria-label={t('common:labels.chainabit')}
+              title={t('common:labels.chainabitTitle')}
               onClick={() => trackExternal('Chainabit', CHAINABIT_APP_URL)}
               className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-80"
             >
-              <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={20} height={20} alt="Chainabit" className="rounded" />
+              <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={20} height={20} alt={t('common:labels.chainabit')} className="rounded" />
             </a>
             <div className="mx-1 h-4 w-px bg-surface-border" />
             <ArenaHeaderLocaleSelect />
             <div className="mx-1 h-4 w-px bg-surface-border" />
             <Link to="/get-started" onClick={() => trackCta('Get Started', 'arena_header')}>
-              <Button variant="ghost" size="sm">Get Started</Button>
+              <Button variant="ghost" size="sm">{t('common:cta.getStarted')}</Button>
             </Link>
             <Link to="/battles" onClick={() => trackCta('Try Arena', 'arena_header')}>
               <Button variant="primary" size="sm">
-                Try Arena <ArrowRight size={14} />
+                {t('common:cta.tryArena')} <ArrowRight size={14} />
               </Button>
             </Link>
           </div>
@@ -308,7 +304,7 @@ export const LandLayout: React.FC = () => {
             size="sm"
             className="md:hidden"
             onClick={() => setMobileOpen((prev) => !prev)}
-            aria-label="Toggle menu"
+            aria-label={t('common:labels.toggleMenu')}
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </Button>
@@ -323,7 +319,7 @@ export const LandLayout: React.FC = () => {
                 onClick={() => setMobileProductOpen((prev) => !prev)}
                 className="flex w-full items-center justify-between py-2 text-sm font-medium text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
               >
-                Product
+                {t('nav:product')}
                 <ChevronDown
                   size={14}
                   className={`transition-transform duration-150 ${mobileProductOpen ? 'rotate-180' : ''}`}
@@ -331,7 +327,11 @@ export const LandLayout: React.FC = () => {
               </button>
               {mobileProductOpen && (
                 <div className="ml-3 mt-1 space-y-1 border-l border-surface-border pl-3">
-                  {PRODUCT_ITEMS.map(({ to, label, icon: Icon, badge }) => (
+                  {PRODUCT_ITEMS.map((item) => {
+                    const { to, key, icon: Icon, hasBadge } = item
+                    const label = t(`nav:items.${key}.label`)
+                    const badge = hasBadge ? t(`nav:items.${key}.badge`) : undefined
+                    return (
                     <Link
                       key={to}
                       to={to}
@@ -346,7 +346,8 @@ export const LandLayout: React.FC = () => {
                         </span>
                       )}
                     </Link>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -357,7 +358,7 @@ export const LandLayout: React.FC = () => {
                 onClick={() => setMobileStoryOpen((prev) => !prev)}
                 className="flex w-full items-center justify-between py-2 text-sm font-medium text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
               >
-                About Us
+                {t('nav:aboutUs')}
                 <ChevronDown
                   size={14}
                   className={`transition-transform duration-150 ${mobileStoryOpen ? 'rotate-180' : ''}`}
@@ -365,7 +366,9 @@ export const LandLayout: React.FC = () => {
               </button>
               {mobileStoryOpen && (
                 <div className="ml-3 mt-1 space-y-1 border-l border-surface-border pl-3">
-                  {NAV_LINKS.map(({ to, label }) => (
+                  {NAV_LINKS.map(({ to, key }) => {
+                    const label = t(`nav:items.${key}.label`)
+                    return (
                     <Link
                       key={to}
                       to={to}
@@ -374,7 +377,8 @@ export const LandLayout: React.FC = () => {
                     >
                       {label}
                     </Link>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -385,7 +389,7 @@ export const LandLayout: React.FC = () => {
               onClick={() => { setMobileOpen(false); trackExternal('Docs', DOCS_BASE_URL, 'arena_header_mobile') }}
               className="flex items-center gap-1.5 py-2 text-sm font-medium text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
             >
-              <BookOpen size={14} /> Docs <ExternalLink size={11} aria-label="External link" />
+              <BookOpen size={14} /> {t('common:labels.docs')} <ExternalLink size={11} aria-label={t('common:labels.externalLink')} />
             </a>
             <a
               href={chainabitContactUrl({
@@ -398,14 +402,14 @@ export const LandLayout: React.FC = () => {
               onClick={() => { setMobileOpen(false); trackExternal('Contact', contactUrl, 'arena_header_mobile') }}
               className="flex items-center gap-1.5 py-2 text-sm font-medium text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
             >
-              Contact <ExternalLink size={11} aria-label="External link" />
+              {t('common:labels.contact')} <ExternalLink size={11} aria-label={t('common:labels.externalLink')} />
             </a>
             <div className="flex items-center gap-3 py-1">
               <a
                 href={GITHUB_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="GitHub"
+                aria-label={t('common:labels.github')}
                 onClick={() => trackExternal('GitHub', GITHUB_URL, 'arena_header_mobile')}
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-surface-border text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-0"
               >
@@ -419,25 +423,25 @@ export const LandLayout: React.FC = () => {
                 className="flex h-8 items-center gap-1.5 rounded-full border border-surface-border bg-surface-raised px-2.5 text-xs font-semibold text-primary-yellow-500 transition-colors hover:border-primary-yellow-500"
               >
                 <Heart size={13} />
-                Sponsor us
+                {t('nav:mobile.sponsorUs')}
               </a>
               <a
                 href={`${CHAINABIT_APP_URL}?utm_source=lenserfight&utm_medium=arena_header_mobile&utm_campaign=arena_chainabit_partner`}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Chainabit"
-                title="Sponsored by Chainabit"
+                aria-label={t('common:labels.chainabit')}
+                title={t('common:labels.chainabitTitle')}
                 onClick={() => trackExternal('Chainabit', CHAINABIT_APP_URL, 'arena_header_mobile')}
                 className="flex h-8 items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-2.5 text-xs font-semibold text-greyscale-700 dark:text-greyscale-300"
               >
                 <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={18} height={18} alt="" className="rounded shrink-0" />
-                Chainabit
-                <ExternalLink size={11} aria-label="External link" />
+                {t('common:labels.chainabit')}
+                <ExternalLink size={11} aria-label={t('common:labels.externalLink')} />
               </a>
             </div>
             <div className="border-t border-surface-border pt-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
-                {t('nav.language', { defaultValue: 'Language' })}
+                {t('common:labels.language')}
               </p>
               <LanguageSwitcher
                 variant="menu"
@@ -449,11 +453,11 @@ export const LandLayout: React.FC = () => {
             </div>
             <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
               <Link to="/get-started" onClick={() => { setMobileOpen(false); trackCta('Get Started', 'arena_header_mobile') }}>
-                <Button variant="secondary" size="md" fullWidth>Get Started</Button>
+                <Button variant="secondary" size="md" fullWidth>{t('common:cta.getStarted')}</Button>
               </Link>
               <Link to="/battles" onClick={() => { setMobileOpen(false); trackCta('Try Arena', 'arena_header_mobile') }}>
                 <Button variant="primary" size="md" fullWidth>
-                  Try Arena <ArrowRight size={14} />
+                  {t('common:cta.tryArena')} <ArrowRight size={14} />
                 </Button>
               </Link>
             </div>
