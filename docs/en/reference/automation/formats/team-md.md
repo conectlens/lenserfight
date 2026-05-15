@@ -5,6 +5,9 @@ description: Canonical file format for a ConectLens LENSER team.
 
 # `TEAM.MD` — Native LENSER team definition
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 A **TEAM** groups multiple LENSERs around a shared outcome with explicit roles, collaboration rules, and a delegation/escalation policy. `TEAM.MD` is its native form.
 
 ## Filename
