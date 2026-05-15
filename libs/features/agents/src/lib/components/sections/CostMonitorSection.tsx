@@ -1,7 +1,8 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import { Alert, Card } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import React from 'react'
 import { EmptyPanel } from '../EmptyPanel'
 
@@ -43,15 +44,9 @@ export const CostMonitorSection: React.FC<CostMonitorSectionProps> = ({ aiLenser
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-        <div className="flex items-start gap-3">
-          <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="font-semibold">Cost summary failed to load</p>
-            <p className="mt-1">{(error as Error).message}</p>
-          </div>
-        </div>
-      </div>
+      <Alert variant="error" title="Cost summary failed to load">
+        {(error as Error).message}
+      </Alert>
     )
   }
 
@@ -97,8 +92,8 @@ export const CostMonitorSection: React.FC<CostMonitorSectionProps> = ({ aiLenser
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[28px] border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-6 shadow-sm dark:border-amber-500/20 dark:from-[#1d160d] dark:via-[#101010] dark:to-[#180d08]">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">
+      <Card className="bg-gradient-to-br from-primary-yellow-50 via-white to-orange-50 border-primary-yellow-200/70 dark:from-[#1d160d] dark:via-surface-raised dark:to-[#180d08] dark:border-primary-yellow-500/20">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-yellow-700 dark:text-primary-yellow-300">
           Cost monitor
         </p>
         <h1 className="mt-3 text-3xl font-black tracking-tight text-gray-900 dark:text-white">
@@ -109,10 +104,10 @@ export const CostMonitorSection: React.FC<CostMonitorSectionProps> = ({ aiLenser
           configured `spending_limit_credits` policy. Numbers refresh as runs
           complete and the policy ceiling is enforced server-side.
         </p>
-      </div>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <Card className="!p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">Today</p>
           <p className="mt-3 text-3xl font-black tracking-tight text-gray-900 dark:text-white">
             {formatCredits(data.today_credits)}
@@ -121,26 +116,26 @@ export const CostMonitorSection: React.FC<CostMonitorSectionProps> = ({ aiLenser
             credits · {limitText}
           </p>
           {remaining != null && (
-            <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+            <p className="mt-1 text-xs text-primary-yellow-700 dark:text-primary-yellow-300">
               {formatCredits(remaining)} remaining today
             </p>
           )}
-        </div>
-        <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        </Card>
+        <Card className="!p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">7 days</p>
           <p className="mt-3 text-3xl font-black tracking-tight text-gray-900 dark:text-white">
             {formatCredits(data.seven_day_credits)}
           </p>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">credits · trailing window</p>
-        </div>
-        <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        </Card>
+        <Card className="!p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">30 days</p>
           <p className="mt-3 text-3xl font-black tracking-tight text-gray-900 dark:text-white">
             {formatCredits(data.thirty_day_credits)}
           </p>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">credits · trailing window</p>
-        </div>
-        <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        </Card>
+        <Card className="!p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">Peak day</p>
           <p className="mt-3 text-3xl font-black tracking-tight text-gray-900 dark:text-white">
             {peakDay ? formatCredits(peakDay.credits_spent) : '—'}
@@ -148,11 +143,11 @@ export const CostMonitorSection: React.FC<CostMonitorSectionProps> = ({ aiLenser
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             {peakDay ? new Date(peakDay.period_date).toLocaleDateString() : 'no recorded spend'}
           </p>
-        </div>
+        </Card>
       </div>
 
       {data.daily.length > 0 ? (
-        <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <Card className="!p-5">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Daily breakdown</h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Last {data.daily.length} day(s) of recorded usage.
@@ -187,7 +182,7 @@ export const CostMonitorSection: React.FC<CostMonitorSectionProps> = ({ aiLenser
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       ) : (
         <EmptyPanel
           icon={<Sparkles size={22} />}
