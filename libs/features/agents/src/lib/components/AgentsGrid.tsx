@@ -1,6 +1,7 @@
 import React from 'react'
 import { Bot } from 'lucide-react'
 import type { AgentProfileView } from '@lenserfight/data/repositories'
+import { Button } from '@lenserfight/ui/components'
 import { AgentCard } from './AgentCard'
 import { EmptyPanel } from './EmptyPanel'
 
@@ -42,13 +43,13 @@ export const AgentsGrid: React.FC<AgentsGridProps> = ({
       >
         {isOwner && onCreateAgent && (
           <div className="mt-6 flex justify-center">
-            <button
+            <Button
               type="button"
+              variant="dark"
               onClick={onCreateAgent}
-              className="rounded-2xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
             >
               Create Agent
-            </button>
+            </Button>
           </div>
         )}
       </EmptyPanel>
