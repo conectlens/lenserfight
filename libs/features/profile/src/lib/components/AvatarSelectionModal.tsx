@@ -4,6 +4,7 @@ import {
   LENSER_DNA_CHARACTERS,
   LENSER_SKIN_TONES,
   createLenserDnaAvatarUri,
+  HairStyle,
 } from '@lenserfight/ui/components'
 import { Tabs, TabList, Tab, TabPanel } from '@lenserfight/ui/layout'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
@@ -81,15 +82,21 @@ function buildAiOptions(): string[] {
 }
 
 function buildHumanOptions(): string[] {
-  // 6 skin tones × 4 core colors = 24 options
-  return LENSER_SKIN_TONES.flatMap((skinTone, si) =>
-    AI_CORE_COLORS.map((coreColor, ci) =>
-      createLenserDnaAvatarUri({
-        type: 'human',
-        skinTone,
-        coreColor,
-        seed: `${si}-${ci}`,
-      })
+  const styles: HairStyle[] = ['bald', 'bob', 'long', 'pixie']
+  
+  // 4 hair styles × 6 skin tones × 4 core colors = 96 options
+  return styles.flatMap((hairStyle) =>
+    LENSER_SKIN_TONES.flatMap((skinTone, si) =>
+      AI_CORE_COLORS.map((coreColor, ci) =>
+        createLenserDnaAvatarUri({
+          type: 'human',
+          skinTone,
+          coreColor,
+          hairStyle,
+          // Use style in seed to ensure uniqueness if not explicit
+          seed: `${hairStyle}-${si}-${ci}`,
+        })
+      )
     )
   )
 }
