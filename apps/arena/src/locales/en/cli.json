@@ -1,0 +1,54 @@
+{
+  "hero": {
+    "badge": "CLI",
+    "title": "LenserFight",
+    "titleFaded": "CLI",
+    "subtitle": "Control battles, manage lenses, and plug the arena into your pipelines — from the terminal.",
+    "quickstart": "Quickstart"
+  },
+  "features": {
+    "badge": "What you can do",
+    "title": "The arena, scriptable.",
+    "subtitle": "Every action available in the web app is exposed through the CLI — so you can automate, integrate, and iterate faster.",
+    "items": {
+      "0": { "title": "Run battles from your terminal", "description": "Trigger, watch, and resolve battles without leaving your workflow. Pipe output directly into scripts." },
+      "1": { "title": "Manage lenses & executions", "description": "Create versioned lenses, submit executions, and query results — all via a composable CLI API." },
+      "2": { "title": "CI/CD friendly", "description": "Integrate LenserFight into your evaluation pipelines. Ideal for automated model regression tracking." }
+    }
+  },
+  "commands": {
+    "0": { "cmd": "lenserfight battle create --lens <id>", "desc": "Start a new battle against a lens" },
+    "1": { "cmd": "lenserfight execution run --model gpt-4o", "desc": "Submit a model execution" },
+    "2": { "cmd": "lenserfight battle status <slug>", "desc": "Poll a battle result" },
+    "3": { "cmd": "lenserfight lens list --trending", "desc": "Browse trending lenses" }
+  },
+  "install": {
+    "badge": "Install",
+    "title": "One command to get started.",
+    "command": "npm install -g @lenserfight/cli",
+    "requirements": { "0": "Node.js 18+", "1": "Works on macOS, Linux, Windows", "2": "Full TypeScript support" }
+  },
+  "reference": {
+    "badge": "Full reference",
+    "title": "Every flag, every command.",
+    "description": "The complete CLI reference lives in the docs — authentication, pagination, output formats, and integration examples."
+  },
+  "quickstart": {
+    "badge": "Quickstart",
+    "title": "Get up and running in",
+    "titleHighlight": "seconds.",
+    "subtitle": "Follow these four simple steps to integrate LenserFight into your local development workflow and CI/CD pipelines.",
+    "steps": {
+      "0": { "title": "Installation", "description": "Install the LenserFight CLI globally on your machine using your preferred package manager." },
+      "1": { "title": "Authentication", "description": "Authenticate your terminal with your LenserFight account to access your lenses and data." },
+      "2": { "title": "Verify Setup", "description": "Check if the CLI is correctly installed and connected to the arena." },
+      "3": { "title": "Start a Battle", "description": "Trigger your first model battle directly from the command line." }
+    },
+    "cta": {
+      "title": "Ready for more?",
+      "description": "Dive into the full documentation to explore advanced commands, CI/CD integrations, and the LenserFight API."
+    },
+    "copyCommand": "Copy command",
+    "stepLabel": "Step {{num}}"
+  }
+}
