@@ -345,210 +345,190 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
         robots={wfMeta.index === false ? 'noindex,nofollow' : 'index,follow'}
       />
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
-      <header className="flex flex-shrink-0 items-center gap-3 border-b border-surface-border bg-surface-base px-4 h-[52px]">
+      <header className="flex flex-shrink-0 items-center border-b border-surface-border bg-surface-base px-4 h-[56px]">
+        {/* Left: Identity Group */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(returnTo)}
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl !p-0 text-greyscale-400 hover:text-greyscale-700 hover:bg-surface-raised transition-colors dark:hover:text-greyscale-200"
+            title="Back to workflows"
+          >
+            <ArrowLeft size={16} />
+          </Button>
 
-        {/* Back */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(returnTo)}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl !p-0 text-greyscale-400 hover:text-greyscale-700 hover:bg-surface-raised transition-colors dark:hover:text-greyscale-200"
-          title="Back to workflows"
-        >
-          <ArrowLeft size={16} />
-        </Button>
-
-        {/* Workflow identity */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised">
-            <GitBranch size={14} className="text-greyscale-400" />
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-surface-raised border border-surface-border shadow-sm">
+              <GitBranch size={16} className="text-primary-yellow-600 dark:text-primary-yellow-500" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="truncate text-sm font-bold text-greyscale-900 dark:text-greyscale-50">
+                  {workflow.title}
+                </h1>
+                <Badge color="blue" variant="outline" className="flex-shrink-0 text-[10px] h-4 px-1.5 font-bold">
+                  {nodes.length}
+                </Badge>
+              </div>
+              {workflow.description && (
+                <p className="truncate text-[11px] text-greyscale-400 leading-none mt-0.5">
+                  {workflow.description}
+                </p>
+              )}
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-sm font-bold text-greyscale-900 dark:text-greyscale-50">
-              {workflow.title}
-            </h1>
-            {workflow.description && (
-              <p className="truncate text-xs text-greyscale-400 leading-none mt-0.5">
-                {workflow.description}
-              </p>
+        </div>
+
+        {/* Center: Mode Switcher */}
+        <div className="flex items-center justify-center px-6">
+          <div className="flex items-center gap-0.5 rounded-xl border border-surface-border bg-surface-raised p-1 shadow-inner">
+            <button
+              type="button"
+              onClick={() => setBuilderMode('canvas')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${builderMode === 'canvas'
+                ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
+                : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                }`}
+            >
+              <GitBranch size={12} /> Canvas
+            </button>
+            <button
+              type="button"
+              onClick={() => setBuilderMode('phases')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${builderMode === 'phases'
+                ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
+                : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                }`}
+            >
+              <Layers size={12} /> Phases
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Actions Group */}
+        <div className="flex items-center gap-3 flex-1 justify-end">
+          {/* Metadata & Social Group */}
+          <div className="flex items-center gap-1.5 pr-3 border-r border-surface-border/50">
+            {workflow.parent_workflow_id && (
+              <button
+                type="button"
+                onClick={() => navigate(`/workflows/${workflow.parent_workflow_id}`)}
+                className="flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-raised px-2 py-1 transition-colors hover:bg-surface-base group"
+                title={`Forked from ${workflow.parent_workflow_title}`}
+              >
+                <GitFork size={10} className="text-greyscale-400 group-hover:text-primary-yellow-600" />
+                <span className="max-w-[100px] truncate text-[10px] font-medium text-greyscale-500">
+                  {workflow.parent_workflow_title}
+                </span>
+              </button>
             )}
 
+            {user && (
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={toggleLike}
+                  disabled={reactionPending}
+                  className={`!h-8 w-auto rounded-xl px-2.5 transition-colors ${liked
+                    ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-700'
+                    : 'text-greyscale-400'
+                    }`}
+                >
+                  <ThumbsUp size={14} className={liked ? 'fill-current' : ''} />
+                  {likeCount > 0 && <span className="text-xs ml-1">{likeCount}</span>}
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={toggleSave}
+                  disabled={reactionPending}
+                  className={`!h-8 w-auto rounded-xl px-2.5 transition-colors ${saved
+                    ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-700'
+                    : 'text-greyscale-400'
+                    }`}
+                >
+                  <Bookmark size={14} className={saved ? 'fill-current' : ''} />
+                </Button>
+              </>
+            )}
+
+            <ExportButton
+              kind="workflow"
+              slug={workflowId}
+              title={workflow.title ?? undefined}
+              fetchPayload={async () => workflow}
+              className="!h-8 w-auto rounded-xl px-2.5 text-greyscale-400"
+            />
           </div>
-          <Badge color="blue" variant="outline" className="flex-shrink-0 text-xs">
-            {nodes.length} node{nodes.length !== 1 ? 's' : ''}
-          </Badge>
-        </div>
 
-        {/* Canvas / Phases mode toggle */}
-        <div className="flex items-center gap-0.5 rounded-lg border border-surface-border bg-surface-raised p-0.5 flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => setBuilderMode('canvas')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${builderMode === 'canvas'
-              ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
-              : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-              }`}
-          >
-            <GitBranch size={11} /> Canvas
-          </button>
-          <button
-            type="button"
-            onClick={() => setBuilderMode('phases')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${builderMode === 'phases'
-              ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
-              : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-              }`}
-          >
-            <Layers size={11} /> Phases
-          </button>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Social: Like / Save / Fork — shown when authenticated */}
-          {user && (
-            <>
-              <Button
-                variant={liked ? 'primary' : 'secondary'}
-                size="sm"
-                onClick={toggleLike}
-                disabled={reactionPending}
-                title={liked ? 'Unlike' : 'Like'}
-                aria-pressed={liked}
-                className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${liked
-                  ? 'border-primary-yellow-500 bg-primary-yellow-500/15 text-primary-yellow-700 shadow-sm ring-1 ring-primary-yellow-500/20'
-                  : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
-                  }`}
-              >
-                <ThumbsUp size={12} className={liked ? 'fill-current' : ''} />
-                {likeCount > 0 && <span>{likeCount}</span>}
-              </Button>
-
-              <Button
-                variant={saved ? 'primary' : 'secondary'}
-                size="sm"
-                onClick={toggleSave}
-                disabled={reactionPending}
-                title={saved ? 'Unsave' : 'Save'}
-                aria-pressed={saved}
-                className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${saved
-                  ? 'border-primary-yellow-500 bg-primary-yellow-500/15 text-primary-yellow-700 shadow-sm ring-1 ring-primary-yellow-500/20'
-                  : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
-                  }`}
-              >
-                <Bookmark size={12} className={saved ? 'fill-current' : ''} />
-                {savedCount > 0 && <span>{savedCount}</span>}
-              </Button>
-
-              {/* Edit button — owner only, left of Fork */}
-              {isOwner && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setIsEditModalOpen(true)}
-                  className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
-                  title="Edit workflow"
-                >
-                  <Pencil size={12} /> Edit
-                </Button>
-              )}
-
-              {workflow && (
-                <ExportButton
-                  kind="workflow"
-                  slug={workflowId}
-                  title={workflow.title ?? undefined}
-                  fetchPayload={async () => workflow}
-                  className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
-                />
-              )}
-
-              {workflow.parent_workflow_id && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/workflows/${workflow.parent_workflow_id}`)}
-                  className="mt-1 flex max-w-full items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-2.5 py-1 text-left transition-colors hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5"
-                  title={workflow.parent_workflow_title ?? 'Parent workflow'}
-                >
-                  <Avatar
-                    src={workflow.parent_workflow_author_profile?.avatar_url ?? null}
-                    alt={workflow.parent_workflow_author_profile?.display_name ?? 'Parent workflow author'}
-                    size="sm"
-                    className="!w-5 !h-5 ring-1 ring-white dark:ring-surface-base"
-                  />
-                  <span className="truncate text-[11px] font-medium text-greyscale-600 dark:text-greyscale-300">
-                    Forked from {workflow.parent_workflow_title ?? 'Parent workflow'}
-                  </span>
-                  <span className="truncate text-[11px] text-greyscale-400">
-                    @{workflow.parent_workflow_author_profile?.handle ?? 'unknown'}
-                  </span>
-                </button>
-              )}
-
-              {!isOwner && workflow.visibility === 'public' && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => forkWorkflow(workflowId)}
-                  isLoading={isForking}
-                  className="gap-1.5 w-auto"
-                >
-                  <GitFork size={12} /> Fork
-                </Button>
-              )}
-
-              {workflow.visibility === 'private' && (
-                <span
-                  title="Private workflow"
-                  className="flex items-center text-greyscale-400"
-                >
-                  <Lock size={14} />
-                </span>
-              )}
-            </>
-          )}
-
-          {/* Run — run/stop button (model selector in run drawer) */}
-          <div className="flex items-center gap-1.5">
-            {isRunning ? (
+          {/* Controls Group */}
+          <div className="flex items-center gap-2">
+            {isOwner && (
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={handleStopClick}
-                className="gap-1.5 w-auto border-status-red/30 text-status-red hover:bg-status-red/10"
-                title="Stop workflow"
+                onClick={() => setIsEditModalOpen(true)}
+                className="h-8 gap-1.5 rounded-xl px-3 border-surface-border bg-surface-base"
               >
-                <Square size={12} /> Stop
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                onClick={() => { setShowRunPanel(true); setSelectedNodeConfig(null) }}
-                isLoading={starting}
-                disabled={nodes.length === 0}
-                className="gap-1.5 w-auto"
-              >
-                <Play size={12} /> Run
+                <Pencil size={14} /> <span className="hidden xl:inline">Edit</span>
               </Button>
             )}
-          </div>
 
-          {/* Run panel toggle */}
-          {runId && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => { setShowRunPanel((v) => !v); setSelectedNodeConfig(null) }}
-              className="gap-1.5 rounded-xl border border-surface-border bg-surface-raised px-2.5 py-1 text-greyscale-600 hover:text-greyscale-900 transition-colors dark:text-greyscale-300 w-auto"
-            >
+            {!isOwner && workflow.visibility === 'public' && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => forkWorkflow(workflowId)}
+                isLoading={isForking}
+                className="h-8 gap-1.5 rounded-xl px-3"
+              >
+                <GitFork size={14} /> Fork
+              </Button>
+            )}
+
+            {workflow.visibility === 'private' && (
+              <div className="flex h-8 w-8 items-center justify-center text-greyscale-400" title="Private workflow">
+                <Lock size={16} />
+              </div>
+            )}
+
+            <div className="flex items-center gap-1.5 pl-2 border-l border-surface-border/50">
               {isRunning ? (
-                <Badge color="blue" variant="outline" className="text-[10px]">Running</Badge>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleStopClick}
+                  className="h-9 gap-1.5 rounded-xl px-4 border-status-red/30 text-status-red hover:bg-status-red/5"
+                >
+                  <Square size={12} className="fill-current" /> Stop
+                </Button>
               ) : (
-                <Badge color="green" variant="outline" className="text-[10px]">Done</Badge>
+                <Button
+                  size="sm"
+                  onClick={() => { setShowRunPanel(true); setSelectedNodeConfig(null) }}
+                  isLoading={starting}
+                  disabled={nodes.length === 0}
+                  className="h-9 gap-1.5 rounded-xl px-4 bg-primary-yellow-500 hover:bg-primary-yellow-600 text-black shadow-md shadow-primary-yellow-500/20"
+                >
+                  <Play size={12} className="fill-current" /> Run
+                </Button>
               )}
-              <ChevronDown size={12} className={`transition-transform ${showRunPanel ? 'rotate-180' : ''}`} />
-            </Button>
-          )}
+
+              {runId && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => { setShowRunPanel((v) => !v); setSelectedNodeConfig(null) }}
+                  className="h-9 w-auto rounded-xl border border-surface-border bg-surface-raised px-2 text-greyscale-600"
+                >
+                  <ChevronDown size={16} className={`transition-transform duration-200 ${showRunPanel ? 'rotate-180' : ''}`} />
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
