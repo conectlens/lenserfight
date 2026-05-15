@@ -1,5 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService, agentsService } from '@lenserfight/data/repositories'
+import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Download, Pause, Play, Save, ShieldOff, Trash2 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
@@ -201,6 +203,8 @@ export const SettingsSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Settings"
+      docsPath="/how-to/agents/workspace/settings"
+      docsTip="Identity, runtime defaults, governance, and export & danger zone. Four tabs in one place — see Manage Agent Settings for field-by-field detail."
       title="Selected agent management"
       description="Manage the selected AI lenser as a concrete product surface: identity, runtime defaults, export, and deletion controls all live here instead of being duplicated on the overview page."
     >
@@ -214,7 +218,7 @@ export const SettingsSection: React.FC = () => {
         <div className="flex flex-col gap-8 md:flex-row md:gap-12">
           <div className="w-full flex-shrink-0 space-y-1 md:w-48">
             {(['identity', 'runtime', 'governance', 'export'] as const).map((t) => (
-              <button
+              <Button
                 key={t}
                 type="button"
                 onClick={() => setTab(t)}
@@ -225,7 +229,7 @@ export const SettingsSection: React.FC = () => {
                 }
               >
                 {TAB_LABELS[t]}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -289,15 +293,15 @@ export const SettingsSection: React.FC = () => {
                       className={`${inputClass} resize-none`}
                     />
                   </Field>
-                  <button
+                  <Button
                     type="button"
                     onClick={() => saveIdentity.mutate()}
                     disabled={saveIdentity.isPending}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+                    isLoading={saveIdentity.isPending}
                   >
                     <Save size={16} />
                     {saveIdentity.isPending ? 'Saving...' : 'Save identity'}
-                  </button>
+                  </Button>
                 </div>
               </ProfileCard>
             )}
@@ -316,19 +320,16 @@ export const SettingsSection: React.FC = () => {
                   </div>
 
                   <Field label="Approval default">
-                    <select
+                    <SelectField
                       value={approvalDefault}
-                      onChange={(event) =>
-                        setApprovalDefault(event.target.value as ApprovalDefault)
+                      onChange={(value) =>
+                        setApprovalDefault(value as ApprovalDefault)
                       }
-                      className={inputClass}
-                    >
-                      {APPROVAL_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
+                      options={APPROVAL_OPTIONS.map((option) => ({
+                        value: option,
+                        label: option,
+                      }))}
+                    />
                   </Field>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -373,15 +374,15 @@ export const SettingsSection: React.FC = () => {
                     />
                   </Field>
 
-                  <button
+                  <Button
                     type="button"
                     onClick={() => saveDefaults.mutate()}
                     disabled={saveDefaults.isPending}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+                    isLoading={saveDefaults.isPending}
                   >
                     <Save size={16} />
                     {saveDefaults.isPending ? 'Saving...' : 'Save defaults'}
-                  </button>
+                  </Button>
                 </div>
               </ProfileCard>
             )}
@@ -477,7 +478,7 @@ export const SettingsSection: React.FC = () => {
                           step={5}
                           value={darkLaunchPct}
                           onChange={(event) => setDarkLaunchPct(Number(event.target.value))}
-                          className="w-full accent-amber-500"
+                          className="w-full accent-primary-yellow-500"
                         />
                         <div className="mt-1 flex justify-between text-xs text-gray-400">
                           <span>0%</span>
@@ -489,15 +490,15 @@ export const SettingsSection: React.FC = () => {
                   </div>
                 </ProfileCard>
 
-                <button
+                <Button
                   type="button"
                   onClick={() => saveGovernance.mutate()}
                   disabled={saveGovernance.isPending}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+                  isLoading={saveGovernance.isPending}
                 >
                   <Save size={16} />
                   {saveGovernance.isPending ? 'Saving...' : 'Save governance'}
-                </button>
+                </Button>
               </div>
             )}
 
@@ -507,15 +508,16 @@ export const SettingsSection: React.FC = () => {
                   title="Export"
                   subtitle="Export an immutable JSON snapshot of teams, bindings, policies, settings, and assignments."
                 >
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={() => exportBundle.mutate()}
                     disabled={exportBundle.isPending}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                    isLoading={exportBundle.isPending}
                   >
                     <Download size={16} />
                     {exportBundle.isPending ? 'Exporting...' : 'Export workspace'}
-                  </button>
+                  </Button>
                 </ProfileCard>
 
                 <ProfileCard
@@ -531,17 +533,19 @@ export const SettingsSection: React.FC = () => {
                         from service. An administrator must confirm before any data is
                         deleted.
                       </p>
-                      <button
+                      <Button
                         type="button"
+                        variant="danger"
+                        size="sm"
                         onClick={() => {
                           const reason = prompt('Reason for deletion?') ?? ''
                           if (reason) requestDeletion.mutate(reason)
                         }}
-                        className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:bg-gray-900 dark:hover:bg-red-500/20"
+                        className="mt-3"
                       >
                         <Trash2 size={14} />
                         Request deletion
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </ProfileCard>
@@ -555,7 +559,7 @@ export const SettingsSection: React.FC = () => {
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,
@@ -590,7 +594,7 @@ const ToggleRow: React.FC<{
           checked
             ? danger
               ? 'bg-red-500'
-              : 'bg-amber-500'
+              : 'bg-primary-yellow-500'
             : 'bg-gray-300 dark:bg-gray-600',
         ].join(' ')}
       />
