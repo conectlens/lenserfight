@@ -1,6 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService, toolsService } from '@lenserfight/data/repositories'
 import { useLenserWorkspace } from '@lenserfight/features/profile'
+import { Button, Card } from '@lenserfight/ui/components'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -166,75 +167,73 @@ export const ToolsSection: React.FC = () => {
 
     if (tab === 'templates') {
       return (
-        <button
+        <Button
           type="button"
           onClick={() => openRegisterDrawer(null)}
-          className={primaryBtn}
         >
           <Plus size={16} />
           Register from scratch
-        </button>
+        </Button>
       )
     }
 
     if (tab === 'registry') {
       return (
-        <button
+        <Button
           type="button"
           onClick={() => openRegisterDrawer(null)}
-          className={primaryBtn}
         >
           <Plus size={16} />
           Register tool
-        </button>
+        </Button>
       )
     }
 
     if (tab === 'profiles') {
       return (
-        <button
+        <Button
           type="button"
           onClick={() => {
             setProfileEditing(null)
             setProfileDrawer(true)
           }}
-          className={primaryBtn}
         >
           <Plus size={16} />
           New policy
-        </button>
+        </Button>
       )
     }
 
     return (
-      <button
+      <Button
         type="button"
         onClick={() => setAssignDrawer(true)}
-        className={primaryBtn}
         disabled={registry.length === 0}
       >
         <Plus size={16} />
         Assign tool
-      </button>
+      </Button>
     )
   })()
 
   return (
     <SectionPage
       eyebrow="Tools"
+      docsPath="/how-to/agents/workspace/tools"
+      docsTip="Tool registry, assignments, invocation log. Tools are sandboxed per egress class (none/read/network/mutation); higher classes require approval."
       title="Templates, policies, and assignments"
       description="Start from a typed tool template, register concrete integrations, define reusable tool policies, and assign approved capabilities to the selected AI lenser."
       toolbar={toolbar}
     >
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2 dark:border-gray-800">
         {tabs.map((tabItem) => (
-          <button
+          <Button
             key={tabItem.id}
             type="button"
             onClick={() => setTab(tabItem.id)}
             className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
               tab === tabItem.id
-                ? 'border-amber-500 text-amber-700 dark:text-amber-300'
+                ? 'border-primary-yellow-500 text-primary-yellow-700 dark:text-primary-yellow-300'
                 : 'border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
             }`}
           >
@@ -244,7 +243,7 @@ export const ToolsSection: React.FC = () => {
                 {tabItem.badge}
               </span>
             ) : null}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -253,7 +252,7 @@ export const ToolsSection: React.FC = () => {
           {TOOL_TEMPLATE_PRESETS.map((preset) => (
             <div
               key={preset.id}
-              className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -264,7 +263,7 @@ export const ToolsSection: React.FC = () => {
                     {preset.summary}
                   </p>
                 </div>
-                <Sparkles size={18} className="text-amber-500" />
+                <Sparkles size={18} className="text-primary-yellow-500" />
               </div>
               <div className="mt-4 flex flex-wrap gap-2 text-[11px]">
                 {preset.tags.map((tag) => (
@@ -275,25 +274,25 @@ export const ToolsSection: React.FC = () => {
                     {tag}
                   </span>
                 ))}
-                <span className="rounded-full border border-amber-200 px-2 py-0.5 font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                <span className="rounded-full border border-primary-yellow-200 px-2 py-0.5 font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300">
                   {preset.auth_method}
                 </span>
               </div>
               <div className="mt-5 flex flex-wrap gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="dark"
                   onClick={() => openRegisterDrawer(preset)}
-                  className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
                 >
                   Use template
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => setTab('registry')}
-                  className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
                 >
                   See registry
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -310,20 +309,20 @@ export const ToolsSection: React.FC = () => {
             description="Start with a template or register a custom integration. The registry stores the concrete tool schema, auth mode, and approval flags that assignments will use."
           >
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <button
+              <Button
                 type="button"
+                variant="dark"
                 onClick={() => setTab('templates')}
-                className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
               >
                 Browse templates
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => openRegisterDrawer(null)}
-                className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+                className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200"
               >
                 Register custom tool
-              </button>
+              </Button>
             </div>
           </EmptyPanel>
         ) : (
@@ -331,9 +330,9 @@ export const ToolsSection: React.FC = () => {
             {registry.map((tool) => (
               <div
                 key={tool.id}
-                className={`rounded-[24px] border bg-white p-5 shadow-sm transition dark:bg-gray-900 ${
+                className={`rounded-2xl border bg-white p-5 shadow-sm transition dark:bg-gray-900 ${
                   selectedRegistryToolId === tool.id
-                    ? 'border-amber-300 ring-2 ring-amber-200 dark:border-amber-500/40 dark:ring-amber-500/20'
+                    ? 'border-primary-yellow-300 ring-2 ring-primary-yellow-200 dark:border-primary-yellow-500/40 dark:ring-primary-yellow-500/20'
                     : 'border-gray-200 dark:border-gray-800'
                 }`}
               >
@@ -351,7 +350,7 @@ export const ToolsSection: React.FC = () => {
                       </p>
                     )}
                   </div>
-                  <button
+                  <Button
                     type="button"
                     onClick={() => {
                       setRegisterPreset(null)
@@ -362,11 +361,11 @@ export const ToolsSection: React.FC = () => {
                     aria-label="Edit tool"
                   >
                     <Pencil size={14} />
-                  </button>
+                  </Button>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
                   {tool.requires_approval && (
-                    <span className="rounded-full border border-amber-200 px-2 py-0.5 font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                    <span className="rounded-full border border-primary-yellow-200 px-2 py-0.5 font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300">
                       Approval
                     </span>
                   )}
@@ -392,16 +391,16 @@ export const ToolsSection: React.FC = () => {
             description="Policies define which tool groups are allowed, denied, or approval-gated for the selected AI lenser. Create one before relying on prompt-only instructions."
           >
             <div className="mt-6 flex justify-center">
-              <button
+              <Button
                 type="button"
+                variant="dark"
                 onClick={() => {
                   setProfileEditing(null)
                   setProfileDrawer(true)
                 }}
-                className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
               >
                 Create policy
-              </button>
+              </Button>
             </div>
           </EmptyPanel>
         ) : (
@@ -409,7 +408,7 @@ export const ToolsSection: React.FC = () => {
             {profiles.map((profileRecord) => (
               <div
                 key={profileRecord.id}
-                className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+                className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -425,7 +424,7 @@ export const ToolsSection: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => {
                         setProfileEditing(profileRecord)
@@ -435,8 +434,8 @@ export const ToolsSection: React.FC = () => {
                       aria-label="Edit policy"
                     >
                       <Pencil size={14} />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={() =>
                         setConfirmState({
@@ -449,11 +448,11 @@ export const ToolsSection: React.FC = () => {
                       aria-label="Delete policy"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 {profileRecord.requires_approval && (
-                  <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-200 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                  <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-primary-yellow-200 px-2.5 py-1 text-[11px] font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300">
                     <ShieldAlert size={12} /> Requires approval
                   </p>
                 )}
@@ -472,21 +471,21 @@ export const ToolsSection: React.FC = () => {
             description="Register a tool first, then assign it to the selected AI lenser so new runs can access it safely."
           >
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <button
+              <Button
                 type="button"
+                variant="dark"
                 onClick={() => setTab(registry.length === 0 ? 'templates' : 'registry')}
-                className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
               >
                 {registry.length === 0 ? 'Start with templates' : 'Manage registry'}
-              </button>
+              </Button>
               {registry.length > 0 && (
-                <button
+                <Button
                   type="button"
                   onClick={() => setAssignDrawer(true)}
-                  className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+                  className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200"
                 >
                   Assign tool
-                </button>
+                </Button>
               )}
             </div>
           </EmptyPanel>
@@ -497,7 +496,7 @@ export const ToolsSection: React.FC = () => {
               return (
                 <div
                   key={assignment.id}
-                  className="flex items-center justify-between rounded-[20px] border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
                 >
                   <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -508,7 +507,7 @@ export const ToolsSection: React.FC = () => {
                       {new Date(assignment.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <button
+                  <Button
                     type="button"
                     onClick={() =>
                       setConfirmState({
@@ -521,7 +520,7 @@ export const ToolsSection: React.FC = () => {
                     aria-label="Revoke tool"
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </Button>
                 </div>
               )
             })}
@@ -584,14 +583,11 @@ export const ToolsSection: React.FC = () => {
   )
 }
 
-const primaryBtn =
-  'inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900'
-
 const iconBtn =
-  'rounded-2xl border border-gray-200 p-2 text-gray-500 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-300'
+  'rounded-2xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-300'
 
 const CenteredLoading: React.FC<{ label: string }> = ({ label }) => (
-  <div className="flex min-h-[260px] items-center justify-center rounded-[24px] border border-gray-200 bg-white text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+  <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-gray-200 bg-white text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
     {label}
   </div>
 )
