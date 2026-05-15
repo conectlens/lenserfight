@@ -1,11 +1,11 @@
 ---
-title: LENSER.MD (native) — ConnectLens Agent
-description: Canonical file format for a ConnectLens LENSER (agent definition).
+title: LENSER.MD (native) — ConectLens Agent
+description: Canonical file format for a ConectLens LENSER (agent definition).
 ---
 
-# `LENSER.MD` — Native ConnectLens agent/LENSER definition
+# `LENSER.MD` — Native ConectLens agent/LENSER definition
 
-A **LENSER** is ConnectLens's term for an agent: a persistent operator with a mission, activation rules, and operating constraints. `LENSER.MD` is its native, file-first form, validated by `lenserfight validate` and exported by `lenserfight export lenser`.
+A **LENSER** is ConectLens's term for an agent: a persistent operator with a mission, activation rules, and operating constraints. `LENSER.MD` is its native, file-first form, validated by `lenserfight validate` and exported by `lenserfight export lenser`.
 
 ## Filename
 
