@@ -164,6 +164,12 @@ export const EvaluationDrawer: React.FC<Props> = ({
       side="right"
       width="w-[640px]"
       title="Add automated evaluation"
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/evaluation"
+          tip="Create or run an evaluation suite. Bind a model profile, add cases, optionally schedule on a cron. Failed cases open a side-by-side diff."
+        />
+      }
       footer={
         <DrawerFooter
           onCancel={onClose}
@@ -180,10 +186,6 @@ export const EvaluationDrawer: React.FC<Props> = ({
       }
     >
       <div className="space-y-4">
-        <DrawerDocsLink
-          path="/how-to/agents/workspace/drawers/evaluation"
-          tip="Create or run an evaluation suite. Bind a model profile, add cases, optionally schedule on a cron. Failed cases open a side-by-side diff."
-        />
         {/* Mode toggle */}
         <div className="flex gap-1 rounded-2xl border border-gray-200 p-1 dark:border-gray-700">
           {(['simple', 'advanced'] as const).map((m) => (
