@@ -127,26 +127,26 @@ export const FounderNotePage: React.FC = () => {
             {/* Glow Effect */}
             <div className="absolute -inset-4 bg-gradient-to-r from-primary-yellow-500/20 to-orange-500/20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
             
-            <div className="relative overflow-hidden rounded-[2.5rem] bg-greyscale-950 p-1 shadow-2xl ring-1 ring-white/10">
+            <div className="relative overflow-hidden rounded-[2.5rem] bg-white dark:bg-greyscale-950 p-1 shadow-2xl ring-1 ring-black/5 dark:ring-white/10">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary-yellow-500/50 to-transparent" />
-              <div className="rounded-[2.25rem] border border-white/5 bg-gradient-to-br from-white/[0.05] to-transparent p-8 lg:p-10 backdrop-blur-2xl">
+              <div className="rounded-[2.25rem] border border-black/5 dark:border-white/5 bg-gradient-to-br from-black/[0.02] to-transparent dark:from-white/[0.05] p-8 lg:p-10 backdrop-blur-2xl">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-yellow-500/10 text-primary-yellow-500 ring-1 ring-primary-yellow-500/20">
                     <Quote size={24} />
                   </div>
                   <div className="flex gap-1">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-1.5 w-1.5 rounded-full bg-greyscale-800" />
+                      <div key={i} className="h-1.5 w-1.5 rounded-full bg-greyscale-200 dark:bg-greyscale-800" />
                     ))}
                   </div>
                 </div>
-                <blockquote className="text-3xl font-black leading-[1.1] tracking-tight text-white sm:text-4xl italic">
+                <blockquote className="text-3xl font-black leading-[1.1] tracking-tight text-greyscale-950 dark:text-white sm:text-4xl italic">
                   "The future of AI isn't just about code; it's about the perspectives we choose to empower."
                 </blockquote>
-                <p className="mt-8 text-base leading-relaxed text-greyscale-400 font-medium italic">
+                <p className="mt-8 text-base leading-relaxed text-greyscale-600 dark:text-greyscale-400 font-medium italic">
                   This arena is the physical manifestation of a dream—a space where transparency isn't just a feature, but the core foundation of every interaction.
                 </p>
-                <div className="mt-10 flex items-center gap-4 border-t border-white/10 pt-8">
+                <div className="mt-10 flex items-center gap-4 border-t border-black/5 dark:border-white/10 pt-8">
                   <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary-yellow-500 to-orange-500 p-[1px]">
                     <div className="h-full w-full rounded-full bg-greyscale-900 flex items-center justify-center overflow-hidden">
                       <span className="font-black text-primary-yellow-500 text-sm">OC</span>
