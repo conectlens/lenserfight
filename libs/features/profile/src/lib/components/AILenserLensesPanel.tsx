@@ -1,4 +1,5 @@
 import { Badge } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { Brain, Link2 } from 'lucide-react'
 import React from 'react'
 
@@ -29,22 +30,16 @@ export const AILenserLensesPanel: React.FC<AILenserLensesPanelProps> = ({
           <h3 className="font-semibold text-gray-900 dark:text-white">Main lens configuration</h3>
         </div>
 
-        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Default instruction lens
-        </label>
-        <select
+        <SelectField
+          label="Default instruction lens"
           value={selectedLensId}
-          onChange={(event) => onSelectLens(event.target.value)}
+          onChange={onSelectLens}
           disabled={isSaving || lenses.length === 0}
-          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-        >
-          <option value="">Select a lens</option>
-          {lenses.map((lens) => (
-            <option key={lens.id} value={lens.id}>
-              {lens.title}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: '', label: 'Select a lens' },
+            ...lenses.map((lens) => ({ value: lens.id, label: lens.title })),
+          ]}
+        />
 
         <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
           The default lens acts as the main instruction source when workflows do not override behavior.
