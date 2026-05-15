@@ -1,5 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, Crosshair, ListChecks, Play, Plus, Sparkles, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
@@ -99,22 +101,17 @@ const RubricBuilder: React.FC<{
               value={row.name}
               onChange={(e) => updateRow(i, { name: e.target.value })}
               disabled={!isOwner}
-              className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             />
-            <select
+            <SelectField
               value={row.operator}
-              onChange={(e) =>
-                updateRow(i, { operator: e.target.value as EvaluationRubricCriterion['operator'] })
+              onChange={(value) =>
+                updateRow(i, { operator: value as EvaluationRubricCriterion['operator'] })
               }
               disabled={!isOwner}
-              className="w-14 rounded-xl border border-gray-200 bg-white px-1 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            >
-              {OPERATORS.map((op) => (
-                <option key={op} value={op}>
-                  {op}
-                </option>
-              ))}
-            </select>
+              options={OPERATORS.map((operator) => ({ value: operator, label: operator }))}
+              className="w-24"
+            />
             <input
               type="number"
               min={0}
@@ -136,13 +133,13 @@ const RubricBuilder: React.FC<{
               className="w-14 rounded-xl border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             />
             {isOwner && rows.length > 1 && (
-              <button
+              <Button
                 type="button"
                 onClick={() => setRows((prev) => prev.filter((_, idx) => idx !== i))}
                 className="rounded-full p-1 text-gray-400 hover:text-red-500"
               >
                 <X size={12} />
-              </button>
+              </Button>
             )}
           </div>
         ))}
@@ -150,21 +147,25 @@ const RubricBuilder: React.FC<{
 
       {isOwner && (
         <div className="mt-3 flex gap-2">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setRows((prev) => [...prev, emptyRow()])}
-            className="text-xs font-semibold text-gray-500 hover:text-amber-600 dark:text-gray-400"
           >
             + Add criterion
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => save.mutate()}
             disabled={save.isPending}
-            className="ml-auto rounded-2xl border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+            isLoading={save.isPending}
+            className="ml-auto"
           >
             {save.isPending ? 'Saving…' : 'Save as new version'}
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -227,7 +228,7 @@ const EvalRunHistory: React.FC<{
     <div className="space-y-3">
       {/* Regression chart */}
       {chartData.length >= 2 && (
-        <div className="rounded-[16px] border border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-700">
+        <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-700">
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
             Score history
           </p>
@@ -272,7 +273,7 @@ const EvalRunHistory: React.FC<{
           return (
             <div
               key={run.id}
-              className="flex flex-wrap items-center gap-2 rounded-[14px] border border-gray-100 bg-gray-50 px-3 py-2 text-xs dark:border-gray-800 dark:bg-gray-700"
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-xs dark:border-gray-800 dark:bg-gray-700"
             >
               <span className="font-mono text-gray-500 dark:text-gray-400">
                 {run.id.slice(0, 8)}
@@ -281,7 +282,7 @@ const EvalRunHistory: React.FC<{
                 {run.status}
               </span>
               {run.score !== null && (
-                <span className="rounded-full border border-amber-200 px-2 py-0.5 font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                <span className="rounded-full border border-primary-yellow-200 px-2 py-0.5 font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300">
                   {run.score.toFixed(3)}
                 </span>
               )}
@@ -306,36 +307,38 @@ const EvalRunHistory: React.FC<{
 
               <div className="ml-auto flex items-center gap-1.5">
                 {isOwner && run.status === 'completed' && !isBaseline && (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setBaseline.mutate(run.id)}
                     disabled={setBaseline.isPending}
                     title="Set as baseline"
-                    className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-2 py-1 font-semibold text-gray-500 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-400"
                   >
                     <Crosshair size={11} />
                     Baseline
-                  </button>
+                  </Button>
                 )}
                 {run.status === 'completed' && (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => onInspectFailures(run)}
-                    className="rounded-xl border border-gray-200 px-2 py-1 font-semibold text-gray-500 transition hover:border-red-300 hover:text-red-600 dark:border-gray-700 dark:text-gray-400"
                   >
                     Failures
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
                   type="button"
                   onClick={() => onSelectRun(run)}
                   className={`rounded-xl border px-2 py-1 font-semibold transition ${selectedRunId === run.id
-                    ? 'border-amber-300 text-amber-700 dark:border-amber-500/30 dark:text-amber-300'
-                    : 'border-gray-200 text-gray-600 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-400'
+                    ? 'border-primary-yellow-300 text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300'
+                    : 'border-gray-200 text-gray-600 hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-400'
                     }`}
                 >
                   Results
-                </button>
+                </Button>
               </div>
             </div>
           )
@@ -392,23 +395,24 @@ export const EvaluationsSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Evaluations"
+      docsPath="/how-to/agents/workspace/evaluations"
+      docsTip="Test-suite-style regression panel. Each evaluation runs cases against the current binding and emits a pass/fail score. Failed cases open a side-by-side diff."
       title="Quality control and scoring"
       description="Test agents, lenses, tools, and workflows before production use. Define cases, run them against a chosen model, and review case-by-case scoring."
       toolbar={
         isOwner ? (
-          <button
+          <Button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
           >
             <Plus size={16} />
             New evaluation
-          </button>
+          </Button>
         ) : undefined
       }
     >
       {isOwner && (
-        <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-5 dark:border-gray-800 dark:bg-gray-700">
+        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-800 dark:bg-gray-700">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">What are evaluations?</h3>
           <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
             An evaluation suite is a named collection of test cases. Each case defines an expected
@@ -440,13 +444,13 @@ export const EvaluationsSection: React.FC = () => {
           description="Create an evaluation suite for a lens, workflow, agent, or team. Add cases and run them against a model to score behavior."
         >
           <div className="mt-6 flex justify-center">
-            <button
+            <Button
               type="button"
+              variant="dark"
               onClick={() => setDrawerOpen(true)}
-              className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
             >
               New evaluation
-            </button>
+            </Button>
           </div>
         </EmptyPanel>
       ) : (
@@ -454,7 +458,7 @@ export const EvaluationsSection: React.FC = () => {
           {(evals.data ?? []).map((e) => (
             <div
               key={e.id}
-              className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -468,34 +472,37 @@ export const EvaluationsSection: React.FC = () => {
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setCasesDrawerEval(e)}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
                   >
                     <ListChecks size={14} />
                     Cases
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setExpandedEvalId(expandedEvalId === e.id ? null : e.id)}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
                   >
                     <ChevronDown
                       size={14}
                       className={`transition-transform ${expandedEvalId === e.id ? 'rotate-0' : '-rotate-90'}`}
                     />
                     History
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={() => runEval.mutate(e.id)}
                     disabled={runEval.isPending}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                    isLoading={runEval.isPending}
                   >
                     <Play size={14} />
                     {runEval.isPending ? 'Queueing…' : 'Run'}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -520,16 +527,17 @@ export const EvaluationsSection: React.FC = () => {
       )}
 
       {selectedRun && (
-        <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Run results</h3>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setSelectedRun(null)}
-              className="text-xs text-gray-500 hover:text-amber-600 dark:text-gray-400"
             >
               Close
-            </button>
+            </Button>
           </div>
           {results.isLoading ? (
             <p className="mt-4 text-sm text-gray-500">Polling…</p>
