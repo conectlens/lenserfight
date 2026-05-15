@@ -1,10 +1,13 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { ProviderConfigRecord } from '@lenserfight/types'
-import { Drawer } from '@lenserfight/ui/overlays'
+import { Button } from '@lenserfight/ui/components'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
 import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle, XCircle } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
+
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 export interface ProviderInfo {
   key: string
@@ -91,8 +94,21 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
       side="right"
       width="w-[500px]"
       title={`Configure ${provider.name}`}
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          onSubmit={handleSave}
+          submitLabel={submitting ? 'Saving…' : 'Save'}
+          isLoading={submitting}
+          disabled={submitting || !apiKey.trim()}
+        />
+      }
     >
       <div className="space-y-5">
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/configure-provider"
+          tip="Bind API key and region for one provider. Keys are encrypted at rest; only last 4 chars are echoed back after save. A health check fires post-save."
+        />
         <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-800">
           <p className="font-mono text-xs text-gray-500 dark:text-gray-400">
             provider key:{' '}
@@ -132,14 +148,14 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
         </Field>
 
         <div className="flex items-center gap-3">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={handleHealthCheck}
             disabled={healthStatus === 'checking'}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
           >
             {healthStatus === 'checking' ? 'Checking…' : 'Health check'}
-          </button>
+          </Button>
           {healthStatus === 'ok' && (
             <span className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
               <CheckCircle size={15} /> {healthMessage}
@@ -164,30 +180,14 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
           </p>
         )}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={submitting || !apiKey.trim()}
-            className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-          >
-            {submitting ? 'Saving…' : 'Save'}
-          </button>
-        </div>
+
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,
