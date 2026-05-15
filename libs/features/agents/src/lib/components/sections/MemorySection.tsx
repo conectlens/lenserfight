@@ -1,5 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import { Button } from '@lenserfight/ui/components'
 import { Tab, TabList, Tabs } from '@lenserfight/ui/layout'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -76,23 +77,24 @@ export const MemorySection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Memory"
+      docsPath="/how-to/agents/workspace/memory"
+      docsTip="Memory profiles are long-lived knowledge slots; entries are short-lived recall-scored memories. Both feed the agent on the next run."
       title="Profiles & entries"
       description="Profiles control retention, scope, and visibility. Entries are the actual memory rows agents read on the next run and write after a successful run."
       toolbar={
         isOwner && aiLenserId ? (
-          <button
+          <Button
             type="button"
             onClick={handleSetMemory}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
           >
             <Plus size={14} />
             Set memory
-          </button>
+          </Button>
         ) : undefined
       }
     >
       {viewMode === 'human_owner' && ownerFleetAgents.length > 0 && (
-        <div className="rounded-[24px] border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
           <SelectField
             label="Agent"
             value={selectedFleetAgentId}
