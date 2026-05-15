@@ -27,7 +27,15 @@ export default defineConfig(() => ({
     outDir: '../../dist/apps/arena',
     emptyOutDir: true,
     reportCompressedSize: true,
-    sourcemap: true,
+    // 'hidden' emits maps for upload to an error tracker but omits the
+    // `//# sourceMappingURL=` footer so browsers do not fetch them. Set
+    // VITE_BUILD_SOURCEMAP=inline locally to opt in to inline maps.
+    sourcemap:
+      process.env['VITE_BUILD_SOURCEMAP'] === 'inline'
+        ? 'inline'
+        : process.env['VITE_BUILD_SOURCEMAP'] === 'true'
+          ? true
+          : 'hidden',
     target: 'es2022',
   },
   test: {
