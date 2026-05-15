@@ -1,11 +1,11 @@
 ---
-title: COLENS.MD (native) — ConnectLens Workflow
-description: Canonical file format for a ConnectLens COLENS (multi-step workflow).
+title: COLENS.MD (native) — ConectLens Workflow
+description: Canonical file format for a ConectLens COLENS (multi-step workflow).
 ---
 
-# `COLENS.MD` — Native ConnectLens workflow/COLENS
+# `COLENS.MD` — Native ConectLens workflow/COLENS
 
-A **COLENS** is a ConnectLens workflow: a coordinated, multi-step sequence of LENS and LENSER invocations. `COLENS.MD` is its native, file-first form, validated by `lenserfight validate` and run by `lenserfight workflow run`.
+A **COLENS** is a ConectLens workflow: a coordinated, multi-step sequence of LENS and LENSER invocations. `COLENS.MD` is its native, file-first form, validated by `lenserfight validate` and run by `lenserfight workflow run`.
 
 ## Filename
 
