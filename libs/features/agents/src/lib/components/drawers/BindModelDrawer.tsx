@@ -64,6 +64,12 @@ export const BindModelDrawer: React.FC<BindModelDrawerProps> = ({
       side="right"
       width="w-[480px]"
       title="Bind model profile"
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/bind-model"
+          tip="Create or edit a model profile. Pin provider, model id, and decoding defaults (temperature, top_p, max_tokens). Exactly one profile is the agent default."
+        />
+      }
       footer={
         <DrawerFooter
           onCancel={onClose}
@@ -75,10 +81,6 @@ export const BindModelDrawer: React.FC<BindModelDrawerProps> = ({
       }
     >
       <div className="space-y-4">
-        <DrawerDocsLink
-          path="/how-to/agents/workspace/drawers/bind-model"
-          tip="Create or edit a model profile. Pin provider, model id, and decoding defaults (temperature, top_p, max_tokens). Exactly one profile is the agent default."
-        />
         <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-800">
           <p className="font-semibold text-gray-900 dark:text-white">
             {profile.model_key ?? profile.model_id}
