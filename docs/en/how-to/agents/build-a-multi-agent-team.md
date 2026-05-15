@@ -138,6 +138,18 @@ A `set-role` call landed a value outside `('leader','executor','reviewer','obser
 
 ---
 
+
+## Code-backed workflow
+
+Source of truth: libs/features/agents/src/lib/components/sections/AgentTeamSection.tsx plus the team drawers under libs/features/agents/src/lib/components/drawers. Builder edits are persisted through agentWorkspaceService mutations for teams, members, and edges.
+
+1. Create the team first so every node and edge has a stable team id.
+2. Add members from agents owned by the active workspace. Direct member addition and drawer-based member creation both refresh the workspace bootstrap.
+3. Connect members with edges only after both endpoints exist. The UI rejects self-connections.
+4. Keep one active team in focus before dispatching a workflow assignment.
+
+Verification: open [Team Builder](./workspace/team-builder), confirm members and edges, then run a workflow and inspect [Runs](./workspace/runs).
+
 ## Related
 
 - [Team Coordination](/en/explanation/agents/team-coordination) — primitives and sequence diagrams
