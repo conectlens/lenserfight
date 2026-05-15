@@ -114,7 +114,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_wor, v_lens_wor, 1,
-      'You are the Weekly Operating Review Lens (Chainabit). The team metrics for the week are: [[:' || v_p_wor_a || ']]. '
+      'You are a Weekly Operating Reviewer. The team metrics for the week are: [[:' || v_p_wor_a || ']]. '
       'The notable events / shipments / blockers are: [[:' || v_p_wor_b || ']]. '
       'Produce an operator-facing review with: '
       '(1) headline of the week in one sentence; '
@@ -136,7 +136,7 @@ BEGIN
       ('lens', v_lens_wor, 'en', true,
        'Weekly Operating Review',
        'Founder-style weekly review with one headline, three wins, three losses, the next bet, and leading-indicator table.',
-       'Weekly Operating Review Lens — synthesise [[metrics]] and [[events]] into a founder-style review.');
+       'You are a Weekly Operating Reviewer. Synthesise [[metrics]] and [[events]] into a founder-style review.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_wor, v_tag_chainabit),
@@ -155,7 +155,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_stand, v_lens_stand, 1,
-      'You are the Async Standup Generator Lens (Chainabit). Yesterday: [[:' || v_p_st_a || ']]. Today’s plan: [[:' || v_p_st_b || ']]. '
+      ‘You are an Async Standup Generator. Yesterday: [[:’ || v_p_st_a || ‘]]. Today’’s plan: [[:’ || v_p_st_b || ‘]]. ‘
       'Produce a tight async standup the user can paste into Slack or Discord. Rules: '
       '(1) lead with the one thing that changed for the team — not a personal task log; '
       '(2) call out one explicit blocker with the unblock owner; '
@@ -175,7 +175,7 @@ BEGIN
       ('lens', v_lens_stand, 'en', true,
        'Async Standup Generator',
        'Turns yesterday/today notes into a tight async standup with explicit blockers, risk flags, and one invite question.',
-       'Async Standup Generator Lens — standup from [[yesterday]] and [[today]] (≤120 words).');
+       'You are an Async Standup Generator. Write a standup from [[yesterday]] and [[today]] (≤120 words).');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_stand, v_tag_chainabit),
@@ -194,7 +194,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_prtr, v_lens_prtr, 1,
-      'You are the PR Triage Brief Lens (Chainabit). The list of open pull requests is: [[:' || v_p_pr_a || ']]. '
+      'You are a PR Triage Reviewer. The list of open pull requests is: [[:' || v_p_pr_a || ']]. '
       'Engineering goals this week: [[:' || v_p_pr_b || ']]. '
       'Produce a triage brief for the reviewer pool: '
       '(1) prioritised queue — table with columns PR / Reviewer / Why this priority / SLA in hours; '
@@ -215,7 +215,7 @@ BEGIN
       ('lens', v_lens_prtr, 'en', true,
        'PR Triage Brief',
        'Opinionated review-queue triage: prioritised table, split/rebase candidates, park-or-close drafts, and pattern risks.',
-       'PR Triage Brief Lens — triage [[open_prs]] against [[eng_goals]].');
+       'You are a PR Triage Reviewer. Triage [[open_prs]] against [[eng_goals]].');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_prtr, v_tag_chainabit),
@@ -234,7 +234,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_kit, v_lens_kit, 1,
-      'You are the Launch Content Kit Lens (Chainabit). The feature or product being launched is [[:' || v_p_kit_a || ']]. '
+      'You are a Launch Content Strategist. The feature or product being launched is [[:' || v_p_kit_a || ']]. '
       'Audience and channels: [[:' || v_p_kit_b || ']]. '
       'Produce a launch-week content kit: '
       '(1) launch tweet (≤ 240 chars) plus a four-tweet thread; '
@@ -255,7 +255,7 @@ BEGIN
       ('lens', v_lens_kit, 'en', true,
        'Launch Content Kit',
        'Launch week content: tweet+thread, LinkedIn post, email teaser, community opener, and an anti-pattern callout.',
-       'Launch Content Kit Lens — pack for [[launch_subject]] over [[channels]].');
+       'You are a Launch Content Strategist. Create a content pack for [[launch_subject]] over [[channels]].');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_kit, v_tag_chainabit),
@@ -274,7 +274,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_hire, v_lens_hire, 1,
-      'You are the Hiring Loop Designer Lens (Chainabit). The role profile is [[:' || v_p_hr_a || ']]. '
+      'You are a Hiring Loop Designer. The role profile is [[:' || v_p_hr_a || ']]. '
       'Stage of company and hiring constraints (budget, urgency, manager bandwidth): [[:' || v_p_hr_b || ']]. '
       'Design an honest interview loop: '
       '(1) the single most-predictive signal for this role and the interview that measures it; '
@@ -296,7 +296,7 @@ BEGIN
       ('lens', v_lens_hire, 'en', true,
        'Hiring Loop Designer',
        'Signal-first 4-stage interview loop with anti-loop, candidate one-pager, and the failure mode the loop is exposed to.',
-       'Hiring Loop Designer Lens — loop for [[role_profile]] under [[constraints]].');
+       'You are a Hiring Loop Designer. Design a loop for [[role_profile]] under [[constraints]].');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_hire, v_tag_chainabit),
