@@ -8,6 +8,7 @@ import React, { useMemo, useState } from 'react'
 import { Link, Outlet, useSearchParams } from 'react-router-dom'
 
 import { WorkflowCard } from '../components/WorkflowCard'
+import { WorkflowTemplateCarousel } from '../components/WorkflowTemplateCarousel'
 import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { usePopularWorkflows } from '../hooks/usePopularWorkflows'
 import { useTemplateWorkflows } from '../hooks/useTemplateWorkflows'
@@ -131,61 +132,12 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
       </div>
 
       {/* Start from template strip — always visible (tiny, horizontally-scrolling) */}
-      {(templates.isLoading || (templates.data && templates.data.length > 0)) && (
-        <section className="mb-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-greyscale-500 dark:text-greyscale-400">
-              <Sparkles size={13} className="text-primary-yellow-500" />
-              Start from template
-            </div>
-            <span className="text-[11px] text-greyscale-400">
-              Forks into your workspace so you can edit safely.
-            </span>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
-            {templates.isLoading &&
-              Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex-shrink-0 w-60 h-28 rounded-2xl border border-surface-border bg-surface-raised animate-pulse snap-start"
-                />
-              ))}
-            {templates.data?.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                disabled={forkWorkflow.isPending}
-                onClick={() => forkWorkflow.mutate(t.id)}
-                className="group flex-shrink-0 w-60 rounded-2xl border border-surface-border bg-surface-base p-3 text-left hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5 transition-colors snap-start disabled:opacity-60 disabled:cursor-wait"
-              >
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50 leading-tight line-clamp-2">
-                    {t.title.replace(/^Template · /, '')}
-                  </p>
-                  <span className="text-[10px] font-semibold text-greyscale-400 whitespace-nowrap">
-                    {t.node_count} steps
-                  </span>
-                </div>
-                {t.description && (
-                  <p className="text-[11px] leading-4 text-greyscale-500 line-clamp-2 mb-2">
-                    {t.description}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-1">
-                  {t.kinds.slice(0, 4).map((k) => (
-                    <span
-                      key={k}
-                      className="text-[10px] font-semibold rounded-full bg-surface-raised text-greyscale-500 px-1.5 py-0.5"
-                    >
-                      {k}
-                    </span>
-                  ))}
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+      <WorkflowTemplateCarousel
+        templates={templates.data ?? []}
+        isLoading={templates.isLoading}
+        isForking={forkWorkflow.isPending}
+        onFork={(id) => forkWorkflow.mutate(id)}
+      />
 
       {isLoading && (
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
