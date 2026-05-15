@@ -83,7 +83,7 @@ describe('validateEnvelope', () => {
     expect(issues.some((i) => i.path === 'checksum')).toBe(true)
   })
 
-  it('flags non-owner export with empty redactions', () => {
+  it('accepts non-owner export with empty redactions (payload had no owner-only fields)', () => {
     const issues = validateEnvelope({
       schema: 'lenserfight.export.v1',
       schemaVersion: '1.0.0',
@@ -96,7 +96,7 @@ describe('validateEnvelope', () => {
       data: {},
       checksum: 'a'.repeat(64),
     })
-    expect(issues.some((i) => i.path === 'redactions')).toBe(true)
+    expect(issues.some((i) => i.path === 'redactions')).toBe(false)
   })
 
   it('factory throws ExportValidationError when validation fails (defence in depth)', async () => {
