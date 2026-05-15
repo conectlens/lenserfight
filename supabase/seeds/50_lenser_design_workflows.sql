@@ -212,7 +212,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_dna_gen, 'en', true,
-       'Lenser DNA Spec Generator (template)',
+       'Lenser DNA Spec Generator',
        'Turns a character concept and emotional role into a valid lenser.json variant block.',
        'Generate a Lenser DNA variant JSON from [[concept]] and [[emotional_role]].'),
       ('lens', v_lens_dna_gen, 'tr', false,
@@ -257,7 +257,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_dna_val, 'en', true,
-       'Lenser DNA Validator (template)',
+       'Lenser DNA Validator',
        'Validates a Lenser variant JSON against all base DNA rules. Returns PASS/FAIL per check.',
        'Validate [[variant_json]] against Lenser DNA rules.'),
       ('lens', v_lens_dna_val, 'tr', false,
@@ -305,7 +305,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_concept, 'en', true,
-       'Lenser Concept Brief (template)',
+       'Lenser Concept Brief',
        'Expands a one-line character idea into a full creative brief for designers.',
        'Generate a creative brief from [[character_idea]] for ecosystem [[ecosystem]].'),
       ('lens', v_lens_concept, 'tr', false,
@@ -347,7 +347,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_storyboard, 'en', true,
-       'Lenser Animation Storyboard (template)',
+       'Lenser Animation Storyboard',
        'Generates a frame-by-frame GIF animation storyboard for a Lenser character.',
        'Generate an animation storyboard for [[character]] performing [[action]].'),
       ('lens', v_lens_storyboard, 'tr', false,
@@ -394,7 +394,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_logo, 'en', true,
-       'Lenser Logo Brief (template)',
+       'Lenser Logo Brief',
        'Generates a complete logo design brief for a brand referencing Lenser DNA colors and identity.',
        'Generate a logo brief for [[brand]] featuring [[character]].'),
       ('lens', v_lens_logo, 'tr', false,
