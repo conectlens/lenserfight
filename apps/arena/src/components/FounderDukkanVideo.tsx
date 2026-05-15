@@ -2,16 +2,13 @@ import { Badge, Button } from '@lenserfight/ui/components'
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { Film, Sparkles, Youtube } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
-const DUKKAN_VIDEO = {
-  url: 'https://cdn.lenserfight.com/brand/gifs/dukkan.png',
-  title: 'This is my Dukkan!',
-  description: 'My dream started with a YouTube video.',
-  tag: 'Founder note',
-  youtubeUrl: 'https://www.youtube.com/@ofcskn',
-}
+const DUKKAN_IMAGE_URL = 'https://cdn.lenserfight.com/brand/gifs/dukkan.png'
+const DUKKAN_YOUTUBE_URL = 'https://www.youtube.com/@ofcskn'
 
 export const FounderDukkanVideo: React.FC = () => {
+  const { t } = useTranslation('founderNote')
   const targetRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
@@ -56,6 +53,10 @@ export const FounderDukkanVideo: React.FC = () => {
   })
   const opacity = useTransform(scrollYProgress, [0, 0.05, 0.95, 1], [0, 1, 1, 0])
 
+  const cardTitle = t('dukkanVideo.card.title')
+  const cardDescription = t('dukkanVideo.card.description')
+  const cardTag = t('dukkanVideo.card.tag')
+
   return (
     <div ref={targetRef} className="relative ml-[calc(50%_-_50vw)] h-[250vh] w-screen">
       <div
@@ -70,10 +71,10 @@ export const FounderDukkanVideo: React.FC = () => {
         <motion.div style={{ opacity }} className="absolute left-8 top-12 z-10 sm:left-16 lg:left-24">
           <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-primary-yellow-500/60">
             <Film size={14} />
-            <span>Note from Omer</span>
+            <span>{t('dukkanVideo.tagline')}</span>
           </div>
           <h2 className="text-3xl font-black tracking-tighter text-white sm:text-4xl">
-            The first spark
+            {t('dukkanVideo.title')}
           </h2>
         </motion.div>
 
@@ -85,8 +86,8 @@ export const FounderDukkanVideo: React.FC = () => {
           <div className="group relative flex h-[62vh] w-[82vw] shrink-0 items-end overflow-hidden rounded-[1.75rem] bg-greyscale-900 shadow-2xl transition-all duration-500 hover:ring-1 hover:ring-primary-yellow-500/20 sm:h-[65vh] sm:rounded-[2rem] lg:h-[70vh] lg:w-[min(75vw,72rem)] lg:rounded-[2.5rem]">
             <div className="absolute inset-0 overflow-hidden">
               <img
-                src={DUKKAN_VIDEO.url}
-                alt={DUKKAN_VIDEO.title}
+                src={DUKKAN_IMAGE_URL}
+                alt={cardTitle}
                 className="h-full w-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-110"
                 loading="lazy"
               />
@@ -102,26 +103,26 @@ export const FounderDukkanVideo: React.FC = () => {
                   variant="solid"
                   className="border-primary-yellow-500/30 bg-primary-yellow-500/20 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary-yellow-500 backdrop-blur-xl"
                 >
-                  {DUKKAN_VIDEO.tag}
+                  {cardTag}
                 </Badge>
 
                 <div className="space-y-4">
                   <h3 className="text-4xl font-black tracking-tighter text-white sm:text-5xl lg:text-7xl">
-                    {DUKKAN_VIDEO.title}
+                    {cardTitle}
                   </h3>
                   <p className="max-w-lg text-lg leading-relaxed text-greyscale-300/80 sm:text-xl">
-                    {DUKKAN_VIDEO.description}
+                    {cardDescription}
                   </p>
                 </div>
 
                 <Button
                   variant="primary"
                   size="lg"
-                  onClick={() => window.open(DUKKAN_VIDEO.youtubeUrl, '_blank', 'noopener,noreferrer')}
+                  onClick={() => window.open(DUKKAN_YOUTUBE_URL, '_blank', 'noopener,noreferrer')}
                   className="rounded-full font-black shadow-[0_0_24px_rgba(234,179,8,0.25)] hover:shadow-[0_0_32px_rgba(234,179,8,0.34)]"
                 >
                   <Youtube size={17} />
-                  YouTube
+                  {t('dukkanVideo.card.cta')}
                 </Button>
               </div>
             </div>
@@ -129,7 +130,7 @@ export const FounderDukkanVideo: React.FC = () => {
             <div className="absolute right-12 top-12 hidden items-center gap-6 sm:flex">
               <div className="flex flex-col items-end">
                 <span className="mb-1 text-[10px] font-black uppercase tracking-widest text-primary-yellow-500/40">
-                  Chapter
+                  {t('dukkanVideo.chapter')}
                 </span>
                 <span className="font-mono text-3xl font-black italic leading-none text-primary-yellow-500">
                   01
@@ -147,7 +148,7 @@ export const FounderDukkanVideo: React.FC = () => {
           />
           <div className="absolute left-0 top-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-greyscale-500">
             <Sparkles size={12} className="text-primary-yellow-500" />
-            <span>Scroll to enter the Dukkan</span>
+            <span>{t('dukkanVideo.scrollHint')}</span>
           </div>
         </div>
       </div>
