@@ -24,7 +24,17 @@
         "main": "apps/cli/src/main.ts",
         "tsConfig": "apps/cli/tsconfig.app.json",
         "assets": [
-          "apps/cli/src/assets"
+          "apps/cli/src/assets",
+          {
+            "input": "apps/cli",
+            "glob": "README.md",
+            "output": "."
+          },
+          {
+            "input": ".",
+            "glob": "LICENSE",
+            "output": "."
+          }
         ],
         "generatePackageJson": true,
         "esbuildOptions": {
@@ -128,6 +138,32 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "cd dist/apps/cli && npm link"
+      }
+    },
+    "validate-package": {
+      "dependsOn": [
+        "chmod"
+      ],
+      "cache": true,
+      "outputs": [
+        "{workspaceRoot}/dist/apps/cli/package-validation.json"
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/cli-release/validate-package.mjs --package-dir dist/apps/cli"
+      }
+    },
+    "smoke-install": {
+      "dependsOn": [
+        "validate-package"
+      ],
+      "cache": false,
+      "outputs": [
+        "{workspaceRoot}/dist/apps/cli/package-smoke.json"
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/cli-release/smoke-install.mjs --package-dir dist/apps/cli"
       }
     },
     "test": {
