@@ -5,6 +5,9 @@ description: "Find battles in voting phase, inspect submissions, cast your vote,
 
 # Vote in a Battle and View Results
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 After this guide you will have cast a vote on a live battle and viewed the leaderboard.
 
 ## Before you start
