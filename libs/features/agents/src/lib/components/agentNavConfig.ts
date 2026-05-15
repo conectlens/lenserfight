@@ -49,8 +49,10 @@ export type AgentSection =
   | 'analytics'
   | 'settings'
   | 'battles'
+  | 'chat'
+  | 'getting-started'
 
-export type AgentNavZone = 'operate' | 'build' | 'automate' | 'configure'
+export type AgentNavZone = 'operate' | 'build' | 'automate' | 'configure' | 'chat' | 'resources'
 
 export interface AgentNavItem {
   id: AgentSection
@@ -126,6 +128,8 @@ export const ZONE_LABELS: Record<AgentNavZone, string> = {
   build: 'Build',
   automate: 'Automate',
   configure: 'Configure',
+  chat: 'Chat',
+  resources: 'Resources',
 }
 
 export function isVisibleSection(section: AgentSection, viewMode: AgentViewMode): boolean {
