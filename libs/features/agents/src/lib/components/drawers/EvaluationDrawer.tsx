@@ -1,12 +1,16 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { Drawer } from '@lenserfight/ui/overlays'
 import type {
   CreateEvaluationInput,
   EvaluationRecord,
   EvaluationTargetType,
 } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
 import { Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
+
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface Props {
   open: boolean
@@ -17,6 +21,7 @@ interface Props {
 }
 
 const TARGETS: EvaluationTargetType[] = ['lens', 'workflow', 'agent', 'team']
+const TARGET_OPTIONS = TARGETS.map((t) => ({ value: t, label: t }))
 
 const RUBRIC_OPTIONS = [
   { value: 'binary_pass', label: 'Binary pass / fail' },
@@ -158,24 +163,41 @@ export const EvaluationDrawer: React.FC<Props> = ({
       onClose={onClose}
       side="right"
       width="w-[640px]"
-      title="Create evaluation"
+      title="Add automated evaluation"
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          onSubmit={handleSave}
+          submitLabel={submitting ? 'Saving…' : 'Create evaluation'}
+          isLoading={submitting}
+          disabled={
+            submitting ||
+            !name ||
+            !targetId ||
+            (mode === 'advanced' && (!!scoringJsonError || !!casesJsonError))
+          }
+        />
+      }
     >
       <div className="space-y-4">
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/evaluation"
+          tip="Create or run an evaluation suite. Bind a model profile, add cases, optionally schedule on a cron. Failed cases open a side-by-side diff."
+        />
         {/* Mode toggle */}
         <div className="flex gap-1 rounded-2xl border border-gray-200 p-1 dark:border-gray-700">
           {(['simple', 'advanced'] as const).map((m) => (
-            <button
+            <Button
               key={m}
               type="button"
+              size="sm"
+              variant={mode === m ? 'dark' : 'ghost'}
               onClick={() => (m === 'advanced' ? switchToAdvanced() : setMode('simple'))}
-              className={
-                mode === m
-                  ? 'flex-1 rounded-xl bg-gray-900 py-1.5 text-xs font-semibold text-white dark:bg-white dark:text-gray-900'
-                  : 'flex-1 rounded-xl py-1.5 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-              }
+              className="flex-1"
+              aria-pressed={mode === m}
             >
               {m === 'simple' ? 'Simple' : 'Advanced (JSON)'}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -192,17 +214,11 @@ export const EvaluationDrawer: React.FC<Props> = ({
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Target type">
-            <select
+            <SelectField
               value={targetType}
-              onChange={(e) => setTargetType(e.target.value as EvaluationTargetType)}
-              className={inputClass}
-            >
-              {TARGETS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setTargetType(v as EvaluationTargetType)}
+              options={TARGET_OPTIONS}
+            />
           </Field>
           <Field label="Target ID">
             <input
@@ -216,23 +232,13 @@ export const EvaluationDrawer: React.FC<Props> = ({
 
         {mode === 'simple' ? (
           <>
-            <div className="rounded-[20px] border border-gray-200 p-4 dark:border-gray-700">
+            <div className="rounded-2xl border border-gray-200 p-4 dark:border-gray-700">
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
                 Scoring rules
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Rubric">
-                  <select
-                    value={rubric}
-                    onChange={(e) => setRubric(e.target.value)}
-                    className={inputClass}
-                  >
-                    {RUBRIC_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                  <SelectField value={rubric} onChange={setRubric} options={RUBRIC_OPTIONS} />
                 </Field>
                 <Field label="Weight">
                   <input
@@ -247,19 +253,20 @@ export const EvaluationDrawer: React.FC<Props> = ({
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-gray-200 p-4 dark:border-gray-700">
+            <div className="rounded-2xl border border-gray-200 p-4 dark:border-gray-700">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
                   Test cases
                 </p>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={addCase}
-                  className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
                 >
-                  <Plus size={12} />
+                  <Plus size={12} className="mr-1 inline" />
                   Add case
-                </button>
+                </Button>
               </div>
               <div className="space-y-3">
                 {cases.map((c, idx) => (
@@ -272,14 +279,14 @@ export const EvaluationDrawer: React.FC<Props> = ({
                         Case {idx + 1}
                       </span>
                       {cases.length > 1 && (
-                        <button
+                        <Button
                           type="button"
                           onClick={() => removeCase(idx)}
                           className="text-gray-400 hover:text-red-500"
                           aria-label="Remove case"
                         >
                           <Trash2 size={13} />
-                        </button>
+                        </Button>
                       )}
                     </div>
                     <div className="grid gap-2">
@@ -358,35 +365,14 @@ export const EvaluationDrawer: React.FC<Props> = ({
           </p>
         )}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={
-              submitting ||
-              !name ||
-              !targetId ||
-              (mode === 'advanced' && (!!scoringJsonError || !!casesJsonError))
-            }
-            className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-          >
-            {submitting ? 'Saving…' : 'Create evaluation'}
-          </button>
-        </div>
+
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="block">
