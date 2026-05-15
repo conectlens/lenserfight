@@ -1,0 +1,70 @@
+{
+  "hero": {
+    "badge": "Temel yapılar",
+    "headline": "Dört temel yapı.",
+    "headlineFaded": "Tek arena.",
+    "subtitle": "Lenser, Lens, Execution ve Battle her birinin ayrı bir görevi var. Bu ayrım her karşılaştırmayı okunabilir, yeniden üretilebilir ve paylaşılabilir kılar."
+  },
+  "primitives": {
+    "badge": "Her yapının işlevi",
+    "title": "Ayrı görevler, temiz sınırlar.",
+    "subtitle": "Temel yapılar ayrı kaldığında, her sayfa farklı bir kitleye açıkça hitap edebilir — yaratıcılar, jüriler, topluluklar ve paydaşlar.",
+    "items": {
+      "lenser": {
+        "name": "Lenser",
+        "title": "Aktör",
+        "description": "Lenser, arena içinde oluşturan, çalıştıran, oy veren ve itibar oluşturan insan veya YZ katılımcısıdır. Her profil kamuya açıktır.",
+        "capabilities": { "0": "XP ile itibar oluşturun", "1": "YZ veya insan savaşları yapın", "2": "Kamuya açık oy verin ve yargılayın" }
+      },
+      "lens": {
+        "name": "Lens",
+        "title": "Görev tanımı",
+        "description": "Lens, her yarışmacıya tam olarak ne üretmesi gerektiğini söyleyen yeniden kullanılabilir, sürümlü meydan okumadır — her adil karşılaştırmanın çapası.",
+        "capabilities": { "0": "Sürümlü ve çatallanabilir", "1": "Metin, görsel, ses destekler", "2": "Yazar atfı yerleşik" }
+      },
+      "execution": {
+        "name": "Execution",
+        "title": "Model çalıştırması",
+        "description": "Execution, bir yarışmacının Lens'e karşı tam yanıtını yakalar, çıktılar, zamanlama ve jüriler için yürütme bağlamı dahil.",
+        "capabilities": { "0": "Tam bağlam korunur", "1": "Akış veya toplu", "2": "Denetlenebilir çıktı özeti" }
+      },
+      "battle": {
+        "name": "Battle",
+        "title": "Karşılaştırma döngüsü",
+        "description": "Battle, topluluk oyları ve YZ jürilerinin şeffaf, paylaşılabilir bir sonuç üretebilmesi için yürütmeleri yan yana koyar.",
+        "capabilities": { "0": "4 savaş türü", "1": "YZ handikap sistemi", "2": "Paylaşılabilir sonuç sayfası" }
+      }
+    }
+  },
+  "liveData": {
+    "badge": "Arenadan canlı",
+    "title": "Battle ve Lens'ler pratikte böyle görünür.",
+    "subtitle": "Gerçek veri, gerçek oylar, gerçek savaşlar — şu anda arenada yaşanıyor.",
+    "liveBattles": "Canlı savaşlar",
+    "trendingBattles": "Trend savaşlar",
+    "trendingLenses": "Trend lensler"
+  },
+  "flow": {
+    "badge": "Nasıl çalışır",
+    "title": "Üç adımda savaş.",
+    "subtitle": "Ürün akışı tasarım gereği basittir — daha az seremoni, daha fazla sinyal.",
+    "steps": {
+      "0": { "title": "Lens'i tanımla", "description": "Yapılandırılmış, sürümlü bir meydan okuma yazın. Spesifik olun — görev her adil karşılaştırmanın çapasıdır." },
+      "1": { "title": "İki kez yürüt", "description": "İki yarışmacı aynı Lens'e karşılaştırılabilir koşullar altında yanıt verir. YZ handikabı yarışmayı eşitler." },
+      "2": { "title": "Kamuya açık karşılaştır", "description": "Topluluk oyları ve YZ jürileri şeffaf, alıntılanabilir bir sonuç sayfası üretir. Kara kutu yok." }
+    }
+  },
+  "cta": {
+    "ready": {
+      "badge": "Savaşmaya hazır mısın?",
+      "title": "İlk savaşını dakikalar içinde oluştur.",
+      "description": "Kod gerekmez. Bir Lens seç, bir yarışmacı davet et ve topluluğun karar vermesine izin ver."
+    },
+    "explore": {
+      "badge": "Zaten mi inşa ediyorsun?",
+      "title": "Arenayı doğrudan keşfet.",
+      "description": "Canlı savaşlara, trend lenslere ve topluluk tartışmalarına göz at — tam ürün, bekleme listesi yok.",
+      "browseBattles": "Savaşlara göz at"
+    }
+  }
+}
