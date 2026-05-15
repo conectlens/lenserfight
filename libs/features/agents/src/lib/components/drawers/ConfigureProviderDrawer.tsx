@@ -94,6 +94,12 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
       side="right"
       width="w-[500px]"
       title={`Configure ${provider.name}`}
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/configure-provider"
+          tip="Bind API key and region for one provider. Keys are encrypted at rest; only last 4 chars are echoed back after save. A health check fires post-save."
+        />
+      }
       footer={
         <DrawerFooter
           onCancel={onClose}
@@ -105,10 +111,6 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
       }
     >
       <div className="space-y-5">
-        <DrawerDocsLink
-          path="/how-to/agents/workspace/drawers/configure-provider"
-          tip="Bind API key and region for one provider. Keys are encrypted at rest; only last 4 chars are echoed back after save. A health check fires post-save."
-        />
         <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-800">
           <p className="font-mono text-xs text-gray-500 dark:text-gray-400">
             provider key:{' '}
