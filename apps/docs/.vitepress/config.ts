@@ -304,6 +304,97 @@ function buildDocsJsonLd(relativePath: string, title: string, description: strin
 
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
 
+const AGENT_WORKSPACE_OPERATE_SIDEBAR = [
+  { text: 'Overview', link: '/en/how-to/agents/workspace/overview' },
+  { text: 'Drafts / Scratchpad', link: '/en/how-to/agents/workspace/scratchpad' },
+  { text: 'Runs', link: '/en/how-to/agents/workspace/runs' },
+  { text: 'Logs', link: '/en/how-to/agents/workspace/logs' },
+  { text: 'Reports', link: '/en/how-to/agents/workspace/reports' },
+  { text: 'Analytics', link: '/en/how-to/agents/workspace/analytics' },
+  { text: 'Creator Analytics', link: '/en/how-to/agents/workspace/creator-analytics' },
+  { text: 'Battles', link: '/en/how-to/agents/workspace/battles' },
+]
+
+const AGENT_WORKSPACE_BUILD_SIDEBAR = [
+  { text: 'Team Builder', link: '/en/how-to/agents/workspace/team-builder' },
+  { text: 'Workflows', link: '/en/how-to/agents/workspace/workflows' },
+]
+
+const AGENT_WORKSPACE_AUTOMATE_SIDEBAR = [
+  { text: 'Schedules', link: '/en/how-to/agents/workspace/schedules' },
+  { text: 'Evaluations', link: '/en/how-to/agents/workspace/evaluations' },
+]
+
+const AGENT_WORKSPACE_CONFIGURE_SIDEBAR = [
+  { text: 'Memory', link: '/en/how-to/agents/workspace/memory' },
+  { text: 'Instructions', link: '/en/how-to/agents/workspace/instructions' },
+  { text: 'Personality', link: '/en/how-to/agents/workspace/personality' },
+  { text: 'Tools', link: '/en/how-to/agents/workspace/tools' },
+  { text: 'Models', link: '/en/how-to/agents/workspace/models' },
+  { text: 'Providers', link: '/en/how-to/agents/workspace/providers' },
+  { text: 'BYOK', link: '/en/how-to/agents/workspace/byok' },
+  { text: 'BYOK Usage Log', link: '/en/how-to/agents/workspace/byok-usage-log' },
+  { text: 'Approvals', link: '/en/how-to/agents/workspace/approvals' },
+  { text: 'Cost', link: '/en/how-to/agents/workspace/cost' },
+  { text: 'Settings', link: '/en/how-to/agents/workspace/settings' },
+]
+
+const AGENT_WORKSPACE_DRAWER_SIDEBAR = [
+  { text: 'Add Team Member', link: '/en/how-to/agents/workspace/drawers/add-team-member' },
+  { text: 'Assign Tool', link: '/en/how-to/agents/workspace/drawers/assign-tool' },
+  { text: 'Bind Model', link: '/en/how-to/agents/workspace/drawers/bind-model' },
+  { text: 'Configure Provider', link: '/en/how-to/agents/workspace/drawers/configure-provider' },
+  { text: 'Create Team', link: '/en/how-to/agents/workspace/drawers/create-team' },
+  { text: 'Evaluation', link: '/en/how-to/agents/workspace/drawers/evaluation' },
+  { text: 'Evaluation Cases', link: '/en/how-to/agents/workspace/drawers/evaluation-cases' },
+  { text: 'Failed Case', link: '/en/how-to/agents/workspace/drawers/failed-case' },
+  { text: 'Memory Entry', link: '/en/how-to/agents/workspace/drawers/memory-entry' },
+  { text: 'Memory Profile', link: '/en/how-to/agents/workspace/drawers/memory-profile' },
+  { text: 'New Battle Subscription', link: '/en/how-to/agents/workspace/drawers/new-battle-subscription' },
+  { text: 'Personality Profile', link: '/en/how-to/agents/workspace/drawers/personality-profile' },
+  { text: 'Register Tool', link: '/en/how-to/agents/workspace/drawers/register-tool' },
+  { text: 'Run Detail', link: '/en/how-to/agents/workspace/drawers/run-detail' },
+  { text: 'Schedule', link: '/en/how-to/agents/workspace/drawers/schedule' },
+  { text: 'Schedule Run History', link: '/en/how-to/agents/workspace/drawers/schedule-run-history' },
+  { text: 'Team Edges', link: '/en/how-to/agents/workspace/drawers/team-edges' },
+  { text: 'Tool Invocation', link: '/en/how-to/agents/workspace/drawers/tool-invocation' },
+  { text: 'Tool Profile', link: '/en/how-to/agents/workspace/drawers/tool-profile' },
+  { text: 'Workflow Assignment', link: '/en/how-to/agents/workspace/drawers/workflow-assignment' },
+]
+
+const AGENT_WORKSPACE_SIDEBAR = [
+  {
+    text: 'Agent Workspace',
+    collapsed: false,
+    items: [{ text: 'Workspace Index', link: '/en/how-to/agents/workspace/' }],
+  },
+  {
+    text: 'Operate',
+    collapsed: false,
+    items: AGENT_WORKSPACE_OPERATE_SIDEBAR,
+  },
+  {
+    text: 'Build',
+    collapsed: false,
+    items: AGENT_WORKSPACE_BUILD_SIDEBAR,
+  },
+  {
+    text: 'Automate',
+    collapsed: false,
+    items: AGENT_WORKSPACE_AUTOMATE_SIDEBAR,
+  },
+  {
+    text: 'Configure',
+    collapsed: false,
+    items: AGENT_WORKSPACE_CONFIGURE_SIDEBAR,
+  },
+  {
+    text: 'Drawers',
+    collapsed: true,
+    items: AGENT_WORKSPACE_DRAWER_SIDEBAR,
+  },
+]
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   srcDir: '../../docs',
@@ -323,7 +414,9 @@ export default defineConfig({
     /\.\.\/\.\.\//,
     // Web-app routes referenced from docs (live at lenserfight.com, not in this docs site)
     /^\/settings\//,
+    /^\/ray$/,
     /^\/ray\//,
+    /ConectLens-agent-skills$/,
   ],
 
   title: 'LenserFight Docs',
@@ -1902,9 +1995,11 @@ export default defineConfig({
           items: [
             { text: 'Manage Agent Settings', link: '/en/how-to/agents/manage-agent-settings' },
             { text: 'Build a Multi-Agent Team', link: '/en/how-to/agents/build-a-multi-agent-team' },
+            { text: 'Agent Workspace', link: '/en/how-to/agents/workspace/' },
           ],
         },
       ],
+      '/en/how-to/agents/workspace/': AGENT_WORKSPACE_SIDEBAR,
       '/en/how-to/battles/': [
         {
           text: 'Battle Guides',
