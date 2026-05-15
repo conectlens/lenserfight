@@ -53,71 +53,17 @@ interface Primitive {
   capabilities: string[]
 }
 
-const PRIMITIVES: Primitive[] = [
-  {
-    icon: User,
-    name: 'Lenser',
-    badgeColor: 'yellow',
-    title: 'The actor',
-    description:
-      'A Lenser is the human or AI participant that creates, runs, votes, and builds reputation inside the arena. Every profile is public.',
-    capabilities: ['Build reputation via XP', 'Run AI or human battles', 'Vote and judge publicly'],
-  },
-  {
-    icon: Aperture,
-    name: 'Lens',
-    badgeColor: 'purple',
-    title: 'The task specification',
-    description:
-      'A Lens is the reusable, versioned challenge that tells every contender exactly what to produce — the anchor of every fair comparison.',
-    capabilities: ['Versioned and forkable', 'Supports text, image, audio', 'Author attribution built in'],
-  },
-  {
-    icon: Activity,
-    name: 'Execution',
-    badgeColor: 'blue',
-    title: 'The model run',
-    description:
-      "An Execution captures one contender's full response against a Lens, including outputs, timing, and execution context for the judges.",
-    capabilities: ['Full context preserved', 'Streaming or batch', 'Auditable output hash'],
-  },
-  {
-    icon: Brain,
-    name: 'Battle',
-    badgeColor: 'green',
-    title: 'The comparison loop',
-    description:
-      'A Battle puts executions side-by-side so community votes and AI judges can produce a transparent, shareable result.',
-    capabilities: ['4 battle types', 'AI handicap system', 'Shareable result page'],
-  },
-]
+const PRIMITIVE_DEFS = [
+  { icon: User, key: 'lenser', badgeColor: 'yellow' as BadgeColor, capCount: 3 },
+  { icon: Aperture, key: 'lens', badgeColor: 'purple' as BadgeColor, capCount: 3 },
+  { icon: Activity, key: 'execution', badgeColor: 'blue' as BadgeColor, capCount: 3 },
+  { icon: Brain, key: 'battle', badgeColor: 'green' as BadgeColor, capCount: 3 },
+] as const
 
-const FLOW_STEPS = [
-  {
-    step: '01',
-    icon: Aperture,
-    title: 'Define the Lens',
-    description:
-      'Write a structured, versioned challenge. Be specific — the task is the anchor of every fair comparison.',
-  },
-  {
-    step: '02',
-    icon: Zap,
-    title: 'Execute twice',
-    description:
-      'Two contenders respond to the same Lens under comparable conditions. AI handicaps level the playing field.',
-  },
-  {
-    step: '03',
-    icon: Layers,
-    title: 'Compare publicly',
-    description:
-      'Community votes and AI judges produce a transparent, citable result page. No black boxes.',
-  },
-]
+const FLOW_ICONS = [Aperture, Zap, Layers] as const
 
 export const ProductPage: React.FC = () => {
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation(['product', 'common'])
   const contactUrl = chainabitContactUrl({
     lang: i18n.language,
     utmMedium: 'arena_product',
@@ -140,31 +86,30 @@ export const ProductPage: React.FC = () => {
           {/* Left — headline */}
           <div className="space-y-6">
             <motion.div variants={fadeUp}>
-              <Badge color="yellow" variant="outline">Core primitives</Badge>
+              <Badge color="yellow" variant="outline">{t('product:hero.badge')}</Badge>
             </motion.div>
             <motion.h1
               variants={fadeUp}
               className="text-5xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-6xl lg:text-7xl"
             >
-              Four primitives.{' '}
-              <span className="text-greyscale-400 dark:text-greyscale-500">One arena.</span>
+              {t('product:hero.headline')}{' '}
+              <span className="text-greyscale-400 dark:text-greyscale-500">{t('product:hero.headlineFaded')}</span>
             </motion.h1>
             <motion.p
               variants={fadeUp}
               className="max-w-xl text-xl leading-9 text-greyscale-600 dark:text-greyscale-400"
             >
-              Lenser, Lens, Execution, and Battle each have a distinct job. That separation is what
-              keeps every comparison readable, reproducible, and shareable.
+              {t('product:hero.subtitle')}
             </motion.p>
             <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
               <Link to="/battles">
                 <Button variant="primary" size="lg">
-                  Open Arena <ArrowRight size={16} />
+                  {t('common:cta.openArena')} <ArrowRight size={16} />
                 </Button>
               </Link>
               <Link to="/about">
                 <Button variant="secondary" size="lg">
-                  Our mission
+                  {t('common:cta.ourMission')}
                 </Button>
               </Link>
             </motion.div>
@@ -172,8 +117,11 @@ export const ProductPage: React.FC = () => {
 
           {/* Right — primitive quick-reference grid */}
           <motion.div variants={stagger} className="grid grid-cols-2 gap-3">
-            {PRIMITIVES.map(({ icon: Icon, name, badgeColor, title }) => (
-              <motion.div key={name} variants={fadeUp}>
+            {PRIMITIVE_DEFS.map(({ icon: Icon, key, badgeColor }) => {
+              const name = t(`product:primitives.items.${key}.name`)
+              const title = t(`product:primitives.items.${key}.title`)
+              return (
+              <motion.div key={key} variants={fadeUp}>
                 <Card className="h-full space-y-3 border-t-4 border-t-primary-yellow-500/40 p-4 transition-colors hover:border-t-primary-yellow-500">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
                     <Icon size={18} />
@@ -186,7 +134,8 @@ export const ProductPage: React.FC = () => {
                   </div>
                 </Card>
               </motion.div>
-            ))}
+              )
+            })}
           </motion.div>
         </motion.div>
       </section>
@@ -194,12 +143,12 @@ export const ProductPage: React.FC = () => {
       {/* ── PRIMITIVES DEEP DIVE ───────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-24">
         <motion.div variants={fadeLeft} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="yellow" variant="outline">What each primitive does</Badge>
+          <Badge color="yellow" variant="outline">{t('product:primitives.badge')}</Badge>
           <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            Distinct jobs, clean boundaries.
+            {t('product:primitives.title')}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            When primitives stay distinct, every page can speak clearly to a different audience — creators, judges, communities, and stakeholders.
+            {t('product:primitives.subtitle')}
           </p>
         </motion.div>
 
@@ -210,8 +159,13 @@ export const ProductPage: React.FC = () => {
           whileInView="visible"
           viewport={viewport}
         >
-          {PRIMITIVES.map(({ icon: Icon, name, badgeColor, title, description, capabilities }) => (
-            <motion.div key={name} variants={fadeUp} className="flex flex-col">
+          {PRIMITIVE_DEFS.map(({ icon: Icon, key, badgeColor, capCount }) => {
+            const name = t(`product:primitives.items.${key}.name`)
+            const title = t(`product:primitives.items.${key}.title`)
+            const description = t(`product:primitives.items.${key}.description`)
+            const capabilities = Array.from({ length: capCount }, (_, i) => t(`product:primitives.items.${key}.capabilities.${i}`))
+            return (
+            <motion.div key={key} variants={fadeUp} className="flex flex-col">
               <Card className="flex flex-1 flex-col space-y-4 border-t-4 border-t-primary-yellow-500/40 p-6 transition-colors hover:border-t-primary-yellow-500">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
                   <Icon size={22} />
@@ -236,19 +190,20 @@ export const ProductPage: React.FC = () => {
                 </ul>
               </Card>
             </motion.div>
-          ))}
+            )
+          })}
         </motion.div>
       </section>
 
       {/* ── LIVE ARENA DATA — real cards ──────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-24">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="red" variant="outline">Live from the arena</Badge>
+          <Badge color="red" variant="outline">{t('product:liveData.badge')}</Badge>
           <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            This is what Battles and Lenses look like in practice.
+            {t('product:liveData.title')}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            Real data, real votes, real battles — happening right now in the arena.
+            {t('product:liveData.subtitle')}
           </p>
         </motion.div>
 
@@ -263,7 +218,7 @@ export const ProductPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-status-red" aria-hidden="true" />
               <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                Live battles
+                {t('product:liveData.liveBattles')}
               </p>
             </div>
             <SpectatorFeedWidget getBattleHref={(slug) => `${RUN_APP_URL}/battles/${slug}`} />
@@ -273,7 +228,7 @@ export const ProductPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <Activity size={12} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
               <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                Trending battles
+                {t('product:liveData.trendingBattles')}
               </p>
             </div>
             <ArenaTrendingBattlesWidget baseUrl={RUN_APP_URL} />
@@ -290,7 +245,7 @@ export const ProductPage: React.FC = () => {
           <div className="mb-3 flex items-center gap-2">
             <Aperture size={12} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
             <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-              Trending lenses
+              {t('product:liveData.trendingLenses')}
             </p>
           </div>
           <ArenaTrendingLensesWidget baseUrl={RUN_APP_URL} />
@@ -300,12 +255,12 @@ export const ProductPage: React.FC = () => {
       {/* ── HOW IT WORKS — 3 steps ────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-24">
         <motion.div variants={fadeLeft} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="purple" variant="outline">How it works</Badge>
+          <Badge color="purple" variant="outline">{t('product:flow.badge')}</Badge>
           <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            A battle in three steps.
+            {t('product:flow.title')}
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            The product flow is simple by design — less ceremony, more signal.
+            {t('product:flow.subtitle')}
           </p>
         </motion.div>
 
@@ -317,20 +272,25 @@ export const ProductPage: React.FC = () => {
           viewport={viewport}
         >
           <div className="absolute inset-x-0 top-10 hidden h-px bg-surface-border md:block" />
-          {FLOW_STEPS.map(({ step, icon: Icon, title, description }) => (
-            <motion.div key={step} variants={fadeUp}>
-              <Card className="relative space-y-4 p-6">
-                <div className="flex items-center gap-3">
-                  <div className="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-yellow-500 text-greyscale-900">
-                    <Icon size={18} />
+          {FLOW_ICONS.map((Icon, i) => {
+            const step = `0${i + 1}`
+            const title = t(`product:flow.steps.${i}.title`)
+            const description = t(`product:flow.steps.${i}.description`)
+            return (
+              <motion.div key={i} variants={fadeUp}>
+                <Card className="relative space-y-4 p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-yellow-500 text-greyscale-900">
+                      <Icon size={18} />
+                    </div>
+                    <span className="text-xs font-black tracking-widest text-greyscale-400">{step}</span>
                   </div>
-                  <span className="text-xs font-black tracking-widest text-greyscale-400">{step}</span>
-                </div>
-                <h3 className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">{title}</h3>
-                <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">{description}</p>
-              </Card>
-            </motion.div>
-          ))}
+                  <h3 className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">{title}</h3>
+                  <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">{description}</p>
+                </Card>
+              </motion.div>
+            )
+          })}
         </motion.div>
       </section>
 
@@ -344,19 +304,19 @@ export const ProductPage: React.FC = () => {
           viewport={viewport}
         >
           <motion.div variants={fadeUp}>
-            <Card className="relative h-full space-y-4 overflow-hidden bg-greyscale-900 p-8">
+            <Card className="relative h-full space-y-4 overflow-hidden bg-white dark:bg-greyscale-900 p-8 ring-1 ring-black/5 dark:ring-white/10 shadow-2xl">
               <div className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,222,89,1),_transparent_60%)]" />
               <div className="relative space-y-4">
-                <Badge color="yellow" variant="solid">Ready to fight?</Badge>
-                <h2 className="text-2xl font-black text-greyscale-0">
-                  Create your first battle in minutes.
+                <Badge color="yellow" variant="solid">{t('product:cta.ready.badge')}</Badge>
+                <h2 className="text-2xl font-black text-greyscale-950 dark:text-greyscale-0">
+                  {t('product:cta.ready.title')}
                 </h2>
-                <p className="text-sm leading-7 text-greyscale-400">
-                  No code required. Pick a Lens, invite a contender, and let the community decide.
+                <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+                  {t('product:cta.ready.description')}
                 </p>
                 <a href={`${RUN_APP_URL}/battles/create`}>
                   <Button variant="primary" size="lg">
-                    Start a battle <ArrowRight size={16} />
+                    {t('common:cta.startBattle')} <ArrowRight size={16} />
                   </Button>
                 </a>
               </div>
@@ -365,22 +325,22 @@ export const ProductPage: React.FC = () => {
 
           <motion.div variants={fadeUp}>
             <Card className="h-full space-y-4 p-8">
-              <Badge color="yellow" variant="outline">Already building?</Badge>
+              <Badge color="yellow" variant="outline">{t('product:cta.explore.badge')}</Badge>
               <h2 className="text-2xl font-black text-greyscale-900 dark:text-greyscale-0">
-                Explore the arena directly.
+                {t('product:cta.explore.title')}
               </h2>
               <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-                Browse live battles, trending lenses, and community discussions — the full product, no waitlist.
+                {t('product:cta.explore.description')}
               </p>
               <div className="flex flex-wrap gap-3">
                 <a href={`${RUN_APP_URL}/battles`}>
                   <Button variant="dark" size="md">
-                    Browse battles
+                    {t('product:cta.explore.browseBattles')}
                   </Button>
                 </a>
                 <a href={contactUrl} target="_blank" rel="noopener noreferrer">
                   <Button variant="secondary" size="md">
-                    Talk to us <ExternalLink size={14} />
+                    {t('common:cta.talkToUs')} <ExternalLink size={14} />
                   </Button>
                 </a>
               </div>
