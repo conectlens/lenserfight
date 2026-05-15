@@ -1,5 +1,7 @@
 import { ExternalLink, Network, Pencil, Trash2, UserPlus } from 'lucide-react'
 import React, { useEffect, useRef } from 'react'
+import { Button } from '@lenserfight/ui/components'
+
 
 interface MenuItem {
   label: string
@@ -74,7 +76,7 @@ export const AgentCanvasContextMenu: React.FC<AgentCanvasContextMenuProps> = ({
       onContextMenu={(e) => e.preventDefault()}
     >
       {items.map((item, idx) => (
-        <button
+        <Button
           key={idx}
           type="button"
           onClick={() => { item.onClick(); onClose() }}
@@ -87,7 +89,7 @@ export const AgentCanvasContextMenu: React.FC<AgentCanvasContextMenuProps> = ({
         >
           {item.icon}
           {item.label}
-        </button>
+        </Button>
       ))}
     </div>
   )
