@@ -1,4 +1,4 @@
-export type ChainabitConnectionState =
+export type PartnerConnectionState =
   | 'loading'
   | 'no_account'
   | 'invalid_connection'
@@ -6,7 +6,10 @@ export type ChainabitConnectionState =
   | 'connected'
   | 'provider_error'
 
-export interface ChainabitAiModel {
+/** @deprecated Use PartnerConnectionState */
+export type ChainabitConnectionState = PartnerConnectionState
+
+export interface PartnerAiModel {
   id: string
   modelKey: string
   name: string
@@ -16,6 +19,9 @@ export interface ChainabitAiModel {
   active: boolean
   costPer1kTokens?: number
 }
+
+/** @deprecated Use PartnerAiModel */
+export type ChainabitAiModel = PartnerAiModel
 
 export interface PartnerProvisionRecord {
   partnerName: string
