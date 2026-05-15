@@ -54,7 +54,7 @@ export interface ExecuteResponse {
 
 export interface ExecuteByokRequest {
   key_ref_id: string
-  provider?: 'openai' | 'anthropic' | 'google' | 'mistral'
+  provider?: 'openai' | 'anthropic' | 'google' | 'mistral' | 'ollama'
   model: string
   messages: Message[]
   max_tokens?: number
