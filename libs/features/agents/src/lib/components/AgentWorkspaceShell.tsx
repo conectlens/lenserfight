@@ -1,5 +1,6 @@
 import { useLenserWorkspace, useWorkspaceSwitchController } from '@lenserfight/features/profile'
-import { AlertTriangle, Bot } from 'lucide-react'
+import { Alert } from '@lenserfight/ui/components'
+import { Bot } from 'lucide-react'
 import React from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
@@ -160,8 +161,8 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
         description="Switching context to owner workspace..."
       >
         <div className="flex flex-col gap-6 items-center justify-center h-64">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
-          <p className="text-sm font-medium text-amber-600 animate-pulse">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-yellow-500 border-t-transparent" />
+          <p className="text-sm font-medium text-primary-yellow-600 animate-pulse">
             Switching into agent workspace...
           </p>
         </div>
@@ -177,7 +178,7 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="h-28 animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-700"
+              className="h-28 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800"
             />
           ))}
         </div>
@@ -192,18 +193,10 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
         title={`@${profile.handle}`}
         description="Agent workspace data not found."
       >
-        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-          <div className="flex items-start gap-3">
-            <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-semibold">Agent workspace not initialized</p>
-              <p className="mt-1">
-                No agent profile was found for this workspace. Ensure the AI lenser was created
-                through the proper provisioning flow and the agent migrations are applied.
-              </p>
-            </div>
-          </div>
-        </div>
+        <Alert variant="warning" title="Agent workspace not initialized">
+          No agent profile was found for this workspace. Ensure the AI lenser was created
+          through the proper provisioning flow and the agent migrations are applied.
+        </Alert>
       </SectionPage>
     )
   }
@@ -215,18 +208,10 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
         title={`@${profile.handle}`}
         description="Workspace bootstrap failed."
       >
-        <div className="rounded-[24px] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-          <div className="flex items-start gap-3">
-            <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-semibold">Workspace bootstrap failed</p>
-              <p className="mt-1">
-                {data.bootstrapState.message ??
-                  'The control-room RPC did not return bootstrap data. Review the migration, RLS, and ownership helpers before relying on this workspace in production.'}
-              </p>
-            </div>
-          </div>
-        </div>
+        <Alert variant="error" title="Workspace bootstrap failed">
+          {data.bootstrapState.message ??
+            'The control-room RPC did not return bootstrap data. Review the migration, RLS, and ownership helpers before relying on this workspace in production.'}
+        </Alert>
       </SectionPage>
     )
   }
