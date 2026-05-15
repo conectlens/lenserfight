@@ -48,10 +48,43 @@ describe('SerializerRegistry', () => {
     expect(() => r.resolve('workflow', 'json')).toThrow(ExportUnsupportedError)
   })
 
-  it('rejects duplicate registrations', () => {
+  // REGRESSION: previously bootstrap kept a module-scoped `bootstrapped`
+  // flag. When Vite HMR reloaded bootstrap.ts but not SerializerRegistry.ts,
+  // the flag reset while the registry singleton kept the serializers,
+  // causing the next call to throw "duplicate registration for battle:json".
+  // Bootstrap must now be safely callable repeatedly.
+  it('is idempotent — repeated calls on the same registry do not throw', () => {
     const r = new SerializerRegistry()
     bootstrapSerializers(r)
-    expect(() => bootstrapSerializers(r)).toThrow(/duplicate/)
+    expect(() => bootstrapSerializers(r)).not.toThrow()
+    expect(() => bootstrapSerializers(r)).not.toThrow()
+    // Adapter set is unchanged after repeated calls.
+    expect(r.supports('battle', 'json')).toBe(true)
+    expect(r.supports('battle', 'markdown')).toBe(true)
+    expect(r.supports('lens', 'json')).toBe(true)
+    expect(r.supports('lens', 'markdown')).toBe(true)
+  })
+
+  it('SerializerRegistry.register still rejects manual duplicates', () => {
+    // The registry-level duplicate guard remains, protecting against
+    // accidental double-registration of a single serializer.
+    const r = new SerializerRegistry()
+    bootstrapSerializers(r)
+    // Re-registering one specific serializer directly must still throw.
+    // (Use the bootstrap helper's class via a fresh instance.)
+    const battleJson = r.resolve('battle', 'json')
+    expect(() => r.register(battleJson)).toThrow(/duplicate/)
+  })
+
+  // Simulates the HMR scenario: bootstrap state is "lost" (imagine the
+  // module reload), but the registry singleton still has the adapters.
+  // Calling bootstrapSerializers again must not throw.
+  it('survives HMR-style state loss (registry already populated)', () => {
+    const r = new SerializerRegistry()
+    bootstrapSerializers(r) // first load
+    // Pretend bootstrap.ts was reloaded but the registry singleton wasn't.
+    // (The fix removes any external state, so this is now trivially safe.)
+    expect(() => bootstrapSerializers(r)).not.toThrow()
   })
 })
 
