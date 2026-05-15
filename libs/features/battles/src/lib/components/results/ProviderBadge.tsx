@@ -48,7 +48,7 @@ const FALLBACK_CONFIG: BadgeConfig = {
 }
 
 export function ProviderBadge({ fundingSource, className = '' }: ProviderBadgeProps) {
-  const cfg = (fundingSource && BADGE_CONFIG[fundingSource]) ?? FALLBACK_CONFIG
+  const cfg: BadgeConfig = (fundingSource ? BADGE_CONFIG[fundingSource] : undefined) ?? FALLBACK_CONFIG
 
   return (
     <span
