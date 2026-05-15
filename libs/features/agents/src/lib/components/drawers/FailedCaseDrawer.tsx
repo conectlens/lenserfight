@@ -75,11 +75,19 @@ export const FailedCaseDrawer: React.FC<Props> = ({ open, onClose, run }) => {
   const failed = (results.data ?? []).filter(isFailedCase)
 
   return (
-    <Drawer open={open} onClose={onClose} side="right" width="w-[600px]" title="Failed cases">
-      <DrawerDocsLink
-        path="/how-to/agents/workspace/drawers/failed-case"
-        tip="Read-only side-by-side diff for one failing case. Expected vs actual; click 'Run trace' to inspect tool calls and tokens consumed."
-      />
+    <Drawer
+      open={open}
+      onClose={onClose}
+      side="right"
+      width="w-[600px]"
+      title="Failed cases"
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/failed-case"
+          tip="Read-only side-by-side diff for one failing case. Expected vs actual; click 'Run trace' to inspect tool calls and tokens consumed."
+        />
+      }
+    >
       {results.isLoading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
