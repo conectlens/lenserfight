@@ -2,6 +2,11 @@ import { queryClient } from '@lenserfight/data/cache'
 import { AuthProvider, AuthExternalRedirect } from '@lenserfight/features/auth'
 import { AnalyticsProvider, RouteTracker } from '@lenserfight/infra/analytics'
 import { ErrorProvider, GlobalErrorRenderer, ErrorClearer } from '@lenserfight/shared/error'
+import {
+  LocaleGuard,
+  NotFoundRedirect,
+  UnprefixedRedirect,
+} from '@lenserfight/shared/i18n-routing'
 import { ScrollToTop } from '@lenserfight/ui/layout'
 import { ThemeProvider } from '@lenserfight/ui/theme'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -39,7 +44,7 @@ const App: React.FC = () => {
               <BrowserRouter
                 future={{
                   v7_startTransition: true,
-                  v7_relativeSplatPath: true
+                  v7_relativeSplatPath: true,
                 }}
               >
                 <AnalyticsProvider>
@@ -49,59 +54,67 @@ const App: React.FC = () => {
                   <ErrorClearer />
                   <GlobalErrorRenderer>
                     <Routes>
-                      {/* Auth Routes → delegated to apps/auth */}
+                      {/* Bare-form external redirects — kept ABOVE the locale
+                          tree so existing inbound links like /auth/login keep
+                          working without entering LocaleGuard. */}
                       <Route path="/auth/login" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
                       <Route path="/auth/register" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/register`} />} />
                       <Route path="/auth/forgot-password" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/forgot-password`} />} />
                       <Route path="/auth/reset-password" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/reset-password`} />} />
                       <Route path="/auth" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
                       <Route path="/auth/*" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
-
-                      {/* Marketing routes (LandLayout — always light) */}
-                      <Route element={<LandLayout />}>
-                        <Route index element={<LandHomePage />} />
-                        <Route path="/about" element={<AboutPage />} />
-                        <Route path="/note-from-omer" element={<FounderNotePage />} />
-                        <Route path="/product" element={<ProductPage />} />
-                        <Route path="/product/cli" element={<CLIPage />} />
-                        <Route path="/product/cli/quickstart" element={<CLIQuickstartPage />} />
-                        <Route path="/product/mobile" element={<MobileComingSoonPage />} />
-                        <Route path="/faq" element={<FAQPage />} />
-                        <Route path="/get-started" element={<GetStartedPage />} />
-                        <Route path="/demo" element={<DemoPage />} />
-                        <Route path="/battle-showcase" element={<BattleShowcasePage />} />
-
-                        {/* Policy routes */}
-                        <Route element={<PolicyLayoutWrapper />}>
-                          <Route path="/policies" element={<Navigate to="/policies/terms" replace />} />
-                          <Route path="/policies/:policy" element={<PoliciesPage />} />
-                        </Route>
-                      </Route>
-
-                      {/* Contact → external Chainabit (locale-aware, UTM-tagged) */}
+                      <Route path="/battles/*" element={<AuthExternalRedirect to={`${ARENA_APP_URL}/battles`} />} />
                       <Route path="/contact" element={<ChainabitContactRedirect />} />
 
-                      {/* Battle routes → redirect to the arena app */}
-                      <Route path="/battles/*" element={<AuthExternalRedirect to={`${ARENA_APP_URL}/battles`} />} />
+                      {/* Localized tree */}
+                      <Route path="/:lang" element={<LocaleGuard />}>
+                        <Route element={<LandLayout />}>
+                          <Route index element={<LandHomePage />} />
+                          <Route path="about" element={<AboutPage />} />
+                          <Route path="note-from-omer" element={<FounderNotePage />} />
+                          <Route path="product" element={<ProductPage />} />
+                          <Route path="product/cli" element={<CLIPage />} />
+                          <Route path="product/cli/quickstart" element={<CLIQuickstartPage />} />
+                          <Route path="product/mobile" element={<MobileComingSoonPage />} />
+                          <Route path="faq" element={<FAQPage />} />
+                          <Route path="get-started" element={<GetStartedPage />} />
+                          <Route path="demo" element={<DemoPage />} />
+                          <Route path="battle-showcase" element={<BattleShowcasePage />} />
 
-                      {/* Backward-compat redirects */}
-                      <Route path="/ecosystem" element={<Navigate to="/product" replace />} />
-                      <Route path="/mission" element={<Navigate to="/about" replace />} />
-                      <Route path="/founder-note" element={<Navigate to="/note-from-omer" replace />} />
-                      <Route path="/what-is-lenserfight" element={<Navigate to="/about" replace />} />
-                      <Route path="/login" element={<Navigate to="/auth/login" replace />} />
-                      <Route path="/register" element={<Navigate to="/auth/register" replace />} />
-                      <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
-                      <Route path="/reset-password" element={<Navigate to="/auth/reset-password" replace />} />
-                      <Route path="/prompts/*" element={<Navigate to="/" replace />} />
-                      <Route path="/tags/*" element={<Navigate to="/" replace />} />
-                      <Route path="/rays/*" element={<Navigate to="/" replace />} />
-                      <Route path="/len/*" element={<Navigate to="/" replace />} />
-                      <Route path="/leaderboard" element={<Navigate to="/" replace />} />
-                      <Route path="/store" element={<Navigate to="/get-started" replace />} />
+                          <Route element={<PolicyLayoutWrapper />}>
+                            <Route path="policies" element={<Navigate to="terms" replace />} />
+                            <Route path="policies/:policy" element={<PoliciesPage />} />
+                          </Route>
+                        </Route>
 
-                      {/* Default */}
-                      <Route path="*" element={<Navigate to="/" replace />} />
+                        {/* Locale-prefixed external redirects so i18n.language
+                            is set before the redirect runs. */}
+                        <Route path="auth" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
+                        <Route path="auth/*" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
+                        <Route path="battles/*" element={<AuthExternalRedirect to={`${ARENA_APP_URL}/battles`} />} />
+                        <Route path="contact" element={<ChainabitContactRedirect />} />
+
+                        {/* Localized backward-compat aliases */}
+                        <Route path="ecosystem" element={<Navigate to="../product" replace />} />
+                        <Route path="mission" element={<Navigate to="../about" replace />} />
+                        <Route path="founder-note" element={<Navigate to="../note-from-omer" replace />} />
+                        <Route path="what-is-lenserfight" element={<Navigate to="../about" replace />} />
+                        <Route path="login" element={<Navigate to="../auth/login" replace />} />
+                        <Route path="register" element={<Navigate to="../auth/register" replace />} />
+                        <Route path="forgot-password" element={<Navigate to="../auth/forgot-password" replace />} />
+                        <Route path="reset-password" element={<Navigate to="../auth/reset-password" replace />} />
+                        <Route path="prompts/*" element={<NotFoundRedirect />} />
+                        <Route path="tags/*" element={<NotFoundRedirect />} />
+                        <Route path="rays/*" element={<NotFoundRedirect />} />
+                        <Route path="len/*" element={<NotFoundRedirect />} />
+                        <Route path="leaderboard" element={<NotFoundRedirect />} />
+                        <Route path="store" element={<Navigate to="../get-started" replace />} />
+
+                        <Route path="*" element={<NotFoundRedirect />} />
+                      </Route>
+
+                      {/* Bare paths — redirect to /<detected>/<path> */}
+                      <Route path="*" element={<UnprefixedRedirect />} />
                     </Routes>
                   </GlobalErrorRenderer>
                 </AnalyticsProvider>
