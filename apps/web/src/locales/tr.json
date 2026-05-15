@@ -1,0 +1,134 @@
+{
+  "nav": {
+    "home": "Ana Sayfa",
+    "prompts": "Promptlar",
+    "topics": "Konular",
+    "leaderboard": "Sıralama",
+    "settings": "Ayarlar",
+    "admin": "Yönetici",
+    "login": "Giriş Yap",
+    "register": "Kayıt Ol",
+    "logout": "Çıkış Yap"
+  },
+  "actions": {
+    "share": "Paylaş",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı!",
+    "follow": "Takip Et",
+    "unfollow": "Takibi Bırak",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "submit": "Gönder",
+    "loading": "Yükleniyor...",
+    "seeMore": "Daha fazla gör",
+    "viewAll": "Tümünü gör"
+  },
+  "home": {
+    "title": "Ana Sayfa",
+    "feed": "Akışın",
+    "trending": "Trend",
+    "forYou": "Senin İçin",
+    "suggestedLensers": "Önerilen Lensers",
+    "trendingTopics": "Trend Konular",
+    "feedTabs": {
+      "forYou": "Senin İçin",
+      "following": "Takip",
+      "trending": "Trend"
+    }
+  },
+  "auth": {
+    "notAuthorized": {
+      "title": "Erişim engellendi",
+      "message": "Bu sayfaya erişmek için Lenser profili ile giriş yapmanız gerekiyor.",
+      "goBack": "Geri dön",
+      "signIn": "Giriş yap"
+    }
+  },
+  "prompts": {
+    "title": "Promptlar",
+    "search": "Prompt ara...",
+    "notFound": "Prompt bulunamadı",
+    "usedTimes": "{{count}} kullanım",
+    "by": "yazan",
+    "tags": "Etiketler",
+    "copyPrompt": "Promptu Kopyala",
+    "remixPrompt": "Remixle",
+    "usePrompt": "Promptu Kullan"
+  },
+  "threads": {
+    "title": "Tartışmalar",
+    "replies": "{{count}} yanıt",
+    "reply": "Yanıtla",
+    "noReplies": "Henüz yanıt yok. Tartışmayı başlat!",
+    "writeReply": "Yanıt yaz...",
+    "notFound": "Tartışma bulunamadı"
+  },
+  "profile": {
+    "title": "Profil",
+    "prompts": "Promptlar",
+    "threads": "Tartışmalar",
+    "followers": "Takipçiler",
+    "following": "Takip Edilen",
+    "joinedOn": "{{date}} tarihinde katıldı",
+    "notFound": "Profil bulunamadı"
+  },
+  "tags": {
+    "title": "Konular",
+    "explore": "Konuları Keşfet",
+    "topPrompts": "En İyi Promptlar",
+    "topThreads": "En İyi Tartışmalar",
+    "follow": "Konuyu Takip Et",
+    "unfollow": "Konuyu Bırak"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "account": "Hesap",
+    "appearance": "Görünüm",
+    "notifications": "Bildirimler",
+    "language": "Dil",
+    "theme": "Tema",
+    "dark": "Koyu",
+    "light": "Açık",
+    "system": "Sistem",
+    "privacy": {
+      "public": "Herkese açık — herkese görünür",
+      "community": "Topluluk — kayıtlı kullanıcılara görünür",
+      "private": "Özel — yalnızca sana görünür"
+    }
+  },
+  "errors": {
+    "generic": "Bir hata oluştu. Lütfen tekrar deneyin.",
+    "notFound": "Sayfa bulunamadı",
+    "unauthorized": "Bunu yapmak için giriş yapmanız gerekmektedir.",
+    "forbidden": "Bu sayfaya erişim izniniz yok."
+  },
+  "language": {
+    "select": "Dil",
+    "en": "English",
+    "tr": "Türkçe"
+  },
+  "battles": {
+    "contentTypes": {
+      "text":       "Metin",
+      "code":       "Kod",
+      "poem":       "Şiir",
+      "drawing":    "Çizim",
+      "image":      "Görsel",
+      "video":      "Video",
+      "audio":      "Ses",
+      "workflow":   "İş Akışı",
+      "map":        "Harita",
+      "avatar":     "Avatar",
+      "image_edit": "Görsel Düzenleme",
+      "kaggle":     "Kaggle"
+    },
+    "filter": {
+      "allMedia":    "Tüm medya",
+      "contentType": "İçerik türü"
+    }
+  }
+}
