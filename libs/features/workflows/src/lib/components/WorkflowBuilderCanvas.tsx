@@ -18,6 +18,7 @@ import {
 } from '@xyflow/react'
 import { AlertTriangle, Info, Pencil, X } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { HelpButton } from '@lenserfight/ui/components'
 
 import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
 import { useWorkflowSimulation } from '../hooks/useWorkflowSimulation'
@@ -655,14 +656,17 @@ function WorkflowBuilderCanvasInner({
     >
       {onEdit && !readOnly && (
         <Panel position="top-left">
-          <button
-            onClick={onEdit}
-            title="Edit workflow settings"
-            className="flex items-center gap-1.5 rounded-xl border border-surface-border bg-surface-base px-2.5 py-1.5 text-xs font-medium text-greyscale-500 shadow-sm transition-colors hover:text-greyscale-900 hover:bg-surface-raised dark:hover:text-greyscale-100"
-          >
-            <Pencil size={12} />
-            Edit
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onEdit}
+              title="Edit workflow settings"
+              className="flex items-center gap-1.5 rounded-xl border border-surface-border bg-surface-base px-2.5 py-1.5 text-xs font-medium text-greyscale-500 shadow-sm transition-colors hover:text-greyscale-900 hover:bg-surface-raised dark:hover:text-greyscale-100"
+            >
+              <Pencil size={12} />
+              Edit
+            </button>
+            <HelpButton path="/tutorials/walkthroughs/create-a-workflow" label="Builder Guide" />
+          </div>
         </Panel>
       )}
       {showDiagnostics && diagnosticsOpen && (
