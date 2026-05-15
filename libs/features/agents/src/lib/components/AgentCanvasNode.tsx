@@ -2,6 +2,8 @@ import type { AgentTeamEdgeType } from '@lenserfight/types'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { Crown, ExternalLink, Pencil, Trash2 } from 'lucide-react'
 import React from 'react'
+import { Button } from '@lenserfight/ui/components'
+
 
 export type AgentNodeStatus = 'idle' | 'running' | 'waiting' | 'failed' | 'completed'
 export type AgentNodeRole = 'leader' | 'executor' | 'reviewer' | 'operator' | 'observer'
@@ -18,7 +20,7 @@ export interface AgentNodeData extends Record<string, unknown> {
 }
 
 const ROLE_BADGE: Record<AgentNodeRole, string> = {
-  leader:   'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  leader:   'bg-primary-yellow-100 text-primary-yellow-700 dark:bg-primary-yellow-900/40 dark:text-primary-yellow-300',
   executor: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
   reviewer: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
   operator: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
@@ -27,7 +29,7 @@ const ROLE_BADGE: Record<AgentNodeRole, string> = {
 
 const STATUS_BORDER: Record<AgentNodeStatus, string> = {
   idle:      '',
-  running:   'animate-pulse border-amber-400 dark:border-amber-500',
+  running:   'animate-pulse border-primary-yellow-400 dark:border-primary-yellow-500',
   waiting:   'border-gray-400 dark:border-gray-500',
   failed:    'border-red-400 dark:border-red-500',
   completed: 'border-emerald-400 dark:border-emerald-500',
@@ -44,15 +46,15 @@ export const AgentCanvasNode: React.FC<NodeProps> = ({ id, data, selected }) => 
       className={[
         'group relative min-w-[200px] rounded-2xl border bg-white px-4 py-3 shadow-sm transition-all dark:bg-gray-900',
         selected
-          ? 'border-amber-400 shadow-amber-200/60 ring-2 ring-amber-400/30 dark:border-amber-500 dark:shadow-amber-500/20'
+          ? 'border-primary-yellow-400 shadow-primary-yellow-200/60 ring-2 ring-primary-yellow-400/30 dark:border-primary-yellow-500 dark:shadow-primary-yellow-500/20'
           : statusBorder || 'border-gray-200 dark:border-gray-700',
       ].join(' ')}
     >
-      <Handle type="target" position={Position.Top} className="!bg-amber-500" />
+      <Handle type="target" position={Position.Top} className="!bg-primary-yellow-500" />
 
       {/* Lead indicator */}
       {d.isLead && (
-        <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-amber-400 shadow-sm">
+        <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-primary-yellow-400 shadow-sm">
           <Crown size={10} className="text-white" />
         </span>
       )}
@@ -60,14 +62,14 @@ export const AgentCanvasNode: React.FC<NodeProps> = ({ id, data, selected }) => 
       {/* Hover action toolbar */}
       <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden items-center gap-1 rounded-xl border border-gray-200 bg-white px-2 py-1 shadow-md group-hover:flex dark:border-gray-700 dark:bg-gray-900">
         {d.onEdit && (
-          <button
+          <Button
             type="button"
             title="Edit member"
             onClick={(e) => { e.stopPropagation(); d.onEdit!(id) }}
             className="rounded-lg p-1 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white"
           >
             <Pencil size={12} />
-          </button>
+          </Button>
         )}
         {d.agentHandle && (
           <a
@@ -80,14 +82,14 @@ export const AgentCanvasNode: React.FC<NodeProps> = ({ id, data, selected }) => 
           </a>
         )}
         {d.onRemove && (
-          <button
+          <Button
             type="button"
             title="Remove member"
             onClick={(e) => { e.stopPropagation(); d.onRemove!(id) }}
             className="rounded-lg p-1 text-gray-500 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400"
           >
             <Trash2 size={12} />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -100,7 +102,7 @@ export const AgentCanvasNode: React.FC<NodeProps> = ({ id, data, selected }) => 
         </p>
       )}
       {d.agentHandle && (
-        <p className="mt-0.5 max-w-[180px] truncate text-[11px] text-amber-600 dark:text-amber-400">
+        <p className="mt-0.5 max-w-[180px] truncate text-[11px] text-primary-yellow-600 dark:text-primary-yellow-400">
           @{d.agentHandle}
         </p>
       )}
@@ -110,7 +112,7 @@ export const AgentCanvasNode: React.FC<NodeProps> = ({ id, data, selected }) => 
         </span>
       )}
 
-      <Handle type="source" position={Position.Bottom} className="!bg-amber-500" />
+      <Handle type="source" position={Position.Bottom} className="!bg-primary-yellow-500" />
     </div>
   )
 }
