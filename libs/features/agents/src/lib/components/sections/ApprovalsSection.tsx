@@ -316,13 +316,13 @@ export const ApprovalsSection: React.FC = () => {
       {/* Tab bar */}
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-0 dark:border-gray-800">
         {tabs.map((tabItem) => (
-          <Button
+          <button
             key={tabItem.id}
             type="button"
             onClick={() => setTab(tabItem.id)}
             className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${tab === tabItem.id
-                ? 'border-primary-yellow-500 text-primary-yellow-700 dark:text-primary-yellow-300'
-                : 'border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+              ? 'border-primary-yellow-500 text-primary-yellow-700 dark:text-primary-yellow-300'
+              : 'border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
               }`}
           >
             {tabItem.label}
@@ -331,7 +331,7 @@ export const ApprovalsSection: React.FC = () => {
                 {tabItem.badge}
               </span>
             ) : null}
-          </Button>
+          </button>
         ))}
       </div>
 
@@ -393,8 +393,8 @@ export const ApprovalsSection: React.FC = () => {
                             setDelegateQuery(result.handle)
                           }}
                           className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm transition ${selectedDelegateId === result.id
-                              ? 'border-primary-yellow-300 bg-primary-yellow-50 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10'
-                              : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
+                            ? 'border-primary-yellow-300 bg-primary-yellow-50 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10'
+                            : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
                             }`}
                         >
                           <div>
@@ -470,14 +470,13 @@ export const ApprovalsSection: React.FC = () => {
                   </div>
 
                   <div className="flex flex-wrap justify-end gap-2">
-                    <Button
+                    <button
                       type="button"
-                      variant="outline"
                       onClick={resetDelegateDraft}
                     >
                       Reset
-                    </Button>
-                    <Button
+                    </button>
+                    <button
                       type="button"
                       onClick={() => upsertDelegate.mutate()}
                       disabled={
@@ -485,10 +484,9 @@ export const ApprovalsSection: React.FC = () => {
                         !selectedDelegateId ||
                         (selectedRole === 'operator' && selectedScopes.length === 0)
                       }
-                      isLoading={upsertDelegate.isPending}
                     >
                       {upsertDelegate.isPending ? 'Saving...' : 'Grant access'}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               )}
@@ -537,24 +535,20 @@ export const ApprovalsSection: React.FC = () => {
 
                         {isOwner && record.role !== 'owner' && (
                           <div className="flex flex-wrap gap-2">
-                            <Button
+                            <button
                               type="button"
-                              variant="outline"
-                              size="sm"
                               onClick={() => startEditingDelegate(record)}
                             >
                               <Edit3 size={12} />
                               Edit
-                            </Button>
-                            <Button
+                            </button>
+                            <button
                               type="button"
-                              variant="danger"
-                              size="sm"
                               onClick={() => revokeDelegate.mutate(record.id)}
                               disabled={revokeDelegate.isPending}
                             >
                               Revoke
-                            </Button>
+                            </button>
                           </div>
                         )}
                       </div>
@@ -634,10 +628,10 @@ export const ApprovalsSection: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${item.approval_status === 'approved'
-                            ? 'border border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
-                            : item.approval_status === 'rejected'
-                              ? 'border border-red-200 text-red-700 dark:border-red-500/30 dark:text-red-300'
-                              : 'border border-primary-yellow-200 text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300'
+                          ? 'border border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
+                          : item.approval_status === 'rejected'
+                            ? 'border border-red-200 text-red-700 dark:border-red-500/30 dark:text-red-300'
+                            : 'border border-primary-yellow-200 text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300'
                           }`}
                       >
                         {item.approval_status}
