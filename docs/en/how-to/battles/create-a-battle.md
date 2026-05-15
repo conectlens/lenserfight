@@ -5,6 +5,9 @@ description: "Step-by-step guide to creating a battle draft, opening it for entr
 
 # Create, Publish, and Manage a Battle
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 After this guide you will have a published battle with results visible on the public feed.
 
 ## Before you start
