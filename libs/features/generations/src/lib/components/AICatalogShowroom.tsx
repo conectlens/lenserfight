@@ -4,7 +4,7 @@ import { Button } from '@lenserfight/ui/components'
 import { MetricCard } from '@lenserfight/ui/data-display'
 import { Input, SelectField } from '@lenserfight/ui/forms'
 import { PageHeader, Stack } from '@lenserfight/ui/layout'
-import { Drawer, Dialog, DrawerFooter } from '@lenserfight/ui/overlays'
+import { Drawer } from '@lenserfight/ui/overlays'
 import { Heading, Surface, Text } from '@lenserfight/ui/primitives'
 import React, { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -373,105 +373,78 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
 
       {/* ── Floating compare bar ─────────────────────────────────────────── */}
       {selectedModels.length > 0 && (
-        <Surface
-          variant="raised"
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[800] flex items-center gap-4 px-6 py-4 rounded-[28px] shadow-neu-4 border border-surface-border animate-in slide-in-from-bottom-4 duration-slow ease-spring"
-        >
-          <div className="flex items-center gap-3">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[800] flex items-center gap-3 bg-surface-raised/95 backdrop-blur-md shadow-neu-4 rounded-2xl px-5 py-3 border border-surface-border">
+          <div className="flex items-center gap-2">
             {selectedModels.map((model) => {
               const key = `${model.provider_key}/${model.key}`
               return (
                 <div
                   key={key}
-                  className="flex items-center gap-2 bg-surface-sunken/80 hover:bg-surface-sunken transition-colors rounded-xl px-3 py-1.5 text-xs font-bold text-greyscale-800 dark:text-greyscale-200 border border-surface-border/50"
+                  className="flex items-center gap-1.5 bg-surface-sunken rounded-xl px-3 py-1.5 text-xs font-semibold text-greyscale-800 dark:text-greyscale-200"
                 >
-                  <span className="max-w-[140px] truncate">{model.name}</span>
+                  <span className="max-w-[120px] truncate">{model.name}</span>
                   <button
                     type="button"
-                    className="p-0.5 rounded-full hover:bg-greyscale-200 dark:hover:bg-greyscale-700 text-greyscale-400 hover:text-greyscale-900 dark:hover:text-white transition-all"
+                    className="text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-300 transition-colors"
                     onClick={() => setSelectedKeys((prev) => prev.filter((k) => k !== key))}
                     aria-label={`Remove ${model.name}`}
                   >
-                    <X size={12} strokeWidth={3} />
+                    <X size={12} />
                   </button>
                 </div>
               )
             })}
           </div>
-
-          <div className="w-px h-6 bg-surface-border shrink-0 mx-1" />
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              className="px-4 py-2 gap-2 shadow-lg shadow-primary-yellow-500/10"
-              onClick={() => setCompareOpen(true)}
-            >
-              <Layers size={14} />
-              <span>Compare <span className="opacity-60">{selectedModels.length}/3</span></span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-greyscale-500 hover:text-greyscale-900 dark:hover:text-white"
-              onClick={() => setSelectedKeys([])}
-            >
-              Clear
-            </Button>
-          </div>
-        </Surface>
+          <div className="w-px h-5 bg-surface-border shrink-0" />
+          <Button variant="primary" size="sm" className="shrink-0 gap-1.5" onClick={() => setCompareOpen(true)}>
+            <Layers size={14} />
+            Compare {selectedModels.length}/3
+          </Button>
+          <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setSelectedKeys([])}>
+            Clear
+          </Button>
+        </div>
       )}
 
       {/* ── Compare drawer ───────────────────────────────────────────────── */}
-      <Dialog
+      <Drawer
         open={compareOpen}
         onClose={() => setCompareOpen(false)}
         title="Model Comparison"
-        description={`Compare ${selectedModels.length} selected models across key capabilities and performance metrics.`}
-        maxWidth="max-w-7xl"
-        containerClassName="items-end pb-4"
-        panelClassName="rounded-[32px] border-x shadow-2xl overflow-hidden"
+        side="bottom"
+        height="h-[72vh]"
       >
         {selectedModels.length === 0 ? (
-          <div className="py-20 text-center">
-            <Layers size={48} className="mx-auto text-greyscale-200 mb-4" />
-            <Text variant="body-m" color="muted" className="italic">
-              Select models from the catalog to compare them here.
-            </Text>
-          </div>
+          <Text variant="body-m" color="muted" className="py-16 text-center italic">
+            Select models from the catalog to compare them here.
+          </Text>
         ) : (
-          <div className="space-y-6">
-            {/* Header / Model Identity Cards */}
+          <div className="min-w-0 overflow-x-auto">
+            {/* Column headers */}
             <div
-              className="grid gap-4"
-              style={{ gridTemplateColumns: `160px repeat(${selectedModels.length}, 1fr)` }}
+              className="grid gap-3 mb-2"
+              style={{ gridTemplateColumns: `180px repeat(${selectedModels.length}, 1fr)` }}
             >
-              <div className="flex items-end pb-2">
-                <Text variant="caption" color="muted" className="uppercase tracking-widest font-bold">
-                  Specifications
-                </Text>
-              </div>
+              <div />
               {selectedModels.map((model) => {
                 const key = `${model.provider_key}/${model.key}`
                 return (
-                  <Surface key={key} variant="raised" className="rounded-2xl p-4 relative group border border-surface-border">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute top-2 right-2 p-1 !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => setSelectedKeys((prev) => prev.filter((k) => k !== key))}
+                  <Surface key={key} variant="inset" className="rounded-2xl p-4 text-center relative">
+                    <button
+                      type="button"
                       aria-label={`Remove ${model.name}`}
+                      className="absolute top-2 right-2 text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-300 transition-colors"
+                      onClick={() => setSelectedKeys((prev) => prev.filter((k) => k !== key))}
                     >
                       <X size={14} />
-                    </Button>
-                    <Text variant="caption" color="muted" className="uppercase tracking-widest font-bold block mb-1">
+                    </button>
+                    <Text variant="caption" color="muted" className="uppercase tracking-widest font-bold block">
                       {model.provider_name}
                     </Text>
-                    <Heading level={3} size="h3" className="text-greyscale-900 dark:text-white truncate">
+                    <Heading level={3} size="h3" className="mt-1 text-greyscale-900 dark:text-white">
                       {model.name}
                     </Heading>
-                    <div className="mt-3">
+                    <div className="mt-2 flex justify-center">
                       <Badge color={supportTone(model.support_level)} variant="outline" size="sm">
                         {model.support_level}
                       </Badge>
@@ -481,80 +454,78 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
               })}
             </div>
 
-            {/* Spec Table */}
-            <div className="space-y-1">
-              {(
-                [
-                  {
-                    label: 'Context Window',
-                    render: (m: AIModelCatalogEntry) => (
-                      <Text variant="body-m" className="font-mono font-bold tabular-nums">
-                        {m.context_window_tokens ? `${(m.context_window_tokens / 1000).toFixed(0)}k` : 'n/a'}
-                      </Text>
-                    ),
-                  },
-                  {
-                    label: 'Status',
-                    render: (m: AIModelCatalogEntry) => (
-                      <Badge color={m.status === 'active' ? 'green' : 'yellow'} variant="solid" size="sm">
-                        {m.status}
-                      </Badge>
-                    ),
-                  },
-                  {
-                    label: 'Streaming',
-                    render: (m: AIModelCatalogEntry) =>
-                      m.supports_streaming
-                        ? <CheckCircle2 size={20} className="text-status-green" />
-                        : <XCircle size={20} className="text-greyscale-300 dark:text-greyscale-600" />,
-                  },
-                  {
-                    label: 'Tool Use',
-                    render: (m: AIModelCatalogEntry) =>
-                      m.supports_tools
-                        ? <CheckCircle2 size={20} className="text-status-green" />
-                        : <XCircle size={20} className="text-greyscale-300 dark:text-greyscale-600" />,
-                  },
-                  {
-                    label: 'Vision',
-                    render: (m: AIModelCatalogEntry) =>
-                      m.supports_vision
-                        ? <CheckCircle2 size={20} className="text-status-green" />
-                        : <XCircle size={20} className="text-greyscale-300 dark:text-greyscale-600" />,
-                  },
-                  {
-                    label: 'JSON Schema',
-                    render: (m: AIModelCatalogEntry) =>
-                      m.supports_json_schema
-                        ? <CheckCircle2 size={20} className="text-status-green" />
-                        : <XCircle size={20} className="text-greyscale-300 dark:text-greyscale-600" />,
-                  },
-                ] as { label: string; render: (m: AIModelCatalogEntry) => React.ReactNode }[]
-              ).map(({ label, render }, idx) => (
-                <div
-                  key={label}
-                  className={`grid gap-4 items-center px-2 py-3 rounded-xl transition-colors ${idx % 2 === 0 ? 'bg-surface-sunken/30' : ''}`}
-                  style={{ gridTemplateColumns: `160px repeat(${selectedModels.length}, 1fr)` }}
-                >
-                  <Text variant="caption" color="muted" className="font-bold uppercase tracking-widest text-[10px]">
-                    {label}
-                  </Text>
-                  {selectedModels.map((model) => (
-                    <div
-                      key={`${model.provider_key}/${model.key}`}
-                      className="flex justify-center items-center"
-                    >
-                      {render(model)}
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
+            {/* Spec rows */}
+            {(
+              [
+                {
+                  label: 'Context Window',
+                  render: (m: AIModelCatalogEntry) => (
+                    <Text variant="caption" className="font-mono font-bold tabular-nums">
+                      {m.context_window_tokens ? `${(m.context_window_tokens / 1000).toFixed(0)}k` : 'n/a'}
+                    </Text>
+                  ),
+                },
+                {
+                  label: 'Status',
+                  render: (m: AIModelCatalogEntry) => (
+                    <Badge color={m.status === 'active' ? 'green' : 'yellow'} variant="solid" size="sm">
+                      {m.status}
+                    </Badge>
+                  ),
+                },
+                {
+                  label: 'Streaming',
+                  render: (m: AIModelCatalogEntry) =>
+                    m.supports_streaming
+                      ? <CheckCircle2 size={18} className="text-status-green" />
+                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                },
+                {
+                  label: 'Tool Use',
+                  render: (m: AIModelCatalogEntry) =>
+                    m.supports_tools
+                      ? <CheckCircle2 size={18} className="text-status-green" />
+                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                },
+                {
+                  label: 'Vision',
+                  render: (m: AIModelCatalogEntry) =>
+                    m.supports_vision
+                      ? <CheckCircle2 size={18} className="text-status-green" />
+                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                },
+                {
+                  label: 'JSON Schema',
+                  render: (m: AIModelCatalogEntry) =>
+                    m.supports_json_schema
+                      ? <CheckCircle2 size={18} className="text-status-green" />
+                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                },
+              ] as { label: string; render: (m: AIModelCatalogEntry) => React.ReactNode }[]
+            ).map(({ label, render }) => (
+              <div
+                key={label}
+                className="grid gap-3 items-center border-t border-surface-border"
+                style={{ gridTemplateColumns: `180px repeat(${selectedModels.length}, 1fr)` }}
+              >
+                <Text variant="caption" color="muted" className="py-4 font-bold uppercase tracking-widest text-[10px]">
+                  {label}
+                </Text>
+                {selectedModels.map((model) => (
+                  <div
+                    key={`${model.provider_key}/${model.key}`}
+                    className="py-4 flex justify-center items-center"
+                  >
+                    {render(model)}
+                  </div>
+                ))}
+              </div>
+            ))}
 
-            {/* Action Row */}
+            {/* Action row */}
             <div
-              className="grid gap-4 pt-6 border-t border-surface-border"
-              style={{ gridTemplateColumns: `160px repeat(${selectedModels.length}, 1fr)` }}
+              className="grid gap-3 pt-4 border-t border-surface-border"
+              style={{ gridTemplateColumns: `180px repeat(${selectedModels.length}, 1fr)` }}
             >
               <div />
               {selectedModels.map((model) => (
@@ -562,8 +533,7 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                   key={`${model.provider_key}/${model.key}`}
                   variant="secondary"
                   size="sm"
-                  fullWidth
-                  className="rounded-xl shadow-sm"
+                  className="w-full"
                   onClick={() => {
                     setCompareOpen(false)
                     navigate(`/ai/catalog/${model.provider_key}/${model.key}`)
@@ -575,7 +545,7 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
             </div>
           </div>
         )}
-      </Dialog>
+      </Drawer>
     </div>
   )
 }
