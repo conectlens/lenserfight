@@ -1,250 +1,150 @@
 ---
 title: Internationalization (i18n) Contribution Guide
-description: How to add or improve translations for LenserFight apps, docs, and the database seed.
+description: How LenserFight resolves, persists, and exposes locale across apps/web (cookie-driven), apps/arena (URL-prefix), and apps/docs (VitePress).
 ---
 
 # Internationalization (i18n) Contribution Guide
 
-LenserFight is a global arena. The core platform is English-first, but every surface is designed for translation. This guide tells you exactly where to add strings, which files to change, and how to verify your work.
+LenserFight is English-first but every surface is built for translation. The platform now ships **two locale strategies** and a shared cookie that lets a language chosen anywhere follow the user across apps. This guide tells contributors which strategy applies where, how to add a string, and where to look first when locale state misbehaves.
 
-## Supported languages
-
-| Code | Language | Native Name | Direction | Docs status |
-|:-----|:---------|:------------|:----------|:------------|
-| `en` | English | English | ltr | Complete |
-| `tr` | Turkish | Türkçe | ltr | WIP |
-| `es` | Spanish | Español | ltr | Stub |
-| `fr` | French | Français | ltr | Stub |
-| `de` | German | Deutsch | ltr | Stub |
-| `zh` | Chinese | 中文 | ltr | Stub |
-| `ja` | Japanese | 日本語 | ltr | Stub |
-| `ko` | Korean | 한국어 | ltr | Stub |
-| `ru` | Russian | Русский | ltr | Stub |
-| `pt` | Portuguese | Português | ltr | Stub |
-| `it` | Italian | Italiano | ltr | Stub |
-| `ar` | Arabic | العربية | **rtl** | Stub |
-
-The database seed (`supabase/seeds/01_core_languages.sql`) is the authoritative registry of supported language codes. All app-level locale files must use codes from that list.
+If you want to **add a brand-new language**, jump to [Adding a Language](./adding-a-language.md). Read on if you are extracting strings, fixing a locale bug, or learning the architecture.
 
 ---
 
-## File structure
+## Architecture in one diagram
 
 ```
-apps/
-  arena/src/locales/
-    en.json                 ← English strings for the public arena
-    tr.json                 ← Turkish strings for the public arena
-    {locale}.json           ← Add new locale here
-    en/policies/            ← Legal docs in English (markdown)
-    tr/policies/            ← Legal docs in Turkish (markdown)
-    {locale}/policies/      ← Add legal docs for new locale here
-
-  web/src/locales/
-    en.json                 ← English strings for the main web app
-    tr.json                 ← Turkish strings for the main web app
-    {locale}.json           ← Add new locale here
-
-  auth/src/locales/         ← Auth app (no i18n yet — contribute here!)
-    en.json                 ← Create this if it doesn't exist
-    {locale}.json           ← Mirror en.json structure
-
-  cli/src/locales/          ← CLI (no i18n yet — contribute here!)
-    en.json                 ← Create this if it doesn't exist
-    {locale}.json           ← Mirror en.json structure
-
-  docs/
-    tutorials/ how-to/ reference/ explanation/ ...   ← English docs
-    tr/                     ← Turkish docs (mirrors English structure)
-    es/ fr/ de/ zh/ ja/ ko/ ru/ pt/ it/              ← WIP stubs
-
-apps/docs/.vitepress/config.ts   ← VitePress locale config (hreflang + nav)
-
-supabase/seeds/
-  01_core_languages.sql     ← Authoritative language registry
+                    +-------------------------------+
+                    |  lensers.preferences.language |  (Supabase, authenticated users)
+                    +---------------+---------------+
+                                    |
+                                    v
++--------------+   reads/writes    +-----------+   reads/writes    +-------------+
+|  apps/web    | <===============> |  shared   | <===============> |  apps/docs  |
+| (cookie /    |   lf-locale       |  cookie   |   lf-locale       | (VitePress) |
+|  no URL      |                   | on parent |                   |             |
+|  prefix)     |                   |   domain  |                   |             |
++--------------+                   +-----+-----+                   +-------------+
+                                         ^
+                                         | reads/writes
+                                         v
+                                  +--------------+
+                                  |  apps/arena  |
+                                  | (URL-prefix  |
+                                  |  /:lang/...) |
+                                  +--------------+
 ```
+
+- `apps/web` is route-stable — there are no `/en/...` URLs. Locale is resolved from auth → cookie → localStorage → navigator → default.
+- `apps/arena` keeps its `/en/`, `/tr/` URL prefixes for SEO/hreflang. It writes the cookie when the user switches.
+- `apps/docs` (VitePress) keeps `/en/`, `/tr/` prefixes but redirects bare paths using the cookie value, and writes the cookie on every locale-prefixed page load.
+
+The cookie name is `lf-locale`, scoped to the parent domain (`.lenserfight.com` in prod, `localhost` locally). Attributes: `Path=/`, `SameSite=Lax`, `Secure` on HTTPS, `Max-Age=1y`.
 
 ---
 
-## How to add a new locale to an app
+## Resolution priority (apps/web)
 
-### 1 — apps/arena and apps/web (i18next)
+Implemented in [`libs/shared/i18n-locale/src/lib/resolver.ts`](https://github.com/conectlens/lenserfight/blob/main/libs/shared/i18n-locale/src/lib/resolver.ts).
 
-Both use i18next with JSON locale files loaded directly in `i18n.ts`.
+1. Authenticated user — `lenser.preferences.language` from `useLenser()`.
+2. Shared cookie — `lf-locale` on the parent domain.
+3. Legacy localStorage — `lf-language` (kept for back-compat with arena).
+4. Browser — `navigator.language` short code.
+5. Default — `en`.
 
-**Step 1.** Copy `apps/arena/src/locales/en.json` to `apps/arena/src/locales/{locale}.json`. Translate every value. Do not change keys.
+The first match that is **enabled** in `@lenserfight/utils/locale` wins. Unknown / disabled values fall through.
 
-**Step 2.** Import and register in `apps/arena/src/i18n.ts`:
-```ts
-import {locale} from './locales/{locale}.json'
-
-export const SUPPORTED_LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'tr', label: 'Türkçe' },
-  { code: '{locale}', label: '{NativeName}' }, // ← add here
-] as const
-
-i18n.init({
-  resources: {
-    en: { translation: en },
-    tr: { translation: tr },
-    {locale}: { translation: {locale} }, // ← add here
-  },
-  supportedLngs: ['en', 'tr', '{locale}'], // ← add here
-  ...
-})
-```
-
-Repeat the same pattern for `apps/web/src/i18n.ts`.
-
-### 2 — apps/arena legal/policy markdown
-
-Copy `apps/arena/src/locales/en/policies/` to `apps/arena/src/locales/{locale}/policies/`. Translate each `.md` file with legal-level precision. Preserve markdown structure and heading levels exactly.
-
-### 3 — apps/auth
-
-Auth has no i18n yet. To add it:
-1. Create `apps/auth/src/locales/en.json` with all visible strings.
-2. Add i18next following the same pattern as `apps/arena/src/i18n.ts`.
-3. Add `{locale}.json` with translations.
-
-### 4 — apps/cli
-
-CLI has no i18n yet. It uses hardcoded English strings. To add it:
-1. Extract all user-visible strings to `apps/cli/src/locales/en.json`.
-2. Wire i18next or a lightweight equivalent.
-3. Add `{locale}.json`.
+On every change, the provider writes cookie + localStorage + `i18next.changeLanguage` + DOM `lang` + DOM `dir`. When the change came from a user interaction and the user is signed in, the new value is also written to `lensers.preferences.language` through `preferencesService.updatePreferences`.
 
 ---
 
-## How to add a new locale to docs (VitePress)
+## Where to find the moving parts
 
-Docs live in `docs/` and are served by VitePress via `apps/docs/.vitepress/config.ts`.
-
-### Step 1 — Create the locale root
-
-```
-docs/{locale}/index.md
-```
-
-Use the existing `docs/tr/index.md` as a template. Set `lang: {locale}` in frontmatter and include a translation note pointing to the English version.
-
-### Step 2 — Create the getting-started stub
-
-```
-docs/{locale}/tutorials/getting-started/overview.md
-```
-
-Minimum content:
-```yaml
----
-lang: {locale}
-title: {Translated title}
----
-
-# {Translated title}
-
-> {Note that this page is a WIP — link to English version}
-
-{2-3 sentences in the target language describing LenserFight}
-
-**{Translated call-to-action to help translate}** → [i18n guide](/en/how-to/contributors/i18n-guide)
-```
-
-### Step 3 — Mirror English structure for translated pages
-
-Each translated page must mirror its English counterpart at `docs/{locale}/{same/path}.md`. Required frontmatter:
-```yaml
----
-lang: {locale}
-title: {Translated title}
----
-```
-
-Untranslated stubs must include a fallback note:
-- English fallback link pattern: `[View English version.](/{english-path})`
-
-### Step 4 — Register in VitePress config
-
-In `apps/docs/.vitepress/config.ts`:
-
-**Add hreflang** (in the `head` array, before `x-default`):
-```ts
-['link', { rel: 'alternate', hreflang: '{locale}', href: `${DOCS_HOST}/{locale}/` }],
-```
-
-**Add locale entry** (in the `locales` object, after `tr`):
-```ts
-{locale}: {
-  label: '{NativeName}',
-  lang: '{locale}',
-  link: '/{locale}/',
-  title: '{Translated site title}',
-  description: '{Translated site description}',
-},
-```
-
-When the locale has enough content to warrant a sidebar and nav, add `themeConfig` following the `tr` locale pattern.
-
-**Update JSON-LD** `inLanguage` array:
-```ts
-inLanguage: ['en', 'tr', '{locale}'],
-```
+| Surface | Path |
+|:---|:---|
+| Locale registry (11 langs, en+tr enabled) | `libs/utils/locale/src/lib/locales.ts` |
+| Cookie-driven provider (apps/web) | `libs/shared/i18n-locale/` |
+| URL-prefix provider (apps/arena, apps/docs) | `libs/shared/i18n-routing/` |
+| Auth bridge (apps/web) | `apps/web/src/locale/LocaleProviderBridge.tsx` |
+| i18next bootstrap (apps/web) | `apps/web/src/i18n.ts` |
+| i18next bootstrap (apps/arena) | `apps/arena/src/i18n.ts` |
+| VitePress locale config | `apps/docs/.vitepress/config.ts` |
+| VitePress cookie hook | `apps/docs/.vitepress/theme/index.ts` |
+| English UI strings (web) | `apps/web/src/locales/en.json` |
+| English UI strings (arena) | `apps/arena/src/locales/en.json` |
+| English docs | `docs/en/` |
+| Turkish docs | `docs/tr/` |
+| Database language registry | `supabase/seeds/01_core_languages.sql` |
 
 ---
 
-## How to use AI tools to translate
+## Extracting a hardcoded string in apps/web
 
-LenserFight encourages AI-assisted translation. Here is the recommended workflow:
+1. Open the component. Identify the user-visible string.
+2. Add a key under a meaningful namespace in `apps/web/src/locales/en.json`. Use dot-namespaced keys (`auth.notAuthorized.title`, not flat `notAuthorizedTitle`).
+3. Add the same key with a Turkish value in `apps/web/src/locales/tr.json`. Even a rough translation is fine — leave a `# WIP` comment in the PR description if so.
+4. Replace the literal with `t('namespace.key')`:
 
-1. **Copy** the English file verbatim.
-2. **Prompt** your AI tool:
-   > Translate this LenserFight documentation page from English to {language}. Preserve all markdown formatting, frontmatter keys, code blocks, and `{{placeholder}}` interpolation markers exactly. Use natural, professional wording — not a word-for-word literal translation.
-3. **Review** as a native speaker. Fix idioms, punctuation, and cultural nuances.
-4. **Submit** a PR with the translated file(s).
+   ```tsx
+   const { t } = useTranslation()
+   return <h1>{t('auth.notAuthorized.title')}</h1>
+   ```
 
-For legal/policy text, use lawyer-level precision. Do not simplify.
+5. Verify in the browser: the string flips when you switch languages via the topbar `LocaleSelect`. No reload required.
 
-For RTL languages (Arabic, Hebrew, Persian, Urdu): text direction is handled by the `dir` attribute in VitePress. You only need to write the translated text — do not add directional overrides.
+Three reference refactors live in the tree as examples — `apps/web/src/NotAuthorizedPage.tsx`, `libs/features/settings/src/lib/components/GeneralTab.tsx`, and `libs/features/home/src/lib/pages/HomePage.tsx`.
 
 ---
 
-## Verifying your work
+## Extracting a hardcoded string in apps/arena
+
+Same pattern, but the file lives at `apps/arena/src/locales/en.json` and the locale is bound to the URL via `:lang` rather than the cookie. The arena `LanguageSwitcher` also writes the cross-app cookie, so a switch in arena is visible to web/docs on the next visit.
+
+---
+
+## When should I pick which strategy?
+
+| You're building... | Use |
+|:---|:---|
+| A new screen in `apps/web` or a `libs/features/*` slice consumed by web | `useTranslation()` + `useLocale()` from `@lenserfight/shared/i18n-locale` |
+| A new landing/marketing page in `apps/arena` | `useTranslation()` + `useLocale()` from `@lenserfight/shared/i18n-routing` |
+| A new docs page | Add the file to both `docs/en/...` and `docs/tr/...` (Turkish can be a WIP stub) |
+| A locale-aware link inside arena/docs | `<LocaleLink>` from `@lenserfight/shared/i18n-routing` |
+| A locale-aware action inside web (cookie-driven) | `useLocale().setLocale(...)` from `@lenserfight/shared/i18n-locale` |
+
+Do not import `@lenserfight/shared/i18n-locale` from arena/docs code, or `@lenserfight/shared/i18n-routing` from web code. The two libs intentionally diverge on URL semantics; mixing them creates undefined behavior.
+
+---
+
+## Verifying your change
 
 ```bash
-# Check that the docs build cleanly
-pnpm nx run docs:build
-
-# Serve locally and review the locale at /{locale}/
-pnpm nx run docs:serve
+pnpm nx test shared-i18n-locale
+pnpm nx test shared-i18n-routing
+pnpm nx build web
+pnpm nx build arena
+pnpm nx build docs
 ```
 
-Open `http://localhost:5173/{locale}/` to verify:
-- The home hero renders correctly
-- The language picker shows your locale
-- Fallback links to English work
+Manual smoke (apps/web):
 
----
+```bash
+pnpm nx serve web
+```
 
-## Quick reference: what needs translating
-
-| Surface | File(s) | Status |
-|:--------|:--------|:-------|
-| Arena UI strings | `apps/arena/src/locales/` | `en` + `tr` done |
-| Arena legal policies | `apps/arena/src/locales/{locale}/policies/` | `en` + `tr` done |
-| Web app UI strings | `apps/web/src/locales/` | `en` + `tr` done |
-| Auth app | `apps/auth/src/locales/` | Not started |
-| CLI | `apps/cli/src/locales/` | Not started |
-| Docs pages | `docs/{locale}/` | Turkish WIP; 9 other stubs |
-| Database language registry | `supabase/seeds/01_core_languages.sql` | Complete (11 locales) |
+1. Anonymous: clear cookies → visit `/home` → English. Cookie `lf-locale=en` is written.
+2. Switch via topbar → Turkish. Reload → still Turkish.
+3. Sign in with a profile whose `preferences.language='tr'` while cookie says `en` → app boots in Turkish, cookie is rewritten to `tr`.
+4. Cross-app: visit `/tr/about` in arena → cookie becomes `tr` → opening `apps/web` afterwards loads in Turkish.
 
 ---
 
 ## Opening a PR
 
 1. Branch from `development`.
-2. Add only translation files — do not mix feature code with i18n.
-3. Title: `i18n({locale}): translate {surface} to {Language}`.
-4. In the PR body, note which AI tool you used (if any) and whether a native speaker reviewed the output.
+2. Keep the PR scoped — pure string extractions, not mixed with feature changes.
+3. Title format: `i18n: extract <surface> strings` or `i18n(<locale>): translate <surface>`.
+4. In the PR body, name the AI tool you used (if any) and whether a native speaker reviewed the output.
 
 Questions? Open a [GitHub Discussion](https://github.com/conectlens/lenserfight/discussions) with the `i18n` label.
