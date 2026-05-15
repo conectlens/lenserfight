@@ -1,5 +1,6 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { AgentTeamRecord } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { BookOpen, Code2, Megaphone, Mic2, Search, Sparkles } from 'lucide-react'
 import React, { useState } from 'react'
@@ -143,21 +144,21 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
         <div className="flex items-center justify-between gap-3">
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="ml-auto flex gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={handleClose}
-              className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 dark:border-gray-700 dark:text-gray-300"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleCreate}
               disabled={submitting || !name.trim()}
-              className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+              isLoading={submitting}
             >
               {submitting ? 'Creating…' : 'Create team'}
-            </button>
+            </Button>
           </div>
         </div>
       }
@@ -170,20 +171,20 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
           </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {TEMPLATES.map((tpl) => (
-              <button
+              <Button
                 key={tpl.id}
                 type="button"
                 onClick={() => handleTemplateSelect(tpl)}
                 className={[
                   'flex items-center gap-2.5 rounded-2xl border px-3 py-3 text-left text-sm transition',
                   selectedTemplate === tpl.id
-                    ? 'border-amber-400 bg-amber-50 text-amber-700 dark:border-amber-500 dark:bg-amber-900/20 dark:text-amber-300'
+                    ? 'border-primary-yellow-400 bg-primary-yellow-50 text-primary-yellow-700 dark:border-primary-yellow-500 dark:bg-primary-yellow-900/20 dark:text-primary-yellow-300'
                     : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:hover:border-gray-600',
                 ].join(' ')}
               >
                 <span className="shrink-0">{tpl.icon}</span>
                 <span className="font-semibold">{tpl.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -199,17 +200,18 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder="e.g., A research crew with a planner, web researcher, critic, and final editor"
-              className="flex-1 resize-none rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500"
+              className="flex-1 resize-none rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500"
             />
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              className="self-start"
               onClick={handleGenerate}
               disabled={!description.trim()}
               title="Generate name from description"
-              className="self-start rounded-2xl border border-gray-200 px-3 py-2.5 text-gray-600 transition hover:border-amber-300 hover:text-amber-600 disabled:opacity-50 dark:border-gray-700 dark:text-gray-400"
             >
               <Sparkles size={16} />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -224,7 +226,7 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Autonomous Crew"
-              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             />
           </div>
 
@@ -237,7 +239,7 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
               onChange={(e) => setPurpose(e.target.value)}
               rows={2}
               placeholder="What does this team do?"
-              className="w-full resize-none rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              className="w-full resize-none rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             />
           </div>
 
@@ -255,7 +257,7 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
                     type="radio"
                     checked={isActive === opt.value}
                     onChange={() => setIsActive(opt.value)}
-                    className="accent-amber-500"
+                    className="accent-primary-yellow-500"
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">{opt.label}</span>
                 </label>
