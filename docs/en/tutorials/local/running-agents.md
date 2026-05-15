@@ -34,9 +34,9 @@ This tutorial covers connecting AI models to your local LenserFight instance. By
 
 ---
 
-## Path A — Ollama (free, fully local)
+## Path A — Ollama (local model runtime)
 
-Ollama runs models entirely on your machine. No API keys, no network calls, no cost.
+Ollama runs supported models on your machine without hosted LenserFight execution or provider API keys. Review Ollama's own model download, update, logging, network, and hardware-cost behavior before using it for sensitive workflows.
 
 ### 1. Install Ollama
 
