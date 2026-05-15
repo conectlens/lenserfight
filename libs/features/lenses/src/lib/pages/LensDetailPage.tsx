@@ -430,6 +430,7 @@ export const LensDetailPage: React.FC = () => {
               onFork={() => cloneLens(previewVersionId ?? null)}
               canFork={hasActiveLenserProfile}
               isForking={isCloning}
+              onCreate={handleCreateClick}
               onExport={() => setIsExportOpen(true)}
               exportModal={
                 <ExportModal
