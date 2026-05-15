@@ -47,13 +47,13 @@ interface ArenaViewRenderProps {
     contenderB: { id: string; displayName: string }
     disabled: boolean
     onVote: (value: 'contender_a' | 'contender_b' | 'draw', rationale: string) => Promise<void>
-    voterEligibility?: import('../types/battle.types').VoterEligibility
+    voterEligibility?: import('../../types/battle.types').VoterEligibility
     isEligible: boolean
   }) => React.ReactNode
   renderRubricPanel: (props: {
-    criteria: Array<{ id: string; name: string; description?: string; weight: number }>
-    scorecardA: Array<{ rubricCriterionId: string; result: string; explanation?: string }>
-    scorecardB: Array<{ rubricCriterionId: string; result: string; explanation?: string }>
+    criteria: Array<{ id: string; title: string; description?: string; weight: number }>
+    scorecardA: Array<{ rubricCriterionId: string; result: 'pass' | 'fail' | 'partial' | 'skipped'; explanation?: string }>
+    scorecardB: Array<{ rubricCriterionId: string; result: 'pass' | 'fail' | 'partial' | 'skipped'; explanation?: string }>
     verdictsA: import('../../hooks/query/useAiJudgeVerdicts').AiJudgeVerdictRecord[]
     verdictsB: import('../../hooks/query/useAiJudgeVerdicts').AiJudgeVerdictRecord[]
   }) => React.ReactNode
