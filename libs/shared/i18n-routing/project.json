@@ -1,0 +1,9 @@
+{
+  "name": "shared-i18n-routing",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/i18n-routing/src",
+  "projectType": "library",
+  "tags": ["layer:shared", "scope:shared", "license:shared"],
+  "// targets": "to see all targets run: nx show project shared-i18n-routing --web",
+  "targets": {}
+}
