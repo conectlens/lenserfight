@@ -1,0 +1,272 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import '../../../libs/ui/tokens/src/lib/tokens.css';
+@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Use class-based dark mode (html.dark) instead of media query */
+@variant dark (&:where(.dark, .dark *));
+
+@source "../../../libs/ui";
+@source "../../../libs/shared";
+@source "../../../libs/features";
+
+@theme {
+  /* Fonts */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Brand aliases (backward compat) ─────────────────────── */
+  --color-primary: #ffde59;
+  --color-deep: #213f74;
+
+  /* ── Primary Yellow ──────────────────────────────────────── */
+  --color-primary-yellow-50: #fff7d7;
+  --color-primary-yellow-100: #ffefb0;
+  --color-primary-yellow-200: #ffe784;
+  --color-primary-yellow-300: #ffdf63;
+  --color-primary-yellow-400: #ffda59;
+  --color-primary-yellow-500: #ffde59;
+  --color-primary-yellow-600: #e8c645;
+  --color-primary-yellow-700: #c9a935;
+  --color-primary-yellow-800: #a88d2b;
+  --color-primary-yellow-900: #8a7322;
+
+  /* ── Deep Lens Navy ──────────────────────────────────────── */
+  --color-deep-lens-navy-50: #e6edf5;
+  --color-deep-lens-navy-100: #c3d1e4;
+  --color-deep-lens-navy-200: #9ab4d2;
+  --color-deep-lens-navy-300: #6b94be;
+  --color-deep-lens-navy-400: #3c74a9;
+  --color-deep-lens-navy-500: #213f74;
+  --color-deep-lens-navy-600: #1a3260;
+  --color-deep-lens-navy-700: #12244a;
+  --color-deep-lens-navy-800: #0a1730;
+  --color-deep-lens-navy-900: #040b14;
+
+  /* ── Greyscale brand scale ───────────────────────────────── */
+  --color-greyscale-0: #ffffff;
+  --color-greyscale-25: #f8f9fa;
+  --color-greyscale-50: #f3f4f5;
+  --color-greyscale-100: #e6e7e9;
+  --color-greyscale-200: #dcdde0;
+  --color-greyscale-300: #c8c9cc;
+  --color-greyscale-400: #a6a7aa;
+  --color-greyscale-500: #86878a;
+  --color-greyscale-600: #6a6b6e;
+  --color-greyscale-700: #4e5053;
+  --color-greyscale-800: #333538;
+  --color-greyscale-900: #1f2022;
+  --color-greyscale-950: #0a0b0d;
+
+  /* ── Primary Dark ────────────────────────────────────────── */
+  --color-primary-dark-500: #1a1a1a;
+  --color-primary-dark-600: #141414;
+  --color-primary-dark-700: #0f0f0f;
+  --color-primary-dark-800: #0a0a0a;
+  --color-primary-dark-900: #000000;
+
+  /* ── Status ──────────────────────────────────────────────── */
+  --color-status-green: #2eb773;
+  --color-status-red: #ea3942;
+  --color-status-blue: #287bff;
+  --color-status-purple: #8746ff;
+
+  /* ── Gray scale (Tailwind-compat, kept for existing components) ─ */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #ededed;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #262626;
+  --color-gray-800: #1a1a1a;
+  --color-gray-900: #121212;
+
+  /* ── Light scheme ────────────────────────────────────────── */
+  --color-light-base: #ffffff;
+  --color-light-surface: #f9fafb;
+  --color-light-subtle: #e5e7eb;
+  --color-light-text: #1f2937;
+  --color-light-muted: #6b7280;
+
+  /* ── Dark scheme ─────────────────────────────────────────── */
+  --color-dark-base: #121212;
+  --color-dark-surface: #1a1a1a;
+  --color-dark-subtle: #262626;
+  --color-dark-text: #f9fafb;
+  --color-dark-muted: #9ca3af;
+
+  /* ── Semantic surfaces (resolve from tokens.css vars) ────── */
+  --color-surface-base:         var(--cl-surface-base);
+  --color-surface-raised:       var(--cl-surface-raised);
+  --color-surface-overlay:      var(--cl-surface-overlay);
+  --color-surface-sunken:       var(--cl-surface-sunken);
+  --color-surface-interactive:  var(--cl-surface-interactive);
+  --color-surface-border:       var(--cl-surface-border);
+  --color-surface-border-subtle: var(--cl-surface-border-subtle);
+
+  /* ── Neumorphic shadow utilities ────────────────────────── */
+  --shadow-neu-0:       var(--cl-elevation-0);
+  --shadow-neu-1:       var(--cl-elevation-1);
+  --shadow-neu-2:       var(--cl-elevation-2);
+  --shadow-neu-3:       var(--cl-elevation-3);
+  --shadow-neu-4:       var(--cl-elevation-4);
+  --shadow-neu-5:       var(--cl-elevation-5);
+  --shadow-neu-inset-1: var(--cl-elevation-inset-1);
+  --shadow-neu-inset-2: var(--cl-elevation-inset-2);
+  --shadow-neu-inset-3: var(--cl-elevation-inset-3);
+
+  /* ── Motion utilities ────────────────────────────────────── */
+  --duration-fast:    var(--cl-duration-fast);
+  --duration-normal:  var(--cl-duration-normal);
+  --duration-slow:    var(--cl-duration-slow);
+  --ease-standard:    var(--cl-ease-standard);
+  --ease-enter:       var(--cl-ease-enter);
+  --ease-exit:        var(--cl-ease-exit);
+  --ease-spring:      var(--cl-ease-spring);
+
+  /* ── Z-Index stack ────────────────────────────────────────── */
+  --z-base:     0;
+  --z-raised:   10;
+  --z-dropdown: 100;
+  --z-sticky:   200;
+  --z-overlay:  300;
+  --z-modal:    400;
+  --z-toast:    500;
+  --z-tooltip:  600;
+}
+
+@layer base {
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  button[disabled] {
+    cursor: not-allowed;
+  }
+}
+
+html {
+  background-color: #f9fafb;
+  color: #1f2937;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  /* Prevent horizontal scrolling */
+  background-color: inherit;
+  color: inherit;
+}
+
+/* Utilities for hiding scrollbars */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}
+
+/* Global Scrollbar Theme (Light) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 5px;
+  border: 2px solid #f5f5f5;
+  /* Creates padding effect */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c2c2c2;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d4 #f5f5f5;
+}
+
+/* Dark mode scrollbar overrides */
+html.dark {
+  color-scheme: dark;
+  background-color: #121212;
+  /* Match gray-900 */
+  color: #f9fafb;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #121212;
+  /* Match gray-900 */
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  /* gray-600 */
+  border-radius: 99px;
+  border: 2px solid #121212;
+  /* Match track for padding effect */
+  background-clip: content-box;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+  /* gray-500 */
+}
+
+html.dark * {
+  scrollbar-color: #4b5563 #121212;
+}
+
+/* Scoped scrollbar for AI Generations & Dropdowns (refined) */
+.generations-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d6d6d6 #f5f5f5;
+}
+
+.generations-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.generations-scroll::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.generations-scroll::-webkit-scrollbar-thumb {
+  background: #d6d6d6;
+  border-radius: 4px;
+}
+
+.generations-scroll::-webkit-scrollbar-thumb:hover {
+  background: #c5c5c5;
+}
+
+/* Dark mode scoped scrollbar */
+html.dark .generations-scroll {
+  scrollbar-color: #4b5563 transparent;
+}
+
+html.dark .generations-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html.dark .generations-scroll::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}

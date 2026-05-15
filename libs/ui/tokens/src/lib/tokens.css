@@ -1,0 +1,153 @@
+/**
+ * ConectLens Brand CSS Custom Properties
+ *
+ * Import this file in your Tailwind 4 `@theme {}` block or as a global CSS import.
+ * In Tailwind 4, declaring --color-* variables inside @theme auto-generates
+ * utility classes like bg-primary-yellow-500, text-status-green, etc.
+ *
+ * Usage in apps/web/src/index.css:
+ *   @import '@lenserfight/ui/tokens/tokens.css';   (if bundler resolves it)
+ *   — OR copy the variables directly into your @theme {} block.
+ */
+
+:root {
+  /* ── Primary Yellow ─────────────────────────────────────── */
+  --cl-yellow-50: #fff7d7;
+  --cl-yellow-100: #ffefb0;
+  --cl-yellow-200: #ffe784;
+  --cl-yellow-300: #ffdf63;
+  --cl-yellow-400: #ffda59;
+  --cl-yellow-500: #ffde59;
+  --cl-yellow-600: #e8c645;
+  --cl-yellow-700: #c9a935;
+  --cl-yellow-800: #a88d2b;
+  --cl-yellow-900: #8a7322;
+
+  /* ── Deep Lens Navy ─────────────────────────────────────── */
+  --cl-navy-50: var(--cl-grey-50);
+  --cl-navy-100: var(--cl-grey-100);
+  --cl-navy-200: var(--cl-grey-200);
+  --cl-navy-300: var(--cl-grey-300);
+  --cl-navy-400: var(--cl-grey-400);
+  --cl-navy-500: var(--cl-grey-500);
+  --cl-navy-600: var(--cl-grey-600);
+  --cl-navy-700: var(--cl-grey-700);
+  --cl-navy-800: var(--cl-grey-800);
+  --cl-navy-900: var(--cl-grey-900);
+
+  /* ── Greyscale ──────────────────────────────────────────── */
+  --cl-grey-0: #ffffff;
+  --cl-grey-25: #f8f9fa;
+  --cl-grey-50: #f3f4f5;
+  --cl-grey-100: #e6e7e9;
+  --cl-grey-200: #dcdde0;
+  --cl-grey-300: #c8c9cc;
+  --cl-grey-400: #a6a7aa;
+  --cl-grey-500: #86878a;
+  --cl-grey-600: #6a6b6e;
+  --cl-grey-700: #4e5053;
+  --cl-grey-800: #333538;
+  --cl-grey-900: #1f2022;
+  --cl-grey-950: #0a0b0d;
+
+  /* ── Primary Dark ───────────────────────────────────────── */
+  --cl-dark-500: #1a1a1a;
+  --cl-dark-600: #141414;
+  --cl-dark-700: #0f0f0f;
+  --cl-dark-800: #0a0a0a;
+  --cl-dark-900: #000000;
+
+  /* ── Status ─────────────────────────────────────────────── */
+  --cl-status-green: #2eb773;
+  --cl-status-red: #ea3942;
+  --cl-status-blue: #287bff;
+  --cl-status-purple: #8746ff;
+
+  /* ── Auth Semantic Roles ────────────────────────────────── */
+  --background-default: #F5F7FA;
+  --surface-card: #FFFFFF;
+  --surface-input: #F9FAFB;
+  --border-default: #E5E7EB;
+  --border-strong: #D1D5DB;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+
+  /* ── Semantic surfaces (light mode defaults) ────────────── */
+  --cl-surface-base: #ffffff;
+  --cl-surface-raised: #f8f9fa;
+  --cl-surface-overlay: #f3f4f5;
+  --cl-surface-sunken: #e6e7e9;
+  --cl-surface-interactive: #dcdde0;
+  --cl-surface-border: #dcdde0;
+  --cl-surface-border-subtle: #e6e7e9;
+  --cl-surface-text: #1f2022;
+  --cl-surface-text-muted: #6a6b6e;
+  --cl-surface-text-disabled: #a6a7aa;
+
+  /* ── Neumorphic elevation — raised (light mode) ─────────── */
+  --cl-elevation-0: none;
+  --cl-elevation-1: 2px 2px 5px rgba(0, 0, 0, 0.07), -2px -2px 5px rgba(255, 255, 255, 0.9);
+  --cl-elevation-2: 4px 4px 10px rgba(0, 0, 0, 0.09), -4px -4px 10px rgba(255, 255, 255, 0.9);
+  --cl-elevation-3: 6px 6px 16px rgba(0, 0, 0, 0.11), -6px -6px 16px rgba(255, 255, 255, 0.85);
+  --cl-elevation-4: 8px 8px 22px rgba(0, 0, 0, 0.13), -8px -8px 22px rgba(255, 255, 255, 0.8);
+  --cl-elevation-5: 12px 12px 30px rgba(0, 0, 0, 0.15), -12px -12px 30px rgba(255, 255, 255, 0.75);
+
+  /* ── Neumorphic elevation — inset/pressed (light mode) ──── */
+  --cl-elevation-inset-1: inset 2px 2px 5px rgba(0, 0, 0, 0.07), inset -2px -2px 5px rgba(255, 255, 255, 0.9);
+  --cl-elevation-inset-2: inset 4px 4px 10px rgba(0, 0, 0, 0.09), inset -4px -4px 10px rgba(255, 255, 255, 0.9);
+  --cl-elevation-inset-3: inset 6px 6px 16px rgba(0, 0, 0, 0.11), inset -6px -6px 16px rgba(255, 255, 255, 0.85);
+
+  /* ── Motion ─────────────────────────────────────────────── */
+  --cl-duration-instant: 0ms;
+  --cl-duration-fast: 100ms;
+  --cl-duration-normal: 200ms;
+  --cl-duration-slow: 300ms;
+  --cl-duration-xslow: 500ms;
+  --cl-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --cl-ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --cl-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --cl-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Z-index stack ───────────────────────────────────────── */
+  --cl-z-base: 0;
+  --cl-z-raised: 10;
+  --cl-z-dropdown: 100;
+  --cl-z-sticky: 200;
+  --cl-z-overlay: 300;
+  --cl-z-modal: 400;
+  --cl-z-toast: 500;
+  --cl-z-tooltip: 600;
+
+  /* ── Workflow Canvas ────────────────────────────────────── */
+  --cl-workflow-edge: var(--cl-grey-500);
+}
+
+/* ── Dark mode overrides ─────────────────────────────────── */
+html.dark {
+  /* Semantic surfaces */
+  --cl-surface-base: #1a1a1a;
+  --cl-surface-raised: #141414;
+  --cl-surface-overlay: #222222;
+  --cl-surface-sunken: #111111;
+  --cl-surface-interactive: #2a2a2a;
+  --cl-surface-border: #333333;
+  --cl-surface-border-subtle: #252525;
+  --cl-surface-text: #f8f9fa;
+  --cl-surface-text-muted: #86878a;
+  --cl-surface-text-disabled: #4e5053;
+
+  /* Neumorphic elevation — raised (dark mode) */
+  --cl-elevation-1: 2px 2px 5px rgba(0, 0, 0, 0.4), -2px -2px 5px rgba(255, 255, 255, 0.04);
+  --cl-elevation-2: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px rgba(255, 255, 255, 0.05);
+  --cl-elevation-3: 6px 6px 16px rgba(0, 0, 0, 0.6), -6px -6px 16px rgba(255, 255, 255, 0.06);
+  --cl-elevation-4: 8px 8px 22px rgba(0, 0, 0, 0.65), -8px -8px 22px rgba(255, 255, 255, 0.06);
+  --cl-elevation-5: 12px 12px 30px rgba(0, 0, 0, 0.7), -12px -12px 30px rgba(255, 255, 255, 0.05);
+
+  /* Neumorphic elevation — inset/pressed (dark mode) */
+  --cl-elevation-inset-1: inset 2px 2px 5px rgba(0, 0, 0, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.04);
+  --cl-elevation-inset-2: inset 4px 4px 10px rgba(0, 0, 0, 0.5), inset -4px -4px 10px rgba(255, 255, 255, 0.05);
+  --cl-elevation-inset-3: inset 6px 6px 16px rgba(0, 0, 0, 0.6), inset -6px -6px 16px rgba(255, 255, 255, 0.06);
+
+  /* Workflow Canvas */
+  --cl-workflow-edge: #ffffff;
+}
