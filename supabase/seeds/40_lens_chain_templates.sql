@@ -178,7 +178,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_intent, v_lens_intent, 1,
-      'You are the Intent Lens in a Connected Lens workflow. Read the raw request in [[:' || v_param_intent_request || ']] and emit a structured intent object with these keys: goal, target_media, quality_level, constraints, suggested_kinds. Do not answer the request — only classify it so downstream lenses can plan execution.',
+      'You are an Intent Classifier. Read the raw request in [[:' || v_param_intent_request || ']] and emit a structured intent object with these keys: goal, target_media, quality_level, constraints, suggested_kinds. Do not answer the request — only classify it so downstream steps can plan execution.',
       'published'::content.content_status, now()
     );
 
@@ -192,7 +192,7 @@ BEGIN
       'lens'::content.entity_type_enum, v_lens_intent, 'en', true,
       'Intent Lens (template)',
       'Classifies a raw user request into structured intent so downstream lenses can plan.',
-      'You are the Intent Lens. Classify the request in [[user_request]] and emit goal/target_media/quality_level/constraints/suggested_kinds.'
+      'You are an Intent Classifier. Classify the request in [[user_request]] and emit goal/target_media/quality_level/constraints/suggested_kinds.'
     );
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id)
@@ -210,7 +210,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_plan, v_lens_plan, 1,
-      'You are the Planning Lens. Given the structured intent in [[:' || v_param_plan_context || ']], produce an ordered execution plan as a JSON array of steps. Each step must declare: id, kind (text|image|video|research|pdf|transform|validation), objective, inputs, and whether it is parallel-safe. Do not perform the steps — only plan them.',
+      'You are an Execution Planner. Given the structured intent in [[:' || v_param_plan_context || ']], produce an ordered execution plan as a JSON array of steps. Each step must declare: id, kind (text|image|video|research|pdf|transform|validation), objective, inputs, and whether it is parallel-safe. Do not perform the steps — only plan them.',
       'published', now()
     );
 
@@ -224,7 +224,7 @@ BEGIN
       'lens', v_lens_plan, 'en', true,
       'Planning Lens (template)',
       'Turns a structured intent into an ordered execution plan of tagged steps.',
-      'You are the Planning Lens. Produce an execution plan from [[context]].'
+      'You are an Execution Planner. Produce an execution plan from [[context]].'
     );
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
@@ -241,7 +241,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_research, v_lens_research, 1,
-      'You are the Research Lens. Using the topic in [[:' || v_param_research_topic || ']] and the upstream context in [[:' || v_param_research_context || ']], gather, rank, and summarize the evidence needed to fulfill the plan. Emit a JSON object with keys: findings (array of {claim, source, confidence}), summary (string), open_questions (array of strings).',
+      'You are a Research Synthesizer. Using the topic in [[:' || v_param_research_topic || ']] and the upstream context in [[:' || v_param_research_context || ']], gather, rank, and summarize the evidence needed to fulfill the plan. Emit a JSON object with keys: findings (array of {claim, source, confidence}), summary (string), open_questions (array of strings).',
       'published', now()
     );
 
@@ -256,7 +256,7 @@ BEGIN
       'lens', v_lens_research, 'en', true,
       'Research Lens (template)',
       'Synthesizes evidence for a topic using upstream planning context.',
-      'You are the Research Lens. Gather evidence for [[topic]] constrained by [[context]].'
+      'You are a Research Synthesizer. Gather evidence for [[topic]] constrained by [[context]].'
     );
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
@@ -273,7 +273,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_gen_text, v_lens_gen_text, 1,
-      'You are the Text Generation Lens. Produce a polished, audience-aware draft about [[:' || v_param_gen_text_topic || ']] grounded in the research synthesis [[:' || v_param_gen_text_context || ']]. Use clear structure (H1/H2/paragraphs). Cite sources inline with [n] markers and preserve every citation surfaced by the upstream Research Lens.',
+      'You are a Long-Form Writer. Produce a polished, audience-aware draft about [[:' || v_param_gen_text_topic || ']] grounded in the research synthesis [[:' || v_param_gen_text_context || ']]. Use clear structure (H1/H2/paragraphs). Cite sources inline with [n] markers and preserve every citation from the research step.',
       'published', now()
     );
 
@@ -288,7 +288,7 @@ BEGIN
       'lens', v_lens_gen_text, 'en', true,
       'Text Generation Lens (template)',
       'Drafts long-form text grounded in upstream research.',
-      'You are the Text Generation Lens. Draft content about [[topic]] grounded in [[context]].'
+      'You are a Long-Form Writer. Draft content about [[topic]] grounded in [[context]].'
     );
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
@@ -305,7 +305,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_gen_image, v_lens_gen_image, 1,
-      'You are the Image Generation Lens. Render a single still image described by the structured visual brief in [[:' || v_param_gen_image_brief || ']]. The brief declares: subject, style, composition, lighting, palette, aspect_ratio, and negative constraints. Honour every field; do not invent subjects beyond the brief.',
+      'You are an Image Generator. Render a single still image described by the structured visual brief in [[:' || v_param_gen_image_brief || ']]. The brief declares: subject, style, composition, lighting, palette, aspect_ratio, and negative constraints. Honour every field; do not invent subjects beyond the brief.',
       'published', now()
     );
 
@@ -319,7 +319,7 @@ BEGIN
       'lens', v_lens_gen_image, 'en', true,
       'Image Generation Lens (template)',
       'Renders a still image from a structured visual brief.',
-      'You are the Image Generation Lens. Render the still described in [[visual_brief]].'
+      'You are an Image Generator. Render the still described in [[visual_brief]].'
     );
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
@@ -336,7 +336,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_gen_video, v_lens_gen_video, 1,
-      'You are the Video Generation Lens. Produce a short-form video from the scene plan in [[:' || v_param_gen_video_scene || ']]. The plan declares: script, shots[] with duration, transitions, audio/narration, pacing, and export format. Preserve continuity between shots and honour the declared duration budget.',
+      'You are a Video Producer. Produce a short-form video from the scene plan in [[:' || v_param_gen_video_scene || ']]. The plan declares: script, shots[] with duration, transitions, audio/narration, pacing, and export format. Preserve continuity between shots and honour the declared duration budget.',
       'published', now()
     );
 
@@ -350,7 +350,7 @@ BEGIN
       'lens', v_lens_gen_video, 'en', true,
       'Video Generation Lens (template)',
       'Renders a short-form video from a scene plan.',
-      'You are the Video Generation Lens. Render the scene plan in [[scene_plan]].'
+      'You are a Video Producer. Render the scene plan in [[scene_plan]].'
     );
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
@@ -367,7 +367,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_refine, v_lens_refine, 1,
-      'You are the Refinement Lens. Improve the draft in [[:' || v_param_refine_draft || ']] without changing its intent. Fix clarity, tighten pacing, remove redundancy, and enforce the declared style/tone constraints. Return the refined draft only — no commentary.',
+      'You are a Draft Editor. Improve the draft in [[:' || v_param_refine_draft || ']] without changing its intent. Fix clarity, tighten pacing, remove redundancy, and enforce the declared style/tone constraints. Return the refined draft only — no commentary.',
       'published', now()
     );
 
@@ -381,7 +381,7 @@ BEGIN
       'lens', v_lens_refine, 'en', true,
       'Refinement Lens (template)',
       'Improves a draft without changing intent.',
-      'You are the Refinement Lens. Improve [[draft]] while preserving intent.'
+      'You are a Draft Editor. Improve [[draft]] while preserving intent.'
     );
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
@@ -398,7 +398,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_validate, v_lens_validate, 1,
-      'You are the Validation Lens. Score the [[:' || v_param_validate_output || ']] against the rubric in [[:' || v_param_validate_requirements || ']]. Emit JSON: {passed, score, issues:[], recommendations:[]}. Fail fast if required fields are missing.',
+      'You are an Output Validator. Score the [[:' || v_param_validate_output || ']] against the rubric in [[:' || v_param_validate_requirements || ']]. Emit JSON: {passed, score, issues:[], recommendations:[]}. Fail fast if required fields are missing.',
       'published', now()
     );
 
@@ -413,7 +413,7 @@ BEGIN
       'lens', v_lens_validate, 'en', true,
       'Validation Lens (template)',
       'Scores an output against a rubric and flags regressions.',
-      'You are the Validation Lens. Score [[output]] against [[requirements]].'
+      'You are an Output Validator. Score [[output]] against [[requirements]].'
     );
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
@@ -430,7 +430,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_export_pdf, v_lens_export_pdf, 1,
-      'You are the PDF Export Lens. Render the validated [[:' || v_param_export_pdf_content || ']] into a production-ready PDF titled [[:' || v_param_export_pdf_title || ']]. Emit a JSON manifest with sections, citations, and page-break hints; the PDF provider serializes the manifest into the final artifact.',
+      'You are a PDF Exporter. Render the validated [[:' || v_param_export_pdf_content || ']] into a production-ready PDF titled [[:' || v_param_export_pdf_title || ']]. Emit a JSON manifest with sections, citations, and page-break hints; the PDF provider serializes the manifest into the final artifact.',
       'published', now()
     );
 
@@ -445,7 +445,7 @@ BEGIN
       'lens', v_lens_export_pdf, 'en', true,
       'PDF Export Lens (template)',
       'Serializes validated content into a PDF-ready manifest.',
-      'You are the PDF Export Lens. Serialize [[content]] to a PDF titled [[title]].'
+      'You are a PDF Exporter. Serialize [[content]] to a PDF titled [[title]].'
     );
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
