@@ -1,6 +1,6 @@
 ---
 title: TEAM.MD — Native LENSER Team
-description: Canonical file format for a ConnectLens LENSER team.
+description: Canonical file format for a ConectLens LENSER team.
 ---
 
 # `TEAM.MD` — Native LENSER team definition
