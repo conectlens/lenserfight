@@ -108,6 +108,12 @@ export const MemoryProfileDrawer: React.FC<MemoryProfileDrawerProps> = ({
       side="right"
       width="w-[520px]"
       title={isEdit ? 'Edit memory profile' : 'Add memory profile'}
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/memory-profile"
+          tip="Manage a long-lived knowledge slot. Pinned profiles load on every run; unpinned ones load only on explicit reference."
+        />
+      }
       footer={
         <DrawerFooter
           onCancel={onClose}
@@ -119,10 +125,6 @@ export const MemoryProfileDrawer: React.FC<MemoryProfileDrawerProps> = ({
       }
     >
       <div className="space-y-4">
-        <DrawerDocsLink
-          path="/how-to/agents/workspace/drawers/memory-profile"
-          tip="Manage a long-lived knowledge slot. Pinned profiles load on every run; unpinned ones load only on explicit reference."
-        />
         <Field label="Name">
           <input
             value={name}
