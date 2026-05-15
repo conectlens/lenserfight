@@ -26,13 +26,11 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
 
       const { error } = await supabase.rpc('fn_lensers_update_preferences', { p_data: fields })
 
-      if (error) {
-        console.error('Failed to update preferences', error)
-        throw error
-      }
+      if (error) throw error
     } catch (err) {
-      if (err instanceof Error && err.message.includes('NetworkError')) {
-        console.warn('Suppressed NetworkError in updatePreferences — backend likely down')
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('NetworkError') || msg.includes('AbortError') || msg.includes('lock request is aborted')) {
+        // Transient: network down or Supabase lock stolen during session init — not actionable
         return
       }
       throw err
