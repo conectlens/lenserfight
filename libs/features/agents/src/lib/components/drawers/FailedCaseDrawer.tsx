@@ -5,6 +5,10 @@ import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle } from 'lucide-react'
 import React, { useState } from 'react'
 
+import { DrawerDocsLink } from './DrawerDocsLink'
+import { Button } from '@lenserfight/ui/components'
+
+
 interface Props {
   open: boolean
   onClose: () => void
@@ -24,14 +28,14 @@ const JsonBlock: React.FC<{ label: string; value: unknown }> = ({ label, value }
   const preview = text.slice(0, 80) + (text.length > 80 ? '…' : '')
   return (
     <div className="mt-2">
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
       >
         {label} {expanded ? '▲' : '▼'}
-      </button>
-      <pre className="overflow-x-auto rounded-[12px] border border-gray-100 bg-gray-50 p-2 font-mono text-[11px] text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
+      </Button>
+      <pre className="overflow-x-auto rounded-xl border border-gray-100 bg-gray-50 p-2 font-mono text-[11px] text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
         {expanded ? text : preview}
       </pre>
     </div>
@@ -39,7 +43,7 @@ const JsonBlock: React.FC<{ label: string; value: unknown }> = ({ label, value }
 }
 
 const FailedCaseCard: React.FC<{ c: EvaluationCaseResultRow }> = ({ c }) => (
-  <div className="rounded-[16px] border border-red-100 bg-red-50/30 p-3 dark:border-red-500/20 dark:bg-red-500/5">
+  <div className="rounded-xl border border-red-100 bg-red-50/30 p-3 dark:border-red-500/20 dark:bg-red-500/5">
     <div className="flex items-center gap-2">
       <AlertTriangle size={13} className="shrink-0 text-red-500" />
       <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
@@ -50,7 +54,7 @@ const FailedCaseCard: React.FC<{ c: EvaluationCaseResultRow }> = ({ c }) => (
       </span>
     </div>
     {c.case_error && (
-      <p className="mt-2 rounded-[10px] border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+      <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
         {c.case_error}
       </p>
     )}
@@ -72,17 +76,21 @@ export const FailedCaseDrawer: React.FC<Props> = ({ open, onClose, run }) => {
 
   return (
     <Drawer open={open} onClose={onClose} side="right" width="w-[600px]" title="Failed cases">
+      <DrawerDocsLink
+        path="/how-to/agents/workspace/drawers/failed-case"
+        tip="Read-only side-by-side diff for one failing case. Expected vs actual; click 'Run trace' to inspect tool calls and tokens consumed."
+      />
       {results.isLoading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-24 animate-pulse rounded-[16px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
+              className="h-24 animate-pulse rounded-xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
             />
           ))}
         </div>
       ) : failed.length === 0 ? (
-        <p className="rounded-[16px] border border-green-100 bg-green-50 px-4 py-6 text-center text-sm font-semibold text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300">
+        <p className="rounded-xl border border-green-100 bg-green-50 px-4 py-6 text-center text-sm font-semibold text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300">
           All cases passed.
         </p>
       ) : (
