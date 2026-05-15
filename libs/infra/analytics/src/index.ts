@@ -1,5 +1,9 @@
 export * from './lib/components/AnalyticsProvider'
-export * from './lib/types'
+export type {
+  AnalyticsEvent,
+  AnalyticsEventName,
+  AnalyticsProvider as AnalyticsProviderInterface,
+} from './lib/types'
 export * from './lib/controller'
 export * from './lib/providers/ga4'
 export * from './lib/providers/posthog'
