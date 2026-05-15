@@ -34,6 +34,8 @@ export const ByokUsageLog: React.FC<ByokUsageLogProps> = ({ keyId }) => {
   return (
     <SectionPage
       eyebrow="Security"
+      docsPath="/how-to/agents/workspace/byok"
+      docsTip="Last 50 model calls for this BYOK key, with provider, model, token totals, and cost estimate. Refreshes every minute."
       title="Key Usage Log"
       description="Last 50 model calls made with this BYOK key. Refreshes every minute."
     >
