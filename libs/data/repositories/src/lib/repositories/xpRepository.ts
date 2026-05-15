@@ -197,7 +197,7 @@ export class SupabaseXPRepository implements XPRepositoryPort {
     return { list: allEntries, userEntry }
   }
 
-  async getActiveSeason(appId = XP_APP_IDS.forum): Promise<XPSeason | null> {
+  async getActiveSeason(appId: string = XP_APP_IDS.forum): Promise<XPSeason | null> {
     const { data, error } = await supabase.rpc('fn_get_active_season', {
       p_app_id: appId,
     })
@@ -218,7 +218,7 @@ export class SupabaseXPRepository implements XPRepositoryPort {
   }
 
   async getSeasonLeaderboard(
-    appId = XP_APP_IDS.forum,
+    appId: string = XP_APP_IDS.forum,
     seasonId?: string,
     limit = 20,
     offset = 0
@@ -293,7 +293,7 @@ export class SupabaseXPRepository implements XPRepositoryPort {
     }))
   }
 
-  async getSeasonList(appId = XP_APP_IDS.forum): Promise<XPSeasonV2[]> {
+  async getSeasonList(appId: string = XP_APP_IDS.forum): Promise<XPSeasonV2[]> {
     const { data, error } = await supabase.rpc('fn_xp_get_seasons', {
       p_app_id: appId,
     })
