@@ -1,7 +1,14 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import type { BattleContentRenderer, SubmissionRendererProps } from '../types/battle-renderer.types'
+import { sanitizeSvg } from './sanitizeSvg'
 
 const DrawingSubmissionRenderer: React.FC<SubmissionRendererProps> = ({ content, url }) => {
+  const safeSvg = useMemo(() => {
+    if (!content || !content.trim().startsWith('<svg')) return null
+    const result = sanitizeSvg(content)
+    return result.length > 0 ? result : null
+  }, [content])
+
   if (!content && !url) {
     return (
       <div className="flex items-center justify-center h-full min-h-[120px] text-greyscale-400 text-sm">
@@ -10,22 +17,32 @@ const DrawingSubmissionRenderer: React.FC<SubmissionRendererProps> = ({ content,
     )
   }
 
-  // SVG content inline
-  if (content && content.trim().startsWith('<svg')) {
+  if (safeSvg) {
     return (
       <div
         className="flex items-center justify-center h-full min-h-[120px] p-2 [&>svg]:max-h-full [&>svg]:max-w-full [&>svg]:object-contain"
-        dangerouslySetInnerHTML={{ __html: content }}
+        dangerouslySetInnerHTML={{ __html: safeSvg }}
       />
     )
   }
 
-  // Image URL (exported drawing)
-  const src = url ?? content
+  // Image URL (exported drawing). If content looked like SVG but failed
+  // sanitization, render nothing rather than smuggling it through <img src>.
+  const looksLikeSvg = content?.trim().startsWith('<svg') ?? false
+  const src = url ?? (looksLikeSvg ? null : content)
+
+  if (!src) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[120px] text-greyscale-400 text-sm">
+        Drawing unavailable
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-center justify-center h-full min-h-[120px]">
       <img
-        src={src ?? ''}
+        src={src}
         alt="Drawing submission"
         className="max-h-full max-w-full rounded-xl object-contain"
       />
