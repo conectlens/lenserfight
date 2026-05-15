@@ -1,6 +1,6 @@
 ---
 title: BATTLE.MD — Native Comparison Document
-description: Canonical file format for a ConnectLens BATTLE (orchestration / comparison spec).
+description: Canonical file format for a ConectLens BATTLE (orchestration / comparison spec).
 ---
 
 # `BATTLE.MD` — Native orchestration/comparison document
