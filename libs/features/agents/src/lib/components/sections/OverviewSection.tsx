@@ -459,7 +459,7 @@ const QuickLinkCard: React.FC<{
 }> = ({ to, icon, title, description }) => (
   <Link
     to={to}
-    className="rounded-[24px] border border-gray-200 bg-gray-50 p-4 transition hover:border-amber-300 hover:bg-amber-50/60 dark:border-gray-800 dark:bg-gray-700 dark:hover:border-amber-500/40 dark:hover:bg-amber-500/10"
+    className="rounded-[24px] border border-gray-200 bg-white p-4 transition-all hover:border-amber-300 hover:shadow-md dark:border-gray-800 dark:bg-[#111111] dark:hover:border-amber-500/30 dark:hover:bg-amber-500/5"
   >
     <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
       {icon}
