@@ -20,7 +20,7 @@ This guide helps contributors identify and refactor raw HTML elements into appro
 
 # Why This Matters
 
-Using raw HTML elements such as `<button>` or `<a>` directly inside feature code creates serious architectural problems:
+Using raw HTML elements such as `&lt;button>` or `&lt;a>` directly inside feature code creates serious architectural problems:
 
 * inconsistent styling
 * duplicated logic
@@ -71,15 +71,15 @@ libs/ui
 
 Examples include:
 
-* `<button>`
-* `<a>`
-* `<input>`
-* `<textarea>`
-* `<select>`
-* `<dialog>`
-* `<form>`
-* `<table>`
-* `<img>`
+* `&lt;button>`
+* `&lt;a>`
+* `&lt;input>`
+* `&lt;textarea>`
+* native select controls
+* `&lt;dialog>`
+* `&lt;form>`
+* `&lt;table>`
+* `&lt;img>`
 
 ---
 
@@ -87,11 +87,11 @@ Examples include:
 
 | Raw Element | Use Instead                      |
 | ----------- | -------------------------------- |
-| `<button>`  | Shared Button component          |
-| `<a>`       | Shared navigation/link component |
-| `<input>`   | Shared form input primitive      |
-| `<dialog>`  | Shared modal system              |
-| `<table>`   | Shared data table abstraction    |
+| `&lt;button>` | Shared Button component          |
+| `&lt;a>`      | Shared navigation/link component |
+| `&lt;input>`  | Shared form input primitive      |
+| `&lt;dialog>` | Shared modal system              |
+| `&lt;table>`  | Shared data table abstraction    |
 | `<img>`     | Shared optimized image component |
 
 ---
@@ -174,11 +174,11 @@ Reusable UI services belong in dedicated abstraction layers.
 Search for:
 
 ```txt
-<button
-<a
-<input
-<textarea
-<select
+&lt;button
+&lt;a
+&lt;input
+&lt;textarea
+native select controls
 ```
 
 Inside:
