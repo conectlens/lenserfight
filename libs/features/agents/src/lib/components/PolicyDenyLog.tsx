@@ -27,13 +27,13 @@ export const PolicyDenyLog: React.FC<PolicyDenyLogProps> = ({ aiLenserId }) => {
   const denials = data ?? []
 
   return (
-    <div className="rounded-xl bg-amber-50 p-4 dark:bg-amber-950">
+    <div className="rounded-xl bg-primary-yellow-50 p-4 dark:bg-primary-yellow-950">
       <div className="flex items-center gap-3">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           Policy Denials
         </h3>
         {denials.length > 0 && (
-          <span className="rounded-full border border-amber-300 bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:border-amber-700 dark:bg-amber-900 dark:text-amber-300">
+          <span className="rounded-full border border-primary-yellow-300 bg-primary-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-primary-yellow-700 dark:border-primary-yellow-700 dark:bg-primary-yellow-900 dark:text-primary-yellow-300">
             {denials.length}
           </span>
         )}
@@ -44,7 +44,7 @@ export const PolicyDenyLog: React.FC<PolicyDenyLogProps> = ({ aiLenserId }) => {
           Array.from({ length: 3 }).map((_, idx) => (
             <div
               key={idx}
-              className="h-12 animate-pulse rounded-2xl border border-amber-200 bg-amber-100 dark:border-amber-800 dark:bg-amber-900"
+              className="h-12 animate-pulse rounded-2xl border border-primary-yellow-200 bg-primary-yellow-100 dark:border-primary-yellow-800 dark:bg-primary-yellow-900"
             />
           ))
         ) : denials.length === 0 ? (
@@ -55,10 +55,10 @@ export const PolicyDenyLog: React.FC<PolicyDenyLogProps> = ({ aiLenserId }) => {
           denials.map((evaluation) => (
             <div
               key={evaluation.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-white px-4 py-3 dark:border-amber-800 dark:bg-gray-900"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-primary-yellow-200 bg-white px-4 py-3 dark:border-primary-yellow-800 dark:bg-gray-900"
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                <span className="flex-shrink-0 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                <span className="flex-shrink-0 rounded-full border border-primary-yellow-300 bg-primary-yellow-50 px-2 py-0.5 text-[11px] font-semibold text-primary-yellow-700 dark:border-primary-yellow-700 dark:bg-primary-yellow-900/50 dark:text-primary-yellow-300">
                   {evaluation.policy_type}
                 </span>
                 <p className="truncate text-sm text-gray-700 dark:text-gray-300">
