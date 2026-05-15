@@ -1,11 +1,14 @@
 import { supabase } from '@lenserfight/data/supabase'
+import { Button, Card } from '@lenserfight/ui/components'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bell, Plus, Swords, Trash2 } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
+import { NewBattleSubscriptionDrawer } from '../drawers/NewBattleSubscriptionDrawer'
 import { EmptyPanel } from '../EmptyPanel'
+
 import { SectionPage } from './SectionPage'
 
 interface BattleSubscription {
@@ -51,40 +54,15 @@ export const BattlesSection: React.FC = () => {
 
   const { data: subscriptions = [], isLoading } = useBattleSubscriptions(agentId)
 
-  const [showForm, setShowForm] = useState(false)
-  const [category, setCategory] = useState('')
-  const [executionMode, setExecutionMode] = useState<'cloud' | 'local' | 'hybrid'>('cloud')
-  const [requireApproval, setRequireApproval] = useState(false)
-  const [maxPerDay, setMaxPerDay] = useState(5)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['agent-battle-subscriptions', agentId] })
+  const openDrawer = useCallback(() => setDrawerOpen(true), [])
+  const closeDrawer = useCallback(() => setDrawerOpen(false), [])
 
-  const subscribe = useMutation({
-    mutationFn: async () => {
-      if (!agentId) throw new Error('No agent ID')
-      const { data, error } = await supabase.rpc('fn_agent_subscribe_to_battles', {
-        p_agent_id: agentId,
-        p_category: category.trim() || null,
-        p_execution_mode: executionMode,
-        p_workflow_id: null,
-        p_require_approval: requireApproval,
-        p_max_joins_per_day: maxPerDay,
-      })
-      if (error) throw new Error(error.message)
-      return data
-    },
-    onSuccess: () => {
-      toast.success('Battle subscription created')
-      setShowForm(false)
-      setCategory('')
-      setExecutionMode('cloud')
-      setRequireApproval(false)
-      setMaxPerDay(5)
-      invalidate()
-    },
-    onError: (e) => toast.error((e as Error).message),
-  })
+  const invalidate = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ['agent-battle-subscriptions', agentId] }),
+    [queryClient, agentId],
+  )
 
   const unsubscribe = useMutation({
     mutationFn: async (subscriptionId: string) => {
@@ -93,115 +71,50 @@ export const BattlesSection: React.FC = () => {
       })
       if (error) throw new Error(error.message)
     },
-    onSuccess: () => { toast.success('Subscription deactivated'); invalidate() },
+    onSuccess: () => {
+      toast.success('Subscription deactivated')
+      invalidate()
+    },
     onError: (e) => toast.error((e as Error).message),
   })
 
-  const active = subscriptions.filter((s) => s.active)
-  const inactive = subscriptions.filter((s) => !s.active)
+  const handleDeactivate = useCallback(
+    (id: string) => unsubscribe.mutate(id),
+    [unsubscribe],
+  )
+
+  const { active, inactive } = useMemo(() => {
+    const a: BattleSubscription[] = []
+    const i: BattleSubscription[] = []
+    for (const s of subscriptions) (s.active ? a : i).push(s)
+    return { active: a, inactive: i }
+  }, [subscriptions])
 
   return (
     <SectionPage
       eyebrow="Battles"
+      docsPath="/how-to/agents/workspace/battles"
+      docsTip="Auto-enroll this agent into matching open battles. Daily caps, stake limits, and a kill switch protect against runaway joins."
       title="Battle subscriptions"
       description="Auto-enroll this agent into open battles matching the configured filters. Rate limits and kill switches protect against runaway joins."
       toolbar={
-        canManage && !showForm ? (
-          <button
+        canManage ? (
+          <Button
             type="button"
-            onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+            onClick={openDrawer}
           >
             <Plus size={16} />
             New subscription
-          </button>
+          </Button>
         ) : undefined
       }
     >
-      {showForm && canManage && (
-        <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-amber-500/10 dark:bg-[#111111]">
-          <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
-            New battle subscription
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                Category filter
-              </label>
-              <input
-                type="text"
-                placeholder="All categories (leave blank)"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                Execution mode
-              </label>
-              <select
-                value={executionMode}
-                onChange={(e) => setExecutionMode(e.target.value as 'cloud' | 'local' | 'hybrid')}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-              >
-                <option value="cloud">Cloud</option>
-                <option value="local">Local (Ollama / BYOK)</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                Max joins per day (1–20)
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={maxPerDay}
-                onChange={(e) => setMaxPerDay(Number(e.target.value))}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-              />
-            </div>
-            <div className="flex items-center gap-3 pt-5">
-              <input
-                id="require-approval"
-                type="checkbox"
-                checked={requireApproval}
-                onChange={(e) => setRequireApproval(e.target.checked)}
-                className="h-4 w-4 rounded accent-amber-500"
-              />
-              <label htmlFor="require-approval" className="text-sm text-gray-700 dark:text-gray-300">
-                Require owner approval per battle
-              </label>
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              onClick={() => subscribe.mutate()}
-              disabled={subscribe.isPending}
-              className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-            >
-              {subscribe.isPending ? 'Subscribing…' : 'Subscribe'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className="h-24 animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-700"
+              className="h-24 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800"
             />
           ))}
         </div>
@@ -211,15 +124,15 @@ export const BattlesSection: React.FC = () => {
           title="No subscriptions yet"
           description="Create a subscription to auto-enroll this agent in matching battles when they open."
         >
-          {canManage && !showForm && (
+          {canManage && (
             <div className="mt-6 flex justify-center">
-              <button
+              <Button
                 type="button"
-                onClick={() => setShowForm(true)}
-                className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+                variant="dark"
+                onClick={openDrawer}
               >
                 New subscription
-              </button>
+              </Button>
             </div>
           )}
         </EmptyPanel>
@@ -230,7 +143,7 @@ export const BattlesSection: React.FC = () => {
               key={sub.id}
               sub={sub}
               canManage={canManage}
-              onDeactivate={() => unsubscribe.mutate(sub.id)}
+              onDeactivate={handleDeactivate}
               isDeactivating={unsubscribe.isPending}
             />
           ))}
@@ -244,7 +157,7 @@ export const BattlesSection: React.FC = () => {
                   key={sub.id}
                   sub={sub}
                   canManage={false}
-                  onDeactivate={() => { }}
+                  onDeactivate={handleDeactivate}
                   isDeactivating={false}
                 />
               ))}
@@ -252,6 +165,13 @@ export const BattlesSection: React.FC = () => {
           )}
         </div>
       )}
+
+      <NewBattleSubscriptionDrawer
+        open={drawerOpen}
+        onClose={closeDrawer}
+        agentId={agentId}
+        onCreated={invalidate}
+      />
     </SectionPage>
   )
 }
@@ -259,17 +179,24 @@ export const BattlesSection: React.FC = () => {
 interface SubscriptionCardProps {
   sub: BattleSubscription
   canManage: boolean
-  onDeactivate: () => void
+  onDeactivate: (id: string) => void
   isDeactivating: boolean
 }
 
-function SubscriptionCard({ sub, canManage, onDeactivate, isDeactivating }: SubscriptionCardProps) {
+const SubscriptionCard = React.memo(function SubscriptionCard({
+  sub,
+  canManage,
+  onDeactivate,
+  isDeactivating,
+}: SubscriptionCardProps) {
+  const handleClick = useCallback(() => onDeactivate(sub.id), [onDeactivate, sub.id])
+
   return (
-    <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-amber-200 dark:border-gray-800 dark:bg-[#0c0c0c] dark:hover:border-amber-500/20">
+    <Card className="!p-5 transition-all hover:border-primary-yellow-200 dark:hover:border-primary-yellow-500/20">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <Swords size={14} className="text-amber-500" />
+            <Swords size={14} className="text-primary-yellow-500" />
             <span className="text-sm font-semibold text-gray-900 dark:text-white">
               {sub.category ?? 'All categories'}
             </span>
@@ -285,7 +212,7 @@ function SubscriptionCard({ sub, canManage, onDeactivate, isDeactivating }: Subs
               {sub.active ? 'Active' : 'Inactive'}
             </span>
             {sub.require_owner_approval && (
-              <span className="flex items-center gap-1 rounded-full border border-amber-200 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+              <span className="flex items-center gap-1 rounded-full border border-primary-yellow-200 px-2.5 py-0.5 text-[11px] font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300">
                 <Bell size={10} />
                 Approval required
               </span>
@@ -296,17 +223,17 @@ function SubscriptionCard({ sub, canManage, onDeactivate, isDeactivating }: Subs
           </p>
         </div>
         {canManage && sub.active && (
-          <button
+          <Button
             type="button"
-            onClick={onDeactivate}
+            onClick={handleClick}
             disabled={isDeactivating}
             className="flex-shrink-0 rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-red-200 hover:text-red-600 disabled:opacity-50 dark:border-gray-700 dark:text-gray-400"
             aria-label="Deactivate subscription"
           >
             <Trash2 size={14} />
-          </button>
+          </Button>
         )}
       </div>
-    </div>
+    </Card>
   )
-}
+})
