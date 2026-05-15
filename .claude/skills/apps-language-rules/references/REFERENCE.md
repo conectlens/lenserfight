@@ -35,8 +35,9 @@ locales: {
 ```tsx
 // In a component:
 import { useTranslation } from 'react-i18next'
+import { Button } from '@lenserfight/ui/components'
 const { t } = useTranslation()
-<button>{t('actions.save')}</button>
+<Button>{t('actions.save')}</Button>
 <p>{t('prompts.usedTimes', { count: 42 })}</p>
 
 // Changing language:
