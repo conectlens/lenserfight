@@ -136,6 +136,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
           return
         }
+        // Transient network failure (offline, DNS hiccup, service worker intercept) — treat as
+        // unauthenticated rather than propagating an error that blocks the whole app.
+        if (
+          err?.name === 'AuthRetryableFetchError' ||
+          err?.name === 'TypeError' ||
+          err?.message?.includes('NetworkError') ||
+          err?.message?.includes('Failed to fetch') ||
+          err?.message?.includes('Load failed')
+        ) {
+          setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
+          return
+        }
         console.error('Auth initialization error:', err)
         // User deleted in DB but JWT still valid → force clean logout
         if (
