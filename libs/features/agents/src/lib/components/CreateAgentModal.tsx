@@ -1,9 +1,9 @@
 import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { HelpButton } from '@lenserfight/ui/components'
 import { Field, Input } from '@lenserfight/ui/forms'
-import { ModalFooter } from '@lenserfight/ui/overlays'
-import { ArrowRight, Check, Loader2, X } from 'lucide-react'
-import React, { useState } from 'react'
+import { DialogHeaderContext, ModalFooter } from '@lenserfight/ui/overlays'
+import { ArrowRight, Check, Loader2, Sparkles, X } from 'lucide-react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useCreateAgent } from '../hooks/useCreateAgent'
@@ -27,6 +27,23 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
   const { humanWorkspace } = useLenserWorkspace()
   const { submit, isSubmitting } = useCreateAgent(humanWorkspace?.id ?? '')
   const navigate = useNavigate()
+
+  const { setHeader, clearHeader } = useContext(DialogHeaderContext)
+
+  useEffect(() => {
+    setHeader({
+      title: 'Create AI agent',
+      description: 'Give the agent a clear identity - handle and display name.',
+      icon: <Sparkles size={18} />,
+      action: (
+        <HelpButton
+          path="/tutorials/agent-walkthroughs/create-your-first-agent"
+          label="Agent Guide"
+        />
+      ),
+    })
+    return () => clearHeader()
+  }, [setHeader, clearHeader])
 
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -77,9 +94,6 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <HelpButton path="/tutorials/agent-walkthroughs/create-your-first-agent" label="Agent Guide" />
-      </div>
       <div className="space-y-4">
         <Field
           id="agent-display-name"
