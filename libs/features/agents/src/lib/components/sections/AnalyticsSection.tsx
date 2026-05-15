@@ -1,3 +1,5 @@
+import { Card } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { BarChart2, Coins } from 'lucide-react'
 import React, { useState } from 'react'
 import {
@@ -36,19 +38,18 @@ interface FilterBarProps {
 
 const FilterBar: React.FC<FilterBarProps> = ({ days, onDaysChange }) => (
   <div className="flex gap-2 mb-4 text-sm">
-    <label className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-      <span className="text-xs font-semibold uppercase tracking-[0.15em]">Period</span>
-      <select
-        value={days}
-        onChange={(e) => onDaysChange(Number(e.target.value))}
-        className="rounded-xl border border-gray-200 bg-white px-2 py-1 text-sm text-gray-800 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-      >
-        <option value={7}>Last 7 days</option>
-        <option value={14}>Last 14 days</option>
-        <option value={30}>Last 30 days</option>
-        <option value={90}>Last 90 days</option>
-      </select>
-    </label>
+    <SelectField
+      label="Period"
+      value={String(days)}
+      onChange={(value) => onDaysChange(Number(value))}
+      options={[
+        { value: '7', label: 'Last 7 days' },
+        { value: '14', label: 'Last 14 days' },
+        { value: '30', label: 'Last 30 days' },
+        { value: '90', label: 'Last 90 days' },
+      ]}
+      className="w-44"
+    />
   </div>
 )
 
@@ -63,7 +64,7 @@ const CostDashboardPanel: React.FC<CostDashboardPanelProps> = ({
   costByModel,
   costTimeSeries,
 }) => (
-  <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+  <Card>
     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-3">
       Cost over time
     </p>
@@ -121,7 +122,7 @@ const CostDashboardPanel: React.FC<CostDashboardPanelProps> = ({
         </table>
       </div>
     )}
-  </div>
+  </Card>
 )
 
 // ─── QualityMetricsPanel ──────────────────────────────────────────────────────
@@ -131,7 +132,7 @@ interface QualityMetricsPanelProps {
 }
 
 const QualityMetricsPanel: React.FC<QualityMetricsPanelProps> = ({ evalQuality }) => (
-  <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+  <Card>
     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-3">
       Evaluation quality
     </p>
@@ -183,7 +184,7 @@ const QualityMetricsPanel: React.FC<QualityMetricsPanelProps> = ({ evalQuality }
         </LineChart>
       </ResponsiveContainer>
     )}
-  </div>
+  </Card>
 )
 
 // ─── WorkflowTimelinePanel ────────────────────────────────────────────────────
@@ -193,7 +194,7 @@ interface WorkflowTimelinePanelProps {
 }
 
 const WorkflowTimelinePanel: React.FC<WorkflowTimelinePanelProps> = ({ workflowPerf }) => (
-  <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+  <Card>
     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-3">
       Workflow performance
     </p>
@@ -237,7 +238,7 @@ const WorkflowTimelinePanel: React.FC<WorkflowTimelinePanelProps> = ({ workflowP
         </div>
       </>
     )}
-  </div>
+  </Card>
 )
 
 // ─── AnalyticsSection (main export) ──────────────────────────────────────────
@@ -250,6 +251,8 @@ export const AnalyticsSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Analytics"
+      docsPath="/how-to/agents/workspace/analytics"
+      docsTip="Request volume, latency p50/p95, and success rate per workflow. Pair with Reports for exports and Creator Analytics for public engagement."
       title="Cost, Quality & Performance"
       description="Per-model cost breakdown, evaluation pass rates, and workflow duration percentiles. Use the period selector to zoom in on recent spikes or zoom out for trend analysis."
     >
