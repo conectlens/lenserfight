@@ -5,6 +5,9 @@ description: Canonical file format for a ConectLens BATTLE (orchestration / comp
 
 # `BATTLE.MD` — Native orchestration/comparison document
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 A **BATTLE** declares a comparison between two or more participants — lenses, lensers, colenses, teams, models, prompts, or humans — under a shared evaluation. `BATTLE.MD` is its native form, validated by `lenserfight validate` and run by `lenserfight battle run`.
 
 ## Filename
