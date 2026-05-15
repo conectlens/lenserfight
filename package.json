@@ -159,7 +159,7 @@
     "jest-util": "^30.3.0",
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
-    "mermaid": "^11.13.0",
+    "mermaid": "^11.15.0",
     "metro-config": "~0.83.5",
     "metro-resolver": "~0.83.5",
     "nx": "22.5.4",
