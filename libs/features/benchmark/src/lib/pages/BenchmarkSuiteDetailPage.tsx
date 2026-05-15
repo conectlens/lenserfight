@@ -168,21 +168,23 @@ export const BenchmarkSuiteDetailPage: React.FC = () => {
 
           {/* Workflow attachment toggle */}
           <div className="space-y-2">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => { setAttachWorkflow((v) => !v); setSelectedWorkflowId(null); setSelectedWorkflowTitle(''); setWorkflowQuery('') }}
-              className="flex items-center gap-2 text-xs font-medium text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              className="!px-0 !py-0 !rounded-none !font-medium text-gray-500 hover:bg-transparent hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-transparent"
             >
               <GitBranch size={13} />
               {attachWorkflow ? 'Remove workflow' : 'Attach a workflow'}
-            </button>
+            </Button>
             {attachWorkflow && (
               <div className="space-y-2">
                 {selectedWorkflowId ? (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-indigo-200 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-900/20">
                     <GitBranch size={13} className="text-indigo-500" />
                     <span className="text-sm font-medium text-gray-900 dark:text-white flex-1 truncate">{selectedWorkflowTitle}</span>
-                    <button type="button" onClick={() => { setSelectedWorkflowId(null); setSelectedWorkflowTitle('') }} className="text-xs text-gray-400 hover:text-red-500">×</button>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => { setSelectedWorkflowId(null); setSelectedWorkflowTitle('') }} className="!px-0 !py-0 !rounded-none !font-medium text-gray-400 hover:bg-transparent hover:text-red-500 hover:border-transparent">×</Button>
                   </div>
                 ) : (
                   <div className="space-y-1">
@@ -196,14 +198,14 @@ export const BenchmarkSuiteDetailPage: React.FC = () => {
                       <ul className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700 overflow-hidden">
                         {workflowSearchResults.slice(0, 5).map((w) => (
                           <li key={w.id}>
-                            <button
+                            <Button
                               type="button"
                               onClick={() => { setSelectedWorkflowId(w.id); setSelectedWorkflowTitle(w.title) }}
                               className="w-full px-3 py-2 text-left text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                             >
                               <GitBranch size={12} className="text-gray-400" />
                               {w.title}
-                            </button>
+                            </Button>
                           </li>
                         ))}
                       </ul>
