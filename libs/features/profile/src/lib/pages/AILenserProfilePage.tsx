@@ -14,6 +14,7 @@ import {
   AgentStatusBadge,
   useRunUnified,
 } from '@lenserfight/features/agents'
+import { ExportButton } from '@lenserfight/features/exports'
 import { ThreadsListCard } from '@lenserfight/features/home'
 import { EmptyState } from '@lenserfight/ui/components'
 import { Dialog } from '@lenserfight/ui/overlays'
@@ -179,7 +180,22 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
 
       <div className="mt-8 px-4 md:px-0">
 
-        <LenserTabs activeTab={activeTab} onChange={handleTabChange} tabs={AI_TABS} />
+        <LenserTabs
+          activeTab={activeTab}
+          onChange={handleTabChange}
+          tabs={AI_TABS}
+          rightSlot={
+            <div className="ml-auto">
+              <ExportButton
+                kind="agent"
+                slug={viewedProfile.handle}
+                title={viewedProfile.display_name}
+                isOwner={isOwner}
+                fetchPayload={async () => agentProfile ?? viewedProfile}
+              />
+            </div>
+          }
+        />
 
 
         <LenserTabContent activeTab={activeTab}>
