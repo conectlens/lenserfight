@@ -220,6 +220,7 @@ export const SettingsSection: React.FC = () => {
             {(['identity', 'runtime', 'governance', 'export'] as const).map((t) => (
               <Button
                 key={t}
+                variant='ghost'
                 type="button"
                 onClick={() => setTab(t)}
                 className={
