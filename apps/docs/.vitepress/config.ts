@@ -1051,6 +1051,7 @@ export default defineConfig({
                 { text: "LenserFight'ta Lensler", link: '/tr/explanation/lenses/lens-usage' },
                 { text: 'Lens Parametreleri', link: '/tr/explanation/lenses/lens-parameters' },
                 { text: 'İş Akışları', link: '/tr/explanation/lenses/workflows' },
+                { text: 'Finansman Kaynakları', link: '/tr/explanation/lenses/funding-sources' },
               ],
             },
             {
@@ -1204,6 +1205,7 @@ export default defineConfig({
                 { text: "LenserFight'ta Lensler", link: '/tr/explanation/lenses/lens-usage' },
                 { text: 'Lens Parametreleri', link: '/tr/explanation/lenses/lens-parameters' },
                 { text: 'İş Akışları', link: '/tr/explanation/lenses/workflows' },
+                { text: 'Finansman Kaynakları', link: '/tr/explanation/lenses/funding-sources' },
               ],
             },
           ],
@@ -2366,6 +2368,7 @@ export default defineConfig({
             { text: 'Lenses in LenserFight', link: '/en/explanation/lenses/lens-usage' },
             { text: 'Lens Parameters', link: '/en/explanation/lenses/lens-parameters' },
             { text: 'Connected Lens Workflows', link: '/en/explanation/lenses/workflows' },
+            { text: 'Funding Sources', link: '/en/explanation/lenses/funding-sources' },
           ],
         },
         {
@@ -2581,6 +2584,7 @@ export default defineConfig({
             { text: 'Lenses in LenserFight', link: '/en/explanation/lenses/lens-usage' },
             { text: 'Lens Parameters', link: '/en/explanation/lenses/lens-parameters' },
             { text: 'Connected Lens Workflows', link: '/en/explanation/lenses/workflows' },
+            { text: 'Funding Sources', link: '/en/explanation/lenses/funding-sources' },
           ],
         },
       ],
