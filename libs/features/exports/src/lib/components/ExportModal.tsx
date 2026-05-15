@@ -76,7 +76,14 @@ export function ExportModal<T>({
     return new CloudDownloadTransport(new SupabaseExportsRepository(supabase as any))
   }, [])
 
-  const runExportDefault = useExportRunner<T>({ kind, slug, fetchPayload, buildContext, resolveTransport })
+  const runExportDefault = useExportRunner<T>({
+    kind,
+    slug,
+    title,
+    fetchPayload,
+    buildContext,
+    resolveTransport,
+  })
 
   const helpPath = useMemo(() => {
     const map: Record<ExportKind, string> = {

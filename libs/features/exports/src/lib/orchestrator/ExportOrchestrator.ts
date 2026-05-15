@@ -33,6 +33,8 @@ export class ExportOrchestrator {
     ctx: ExportContext
     fetchPayload: () => Promise<T>
     transport: ExportTransport
+    /** Human-readable title; preferred over `request.slug` for the filename. */
+    title?: string | null
   }): Promise<ExportResult> {
     const { request, ctx, fetchPayload, transport } = input
     const data = await fetchPayload()
@@ -47,10 +49,20 @@ export class ExportOrchestrator {
     })
     const validation = await serializer.validate(serialized)
     if (!validation.ok) throw new ExportValidationError(validation.issues)
-    const filename = buildExportFilename({ slug: request.slug, format: request.format })
+    const filenameBasis = pickFilenameBasis(input.title, request.slug)
+    const filename = buildExportFilename({ slug: filenameBasis, format: request.format })
     return transport.deliver(
       [{ envelope: envelope as ExportEnvelope<unknown>, serialized, filename }],
       request,
     )
   }
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function pickFilenameBasis(title: string | null | undefined, slug: string): string {
+  const titleTrimmed = (title ?? '').trim()
+  if (titleTrimmed.length > 0) return titleTrimmed
+  if (UUID_RE.test(slug.trim())) return 'export'
+  return slug
 }

@@ -44,8 +44,18 @@ describe('SerializerRegistry', () => {
   it('throws ExportUnsupportedError for unregistered pair', () => {
     const r = new SerializerRegistry()
     bootstrapSerializers(r)
-    expect(() => r.resolve('battle', 'yaml')).toThrow(ExportUnsupportedError)
-    expect(() => r.resolve('workflow', 'json')).toThrow(ExportUnsupportedError)
+    expect(() => r.resolve('agent', 'json')).toThrow(ExportUnsupportedError)
+    expect(() => r.resolve('bundle', 'markdown')).toThrow(ExportUnsupportedError)
+  })
+
+  it('registers battle/lens/workflow × json/markdown/yaml', () => {
+    const r = new SerializerRegistry()
+    bootstrapSerializers(r)
+    for (const kind of ['battle', 'lens', 'workflow'] as const) {
+      for (const format of ['json', 'markdown', 'yaml'] as const) {
+        expect(r.supports(kind, format)).toBe(true)
+      }
+    }
   })
 
   // REGRESSION: previously bootstrap kept a module-scoped `bootstrapped`
