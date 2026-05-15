@@ -362,7 +362,7 @@ function WorkflowBuilderCanvasInner({
           ordinal: d.ordinal ?? i,
           position_x: n.position.x,
           position_y: n.position.y,
-          config: cfg ?? null,
+          config: (cfg as Record<string, unknown> | undefined) ?? null,
         }
       })
       const upsertEdges: UpsertEdgeInput[] = eds
@@ -594,8 +594,8 @@ function WorkflowBuilderCanvasInner({
           .map((e) => e.targetHandle ?? 'input')
         return {
           id: n.id,
-          lensId: data.lens_id,
-          kind: 'transform',
+          lensId: data.lens_id ?? '',
+          kind: 'text' as const,
           paramLabels: incomingLabels,
         }
       }),
