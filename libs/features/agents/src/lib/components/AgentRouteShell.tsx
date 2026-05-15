@@ -1,3 +1,4 @@
+import { Card } from '@lenserfight/ui/components'
 import React from 'react'
 import { useParams } from 'react-router-dom'
 
@@ -20,14 +21,14 @@ const LoadingSkeleton: React.FC = () => (
 )
 
 const NotFound: React.FC<{ handle: string }> = ({ handle }) => (
-  <div className="rounded-[28px] border border-dashed border-gray-300 bg-white/80 p-10 text-center shadow-sm dark:border-gray-700 dark:bg-gray-900">
+  <Card className="p-10 text-center">
     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
       Lenser not found
     </h1>
     <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
       {handle ? `No Lenser with handle @${handle}.` : 'No handle provided.'}
     </p>
-  </div>
+  </Card>
 )
 
 /**
