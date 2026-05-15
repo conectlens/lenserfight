@@ -1,0 +1,46 @@
+name: Docs link check
+
+# Runs on PRs that touch any markdown under docs/. Fails if a link is dead
+# (excluding localhost and private hosts — see .markdown-link-check.json).
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**/*.md'
+      - '.markdown-link-check.json'
+      - '.github/workflows/docs-link-check.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  link-check:
+    name: Markdown link check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Find changed markdown files
+        id: changed
+        # SUPPLY-CHAIN: tj-actions has had token-exfiltration incidents in the past.
+        # Pin to an audited SHA before public OSS launch. Resolve via:
+        #   gh api repos/tj-actions/changed-files/git/refs/tags/<exact-version> | jq -r .object.sha
+        # then replace `@v44` with `@<full-40-char-sha>  # <version>`.
+        uses: tj-actions/changed-files@v44
+        with:
+          files: docs/**/*.md
+
+      - name: Run markdown-link-check on changed files
+        if: steps.changed.outputs.any_changed == 'true'
+        # SUPPLY-CHAIN: Pin to immutable SHA before public OSS launch. Resolve via:
+        #   gh api repos/gaurav-nelson/github-action-markdown-link-check/git/refs/tags/<exact-version> | jq -r .object.sha
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          use-verbose-mode: 'yes'
+          config-file: '.markdown-link-check.json'
+          file-path: ${{ steps.changed.outputs.all_changed_files }}
+          base-branch: ${{ github.base_ref }}
+          check-modified-files-only: 'yes'
