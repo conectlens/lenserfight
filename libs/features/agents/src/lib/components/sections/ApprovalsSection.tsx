@@ -1,6 +1,8 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService, lenserService } from '@lenserfight/data/repositories'
 import type { AgentPermissionScope, AgentOwnershipDelegateRecord, ApprovalRequestView } from '@lenserfight/types'
+import { Alert, Button, Card } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ClipboardCheck, ShieldCheck, ShieldPlus, Users, History, CheckCircle, XCircle, Edit3 } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
@@ -233,6 +235,8 @@ export const ApprovalsSection: React.FC = () => {
     return (
       <SectionPage
         eyebrow="Permissions"
+        docsPath="/how-to/agents/workspace/approvals"
+        docsTip="Pending approval gates for tool calls, autonomous battle entries, and elevated-egress workflows. Approve, Deny, or Defer per row."
         title="Human approval gates"
         description="Human Lensers govern when an AI Lenser may act autonomously and who else can operate the control room."
       >
@@ -258,12 +262,14 @@ export const ApprovalsSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Permissions"
+      docsPath="/how-to/agents/workspace/approvals"
+      docsTip="Pending queue, delegates, and audit history. Delegates inherit scoped permissions; every approval decision is audited."
       title="Human approval gates"
       description="Permissions define who can operate this AI Lenser, which autonomous actions still require a human checkpoint, and how delegates are scoped across the control room."
     >
       {/* My scopes banner — shown when current user is a scoped operator */}
       {!isOwnerOrCoOwner && myOwnerRecord && myScopes.length > 0 && (
-        <div className="rounded-[20px] border border-blue-200 bg-blue-50 p-4 dark:border-blue-500/30 dark:bg-blue-500/10">
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-500/30 dark:bg-blue-500/10">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700 dark:text-blue-300">
             Your operator access
           </p>
@@ -310,12 +316,12 @@ export const ApprovalsSection: React.FC = () => {
       {/* Tab bar */}
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-0 dark:border-gray-800">
         {tabs.map((tabItem) => (
-          <button
+          <Button
             key={tabItem.id}
             type="button"
             onClick={() => setTab(tabItem.id)}
             className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${tab === tabItem.id
-                ? 'border-amber-500 text-amber-700 dark:text-amber-300'
+                ? 'border-primary-yellow-500 text-primary-yellow-700 dark:text-primary-yellow-300'
                 : 'border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
               }`}
           >
@@ -325,7 +331,7 @@ export const ApprovalsSection: React.FC = () => {
                 {tabItem.badge}
               </span>
             ) : null}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -351,7 +357,7 @@ export const ApprovalsSection: React.FC = () => {
             subtitle="Owner and co-owner roles have full control. Operators must be explicitly scoped."
           >
             <div className="space-y-4">
-              <div className="rounded-[20px] border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
                 Think of this like an Instagram account: one primary owner, optional co-owners for
                 full administration, and operators for scoped tasks only (e.g., approve runs, view
                 logs, assign workflows).
@@ -376,7 +382,7 @@ export const ApprovalsSection: React.FC = () => {
                   ) : searchResults.length > 0 ? (
                     <div className="space-y-2">
                       {searchResults.map((result) => (
-                        <button
+                        <Button
                           key={result.id}
                           type="button"
                           onClick={() => {
@@ -387,7 +393,7 @@ export const ApprovalsSection: React.FC = () => {
                             setDelegateQuery(result.handle)
                           }}
                           className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm transition ${selectedDelegateId === result.id
-                              ? 'border-amber-300 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10'
+                              ? 'border-primary-yellow-300 bg-primary-yellow-50 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10'
                               : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
                             }`}
                         >
@@ -399,10 +405,10 @@ export const ApprovalsSection: React.FC = () => {
                               @{result.handle}
                             </p>
                           </div>
-                          <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                          <span className="text-xs font-semibold text-primary-yellow-700 dark:text-primary-yellow-300">
                             Select
                           </span>
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   ) : delegateQuery.trim().length >= 2 ? (
@@ -410,21 +416,17 @@ export const ApprovalsSection: React.FC = () => {
                   ) : null}
 
                   <div className="grid gap-3 md:grid-cols-2">
-                    <label className="block">
-                      <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-                        Role
-                      </span>
-                      <select
-                        value={selectedRole}
-                        onChange={(event) =>
-                          setSelectedRole(event.target.value as 'co_owner' | 'operator')
-                        }
-                        className={inputClass}
-                      >
-                        <option value="operator">operator</option>
-                        <option value="co_owner">co_owner</option>
-                      </select>
-                    </label>
+                    <SelectField
+                      label="Role"
+                      value={selectedRole}
+                      onChange={(value) =>
+                        setSelectedRole(value as 'co_owner' | 'operator')
+                      }
+                      options={[
+                        { value: 'operator', label: 'operator' },
+                        { value: 'co_owner', label: 'co_owner' },
+                      ]}
+                    />
                     <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-300">
                       {selectedDelegateId
                         ? `Selected: ${selectedDelegateLabel}`
@@ -468,14 +470,14 @@ export const ApprovalsSection: React.FC = () => {
                   </div>
 
                   <div className="flex flex-wrap justify-end gap-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
                       onClick={resetDelegateDraft}
-                      className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
                     >
                       Reset
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={() => upsertDelegate.mutate()}
                       disabled={
@@ -483,10 +485,10 @@ export const ApprovalsSection: React.FC = () => {
                         !selectedDelegateId ||
                         (selectedRole === 'operator' && selectedScopes.length === 0)
                       }
-                      className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+                      isLoading={upsertDelegate.isPending}
                     >
                       {upsertDelegate.isPending ? 'Saving...' : 'Grant access'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -502,7 +504,7 @@ export const ApprovalsSection: React.FC = () => {
                   ownerRecords.map((record) => (
                     <div
                       key={record.id}
-                      className="rounded-[20px] border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+                      className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
                     >
                       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div>
@@ -525,7 +527,7 @@ export const ApprovalsSection: React.FC = () => {
                             ).map((scope) => (
                               <span
                                 key={scope}
-                                className="rounded-full border border-amber-200 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300"
+                                className="rounded-full border border-primary-yellow-200 px-2 py-0.5 text-[11px] font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300"
                               >
                                 {scope}
                               </span>
@@ -535,22 +537,24 @@ export const ApprovalsSection: React.FC = () => {
 
                         {isOwner && record.role !== 'owner' && (
                           <div className="flex flex-wrap gap-2">
-                            <button
+                            <Button
                               type="button"
+                              variant="outline"
+                              size="sm"
                               onClick={() => startEditingDelegate(record)}
-                              className="inline-flex items-center gap-1.5 rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
                             >
                               <Edit3 size={12} />
                               Edit
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               type="button"
+                              variant="danger"
+                              size="sm"
                               onClick={() => revokeDelegate.mutate(record.id)}
                               disabled={revokeDelegate.isPending}
-                              className="rounded-2xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10"
                             >
                               Revoke
-                            </button>
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -569,7 +573,7 @@ export const ApprovalsSection: React.FC = () => {
               {PERMISSION_SCOPE_OPTIONS.map((item) => (
                 <div
                   key={item.scope}
-                  className="rounded-[20px] border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+                  className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -600,7 +604,7 @@ export const ApprovalsSection: React.FC = () => {
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-16 animate-pulse rounded-[20px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-700"
+                  className="h-16 animate-pulse rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-700"
                 />
               ))}
             </div>
@@ -615,7 +619,7 @@ export const ApprovalsSection: React.FC = () => {
               {approvalHistoryQuery.data.map((item) => (
                 <div
                   key={item.request_id}
-                  className="flex items-start gap-3 rounded-[20px] border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+                  className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
                 >
                   <div className="mt-0.5 flex-shrink-0">
                     {item.approval_status === 'approved' ? (
@@ -623,7 +627,7 @@ export const ApprovalsSection: React.FC = () => {
                     ) : item.approval_status === 'rejected' ? (
                       <XCircle size={16} className="text-red-500" />
                     ) : (
-                      <div className="h-4 w-4 rounded-full border-2 border-amber-400 bg-amber-50 dark:bg-amber-900/20" />
+                      <div className="h-4 w-4 rounded-full border-2 border-primary-yellow-400 bg-primary-yellow-50 dark:bg-primary-yellow-900/20" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -633,7 +637,7 @@ export const ApprovalsSection: React.FC = () => {
                             ? 'border border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
                             : item.approval_status === 'rejected'
                               ? 'border border-red-200 text-red-700 dark:border-red-500/30 dark:text-red-300'
-                              : 'border border-amber-200 text-amber-700 dark:border-amber-500/30 dark:text-amber-300'
+                              : 'border border-primary-yellow-200 text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300'
                           }`}
                       >
                         {item.approval_status}
@@ -669,7 +673,7 @@ export const ApprovalsSection: React.FC = () => {
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const SummaryCard: React.FC<{
   icon: React.ReactNode
@@ -677,9 +681,9 @@ const SummaryCard: React.FC<{
   value: string
   caption: string
 }> = ({ icon, label, value, caption }) => (
-  <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+  <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
     <div className="flex items-center justify-between gap-3">
-      <span className="inline-flex rounded-2xl border border-amber-200 bg-amber-50 p-2 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+      <span className="inline-flex rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50 p-2 text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-300">
         {icon}
       </span>
       <p className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">
