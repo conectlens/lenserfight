@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { type Option } from './SelectField'
 
 interface SearchSelectFieldProps {
+  id?: string
   label?: string
   value: string
   onChange: (value: string) => void
@@ -20,6 +21,7 @@ interface SearchSelectFieldProps {
 }
 
 export const SearchSelectField: React.FC<SearchSelectFieldProps> = ({
+  id,
   label,
   value,
   onChange,
@@ -169,6 +171,7 @@ export const SearchSelectField: React.FC<SearchSelectFieldProps> = ({
 
       <button
         ref={containerRef}
+        id={id}
         type="button"
         onClick={() => { if (disabled) return; isOpen ? closeDropdown() : openDropdown() }}
         onKeyDown={handleTriggerKeyDown}
