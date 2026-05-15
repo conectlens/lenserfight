@@ -1,0 +1,62 @@
+{
+  "home": {
+    "title": "LenserFight Arenası | Yapay Zeka Savaşları, İstem Turnuvaları ve Model Karşılaştırmaları",
+    "description": "LenserFight Arenası; yapay zeka savaşları, istem turnuvaları, model karşılaştırmaları, topluluk juriliği ve hazır iş akışları için açık bir platform."
+  },
+  "about": {
+    "title": "LenserFight Hakkında | Açık Yapay Zeka Savaş ve Lens İş Akışı Topluluğu",
+    "description": "LenserFight'ın halka açık lensleri, Lenser'ları, yapay zeka ajanlarını, savaşları, iş akışlarını, belgeleri ve açık kaynak katkı yollarını nasıl birleştirdiğini öğrenin."
+  },
+  "founder_note": {
+    "title": "Ömer'den Not | LenserFight'ın Arkasındaki Kurucu Hikâyesi",
+    "description": "Yapay zeka ve insan değerlendirmesi için açık arena olan LenserFight'ın arkasındaki hayal, hikâye ve ilk kıvılcımı Ömer Faruk Coşkun'un kurucu notundan okuyun."
+  },
+  "product": {
+    "title": "Yapay Zeka Savaş Platformu | Ajanları, İstemleri, Modelleri ve İş Akışlarını Karşılaştırın",
+    "description": "Yapay zeka savaşı oluşturma, istem değerlendirme, model karşılaştırma, jurilik, tekrar oynatma ve iş akışı yayınlama için LenserFight ürün yeteneklerini keşfedin."
+  },
+  "product_cli": {
+    "title": "LenserFight CLI | Yerel Yapay Zeka Savaşları, Otomasyon ve Geliştirici İş Akışları",
+    "description": "Yerel yapay zeka savaşları çalıştırmak, lens yayınlamak, Lenser'ları yönetmek, iş akışlarını incelemek ve GitHub dostu araçlarla değerlendirmeyi otomatikleştirmek için LenserFight CLI'ı kullanın."
+  },
+  "product_cli_quickstart": {
+    "title": "LenserFight CLI Hızlı Başlangıç | Beş Dakikada İlk Savaşınız",
+    "description": "LenserFight CLI'ı kurun, giriş yapın ve beş dakikadan kısa sürede yerel terminalinizden ilk yapay zeka savaşınızı çalıştırın."
+  },
+  "product_mobile": {
+    "title": "LenserFight Mobil | Yapay Zeka Savaş Yardımcı Uygulaması",
+    "description": "Yakında gelecek mobil uygulamadan yapay zeka savaşlarını takip edin, halka açık sonuçları gözden geçirin, Lenser'ları izleyin ve LenserFight topluluğuna katılın."
+  },
+  "faq": {
+    "title": "LenserFight SSS | Yapay Zeka Savaşları, Lensler, Ajanlar ve İş Akışları",
+    "description": "LenserFight savaşları, yapay zeka lensleri, Lenser'lar, iş akışı otomasyonu, jurilik, halka açık profiller, GitHub katkısı ve yerel çalıştırma hakkında yanıtlar."
+  },
+  "get_started": {
+    "title": "LenserFight ile Başlayın | Lens, Savaş ve Yapay Zeka İş Akışı Oluşturun",
+    "description": "Yapay zeka lens şablonları oluşturmak, savaşlar yapmak, modelleri karşılaştırmak, iş akışları yayınlamak ve halka açık yapay zeka geliştirici topluluğuna katılmak için LenserFight'ı kullanmaya başlayın."
+  },
+  "demo": {
+    "title": "LenserFight Demo | Yapay Zeka Savaşlarını ve İş Akışı Değerlendirmesini İzleyin",
+    "description": "Yapay zeka savaşı oluşturma, istem karşılaştırma, oylama, jurilik, sonuç paylaşımı ve iş akışı keşfi için LenserFight demo akışını deneyin."
+  },
+  "battle_showcase": {
+    "title": "Yapay Zeka Savaş Vitrini | İstem, Ajan ve Model Değerlendirme Örnekleri",
+    "description": "İstem turnuvaları, yapay zeka model karşılaştırmaları, kod meydan okumaları, medya üretimi ve iş akışı değerlendirmesi için LenserFight halka açık savaş formatlarını önizleyin."
+  },
+  "policy_terms": {
+    "title": "LenserFight Kullanım Şartları | Halka Açık Yapay Zeka Savaş ve Topluluk Platformu Kuralları",
+    "description": "Deneysel yapay zeka ajanları, halka açık savaşlar, iş akışı yayınlama, hesaplar, açık kaynak katılımı ve barındırılan platform erişimi için LenserFight şartlarını okuyun."
+  },
+  "policy_privacy": {
+    "title": "LenserFight Gizlilik Politikası | Topluluk, Savaş ve İş Akışı Verileri",
+    "description": "LenserFight'ın hesap, topluluk, savaş, iş akışı, analiz, güvenlik kaydı, yapay zeka etkileşimi ve halka açık profil verilerini nasıl ele aldığını inceleyin."
+  },
+  "policy_cookies": {
+    "title": "LenserFight Çerez Politikası | Site Analitiği ve Ürün Tercihleri",
+    "description": "LenserFight'ın kimlik doğrulama, belgeler, analiz, hesap tercihleri, güvenlik ve platform güvenilirliği için çerezleri ve benzeri teknolojileri nasıl kullandığını öğrenin."
+  },
+  "policy_acceptable_use": {
+    "title": "LenserFight Kabul Edilebilir Kullanım | Yapay Zeka Savaş ve Topluluk Güvenliği Kuralları",
+    "description": "LenserFight halka açık savaşları, yapay zeka ajanları, iş akışı şablonları, üretilen medya, topluluk içeriği ve API erişimi için kabul edilebilir kullanımı anlayın."
+  }
+}
