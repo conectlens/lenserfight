@@ -4,9 +4,17 @@ import {
 } from '@lenserfight/data/repositories'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import type { AgentWorkflowAssignmentRecord } from '@lenserfight/types'
-import { Drawer } from '@lenserfight/ui/overlays'
-import React, { useEffect, useState } from 'react'
+import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
+import React, { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+
+const ASSIGNEE_KIND_OPTIONS = [
+  { value: 'agent', label: 'agent' },
+  { value: 'team', label: 'team' },
+  { value: 'evaluator', label: 'evaluator' },
+]
 
 interface Props {
   open: boolean
@@ -47,6 +55,15 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
   const [isActive, setIsActive] = useState(initial?.is_active ?? true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const workflowOptions = useMemo(
+    () => workflows.map((w) => ({ value: w.id, label: w.title })),
+    [workflows]
+  )
+  const teamOptions = useMemo(
+    () => teams.map((t) => ({ value: t.id, label: t.name })),
+    [teams]
+  )
 
   useEffect(() => {
     if (!open) return
@@ -126,58 +143,49 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
       onClose={onClose}
       side="right"
       width="w-[560px]"
-      title={isEdit ? 'Edit assignment' : 'New assignment'}
+      title={isEdit ? 'Edit workflow assignment' : 'Assign agent to workflow'}
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          onSubmit={handleSave}
+          submitLabel={submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create'}
+          isLoading={submitting}
+          disabled={submitting || !workflowId}
+        />
+      }
     >
       <div className="space-y-4">
         <Field label="Workflow">
-          <select
+          <SelectField
             value={workflowId}
-            onChange={(e) => setWorkflowId(e.target.value)}
-            className={inputClass}
-          >
-            {workflows.length === 0 ? (
-              <option value="">No workflows available</option>
-            ) : (
-              workflows.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.title}
-                </option>
-              ))
-            )}
-          </select>
+            onChange={setWorkflowId}
+            options={workflowOptions}
+            placeholder={workflows.length === 0 ? 'No workflows available' : 'Select a workflow'}
+            disabled={workflows.length === 0}
+          />
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Assignee kind">
-            <select
+            <SelectField
               value={assigneeKind}
-              onChange={(e) => setAssigneeKind(e.target.value as 'agent' | 'team' | 'evaluator')}
-              className={inputClass}
-            >
-              <option value="agent">agent</option>
-              <option value="team">team</option>
-              <option value="evaluator">evaluator</option>
-            </select>
+              onChange={(v) => setAssigneeKind(v as 'agent' | 'team' | 'evaluator')}
+              options={ASSIGNEE_KIND_OPTIONS}
+            />
           </Field>
           {assigneeKind === 'evaluator' && (
-            <div className="col-span-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            <div className="col-span-2 rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50 px-3 py-2 text-xs text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-300">
               Evaluator agents trigger evaluation suites post-run instead of executing workflow nodes.
             </div>
           )}
           {assigneeKind === 'team' && (
             <Field label="Team">
-              <select
+              <SelectField
                 value={assigneeTeamId}
-                onChange={(e) => setAssigneeTeamId(e.target.value)}
-                className={inputClass}
-              >
-                <option value="">— select team —</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setAssigneeTeamId}
+                options={teamOptions}
+                placeholder="— select team —"
+              />
             </Field>
           )}
         </div>
@@ -217,30 +225,14 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
           </p>
         )}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={submitting || !workflowId}
-            className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-          >
-            {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create'}
-          </button>
-        </div>
+
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="block">
