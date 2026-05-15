@@ -1,0 +1,31 @@
+name: Sync repo labels
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/labels.yml'
+      - '.github/workflows/labels-sync.yml'
+  workflow_dispatch: {}
+
+jobs:
+  sync-labels:
+    name: Apply .github/labels.yml to repo
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # SUPPLY-CHAIN: Pin to immutable SHA before public OSS launch. Resolve via:
+      #   gh api repos/crazy-max/ghaction-github-labeler/git/refs/tags/<exact-version> | jq -r .object.sha
+      # then replace `@v5` with `@<full-40-char-sha>  # <version>`.
+      - uses: crazy-max/ghaction-github-labeler@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          yaml-file: .github/labels.yml
+          # Set to false to prune labels that are not in labels.yml.
+          # Keep true initially so we don't accidentally delete in-flight labels.
+          skip-delete: true
+          dry-run: false
