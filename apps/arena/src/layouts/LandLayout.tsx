@@ -18,8 +18,13 @@ import {
 } from 'lucide-react'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { CHAINABIT_APP_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
+import { stripLocale } from '@lenserfight/utils/locale'
+import {
+  LanguageSwitcher,
+  LocaleLink as Link,
+} from '@lenserfight/shared/i18n-routing'
 import { globalAnalyticsController } from '@lenserfight/infra/analytics'
 
 function trackNav(label: string, location = 'arena_header') {
@@ -80,14 +85,16 @@ export const LandLayout: React.FC = () => {
   const [mobileStoryOpen, setMobileStoryOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const storyDropdownRef = useRef<HTMLDivElement>(null)
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation()
   const contactUrl = chainabitContactUrl({
     lang: i18n.language,
     utmMedium: 'arena_header',
     utmCampaign: 'arena_contact_link',
   })
 
-  const isActive = (to: string) => location.pathname === to || location.pathname.startsWith(to + '/')
+  const currentUnprefixedPath = stripLocale(location.pathname)
+  const isActive = (to: string) =>
+    currentUnprefixedPath === to || currentUnprefixedPath.startsWith(to + '/')
   const isProductActive = PRODUCT_ITEMS.some(({ to }) => isActive(to))
   const isStoryActive = NAV_LINKS.some(({ to }) => isActive(to))
 
@@ -266,6 +273,11 @@ export const LandLayout: React.FC = () => {
               <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={20} height={20} alt="Chainabit" className="rounded" />
             </a>
             <div className="mx-1 h-4 w-px bg-surface-border" />
+            <LanguageSwitcher
+              variant="compact"
+              onChange={(next, prev) => trackCta(`language:${prev}->${next}`, 'arena_header')}
+            />
+            <div className="mx-1 h-4 w-px bg-surface-border" />
             <Link to="/get-started" onClick={() => trackCta('Get Started', 'arena_header')}>
               <Button variant="ghost" size="sm">Get Started</Button>
             </Link>
@@ -408,6 +420,18 @@ export const LandLayout: React.FC = () => {
                 Chainabit
                 <ExternalLink size={11} aria-label="External link" />
               </a>
+            </div>
+            <div className="border-t border-surface-border pt-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
+                {t('nav.language', { defaultValue: 'Language' })}
+              </p>
+              <LanguageSwitcher
+                variant="menu"
+                onChange={(next, prev) => {
+                  setMobileOpen(false)
+                  trackCta(`language:${prev}->${next}`, 'arena_header_mobile')
+                }}
+              />
             </div>
             <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
               <Link to="/get-started" onClick={() => { setMobileOpen(false); trackCta('Get Started', 'arena_header_mobile') }}>
