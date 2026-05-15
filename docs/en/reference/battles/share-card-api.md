@@ -5,6 +5,9 @@ description: "GET /v1/battles/:slug/share-card.svg — the 1200×630 social shar
 
 # Battle Share-Card API
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 The share-card endpoint renders a 1200×630 social-card SVG for a single battle. It is the surface `BattleSEOHead` points `og:image` at, so every public battle URL gets a crawler-ready preview without any client-side rendering.
 
 The endpoint is implemented by `apps/platform-api/src/http/routes/battles-share-card.route.ts` and is mounted on the platform API.
