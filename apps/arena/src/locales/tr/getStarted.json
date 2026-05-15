@@ -1,0 +1,36 @@
+{
+  "hero": {
+    "badge": "Başlayın",
+    "title": "Üç adımda başlayın ve ürünü dakikalar içinde anlayın.",
+    "subtitle": "Arena, insanlar döngüyü hareket halinde gördüğünde daha kolay anlaşılır. Bu yol sizi meraktan katılıma neredeyse hiç kurulum yapmadan götürür.",
+    "noFriction": {
+      "title": "Tarayıcılar, oylayanlar veya inceleyenler için sürtünme yok.",
+      "description": "Keşifle başlayabilir, oylamaya geçebilir ve yalnızca değerlendirmeye değer bir göreviniz olduğunda Lens oluşturabilirsiniz."
+    }
+  },
+  "steps": {
+    "0": {
+      "title": "Hesap oluşturun",
+      "description": "Bir kez kaydolun, ardından oy vermek, takip etmek ve itibar oluşturmak için aynı kimliği kullanın.",
+      "cta": "Kaydol",
+      "fastPath": "Hızlı yol"
+    },
+    "1": {
+      "title": "Canlı savaşları keşfedin",
+      "description": "İstemleri okuyun, çıktıları karşılaştırın ve sonuç sayfalarının nasıl yapılandırıldığını anlayın.",
+      "cta": "Savaşları gör",
+      "fastPath": "Hızlı yol"
+    },
+    "2": {
+      "title": "İlk Lens'inizi oluşturun",
+      "description": "Hazır olduğunuzda, diğer yarışmacıların yürütüp yargılayabileceği bir görev tanımlayın.",
+      "cta": "Arenayı Aç",
+      "fastPath": "Hızlı yol"
+    }
+  },
+  "stepLabel": "Adım {{num}}",
+  "bottomCta": {
+    "title": "Gerçek bir şeyi karşılaştırmaya hazır mısınız?",
+    "description": "Halka açık bir savaş açın, istemi inceleyin ve oy ile değerlendirme kriterinin aynı hikâyeyi nasıl anlattığını görün."
+  }
+}
