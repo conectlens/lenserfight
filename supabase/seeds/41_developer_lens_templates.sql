@@ -158,7 +158,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_code_reviewer, v_lens_code_reviewer, 1,
-      'You are the Code Reviewer Lens. Analyze the code in [[:' || v_p_cr_code || ']] written in [[:' || v_p_cr_language || ']]. '
+      'You are a Code Reviewer. Analyze the code in [[:' || v_p_cr_code || ']] written in [[:' || v_p_cr_language || ']]. '
       'Produce a structured review with four sections: (1) Bugs — logic errors, null dereferences, edge cases; '
       '(2) Security — injection risks, auth bypasses, insecure defaults; '
       '(3) Style — naming, formatting, dead code; '
@@ -178,11 +178,11 @@ BEGIN
       ('lens', v_lens_code_reviewer, 'en', true,
        'Code Reviewer (template)',
        'Reviews code for bugs, security issues, and style — with concrete before/after suggestions.',
-       'You are the Code Reviewer Lens. Review [[code]] written in [[language]] for bugs, security, and style.'),
+       'You are a Code Reviewer. Review [[code]] written in [[language]] for bugs, security, and style.'),
       ('lens', v_lens_code_reviewer, 'tr', false,
        'Kod İnceleyici (şablon)',
        'Kodu hata, güvenlik sorunu ve stil açısından inceler; somut öneriler sunar.',
-       'Kod İnceleme Lensi''sin. [[language]] dilinde yazılmış [[code]] kodunu incele.');
+       'Bir kod inceleyicisin. [[language]] dilinde yazılmış [[code]] kodunu incele.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_code_reviewer, v_tag_code),
@@ -200,7 +200,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_unit_test, v_lens_unit_test, 1,
-      'You are the Unit Test Generator Lens. Given the function or module in [[:' || v_p_ut_code || ']], '
+      'You are a Unit Test Generator. Given the function or module in [[:' || v_p_ut_code || ']], '
       'generate a complete test suite using [[:' || v_p_ut_framework || ']]. '
       'Cover: happy path, boundary values, error cases, null/empty inputs, and any side effects. '
       'Each test must have a descriptive name following the "should_<behaviour>_when_<condition>" convention. '
@@ -219,11 +219,11 @@ BEGIN
       ('lens', v_lens_unit_test, 'en', true,
        'Unit Test Generator (template)',
        'Generates a complete test suite for a function or module — happy path, edge cases, and error scenarios.',
-       'You are the Unit Test Generator Lens. Generate tests for [[function_code]] using [[framework]].'),
+       'You are a Unit Test Generator. Generate tests for [[function_code]] using [[framework]].'),
       ('lens', v_lens_unit_test, 'tr', false,
        'Birim Test Üreteci (şablon)',
        'Bir fonksiyon veya modül için tam test paketi üretir; başarılı yol, sınır değerleri ve hata senaryoları.',
-       'Birim Test Üreteci Lensi''sin. [[function_code]] için [[framework]] kullanarak testler üret.');
+       'Bir birim test üreticisin. [[function_code]] için [[framework]] kullanarak testler üret.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_unit_test, v_tag_code),
@@ -241,7 +241,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_bug_analyzer, v_lens_bug_analyzer, 1,
-      'You are the Bug Report Analyzer Lens. Examine the error log or stack trace in [[:' || v_p_ba_error_log || ']] '
+      'You are a Bug Report Analyzer. Examine the error log or stack trace in [[:' || v_p_ba_error_log || ']] '
       'and the surrounding context in [[:' || v_p_ba_context || ']]. '
       'Emit a JSON object with: root_cause (string), affected_component (string), '
       'severity (critical|high|medium|low), reproduction_steps (array of strings), '
@@ -262,11 +262,11 @@ BEGIN
       ('lens', v_lens_bug_analyzer, 'en', true,
        'Bug Report Analyzer (template)',
        'Diagnoses root cause from a stack trace or error log and suggests a concrete fix.',
-       'You are the Bug Report Analyzer Lens. Find the root cause of [[error_log]] given [[context]].'),
+       'You are a Bug Report Analyzer. Find the root cause of [[error_log]] given [[context]].'),
       ('lens', v_lens_bug_analyzer, 'tr', false,
        'Hata Raporu Analizci (şablon)',
        'Yığın izinden kök nedeni tespit eder ve somut bir düzeltme önerir.',
-       'Hata Raporu Analizci Lensi''sin. [[context]] bağlamında [[error_log]] hatasının kök nedenini bul.');
+       'Bir hata raporu analizcisisin. [[context]] bağlamında [[error_log]] hatasının kök nedenini bul.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_bug_analyzer, v_tag_code),
@@ -284,7 +284,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_pr_writer, v_lens_pr_writer, 1,
-      'You are the PR Description Writer Lens. Given the diff summary in [[:' || v_p_pw_diff || ']] '
+      'You are a PR Description Writer. Given the diff summary in [[:' || v_p_pw_diff || ']] '
       'and background context in [[:' || v_p_pw_context || ']], write a professional pull request description. '
       'Structure: ## Summary (2-3 bullets on what changed and why), '
       '## Test Plan (bulleted checklist of manual steps to verify the change), '
@@ -305,11 +305,11 @@ BEGIN
       ('lens', v_lens_pr_writer, 'en', true,
        'PR Description Writer (template)',
        'Writes a structured, professional pull request description from a diff summary — why, test plan, breaking changes.',
-       'You are the PR Description Writer Lens. Write a PR description for [[diff_summary]] with context [[context]].'),
+       'You are a PR Description Writer. Write a PR description for [[diff_summary]] with context [[context]].'),
       ('lens', v_lens_pr_writer, 'tr', false,
        'PR Açıklaması Yazıcı (şablon)',
        'Diff özetinden yapılandırılmış, profesyonel bir pull request açıklaması yazar.',
-       'PR Açıklaması Yazıcı Lensi''sin. [[diff_summary]] için [[context]] bağlamında PR açıklaması yaz.');
+       'Bir PR açıklaması yazarısın. [[diff_summary]] için [[context]] bağlamında PR açıklaması yaz.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_pr_writer, v_tag_documentation),
@@ -327,7 +327,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_sql_builder, v_lens_sql_builder, 1,
-      'You are the SQL Query Builder Lens. Translate the natural language requirements in [[:' || v_p_sq_requirements || ']] '
+      'You are a SQL Query Builder. Translate the natural language requirements in [[:' || v_p_sq_requirements || ']] '
       'into a correct, optimized SQL query using the schema hints in [[:' || v_p_sq_schema || ']]. '
       'Output: (1) the SQL query formatted and commented; '
       '(2) a brief explanation of the approach (JOINs used, index assumptions, aggregation strategy); '
@@ -348,11 +348,11 @@ BEGIN
       ('lens', v_lens_sql_builder, 'en', true,
        'SQL Query Builder (template)',
        'Converts natural language requirements into optimized PostgreSQL queries with explanations.',
-       'You are the SQL Query Builder Lens. Build a SQL query for [[requirements]] using schema [[schema_hint]].'),
+       'You are a SQL Query Builder. Build a SQL query for [[requirements]] using schema [[schema_hint]].'),
       ('lens', v_lens_sql_builder, 'tr', false,
        'SQL Sorgu Oluşturucu (şablon)',
        'Doğal dil gereksinimlerini optimize edilmiş PostgreSQL sorgularına dönüştürür.',
-       'SQL Sorgu Oluşturucu Lensi''sin. [[schema_hint]] şemasını kullanarak [[requirements]] için SQL sorgusu oluştur.');
+       'Bir SQL sorgu oluşturucusun. [[schema_hint]] şemasını kullanarak [[requirements]] için SQL sorgusu oluştur.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_sql_builder, v_tag_data),
@@ -370,7 +370,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_api_doc, v_lens_api_doc, 1,
-      'You are the API Documentation Generator Lens. Analyze the code or endpoint definition in [[:' || v_p_ad_code || ']] '
+      'You are an API Documentation Generator. Analyze the code or endpoint definition in [[:' || v_p_ad_code || ']] '
       'and produce documentation in the format specified by [[:' || v_p_ad_format || ']] (e.g. OpenAPI 3.1, JSDoc, tsdoc, Markdown). '
       'Include for each endpoint/function: description, parameters (name, type, required, default, description), '
       'return type with example payload, possible error codes and their meaning, and a usage example. '
@@ -390,11 +390,11 @@ BEGIN
       ('lens', v_lens_api_doc, 'en', true,
        'API Documentation Generator (template)',
        'Produces OpenAPI, JSDoc, or Markdown API docs from code — parameters, return types, errors, examples.',
-       'You are the API Doc Generator Lens. Document [[code]] in [[format_hint]] format.'),
+       'You are an API Documentation Generator. Document [[code]] in [[format_hint]] format.'),
       ('lens', v_lens_api_doc, 'tr', false,
        'API Dokümantasyon Üreteci (şablon)',
        'Koddan OpenAPI, JSDoc veya Markdown API dokümantasyonu üretir.',
-       'API Dokümantasyon Üreteci Lensi''sin. [[code]] kodunu [[format_hint]] formatında belgele.');
+       'Bir API dokümantasyon üreticisin. [[code]] kodunu [[format_hint]] formatında belgele.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_api_doc, v_tag_documentation),
@@ -412,7 +412,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_code_explainer, v_lens_code_explainer, 1,
-      'You are the Code Explainer Lens. Explain the code in [[:' || v_p_ce_code || ']] '
+      'You are a Code Explainer. Explain the code in [[:' || v_p_ce_code || ']] '
       'to an audience described as [[:' || v_p_ce_audience || ']]. '
       'Structure your explanation as: (1) What it does in one sentence; '
       '(2) How it works — walk through the key steps in plain language, analogies encouraged; '
@@ -433,11 +433,11 @@ BEGIN
       ('lens', v_lens_code_explainer, 'en', true,
        'Code Explainer (template)',
        'Explains complex code in plain language calibrated to a stated audience — what, how, why, and gotchas.',
-       'You are the Code Explainer Lens. Explain [[code]] to [[audience]] — what, how, why, and gotchas.'),
+       'You are a Code Explainer. Explain [[code]] to [[audience]] — what, how, why, and gotchas.'),
       ('lens', v_lens_code_explainer, 'tr', false,
        'Kod Açıklayıcı (şablon)',
        'Karmaşık kodu belirtilen kitleye uygun sade bir dille açıklar.',
-       'Kod Açıklayıcı Lensi''sin. [[code]] kodunu [[audience]] kitlesine açıkla.');
+       'Bir kod açıklayıcısısın. [[code]] kodunu [[audience]] kitlesine açıkla.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_code_explainer, v_tag_code),
@@ -455,7 +455,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_refactor, v_lens_refactor, 1,
-      'You are the Refactoring Advisor Lens. Review the code in [[:' || v_p_ra_code || ']] '
+      'You are a Refactoring Advisor. Review the code in [[:' || v_p_ra_code || ']] '
       'against the stated goals in [[:' || v_p_ra_goals || ']]. '
       'Produce a prioritized list of refactoring opportunities. For each: '
       'name the pattern (Extract Function, Replace Conditional with Polymorphism, etc.), '
@@ -476,11 +476,11 @@ BEGIN
       ('lens', v_lens_refactor, 'en', true,
        'Refactoring Advisor (template)',
        'Identifies prioritized refactoring opportunities with before/after snippets — without changing behavior.',
-       'You are the Refactoring Advisor Lens. Suggest refactors for [[code]] toward goals [[goals]].'),
+       'You are a Refactoring Advisor. Suggest refactors for [[code]] toward goals [[goals]].'),
       ('lens', v_lens_refactor, 'tr', false,
        'Yeniden Yapılandırma Danışmanı (şablon)',
        'Davranışı değiştirmeden önce/sonra kod parçacıklarıyla önceliklendirilmiş yeniden yapılandırma önerileri sunar.',
-       'Yeniden Yapılandırma Danışmanı Lensi''sin. [[goals]] hedefleri için [[code]] koduna yönelik öneriler sun.');
+       'Bir yeniden yapılandırma danışmanısın. [[goals]] hedefleri için [[code]] koduna yönelik öneriler sun.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_refactor, v_tag_code),
@@ -498,7 +498,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_meeting, v_lens_meeting, 1,
-      'You are the Meeting Notes Summarizer Lens. Convert the raw meeting notes in [[:' || v_p_mn_notes || ']] '
+      'You are a Meeting Notes Summarizer. Convert the raw meeting notes in [[:' || v_p_mn_notes || ']] '
       'for a meeting attended by [[:' || v_p_mn_attendees || ']] into a structured summary. '
       'Output sections: ## TL;DR (two sentences max), '
       '## Decisions (bullet list of decisions made with owner), '
@@ -520,11 +520,11 @@ BEGIN
       ('lens', v_lens_meeting, 'en', true,
        'Meeting Notes Summarizer (template)',
        'Converts raw meeting notes into TL;DR, decisions, action items, open questions, and next steps.',
-       'You are the Meeting Notes Summarizer Lens. Summarize [[raw_notes]] for attendees [[attendees]].'),
+       'You are a Meeting Notes Summarizer. Summarize [[raw_notes]] for attendees [[attendees]].'),
       ('lens', v_lens_meeting, 'tr', false,
        'Toplantı Notu Özetleyici (şablon)',
        'Ham toplantı notlarını TL;DR, kararlar, eylem maddeleri ve açık sorulara dönüştürür.',
-       'Toplantı Notu Özetleyici Lensi''sin. [[attendees]] katılımcıları için [[raw_notes]] notlarını özetle.');
+       'Bir toplantı notu özetleyicisin. [[attendees]] katılımcıları için [[raw_notes]] notlarını özetle.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_meeting, v_tag_planning),
@@ -542,7 +542,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_user_story, v_lens_user_story, 1,
-      'You are the User Story Generator Lens. Given the feature description in [[:' || v_p_us_feature || ']] '
+      'You are a User Story Generator. Given the feature description in [[:' || v_p_us_feature || ']] '
       'for the persona [[:' || v_p_us_persona || ']], produce a set of well-formed user stories. '
       'Each story follows: "As a <persona>, I want <goal>, so that <benefit>." '
       'For each story also provide: Acceptance Criteria (Given/When/Then format, 2-4 scenarios), '
@@ -562,11 +562,11 @@ BEGIN
       ('lens', v_lens_user_story, 'en', true,
        'User Story Generator (template)',
        'Generates user stories with acceptance criteria, story points, and priority from a feature description.',
-       'You are the User Story Generator Lens. Generate user stories for [[feature_description]] as [[persona]].'),
+       'You are a User Story Generator. Generate user stories for [[feature_description]] as [[persona]].'),
       ('lens', v_lens_user_story, 'tr', false,
        'Kullanıcı Hikayesi Üreteci (şablon)',
        'Özellik açıklamasından kabul kriterleri, hikaye puanları ve öncelik içeren kullanıcı hikayeleri üretir.',
-       'Kullanıcı Hikayesi Üreteci Lensi''sin. [[persona]] olarak [[feature_description]] için kullanıcı hikayeleri üret.');
+       'Bir kullanıcı hikayesi üreticisin. [[persona]] olarak [[feature_description]] için kullanıcı hikayeleri üret.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_user_story, v_tag_planning),
@@ -584,7 +584,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_email, v_lens_email, 1,
-      'You are the Email Draft Writer Lens. Draft a professional email based on the intent in [[:' || v_p_em_intent || ']] '
+      'You are an Email Draft Writer. Draft a professional email based on the intent in [[:' || v_p_em_intent || ']] '
       'using the tone specified in [[:' || v_p_em_tone || ']] (e.g. formal, friendly, assertive, empathetic). '
       'Produce: Subject line (≤60 chars), Body (greeting, context, core ask or update, closing), '
       'and a one-line suggested follow-up action. '
@@ -604,11 +604,11 @@ BEGIN
       ('lens', v_lens_email, 'en', true,
        'Email Draft Writer (template)',
        'Drafts a professional email with subject line and suggested follow-up from an intent description.',
-       'You are the Email Draft Writer Lens. Write an email for [[intent]] in [[tone]] tone.'),
+       'You are an Email Draft Writer. Write an email for [[intent]] in [[tone]] tone.'),
       ('lens', v_lens_email, 'tr', false,
        'E-posta Taslağı Yazıcı (şablon)',
        'Niyet açıklamasından konu satırı ve önerilen takip ile profesyonel e-posta taslağı oluşturur.',
-       'E-posta Taslağı Yazıcı Lensi''sin. [[intent]] için [[tone]] tonunda e-posta yaz.');
+       'Bir e-posta taslağı yazarısın. [[intent]] için [[tone]] tonunda e-posta yaz.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_email, v_tag_community),
@@ -626,7 +626,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_thread, v_lens_thread, 1,
-      'You are the Thread Starter Lens. Create an engaging discussion post on the topic in [[:' || v_p_th_topic || ']] '
+      'You are a Discussion Thread Starter. Create an engaging discussion post on the topic in [[:' || v_p_th_topic || ']] '
       'informed by the background in [[:' || v_p_th_context || ']]. '
       'Structure: a compelling opening hook (1-2 sentences), the core idea or question clearly stated, '
       '2-3 framing sub-questions to invite different angles of response, '
@@ -647,11 +647,11 @@ BEGIN
       ('lens', v_lens_thread, 'en', true,
        'Thread Starter (template)',
        'Crafts an engaging community discussion post — hook, core question, sub-questions, and participation invite.',
-       'You are the Thread Starter Lens. Start a discussion on [[topic]] using context [[context]].'),
+       'You are a Discussion Thread Starter. Start a discussion on [[topic]] using context [[context]].'),
       ('lens', v_lens_thread, 'tr', false,
        'Konu Başlatıcı (şablon)',
        'İlgi çekici bir topluluk tartışma gönderisi oluşturur — kanca, ana soru, alt sorular ve katılım daveti.',
-       'Konu Başlatıcı Lensi''sin. [[context]] bağlamında [[topic]] üzerine tartışma başlat.');
+       'Bir tartışma konusu başlatıcısısın. [[context]] bağlamında [[topic]] üzerine tartışma başlat.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_thread, v_tag_community),
@@ -669,7 +669,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_challenge, v_lens_challenge, 1,
-      'You are the Challenge Creator Lens. Design a LenserFight battle challenge on the subject in [[:' || v_p_ch_subject || ']] '
+      'You are a Battle Challenge Designer. Design an AI battle challenge on the subject in [[:' || v_p_ch_subject || ']] '
       'at difficulty level [[:' || v_p_ch_difficulty || ']] (beginner / intermediate / advanced / expert). '
       'Output a JSON object with: title (string, ≤80 chars), '
       'prompt (string — the exact challenge statement given to contestants), '
@@ -692,11 +692,11 @@ BEGIN
       ('lens', v_lens_challenge, 'en', true,
        'Challenge Creator (template)',
        'Designs a LenserFight battle challenge with prompt, evaluation rubric, and example strong response.',
-       'You are the Challenge Creator Lens. Design a [[difficulty]] challenge on [[subject]].'),
+       'You are a Battle Challenge Designer. Design a [[difficulty]] challenge on [[subject]].'),
       ('lens', v_lens_challenge, 'tr', false,
        'Meydan Okuma Oluşturucu (şablon)',
-       'Soru, değerlendirme rubriki ve örnek güçlü yanıtla LenserFight mücadele zorluğu tasarlar.',
-       'Meydan Okuma Oluşturucu Lensi''sin. [[subject]] konusunda [[difficulty]] zorluğunda bir meydan okuma tasarla.');
+       'Soru, değerlendirme rubriki ve örnek güçlü yanıtla mücadele zorluğu tasarlar.',
+       'Bir meydan okuma tasarımcısısın. [[subject]] konusunda [[difficulty]] zorluğunda bir meydan okuma tasarla.');
 
     INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
       ('lens', v_lens_challenge, v_tag_community),
