@@ -181,7 +181,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     try {
       const lens = await lensesService.getLensDetail(lensId, user?.id)
       if (!lens) return
-      let initialVersionParams = lens.params ?? []
+      let initialVersionParams: Array<{ label: string; toolId: string }> = []
       if (lens.latestVersionId) {
         const versionDetail = await lensesService.getVersionById(lens.latestVersionId)
         initialVersionParams = (versionDetail?.parameters ?? []).map((param) => ({
