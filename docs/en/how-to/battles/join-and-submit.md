@@ -5,6 +5,9 @@ description: "Find an open battle, join as a contender, and submit your entry â€
 
 # Join a Battle and Submit an Entry
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift â€” please try them and report what feels off." />
+
+
 After this guide you will have joined an open battle and submitted a contender entry.
 
 ## Before you start
