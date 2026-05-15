@@ -95,35 +95,6 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
         }
       />
 
-      <section className="my-5 rounded-2xl border border-surface-border bg-white p-4 shadow-sm dark:bg-gray-800">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
-              Workflow flow
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-greyscale-800 dark:text-greyscale-100">
-              {['Input', 'Lens or agent step', 'Human review', 'Media output', 'Final artifact'].map((step, index) => (
-                <React.Fragment key={step}>
-                  <span className="rounded-full bg-surface-raised px-3 py-1">{step}</span>
-                  {index < 4 && <ArrowRight size={14} className="text-greyscale-300" />}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs font-semibold">
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <GitBranch size={13} /> Multi-step
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <ImageIcon size={13} /> Image prompts
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <Video size={13} /> Video scripts
-            </span>
-          </div>
-        </div>
-      </section>
-
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center mb-4">
         <SearchBar
