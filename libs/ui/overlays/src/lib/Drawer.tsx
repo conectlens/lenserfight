@@ -22,6 +22,7 @@ export interface DrawerProps {
    */
   height?: string
   children: React.ReactNode
+  footer?: React.ReactNode
   dismissOnBackdrop?: boolean
   className?: string
 }
@@ -82,6 +83,7 @@ export const Drawer: React.FC<DrawerProps> = ({
   width = 'w-80',
   height = 'h-80',
   children,
+  footer,
   dismissOnBackdrop = true,
   className = '',
 }) => {
@@ -156,10 +158,16 @@ export const Drawer: React.FC<DrawerProps> = ({
             </div>
           )}
 
-          {/* Content */}
           <div className="flex-1 overflow-y-auto overscroll-contain p-5">
             {children}
           </div>
+
+          {/* Footer */}
+          {footer && (
+            <div className="px-5 pb-5 flex-shrink-0">
+              {footer}
+            </div>
+          )}
         </div>
       </div>
     </Portal>
