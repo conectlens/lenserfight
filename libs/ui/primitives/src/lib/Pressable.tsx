@@ -1,10 +1,41 @@
 import React from 'react'
 
-export interface PressableProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Triggered on click/press (alias for onClick with web compatibility) */
-  onPress?: (event: React.MouseEvent<HTMLButtonElement>) => void
+export interface PressableProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onPress' | 'style'> {
+  /** Triggered on click/press. Native callers pass `() => void`; web internals pass MouseEvent. */
+  onPress?: ((event: React.MouseEvent<HTMLButtonElement>) => void) | (() => void)
+  onLongPress?: () => void
   /** Whether this is a purely visual pressable (no semantic button role) */
   asChild?: boolean
+  /** Native-only: opt-in haptic feedback. Ignored on web. */
+  haptic?: boolean
+  /** Native-only: pressed opacity (0–1). Ignored on web. */
+  pressedOpacity?: number
+  /**
+   * Style. On web this is a CSSProperties object; on native this can be a ViewStyle
+   * or an array of ViewStyle entries. Accept a loose type so shared call-sites typecheck.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  style?: any
+  /** Native accessibility props. Ignored on web (web uses aria-* attributes). */
+  accessible?: boolean
+  accessibilityLabel?: string
+  accessibilityRole?:
+    | 'button'
+    | 'link'
+    | 'menuitem'
+    | 'tab'
+    | 'none'
+    | 'checkbox'
+    | 'radio'
+    | 'switch'
+  accessibilityHint?: string
+  accessibilityState?: {
+    disabled?: boolean
+    checked?: boolean | 'mixed'
+    selected?: boolean
+  }
+  testID?: string
 }
 
 /**
@@ -19,9 +50,33 @@ export interface PressableProps extends React.ButtonHTMLAttributes<HTMLButtonEle
  * </Pressable>
  */
 export const Pressable = React.forwardRef<HTMLButtonElement, PressableProps>(
-  ({ onPress, onClick, disabled, className = '', children, type = 'button', ...props }, ref) => {
+  (
+    {
+      onPress,
+      onClick,
+      onLongPress,
+      disabled,
+      className = '',
+      children,
+      type = 'button',
+      // Drop native-only props so they don't end up on the DOM node.
+      haptic: _haptic,
+      pressedOpacity: _pressedOpacity,
+      accessible: _accessible,
+      accessibilityLabel,
+      accessibilityRole: _accessibilityRole,
+      accessibilityHint: _accessibilityHint,
+      accessibilityState: _accessibilityState,
+      testID,
+      style,
+      asChild: _asChild,
+      ...props
+    },
+    ref
+  ) => {
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      onPress?.(e)
+      // The function-form onPress (native shape) is also callable with no args.
+      ;(onPress as ((event: React.MouseEvent<HTMLButtonElement>) => void) | undefined)?.(e)
       onClick?.(e)
     }
 
@@ -31,6 +86,9 @@ export const Pressable = React.forwardRef<HTMLButtonElement, PressableProps>(
         type={type}
         disabled={disabled}
         onClick={handleClick}
+        aria-label={accessibilityLabel}
+        data-testid={testID}
+        style={style}
         className={`
           inline-flex items-center justify-center
           cursor-pointer
