@@ -1,6 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentsService, lensesService } from '@lenserfight/data/repositories'
-import { Drawer } from '@lenserfight/ui/overlays'
+import { Button } from '@lenserfight/ui/components'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bot, Plus } from 'lucide-react'
 import React, { useState } from 'react'
@@ -91,12 +92,14 @@ export const InstructionsSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Instructions"
+      docsPath="/how-to/agents/workspace/instructions"
+      docsTip="Bind a versioned lens as the default system prompt. Owner-only and version-pinned — promoting a new lens version requires an explicit rebind."
       title="Instruction lens binding"
       description="Bind a versioned lens as the default instruction source for this agent. Instructions stay versioned, reusable, and consistent across runs."
       toolbar={
         <a
           href="/lenses"
-          className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+          className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200"
         >
           Open lens studio
         </a>
@@ -130,14 +133,13 @@ export const InstructionsSection: React.FC = () => {
               description="Bind a lens version so this agent has a canonical instruction source instead of ad hoc text."
             >
               <div className="mt-6 flex justify-center">
-                <button
+                <Button
                   type="button"
                   onClick={openCreateLensDrawer}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
                 >
                   <Plus size={14} />
                   Create instruction lens
-                </button>
+                </Button>
               </div>
             </EmptyPanel>
           )}
@@ -166,7 +168,31 @@ export const InstructionsSection: React.FC = () => {
         onClose={() => setCreateLensDrawer(false)}
         side="right"
         width="w-[480px]"
-        title="Create a new lens"
+        title="Draft new lens"
+        footer={
+          <DrawerFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setCreateLensDrawer(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (newLensTitle.trim() && newLensContent.trim()) {
+                  createLens.mutate({ title: newLensTitle.trim(), content: newLensContent.trim() })
+                }
+              }}
+              disabled={createLens.isPending || !newLensTitle.trim() || newLensContent.trim().length < 50}
+              isLoading={createLens.isPending}
+            >
+              <Plus size={14} />
+              {createLens.isPending ? 'Creating…' : 'Create lens'}
+            </Button>
+          </DrawerFooter>
+        }
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -180,7 +206,7 @@ export const InstructionsSection: React.FC = () => {
               value={newLensTitle}
               onChange={(e) => setNewLensTitle(e.target.value)}
               placeholder="e.g. System instructions v1"
-              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             />
           </label>
           <label className="block">
@@ -192,7 +218,7 @@ export const InstructionsSection: React.FC = () => {
               value={newLensContent}
               onChange={(e) => setNewLensContent(e.target.value)}
               placeholder="Write the instruction content for this lens (at least 50 characters)..."
-              className="w-full resize-none rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              className="w-full resize-none rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             />
             <span className="mt-1 block text-xs text-gray-400 dark:text-gray-500">
               {newLensContent.length} / 50 min characters
@@ -203,28 +229,7 @@ export const InstructionsSection: React.FC = () => {
               {newLensError}
             </p>
           )}
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setCreateLensDrawer(false)}
-              className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (newLensTitle.trim() && newLensContent.trim()) {
-                  createLens.mutate({ title: newLensTitle.trim(), content: newLensContent.trim() })
-                }
-              }}
-              disabled={createLens.isPending || !newLensTitle.trim() || newLensContent.trim().length < 50}
-              className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-            >
-              <Plus size={14} />
-              {createLens.isPending ? 'Creating…' : 'Create lens'}
-            </button>
-          </div>
+
         </div>
       </Drawer>
     </SectionPage>
