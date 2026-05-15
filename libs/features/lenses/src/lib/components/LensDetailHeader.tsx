@@ -2,7 +2,7 @@ import { ForkNode, LensDetailViewModel } from '@lenserfight/types'
 import { Avatar, HelpButton } from '@lenserfight/ui/components'
 import { TagBadge } from '@lenserfight/ui/components'
 import { formatCount } from '@lenserfight/utils/number'
-import { GitFork, Lock, Bookmark, Pencil, Copy, Check, Loader2, Download } from 'lucide-react'
+import { GitFork, Lock, Bookmark, Pencil, Copy, Check, Loader2, Download, Plus } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -22,6 +22,7 @@ interface LensDetailHeaderProps {
   isForking?: boolean
   onExport?: () => void
   exportModal?: React.ReactNode
+  onCreate?: () => void
 }
 
 export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
@@ -39,6 +40,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
   isForking = false,
   onExport,
   exportModal,
+  onCreate,
 }) => {
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
@@ -72,8 +74,12 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
 
         <div className="flex items-center gap-2">
           <HelpButton
-            path="/tutorials/walkthroughs/create-a-lens"
+            path="/explanation/lenses/what-is-a-lens"
             label="What is a Lens?"
+          />
+          <HelpButton
+            path="/tutorials/walkthroughs/create-a-lens"
+            label="How to create?"
           />
           {canEdit && onEdit && (
             <button
@@ -105,6 +111,18 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
               ) : (
                 <Copy size={18} className="transition-transform duration-200 group-active:scale-95" />
               )}
+            </button>
+          )}
+
+          {onCreate && (
+            <button
+              type="button"
+              onClick={onCreate}
+              className="group flex-shrink-0 rounded-2xl border border-surface-border bg-surface-base p-2.5 text-greyscale-500 transition-colors hover:border-primary-yellow-500 hover:text-primary-yellow-600"
+              aria-label="Create new lens"
+              title="Create Lens"
+            >
+              <Plus size={18} className="transition-transform duration-200 group-active:scale-95" />
             </button>
           )}
 
