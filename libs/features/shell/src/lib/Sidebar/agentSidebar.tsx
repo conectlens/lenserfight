@@ -9,7 +9,7 @@ import type { SidebarNavSectionConfig } from './sidebarModes'
 export function buildAgentSidebarSections(handle: string): SidebarNavSectionConfig[] {
   const base = `/lenser/${handle}/ag`
 
-  const sections = AGENT_NAV_ZONES.map((zone) => ({
+  const sections: SidebarNavSectionConfig[] = AGENT_NAV_ZONES.map((zone) => ({
     id: zone,
     label: ZONE_LABELS[zone],
     items: NAV_ITEMS
