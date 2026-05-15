@@ -43,7 +43,17 @@ export const useCreateLens = () => {
     })
   }, [textToolId])
 
-  const openModal = (initialData?: {
+  const resetForm = useCallback(() => {
+    setEditId(null)
+    setTitle('')
+    setContent('')
+    setTags([])
+    setVisibility('private')
+    setVersionParams([])
+    setError(null)
+  }, [])
+
+  const openModal = useCallback((initialData?: {
     id?: string
     title?: string
     content?: string
@@ -62,22 +72,12 @@ export const useCreateLens = () => {
       resetForm()
     }
     setIsOpen(true)
-  }
+  }, [resetForm])
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setIsOpen(false)
     resetForm()
-  }
-
-  const resetForm = () => {
-    setEditId(null)
-    setTitle('')
-    setContent('')
-    setTags([])
-    setVisibility('private')
-    setVersionParams([])
-    setError(null)
-  }
+  }, [resetForm])
 
   const submit = async (onSuccess?: (id: string) => void) => {
     if (!lenser) {
