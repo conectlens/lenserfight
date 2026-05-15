@@ -66,10 +66,23 @@ export const LocaleLanguageSelect: React.FC<LocaleLanguageSelectProps> = ({
   const openDropdown = useCallback(() => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect()
+      const dropdownWidth = Math.max(rect.width, 240)
+      const viewportWidth = window.innerWidth
+      
+      let left = rect.left + window.scrollX
+      
+      // If it overflows the right side of the viewport, align it to the right edge of the trigger
+      if (left + dropdownWidth > viewportWidth - 16) {
+        left = rect.right + window.scrollX - dropdownWidth
+      }
+      
+      // Ensure it doesn't overflow the left side either
+      left = Math.max(16, left)
+
       setCoords({
         top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: Math.max(rect.width, 240),
+        left,
+        width: dropdownWidth,
       })
     }
     setIsOpen(true)
@@ -130,10 +143,15 @@ export const LocaleLanguageSelect: React.FC<LocaleLanguageSelectProps> = ({
         createPortal(
           <div
             ref={dropdownRef}
-            className={`absolute z-[9999] bg-white dark:bg-[#121212] rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150 origin-top ${dropdownClassName ?? ''}`}
-            style={{ top: coords.top, left: coords.left, width: coords.width }}
+            className={`absolute z-[9999] bg-white dark:bg-[#121212] rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150 origin-top flex flex-col ${dropdownClassName ?? ''}`}
+            style={{ 
+              top: coords.top, 
+              left: coords.left, 
+              width: coords.width,
+              maxHeight: `calc(100vh - ${coords.top - window.scrollY + 16}px)`
+            }}
           >
-            <div className="p-1.5 flex flex-col gap-0.5">
+            <div className="p-1.5 flex flex-col gap-0.5 overflow-y-auto generations-scroll flex-1">
               {LOCALES.map((locale) => {
                 const active = isActive(locale)
                 const incomplete = locale.status !== 'stable'
