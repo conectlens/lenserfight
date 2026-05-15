@@ -50,12 +50,12 @@ export const xpService = {
     return repo.getContributions(lenserId)
   },
 
-  getActiveSeason: async (appId = XP_APP_IDS.forum): Promise<XPSeason | null> => {
+  getActiveSeason: async (appId: string = XP_APP_IDS.forum): Promise<XPSeason | null> => {
     return repo.getActiveSeason(appId)
   },
 
   getSeasonLeaderboard: async (
-    appId = XP_APP_IDS.forum,
+    appId: string = XP_APP_IDS.forum,
     seasonId?: string,
     limit = 20,
     offset = 0
@@ -71,7 +71,7 @@ export const xpService = {
     return repo.getLevelUps(lenserId, limit)
   },
 
-  getSeasonList: async (appId = XP_APP_IDS.forum): Promise<XPSeasonV2[]> => {
+  getSeasonList: async (appId: string = XP_APP_IDS.forum): Promise<XPSeasonV2[]> => {
     return repo.getSeasonList(appId)
   },
 
