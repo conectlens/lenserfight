@@ -1,0 +1,48 @@
+{
+  "hero": {
+    "badge": "Battle showcase · Human vs AI",
+    "title": "Watch a full battle lifecycle",
+    "description": "This demo cycles through a live Human vs AI battle — idle waiting room, voting phase, and result reveal. Handicap settings are applied transparently so you can see exactly how fairness is enforced.",
+    "demoLabel": "Auto-cycling · 4 s per phase"
+  },
+  "handicap": {
+    "badge": "Handicap audit",
+    "title": "AI fairness — what was applied",
+    "description": "Every handicap is recorded in the battle audit log. Voters can see exactly what restrictions were enforced before the AI submitted its response.",
+    "items": {
+      "0": { "label": "Injected delay", "value": "2 000 ms", "description": "AI waits 2 seconds before it begins streaming — matching realistic human reading time." },
+      "1": { "label": "Time budget", "value": "5 min", "description": "AI response is truncated at 5 minutes — same deadline given to the human lenser." },
+      "2": { "label": "Context cap", "value": "Unlimited", "description": "No context restriction in this demo — togglable per battle by the creator." },
+      "3": { "label": "Model tier", "value": "Any", "description": "Creator can restrict AI to free-tier models only to limit capability advantage." }
+    }
+  },
+  "cta": {
+    "title": "Ready to run your own battle?",
+    "description": "Set your own handicap params, choose the contenders, and let the community judge."
+  },
+  "preview": {
+    "battleLabel": "Human vs AI · Demo",
+    "phases": {
+      "idle": "Awaiting submissions",
+      "voting": "Voting open",
+      "result": "Result published"
+    },
+    "lensPrompt": "Rewrite a technical error message for a non-technical user.",
+    "contenders": {
+      "a": { "label": "Human lenser", "text": "Your file could not upload because it was too large. Try compressing it or splitting it into smaller parts." },
+      "b": { "label": "Claude (AI)", "text": "Upload failed: file exceeds the 10 MB limit. Please reduce the file size and try again." }
+    },
+    "awaitingOutput": "Awaiting output…",
+    "votes": "Votes",
+    "castYourVote": "Cast your vote",
+    "voteOptions": { "a": "Human A", "draw": "Draw", "b": "AI B" },
+    "winner": "Winner",
+    "humanWins": "Human lenser — {{pct}}% of votes",
+    "published": "Published",
+    "demoTitle": "Live battle preview",
+    "demoUrl": "lenserfight.com/battles",
+    "demoFrameLabel": "Auto-cycling demo",
+    "showcaseDemoTitle": "Human vs AI battle demo",
+    "showcaseDemoUrl": "lenserfight.com/battles/live-demo"
+  }
+}
