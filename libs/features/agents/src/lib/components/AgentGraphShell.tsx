@@ -145,7 +145,7 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
       <div
         ref={containerRef}
-        className="relative min-h-[560px] overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
+        className="relative min-h-[560px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-surface-raised"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
