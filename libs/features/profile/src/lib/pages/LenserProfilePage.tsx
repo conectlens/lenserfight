@@ -10,6 +10,7 @@ import {
 import { AgentCard } from '@lenserfight/features/agents'
 import { useAuth } from '@lenserfight/features/auth'
 import { ThreadsListCard } from '@lenserfight/features/home'
+import { ExportButton } from '@lenserfight/features/exports'
 import { CreateLensModal, LensCard, useCreateLens } from '@lenserfight/features/lenses'
 import { useShareContext } from '@lenserfight/features/share'
 import { CreateThreadModal } from '@lenserfight/features/threads'
