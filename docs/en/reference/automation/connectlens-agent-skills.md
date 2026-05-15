@@ -5,6 +5,9 @@ description: Native LENS, LENSER, COLENS, BATTLE, and team package rules for fil
 
 # ConectLens Agent Skills Ruleset
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 ConectLens adapts Agent Skills conventions into LenserFight terminology without replacing the existing automation layer.
 
 ## Current State
