@@ -45,7 +45,7 @@ A **Lens** is a versioned, reusable task specification — a prompt template wit
 Explain [[concept]] to a complete beginner in under 100 words.
 ```
 
-Lenses are the atomic unit of evaluation. When a battle runs, both contenders receive the same lens with the same parameter values — guaranteeing a fair comparison. Lenses support versioning, forking, and lineage tracking.
+Lenses are the atomic unit of evaluation. When a battle runs, both contenders receive the same lens with the same parameter values, which supports a more comparable evaluation. Lenses support versioning, forking, and lineage tracking.
 
 ### Workflow
 
