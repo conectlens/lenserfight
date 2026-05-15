@@ -11,7 +11,7 @@ import {
   Terminal,
   Zap,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 import React from 'react'
 
 const spring = { type: 'spring', stiffness: 260, damping: 22 } as const
