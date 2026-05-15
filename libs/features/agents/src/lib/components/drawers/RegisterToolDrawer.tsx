@@ -1,6 +1,8 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { Drawer } from '@lenserfight/ui/overlays'
 import type { ToolAuthMethod, ToolRegistryRecord } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
 import React, { useEffect, useState } from 'react'
 
 import type { ToolTemplatePreset } from '../toolTemplates'
@@ -14,6 +16,7 @@ interface Props {
 }
 
 const AUTH_METHODS = ['none', 'api_key', 'oauth', 'service_account']
+const AUTH_METHOD_OPTIONS = AUTH_METHODS.map((m) => ({ value: m, label: m }))
 
 export const RegisterToolDrawer: React.FC<Props> = ({
   open,
@@ -100,11 +103,21 @@ export const RegisterToolDrawer: React.FC<Props> = ({
       onClose={onClose}
       side="right"
       width="w-[600px]"
-      title={isEdit ? 'Edit tool registration' : 'Register tool'}
+      title={isEdit ? 'Edit tool registry' : 'Register external tool'}
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          cancelVariant="outline"
+          onSubmit={handleSave}
+          submitLabel={submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Register'}
+          isLoading={submitting}
+          disabled={submitting || !key || !name}
+        />
+      }
     >
       <div className="space-y-4">
         {!isEdit && preset && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+          <div className="rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50/70 px-4 py-3 text-sm text-primary-yellow-800 dark:border-primary-yellow-500/20 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-200">
             Starting from template: <span className="font-semibold">{preset.label}</span>
           </div>
         )}
@@ -121,13 +134,12 @@ export const RegisterToolDrawer: React.FC<Props> = ({
           <Field label="Category">
             <input value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} />
           </Field>
-          <Field label="Auth method">
-            <select value={authMethod} onChange={(e) => setAuthMethod(e.target.value as ToolAuthMethod)} className={inputClass}>
-              {AUTH_METHODS.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </Field>
+          <SelectField
+            label="Auth method"
+            value={authMethod}
+            onChange={(v) => setAuthMethod(v as ToolAuthMethod)}
+            options={AUTH_METHOD_OPTIONS}
+          />
         </div>
         <Field label="Input schema (JSON)">
           <textarea rows={4} value={schemaInput} onChange={(e) => setSchemaInput(e.target.value)} className={`${inputClass} resize-none font-mono text-xs`} />
@@ -148,19 +160,14 @@ export const RegisterToolDrawer: React.FC<Props> = ({
         {error && (
           <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">{error}</p>
         )}
-        <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200">Cancel</button>
-          <button type="button" onClick={handleSave} disabled={submitting || !key || !name} className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900">
-            {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Register'}
-          </button>
-        </div>
+
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="block">
