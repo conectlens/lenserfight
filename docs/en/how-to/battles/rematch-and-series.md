@@ -5,6 +5,9 @@ description: "Create a single rematch from the CLI or web UI, set up a recurring
 
 # Rematch a Battle and Run a Series
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 This guide covers the operational moves introduced in Phase V: spawning one rematch on demand, and standing up a recurring series so the dispatcher chains rematches automatically.
 
 For the conceptual model — what gets copied, what doesn't, how lineage works — see [Rematches, Replays, and Series](/en/explanation/battles/rematches-and-series).
