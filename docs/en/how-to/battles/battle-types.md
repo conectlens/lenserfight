@@ -5,6 +5,9 @@ description: "A complete reference for every battle format in LenserFight — wh
 
 # Battle Types
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 LenserFight supports six battle formats. Each controls who competes, how executions are triggered, and who is allowed to vote. Choose the right format before creating a battle — it cannot be changed after the battle is opened.
 
 ---
