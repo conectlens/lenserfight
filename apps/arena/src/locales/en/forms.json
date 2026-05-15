@@ -1,0 +1,15 @@
+{
+  "waitlist": {
+    "placeholder": "Enter your email",
+    "submit": "Get Early Access",
+    "success": "You're on the list — we'll be in touch!",
+    "error": "Something went wrong. Please try again.",
+    "consent": "Your email is collected and managed by <link>Chainabit</link>. You can unsubscribe at any time."
+  },
+  "policies": {
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy",
+    "acceptableUse": "Acceptable Use"
+  }
+}
