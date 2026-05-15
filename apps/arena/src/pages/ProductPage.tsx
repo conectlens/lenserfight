@@ -22,7 +22,7 @@ import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
 import { chainabitContactUrl } from '../utils/chainabitUrls'
 
-const RUN_APP_URL = import.meta.env.ARENA_URL ?? 'https://moon.lenserfight.com'
+const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
 
 const spring = { type: 'spring', stiffness: 260, damping: 22 } as const
 const viewport = { once: true, margin: '-60px' } as const
@@ -121,19 +121,19 @@ export const ProductPage: React.FC = () => {
               const name = t(`product:primitives.items.${key}.name`)
               const title = t(`product:primitives.items.${key}.title`)
               return (
-              <motion.div key={key} variants={fadeUp}>
-                <Card className="h-full space-y-3 border-t-4 border-t-primary-yellow-500/40 p-4 transition-colors hover:border-t-primary-yellow-500">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
-                    <Icon size={18} />
-                  </div>
-                  <div className="space-y-1">
-                    <Badge color={badgeColor} variant="outline" size="sm">
-                      {name}
-                    </Badge>
-                    <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{title}</p>
-                  </div>
-                </Card>
-              </motion.div>
+                <motion.div key={key} variants={fadeUp}>
+                  <Card className="h-full space-y-3 border-t-4 border-t-primary-yellow-500/40 p-4 transition-colors hover:border-t-primary-yellow-500">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
+                      <Icon size={18} />
+                    </div>
+                    <div className="space-y-1">
+                      <Badge color={badgeColor} variant="outline" size="sm">
+                        {name}
+                      </Badge>
+                      <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{title}</p>
+                    </div>
+                  </Card>
+                </motion.div>
               )
             })}
           </motion.div>
@@ -165,31 +165,31 @@ export const ProductPage: React.FC = () => {
             const description = t(`product:primitives.items.${key}.description`)
             const capabilities = Array.from({ length: capCount }, (_, i) => t(`product:primitives.items.${key}.capabilities.${i}`))
             return (
-            <motion.div key={key} variants={fadeUp} className="flex flex-col">
-              <Card className="flex flex-1 flex-col space-y-4 border-t-4 border-t-primary-yellow-500/40 p-6 transition-colors hover:border-t-primary-yellow-500">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
-                  <Icon size={22} />
-                </div>
-                <div className="space-y-2">
-                  <Badge color={badgeColor} variant="outline" size="sm">
-                    {name}
-                  </Badge>
-                  <h3 className="text-lg font-bold text-greyscale-900 dark:text-greyscale-50">{title}</h3>
-                </div>
-                <p className="flex-1 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
-                <ul className="space-y-1.5">
-                  {capabilities.map((cap) => (
-                    <li
-                      key={cap}
-                      className="flex items-center gap-2 text-xs text-greyscale-600 dark:text-greyscale-400"
-                    >
-                      <CheckCircle size={12} className="shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400" />
-                      {cap}
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </motion.div>
+              <motion.div key={key} variants={fadeUp} className="flex flex-col">
+                <Card className="flex flex-1 flex-col space-y-4 border-t-4 border-t-primary-yellow-500/40 p-6 transition-colors hover:border-t-primary-yellow-500">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
+                    <Icon size={22} />
+                  </div>
+                  <div className="space-y-2">
+                    <Badge color={badgeColor} variant="outline" size="sm">
+                      {name}
+                    </Badge>
+                    <h3 className="text-lg font-bold text-greyscale-900 dark:text-greyscale-50">{title}</h3>
+                  </div>
+                  <p className="flex-1 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
+                  <ul className="space-y-1.5">
+                    {capabilities.map((cap) => (
+                      <li
+                        key={cap}
+                        className="flex items-center gap-2 text-xs text-greyscale-600 dark:text-greyscale-400"
+                      >
+                        <CheckCircle size={12} className="shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400" />
+                        {cap}
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              </motion.div>
             )
           })}
         </motion.div>
