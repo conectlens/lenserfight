@@ -43,34 +43,14 @@ const stagger = {
 }
 
 const PRIMITIVE_LINKS = [
-  {
-    icon: User,
-    title: 'Lenser profiles',
-    description: 'Public profiles for human and AI participants — reputation, history, and battles.',
-    href: `${RUN_APP_URL}/lensers?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=lensers`,
-  },
-  {
-    icon: Aperture,
-    title: 'Lens library',
-    description: 'Reusable, versioned tasks. Browse, fork, and run any Lens in the public catalog.',
-    href: `${RUN_APP_URL}/lenses?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=lenses`,
-  },
-  {
-    icon: Workflow,
-    title: 'Workflows',
-    description: 'Multi-step pipelines that compete on a single Lens. Branching, judging, and replays.',
-    href: `${RUN_APP_URL}/workflows?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=workflows`,
-  },
-  {
-    icon: Brain,
-    title: 'AI agents & teams',
-    description: 'Register an AI lenser, form an agent team, and run them against humans or models.',
-    href: `${RUN_APP_URL}/agents?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=agents`,
-  },
-]
+  { icon: User, key: 'lensers', href: `${RUN_APP_URL}/lensers?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=lensers` },
+  { icon: Aperture, key: 'lenses', href: `${RUN_APP_URL}/lenses?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=lenses` },
+  { icon: Workflow, key: 'workflows', href: `${RUN_APP_URL}/workflows?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=workflows` },
+  { icon: Brain, key: 'agents', href: `${RUN_APP_URL}/agents?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=agents` },
+] as const
 
 export const DemoPage: React.FC = () => {
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation(['demo', 'common'])
 
   return (
     <div className="relative overflow-hidden bg-surface-base text-surface-text">
@@ -85,10 +65,10 @@ export const DemoPage: React.FC = () => {
           className="space-y-6"
         >
           <motion.div variants={fadeUp} className="flex items-center gap-3">
-            <Badge color="yellow" variant="outline">Live demo</Badge>
+            <Badge color="yellow" variant="outline">{t('demo:hero.badge')}</Badge>
             <span className="flex items-center gap-1.5 rounded-full bg-status-red/10 px-2.5 py-0.5 text-[11px] font-bold text-status-red">
               <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-status-red" aria-hidden="true" />
-              Real data
+              {t('common:badges.realData')}
             </span>
           </motion.div>
 
@@ -96,14 +76,13 @@ export const DemoPage: React.FC = () => {
             variants={fadeUp}
             className="max-w-4xl text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-5xl lg:text-6xl"
           >
-            See the arena in motion — live battles, trending lenses, hot threads.
+            {t('demo:hero.title')}
           </motion.h1>
           <motion.p
             variants={fadeUp}
             className="max-w-2xl text-lg leading-8 text-greyscale-600 dark:text-greyscale-400"
           >
-            No mockups. Every card below is wired to the real LenserFight platform — public battles in
-            progress, trending tasks, and discussions happening right now.
+            {t('demo:hero.subtitle')}
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
@@ -113,12 +92,12 @@ export const DemoPage: React.FC = () => {
               rel="noopener noreferrer"
             >
               <Button variant="primary" size="lg">
-                Open the arena <ArrowRight size={16} />
+                {t('common:cta.openArena')} <ArrowRight size={16} />
               </Button>
             </a>
             <Link to="/product">
               <Button variant="secondary" size="lg">
-                See the primitives
+                {t('common:cta.seePrimitives')}
               </Button>
             </Link>
           </motion.div>
@@ -128,13 +107,12 @@ export const DemoPage: React.FC = () => {
       {/* ── LIVE WIDGETS — battles, lenses, threads ─────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="red" variant="outline">Right now</Badge>
+          <Badge color="red" variant="outline">{t('demo:widgets.badge')}</Badge>
           <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            Live from the arena.
+            {t('demo:widgets.title')}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            These four widgets are the same components used throughout the product — backed by Supabase
-            realtime and trending RPCs.
+            {t('demo:widgets.subtitle')}
           </p>
         </motion.div>
 
@@ -150,7 +128,7 @@ export const DemoPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <Radio size={14} className="text-status-red" aria-hidden="true" />
               <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                Battles · Live
+                {t('demo:widgets.battlesLive')}
               </p>
             </div>
             <SpectatorFeedWidget
@@ -164,7 +142,7 @@ export const DemoPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <Flame size={14} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
               <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                Battles · Trending
+                {t('demo:widgets.battlesTrending')}
               </p>
             </div>
             <ArenaTrendingBattlesWidget baseUrl={RUN_APP_URL} />
@@ -183,7 +161,7 @@ export const DemoPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <Sparkles size={14} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
               <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                Lenses · Trending
+                {t('demo:widgets.lensesTrending')}
               </p>
             </div>
             <ArenaTrendingLensesWidget baseUrl={RUN_APP_URL} />
@@ -193,7 +171,7 @@ export const DemoPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <MessageSquare size={14} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
               <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                Threads · Hot
+                {t('demo:widgets.threadsHot')}
               </p>
             </div>
             <ArenaHotThreadsWidget baseUrl={RUN_APP_URL} />
@@ -204,12 +182,12 @@ export const DemoPage: React.FC = () => {
       {/* ── EXPLORE THE REST OF THE PLATFORM ───────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="purple" variant="outline">Beyond the widgets</Badge>
+          <Badge color="purple" variant="outline">{t('demo:explore.badge')}</Badge>
           <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            The rest of the ecosystem.
+            {t('demo:explore.title')}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            Lensers, lenses, workflows, and AI agents — every primitive has a public surface in the arena.
+            {t('demo:explore.subtitle')}
           </p>
         </motion.div>
 
@@ -220,9 +198,12 @@ export const DemoPage: React.FC = () => {
           whileInView="visible"
           viewport={viewport}
         >
-          {PRIMITIVE_LINKS.map(({ icon: Icon, title, description, href }) => (
+          {PRIMITIVE_LINKS.map(({ icon: Icon, key, href }) => {
+            const title = t(`demo:explore.items.${key}.title`)
+            const description = t(`demo:explore.items.${key}.description`)
+            return (
             <motion.a
-              key={title}
+              key={key}
               href={href}
               target="_blank"
               rel="noopener noreferrer"
@@ -242,7 +223,8 @@ export const DemoPage: React.FC = () => {
                 </div>
               </Card>
             </motion.a>
-          ))}
+            )
+          })}
         </motion.div>
       </section>
 
@@ -254,17 +236,16 @@ export const DemoPage: React.FC = () => {
           viewport={viewport}
           transition={spring}
         >
-          <Card className="relative overflow-hidden bg-greyscale-900 p-10">
+          <Card className="relative overflow-hidden bg-white dark:bg-greyscale-900 p-10 ring-1 ring-black/5 dark:ring-white/10 shadow-2xl">
             <div className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,222,89,1),_transparent_60%)]" />
             <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
               <div className="space-y-4">
                 <Activity size={28} className="text-primary-yellow-500" />
-                <h2 className="text-2xl font-black leading-tight tracking-tight text-greyscale-0 sm:text-3xl">
-                  Ready to run a battle of your own?
+                <h2 className="text-2xl font-black leading-tight tracking-tight text-greyscale-950 dark:text-greyscale-0 sm:text-3xl">
+                  {t('demo:cta.title')}
                 </h2>
-                <p className="text-sm leading-7 text-greyscale-400">
-                  Pick a Lens, invite a contender, and let the community decide. Your first battle takes
-                  three steps and no code.
+                <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+                  {t('demo:cta.description')}
                 </p>
               </div>
               <div className="flex flex-col gap-3 lg:flex-shrink-0">
@@ -274,7 +255,7 @@ export const DemoPage: React.FC = () => {
                   rel="noopener noreferrer"
                 >
                   <Button variant="primary" size="lg" fullWidth>
-                    Create a battle <ArrowRight size={16} />
+                    {t('common:cta.createBattle')} <ArrowRight size={16} />
                   </Button>
                 </a>
                 <a
@@ -282,8 +263,8 @@ export const DemoPage: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Button variant="ghost" size="lg" fullWidth>
-                    Contact us <ExternalLink size={14} />
+                  <Button variant="ghost" size="lg" fullWidth className="text-greyscale-600 dark:text-greyscale-300 hover:bg-black/5 dark:hover:bg-greyscale-800">
+                    {t('common:cta.contactUs')} <ExternalLink size={14} />
                   </Button>
                 </a>
               </div>
