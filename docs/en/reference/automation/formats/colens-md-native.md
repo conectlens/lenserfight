@@ -5,6 +5,9 @@ description: Canonical file format for a ConectLens COLENS (multi-step workflow)
 
 # `COLENS.MD` — Native ConectLens workflow/COLENS
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 A **COLENS** is a ConectLens workflow: a coordinated, multi-step sequence of LENS and LENSER invocations. `COLENS.MD` is its native, file-first form, validated by `lenserfight validate` and run by `lenserfight workflow run`.
 
 ## Filename
