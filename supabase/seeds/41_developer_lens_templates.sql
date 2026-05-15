@@ -176,7 +176,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_code_reviewer, 'en', true,
-       'Code Reviewer (template)',
+       'Code Reviewer',
        'Reviews code for bugs, security issues, and style — with concrete before/after suggestions.',
        'You are a Code Reviewer. Review [[code]] written in [[language]] for bugs, security, and style.'),
       ('lens', v_lens_code_reviewer, 'tr', false,
@@ -217,7 +217,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_unit_test, 'en', true,
-       'Unit Test Generator (template)',
+       'Unit Test Generator',
        'Generates a complete test suite for a function or module — happy path, edge cases, and error scenarios.',
        'You are a Unit Test Generator. Generate tests for [[function_code]] using [[framework]].'),
       ('lens', v_lens_unit_test, 'tr', false,
@@ -260,7 +260,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_bug_analyzer, 'en', true,
-       'Bug Report Analyzer (template)',
+       'Bug Report Analyzer',
        'Diagnoses root cause from a stack trace or error log and suggests a concrete fix.',
        'You are a Bug Report Analyzer. Find the root cause of [[error_log]] given [[context]].'),
       ('lens', v_lens_bug_analyzer, 'tr', false,
@@ -303,7 +303,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_pr_writer, 'en', true,
-       'PR Description Writer (template)',
+       'PR Description Writer',
        'Writes a structured, professional pull request description from a diff summary — why, test plan, breaking changes.',
        'You are a PR Description Writer. Write a PR description for [[diff_summary]] with context [[context]].'),
       ('lens', v_lens_pr_writer, 'tr', false,
@@ -346,7 +346,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_sql_builder, 'en', true,
-       'SQL Query Builder (template)',
+       'SQL Query Builder',
        'Converts natural language requirements into optimized PostgreSQL queries with explanations.',
        'You are a SQL Query Builder. Build a SQL query for [[requirements]] using schema [[schema_hint]].'),
       ('lens', v_lens_sql_builder, 'tr', false,
@@ -388,7 +388,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_api_doc, 'en', true,
-       'API Documentation Generator (template)',
+       'API Documentation Generator',
        'Produces OpenAPI, JSDoc, or Markdown API docs from code — parameters, return types, errors, examples.',
        'You are an API Documentation Generator. Document [[code]] in [[format_hint]] format.'),
       ('lens', v_lens_api_doc, 'tr', false,
@@ -431,7 +431,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_code_explainer, 'en', true,
-       'Code Explainer (template)',
+       'Code Explainer',
        'Explains complex code in plain language calibrated to a stated audience — what, how, why, and gotchas.',
        'You are a Code Explainer. Explain [[code]] to [[audience]] — what, how, why, and gotchas.'),
       ('lens', v_lens_code_explainer, 'tr', false,
@@ -474,7 +474,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_refactor, 'en', true,
-       'Refactoring Advisor (template)',
+       'Refactoring Advisor',
        'Identifies prioritized refactoring opportunities with before/after snippets — without changing behavior.',
        'You are a Refactoring Advisor. Suggest refactors for [[code]] toward goals [[goals]].'),
       ('lens', v_lens_refactor, 'tr', false,
@@ -518,7 +518,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_meeting, 'en', true,
-       'Meeting Notes Summarizer (template)',
+       'Meeting Notes Summarizer',
        'Converts raw meeting notes into TL;DR, decisions, action items, open questions, and next steps.',
        'You are a Meeting Notes Summarizer. Summarize [[raw_notes]] for attendees [[attendees]].'),
       ('lens', v_lens_meeting, 'tr', false,
@@ -560,7 +560,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_user_story, 'en', true,
-       'User Story Generator (template)',
+       'User Story Generator',
        'Generates user stories with acceptance criteria, story points, and priority from a feature description.',
        'You are a User Story Generator. Generate user stories for [[feature_description]] as [[persona]].'),
       ('lens', v_lens_user_story, 'tr', false,
@@ -602,7 +602,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_email, 'en', true,
-       'Email Draft Writer (template)',
+       'Email Draft Writer',
        'Drafts a professional email with subject line and suggested follow-up from an intent description.',
        'You are an Email Draft Writer. Write an email for [[intent]] in [[tone]] tone.'),
       ('lens', v_lens_email, 'tr', false,
@@ -645,7 +645,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_thread, 'en', true,
-       'Thread Starter (template)',
+       'Thread Starter',
        'Crafts an engaging community discussion post — hook, core question, sub-questions, and participation invite.',
        'You are a Discussion Thread Starter. Start a discussion on [[topic]] using context [[context]].'),
       ('lens', v_lens_thread, 'tr', false,
@@ -690,7 +690,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_challenge, 'en', true,
-       'Challenge Creator (template)',
+       'Challenge Creator',
        'Designs a LenserFight battle challenge with prompt, evaluation rubric, and example strong response.',
        'You are a Battle Challenge Designer. Design a [[difficulty]] challenge on [[subject]].'),
       ('lens', v_lens_challenge, 'tr', false,
