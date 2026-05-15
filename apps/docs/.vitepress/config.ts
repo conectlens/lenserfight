@@ -1974,6 +1974,7 @@ export default defineConfig({
             { text: 'Branching and Versioning', link: '/en/how-to/contributors/branching' },
             { text: 'Release Process', link: '/en/how-to/contributors/release-process' },
             { text: 'Release Checklist', link: '/en/how-to/contributors/release-checklist' },
+            { text: 'CLI Release Guide', link: '/en/how-to/contributors/cli-release' },
             { text: 'Triage Policy', link: '/en/how-to/contributors/triage-policy' },
             { text: 'Mentor Rotation', link: '/en/how-to/contributors/mentor-rotation' },
             { text: 'Community Pilot Plan', link: '/en/how-to/contributors/community-pilot-plan' },
