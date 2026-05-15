@@ -22,10 +22,10 @@ export const WaitingListSection: React.FC = () => {
 }
 
 const WaitingListSectionContent: React.FC = () => {
-  const { lenser, hasLenser } = useLenser()
+  const { lenser, hasLenser, isLoading: lenserLoading, redirectToOnboarding } = useLenser()
   const { isInWaitingList, toggleWaitingList } = useWaitingList()
 
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
 
   const [kvkkApproved, setKvkkApproved] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -33,28 +33,31 @@ const WaitingListSectionContent: React.FC = () => {
 
   /**
    * STATE DERIVATION (IMPORTANT)
+   *
+   * Hold the loading state while auth or the lenser profile query is in
+   * flight, so authenticated users with a slow profile fetch don't briefly
+   * see the "Sign In / Register" CTA.
    */
+  const isResolving = authLoading || (isAuthenticated && lenserLoading)
+
   const isCheckingStatus =
-    isAuthenticated && hasLenser && isInWaitingList === null
+    !isResolving && isAuthenticated && hasLenser && isInWaitingList === null
 
   const isJoined = isInWaitingList === true
-  const showAuthCta = !isAuthenticated || !hasLenser
+  const showSignInCta = !isResolving && !isAuthenticated
+  const showOnboardingCta = !isResolving && isAuthenticated && !hasLenser
 
-  const authCtaCard = (
+  const signInCtaCard = (
     <div className="max-w-md mx-auto">
       <div className="bg-white/80 dark:bg-gray-800/80 rounded-3xl p-10 border shadow-xl">
         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
           <Lock size={28} />
         </div>
 
-        <h3 className="text-xl font-bold mb-3">
-          {hasLenser ? 'Lenser Exclusive' : 'Create Your Lenser Identity'}
-        </h3>
+        <h3 className="text-xl font-bold mb-3">Sign in to join</h3>
 
         <p className="text-gray-500 mb-8">
-          {hasLenser
-            ? 'You must have an active Lenser identity.'
-            : 'Create your Lenser profile before you can join the waitlist.'}
+          Sign in or create a Lenser account to join the waitlist.
         </p>
 
         <div className="grid grid-cols-2 gap-4">
@@ -69,6 +72,26 @@ const WaitingListSectionContent: React.FC = () => {
             </Button>
           </Link>
         </div>
+      </div>
+    </div>
+  )
+
+  const onboardingCtaCard = (
+    <div className="max-w-md mx-auto">
+      <div className="bg-white/80 dark:bg-gray-800/80 rounded-3xl p-10 border shadow-xl">
+        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <Lock size={28} />
+        </div>
+
+        <h3 className="text-xl font-bold mb-3">Create Your Lenser Identity</h3>
+
+        <p className="text-gray-500 mb-8">
+          Finish setting up your Lenser profile before you can join the waitlist.
+        </p>
+
+        <Button className="w-full" onClick={() => redirectToOnboarding()}>
+          Continue Setup
+        </Button>
       </div>
     </div>
   )
@@ -120,7 +143,7 @@ const WaitingListSectionContent: React.FC = () => {
         {/* ===============================
             1️⃣ LOADING STATE (CRITICAL)
            =============================== */}
-        {isCheckingStatus && (
+        {(isResolving || isCheckingStatus) && (
           <div className="max-w-md mx-auto rounded-3xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm">
             <div className="flex flex-col items-center justify-center gap-4 py-14">
               <Loader2
@@ -137,7 +160,7 @@ const WaitingListSectionContent: React.FC = () => {
         {/* ===============================
             2️⃣ AUTHENTICATED + LENSER
            =============================== */}
-        {!isCheckingStatus && !showAuthCta && (
+        {!isResolving && !isCheckingStatus && !showSignInCta && !showOnboardingCta && (
           <>
             {isJoined ? (
               // ✅ JOINED
@@ -207,7 +230,12 @@ const WaitingListSectionContent: React.FC = () => {
         {/* ===============================
             3️⃣ NOT AUTHENTICATED
            =============================== */}
-        {showAuthCta && authCtaCard}
+        {showSignInCta && signInCtaCard}
+
+        {/* ===============================
+            4️⃣ AUTHENTICATED, NO LENSER YET
+           =============================== */}
+        {showOnboardingCta && onboardingCtaCard}
 
       </div>
     </section>
