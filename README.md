@@ -358,9 +358,10 @@ LenserFight is a global arena. The core platform is English-first, and every sur
 
 ### 🛠️ Contribute a Translation
 
-The infrastructure is already wired. You do not need to touch any code to translate docs. You only need to add files. The i18n guide walks you through everything in one place:
+The infrastructure is already wired. You do not need to touch any code to translate docs. You only need to add files. The localization system uses a parent-domain cookie (`lf-locale` on `.lenserfight.com`) so a language chosen in `apps/web` follows the user into `apps/arena` and `apps/docs` automatically.
 
-**→ [docs/en/how-to/contributors/i18n-guide.md](docs/en/how-to/contributors/i18n-guide.md)**
+- **Architecture, cookie flow, and string-extraction playbook:** [docs/en/how-to/contributors/i18n-guide.md](docs/en/how-to/contributors/i18n-guide.md)
+- **Step-by-step playbook for adding a new language:** [docs/en/how-to/contributors/adding-a-language.md](docs/en/how-to/contributors/adding-a-language.md)
 
 The guide covers the exact file structure, registration steps, and AI-assisted workflow for each surface:
 
@@ -384,6 +385,7 @@ We welcome focused contributions that improve installability, workflow reliabili
 
 - Start with [CONTRIBUTING.md](CONTRIBUTING.md)
 - Contributor guides live in [docs/en/how-to/contributors/](docs/en/how-to/contributors/)
+- Translating? See the [i18n guide](docs/en/how-to/contributors/i18n-guide.md) and the [adding-a-language playbook](docs/en/how-to/contributors/adding-a-language.md)
 - For larger ideas, open an issue before investing in implementation
 
 If you change behavior, run the smallest relevant validation and mention what you did in your PR.
