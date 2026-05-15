@@ -137,7 +137,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </button>
           )}
 
-          {pageActions.length > 0 && <ActionMenu actions={pageActions} />}
 
           {isAgentOwner && humanWorkspace && (
             <Button
@@ -167,16 +166,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               )}
             </button>
           )}
+          {pageActions.length > 0 && <ActionMenu actions={pageActions} />}
 
-          {isAuthenticated && (
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-lg text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-colors ml-1"
-              title="Logout"
-            >
-              <LogOut size={20} />
-            </button>
-          )}
         </div>
       </div>
 
