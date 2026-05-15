@@ -27,7 +27,7 @@
     "supabase:combine-seeds": "bash supabase/combine-seeds.sh",
     "supabase:db:reset": "bash supabase/combine-seeds.sh && supabase db reset --local --yes",
     "supabase:db:reset:debug": "bash supabase/combine-seeds.sh && supabase db reset --local --yes --debug",
-    "supabase:seed:demo": "bash supabase/combine-seeds.sh && psql postgresql://postgres:postgres@localhost:54322/postgres -f supabase/seed-data.sql",
+    "supabase:seed:demo": "bash scripts/seed-demo.sh",
     "supabase:local:recover": "bash scripts/supabase-local-recover.sh",
     "supabase:gen:types": "supabase gen types typescript --local --schema public,lensers,lenses,agents,ai,execution,content,media,tenancy > libs/types/src/lib/database.types.ts",
     "smoke": "bash scripts/smoke.sh",
