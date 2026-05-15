@@ -234,7 +234,7 @@ export const SettingsSection: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex-1 max-w-2xl space-y-6">
+          <div className="flex-1 space-y-6">
             {(error || okMsg) && (
               <div className="space-y-3">
                 {error && (
