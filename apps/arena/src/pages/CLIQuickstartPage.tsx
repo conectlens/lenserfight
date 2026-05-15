@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { DOCS_BASE_URL } from '@lenserfight/utils/env'
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
 const spring = { type: 'spring', stiffness: 260, damping: 22 } as const
 
