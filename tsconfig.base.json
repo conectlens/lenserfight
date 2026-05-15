@@ -82,6 +82,9 @@
       "@lenserfight/utils/text": [
         "libs/utils/text/src/index.ts"
       ],
+      "@lenserfight/utils/locale": [
+        "libs/utils/locale/src/index.ts"
+      ],
       "@lenserfight/domain/lenses": [
         "libs/domain/lenses/src/index.ts"
       ],
@@ -228,6 +231,9 @@
       ],
       "@lenserfight/shared/error": [
         "libs/shared/error/src/index.ts"
+      ],
+      "@lenserfight/shared/i18n-routing": [
+        "libs/shared/i18n-routing/src/index.ts"
       ],
       "@lenserfight/shared/serializers": [
         "libs/shared/serializers/src/index.ts"
