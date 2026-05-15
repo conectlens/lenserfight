@@ -4,6 +4,9 @@ export type LenserType = 'ai' | 'human'
 export type AntennaTip = 'star' | 'heart' | 'ring' | 'orbit' | 'broadcast'
 export type SmileStyle = 'neutral' | 'curved' | 'sharp' | 'wide'
 
+export type HairStyle = 'bald' | 'bob' | 'long' | 'pixie'
+export type HairColor = 'black' | 'brown' | 'blonde' | 'red' | 'blue'
+
 export interface LenserDnaAvatarConfig {
   type: LenserType
   coreColor?: string
@@ -11,6 +14,8 @@ export interface LenserDnaAvatarConfig {
   smileStyle?: SmileStyle
   skinTone?: string
   eyeColor?: string
+  hairStyle?: HairStyle
+  hairColor?: HairColor
   seed?: string
 }
 
@@ -38,6 +43,14 @@ const SKIN_TONES = [
   { base: '#8B4A2E', dark: '#6a3020', darker: '#4a1810', light: '#a86040' },
   { base: '#4A2615', dark: '#2e1209', darker: '#180804', light: '#6a3820' },
 ] as const
+
+const HAIR_COLORS = {
+  black: '#1A1A1A',
+  brown: '#4B2C20',
+  blonde: '#E1B871',
+  red: '#A53D25',
+  blue: '#2C66C7',
+} as const
 
 const EYE_COLORS = ['#6B3A2A', '#7B6830', '#3a6a9a', '#3a7a4a', '#7a7a8a']
 const AI_CORE_COLORS = ['#00C896', '#FF63B8', '#2DA8FF', '#FF9500']
@@ -85,6 +98,38 @@ function smileSvg(style: SmileStyle): string {
     case 'neutral':
     default:
       return `<line x1="90" y1="123" x2="110" y2="123" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="${cap}"/>`
+  }
+}
+
+// ── Hair SVG fragments ────────────────────────────────────────────────────────
+
+function hairSvg(style: HairStyle, color: string): string {
+  if (style === 'bald') return ''
+  
+  const fill = color
+  
+  switch (style) {
+    case 'bob':
+      return `
+        <!-- Bob hair -->
+        <path d="M34,105 Q34,32 100,32 Q166,32 166,105 L166,135 Q166,145 156,145 L145,145 Q135,145 135,135 Q135,115 100,115 Q65,115 65,135 Q65,145 55,145 L44,145 Q34,145 34,135 Z" fill="${fill}"/>
+        <path d="M60,35 Q100,35 140,55" stroke="white" stroke-width="3" fill="none" opacity="0.1" stroke-linecap="round"/>
+      `
+    case 'long':
+      return `
+        <!-- Long hair -->
+        <path d="M34,105 Q34,32 100,32 Q166,32 166,105 L178,200 L22,200 Z" fill="${fill}"/>
+        <path d="M34,105 Q34,32 100,32 Q166,32 166,105 L155,140 Q145,145 135,135 Q135,115 100,115 Q65,115 65,135 Q55,145 45,140 Z" fill="${fill}"/>
+        <path d="M100,32 L100,60" stroke="black" stroke-width="1" opacity="0.1"/>
+      `
+    case 'pixie':
+      return `
+        <!-- Pixie hair -->
+        <path d="M37,95 Q37,35 100,35 Q163,35 163,95 L163,105 Q150,90 130,90 Q110,110 100,90 Q90,110 70,90 Q50,90 37,105 Z" fill="${fill}"/>
+        <path d="M80,45 L95,40 M110,48 L125,42" stroke="white" stroke-width="2" opacity="0.1" stroke-linecap="round"/>
+      `
+    default:
+      return ''
   }
 }
 
@@ -175,14 +220,19 @@ function buildHumanHead(cfg: {
   coreColor: string
   skinTone: (typeof SKIN_TONES)[number]
   eyeColor: string
+  hairStyle: HairStyle
+  hairColor: string
   uid: string
 }): string {
-  const { coreColor, skinTone, eyeColor, uid } = cfg
+  const { coreColor, skinTone, eyeColor, hairStyle, hairColor, uid } = cfg
   const { base, dark, darker, light } = skinTone
 
   return `
     <!-- Background -->
     <rect width="200" height="200" fill="${base}"/>
+
+    <!-- Back hair (for long styles) -->
+    ${hairStyle === 'long' ? `<path d="M25,100 L25,200 L175,200 L175,100 Q100,80 25,100" fill="${hairColor}" opacity="0.8"/>` : ''}
 
     <!-- Cape + shoulders -->
     <path d="M42,152 L15,200 L185,200 L158,152 Q100,147 42,152Z" fill="#213f74"/>
@@ -199,6 +249,9 @@ function buildHumanHead(cfg: {
 
     <!-- Head sphere (skin tone) -->
     <circle cx="100" cy="100" r="63" fill="${base}" stroke="${dark}" stroke-width="1.5"/>
+
+    <!-- Hair -->
+    ${hairSvg(hairStyle, hairColor)}
 
     <!-- Left eyebrow -->
     <path d="M74,84 Q83,79 92,82" stroke="${darker}" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.75"/>
@@ -247,6 +300,8 @@ function buildSvg(cfg: LenserDnaAvatarConfig, uid: string): string {
     smileStyle: cfgSmile,
     skinTone: cfgSkin,
     eyeColor: cfgEye,
+    hairStyle: cfgHair,
+    hairColor: cfgHairColor,
   } = cfg
 
   const h = hashSeed(seed)
@@ -258,11 +313,15 @@ function buildSvg(cfg: LenserDnaAvatarConfig, uid: string): string {
     ? SKIN_TONES.find((t) => t.base === cfgSkin) ?? SKIN_TONES[h % SKIN_TONES.length]
     : SKIN_TONES[h % SKIN_TONES.length]
   const eyeColor = cfgEye ?? EYE_COLORS[h % EYE_COLORS.length]
+  
+  const hairStyle: HairStyle = cfgHair ?? (['bald', 'bald', 'bob', 'long', 'pixie'][h % 5] as HairStyle)
+  const hairColorNames = Object.keys(HAIR_COLORS) as HairColor[]
+  const hairColor = cfgHairColor ? HAIR_COLORS[cfgHairColor] : HAIR_COLORS[hairColorNames[h % hairColorNames.length]]
 
   const body =
     type === 'ai'
       ? buildAiHead({ coreColor, antennaTip, smileStyle, uid })
-      : buildHumanHead({ coreColor, skinTone: skinToneObj, eyeColor, uid })
+      : buildHumanHead({ coreColor, skinTone: skinToneObj, eyeColor, hairStyle, hairColor, uid })
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
@@ -323,6 +382,8 @@ export const LenserDnaAvatar: React.FC<LenserDnaAvatarProps> = ({
     cfg.smileStyle,
     cfg.skinTone,
     cfg.eyeColor,
+    cfg.hairStyle,
+    cfg.hairColor,
     cfg.seed,
   ])
 
