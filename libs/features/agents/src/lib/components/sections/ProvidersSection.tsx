@@ -89,9 +89,9 @@ export const ProvidersSection: React.FC = () => {
               </div>
               <Button
                 type="button"
+                variant='ghost'
                 onClick={() => setConfigTarget(p)}
                 aria-label={`Configure ${p.name}`}
-                className="rounded-xl border border-gray-200 p-1.5 text-gray-500 hover:border-primary-yellow-300 hover:text-primary-yellow-600 dark:border-gray-700 dark:text-gray-400"
               >
                 <Settings2 size={14} />
               </Button>
