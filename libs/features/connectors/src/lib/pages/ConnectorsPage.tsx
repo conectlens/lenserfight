@@ -113,7 +113,7 @@ export const ConnectorsPage: React.FC = () => {
             <div className="flex flex-col gap-3">
               <p>{CONNECTORS_UNDER_CONSTRUCTION_MESSAGE}</p>
               <a
-                href={CONNECTORS_DOCS_PATH}
+                href={`${DOCS_BASE_URL}/en${CONNECTORS_DOCS_PATH}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 self-start rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-50 dark:border-amber-700/60 dark:bg-amber-900/30 dark:text-amber-200 dark:hover:bg-amber-900/50 transition-colors"
