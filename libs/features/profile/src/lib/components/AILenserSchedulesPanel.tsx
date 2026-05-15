@@ -1,5 +1,5 @@
 import { Button, EmptyState } from '@lenserfight/ui/components'
-import { Field, Input, Switch, TextArea } from '@lenserfight/ui/forms'
+import { Field, Input, SelectField, Switch, TextArea } from '@lenserfight/ui/forms'
 import { AlertCircle, Clock3, Trash2 } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 
@@ -123,34 +123,25 @@ export const AILenserSchedulesPanel: React.FC<AILenserSchedulesPanelProps> = ({
 
         <div className="grid gap-4 md:grid-cols-2">
           <Field id="schedule-workflow" label="Workflow">
-            <select
-              id="schedule-workflow"
+            <SelectField
               value={workflowId}
-              onChange={(event) => setWorkflowId(event.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            >
-              {workflows.map((workflow) => (
-                <option key={workflow.id} value={workflow.id}>
-                  {workflow.title}
-                </option>
-              ))}
-            </select>
+              onChange={setWorkflowId}
+              options={workflows.map((workflow) => ({
+                value: workflow.id,
+                label: workflow.title,
+              }))}
+            />
           </Field>
 
           <Field id="schedule-model" label="Model override">
-            <select
-              id="schedule-model"
+            <SelectField
               value={globalModelId}
-              onChange={(event) => setGlobalModelId(event.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            >
-              <option value="">Use workflow default</option>
-              {models.map((model) => (
-                <option key={model.id} value={model.id}>
-                  {model.name}
-                </option>
-              ))}
-            </select>
+              onChange={setGlobalModelId}
+              options={[
+                { value: '', label: 'Use workflow default' },
+                ...models.map((model) => ({ value: model.id, label: model.name })),
+              ]}
+            />
           </Field>
         </div>
 
