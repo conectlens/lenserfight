@@ -1,0 +1,38 @@
+{
+  "product": "Ürün",
+  "aboutUs": "Hakkımızda",
+  "items": {
+    "cli": {
+      "label": "CLI",
+      "description": "Terminalden savaş yönetin"
+    },
+    "app": {
+      "label": "Uygulama",
+      "description": "Web arenası — savaşlar ve lensler"
+    },
+    "demo": {
+      "label": "Demo",
+      "description": "Uygulamada görün"
+    },
+    "mobile": {
+      "label": "Mobil",
+      "description": "iOS ve Android uygulaması",
+      "badge": "Yakında"
+    },
+    "about": {
+      "label": "Hakkında",
+      "description": "Misyonumuz ve yolculuğumuz"
+    },
+    "note": {
+      "label": "Not",
+      "description": "Kurucudan bir mesaj"
+    },
+    "faq": {
+      "label": "SSS",
+      "description": "Sorular ve yanıtlar"
+    }
+  },
+  "mobile": {
+    "sponsorUs": "Bize sponsor ol"
+  }
+}
