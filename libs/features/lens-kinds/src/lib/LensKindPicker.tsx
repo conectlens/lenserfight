@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { LENS_KIND_ORDER, LENS_KIND_REGISTRY } from './lens-kinds.registry'
+import { XCarousel } from '@lenserfight/ui/components'
 
 import type { LensKind } from '@lenserfight/types'
 
@@ -91,29 +92,15 @@ export const LensKindPicker: React.FC<LensKindPickerProps> = ({
         <div className="mb-2 text-[13px] font-semibold text-greyscale-500 dark:text-greyscale-400 ml-1">
           Engine Kind
         </div>
-        <style>{`
-          @keyframes scroll-carousel {
-            0% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(calc(-50% - 0.5rem), 0, 0); }
-          }
-          .animate-carousel {
-            animation: scroll-carousel 30s linear infinite;
-            will-change: transform;
-          }
-          .group:hover .animate-carousel {
-            animation-play-state: paused;
-          }
-        `}</style>
-        <div className="overflow-hidden w-full group relative" role="group" aria-label="Lens kind">
-           {/* Fade masks for the carousel edges */}
-           <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-surface-raised dark:from-surface-raised z-10 pointer-events-none" />
-           <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface-raised dark:from-surface-raised z-10 pointer-events-none" />
-           
-           <div className="flex gap-4 animate-carousel w-max">
-             {kinds.map((kind) => renderCard(kind, 0))}
-             {kinds.map((kind) => renderCard(kind, 1))}
-           </div>
-        </div>
+        <XCarousel 
+          speed={30} 
+          gapClass="gap-4" 
+          gapPx={16} 
+          showFadeMasks 
+          fadeColorClass="from-surface-raised"
+        >
+          {kinds.map((kind) => renderCard(kind, 0))}
+        </XCarousel>
       </div>
     )
   }
