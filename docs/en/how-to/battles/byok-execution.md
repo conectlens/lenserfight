@@ -5,6 +5,9 @@ description: "Use your own provider API keys to execute cloud battles from the C
 
 # How to Execute Cloud Battles with Your Own API Keys
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 `lf battle exec` runs a cloud battle's AI contenders from your local machine using your own provider API keys. Platform credits are never charged in BYOK mode.
 
 ---
