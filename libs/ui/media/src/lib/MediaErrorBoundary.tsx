@@ -23,8 +23,8 @@ export class MediaErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     // Log to telemetry if available
-    if (typeof window !== 'undefined' && (window as Record<string, unknown>)['__lf_telemetry']) {
-      const tel = (window as Record<string, unknown>)['__lf_telemetry'] as {
+    if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>)['__lf_telemetry']) {
+      const tel = (window as unknown as Record<string, unknown>)['__lf_telemetry'] as {
         captureException: (e: Error, ctx: unknown) => void
       }
       tel.captureException(error, { componentStack: info.componentStack })
