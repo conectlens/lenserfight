@@ -2,6 +2,7 @@ import { Badge, Card } from '@lenserfight/ui/components'
 import { useTrendingThreads } from '@lenserfight/features/home'
 import { motion } from 'framer-motion'
 import { MessageSquare, Heart } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const spring = { type: 'spring', stiffness: 280, damping: 22 } as const
 
@@ -32,6 +33,7 @@ function timeAgo(iso: string): string {
 }
 
 export function HotThreadsSection() {
+  const { t } = useTranslation('home')
   const { data, isLoading } = useTrendingThreads()
   const threads = data?.pages[0]?.data?.slice(0, 3) ?? []
 
@@ -40,8 +42,8 @@ export function HotThreadsSection() {
   return (
     <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
       <motion.div className="mb-8 space-y-2" variants={fadeRight} initial="hidden" whileInView="visible" viewport={viewport}>
-        <Badge color="purple" variant="outline">Hot right now</Badge>
-        <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">Trending in the arena</h2>
+        <Badge color="purple" variant="outline">{t('threads.badge')}</Badge>
+        <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">{t('threads.title')}</h2>
       </motion.div>
 
       {isLoading ? (
