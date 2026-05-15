@@ -30,7 +30,7 @@ export const AgentPalettePanel: React.FC<AgentPalettePanelProps> = ({
       ].join(' ')}
     >
       {/* Collapsed tab */}
-      <Button
+      <button
         type="button"
         title={expanded ? 'Collapse palette' : 'Expand palette'}
         onClick={() => setExpanded((v) => !v)}
@@ -47,9 +47,8 @@ export const AgentPalettePanel: React.FC<AgentPalettePanelProps> = ({
           className="origin-center -rotate-90 text-[10px] font-semibold uppercase tracking-widest"
           style={{ writingMode: 'vertical-rl' }}
         >
-          Agents
         </span>
-      </Button>
+      </button>
 
       {/* Expanded panel */}
       <div
