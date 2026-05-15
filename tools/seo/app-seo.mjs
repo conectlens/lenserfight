@@ -1,4 +1,47 @@
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 const DEFAULT_DATE = '2026-05-12'
+
+// Locale registry — mirrors libs/utils/locale ENABLED_LOCALES. Keep in sync;
+// the util-locale parity spec catches DB drift, and `loadArenaSeoStrings`
+// below will throw if a translation file is missing.
+const ARENA_ENABLED_LOCALES = ['en', 'tr']
+const ARENA_DEFAULT_LOCALE = 'en'
+
+// Path → seo.<key> mapping (mirrors apps/arena/src/seo/RouteSEO.tsx routeMeta).
+const ARENA_SEO_KEY_BY_PATH = {
+  '/': 'home',
+  '/about': 'about',
+  '/note-from-omer': 'founder_note',
+  '/product': 'product',
+  '/product/cli': 'product_cli',
+  '/product/cli/quickstart': 'product_cli_quickstart',
+  '/product/mobile': 'product_mobile',
+  '/faq': 'faq',
+  '/get-started': 'get_started',
+  '/demo': 'demo',
+  '/battle-showcase': 'battle_showcase',
+  '/policies/terms': 'policy_terms',
+  '/policies/privacy': 'policy_privacy',
+  '/policies/cookies': 'policy_cookies',
+  '/policies/acceptable-use': 'policy_acceptable_use',
+}
+
+const __seoDir = dirname(fileURLToPath(import.meta.url))
+const __arenaLocalesDir = resolve(__seoDir, '../../apps/arena/src/locales')
+
+const arenaSeoCache = new Map()
+function loadArenaSeoStrings(locale) {
+  if (arenaSeoCache.has(locale)) return arenaSeoCache.get(locale)
+  const filePath = resolve(__arenaLocalesDir, `${locale}.json`)
+  const raw = readFileSync(filePath, 'utf-8')
+  const parsed = JSON.parse(raw)
+  const seo = parsed?.seo ?? {}
+  arenaSeoCache.set(locale, seo)
+  return seo
+}
 
 const ORGANIZATION = {
   '@type': 'Organization',
@@ -669,14 +712,53 @@ const apps = {
     ogImage: 'https://arena.lenserfight.com/og-banner.png',
     routes: arenaStaticRoutes,
     disallow: ['/auth/', '/contact'],
+    locales: ARENA_ENABLED_LOCALES,
+    defaultLocale: ARENA_DEFAULT_LOCALE,
   },
+}
+
+function localePath(locale, unprefixed) {
+  if (unprefixed === '/' || unprefixed === '') return `/${locale}`
+  return `/${locale}${unprefixed}`
+}
+
+function localizeRoute(app, route, locale) {
+  const seoKey = ARENA_SEO_KEY_BY_PATH[route.path]
+  const strings = seoKey ? loadArenaSeoStrings(locale)?.[seoKey] : null
+  const title = strings?.title ?? route.title
+  const description = strings?.description ?? route.description
+  const localizedPath = localePath(locale, route.path)
+  return { ...route, path: localizedPath, title, description, locale }
+}
+
+function buildHreflangAlternates(app, unprefixed) {
+  if (!app.locales) return []
+  return [
+    ...app.locales.map((code) => ({
+      hrefLang: code,
+      href: absoluteUrl(app.baseUrl, localePath(code, unprefixed)),
+    })),
+    {
+      hrefLang: 'x-default',
+      href: absoluteUrl(app.baseUrl, localePath(app.defaultLocale, unprefixed)),
+    },
+  ]
 }
 
 function withResolvedLinks(app, route) {
   const canonicalUrl = absoluteUrl(app.baseUrl, route.path)
+  // For localized arena routes, internal link paths in the route definition
+  // are still unprefixed (e.g., '/product') — prefix them with the active
+  // locale so emitted SEO HTML points to the localized variants.
+  const linkLocale = route.locale ?? null
+  const resolveLinkPath = (link) => {
+    if (link.url) return link.url
+    if (linkLocale && link.path) return absoluteUrl(app.baseUrl, localePath(linkLocale, link.path))
+    return absoluteUrl(app.baseUrl, link.path)
+  }
   const links = (route.links ?? []).map((link) => ({
     ...link,
-    url: link.url ?? absoluteUrl(app.baseUrl, link.path),
+    url: resolveLinkPath(link),
   }))
   const schema = {
     ...createWebPageSchema({
@@ -704,13 +786,42 @@ function withResolvedLinks(app, route) {
   }
 }
 
+const expandRoutes = (app) => {
+  if (!app.locales) {
+    return app.routes.map((route) => withResolvedLinks(app, route))
+  }
+  const expanded = []
+  for (const route of app.routes) {
+    for (const locale of app.locales) {
+      const localized = localizeRoute(app, route, locale)
+      const resolved = withResolvedLinks(app, localized)
+      expanded.push({
+        ...resolved,
+        unprefixedPath: route.path,
+        alternates: buildHreflangAlternates(app, route.path),
+      })
+    }
+  }
+  return expanded
+}
+
 const getAppSeo = (appName) => {
   const app = apps[appName]
   if (!app) throw new Error(`Unknown SEO app "${appName}"`)
   return {
     ...app,
-    routes: app.routes.map((route) => withResolvedLinks(app, route)),
+    routes: expandRoutes(app),
     dynamicRoutePatterns: dynamicRoutePatterns[appName] ?? [],
+  }
+}
+
+// Un-localized base routes — for generate-app-seo.mjs's bare-path Tier-1 shim emission.
+const getAppBaseRoutes = (appName) => {
+  const app = apps[appName]
+  if (!app) throw new Error(`Unknown SEO app "${appName}"`)
+  return {
+    ...app,
+    routes: app.routes.map((route) => withResolvedLinks(app, route)),
   }
 }
 
@@ -726,6 +837,13 @@ const escapeAttr = escapeHtml
 
 const renderHeadTags = (route, { noindex = false } = {}) => {
   const schema = JSON.stringify(route.jsonLd).replace(/</g, '\\u003c')
+  const alternates = (route.alternates ?? [])
+    .map(
+      (alt) =>
+        `<link rel="alternate" hreflang="${escapeAttr(alt.hrefLang)}" href="${escapeAttr(alt.href)}" />`,
+    )
+    .join('\n  ')
+  const ogLocale = route.locale ? route.locale.replace('-', '_') : null
   return [
     `<title>${escapeHtml(route.title)}</title>`,
     `<meta name="description" content="${escapeAttr(truncate(route.description, 170))}" />`,
@@ -739,14 +857,33 @@ const renderHeadTags = (route, { noindex = false } = {}) => {
     `<meta property="og:image:width" content="1200" />`,
     `<meta property="og:image:height" content="630" />`,
     `<meta property="og:site_name" content="LenserFight" />`,
+    ogLocale ? `<meta property="og:locale" content="${escapeAttr(ogLocale)}" />` : null,
     `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:site" content="@lenserfight" />`,
     `<meta name="twitter:title" content="${escapeAttr(route.title)}" />`,
     `<meta name="twitter:description" content="${escapeAttr(truncate(route.description, 200))}" />`,
     `<meta name="twitter:image" content="${escapeAttr(route.ogImage)}" />`,
+    alternates || null,
     `<script type="application/ld+json">${schema}</script>`,
-  ].join('\n  ')
+  ]
+    .filter(Boolean)
+    .join('\n  ')
 }
+
+const renderRedirectShim = ({ targetUrl, canonicalUrl }) => `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="0;url=${escapeAttr(targetUrl)}">
+<link rel="canonical" href="${escapeAttr(canonicalUrl)}">
+<meta name="robots" content="noindex,follow">
+<title>Redirecting…</title>
+</head>
+<body>
+<p>Redirecting to <a href="${escapeAttr(targetUrl)}">${escapeHtml(targetUrl)}</a>.</p>
+</body>
+</html>
+`
 
 const renderSeoMain = (route) => {
   const sections = (route.sections ?? []).map((text) => `<li>${escapeHtml(text)}</li>`).join('\n        ')
@@ -790,12 +927,23 @@ const renderSitemap = (appName) => {
     return true
   })
 
+  const xmlns = app.locales
+    ? 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml"'
+    : 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'
+
   return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset ${xmlns}>
 ${urls
   .map(
     (route) => `  <url>
-    <loc>${route.canonicalUrl}</loc>
+    <loc>${route.canonicalUrl}</loc>${
+      (route.alternates ?? [])
+        .map(
+          (alt) =>
+            `\n    <xhtml:link rel="alternate" hreflang="${escapeAttr(alt.hrefLang)}" href="${escapeAttr(alt.href)}" />`,
+        )
+        .join('')
+    }
     <lastmod>${DEFAULT_DATE}</lastmod>
     <changefreq>${route.changefreq}</changefreq>
     <priority>${route.priority}</priority>
@@ -887,9 +1035,11 @@ const matchDynamicRoute = (appName, pathname) => {
 export {
   absoluteUrl,
   getAppSeo,
+  getAppBaseRoutes,
   injectSeoIntoHtml,
   matchDynamicRoute,
   renderHeadTags,
+  renderRedirectShim,
   renderRobots,
   renderSeoMain,
   renderSitemap,
