@@ -8,6 +8,7 @@ import { useNativeTheme } from '@lenserfight/ui/providers'
 
 export interface TextAreaProps extends Omit<TextInputProps, 'style' | 'multiline'> {
   error?:        boolean
+  disabled?:     boolean
   numberOfLines?: number
   style?:        ViewStyle
 }
