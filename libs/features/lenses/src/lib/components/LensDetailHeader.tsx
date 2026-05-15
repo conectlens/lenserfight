@@ -81,6 +81,16 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
             path="/tutorials/walkthroughs/create-a-lens"
             label="How to create?"
           />
+          <button
+            type="button"
+            onClick={onCreate}
+            className="group flex-shrink-0 rounded-2xl border border-surface-border bg-surface-base p-2.5 text-greyscale-500 transition-colors hover:border-primary-yellow-500 hover:text-primary-yellow-600"
+            aria-label="Create new lens"
+            title="Create Lens"
+          >
+            <Plus size={18} className="transition-transform duration-200 group-active:scale-95" />
+          </button>
+
           {canEdit && onEdit && (
             <button
               type="button"
@@ -111,18 +121,6 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
               ) : (
                 <Copy size={18} className="transition-transform duration-200 group-active:scale-95" />
               )}
-            </button>
-          )}
-
-          {onCreate && (
-            <button
-              type="button"
-              onClick={onCreate}
-              className="group flex-shrink-0 rounded-2xl border border-surface-border bg-surface-base p-2.5 text-greyscale-500 transition-colors hover:border-primary-yellow-500 hover:text-primary-yellow-600"
-              aria-label="Create new lens"
-              title="Create Lens"
-            >
-              <Plus size={18} className="transition-transform duration-200 group-active:scale-95" />
             </button>
           )}
 
@@ -214,6 +212,33 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
             {lens.author.displayName}
           </span>
         </div>
+
+        {lens.parentLensId && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              const handle = forkTree?.[0]?.forkedFromLenserHandle
+              if (handle) navigate(`/lenser/${handle}`)
+              else if (lens.parentLensId) navigate(`/lenses/${lens.parentLensId}`)
+            }}
+            className="group mr-4 flex items-center gap-1.5 text-greyscale-500 transition-colors hover:text-primary-yellow-600 dark:text-greyscale-400"
+            title={forkTree?.[0]?.forkedFromLenserHandle ? `Forked from @${forkTree[0].forkedFromLenserHandle}` : 'Forked lens'}
+            aria-label="Forked from"
+          >
+            <GitFork size={14} className="shrink-0" />
+            {forkTree?.[0]?.forkedFromLenserAvatarUrl && (
+              <img
+                src={forkTree[0].forkedFromLenserAvatarUrl}
+                alt={forkTree[0].forkedFromLenserHandle}
+                className="w-5 h-5 rounded-full object-cover"
+              />
+            )}
+            <span className="text-xs font-medium">
+              {forkTree?.[0]?.forkedFromLenserHandle ? `@${forkTree[0].forkedFromLenserHandle}` : 'Forked'}
+            </span>
+          </button>
+        )}
 
         <span className="mr-4 hidden text-greyscale-300 dark:text-greyscale-600 sm:inline">|</span>
 

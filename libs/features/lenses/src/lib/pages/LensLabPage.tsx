@@ -193,6 +193,10 @@ export const LensLabPage: React.FC = () => {
     setIsDeleteModalOpen(true)
   }, [])
 
+  const handleCreateClick = useCallback(() => {
+    openCreateModal()
+  }, [openCreateModal])
+
   const handleEditClick = useCallback(
     (targetId?: string) => {
       if (!ensureProfile()) return
@@ -375,6 +379,7 @@ export const LensLabPage: React.FC = () => {
         onFork={() => forkLens({})}
         canFork={hasActiveLenserProfile}
         isForking={isForking}
+        onCreate={handleCreateClick}
         onExport={() => setIsExportOpen(true)}
         exportModal={
           <ExportModal
