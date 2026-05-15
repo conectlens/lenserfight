@@ -3,7 +3,7 @@ import { KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil, Loader2 } fro
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
-import { SURFACE, CHAINABIT_APP_URL } from '@lenserfight/utils/env'
+import { SURFACE, CHAINABIT_APP_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
 import { Link } from 'react-router-dom'
 import type { LocalKeyMeta, ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/types'
 import { LabProviderSelector } from './LabProviderSelector'
@@ -40,6 +40,18 @@ interface FundingSourceToggleProps {
   selectedModelKey?: string
   onModelChange?: (key: string) => void
   onProviderDropdownOpen?: () => void
+}
+
+function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  return (
+    <div className="relative group/tip">
+      {children}
+      <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-52 rounded-lg bg-gray-900 dark:bg-gray-700 px-3 py-2 text-[11px] leading-snug text-white shadow-lg opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
+        {text}
+        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
+      </div>
+    </div>
+  )
 }
 
 function ChainabitLogo({ size = 16 }: { size?: number }) {
@@ -382,107 +394,171 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
     onFundingSourceChange('user_byok_local')
   }
 
+  const fundingDocsUrl = `${DOCS_BASE_URL}/en/explanation/lenses/funding-sources`
+
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-        Funding
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+          Funding
+        </label>
+        <a
+          href={fundingDocsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] text-primary-500 hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Learn more
+        </a>
+      </div>
 
       {/* Row 1: Cloud | My Key */}
       <div className={`grid gap-2 ${isCloudEdition ? 'grid-cols-2' : 'grid-cols-1'}`}>
         {isCloudEdition && (
+          <Tooltip text="Use your Chainabit credit balance to pay for AI inference. Credits are shared across all LenserFight battles.">
+            <button
+              type="button"
+              onClick={handleChainabitClick}
+              disabled={chainabitIsDisabled}
+              className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isCloud && chainabitActive
+                  ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
+                  : chainabitIsDisabled
+                    ? 'border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed'
+                    : chainabitNeedsAction
+                      ? 'border-gray-200 dark:border-gray-600 opacity-60 hover:border-orange-300 hover:opacity-100'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
+                }`}
+            >
+              <ChainabitLogo size={16} />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1">
+                  Chainabit
+                  <a
+                    href={`${fundingDocsUrl}#chainabit-credits`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-primary-500 transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                    title="How Chainabit credits work"
+                  >
+                    <span className="text-[9px] leading-none border border-current rounded-full px-1">?</span>
+                  </a>
+                </p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 tabular-nums flex items-center gap-1">
+                  {chainabitState === 'loading' ? (
+                    <><Loader2 size={10} className="animate-spin" />Checking…</>
+                  ) : chainabitState === 'provider_error' ? (
+                    'Unavailable'
+                  ) : chainabitActive && walletBalance != null ? (
+                    `${walletBalance.balance.toLocaleString()} cr`
+                  ) : chainabitState === 'no_credits' ? (
+                    'No credits'
+                  ) : chainabitNeedsAction ? (
+                    'Connect'
+                  ) : (
+                    '—'
+                  )}
+                </p>
+              </div>
+            </button>
+          </Tooltip>
+        )}
+
+        <Tooltip text={isCloudEdition ? 'Use your own API key stored securely in LenserFight. Charges go directly to your AI provider account.' : 'Use an API key stored locally in your browser. It is encrypted and never sent to our servers.'}>
           <button
             type="button"
-            onClick={handleChainabitClick}
-            disabled={chainabitIsDisabled}
-            className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isCloud && chainabitActive
-                ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
-                : chainabitIsDisabled
-                  ? 'border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed'
-                  : chainabitNeedsAction
-                    ? 'border-gray-200 dark:border-gray-600 opacity-60 hover:border-orange-300 hover:opacity-100'
-                    : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
-              }`}
+            onClick={handleMyKeyClick}
+            disabled={!canSelectByok}
+            className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isByok
+              ? 'border-primary bg-primary/5 ring-1 ring-primary'
+              : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+              } ${!canSelectByok ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
           >
-            <ChainabitLogo size={16} />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Chainabit</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 tabular-nums flex items-center gap-1">
-                {chainabitState === 'loading' ? (
-                  <><Loader2 size={10} className="animate-spin" />Checking…</>
-                ) : chainabitState === 'provider_error' ? (
-                  'Unavailable'
-                ) : chainabitActive && walletBalance != null ? (
-                  `${walletBalance.balance.toLocaleString()} cr`
-                ) : chainabitState === 'no_credits' ? (
-                  'No credits'
-                ) : chainabitNeedsAction ? (
-                  'Connect'
-                ) : (
-                  '—'
-                )}
+            <KeyRound size={16} className={isByok ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1">
+                {isCloudEdition ? 'My Keys' : 'Local Keys'}
+                <a
+                  href={`${fundingDocsUrl}#${isCloudEdition ? 'lf-cloud-keys-byok-cloud' : 'local-keys-byok-local'}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-primary-500 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                  title={isCloudEdition ? 'How LF Cloud Keys work' : 'How Local Keys work'}
+                >
+                  <span className="text-[9px] leading-none border border-current rounded-full px-1">?</span>
+                </a>
+              </p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                {selectableByokCount > 0
+                  ? `${selectableByokCount} key${selectableByokCount > 1 ? 's' : ''}`
+                  : isCloudEdition ? 'Add in Settings' : 'Add a key'}
               </p>
             </div>
           </button>
-        )}
-
-        <button
-          type="button"
-          onClick={handleMyKeyClick}
-          disabled={!canSelectByok}
-          className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isByok
-            ? 'border-primary bg-primary/5 ring-1 ring-primary'
-            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-            } ${!canSelectByok ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
-        >
-          <KeyRound size={16} className={isByok ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-              {isCloudEdition ? 'My Keys' : 'Local Keys'}
-            </p>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">
-              {selectableByokCount > 0
-                ? `${selectableByokCount} key${selectableByokCount > 1 ? 's' : ''}`
-                : isCloudEdition ? 'Add in Settings' : 'Add a key'}
-            </p>
-          </div>
-        </button>
+        </Tooltip>
       </div>
 
       {/* Row 2: LF Cloud Keys | Local Keys sub-mode (visible when isByok) */}
       {isCloudEdition && (isByokCloud || (isByokLocal && localKeyEnabled)) && (
         <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => onFundingSourceChange('user_byok_cloud')}
-            className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${isByokCloud
-              ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
-              : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
-              }`}
-          >
-            <Globe size={12} />
-            LF Cloud Keys
-            {availableKeys.length > 0 && (
-              <span className="ml-auto text-[10px] text-gray-400">{availableKeys.length}</span>
-            )}
-          </button>
-
-          {localKeyEnabled && (
+          <Tooltip text="API keys stored securely in LenserFight's cloud. Accessible from any device.">
             <button
               type="button"
-              onClick={() => onFundingSourceChange('user_byok_local')}
-              className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${isByokLocal
+              onClick={() => onFundingSourceChange('user_byok_cloud')}
+              className={`w-full flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${isByokCloud
                 ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
                 : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
                 }`}
             >
-              <HardDrive size={12} />
-              Local Keys
-              {availableLocalKeys.length > 0 && (
-                <span className="ml-auto text-[10px] text-gray-400">{availableLocalKeys.length}</span>
+              <Globe size={12} />
+              LF Cloud Keys
+              <a
+                href={`${fundingDocsUrl}#lf-cloud-keys-byok-cloud`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto text-gray-400 hover:text-primary-500 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+                title="How LF Cloud Keys work"
+              >
+                <span className="text-[9px] leading-none border border-current rounded-full px-1">?</span>
+              </a>
+              {availableKeys.length > 0 && (
+                <span className="text-[10px] text-gray-400">{availableKeys.length}</span>
               )}
             </button>
-          )}
+          </Tooltip>
+
+          <Tooltip text={isCloudEdition ? "Local keys are encrypted in your browser and never leave your device. Available when self-hosting LenserFight." : "API keys encrypted and stored only in your browser. Never leaves your device."}>
+            <button
+              type="button"
+              onClick={localKeyEnabled ? () => onFundingSourceChange('user_byok_local') : undefined}
+              disabled={!localKeyEnabled}
+              className={`w-full flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${isByokLocal
+                ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
+                : !localKeyEnabled
+                  ? 'border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 opacity-50 cursor-not-allowed'
+                  : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                }`}
+            >
+              <HardDrive size={12} />
+              Local Keys
+              <a
+                href={`${fundingDocsUrl}#local-keys-byok-local`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto text-gray-400 hover:text-primary-500 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+                title="How Local Keys work"
+              >
+                <span className="text-[9px] leading-none border border-current rounded-full px-1">?</span>
+              </a>
+              {availableLocalKeys.length > 0 && (
+                <span className="text-[10px] text-gray-400">{availableLocalKeys.length}</span>
+              )}
+            </button>
+          </Tooltip>
         </div>
       )}
 
