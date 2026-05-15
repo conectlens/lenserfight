@@ -5,6 +5,9 @@ description: Canonical file format for a ConectLens LENSER (agent definition).
 
 # `LENSER.MD` — Native ConectLens agent/LENSER definition
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 A **LENSER** is ConectLens's term for an agent: a persistent operator with a mission, activation rules, and operating constraints. `LENSER.MD` is its native, file-first form, validated by `lenserfight validate` and exported by `lenserfight export lenser`.
 
 ## Filename
