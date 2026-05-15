@@ -5,6 +5,9 @@ description: Legacy compatibility alias for a portable workflow with triggers, i
 
 # `COLENS.MD` — Legacy compatibility alias for a portable workflow
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 The legacy portable form of a workflow. Uses `kind: workflow` semantics with strict frontmatter and four required sections. Discovery also accepts the legacy `WORKFLOW.md` filename.
 
 ## Filename
