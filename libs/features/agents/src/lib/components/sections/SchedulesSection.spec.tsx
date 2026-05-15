@@ -60,9 +60,9 @@ vi.mock('@lenserfight/ui/overlays', () => ({
       <div>
         <p>{title}</p>
         <p>{bodyText}</p>
-        <button type="button" onClick={confirmAction.onClick}>
+        <Button type="button" onClick={confirmAction.onClick}>
           {confirmAction.label}
-        </button>
+        </Button>
       </div>
     ) : null,
 }))
@@ -83,6 +83,8 @@ import { SchedulesSection } from './SchedulesSection'
 import type { AgentWorkspaceContextValue } from '../../context/AgentWorkspaceContext'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import type { WorkflowScheduleRecord } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
+
 
 function makeWorkflow(overrides: Partial<WorkflowRecord> = {}): WorkflowRecord {
   return {
