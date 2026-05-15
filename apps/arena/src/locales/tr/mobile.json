@@ -1,0 +1,36 @@
+{
+  "hero": {
+    "title": "LenserFight",
+    "titleFaded": "Mobil",
+    "subtitle": "Arena cebinizde. Mobil uygulama monorepo içinde aktif geliştirme aşamasında — hayata geçirmek için katkıda bulunanlara ihtiyacımız var."
+  },
+  "contribute": {
+    "badge": "4 adımda başlayın",
+    "title": "Mobil projeyi yerelde kurun.",
+    "subtitle": "Uygulama bir Nx monorepo içindeki Expo projesidir. Nx'i derinlemesine bilmenize gerek yok — sadece bu adımları izleyin.",
+    "steps": {
+      "0": { "title": "Repo'yu fork'layın ve klonlayın", "description": "Mobil uygulama Nx monorepo içinde apps/mobile'da bulunur." },
+      "1": { "title": "Bağımlılıkları kurun", "description": "pnpm workspace'leri kullanır — tüm paketler kök dizine yükseltilir." },
+      "2": { "title": "Expo dev sunucusunu başlatın", "description": "Expo Go'yu açar. Telefonunuzla QR kodu tarayın veya simülatörde çalıştırın." },
+      "3": { "title": "Özelliğinizi bulun", "description": "Bileşenler, ekranlar ve navigasyon apps/mobile/src içindedir." }
+    }
+  },
+  "needs": {
+    "badge": "İhtiyacımız olan",
+    "title": "Katkıya açık alanlar.",
+    "items": {
+      "0": "Savaşlar ve lensler için iOS ve Android ekranları",
+      "1": "Push bildirim entegrasyonu",
+      "2": "Çevrimdışı öncelikli önbellek katmanı",
+      "3": "Expo Router navigasyon kurulumu",
+      "4": "Karanlık / açık tema tokenleri (libs/ui'de zaten mevcut)",
+      "5": "Erişilebilirlik (a11y) denetimleri"
+    }
+  },
+  "cta": {
+    "badge": "Katkıda bulunmaya hazır mısınız?",
+    "title": "Bir sorun seçin ve gönderin.",
+    "description": "GitHub'da <strong>mobile</strong> etiketli açık sorunlara göz atın. Her seviyeden katkı bekliyoruz.",
+    "viewApps": "apps/mobile'ı görüntüle"
+  }
+}
