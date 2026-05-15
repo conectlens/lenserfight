@@ -38,7 +38,7 @@ export class SupabasePolicyEvaluationsRepository
     })
     if (error) throw error
     let rows = (data ?? []) as PolicyEvaluationRecord[]
-    if (options.verdict) rows = rows.filter((r) => r.decision === options.verdict)
+    if (options.verdict) rows = rows.filter((r) => r.verdict === options.verdict)
     if (options.policy_type) rows = rows.filter((r) => r.policy_type === options.policy_type)
     return rows
   }
