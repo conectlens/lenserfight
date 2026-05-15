@@ -6,6 +6,7 @@ import type {
   ApprovalStatus,
 } from '@lenserfight/types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Button, Card } from '@lenserfight/ui/components'
 import { Check, Pencil, ShieldCheck, X } from 'lucide-react'
 import React, { useState } from 'react'
 import { ApprovalDecisionDialog } from '../ApprovalDecisionDialog'
@@ -80,8 +81,8 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[28px] border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-6 shadow-sm dark:border-amber-500/20 dark:from-[#1d160d] dark:via-[#101010] dark:to-[#180d08]">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">
+      <div className="rounded-3xl border border-primary-yellow-200/70 bg-gradient-to-br from-primary-yellow-50 via-white to-orange-50 p-6 shadow-sm dark:border-primary-yellow-500/20 dark:from-[#1d160d] dark:via-[#101010] dark:to-[#180d08]">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-yellow-700 dark:text-primary-yellow-300">
           Approval queue
         </p>
         <h1 className="mt-3 text-3xl font-black tracking-tight text-gray-900 dark:text-white">
@@ -96,18 +97,18 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
 
       <div className="flex flex-wrap items-center gap-2">
         {FILTER_OPTIONS.map((option) => (
-          <button
+          <Button
             key={option.value}
             type="button"
             onClick={() => setStatusFilter(option.value)}
             className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition ${
               statusFilter === option.value
-                ? 'border-amber-500 bg-amber-100 text-amber-800 dark:border-amber-400 dark:bg-amber-500/20 dark:text-amber-200'
-                : 'border-gray-200 text-gray-600 hover:border-amber-300 dark:border-gray-700 dark:text-gray-300'
+                ? 'border-primary-yellow-500 bg-primary-yellow-100 text-primary-yellow-800 dark:border-primary-yellow-400 dark:bg-primary-yellow-500/20 dark:text-primary-yellow-200'
+                : 'border-gray-200 text-gray-600 hover:border-primary-yellow-300 dark:border-gray-700 dark:text-gray-300'
             }`}
           >
             {option.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -139,12 +140,12 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           {requests.map((request) => (
             <div
               key={request.request_id}
-              className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+              className="!p-5"
             >
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                    <span className="rounded-full border border-primary-yellow-200 bg-primary-yellow-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-200">
                       {request.gate_kind ?? 'gate'}
                     </span>
                     <span className="rounded-full border border-gray-200 px-2.5 py-1 text-[11px] font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300">
@@ -171,33 +172,33 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
                 </div>
                 {statusFilter === 'pending' && (
                   <div className="flex flex-wrap items-center gap-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="danger"
                       onClick={() =>
                         setActiveDecision({ request, decision: 'rejected' })
                       }
-                      className="inline-flex items-center gap-1.5 rounded-2xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 transition hover:border-red-400 hover:bg-red-50 dark:border-red-500/30 dark:bg-gray-900 dark:text-red-300 dark:hover:bg-red-500/10"
                     >
                       <X size={16} /> Reject
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="secondary"
                       onClick={() =>
                         setActiveDecision({ request, decision: 'modified' })
                       }
-                      className="inline-flex items-center gap-1.5 rounded-2xl border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-amber-700 transition hover:border-amber-400 hover:bg-amber-50 dark:border-amber-500/30 dark:bg-gray-900 dark:text-amber-300 dark:hover:bg-amber-500/10"
                     >
                       <Pencil size={16} /> Modify
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="primary"
                       onClick={() =>
                         setActiveDecision({ request, decision: 'approved' })
                       }
-                      className="inline-flex items-center gap-1.5 rounded-2xl bg-amber-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-amber-500"
                     >
                       <Check size={16} /> Approve
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
