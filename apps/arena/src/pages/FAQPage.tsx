@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
 import { chainabitContactUrl } from '../utils/chainabitUrls'
 
