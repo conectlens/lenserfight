@@ -57,13 +57,13 @@ function urlFor(locale: string, unprefixed: string): string {
 export function RouteSEO() {
   const location = useLocation()
   const { locale } = useLocale()
-  const { t } = useTranslation()
+  const { t } = useTranslation('seo')
 
   const unprefixed = normalizeUnprefixed(location.pathname)
   const meta = routeMeta[unprefixed] ?? routeMeta['/']
 
-  const title = t(`seo.${meta.key}.title`)
-  const description = t(`seo.${meta.key}.description`)
+  const title = t(`${meta.key}.title`)
+  const description = t(`${meta.key}.description`)
   const canonicalUrl = urlFor(locale, unprefixed)
   const direction = getLocale(locale).direction
 
