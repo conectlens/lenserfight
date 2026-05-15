@@ -11,10 +11,36 @@
 -- The auth.user UUIDs are deterministic so that downstream seeds (battles,
 -- lens templates, workflows, analytics) can reference them safely.
 --
--- Passwords are seeded for local development and CI ONLY. They are rotated by
--- the deployment pipeline before any production environment is exposed to the
--- public. NEVER commit real production credentials here.
+-- Passwords are injected at apply-time via PostgreSQL session settings — they
+-- are NEVER committed to this file. The deployment pipeline (or a developer
+-- running `pnpm supabase:seed:demo` locally) sets them like:
+--
+--   PGOPTIONS="-c seed.lf_password=$LF_PW \
+--              -c seed.chainabit_password=$CHAINABIT_PW \
+--              -c seed.conectlens_password=$CONECTLENS_PW" \
+--     psql ... -f supabase/seed-data.sql
+--
+-- When the GUCs are unset (local one-shot resets, ad-hoc psql runs), a random
+-- UUID-derived password is used so the row inserts succeed but cannot be
+-- guessed. Operators must reset the password via the auth recovery flow to
+-- access these accounts in that case.
 -- =============================================================================
+
+-- Reserved-seed password resolver. Returns the GUC if set, else a random UUID.
+CREATE OR REPLACE FUNCTION pg_temp.fn_seed_password(p_guc text)
+RETURNS text
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_val text;
+BEGIN
+  v_val := current_setting(p_guc, true);
+  IF v_val IS NULL OR length(v_val) = 0 THEN
+    RETURN gen_random_uuid()::text;
+  END IF;
+  RETURN v_val;
+END;
+$$;
 
 INSERT INTO auth.users (
     instance_id, id, aud, role,
@@ -34,7 +60,7 @@ VALUES
         'a1000000-0000-0000-0000-000000000001',
         'authenticated', 'authenticated',
         'hey@lenserfight.com',
-        extensions.crypt('LenserFight#DevSeed2026!', extensions.gen_salt('bf')),
+        extensions.crypt(pg_temp.fn_seed_password('seed.lf_password'), extensions.gen_salt('bf')),
         now(), now(), now(), now(),
         '', NULL,
         '', NULL,
@@ -50,7 +76,7 @@ VALUES
         'a1000000-0000-0000-0000-000000000002',
         'authenticated', 'authenticated',
         'bit@chainabit.com',
-        extensions.crypt('Chainabit#DevSeed2026!', extensions.gen_salt('bf')),
+        extensions.crypt(pg_temp.fn_seed_password('seed.chainabit_password'), extensions.gen_salt('bf')),
         now(), now(), now(), now(),
         '', NULL,
         '', NULL,
@@ -66,7 +92,7 @@ VALUES
         'a1000000-0000-0000-0000-000000000003',
         'authenticated', 'authenticated',
         'lets@conectlens.com',
-        extensions.crypt('ConectLens#DevSeed2026!', extensions.gen_salt('bf')),
+        extensions.crypt(pg_temp.fn_seed_password('seed.conectlens_password'), extensions.gen_salt('bf')),
         now(), now(), now(), now(),
         '', NULL,
         '', NULL,
