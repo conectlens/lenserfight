@@ -24,7 +24,9 @@ import { stripLocale } from '@lenserfight/utils/locale'
 import {
   LanguageSwitcher,
   LocaleLink as Link,
+  useLocale,
 } from '@lenserfight/shared/i18n-routing'
+import { LocaleLanguageSelect } from '@lenserfight/ui/forms'
 import { globalAnalyticsController } from '@lenserfight/infra/analytics'
 
 function trackNav(label: string, location = 'arena_header') {
@@ -72,6 +74,21 @@ const PRODUCT_ITEMS = [
     badge: 'Soon' as const,
   },
 ]
+
+const ArenaHeaderLocaleSelect: React.FC = () => {
+  const { locale, setLocale } = useLocale()
+  return (
+    <LocaleLanguageSelect
+      className="w-32"
+      value={locale}
+      onChange={(next) => {
+        const prev = locale
+        setLocale(next)
+        trackCta(`language:${prev}->${next}`, 'arena_header')
+      }}
+    />
+  )
+}
 
 const GITHUB_URL = 'https://github.com/conectlens/lenserfight'
 const GITHUB_SPONSORS_URL = 'https://github.com/sponsors/conectlens'
@@ -273,10 +290,7 @@ export const LandLayout: React.FC = () => {
               <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={20} height={20} alt="Chainabit" className="rounded" />
             </a>
             <div className="mx-1 h-4 w-px bg-surface-border" />
-            <LanguageSwitcher
-              variant="compact"
-              onChange={(next, prev) => trackCta(`language:${prev}->${next}`, 'arena_header')}
-            />
+            <ArenaHeaderLocaleSelect />
             <div className="mx-1 h-4 w-px bg-surface-border" />
             <Link to="/get-started" onClick={() => trackCta('Get Started', 'arena_header')}>
               <Button variant="ghost" size="sm">Get Started</Button>
