@@ -30,6 +30,13 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Module-level flag: survives React Strict Mode's double-mount (each mount gets a fresh ref,
+// but the module is loaded once). Reset on HMR via import.meta.hot so dev reload works cleanly.
+let _initDone = false
+if (import.meta.hot) {
+  import.meta.hot.accept(() => { _initDone = false })
+}
+
 // sessionStorage-backed guard: survives React Strict Mode and HMR (unlike module-level booleans
 // which reset on every hot-reload in dev). Key is scoped by user ID so switching accounts works.
 const _deletionCheckKey = (userId: string) => `acdr_${userId}`
@@ -61,9 +68,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     error: null,
   })
 
-  // Tracks whether initAuth has already settled state so the onAuthStateChange
-  // subscription does not overwrite it with a stale INITIAL_SESSION event.
-  const initDone = useRef(false)
   const loginTransitionInFlight = useRef(false)
   // Track whether the user was previously authenticated so we only clear caches
   // on actual sign-out transitions (not null → null for anonymous users).
@@ -89,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = authService.onAuthStateChange((user) => {
       // Skip early INITIAL_SESSION fires — initAuth owns the first state write.
       // After that, apply any subsequent changes (token refresh, sign-out, etc.)
-      if (!initDone.current) return
+      if (!_initDone) return
       if (loginTransitionInFlight.current && user) return
       // Clear stale caches on actual sign-out (user was authenticated, now is not).
       // Skip for anonymous users (null → null) to avoid wiping in-flight public queries.
@@ -106,8 +110,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 2. Initial load from persisted session or network
     const initAuth = async () => {
-      if (initDone.current) return
-      initDone.current = true
+      if (_initDone) return
+      _initDone = true
       try {
         const user = await authService.getCurrentUser()
         if (user) {
