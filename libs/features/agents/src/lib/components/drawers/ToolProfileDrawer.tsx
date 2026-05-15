@@ -1,6 +1,7 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { Drawer } from '@lenserfight/ui/overlays'
 import type { AgentToolProfileRecord } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
 import React, { useEffect, useState } from 'react'
 
 interface Props {
@@ -89,6 +90,16 @@ export const ToolProfileDrawer: React.FC<Props> = ({
       side="right"
       width="w-[520px]"
       title={isEdit ? 'Edit tool profile' : 'Create tool profile'}
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          cancelVariant="outline"
+          onSubmit={handleSave}
+          submitLabel={submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create'}
+          isLoading={submitting}
+          disabled={submitting}
+        />
+      }
     >
       <div className="space-y-4">
         <Field label="Name">
@@ -116,19 +127,14 @@ export const ToolProfileDrawer: React.FC<Props> = ({
         {error && (
           <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">{error}</p>
         )}
-        <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200">Cancel</button>
-          <button type="button" onClick={handleSave} disabled={submitting} className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900">
-            {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create'}
-          </button>
-        </div>
+
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="block">
