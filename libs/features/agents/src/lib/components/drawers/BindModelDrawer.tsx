@@ -1,7 +1,10 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { Drawer } from '@lenserfight/ui/overlays'
 import type { AgentModelProfileRecord } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
 import React, { useEffect, useState } from 'react'
+
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface BindModelDrawerProps {
   open: boolean
@@ -55,8 +58,27 @@ export const BindModelDrawer: React.FC<BindModelDrawerProps> = ({
   }
 
   return (
-    <Drawer open={open} onClose={onClose} side="right" width="w-[480px]" title="Edit model binding">
+    <Drawer
+      open={open}
+      onClose={onClose}
+      side="right"
+      width="w-[480px]"
+      title="Bind model profile"
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          onSubmit={handleSave}
+          submitLabel={submitting ? 'Saving…' : 'Save changes'}
+          isLoading={submitting}
+          disabled={submitting}
+        />
+      }
+    >
       <div className="space-y-4">
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/bind-model"
+          tip="Create or edit a model profile. Pin provider, model id, and decoding defaults (temperature, top_p, max_tokens). Exactly one profile is the agent default."
+        />
         <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-800">
           <p className="font-semibold text-gray-900 dark:text-white">
             {profile.model_key ?? profile.model_id}
@@ -104,7 +126,7 @@ export const BindModelDrawer: React.FC<BindModelDrawerProps> = ({
             id="isDefault"
             checked={isDefault}
             onChange={(e) => setIsDefault(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 accent-amber-500"
+            className="h-4 w-4 rounded border-gray-300 accent-primary-yellow-500"
           />
           <label htmlFor="isDefault" className="text-sm text-gray-700 dark:text-gray-200">
             Set as default model for this workspace
@@ -117,30 +139,14 @@ export const BindModelDrawer: React.FC<BindModelDrawerProps> = ({
           </p>
         )}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={submitting}
-            className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-          >
-            {submitting ? 'Saving…' : 'Save changes'}
-          </button>
-        </div>
+
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="block">
