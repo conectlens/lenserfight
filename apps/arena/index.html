@@ -87,6 +87,20 @@
 
 <body class="transition-colors duration-200">
   <div id="root"></div>
+  <script>
+    // Seed the i18next localStorage key from the URL before the bundle parses,
+    // so the first paint matches the URL-driven locale and avoids FOUC.
+    (function () {
+      try {
+        var ENABLED = ['en', 'tr'];
+        var seg = (window.location.pathname || '/').split('/')[1];
+        if (seg && ENABLED.indexOf(seg) !== -1) {
+          window.localStorage.setItem('lf-language', seg);
+          document.documentElement.lang = seg;
+        }
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
   <script type="module" src="/src/index.tsx"></script>
 </body>
 
