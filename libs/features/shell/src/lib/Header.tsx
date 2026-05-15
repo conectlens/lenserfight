@@ -8,6 +8,7 @@ import { ActionMenu, Breadcrumbs, Button } from '@lenserfight/ui/components'
 import { useUI } from '@lenserfight/ui/providers'
 import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
 import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
+import { LocaleSelect } from '@lenserfight/shared/i18n-locale'
 import { Bell, ChevronLeft, Menu, Share2, Shield, LogOut, Github } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
@@ -75,6 +76,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               <Shield size={20} />
             </button>
           )}
+
+          <LocaleSelect className="mr-1" />
 
           <a
             href={githubUrl}
