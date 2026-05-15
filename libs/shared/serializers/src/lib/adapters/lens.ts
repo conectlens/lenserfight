@@ -2,6 +2,7 @@ import type { ExportEnvelope, ExportKind } from '@lenserfight/domain/exports'
 
 import { JsonSerializer } from './JsonSerializer'
 import { MarkdownSerializerBase } from './MarkdownSerializer'
+import { YamlSerializer } from './YamlSerializer'
 import { escapeMarkdown, stripHtml } from '../util/markdownEscape'
 
 export interface LensExportPayload {
@@ -17,6 +18,12 @@ export interface LensExportPayload {
 const LENS_KIND: ExportKind = 'lens'
 
 export class LensJsonSerializer extends JsonSerializer<LensExportPayload> {
+  constructor() {
+    super(LENS_KIND)
+  }
+}
+
+export class LensYamlSerializer extends YamlSerializer<LensExportPayload> {
   constructor() {
     super(LENS_KIND)
   }
