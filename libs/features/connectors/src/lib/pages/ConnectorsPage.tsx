@@ -54,7 +54,7 @@ export const ConnectorsPage: React.FC = () => {
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-center gap-4 pt-1">
               <a
-                href={ADAPTER_GUIDE_PATH}
+                href={`${DOCS_BASE_URL}/en${ADAPTER_GUIDE_PATH}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-semibold text-greyscale-500 dark:text-greyscale-400 hover:text-amber-600 dark:hover:text-amber-400 underline underline-offset-4 decoration-greyscale-200 dark:decoration-greyscale-800 transition-all"
@@ -64,7 +64,7 @@ export const ConnectorsPage: React.FC = () => {
               </a>
               <div className="w-1 h-1 rounded-full bg-greyscale-200 dark:bg-greyscale-800" />
               <a
-                href={CONNECTORS_DOCS_PATH}
+                href={`${DOCS_BASE_URL}/en${CONNECTORS_DOCS_PATH}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-semibold text-greyscale-500 dark:text-greyscale-400 hover:text-amber-600 dark:hover:text-amber-400 underline underline-offset-4 decoration-greyscale-200 dark:decoration-greyscale-800 transition-all"
