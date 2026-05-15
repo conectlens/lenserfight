@@ -131,15 +131,20 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
     if (tagsError) this.handleError(tagsError)
 
-    const tagById = new Map((tags ?? []).map((tag) => [tag.id, tag]))
-    return tagIds
-      .map((id: string) => tagById.get(id))
-      .filter((tag): tag is NonNullable<typeof tag> => tag != null)
-      .map((tag) => ({
-        id: tag.id,
-        slug: tag.slug,
-        name: tag.name,
-      }))
+    type TagRow = { id: string; slug: string; name: string }
+    const tagById = new Map<string, TagRow>(
+      ((tags ?? []) as TagRow[]).map((tag) => [tag.id, tag])
+    )
+    const resolved: TagRow[] = []
+    for (const id of tagIds) {
+      const tag = tagById.get(id)
+      if (tag) resolved.push(tag)
+    }
+    return resolved.map((tag) => ({
+      id: tag.id,
+      slug: tag.slug,
+      name: tag.name,
+    }))
   }
 
   private async getThreadReactionTotals(threadId: string): Promise<Record<string, number>> {
