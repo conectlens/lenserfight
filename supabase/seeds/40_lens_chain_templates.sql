@@ -190,7 +190,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES (
       'lens'::content.entity_type_enum, v_lens_intent, 'en', true,
-      'Intent Lens (template)',
+      'Intent Lens',
       'Classifies a raw user request into structured intent so downstream lenses can plan.',
       'You are an Intent Classifier. Classify the request in [[user_request]] and emit goal/target_media/quality_level/constraints/suggested_kinds.'
     );
@@ -222,7 +222,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES (
       'lens', v_lens_plan, 'en', true,
-      'Planning Lens (template)',
+      'Planning Lens',
       'Turns a structured intent into an ordered execution plan of tagged steps.',
       'You are an Execution Planner. Produce an execution plan from [[context]].'
     );
@@ -254,7 +254,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES (
       'lens', v_lens_research, 'en', true,
-      'Research Lens (template)',
+      'Research Lens',
       'Synthesizes evidence for a topic using upstream planning context.',
       'You are a Research Synthesizer. Gather evidence for [[topic]] constrained by [[context]].'
     );
@@ -286,7 +286,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES (
       'lens', v_lens_gen_text, 'en', true,
-      'Text Generation Lens (template)',
+      'Text Generation Lens',
       'Drafts long-form text grounded in upstream research.',
       'You are a Long-Form Writer. Draft content about [[topic]] grounded in [[context]].'
     );
@@ -317,7 +317,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES (
       'lens', v_lens_gen_image, 'en', true,
-      'Image Generation Lens (template)',
+      'Image Generation Lens',
       'Renders a still image from a structured visual brief.',
       'You are an Image Generator. Render the still described in [[visual_brief]].'
     );
@@ -348,7 +348,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES (
       'lens', v_lens_gen_video, 'en', true,
-      'Video Generation Lens (template)',
+      'Video Generation Lens',
       'Renders a short-form video from a scene plan.',
       'You are a Video Producer. Render the scene plan in [[scene_plan]].'
     );
@@ -379,7 +379,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES (
       'lens', v_lens_refine, 'en', true,
-      'Refinement Lens (template)',
+      'Refinement Lens',
       'Improves a draft without changing intent.',
       'You are a Draft Editor. Improve [[draft]] while preserving intent.'
     );
@@ -411,7 +411,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES (
       'lens', v_lens_validate, 'en', true,
-      'Validation Lens (template)',
+      'Validation Lens',
       'Scores an output against a rubric and flags regressions.',
       'You are an Output Validator. Score [[output]] against [[requirements]].'
     );
@@ -443,7 +443,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES (
       'lens', v_lens_export_pdf, 'en', true,
-      'PDF Export Lens (template)',
+      'PDF Export Lens',
       'Serializes validated content into a PDF-ready manifest.',
       'You are a PDF Exporter. Serialize [[content]] to a PDF titled [[title]].'
     );
