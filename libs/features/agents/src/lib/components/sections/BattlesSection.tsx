@@ -119,7 +119,7 @@ export const BattlesSection: React.FC = () => {
       }
     >
       {showForm && canManage && (
-        <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-5 dark:border-amber-800/40 dark:bg-amber-950/20">
+        <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-amber-500/10 dark:bg-[#111111]">
           <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
             New battle subscription
           </h3>
@@ -265,7 +265,7 @@ interface SubscriptionCardProps {
 
 function SubscriptionCard({ sub, canManage, onDeactivate, isDeactivating }: SubscriptionCardProps) {
   return (
-    <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-amber-200 dark:border-gray-800 dark:bg-[#0c0c0c] dark:hover:border-amber-500/20">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">

@@ -195,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const chromeClass =
     workspaceMode === 'agent'
-      ? 'bg-[#fff8ef] dark:bg-[#0f0d0a] border-r border-amber-200/80 dark:border-amber-500/20'
+      ? 'bg-white dark:bg-[#0a0a0a] border-r border-amber-200/50 dark:border-amber-500/10'
       : 'bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700'
 
   const containerClass = isMobile
@@ -285,8 +285,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div key={section.id}>
                 {section.label && showLabels && (
                   <p
-                    className={`px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${workspaceMode === 'agent'
-                      ? 'text-amber-700 dark:text-amber-300'
+                    className={`px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] ${workspaceMode === 'agent'
+                      ? 'text-amber-600 dark:text-amber-500/80'
                       : 'text-gray-500 dark:text-gray-400'
                       }`}
                   >
@@ -316,7 +316,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </nav>
 
-        <div className={`flex-shrink-0 px-3 pb-3 pt-2 mt-auto space-y-3 ${workspaceMode === 'agent' ? 'bg-[#fff8ef] dark:bg-[#0f0d0a]' : 'bg-gray-50 dark:bg-gray-800'}`}>
+        <div className={`flex-shrink-0 px-3 pb-3 pt-2 mt-auto space-y-3 ${workspaceMode === 'agent' ? 'bg-white dark:bg-[#0a0a0a]' : 'bg-gray-50 dark:bg-gray-800'}`}>
           {/* Feedback Button */}
           <div
             className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-3 duration-500 delay-75'}`}
