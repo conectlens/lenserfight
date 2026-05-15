@@ -15,7 +15,7 @@ LenserFight routes lens executions through a unified model registry (`ai.models`
 | `reasoning` | Extended chain-of-thought reasoning (think-before-answer) |
 | `tools` | Function / tool calling |
 | `vision` | Accepts image inputs |
-| `json_schema` | Guaranteed structured JSON output |
+| `json_schema` | Provider-supported structured JSON output |
 | `image_generation` | Produces images from text prompts |
 | `video_generation` | Produces video clips from text/image prompts |
 | `audio_generation` | Produces speech or general audio |
