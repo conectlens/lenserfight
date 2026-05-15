@@ -1,4 +1,5 @@
 import { Badge } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { Bot, Brain, Clock3, FileText, GitBranch } from 'lucide-react'
 import React from 'react'
 
@@ -191,22 +192,16 @@ export const AILenserOverviewPanel: React.FC<AILenserOverviewPanelProps> = ({
             <FileText size={16} className="text-primary-yellow-600" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Default model binding</h3>
           </div>
-          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Runtime default model
-          </label>
-          <select
+          <SelectField
+            label="Runtime default model"
             value={selectedModelId}
-            onChange={(event) => onSelectModel(event.target.value)}
+            onChange={onSelectModel}
             disabled={isSavingModel || models.length === 0}
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-          >
-            <option value="">Select a model</option>
-            {models.map((model) => (
-              <option key={model.id} value={model.id}>
-                {model.name}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: '', label: 'Select a model' },
+              ...models.map((model) => ({ value: model.id, label: model.name })),
+            ]}
+          />
           <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
             <p>Every scheduled workflow dispatch is logged in the unified automation feed.</p>
             <p>Schedule activation is blocked for cyclic workflows and in-flight overlap is skipped.</p>
