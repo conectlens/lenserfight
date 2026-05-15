@@ -5,6 +5,7 @@ import type {
   AgentTeamMemberRecord,
   AgentTeamRecord,
 } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useModalRouter } from '@lenserfight/ui/routing'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -266,6 +267,8 @@ export const AgentTeamSection: React.FC = () => {
     return (
       <SectionPage
         eyebrow="Builder"
+        docsPath="/how-to/agents/workspace/team-builder"
+        docsTip="Builder is the live multi-agent graph. Each node is an agent or tool role; each edge is a handoff. Owners only."
         title="Multi-agent graph"
         description="Builder is where the owner connects agents into a live team topology."
       >
@@ -281,6 +284,8 @@ export const AgentTeamSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Builder"
+      docsPath="/how-to/agents/workspace/team-builder"
+      docsTip="Builder owns the live team topology: who participates, how they hand work off, and which active team is currently in focus."
       title="Multi-agent graph"
       description="Builder owns the live team topology: who participates, how they hand work off, and which active team is currently in focus."
     >
@@ -358,13 +363,13 @@ export const AgentTeamSection: React.FC = () => {
             ? 'Drag an agent from the palette or right-click the canvas to add a member.'
             : 'Create a team first, then connect agents on the canvas.',
           action: bootstrap ? (
-            <button
+            <Button
               type="button"
+              variant="dark"
               onClick={() => setCreateTeamDialogOpen(true)}
-              className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
             >
               Create team
-            </button>
+            </Button>
           ) : undefined,
         }}
         sidePanel={
@@ -450,6 +455,7 @@ export const AgentTeamSection: React.FC = () => {
             open={scheduleDrawerOpen}
             onClose={() => setScheduleDrawerOpen(false)}
             workflows={workflows}
+            ownerLenserId={agentProfile?.owner_lenser_id ?? profile.id}
             defaultAssigneeId={selectedTeam.id}
             defaultAssigneeType="team"
             teamOptions={teamOptions}
