@@ -5,6 +5,9 @@ description: "How CLI tokens reach the LenserFight web UI in real-time — Supab
 
 # Webstreaming Architecture
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 When you run `lf battle exec <id> --byok --stream-to-web`, every token from your local AI provider appears in the LenserFight web arena within milliseconds. This page explains how that pipeline works end-to-end.
 
 ---
