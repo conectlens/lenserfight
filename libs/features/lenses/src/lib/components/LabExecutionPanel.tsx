@@ -1,7 +1,8 @@
 import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance, LensVersionParam, GenerativeMediaParams } from '@lenserfight/types'
 import type { ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/types'
 import { Button } from '@lenserfight/ui/components'
-import { Loader2, Play, Square } from 'lucide-react'
+import { copyTextToClipboard, renderLens, renderLensWithSnapshot } from '@lenserfight/utils/text'
+import { Check, ClipboardCopy, Loader2, Play, Square } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
@@ -154,6 +155,34 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
 
   const [jsonImportOpen, setJsonImportOpen] = useState(false)
   const [csvImportOpen, setCsvImportOpen] = useState(false)
+  const [copiedWithParams, setCopiedWithParams] = useState(false)
+
+  const isNonEmpty = (v: unknown) => {
+    if (v === undefined || v === null) return false
+    if (typeof v === 'string') return v.trim().length > 0
+    if (Array.isArray(v)) return v.length > 0
+    return true
+  }
+  const canCopyWithParams = Object.values(form.inputValues).some(isNonEmpty)
+
+  const handleCopyWithParameters = async () => {
+    let rendered: string
+    if (form.usingVersionParams && versionParams) {
+      rendered = renderLensWithSnapshot(lensContent, form.inputValues, versionParams)
+    } else if (form.legacyParamSchemas.length > 0) {
+      rendered = renderLens(lensContent, form.inputValues as Record<string, unknown>, form.legacyParamSchemas)
+    } else {
+      const freeform = (form.inputValues['freeform'] as string) ?? ''
+      rendered = freeform.trim().length > 0 ? `${lensContent}\n\n${freeform}` : lensContent
+    }
+    try {
+      await copyTextToClipboard(rendered)
+      setCopiedWithParams(true)
+      setTimeout(() => setCopiedWithParams(false), 2000)
+    } catch {
+      // clipboard failed — leave state unchanged
+    }
+  }
 
   const isDisabled =
     isTriggeringExecution ||
@@ -263,11 +292,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
                     key={m}
                     type="button"
                     onClick={() => setSelectedModality(m as typeof selectedModality)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors capitalize ${
-                      effectiveModality === m
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors capitalize ${effectiveModality === m
                         ? 'bg-primary-yellow-500 text-greyscale-900'
                         : 'border border-surface-border bg-surface-raised text-greyscale-600 hover:border-primary-yellow-400 dark:text-greyscale-300'
-                    }`}
+                      }`}
                   >
                     {m}
                   </button>
@@ -394,23 +422,51 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               <span>Stop</span>
             </Button>
           ) : (
-            <Button
-              type="submit"
-              disabled={isDisabled || isLocked}
-              className="w-full flex items-center justify-center gap-2 h-auto py-2.5"
-            >
-              {isTriggeringExecution ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  <span>Running…</span>
-                </>
-              ) : (
-                <>
-                  <Play size={16} />
-                  <span>Run</span>
-                </>
+            <div className="flex items-stretch gap-2">
+
+              <Button
+                type="submit"
+                disabled={isDisabled || isLocked}
+                className="flex-1 flex items-center justify-center gap-2 h-auto py-2.5"
+              >
+                {isTriggeringExecution ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Running…</span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={16} />
+                    <span>Run</span>
+                  </>
+                )}
+              </Button>
+    {canCopyWithParams && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleCopyWithParameters}
+                  disabled={isLocked}
+                  title="Copy lens prompt with filled parameter values"
+                  className={`flex-shrink-0 flex items-center justify-center gap-2 h-auto py-2.5 px-4 rounded-xl border shadow-sm transition-all ${copiedWithParams
+                      ? 'bg-emerald-600 border-emerald-600 text-white'
+                      : 'bg-emerald-50 border-emerald-200 text-emerald-900 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-50 dark:hover:bg-emerald-900/40'
+                    }`}
+                >
+                  {copiedWithParams ? (
+                    <>
+                      <Check size={16} strokeWidth={3} />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <ClipboardCopy size={16} />
+                      <span>Copy with Parameters</span>
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
+            </div>
           )}
         </form>
       </div>
