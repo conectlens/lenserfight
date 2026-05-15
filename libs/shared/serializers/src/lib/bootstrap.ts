@@ -2,13 +2,15 @@ import type { ExportFormat, ExportKind } from '@lenserfight/domain/exports'
 
 import { BattleJsonSerializer, BattleMarkdownSerializer } from './adapters/battle'
 import { LensJsonSerializer, LensMarkdownSerializer } from './adapters/lens'
+import { WorkflowJsonSerializer, WorkflowMarkdownSerializer } from './adapters/workflow'
 import type { Serializer } from './Serializer'
 import { getDefaultRegistry, SerializerRegistry } from './SerializerRegistry'
 
 /**
  * Bootstrap serializer registry with the EX-1 set:
- *   - battle: json, markdown
- *   - lens:   json, markdown
+ *   - battle:   json, markdown
+ *   - lens:     json, markdown
+ *   - workflow: json, markdown
  *
  * Truly idempotent: state lives in the registry itself, not in a
  * separate module-scoped flag. This survives HMR reloads, dual module
@@ -19,6 +21,8 @@ const BUILTINS: Array<() => Serializer<unknown>> = [
   () => new BattleMarkdownSerializer() as unknown as Serializer<unknown>,
   () => new LensJsonSerializer() as unknown as Serializer<unknown>,
   () => new LensMarkdownSerializer() as unknown as Serializer<unknown>,
+  () => new WorkflowJsonSerializer() as unknown as Serializer<unknown>,
+  () => new WorkflowMarkdownSerializer() as unknown as Serializer<unknown>,
 ]
 
 export function bootstrapSerializers(
