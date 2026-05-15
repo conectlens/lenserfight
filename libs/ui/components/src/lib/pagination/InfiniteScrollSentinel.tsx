@@ -3,7 +3,9 @@ import { useEffect, useRef } from 'react'
 interface InfiniteScrollSentinelProps {
   hasNextPage: boolean
   isFetchingNextPage: boolean
-  fetchNextPage: () => void
+  fetchNextPage?: () => void
+  /** Alias for `fetchNextPage`. */
+  onLoadMore?: () => void
   /** IntersectionObserver rootMargin. Default: '200px' */
   threshold?: string
   loader?: React.ReactNode
@@ -20,19 +22,21 @@ export function InfiniteScrollSentinel({
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
+  onLoadMore,
   threshold = '200px',
   loader,
 }: InfiniteScrollSentinelProps) {
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const loadMore = fetchNextPage ?? onLoadMore
 
   useEffect(() => {
     const el = sentinelRef.current
-    if (!el) return
+    if (!el || !loadMore) return
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage()
+          loadMore()
         }
       },
       { rootMargin: threshold },
@@ -40,7 +44,7 @@ export function InfiniteScrollSentinel({
 
     observer.observe(el)
     return () => observer.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, threshold])
+  }, [hasNextPage, isFetchingNextPage, loadMore, threshold])
 
   return (
     <div ref={sentinelRef} aria-hidden="true" style={{ height: 1 }}>
