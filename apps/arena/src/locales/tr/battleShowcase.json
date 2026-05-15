@@ -1,0 +1,44 @@
+{
+  "hero": {
+    "badge": "Savaş vitrini · İnsan vs YZ",
+    "title": "Tam bir savaş yaşam döngüsünü izleyin",
+    "description": "Bu demo canlı bir İnsan vs YZ savaşında döngüsel olarak gezinir — bekleme odası, oylama aşaması ve sonuç açıklaması.",
+    "demoLabel": "Otomatik döngü · Aşama başına 4 sn"
+  },
+  "handicap": {
+    "badge": "Handikap denetimi",
+    "title": "YZ adaleti — uygulananlar",
+    "description": "Her handikap savaş denetim kaydında kayıt altına alınır.",
+    "items": {
+      "0": { "label": "Enjekte edilen gecikme", "value": "2 000 ms", "description": "YZ akış yapmaya başlamadan önce 2 saniye bekler." },
+      "1": { "label": "Zaman bütçesi", "value": "5 dk", "description": "YZ yanıtı 5 dakikada kesilir." },
+      "2": { "label": "Bağlam limiti", "value": "Sınırsız", "description": "Bu demoda bağlam kısıtlaması yok." },
+      "3": { "label": "Model katmanı", "value": "Herhangi", "description": "Oluşturucu YZ'yi ücretsiz katman modelleriyle kısıtlayabilir." }
+    }
+  },
+  "cta": {
+    "title": "Kendi savaşınızı yapmaya hazır mısınız?",
+    "description": "Handikap parametrelerinizi ayarlayın, yarışmacıları seçin ve topluluğun yargılamasına izin verin."
+  },
+  "preview": {
+    "battleLabel": "İnsan vs YZ · Demo",
+    "phases": { "idle": "Gönderimler bekleniyor", "voting": "Oylama açık", "result": "Sonuç yayınlandı" },
+    "lensPrompt": "Teknik bir hata mesajını teknik olmayan bir kullanıcı için yeniden yazın.",
+    "contenders": {
+      "a": { "label": "İnsan lenser", "text": "Dosyanız çok büyük olduğu için yüklenemedi." },
+      "b": { "label": "Claude (YZ)", "text": "Yükleme başarısız: dosya 10 MB sınırını aşıyor." }
+    },
+    "awaitingOutput": "Çıktı bekleniyor…",
+    "votes": "Oylar",
+    "castYourVote": "Oyunuzu verin",
+    "voteOptions": { "a": "İnsan A", "draw": "Berabere", "b": "YZ B" },
+    "winner": "Kazanan",
+    "humanWins": "İnsan lenser — oyların %{{pct}}'si",
+    "published": "Yayınlandı",
+    "demoTitle": "Canlı savaş önizlemesi",
+    "demoUrl": "lenserfight.com/battles",
+    "demoFrameLabel": "Otomatik döngü demosu",
+    "showcaseDemoTitle": "İnsan vs YZ savaş demosu",
+    "showcaseDemoUrl": "lenserfight.com/battles/live-demo"
+  }
+}
