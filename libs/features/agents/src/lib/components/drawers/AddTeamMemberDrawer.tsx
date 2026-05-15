@@ -102,6 +102,12 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
       side="right"
       width="w-[480px]"
       title={isEdit ? 'Edit team member' : 'Add team member'}
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/add-team-member"
+          tip="Attach an existing AI Lenser to the active team. Pick a member, choose a role (lead/worker/judge/observer), optionally set a quota override."
+        />
+      }
       footer={
         <DrawerFooter
           onCancel={onClose}
@@ -113,10 +119,6 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
       }
     >
       <div className="space-y-4">
-        <DrawerDocsLink
-          path="/how-to/agents/workspace/drawers/add-team-member"
-          tip="Attach an existing AI Lenser to the active team. Pick a member, choose a role (lead/worker/judge/observer), optionally set a quota override."
-        />
         {!isEdit && (
           <Field label="Agent">
             <SelectField
