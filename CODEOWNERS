@@ -1,0 +1,51 @@
+# LenserFight — review ownership map
+#
+# Lines later in the file take precedence. See:
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+#
+# Handle placeholders prefixed with `@maintainer-` are deliberate during Limited
+# Beta. They are replaced with named GitHub teams before the public launch
+# announcement. Do not use these handles to ping people directly — read
+# docs/how-to/contributors/mentor-rotation.md for the on-call rotation.
+
+# ── Task schemas (battle rubrics, evaluation YAML) ────────────────────────────
+# Governance: docs/explanation/community/task-schema-governance.md
+examples/rubrics/                              @maintainer-scoring
+docs/explanation/community/task-schema-governance.md  @maintainer-scoring
+docs/how-to/contributors/task-schema-contribution-guide.md  @maintainer-scoring
+
+# ── Scoring plugins ───────────────────────────────────────────────────────────
+# RFC: docs/rfcs/RFC-0002-scoring-plugin.md
+libs/plugins/scoring/                          @maintainer-scoring
+examples/scoring/                              @maintainer-scoring
+docs/rfcs/RFC-0002-scoring-plugin.md           @maintainer-scoring
+docs/how-to/contributors/scoring-plugin-getting-started.md  @maintainer-scoring
+
+# ── Connector adapters ────────────────────────────────────────────────────────
+# RFC: docs/rfcs/RFC-0001-connector-interface.md
+libs/adapters/connector/                       @maintainer-providers
+examples/connectors/                           @maintainer-providers @maintainer-auth
+docs/rfcs/RFC-0001-connector-interface.md      @maintainer-providers
+docs/how-to/contributors/adapter-contribution-guide.md  @maintainer-providers
+docs/how-to/contributors/connector-sdk-getting-started.md  @maintainer-providers
+docs/how-to/contributors/adapter-mentorship.md @maintainer-providers @maintainer-auth @maintainer-scoring
+docs/how-to/contributors/mentor-rotation.md    @maintainer-providers @maintainer-auth @maintainer-scoring
+
+# ── Workflow templates (community) ────────────────────────────────────────────
+templates/community/                           @maintainer-providers
+docs/how-to/contributors/workflow-template-getting-started.md  @maintainer-providers
+docs/how-to/contributors/workflow-template-guide.md  @maintainer-providers
+
+# ── Supply-chain & security-sensitive surfaces ────────────────────────────────
+# Every change to CI workflows, Supabase migrations, Docker tooling, or the
+# environment-variable layer must be reviewed by a security-cleared maintainer.
+# Third-party GitHub Actions must be pinned to immutable commit SHAs.
+.github/workflows/                             @maintainer-security
+.github/actions/                               @maintainer-security
+supabase/migrations/                           @maintainer-security
+supabase/seeds/                                @maintainer-security
+docker-compose*.yml                            @maintainer-security
+libs/utils/env/                                @maintainer-security
+scripts/seed-demo.sh                           @maintainer-security
+SECURITY.md                                    @maintainer-security
+CODEOWNERS                                     @maintainer-security
