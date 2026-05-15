@@ -81,8 +81,16 @@
   ],
   "release": {
     "projects": [
-      "adapters-connector"
+      "adapters-connector",
+      "cli"
     ],
+    "releaseTag": {
+      "pattern": "{projectName}@{version}",
+      "requireSemver": true
+    },
+    "git": {
+      "commitMessage": "chore(release): publish {version} [skip ci]"
+    },
     "version": {
       "conventionalCommits": true
     },
