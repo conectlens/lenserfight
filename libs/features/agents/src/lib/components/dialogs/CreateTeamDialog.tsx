@@ -173,14 +173,9 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
             {TEMPLATES.map((tpl) => (
               <Button
                 key={tpl.id}
+                variant='dark'
                 type="button"
                 onClick={() => handleTemplateSelect(tpl)}
-                className={[
-                  'flex items-center gap-2.5 rounded-2xl border px-3 py-3 text-left text-sm transition',
-                  selectedTemplate === tpl.id
-                    ? 'border-primary-yellow-400 bg-primary-yellow-50 text-primary-yellow-700 dark:border-primary-yellow-500 dark:bg-primary-yellow-900/20 dark:text-primary-yellow-300'
-                    : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:hover:border-gray-600',
-                ].join(' ')}
               >
                 <span className="shrink-0">{tpl.icon}</span>
                 <span className="font-semibold">{tpl.label}</span>
