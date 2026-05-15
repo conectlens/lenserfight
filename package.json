@@ -80,7 +80,7 @@
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
     "expo-system-ui": "~6.0.9",
-    "framer-motion": "^10.18.0",
+    "framer-motion": "^12.23.0",
     "i18next": "^25.10.9",
     "i18next-browser-languagedetector": "^8.2.1",
     "idb": "^8.0.3",
