@@ -16,11 +16,6 @@ vi.mock('@lenserfight/data/repositories', () => ({
   partnerProvisioningRepository: {
     getBalance: (...args: unknown[]) => mockGetBalance(...args),
     getAiModels: (...args: unknown[]) => mockGetAiModels(...args),
-  },
-}))
-
-vi.mock('@lenserfight/infra/partner-provisioning', () => ({
-  partnerApiClient: {
     startOAuthConnect: (...args: unknown[]) => mockStartOAuthConnect(...args),
   },
 }))
@@ -29,6 +24,7 @@ vi.mock('@lenserfight/features/auth', () => ({
   useAuth: () => ({ isAuthenticated: mockIsAuthenticated.value }),
 }))
 
+import { usePartnerConnection } from './usePartnerConnection'
 import { useChainabitConnection } from './useChainabitConnection'
 
 function createWrapper() {
@@ -40,7 +36,9 @@ function createWrapper() {
   )
 }
 
-describe('useChainabitConnection', () => {
+// ── Generic hook ─────────────────────────────────────────────────────────────
+
+describe('usePartnerConnection', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockIsAuthenticated.value = true
@@ -49,7 +47,7 @@ describe('useChainabitConnection', () => {
   describe('state: loading', () => {
     it('returns loading while balance is pending', () => {
       mockGetBalance.mockReturnValue(new Promise(() => {}))
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
       expect(result.current.state).toBe('loading')
       expect(result.current.credits).toBeNull()
       expect(result.current.models).toBeNull()
@@ -61,7 +59,7 @@ describe('useChainabitConnection', () => {
       mockGetBalance.mockResolvedValue({ credits: 500, currency: 'cr' })
       mockGetAiModels.mockResolvedValue([{ id: 'm1', name: 'GPT-4', provider: 'openai' }])
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('connected'))
       expect(result.current.credits).toBe(500)
@@ -72,11 +70,21 @@ describe('useChainabitConnection', () => {
       mockGetBalance.mockResolvedValue({ credits: 250, currency: 'cr' })
       mockGetAiModels.mockResolvedValue([{ id: 'm2', name: 'Claude', provider: 'anthropic' }])
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('connected'))
       await waitFor(() => expect(result.current.models).toHaveLength(1))
       expect(mockGetAiModels).toHaveBeenCalledWith('chainabit')
+    })
+
+    it('passes partnerName through to repository calls', async () => {
+      mockGetBalance.mockResolvedValue({ credits: 100, currency: 'cr' })
+      mockGetAiModels.mockResolvedValue([])
+
+      const { result } = renderHook(() => usePartnerConnection('acme'), { wrapper: createWrapper() })
+
+      await waitFor(() => expect(result.current.state).toBe('connected'))
+      expect(mockGetBalance).toHaveBeenCalledWith('acme')
     })
   })
 
@@ -85,7 +93,7 @@ describe('useChainabitConnection', () => {
       mockGetBalance.mockResolvedValue({ credits: 0, currency: 'cr' })
       mockGetAiModels.mockResolvedValue([])
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('no_credits'))
       expect(result.current.credits).toBe(0)
@@ -95,7 +103,7 @@ describe('useChainabitConnection', () => {
       mockGetBalance.mockResolvedValue({ credits: 0, currency: 'cr' })
       mockGetAiModels.mockResolvedValue([{ id: 'm1', name: 'GPT-4', provider: 'openai' }])
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('no_credits'))
       await waitFor(() => expect(result.current.models).not.toBeNull())
@@ -107,7 +115,7 @@ describe('useChainabitConnection', () => {
       const err = Object.assign(new Error('Not found'), { error: 'not_provisioned' })
       mockGetBalance.mockRejectedValue(err)
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('no_account'))
       expect(result.current.credits).toBeNull()
@@ -116,7 +124,7 @@ describe('useChainabitConnection', () => {
     it('returns no_account for unknown errors (safe default)', async () => {
       mockGetBalance.mockRejectedValue(new Error('network failure'))
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('no_account'))
     })
@@ -125,7 +133,7 @@ describe('useChainabitConnection', () => {
       const err = Object.assign(new Error('Not found'), { error: 'not_provisioned' })
       mockGetBalance.mockRejectedValue(err)
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('no_account'))
       expect(mockGetAiModels).not.toHaveBeenCalled()
@@ -137,7 +145,7 @@ describe('useChainabitConnection', () => {
       const err = Object.assign(new Error('Unauthorized'), { error: 'unauthorized' })
       mockGetBalance.mockRejectedValue(err)
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('invalid_connection'))
     })
@@ -146,7 +154,7 @@ describe('useChainabitConnection', () => {
       const err = Object.assign(new Error('Unauthenticated'), { error: 'unauthenticated' })
       mockGetBalance.mockRejectedValue(err)
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('invalid_connection'))
     })
@@ -154,7 +162,7 @@ describe('useChainabitConnection', () => {
     it('returns invalid_connection when error message contains 401', async () => {
       mockGetBalance.mockRejectedValue(new Error('401 Unauthorized'))
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('invalid_connection'))
     })
@@ -163,7 +171,7 @@ describe('useChainabitConnection', () => {
       const err = Object.assign(new Error('Unauthorized'), { error: 'unauthorized' })
       mockGetBalance.mockRejectedValue(err)
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('invalid_connection'))
       expect(mockGetAiModels).not.toHaveBeenCalled()
@@ -176,7 +184,7 @@ describe('useChainabitConnection', () => {
       const err = Object.assign(new Error('Provider error'), { error: 'provider_error' })
       mockGetBalance.mockRejectedValue(err)
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => expect(result.current.state).toBe('provider_error'))
     })
@@ -186,9 +194,8 @@ describe('useChainabitConnection', () => {
     it('returns no_account and does not call getBalance when not authenticated', () => {
       mockIsAuthenticated.value = false
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
-      // Query disabled (enabled: false) — react-query returns no data/error, maps to no_account
       expect(result.current.state).toBe('no_account')
       expect(mockGetBalance).not.toHaveBeenCalled()
     })
@@ -199,12 +206,31 @@ describe('useChainabitConnection', () => {
       mockGetBalance.mockResolvedValue({ credits: 0, currency: 'cr' })
       mockStartOAuthConnect.mockResolvedValue(undefined)
 
-      const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+      const { result } = renderHook(() => usePartnerConnection('chainabit'), { wrapper: createWrapper() })
 
       await waitFor(() => result.current.state !== 'loading')
       await result.current.reconnect()
 
       expect(mockStartOAuthConnect).toHaveBeenCalledWith(window.location.href)
     })
+  })
+})
+
+// ── Chainabit facade ─────────────────────────────────────────────────────────
+
+describe('useChainabitConnection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockIsAuthenticated.value = true
+  })
+
+  it('delegates to usePartnerConnection("chainabit")', async () => {
+    mockGetBalance.mockResolvedValue({ credits: 200, currency: 'cr' })
+    mockGetAiModels.mockResolvedValue([])
+
+    const { result } = renderHook(() => useChainabitConnection(), { wrapper: createWrapper() })
+
+    await waitFor(() => expect(result.current.state).toBe('connected'))
+    expect(mockGetBalance).toHaveBeenCalledWith('chainabit')
   })
 })
