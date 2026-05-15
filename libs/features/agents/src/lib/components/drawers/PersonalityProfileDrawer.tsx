@@ -1,6 +1,8 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { Drawer } from '@lenserfight/ui/overlays'
 import type { AgentPersonalityProfileRecord } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
 import React, { useEffect, useState } from 'react'
 
 interface Props {
@@ -92,7 +94,16 @@ export const PersonalityProfileDrawer: React.FC<Props> = ({
       onClose={onClose}
       side="right"
       width="w-[560px]"
-      title={isEdit ? 'Edit personality profile' : 'Create personality profile'}
+      title={isEdit ? 'Edit personality' : 'Add personality profile'}
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          onSubmit={handleSave}
+          submitLabel={submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create'}
+          isLoading={submitting}
+          disabled={submitting}
+        />
+      }
     >
       <div className="space-y-4">
         <Field label="Name">
@@ -131,30 +142,14 @@ export const PersonalityProfileDrawer: React.FC<Props> = ({
             {error}
           </p>
         )}
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={submitting}
-            className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-          >
-            {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create'}
-          </button>
-        </div>
+
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="block">
@@ -169,11 +164,10 @@ const Selector: React.FC<{
   onChange: (v: string) => void
   options: string[]
 }> = ({ label, value, onChange, options }) => (
-  <Field label={label}>
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
-      {options.map((o) => (
-        <option key={o} value={o}>{o}</option>
-      ))}
-    </select>
-  </Field>
+  <SelectField
+    label={label}
+    value={value}
+    onChange={onChange}
+    options={options.map((o) => ({ value: o, label: o }))}
+  />
 )
