@@ -40,6 +40,12 @@ interface DecryptedSecretRow {
   decrypted_secret: string
 }
 
+// Local-only providers have no public cloud API to probe. Without a
+// caller-supplied base_url the test cannot reach a running daemon from the
+// Edge Function runtime, so we report a deterministic "local_only" result
+// instead of leaking a DNS failure.
+const LOCAL_ONLY_PROVIDERS = new Set(['ollama', 'lmstudio', 'localai', 'llamacpp'])
+
 // Minimal probe endpoints — just enough to confirm the key is accepted.
 // Returns HTTP 200/2xx on a valid key; 401/403 on an invalid key.
 async function probeProvider(
@@ -50,6 +56,53 @@ async function probeProvider(
   type ProbeConfig = {
     url: string
     headers: Record<string, string>
+  }
+
+  // Local provider handling — only probe if the user supplied a reachable
+  // base_url. Otherwise short-circuit with an actionable message.
+  if (LOCAL_ONLY_PROVIDERS.has(providerKey)) {
+    if (!baseUrl) {
+      return {
+        ok: false,
+        message:
+          `${providerKey} is a local provider — set base_url (e.g. http://localhost:11434) before testing.`,
+      }
+    }
+
+    const localUrl =
+      providerKey === 'ollama'
+        ? `${baseUrl.replace(/\/$/, '')}/api/tags`
+        : `${baseUrl.replace(/\/$/, '')}/v1/models`
+    const localHeaders: Record<string, string> = apiKey
+      ? { Authorization: `Bearer ${apiKey}` }
+      : {}
+
+    try {
+      const res = await fetch(localUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', ...localHeaders },
+        signal: AbortSignal.timeout(8_000),
+      })
+      if (res.ok) {
+        return { ok: true, message: `${providerKey} daemon responded successfully.` }
+      }
+      if (res.status === 401 || res.status === 403) {
+        return { ok: false, message: 'Local provider rejected the supplied key.' }
+      }
+      return { ok: false, message: `Local provider returned HTTP ${res.status}.` }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('timed out') || msg.includes('AbortError')) {
+        return { ok: false, message: 'Local provider connection timed out (8s).' }
+      }
+      // DNS / network errors on local endpoints: caller likely set an
+      // unreachable host. Surface that explicitly instead of "name resolution failed".
+      return {
+        ok: false,
+        message:
+          `Local provider unreachable from server: ${msg}. Local daemons must be exposed publicly or tested from the client.`,
+      }
+    }
   }
 
   const probeMap: Record<string, ProbeConfig> = {
@@ -87,9 +140,16 @@ async function probeProvider(
   }
 
   const probe = probeMap[providerKey]
+  if (!probe && !baseUrl) {
+    return {
+      ok: false,
+      message: `Unknown provider "${providerKey}" — set base_url to enable a custom probe.`,
+    }
+  }
+
   const probeUrl =
     probe?.url ??
-    `${baseUrl ?? `https://api.${providerKey}.com`}/v1/models`
+    `${baseUrl!.replace(/\/$/, '')}/v1/models`
   const probeHeaders: Record<string, string> = probe?.headers ?? {
     Authorization: `Bearer ${apiKey}`,
   }
