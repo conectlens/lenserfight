@@ -2,6 +2,7 @@ import { Card } from '@lenserfight/ui/components'
 import { useLocale } from '@lenserfight/shared/i18n-routing'
 import { DEFAULT_LOCALE } from '@lenserfight/utils/locale'
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, Navigate } from 'react-router-dom'
 
 import { MarkdownRenderer } from '../utils/MarkdownRenderer'
@@ -22,6 +23,7 @@ function resolveModuleKey(lang: string, policy: string): string {
 export const PoliciesPage: React.FC = () => {
   const { policy } = useParams<{ policy: string }>()
   const { locale } = useLocale()
+  const { t } = useTranslation('common')
   const [content, setContent] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -70,7 +72,7 @@ export const PoliciesPage: React.FC = () => {
       )}
       {!loading && !content && (
         <Card className="p-6">
-          <p className="text-greyscale-500 dark:text-greyscale-400">Policy content not available.</p>
+          <p className="text-greyscale-500 dark:text-greyscale-400">{t('status.policyNotAvailable')}</p>
         </Card>
       )}
     </div>
