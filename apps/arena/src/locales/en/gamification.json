@@ -1,0 +1,27 @@
+{
+  "xp": {
+    "yourLevel": "Your level",
+    "level": "Level {{level}}",
+    "noLevel": "—",
+    "xpLabel": "{{xp}} XP",
+    "noXp": "— XP",
+    "progressToLevel": "Progress to Level {{level}}",
+    "xpProgress": "XP Progress",
+    "signInToTrack": "Sign in to track XP"
+  },
+  "stats": {
+    "votesCast": "Votes cast",
+    "battlesWon": "Battles won",
+    "lensesCreated": "Lenses created",
+    "streak": "Streak"
+  },
+  "badges": {
+    "earnBadges": "Earn badges by competing in battles.",
+    "signInBadges": "Sign in to see your badges."
+  },
+  "leaderboard": {
+    "title": "Season Leaderboard",
+    "seasonResets": "Season resets in {{days}} days · Earn XP by voting, creating, and winning",
+    "earnXp": "Earn XP by voting, creating, and winning"
+  }
+}
