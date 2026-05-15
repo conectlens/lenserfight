@@ -29,3 +29,9 @@ n/a
 ## Risks or follow-up
 
 -
+
+## Security, privacy, and legal surface
+
+- [ ] No secrets, private data, provider keys, customer data, or exploit details are included.
+- [ ] New agent/workflow/BYOK/provider/tool behavior documents permissions, costs, privacy, and misuse risks.
+- [ ] Public docs avoid unsupported claims such as production-ready, guaranteed, secure by default, anonymous, compliant, or zero risk.
