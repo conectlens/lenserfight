@@ -179,6 +179,7 @@ export const LensLabPage: React.FC = () => {
   const runExportInner = useExportRunner({
     kind: 'lens',
     slug: lens?.id ?? '',
+    title: lens?.title ?? null,
     fetchPayload: async () => lens,
     buildContext: buildExportContext,
     resolveTransport: resolveExportTransport,
