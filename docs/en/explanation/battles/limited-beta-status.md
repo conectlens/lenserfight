@@ -5,6 +5,9 @@ description: Operator runbook for the Cloud Battles surface — preflight env va
 
 # Cloud Battles — Operator Runbook
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 This page is the operator runbook for running the Cloud Battles surface. It assumes the deployment has the Phase O webhook outbox migration applied and a hosted Supabase instance with `pg_cron` and `pg_net` available.
 
 For the full set of integrity checks the surface must pass before flipping the flag, see [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist).
