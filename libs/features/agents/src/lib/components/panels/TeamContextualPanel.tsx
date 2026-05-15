@@ -41,7 +41,7 @@ interface TeamContextualPanelProps {
 }
 
 const ROLE_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: 'leader',   label: 'Leader'   },
+  { value: 'leader', label: 'Leader' },
   { value: 'executor', label: 'Executor' },
   { value: 'reviewer', label: 'Reviewer' },
   { value: 'operator', label: 'Operator' },
@@ -49,11 +49,11 @@ const ROLE_OPTIONS: Array<{ value: string; label: string }> = [
 ]
 
 const EDGE_TYPE_OPTIONS: Array<{ value: AgentTeamEdgeType; label: string }> = [
-  { value: 'delegates',      label: 'Delegates'      },
-  { value: 'reviews',        label: 'Reviews'        },
-  { value: 'reports_to',     label: 'Reports to'     },
+  { value: 'delegates', label: 'Delegates' },
+  { value: 'reviews', label: 'Reviews' },
+  { value: 'reports_to', label: 'Reports to' },
   { value: 'shares_context', label: 'Shares context' },
-  { value: 'handoff',        label: 'Handoff'        },
+  { value: 'handoff', label: 'Handoff' },
 ]
 
 export const TeamContextualPanel: React.FC<TeamContextualPanelProps> = ({
@@ -141,116 +141,117 @@ const DefaultPanel: React.FC<{
   onAddMember, onSchedule, onAssignWorkflow, onManageAllEdges,
   workflowsAvailable,
 }) => {
-  const [helpOpen, setHelpOpen] = useState(false)
+    const [helpOpen, setHelpOpen] = useState(false)
 
-  return (
-    <div className="space-y-4">
-      {/* Team switcher */}
-      <Card>
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">Team</h3>
-          <Button
-            type="button"
-            size="sm"
-            onClick={onCreateTeam}
-          >
-            <Plus size={12} />
-            New team
-          </Button>
-        </div>
-
-        <SelectField
-          value={selectedTeam?.id ?? ''}
-          onChange={onTeamChange}
-          options={[
-            { value: '', label: 'Select a team' },
-            ...teams.map((team) => ({ value: team.id, label: team.name })),
-          ]}
-          className="mt-3"
-        />
-
-        {selectedTeam && (
-          <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-            <StatPill label="Members" value={String(members.length)} />
-            <StatPill label="Edges" value={String(edges.length)} />
-            <StatPill
-              label="Mode"
-              value={selectedTeam.is_active ? 'Active' : 'Draft'}
-              highlight={selectedTeam.is_active}
-            />
-          </div>
-        )}
-      </Card>
-
-      {/* Quick actions */}
-      {selectedTeam && (
-        <Card title="Actions">
-          <div className="grid grid-cols-2 gap-2">
-            <ActionBtn icon={<UserPlus size={13} />} label="Add member" onClick={onAddMember} />
-            <ActionBtn icon={<GitMerge size={13} />} label="All edges" onClick={onManageAllEdges} />
-            <ActionBtn
-              label="Schedule"
-              onClick={onSchedule}
-              disabled={!workflowsAvailable}
-            />
-            <ActionBtn
-              label="Assign workflow"
-              onClick={onAssignWorkflow}
-              disabled={!workflowsAvailable}
-            />
-          </div>
-          <Button
-            type="button"
-            variant="danger"
-            size="sm"
-            fullWidth
-            onClick={onDeleteTeam}
-            className="mt-3"
-          >
-            <Trash2 size={13} />
-            Delete team
-          </Button>
-        </Card>
-      )}
-
-      {!selectedTeam && (
+    return (
+      <div className="space-y-4">
+        {/* Team switcher */}
         <Card>
-          <div className="flex flex-col items-center gap-3 py-4 text-center">
-            <Bot size={24} className="text-gray-400" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Create a team to start building your AI agent topology.
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Team</h3>
+            <Button
+              type="button"
+              size="sm"
+              onClick={onCreateTeam}
+            >
+              <Plus size={12} />
+              New team
+            </Button>
+          </div>
+
+          <SelectField
+            value={selectedTeam?.id ?? ''}
+            onChange={onTeamChange}
+            options={[
+              { value: '', label: 'Select a team' },
+              ...teams.map((team) => ({ value: team.id, label: team.name })),
+            ]}
+            className="mt-3"
+          />
+
+          {selectedTeam && (
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <StatPill label="Members" value={String(members.length)} />
+              <StatPill label="Edges" value={String(edges.length)} />
+              <StatPill
+                label="Mode"
+                value={selectedTeam.is_active ? 'Active' : 'Draft'}
+                highlight={selectedTeam.is_active}
+              />
+            </div>
+          )}
+        </Card>
+
+        {/* Quick actions */}
+        {selectedTeam && (
+          <Card title="Actions">
+            <div className="grid grid-cols-2 gap-2">
+              <ActionBtn icon={<UserPlus size={13} />} label="Add member" onClick={onAddMember} />
+              <ActionBtn icon={<GitMerge size={13} />} label="All edges" onClick={onManageAllEdges} />
+              <ActionBtn
+                label="Schedule"
+                onClick={onSchedule}
+                disabled={!workflowsAvailable}
+              />
+              <ActionBtn
+                label="Assign workflow"
+                onClick={onAssignWorkflow}
+                disabled={!workflowsAvailable}
+              />
+            </div>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              fullWidth
+              onClick={onDeleteTeam}
+              className="mt-3"
+            >
+              <Trash2 size={13} />
+              Delete team
+            </Button>
+          </Card>
+        )}
+
+        {!selectedTeam && (
+          <Card>
+            <div className="flex flex-col items-center gap-3 py-4 text-center">
+              <Bot size={24} className="text-gray-400" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Create a team to start building your AI agent topology.
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {/* Help footer */}
+        <Button
+          type="button"
+          variant='ghost'
+          onClick={() => setHelpOpen((v) => !v)}
+          className="flex w-full items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-600 transition hover:border-gray-300 dark:border-gray-700 dark:text-gray-400"
+        >
+          <span className="font-medium">Builder vs Workflows</span>
+          <ChevronDown
+            size={14}
+            className={['transition-transform', helpOpen ? 'rotate-180' : ''].join(' ')}
+          />
+        </Button>
+        {helpOpen && (
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-6 text-gray-600 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
+            <p>
+              <strong className="text-gray-900 dark:text-white">Builder</strong> is the live team
+              canvas — who participates, who reviews, and how work is handed off.
+            </p>
+            <p className="mt-2">
+              <strong className="text-gray-900 dark:text-white">Workflows</strong> are reusable
+              automation logic, schedules, and run entry points assigned to a team.
             </p>
           </div>
-        </Card>
-      )}
-
-      {/* Help footer */}
-      <Button
-        type="button"
-        onClick={() => setHelpOpen((v) => !v)}
-        className="flex w-full items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-600 transition hover:border-gray-300 dark:border-gray-700 dark:text-gray-400"
-      >
-        <span className="font-medium">Builder vs Workflows</span>
-        <ChevronDown
-          size={14}
-          className={['transition-transform', helpOpen ? 'rotate-180' : ''].join(' ')}
-        />
-      </Button>
-      {helpOpen && (
-        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-6 text-gray-600 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
-          <p>
-            <strong className="text-gray-900 dark:text-white">Builder</strong> is the live team
-            canvas — who participates, who reviews, and how work is handed off.
-          </p>
-          <p className="mt-2">
-            <strong className="text-gray-900 dark:text-white">Workflows</strong> are reusable
-            automation logic, schedules, and run entry points assigned to a team.
-          </p>
-        </div>
-      )}
-    </div>
-  )
-}
+        )}
+      </div>
+    )
+  }
 
 // ─── Node Inspector ───────────────────────────────────────────────────────────
 
