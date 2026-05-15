@@ -1,5 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { workflowsService } from '@lenserfight/data/repositories'
+import { Button, Card } from '@lenserfight/ui/components'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -18,7 +19,17 @@ import { SectionPage } from './SectionPage'
 import type { WorkflowScheduleRecord } from '@lenserfight/types'
 
 export const SchedulesSection: React.FC = () => {
-  const { schedules, workflows, viewMode, bootstrap } = useAgentWorkspace()
+  const { schedules, workflows, viewMode, bootstrap, agentProfile, profile } =
+    useAgentWorkspace()
+  // For agent_owner mode the active workspace is the human owner of the AI;
+  // for human_owner mode the visited profile IS the owner. Either way, the
+  // schedule RPC needs workflows owned by this lenser.
+  const ownerLenserId =
+    viewMode === 'agent_owner'
+      ? (agentProfile?.owner_lenser_id ?? null)
+      : viewMode === 'human_owner'
+        ? profile.id
+        : null
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editing, setEditing] = useState<WorkflowScheduleRecord | null>(null)
@@ -67,19 +78,21 @@ export const SchedulesSection: React.FC = () => {
     return (
       <SectionPage
         eyebrow="Schedules"
+        docsPath="/how-to/agents/workspace/schedules"
+        docsTip="Cron-driven workflow triggers. Each schedule pins a workflow, cron expression, timezone, assignee, and JSON inputs template."
         title="CRON-driven workflow dispatch"
         description="Workflow schedules dispatch manual, CRON-based, or team-assigned automation runs."
       >
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950/30">
+        <div className="rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50 p-6 dark:border-primary-yellow-800 dark:bg-primary-yellow-950/30">
           <div className="flex items-start gap-3">
-            <CalendarClock size={20} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <CalendarClock size={20} className="mt-0.5 shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400" />
             <div>
-              <p className="font-semibold text-amber-900 dark:text-amber-200">
+              <p className="font-semibold text-primary-yellow-900 dark:text-primary-yellow-200">
                 Scheduling is not enabled in this edition
               </p>
-              <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
+              <p className="mt-1 text-sm text-primary-yellow-800 dark:text-primary-yellow-300">
                 CRON-driven workflow dispatch requires a full Supabase instance and the{' '}
-                <code className="rounded bg-amber-100 px-1 text-xs dark:bg-amber-900">
+                <code className="rounded bg-primary-yellow-100 px-1 text-xs dark:bg-primary-yellow-900">
                   FEATURE_CRON_SCHEDULING=true
                 </code>{' '}
                 environment variable. See the{' '}
@@ -103,22 +116,23 @@ export const SchedulesSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Schedules"
+      docsPath="/how-to/agents/workspace/schedules"
+      docsTip="Cron-driven workflow triggers. Pause an entry to halt dispatch without deleting it; open Run History to inspect past dispatches."
       title="CRON-driven workflow dispatch"
       description="Workflow schedules dispatch manual, CRON-based, or team-assigned automation runs. Pause individual schedules to halt dispatch without deleting them."
       toolbar={
         canManage ? (
-          <button
+          <Button
             type="button"
             onClick={() => {
               setEditing(null)
               setDrawerOpen(true)
             }}
             disabled={workflows.length === 0}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
           >
             <Plus size={16} />
             New schedule
-          </button>
+          </Button>
         ) : undefined
       }
     >
@@ -131,25 +145,24 @@ export const SchedulesSection: React.FC = () => {
           >
             {canManage ? (
               <div className="mt-6 flex justify-center">
-                <button
+                <Button
                   type="button"
                   onClick={() => {
                     setEditing(null)
                     setDrawerOpen(true)
                   }}
                   disabled={workflows.length === 0}
-                  className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
                 >
                   {workflows.length === 0 ? 'Create a workflow first' : 'New schedule'}
-                </button>
+                </Button>
               </div>
             ) : undefined}
           </EmptyPanel>
         ) : (
           schedules.map((schedule) => (
-            <div
+            <Card
               key={schedule.id}
-              className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+              className="!p-5"
             >
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0 flex-1">
@@ -202,37 +215,38 @@ export const SchedulesSection: React.FC = () => {
                       ! error
                     </span>
                   )}
-                  <button
+                  <Button
                     type="button"
                     onClick={() =>
                       setHistorySchedule({ id: schedule.id, name: schedule.workflow_title })
                     }
-                    className="rounded-xl border border-gray-200 p-2 text-gray-500 hover:text-amber-600 dark:border-gray-700 dark:text-gray-400"
+                    className="rounded-xl border border-gray-200 p-2 text-gray-500 hover:text-primary-yellow-600 dark:border-gray-700 dark:text-gray-400"
                     aria-label="View run history"
                   >
                     <History size={14} />
-                  </button>
+                  </Button>
                   {canManage && (
                     <>
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="sm"
                         onClick={() => togglePause.mutate(schedule)}
-                        className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
                       >
                         {schedule.is_active ? 'Pause' : 'Resume'}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         onClick={() => {
                           setEditing(schedule)
                           setDrawerOpen(true)
                         }}
-                        className="rounded-xl border border-gray-200 p-2 text-gray-500 hover:text-amber-600 dark:border-gray-700 dark:text-gray-400"
+                        className="rounded-xl border border-gray-200 p-2 text-gray-500 hover:text-primary-yellow-600 dark:border-gray-700 dark:text-gray-400"
                         aria-label="Edit"
                       >
                         <Pencil size={14} />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         onClick={() =>
                           setConfirmState({
@@ -245,12 +259,12 @@ export const SchedulesSection: React.FC = () => {
                         aria-label="Delete"
                       >
                         <Trash2 size={14} />
-                      </button>
+                      </Button>
                     </>
                   )}
                 </div>
               </div>
-            </div>
+            </Card>
           ))
         )}
       </div>
@@ -261,6 +275,7 @@ export const SchedulesSection: React.FC = () => {
           onClose={() => setDrawerOpen(false)}
           workflows={workflows}
           initial={editing}
+          ownerLenserId={ownerLenserId}
           defaultAssigneeId={bootstrap?.ai_lenser_id ?? null}
           onSaved={invalidate}
         />
