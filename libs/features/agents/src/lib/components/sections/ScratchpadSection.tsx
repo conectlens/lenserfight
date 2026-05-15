@@ -267,14 +267,14 @@ export const ScratchpadSection: React.FC = () => {
     <div className="flex flex-col h-[calc(100vh-140px)] w-full rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-surface-base overflow-hidden shadow-sm font-sans">
 
       {/* Top Navbar */}
-      <div className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 bg-gray-50 dark:bg-surface-raised shrink-0 z-10">
+      <div className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 shrink-0 z-10">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded bg-primary-yellow-500/20 text-primary-yellow-600 flex items-center justify-center">
             <Bot size={18} />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Drafts Workbench</h2>
-            <p className="text-[10px] uppercase tracking-widest text-gray-500">Workspace / {profile.handle}</p>
+            <h2 className="text-sm font-bold">Drafts Workbench</h2>
+            <p className="text-[10px] uppercase tracking-widest">Workspace / {profile.handle}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -308,22 +308,22 @@ export const ScratchpadSection: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Toolbar */}
         <div className="w-14 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-surface-raised flex flex-col items-center py-4 gap-4 shrink-0 z-10 shadow-sm">
-          <Button variant="ghost" className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 text-primary-yellow-600 hover:ring-2 ring-primary-yellow-500/50 group relative">
+          <Button variant="ghost" className="p-2 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 group relative">
             <Bot size={20} />
             <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none font-medium">Agent Node</span>
           </Button>
-          <Button variant="ghost" className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 text-purple-500 hover:text-purple-600 hover:ring-2 ring-purple-500/50 group relative">
+          <Button variant="ghost" className="p-2 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 group relative">
             <Sparkles size={20} />
             <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none font-medium">Instruction Node</span>
           </Button>
-          <Button variant="ghost" className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 text-blue-500 hover:text-blue-600 hover:ring-2 ring-blue-500/50 group relative">
+          <Button variant="ghost" className="p-2 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 group relative">
             <Cpu size={20} />
             <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none font-medium">Model Node</span>
           </Button>
         </div>
 
         {/* Main Canvas */}
-        <div className="flex-1 relative bg-gray-50 dark:bg-surface-base">
+        <div className="flex-1 relative">
           <ReactFlowProvider>
             <ReactFlow
               nodes={nodes}
@@ -334,7 +334,7 @@ export const ScratchpadSection: React.FC = () => {
               nodeTypes={nodeTypes}
               fitView
               fitViewOptions={{ padding: 0.3 }}
-              className="bg-gray-50 dark:bg-surface-base"
+              className="w-full h-full"
               minZoom={0.5}
               maxZoom={2}
             >
@@ -347,24 +347,27 @@ export const ScratchpadSection: React.FC = () => {
 
         {/* Right Inspector */}
         <div className="w-[340px] border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-surface-raised flex flex-col shrink-0 overflow-hidden z-10 shadow-sm">
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200 dark:border-gray-800 shrink-0 bg-gray-50 dark:bg-surface-raised">
-            <Button
-              className={`flex-1 py-3.5 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'workbench' ? 'border-primary-yellow-500 text-primary-yellow-600 dark:text-primary-yellow-500' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-              onClick={() => setActiveTab('workbench')}
-            >
-              <div className="flex items-center justify-center gap-2"><Terminal size={14} /> Inspector</div>
-            </Button>
-            <Button
-              className={`flex-1 py-3.5 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'history' ? 'border-primary-yellow-500 text-primary-yellow-600 dark:text-primary-yellow-500' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-              onClick={() => setActiveTab('history')}
-            >
-              <div className="flex items-center justify-center gap-2"><History size={14} /> History</div>
-            </Button>
-          </div>
 
           {/* Tab Content */}
           <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-hide">
+            {/* Tabs */}
+            <div className="flex">
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={() => setActiveTab('workbench')}
+              >
+                <div className="flex items-center justify-center gap-2"><Terminal size={14} /> Inspector</div>
+              </Button>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={() => setActiveTab('history')}
+              >
+                <div className="flex items-center justify-center gap-2"><History size={14} /> History</div>
+              </Button>
+            </div>
+
             {activeTab === 'workbench' && (
               <>
                 {/* Context Metadata */}
@@ -403,12 +406,12 @@ export const ScratchpadSection: React.FC = () => {
 
                 {/* Prompt Area */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 pl-1">Test Prompt</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest pl-1">Test Prompt</label>
                   <textarea
                     rows={6}
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-surface-base border border-gray-200 dark:border-gray-800 rounded-xl p-4 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-yellow-500/50 outline-none resize-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600 shadow-inner"
+                    className="w-full border border-gray-200 dark:border-gray-800 rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary-yellow-500/50 outline-none resize-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600 shadow-inner"
                     placeholder="Describe the prompt, test case, or tool call you want this agent to execute..."
                   />
                 </div>
@@ -427,10 +430,10 @@ export const ScratchpadSection: React.FC = () => {
                     <div key={run.id} className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-surface-base hover:border-primary-yellow-500/50 dark:hover:border-primary-yellow-500/50 transition-colors group relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-1 h-full bg-gray-200 dark:bg-gray-800 group-hover:bg-primary-yellow-500 transition-colors" />
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-[10px] font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase">Run {run.id.slice(0, 6)}</span>
+                        <span className="text-[10px] font-bold tracking-widest uppercase">Run {run.id.slice(0, 6)}</span>
                         <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${run.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' :
-                            run.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' :
-                              'bg-primary-yellow-100 text-primary-yellow-700 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-400'}`}>
+                          run.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' :
+                            'bg-primary-yellow-100 text-primary-yellow-700 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-400'}`}>
                           {run.status}
                         </span>
                       </div>
@@ -471,10 +474,10 @@ export const ScratchpadSection: React.FC = () => {
 
       {/* Bottom Debug Console */}
       <div className="h-[220px] border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-surface-base shrink-0 flex flex-col z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] dark:shadow-none">
-        <div className="h-10 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 bg-gray-50 dark:bg-surface-raised shrink-0">
+        <div className="h-10 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 shrink-0">
           <div className="flex items-center gap-2">
-            <Terminal size={14} className="text-gray-500" />
-            <span className="text-[11px] font-bold tracking-widest uppercase text-gray-600 dark:text-gray-400">Execution Console</span>
+            <Terminal size={14} />
+            <span className="text-[11px] font-bold tracking-widest uppercase">Execution Console</span>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4 font-mono text-xs text-gray-700 dark:text-gray-300 space-y-2">
