@@ -5,6 +5,9 @@ description: "Tables, columns, enums, and RPC functions that make up the battles
 
 # Battle Schema Reference
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 All battle data lives in the `battles` Postgres schema in the LenserFight Supabase database.
 
 ---
