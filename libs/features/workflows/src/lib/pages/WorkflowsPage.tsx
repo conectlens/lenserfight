@@ -1,6 +1,6 @@
 import { seoService } from '@lenserfight/data/repositories'
 import { useLenser } from '@lenserfight/features/profile'
-import { Button, EmptyState, HelpButton, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
+import { Button, EmptyState, ExperimentalBadge, HelpButton, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { SearchBar, SelectField } from '@lenserfight/ui/forms'
 import { ArrowRight, GitBranch, ImageIcon, Plus, Search, Sparkles, Video } from 'lucide-react'
@@ -84,7 +84,7 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
     <div className="">
       <PageMeta title={wfListMeta.title} description={wfListMeta.description} />
       <PageHeader
-        title="Connected Lenses & AI Workflows"
+        title={<span className="inline-flex items-center gap-2">Connected Lenses & AI Workflows <ExperimentalBadge mode="inline" title="Experimental" /></span>}
         description="Run reusable, multi-step AI pipelines that turn an idea into copy, media prompts, scripts, code, or launch assets."
         action={
           <>
@@ -94,6 +94,12 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
             </Button>
           </>
         }
+      />
+
+      <ExperimentalBadge
+        title="Workflows"
+        description="Workflows are live but still being polished. Templates, scheduling, and run history work — but I haven't finished the regression tests, so please try them and tell me what breaks."
+        className="mb-4"
       />
 
       {/* Filters */}
