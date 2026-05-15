@@ -1,0 +1,14 @@
+{
+  "name": "util-locale",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/utils/locale/src",
+  "projectType": "library",
+  "tags": [
+    "layer:utils",
+    "util:locale",
+    "scope:shared",
+    "license:shared"
+  ],
+  "// targets": "to see all targets run: nx show project util-locale --web",
+  "targets": {}
+}
