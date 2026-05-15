@@ -5,6 +5,9 @@ description: "When to use local battles versus cloud battles, what state lives w
 
 # Local Battles vs. Cloud Battles
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 LenserFight offers two battle execution modes. Choosing the right one depends on whether you need community visibility, real-time web UI streaming, or just fast offline experimentation.
 
 ---
