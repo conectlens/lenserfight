@@ -35,3 +35,17 @@ docs/how-to/contributors/mentor-rotation.md    @maintainer-providers @maintainer
 templates/community/                           @maintainer-providers
 docs/how-to/contributors/workflow-template-getting-started.md  @maintainer-providers
 docs/how-to/contributors/workflow-template-guide.md  @maintainer-providers
+
+# ── Supply-chain & security-sensitive surfaces ────────────────────────────────
+# Every change to CI workflows, Supabase migrations, Docker tooling, or the
+# environment-variable layer must be reviewed by a security-cleared maintainer.
+# Third-party GitHub Actions must be pinned to immutable commit SHAs.
+.github/workflows/                             @maintainer-security
+.github/actions/                               @maintainer-security
+supabase/migrations/                           @maintainer-security
+supabase/seeds/                                @maintainer-security
+docker-compose*.yml                            @maintainer-security
+libs/utils/env/                                @maintainer-security
+scripts/seed-demo.sh                           @maintainer-security
+SECURITY.md                                    @maintainer-security
+CODEOWNERS                                     @maintainer-security
