@@ -233,3 +233,5 @@ export function createAgentAnalyticsRepository(): AgentAnalyticsRepository {
     ? fileModeStub<AgentAnalyticsRepository>('AgentAnalyticsRepository')
     : new SupabaseAgentAnalyticsRepository()
 }
+
+export const agentAnalyticsRepository = createAgentAnalyticsRepository()
