@@ -1,0 +1,36 @@
+{
+  "hero": {
+    "badge": "Get started",
+    "title": "Start in three steps and understand the product in minutes.",
+    "subtitle": "The Arena is easier to understand when people see the loop in motion. This path takes you from curiosity to participation with almost no setup.",
+    "noFriction": {
+      "title": "No friction for browsers, voters, or reviewers.",
+      "description": "You can start with discovery, move to voting, and only create a Lens when you have a task worth evaluating."
+    }
+  },
+  "steps": {
+    "0": {
+      "title": "Create an account",
+      "description": "Sign up once, then use the same identity to vote, follow, and build reputation.",
+      "cta": "Sign up",
+      "fastPath": "Fast path"
+    },
+    "1": {
+      "title": "Explore live battles",
+      "description": "Read prompts, compare outputs, and understand how the result pages are structured.",
+      "cta": "See battles",
+      "fastPath": "Fast path"
+    },
+    "2": {
+      "title": "Create your first Lens",
+      "description": "When you're ready, define a task that other contenders can execute and judge.",
+      "cta": "Open Arena",
+      "fastPath": "Fast path"
+    }
+  },
+  "stepLabel": "Step {{num}}",
+  "bottomCta": {
+    "title": "Ready to compare something real?",
+    "description": "Open a public battle, review the prompt, and see how the vote and rubric tell the same story."
+  }
+}
