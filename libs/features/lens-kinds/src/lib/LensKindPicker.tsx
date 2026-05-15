@@ -17,12 +17,14 @@ const BADGE_COLOR_CLASS: Record<string, string> = {
 }
 
 interface LensKindPickerProps {
-  value: LensKind | null
-  onChange: (kind: LensKind) => void
+  value: LensKind[] | null
+  onChange: (kinds: LensKind[]) => void
   /** Optional dense layout — fewer columns, smaller cards. */
   dense?: boolean
   /** Optional description hidden when true (useful for compact contexts). */
   hideDescription?: boolean
+  /** Layout variant: grid (default) or carousel */
+  variant?: 'grid' | 'carousel'
   className?: string
 }
 
@@ -36,50 +38,93 @@ export const LensKindPicker: React.FC<LensKindPickerProps> = ({
   onChange,
   dense = false,
   hideDescription = false,
+  variant = 'grid',
   className = '',
 }) => {
   const kinds = LENS_KIND_ORDER
   const gridCols = dense ? 'grid-cols-3 md:grid-cols-5' : 'grid-cols-2 md:grid-cols-3'
+
+  const renderCard = (kind: LensKind, index: number) => {
+    const def = LENS_KIND_REGISTRY[kind]
+    const selected = value?.includes(kind) ?? false
+    const badge = BADGE_COLOR_CLASS[def.badgeColor] ?? BADGE_COLOR_CLASS.slate
+    return (
+      <button
+        key={`${kind}-${index}`}
+        type="button"
+        role="checkbox"
+        aria-checked={selected}
+        onClick={() => {
+          const current = value || []
+          if (current.includes(kind)) {
+            onChange(current.filter((k) => k !== kind))
+          } else {
+            onChange([...current, kind])
+          }
+        }}
+        className={`text-left rounded-xl border px-3 py-2 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 shrink-0 ${variant === 'carousel' ? 'w-64 whitespace-normal' : ''} ${
+          selected
+            ? 'border-primary bg-primary/5 dark:bg-primary/10'
+            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+        }`}
+      >
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-semibold text-sm text-gray-900 dark:text-white">
+            {def.label}
+          </span>
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${badge}`}>
+            {def.tagSlug}
+          </span>
+        </div>
+        {!hideDescription && (
+          <div className="text-xs text-gray-500 dark:text-gray-400 leading-snug">
+            {def.description}
+          </div>
+        )}
+      </button>
+    )
+  }
+
+  if (variant === 'carousel') {
+    return (
+      <div className={className}>
+        <div className="mb-2 text-[13px] font-semibold text-greyscale-500 dark:text-greyscale-400 ml-1">
+          Engine Kind
+        </div>
+        <style>{`
+          @keyframes scroll-carousel {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(calc(-50% - 0.5rem), 0, 0); }
+          }
+          .animate-carousel {
+            animation: scroll-carousel 30s linear infinite;
+            will-change: transform;
+          }
+          .group:hover .animate-carousel {
+            animation-play-state: paused;
+          }
+        `}</style>
+        <div className="overflow-hidden w-full group relative" role="group" aria-label="Lens kind">
+           {/* Fade masks for the carousel edges */}
+           <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-surface-raised dark:from-surface-raised z-10 pointer-events-none" />
+           <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface-raised dark:from-surface-raised z-10 pointer-events-none" />
+           
+           <div className="flex gap-4 animate-carousel w-max">
+             {kinds.map((kind) => renderCard(kind, 0))}
+             {kinds.map((kind) => renderCard(kind, 1))}
+           </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={className}>
       <div className="mb-2 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
         Lens Kind
       </div>
-      <div role="radiogroup" aria-label="Lens kind" className={`grid gap-2 ${gridCols}`}>
-        {kinds.map((kind) => {
-          const def = LENS_KIND_REGISTRY[kind]
-          const selected = value === kind
-          const badge = BADGE_COLOR_CLASS[def.badgeColor] ?? BADGE_COLOR_CLASS.slate
-          return (
-            <button
-              key={kind}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => onChange(kind)}
-              className={`text-left rounded-xl border px-3 py-2 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-                selected
-                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-sm text-gray-900 dark:text-white">
-                  {def.label}
-                </span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${badge}`}>
-                  {def.tagSlug}
-                </span>
-              </div>
-              {!hideDescription && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 leading-snug">
-                  {def.description}
-                </div>
-              )}
-            </button>
-          )
-        })}
+      <div role="group" aria-label="Lens kind" className={`grid gap-2 ${gridCols}`}>
+        {kinds.map((kind) => renderCard(kind, 0))}
       </div>
     </div>
   )
