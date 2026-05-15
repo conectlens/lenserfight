@@ -1,5 +1,8 @@
+import type { ExportFormat, ExportKind } from '@lenserfight/domain/exports'
+
 import { BattleJsonSerializer, BattleMarkdownSerializer } from './adapters/battle'
 import { LensJsonSerializer, LensMarkdownSerializer } from './adapters/lens'
+import type { Serializer } from './Serializer'
 import { getDefaultRegistry, SerializerRegistry } from './SerializerRegistry'
 
 /**
@@ -7,22 +10,34 @@ import { getDefaultRegistry, SerializerRegistry } from './SerializerRegistry'
  *   - battle: json, markdown
  *   - lens:   json, markdown
  *
- * Idempotent: callers may invoke this at module load on web, CLI, and
- * edge function entry points. Workflow + agent + bundle land in later
- * phases (EX-2/EX-3) without changing the orchestrator.
+ * Truly idempotent: state lives in the registry itself, not in a
+ * separate module-scoped flag. This survives HMR reloads, dual module
+ * graphs, and concurrent invocations.
  */
-let bootstrapped = false
+const BUILTINS: Array<() => Serializer<unknown>> = [
+  () => new BattleJsonSerializer() as unknown as Serializer<unknown>,
+  () => new BattleMarkdownSerializer() as unknown as Serializer<unknown>,
+  () => new LensJsonSerializer() as unknown as Serializer<unknown>,
+  () => new LensMarkdownSerializer() as unknown as Serializer<unknown>,
+]
 
-export function bootstrapSerializers(registry: SerializerRegistry = getDefaultRegistry()): SerializerRegistry {
-  if (bootstrapped && registry === getDefaultRegistry()) return registry
-  registry.register(new BattleJsonSerializer())
-  registry.register(new BattleMarkdownSerializer())
-  registry.register(new LensJsonSerializer())
-  registry.register(new LensMarkdownSerializer())
-  if (registry === getDefaultRegistry()) bootstrapped = true
+export function bootstrapSerializers(
+  registry: SerializerRegistry = getDefaultRegistry(),
+): SerializerRegistry {
+  for (const make of BUILTINS) {
+    const s = make()
+    if (!registry.supports(s.kind as ExportKind, s.format as ExportFormat)) {
+      registry.register(s)
+    }
+  }
   return registry
 }
 
+/**
+ * Test helper — preserved for compatibility with existing specs.
+ * No internal flag to reset anymore; the registry itself is the source
+ * of truth and __resetRegistryForTests() handles that.
+ */
 export function __resetBootstrapForTests(): void {
-  bootstrapped = false
+  /* no-op: kept for API compatibility */
 }
