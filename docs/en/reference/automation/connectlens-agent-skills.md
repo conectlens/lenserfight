@@ -1,16 +1,16 @@
 ---
-title: ConnectLens Agent Skills Ruleset
+title: ConectLens Agent Skills Ruleset
 description: Native LENS, LENSER, COLENS, BATTLE, and team package rules for file-first LenserFight automation.
 ---
 
-# ConnectLens Agent Skills Ruleset
+# ConectLens Agent Skills Ruleset
 
-ConnectLens adapts Agent Skills conventions into LenserFight terminology without replacing the existing automation layer.
+ConectLens adapts Agent Skills conventions into LenserFight terminology without replacing the existing automation layer.
 
 ## Current State
 
 - File-first automation already exists through markdown objects and `lf validate`.
-- Native ConnectLens primary files are now discovered by filename: `LENS.MD`, `LENSER.MD`, `COLENS.MD`, `BATTLE.MD`, and `TEAM.MD`.
+- Native ConectLens primary files are now discovered by filename: `LENS.MD`, `LENSER.MD`, `COLENS.MD`, `BATTLE.MD`, and `TEAM.MD`.
 - Compatibility files remain valid: `SKILL.MD`, `AGENT.MD`, `AGENT_TEAM.md`, `WORKFLOW.MD`, and `PRIVATE_BATTLE.md`.
 - Parameter placeholders use `[[name]]`; stored database templates may use `[[:uuid]]`.
 - Lens parameter declarations mirror `lenses.version_parameters`: each declaration needs `label` and `tool_id`.
@@ -18,7 +18,7 @@ ConnectLens adapts Agent Skills conventions into LenserFight terminology without
 
 ## Terminology
 
-| Agent Skills term | ConnectLens term | Native file |
+| Agent Skills term | ConectLens term | Native file |
 |---|---|---|
 | Skill | LENS | `LENS.MD` |
 | Agent | LENSER | `LENSER.MD` |
