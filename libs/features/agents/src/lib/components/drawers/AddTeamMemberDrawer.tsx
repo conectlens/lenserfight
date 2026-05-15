@@ -1,9 +1,13 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { Drawer } from '@lenserfight/ui/overlays'
 import type { AgentTeamMemberRecord } from '@lenserfight/types'
-import React, { useEffect, useState } from 'react'
+import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import type { AgentProfileView } from '@lenserfight/data/repositories'
+
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface AddTeamMemberDrawerProps {
   open: boolean
@@ -15,7 +19,10 @@ interface AddTeamMemberDrawerProps {
   onSaved?: () => void
 }
 
-const ROLES = ['leader', 'executor', 'reviewer', 'operator', 'observer']
+const ROLE_OPTIONS = ['leader', 'executor', 'reviewer', 'operator', 'observer'].map((r) => ({
+  value: r,
+  label: r,
+}))
 
 export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
   open,
@@ -34,6 +41,15 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
   const [sortOrder, setSortOrder] = useState(initial?.sort_order ?? 0)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const agentOptions = useMemo(
+    () =>
+      agents.map((agent) => ({
+        value: agent.ai_lenser_id,
+        label: `${agent.display_name} (@${agent.handle})`,
+      })),
+    [agents]
+  )
 
   useEffect(() => {
     if (!open) return
@@ -86,22 +102,29 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
       side="right"
       width="w-[480px]"
       title={isEdit ? 'Edit team member' : 'Add team member'}
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          onSubmit={handleSave}
+          submitLabel={submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Add member'}
+          isLoading={submitting}
+          disabled={submitting || (!isEdit && agents.length === 0)}
+        />
+      }
     >
       <div className="space-y-4">
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/add-team-member"
+          tip="Attach an existing AI Lenser to the active team. Pick a member, choose a role (lead/worker/judge/observer), optionally set a quota override."
+        />
         {!isEdit && (
           <Field label="Agent">
-            <select
+            <SelectField
               value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-              className={inputClass}
-            >
-              <option value="">Select an AI Lenser</option>
-              {agents.map((agent) => (
-                <option key={agent.ai_lenser_id} value={agent.ai_lenser_id}>
-                  {agent.display_name} (@{agent.handle})
-                </option>
-              ))}
-            </select>
+              onChange={setAgentId}
+              options={agentOptions}
+              placeholder="Select an AI Lenser"
+            />
             <p className="mt-1 text-xs text-gray-400">
               Pick one of the owner&apos;s AI Lensers for this crew slot.
             </p>
@@ -115,15 +138,7 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
           </Field>
         )}
         <Field label="Role">
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className={inputClass}
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
+          <SelectField value={role} onChange={setRole} options={ROLE_OPTIONS} />
         </Field>
         <Field label="Responsibility">
           <textarea
@@ -160,30 +175,14 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
             {error}
           </p>
         )}
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={submitting || (!isEdit && agents.length === 0)}
-            className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-          >
-            {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Add member'}
-          </button>
-        </div>
+
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="block">
