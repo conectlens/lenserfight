@@ -1,0 +1,36 @@
+{
+  "hero": {
+    "title": "LenserFight",
+    "titleFaded": "Mobile",
+    "subtitle": "The arena, in your pocket. The mobile app is in active development inside the monorepo — and we need contributors to bring it to life."
+  },
+  "contribute": {
+    "badge": "Get started in 4 steps",
+    "title": "Set up the mobile project locally.",
+    "subtitle": "The app is an Expo project inside an Nx monorepo. You don't need to know Nx deeply — just follow these steps.",
+    "steps": {
+      "0": { "title": "Fork & clone the repo", "description": "The mobile app lives at apps/mobile inside the Nx monorepo." },
+      "1": { "title": "Install dependencies", "description": "Uses pnpm workspaces — all packages are hoisted at the root." },
+      "2": { "title": "Start the Expo dev server", "description": "Opens Expo Go. Scan the QR code with your phone or run on a simulator." },
+      "3": { "title": "Find your feature", "description": "Components, screens, and navigation are all inside apps/mobile/src." }
+    }
+  },
+  "needs": {
+    "badge": "What we need",
+    "title": "Areas open for contribution.",
+    "items": {
+      "0": "iOS & Android screens for battles and lenses",
+      "1": "Push notification integration",
+      "2": "Offline-first caching layer",
+      "3": "Expo Router navigation setup",
+      "4": "Dark / light theme tokens (already exist in libs/ui)",
+      "5": "Accessibility (a11y) audits"
+    }
+  },
+  "cta": {
+    "badge": "Ready to contribute?",
+    "title": "Pick an issue and ship it.",
+    "description": "Browse open issues labelled <strong>mobile</strong> on GitHub. All skill levels welcome — from UI tweaks to full feature screens.",
+    "viewApps": "View apps/mobile"
+  }
+}
