@@ -2,14 +2,14 @@
 -- pgTAP: 93_workspace_rpcs_repairs.sql
 -- Regression coverage for 20271222000000_fix_workspace_rpcs_and_schedule_owner.sql.
 --
---   1. fn_delete_workspace_item / fn_upsert_workspace_item no longer reference
---      the non-existent owner_lenser_id / ai_lenser_id columns on tables that
---      don't actually have them (team_members, team_edges, agent_run_*).
---   2. fn_create_workspace_record honors gen_random_uuid() default on
---      team_members.id when the payload omits 'id' (was 23502 NOT NULL).
---   3. fn_upsert_workflow_schedule accepts the human owner of a workflow
---      after the active session lenser has been switched to an AI lenser
---      (was 42501 'not the owner of workflow ...').
+--   1. fn_delete_workspace_item / fn_upsert_workspace_item dispatch a per-table
+--      ownership predicate. Tables without owner_lenser_id / ai_lenser_id
+--      (team_members, team_edges, …) used to raise 42703 "column does not exist".
+--   2. fn_create_workspace_record strips id from the payload so
+--      gen_random_uuid() default fires on team_members and similar tables
+--      (was 23502 NOT NULL).
+--   3. fn_upsert_workflow_schedule accepts the human workflow owner after a
+--      workspace switch (was 42501 'not the owner of workflow ...').
 --
 -- All changes rolled back.
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -18,18 +18,25 @@ SELECT plan(8);
 
 
 -- ─── Fixture setup ──────────────────────────────────────────────────────────
--- Alice (b2...0001) owns AI lenser d5...0001 via 08_lenser_family seed.
+-- @lenserfight (b2...0001) owns AI lenser d5...0001 via 08_lenser_family seed.
+-- The seed deactivates @lenserfight, but lensers.get_auth_human_lenser_id()
+-- only resolves active profiles. Reactivate inside this transaction (rolled
+-- back at the end) so the resolver returns b2...0001 for our session JWT.
 
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM agents.ownerships
-    WHERE ai_lenser_id   = 'd5000000-0000-0000-0000-000000000001'::uuid
+    WHERE ai_lenser_id    = 'd5000000-0000-0000-0000-000000000001'::uuid
       AND owner_lenser_id = 'b2000000-0000-0000-0000-000000000001'::uuid
       AND revoked_at IS NULL
   ) THEN
     RAISE EXCEPTION 'seed fixture missing: ownership 0001/b2...0001';
   END IF;
 END $$;
+
+UPDATE lensers.profiles
+SET    status = 'active'
+WHERE  id = 'b2000000-0000-0000-0000-000000000001'::uuid;
 
 INSERT INTO agents.teams (id, ai_lenser_id, name, description, status, is_active)
 VALUES (
@@ -42,9 +49,10 @@ VALUES (
 
 
 -- ── Test 1: fn_create_workspace_record populates default id ─────────────────
--- Bypass the lives_ok savepoint so the row persists for the verification step.
+-- All RPCs are SECURITY DEFINER, but the JWT claim is what auth.uid() reads
+-- inside lensers.get_auth_human_lenser_id(). Lookups outside the function
+-- happen as the superuser role so RLS doesn't hide our verification.
 
-SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub',
   'a1000000-0000-0000-0000-000000000001', true);
 SELECT set_config('request.jwt.claims',
@@ -64,7 +72,6 @@ SELECT public.fn_create_workspace_record(
     'is_active', true
   )
 );
-RESET ROLE;
 
 SELECT isnt(
   (SELECT id FROM agents.team_members
@@ -78,15 +85,6 @@ SELECT isnt(
 
 -- ── Test 2: fn_upsert_workspace_item updates team_members without 42703 ─────
 
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub',
-  'a1000000-0000-0000-0000-000000000001', true);
-SELECT set_config('request.jwt.claims',
-  json_build_object(
-    'sub','a1000000-0000-0000-0000-000000000001',
-    'role','authenticated'
-  )::text, true);
-
 SELECT public.fn_upsert_workspace_item(
   'team_members',
   (SELECT id FROM agents.team_members
@@ -95,21 +93,11 @@ SELECT public.fn_upsert_workspace_item(
    LIMIT 1),
   '{"role":"operator"}'::jsonb
 );
-RESET ROLE;
 
-SELECT ok(true, 'fn_upsert_workspace_item ran without column-not-exists error');
+SELECT ok(true, 'fn_upsert_workspace_item: ran without column-not-exists error');
 
 
 -- ── Test 3: fn_delete_workspace_item deletes the row without 42703 ─────────
-
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub',
-  'a1000000-0000-0000-0000-000000000001', true);
-SELECT set_config('request.jwt.claims',
-  json_build_object(
-    'sub','a1000000-0000-0000-0000-000000000001',
-    'role','authenticated'
-  )::text, true);
 
 SELECT public.fn_delete_workspace_item(
   'team_members',
@@ -118,7 +106,6 @@ SELECT public.fn_delete_workspace_item(
      AND agent_id = 'd5000000-0000-0000-0000-000000000002'::uuid
    LIMIT 1)
 );
-RESET ROLE;
 
 SELECT is(
   (SELECT count(*)::int FROM agents.team_members
@@ -129,15 +116,6 @@ SELECT is(
 
 
 -- ── Test 4: fn_create_workspace_record allowlist still rejects bad table ────
-
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub',
-  'a1000000-0000-0000-0000-000000000001', true);
-SELECT set_config('request.jwt.claims',
-  json_build_object(
-    'sub','a1000000-0000-0000-0000-000000000001',
-    'role','authenticated'
-  )::text, true);
 
 SELECT throws_ok(
   $$
@@ -150,10 +128,21 @@ SELECT throws_ok(
   NULL,
   'fn_create_workspace_record rejects tables outside the allowlist'
 );
-RESET ROLE;
 
 
--- ── Test 5: fn_upsert_workflow_schedule succeeds for the workflow owner ────
+-- ── Test 5: fn_create_workspace_record with empty payload reaches NOT NULL ─
+
+SELECT throws_ok(
+  $$
+  SELECT public.fn_create_workspace_record('team_members', '{}'::jsonb)
+  $$,
+  '23502',
+  NULL,
+  'fn_create_workspace_record: empty payload reaches NOT NULL guard (not a function error)'
+);
+
+
+-- ── Test 6: fn_upsert_workflow_schedule succeeds for the workflow owner ────
 
 INSERT INTO lenses.workflows (id, lenser_id, title, description, visibility)
 VALUES (
@@ -164,15 +153,7 @@ VALUES (
   'private'
 );
 
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub',
-  'a1000000-0000-0000-0000-000000000001', true);
-SELECT set_config('request.jwt.claims',
-  json_build_object(
-    'sub','a1000000-0000-0000-0000-000000000001',
-    'role','authenticated'
-  )::text, true);
-
+-- Active session is still Alice's human profile here.
 SELECT lives_ok(
   $$
   SELECT public.fn_upsert_workflow_schedule(
@@ -194,12 +175,10 @@ SELECT lives_ok(
   $$,
   'fn_upsert_workflow_schedule: human owner accepted'
 );
-RESET ROLE;
 
 
--- ── Test 6: non-owner still rejected (security boundary preserved) ─────────
+-- ── Test 7: non-owner still rejected (security boundary preserved) ─────────
 
-SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub',
   'a1000000-0000-0000-0000-000000000002', true);
 SELECT set_config('request.jwt.claims',
@@ -231,38 +210,9 @@ SELECT throws_ok(
   NULL,
   'fn_upsert_workflow_schedule: non-owner caller still rejected'
 );
-RESET ROLE;
 
 
--- ── Test 7: fn_create_workspace_record with empty payload works ────────────
--- evaluation_cases has no NOT-NULL columns beyond evaluation_id, but the FK
--- accepts NULL there. The DEFAULT-VALUES branch should compile and run; the
--- only thing we verify is that no plpgsql exception is raised at plan time.
-
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub',
-  'a1000000-0000-0000-0000-000000000001', true);
-SELECT set_config('request.jwt.claims',
-  json_build_object(
-    'sub','a1000000-0000-0000-0000-000000000001',
-    'role','authenticated'
-  )::text, true);
-
-SELECT throws_ok(
-  $$
-  SELECT public.fn_create_workspace_record('team_members', '{}'::jsonb)
-  $$,
-  -- team_members.team_id is NOT NULL FK; empty payload triggers 23502.
-  -- We assert the function DISPATCHES (not "function not found"), proving
-  -- the DEFAULT-VALUES branch compiles cleanly.
-  '23502',
-  NULL,
-  'fn_create_workspace_record: empty payload reaches NOT NULL guard, not a function error'
-);
-RESET ROLE;
-
-
--- ── Test 8: ownership helper is whitelisted and not exposed to anon ────────
+-- ── Test 8: ownership helper EXECUTE granted to authenticated ─────────────
 
 SELECT ok(
   has_function_privilege('authenticated',
