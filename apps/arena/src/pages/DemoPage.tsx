@@ -27,7 +27,7 @@ import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
 import { chainabitContactUrl } from '../utils/chainabitUrls'
 
-const RUN_APP_URL = import.meta.env.ARENA_URL ?? 'https://moon.lenserfight.com'
+const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
 
 const spring = { type: 'spring', stiffness: 260, damping: 22 } as const
 const viewport = { once: true, margin: '-60px' } as const
@@ -105,78 +105,20 @@ export const DemoPage: React.FC = () => {
       </section>
 
       {/* ── LIVE WIDGETS — battles, lenses, threads ─────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
-        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="red" variant="outline">{t('demo:widgets.badge')}</Badge>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            {t('demo:widgets.title')}
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            {t('demo:widgets.subtitle')}
-          </p>
-        </motion.div>
+      <section className="mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
+        {/* Live battles — Supabase realtime */}
+        <SpectatorFeedWidget
+          getBattleHref={(slug) => `${RUN_APP_URL}/battles/${slug}`}
+        />
 
-        {/* Battles row — Live + Trending */}
-        <motion.div
-          className="mt-8 grid gap-5 lg:grid-cols-2"
-          variants={stagger}
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewport}
-        >
-          <motion.div variants={fadeUp} className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Radio size={14} className="text-status-red" aria-hidden="true" />
-              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                {t('demo:widgets.battlesLive')}
-              </p>
-            </div>
-            <SpectatorFeedWidget
-              getBattleHref={(slug) =>
-                `${RUN_APP_URL}/battles/${slug}?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=demo_live_battles`
-              }
-            />
-          </motion.div>
+        {/* Hot / trending battles */}
+        <ArenaTrendingBattlesWidget baseUrl={RUN_APP_URL} />
 
-          <motion.div variants={fadeUp} className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Flame size={14} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
-              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                {t('demo:widgets.battlesTrending')}
-              </p>
-            </div>
-            <ArenaTrendingBattlesWidget baseUrl={RUN_APP_URL} />
-          </motion.div>
-        </motion.div>
+        {/* Hot threads */}
+        <ArenaHotThreadsWidget baseUrl={RUN_APP_URL} />
 
-        {/* Lenses + Threads row */}
-        <motion.div
-          className="mt-5 grid gap-5 lg:grid-cols-2"
-          variants={stagger}
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewport}
-        >
-          <motion.div variants={fadeUp} className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
-              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                {t('demo:widgets.lensesTrending')}
-              </p>
-            </div>
-            <ArenaTrendingLensesWidget baseUrl={RUN_APP_URL} />
-          </motion.div>
-
-          <motion.div variants={fadeUp} className="space-y-3">
-            <div className="flex items-center gap-2">
-              <MessageSquare size={14} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
-              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                {t('demo:widgets.threadsHot')}
-              </p>
-            </div>
-            <ArenaHotThreadsWidget baseUrl={RUN_APP_URL} />
-          </motion.div>
-        </motion.div>
+        {/* Trending lenses */}
+        <ArenaTrendingLensesWidget baseUrl={RUN_APP_URL} />
       </section>
 
       {/* ── EXPLORE THE REST OF THE PLATFORM ───────────────────────────── */}
@@ -202,27 +144,27 @@ export const DemoPage: React.FC = () => {
             const title = t(`demo:explore.items.${key}.title`)
             const description = t(`demo:explore.items.${key}.description`)
             return (
-            <motion.a
-              key={key}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              variants={fadeUp}
-              className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500 rounded-2xl"
-            >
-              <Card className="h-full space-y-4 border-t-4 border-t-primary-yellow-500/40 p-6 transition-shadow hover:border-t-primary-yellow-500 hover:shadow-md">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
-                  <Icon size={20} />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="flex items-center gap-1.5 text-base font-bold text-greyscale-900 dark:text-greyscale-50">
-                    {title}
-                    <ExternalLink size={12} className="text-greyscale-400 transition-colors group-hover:text-greyscale-700 dark:group-hover:text-greyscale-200" />
-                  </h3>
-                  <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
-                </div>
-              </Card>
-            </motion.a>
+              <motion.a
+                key={key}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                variants={fadeUp}
+                className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500 rounded-2xl"
+              >
+                <Card className="h-full space-y-4 border-t-4 border-t-primary-yellow-500/40 p-6 transition-shadow hover:border-t-primary-yellow-500 hover:shadow-md">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
+                    <Icon size={20} />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="flex items-center gap-1.5 text-base font-bold text-greyscale-900 dark:text-greyscale-50">
+                      {title}
+                      <ExternalLink size={12} className="text-greyscale-400 transition-colors group-hover:text-greyscale-700 dark:group-hover:text-greyscale-200" />
+                    </h3>
+                    <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
+                  </div>
+                </Card>
+              </motion.a>
             )
           })}
         </motion.div>
