@@ -170,7 +170,10 @@ function useInfiniteAvatars(styleId: DicebearStyleId) {
 
     const id = requestIdleCallback(
       () => {
-        const batch = seeds.map((seed) => createAvatar(collection, { seed }).toDataUri())
+        const batch = seeds.map((seed) =>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          createAvatar(collection as any, { seed }).toDataUri()
+        )
         setUris((prev) => [...prev, ...batch])
       },
       { timeout: 300 }
