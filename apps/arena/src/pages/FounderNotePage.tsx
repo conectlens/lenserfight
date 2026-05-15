@@ -2,7 +2,7 @@ import { Badge, Button, Card } from '@lenserfight/ui/components'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Heart, Lightbulb, Quote, Sparkles, Youtube } from 'lucide-react'
 import React, { useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
 import { FounderDukkanVideo } from '../components/FounderDukkanVideo'
 
