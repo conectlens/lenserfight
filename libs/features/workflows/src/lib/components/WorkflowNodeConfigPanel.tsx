@@ -216,9 +216,6 @@ export function WorkflowNodeConfigPanel({
         {/* Parameters from lens version */}
         {versionParams.length > 0 && (
           <div className="space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">
-              Parameters
-            </p>
             {/* Auto-wired params display */}
             {incomingEdges.map((edge) => {
               const paramLabel = edge.target_param_label

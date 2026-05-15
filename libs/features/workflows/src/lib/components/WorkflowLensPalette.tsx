@@ -183,11 +183,10 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
                 variant="ghost"
                 size="sm"
                 onClick={() => setTab(t)}
-                className={`flex-1 !rounded-lg !px-2 !py-1 !text-xs !font-semibold ${
-                  effectiveTab === t
+                className={`flex-1 !rounded-lg !px-2 !py-1 !text-xs !font-semibold ${effectiveTab === t
                     ? '!bg-primary-yellow-500/15 !text-primary-yellow-600 hover:!bg-primary-yellow-500/15'
                     : '!text-greyscale-500 hover:!text-greyscale-900 dark:hover:!text-greyscale-50 !bg-transparent'
-                }`}
+                  }`}
               >
                 {t === 'mine' ? 'My Lenses' : 'Popular'}
               </Button>
@@ -200,11 +199,10 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
           <button
             type="button"
             onClick={() => setKindFilter(null)}
-            className={`text-[10px] rounded-full px-2 py-0.5 font-semibold transition-colors ${
-              kindFilter === null
+            className={`text-[10px] rounded-full px-2 py-0.5 font-semibold transition-colors ${kindFilter === null
                 ? 'bg-primary-yellow-500/15 text-primary-yellow-600'
                 : 'bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-50'
-            }`}
+              }`}
           >
             All
           </button>
@@ -214,11 +212,10 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
               type="button"
               onClick={() => setKindFilter(kindFilter === k ? null : k)}
               title={LENS_KIND_REGISTRY[k].description}
-              className={`text-[10px] rounded-full px-2 py-0.5 font-semibold transition-colors ${
-                kindFilter === k
+              className={`text-[10px] rounded-full px-2 py-0.5 font-semibold transition-colors ${kindFilter === k
                   ? 'bg-primary-yellow-500/15 text-primary-yellow-600'
                   : 'bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-50'
-              }`}
+                }`}
             >
               {LENS_KIND_REGISTRY[k].label}
             </button>
