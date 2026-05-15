@@ -121,6 +121,18 @@ export class FileLenserRepository implements LenserRepositoryPort {
     return (await profileStore.findById(id)) ?? null
   }
 
+  async checkHandle(handle: string) {
+    const clean = (handle ?? '').toLowerCase()
+    const isShort = clean.length < 4
+    return {
+      verdict: isShort ? ('deny' as const) : ('allow' as const),
+      class_hit: null,
+      risk_score: isShort ? 100 : 0,
+      reason_codes: isShort ? ['syntax_too_short'] : [],
+      is_available: !isShort,
+    }
+  }
+
   async getPublicLenserProfile(handle: string): Promise<LenserProfileDTO> {
     const profiles = await profileStore.findWhere((p) => p.handle === handle)
     const p = profiles[0]
