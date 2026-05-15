@@ -90,13 +90,15 @@ const QuotaEditForm: React.FC<QuotaEditFormProps> = ({ agentId, agent, queryClie
             Daily Limits
           </span>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleSave}
           disabled={saving}
-          className="text-xs font-semibold text-primary-yellow-600 dark:text-primary-yellow-400 hover:underline disabled:opacity-50"
+          isLoading={saving}
         >
           {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}
-        </button>
+        </Button>
       </div>
       <div className="grid grid-cols-3 gap-3 text-sm">
         <div>
