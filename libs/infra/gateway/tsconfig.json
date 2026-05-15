@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "commonjs"
+    "module": "ESNext"
   },
   "files": [],
   "include": [],
