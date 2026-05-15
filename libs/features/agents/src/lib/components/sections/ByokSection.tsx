@@ -1,6 +1,7 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { ByokKeyHint, ByokRotationDueRow } from '@lenserfight/data/repositories'
 import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { KeyRound, ShieldCheck, ShieldX, Clock, Plus, AlertTriangle } from 'lucide-react'
@@ -146,6 +147,8 @@ export const ByokSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Security"
+      docsPath="/how-to/agents/workspace/byok"
+      docsTip="Bring Your Own Key. Keys are encrypted at rest, never echoed in full, and may be rotated or capped per month. Usage logs are read-only."
       title="API Keys (BYOK)"
       description="Manage your Bring-Your-Own-Key API credentials. Keys are stored encrypted and never shown in full."
       toolbar={
@@ -212,14 +215,15 @@ export const ByokSection: React.FC = () => {
               <div className="flex items-center gap-2 shrink-0">
                 <HealthBadge isValid={key.is_valid} />
                 {key.is_valid && (
-                  <button
+                  <Button
                     type="button"
+                    variant="danger"
+                    size="sm"
                     onClick={() => revokeMutation.mutate({ provider: key.provider })}
                     disabled={revokeMutation.isPending}
-                    className="text-xs px-2 py-1 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
                   >
                     Revoke
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -236,21 +240,15 @@ export const ByokSection: React.FC = () => {
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-medium text-greyscale-700 dark:text-greyscale-300 mb-1">
-              Provider
-            </label>
-            <select
+            <SelectField
+              label="Provider"
               value={form.provider}
-              onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))}
-              className="w-full px-3 py-2 rounded-lg border border-greyscale-200 dark:border-greyscale-700 bg-white dark:bg-greyscale-900 text-sm text-greyscale-900 dark:text-greyscale-100 focus:outline-none focus:ring-2 focus:ring-primary-yellow-400/50"
-            >
-              {KNOWN_PROVIDERS.map((p) => (
-                <option key={p} value={p} className="capitalize">
-                  {p}
-                </option>
-              ))}
-              <option value="__custom__">Other…</option>
-            </select>
+              onChange={(value) => setForm((f) => ({ ...f, provider: value }))}
+              options={[
+                ...KNOWN_PROVIDERS.map((provider) => ({ value: provider, label: provider })),
+                { value: '__custom__', label: 'Other...' },
+              ]}
+            />
           </div>
 
           {form.provider === '__custom__' && (
