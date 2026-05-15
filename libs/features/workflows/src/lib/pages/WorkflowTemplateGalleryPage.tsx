@@ -64,7 +64,7 @@ export function WorkflowTemplateGalleryPage() {
           {templates.map((template) => (
             <div key={template.id} className="relative">
               <WorkflowCard
-                workflow={template as Parameters<typeof WorkflowCard>[0]['workflow']}
+                workflow={template as unknown as Parameters<typeof WorkflowCard>[0]['workflow']}
               />
               <div className="mt-2 flex justify-end">
                 <button
