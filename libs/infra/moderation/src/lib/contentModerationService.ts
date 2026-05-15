@@ -7,7 +7,7 @@ import { DictionaryPolicy, RegexPolicy, SemanticPolicy } from './policies'
 // alongside the always-on DictionaryPolicy and RegexPolicy.
 const semanticEnabled =
   (typeof process !== 'undefined' && process.env?.['MODERATION_SEMANTIC_ENABLED'] === 'true') ||
-  (typeof import.meta !== 'undefined' && (import.meta as Record<string, Record<string, string>>).env?.['MODERATION_SEMANTIC_ENABLED'] === 'true')
+  (typeof import.meta !== 'undefined' && (import.meta as unknown as Record<string, Record<string, string>>).env?.['MODERATION_SEMANTIC_ENABLED'] === 'true')
 
 class ContentModerationService {
   private policies: ModerationPolicy[]
