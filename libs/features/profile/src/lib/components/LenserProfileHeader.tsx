@@ -146,43 +146,51 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
 
   const StatsBlock = ({ mobile = false }) => (
     <div
-      className={`flex items-center gap-3 text-sm ${mobile ? 'justify-center text-gray-600 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}
+      className={`flex items-center text-sm ${mobile ? 'justify-center gap-3 text-gray-600 dark:text-gray-400' : 'justify-between w-full text-gray-500 dark:text-gray-400'}`}
     >
-      <div
-        className="flex items-center gap-1 transition-colors group/stats cursor-pointer hover:text-primary-700 dark:hover:text-primary-400"
-        onClick={() => setNetworkType('followers')}
-      >
-        <span className="font-bold text-gray-900 dark:text-gray-100 group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400">
-          {formatCount(followersCount)}
-        </span>
-        <span className="text-gray-500 dark:text-gray-400">Followers</span>
-      </div>
-      <span className="text-gray-300 dark:text-gray-600">•</span>
-      <div
-        className="flex items-center gap-1 transition-colors group/stats cursor-pointer hover:text-primary-700 dark:hover:text-primary-400"
-        onClick={() => setNetworkType('following')}
-      >
-        <span className="font-bold text-gray-900 dark:text-gray-100 group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400">
-          {formatCount(followingCount)}
-        </span>
-        <span className="text-gray-500 dark:text-gray-400">Following</span>
+      <div className="flex items-center gap-3">
+        <div
+          className="flex items-center gap-1 transition-colors group/stats cursor-pointer hover:text-primary-700 dark:hover:text-primary-400"
+          onClick={() => setNetworkType('followers')}
+        >
+          <span className="font-bold text-gray-900 dark:text-gray-100 group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400">
+            {formatCount(followersCount)}
+          </span>
+          <span className="text-gray-500 dark:text-gray-400">Followers</span>
+        </div>
+        <span className="text-gray-300 dark:text-gray-600">•</span>
+        <div
+          className="flex items-center gap-1 transition-colors group/stats cursor-pointer hover:text-primary-700 dark:hover:text-primary-400"
+          onClick={() => setNetworkType('following')}
+        >
+          <span className="font-bold text-gray-900 dark:text-gray-100 group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400">
+            {formatCount(followingCount)}
+          </span>
+          <span className="text-gray-500 dark:text-gray-400">Following</span>
+        </div>
+
+        {xpSummary && (
+          <>
+            <span className="text-gray-300 dark:text-gray-600">•</span>
+            <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-semibold">
+              <Zap size={14} className="fill-current" />
+              <span>{formatCount(xpSummary.totalXp)} XP</span>
+            </div>
+          </>
+        )}
+
+        {!mobile && (
+          <>
+            <span className="text-gray-300 dark:text-gray-600">•</span>
+            <span className="text-gray-500 dark:text-gray-400 font-medium">@{lenser.handle}</span>
+          </>
+        )}
       </div>
 
-      {xpSummary && (
-        <>
-          <span className="text-gray-300 dark:text-gray-600">•</span>
-          <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-semibold">
-            <Zap size={14} className="fill-current" />
-            <span>{formatCount(xpSummary.totalXp)} XP</span>
-          </div>
-        </>
-      )}
-
-      {!mobile && (
-        <>
-          <span className="text-gray-300 dark:text-gray-600">•</span>
-          <span className="text-gray-500 dark:text-gray-400 font-medium">@{lenser.handle}</span>
-        </>
+      {!mobile && lenser.type !== 'ai' && (
+        <div className="flex-shrink-0">
+          <HelpButton path="/explanation/lensers/human-lensers" label="About Lensers" />
+        </div>
       )}
     </div>
   )
@@ -352,7 +360,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
             {/* Content */}
             <div className="flex-1 pt-1 min-w-0 w-full flex flex-col items-center md:items-start text-center md:text-left">
               {/* Desktop: Stats Row Top */}
-              <div className="hidden md:block mb-1">
+              <div className="hidden md:block mb-1 w-full">
                 <StatsBlock />
               </div>
 
@@ -435,9 +443,6 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                         Control Room
                       </Button>
                     )}
-                    {lenser.type !== 'ai' && (
-                      <HelpButton path="/explanation/lensers/human-lensers" label="About Lensers" />
-                    )}
                   </div>
                 ) : (
                   <div className="hidden md:flex items-center gap-2 mt-2 md:mt-0">
@@ -446,9 +451,6 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                       handle={lenser.handle}
                       relationshipState={relationshipState ?? null}
                     />
-                    {lenser.type !== 'ai' && (
-                      <HelpButton path="/explanation/lensers/human-lensers" label="About Lensers" />
-                    )}
                   </div>
                 )}
               </div>
