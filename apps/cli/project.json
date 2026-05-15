@@ -1,0 +1,175 @@
+{
+  "name": "cli",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/cli/src",
+  "projectType": "application",
+  "tags": [
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/cli",
+        "format": [
+          "cjs"
+        ],
+        "bundle": true,
+        "main": "apps/cli/src/main.ts",
+        "tsConfig": "apps/cli/tsconfig.app.json",
+        "assets": [
+          "apps/cli/src/assets",
+          {
+            "input": "apps/cli",
+            "glob": "README.md",
+            "output": "."
+          },
+          {
+            "input": ".",
+            "glob": "LICENSE",
+            "output": "."
+          }
+        ],
+        "generatePackageJson": true,
+        "esbuildOptions": {
+          "sourcemap": true,
+          "outExtension": {
+            ".js": ".js"
+          },
+          "banner": {
+            "js": "#!/usr/bin/env node"
+          },
+          "define": {
+            "import.meta.env": "undefined"
+          }
+        }
+      },
+      "configurations": {
+        "development": {},
+        "production": {
+          "esbuildOptions": {
+            "sourcemap": false,
+            "outExtension": {
+              ".js": ".js"
+            },
+            "banner": {
+              "js": "#!/usr/bin/env node"
+            },
+            "define": {
+              "import.meta.env": "undefined"
+            }
+          }
+        }
+      }
+    },
+    "prune-lockfile": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": true,
+      "executor": "@nx/js:prune-lockfile",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/cli/package.json",
+        "{workspaceRoot}/dist/apps/cli/package-lock.json"
+      ],
+      "options": {
+        "buildTarget": "build"
+      }
+    },
+    "copy-workspace-modules": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": true,
+      "outputs": [
+        "{workspaceRoot}/dist/apps/cli/workspace_modules"
+      ],
+      "executor": "@nx/js:copy-workspace-modules",
+      "options": {
+        "buildTarget": "build"
+      }
+    },
+    "prune": {
+      "dependsOn": [
+        "prune-lockfile",
+        "copy-workspace-modules"
+      ],
+      "executor": "nx:noop"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "buildTarget": "cli:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "cli:build:development"
+        },
+        "production": {
+          "buildTarget": "cli:build:production"
+        }
+      }
+    },
+    "chmod": {
+      "dependsOn": [
+        "build"
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "chmod 755 dist/apps/cli/main.js"
+      }
+    },
+    "link": {
+      "dependsOn": [
+        "chmod"
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd dist/apps/cli && npm link"
+      }
+    },
+    "validate-package": {
+      "dependsOn": [
+        "chmod"
+      ],
+      "cache": true,
+      "outputs": [
+        "{workspaceRoot}/dist/apps/cli/package-validation.json"
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/cli-release/validate-package.mjs --package-dir dist/apps/cli"
+      }
+    },
+    "smoke-install": {
+      "dependsOn": [
+        "validate-package"
+      ],
+      "cache": false,
+      "outputs": [
+        "{workspaceRoot}/dist/apps/cli/package-smoke.json"
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/cli-release/smoke-install.mjs --package-dir dist/apps/cli"
+      }
+    },
+    "test": {
+      "options": {
+        "passWithNoTests": true
+      }
+    }
+  }
+}
