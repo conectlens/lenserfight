@@ -75,7 +75,8 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
     staleTime: 1000 * 60 * 5,
   })
 
-  const popularLenses: LensViewModel[] = popularQuery.data?.pages.flatMap((p) => p.data) ?? []
+  const popularLenses: LensViewModel[] =
+    popularQuery.data?.pages.flatMap((p) => p.data ?? []) ?? []
 
   // Search — min 3 chars, fires after debounce (keep as regular query, no infinite scroll)
   const { data: searchData, isLoading: loadingSearch } = useQuery({
