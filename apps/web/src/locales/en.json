@@ -33,7 +33,20 @@
     "trending": "Trending",
     "forYou": "For You",
     "suggestedLensers": "Suggested Lensers",
-    "trendingTopics": "Trending Topics"
+    "trendingTopics": "Trending Topics",
+    "feedTabs": {
+      "forYou": "For You",
+      "following": "Following",
+      "trending": "Trending"
+    }
+  },
+  "auth": {
+    "notAuthorized": {
+      "title": "Access denied",
+      "message": "You need to be signed in with a Lenser profile to access this page.",
+      "goBack": "Go back",
+      "signIn": "Sign in"
+    }
   },
   "prompts": {
     "title": "Prompts",
@@ -80,7 +93,12 @@
     "theme": "Theme",
     "dark": "Dark",
     "light": "Light",
-    "system": "System"
+    "system": "System",
+    "privacy": {
+      "public": "Public — visible to everyone",
+      "community": "Community — visible to registered users",
+      "private": "Private — only visible to you"
+    }
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
