@@ -1,0 +1,134 @@
+{
+  "nav": {
+    "home": "Home",
+    "prompts": "Prompts",
+    "topics": "Topics",
+    "leaderboard": "Leaderboard",
+    "settings": "Settings",
+    "admin": "Admin",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "actions": {
+    "share": "Share",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "search": "Search",
+    "filter": "Filter",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "submit": "Submit",
+    "loading": "Loading...",
+    "seeMore": "See more",
+    "viewAll": "View all"
+  },
+  "home": {
+    "title": "Home",
+    "feed": "Your Feed",
+    "trending": "Trending",
+    "forYou": "For You",
+    "suggestedLensers": "Suggested Lensers",
+    "trendingTopics": "Trending Topics",
+    "feedTabs": {
+      "forYou": "For You",
+      "following": "Following",
+      "trending": "Trending"
+    }
+  },
+  "auth": {
+    "notAuthorized": {
+      "title": "Access denied",
+      "message": "You need to be signed in with a Lenser profile to access this page.",
+      "goBack": "Go back",
+      "signIn": "Sign in"
+    }
+  },
+  "prompts": {
+    "title": "Prompts",
+    "search": "Search prompts...",
+    "notFound": "Prompt not found",
+    "usedTimes": "{{count}} uses",
+    "by": "by",
+    "tags": "Tags",
+    "copyPrompt": "Copy Prompt",
+    "remixPrompt": "Remix",
+    "usePrompt": "Use Prompt"
+  },
+  "threads": {
+    "title": "Discussions",
+    "replies": "{{count}} replies",
+    "reply": "Reply",
+    "noReplies": "No replies yet. Start the discussion!",
+    "writeReply": "Write a reply...",
+    "notFound": "Thread not found"
+  },
+  "profile": {
+    "title": "Profile",
+    "prompts": "Prompts",
+    "threads": "Threads",
+    "followers": "Followers",
+    "following": "Following",
+    "joinedOn": "Joined {{date}}",
+    "notFound": "Profile not found"
+  },
+  "tags": {
+    "title": "Topics",
+    "explore": "Explore Topics",
+    "topPrompts": "Top Prompts",
+    "topThreads": "Top Threads",
+    "follow": "Follow Topic",
+    "unfollow": "Unfollow Topic"
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "appearance": "Appearance",
+    "notifications": "Notifications",
+    "language": "Language",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light",
+    "system": "System",
+    "privacy": {
+      "public": "Public — visible to everyone",
+      "community": "Community — visible to registered users",
+      "private": "Private — only visible to you"
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "notFound": "Page not found",
+    "unauthorized": "You must be logged in to do this.",
+    "forbidden": "You do not have permission to access this."
+  },
+  "language": {
+    "select": "Language",
+    "en": "English",
+    "tr": "Türkçe"
+  },
+  "battles": {
+    "contentTypes": {
+      "text":       "Text",
+      "code":       "Code",
+      "poem":       "Poem",
+      "drawing":    "Drawing",
+      "image":      "Image",
+      "video":      "Video",
+      "audio":      "Audio",
+      "workflow":   "Workflow",
+      "map":        "Map",
+      "avatar":     "Avatar",
+      "image_edit": "Image Edit",
+      "kaggle":     "Kaggle"
+    },
+    "filter": {
+      "allMedia":    "All media",
+      "contentType": "Content type"
+    }
+  }
+}
