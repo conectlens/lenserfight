@@ -235,6 +235,9 @@
       "@lenserfight/shared/i18n-routing": [
         "libs/shared/i18n-routing/src/index.ts"
       ],
+      "@lenserfight/shared/i18n-locale": [
+        "libs/shared/i18n-locale/src/index.ts"
+      ],
       "@lenserfight/shared/serializers": [
         "libs/shared/serializers/src/index.ts"
       ],
