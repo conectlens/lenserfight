@@ -139,15 +139,14 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
             </p>
             <div className="space-y-1">
               {ownLenses.map((lens) => (
-                <Button
+                <button
                   key={lens.id}
                   type="button"
                   onClick={() => selectLens(lens.id)}
-                  className={`w-full rounded-2xl border px-4 py-2.5 text-left text-sm font-medium transition ${
-                    selectedLensId === lens.id
+                  className={`w-full rounded-2xl border px-4 py-2.5 text-left text-sm font-medium transition ${selectedLensId === lens.id
                       ? 'border-primary-yellow-400 bg-primary-yellow-50 text-gray-900 dark:bg-primary-yellow-500/10 dark:text-white'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'
-                  }`}
+                    }`}
                 >
                   {lens.title}
                   {lens.description && (
@@ -155,7 +154,7 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
                       {lens.description.slice(0, 60)}{lens.description.length > 60 ? '…' : ''}
                     </span>
                   )}
-                </Button>
+                </button>
               ))}
               {hasNextOwnPage && (
                 <Button
