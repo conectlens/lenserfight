@@ -3,6 +3,7 @@ import { ArenaHotThreadsWidget, ArenaTrendingLensesWidget } from '@lenserfight/f
 import { motion } from 'framer-motion'
 import { Radio } from 'lucide-react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 // moon.lenserfight.com — the functional arena app
 const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
@@ -17,6 +18,7 @@ const sectionVariants = {
 }
 
 export function ArenaPulseSection() {
+  const { t } = useTranslation(['home', 'common'])
   return (
     <motion.section
       className="w-full"
@@ -24,26 +26,26 @@ export function ArenaPulseSection() {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: '-80px' }}
-      aria-label="Arena Pulse — live platform activity"
+      aria-label={t('home:pulse.ariaLabel')}
     >
       {/* Section header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="flex items-center gap-2">
           <Radio size={18} aria-hidden="true" className="text-red-500" />
           <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-            Arena Pulse
+            {t('home:pulse.title')}
           </h2>
         </div>
         <span
           className="flex items-center gap-1.5 text-[11px] font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full"
-          aria-label="Live data"
+          aria-label={t('home:pulse.liveDataAria')}
         >
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" aria-hidden="true" />
-          LIVE
+          {t('home:pulse.live')}
         </span>
       </div>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 -mt-4">
-        Live battles, trending fights, hot threads, and rising lenses — happening right now.
+        {t('home:pulse.subtitle')}
       </p>
 
       {/* Quad grid */}
@@ -69,7 +71,7 @@ export function ArenaPulseSection() {
           href={RUN_APP_URL}
           className="inline-flex items-center gap-2 rounded-full bg-gray-900 dark:bg-white px-6 py-3 text-sm font-bold text-white dark:text-gray-900 shadow-md hover:shadow-xl transition-shadow hover:scale-[1.02] active:scale-[0.98]"
         >
-          Explore the Arena →
+          {t('common:cta.exploreArena')} →
         </a>
       </div>
     </motion.section>
