@@ -1,0 +1,36 @@
+name: Sync Contributors
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-contributors:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update contributors list
+        # SUPPLY-CHAIN: Pin to immutable SHA before public OSS launch. Resolve via:
+        #   gh api repos/akhilmhdh/contributors-readme-action/git/refs/tags/v2.3.11 | jq -r .object.sha
+        # then replace `@v2.3.11` with `@<full-40-char-sha>  # v2.3.11`.
+        uses: akhilmhdh/contributors-readme-action@v2.3.11
+        with:
+          readme_path: docs/community/contributors.md
+          use_username: true
+          columns_per_row: 6
+          commit_message: "docs(contributors): sync contributors page"
+          auto_detect_branch_protection: true
+          image_size: 100
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
