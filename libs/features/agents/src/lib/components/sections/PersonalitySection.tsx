@@ -44,12 +44,14 @@ export const PersonalitySection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Personality"
+      docsPath="/how-to/agents/workspace/personality"
+      docsTip="Personality is a free-text note (≤1000 chars) plus a bound lens. Both are injected alongside the system prompt at inference time."
       title="Personality lens"
       description="Fork a community lens or select one of your own lenses to define this agent's personality. The bound lens version becomes the personality source applied to every run."
       toolbar={
         <a
           href="/lenses"
-          className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+          className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200"
         >
           Open lens studio
         </a>
