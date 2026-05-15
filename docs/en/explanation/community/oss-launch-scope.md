@@ -18,12 +18,12 @@ These surfaces ship enabled (or preview-flagged) in Community Edition. A self-ho
 | CLI (`lf run exec`, `lf execution wait`) | **Stable** | Local and BYOK model experiments |
 | Social graph (follow / unfollow) | **Stable** | |
 | Notifications (bell, badge) | **Stable** | Requires Supabase |
-| Cloud battles arena | **Stable** | `FEATURE_PUBLIC_BATTLES=true` + hosted Supabase + webhook outbox wired. See [Cloud Battles runbook](/en/explanation/battles/limited-beta-status). |
-| Battle BYOK streaming | **Stable** | Cloud battles + BYOK key reference |
-| ELO leaderboard | **Stable** | Cloud battles deployment |
-| Tournament scoring | **Stable** | Cloud battles deployment |
-| Public arena and discovery | **Stable** | Cloud battles deployment |
-| Battle moderation admin console | **Stable** | `FEATURES.PUBLIC_BATTLES=true` + admin-or-creator gating |
+| Cloud battles arena | **Preview** | `FEATURE_PUBLIC_BATTLES=true` + hosted Supabase + webhook outbox wired. Limited beta only; see [Cloud Battles runbook](/en/explanation/battles/limited-beta-status). |
+| Battle BYOK streaming | **Preview** | Cloud battles + BYOK key reference |
+| ELO leaderboard | **Preview** | Cloud battles deployment |
+| Tournament scoring | **Preview** | Cloud battles deployment |
+| Public arena and discovery | **Preview** | Cloud battles deployment |
+| Battle moderation admin console | **Preview** | `FEATURES.PUBLIC_BATTLES=true` + admin-or-creator gating |
 | CRON scheduling | **Preview** | Requires `FEATURE_CRON_SCHEDULING=true` + pg_cron. Default approval-gated. |
 | Approval gates | **Preview** | Blocks scheduled runs and write-class tool calls until a human resolves |
 | Tool invocation (read-only and write-class) | **Preview** | Write-class tools always require approval |
@@ -44,7 +44,7 @@ The cloud battles surface requires the following deployment verifications. Each 
 - **O1 — Approval / moderation webhook outbox.** `audit.webhook_outbox` is being drained by the `webhook-outbox-dispatcher` cron and `app.webhook_signing_secret` is configured. Verified by [`supabase/tests/61_webhook_outbox_drain.sql`](https://github.com/conectlens/lenserfight/blob/main/supabase/tests/61_webhook_outbox_drain.sql) plan(3).
 - **O3 — ELO change log.** Every leaderboard mutation writes a row to `reputation.elo_battle_log`. Verified by [`supabase/tests/62_elo_change_log.sql`](https://github.com/conectlens/lenserfight/blob/main/supabase/tests/62_elo_change_log.sql) plan(2).
 
-To deploy cloud battles, follow the [Cloud Battles Operator Runbook](/en/explanation/battles/limited-beta-status) and verify all five gates pass on your instance before setting `FEATURE_PUBLIC_BATTLES=true`.
+To deploy cloud battles, follow the [Cloud Battles Operator Runbook](/en/explanation/battles/limited-beta-status), verify all five gates pass on your instance, and complete the [Public Beta Release Risk Register](/en/explanation/community/beta-release-risk-register) before setting `FEATURE_PUBLIC_BATTLES=true`.
 
 ## Out of scope — not yet implemented
 
@@ -65,9 +65,10 @@ These are tracked in the roadmap but **no production-ready surface** exists yet.
 - Do not claim out-of-scope surfaces work in any contributor-facing material.
 - Do not promote preview surfaces as generally available.
 - When writing docs, use `::: warning Preview` callouts on any surface marked Preview in this list.
-- Cloud battles surfaces are Stable — no access grant required. Self-hosters deploy by following the operator runbook.
+- Cloud battles surfaces are Preview. Do not describe them as generally available until the release risk register and operator gates are complete.
 
 ## Related
 
 - [Known Preview Surfaces](/en/reference/known-preview-surfaces) — controlling flags and rollback instructions
 - [Known Limitations](/en/reference/known-limitations) — honest list of current constraints
+- [Public Beta Release Risk Register](/en/explanation/community/beta-release-risk-register) — legal, security, privacy, OSS, governance, and docs gates before public beta
