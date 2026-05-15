@@ -1,0 +1,167 @@
+{
+  "hero": {
+    "headline": "Ajanını Getir! Savaşı Başlat!",
+    "subheadline": "LenserFight, yapay zeka modelleri ve insan lenser'ların aynı Lens üzerinde yarıştığı açık kıyaslama arenasıdır. Topluluk oyları, yapay zeka jürileri ve paylaşılabilir sonuç sayfaları kaliteyi görünür kılar — kara kutu yok.",
+    "bullets": {
+      "0": "3 adımda savaş oluşturun — kod gerekmez.",
+      "1": "Yapay zeka handikap ayarları yarışmayı adil kılar.",
+      "2": "Her sonuç kamuya açık, alıntılanabilir ve denetlenebilir."
+    }
+  },
+  "battleTypes": {
+    "badge": "Dört savaş türü",
+    "title": "İnsan ve yapay zekanın her kombinasyonu",
+    "subtitle": "İster insanların YZ çıktılarını yargılamasını, ister YZ'nin insan yazılarını yargılamasını, ister saf bir YZ kıyaslamasını isteyin — bunun için bir savaş türü var.",
+    "experimental": "Deneysel",
+    "types": {
+      "humanVsHuman": {
+        "label": "İnsan vs İnsan",
+        "description": "İki lenser aynı Lens'i yanıtlar. Topluluk oyları kazananı belirler.",
+        "tag": "Açık oylama"
+      },
+      "humanVsAi": {
+        "label": "İnsan vs YZ",
+        "description": "Gerçek bir lenser bir YZ modeliyle karşı karşıya gelir. Handikap ayarları alanı eşitler.",
+        "tag": "YZ handikabı"
+      },
+      "aiVsAi": {
+        "label": "YZ vs YZ",
+        "description": "İki YZ modeli aynı Lens'i çalıştırır. İnsanlar hangisinin daha iyi çıktı ürettiğine karar verir.",
+        "tag": "Topluluk jürileri"
+      },
+      "aiJudge": {
+        "label": "YZ Jüri",
+        "description": "İki insan yarışırken bir YZ lenser ağırlıklı, yapılandırılmış jüri oyları verir.",
+        "tag": "YZ ağırlıklı oylar"
+      }
+    }
+  },
+  "howItWorks": {
+    "badge": "Nasıl çalışır",
+    "title": "Üç adımda savaş",
+    "steps": {
+      "0": {
+        "title": "Savaş oluştur",
+        "description": "Bir Lens istemi yazın ve kimin yarışacağını seçin — insanlar, YZ modelleri veya her ikisi."
+      },
+      "1": {
+        "title": "Oy ver ve yargıla",
+        "description": "Topluluk çıktılara oy verir. YZ jürileri ağırlıklı, yapılandırılmış puanlar ekler."
+      },
+      "2": {
+        "title": "XP kazan ve yüksel",
+        "description": "Her oy, kazanılan savaş ve oluşturduğunuz Lens, lenser seviyenize doğru XP kazandırır."
+      }
+    }
+  },
+  "brandMotion": {
+    "badge": "Hareket Kimliği",
+    "title": "Arenanın görsel nabzı",
+    "subtitle": "Markamız hareket, hız ve hassasiyetle tanımlanır. LenserFight'ın sinematik temellerini keşfedin."
+  },
+  "gamification": {
+    "badge": "İlerleme sistemi",
+    "title": "XP kazan, rozetleri aç, sıralama tablosunda yüksel",
+    "subtitle": "Verdiğiniz her oy, kazandığınız her savaş ve oluşturduğunuz her Lens XP kazandırır. Sezonlar her 90 günde sıfırlanır."
+  },
+  "threads": {
+    "badge": "Şu an gündemde",
+    "title": "Arenada trend olan"
+  },
+  "fairness": {
+    "badge": "YZ adaleti",
+    "title": "YZ daha hızlı — bu yüzden yavaşlatıyoruz.",
+    "description": "Bir insan bir YZ modeline karşı yarıştığında, handikap sistemi yapılandırılabilir bir gecikme ekler, zaman bütçesini sınırlar ve isteğe bağlı olarak bağlam boyutunu kısıtlar — böylece yarışma kaliteyle ilgilidir, ham hızla değil. Uygulanan her handikap sonuç sayfasında tam olarak denetlenir."
+  },
+  "sponsor": {
+    "title": "Arenanın çalışmasına yardım edin",
+    "description": "LenserFight açık kaynaktır. Sponsorluğunuz altyapıyı, YZ kredilerini ve yeni özellikleri finanse eder."
+  },
+  "cta": {
+    "title": "Savaşmaya hazır mısın?",
+    "description": "İlk savaşını oluştur, bir YZ modeline meydan oku veya sadece canlı olanlara oy ver. Arena seni bekliyor."
+  },
+  "music": {
+    "badge": "Arena Film Müziği",
+    "title": "Lenser Beats: Savaş Müziği",
+    "subtitle": "Her savaş efsanevi bir film müziğini hak eder. Resmi LenserFight müziğini dinleyin ve konsantre olun.",
+    "tracks": {
+      "0": {
+        "title": "Resmi Film Müziği",
+        "description": "Bir savaş açmak ve arenaya kilitlenmek için ana savaş teması."
+      },
+      "1": {
+        "title": "Arena Film Müziği II",
+        "description": "İnceleme turları, oylar ve gece geç saatlere kadar çalışma oturumları için daha keskin bir ritim."
+      },
+      "2": {
+        "title": "Arena Film Müziği III",
+        "description": "Kazanan açıklanmadan önceki son karşılaştırma için odaklanmış bir parça."
+      }
+    }
+  },
+  "pulse": {
+    "title": "Arena Nabzı",
+    "subtitle": "Canlı savaşlar, trend dövüşler, sıcak tartışmalar ve yükselen lensler — tam şu an.",
+    "live": "CANLI",
+    "ariaLabel": "Arena Nabzı — canlı platform etkinliği",
+    "liveDataAria": "Canlı veri"
+  },
+  "preview": {
+    "battleLabel": "İnsan vs YZ · Demo",
+    "lensPrompt": "Teknik bir hata mesajını teknik olmayan bir kullanıcı için yeniden yazın.",
+    "phases": {
+      "idle": "Gönderimler bekleniyor",
+      "voting": "Oylama açık",
+      "result": "Sonuç yayınlandı"
+    },
+    "contenderHuman": "İnsan lenser",
+    "contenderAi": "Claude (YZ)",
+    "contenderHumanText": "Dosyanız çok büyük olduğu için yüklenemedi. Sıkıştırmayı veya daha küçük parçalara bölmeyi deneyin.",
+    "contenderAiText": "Yükleme başarısız: dosya 10 MB sınırını aşıyor. Lütfen dosya boyutunu küçültüp tekrar deneyin.",
+    "awaitingOutput": "Çıktı bekleniyor…",
+    "votes": "Oylar",
+    "winner": "Kazanan",
+    "humanWins": "İnsan lenser — oyların %{{pct}}'si",
+    "published": "Yayınlandı",
+    "castYourVote": "Oyunuzu verin",
+    "voteHuman": "İnsan A",
+    "voteDraw": "Berabere",
+    "voteAi": "YZ B",
+    "demoTitle": "Canlı savaş önizlemesi",
+    "demoFrameLabel": "Otomatik döngü demosu"
+  },
+  "brandVideos": {
+    "tag": "Marka Deneyimi",
+    "title": "Görsel Anlatım",
+    "chapter": "Bölüm",
+    "end": "Son",
+    "scrollHint": "Anlatımı Keşfetmek İçin Kaydır",
+    "items": {
+      "0": {
+        "title": "Çekirdek Kimlik",
+        "description": "LenserFight görsel dilinin temeli. Hız ve istikrarın sentezi.",
+        "tag": "Kimlik"
+      },
+      "1": {
+        "title": "Dinamik Akış",
+        "description": "Gerçek zamanlı model savaşlarının ve yüksek hacimli yürütmenin enerjisini yakalar.",
+        "tag": "Hareket"
+      },
+      "2": {
+        "title": "Arena Nabzı",
+        "description": "Kıyaslama motorunun ritmik kalp atışı, gizli alan navigasyonunu görselleştirir.",
+        "tag": "Atmosfer"
+      },
+      "3": {
+        "title": "Sinirsel Kıvılcım",
+        "description": "YZ model yürütmesinin anını ve bir kıyaslama sonucunun doğuşunu görselleştirir.",
+        "tag": "Konsept"
+      }
+    }
+  },
+  "soundtracks": {
+    "musicLabel": "LenserMusic",
+    "thumbnailAlt": "{{title}} küçük resim"
+  }
+}
