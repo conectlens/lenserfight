@@ -15,15 +15,46 @@ import NotFoundActions from './NotFoundActions.vue'
 import { globalAnalyticsController, GA4Provider } from '@lenserfight/infra/analytics'
 
 const KNOWN_LOCALES = new Set(['en', 'tr', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ru', 'pt', 'it'])
+const ENABLED_LOCALES = new Set(['en', 'tr'])
+const LOCALE_COOKIE_NAME = 'lf-locale'
+const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
+
+function getCookieDomain(hostname: string): string {
+  if (!hostname) return ''
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return hostname
+  if (hostname.endsWith('.localhost')) return '.localhost'
+  if (/^[\d.]+$/.test(hostname) || hostname.includes(':')) return hostname
+  const parts = hostname.split('.')
+  return parts.length > 2 ? '.' + parts.slice(-2).join('.') : hostname
+}
+
+function readLocaleCookie(): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(/(?:^|; )lf-locale=([^;]*)/)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
+function writeLocaleCookie(code: string): void {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return
+  if (!ENABLED_LOCALES.has(code)) return
+  const domain = getCookieDomain(window.location.hostname)
+  const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+  const domainAttr = domain ? `; Domain=${domain}` : ''
+  document.cookie =
+    `${LOCALE_COOKIE_NAME}=${encodeURIComponent(code)}${domainAttr}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`
+}
 
 function redirectUnprefixedPath(): void {
   if (typeof window === 'undefined') return
   const { pathname, search, hash } = window.location
   const segments = pathname.replace(/^\//, '').split('/')
   if (KNOWN_LOCALES.has(segments[0])) return
-  // Bare root → English home
+  // No locale in URL — prefer the cross-app cookie so a locale chosen in
+  // apps/web or apps/arena follows the user into docs on first visit.
+  const cookieLocale = readLocaleCookie()
+  const target = cookieLocale && ENABLED_LOCALES.has(cookieLocale) ? cookieLocale : 'en'
   const rest = pathname === '/' ? '' : pathname
-  window.location.replace(`/en${rest}${search}${hash}`)
+  window.location.replace(`/${target}${rest}${search}${hash}`)
 }
 
 const POSTHOG_TOKEN = import.meta.env['PUBLIC_POSTHOG_PROJECT_TOKEN'] as string | undefined
@@ -85,8 +116,14 @@ export default {
     ctx.app.component('HotLenses', HotLenses)
     ctx.app.component('AiLenserFamily', AiLenserFamily)
 
-    // Redirect any path without a locale prefix to /en/:path
+    // Redirect any path without a locale prefix to the cookie's locale (or /en)
     redirectUnprefixedPath()
+
+    // Mirror the active locale into the shared cookie on initial load.
+    if (typeof window !== 'undefined') {
+      const firstSegment = window.location.pathname.replace(/^\//, '').split('/')[0]
+      writeLocaleCookie(firstSegment)
+    }
 
     ctx.router.onBeforeRouteChange = (to) => {
       if (typeof window === 'undefined') return
@@ -100,6 +137,11 @@ export default {
 
     ctx.router.onAfterRouteChanged = (to) => {
       if (typeof window !== 'undefined') {
+        // Persist the active locale to the shared cookie so a docs visitor
+        // who later opens apps/web or apps/arena lands in the same language.
+        const firstSegment = to.replace(/^\//, '').split('/')[0]
+        writeLocaleCookie(firstSegment)
+
         globalAnalyticsController.trackPageView(to)
 
         const ph = (window as unknown as Record<string, unknown>).__posthogDocs
