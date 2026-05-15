@@ -1,9 +1,18 @@
 import { agentWorkspaceService, agentsService } from '@lenserfight/data/repositories'
 import type { AgentProfileView } from '@lenserfight/data/repositories'
 import type { AgentTeamRecord } from '@lenserfight/types'
-import { Drawer } from '@lenserfight/ui/overlays'
+import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
 import { useQuery } from '@tanstack/react-query'
 import React, { useEffect, useMemo, useState } from 'react'
+
+import { DrawerDocsLink } from './DrawerDocsLink'
+
+const ACTIVATION_OPTIONS = [
+  { value: 'active', label: 'Active crew' },
+  { value: 'draft', label: 'Draft crew' },
+]
 
 interface CreateTeamDrawerProps {
   open: boolean
@@ -42,6 +51,17 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
     const currentAgent = agents.find((agent) => agent.ai_lenser_id === aiLenserId)
     return currentAgent ? [currentAgent.ai_lenser_id] : agents[0] ? [agents[0].ai_lenser_id] : []
   }, [agents, aiLenserId])
+
+  const leadAgentOptions = useMemo(() => {
+    return selectedAgentIds.map((agentId) => {
+      const agent = agents.find((item) => item.ai_lenser_id === agentId)
+      const handle = agent?.handle ? ` (@${agent.handle})` : ''
+      return {
+        value: agentId,
+        label: `${agent?.display_name ?? agentId}${handle}`,
+      }
+    })
+  }, [agents, selectedAgentIds])
 
   useEffect(() => {
     if (!open) return
@@ -117,8 +137,27 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
   }
 
   return (
-    <Drawer open={open} onClose={onClose} side="right" width="w-[560px]" title="Create autonomous crew">
+    <Drawer
+      open={open}
+      onClose={onClose}
+      side="right"
+      width="w-[560px]"
+      title="Create new crew"
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          onSubmit={handleSave}
+          isLoading={submitting}
+          submitLabel="Create crew"
+          disabled={submitting}
+        />
+      }
+    >
       <div className="space-y-4">
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/create-team"
+          tip="Bootstrap a new team graph. Pick coordination style (round-robin / manager-worker / consensus) and autonomy level (0 = every step gated … 3 = fully autonomous within budget)."
+        />
         <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
           Teams are reusable autonomous crews. Select the AI Lensers that participate, choose a lead,
           and then assign workflows or CRON schedules to this crew.
@@ -144,33 +183,21 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
         </Field>
 
         <Field label="Activation mode">
-          <select
+          <SelectField
             value={activationMode}
-            onChange={(e) => setActivationMode(e.target.value as ActivationMode)}
-            className={inputClass}
-          >
-            <option value="active">Active crew</option>
-            <option value="draft">Draft crew</option>
-          </select>
+            onChange={(v) => setActivationMode(v as ActivationMode)}
+            options={ACTIVATION_OPTIONS}
+          />
         </Field>
 
         <Field label="Lead agent">
-          <select
+          <SelectField
             value={leadAgentId}
-            onChange={(e) => setLeadAgentId(e.target.value)}
-            className={inputClass}
+            onChange={setLeadAgentId}
+            options={leadAgentOptions}
+            placeholder="Select a lead"
             disabled={agents.length === 0}
-          >
-            <option value="">Select a lead</option>
-            {selectedAgentIds.map((agentId) => {
-              const agent = agents.find((item) => item.ai_lenser_id === agentId)
-              return (
-                <option key={agentId} value={agentId}>
-                  {agent?.display_name ?? agentId} {agent?.handle ? `(@${agent.handle})` : ''}
-                </option>
-              )
-            })}
-          </select>
+          />
         </Field>
 
         <div className="space-y-3">
@@ -202,7 +229,7 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
                   <label
                     key={agent.ai_lenser_id}
                     className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 text-sm transition ${selected
-                        ? 'border-amber-300 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10'
+                        ? 'border-primary-yellow-300 bg-primary-yellow-50 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10'
                         : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
                       }`}
                   >
@@ -228,14 +255,14 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
         </div>
 
         {error && <ErrorBanner message={error} />}
-        <DrawerFooter onCancel={onClose} onSave={handleSave} saving={submitting} label="Create crew" />
+
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="block">
@@ -250,29 +277,4 @@ const ErrorBanner: React.FC<{ message: string }> = ({ message }) => (
   <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
     {message}
   </p>
-)
-
-const DrawerFooter: React.FC<{
-  onCancel: () => void
-  onSave: () => void
-  saving: boolean
-  label: string
-}> = ({ onCancel, onSave, saving, label }) => (
-  <div className="flex justify-end gap-2 pt-2">
-    <button
-      type="button"
-      onClick={onCancel}
-      className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
-    >
-      Cancel
-    </button>
-    <button
-      type="button"
-      onClick={onSave}
-      disabled={saving}
-      className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-    >
-      {saving ? 'Saving…' : label}
-    </button>
-  </div>
 )
