@@ -2,37 +2,19 @@ import { Badge } from '@lenserfight/ui/components'
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
 import { Film, Sparkles } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const CDN = 'https://cdn.lenserfight.com/brand/gifs'
 
-const BRAND_VIDEOS_DATA = [
-  {
-    url: `${CDN}/lf-animation-1.gif`,
-    title: 'Core Identity',
-    description: 'The foundation of the LenserFight visual language. A synthesis of speed and stability.',
-    tag: 'Identity',
-  },
-  {
-    url: `${CDN}/lf-animation-2.gif`,
-    title: 'Dynamic Flow',
-    description: 'Capturing the energy of real-time model battles and high-throughput execution.',
-    tag: 'Motion',
-  },
-  {
-    url: `${CDN}/lf-animation-3.gif`,
-    title: 'Arena Pulse',
-    description: 'The rhythmic heartbeat of the benchmarking engine, visualizing latent space navigation.',
-    tag: 'Atmosphere',
-  },
-  {
-    url: `${CDN}/lf-animation-4.gif`,
-    title: 'Neural Spark',
-    description: 'Visualizing the moment of AI model execution and the birth of a benchmark result.',
-    tag: 'Concept',
-  },
-]
+const BRAND_VIDEO_URLS = [
+  `${CDN}/lf-animation-1.gif`,
+  `${CDN}/lf-animation-2.gif`,
+  `${CDN}/lf-animation-3.gif`,
+  `${CDN}/lf-animation-4.gif`,
+] as const
 
 export const BrandVideos: React.FC = () => {
+  const { t } = useTranslation('home')
   const targetRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
@@ -89,76 +71,81 @@ export const BrandVideos: React.FC = () => {
         <motion.div style={{ opacity }} className="absolute left-8 top-12 z-10 sm:left-16 lg:left-24">
           <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-primary-yellow-500/60">
             <Film size={14} />
-            <span>Brand Experience</span>
+            <span>{t('brandVideos.tag')}</span>
           </div>
           <h2 className="text-3xl font-black tracking-tighter text-white sm:text-4xl">
-            Visual Narrative
+            {t('brandVideos.title')}
           </h2>
         </motion.div>
 
         <motion.div ref={trackRef} style={{ x }} className="flex gap-5 px-5 sm:gap-8 sm:px-10 lg:gap-12 lg:px-24">
-          {BRAND_VIDEOS_DATA.map((video, i) => (
-            <div
-              key={video.url}
-              className="group relative flex h-[62vh] w-[82vw] shrink-0 items-end overflow-hidden rounded-[1.75rem] bg-greyscale-900 shadow-2xl transition-all duration-500 hover:ring-1 hover:ring-primary-yellow-500/20 sm:h-[65vh] sm:rounded-[2rem] lg:h-[70vh] lg:w-[min(75vw,72rem)] lg:rounded-[2.5rem]"
-            >
-              {/* Image Container */}
-              <div className="absolute inset-0 overflow-hidden">
-                <img
-                  src={video.url}
-                  alt={video.title}
-                  className="h-full w-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-110"
-                  loading="lazy"
-                />
-              </div>
+          {BRAND_VIDEO_URLS.map((url, i) => {
+            const title = t(`brandVideos.items.${i}.title`)
+            const description = t(`brandVideos.items.${i}.description`)
+            const tag = t(`brandVideos.items.${i}.tag`)
+            return (
+              <div
+                key={url}
+                className="group relative flex h-[62vh] w-[82vw] shrink-0 items-end overflow-hidden rounded-[1.75rem] bg-greyscale-900 shadow-2xl transition-all duration-500 hover:ring-1 hover:ring-primary-yellow-500/20 sm:h-[65vh] sm:rounded-[2rem] lg:h-[70vh] lg:w-[min(75vw,72rem)] lg:rounded-[2.5rem]"
+              >
+                {/* Image Container */}
+                <div className="absolute inset-0 overflow-hidden">
+                  <img
+                    src={url}
+                    alt={title}
+                    className="h-full w-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-110"
+                    loading="lazy"
+                  />
+                </div>
 
-              {/* Overlays */}
-              <div className="absolute inset-0 bg-gradient-to-t from-greyscale-950 via-greyscale-950/40 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-80" />
-              <div className="absolute inset-0 bg-gradient-to-r from-greyscale-950/60 via-transparent to-transparent opacity-40" />
+                {/* Overlays */}
+                <div className="absolute inset-0 bg-gradient-to-t from-greyscale-950 via-greyscale-950/40 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-80" />
+                <div className="absolute inset-0 bg-gradient-to-r from-greyscale-950/60 via-transparent to-transparent opacity-40" />
 
-              {/* Content */}
-              <div className="relative z-10 w-full p-8 sm:p-12 lg:p-16">
-                <div className="max-w-2xl space-y-6">
-                  <Badge
-                    color="yellow"
-                    variant="solid"
-                    className="bg-primary-yellow-500/20 border-primary-yellow-500/30 text-primary-yellow-500 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-xl"
-                  >
-                    {video.tag}
-                  </Badge>
+                {/* Content */}
+                <div className="relative z-10 w-full p-8 sm:p-12 lg:p-16">
+                  <div className="max-w-2xl space-y-6">
+                    <Badge
+                      color="yellow"
+                      variant="solid"
+                      className="bg-primary-yellow-500/20 border-primary-yellow-500/30 text-primary-yellow-500 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-xl"
+                    >
+                      {tag}
+                    </Badge>
 
-                  <div className="space-y-4">
-                    <h3 className="text-4xl font-black tracking-tighter text-white sm:text-5xl lg:text-7xl">
-                      {video.title}
-                    </h3>
-                    <p className="max-w-lg text-lg leading-relaxed text-greyscale-300/80 sm:text-xl">
-                      {video.description}
-                    </p>
+                    <div className="space-y-4">
+                      <h3 className="text-4xl font-black tracking-tighter text-white sm:text-5xl lg:text-7xl">
+                        {title}
+                      </h3>
+                      <p className="max-w-lg text-lg leading-relaxed text-greyscale-300/80 sm:text-xl">
+                        {description}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Counter and Decorative Line */}
-              <div className="absolute right-12 top-12 flex items-center gap-6">
-                <div className="flex flex-col items-end">
-                  <span className="mb-1 text-[10px] font-black uppercase tracking-widest text-primary-yellow-500/40">
-                    Chapter
-                  </span>
-                  <span className="font-mono text-3xl font-black italic leading-none text-primary-yellow-500">
-                    0{i + 1}
-                  </span>
+                {/* Counter and Decorative Line */}
+                <div className="absolute right-12 top-12 flex items-center gap-6">
+                  <div className="flex flex-col items-end">
+                    <span className="mb-1 text-[10px] font-black uppercase tracking-widest text-primary-yellow-500/40">
+                      {t('brandVideos.chapter')}
+                    </span>
+                    <span className="font-mono text-3xl font-black italic leading-none text-primary-yellow-500">
+                      0{i + 1}
+                    </span>
+                  </div>
+                  <div className="h-16 w-px bg-gradient-to-b from-transparent via-primary-yellow-500/30 to-transparent" />
                 </div>
-                <div className="h-16 w-px bg-gradient-to-b from-transparent via-primary-yellow-500/30 to-transparent" />
               </div>
-            </div>
-          ))}
+            )
+          })}
 
           {/* Last slide placeholder */}
           <div className="flex h-[62vh] w-[24vw] shrink-0 items-center justify-center opacity-20 sm:h-[65vh] lg:h-[70vh] lg:w-[20vw]">
             <div className="flex flex-col items-center gap-4">
               <div className="h-px w-24 bg-primary-yellow-500" />
               <span className="text-xs font-black uppercase tracking-[0.5em] text-primary-yellow-500">
-                End
+                {t('brandVideos.end')}
               </span>
             </div>
           </div>
@@ -172,7 +159,7 @@ export const BrandVideos: React.FC = () => {
           />
           <div className="absolute left-0 top-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-greyscale-500">
             <Sparkles size={12} className="text-primary-yellow-500" />
-            <span>Scroll to Explore Narrative</span>
+            <span>{t('brandVideos.scrollHint')}</span>
           </div>
         </div>
       </div>
