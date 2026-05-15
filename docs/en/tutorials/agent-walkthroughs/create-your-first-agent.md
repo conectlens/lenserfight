@@ -50,7 +50,7 @@ For this tutorial, choose one path:
 export LENSERFIGHT_API_KEY=lf_dev_...  # your developer token
 ```
 
-**Path B — Ollama (local, no cost):**
+**Path B — Ollama (local model runtime):**
 ```bash
 # Make sure Ollama is running
 ollama serve &
