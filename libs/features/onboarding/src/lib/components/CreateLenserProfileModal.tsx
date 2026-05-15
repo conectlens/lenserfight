@@ -150,6 +150,17 @@ export const CreateLenserProfileModal: React.FC = () => {
     const timer = setTimeout(async () => {
       setIsCheckingHandle(true)
       try {
+        const governance = await lenserService.checkHandle(clean)
+        if (governance.verdict === 'deny') {
+          const reason = governance.class_hit
+            ? `This handle is reserved (${governance.class_hit}). Please choose a different one.`
+            : 'This handle is reserved or protected. Please choose a different one.'
+          setHandleError(reason)
+          setSuggestions([])
+          setIsHandleUnique(false)
+          return
+        }
+
         const existing = await lenserService.getLenserByHandle(clean)
         if (existing) {
           setHandleError('Handle is already taken.')
