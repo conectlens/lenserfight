@@ -16,7 +16,7 @@ import { useUI } from '@lenserfight/ui/providers'
 import { useDrawerRouter } from '@lenserfight/ui/routing'
 import { copyTextToClipboard, renderLensContentForCopy } from '@lenserfight/utils/text'
 import { useQueryClient } from '@tanstack/react-query'
-import { History, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp, ListVideo, ImageIcon } from 'lucide-react'
+import { History, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp, ListVideo, ImageIcon, Plus } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
@@ -218,8 +218,8 @@ export const LensDetailPage: React.FC = () => {
   }, [lens, setPageTitle, setShareConfig])
 
   const handleCreateClick = useCallback(() => {
-    if (ensureProfile()) openCreateModal()
-  }, [ensureProfile, openCreateModal])
+    openCreateModal()
+  }, [openCreateModal])
 
   const handleDeleteClick = useCallback((targetId: string) => {
     setDeleteTargetId(targetId)
@@ -256,19 +256,30 @@ export const LensDetailPage: React.FC = () => {
   )
 
   const pageActions = useMemo(() => {
+    const actions = []
+
+    // Always allow creating a new lens
+    actions.push({
+      label: 'Create Lens',
+      icon: <Plus size={16} />,
+      onClick: handleCreateClick,
+    })
+
     if (isOwner && lens?.id) {
-      return [
+      actions.push(
         { label: 'Edit Lens', icon: <Pencil size={16} />, onClick: () => handleEditClick(lens.id) },
         { label: 'Delete Lens', icon: <Trash2 size={16} />, onClick: () => handleDeleteClick(lens.id), variant: 'danger' as const },
-      ]
+      )
+    } else if (lens?.id && hasActiveLenserProfile) {
+      actions.push({
+        label: 'Report Lens',
+        icon: <Flag size={16} />,
+        onClick: () => setIsReportOpen(true),
+        variant: 'danger' as const,
+      })
     }
-    if (!isOwner && lens?.id && hasActiveLenserProfile) {
-      return [
-        { label: 'Report Lens', icon: <Flag size={16} />, onClick: () => setIsReportOpen(true), variant: 'danger' as const },
-      ]
-    }
-    return []
-  }, [hasActiveLenserProfile, handleDeleteClick, handleEditClick, isOwner, lens])
+    return actions
+  }, [handleCreateClick, hasActiveLenserProfile, handleDeleteClick, handleEditClick, isOwner, lens])
 
   useEffect(() => { setPageActions(pageActions) }, [pageActions, setPageActions])
 
@@ -430,7 +441,7 @@ export const LensDetailPage: React.FC = () => {
               onFork={() => cloneLens(previewVersionId ?? null)}
               canFork={hasActiveLenserProfile}
               isForking={isCloning}
-              onCreate={handleCreateClick}
+              onCreate={() => openCreateModal()}
               onExport={() => setIsExportOpen(true)}
               exportModal={
                 <ExportModal
