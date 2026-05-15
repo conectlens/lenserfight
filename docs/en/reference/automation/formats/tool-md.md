@@ -5,6 +5,9 @@ description: Portable contract for an external tool used by lensers and lenses.
 
 # `TOOL.md` — Portable tool contract
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 A **TOOL** is a typed, side-effect-bearing capability that LENSERs and LENSes can call. `TOOL.md` declares its input/output schema, auth requirements, risk class, and failure modes. The CLI command `lenserfight tool test ./TOOL.md` runs a smoke test against the contract.
 
 ## Filename
