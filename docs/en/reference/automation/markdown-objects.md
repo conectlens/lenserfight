@@ -11,7 +11,7 @@ The canonical portable objects are markdown files with YAML frontmatter plus str
 
 ## Common frontmatter
 
-Native ConnectLens units may use the compact Agent Skills-style frontmatter with only `name` and `description`. Legacy strict objects keep the full schema below.
+Native ConectLens units may use the compact Agent Skills-style frontmatter with only `name` and `description`. Legacy strict objects keep the full schema below.
 
 ```yaml
 kind: <object_kind>
@@ -31,9 +31,9 @@ tags: []
 
 | Format | Purpose | Required fields | Validation |
 |---|---|---|---|
-| [`LENS.MD`](./formats/lens-md) | Native ConnectLens lens/task unit | `name`, `description`; parameterized files also need `parameters[].label` + `tool_id` | frontmatter + parameter + disclosure checks |
-| [`LENSER.MD`](./formats/lenser-md-native) | Native ConnectLens agent/LENSER definition | `name`, `description` | frontmatter + disclosure checks |
-| [`COLENS.MD`](./formats/colens-md-native) | Native ConnectLens workflow/COLENS | `name`, `description` | frontmatter + disclosure checks |
+| [`LENS.MD`](./formats/lens-md) | Native ConectLens lens/task unit | `name`, `description`; parameterized files also need `parameters[].label` + `tool_id` | frontmatter + parameter + disclosure checks |
+| [`LENSER.MD`](./formats/lenser-md-native) | Native ConectLens agent/LENSER definition | `name`, `description` | frontmatter + disclosure checks |
+| [`COLENS.MD`](./formats/colens-md-native) | Native ConectLens workflow/COLENS | `name`, `description` | frontmatter + disclosure checks |
 | [`BATTLE.MD`](./formats/battle-md) | Native orchestration/comparison document | `name`, `description`, participants or orchestration references | frontmatter + battle reference checks |
 | [`TEAM.MD`](./formats/team-md) | Native LENSER team definition | `name`, `description` | frontmatter + disclosure checks |
 | [`LENS.md`](./formats/lens-md-legacy) | Legacy portable lens/task unit | `id`, `name`, prompt body, input/output schema | frontmatter + section checks |
@@ -80,12 +80,12 @@ lenserfight battle run ./PRIVATE_BATTLE.md
 - hosted sync should project from files, not replace them
 - validation should fail fast on missing frontmatter or required sections
 - files should remain readable and reviewable in Git
-- native ConnectLens units use folder-based progressive disclosure with `references/`, `scripts/`, `assets/`, and `evals/`
+- native ConectLens units use folder-based progressive disclosure with `references/`, `scripts/`, `assets/`, and `evals/`
 - private runtime state belongs in user runtime storage, not project-root `.lenserfight/`
 
 ## Related
 
-- [ConnectLens Agent Skills Ruleset](/en/reference/automation/connectlens-agent-skills)
+- [ConectLens Agent Skills Ruleset](/en/reference/automation/ConectLens-agent-skills)
 - [Automation Workspace Overview](/en/explanation/automation/index)
 - [Agent Exploration API](/en/reference/automation/agent-exploration-api)
 - [CLI Hub](/en/reference/cli/index)
