@@ -70,7 +70,8 @@ export interface TabListProps {
 }
 
 export const TabList: React.FC<TabListProps> = ({ style, children }) => {
-  const { surface, variant } = React.useContext(TabsContext)
+  const { variant } = React.useContext(TabsContext)
+  const { surface } = useNativeTheme()
 
   return (
     <ScrollView
