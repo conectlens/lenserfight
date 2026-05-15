@@ -1,5 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService } from '@lenserfight/data/repositories'
+import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GitFork, Search, Sparkles } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
@@ -86,6 +88,17 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
     <ProfileCard
       title="Choose a lens"
       subtitle="Browse your lenses or fork a community lens. Community lenses must be forked before binding."
+      toolbar={
+        <Button
+          type="button"
+          onClick={handleBind}
+          disabled={!selectedLensId || isSaving || forkMutation.isPending}
+          isLoading={isSaving}
+        >
+          <Sparkles size={14} />
+          {isSaving ? 'Binding…' : bindLabel}
+        </Button>
+      }
     >
       <div className="space-y-4">
         {/* Search */}
@@ -98,7 +111,7 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search lenses…"
-            className="w-full rounded-2xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            className="w-full rounded-2xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
           />
         </div>
 
@@ -126,14 +139,14 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
             </p>
             <div className="space-y-1">
               {ownLenses.map((lens) => (
-                <button
+                <Button
                   key={lens.id}
                   type="button"
                   onClick={() => selectLens(lens.id)}
                   className={`w-full rounded-2xl border px-4 py-2.5 text-left text-sm font-medium transition ${
                     selectedLensId === lens.id
-                      ? 'border-amber-400 bg-amber-50 text-gray-900 dark:bg-amber-500/10 dark:text-white'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'
+                      ? 'border-primary-yellow-400 bg-primary-yellow-50 text-gray-900 dark:bg-primary-yellow-500/10 dark:text-white'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'
                   }`}
                 >
                   {lens.title}
@@ -142,17 +155,20 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
                       {lens.description.slice(0, 60)}{lens.description.length > 60 ? '…' : ''}
                     </span>
                   )}
-                </button>
+                </Button>
               ))}
               {hasNextOwnPage && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  fullWidth
                   onClick={fetchNextOwnPage}
                   disabled={isFetchingNextOwnPage}
-                  className="w-full rounded-2xl border border-dashed border-gray-200 py-2 text-xs font-semibold text-gray-400 transition hover:border-amber-300 hover:text-amber-600 disabled:opacity-50 dark:border-gray-700 dark:text-gray-500"
+                  isLoading={isFetchingNextOwnPage}
                 >
                   {isFetchingNextOwnPage ? 'Loading…' : 'Load more'}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -164,7 +180,7 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
               Community lenses
             </p>
-            <div className="space-y-1">
+            <div className="max-h-72 space-y-1 overflow-y-auto pr-1">
               {communityLenses.map((lens) => (
                 <div
                   key={lens.id}
@@ -173,26 +189,30 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
                   <span className="flex-1 text-sm text-gray-700 dark:text-gray-200">
                     {lens.title}
                   </span>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="sm"
                     disabled={forkMutation.isPending}
                     onClick={() => forkMutation.mutate(lens.id)}
-                    className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-amber-300 hover:text-amber-600 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
                   >
                     <GitFork size={12} />
                     Fork &amp; use
-                  </button>
+                  </Button>
                 </div>
               ))}
               {hasNextCommunityPage && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  fullWidth
                   onClick={fetchNextCommunityPage}
                   disabled={isFetchingNextCommunityPage}
-                  className="w-full rounded-2xl border border-dashed border-gray-200 py-2 text-xs font-semibold text-gray-400 transition hover:border-amber-300 hover:text-amber-600 disabled:opacity-50 dark:border-gray-700 dark:text-gray-500"
+                  isLoading={isFetchingNextCommunityPage}
                 >
                   {isFetchingNextCommunityPage ? 'Loading…' : 'Load more'}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -200,35 +220,23 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
 
         {/* Version selector */}
         {selectedLensId && (
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-              Version
-            </span>
-            <select
+          <div>
+            <SelectField
+              label="Version"
               value={selectedVersionId}
-              onChange={(e) => setSelectedVersionId(e.target.value)}
+              onChange={setSelectedVersionId}
               disabled={versionsQuery.isLoading}
-              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            >
-              <option value="">Latest published</option>
-              {(versionsQuery.data ?? []).map((v) => (
-                <option key={v.id} value={v.id}>
-                  v{v.versionNumber} · {v.status}
-                </option>
-              ))}
-            </select>
-          </label>
+              options={[
+                { value: '', label: 'Latest published' },
+                ...(versionsQuery.data ?? []).map((version) => ({
+                  value: version.id,
+                  label: `v${version.versionNumber} · ${version.status}`,
+                })),
+              ]}
+            />
+          </div>
         )}
 
-        <button
-          type="button"
-          onClick={handleBind}
-          disabled={!selectedLensId || isSaving || forkMutation.isPending}
-          className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-        >
-          <Sparkles size={14} />
-          {isSaving ? 'Binding…' : bindLabel}
-        </button>
       </div>
     </ProfileCard>
   )
