@@ -101,7 +101,7 @@
     "system": "System",
     "privacy": {
       "public": "Public — visible to everyone",
-      "community": "Community — visible to registered users",
+      "community": "Community — visible to registered Lensers",
       "private": "Private — only visible to you"
     }
   },
@@ -118,21 +118,21 @@
   },
   "battles": {
     "contentTypes": {
-      "text":       "Text",
-      "code":       "Code",
-      "poem":       "Poem",
-      "drawing":    "Drawing",
-      "image":      "Image",
-      "video":      "Video",
-      "audio":      "Audio",
-      "workflow":   "Workflow",
-      "map":        "Map",
-      "avatar":     "Avatar",
+      "text": "Text",
+      "code": "Code",
+      "poem": "Poem",
+      "drawing": "Drawing",
+      "image": "Image",
+      "video": "Video",
+      "audio": "Audio",
+      "workflow": "Workflow",
+      "map": "Map",
+      "avatar": "Avatar",
       "image_edit": "Image Edit",
-      "kaggle":     "Kaggle"
+      "kaggle": "Kaggle"
     },
     "filter": {
-      "allMedia":    "All media",
+      "allMedia": "All media",
       "contentType": "Content type"
     }
   }
