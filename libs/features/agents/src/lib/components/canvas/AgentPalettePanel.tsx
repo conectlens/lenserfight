@@ -1,5 +1,6 @@
 import type { AgentProfileView } from '@lenserfight/data/repositories'
 import type { AgentTeamMemberRecord } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
 import { Bot, ChevronRight, GripVertical, Plus } from 'lucide-react'
 import React, { useState } from 'react'
 
@@ -29,7 +30,7 @@ export const AgentPalettePanel: React.FC<AgentPalettePanelProps> = ({
       ].join(' ')}
     >
       {/* Collapsed tab */}
-      <button
+      <Button
         type="button"
         title={expanded ? 'Collapse palette' : 'Expand palette'}
         onClick={() => setExpanded((v) => !v)}
@@ -48,7 +49,7 @@ export const AgentPalettePanel: React.FC<AgentPalettePanelProps> = ({
         >
           Agents
         </span>
-      </button>
+      </Button>
 
       {/* Expanded panel */}
       <div
@@ -74,13 +75,15 @@ export const AgentPalettePanel: React.FC<AgentPalettePanelProps> = ({
               <Bot size={20} className="text-gray-400" />
               <p className="text-xs text-gray-500 dark:text-gray-400">No agents yet</p>
               {onCreateAgent && (
-                <button
+                <Button
                   type="button"
+                  variant="dark"
+                  size="sm"
+                  className="mt-1"
                   onClick={onCreateAgent}
-                  className="mt-1 rounded-xl bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
                 >
                   Create agent
-                </button>
+                </Button>
               )}
             </div>
           ) : (
@@ -124,7 +127,7 @@ const PaletteChip: React.FC<{
         'flex items-center gap-2 rounded-xl border px-2 py-2 text-xs transition',
         onCanvas
           ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-700/40 dark:bg-emerald-900/20'
-          : 'cursor-grab border-gray-200 bg-gray-50 hover:border-amber-300 hover:bg-amber-50/50 active:cursor-grabbing dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-amber-600',
+          : 'cursor-grab border-gray-200 bg-gray-50 hover:border-primary-yellow-300 hover:bg-primary-yellow-50/50 active:cursor-grabbing dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-primary-yellow-600',
       ].join(' ')}
     >
       <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-gray-200 text-[10px] font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
@@ -141,14 +144,14 @@ const PaletteChip: React.FC<{
       {onCanvas ? (
         <span className="size-2 shrink-0 rounded-full bg-emerald-500" title="On canvas" />
       ) : disabled ? null : (
-        <button
+        <Button
           type="button"
           onClick={(e) => { e.stopPropagation(); onAdd() }}
           title="Add to canvas"
-          className="shrink-0 rounded-lg p-1 text-gray-400 transition hover:text-amber-600 dark:hover:text-amber-400"
+          className="shrink-0 rounded-lg p-1 text-gray-400 transition hover:text-primary-yellow-600 dark:hover:text-primary-yellow-400"
         >
           <Plus size={12} />
-        </button>
+        </Button>
       )}
       {!onCanvas && !disabled && (
         <GripVertical size={12} className="shrink-0 text-gray-300 dark:text-gray-600" />
