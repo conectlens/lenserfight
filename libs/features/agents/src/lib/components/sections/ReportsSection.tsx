@@ -1,4 +1,5 @@
 import type { RunIncidentRecord, RunReportRecord } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
 import { AlertTriangle, BarChart3, CheckCircle2, ClipboardList, XCircle } from 'lucide-react'
 import React, { useState } from 'react'
 
@@ -17,7 +18,7 @@ const OUTCOME_COLORS: Record<string, string> = {
   success:
     'border-green-200 bg-green-50 text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300',
   partial:
-    'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+    'border-primary-yellow-200 bg-primary-yellow-50 text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-300',
   failed:
     'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
   cancelled:
@@ -28,7 +29,7 @@ const OUTCOME_COLORS: Record<string, string> = {
 
 const SEVERITY_COLORS: Record<string, string> = {
   low: 'border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400',
-  medium: 'border-amber-200 text-amber-700 dark:border-amber-500/30 dark:text-amber-300',
+  medium: 'border-primary-yellow-200 text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300',
   high: 'border-orange-200 text-orange-700 dark:border-orange-500/30 dark:text-orange-300',
   critical: 'border-red-200 text-red-700 dark:border-red-500/30 dark:text-red-400',
 }
@@ -42,10 +43,10 @@ const OutcomePill: React.FC<{ outcome: string }> = ({ outcome }) => (
 )
 
 const IncidentRow: React.FC<{ incident: RunIncidentRecord }> = ({ incident }) => (
-  <div className="flex items-start gap-3 rounded-[12px] border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-700">
+  <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-700">
     <AlertTriangle
       size={14}
-      className={`mt-0.5 flex-shrink-0 ${incident.severity === 'critical' || incident.severity === 'high' ? 'text-red-500' : 'text-amber-500'}`}
+      className={`mt-0.5 flex-shrink-0 ${incident.severity === 'critical' || incident.severity === 'high' ? 'text-red-500' : 'text-primary-yellow-500'}`}
     />
     <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -87,7 +88,7 @@ const ReportCard: React.FC<{
   const hasRun = !!report.team_run_id
 
   return (
-    <div className="rounded-[24px] border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div className="flex items-start justify-between gap-3 p-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -119,23 +120,25 @@ const ReportCard: React.FC<{
 
         <div className="flex shrink-0 flex-col items-end gap-2">
           {hasRun && (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => onInspectRun(report.team_run_id!)}
-              className="inline-flex items-center gap-1.5 rounded-2xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
             >
               <ClipboardList size={12} />
               Run trace
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setExpanded((prev) => !prev)}
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
           >
             <AlertTriangle size={12} />
             {expanded ? 'Hide incidents' : 'View incidents'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -185,6 +188,8 @@ export const ReportsSection: React.FC = () => {
     <>
       <SectionPage
         eyebrow="Reports"
+        docsPath="/how-to/agents/workspace/reports"
+        docsTip="Durable outcome records emitted after each run completes. Exportable as CSV/JSON for arbitrary time windows."
         title="Execution reports"
         description="Durable outcome records generated after each run completes. Each report links to the team run trace and any incidents that occurred."
       >
@@ -213,7 +218,7 @@ export const ReportsSection: React.FC = () => {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-28 animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
+                className="h-28 animate-pulse rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
               />
             ))}
           </div>
