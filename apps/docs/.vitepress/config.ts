@@ -2162,6 +2162,8 @@ export default defineConfig({
             { text: 'Execution Engine', link: '/en/reference/workflows/execution-engine' },
             { text: 'Contract Schema', link: '/en/reference/workflows/contract-schema' },
             { text: 'Test Plan', link: '/en/reference/workflows/test-plan' },
+            { text: 'CRON Expressions', link: '/en/reference/cron-expressions' },
+            { text: 'Workflow Inputs Template', link: '/en/reference/workflow-inputs-template' },
           ],
         },
       ],
