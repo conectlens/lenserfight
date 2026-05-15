@@ -1,7 +1,11 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { Drawer } from '@lenserfight/ui/overlays'
 import type { AgentMemoryProfileRecord } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
 import React, { useEffect, useState } from 'react'
+
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface MemoryProfileDrawerProps {
   open: boolean
@@ -11,15 +15,17 @@ interface MemoryProfileDrawerProps {
   onSaved?: (record: AgentMemoryProfileRecord) => void
 }
 
-const SCOPE_TYPES = ['team', 'agent', 'workflow', 'global']
-const ISOLATION_MODES = ['shared', 'isolated', 'sandboxed']
-const VISIBILITIES = ['private', 'team', 'public']
-const SUMMARY_STRATEGIES = [
+const toOptions = (values: string[]) => values.map((v) => ({ value: v, label: v }))
+
+const SCOPE_OPTIONS = toOptions(['team', 'agent', 'workflow', 'global'])
+const ISOLATION_OPTIONS = toOptions(['shared', 'isolated', 'sandboxed'])
+const VISIBILITY_OPTIONS = toOptions(['private', 'team', 'public'])
+const SUMMARY_OPTIONS = toOptions([
   'rolling_summary',
   'structured_facts',
   'no_summary',
-]
-const RESET_POLICIES = ['manual', 'on_run', 'ttl']
+])
+const RESET_OPTIONS = toOptions(['manual', 'on_run', 'ttl'])
 
 export const MemoryProfileDrawer: React.FC<MemoryProfileDrawerProps> = ({
   open,
@@ -101,9 +107,22 @@ export const MemoryProfileDrawer: React.FC<MemoryProfileDrawerProps> = ({
       onClose={onClose}
       side="right"
       width="w-[520px]"
-      title={isEdit ? 'Edit memory profile' : 'Create memory profile'}
+      title={isEdit ? 'Edit memory profile' : 'Add memory profile'}
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          onSubmit={handleSave}
+          submitLabel={submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create'}
+          isLoading={submitting}
+          disabled={submitting}
+        />
+      }
     >
       <div className="space-y-4">
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/memory-profile"
+          tip="Manage a long-lived knowledge slot. Pinned profiles load on every run; unpinned ones load only on explicit reference."
+        />
         <Field label="Name">
           <input
             value={name}
@@ -112,30 +131,14 @@ export const MemoryProfileDrawer: React.FC<MemoryProfileDrawerProps> = ({
           />
         </Field>
         <Field label="Scope">
-          <select
-            value={scopeType}
-            onChange={(e) => setScopeType(e.target.value)}
-            className={inputClass}
-          >
-            {SCOPE_TYPES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+          <SelectField value={scopeType} onChange={setScopeType} options={SCOPE_OPTIONS} />
         </Field>
         <Field label="Isolation">
-          <select
+          <SelectField
             value={isolationMode}
-            onChange={(e) => setIsolationMode(e.target.value)}
-            className={inputClass}
-          >
-            {ISOLATION_MODES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            onChange={setIsolationMode}
+            options={ISOLATION_OPTIONS}
+          />
         </Field>
         <Field label="Retention (days)">
           <input
@@ -147,73 +150,39 @@ export const MemoryProfileDrawer: React.FC<MemoryProfileDrawerProps> = ({
           />
         </Field>
         <Field label="Visibility">
-          <select
+          <SelectField
             value={visibility}
-            onChange={(e) => setVisibility(e.target.value)}
-            className={inputClass}
-          >
-            {VISIBILITIES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            onChange={setVisibility}
+            options={VISIBILITY_OPTIONS}
+          />
         </Field>
         <Field label="Summary strategy">
-          <select
+          <SelectField
             value={summaryStrategy}
-            onChange={(e) => setSummaryStrategy(e.target.value)}
-            className={inputClass}
-          >
-            {SUMMARY_STRATEGIES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            onChange={setSummaryStrategy}
+            options={SUMMARY_OPTIONS}
+          />
         </Field>
         <Field label="Reset policy">
-          <select
+          <SelectField
             value={resetPolicy}
-            onChange={(e) => setResetPolicy(e.target.value)}
-            className={inputClass}
-          >
-            {RESET_POLICIES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            onChange={setResetPolicy}
+            options={RESET_OPTIONS}
+          />
         </Field>
         {error && (
           <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
             {error}
           </p>
         )}
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={submitting}
-            className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-          >
-            {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create'}
-          </button>
-        </div>
+
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,
