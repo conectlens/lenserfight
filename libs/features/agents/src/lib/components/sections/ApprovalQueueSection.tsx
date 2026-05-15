@@ -97,18 +97,17 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
 
       <div className="flex flex-wrap items-center gap-2">
         {FILTER_OPTIONS.map((option) => (
-          <Button
+          <button
             key={option.value}
             type="button"
             onClick={() => setStatusFilter(option.value)}
-            className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition ${
-              statusFilter === option.value
+            className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition ${statusFilter === option.value
                 ? 'border-primary-yellow-500 bg-primary-yellow-100 text-primary-yellow-800 dark:border-primary-yellow-400 dark:bg-primary-yellow-500/20 dark:text-primary-yellow-200'
                 : 'border-gray-200 text-gray-600 hover:border-primary-yellow-300 dark:border-gray-700 dark:text-gray-300'
-            }`}
+              }`}
           >
             {option.label}
-          </Button>
+          </button>
         ))}
       </div>
 
