@@ -1,11 +1,11 @@
 ---
-title: LENS.MD — Native ConnectLens Lens
-description: Canonical file format for a ConnectLens lens (reusable task unit).
+title: LENS.MD — Native ConectLens Lens
+description: Canonical file format for a ConectLens lens (reusable task unit).
 ---
 
-# `LENS.MD` — Native ConnectLens lens/task unit
+# `LENS.MD` — Native ConectLens lens/task unit
 
-`LENS.MD` is the canonical, file-first representation of a **lens**: a reusable prompt/task unit with a structured body and optional parameter contract. It is the native ConnectLens form, validated by `lenserfight validate`, exported by `lenserfight export lens`, and consumed by `lenserfight workflow run`.
+`LENS.MD` is the canonical, file-first representation of a **lens**: a reusable prompt/task unit with a structured body and optional parameter contract. It is the native ConectLens form, validated by `lenserfight validate`, exported by `lenserfight export lens`, and consumed by `lenserfight workflow run`.
 
 ## Filename
 
@@ -15,7 +15,7 @@ description: Canonical file format for a ConnectLens lens (reusable task unit).
 
 ## Required frontmatter
 
-Native ConnectLens lenses can use the compact Agent-Skills-style frontmatter with just two keys:
+Native ConectLens lenses can use the compact Agent-Skills-style frontmatter with just two keys:
 
 | Key | Type | Notes |
 |---|---|---|
@@ -92,5 +92,5 @@ Describe the expected output shape and quality bar.
 ## Related
 
 - [Markdown Object Formats overview](../markdown-objects)
-- [ConnectLens Agent Skills Ruleset](../connectlens-agent-skills)
+- [ConectLens Agent Skills Ruleset](../ConectLens-agent-skills)
 - Implementation: [automation-objects.ts](../../../../../../apps/cli/src/utils/automation-objects.ts)
