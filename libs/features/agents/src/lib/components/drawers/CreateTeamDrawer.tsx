@@ -143,6 +143,12 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
       side="right"
       width="w-[560px]"
       title="Create new crew"
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/create-team"
+          tip="Bootstrap a new team graph. Pick coordination style (round-robin / manager-worker / consensus) and autonomy level (0 = every step gated … 3 = fully autonomous within budget)."
+        />
+      }
       footer={
         <DrawerFooter
           onCancel={onClose}
@@ -154,10 +160,6 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
       }
     >
       <div className="space-y-4">
-        <DrawerDocsLink
-          path="/how-to/agents/workspace/drawers/create-team"
-          tip="Bootstrap a new team graph. Pick coordination style (round-robin / manager-worker / consensus) and autonomy level (0 = every step gated … 3 = fully autonomous within budget)."
-        />
         <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
           Teams are reusable autonomous crews. Select the AI Lensers that participate, choose a lead,
           and then assign workflows or CRON schedules to this crew.
