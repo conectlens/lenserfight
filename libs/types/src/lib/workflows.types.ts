@@ -54,6 +54,7 @@ export interface UpsertWorkflowScheduleInput {
   global_model_id?: string | null
   inputs_template?: Record<string, unknown>
   is_active?: boolean
+  description?: string | null
   assignee_type?: 'agent' | 'team'
   assignee_id?: string | null
   workflow_assignment_id?: string | null
