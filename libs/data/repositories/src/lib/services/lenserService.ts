@@ -70,6 +70,10 @@ export const lenserService = {
     return await lenserRepo.getPublicLenserProfile(handle)
   },
 
+  checkHandle: async (handle: string) => {
+    return await lenserRepo.checkHandle(handle)
+  },
+
   createLenserProfile: async (data: CreateLenserDTO): Promise<Lenser> => {
     if (!data) throw new Error('Data is required')
 
