@@ -10,6 +10,7 @@ export interface BadgeProps {
   size?: BadgeSize
   children: React.ReactNode
   className?: string
+  title?: string
 }
 
 const solidClasses: Record<BadgeColor, string> = {
@@ -36,12 +37,13 @@ const sizeClasses: Record<BadgeSize, string> = {
 }
 
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ color = 'gray', variant = 'solid', size = 'sm', children, className = '' }, ref) => {
+  ({ color = 'gray', variant = 'solid', size = 'sm', children, className = '', title }, ref) => {
     const colorClass = variant === 'solid' ? solidClasses[color] : outlineClasses[color]
 
     return (
       <span
         ref={ref}
+        title={title}
         className={`inline-flex items-center rounded-full ${sizeClasses[size]} ${colorClass} ${className}`}
       >
         {children}
