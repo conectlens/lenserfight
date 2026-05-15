@@ -16,7 +16,7 @@ interface Props {
 
 const STATUS_COLORS: Record<string, string> = {
   pending:   'border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400',
-  queued:    'border-amber-200 text-amber-700 dark:border-amber-500/30 dark:text-amber-300',
+  queued:    'border-primary-yellow-200 text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300',
   running:   'border-blue-200 text-blue-700 dark:border-blue-500/30 dark:text-blue-300',
   completed: 'border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300',
   failed:    'border-red-200 text-red-700 dark:border-red-500/30 dark:text-red-400',
@@ -35,7 +35,7 @@ function StatusPill({ status }: { status: string }) {
 
 function RunRow({ run }: { run: WorkflowScheduleRunHistoryRecord }) {
   return (
-    <div className="flex flex-col gap-1 rounded-[16px] border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+    <div className="flex flex-col gap-1 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
       <div className="flex items-center gap-2">
         <CalendarClock size={12} className="shrink-0 text-gray-400" />
         <span className="font-mono text-xs text-gray-700 dark:text-gray-200">
@@ -52,7 +52,7 @@ function RunRow({ run }: { run: WorkflowScheduleRunHistoryRecord }) {
         )}
       </div>
       {run.error_message && (
-        <p className="mt-1 rounded-[8px] bg-red-50 px-2 py-1 text-[11px] text-red-700 dark:bg-red-900/20 dark:text-red-400">
+        <p className="mt-1 rounded-lg bg-red-50 px-2 py-1 text-[11px] text-red-700 dark:bg-red-900/20 dark:text-red-400">
           {run.error_message}
         </p>
       )}
