@@ -1,0 +1,92 @@
+name: Claude Issue Fix
+
+on:
+  issues:
+    types: [assigned]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+jobs:
+  claude-fix:
+    if: github.event.assignee.login == 'claude'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Restrict trigger to repository admins
+        id: gate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const assigner = context.payload.sender.login
+            const { owner, repo } = context.repo
+            const res = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner,
+              repo,
+              username: assigner,
+            })
+            const allowed =
+              res.data.role_name === 'admin' || res.data.permission === 'admin'
+            if (!allowed) {
+              core.setFailed(
+                `Claude issue-fix is restricted to repository admins. ` +
+                  `'${assigner}' has permission='${res.data.permission}', ` +
+                  `role='${res.data.role_name}'.`,
+              )
+            }
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          node-version: 22
+
+      - name: Run Claude to fix issue and open PR
+        # Pin to an immutable commit SHA before merging this change. Resolve via:
+        #   gh api repos/anthropics/claude-code-action/git/refs/tags/v1 | jq -r .object.sha
+        # then replace the tag below with `@<full-40-char-sha>  # v1`.
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          assignee_trigger: "claude"
+          branch_prefix: claude/
+          track_progress: true
+          prompt: |
+            You are fixing GitHub issue #${{ github.event.issue.number }} in ${{ github.repository }}.
+
+            Activation rules:
+            - This run is allowed only because the issue was assigned to Claude.
+            - Never respond to comments or @mentions.
+
+            Branch safety rules:
+            - Never commit or push directly to protected branches such as main or development.
+            - Always create a new branch for the fix.
+            - Never merge anything.
+
+            Target branch rules:
+            - Read the issue carefully and determine whether it specifies a target branch.
+            - If the issue explicitly names a target branch such as "development" or "feature/oauth", use that as the base branch.
+            - If no target branch is specified, stop and comment on the issue asking the maintainer to provide a target branch.
+            - Never assume main.
+            - Never assume development unless the issue explicitly says so.
+
+            PR rules:
+            - Open the PR into the same target branch you used as the base.
+            - Title format: fix(issue #${{ github.event.issue.number }}): short summary
+            - Include in the PR body:
+              - summary of the fix
+              - files changed
+              - risks / limitations
+              - how to test
+
+            Implementation rules:
+            - Keep the fix minimal and scoped to the issue.
+            - Avoid unrelated refactors.
+            - If the issue is unclear, too broad, or unsafe, comment with the blocker instead of faking a fix.
+          claude_args: |
+            --model claude-sonnet-4-6
+            --max-turns 5
