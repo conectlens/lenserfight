@@ -1,4 +1,4 @@
-import { BookOpen, MessageCircle } from 'lucide-react'
+import { BluetoothConnected, BookOpen, ConciergeBell, CornerDownLeftIcon, MessageCircle } from 'lucide-react'
 import React from 'react'
 
 import { AGENT_NAV_ZONES, NAV_ITEMS, ZONE_LABELS } from '@lenserfight/features/agents'
@@ -34,6 +34,21 @@ export function buildAgentSidebarSections(handle: string): SidebarNavSectionConf
         label: 'Chat',
         path: '/chat',
         icon: <MessageCircle size={20} />,
+        wip: true,
+      },
+    ],
+  })
+
+
+  sections.push({
+    id: 'connectors',
+    label: 'Connectors',
+    items: [
+      {
+        id: 'connectors',
+        label: 'Connectors',
+        path: '/connectors',
+        icon: <CornerDownLeftIcon size={20} />,
         wip: true,
       },
     ],
