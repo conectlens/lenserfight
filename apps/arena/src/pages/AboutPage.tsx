@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
 
 import { chainabitContactUrl } from '../utils/chainabitUrls'
