@@ -2,7 +2,7 @@ import { AiLenserFamily, Badge, Card, DesktopFrame } from '@lenserfight/ui/compo
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Bolt, CheckCircle, Heart, MessagesSquare, Music, PlayCircle, Shield, Star, Swords, Youtube } from 'lucide-react'
 import React, { useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
 import { ArenaPulseSection } from '../components/ArenaPulseSection'
 import { BattleTypesShowcase } from '../components/BattleTypesShowcase'
