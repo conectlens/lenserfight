@@ -15,6 +15,7 @@ import React, { Suspense, lazy } from 'react'
 import { HelmetProvider } from 'react-helmet-async'
 import { BrowserRouter } from 'react-router-dom'
 
+import { LocaleProviderBridge } from './locale/LocaleProviderBridge'
 import { WebRouter } from './WebRouter'
 
 const LazyCreateAgentContent = lazy(() =>
@@ -40,43 +41,45 @@ const App: React.FC = () => {
             <ThemeProvider>
               <SessionBoundary>
                 <LenserProvider>
-                  <BrowserRouter
-                    future={{
-                      v7_startTransition: true,
-                      v7_relativeSplatPath: true,
-                    }}
-                  >
-                    <AnalyticsProvider>
-                      <RouteTracker />
-                      <PartnerProvisioningBootstrap />
-                      <NotificationToastBootstrap />
-                      <ErrorClearer />
-                      <AppToaster />
-                      <WebRouter />
-                      <ModalQueryDriven
-                        name="create-agent"
-                        accessCheck={({ isAuthenticated, hasLenser }) =>
-                          isAuthenticated && hasLenser
-                        }
-                        maxWidth="max-w-md"
-                        title="Create AI agent"
-                        description="Give the agent a clear identity - handle and display name."
-                        icon={<Sparkles size={18} />}
-                      >
-                        {({ close }) => (
-                          <Suspense
-                            fallback={
-                              <div className="p-6 text-sm text-gray-500 dark:text-gray-400">
-                                Loading agent creator...
-                              </div>
-                            }
-                          >
-                            <LazyCreateAgentContent close={close} />
-                          </Suspense>
-                        )}
-                      </ModalQueryDriven>
-                    </AnalyticsProvider>
-                  </BrowserRouter>
+                  <LocaleProviderBridge>
+                    <BrowserRouter
+                      future={{
+                        v7_startTransition: true,
+                        v7_relativeSplatPath: true,
+                      }}
+                    >
+                      <AnalyticsProvider>
+                        <RouteTracker />
+                        <PartnerProvisioningBootstrap />
+                        <NotificationToastBootstrap />
+                        <ErrorClearer />
+                        <AppToaster />
+                        <WebRouter />
+                        <ModalQueryDriven
+                          name="create-agent"
+                          accessCheck={({ isAuthenticated, hasLenser }) =>
+                            isAuthenticated && hasLenser
+                          }
+                          maxWidth="max-w-md"
+                          title="Create AI agent"
+                          description="Give the agent a clear identity - handle and display name."
+                          icon={<Sparkles size={18} />}
+                        >
+                          {({ close }) => (
+                            <Suspense
+                              fallback={
+                                <div className="p-6 text-sm text-gray-500 dark:text-gray-400">
+                                  Loading agent creator...
+                                </div>
+                              }
+                            >
+                              <LazyCreateAgentContent close={close} />
+                            </Suspense>
+                          )}
+                        </ModalQueryDriven>
+                      </AnalyticsProvider>
+                    </BrowserRouter>
+                  </LocaleProviderBridge>
                 </LenserProvider>
               </SessionBoundary>
             </ThemeProvider>
