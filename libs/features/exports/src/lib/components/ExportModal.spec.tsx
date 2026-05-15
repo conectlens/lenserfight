@@ -3,6 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 
 import { ExportModal } from './ExportModal'
+import { Button } from '@lenserfight/ui/components'
+
 
 // ── external deps ─────────────────────────────────────────────────────────────
 
@@ -17,16 +19,16 @@ vi.mock('@lenserfight/ui/overlays', () => ({
     ) : null,
   ModalFooter: ({ leftButton, primaryButton }: any) => (
     <div>
-      <button onClick={leftButton.onClick} disabled={leftButton.disabled}>
+      <Button onClick={leftButton.onClick} disabled={leftButton.disabled}>
         {leftButton.label}
-      </button>
-      <button
+      </Button>
+      <Button
         onClick={primaryButton.onClick}
         disabled={primaryButton.disabled}
         data-testid="confirm-btn"
       >
         {primaryButton.label}
-      </button>
+      </Button>
     </div>
   ),
 }))
@@ -77,28 +79,20 @@ vi.mock('../transport/LocalDownloadTransport', () => ({
 
 vi.mock('../components/DestinationSelector', () => ({
   DestinationSelector: ({ value, onChange }: any) => (
-    <select
-      data-testid="destination-selector"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="cloud-download">Cloud</option>
-      <option value="local-download">Device</option>
-    </select>
+    <div data-testid="destination-selector" data-value={value}>
+      <Button type="button" onClick={() => onChange('cloud-download')}>Cloud</Button>
+      <Button type="button" onClick={() => onChange('local-download')}>Device</Button>
+    </div>
   ),
 }))
 
 vi.mock('../components/FormatSelector', () => ({
   FormatSelector: ({ value, onChange }: any) => (
-    <select
-      data-testid="format-selector"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="markdown">Markdown</option>
-      <option value="json">JSON</option>
-      <option value="yaml">YAML</option>
-    </select>
+    <div data-testid="format-selector" data-value={value}>
+      <Button type="button" onClick={() => onChange('markdown')}>Markdown</Button>
+      <Button type="button" onClick={() => onChange('json')}>JSON</Button>
+      <Button type="button" onClick={() => onChange('yaml')}>YAML</Button>
+    </div>
   ),
 }))
 
@@ -222,7 +216,7 @@ describe('ExportModal', () => {
       const onConfirm = vi.fn().mockResolvedValue(undefined)
       render(<ExportModal {...defaultProps} onConfirm={onConfirm} />)
 
-      fireEvent.change(screen.getByTestId('format-selector'), { target: { value: 'json' } })
+      fireEvent.click(screen.getByRole('button', { name: 'JSON' }))
       fireEvent.click(screen.getByTestId('confirm-btn'))
 
       await waitFor(() => {
@@ -236,9 +230,7 @@ describe('ExportModal', () => {
       const onConfirm = vi.fn().mockResolvedValue(undefined)
       render(<ExportModal {...defaultProps} onConfirm={onConfirm} />)
 
-      fireEvent.change(screen.getByTestId('destination-selector'), {
-        target: { value: 'local-download' },
-      })
+      fireEvent.click(screen.getByRole('button', { name: 'Device' }))
       fireEvent.click(screen.getByTestId('confirm-btn'))
 
       await waitFor(() => {
