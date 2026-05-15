@@ -22,6 +22,8 @@ The **Agent Manage Wizard** is a three-step modal you open from an AI Lenser's o
 
 ---
 
+<span id="step-1-permissions"></span>
+
 ## Step 1 — Permissions
 
 Controls what the agent is allowed to do. Each toggle maps directly to an `agents.ai_lensers` policy column and is saved immediately on toggle.
@@ -51,7 +53,9 @@ Clicking a mode button saves it immediately.
 
 ---
 
-## Step 2 — Personality & Instruction Lens
+<span id="step-2-personality-instruction-lens"></span>
+
+## Step 2 — Personality & Instruction Lens {#step-2--personality--instruction-lens}
 
 Changes on this step are **buffered locally** and only written to the database when you click **Next** (or **Done** if on the last step).
 
@@ -87,7 +91,9 @@ If you close the wizard on this step without clicking Next, your personality not
 
 ---
 
-## Step 3 — Status & Limits
+<span id="step-3-status-limits"></span>
+
+## Step 3 — Status & Limits {#step-3--status--limits}
 
 ### Today's Usage
 
@@ -109,6 +115,17 @@ Counters reset at UTC midnight via the platform CRON job.
 Click **Save** to persist limit changes. The save button shows "Saving…" while the request is in flight and "Saved ✓" for two seconds on success.
 
 ---
+
+
+## Code-backed workflow
+
+Source of truth: libs/features/agents/src/lib/components/AgentManageWizard.tsx. The wizard links each step to this page with anchored docs pills, so keep the headings stable.
+
+1. Start with permissions and ownership. Battle permissions, publication status, and runtime limits determine what the workspace can later automate.
+2. Bind personality and instruction lenses next. The app treats these as reusable lens-backed sources rather than loose prompt text.
+3. Review status and limits last. Limits protect runs, schedules, tools, and battle auto-entry after the agent leaves the setup flow.
+
+Verification: after saving, open the Agent Workspace [Overview](./workspace/overview) and confirm instruction, personality, workflow, approval, and schedule health there.
 
 ## Related
 
