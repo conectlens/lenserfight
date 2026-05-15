@@ -285,15 +285,13 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
       p_ai_lenser_id: input.ai_lenser_id,
       p_name: input.name,
       p_description: input.description ?? null,
-      p_initial_members: JSON.stringify(
-        (input.initial_members ?? []).map((member, index) => ({
-          agent_id: member.agent_id,
-          role: member.role,
-          responsibility: member.responsibility ?? null,
-          lane: member.lane ?? 0,
-          sort_order: member.sort_order ?? index,
-        }))
-      ),
+      p_initial_members: (input.initial_members ?? []).map((member, index) => ({
+        agent_id: member.agent_id,
+        role: member.role,
+        responsibility: member.responsibility ?? null,
+        lane: member.lane ?? 0,
+        sort_order: member.sort_order ?? index,
+      })),
     })
 
     if (error) throw error
