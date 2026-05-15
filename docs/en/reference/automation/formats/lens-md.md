@@ -5,6 +5,9 @@ description: Canonical file format for a ConectLens lens (reusable task unit).
 
 # `LENS.MD` — Native ConectLens lens/task unit
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 `LENS.MD` is the canonical, file-first representation of a **lens**: a reusable prompt/task unit with a structured body and optional parameter contract. It is the native ConectLens form, validated by `lenserfight validate`, exported by `lenserfight export lens`, and consumed by `lenserfight workflow run`.
 
 ## Filename
