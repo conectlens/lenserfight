@@ -8,12 +8,14 @@ const {
   mockSubmit,
   mockNavigate,
   mockNextStep,
+  mockUseAgentDetail,
 } = vi.hoisted(() => ({
   mockUseLenserWorkspace: vi.fn(),
   mockUseHandleCheck: vi.fn(),
   mockSubmit: vi.fn(),
   mockNavigate: vi.fn(),
   mockNextStep: vi.fn(),
+  mockUseAgentDetail: vi.fn(),
 }))
 
 vi.mock('@lenserfight/data/repositories', () => ({
@@ -52,7 +54,7 @@ vi.mock('../hooks/useHandleCheck', () => ({
 }))
 
 vi.mock('../hooks/useAgentDetail', () => ({
-  useAgentDetail: () => ({ data: null, isLoading: false }),
+  useAgentDetail: (...args: unknown[]) => mockUseAgentDetail(...args),
 }))
 
 vi.mock('../hooks/useAgentPersonality', () => ({
@@ -154,6 +156,31 @@ function defaultHandleCheck(overrides = {}) {
   }
 }
 
+const AGENT_FIXTURE = {
+  display_name: 'Battle Bot',
+  handle: 'battle_bot',
+  avatar_url: null,
+  model_count: 0,
+  lens_count: 0,
+  runtime_pref: null,
+  suspended_reason: null,
+  suspended_at: null,
+  ai_lenser_id: 'agent-1',
+  profile_id: 'profile-1',
+  is_active: true,
+  can_join_battles: true,
+  can_vote: true,
+  can_create_battles: false,
+  can_receive_sponsorship: false,
+  model_binding_mode: 'single',
+  personality_note: null,
+  max_daily_battles: 10,
+  max_daily_votes: 10,
+  battles_used: 0,
+  votes_used: 0,
+  spending_limit_credits: 0,
+}
+
 describe('AgentManageWizard — create mode (no agentId)', () => {
   beforeEach(() => {
     mockSubmit.mockReset()
@@ -161,6 +188,7 @@ describe('AgentManageWizard — create mode (no agentId)', () => {
     mockNextStep.mockReset()
     mockUseLenserWorkspace.mockReturnValue({ humanWorkspace: { id: 'lenser-1' } })
     mockUseHandleCheck.mockReturnValue(defaultHandleCheck())
+    mockUseAgentDetail.mockReturnValue({ data: null, isLoading: false })
     mockSubmit.mockResolvedValue({ ai_lenser_id: 'agent-1', profile_id: 'profile-1' })
   })
 
@@ -248,14 +276,45 @@ describe('AgentManageWizard — manage mode (with agentId)', () => {
     mockUseLenserWorkspace.mockReturnValue({ humanWorkspace: { id: 'lenser-1' } })
     mockUseHandleCheck.mockReturnValue(defaultHandleCheck())
     mockNextStep.mockReset()
+    mockUseAgentDetail.mockReturnValue({ data: AGENT_FIXTURE, isLoading: false })
   })
 
-  it('starts at step 0 = Permissions without an Identity step', () => {
+  it('starts at step 0 = Identity with editable display name', () => {
     render(<AgentManageWizard agentId="agent-1" handle="battle_bot" onDone={vi.fn()} />)
-    // In manage mode agentId is set but agent data is null (mocked) — no loading skeleton
-    // because step=0 and permissionsStep=0, needsAgentData=true but agentId set + !agent
-    // The skeleton renders. Adjust: useAgentDetail returns loading=false, data=null
-    // So it shows skeleton. We test that Identity step label is NOT present instead.
-    expect(screen.queryByTestId('step-label')?.textContent).not.toBe('Identity')
+    expect(screen.getByTestId('step-label').textContent).toBe('Identity')
+    expect(screen.getByLabelText(/Display name/i)).toBeTruthy()
+  })
+
+  it('shows the handle as read-only', () => {
+    render(<AgentManageWizard agentId="agent-1" handle="battle_bot" onDone={vi.fn()} />)
+    const handleInput = screen.getByLabelText(/Handle/i) as HTMLInputElement
+    expect(handleInput.readOnly).toBe(true)
+  })
+
+  it('blocks Next when display name is cleared', () => {
+    render(<AgentManageWizard agentId="agent-1" handle="battle_bot" onDone={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText(/Display name/i), { target: { value: '' } })
+    expect((screen.getByTestId('next-btn') as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('saves display name and advances on Next', async () => {
+    const { agentsService: mockAgentsService } = await import('@lenserfight/data/repositories') as any
+    mockAgentsService.updateAgentProfile = vi.fn().mockResolvedValue(undefined)
+
+    render(<AgentManageWizard agentId="agent-1" handle="battle_bot" onDone={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText(/Display name/i), {
+      target: { value: 'Updated Bot' },
+    })
+    fireEvent.click(screen.getByTestId('next-btn'))
+
+    await waitFor(() => {
+      expect(mockAgentsService.updateAgentProfile).toHaveBeenCalledWith(
+        'agent-1',
+        { display_name: 'Updated Bot' }
+      )
+    })
+    await waitFor(() => {
+      expect(mockNextStep).toHaveBeenCalledTimes(1)
+    })
   })
 })
