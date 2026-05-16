@@ -1,9 +1,10 @@
+import { getMediaCapabilities } from '@lenserfight/providers'
 import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance, LensVersionParam, GenerativeMediaParams } from '@lenserfight/types'
 import type { ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/types'
 import { Button } from '@lenserfight/ui/components'
 import { copyTextToClipboard, renderLens, renderLensWithSnapshot } from '@lenserfight/utils/text'
-import { Check, ClipboardCopy, Loader2, Play, Square } from 'lucide-react'
-import React, { useState } from 'react'
+import { Check, ClipboardCopy, FileJson, Loader2, Play, Square, Table2 } from 'lucide-react'
+import React, { useMemo, useState } from 'react'
 
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
 import { useLabParamForm } from '../hooks/useLabParamForm'
@@ -134,12 +135,50 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const [mediaDurationS, setMediaDurationS] = useState(5)
   const [mediaAspectRatio, setMediaAspectRatio] = useState('16:9')
 
+  // Read the wire-truth capability map for the active model. Drives which
+  // media params we actually emit, so we never ship a value the adapter will
+  // silently coerce.
+  const mediaCapabilities = useMemo(
+    () => getMediaCapabilities(selectedModelKey),
+    [selectedModelKey],
+  )
+
   const buildMediaParams = (): GenerativeMediaParams | undefined => {
     if (effectiveModality === 'text') return undefined
     const base: GenerativeMediaParams = { output_modality: effectiveModality }
-    if (effectiveModality === 'image') return { ...base, width: mediaWidth, height: mediaHeight }
-    if (effectiveModality === 'video') return { ...base, duration_s: mediaDurationS, aspect_ratio: mediaAspectRatio }
-    if (effectiveModality === 'audio' || effectiveModality === 'music') return { ...base, duration_s: mediaDurationS }
+
+    if (effectiveModality === 'image') {
+      // Only include width/height when the model accepts custom sizes (OpenAI image).
+      // For models that key off aspectRatio (Imagen, Stability, fal) we send aspect_ratio.
+      if (mediaCapabilities.imageSizes.length > 0) {
+        return { ...base, width: mediaWidth, height: mediaHeight }
+      }
+      if (mediaCapabilities.aspectRatios.length > 0) {
+        const aspect = mediaCapabilities.aspectRatios.includes(mediaAspectRatio)
+          ? mediaAspectRatio
+          : mediaCapabilities.aspectRatios[0]
+        return { ...base, aspect_ratio: aspect }
+      }
+      return base
+    }
+
+    if (effectiveModality === 'video') {
+      const aspect = mediaCapabilities.aspectRatios.length === 0 || mediaCapabilities.aspectRatios.includes(mediaAspectRatio)
+        ? mediaAspectRatio
+        : mediaCapabilities.aspectRatios[0]
+      const duration = mediaCapabilities.durations.length === 0 || mediaCapabilities.durations.includes(mediaDurationS)
+        ? mediaDurationS
+        : mediaCapabilities.durations[0]
+      return { ...base, duration_s: duration, aspect_ratio: aspect }
+    }
+
+    if (effectiveModality === 'audio' || effectiveModality === 'music') {
+      const duration = mediaCapabilities.durations.length === 0 || mediaCapabilities.durations.includes(mediaDurationS)
+        ? mediaDurationS
+        : mediaCapabilities.durations[0]
+      return { ...base, duration_s: duration }
+    }
+
     return base
   }
 
@@ -192,9 +231,9 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
       : !effectiveProviderKey || !selectedModelKey)
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-surface-border bg-surface-base p-4">
+    <div className="flex flex-col rounded-2xl border border-surface-border bg-surface-base overflow-hidden max-h-[calc(100vh-8rem)]">
       {isLocked && (
-        <div className="rounded-2xl border border-dashed border-surface-border bg-surface-raised p-4">
+        <div className="m-4 rounded-2xl border border-dashed border-surface-border bg-surface-raised p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h4 className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{lockedTitle}</h4>
@@ -213,7 +252,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         </div>
       )}
 
-      <div className={isLocked ? 'pointer-events-none select-none blur-[1.5px] opacity-75 saturate-75' : ''}>
+      <div className={`flex flex-col flex-1 min-h-0 ${isLocked ? 'pointer-events-none select-none blur-[1.5px] opacity-75 saturate-75' : ''}`}>
         <form
           onSubmit={(e) =>
             form.handleSubmit(e, {
@@ -232,9 +271,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               generative_media_params: buildMediaParams(),
             })
           }
-          className="flex flex-col gap-4"
+          className="flex flex-col flex-1 min-h-0"
           aria-disabled={isLocked}
         >
+          <div className="flex flex-col gap-4 px-4 pt-4 pb-4 border-b border-surface-border bg-surface-base shrink-0">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Run Lens</h4>
             {(isTriggeringExecution || isStreaming) && (
@@ -368,6 +408,40 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
             </label>
           )}
 
+          </div>{/* end top fixed section */}
+
+          {/* Parameters Header — Fixed above the scrollable area */}
+          {(form.usingVersionParams || (!form.usingVersionParams && form.legacyParamSchemas.length > 0)) && (
+            <div className="flex items-center justify-between px-4 py-2 bg-surface-raised dark:bg-surface-raised border-b border-surface-border shrink-0 z-10">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Parameters
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setJsonImportOpen(true)}
+                  className="flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  title="Import from JSON"
+                >
+                  <FileJson size={12} />
+                  JSON
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCsvImportOpen(true)}
+                  className="flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  title="Import from CSV"
+                >
+                  <Table2 size={12} />
+                  CSV
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Scrollable parameters area */}
+          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 px-4 pt-4 pb-6 bg-surface-raised/40 dark:bg-surface-raised/20">
+
           {/* 3. Version Parameters */}
           {form.usingVersionParams && versionParams && (
             <VersionParamFields
@@ -377,8 +451,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               onChange={form.handleChange}
               onFileUpload={onFileParamUpload}
               selectedModelInputModalities={selectedModelInputModalities}
-              onImportJson={() => setJsonImportOpen(true)}
-              onImportCsv={() => setCsvImportOpen(true)}
             />
           )}
 
@@ -390,8 +462,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               errors={form.fieldErrors}
               onChange={form.handleChange}
               onMultiselectToggle={form.handleMultiselectToggle}
-              onImportJson={() => setJsonImportOpen(true)}
-              onImportCsv={() => setCsvImportOpen(true)}
             />
           )}
 
@@ -411,6 +481,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
             />
           )}
 
+          </div>{/* end scrollable params */}
+
+          {/* Run button — fixed at bottom */}
+          <div className="px-4 py-3 border-t border-surface-border bg-surface-base shrink-0">
           {isStreaming ? (
             <Button
               type="button"
@@ -468,6 +542,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               )}
             </div>
           )}
+          </div>{/* end run button section */}
         </form>
       </div>
 
