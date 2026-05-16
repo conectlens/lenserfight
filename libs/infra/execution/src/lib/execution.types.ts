@@ -3,6 +3,7 @@ import type { NodeOutputEnvelope } from '@lenserfight/types'
 export type MediaType = 'text' | 'image' | 'video' | 'audio' | 'pdf'
 
 // AP: Node type taxonomy — includes multimodal_chain for combined image→video workflows
+// CN: Extended with logic, data, and flow-control node types for sector-standard coverage
 export type WorkflowNodeType =
   | 'text'
   | 'image'
@@ -12,6 +13,15 @@ export type WorkflowNodeType =
   | 'delegate'
   | 'condition'
   | 'merge'
+  // CN — Logic & Data Foundation
+  | 'code'
+  | 'json_transform'
+  | 'set_variables'
+  | 'switch'
+  | 'loop_map'
+  | 'wait_delay'
+  | 'error_catch'
+  | 'sub_workflow'
 
 export type ExecutionInputAttachmentKind = 'image' | 'audio' | 'document'
 
