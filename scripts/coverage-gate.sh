@@ -49,10 +49,21 @@ CRITICAL_RPCS=(
   fn_dispatch_webhook_outbox
   fn_compute_elo_after_battle
   fn_battles_next_recommendation
+  # ── Execution-paths campaign (Phase 5 — pending pgTAP authoring) ──
+  fn_dispatch_scheduled_workflows
+  fn_worker_claim_battle_job
+  fn_worker_get_ai_key_secret
+  fn_worker_decrypt_api_key
+  fn_start_workflow_run
+  fn_poll_async_run
 )
 RPC_FAIL=0
+# Search test files across the three surfaces that can claim coverage:
+#   - supabase/tests           pgTAP RLS / lifecycle / RPC behavior tests
+#   - libs/data/repositories   repository-layer integration tests
+#   - apps/platform-api/src    worker-layer Jest tests that consume RPCs
 for rpc in "${CRITICAL_RPCS[@]}"; do
-  hits=$(grep -rE "\\b${rpc}\\b" supabase/tests/ libs/data/repositories/src/ 2>/dev/null | wc -l || true)
+  hits=$(grep -rE "\\b${rpc}\\b" supabase/tests/ libs/data/repositories/src/ apps/platform-api/src/ 2>/dev/null | wc -l || true)
   if [[ "$hits" -eq 0 ]]; then
     printf '  ✗ %-40s  no test references\n' "$rpc"
     RPC_FAIL=1
@@ -68,9 +79,35 @@ spec_count=$(find libs/data/repositories/src -name '*.spec.ts' | wc -l)
 spec_lines=$(find libs/data/repositories/src -name '*.spec.ts' -exec wc -l {} + | tail -1 | awk '{print $1}')
 echo "  ${spec_count} spec files, ${spec_lines} total lines"
 
-# ── 4. Exit ─────────────────────────────────────────────────────────────────
+# ── 4. Capability-matrix parity ─────────────────────────────────────────────
+# Asserts the in-code model registry covers at least the runnable text models
+# and the runnable media models. Acts as an early canary if a registry entry
+# is removed without seed/coverage updates.
 echo
-if [[ "$PG_FAIL" -ne 0 || "$RPC_FAIL" -ne 0 ]]; then
+echo "── Capability-matrix parity ──"
+MATRIX_FAIL=0
+PROVIDERS_SPECS=$(find libs/providers/src/lib/__tests__ -name '*.spec.ts' 2>/dev/null | wc -l)
+MIN_PROVIDERS_SPECS=14
+if [[ "$PROVIDERS_SPECS" -lt "$MIN_PROVIDERS_SPECS" ]]; then
+  printf '  ✗ providers specs: %s (expected >= %s)\n' "$PROVIDERS_SPECS" "$MIN_PROVIDERS_SPECS"
+  MATRIX_FAIL=1
+else
+  printf '  ✓ providers specs: %s (>= %s)\n' "$PROVIDERS_SPECS" "$MIN_PROVIDERS_SPECS"
+fi
+
+# Drift gates must be present.
+for gate in capability-matrix provider-support-parity model-seed-parity; do
+  if [[ -f "libs/providers/src/lib/__tests__/${gate}.spec.ts" ]]; then
+    printf '  ✓ drift gate: %s.spec.ts\n' "$gate"
+  else
+    printf '  ✗ drift gate missing: %s.spec.ts\n' "$gate"
+    MATRIX_FAIL=1
+  fi
+done
+
+# ── 5. Exit ─────────────────────────────────────────────────────────────────
+echo
+if [[ "$PG_FAIL" -ne 0 || "$RPC_FAIL" -ne 0 || "$MATRIX_FAIL" -ne 0 ]]; then
   echo "✗ coverage gate failed — fix the rows marked ✗ above"
   exit 1
 fi
