@@ -29,6 +29,7 @@ export type {
   WorkflowNodeN8nMapping,
   WorkflowNodeRetryBehavior,
   WorkflowNodeSchemaField,
+  SideEffectPolicy,
 } from './workflow-node-catalog'
 export {
   normalizeWorkflowNodeConfigForExecution,
