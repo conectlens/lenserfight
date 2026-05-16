@@ -6,6 +6,7 @@ import { CalendarClock } from 'lucide-react'
 import React from 'react'
 
 import { formatDateTime } from '../sections/_shared'
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface Props {
   open: boolean
@@ -74,7 +75,17 @@ export const ScheduleRunHistoryDrawer: React.FC<Props> = ({
   })
 
   return (
-    <Drawer open={open} onClose={onClose} title={`Run history — ${scheduleName}`}>
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title={`Run history — ${scheduleName}`}
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/schedule-run-history"
+          tip="Recent dispatch attempts for this schedule. 'dispatch_failed' means the gateway couldn't enqueue the run; 'failed' means it ran but the workflow errored. Check Logs for root cause."
+        />
+      }
+    >
       <div className="space-y-3 p-4">
         {isLoading && (
           <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
