@@ -4,6 +4,7 @@ import { nodeLogger } from '@lenserfight/utils/logger'
 import { createServiceSupabaseClient } from '../lib/supabase'
 
 import type { WorkflowNode, WorkflowEdge, WorkflowExecutionContext, NodeResult } from '@lenserfight/infra/execution'
+import type { LensInputContract, LensOutputContract } from '@lenserfight/types'
 
 const WORKER_ID = process.env['BATTLE_WORKER_ID'] ?? `worker-${process.pid}`
 
@@ -142,20 +143,24 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
 
     const defaultModelId = claimed.global_model_id ?? 'claude-sonnet-4-6'
 
+    const providerByModelKey = new Map<string, ReturnType<typeof getExecutionProvider>>()
+
     const ctx: WorkflowExecutionContext = {
       runId: run_id,
       rootInputs: claimed.context_inputs ?? {},
-
-      // AL-3: wire delegation so delegate_to_agent nodes dispatch real team runs
+      defaultModelKey: defaultModelId,
       delegation: new SupabaseDelegationHandler(serviceClient),
 
       async resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string> {
-        const { data, error } = await serviceClient.rpc('fn_worker_render_template', {
-          p_template_body: lensId,
-          p_inputs: {},
+        const { data, error } = await serviceClient.rpc('fn_worker_get_lens_template_body', {
+          p_lens_id: lensId,
+          p_version_id: versionId ?? null,
         })
-        if (error || !data) throw new Error(error?.message ?? `Failed to resolve template for lens ${lensId}`)
-        const baseTemplate = data as string
+        if (error) throw new Error(error.message)
+        const baseTemplate = (data as string | null) ?? ''
+        if (!baseTemplate) {
+          throw new Error(`fn_worker_get_lens_template_body returned empty for lens ${lensId}`)
+        }
 
         if (!claimed.ai_lenser_id) return baseTemplate
 
@@ -166,20 +171,46 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
         return memCtx ? `${memCtx}${baseTemplate}` : baseTemplate
       },
 
+      async resolveVersionContracts(versionId?: string | null) {
+        if (!versionId) return { input: null, output: null }
+        try {
+          const { data, error } = await serviceClient.rpc('fn_get_version_contracts', { p_version_id: versionId })
+          if (error) return { input: null, output: null }
+          const row = Array.isArray(data) ? data[0] : data
+          if (!row) return { input: null, output: null }
+          return {
+            input: (row.input_contract ?? null) as LensInputContract | null,
+            output: (row.output_contract ?? null) as LensOutputContract | null,
+          }
+        } catch {
+          return { input: null, output: null }
+        }
+      },
+
+      resolveExecutionProvider(node) {
+        const modelKey = (node.config?.modelId?.trim() || defaultModelId).trim()
+        let p = providerByModelKey.get(modelKey)
+        if (!p) {
+          p = getExecutionProvider(resolveProviderKey(modelKey))
+          providerByModelKey.set(modelKey, p)
+        }
+        return p
+      },
+
       async onNodeStatusChange(nodeId: string, result: NodeResult): Promise<void> {
         const od = result.outputData as Record<string, unknown> | undefined
-        await serviceClient
-          .rpc('fn_worker_upsert_node_result', {
-            p_run_id:        run_id,
-            p_node_id:       nodeId,
-            p_status:        result.status,
-            p_output_key:    od ? Object.keys(od)[0] ?? null : null,
-            p_output_value:  od ? String(Object.values(od)[0] ?? '') : null,
-            p_error_message: result.error ?? null,
-            p_model_key:     null,
-            p_token_input:   0,
-            p_token_output:  0,
-          })
+        const { error } = await serviceClient.rpc('fn_worker_upsert_node_result', {
+          p_run_id: run_id,
+          p_node_id: nodeId,
+          p_status: result.status,
+          p_output_data: od ?? null,
+          p_error_message: result.error ?? null,
+          p_resolved_input_snapshot: result.resolvedInputSnapshot ?? null,
+          p_provider_route: result.providerRoute ?? null,
+        })
+        if (error) {
+          nodeLogger.error('fn_worker_upsert_node_result failed', { runId: run_id, nodeId, message: error.message })
+        }
 
         if (result.status === 'completed' && workspaceId && claimed.ai_lenser_id) {
           const mediaType = od?.['mediaType'] as string | undefined
@@ -187,19 +218,19 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
           if (mediaType && ['image', 'video', 'audio'].includes(mediaType) && url) {
             const mimeType = (od?.['mimeType'] as string | undefined) ?? null
             const ext = mimeType?.split('/')[1]?.split('+')[0] ?? mediaType
-            await serviceClient
-              .rpc('fn_worker_insert_workflow_media_object', {
-                p_workspace_id:    workspaceId,
-                p_owner_lenser_id: claimed.ai_lenser_id,
-                p_external_url:    url,
-                p_mime_type:       mimeType ?? '',
-                p_media_type:      mediaType,
-                p_name:            `wf-${run_id.slice(0, 8)}-${nodeId.slice(0, 8)}.${ext}`,
-              })
+            await serviceClient.rpc('fn_worker_insert_workflow_media_object', {
+              p_workspace_id: workspaceId,
+              p_owner_lenser_id: claimed.ai_lenser_id,
+              p_run_id: run_id,
+              p_node_id: nodeId,
+              p_external_url: url,
+              p_mime_type: mimeType ?? '',
+              p_media_type: mediaType,
+              p_name: `wf-${run_id.slice(0, 8)}-${nodeId.slice(0, 8)}.${ext}`,
+            })
           }
         }
 
-        // BZ: fire-and-forget BYOK usage log when this is a BYOK-funded battle run
         if (
           result.status === 'completed' &&
           claimed.funding_source === 'user_byok' &&
@@ -212,24 +243,22 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
             ((od?.['token_output'] as number | undefined) ?? 0)
           serviceClient
             .rpc('fn_byok_log_usage', {
-              p_key_id:      claimed.byok_key_id,
-              p_battle_id:   claimed.battle_id,
-              p_model_id:    modelKey,
+              p_key_id: claimed.byok_key_id,
+              p_battle_id: claimed.battle_id,
+              p_model_id: modelKey,
               p_token_count: tokenCount,
             })
-            .then(({ error }) => {
-              if (error) {
-                nodeLogger.error('byok usage log failed', { runId: run_id, message: error.message })
+            .then(({ error: logErr }) => {
+              if (logErr) {
+                nodeLogger.error('byok usage log failed', { runId: run_id, message: logErr.message })
               }
             })
         }
       },
     }
 
-    // Resolve provider from default model id (e.g. 'claude-sonnet-4-6' → 'anthropic')
-    const providerKey = resolveProviderKey(defaultModelId)
-    const provider = getExecutionProvider(providerKey)
-    const service = new WorkflowExecutionService(provider)
+    const bootstrapProvider = getExecutionProvider(resolveProviderKey(defaultModelId))
+    const service = new WorkflowExecutionService(bootstrapProvider)
 
     const runResult = await service.executeWorkflow(nodes, edges, ctx)
 
@@ -267,9 +296,12 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
 }
 
 function resolveProviderKey(modelId: string): string {
-  if (modelId.startsWith('claude')) return 'anthropic'
-  if (modelId.startsWith('gpt') || modelId.startsWith('o1') || modelId.startsWith('o3')) return 'openai'
-  if (modelId.startsWith('gemini')) return 'google'
-  if (modelId.startsWith('mistral') || modelId.startsWith('open-mistral')) return 'mistral'
+  const m = modelId.toLowerCase()
+  if (m.includes('fal-ai/') || m.startsWith('fal')) return 'fal-ai'
+  if (m.startsWith('claude')) return 'anthropic'
+  if (m.startsWith('gpt') || m.startsWith('o1') || m.startsWith('o3')) return 'openai'
+  if (m.startsWith('gemini')) return 'google'
+  if (m.startsWith('mistral') || m.startsWith('open-mistral')) return 'mistral'
+  if (m.startsWith('research') || m.includes('research')) return 'research'
   return 'anthropic'
 }
