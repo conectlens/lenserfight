@@ -85,10 +85,18 @@ async function consumeExecuteStream(
 export const walletApiClient = {
   async getBalance(): Promise<WalletBalance> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${EDGE_BASE}/partner-balance`, {
-      headers: { ...authHeader },
-    })
-    return unwrapEnvelope<WalletBalance>(res)
+    try {
+      const res = await apiFetch(`${EDGE_BASE}/partner-balance`, {
+        headers: { ...authHeader },
+      })
+      return unwrapEnvelope<WalletBalance>(res)
+    } catch (err: unknown) {
+      if (err instanceof TypeError || (err instanceof DOMException && err.name === 'AbortError')) {
+        console.warn('[wallet] partner-balance unreachable — returning zero balance')
+        return { balance: 0 }
+      }
+      throw err
+    }
   },
 
   async getTransactions(
