@@ -63,7 +63,7 @@ export const AgentsTab: React.FC<AgentsTabProps> = ({ lenserId }) => {
           {agents.map((agent) => (
             <Link
               key={agent.id}
-              to={`/agents/${agent.id}`}
+              to={`/lenser/${agent.handle}/ag/overview`}
               className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors group"
             >
               <Avatar

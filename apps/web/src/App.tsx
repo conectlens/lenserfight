@@ -18,8 +18,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { LocaleProviderBridge } from './locale/LocaleProviderBridge'
 import { WebRouter } from './WebRouter'
 
-const LazyCreateAgentContent = lazy(() =>
-  import('@lenserfight/features/agents').then((module) => ({ default: module.CreateAgentContent }))
+const LazyAgentManageWizard = lazy(() =>
+  import('@lenserfight/features/agents').then((module) => ({ default: module.AgentManageWizard }))
 )
 
 function PartnerProvisioningBootstrap() {
@@ -60,9 +60,7 @@ const App: React.FC = () => {
                           accessCheck={({ isAuthenticated, hasLenser }) =>
                             isAuthenticated && hasLenser
                           }
-                          maxWidth="max-w-md"
-                          title="Create AI agent"
-                          description="Give the agent a clear identity - handle and display name."
+                          maxWidth="max-w-lg"
                           icon={<Sparkles size={18} />}
                         >
                           {({ close }) => (
@@ -73,7 +71,7 @@ const App: React.FC = () => {
                                 </div>
                               }
                             >
-                              <LazyCreateAgentContent close={close} />
+                              <LazyAgentManageWizard onDone={close} />
                             </Suspense>
                           )}
                         </ModalQueryDriven>
