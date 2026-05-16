@@ -53,18 +53,18 @@ export const AgentCanvasContextMenu: React.FC<AgentCanvasContextMenuProps> = ({
 
   const items: MenuItem[] = nodeId
     ? [
-        ...(onViewAgent ? [{ label: 'View agent', icon: <ExternalLink size={14} />, onClick: onViewAgent }] : []),
-        ...(onEditMember ? [{ label: 'Edit member', icon: <Pencil size={14} />, onClick: onEditMember }] : []),
-        ...(onRemoveMember
-          ? [{ label: 'Remove member', icon: <Trash2 size={14} />, onClick: onRemoveMember, variant: 'destructive' as const }]
-          : []),
-      ]
+      ...(onViewAgent ? [{ label: 'View agent', icon: <ExternalLink size={14} />, onClick: onViewAgent }] : []),
+      ...(onEditMember ? [{ label: 'Edit member', icon: <Pencil size={14} />, onClick: onEditMember }] : []),
+      ...(onRemoveMember
+        ? [{ label: 'Remove member', icon: <Trash2 size={14} />, onClick: onRemoveMember, variant: 'destructive' as const }]
+        : []),
+    ]
     : [
-        { label: 'Add member here', icon: <UserPlus size={14} />, onClick: onAddMember },
-        ...(onManageEdges
-          ? [{ label: 'Manage edges', icon: <Network size={14} />, onClick: onManageEdges }]
-          : []),
-      ]
+      { label: 'Add member here', icon: <UserPlus size={14} />, onClick: onAddMember },
+      ...(onManageEdges
+        ? [{ label: 'Manage edges', icon: <Network size={14} />, onClick: onManageEdges }]
+        : []),
+    ]
 
   if (items.length === 0) return null
 
@@ -77,6 +77,7 @@ export const AgentCanvasContextMenu: React.FC<AgentCanvasContextMenuProps> = ({
     >
       {items.map((item, idx) => (
         <Button
+          variant="ghost"
           key={idx}
           type="button"
           onClick={() => { item.onClick(); onClose() }}
