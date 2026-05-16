@@ -363,13 +363,30 @@ export const AgentTeamSection: React.FC = () => {
             ? 'Drag an agent from the palette or right-click the canvas to add a member.'
             : 'Create a team first, then connect agents on the canvas.',
           action: bootstrap ? (
-            <Button
-              type="button"
-              variant="dark"
-              onClick={() => setCreateTeamDialogOpen(true)}
-            >
-              Create team
-            </Button>
+            selectedTeam ? (
+              <Button
+                type="button"
+                variant="dark"
+                onClick={() =>
+                  setAddMemberState({
+                    open: true,
+                    teamId: selectedTeam.id,
+                    defaultAgentId: agentProfile?.ai_lenser_id,
+                    initial: null,
+                  })
+                }
+              >
+                Add member
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="dark"
+                onClick={() => setCreateTeamDialogOpen(true)}
+              >
+                Create team
+              </Button>
+            )
           ) : undefined,
         }}
         sidePanel={
