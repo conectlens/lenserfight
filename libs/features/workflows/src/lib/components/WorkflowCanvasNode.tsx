@@ -8,7 +8,20 @@ import type { NodeProps } from '@xyflow/react'
 export interface WorkflowNodeConfig {
   model_id?: string | null
   param_overrides?: Record<string, string>
-  node_type?: 'lens' | 'image_generate' | 'web_search' | 'http_request'
+  node_type?:
+    | 'lens'
+    | 'image_generate'
+    | 'web_search'
+    | 'http_request'
+    // CN — Logic & Data Foundation
+    | 'code'
+    | 'json_transform'
+    | 'set_variables'
+    | 'switch'
+    | 'loop_map'
+    | 'wait_delay'
+    | 'error_catch'
+    | 'sub_workflow'
   // Per-node funding source override
   funding_source?: import('@lenserfight/types').FundingSource
   key_ref_id?: string | null
