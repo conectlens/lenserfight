@@ -20,6 +20,7 @@ function makeConfig(): GatewayConfig {
     bind: '127.0.0.1',
     port: 0,
     tailscale: false,
+    keysOnly: false,
     stateDir: mkdtempSync(path.join(tmpdir(), 'lf-gateway-sync-')),
     keychainService: `lf-gateway-sync-${Date.now()}`,
     daemonVersion: 'lf-gatewayd/test',
