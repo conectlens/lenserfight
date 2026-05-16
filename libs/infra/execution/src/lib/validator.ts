@@ -44,6 +44,20 @@ export type ValidationCode =
   | 'validation_missing_policy'
   | 'orchestration_missing_caps'
   | 'duplicate_node_id'
+  | 'no_trigger_node'
+
+/**
+ * The complete set of workflow node types that qualify as entry/trigger nodes.
+ * Exported so builder UI and execution service can gate on the same set without
+ * duplicating the list.
+ */
+export const TRIGGER_NODE_TYPES = new Set<string>([
+  'manual_trigger',
+  'event_trigger',
+  'form_input_trigger',
+  'webhook_trigger',
+  'schedule_trigger',
+])
 
 export interface ValidationNodeShape {
   id: string
@@ -158,6 +172,12 @@ export interface ValidateWorkflowOptions {
    * input contract. Default true — most editors don't load contracts upfront.
    */
   contractOptional?: boolean
+  /**
+   * When true, the absence of a trigger/input node among the DAG roots is
+   * treated as an error (blocking execution). When false (default), it is
+   * a non-blocking warning shown in the editor.
+   */
+  requireTriggerNode?: boolean
 }
 
 /**
@@ -332,6 +352,34 @@ export function validateWorkflow(
         code: 'orchestration_missing_caps',
         nodeId: node.id,
         message: `Orchestration node "${node.id}" should declare config.maxDepth and config.maxGeneratedNodes to prevent runaway subflows`,
+      })
+    }
+  }
+
+  // 7. Trigger/input node presence
+  // A well-formed executable workflow must have at least one trigger or input
+  // node as a DAG root. Partial sub-workflows may omit this — callers opt in
+  // to error-severity by passing requireTriggerNode: true.
+  {
+    const inDegreeForTriggerCheck = new Map<string, number>()
+    for (const n of nodes) inDegreeForTriggerCheck.set(n.id, 0)
+    for (const e of edges) {
+      if (nodeMap.has(e.targetNodeId)) {
+        inDegreeForTriggerCheck.set(
+          e.targetNodeId,
+          (inDegreeForTriggerCheck.get(e.targetNodeId) ?? 0) + 1,
+        )
+      }
+    }
+    const rootNodes = nodes.filter((n) => (inDegreeForTriggerCheck.get(n.id) ?? 0) === 0)
+    const hasTrigger = rootNodes.some((n) => TRIGGER_NODE_TYPES.has(n.kind ?? ''))
+    if (!hasTrigger && nodes.length > 0) {
+      issues.push({
+        severity: options.requireTriggerNode ? 'error' : 'warn',
+        code: 'no_trigger_node',
+        message:
+          'Workflow has no trigger/input node. Add a Manual Trigger, Webhook Trigger, ' +
+          'Schedule Trigger, Event Trigger, or Form Input Trigger as the entry point.',
       })
     }
   }
