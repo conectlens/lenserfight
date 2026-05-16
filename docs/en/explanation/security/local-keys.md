@@ -89,6 +89,58 @@ Key design choices:
 | Brute force on `/keys/:id/resolve` | 60/min per token, burst 5; audit log on each failure. | None for casual abuse. A patient attacker can still grind across many resolves — pair with strong origin + token. |
 | Master passphrase exposed via env var | `LENSERFIGHT_KEYS_PASSPHRASE` only honored when the OS keychain is unavailable, unless `LENSERFIGHT_KEYS_PASSPHRASE_FORCE_ENV=1`. | Linux `/proc/<pid>/environ` is readable by the same UID — keep the env var in CI only, never in your shell rc. |
 
+## Accessing the gateway over Tailscale or a LAN
+
+By default the gateway binds to `127.0.0.1:38080` (loopback only) and the
+allow-list permits browser origins on `lenserfight.com`, `localhost`,
+`127.0.0.1`, **Tailscale CGNAT** (`100.64.0.0/10`), **RFC 1918** private
+ranges (`10/8`, `172.16/12`, `192.168/16`), and `.local` mDNS hostnames.
+The web app's gateway client derives its target URL from
+`window.location.hostname` — so a page served at
+`http://100.88.58.68:3000` automatically reaches the gateway at
+`http://100.88.58.68:38080`.
+
+For the gateway to answer on a non-loopback address, run it in
+**keys-only mode** with an explicit bind. Keys-only mode is the right
+default for the Local Keys feature — it skips the identity / session /
+lenser / kill_switch preconditions and the heartbeat / sync loops, which
+are only relevant to the unrelated signed-coordination surface:
+
+```bash
+# Bind everywhere — bearer + origin allow-list still gate every /keys call.
+lf gateway serve --keys-only --bind 0.0.0.0
+
+# Or pin to a specific Tailscale IP.
+lf gateway serve --keys-only --bind 100.88.58.68
+```
+
+The full-coordination daemon (`lf gateway serve` without `--keys-only`)
+still refuses to bind on `0.0.0.0` / `::` unless Tailscale consent
+exists. Keys-only mode relaxes that because every `/keys/*` request is
+already authenticated with a bearer token + origin allow-list +
+per-token rate limit, so there is no accidental public exposure from a
+wider bind alone.
+
+Self-hosters with a custom domain can extend the origin allow-list via
+`LF_GATEWAY_EXTRA_ORIGINS` (comma-separated regex bodies). Example:
+
+```bash
+LF_GATEWAY_EXTRA_ORIGINS='^https://app\.mycompany\.local$' lf gateway serve
+```
+
+Browsers running on Chrome's Private Network Access path also need the
+gateway to answer the PNA preflight — the daemon emits
+`Access-Control-Allow-Private-Network: true` automatically when it sees
+`Access-Control-Request-Private-Network` on a preflight.
+
+If your gateway is on a different host/port from the web app, override
+the target URL in the browser session:
+
+```js
+// In the browser devtools, before pairing:
+sessionStorage.setItem('lf-gateway-url', 'http://my-gateway.local:38080')
+```
+
 ## Recovery
 
 If you lose the master passphrase, **the keys are unrecoverable.** scrypt is designed to be expensive enough that brute force is infeasible, and the passphrase is the only way to derive any of the per-key keys. Re-add the keys with `lf keys add`.
