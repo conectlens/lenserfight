@@ -11,17 +11,12 @@ import {
   AlertTriangle,
   ArrowDownToLine,
   ArrowUpFromLine,
-  Ban,
   CheckCircle,
   ChevronDown,
-  Clock,
   GitBranch,
   Hourglass,
-  Loader,
   PauseCircle,
-  RotateCw,
   ShieldAlert,
-  SkipForward,
   Sparkles,
   TimerOff,
   Workflow,
@@ -29,6 +24,12 @@ import {
   Zap,
 } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
+
+import {
+  getStatusIcon,
+  STATUS_COLORS,
+  STATUS_LABELS,
+} from '../execution/workflowNodeExecutionStatus'
 
 import type {
   WorkflowNodeRecord,
@@ -68,56 +69,6 @@ interface WorkflowProgressViewProps {
 }
 
 type NodeStatus = WorkflowNodeResultRecord['status']
-
-// Phase 8 — expanded state machine. Every status in the Phase 1 union must
-// have an icon + colour mapping so the UI never renders an "unknown" box.
-const STATUS_ICONS: Record<NodeStatus, React.ReactNode> = {
-  pending: <Clock size={14} className="text-greyscale-400" />,
-  awaiting_dependency: <Hourglass size={14} className="text-greyscale-400" />,
-  queued: <Clock size={14} className="text-greyscale-500" />,
-  running: <Loader size={14} className="text-primary-yellow-600 animate-spin" />,
-  streaming: <Loader size={14} className="text-primary-yellow-600 animate-spin" />,
-  retrying: <RotateCw size={14} className="text-primary-yellow-600 animate-spin" />,
-  completed: <CheckCircle size={14} className="text-status-green" />,
-  failed: <XCircle size={14} className="text-status-red" />,
-  cancelled: <XCircle size={14} className="text-status-red" />,
-  skipped: <SkipForward size={14} className="text-greyscale-500" />,
-  timed_out: <TimerOff size={14} className="text-status-red" />,
-  blocked: <Ban size={14} className="text-status-red" />,
-  invalidated: <ShieldAlert size={14} className="text-status-red" />,
-}
-
-const STATUS_COLORS: Record<NodeStatus, string> = {
-  pending: 'border-surface-border bg-surface-base',
-  awaiting_dependency: 'border-surface-border bg-surface-base',
-  queued: 'border-surface-border bg-surface-base',
-  running: 'border-primary-yellow-500 bg-primary-yellow-500/5',
-  streaming: 'border-primary-yellow-500 bg-primary-yellow-500/5',
-  retrying: 'border-primary-yellow-500/60 bg-primary-yellow-500/5',
-  completed: 'border-status-green bg-status-green/5',
-  failed: 'border-status-red bg-status-red/5',
-  cancelled: 'border-status-red bg-status-red/5',
-  skipped: 'border-surface-border bg-surface-base opacity-70',
-  timed_out: 'border-status-red bg-status-red/5',
-  blocked: 'border-status-red bg-status-red/5',
-  invalidated: 'border-status-red bg-status-red/5',
-}
-
-const STATUS_LABELS: Record<NodeStatus, string> = {
-  pending: 'Pending',
-  awaiting_dependency: 'Awaiting',
-  queued: 'Queued',
-  running: 'Running',
-  streaming: 'Streaming',
-  retrying: 'Retrying',
-  completed: 'Completed',
-  failed: 'Failed',
-  cancelled: 'Canceled',
-  skipped: 'Skipped',
-  timed_out: 'Timed out',
-  blocked: 'Blocked',
-  invalidated: 'Invalidated',
-}
 
 const WAITING_REASON_LABELS: Record<string, string> = {
   dependency: 'Waiting for upstream node',
@@ -662,7 +613,7 @@ export function WorkflowProgressView({
                   )}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  {STATUS_ICONS[status]}
+                  {getStatusIcon(status)}
                   <Badge color={badgeColorFor(status)} variant="outline">
                     {displayStatus}
                   </Badge>
