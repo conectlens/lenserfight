@@ -205,8 +205,8 @@ const SubscriptionCard = React.memo(function SubscriptionCard({
             </span>
             <span
               className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${sub.active
-                  ? 'border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
-                  : 'border-gray-200 text-gray-400 dark:border-gray-700 dark:text-gray-500'
+                ? 'border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
+                : 'border-gray-200 text-gray-400 dark:border-gray-700 dark:text-gray-500'
                 }`}
             >
               {sub.active ? 'Active' : 'Inactive'}
@@ -225,6 +225,7 @@ const SubscriptionCard = React.memo(function SubscriptionCard({
         {canManage && sub.active && (
           <Button
             type="button"
+            variant="ghost"
             onClick={handleClick}
             disabled={isDeactivating}
             className="flex-shrink-0 rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-red-200 hover:text-red-600 disabled:opacity-50 dark:border-gray-700 dark:text-gray-400"
