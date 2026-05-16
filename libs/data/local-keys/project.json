@@ -1,0 +1,21 @@
+{
+  "name": "data-local-keys",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/data/local-keys/src",
+  "projectType": "library",
+  "tags": [
+    "layer:data",
+    "data:local-keys",
+    "scope:shared",
+    "license:oss"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../../coverage/libs/data/local-keys"
+      }
+    }
+  }
+}
