@@ -47,57 +47,87 @@ Chainabit is the billing layer for the ConectLens ecosystem. When you run a Lens
 
 ## Local Keys (BYOK Local)
 
-> Available in self-hosted LenserFight deployments. Also available as a browser-side option on Cloud when explicitly enabled.
+Local Keys are API keys that live **only on your machine**, encrypted at rest under a master passphrase that LenserFight never sees. The browser holds **no** ciphertext and **no** persistent state about the keys — every read goes through the LenserFight Gateway loopback daemon.
 
-Local Keys are API keys stored **only in your current browser** using AES-GCM 256-bit encryption. Nothing is ever sent to LenserFight's servers.
-
-### Web UI: encrypted in your browser
-
-When you add a Local Key via the Funding panel in the web UI:
-
-- The key is encrypted immediately in the browser using the [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) (AES-GCM, 256-bit).
-- The encrypted blob is stored in **IndexedDB** (`lenserfight-local-keys` database).
-- The AES device key is derived via PBKDF2 from a per-browser salt stored in `localStorage`.
-- The plaintext key exists only briefly in memory at execution time and is never written to disk or transmitted.
-
-**Implications:**
-
-| Situation | Result |
-|---|---|
-| You clear browser storage / IndexedDB | Keys are unrecoverable — add them again |
-| Private / incognito browsing | Salt is session-only; keys are lost when the tab closes |
-| HTTP (not HTTPS or localhost) | Web Crypto is unavailable; Local Keys cannot be added |
-| Different browser on same machine | No access — keys are per-browser, not per-device |
-
-### CLI: `.env` or environment variables
-
-When running Lens executions via the `lf` CLI, local keys are resolved from your **environment variables** — not from IndexedDB or any LenserFight storage. The CLI never reads your browser's IndexedDB.
-
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-export OPENAI_API_KEY=sk-...
-lf battle exec <battle-id> --byok
+```
+┌──────────────────┐  HTTP (loopback, bearer auth)  ┌──────────────────┐  fs (0600/0700)
+│  apps/web        │ ────────────────────────────>  │  apps/gateway    │ ────────────────>  ~/.lenserfight/keys/
+│  (browser)       │   /keys CRUD + /keys/:id/resolve│  (Node daemon)   │                    <id>.json (AES-256-GCM envelopes)
+└──────────────────┘                                 └──────────────────┘
+                                                              ▲
+                                                              │ direct fs
+                                                              │
+                                                     ┌──────────────────┐
+                                                     │  apps/cli        │
+                                                     │  lf keys *       │
+                                                     └──────────────────┘
 ```
 
-For persistent key configuration, add them to a `.env` file in your project root or to `~/.lenserfight/env` (sourced automatically by `lf`):
+The same store serves the browser (via the gateway), the CLI (`lf keys *`), and any future runner you build on top of `libs/data/local-keys`. There is no longer a separate browser-only store — the previous IndexedDB design has been removed.
 
-```bash
-# ~/.lenserfight/env
-ANTHROPIC_API_KEY=sk-ant-...
-OPENAI_API_KEY=sk-...
+### Set it up
+
+1. **Start the gateway.** It runs as a small Node daemon on `127.0.0.1:38080`:
+   ```bash
+   lf gateway serve
+   ```
+2. **Generate a master passphrase**, stored in your OS keychain (macOS Keychain, Windows Credential Manager, libsecret on Linux):
+   ```bash
+   lf keys init
+   ```
+3. **Pair the web app once per origin.** The bearer token is held in `sessionStorage` (lost when you close the tab — re-pair anytime):
+   ```bash
+   lf gateway pair --web
+   # Settings → Local Keys → Pair Gateway → paste the printed token
+   ```
+4. **Add a key** (the value is read from stdin so it never appears in shell history):
+   ```bash
+   lf keys add --provider openai --label "Prod"
+   ```
+
+`lf keys list`, `lf keys rotate <id>`, `lf keys remove <id>`, and `lf keys doctor` are also available. See [the CLI reference](/en/reference/cli/keys) for the full surface.
+
+### Encryption at rest
+
+Each key lives in its own envelope at `~/.lenserfight/keys/<id>.json`:
+
+```json
+{ "v": 1, "alg": "aes-256-gcm", "kdf": "scrypt",
+  "salt": "<16 bytes>", "iv": "<12 bytes>",
+  "ciphertext": "...", "tag": "<16 bytes>",
+  "meta": { "id": "...", "provider": "openai", "label": "Prod", "createdAt": "..." } }
 ```
 
-The `~/.lenserfight/` directory is **never synced** to LenserFight's servers.
+- **Per-key salt + scrypt KDF** (N=2^15, r=8, p=1, dkLen=32). One derivation per envelope — brute force has to grind scrypt for every individual key.
+- **AES-256-GCM** with a fresh 12-byte IV per encryption. The auth tag detects any tampering and refuses to decrypt.
+- **File mode 0600**; parent directory mode 0700. The store refuses to follow symlinks and rejects any id that doesn't match `^[A-Za-z0-9_-]{20,40}$`.
+- **Master passphrase** lives in the OS keychain under service `lenserfight-keys`. Never written to any file under `~/.lenserfight/`. CI may opt in to the env var `LENSERFIGHT_KEYS_PASSPHRASE` instead.
+
+### Browser ↔ gateway authentication
+
+| Check | Defense |
+| --- | --- |
+| Cross-origin browser JS calling the gateway | Origin allow-list (`lenserfight.com`, subdomains, `localhost`/`127.0.0.1`). |
+| Disallowed-origin preflight | Returns 403 — browser never sees the response body. |
+| Bearer token | 32 random bytes, generated by `lf gateway pair`, held in OS keychain by the gateway and `sessionStorage` by the browser. Constant-time comparison. |
+| Brute force on `/keys/:id/resolve` | 60/min per token, burst of 5 — 429 + audit log. |
+| Body abuse | Hard 64 KiB cap; payloads larger than this 413. |
+
+The full threat-model breakdown lives at [security/local-keys](/en/explanation/security/local-keys).
 
 ### Ollama (local models)
 
-Ollama is a special provider that runs AI models entirely on your machine. For local Ollama models, **no API key is required** — Ollama connects to `localhost:11434`. An optional key field is available for cloud-routed Ollama models only.
+Ollama runs AI models entirely on your machine. For local Ollama models, **no API key is required** — Ollama connects to `localhost:11434`. An optional key field is available for cloud-routed Ollama models only.
 
-**When to use Local Keys:**
+### Migrating from the old IndexedDB store
+
+If you used Local Keys on a version prior to this one, the old IndexedDB database (`lenserfight-local-keys`) is auto-deleted on first load after upgrade. Re-add your keys with `lf keys add`. There is no export path from the legacy store — the previous per-origin encryption was a development-only safeguard.
+
+### When to use Local Keys
 
 - You are self-hosting LenserFight and prefer to keep all secrets on your machine.
+- You move between the CLI and the browser and want a single source of truth for your provider keys.
 - You want to test AI providers without creating a LenserFight account.
-- You want to use models via Ollama running locally.
 
 ---
 
@@ -105,17 +135,20 @@ Ollama is a special provider that runs AI models entirely on your machine. For l
 
 | Feature | Chainabit Credits | LF Cloud Keys | Local Keys |
 |---|---|---|---|
-| Where keys live | Chainabit account | LenserFight servers (encrypted) | Your browser (IndexedDB) or `~/.lenserfight/env` |
+| Where keys live | Chainabit account | LenserFight servers (encrypted) | `~/.lenserfight/keys/` on your machine |
 | Provider key required | No | Yes | Yes |
-| Available on Cloud | Yes | Yes | Optional |
+| Available on Cloud | Yes | Yes | Yes (gateway required) |
 | Available self-hosted | No | No | Yes |
-| Accessible across devices | Yes | Yes | No (browser-local) |
-| Works in CLI (`lf`) | Via Chainabit billing | Via cloud key API | Via env vars |
+| Accessible across devices | Yes | Yes | One machine — copy `~/.lenserfight/keys/` manually if you want a second |
+| Works in CLI (`lf`) | Via Chainabit billing | Via cloud key API | Yes (`lf keys *`) |
+| Touches the browser? | No (server-side billing) | No (server-side resolve) | Only the plaintext for the in-flight request; never stored |
 
 ---
 
 ## See also
 
+- [Local Keys security model](/en/explanation/security/local-keys)
+- [`lf keys` CLI reference](/en/reference/cli/keys)
 - [BYOK execution guide](/en/how-to/battles/byok-execution)
 - [BYOK Cloud Battle walkthrough](/en/tutorials/battle-walkthroughs/byok-cloud-battle)
 - [Chainabit integration reference](/en/how-to/integrations/chainabit-example)
