@@ -18,7 +18,7 @@ import { WorkflowNodeConfigPanel } from './WorkflowNodeConfigPanel'
 import { WorkflowUtilityNodeConfig, isUtilityNode } from './WorkflowUtilityNodeConfig'
 
 import type { WorkflowNodeConfig } from '../types'
-import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
+import type { WorkflowNodeRecord, WorkflowEdgeRecord, WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
 
 interface WorkflowNodeConfigDispatcherProps {
   nodeId: string
@@ -29,6 +29,8 @@ interface WorkflowNodeConfigDispatcherProps {
   currentConfig: WorkflowNodeConfig
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
+  /** Latest node execution results for upstream output display */
+  nodeResults?: WorkflowNodeResultRecord[]
   onSave: (nodeId: string, config: WorkflowNodeConfig) => void
   onClose: () => void
   onEditLens?: (lensId: string) => void
@@ -49,6 +51,7 @@ export function WorkflowNodeConfigDispatcher(props: WorkflowNodeConfigDispatcher
         currentConfig={nodeType ? { ...props.currentConfig, node_type: nodeType as WorkflowNodeConfig['node_type'] } : props.currentConfig}
         nodes={props.nodes}
         edges={props.edges}
+        nodeResults={props.nodeResults ?? []}
         onSave={props.onSave}
         onClose={props.onClose}
       />
@@ -56,5 +59,5 @@ export function WorkflowNodeConfigDispatcher(props: WorkflowNodeConfigDispatcher
   }
 
   // Default: Lens config panel (provider, model, version params, funding)
-  return <WorkflowNodeConfigPanel {...props} />
+  return <WorkflowNodeConfigPanel {...props} nodeResults={props.nodeResults ?? []} />
 }
