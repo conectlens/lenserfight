@@ -4,10 +4,10 @@ import type {
   EvaluationRecord,
   EvaluationTargetType,
 } from '@lenserfight/types'
-import { Button } from '@lenserfight/ui/components'
+import { Button, Tooltip } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
-import { Plus, Trash2 } from 'lucide-react'
+import { HelpCircle, Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { DrawerDocsLink } from './DrawerDocsLink'
@@ -167,7 +167,7 @@ export const EvaluationDrawer: React.FC<Props> = ({
       headerExtra={
         <DrawerDocsLink
           path="/how-to/agents/workspace/drawers/evaluation"
-          tip="Create or run an evaluation suite. Bind a model profile, add cases, optionally schedule on a cron. Failed cases open a side-by-side diff."
+          tip="Create an evaluation suite that runs assertions against a target (workflow, agent, lens, or team). Simple mode guides you through common fields; Advanced mode accepts raw JSON for full control."
         />
       }
       footer={
@@ -203,33 +203,48 @@ export const EvaluationDrawer: React.FC<Props> = ({
           ))}
         </div>
 
-        <Field label="Name">
+        <FieldLabel
+          label="Name"
+          tooltip="Label for this evaluation suite. Should describe what's being tested, e.g. 'Response quality — GPT-4o' or 'Edge case coverage'."
+        >
           <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-        </Field>
-        <Field label="Description">
+        </FieldLabel>
+
+        <FieldLabel
+          label="Description"
+          tooltip="Optional long-form context for reviewers. Explain what this suite validates, when it should run, and what a passing score means for the agent's behavior."
+        >
           <textarea
             rows={2}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className={`${inputClass} resize-none`}
           />
-        </Field>
+        </FieldLabel>
+
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Target type">
+          <FieldLabel
+            label="Target type"
+            tooltip="What entity is under test — 'lens' tests a single lens; 'workflow' tests end-to-end execution; 'agent' tests the agent's responses directly; 'team' tests multi-agent coordination."
+          >
             <SelectField
               value={targetType}
               onChange={(v) => setTargetType(v as EvaluationTargetType)}
               options={TARGET_OPTIONS}
             />
-          </Field>
-          <Field label="Target ID">
+          </FieldLabel>
+
+          <FieldLabel
+            label="Target ID"
+            tooltip="UUID of the target entity. Copy from the entity's settings page or its URL segment."
+          >
             <input
               value={targetId}
               onChange={(e) => setTargetId(e.target.value)}
               placeholder="uuid"
               className={inputClass}
             />
-          </Field>
+          </FieldLabel>
         </div>
 
         {mode === 'simple' ? (
@@ -239,10 +254,17 @@ export const EvaluationDrawer: React.FC<Props> = ({
                 Scoring rules
               </p>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Rubric">
+                <FieldLabel
+                  label="Rubric"
+                  tooltip="The scoring algorithm. 'Binary pass/fail' is strict — any deviation fails; 'scale 1–5' grades partial quality; 'custom' lets you define your own scoring function in Advanced mode."
+                >
                   <SelectField value={rubric} onChange={setRubric} options={RUBRIC_OPTIONS} />
-                </Field>
-                <Field label="Weight">
+                </FieldLabel>
+
+                <FieldLabel
+                  label="Weight"
+                  tooltip="How much this evaluation suite contributes to the agent's overall quality score. Higher weight suites have more influence on the final grade."
+                >
                   <input
                     type="number"
                     min={0}
@@ -251,7 +273,7 @@ export const EvaluationDrawer: React.FC<Props> = ({
                     onChange={(e) => setWeight(Number(e.target.value))}
                     className={inputClass}
                   />
-                </Field>
+                </FieldLabel>
               </div>
             </div>
 
@@ -292,24 +314,35 @@ export const EvaluationDrawer: React.FC<Props> = ({
                       )}
                     </div>
                     <div className="grid gap-2">
-                      <Field label="Prompt">
+                      <FieldLabel
+                        label="Prompt"
+                        tooltip="The input prompt sent to the target. This is what the agent will receive and respond to."
+                      >
                         <input
                           value={c.prompt}
                           onChange={(e) => updateCase(idx, { prompt: e.target.value })}
                           placeholder="Input prompt"
                           className={inputClass}
                         />
-                      </Field>
-                      <Field label="Expected output contains">
+                      </FieldLabel>
+
+                      <FieldLabel
+                        label="Expected output contains"
+                        tooltip="A substring that must appear in the agent's response for this case to pass. Case-sensitive. Leave empty to skip assertion."
+                      >
                         <input
                           value={c.expected}
                           onChange={(e) => updateCase(idx, { expected: e.target.value })}
                           placeholder="ok"
                           className={inputClass}
                         />
-                      </Field>
+                      </FieldLabel>
+
                       <div className="grid grid-cols-2 gap-2">
-                        <Field label="Weight">
+                        <FieldLabel
+                          label="Weight"
+                          tooltip="Relative contribution of this case to the suite score."
+                        >
                           <input
                             type="number"
                             min={0}
@@ -318,15 +351,19 @@ export const EvaluationDrawer: React.FC<Props> = ({
                             onChange={(e) => updateCase(idx, { weight: Number(e.target.value) })}
                             className={inputClass}
                           />
-                        </Field>
-                        <Field label="Tags (comma separated)">
+                        </FieldLabel>
+
+                        <FieldLabel
+                          label="Tags (comma separated)"
+                          tooltip="Labels for filtering. Standard tags: 'smoke', 'regression', 'edge-case'."
+                        >
                           <input
                             value={c.tags}
                             onChange={(e) => updateCase(idx, { tags: e.target.value })}
                             placeholder="smoke, regression"
                             className={inputClass}
                           />
-                        </Field>
+                        </FieldLabel>
                       </div>
                     </div>
                   </div>
@@ -336,7 +373,10 @@ export const EvaluationDrawer: React.FC<Props> = ({
           </>
         ) : (
           <>
-            <Field label="Scoring rules (JSON)">
+            <FieldLabel
+              label="Scoring rules (JSON)"
+              tooltip="Advanced JSON override for the scoring configuration. Must be a valid JSON object. Replaces the rubric and weight pickers from Simple mode."
+            >
               <textarea
                 rows={3}
                 value={scoringJson}
@@ -346,8 +386,12 @@ export const EvaluationDrawer: React.FC<Props> = ({
               {scoringJsonError && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">{scoringJsonError}</p>
               )}
-            </Field>
-            <Field label="Cases (JSON array)">
+            </FieldLabel>
+
+            <FieldLabel
+              label="Cases (JSON array)"
+              tooltip="Array of case objects with 'input', 'expected', 'weight', and 'tags' keys. Must be a valid JSON array."
+            >
               <textarea
                 rows={6}
                 value={casesJson}
@@ -357,7 +401,7 @@ export const EvaluationDrawer: React.FC<Props> = ({
               {casesJsonError && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">{casesJsonError}</p>
               )}
-            </Field>
+            </FieldLabel>
           </>
         )}
 
@@ -366,8 +410,6 @@ export const EvaluationDrawer: React.FC<Props> = ({
             {error}
           </p>
         )}
-
-
       </div>
     </Drawer>
   )
@@ -376,11 +418,26 @@ export const EvaluationDrawer: React.FC<Props> = ({
 const inputClass =
   'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )
