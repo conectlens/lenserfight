@@ -1657,6 +1657,18 @@ export default defineConfig({
           ],
         },
         {
+          text: 'Workflow Examples',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/en/tutorials/workflow-examples/' },
+            { text: 'Coding Workflows', link: '/en/tutorials/workflow-examples/coding-workflow' },
+            { text: 'Content Creation Workflows', link: '/en/tutorials/workflow-examples/content-creation-workflow' },
+            { text: 'Finance Workflows ⚠️', link: '/en/tutorials/workflow-examples/finance-workflow' },
+            { text: 'Research Workflows', link: '/en/tutorials/workflow-examples/research-workflow' },
+            { text: 'Startup Workflows', link: '/en/tutorials/workflow-examples/startup-workflow' },
+          ],
+        },
+        {
           text: 'CLI Tutorials',
           collapsed: true,
           items: [
@@ -1843,6 +1855,22 @@ export default defineConfig({
             { text: 'For Communities', link: '/en/tutorials/getting-started/for-communities' },
             { text: 'For Organizations', link: '/en/tutorials/getting-started/for-organizations' },
             { text: 'SaaS Integration', link: '/en/how-to/integrations/saas-quickstart' },
+          ],
+        },
+      ],
+      '/en/tutorials/workflow-examples/': [
+        {
+          text: 'Workflow Examples',
+          items: [
+            { text: 'Overview', link: '/en/tutorials/workflow-examples/' },
+            { text: 'Coding Workflows', link: '/en/tutorials/workflow-examples/coding-workflow' },
+            {
+              text: 'Content Creation Workflows',
+              link: '/en/tutorials/workflow-examples/content-creation-workflow',
+            },
+            { text: 'Finance Workflows ⚠️', link: '/en/tutorials/workflow-examples/finance-workflow' },
+            { text: 'Research Workflows', link: '/en/tutorials/workflow-examples/research-workflow' },
+            { text: 'Startup Workflows', link: '/en/tutorials/workflow-examples/startup-workflow' },
           ],
         },
       ],
