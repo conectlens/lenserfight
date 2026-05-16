@@ -1,8 +1,9 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { ToolRegistryRecord } from '@lenserfight/types'
-import { Button } from '@lenserfight/ui/components'
+import { Tooltip } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
+import { HelpCircle } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { DrawerDocsLink } from './DrawerDocsLink'
@@ -66,16 +67,16 @@ export const AssignToolDrawer: React.FC<Props> = ({
   }
 
   return (
-    <Drawer 
-      open={open} 
-      onClose={onClose} 
-      side="right" 
-      width="w-[420px]" 
+    <Drawer
+      open={open}
+      onClose={onClose}
+      side="right"
+      width="w-[420px]"
       title="Assign tool to agent"
       headerExtra={
         <DrawerDocsLink
           path="/how-to/agents/workspace/drawers/assign-tool"
-          tip="Allow or deny a registered tool for this agent. Pick a tool, toggle Allowed, save. Idempotent — re-assigning the same tool overwrites the allow flag."
+          tip="Allow or deny a registered tool for this agent. Toggling Allowed is idempotent — re-assigning the same tool overwrites the allow flag without creating a duplicate row."
         />
       }
       footer={
@@ -96,20 +97,31 @@ export const AssignToolDrawer: React.FC<Props> = ({
           </p>
         ) : (
           <>
-            <SelectField
+            <FieldLabel
               label="Tool"
-              value={toolId}
-              onChange={setToolId}
-              options={toolOptions}
-            />
-            <label className="flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
-              <input type="checkbox" checked={allowed} onChange={(e) => setAllowed(e.target.checked)} />
-              <span>Allowed</span>
-            </label>
+              tooltip="The registered tool to assign to this agent. Only tools already in the registry can be assigned. Register new tools via the Register Tool drawer."
+            >
+              <SelectField
+                value={toolId}
+                onChange={setToolId}
+                options={toolOptions}
+              />
+            </FieldLabel>
+
+            <Tooltip
+              content="When checked the agent may invoke this tool during runs. Uncheck to deny access without removing the assignment record."
+              position="top"
+              contentClassName="max-w-xs whitespace-normal text-left"
+            >
+              <label className="flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
+                <input type="checkbox" checked={allowed} onChange={(e) => setAllowed(e.target.checked)} />
+                <span>Allowed</span>
+              </label>
+            </Tooltip>
+
             {error && (
               <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">{error}</p>
             )}
-
           </>
         )}
       </div>
@@ -117,3 +129,26 @@ export const AssignToolDrawer: React.FC<Props> = ({
   )
 }
 
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
+    {children}
+  </div>
+)
