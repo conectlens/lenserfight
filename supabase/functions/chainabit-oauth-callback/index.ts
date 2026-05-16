@@ -148,19 +148,7 @@ Deno.serve(async (req: Request) => {
     return errorRedirect('session_failed', state.returnUrl)
   }
 
-  const userId = linkData.user?.id
-  if (userId) {
-    await supabase.from('partner_provisions').upsert(
-      {
-        user_id: userId,
-        partner_name: 'chainabit',
-        token: tokens.access_token,
-        token_scopes: ['email:read', 'profile:read', 'wallet:read', 'execution:run'],
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id,partner_name' },
-    )
-  }
-
+  // Wallet access (partner_provisions) is not provisioned automatically on login.
+  // Users connect their Chainabit wallet explicitly from Settings → Partner Accounts.
   return redirect(linkData.properties.action_link)
 })
