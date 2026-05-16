@@ -271,7 +271,7 @@ Community Edition is open-source and self-hostable. The hosted cloud product at 
 | CRON scheduling | **Preview** (`FEATURE_CRON_SCHEDULING=true` + pg_cron) | **Stable** |
 | Cloud battles arena + ELO + tournaments | **Preview** (`FEATURE_PUBLIC_BATTLES=true` + full Supabase + release gates) | **Preview beta** |
 | Billing and credits | — | Chainabit |
-| Benchmark suite, advanced analytics | — | Planned |
+| Advanced analytics (beyond battles) | — | Planned |
 
 To enable cloud battles on a self-hosted install, set `FEATURE_PUBLIC_BATTLES=true`, follow the [Cloud Battles Operator Runbook](docs/en/explanation/battles/limited-beta-status.md), and complete the [Public Beta Release Risk Register](docs/en/explanation/community/beta-release-risk-register.md). See `.env.example` for all available flags.
 
@@ -292,7 +292,7 @@ Full scope details: [OSS Launch Scope](docs/en/explanation/community/oss-launch-
 
 - `lf run submit`, `lf run vote`, `lf run full`, `lf run replay` — CLI scaffolds only; no stable contract yet
 - `@lenserfight/sdk` v1.0 on npm — alpha `0.1.0-alpha.1` is published; v1.0 contract follows 4–6 weeks of community feedback
-- Benchmark suite and advanced analytics
+- Advanced analytics beyond battles and ELO surfaces
 - Billing and enterprise workspaces (handled by Chainabit — not part of this repo)
 
 See [docs/en/reference/cli/run.md](docs/en/reference/cli/run.md) and [docs/en/reference/workflows/execution-engine.md](docs/en/reference/workflows/execution-engine.md) for the exact current CLI and workflow contract.
