@@ -1,6 +1,8 @@
 import { validateInputs, validateOutput } from './contract-validator'
 import { detectCycle as validatorDetectCycle, PlaceholderUnboundError } from './validator'
 import { shouldHaltScheduling, type BudgetSnapshot } from './budget-reconciler'
+import { inferAttachmentsFromRendered } from './execution-attachments'
+import { resolveMappedOutputValue } from './output-path'
 
 import type {
   ExecutionInput,
@@ -102,6 +104,8 @@ export interface WorkflowNodeConfig {
   delegationPolicy?: DelegationPolicy
   /** AP: output modality for this node — checked against agents.policies.allowed_output_modalities. */
   nodeType?: WorkflowNodeType
+  /** Per-node AIModel.key override; falls back to run-level `defaultModelKey`. */
+  modelId?: string
 }
 
 /**
@@ -169,6 +173,10 @@ export interface NodeResult {
   envelope?: NodeOutputEnvelope
   error?: string
   attempts?: number
+  /** Label→value map after edge merge (for audit / replay). */
+  resolvedInputSnapshot?: Record<string, unknown>
+  /** Provider + model used for this node. */
+  providerRoute?: Record<string, unknown>
   /**
    * Populated when `status` is `awaiting_dependency` | `queued` | `retrying`.
    * Mirrors `WaitingReason` so the run-state projection knows why the node is
@@ -246,10 +254,20 @@ export interface WorkflowExecutionContext {
   parentRunId?: string | null
   /** Root-level inputs for nodes with no incoming edges */
   rootInputs: Record<string, unknown>
+  /**
+   * Default model key for `IExecutionProvider.execute` when a node has no
+   * `config.modelId`.
+   */
+  defaultModelKey?: string
   /** Optional abort signal for cancellation-aware execution */
   signal?: AbortSignal
   /** Resolves a lens version's template body by lensId + versionId */
   resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string>
+  /**
+   * When set, returns the provider to use for this node (mixed text + media DAGs).
+   * If omitted, the service was constructed with a single global provider.
+   */
+  resolveExecutionProvider?(node: WorkflowNode): IExecutionProvider | Promise<IExecutionProvider>
   /** Optional contract resolver — when provided, engine validates inputs/outputs per node. */
   resolveVersionContracts?(
     versionId?: string | null,
@@ -786,6 +804,22 @@ export class WorkflowExecutionService {
           }
 
           // ── Provider call with retry + timeout ──────────────────────
+          const nodeProvider = ctx.resolveExecutionProvider
+            ? await ctx.resolveExecutionProvider(node)
+            : this.provider
+          const rawCfg = node.config as Record<string, unknown> | undefined
+          const modelKey = (
+            node.config?.modelId?.trim() ||
+            (typeof rawCfg?.['model_id'] === 'string' ? rawCfg['model_id'].trim() : '') ||
+            ctx.defaultModelKey ||
+            ''
+          ).trim()
+          const attachments = inferAttachmentsFromRendered(renderedInputs)
+          const execInputBase: ExecutionInput = {
+            prompt: resolvedPrompt,
+            ...(attachments.length > 0 ? { attachments } : {}),
+          }
+
           let envelope: NodeOutputEnvelope | null = null
           let providerError: { cause: RetryCause; err: unknown } | null = null
           let attempt = 0
@@ -796,9 +830,9 @@ export class WorkflowExecutionService {
 
             try {
               const execResult = await runWithTimeout(
-                this.provider,
-                node.lensId,
-                { prompt: resolvedPrompt },
+                nodeProvider,
+                modelKey || node.lensId,
+                execInputBase,
                 timeoutMs,
                 ctx.signal,
                 ctx.onPartialOutput ? (partial) => ctx.onPartialOutput?.(nodeId, partial) : undefined,
@@ -859,6 +893,9 @@ export class WorkflowExecutionService {
             return
           }
 
+          const routeMeta = { providerId: nodeProvider.id, modelKey: modelKey || node.lensId }
+          const inputSnapshot = { ...renderedInputs }
+
           if (providerError) {
             const cause = providerError.cause
             // Timeouts are persisted with the real `timed_out` status (Phase 1
@@ -869,6 +906,8 @@ export class WorkflowExecutionService {
               status: terminalStatus,
               error: errorMessage(providerError.err),
               attempts: attempt,
+              resolvedInputSnapshot: inputSnapshot,
+              providerRoute: routeMeta,
             }
             results.set(nodeId, failed)
             await ctx.onNodeStatusChange(nodeId, failed)
@@ -943,6 +982,8 @@ export class WorkflowExecutionService {
             envelope: envelope!,
             outputData,
             attempts: attempt,
+            resolvedInputSnapshot: inputSnapshot,
+            providerRoute: routeMeta,
           }
           results.set(nodeId, result)
           await ctx.onNodeStatusChange(nodeId, result)
@@ -1259,7 +1300,14 @@ function resolveRenderedInputs(
       const source = results.get(edge.sourceNodeId)
       if (!source) continue
       if (source.status !== 'completed') continue
-      const value = source.outputData?.[edge.sourceOutputKey] ?? source.envelope?.output ?? ''
+      const value = resolveMappedOutputValue(
+        {
+          status: source.status,
+          outputData: source.outputData,
+          envelope: source.envelope,
+        },
+        edge.sourceOutputKey,
+      )
       values.push({
         sourceNodeId: edge.sourceNodeId,
         value,
@@ -1313,7 +1361,14 @@ function isEdgeConditionSatisfied(edge: WorkflowEdge, results: Map<string, NodeR
   if (!edge.condition) return true
   const source = results.get(edge.sourceNodeId)
   if (!source || source.status !== 'completed') return false
-  const sourceValue = source.outputData?.[edge.sourceOutputKey] ?? source.envelope?.output ?? null
+  const sourceValue = resolveMappedOutputValue(
+    {
+      status: source.status,
+      outputData: source.outputData,
+      envelope: source.envelope,
+    },
+    edge.sourceOutputKey,
+  )
   switch (edge.condition.type) {
     case 'present':
       return sourceValue !== null && sourceValue !== undefined && sourceValue !== ''
