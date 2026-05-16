@@ -1,11 +1,13 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { ToolAuthMethod, ToolRegistryRecord } from '@lenserfight/types'
-import { Button } from '@lenserfight/ui/components'
+import { Tooltip } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
+import { HelpCircle } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 
 import type { ToolTemplatePreset } from '../toolTemplates'
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface Props {
   open: boolean
@@ -104,6 +106,12 @@ export const RegisterToolDrawer: React.FC<Props> = ({
       side="right"
       width="w-[600px]"
       title={isEdit ? 'Edit tool registry' : 'Register external tool'}
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/register-tool"
+          tip="Declare a new tool in the registry. After registration, open the Assign Tool drawer to grant this agent access. Tool keys are permanent — choose carefully."
+        />
+      }
       footer={
         <DrawerFooter
           onCancel={onClose}
@@ -121,46 +129,126 @@ export const RegisterToolDrawer: React.FC<Props> = ({
             Starting from template: <span className="font-semibold">{preset.label}</span>
           </div>
         )}
-        <Field label="Key (unique within owner)">
-          <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="search.web" className={inputClass} disabled={isEdit} />
-        </Field>
-        <Field label="Name">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Web search" className={inputClass} />
-        </Field>
-        <Field label="Description">
-          <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} className={`${inputClass} resize-none`} />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Category">
-            <input value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} />
-          </Field>
-          <SelectField
-            label="Auth method"
-            value={authMethod}
-            onChange={(v) => setAuthMethod(v as ToolAuthMethod)}
-            options={AUTH_METHOD_OPTIONS}
+
+        <FieldLabel
+          label="Key (unique within owner)"
+          tooltip="Stable, lowercase slug used in workflows and assignments. Cannot be changed after creation. Example: 'web.search', 'github.pr.create'."
+        >
+          <input
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            placeholder="search.web"
+            className={inputClass}
+            disabled={isEdit}
           />
-        </div>
-        <Field label="Input schema (JSON)">
-          <textarea rows={4} value={schemaInput} onChange={(e) => setSchemaInput(e.target.value)} className={`${inputClass} resize-none font-mono text-xs`} />
-        </Field>
-        <Field label="Output schema (JSON)">
-          <textarea rows={4} value={schemaOutput} onChange={(e) => setSchemaOutput(e.target.value)} className={`${inputClass} resize-none font-mono text-xs`} />
-        </Field>
+        </FieldLabel>
+
+        <FieldLabel
+          label="Name"
+          tooltip="Human-readable label shown in pickers and approval gates."
+        >
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Web search"
+            className={inputClass}
+          />
+        </FieldLabel>
+
+        <FieldLabel
+          label="Description"
+          tooltip="Surfaces in the tool picker tooltip and approval review screen. Describe what the tool does and its side effects."
+        >
+          <textarea
+            rows={2}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className={`${inputClass} resize-none`}
+          />
+        </FieldLabel>
+
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
-            <input type="checkbox" checked={requiresApproval} onChange={(e) => setRequiresApproval(e.target.checked)} />
-            <span>Requires approval</span>
-          </label>
-          <label className="flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
-            <input type="checkbox" checked={isDangerous} onChange={(e) => setIsDangerous(e.target.checked)} />
-            <span>Dangerous tool</span>
-          </label>
+          <FieldLabel
+            label="Category"
+            tooltip="Groups tools in the picker. Use existing categories like 'search', 'code', 'communication' for consistency."
+          >
+            <input
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className={inputClass}
+            />
+          </FieldLabel>
+
+          <FieldLabel
+            label="Auth method"
+            tooltip="'none' = no credentials; 'api_key' = secret stored in Vault; 'oauth' = user-delegated token; 'service_account' = workspace-level credentials."
+          >
+            <SelectField
+              value={authMethod}
+              onChange={(v) => setAuthMethod(v as ToolAuthMethod)}
+              options={AUTH_METHOD_OPTIONS}
+            />
+          </FieldLabel>
         </div>
+
+        <FieldLabel
+          label="Input schema (JSON)"
+          tooltip="JSON Schema describing the tool's input. Used for validation and auto-generated type hints in the workflow editor."
+        >
+          <textarea
+            rows={4}
+            value={schemaInput}
+            onChange={(e) => setSchemaInput(e.target.value)}
+            className={`${inputClass} resize-none font-mono text-xs`}
+          />
+        </FieldLabel>
+
+        <FieldLabel
+          label="Output schema (JSON)"
+          tooltip="JSON Schema describing what the tool returns. Optional but improves downstream type safety in workflow nodes."
+        >
+          <textarea
+            rows={4}
+            value={schemaOutput}
+            onChange={(e) => setSchemaOutput(e.target.value)}
+            className={`${inputClass} resize-none font-mono text-xs`}
+          />
+        </FieldLabel>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Tooltip
+            content="Approval gate fires before every invocation. Required for any tool that writes data, deletes records, or incurs external charges."
+            position="top"
+            contentClassName="max-w-xs whitespace-normal text-left"
+          >
+            <label className="flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
+              <input
+                type="checkbox"
+                checked={requiresApproval}
+                onChange={(e) => setRequiresApproval(e.target.checked)}
+              />
+              <span>Requires approval</span>
+            </label>
+          </Tooltip>
+          <Tooltip
+            content="Tags this tool as high-risk. Dangerous tools always appear in approval queues and are excluded from autonomous runs by default."
+            position="top"
+            contentClassName="max-w-xs whitespace-normal text-left"
+          >
+            <label className="flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
+              <input
+                type="checkbox"
+                checked={isDangerous}
+                onChange={(e) => setIsDangerous(e.target.checked)}
+              />
+              <span>Dangerous tool</span>
+            </label>
+          </Tooltip>
+        </div>
+
         {error && (
           <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">{error}</p>
         )}
-
       </div>
     </Drawer>
   )
@@ -169,9 +257,26 @@ export const RegisterToolDrawer: React.FC<Props> = ({
 const inputClass =
   'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">{label}</span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )
