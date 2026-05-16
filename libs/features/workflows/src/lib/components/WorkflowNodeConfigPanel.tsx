@@ -9,7 +9,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 
 import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
 import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
-import type { AIProvider, AIProviderModel, LensParam } from '@lenserfight/types'
+import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
 import { CsvImportDialog } from '../../../../lenses/src/lib/components/CsvImportDialog'
 import { JsonImportDialog } from '../../../../lenses/src/lib/components/JsonImportDialog'
@@ -95,7 +95,6 @@ export function WorkflowNodeConfigPanel({
     () => versionParams.filter((p) => !autoWiredParams.has(p.label)),
     [versionParams, autoWiredParams],
   )
-  const legacyParams: LensParam[] = []
 
   // Derive providers/models from flat useAIModels list
   const providers: AIProvider[] = useMemo(() => {
@@ -288,7 +287,6 @@ export function WorkflowNodeConfigPanel({
         open={jsonImportOpen}
         onClose={() => setJsonImportOpen(false)}
         versionParams={editableParams}
-        legacyParams={legacyParams}
         onApply={(patch) =>
           setParamOverrides((prev) => ({
             ...prev,
@@ -302,7 +300,6 @@ export function WorkflowNodeConfigPanel({
         open={csvImportOpen}
         onClose={() => setCsvImportOpen(false)}
         versionParams={editableParams}
-        legacyParams={legacyParams}
         onApply={(patch) =>
           setParamOverrides((prev) => ({
             ...prev,
