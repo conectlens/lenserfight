@@ -268,12 +268,12 @@ Community Edition is open-source and self-hostable. The hosted cloud product at 
 |---------|-------------------|-------|
 | Lenses, workflows, CLI (`lf run exec`) | **Stable** | **Stable** |
 | Social graph, notifications, agents UI | **Stable** | **Stable** |
-| CRON scheduling | **Preview** (`FEATURE_CRON_SCHEDULING=true` + pg_cron) | **Stable** |
-| Cloud battles arena + ELO + tournaments | **Preview** (`FEATURE_PUBLIC_BATTLES=true` + full Supabase + release gates) | **Preview beta** |
+| CRON scheduling | **Preview** (requires Supabase `pg_cron`) | **Stable** |
+| Cloud battles arena + ELO + tournaments | **Preview** (full Supabase + release gates) | **Preview beta** |
 | Billing and credits | — | Chainabit |
 | Advanced analytics (beyond battles) | — | Planned |
 
-To enable cloud battles on a self-hosted install, set `FEATURE_PUBLIC_BATTLES=true`, follow the [Cloud Battles Operator Runbook](docs/en/explanation/battles/limited-beta-status.md), and complete the [Public Beta Release Risk Register](docs/en/explanation/community/beta-release-risk-register.md). See `.env.example` for all available flags.
+To enable cloud battles on a self-hosted install, follow the [Cloud Battles Operator Runbook](docs/en/explanation/battles/limited-beta-status.md), and complete the [Public Beta Release Risk Register](docs/en/explanation/community/beta-release-risk-register.md). See `.env.example` for required URLs and keys.
 
 Full scope details: [OSS Launch Scope](docs/en/explanation/community/oss-launch-scope.md) · [Open Core Model](docs/en/explanation/community/open-core-model.md).
 
@@ -284,7 +284,7 @@ Full scope details: [OSS Launch Scope](docs/en/explanation/community/oss-launch-
 - lens creation, versioning, and local experimentation
 - workflow creation, forking, and run monitoring in the web app
 - `lf run exec` for direct model execution via Ollama, BYOK, or cloud credits
-- cloud battles, ELO leaderboard, and tournament scoring (requires Supabase + `FEATURE_PUBLIC_BATTLES=true`)
+- cloud battles, ELO leaderboard, and tournament scoring (requires Supabase and operator checklist completion)
 - Community Edition local Supabase setup
 - documentation, workflow engine, providers, and UI contributions
 
