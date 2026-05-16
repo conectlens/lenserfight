@@ -395,6 +395,20 @@ const AGENT_WORKSPACE_SIDEBAR = [
   },
 ]
 
+const EN_REFERENCE_WORKFLOWS_SIDEBAR = [
+  {
+    text: 'Workflows',
+    items: [
+      { text: 'Execution Engine', link: '/en/reference/workflows/execution-engine' },
+      { text: 'Node Catalog', link: '/en/reference/workflows/workflow-node-catalog' },
+      { text: 'Contract Schema', link: '/en/reference/workflows/contract-schema' },
+      { text: 'Test Plan', link: '/en/reference/workflows/test-plan' },
+      { text: 'CRON Expressions', link: '/en/reference/cron-expressions' },
+      { text: 'Workflow Inputs Template', link: '/en/reference/workflow-inputs-template' },
+    ],
+  },
+]
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   srcDir: '../../docs',
@@ -2278,18 +2292,7 @@ export default defineConfig({
           ],
         },
       ],
-      '/en/reference/workflows/': [
-        {
-          text: 'Workflows',
-          items: [
-            { text: 'Execution Engine', link: '/en/reference/workflows/execution-engine' },
-            { text: 'Contract Schema', link: '/en/reference/workflows/contract-schema' },
-            { text: 'Test Plan', link: '/en/reference/workflows/test-plan' },
-            { text: 'CRON Expressions', link: '/en/reference/cron-expressions' },
-            { text: 'Workflow Inputs Template', link: '/en/reference/workflow-inputs-template' },
-          ],
-        },
-      ],
+      '/en/reference/workflows/': EN_REFERENCE_WORKFLOWS_SIDEBAR,
       '/en/reference/cli/': [
         {
           text: 'CLI',
