@@ -1,0 +1,13 @@
+{
+  "name": "battle-governance",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/battle-governance/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:battle-governance",
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {}
+}
