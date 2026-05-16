@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test'
 
 // Phase 9 acceptance criterion #3:
-// With PRODUCT_EDITION=community + FEATURE_PUBLIC_BATTLES=false,
-// every arena/battle entrypoint must redirect to a safe page (/, /workflows)
+// With FEATURE_PUBLIC_BATTLES=false and FEATURE_BENCHMARK_UI=false, every
+// arena/battle/benchmark entrypoint must redirect to a safe page (/, /workflows)
 // or 404 — never render the live arena UI.
 //
 // The webServer config in playwright.config.ts sets these env vars before
-// launching the dev server, so this spec runs against a community build.
+// launching the dev server.
 
-test.describe('Arena/battles gate (community edition, battles off)', () => {
+test.describe('Arena/battles gate (battles + benchmark off)', () => {
   test('/lenserboard redirects to home', async ({ page }) => {
     const response = await page.goto('/lenserboard', { waitUntil: 'networkidle' })
 
@@ -32,8 +32,8 @@ test.describe('Arena/battles gate (community edition, battles off)', () => {
 
     if (response && response.status() === 404) return
 
-    // showBenchmarkSuite=false in community → route is not registered, falls
-    // through to the catch-all redirect.
+    // FEATURE_BENCHMARK_UI=false → route is not registered, falls through to
+    // the catch-all redirect.
     await expect(page).not.toHaveURL(/\/benchmark\/?$/)
   })
 })
