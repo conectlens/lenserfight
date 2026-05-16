@@ -12,6 +12,7 @@
 //   5. Render `[[label]]` placeholders with the resolved inputs and throw
 //      `PlaceholderUnboundError` when a non-optional label is missing.
 
+import { resolveMappedOutputValue } from './output-path'
 import { PlaceholderUnboundError } from './validator'
 
 import type { LensInputContract, NodeOutputEnvelope } from '@lenserfight/types'
@@ -79,8 +80,7 @@ export function resolveRenderedInputs(
       if (!isEdgeConditionSatisfied(edge, upstream)) continue
       const source = upstream.get(edge.sourceNodeId)
       if (!source || source.status !== 'completed') continue
-      const value =
-        source.outputData?.[edge.sourceOutputKey] ?? source.envelope?.output ?? ''
+      const value = resolveMappedOutputValue(source, edge.sourceOutputKey)
       values.push({ sourceNodeId: edge.sourceNodeId, value })
     }
     if (values.length === 0) {
@@ -101,8 +101,7 @@ export function isEdgeConditionSatisfied(
   if (!edge.condition) return true
   const source = upstream.get(edge.sourceNodeId)
   if (!source || source.status !== 'completed') return false
-  const sourceValue =
-    source.outputData?.[edge.sourceOutputKey] ?? source.envelope?.output ?? null
+  const sourceValue = resolveMappedOutputValue(source, edge.sourceOutputKey)
   switch (edge.condition.type) {
     case 'present':
       return sourceValue !== null && sourceValue !== undefined && sourceValue !== ''
