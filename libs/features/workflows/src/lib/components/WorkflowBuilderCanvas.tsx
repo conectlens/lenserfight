@@ -7,7 +7,9 @@ import {
   getWorkflowNodeCompatibilityWarning,
   isWorkflowUtilityNodeType,
 } from '@lenserfight/infra/execution'
+import { useLocale } from '@lenserfight/shared/i18n-locale'
 import { HelpButton } from '@lenserfight/ui/components'
+import { getWorkflowNodeDocsHref } from '../utils/workflow-node-docs'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ReactFlow,
@@ -48,6 +50,7 @@ import type { DraggedLensData } from './WorkflowLensPalette'
 import type {
   WorkflowNodeRecord,
   WorkflowEdgeRecord,
+  WorkflowNodeResultRecord,
   UpsertNodeInput,
   UpsertEdgeInput,
 } from '@lenserfight/data/repositories'
@@ -222,6 +225,8 @@ export interface WorkflowBuilderCanvasProps {
   onConfigNode?: (nodeId: string, lensId: string) => void
   onEditLens?: (lensId: string) => void
   onEdit?: () => void
+  /** Live or dry-run node results to visualize on canvas nodes. */
+  nodeResults?: WorkflowNodeResultRecord[]
 }
 
 // ─── Public component — wraps inner in ReactFlowProvider ─────────────────────
@@ -248,8 +253,10 @@ function WorkflowBuilderCanvasInner({
   onConfigNode,
   onEditLens,
   onEdit,
+  nodeResults,
 }: WorkflowBuilderCanvasProps) {
   const { screenToFlowPosition, fitView, zoomIn, zoomOut, setViewport } = useReactFlow()
+  const { locale } = useLocale()
   const { mutateAsync: saveWorkflow } = useSaveWorkflow()
   const queryClient = useQueryClient()
   const canvasContainerRef = useRef<HTMLDivElement>(null)
@@ -385,6 +392,34 @@ function WorkflowBuilderCanvasInner({
       }
     }))
   }, [nodeConfigOverrides, nodeRecords, setEdges, setNodes])
+
+  // Sync execution status from live run / dry-run into canvas nodes.
+  // Uses ring-* classes (not border-*) so the category/visibility border is preserved.
+  // This effect is intentionally excluded from fingerprinting and save logic —
+  // executionStatus is ephemeral and must never trigger a DB write.
+  useEffect(() => {
+    if (!nodeResults || nodeResults.length === 0) {
+      setNodes((nds) => {
+        const anyHasStatus = nds.some((n) => (n.data as Record<string, unknown>)['executionStatus'] != null)
+        if (!anyHasStatus) return nds
+        return nds.map((n) => {
+          if ((n.data as Record<string, unknown>)['executionStatus'] == null &&
+              (n.data as Record<string, unknown>)['executionWarning'] == null) return n
+          return { ...n, data: { ...n.data, executionStatus: null, executionWarning: null } }
+        })
+      })
+      return
+    }
+    const resultIndex = new Map(nodeResults.map((r) => [r.node_id, r]))
+    setNodes((nds) => nds.map((n) => {
+      const result = resultIndex.get(n.id)
+      const status = result?.status ?? null
+      const warning = (result?.output_data as Record<string, unknown> | null | undefined)?.['_dryRunWarning'] as string | null | undefined ?? null
+      const currentData = n.data as Record<string, unknown>
+      if (currentData['executionStatus'] === status && currentData['executionWarning'] === warning) return n
+      return { ...n, data: { ...n.data, executionStatus: status, executionWarning: warning } }
+    }))
+  }, [nodeResults, setNodes])
 
   // ── Sync refs with latest state ───────────────────────────────────────────
   useEffect(() => { flowNodesRef.current = flowNodes }, [flowNodes])
@@ -845,13 +880,13 @@ function WorkflowBuilderCanvasInner({
   const viewSelectedNodeDocs = useCallback(() => {
     const nodeType = selectedNodeType()
     const entry = nodeType ? getWorkflowNodeCatalogEntry(nodeType) : null
-    const link = entry?.docsLink ?? entry?.docsPath
-    if (!link) {
+    const href = entry ? getWorkflowNodeDocsHref(entry.docsPath, locale) : null
+    if (!href) {
       toast.info('No node documentation is registered yet.')
       return
     }
-    window.open(link, '_blank', 'noreferrer')
-  }, [selectedNodeType])
+    window.open(href, '_blank', 'noreferrer')
+  }, [selectedNodeType, locale])
 
   const selectedEdge = useCallback(() => {
     const edgeId = selectionRef.current.edgeIds[0]
