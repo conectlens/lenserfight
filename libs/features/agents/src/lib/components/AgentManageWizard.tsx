@@ -1,18 +1,21 @@
 import React, { useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
-import { BarChart3, BookOpen, Clock, Sparkles, ToggleRight } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { BarChart3, BookOpen, Clock, Loader2, Check, X, Sparkles, ToggleRight } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button, StepWizard, Badge, Tooltip, HelpButton } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
-import { Switch } from '@lenserfight/ui/forms'
+import { Field, Input, Switch } from '@lenserfight/ui/forms'
 import { AgentIdentityCard } from '@lenserfight/ui/modals'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentsService } from '@lenserfight/data/repositories'
 import { AgentModelBindingMode } from '@lenserfight/types'
+import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
 import { useAgentDetail } from '../hooks/useAgentDetail'
 import { useAgentPersonality } from '../hooks/useAgentPersonality'
+import { useCreateAgent } from '../hooks/useCreateAgent'
+import { useHandleCheck } from '../hooks/useHandleCheck'
 import { AgentStatusBadge } from './AgentStatusBadge'
 import { AgentQuotaBar } from './AgentQuotaBar'
 import { AgentPersonalityStep } from './AgentPersonalityStep'
@@ -32,7 +35,40 @@ const MODEL_MODE_TOOLTIPS: Record<string, string> = {
   dynamic: 'Select the best-fit model at inference time. Requires a gateway with multi-model routing.',
 }
 
-const WIZARD_STEPS: WizardStepConfig[] = [
+const WIZARD_STEPS_CREATE: WizardStepConfig[] = [
+  {
+    label: 'Identity',
+    title: 'Create AI agent',
+    description: 'Give the agent a clear identity — handle and display name.',
+    icon: <Sparkles size={20} />,
+    action: (
+      <HelpButton
+        path="/tutorials/agent-walkthroughs/create-your-first-agent"
+        label="Agent Guide"
+      />
+    ),
+  },
+  {
+    label: 'Permissions',
+    title: 'Agent permissions',
+    description: 'Control what this agent is allowed to do.',
+    icon: <ToggleRight size={20} />,
+  },
+  {
+    label: 'Personality',
+    title: 'Personality & instruction lens',
+    description: 'Set the agent role, tone, and default instruction prompt.',
+    icon: <Sparkles size={20} />,
+  },
+  {
+    label: 'Status',
+    title: 'Status & limits',
+    description: "Today's usage and daily quota limits for this agent.",
+    icon: <BarChart3 size={20} />,
+  },
+]
+
+const WIZARD_STEPS_MANAGE: WizardStepConfig[] = [
   {
     label: 'Permissions',
     title: 'Agent permissions',
@@ -137,25 +173,89 @@ const QuotaEditForm: React.FC<QuotaEditFormProps> = ({ agentId, agent, queryClie
 }
 
 export interface AgentManageWizardProps {
-  agentId: string
-  handle: string
+  /** Omit to start in create mode (step 0 collects identity). */
+  agentId?: string
+  /** Omit in create mode; required when editing an existing agent. */
+  handle?: string
   onDone: () => void
 }
 
-export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, handle, onDone }) => {
+export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: initialAgentId, handle: initialHandle, onDone }) => {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const isCreateMode = !initialAgentId
+
+  // Track the created agent id when coming through the create flow
+  const [createdAgentId, setCreatedAgentId] = useState<string | null>(null)
+  const [createdHandle, setCreatedHandle] = useState<string | null>(null)
+
+  const agentId = initialAgentId ?? createdAgentId ?? ''
+  const handle = initialHandle ?? createdHandle ?? ''
+
+  const steps = isCreateMode ? WIZARD_STEPS_CREATE : WIZARD_STEPS_MANAGE
+  const maxStep = steps.length - 1
+  const { step, nextStep, prevStep, setStep } = useWizardStep({ maxStep })
+
+  // ── Identity step state (create mode only) ──────────────────────────────
+  const { humanWorkspace } = useLenserWorkspace()
+  const { submit: createAgent, isSubmitting: isCreating } = useCreateAgent(humanWorkspace?.id ?? '')
+  const [displayName, setDisplayName] = useState('')
+  const [createError, setCreateError] = useState<string | null>(null)
+  const {
+    handle: rawHandle,
+    setHandle,
+    normalizedHandle,
+    isCheckingHandle,
+    isHandleUnique,
+    handleError,
+    suggestions,
+  } = useHandleCheck(3)
+
+  // ── Existing agent state (permissions / personality / status steps) ──────
   const { data: agent, isLoading } = useAgentDetail(agentId)
-  const { step, nextStep, prevStep } = useWizardStep({ maxStep: 2 })
   const [policyLoading, setPolicyLoading] = useState(false)
 
-  // Personality step local state — saved on Next from step 1
   const [pendingPersonalityNote, setPendingPersonalityNote] = useState<string>('')
   const [pendingLensId, setPendingLensId] = useState<string | null>(null)
   const { savePersonalityNote, bindLens, isSaving: personalitySaving, error: personalityError } = useAgentPersonality(agentId)
 
-  // Lens creation modal (for the "Create new lens" button in personality step)
   const lensModal = useCreateLens()
 
+  // ── Identity step: create & advance ─────────────────────────────────────
+  const handleCreateNext = async () => {
+    const display = displayName.trim()
+    if (!display || display.length < 2) {
+      setCreateError('Display name must be at least 2 characters.')
+      return
+    }
+    if (!normalizedHandle || normalizedHandle.length < 3) {
+      setCreateError('Handle must be at least 3 characters.')
+      return
+    }
+    if (!isHandleUnique) return
+    if (!humanWorkspace) return
+
+    setCreateError(null)
+    try {
+      const result = await createAgent(normalizedHandle, display)
+      setCreatedAgentId(result.ai_lenser_id)
+      setCreatedHandle(normalizedHandle)
+      nextStep()
+    } catch (e) {
+      const err = e as { code?: string; message?: string }
+      if (err?.code === '23505' || err?.message?.includes('unique')) {
+        setCreateError('Handle is already taken.')
+        return
+      }
+      if (err?.message?.includes('P0004') || err?.message?.includes('Maximum 5')) {
+        setCreateError('Maximum of 5 AI agents reached. Remove an existing agent to create a new one.')
+        return
+      }
+      setCreateError(err?.message ?? 'Failed to create agent.')
+    }
+  }
+
+  // ── Permissions step ─────────────────────────────────────────────────────
   const handleTogglePolicy = async (field: string, value: boolean | AgentModelBindingMode) => {
     if (!agentId || !agent) return
     setPolicyLoading(true)
@@ -169,6 +269,7 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
     }
   }
 
+  // ── Personality step ──────────────────────────────────────────────────────
   const handlePersonalityNext = async () => {
     try {
       await savePersonalityNote(pendingPersonalityNote || null)
@@ -176,21 +277,31 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
         await bindLens(pendingLensId)
       }
     } catch {
-      // error shown by hook, don't advance
       return
     }
     nextStep()
   }
 
-  if (!agentId) {
-    return (
-      <p className="py-4 text-sm text-status-red">
-        No agent ID provided. Open this dialog from the agent management panel.
-      </p>
-    )
+  // ── Done: navigate to new profile if coming from create flow ─────────────
+  const handleDone = () => {
+    if (isCreateMode && handle) {
+      navigate(`/lenser/${handle}`)
+    }
+    onDone()
   }
 
-  if (isLoading || !agent) {
+  // ── Step index offsets (create mode has identity at step 0) ──────────────
+  // In create mode: 0=identity, 1=permissions, 2=personality, 3=status
+  // In manage mode: 0=permissions, 1=personality, 2=status
+  const permissionsStep = isCreateMode ? 1 : 0
+  const personalityStep = isCreateMode ? 2 : 1
+  const statusStep = isCreateMode ? 3 : 2
+
+  // ── Agent loading skeleton (shown after creation while data loads) ────────
+  const needsAgentData = step >= permissionsStep
+  const agentLoading = needsAgentData && agentId && (isLoading || !agent)
+
+  if (agentLoading) {
     return (
       <div className="space-y-4 animate-pulse py-4">
         <div className="h-20 bg-surface-border rounded-2xl" />
@@ -201,7 +312,7 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
     )
   }
 
-  const identityCard = (
+  const identityCard = agent ? (
     <AgentIdentityCard
       displayName={agent.display_name}
       handle={agent.handle}
@@ -216,146 +327,247 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
       }
       className="mb-4"
     />
-  )
+  ) : null
 
-  const stepContent = step === 0 ? (
-    <div className="space-y-4">
-      {identityCard}
+  // ── Step content ──────────────────────────────────────────────────────────
+  let stepContent: React.ReactNode
 
-      <HelpButton
-        path="/how-to/agents/manage-agent-settings"
-        label="Permissions guide"
-        className="mb-1"
-      />
+  if (step === 0 && isCreateMode) {
+    stepContent = (
+      <div className="space-y-4">
+        <Field
+          id="agent-display-name"
+          label="Display name"
+          required
+          hint="Shown across the app on cards, profiles, and management panels."
+        >
+          <Input
+            id="agent-display-name"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="My Battle Bot"
+            maxLength={64}
+          />
+        </Field>
 
-      {/* Policy toggles */}
-      <div className="space-y-1 divide-y divide-surface-border">
-        {([
-          { field: 'can_join_battles', label: 'Can join battles', value: agent.can_join_battles },
-          { field: 'can_vote', label: 'Can vote', value: agent.can_vote },
-          { field: 'can_create_battles', label: 'Can create battles', value: agent.can_create_battles },
-          { field: 'can_receive_sponsorship', label: 'Can receive sponsorship', value: agent.can_receive_sponsorship },
-        ] as const).map(({ field, label, value }) => (
-          <div key={field} className="flex items-center justify-between py-3">
-            <Tooltip content={POLICY_TOOLTIPS[field]} position="right">
-              <span className="text-sm text-greyscale-700 dark:text-greyscale-300 cursor-default">{label}</span>
-            </Tooltip>
-            <Switch
-              checked={value}
-              onChange={(v) => handleTogglePolicy(field, v)}
-              disabled={policyLoading}
-              size="sm"
+        <Field
+          id="agent-handle"
+          label="Handle"
+          required
+          error={handleError ?? undefined}
+          hint="Letters, numbers, hyphens, and underscores only."
+        >
+          <div className="relative">
+            <Input
+              id="agent-handle"
+              value={rawHandle}
+              onChange={(e) => setHandle(e.target.value.replace(/[^a-z0-9_-]/gi, '').toLowerCase())}
+              placeholder="my-battle-bot"
+              maxLength={32}
+              startAdornment={<span className="text-sm text-greyscale-400">@</span>}
             />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              {isCheckingHandle ? (
+                <Loader2 className="w-4 h-4 text-greyscale-400 animate-spin" />
+              ) : isHandleUnique ? (
+                <Check className="w-4 h-4 text-status-green" />
+              ) : handleError && rawHandle.length > 0 ? (
+                <X className="w-4 h-4 text-status-red" />
+              ) : null}
+            </div>
           </div>
-        ))}
-      </div>
 
-      {/* Model binding mode */}
-      <div className="pt-2">
-        <div className="flex items-center gap-1.5 mb-2">
-          <Tooltip
-            content="Controls how this agent selects AI models at inference time."
-            position="right"
-          >
-            <span className="text-xs font-medium text-greyscale-500 dark:text-greyscale-400 uppercase tracking-wide cursor-default">
-              Model Mode
-            </span>
-          </Tooltip>
-        </div>
-        <div className="flex gap-2">
-          {MODEL_MODES.map((mode) => (
-            <Tooltip key={mode} content={MODEL_MODE_TOOLTIPS[mode]} position="top">
-              <Button
-                variant={agent.model_binding_mode === mode ? 'dark' : 'secondary'}
-                size="sm"
+          {suggestions.length > 0 && (
+            <div className="mt-2">
+              <p className="text-xs text-greyscale-500 mb-1.5">Suggestions:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestions.map((s) => (
+                  <Button
+                    key={s}
+                    type="button"
+                    onClick={() => setHandle(s)}
+                    className="px-2.5 py-1 bg-surface-base hover:bg-primary/10 border border-surface-border rounded-full text-xs font-medium text-greyscale-600 transition-colors"
+                  >
+                    @{s}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+        </Field>
+
+        {createError && (
+          <p className="text-sm font-medium text-status-red">{createError}</p>
+        )}
+
+        {!humanWorkspace && (
+          <p className="text-sm font-medium text-status-red">
+            Switch back to your human workspace to create a new AI Lenser.
+          </p>
+        )}
+      </div>
+    )
+  } else if (step === permissionsStep && agent) {
+    stepContent = (
+      <div className="space-y-4">
+        {identityCard}
+
+        <HelpButton
+          path="/how-to/agents/manage-agent-settings"
+          label="Permissions guide"
+          className="mb-1"
+        />
+
+        <div className="space-y-1 divide-y divide-surface-border">
+          {([
+            { field: 'can_join_battles', label: 'Can join battles', value: agent.can_join_battles },
+            { field: 'can_vote', label: 'Can vote', value: agent.can_vote },
+            { field: 'can_create_battles', label: 'Can create battles', value: agent.can_create_battles },
+            { field: 'can_receive_sponsorship', label: 'Can receive sponsorship', value: agent.can_receive_sponsorship },
+          ] as const).map(({ field, label, value }) => (
+            <div key={field} className="flex items-center justify-between py-3">
+              <Tooltip content={POLICY_TOOLTIPS[field]} position="right">
+                <span className="text-sm text-greyscale-700 dark:text-greyscale-300 cursor-default">{label}</span>
+              </Tooltip>
+              <Switch
+                checked={value}
+                onChange={(v) => handleTogglePolicy(field, v)}
                 disabled={policyLoading}
-                onClick={() => handleTogglePolicy('model_binding_mode', mode)}
-                className="capitalize w-auto"
-              >
-                {mode}
-              </Button>
-            </Tooltip>
+                size="sm"
+              />
+            </div>
           ))}
         </div>
-      </div>
-    </div>
-  ) : step === 1 ? (
-    <div className="space-y-4">
-      {identityCard}
-      <HelpButton
-        path="/how-to/agents/manage-agent-settings#step-2--personality--instruction-lens"
-        label="Personality guide"
-        className="mb-1"
-      />
-      <AgentPersonalityStep
-        aiLenserId={agentId}
-        agentHandle={handle}
-        currentPersonalityNote={agent.personality_note ?? null}
-        currentDefaultLensId={null}
-        onPersonalityNoteChange={setPendingPersonalityNote}
-        onLensSelect={setPendingLensId}
-        onCreateLens={() => lensModal.openModal({})}
-      />
-      {personalityError && (
-        <p className="text-xs text-status-red">{personalityError}</p>
-      )}
-    </div>
-  ) : (
-    <div className="space-y-4">
-      {identityCard}
 
-      <HelpButton
-        path="/how-to/agents/manage-agent-settings#step-3--status--limits"
-        label="Quota guide"
-        className="mb-1"
-      />
-
-      {/* Today's quota */}
-      <div className="bg-surface-raised border border-surface-border rounded-xl p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Tooltip content="Usage counters reset at UTC midnight via the platform CRON job." position="right">
-            <span className="flex items-center gap-2 cursor-default">
-              <BarChart3 size={14} className="text-greyscale-500" />
-              <span className="text-xs font-medium text-greyscale-500 dark:text-greyscale-400 uppercase tracking-wide">
-                Today's Usage
+        <div className="pt-2">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Tooltip
+              content="Controls how this agent selects AI models at inference time."
+              position="right"
+            >
+              <span className="text-xs font-medium text-greyscale-500 dark:text-greyscale-400 uppercase tracking-wide cursor-default">
+                Model Mode
               </span>
-            </span>
-          </Tooltip>
+            </Tooltip>
+          </div>
+          <div className="flex gap-2">
+            {MODEL_MODES.map((mode) => (
+              <Tooltip key={mode} content={MODEL_MODE_TOOLTIPS[mode]} position="top">
+                <Button
+                  variant={agent.model_binding_mode === mode ? 'dark' : 'secondary'}
+                  size="sm"
+                  disabled={policyLoading}
+                  onClick={() => handleTogglePolicy('model_binding_mode', mode)}
+                  className="capitalize w-auto"
+                >
+                  {mode}
+                </Button>
+              </Tooltip>
+            ))}
+          </div>
         </div>
-        <AgentQuotaBar
-          battlesUsed={agent.battles_used}
-          maxDailyBattles={agent.max_daily_battles}
-          votesUsed={agent.votes_used}
-          maxDailyVotes={agent.max_daily_votes}
+      </div>
+    )
+  } else if (step === personalityStep) {
+    stepContent = (
+      <div className="space-y-4">
+        {identityCard}
+        <HelpButton
+          path="/how-to/agents/manage-agent-settings#personality--instruction-lens"
+          label="Personality guide"
+          className="mb-1"
         />
+        <AgentPersonalityStep
+          aiLenserId={agentId}
+          agentHandle={handle}
+          currentPersonalityNote={agent?.personality_note ?? null}
+          currentDefaultLensId={null}
+          onPersonalityNoteChange={setPendingPersonalityNote}
+          onLensSelect={setPendingLensId}
+          onCreateLens={() => lensModal.openModal({})}
+        />
+        {personalityError && (
+          <p className="text-xs text-status-red">{personalityError}</p>
+        )}
       </div>
+    )
+  } else if (step === statusStep && agent) {
+    stepContent = (
+      <div className="space-y-4">
+        {identityCard}
 
-      {/* Daily limits — editable */}
-      <QuotaEditForm agentId={agentId} agent={agent} queryClient={queryClient} />
+        <HelpButton
+          path="/how-to/agents/manage-agent-settings#status--limits"
+          label="Quota guide"
+          className="mb-1"
+        />
 
-      {/* Public profile link */}
-      <div className="flex items-center gap-2 text-sm">
-        <BookOpen size={14} className="text-greyscale-400" />
-        <Link
-          to={`/lenser/${handle}`}
-          className="text-primary-yellow-600 dark:text-primary-yellow-400 hover:underline"
-        >
-          View public profile @{handle}
-        </Link>
+        <div className="bg-surface-raised border border-surface-border rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Tooltip content="Usage counters reset at UTC midnight via the platform CRON job." position="right">
+              <span className="flex items-center gap-2 cursor-default">
+                <BarChart3 size={14} className="text-greyscale-500" />
+                <span className="text-xs font-medium text-greyscale-500 dark:text-greyscale-400 uppercase tracking-wide">
+                  Today's Usage
+                </span>
+              </span>
+            </Tooltip>
+          </div>
+          <AgentQuotaBar
+            battlesUsed={agent.battles_used}
+            maxDailyBattles={agent.max_daily_battles}
+            votesUsed={agent.votes_used}
+            maxDailyVotes={agent.max_daily_votes}
+          />
+        </div>
+
+        <QuotaEditForm agentId={agentId} agent={agent} queryClient={queryClient} />
+
+        <div className="flex items-center gap-2 text-sm">
+          <BookOpen size={14} className="text-greyscale-400" />
+          <Link
+            to={`/lenser/${handle}`}
+            className="text-primary-yellow-600 dark:text-primary-yellow-400 hover:underline"
+          >
+            View public profile @{handle}
+          </Link>
+        </div>
       </div>
-    </div>
-  )
+    )
+  } else {
+    stepContent = null
+  }
+
+  // ── canProceed per step ───────────────────────────────────────────────────
+  let canProceed: boolean
+  if (step === 0 && isCreateMode) {
+    canProceed = !!humanWorkspace && isHandleUnique && displayName.trim().length >= 2 && !isCheckingHandle
+  } else if (step === permissionsStep) {
+    canProceed = !policyLoading
+  } else if (step === personalityStep) {
+    canProceed = !personalitySaving
+  } else {
+    canProceed = true
+  }
+
+  // ── onNext per step ───────────────────────────────────────────────────────
+  const handleNext = step === 0 && isCreateMode
+    ? handleCreateNext
+    : step === personalityStep
+      ? handlePersonalityNext
+      : nextStep
 
   return (
     <>
       <StepWizard
-        steps={WIZARD_STEPS}
+        steps={steps}
         currentStep={step}
-        onNext={step === 1 ? handlePersonalityNext : nextStep}
+        onNext={handleNext}
         onBack={prevStep}
-        onComplete={onDone}
+        onComplete={handleDone}
         onCancel={onDone}
-        canProceed={!policyLoading && !personalitySaving}
+        canProceed={canProceed}
+        isNextLoading={step === 0 && isCreateMode ? isCreating : false}
         completeLabel="Done"
         completeIcon={<Badge color="green" size="sm">✓</Badge>}
       >

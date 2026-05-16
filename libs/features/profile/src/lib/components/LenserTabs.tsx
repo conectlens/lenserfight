@@ -7,6 +7,7 @@ export type LenserTabId =
   | 'threads'
   | 'challenges'
   | 'agents'
+  | 'badges'
   | 'overview'
   | 'workflows'
   | 'logs'
@@ -19,6 +20,7 @@ export type LenserTabId =
   | 'ai_threads'
   | 'ai_actions'
   | 'ai_cron'
+  | 'ai_badges'
 
 export interface LenserTabDefinition {
   id: LenserTabId
