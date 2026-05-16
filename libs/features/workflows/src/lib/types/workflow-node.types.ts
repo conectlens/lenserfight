@@ -5,7 +5,7 @@
  * to co-locate the runner config descriptor types used by the modular
  * config panel architecture.
  */
-import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
+import type { WorkflowNodeRecord, WorkflowEdgeRecord, WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
 import type { FundingSource } from '@lenserfight/types'
 
 // ── Core Node Types ─────────────────────────────────────────────────────────
@@ -139,6 +139,10 @@ export interface WorkflowNodeData {
   onDuplicate?: (id: string) => void
   onConfigNode?: (nodeId: string, lensId: string) => void
   onEditLens?: (lensId: string) => void
+  /** Current execution status for this node from a live run or dry run. */
+  executionStatus?: WorkflowNodeResultRecord['status'] | null
+  /** Warning message — populated from output_data._dryRunWarning for mocked side-effect nodes. */
+  executionWarning?: string | null
   [key: string]: unknown
 }
 
