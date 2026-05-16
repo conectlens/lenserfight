@@ -78,6 +78,19 @@ import { TextToImageRunner } from './media/text-to-image.runner'
 import { TextToSpeechRunner } from './media/text-to-speech.runner'
 import { TextToVideoRunner } from './media/text-to-video.runner'
 import { VideoAnalyzeRunner } from './video-analyze.runner'
+import { SqlQueryRunner } from './sql-query.runner'
+import { ObjectStorageUploadRunner, ObjectStorageDownloadRunner } from './object-storage.runner'
+import { HttpRequestRunner } from './http-request.runner'
+import { GraphqlRequestRunner } from './graphql-request.runner'
+import { TelegramNotifyRunner } from './telegram-notify.runner'
+import { PushNotificationRunner } from './push-notification.runner'
+import { SmsSendRunner } from './sms-send.runner'
+import { GithubPrReviewRunner } from './github-pr-review.runner'
+import { GithubIssueCreateRunner } from './github-issue-create.runner'
+import { NotionWriteRunner } from './notion-write.runner'
+import { CalendarCreateRunner } from './calendar-create.runner'
+import { LinearIssueCreateRunner } from './linear-issue-create.runner'
+import { JiraIssueCreateRunner } from './jira-issue-create.runner'
 
 import type { INodeRunner } from './node-runner.interface'
 
@@ -162,6 +175,20 @@ const runnerFactories: Array<() => INodeRunner> = [
   () => new CacheWriteRunner(),
   () => new RetryRunner(),
   () => new NoopRunner(),
+  () => new SqlQueryRunner(),
+  () => new ObjectStorageUploadRunner(),
+  () => new ObjectStorageDownloadRunner(),
+  () => new HttpRequestRunner(),
+  () => new GraphqlRequestRunner(),
+  () => new TelegramNotifyRunner(),
+  () => new PushNotificationRunner(),
+  () => new SmsSendRunner(),
+  () => new GithubPrReviewRunner(),
+  () => new GithubIssueCreateRunner(),
+  () => new NotionWriteRunner(),
+  () => new CalendarCreateRunner(),
+  () => new LinearIssueCreateRunner(),
+  () => new JiraIssueCreateRunner(),
 ]
 
 export function registerDefaultNodeRunners(): void {
