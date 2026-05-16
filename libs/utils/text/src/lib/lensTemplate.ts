@@ -72,16 +72,24 @@ function coerceValue(value: any, param: LensParam): string {
   }
 }
 
+export interface RenderLensOptions {
+  /** When true, unset/empty params are left as `[[name]]` instead of substituted with ''. */
+  keepUnsetTokens?: boolean
+}
+
 export function renderLens(
   template: string,
   values: Record<string, any>,
-  params: LensParam[]
+  params: LensParam[],
+  options: RenderLensOptions = {}
 ): string {
   const paramMap = new Map(params.map((p) => [p.name, p]))
-  return template.replace(/\[\[(\w+)\]\]/g, (_, name) => {
+  return template.replace(/\[\[(\w+)\]\]/g, (match, name) => {
     const param = paramMap.get(name) ?? { name, type: 'string' as const, required: true }
     const value = values[name]
-    if (value === undefined || value === null || value === '') return ''
+    if (value === undefined || value === null || value === '') {
+      return options.keepUnsetTokens ? match : ''
+    }
     return coerceValue(value, param)
   })
 }
@@ -319,6 +327,7 @@ export function renderLensWithSnapshot(
   templateBody: string,
   snapshot: Record<string, unknown>,
   versionParams: LensVersionParam[],
+  options: RenderLensOptions = {},
 ): string {
   const normalised = resolveUuidRefs(templateBody, versionParams)
   const legacyParams: LensParam[] = versionParams.map((p) => ({
@@ -326,5 +335,5 @@ export function renderLensWithSnapshot(
     type: mapToolTypeToLegacyType(p.tool.type),
     required: p.tool.required,
   }))
-  return renderLens(normalised, snapshot as Record<string, any>, legacyParams)
+  return renderLens(normalised, snapshot as Record<string, any>, legacyParams, options)
 }
