@@ -289,12 +289,4 @@ export const queryKeys = {
     ratings: (lenserId: string) => [...queryKeys.reputation.all, 'ratings', lenserId] as const,
     calibration: (lenserId: string) => [...queryKeys.reputation.all, 'calibration', lenserId] as const,
   },
-  benchmark: {
-    all: ['benchmark'] as const,
-    suites: (filter?: string) => [...queryKeys.benchmark.all, 'suites', filter] as const,
-    suite: (id: string) => [...queryKeys.benchmark.all, 'suite', id] as const,
-    tasks: (suiteId: string) => [...queryKeys.benchmark.all, 'tasks', suiteId] as const,
-    results: (suiteId: string) => [...queryKeys.benchmark.all, 'results', suiteId] as const,
-    protocols: (suiteId: string) => [...queryKeys.benchmark.all, 'protocols', suiteId] as const,
-  },
 }

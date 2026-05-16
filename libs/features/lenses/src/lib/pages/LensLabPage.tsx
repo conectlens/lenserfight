@@ -549,9 +549,12 @@ export const LensLabPage: React.FC = () => {
             selectedLocalKeyId={funding.selectedLocalKeyId}
             onLocalKeyIdChange={funding.setSelectedLocalKeyId}
             availableLocalKeys={funding.localKeys}
+            localKeyAvailability={funding.localKeyAvailability}
             onAddLocalKey={funding.addLocalKey}
             onRemoveLocalKey={funding.removeLocalKey}
             onUpdateLocalKey={funding.updateLocalKey}
+            onPairGateway={funding.pairGateway}
+            onRefreshLocalKeys={funding.refreshLocalKeys}
             onProviderDropdownOpen={handleProviderDropdownOpen}
             chainabitState={chainabit.state}
             chainabitModels={chainabit.models}
