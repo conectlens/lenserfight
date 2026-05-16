@@ -1,14 +1,13 @@
 import { expect, test } from '@playwright/test'
 
 // Phase 9 acceptance criterion #3:
-// With FEATURE_PUBLIC_BATTLES=false and FEATURE_BENCHMARK_UI=false, every
-// arena/battle/benchmark entrypoint must redirect to a safe page (/, /workflows)
-// or 404 — never render the live arena UI.
+// With FEATURE_PUBLIC_BATTLES=false, arena/battle entrypoints must redirect to a
+// safe page (/, /workflows) or 404 — never render the live arena UI.
 //
 // The webServer config in playwright.config.ts sets these env vars before
 // launching the dev server.
 
-test.describe('Arena/battles gate (battles + benchmark off)', () => {
+test.describe('Arena/battles gate (battles off)', () => {
   test('/lenserboard redirects to home', async ({ page }) => {
     const response = await page.goto('/lenserboard', { waitUntil: 'networkidle' })
 
@@ -27,13 +26,8 @@ test.describe('Arena/battles gate (battles + benchmark off)', () => {
     await expect(page).not.toHaveURL(/lenserfight\.com\/get-started/)
   })
 
-  test('/benchmark is not rendered', async ({ page }) => {
-    const response = await page.goto('/benchmark', { waitUntil: 'networkidle' })
-
-    if (response && response.status() === 404) return
-
-    // FEATURE_BENCHMARK_UI=false → route is not registered, falls through to
-    // the catch-all redirect.
+  test('/benchmark is not a product route', async ({ page }) => {
+    await page.goto('/benchmark', { waitUntil: 'networkidle' })
     await expect(page).not.toHaveURL(/\/benchmark\/?$/)
   })
 })
