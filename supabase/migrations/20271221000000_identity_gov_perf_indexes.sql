@@ -52,7 +52,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path = ''
+SET search_path TO identity_gov, extensions, pg_catalog
 AS $$
 DECLARE
   v_norm        text;

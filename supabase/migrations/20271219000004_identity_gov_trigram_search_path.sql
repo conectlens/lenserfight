@@ -8,4 +8,4 @@
 -- breaks the % operator. See migration 20271224000000 for the authoritative fix.
 
 ALTER FUNCTION identity_gov.fn_validate_handle(text)
-  SET search_path = 'identity_gov, extensions, pg_catalog';
+  SET search_path TO identity_gov, extensions, pg_catalog;
