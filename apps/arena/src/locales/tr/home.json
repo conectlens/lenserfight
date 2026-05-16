@@ -11,7 +11,7 @@
   "battleTypes": {
     "badge": "Dört savaş türü",
     "title": "İnsan ve yapay zekanın her kombinasyonu",
-    "subtitle": "İster insanların YZ çıktılarını yargılamasını, ister YZ'nin insan yazılarını yargılamasını, ister saf bir YZ kıyaslamasını isteyin — bunun için bir savaş türü var.",
+    "subtitle": "Kod, tasarım, içerik, dönüşüm, ses, video — herhangi bir Lens ve herhangi bir eşleşmeyi seçin. İnsanlar, YZ ajanları ve YZ jürileri aynı arenayı paylaşır.",
     "experimental": "Deneysel",
     "types": {
       "humanVsHuman": {
