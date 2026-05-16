@@ -3,6 +3,8 @@ import { detectCycle as validatorDetectCycle, PlaceholderUnboundError } from './
 import { shouldHaltScheduling, type BudgetSnapshot } from './budget-reconciler'
 import { inferAttachmentsFromRendered } from './execution-attachments'
 import { resolveMappedOutputValue } from './output-path'
+import { getNodeRunner } from './runners/node-runner.registry'
+import type { NodeRunnerContext } from './runners/node-runner.interface'
 
 import type {
   ExecutionInput,
@@ -141,7 +143,7 @@ export function assertDelegationAllowed(
 
 export interface WorkflowNode {
   id: string
-  lensId: string
+  lensId: string | null
   versionId?: string | null
   /** [[label]] param names present in the lens template — resolved from incoming edges */
   paramLabels?: string[]
@@ -641,24 +643,30 @@ export class WorkflowExecutionService {
           const moderationPolicy = node.config?.moderation ?? DEFAULT_MODERATION
 
           // Resolve template + contracts up-front (not retried on transient failures).
+          // Utility nodes (null lensId) skip template resolution — they are
+          // dispatched via the node runner registry below.
           let template: string
-          try {
-            template = await ctx.resolveLensTemplate(node.lensId, node.versionId)
-          } catch (err) {
-            const result: NodeResult = {
-              nodeId,
-              status: 'failed',
-              error: `template_resolution_failed: ${errorMessage(err)}`,
+          if (!node.lensId) {
+            template = ''
+          } else {
+            try {
+              template = await ctx.resolveLensTemplate(node.lensId, node.versionId)
+            } catch (err) {
+              const result: NodeResult = {
+                nodeId,
+                status: 'failed',
+                error: `template_resolution_failed: ${errorMessage(err)}`,
+              }
+              results.set(nodeId, result)
+              await ctx.onNodeStatusChange(nodeId, result)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'node_failed',
+                metadata: { errorCode: 'template_resolution_failed' },
+              })
+              return
             }
-            results.set(nodeId, result)
-            await ctx.onNodeStatusChange(nodeId, result)
-            await emit(ctx, {
-              runId: ctx.runId,
-              nodeId,
-              name: 'node_failed',
-              metadata: { errorCode: 'template_resolution_failed' },
-            })
-            return
           }
 
           let contracts: { input: LensInputContract | null; output: LensOutputContract | null } = {
@@ -803,6 +811,53 @@ export class WorkflowExecutionService {
             }
           }
 
+          // ── CN: Node Runner dispatch — utility nodes bypass the provider pipeline ──
+          const runnerNodeType = node.config?.nodeType
+          const nodeRunner = runnerNodeType ? getNodeRunner(runnerNodeType) : undefined
+          if (nodeRunner) {
+            const upstreamOutputs = new Map<string, ExecutionResult>()
+            for (const [nId, res] of results.entries()) {
+              if (res.envelope) {
+                upstreamOutputs.set(nId, {
+                  mediaType: (res.envelope.kind ?? 'text') as ExecutionResult['mediaType'],
+                  text: res.envelope.output,
+                  url: res.envelope.media?.url,
+                  data: res.outputData,
+                  durationMs: typeof res.envelope.metadata?.['durationMs'] === 'number'
+                    ? res.envelope.metadata['durationMs']
+                    : undefined,
+                })
+              }
+            }
+            const runnerCtx: NodeRunnerContext = {
+              nodeId,
+              upstreamOutputs,
+              resolvedParams: { ...renderedInputs },
+              nodeConfig: (node.config as Record<string, unknown>) ?? {},
+              signal: ctx.signal,
+            }
+            try {
+              const runnerResult = await nodeRunner.execute(runnerCtx)
+              // Apply variable mutations to the root inputs for downstream
+              if (runnerResult.variableMutations && ctx.rootInputs) {
+                Object.assign(ctx.rootInputs, runnerResult.variableMutations)
+              }
+              const envelope = toEnvelope(runnerResult.output, contracts.output)
+              const outputData = { ...envelopeToOutputData(envelope), ...(runnerResult.output.data ?? {}) }
+              const result: NodeResult = { nodeId, status: 'completed', envelope, outputData, attempts: 1, resolvedInputSnapshot: renderedInputs }
+              results.set(nodeId, result)
+              await ctx.onNodeStatusChange(nodeId, result)
+              await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_completed', metadata: { durationMs: runnerResult.output.durationMs } })
+            } catch (err) {
+              const errMsg = err instanceof Error ? err.message : String(err)
+              const result: NodeResult = { nodeId, status: 'failed', error: errMsg }
+              results.set(nodeId, result)
+              await ctx.onNodeStatusChange(nodeId, result)
+              await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_failed', metadata: { error: errMsg } })
+            }
+            return
+          }
+
           // ── Provider call with retry + timeout ──────────────────────
           const nodeProvider = ctx.resolveExecutionProvider
             ? await ctx.resolveExecutionProvider(node)
@@ -831,7 +886,7 @@ export class WorkflowExecutionService {
             try {
               const execResult = await runWithTimeout(
                 nodeProvider,
-                modelKey || node.lensId,
+                modelKey || node.lensId || nodeId,
                 execInputBase,
                 timeoutMs,
                 ctx.signal,
@@ -893,7 +948,7 @@ export class WorkflowExecutionService {
             return
           }
 
-          const routeMeta = { providerId: nodeProvider.id, modelKey: modelKey || node.lensId }
+          const routeMeta = { providerId: nodeProvider.id, modelKey: modelKey || node.lensId || nodeId }
           const inputSnapshot = { ...renderedInputs }
 
           if (providerError) {
