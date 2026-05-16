@@ -1,9 +1,4 @@
 import { Badge, Button, Card } from '@lenserfight/ui/components'
-import {
-  ArenaTrendingBattlesWidget,
-  SpectatorFeedWidget,
-} from '@lenserfight/features/battles'
-import { ArenaTrendingLensesWidget } from '@lenserfight/features/home'
 import { motion } from 'framer-motion'
 import {
   Activity,
@@ -20,6 +15,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
+import { PlatformPillars } from '../components/PlatformPillars'
 import { chainabitContactUrl } from '../utils/chainabitUrls'
 
 const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
@@ -43,15 +39,6 @@ const stagger = {
 }
 
 type BadgeColor = 'yellow' | 'purple' | 'blue' | 'green'
-
-interface Primitive {
-  icon: React.ElementType
-  name: string
-  badgeColor: BadgeColor
-  title: string
-  description: string
-  capabilities: string[]
-}
 
 const PRIMITIVE_DEFS = [
   { icon: User, key: 'lenser', badgeColor: 'yellow' as BadgeColor, capCount: 3 },
@@ -195,60 +182,42 @@ export const ProductPage: React.FC = () => {
         </motion.div>
       </section>
 
-      {/* ── LIVE ARENA DATA — real cards ──────────────────────────────── */}
+      {/* ── BEYOND THE FOUR PRIMITIVES — every platform pillar ─────────── */}
+      <PlatformPillars
+        className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-24"
+        i18nNamespace="product"
+        i18nPrefix="pillars"
+        variant="compact"
+        utm={{ source: 'lenserfight', medium: 'arena_product' }}
+      />
+
+      {/* ── SEE IT LIVE — pointer to /demo ─────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-24">
-        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="red" variant="outline">{t('product:liveData.badge')}</Badge>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            {t('product:liveData.title')}
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            {t('product:liveData.subtitle')}
-          </p>
-        </motion.div>
-
         <motion.div
-          className="mt-8 grid gap-5 lg:grid-cols-2"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
           viewport={viewport}
-          transition={{ ...spring, delay: 0.1 }}
         >
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-status-red" aria-hidden="true" />
-              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                {t('product:liveData.liveBattles')}
+          <Card className="flex flex-col items-start gap-5 p-8 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-status-red" aria-hidden="true" />
+                <Badge color="red" variant="outline">{t('product:liveData.badge')}</Badge>
+              </div>
+              <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+                {t('product:liveData.title')}
+              </h2>
+              <p className="max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+                {t('product:liveData.subtitle')}
               </p>
             </div>
-            <SpectatorFeedWidget getBattleHref={(slug) => `${RUN_APP_URL}/battles/${slug}`} />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Activity size={12} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
-              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                {t('product:liveData.trendingBattles')}
-              </p>
-            </div>
-            <ArenaTrendingBattlesWidget baseUrl={RUN_APP_URL} />
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="mt-5"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport}
-          transition={{ ...spring, delay: 0.2 }}
-        >
-          <div className="mb-3 flex items-center gap-2">
-            <Aperture size={12} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
-            <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-              {t('product:liveData.trendingLenses')}
-            </p>
-          </div>
-          <ArenaTrendingLensesWidget baseUrl={RUN_APP_URL} />
+            <Link to="/demo" className="shrink-0">
+              <Button variant="primary" size="lg">
+                {t('common:cta.seeDemo')} <ArrowRight size={16} />
+              </Button>
+            </Link>
+          </Card>
         </motion.div>
       </section>
 
