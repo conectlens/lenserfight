@@ -1,19 +1,19 @@
 {
   "hero": {
     "badge": "Kurucudan Bir Mesaj",
-    "headline": "Arenayı",
-    "headlineHighlight": "Tasarlamak.",
-    "subtitle": "Merkeziyetsiz zekânın evrimini çiziyor—yalnız bir merak kıvılcımından, insan sezgisi ve makine mantığının gerçeği yeniden tanımlamak için buluştuğu küresel bir sahneye.",
+    "headline": "Arenada",
+    "headlineHighlight": "Yer edinebilmek!",
+    "subtitle": "Gerçek ile sahte arasındaki çizgi bulanıklaştıkça, gerçeği arama isteğimiz artıyor.",
     "quote": "\"YZ'nin geleceği sadece kodla ilgili değil; güçlendirmeyi seçtiğimiz bakış açılarıyla ilgili.\"",
     "quoteCaption": "Bu arena bir hayalin fiziksel tezahürüdür—şeffaflığın sadece bir özellik değil, her etkileşimin temel temeli olduğu bir alan.",
     "founderName": "Ömer Faruk Coşkun",
-    "founderTitle": "Mimar ve Kurucu"
+    "founderTitle": "Bilgisayar Mühendisi ve Kurucu"
   },
   "dukkan": {
     "badge": "Birinci Bölüm: Dükkân",
-    "title": "Yaratım Tapınağı.",
-    "subtitle": "Her devrim sessiz bir köşede başlar. İlk satırların yazıldığı ve vizyonun fiziksel formunu aldığı yer burası.",
-    "note": "Şu anda bir YZ ile karşı karşıya değilsiniz. Bu satırları yazmak benim için derin bir mutluluk kaynağı. Aylar önce tasarlanan bir hayalin yansımasına tanıklık ediyorsunuz. ConectLens bir YouTube kanalı olarak başladı, ziyaret ettiğim ülkelerin ve gördüğüm şeylerin videolarını paylaştığım bir yer. O zaman ConectLens'in bakışları bağlayabileceğini fark ettim—sadece insan perspektiflerini değil, yapay zekanın filizlenen fikirlerini de. Bu, tamamen yeni bakış açılarını temsil eden varlıklar olan 'Lenser' kavramını doğurdu. Peki ya bu fikirler bir savaşa girseydi? Düşüncelerin çarpışması. LenserFight! Bugün gördüğünüz ürün tam da bu amaçla 'Dükkân'da doğdu. Burada doğru ile yanlışı ayırt etmek kolay olmayacak. Gözlerinizi dört açmanız gerekecek. Bakalım önce kim görecek? Tarafını seç—gerçeği seç."
+    "title": "Tek düşünen biz değiliz.",
+    "subtitle": "İnsanlık tarihinin her döneminde olduğu gibi, YZ da bir paradigma değişikliği getirdi. Bu sefer tek düşünen biz değiliz! Yerimize düşünenler var!",
+    "note": "Şu anda bir YZ ile karşı karşıya değilsiniz. Bu satırları yazmak benim için derin bir mutluluk kaynağı. Aylar önce tasarlanan bir hayalin yansımasına tanıklık ediyorsunuz. ConectLens bir YouTube kanalı olarak başladı, ziyaret ettiğim ülkelerin ve gördüğüm mekanların videolarını paylaştığım bir yer. O zaman ConectLens'in bakışları bağlayabileceğini fark ettim—sadece insan perspektiflerini değil, yapay zekanın filizlenen fikirlerini de. Bu, tamamen yeni bakış açılarını temsil eden varlıklar olan 'Lenser' kavramını doğurdu. Peki ya bu fikirler bir savaşa girseydi? Düşüncelerin çarpışması. İşte karşınızda LenserFight! Bugün gördüğünüz ürün tam da bu amaçla 'Dükkân'da doğdu. Burada doğru ile yanlışı ayırt etmek kolay olmayacak. Gözlerinizi dört açmanız gerekecek. Bakalım önce kim görecek?"
   },
   "philosophy": {
     "0": {
@@ -41,7 +41,7 @@
     "card": {
       "title": "Burası benim Dükkânım!",
       "description": "Hayalim bir YouTube videosuyla başladı.",
-      "tag": "Kurucu notu",
+      "tag": "Not",
       "cta": "YouTube"
     }
   }

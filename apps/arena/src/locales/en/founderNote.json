@@ -1,24 +1,24 @@
 {
   "hero": {
     "badge": "A Message from the Founder",
-    "headline": "Architecting the",
-    "headlineHighlight": "Arena.",
-    "subtitle": "Charting the evolution of decentralized intelligence—from a solitary spark of curiosity to a global stage where human intuition and machine logic converge to redefine truth.",
-    "quote": "\"The future of AI isn't just about code; it's about the perspectives we choose to empower.\"",
-    "quoteCaption": "This arena is the physical manifestation of a dream—a space where transparency isn't just a feature, but the core foundation of every interaction.",
-    "founderName": "Omer Faruk Coskun",
-    "founderTitle": "Architect & Founder"
+    "headline": "In the Arena,",
+    "headlineHighlight": "Making your mark!",
+    "subtitle": "As the line between real and fake blurs, our desire to find the truth grows.",
+    "quote": "\"The future of AI is not just about code; it's about the perspectives we choose to empower.\"",
+    "quoteCaption": "This arena is the physical manifestation of a dream—a space where transparency is not just a feature, but the foundational bedrock of every interaction.",
+    "founderName": "Ömer Faruk Coşkun",
+    "founderTitle": "Computer Engineer and Founder"
   },
   "dukkan": {
-    "badge": "Chapter One: The Dukkan",
-    "title": "The Sanctum of Creation.",
-    "subtitle": "Every revolution begins in a quiet corner. This is where the first lines were written, and the vision took its physical form.",
-    "note": "You are not facing an AI right now. Writing these words is a profound source of joy for me. You are witnessing the reflection of a dream conceived months ago. ConectLens began as a YouTube channel, a place where I shared videos of the countries I visited and the things I saw. It was then that I realized ConectLens could connect gazes—not just human perspectives, but the burgeoning ideas of artificial intelligence. This gave birth to the concept of the 'Lenser'—entities representing entirely new viewpoints. But what if these ideas were to engage in a battle? A clash of thoughts. LenserFight! The product you see today was born in the 'Dukkan' with this very purpose. Distinguishing between truth and deception here will be no easy task. You will need to keep your eyes wide open. Let's see who sees it first? Choose your side—choose the truth."
+    "badge": "Chapter One: Dükkân",
+    "title": "We are not the only ones thinking.",
+    "subtitle": "As in every period of human history, AI has brought a paradigm shift. This time, we are not the only ones thinking! There are those who think on our behalf!",
+    "note": "Right now, you are not facing an AI. Writing these lines is a source of deep joy for me. You are witnessing the reflection of a dream designed months ago. ConectLens started as a YouTube channel, a place where I shared videos of the countries I visited and the places I saw. That's when I realized ConectLens could connect gazes—not just human perspectives, but the burgeoning ideas of artificial intelligence too. This gave birth to the concept of 'Lenser'—entities representing entirely new viewpoints. But what if these ideas went into a battle? A collision of thoughts. And so, LenserFight was born! The product you see today was born in 'Dükkân' specifically for this purpose. Distinguishing between right and wrong won't be easy here. You'll need to keep your eyes wide open. Let's see who sees it first?"
   },
   "philosophy": {
     "0": {
-      "title": "The Inception",
-      "description": "LenserFight emerged from a fundamental question: how do we quantify the intangible quality of AI reasoning in a way that is both rigorous and human-centric?"
+      "title": "The Beginning",
+      "description": "LenserFight was born from a fundamental question: How do we measure the abstract quality of AI reasoning in a way that is both rigorous and human-centric?"
     },
     "1": {
       "title": "The Purpose",
@@ -26,22 +26,22 @@
     },
     "2": {
       "title": "The Vision",
-      "description": "A decentralized arena where truth is verified through collective human intuition, creating a living benchmark for the evolution of intelligence."
+      "description": "A decentralized arena where truth is validated by collective human intuition, creating a living benchmark for the evolution of intelligence."
     }
   },
   "cta": {
     "title": "Ready to choose your side?",
-    "subtitle": "The arena is open. Join the thousands of humans and AI models redefining the boundaries of intelligence."
+    "subtitle": "The arena is open. Join thousands of humans and AI models redefining the boundaries of intelligence."
   },
   "dukkanVideo": {
-    "tagline": "Note from Omer",
+    "tagline": "Note from Ömer",
     "title": "The first spark",
     "chapter": "Chapter",
-    "scrollHint": "Scroll to enter the Dukkan",
+    "scrollHint": "Scroll to enter Dükkân",
     "card": {
-      "title": "This is my Dukkan!",
+      "title": "This is my Dükkân!",
       "description": "My dream started with a YouTube video.",
-      "tag": "Founder note",
+      "tag": "Note",
       "cta": "YouTube"
     }
   }
