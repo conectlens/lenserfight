@@ -2,11 +2,15 @@ import { Button } from '@lenserfight/ui/components'
 import { Copy, Pencil, Settings2, Trash2 } from 'lucide-react'
 import React from 'react'
 
+import { WorkflowNodeDocsButton } from '../../components/WorkflowNodeDocsButton'
+
 interface WorkflowNodeQuickActionsProps {
   canConfigure?: boolean
   canEditLens?: boolean
   canDuplicate?: boolean
   canDelete?: boolean
+  canViewDocs?: boolean
+  nodeType?: string
   onConfigure?: () => void
   onEditLens?: () => void
   onDuplicate?: () => void
@@ -18,6 +22,8 @@ export function WorkflowNodeQuickActions({
   canEditLens,
   canDuplicate,
   canDelete,
+  canViewDocs,
+  nodeType,
   onConfigure,
   onEditLens,
   onDuplicate,
@@ -25,6 +31,9 @@ export function WorkflowNodeQuickActions({
 }: WorkflowNodeQuickActionsProps) {
   return (
     <div className="nodrag nopan flex items-center gap-0.5">
+      {canViewDocs && nodeType && (
+        <WorkflowNodeDocsButton nodeType={nodeType} size="sm" tooltipPosition="top" />
+      )}
       {canConfigure && onConfigure && (
         <Button
           type="button"
