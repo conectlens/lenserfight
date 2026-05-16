@@ -266,7 +266,9 @@ const n8n = (nodeType: string, operation?: string): WorkflowNodeN8nMapping => ({
 
 function defineNode(def: NodeDefinition): WorkflowNodeCatalogEntry {
   const color = CATEGORY_COLORS[def.category]
-  const docsLink = def.docsLink ?? `/docs/workflows/nodes/${def.type}`
+  const categorySlug = def.category === 'ai_primitive' ? 'ai-primitives' : def.category
+  const nodeSlug = def.type.replace(/_/g, '-')
+  const docsLink = def.docsLink ?? `/reference/workflows/nodes/${categorySlug}#${nodeSlug}`
   return {
     type: def.type,
     displayName: def.displayName,
