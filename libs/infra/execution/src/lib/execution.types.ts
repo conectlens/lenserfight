@@ -13,9 +13,19 @@ export type WorkflowNodeType =
   | 'condition'
   | 'merge'
 
+export type ExecutionInputAttachmentKind = 'image' | 'audio' | 'document'
+
+export interface ExecutionInputAttachment {
+  kind: ExecutionInputAttachmentKind
+  url: string
+  mimeType?: string
+}
+
 export interface ExecutionInput {
   prompt: string
   params?: Record<string, unknown>
+  /** Optional multimodal context (e.g. upstream image URLs wired into the prompt). */
+  attachments?: ExecutionInputAttachment[]
 }
 
 export interface ExecutionResult {
