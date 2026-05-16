@@ -223,7 +223,10 @@ lf status                        # confirm everything is green
 
 | Command | Description |
 |---------|-------------|
-| `lf gateway` | Trust Gateway daemon control |
+| `lf gateway` | Trust Gateway daemon control (loopback HTTP) |
+| `lf gateway pair --web` | Print the bearer token that the web app pastes into Settings → Local Keys |
+| `lf keys init` | One-time: generate the master passphrase (OS keychain) and create `~/.lenserfight/keys/` |
+| `lf keys list` / `add` / `update` / `rotate` / `remove` / `export` / `doctor` | Manage local BYOK keys (file-backed, AES-256-GCM at rest, accessed by the gateway from the browser) |
 | `lf approval` | Approve pending tool invocations |
 | `lf execution` | Execution management |
 | `lf budget` | Budget management |
