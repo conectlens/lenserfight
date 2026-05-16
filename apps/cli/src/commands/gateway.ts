@@ -285,16 +285,28 @@ function findDaemonBinary(): string | null {
 const serve = defineCommand({
   meta: {
     name: 'serve',
-    description: 'Start the long-running gateway daemon (lf-gatewayd).',
+    description:
+      'Start the long-running gateway daemon (lf-gatewayd). Use --keys-only to skip the heavy preconditions (identity/session/sync) when you just need the Local Keys HTTP surface.',
   },
   args: {
-    bind: { type: 'string', default: '127.0.0.1', description: 'Bind interface' },
+    bind: { type: 'string', default: '127.0.0.1', description: 'Bind interface (127.0.0.1, 0.0.0.0, or a specific Tailscale/LAN IP)' },
     port: { type: 'string', default: '38080', description: 'Bind port' },
-    tailscale: { type: 'boolean', default: false, description: 'Also bind detected Tailscale interface' },
+    tailscale: { type: 'boolean', default: false, description: 'Also bind detected Tailscale interface (requires consent file)' },
+    'keys-only': {
+      type: 'boolean',
+      default: false,
+      description: 'Local-keys mode: only /healthz + /keys/*. Skips identity/session/lenser/kill_switch preconditions and sync loops. Required if you want to bind 0.0.0.0 without the Tailscale consent dance.',
+    },
   },
   async run({ args }) {
-    if (args.bind === '0.0.0.0') {
-      consola.error('public_bind_forbidden: --bind 0.0.0.0 is not allowed in v1.');
+    const bind = String(args.bind);
+    const keysOnly = Boolean(args['keys-only']);
+
+    if (bind === '0.0.0.0' && !keysOnly && !args.tailscale) {
+      consola.error(
+        'Binding 0.0.0.0 is refused outside keys-only / tailscale mode.\n' +
+        '  → Run with --keys-only for the Local Keys HTTP surface, or set up Tailscale consent.'
+      );
       process.exit(5);
     }
 
@@ -302,16 +314,25 @@ const serve = defineCommand({
     if (!binary) {
       consola.warn(
         'lf-gatewayd binary not found. Build apps/gateway first:\n' +
-          '  pnpm nx run gateway:build && node dist/apps/gateway/main.js'
+        '  pnpm nx run gateway:build && node dist/apps/gateway/main.js'
       );
       process.exit(4);
     }
 
+    if (keysOnly && bind !== '127.0.0.1') {
+      consola.warn(
+        `keys-only daemon will listen on ${bind}:${args.port}. Every /keys/* request is\n` +
+        'authenticated with a bearer token + origin allow-list, but anyone on a network\n' +
+        'that can reach this address can attempt to call the endpoint.'
+      );
+    }
+
     const env = {
       ...process.env,
-      LF_GATEWAY_BIND: String(args.bind),
+      LF_GATEWAY_BIND: bind,
       LF_GATEWAY_PORT: String(args.port),
       LF_GATEWAY_TAILSCALE: args.tailscale ? '1' : '0',
+      LF_GATEWAY_KEYS_ONLY: keysOnly ? '1' : '0',
     };
     const child = spawn(process.execPath, [binary], {
       stdio: 'inherit',
@@ -461,7 +482,7 @@ const identity = defineCommand({
             return;
           }
           if (!present) {
-            consola.warn('No Ed25519 keypair present. Run `lf-gateway-init` to generate one.');
+            consola.warn('No Ed25519 keypair present. Run `lf gateway init` to generate one.');
             return;
           }
           consola.success('Identity present');
@@ -862,6 +883,55 @@ const daemons = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// `lf gateway pair` — surface the bearer token paired with the web app
+// ---------------------------------------------------------------------------
+
+const pair = defineCommand({
+  meta: {
+    name: 'pair',
+    description:
+      'Print the bearer token apps/web uses to call the gateway. --rotate replaces it.',
+  },
+  args: {
+    web: { type: 'boolean', description: 'Print pairing instructions for the web app', default: true },
+    rotate: { type: 'boolean', description: 'Rotate the token (invalidates the old one)', default: false },
+  },
+  async run({ args }) {
+    const { keychain } = await import('@lenserfight/utils/keychain');
+    const { randomBytes } = await import('node:crypto');
+    const service = 'lenserfight-gateway-bearer';
+    const account = 'web-pair';
+    let token = await keychain.getSecret({ service, account });
+    if (args.rotate || !token) {
+      token = randomBytes(32).toString('base64url');
+      await keychain.setSecret({ service, account, secret: token });
+    }
+    if (args.web) {
+      process.stdout.write('LenserFight Gateway pairing token:\n\n');
+      process.stdout.write(`  ${token}\n\n`);
+      process.stdout.write(
+        'How to pair the web app:\n' +
+        '  1. Start the keys-only daemon in another terminal (skips the\n' +
+        '     identity/session preconditions you don\'t need for Local Keys):\n' +
+        '         lf gateway serve --keys-only\n' +
+        '     For Tailscale / LAN access add `--bind 0.0.0.0` (or a specific IP).\n' +
+        '  2. Open the LenserFight web app and navigate to any lens, battle, or\n' +
+        '     workflow page (anywhere a Funding panel is shown).\n' +
+        '  3. In the Funding panel, click the "Local Keys" tile.\n' +
+        '  4. A "Paste your pairing token below ↓" box appears — paste the token\n' +
+        '     above into it and click "Pair gateway".\n' +
+        '\n' +
+        'The token is held in your browser tab\'s sessionStorage only (lost when\n' +
+        'you close the tab — re-run this command to pair again). To revoke the\n' +
+        'old token immediately, re-run with --rotate.\n'
+      );
+    } else {
+      process.stdout.write(`${token}\n`);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -881,6 +951,7 @@ export default defineCommand({
     doctor,
     identity,
     peers,
+    pair,
     sync,
     policy,
     consent,

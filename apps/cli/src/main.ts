@@ -149,6 +149,7 @@ const main = defineCommand({
     top: () => import('./commands/top').then((m) => m.default),
     media: () => import('./commands/media').then((m) => m.default),
     byok: () => import('./commands/byok').then((m) => m.default),
+    keys: () => import('./commands/keys').then((m) => m.default),
     security: () => import('./commands/security').then((m) => m.default),
     admin: () => import('./commands/admin').then((m) => m.default),
   },
