@@ -38,6 +38,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import type { WorkflowNodeCatalogEntry } from '@lenserfight/infra/execution'
 import type { LensKind, LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 
+import { WorkflowNodeDocsButton } from './WorkflowNodeDocsButton'
+
 export interface DraggedLensData {
   lens_id: string
   title: string
@@ -320,9 +322,20 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
         <div className="flex-1 min-h-0 overflow-y-auto border-t border-surface-border px-3 py-2 space-y-1.5">
           {utilityNodesByCategory.map(({ category, nodes: catalogNodes }) => (
             <div key={category} className="space-y-1.5">
-              <span className="block text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">
-                {getWorkflowNodeCategoryLabel(category)} ({catalogNodes.length})
-              </span>
+              {category === 'trigger' ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    Triggers / Inputs
+                  </span>
+                  <span className="text-[9px] rounded-full bg-emerald-100 px-1.5 py-0.5 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 font-medium">
+                    Start here
+                  </span>
+                </div>
+              ) : (
+                <span className="block text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">
+                  {getWorkflowNodeCategoryLabel(category)} ({catalogNodes.length})
+                </span>
+              )}
               <div className="space-y-1">
                 {catalogNodes.map((node) => (
                   <UtilityNodeItem key={node.type} node={node} onDragStart={onDragStart} />
@@ -356,9 +369,10 @@ function UtilityNodeItem({ node, onDragStart }: { node: WorkflowNodeCatalogEntry
       className="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-raised px-2 py-1.5 cursor-grab active:cursor-grabbing select-none hover:border-violet-400/40 hover:bg-violet-500/5 transition-colors group"
     >
       <span className={`flex-shrink-0 ${node.color}`}>{renderNodeIcon(node.iconKey)}</span>
-      <span className="text-[11px] font-medium text-greyscale-700 dark:text-greyscale-200 truncate">
+      <span className="flex-1 text-[11px] font-medium text-greyscale-700 dark:text-greyscale-200 truncate">
         {node.displayName}
       </span>
+      <WorkflowNodeDocsButton nodeType={node.type} size="sm" tooltipPosition="left" />
     </div>
   )
 }
