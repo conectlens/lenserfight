@@ -1,13 +1,16 @@
 /**
  * Local BYOK funding adapter.
  *
- * Runs entirely in the browser:
- *  - Text   → streamLocalProvider (SSE / NDJSON pumped from the provider)
- *  - Media  → callGenerativeMedia (direct fetch to provider's image/video/audio API)
+ * The plaintext key is fetched from the LenserFight Gateway loopback daemon
+ * just-in-time, then sent directly to the upstream AI provider from the
+ * browser (text streaming via SSE / NDJSON; media via direct fetch).
+ * LenserFight servers never see the plaintext — and neither does the browser
+ * cache, beyond the lifetime of a single `resolveLocalKey()` call.
  *
- * The decrypted API key never leaves the browser. The caller supplies a
- * `resolveLocalKey(id)` function (typically wired to useLocalKeyStore) so this
- * adapter does not need to know about IndexedDB or crypto specifics.
+ * The adapter is transport-agnostic: callers supply a `resolveLocalKey(id)`
+ * function (typically `useLocalKeyStore().resolveKey`). Whether that function
+ * talks to the gateway, the filesystem, or some future runner is the
+ * adapter's caller's concern.
  */
 import { callGenerativeMedia } from '@lenserfight/providers'
 
