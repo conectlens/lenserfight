@@ -1,6 +1,6 @@
-import { Turnstile } from '@marsidev/react-turnstile'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { isMock, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY, loadDevSeedCredentials } from '@lenserfight/utils/env'
@@ -54,6 +54,7 @@ export const LoginPage: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [rememberMe, setRememberMe] = useState(true)
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   const [magicLinkEmail, setMagicLinkEmail] = useState('')
   const [magicLinkSending, setMagicLinkSending] = useState(false)
@@ -87,8 +88,12 @@ export const LoginPage: React.FC = () => {
       setIsSuccess(true)
     } catch (err: unknown) {
       setApiError(normalizeError(err))
-      setIsSubmitting(false) // Only stop loading on error
-      if (ENABLE_CAPTCHA) setCaptchaToken(null) // Reset captcha on error
+      if (ENABLE_CAPTCHA) {
+        setCaptchaToken(null)
+        turnstileRef.current?.reset()
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -205,7 +210,7 @@ export const LoginPage: React.FC = () => {
 
           {ENABLE_CAPTCHA && (
             <div className="flex justify-center my-4">
-              <Turnstile siteKey={CAPTCHA_SITE_KEY} onSuccess={setCaptchaToken} />
+              <Turnstile ref={turnstileRef} siteKey={CAPTCHA_SITE_KEY} onSuccess={setCaptchaToken} />
             </div>
           )}
 

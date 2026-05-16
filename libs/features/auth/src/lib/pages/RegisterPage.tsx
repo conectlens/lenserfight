@@ -1,6 +1,6 @@
-import { Turnstile } from '@marsidev/react-turnstile'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { Check, AlertCircle, ExternalLink } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import {
@@ -54,6 +54,7 @@ export const RegisterPage: React.FC = () => {
   }, [])
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   const passwordValidator = (value: any) => {
     if (!value) return 'Password is required'
@@ -149,8 +150,12 @@ export const RegisterPage: React.FC = () => {
       } else {
         setApiError(normalized)
       }
+      if (ENABLE_CAPTCHA) {
+        setCaptchaToken(null)
+        turnstileRef.current?.reset()
+      }
+    } finally {
       setLoading(false)
-      if (ENABLE_CAPTCHA) setCaptchaToken(null)
     }
   }
 
@@ -285,7 +290,7 @@ export const RegisterPage: React.FC = () => {
 
           {ENABLE_CAPTCHA && (
             <div className="flex justify-center mt-4">
-              <Turnstile siteKey={CAPTCHA_SITE_KEY} onSuccess={setCaptchaToken} />
+              <Turnstile ref={turnstileRef} siteKey={CAPTCHA_SITE_KEY} onSuccess={setCaptchaToken} />
             </div>
           )}
 
