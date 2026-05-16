@@ -169,6 +169,56 @@ const profileShow = defineCommand({
   },
 })
 
+// ─── profile update ─────────────────────────────────────────────────────────
+
+const profileUpdate = defineCommand({
+  meta: {
+    name: 'update',
+    description: 'Update your Lenser profile fields on the active backend.',
+  },
+  args: {
+    handle: { type: 'string', description: 'Public handle, without @', default: '' },
+    'display-name': { type: 'string', description: 'Public display name', default: '' },
+    bio: { type: 'string', description: 'Short public bio', default: '' },
+    'avatar-url': { type: 'string', description: 'Avatar image URL', default: '' },
+    website: { type: 'string', description: 'Personal website URL', default: '' },
+    json: { type: 'boolean', description: 'Output updated profile as JSON', default: false },
+  },
+  async run({ args }) {
+    const patch: Record<string, string> = {}
+    if (args.handle) patch.handle = String(args.handle).replace(/^@/, '')
+    if (args['display-name']) patch.display_name = args['display-name']
+    if (args.bio) patch.bio = args.bio
+    if (args['avatar-url']) patch.avatar_url = args['avatar-url']
+    if (args.website) patch.website = args.website
+
+    if (Object.keys(patch).length === 0) {
+      consola.error('Pass at least one field to update: --handle, --display-name, --bio, --avatar-url, or --website.')
+      process.exitCode = 1
+      return
+    }
+
+    try {
+      const updated = await callRpc<Record<string, unknown>>(
+        'fn_lensers_update_profile',
+        { p_data: patch },
+        { requireAuth: true },
+      )
+
+      if (args.json) {
+        printJson(updated)
+        return
+      }
+
+      consola.success('Profile updated.')
+      if (updated?.['handle']) consola.info('Handle:       @%s', updated['handle'])
+      if (updated?.['display_name']) consola.info('Display name: %s', updated['display_name'])
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 // ─── profile xp ──────────────────────────────────────────────────────────────
 
 const profileXp = defineCommand({
@@ -293,6 +343,7 @@ const profileCommand = defineCommand({
     use: profileUse,
     delete: profileDelete,
     show: profileShow,
+    update: profileUpdate,
     xp: profileXp,
     badges: profileBadges,
     trust: profileTrust,
