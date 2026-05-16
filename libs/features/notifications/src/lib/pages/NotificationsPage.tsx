@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Bell, CheckCheck } from 'lucide-react'
 import { Button, HelpButton } from '@lenserfight/ui/components'
 import { useNotifications } from '../hooks/useNotifications'
+import { useUnreadCount } from '../hooks/useUnreadCount'
 import type { NotificationRecord } from '@lenserfight/data/repositories'
 import { NOTIFICATION_CATEGORY_MAP, type NotificationType, type NotificationCategory } from '@lenserfight/types'
 
@@ -47,7 +48,8 @@ function NotificationRow({ n, onRead }: { n: NotificationRecord; onRead: (id: st
 export function NotificationsPage() {
   const [tab, setTab] = useState<FilterTab>('all')
   const [page, setPage] = useState(1)
-  const { notifications, unreadCount, isLoading, markRead, markAllRead } = useNotifications(50)
+  const { notifications, isLoading, markRead, markAllRead } = useNotifications(50)
+  const unreadCount = useUnreadCount()
 
   const filtered = notifications.filter((n) => {
     if (tab === 'unread') return !n.read_at
