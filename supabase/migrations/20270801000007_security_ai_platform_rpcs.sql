@@ -6,6 +6,7 @@
 -- apps/platform-api/src/worker/main.ts (platform, ai, execution, lenses RPCs),
 -- supabase/functions/test-provider/index.ts (ai.keys, vault.decrypted_secrets),
 -- apps/cli/src/commands/battle.ts (battles.battles UPDATE, battle_execution_jobs SELECT).
+-- supabase/functions/trigger-execution/index.ts (fn_worker_start_media_execution).
 --
 -- Note: fn_worker_render_template (lenses.fn_render_template) is in migration 03.
 -- Note: fn_worker_decrypt_api_key wraps ai.fn_decrypt_api_key for BYOK resolution
@@ -524,3 +525,67 @@ GRANT EXECUTE ON FUNCTION public.fn_worker_update_vote_risk_score(uuid, numeric,
 
 COMMENT ON FUNCTION public.fn_worker_update_vote_risk_score(uuid, numeric, text[], text) IS
   'Worker-only: update risk_score, risk_factors, and review_status on a vote_risk_scores row.';
+
+-- ─── fn_worker_start_media_execution ──────────────────────────────────────────
+-- Public SECURITY DEFINER wrapper for execution.fn_start_execution, called by
+-- the trigger-execution edge function.
+--
+-- Accepts p_user_id (auth.users.id) instead of p_lenser_id so the edge function
+-- never needs to touch lensers.* or execution.* schemas directly through
+-- PostgREST. The lenser resolution and workspace lookup happen here, inside the
+-- DB, where the private schemas are safely accessible.
+--
+-- Callable only by service_role (the edge function's service client).
+
+CREATE OR REPLACE FUNCTION public.fn_worker_start_media_execution(
+  p_user_id        uuid,
+  p_origin_type    text,
+  p_funding_source text,
+  p_lens_id        uuid    DEFAULT NULL,
+  p_byok_key_ref_id uuid   DEFAULT NULL,
+  p_input_snapshot jsonb   DEFAULT '{}'
+) RETURNS TABLE(request_id uuid, run_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'lensers', 'execution', 'tenancy'
+AS $$
+DECLARE
+  v_lenser_id uuid;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RAISE EXCEPTION 'p_user_id is required';
+  END IF;
+
+  -- Resolve the human profile for this auth user.
+  SELECT id INTO v_lenser_id
+  FROM lensers.profiles
+  WHERE user_id = p_user_id
+    AND type    = 'human'
+  LIMIT 1;
+
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'No human lenser profile found for user';
+  END IF;
+
+  RETURN QUERY
+    SELECT r.request_id, r.run_id
+    FROM execution.fn_start_execution(
+      p_lenser_id       => v_lenser_id,
+      p_origin_type     => p_origin_type,
+      p_funding_source  => p_funding_source,
+      p_model_id        => NULL,
+      p_lens_id         => p_lens_id,
+      p_byok_key_ref_id => p_byok_key_ref_id,
+      p_input_snapshot  => p_input_snapshot
+    ) r;
+END;
+$$;
+
+ALTER FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) FROM anon;
+REVOKE ALL ON FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) TO service_role;
+
+COMMENT ON FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) IS
+  'Edge-function gateway: resolves auth user → lenser profile, then delegates to execution.fn_start_execution. Accepts p_user_id so the edge function never touches private schemas through PostgREST. Callable only by service_role.';
