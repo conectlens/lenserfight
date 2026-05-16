@@ -122,7 +122,18 @@ export interface WorkflowNodeCatalogEntry {
   exampleUseCase: string
   n8nMapping?: WorkflowNodeN8nMapping
   n8nEquivalent?: string
+  sideEffectPolicy: SideEffectPolicy
 }
+
+/**
+ * Side-effect policy for dry-run execution. Determines how the node behaves
+ * when the workflow is executed in dev/test mode.
+ * - 'none': safe to run anywhere (pure computation, AI generation)
+ * - 'mock': dry-run returns a mock response (email, notifications)
+ * - 'preview': dry-run shows what WOULD be sent without sending (HTTP, webhooks)
+ * - 'skip': dry-run skips entirely with a warning (file writes, KV writes)
+ */
+export type SideEffectPolicy = 'none' | 'mock' | 'skip' | 'preview'
 
 export type WorkflowCatalogNodeType = WorkflowNodeType | 'lens'
 
@@ -149,6 +160,7 @@ interface NodeDefinition {
   docsLink?: string
   exampleUseCase?: string
   n8n?: WorkflowNodeN8nMapping
+  sideEffectPolicy?: SideEffectPolicy
 }
 
 export const WORKFLOW_NODE_CATEGORIES: readonly WorkflowNodeCategory[] = [
@@ -264,6 +276,21 @@ const n8n = (nodeType: string, operation?: string): WorkflowNodeN8nMapping => ({
   mapped: true,
 })
 
+/** Default side-effect policy per category — communication/integration nodes mock by default. */
+const CATEGORY_SIDE_EFFECT_DEFAULTS: Record<WorkflowNodeCategory, SideEffectPolicy> = {
+  lens: 'none',
+  trigger: 'none',
+  logic: 'none',
+  data: 'none',
+  ai_primitive: 'none',
+  battle: 'none',
+  storage: 'none',
+  communication: 'mock',
+  integration: 'mock',
+  media: 'none',
+  utility: 'none',
+}
+
 function defineNode(def: NodeDefinition): WorkflowNodeCatalogEntry {
   const color = CATEGORY_COLORS[def.category]
   const categorySlug = def.category === 'ai_primitive' ? 'ai-primitives' : def.category
@@ -297,6 +324,7 @@ function defineNode(def: NodeDefinition): WorkflowNodeCatalogEntry {
     exampleUseCase: def.exampleUseCase ?? def.exampleConfig.scenario,
     n8nMapping: def.n8n,
     n8nEquivalent: def.n8n?.nodeType,
+    sideEffectPolicy: def.sideEffectPolicy ?? CATEGORY_SIDE_EFFECT_DEFAULTS[def.category],
   }
 }
 
