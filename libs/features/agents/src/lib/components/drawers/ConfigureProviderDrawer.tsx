@@ -1,10 +1,10 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { ProviderConfigRecord } from '@lenserfight/types'
-import { Button } from '@lenserfight/ui/components'
+import { Button, Tooltip } from '@lenserfight/ui/components'
 import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
 import { useQueryClient } from '@tanstack/react-query'
-import { CheckCircle, XCircle } from 'lucide-react'
+import { CheckCircle, HelpCircle, XCircle } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 
 import { DrawerDocsLink } from './DrawerDocsLink'
@@ -97,7 +97,7 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
       headerExtra={
         <DrawerDocsLink
           path="/how-to/agents/workspace/drawers/configure-provider"
-          tip="Bind API key and region for one provider. Keys are encrypted at rest; only last 4 chars are echoed back after save. A health check fires post-save."
+          tip="Bind API key and optional base URL for one provider. Keys are encrypted via Supabase Vault — only the last 4 chars are echoed back after save. Run a health check to verify connectivity before closing."
         />
       }
       footer={
@@ -125,7 +125,10 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
           )}
         </div>
 
-        <Field label="API Key">
+        <FieldLabel
+          label="API Key"
+          tooltip="Stored in Supabase Vault — encrypted at rest, never logged, and never exposed in responses. Only the last four characters are echoed back after save. Leave blank to keep the existing key."
+        >
           <input
             type="password"
             value={apiKey}
@@ -137,9 +140,12 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
           <p className="mt-1 text-xs text-gray-400">
             Stored securely via Supabase Vault. Never logged or exposed in responses.
           </p>
-        </Field>
+        </FieldLabel>
 
-        <Field label="Base URL (optional)">
+        <FieldLabel
+          label="Base URL (optional)"
+          tooltip="Override the provider's default API endpoint. Required for self-hosted deployments, proxies, or private cloud configurations. Leave blank to use the official provider URL."
+        >
           <input
             type="url"
             value={baseUrl}
@@ -147,7 +153,7 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
             placeholder="https://api.example.com/v1 (for self-hosted)"
             className={inputClass}
           />
-        </Field>
+        </FieldLabel>
 
         <div className="flex items-center gap-3">
           <Button
@@ -181,8 +187,6 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
             {error}
           </p>
         )}
-
-
       </div>
     </Drawer>
   )
@@ -191,14 +195,26 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
 const inputClass =
   'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
-  label,
-  children,
-}) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )
