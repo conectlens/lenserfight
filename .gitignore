@@ -115,4 +115,11 @@ supabase/seed-data.sql
 # Local battle results from older lf battle local runs
 .lf-battle/
 
+# Local BYOK keys (encrypted at rest under a passphrase held in the OS keychain).
+# Belt-and-suspenders — the canonical home is ~/.lenserfight/keys/, but a stray
+# .lenserfight/ checked into the repo root must never include keys.
+.lenserfight/keys/
+**/.lenserfight/keys/
+**/keys-index.json
+
 /tmp/*
