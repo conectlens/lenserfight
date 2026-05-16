@@ -25,7 +25,6 @@ export default defineConfig({
       env: {
         FEATURE_PUBLIC_BATTLES: 'false',
         FEATURE_WAITING_LIST: 'false',
-        FEATURE_BENCHMARK_UI: 'false',
       },
     },
   projects: [
