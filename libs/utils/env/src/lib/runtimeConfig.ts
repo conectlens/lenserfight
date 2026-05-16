@@ -154,7 +154,6 @@ export const FEATURES = {
   SUPABASE_INTEGRATION: featureEnabled('FEATURE_SUPABASE_INTEGRATION', true),
   CRON_SCHEDULING: featureEnabled('FEATURE_CRON_SCHEDULING', true),
   AGENT_ANALYTICS: featureEnabled('FEATURE_AGENT_ANALYTICS', true),
-  BENCHMARK_SUITE: featureEnabled('FEATURE_BENCHMARK_UI', true),
   // Cloud-only signup gate. Off by default so self-hosted installs aren't trapped behind it.
   WAITING_LIST: featureEnabled('FEATURE_WAITING_LIST', false),
   // Chainabit execution bridge: routes battle jobs to Chainabit's cloud executor.
