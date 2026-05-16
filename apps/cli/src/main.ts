@@ -101,6 +101,8 @@ const main = defineCommand({
     export: () => import('./commands/export').then((m) => m.default),
     auth: () => import('./commands/auth').then((m) => m.default),
     config: () => import('./commands/config').then((m) => m.default),
+    'local-battle-key': () => import('./commands/config-local-battle-key').then((m) => m.default),
+    'webhook-secret': () => import('./commands/config-webhook-secret').then((m) => m.default),
     setup: () => import('./commands/setup').then((m) => m.default),
     onboard: () => import('./commands/onboard').then((m) => m.default),
     runner: runnerDeprecatedCommand,
