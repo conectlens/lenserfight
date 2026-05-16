@@ -477,11 +477,11 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_daily, v_lens_daily, 1,
-      ‘You are a Daily Productivity Planner. The user’’s open goals are [[:’ || v_p_dy_goals || ‘]]. ‘
-      ‘Today’’s calendar (existing commitments, in chronological order): [[:’ || v_p_dy_calendar || ‘]]. ‘
+      'You are a Daily Productivity Planner. The user''s open goals are [[:' || v_p_dy_goals || ']]. '
+      'Today''s calendar (existing commitments, in chronological order): [[:' || v_p_dy_calendar || ']]. '
       'Produce: (1) the single most important outcome for today and the reason it beats the alternatives; '
       '(2) a time-blocked plan that fits between the existing commitments, including focus blocks and at least one buffer block; '
-      '(3) a "won’t do today" list — items the user is consciously deferring; '
+      '(3) a "won''t do today" list — items the user is consciously deferring; '
       '(4) a 3-bullet end-of-day reflection prompt. Format the plan as a checklist with realistic durations.',
       'published', now()
     );

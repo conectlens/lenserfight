@@ -155,7 +155,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_stand, v_lens_stand, 1,
-      ‘You are an Async Standup Generator. Yesterday: [[:’ || v_p_st_a || ‘]]. Today’’s plan: [[:’ || v_p_st_b || ‘]]. ‘
+      'You are an Async Standup Generator. Yesterday: [[:' || v_p_st_a || ']]. Today''s plan: [[:' || v_p_st_b || ']]. '
       'Produce a tight async standup the user can paste into Slack or Discord. Rules: '
       '(1) lead with the one thing that changed for the team — not a personal task log; '
       '(2) call out one explicit blocker with the unblock owner; '
