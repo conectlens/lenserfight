@@ -30,6 +30,7 @@ export interface AuthRepositoryPort {
   resetPassword(password: string, token?: string): Promise<void>
   signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void>
   resendSignupConfirmation(email: string): Promise<void>
+  sendMagicLink(email: string, captchaToken?: string): Promise<void>
   onAuthStateChange(callback: AuthStateChangeCallback): () => void
   requestDeviceApproval(dto?: DeviceApprovalRequestDTO): Promise<DeviceApprovalRequestResultDTO>
   approveDeviceRequest(dto: ApproveDeviceRequestDTO): Promise<ApproveDeviceRequestResultDTO>
@@ -114,6 +115,17 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
 
   async resendSignupConfirmation(email: string): Promise<void> {
     const { error } = await supabase.auth.resend({ type: 'signup', email: email })
+    if (error) throw error
+  }
+
+  async sendMagicLink(email: string, captchaToken?: string): Promise<void> {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${AUTH_BASE_URL}/callback`,
+        captchaToken,
+      },
+    })
     if (error) throw error
   }
 

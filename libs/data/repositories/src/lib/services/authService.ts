@@ -56,6 +56,10 @@ export const authService = {
     return authRepo.resendSignupConfirmation(email)
   },
 
+  sendMagicLink: async (email: string, captchaToken?: string): Promise<void> => {
+    return authRepo.sendMagicLink(email, captchaToken)
+  },
+
   onAuthStateChange: (callback: AuthStateChangeCallback): (() => void) => {
     return authRepo.onAuthStateChange(callback)
   },
