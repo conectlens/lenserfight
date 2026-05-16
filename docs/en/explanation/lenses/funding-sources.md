@@ -67,23 +67,44 @@ The same store serves the browser (via the gateway), the CLI (`lf keys *`), and 
 
 ### Set it up
 
-1. **Start the gateway.** It runs as a small Node daemon on `127.0.0.1:38080`:
-   ```bash
-   lf gateway serve
-   ```
-2. **Generate a master passphrase**, stored in your OS keychain (macOS Keychain, Windows Credential Manager, libsecret on Linux):
-   ```bash
-   lf keys init
-   ```
-3. **Pair the web app once per origin.** The bearer token is held in `sessionStorage` (lost when you close the tab — re-pair anytime):
-   ```bash
-   lf gateway pair --web
-   # Settings → Local Keys → Pair Gateway → paste the printed token
-   ```
-4. **Add a key** (the value is read from stdin so it never appears in shell history):
-   ```bash
-   lf keys add --provider openai --label "Prod"
-   ```
+You'll run two short-lived CLI commands and paste one token into the browser.
+
+**In a terminal — leave this running.** Pick the line that matches your setup:
+
+```bash
+# Same machine — gateway and browser on the same box (most common).
+lf gateway serve --keys-only
+
+# Tailscale or LAN — browser on another device, gateway on this one.
+# Bind to 0.0.0.0 (or your Tailscale IP) so the other device can reach it.
+lf gateway serve --keys-only --bind 0.0.0.0
+```
+
+`--keys-only` skips identity/session/lenser/kill_switch preconditions — those are for the signed-coordination feature, not Local Keys. With `--keys-only` you can also bind a non-loopback address without setting up the Tailscale consent file.
+
+**In another terminal:**
+
+```bash
+# One-time: generate the master passphrase (stored in your OS keychain) and
+# create ~/.lenserfight/keys/.
+lf keys init
+
+# Add a key (value is read from stdin so it doesn't enter shell history).
+lf keys add --provider openai --label "Prod"
+
+# Print the pairing token the browser will need.
+lf gateway pair --web
+```
+
+**In the browser:**
+
+1. Open the LenserFight web app on any lens, battle, or workflow page (anywhere with a Funding panel).
+2. In the Funding panel, click the **Local Keys** tile.
+3. A `Paste your pairing token below ↓` box appears. Paste the token from `lf gateway pair --web` into it and click **Pair gateway**.
+
+The keys you added with `lf keys add` will now show up in the picker.
+
+The pairing token lives in `sessionStorage` only — close the tab and you'll need to re-run `lf gateway pair --web` to get a fresh one. There is no `Settings → Local Keys` global page; the pair input is inline inside the Funding panel because that's the only place Local Keys are used.
 
 `lf keys list`, `lf keys rotate <id>`, `lf keys remove <id>`, and `lf keys doctor` are also available. See [the CLI reference](/en/reference/cli/keys) for the full surface.
 
