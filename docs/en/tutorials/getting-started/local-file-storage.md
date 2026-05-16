@@ -50,7 +50,6 @@ pnpm install --frozen-lockfile
 # 2. Create the env file and start the app
 cat > .env.local << 'EOF'
 DATA_SOURCE=file
-PRODUCT_EDITION=community
 WEB_BASE_URL=http://localhost:3000
 API_URL=http://localhost:8786
 EOF
