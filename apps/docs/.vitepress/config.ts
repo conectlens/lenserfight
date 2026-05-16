@@ -407,6 +407,24 @@ const EN_REFERENCE_WORKFLOWS_SIDEBAR = [
       { text: 'Workflow Inputs Template', link: '/en/reference/workflow-inputs-template' },
     ],
   },
+  {
+    text: 'Node Reference',
+    collapsed: true,
+    items: [
+      { text: 'Overview', link: '/en/reference/workflows/nodes/' },
+      { text: 'Lens', link: '/en/reference/workflows/nodes/lens' },
+      { text: 'Triggers', link: '/en/reference/workflows/nodes/trigger' },
+      { text: 'Logic', link: '/en/reference/workflows/nodes/logic' },
+      { text: 'Data', link: '/en/reference/workflows/nodes/data' },
+      { text: 'AI Primitives', link: '/en/reference/workflows/nodes/ai-primitives' },
+      { text: 'Battle / Arena', link: '/en/reference/workflows/nodes/battle' },
+      { text: 'Storage & I/O', link: '/en/reference/workflows/nodes/storage' },
+      { text: 'Communication', link: '/en/reference/workflows/nodes/communication' },
+      { text: 'Integrations', link: '/en/reference/workflows/nodes/integration' },
+      { text: 'Media Generation', link: '/en/reference/workflows/nodes/media' },
+      { text: 'Utility', link: '/en/reference/workflows/nodes/utility' },
+    ],
+  },
 ]
 
 const EN_REFERENCE_SIDEBAR = [
