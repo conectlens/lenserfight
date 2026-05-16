@@ -13,6 +13,9 @@ export {
   detectCycle,
   PlaceholderUnboundError,
 } from './lib/validator'
+export { validateBrowserExecutionPlan } from './lib/execution-plan-validator'
+export type { ExecutionPlanIssue, ExecutionPlanModel, ExecutionPlanNodeShape } from './lib/execution-plan-validator'
+export { resolveMappedOutputValue } from './lib/output-path'
 export type {
   ValidationIssue,
   ValidationCode,
