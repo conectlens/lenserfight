@@ -402,6 +402,7 @@ export default defineCommand({
     whoami,
     refresh,
     token,
+    request: deviceRequest,
     device,
     'developer-token': developerToken,
     register,
