@@ -184,7 +184,7 @@ const approveDevice = defineCommand({
 // ---------------------------------------------------------------------------
 const runners = defineCommand({
   meta: {
-    name: 'lensers',
+    name: 'runners',
     description: 'List lensers and their bound trusted devices.',
   },
   args: {
@@ -875,6 +875,7 @@ export default defineCommand({
     daemons,
     'approve-device': approveDevice,
     runners,
+    lensers: runners,
     status,
     serve,
     doctor,
