@@ -1,12 +1,12 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { AgentTeamMemberRecord } from '@lenserfight/types'
-import { Button } from '@lenserfight/ui/components'
+import { Tooltip } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
+import { HelpCircle } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 
 import type { AgentProfileView } from '@lenserfight/data/repositories'
-
 import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface AddTeamMemberDrawerProps {
@@ -105,7 +105,7 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
       headerExtra={
         <DrawerDocsLink
           path="/how-to/agents/workspace/drawers/add-team-member"
-          tip="Attach an existing AI Lenser to the active team. Pick a member, choose a role (lead/worker/judge/observer), optionally set a quota override."
+          tip="Attach an existing AI Lenser to the active team. Pick a member, choose a role (leader/executor/reviewer/operator/observer), set a lane for parallel execution control, and optionally describe the member's responsibility."
         />
       }
       footer={
@@ -120,7 +120,10 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
     >
       <div className="space-y-4">
         {!isEdit && (
-          <Field label="Agent">
+          <FieldLabel
+            label="Agent"
+            tooltip="The AI Lenser joining this crew. Can be any agent owned by the same workspace."
+          >
             <SelectField
               value={agentId}
               onChange={setAgentId}
@@ -130,19 +133,28 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
             <p className="mt-1 text-xs text-gray-400">
               Pick one of the owner&apos;s AI Lensers for this crew slot.
             </p>
-          </Field>
+          </FieldLabel>
         )}
+
         {isEdit && (
-          <Field label="Agent">
+          <FieldLabel label="Agent">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200">
               {(agents.find((agent) => agent.ai_lenser_id === initial?.agent_id)?.display_name ?? initial?.agent_id) || 'Unknown agent'}
             </div>
-          </Field>
+          </FieldLabel>
         )}
-        <Field label="Role">
+
+        <FieldLabel
+          label="Role"
+          tooltip="Determines position in the execution graph. 'leader' coordinates others and owns final delivery; 'executor' runs tasks; 'reviewer' checks outputs; 'operator' handles tooling; 'observer' monitors silently."
+        >
           <SelectField value={role} onChange={setRole} options={ROLE_OPTIONS} />
-        </Field>
-        <Field label="Responsibility">
+        </FieldLabel>
+
+        <FieldLabel
+          label="Responsibility"
+          tooltip="Freeform description of this member's task. Injected into the team's routing prompt so the scheduler knows when to activate this member."
+        >
           <textarea
             rows={2}
             value={responsibility}
@@ -150,9 +162,13 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
             placeholder="Handles delegation and final review of outputs."
             className={inputClass}
           />
-        </Field>
+        </FieldLabel>
+
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Lane">
+          <FieldLabel
+            label="Lane"
+            tooltip="Execution lane number (1–10). Members in the same lane may run in parallel; members in different lanes run sequentially in ascending lane order."
+          >
             <input
               type="number"
               min={1}
@@ -161,8 +177,12 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
               onChange={(e) => setLane(Number(e.target.value))}
               className={inputClass}
             />
-          </Field>
-          <Field label="Sort order">
+          </FieldLabel>
+
+          <FieldLabel
+            label="Sort order"
+            tooltip="Within the same lane, lower numbers execute first. Use to control step ordering when multiple members share a lane."
+          >
             <input
               type="number"
               min={0}
@@ -170,14 +190,14 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
               onChange={(e) => setSortOrder(Number(e.target.value))}
               className={inputClass}
             />
-          </Field>
+          </FieldLabel>
         </div>
+
         {error && (
           <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
             {error}
           </p>
         )}
-
       </div>
     </Drawer>
   )
@@ -186,11 +206,26 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
 const inputClass =
   'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )
