@@ -13,7 +13,6 @@ import { CsvImportDialog } from './CsvImportDialog'
 import { FreeformInput } from './FreeformInput'
 import { FundingSourceToggle } from './FundingSourceToggle'
 import { JsonImportDialog } from './JsonImportDialog'
-import { LegacyParamFields } from './LegacyParamFields'
 import { VersionParamFields } from './VersionParamFields'
 
 import type { LocalKeyMeta } from '@lenserfight/types'
@@ -411,7 +410,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
           </div>{/* end top fixed section */}
 
           {/* Parameters Header — Fixed above the scrollable area */}
-          {(form.usingVersionParams || (!form.usingVersionParams && form.legacyParamSchemas.length > 0)) && (
+          {form.effectiveParams.length > 0 && (
             <div className="flex items-center justify-between px-4 py-2 bg-surface-raised dark:bg-surface-raised border-b border-surface-border shrink-0 z-10">
               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 Parameters
@@ -442,26 +441,15 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
           {/* Scrollable parameters area */}
           <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 px-4 pt-4 pb-6 bg-surface-raised/40 dark:bg-surface-raised/20">
 
-          {/* 3. Version Parameters */}
-          {form.usingVersionParams && versionParams && (
+          {/* Parameters Fields */}
+          {form.effectiveParams.length > 0 && (
             <VersionParamFields
-              params={versionParams}
+              params={form.effectiveParams}
               values={form.inputValues}
               errors={form.fieldErrors}
               onChange={form.handleChange}
               onFileUpload={onFileParamUpload}
               selectedModelInputModalities={selectedModelInputModalities}
-            />
-          )}
-
-          {/* Legacy LensParam[] renderer */}
-          {!form.usingVersionParams && form.legacyParamSchemas.length > 0 && (
-            <LegacyParamFields
-              params={form.legacyParamSchemas}
-              values={form.inputValues}
-              errors={form.fieldErrors}
-              onChange={form.handleChange}
-              onMultiselectToggle={form.handleMultiselectToggle}
             />
           )}
 
@@ -474,7 +462,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
           )}
 
           {/* Freeform input (no params at all) */}
-          {!form.usingVersionParams && !isLoadingVersionParams && form.legacyParamSchemas.length === 0 && (
+          {!form.usingVersionParams && !isLoadingVersionParams && form.effectiveParams.length === 0 && (
             <FreeformInput
               value={(form.inputValues['freeform'] as string) ?? ''}
               onChange={(v) => form.handleChange('freeform', v)}
@@ -549,8 +537,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
       <JsonImportDialog
         open={jsonImportOpen}
         onClose={() => setJsonImportOpen(false)}
-        versionParams={versionParams}
-        legacyParams={form.legacyParamSchemas}
+        versionParams={form.effectiveParams}
         onApply={form.applyImportedValues}
         currentValues={form.inputValues}
       />
@@ -558,8 +545,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
       <CsvImportDialog
         open={csvImportOpen}
         onClose={() => setCsvImportOpen(false)}
-        versionParams={versionParams}
-        legacyParams={form.legacyParamSchemas}
+        versionParams={form.effectiveParams}
         onApply={form.applyImportedValues}
         currentValues={form.inputValues}
       />
