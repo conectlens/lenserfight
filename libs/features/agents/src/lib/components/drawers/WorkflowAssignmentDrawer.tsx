@@ -4,11 +4,14 @@ import {
 } from '@lenserfight/data/repositories'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import type { AgentWorkflowAssignmentRecord } from '@lenserfight/types'
-import { Button } from '@lenserfight/ui/components'
+import { Tooltip } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
+import { HelpCircle } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 const ASSIGNEE_KIND_OPTIONS = [
   { value: 'agent', label: 'agent' },
@@ -144,6 +147,12 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
       side="right"
       width="w-[560px]"
       title={isEdit ? 'Edit workflow assignment' : 'Assign agent to workflow'}
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/workflow-assignment"
+          tip="Bind a workflow to an executor — agent, team, or evaluator. Approval and retry policies govern every dispatched run. Inactive assignments are ignored by schedules and webhooks."
+        />
+      }
       footer={
         <DrawerFooter
           onCancel={onClose}
@@ -155,7 +164,10 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
       }
     >
       <div className="space-y-4">
-        <Field label="Workflow">
+        <FieldLabel
+          label="Workflow"
+          tooltip="The workflow to assign. Only workflows visible to this workspace appear in the list."
+        >
           <SelectField
             value={workflowId}
             onChange={setWorkflowId}
@@ -163,34 +175,45 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
             placeholder={workflows.length === 0 ? 'No workflows available' : 'Select a workflow'}
             disabled={workflows.length === 0}
           />
-        </Field>
+        </FieldLabel>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Assignee kind">
+          <FieldLabel
+            label="Assignee kind"
+            tooltip="'agent' dispatches to this agent; 'team' routes to all active members of a crew; 'evaluator' triggers a scoring suite post-run instead of executing workflow nodes."
+          >
             <SelectField
               value={assigneeKind}
               onChange={(v) => setAssigneeKind(v as 'agent' | 'team' | 'evaluator')}
               options={ASSIGNEE_KIND_OPTIONS}
             />
-          </Field>
-          {assigneeKind === 'evaluator' && (
-            <div className="col-span-2 rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50 px-3 py-2 text-xs text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-300">
-              Evaluator agents trigger evaluation suites post-run instead of executing workflow nodes.
-            </div>
-          )}
+          </FieldLabel>
+
           {assigneeKind === 'team' && (
-            <Field label="Team">
+            <FieldLabel
+              label="Team"
+              tooltip="The agent team that receives dispatched runs. Every active member executes in parallel according to the team's edge graph."
+            >
               <SelectField
                 value={assigneeTeamId}
                 onChange={setAssigneeTeamId}
                 options={teamOptions}
                 placeholder="— select team —"
               />
-            </Field>
+            </FieldLabel>
           )}
         </div>
 
-        <Field label="Approval policy (JSON)">
+        {assigneeKind === 'evaluator' && (
+          <div className="rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50 px-3 py-2 text-xs text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-300">
+            Evaluator agents trigger evaluation suites post-run instead of executing workflow nodes.
+          </div>
+        )}
+
+        <FieldLabel
+          label="Approval policy (JSON)"
+          tooltip="Controls when runs require human sign-off. Default {'mode':'none'} skips all gates. Use {'mode':'all'} to gate every run, or {'mode':'on_write'} for runs that modify data."
+        >
           <textarea
             rows={3}
             value={approvalPolicyJson}
@@ -198,9 +221,12 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
             placeholder='{"mode":"none"}'
             className={`${inputClass} resize-none font-mono text-xs`}
           />
-        </Field>
+        </FieldLabel>
 
-        <Field label="Retry policy (JSON)">
+        <FieldLabel
+          label="Retry policy (JSON)"
+          tooltip="Controls automatic retries on failure. Default {'mode':'none'} means no retry. Example: {'mode':'linear','max':3,'delay_ms':5000} retries three times with 5 s between attempts."
+        >
           <textarea
             rows={3}
             value={retryPolicyJson}
@@ -208,24 +234,28 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
             placeholder='{"mode":"none"}'
             className={`${inputClass} resize-none font-mono text-xs`}
           />
-        </Field>
+        </FieldLabel>
 
-        <label className="flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
-          <input
-            type="checkbox"
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-          />
-          <span className="text-gray-700 dark:text-gray-200">Active</span>
-        </label>
+        <Tooltip
+          content="Inactive assignments are ignored by schedules and webhooks. Use to pause dispatch without deleting the assignment record."
+          position="top"
+          contentClassName="max-w-xs whitespace-normal text-left"
+        >
+          <label className="flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
+            <input
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+            />
+            <span className="text-gray-700 dark:text-gray-200">Active</span>
+          </label>
+        </Tooltip>
 
         {error && (
           <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
             {error}
           </p>
         )}
-
-
       </div>
     </Drawer>
   )
@@ -234,11 +264,26 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
 const inputClass =
   'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )
