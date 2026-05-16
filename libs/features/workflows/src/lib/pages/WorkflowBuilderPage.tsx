@@ -1,4 +1,5 @@
 import { lensesService, workflowsService, seoService } from '@lenserfight/data/repositories'
+import { validateBrowserExecutionPlan, validateWorkflow } from '@lenserfight/infra/execution'
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
@@ -127,15 +128,24 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const { data: historyRunState } = useWorkflowRunState(selectedHistoryRunId)
   const { data: historyProvenance = [] } = useWorkflowRunProvenance(selectedHistoryRunId)
 
-  // Terminal node: the node with no outgoing edges
+  // Terminal node: prefer a single sink; with multiple sinks pick the most
+  // recently completed (then highest ordinal) so the banner matches user intent.
   const terminalNodeId = useMemo(() => {
     const targetSet = new Set(edges.map((e) => e.target_node_id))
-    return (
-      nodes
-        .filter((n) => !targetSet.has(n.id))
-        .sort((a, b) => b.ordinal - a.ordinal)[0]?.id ?? null
-    )
-  }, [nodes, edges])
+    const sinks = nodes.filter((n) => !targetSet.has(n.id))
+    if (sinks.length === 0) return null
+    if (sinks.length === 1) return sinks[0]!.id
+
+    const ranked = [...sinks].sort((a, b) => {
+      const ra = nodeResults.find((r) => r.node_id === a.id)
+      const rb = nodeResults.find((r) => r.node_id === b.id)
+      const ta = ra?.completed_at ? new Date(ra.completed_at).getTime() : 0
+      const tb = rb?.completed_at ? new Date(rb.completed_at).getTime() : 0
+      if (ta !== tb) return tb - ta
+      return b.ordinal - a.ordinal
+    })
+    return ranked[0]?.id ?? null
+  }, [nodes, edges, nodeResults])
 
   const terminalNodeResult = nodeResults.find((r) => r.node_id === terminalNodeId)
   const terminalNodeLabel =
@@ -269,7 +279,10 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     setSelectedModelKey('')
   }
 
-  const canExecute = !!selectedModelKey && funding.isReady
+  /** Cloud BYOK vault keys are not available in the browser build outside dev — no worker claims manual runs today. */
+  const cloudByokNeedsExecutor =
+    funding.fundingSource === 'user_byok_cloud' && !import.meta.env.DEV
+  const canExecute = !!selectedModelKey && funding.isReady && !cloudByokNeedsExecutor
 
   useEffect(() => {
     if (funding.fundingSource !== 'user_byok_cloud' || isRunning) return
@@ -286,18 +299,50 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
   const handleExecuteClick = async (rootInputs: Record<string, unknown> = {}) => {
     if (!canExecute) return
+
+    if (nodes.length > 0) {
+      const struct = validateWorkflow(
+        nodes.map((n) => ({
+          id: n.id,
+          lensId: n.lens_id,
+          versionId: n.version_id ?? null,
+          config: (n.config ?? null) as Record<string, unknown> | null,
+        })),
+        edges.map((e) => ({
+          id: e.id,
+          sourceNodeId: e.source_node_id,
+          targetNodeId: e.target_node_id,
+          sourceOutputKey: e.source_output_key,
+          targetParamLabel: e.target_param_label,
+          condition: e.condition as
+            | { type: 'equals' | 'contains' | 'present' | 'truthy'; value?: unknown }
+            | null
+            | undefined,
+        })),
+      )
+      if (!struct.ok) {
+        toast.error(struct.errors[0]?.message ?? 'Workflow validation failed')
+        return
+      }
+    }
+
+    const plan = validateBrowserExecutionPlan(
+      nodes.map((n) => ({ id: n.id, config: n.config ?? null })),
+      selectedModelKey,
+      models.map((m) => ({ key: m.key, provider: m.provider })),
+      funding.fundingSource,
+    )
+    if (!plan.ok) {
+      toast.error(plan.errors[0]?.message ?? 'This workflow cannot run with the current funding and model selection.')
+      return
+    }
+
     const run = await startRun({ inputs: rootInputs, globalModelId: selectedModelKey })
     setSelectedNodeConfig(null)
     if (!run?.id) return
 
-    if (funding.fundingSource === 'user_byok_cloud') {
-      // Cloud BYOK keys are resolved server-side only. In this mode we enqueue
-      // the run and let the platform executor/worker consume it.
-      toast.message('Workflow queued on platform executor (Cloud BYOK).')
-      return
-    }
-
-    // Fire execution orchestrator in background — status updates flow via Realtime
+    // Fire execution orchestrator in background — status updates flow via Realtime.
+    // Production Cloud BYOK is blocked above (no worker claims manual workflow_runs).
     executeWorkflow(run.id, selectedModelKey, rootInputs).catch((err) => {
       toast.error(`Workflow execution failed: ${err instanceof Error ? err.message : String(err)}`)
     })
@@ -689,6 +734,11 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                     onSubmit={(rootInputs) => handleExecuteClick(rootInputs)}
                     isRunning={starting || isRunning}
                     canExecute={canExecute}
+                    executeHint={
+                      cloudByokNeedsExecutor
+                        ? 'Cloud BYOK is not supported for workflow runs in production yet. Switch to Platform credits or a Local key.'
+                        : undefined
+                    }
                     nodeConfigOverrides={nodeConfigs}
                   />
                   {/* Recovery banner — shown when the run terminated with failure */}
