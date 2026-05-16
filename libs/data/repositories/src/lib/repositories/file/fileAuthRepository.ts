@@ -112,6 +112,10 @@ export class FileAuthRepository implements AuthRepositoryPort {
     // No-op in file mode.
   }
 
+  async sendMagicLink(_email: string, _captchaToken?: string): Promise<void> {
+    // No-op in file mode.
+  }
+
   async requestDeviceApproval(
     _dto?: DeviceApprovalRequestDTO
   ): Promise<DeviceApprovalRequestResultDTO> {

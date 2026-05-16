@@ -24,6 +24,7 @@ interface AuthContextType extends AuthState {
   resetPassword: (password: string, token?: string) => Promise<void>
   signInWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>
   resendSignupConfirmation: (email: string) => Promise<void>
+  sendMagicLink: (email: string, captchaToken?: string) => Promise<void>
   /** Redirect to the external auth app login page, preserving the current page as return_url. */
   redirectToLogin: (delayMs?: number) => void
 }
@@ -279,6 +280,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await authService.resendSignupConfirmation(email)
   }, [])
 
+  const sendMagicLink = useCallback(async (email: string, captchaToken?: string) => {
+    try {
+      await authService.sendMagicLink(email, captchaToken)
+    } catch (err: unknown) {
+      const message = getErrorMessage(err)
+      setState((s) => ({ ...s, error: message }))
+      throw err
+    }
+  }, [])
+
   const redirectToLogin = useCallback((delayMs = 0) => {
     const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
     const target = `${AUTH_BASE_URL}/login?return_url=${returnUrl}`
@@ -300,6 +311,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetPassword,
         signInWithOAuth,
         resendSignupConfirmation,
+        sendMagicLink,
         redirectToLogin,
       }}
     >
