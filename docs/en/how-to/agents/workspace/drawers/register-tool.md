@@ -1,6 +1,6 @@
 ---
 title: Register Tool drawer
-description: Declare a new tool in the registry — key, JSON Schema, egress class, and timeout.
+description: Declare a new tool in the registry — key, name, description, category, auth method, input/output JSON schemas, and safety flags.
 ---
 
 # Register Tool drawer
@@ -11,41 +11,42 @@ Opened from the [Tools Section](../tools).
 
 | Field | Required | Notes |
 |---|---|---|
-| **Key** | yes | Stable slug, e.g. `web.fetch`. Used by workflows |
-| **Name** | yes | Human label |
-| **Description** | no | Surfaced in pickers and approval gates |
-| **Input schema** | yes | JSON Schema for the tool's input |
-| **Output schema** | no | JSON Schema for the tool's output |
-| **Egress class** | yes | `none` / `read` / `network` / `mutation` |
-| **Timeout (ms)** | yes | Gateway aborts after this; default 30 000 |
+| **Key** | yes | Stable, lowercase slug. **Cannot be changed after creation.** Example: `web.search`, `github.pr.create` |
+| **Name** | yes | Human-readable label shown in pickers and approval gates |
+| **Description** | no | Surfaces in the tool picker tooltip and the approval review screen |
+| **Category** | yes | Groups tools in the picker. Reuse existing slugs: `search`, `code`, `communication` |
+| **Auth method** | yes | `none` · `api_key` · `oauth` · `service_account` |
+| **Input schema** | no | JSON Schema for the tool's input — used for validation and workflow editor hints |
+| **Output schema** | no | JSON Schema for the tool's output — improves downstream type safety |
+| **Requires approval** | toggle | Forces a human approval gate before every invocation |
+| **Dangerous tool** | toggle | Tags the tool as high-risk; always queued for approval regardless of the toggle above |
 
-## Egress class
+## Auth methods
 
-The egress class **drives the approval gate**. Workflows that call this tool inherit the class — they cannot raise it.
-
-| Class | Approval at runtime |
+| Method | Where credential lives |
 |---|---|
-| `none` | none |
-| `read` | none |
-| `network` | required |
-| `mutation` | required |
+| `none` | No credentials needed |
+| `api_key` | Secret stored in Supabase Vault — encrypted at rest |
+| `oauth` | User-delegated token via OAuth flow |
+| `service_account` | Workspace-level credentials shared across agents |
 
 ## After registration
 
-The tool is registered but **not yet usable** by the agent. Open the [Assign Tool drawer](./assign-tool) to flip the allow flag.
+The tool appears in the registry but **is not yet usable** by the agent. Open the [Assign Tool drawer](./assign-tool) to flip the allow flag for a specific agent.
 
+## Key naming conventions
 
-## Code-backed workflow
+Keys are the stable reference used in workflows and assignments. Choose a namespace:
 
-Source of truth: RegisterToolDrawer.tsx.
-
-1. Register tool name, key, endpoint, auth method, schema, and policy metadata.
-2. Tool keys must be stable because assignments and invocations refer to them.
-3. Verify the tool appears in the registry before assigning it to an agent.
+```
+{domain}.{action}          → web.search, web.fetch
+{service}.{resource}.{op}  → github.pr.create, slack.message.send
+{internal}.{function}      → memory.write, eval.score
+```
 
 ## Related
 
 - [Tools Section](../tools)
 - [Assign Tool drawer](./assign-tool)
+- [Tool Profile drawer](./tool-profile)
 - [Tool Sandboxing](/en/explanation/agents/tool-sandboxing)
-- [Tools Reference](/en/reference/internals/tools)
