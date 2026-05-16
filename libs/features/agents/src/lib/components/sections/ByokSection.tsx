@@ -1,139 +1,97 @@
-import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import type { ByokKeyHint, ByokRotationDueRow } from '@lenserfight/data/repositories'
-import { Button } from '@lenserfight/ui/components'
+import { apiKeysService } from '@lenserfight/data/repositories'
+import type { UserApiKey, CloudByokProvider } from '@lenserfight/types'
+import { Button, Card, Badge } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { KeyRound, ShieldCheck, ShieldX, Clock, Plus, AlertTriangle } from 'lucide-react'
+import { KeyRound, ShieldCheck, ShieldX, Plus } from 'lucide-react'
 import React from 'react'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { SectionPage } from './SectionPage'
 
-const KNOWN_PROVIDERS = ['openai', 'anthropic', 'gemini', 'mistral', 'cohere', 'groq', 'together']
+// Only providers the vault can store — mirrors apiKeysService.ALLOWED_PROVIDERS
+const CLOUD_PROVIDERS: CloudByokProvider[] = ['openai', 'anthropic', 'google', 'mistral']
 
-function HealthBadge({ isValid, expiresAt }: { isValid: boolean; expiresAt?: string | null }) {
-  if (!isValid) {
+const API_KEYS_QUERY_KEY = ['apiKeys', 'mine'] as const
+
+function HealthBadge({ isActive }: { isActive: boolean }) {
+  if (!isActive) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+      <Badge color="red" size="sm" className="gap-1.5">
         <ShieldX className="w-3 h-3" />
-        Expired / Revoked
-      </span>
+        Revoked
+      </Badge>
     )
   }
-  if (expiresAt) {
-    const daysLeft = Math.floor((new Date(expiresAt).getTime() - Date.now()) / 86_400_000)
-    if (daysLeft < 30) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-          <Clock className="w-3 h-3" />
-          Expires in {daysLeft}d
-        </span>
-      )
-    }
-  }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+    <Badge color="green" size="sm" className="gap-1.5">
       <ShieldCheck className="w-3 h-3" />
       Active
-    </span>
+    </Badge>
   )
 }
 
 interface RegisterFormState {
-  provider: string
-  customProvider: string
+  provider: CloudByokProvider
   key: string
   label: string
 }
 
-const EMPTY_FORM: RegisterFormState = { provider: 'openai', customProvider: '', key: '', label: '' }
+const EMPTY_FORM: RegisterFormState = { provider: 'openai', key: '', label: '' }
 
 export const ByokSection: React.FC = () => {
-  const { viewMode, bootstrap } = useAgentWorkspace()
+  const { viewMode } = useAgentWorkspace()
   const isOwner = viewMode === 'agent_owner'
-  const aiLenserId = bootstrap?.ai_lenser_id ?? ''
   const queryClient = useQueryClient()
 
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [form, setForm] = React.useState<RegisterFormState>(EMPTY_FORM)
   const [formError, setFormError] = React.useState<string | null>(null)
 
-  const keysQuery = useQuery<ByokKeyHint[]>({
-    queryKey: ['byok', 'keys', aiLenserId],
-    queryFn: () => agentWorkspaceService.listByokKeyHints(aiLenserId),
-    enabled: isOwner && !!aiLenserId,
-    staleTime: 5 * 60_000,
-    gcTime: 10 * 60_000,
-  })
-
-  const rotationDueQuery = useQuery<ByokRotationDueRow[]>({
-    queryKey: ['byok', 'rotation-due'],
-    queryFn: () => agentWorkspaceService.listRotationDue(),
+  // Single data source: same fn_get_my_api_keys RPC used by /settings/api-keys.
+  // The RPC resolves against the human profile (not the active lenser selection)
+  // so it returns the correct keys even when viewed from the agent workspace.
+  const keysQuery = useQuery<UserApiKey[]>({
+    queryKey: API_KEYS_QUERY_KEY,
+    queryFn: () => apiKeysService.getMyKeys(),
     enabled: isOwner,
     staleTime: 5 * 60_000,
     gcTime: 10 * 60_000,
   })
 
-  const overdueKeys = rotationDueQuery.data ?? []
-
   const revokeMutation = useMutation({
-    mutationFn: ({ provider }: { provider: string }) =>
-      agentWorkspaceService.revokeByokKey(aiLenserId, provider),
-    onSuccess: (_, { provider }) => {
-      queryClient.setQueryData<ByokKeyHint[]>(
-        ['byok', 'keys', aiLenserId],
-        (prev = []) => prev.map((k) => k.provider === provider ? { ...k, is_valid: false } : k),
+    mutationFn: (keyId: string) => apiKeysService.revokeKey(keyId),
+    onSuccess: (_, keyId) => {
+      queryClient.setQueryData<UserApiKey[]>(
+        API_KEYS_QUERY_KEY,
+        (prev = []) => prev.map((k) => k.id === keyId ? { ...k, isActive: false, revokedAt: new Date().toISOString() } : k),
       )
     },
   })
 
-  const registerMutation = useMutation({
-    mutationFn: ({
-      provider,
-      key,
-      label,
-    }: {
-      provider: string
-      key: string
-      label: string
-    }) => {
-      const hint = key.length >= 4 ? key.slice(-4) : key
-      return agentWorkspaceService.registerByokKey(aiLenserId, provider, key, hint, label || undefined)
-    },
-    onSuccess: (_, { provider, key, label }) => {
-      const hint = key.length >= 4 ? key.slice(-4) : key
-      queryClient.setQueryData<ByokKeyHint[]>(
-        ['byok', 'keys', aiLenserId],
-        (prev = []) => {
-          const without = prev.filter((k) => k.provider !== provider)
-          return [...without, { provider, key_hint: hint, label: label || null, is_valid: true }]
-        },
-      )
+  const storeMutation = useMutation({
+    mutationFn: ({ provider, key, label }: RegisterFormState) =>
+      apiKeysService.storeKey({ provider, rawKey: key, label: label || undefined }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: API_KEYS_QUERY_KEY })
       setDialogOpen(false)
       setForm(EMPTY_FORM)
       setFormError(null)
     },
     onError: (err: Error) => {
-      setFormError(err.message ?? 'Failed to register key.')
+      setFormError(err.message ?? 'Failed to store key.')
     },
   })
-
-  const resolvedProvider =
-    form.provider === '__custom__' ? form.customProvider.trim() : form.provider
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormError(null)
-    if (!resolvedProvider) {
-      setFormError('Provider is required.')
+    if (!form.key.trim() || form.key.trim().length < 8) {
+      setFormError('API key must be at least 8 characters.')
       return
     }
-    if (!form.key.trim()) {
-      setFormError('API key is required.')
-      return
-    }
-    registerMutation.mutate({ provider: resolvedProvider, key: form.key.trim(), label: form.label.trim() })
+    storeMutation.mutate(form)
   }
 
   function handleOpenDialog() {
@@ -148,9 +106,9 @@ export const ByokSection: React.FC = () => {
     <SectionPage
       eyebrow="Security"
       docsPath="/how-to/agents/workspace/byok"
-      docsTip="Bring Your Own Key. Keys are encrypted at rest, never echoed in full, and may be rotated or capped per month. Usage logs are read-only."
+      docsTip="Bring Your Own Key. Keys are encrypted at rest via Vault, never echoed in full. The same keys are accessible from Settings → API Keys."
       title="API Keys (BYOK)"
-      description="Manage your Bring-Your-Own-Key API credentials. Keys are stored encrypted and never shown in full."
+      description="Manage your Bring-Your-Own-Key API credentials. Keys are encrypted at rest and never shown in full."
       toolbar={
         isOwner ? (
           <Button variant="secondary" size="sm" onClick={handleOpenDialog}>
@@ -160,25 +118,6 @@ export const ByokSection: React.FC = () => {
         ) : undefined
       }
     >
-      {isOwner && overdueKeys.length > 0 && (
-        <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 mb-4">
-          <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-              {overdueKeys.length} key{overdueKeys.length > 1 ? 's' : ''} overdue for rotation
-            </p>
-            <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-0.5">
-              Keys should be rotated every 90 days.{' '}
-              {overdueKeys.map((k) => (
-                <span key={k.id} className="font-medium capitalize">{k.provider}</span>
-              )).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, ', ', el], [])}
-              {overdueKeys.length === 1 ? ' is' : ' are'} overdue. Rotate using{' '}
-              <code className="font-mono text-xs">lf byok rotate</code> or the form below.
-            </p>
-          </div>
-        </div>
-      )}
-
       {!isOwner ? (
         <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
           Only the agent owner can manage API keys.
@@ -190,17 +129,17 @@ export const ByokSection: React.FC = () => {
           No BYOK keys registered yet. Click <strong>Add Key</strong> above to add one.
         </p>
       ) : (
-        <div className="divide-y divide-greyscale-200 dark:divide-greyscale-800 rounded-xl border border-greyscale-200 dark:border-greyscale-800 overflow-hidden">
+        <div className="flex flex-col gap-3">
           {keys.map((key) => (
-            <div
-              key={key.provider}
-              className="flex items-center justify-between gap-4 px-4 py-3 bg-white dark:bg-greyscale-950"
+            <Card
+              key={key.id}
+              className="flex items-center justify-between gap-4 !p-4"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <KeyRound className="w-4 h-4 text-greyscale-400 shrink-0" />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-greyscale-900 dark:text-greyscale-100 capitalize">
-                    {key.provider}
+                  <p className="text-sm font-medium text-greyscale-900 dark:text-greyscale-100">
+                    {key.providerDisplayName}
                   </p>
                   {key.label && (
                     <p className="text-xs text-greyscale-500 dark:text-greyscale-400 truncate">
@@ -209,24 +148,24 @@ export const ByokSection: React.FC = () => {
                   )}
                 </div>
                 <span className="font-mono text-xs text-greyscale-500 dark:text-greyscale-400">
-                  ···· {key.key_hint ?? '????'}
+                  ···· {key.keySuffix}
                 </span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <HealthBadge isValid={key.is_valid} />
-                {key.is_valid && (
+                <HealthBadge isActive={key.isActive} />
+                {key.isActive && (
                   <Button
                     type="button"
                     variant="danger"
                     size="sm"
-                    onClick={() => revokeMutation.mutate({ provider: key.provider })}
+                    onClick={() => revokeMutation.mutate(key.id)}
                     disabled={revokeMutation.isPending}
                   >
                     Revoke
                   </Button>
                 )}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -235,7 +174,7 @@ export const ByokSection: React.FC = () => {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         title="Register API Key"
-        description="The key is stored server-side and never returned in full."
+        description="The key is stored server-side via Vault and never returned in full."
         icon={<KeyRound className="w-5 h-5" />}
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -243,28 +182,10 @@ export const ByokSection: React.FC = () => {
             <SelectField
               label="Provider"
               value={form.provider}
-              onChange={(value) => setForm((f) => ({ ...f, provider: value }))}
-              options={[
-                ...KNOWN_PROVIDERS.map((provider) => ({ value: provider, label: provider })),
-                { value: '__custom__', label: 'Other...' },
-              ]}
+              onChange={(value) => setForm((f) => ({ ...f, provider: value as CloudByokProvider }))}
+              options={CLOUD_PROVIDERS.map((p) => ({ value: p, label: p }))}
             />
           </div>
-
-          {form.provider === '__custom__' && (
-            <div>
-              <label className="block text-sm font-medium text-greyscale-700 dark:text-greyscale-300 mb-1">
-                Provider name
-              </label>
-              <input
-                type="text"
-                value={form.customProvider}
-                onChange={(e) => setForm((f) => ({ ...f, customProvider: e.target.value }))}
-                placeholder="e.g. ollama, custom-llm"
-                className="w-full px-3 py-2 rounded-lg border border-greyscale-200 dark:border-greyscale-700 bg-white dark:bg-greyscale-900 text-sm text-greyscale-900 dark:text-greyscale-100 focus:outline-none focus:ring-2 focus:ring-primary-yellow-400/50"
-              />
-            </div>
-          )}
 
           <div>
             <label className="block text-sm font-medium text-greyscale-700 dark:text-greyscale-300 mb-1">
@@ -306,7 +227,7 @@ export const ByokSection: React.FC = () => {
               variant="ghost"
               size="sm"
               onClick={() => setDialogOpen(false)}
-              disabled={registerMutation.isPending}
+              disabled={storeMutation.isPending}
             >
               Cancel
             </Button>
@@ -314,9 +235,9 @@ export const ByokSection: React.FC = () => {
               type="submit"
               variant="primary"
               size="sm"
-              disabled={registerMutation.isPending}
+              disabled={storeMutation.isPending}
             >
-              {registerMutation.isPending ? 'Saving…' : 'Save Key'}
+              {storeMutation.isPending ? 'Saving…' : 'Save Key'}
             </Button>
           </div>
         </form>
