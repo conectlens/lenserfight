@@ -73,6 +73,15 @@ function PartnerCard({ partnerName, displayName }: PartnerCardProps) {
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Connect your {displayName} account to use wallet credits for AI battles.
         </p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          By connecting, you agree to {displayName}&apos;s{' '}
+          <a href="https://chainabit.com/policy/terms" target="_blank" rel="noopener noreferrer"
+             className="underline text-blue-500 hover:text-blue-600">Terms of Service</a>,{' '}
+          <a href="https://chainabit.com/policy/cookies" target="_blank" rel="noopener noreferrer"
+             className="underline text-blue-500 hover:text-blue-600">Cookie Policy</a>, and{' '}
+          <a href="https://chainabit.com/policy/privacy" target="_blank" rel="noopener noreferrer"
+             className="underline text-blue-500 hover:text-blue-600">Privacy Policy</a>.
+        </p>
         <Button
           variant="secondary"
           className="!w-auto px-4 text-xs"

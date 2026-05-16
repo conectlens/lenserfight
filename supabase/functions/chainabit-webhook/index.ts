@@ -66,17 +66,10 @@ Deno.serve(async (req: Request) => {
       }
 
       case 'provision.claimed': {
-        const { user_id, email, handle, display_name, avatar_url } =
-          event.data as Record<string, string>
-        if (user_id && email) {
-          await supabase.rpc('fn_upsert_profile_from_chainabit', {
-            p_user_id:      user_id,
-            p_email:        email,
-            p_handle:       handle ?? null,
-            p_display_name: display_name ?? null,
-            p_avatar_url:   avatar_url ?? null,
-          })
-        }
+        // Intentionally not handled: LenserFight profiles must be created through
+        // the standard user-initiated onboarding flow, not server-side provisioning.
+        // Users who want to connect their Chainabit wallet do so explicitly from
+        // Settings → Partner Accounts.
         break
       }
 
