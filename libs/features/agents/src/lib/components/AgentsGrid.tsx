@@ -14,6 +14,8 @@ interface AgentsGridProps {
   onCreateAgent?: () => void
   emptyTitle?: string
   emptyDescription?: string
+  /** 'grid' (default) wraps cards in a responsive grid; 'carousel' shows a single horizontal scrollable row. */
+  layout?: 'grid' | 'carousel'
 }
 
 /**
@@ -27,6 +29,7 @@ export const AgentsGrid: React.FC<AgentsGridProps> = ({
   onCreateAgent,
   emptyTitle,
   emptyDescription,
+  layout = 'grid',
 }) => {
   if (agents.length === 0) {
     const isOwner = mode === 'owner'
@@ -53,6 +56,18 @@ export const AgentsGrid: React.FC<AgentsGridProps> = ({
           </div>
         )}
       </EmptyPanel>
+    )
+  }
+
+  if (layout === 'carousel') {
+    return (
+      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700">
+        {agents.map((agent) => (
+          <div key={agent.id} className="snap-start shrink-0 w-64">
+            <AgentCard agent={agent} isOwner={mode === 'owner'} />
+          </div>
+        ))}
+      </div>
     )
   }
 
