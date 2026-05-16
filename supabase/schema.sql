@@ -38908,22 +38908,57 @@ COMMENT ON FUNCTION "public"."fn_worker_fail_execution_run"("p_run_id" "uuid", "
 
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") RETURNS "text"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public', 'ai', 'vault'
+CREATE OR REPLACE FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid", "p_user_id" "uuid") RETURNS "text"
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'ai', 'vault', 'lensers'
     AS $$
-  SELECT vs.decrypted_secret
-  FROM ai.keys k
-  JOIN vault.decrypted_secrets vs ON vs.id = k.encrypted_key_id
-  WHERE k.id = p_ai_key_id
+DECLARE
+  v_lenser_id    uuid;
+  v_encrypted_id uuid;
+  v_decrypted    text;
+BEGIN
+  IF p_ai_key_id IS NULL OR p_user_id IS NULL THEN
+    RAISE EXCEPTION 'p_ai_key_id and p_user_id are required';
+  END IF;
+
+  SELECT p.id INTO v_lenser_id
+  FROM lensers.profiles p
+  WHERE p.user_id = p_user_id
+    AND p.type = 'human'
   LIMIT 1;
+
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'Key owner profile not found';
+  END IF;
+
+  SELECT k.encrypted_key_id INTO v_encrypted_id
+  FROM ai.keys k
+  WHERE k.id = p_ai_key_id
+    AND k.lenser_id = v_lenser_id
+    AND k.is_active = true
+  LIMIT 1;
+
+  IF v_encrypted_id IS NULL THEN
+    RAISE EXCEPTION 'Key not found, revoked, or not owned by caller';
+  END IF;
+
+  SELECT decrypted_secret INTO v_decrypted
+  FROM vault.decrypted_secrets
+  WHERE id = v_encrypted_id;
+
+  IF v_decrypted IS NULL THEN
+    RAISE EXCEPTION 'Failed to decrypt key from vault';
+  END IF;
+
+  RETURN v_decrypted;
+END;
 $$;
 
 
-ALTER FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid", "p_user_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") IS 'Worker-only: resolve and decrypt an API key from ai.keys via vault.decrypted_secrets. Single round-trip replacing the two-step lookup in test-provider edge function.';
+COMMENT ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid", "p_user_id" "uuid") IS 'Worker-only: resolve and decrypt a BYOK API key from ai.keys via vault.decrypted_secrets. Requires p_user_id (the authenticated caller''s auth.uid()) and verifies the key belongs to that user. Patched 2026-05-16 to close cross-user IDOR.';
 
 
 
@@ -67837,10 +67872,10 @@ GRANT ALL ON FUNCTION "public"."fn_worker_fail_execution_run"("p_run_id" "uuid",
 
 
 
-REVOKE ALL ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid", "p_user_id" "uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid", "p_user_id" "uuid") FROM "anon";
+REVOKE ALL ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid", "p_user_id" "uuid") FROM "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid", "p_user_id" "uuid") TO "service_role";
 
 
 
