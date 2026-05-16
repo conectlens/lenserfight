@@ -13,6 +13,7 @@ const baseConfig: GatewayConfig = {
   bind: '127.0.0.1',
   port: 38080,
   tailscale: false,
+  keysOnly: false,
   stateDir: '/tmp/lf-gateway-test',
   keychainService: 'lenserfight-gateway-test',
   daemonVersion: 'test',
@@ -103,6 +104,45 @@ describe('evaluatePreconditions', () => {
     } finally {
       rmSync(stateDir, { recursive: true, force: true })
     }
+  })
+
+  it('keysOnly mode skips identity/session/lenser/kill_switch preconditions', async () => {
+    const probes = {
+      ...passingProbes(),
+      checkIdentityPresent: async () => false,
+      checkSessionPresent: async () => false,
+      checkLenserActive: async () => false,
+      checkKillSwitch: async () => true,
+    }
+    const results = await evaluatePreconditions(
+      { config: { ...baseConfig, keysOnly: true }, env: {} },
+      probes
+    )
+    // The keys-only surface needs none of these — the daemon must still start.
+    expect(preconditionsAllPass(results)).toBe(true)
+    const ids = results.map((r) => r.id)
+    expect(ids).not.toContain('identity_present')
+    expect(ids).not.toContain('session_present')
+    expect(ids).not.toContain('lenser_active')
+    expect(ids).not.toContain('kill_switch')
+  })
+
+  it('keysOnly mode permits binding 0.0.0.0', async () => {
+    const results = await evaluatePreconditions(
+      { config: { ...baseConfig, keysOnly: true, bind: '0.0.0.0' }, env: {} },
+      passingProbes()
+    )
+    const bindResult = results.find((r) => r.id === 'bind_safe')
+    expect(bindResult?.ok).toBe(true)
+    expect(bindResult?.message).toMatch(/keys-only/)
+  })
+
+  it('non-keysOnly mode still refuses 0.0.0.0', async () => {
+    const results = await evaluatePreconditions(
+      { config: { ...baseConfig, bind: '0.0.0.0' }, env: {} },
+      passingProbes()
+    )
+    expect(results.find((r) => r.id === 'bind_safe')?.ok).toBe(false)
   })
 
   it('fails tailscale_consent when live interfaces do not match consent fingerprints', async () => {

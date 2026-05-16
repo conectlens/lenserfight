@@ -20,6 +20,7 @@ beforeEach(async () => {
     bind: '127.0.0.1',
     port: 0,
     tailscale: false,
+    keysOnly: false,
     stateDir: tempDir,
     keychainService: `lf-gateway-heartbeat-${Date.now()}`,
     daemonVersion: 'lf-gatewayd/test',

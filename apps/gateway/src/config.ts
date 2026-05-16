@@ -12,12 +12,20 @@ export interface GatewayConfig {
   pullIntervalMs: number
   outboxFlushIntervalMs: number
   clockSkewLimitSeconds: number
+  /**
+   * Keys-only mode: serve only /healthz and /keys/*. Skips the heavy
+   * preconditions (identity, session, lenser, kill_switch) and the
+   * heartbeat/outbox/sync loops. Use this when you just want to back the
+   * web app's Local Keys feature without setting up signed coordination.
+   */
+  keysOnly: boolean
 }
 
 export interface ResolveConfigInput {
   bind?: string
   port?: number
   tailscale?: boolean
+  keysOnly?: boolean
   env?: NodeJS.ProcessEnv
 }
 
@@ -36,12 +44,14 @@ export function resolveGatewayConfig(input: ResolveConfigInput = {}): GatewayCon
   const bind = input.bind ?? env['LF_GATEWAY_BIND'] ?? DEFAULTS.bind
   const port = input.port ?? Number(env['LF_GATEWAY_PORT'] ?? DEFAULTS.port)
   const tailscale = input.tailscale ?? env['LF_GATEWAY_TAILSCALE'] === '1'
+  const keysOnly = input.keysOnly ?? env['LF_GATEWAY_KEYS_ONLY'] === '1'
   const stateDir = path.join(os.homedir(), '.lenserfight', 'gateway')
 
   return {
     bind,
     port,
     tailscale,
+    keysOnly,
     stateDir,
     keychainService: 'lenserfight-gateway',
     daemonVersion: DEFAULTS.daemonVersion,

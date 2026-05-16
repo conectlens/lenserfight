@@ -7,6 +7,7 @@ const config: GatewayConfig = {
   bind: '127.0.0.1',
   port: 0,
   tailscale: false,
+  keysOnly: false,
   stateDir: '/tmp/lf-gateway-test',
   keychainService: 'lenserfight-gateway-test',
   daemonVersion: 'test',
@@ -102,6 +103,61 @@ describe('startServer', () => {
       expect(peersPrimary.peer_discovery).toBe('primary')
       expect(peersExtra.peers).toEqual([])
       expect(peersExtra.peer_discovery).toBe('primary_bind_only')
+    } finally {
+      await server.close()
+    }
+  })
+
+  it('returns Access-Control-Allow-Origin on /healthz for allowed origins', async () => {
+    // Regression: the browser's `LocalKeysGatewayClient.healthCheck()` calls
+    // /healthz cross-origin *before* pairing, so the response must include
+    // ACAO or the browser rejects it with "CORS request did not succeed".
+    const server = await startServer(config, {
+      daemonVersion: 'test/1',
+      primaryBind: config.bind,
+    })
+    try {
+      const res = await fetch(`${server.url}/healthz`, {
+        headers: { origin: 'https://lenserfight.com' },
+      })
+      expect(res.status).toBe(200)
+      expect(res.headers.get('access-control-allow-origin')).toBe('https://lenserfight.com')
+      expect(res.headers.get('vary')).toBe('origin')
+    } finally {
+      await server.close()
+    }
+  })
+
+  it('omits ACAO on /healthz when the origin is disallowed', async () => {
+    const server = await startServer(config, {
+      daemonVersion: 'test/1',
+      primaryBind: config.bind,
+    })
+    try {
+      const res = await fetch(`${server.url}/healthz`, {
+        headers: { origin: 'https://evil.example' },
+      })
+      // The server still answers (CORS is a browser-side guard), but no ACAO
+      // header is set — the browser will block the response from JS.
+      expect(res.status).toBe(200)
+      expect(res.headers.get('access-control-allow-origin')).toBeNull()
+    } finally {
+      await server.close()
+    }
+  })
+
+  it('handles OPTIONS preflight for /healthz (allowed origin → 204)', async () => {
+    const server = await startServer(config, {
+      daemonVersion: 'test/1',
+      primaryBind: config.bind,
+    })
+    try {
+      const res = await fetch(`${server.url}/healthz`, {
+        method: 'OPTIONS',
+        headers: { origin: 'http://localhost:4200' },
+      })
+      expect(res.status).toBe(204)
+      expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:4200')
     } finally {
       await server.close()
     }
