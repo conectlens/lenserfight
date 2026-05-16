@@ -167,7 +167,7 @@ const FORMAT_CARDS: FormatCardConfig[] = [
   {
     value: 'workflow',
     title: 'Workflow Battle',
-    subtitle: 'Multi-step lens workflow — ideal for AI benchmarking',
+    subtitle: 'Multi-step lens workflow — ideal for structured model comparisons',
     Icon: GitBranch,
     helpLabel: 'About Workflow Battles',
     docsPath: '/tutorials/battle-walkthroughs/workflow-battle',
@@ -1085,9 +1085,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       selectedLocalKeyId={battleFunding.selectedLocalKeyId}
                       onLocalKeyIdChange={battleFunding.setSelectedLocalKeyId}
                       availableLocalKeys={battleFunding.localKeys}
+                      localKeyAvailability={battleFunding.localKeyAvailability}
                       onAddLocalKey={battleFunding.addLocalKey}
                       onRemoveLocalKey={battleFunding.removeLocalKey}
                       onUpdateLocalKey={battleFunding.updateLocalKey}
+                      onPairGateway={battleFunding.pairGateway}
+                      onRefreshLocalKeys={battleFunding.refreshLocalKeys}
                       walletBalance={battleFunding.walletBalance}
                       canUseBYOK={battleFunding.canUseBYOK}
                       chainabitState={chainabit.state}

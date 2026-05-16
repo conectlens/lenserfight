@@ -91,14 +91,6 @@ const LazyAgentRouteShell = lazy(() =>
     default: module.AgentRouteShell,
   }))
 )
-const LazyBenchmarkSuitesPage = lazy(() =>
-  import('@lenserfight/features/benchmark').then((module) => ({ default: module.BenchmarkSuitesPage }))
-)
-const LazyBenchmarkSuiteDetailPage = lazy(() =>
-  import('@lenserfight/features/benchmark').then((module) => ({
-    default: module.BenchmarkSuiteDetailPage,
-  }))
-)
 const LazyBattleTemplatesPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.BattleTemplatesPage }))
 )
@@ -885,27 +877,6 @@ export const WebRouter: React.FC = () => {
         <Route path="/agents" element={<Navigate to="/lensers?type=ai" replace />} />
         <Route path="/agents/:id" element={<LazyAgentProfileRedirect />} />
         <Route path="/agents/:agentId/workspace" element={<LazyAgentWorkspacePage />} />
-
-        {FEATURES.BENCHMARK_SUITE && (
-          <Route
-            path="/benchmark"
-            element={
-              <DashboardFrame>
-                <LazyBenchmarkSuitesPage />
-              </DashboardFrame>
-            }
-          />
-        )}
-        {FEATURES.BENCHMARK_SUITE && (
-          <Route
-            path="/benchmark/:id"
-            element={
-              <DashboardFrame>
-                <LazyBenchmarkSuiteDetailPage />
-              </DashboardFrame>
-            }
-          />
-        )}
 
         <Route path="/onboarding" element={<OnboardingModal />} />
 
