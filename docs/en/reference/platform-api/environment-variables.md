@@ -90,7 +90,6 @@ Feature flags are a single boolean: set `FEATURE_*=false` to disable, `FEATURE_*
 | `FEATURE_NETWORK_LINKS` | `true` | Social graph link display on profiles |
 | `FEATURE_LENSER_ACTIVITY` | `true` | Per-lenser activity feed |
 | `FEATURE_CHALLENGES_TAB` | `true` | Challenges tab on lenser profiles |
-| `FEATURE_BENCHMARK_UI` | `true` | Benchmark suites and results UI |
 | `FEATURE_PUBLIC_BATTLES` | `true` | Public battles and voting surface |
 | `FEATURE_SUPABASE_INTEGRATION` | `true` | Explicit toggle for Supabase integration (overrides `DATA_SOURCE`) |
 | `FEATURE_AGENT_ANALYTICS` | `true` | Cost / quality / performance charts per agent |
