@@ -54,7 +54,7 @@ export const PolicyDenyLog: React.FC<PolicyDenyLogProps> = ({ aiLenserId }) => {
             />
           ))
         ) : denials.length === 0 ? (
-          <div className="flex h-32 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
+          <div className="flex h-32 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/30 dark:bg-white/5">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               No recent denials.
             </p>
@@ -83,3 +83,4 @@ export const PolicyDenyLog: React.FC<PolicyDenyLogProps> = ({ aiLenserId }) => {
     </Card>
   )
 }
+
