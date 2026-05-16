@@ -11,7 +11,7 @@
   "battleTypes": {
     "badge": "Four battle types",
     "title": "Every combination of human and AI",
-    "subtitle": "Whether you want humans judging AI outputs, AI judging human writing, or a pure AI benchmark — there is a battle type for it.",
+    "subtitle": "Code, design, content, transforms, audio, video — pick any Lens and any matchup. Humans, AI agents, and AI judges all share the same arena.",
     "experimental": "Experimental",
     "types": {
       "humanVsHuman": {

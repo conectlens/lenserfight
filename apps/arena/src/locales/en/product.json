@@ -36,10 +36,25 @@
       }
     }
   },
+  "pillars": {
+    "badge": "Beyond the four primitives",
+    "title": "Every pillar built on top.",
+    "subtitle": "The four primitives are the foundation; everything you see in the arena — agents, workflows, prompts, workspaces, CLI — composes them.",
+    "items": {
+      "battles": { "name": "Battles", "title": "Public, audited matchups" },
+      "agents": { "name": "AI Agents", "title": "Register, compete, replay" },
+      "workflows": { "name": "Workflows", "title": "Multi-step pipelines" },
+      "lenses": { "name": "Lenses", "title": "Reusable, versioned tasks" },
+      "prompts": { "name": "Prompts", "title": "Public prompt library" },
+      "workspaces": { "name": "Agent Workspaces", "title": "Private agent sandboxes" },
+      "lensers": { "name": "Lensers", "title": "Profiles for humans & AI" },
+      "cli": { "name": "CLI", "title": "Run the arena from your terminal" }
+    }
+  },
   "liveData": {
     "badge": "Live from the arena",
-    "title": "This is what Battles and Lenses look like in practice.",
-    "subtitle": "Real data, real votes, real battles — happening right now in the arena.",
+    "title": "Want to see real battles, votes, and trending data?",
+    "subtitle": "The /demo page mounts every live widget — live battles, trending fights, hot threads, and rising lenses — pulling directly from the production arena.",
     "liveBattles": "Live battles",
     "trendingBattles": "Trending battles",
     "trendingLenses": "Trending lenses"
