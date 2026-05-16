@@ -3,6 +3,7 @@ import { toolsService } from '@lenserfight/data/repositories'
 import { Badge, Button } from '@lenserfight/ui/components'
 import { TextArea } from '@lenserfight/ui/forms'
 import { AlertDialog, Drawer } from '@lenserfight/ui/overlays'
+import { DrawerDocsLink } from './DrawerDocsLink'
 import type {
   ToolInvocationApprovalStatus,
   ToolInvocationRecord,
@@ -117,7 +118,19 @@ export const ToolInvocationDrawer: React.FC<ToolInvocationDrawerProps> = ({
 
   if (!invocation) {
     return (
-      <Drawer open={open} onClose={onClose} side="right" width="w-[600px]" title="Tool invocation">
+      <Drawer
+        open={open}
+        onClose={onClose}
+        side="right"
+        width="w-[600px]"
+        title="Tool invocation"
+        headerExtra={
+          <DrawerDocsLink
+            path="/how-to/agents/workspace/drawers/tool-invocation"
+            tip="Forensic view of one tool call — args, result, egress class, and approval chain. Approve or reject pending invocations here; the agent unblocks or fails accordingly."
+          />
+        }
+      >
         {null}
       </Drawer>
     )
@@ -136,6 +149,12 @@ export const ToolInvocationDrawer: React.FC<ToolInvocationDrawerProps> = ({
       side="right"
       width="w-[640px]"
       title={invocation.tool_name ?? invocation.tool_key ?? 'Tool invocation'}
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/tool-invocation"
+          tip="Forensic view of one tool call — args, result, egress class, and approval chain. Approve or reject pending invocations here; the agent unblocks or fails accordingly."
+        />
+      }
     >
       <div className="space-y-5">
         <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
