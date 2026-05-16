@@ -9,6 +9,7 @@ import React, { useState } from 'react'
 import { toast } from 'sonner'
 
 import { formatDateTime } from '../sections/_shared'
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface Props {
   open: boolean
@@ -110,7 +111,19 @@ export const RunDetailDrawer: React.FC<Props> = ({ open, onClose, run, aiLenserI
   const canRetry = run?.status === 'failed'
 
   return (
-    <Drawer open={open} onClose={onClose} side="right" width="w-[560px]" title="Run detail">
+    <Drawer
+      open={open}
+      onClose={onClose}
+      side="right"
+      width="w-[560px]"
+      title="Run detail"
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/run-detail"
+          tip="Forensic view of one workflow execution. Steps tab shows the execution graph progress; Events tab shows the raw audit chronology. Cancel stops a running run; Retry re-queues a failed one."
+        />
+      }
+    >
       {run && (
         <div className="space-y-5">
           <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-700">
