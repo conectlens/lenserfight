@@ -4,10 +4,10 @@ import {
   type CreateEvaluationCaseInput,
 } from '@lenserfight/data/repositories'
 import type { EvaluationCaseRecord, EvaluationRecord } from '@lenserfight/types'
-import { Button } from '@lenserfight/ui/components'
+import { Button, Tooltip } from '@lenserfight/ui/components'
 import { AlertDialog, Drawer } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2 } from 'lucide-react'
+import { HelpCircle, Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -160,7 +160,7 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
       headerExtra={
         <DrawerDocsLink
           path="/how-to/agents/workspace/drawers/evaluation-cases"
-          tip="CRUD over the case list. Each case is one input + one assertion (substring/regex/jsonpath/score_gte) with a weight. Bulk-import via the JSON paste field."
+          tip="Manage the case list for this evaluation suite. Each case is one input + one optional expected output with a weight. Higher-weight cases have more impact on the final score."
         />
       }
     >
@@ -215,7 +215,11 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-yellow-700 dark:text-primary-yellow-300">
               New case
             </p>
-            <Field label="Input (JSON)">
+
+            <FieldLabel
+              label="Input (JSON)"
+              tooltip="The test input passed to the workflow or agent. Must be a valid JSON object matching the target's expected input shape."
+            >
               <textarea
                 rows={4}
                 value={inputJson}
@@ -223,8 +227,12 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
                 placeholder="{}"
                 className={`${inputClass} resize-none font-mono text-xs`}
               />
-            </Field>
-            <Field label="Expected (JSON, optional)">
+            </FieldLabel>
+
+            <FieldLabel
+              label="Expected (JSON, optional)"
+              tooltip="The expected output shape. Leave empty to grade only on the rubric score without asserting structure."
+            >
               <textarea
                 rows={3}
                 value={expectedJson}
@@ -232,9 +240,13 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
                 placeholder="{}"
                 className={`${inputClass} resize-none font-mono text-xs`}
               />
-            </Field>
+            </FieldLabel>
+
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Weight">
+              <FieldLabel
+                label="Weight"
+                tooltip="Relative contribution of this case to the overall evaluation score. Higher weight means more impact on the final grade."
+              >
                 <input
                   type="number"
                   value={weight}
@@ -243,16 +255,21 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
                   step="0.1"
                   className={inputClass}
                 />
-              </Field>
-              <Field label="Tags (comma-separated)">
+              </FieldLabel>
+
+              <FieldLabel
+                label="Tags (comma-separated)"
+                tooltip="Labels for filtering and grouping cases. Standard tags: 'smoke', 'regression', 'edge-case'."
+              >
                 <input
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                   placeholder="smoke, edge-case"
                   className={inputClass}
                 />
-              </Field>
+              </FieldLabel>
             </div>
+
             {addError && (
               <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
                 {addError}
@@ -304,11 +321,26 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
 const inputClass =
   'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )
