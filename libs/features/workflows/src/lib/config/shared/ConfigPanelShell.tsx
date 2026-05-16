@@ -9,6 +9,8 @@ import { Button } from '@lenserfight/ui/components'
 import { X } from 'lucide-react'
 import React from 'react'
 
+import { WorkflowNodeDocsButton } from '../../components/WorkflowNodeDocsButton'
+
 export interface ConfigPanelShellProps {
   nodeLabel: string
   nodeType: string
@@ -34,14 +36,17 @@ export function ConfigPanelShell({
             {nodeType.replace(/_/g, ' ')} node
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="!p-1 !h-6 !w-6 text-greyscale-400 hover:text-greyscale-700 transition-colors flex-shrink-0"
-        >
-          <X size={14} />
-        </Button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <WorkflowNodeDocsButton nodeType={nodeType} size="md" tooltipPosition="bottom" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="!p-1 !h-6 !w-6 text-greyscale-400 hover:text-greyscale-700 transition-colors"
+          >
+            <X size={14} />
+          </Button>
+        </div>
       </div>
 
       {/* Scrollable body */}
