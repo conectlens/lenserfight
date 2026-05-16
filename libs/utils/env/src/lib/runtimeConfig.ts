@@ -1,5 +1,3 @@
-import { resolveProductEdition } from './appSurface'
-
 function readPublicBaseUrl(envKey: string, fallback: string): string {
   const raw = import.meta.env[envKey] as string | undefined
   const s =
@@ -130,39 +128,39 @@ export async function loadDevSeedCredentials(): Promise<LocalSeedCredentials | n
   return mod.LOCAL_SEED_CREDENTIALS
 }
 
-function featureEnabled(envKey: string, editionDefault: boolean): boolean {
+/**
+ * Resolves a `FEATURE_*` env flag. Explicit `true` / `false` always wins;
+ * otherwise the caller-supplied default applies.
+ *
+ * Default policy: the application is single-mode (no community/cloud split).
+ * Most features default **on** — the few that gate launch readiness or signup
+ * funnels (waiting list, Chainabit execution) default **off**.
+ */
+function featureEnabled(envKey: string, defaultValue: boolean): boolean {
   const v = import.meta.env[envKey]
   if (v === 'true') return true
   if (v === 'false') return false
-  return editionDefault
+  return defaultValue
 }
 
-const editionIsCloud = resolveProductEdition() === 'cloud'
-
-// Feature Flags — explicit `FEATURE_*=true|false` wins; otherwise cloud edition defaults on.
+// Feature Flags — explicit `FEATURE_*=true|false` always wins.
 export const FEATURES = {
-  CHALLENGES_TAB: featureEnabled('FEATURE_CHALLENGES_TAB', editionIsCloud),
-  LENSER_ACTIVITY: featureEnabled('FEATURE_LENSER_ACTIVITY', editionIsCloud),
-  NOTIFICATIONS: featureEnabled('FEATURE_NOTIFICATIONS', editionIsCloud),
-  NETWORK_LINKS: featureEnabled('FEATURE_NETWORK_LINKS', editionIsCloud),
-  AGENTS: featureEnabled('FEATURE_AGENTS', editionIsCloud),
-  // MVP launch guard: battle entrypoints stay private until public arena is ready.
-  PUBLIC_BATTLES: featureEnabled('FEATURE_PUBLIC_BATTLES', editionIsCloud),
-  // Supabase publishing and cloud wiring are still staged for post-MVP rollout.
-  SUPABASE_INTEGRATION: featureEnabled('FEATURE_SUPABASE_INTEGRATION', editionIsCloud),
-  // CRON scheduling: on by default for cloud; off by default for self-hosted/community.
-  CRON_SCHEDULING: featureEnabled('FEATURE_CRON_SCHEDULING', editionIsCloud),
-  // Analytics dashboard: cost/quality/performance charts per agent.
-  AGENT_ANALYTICS: featureEnabled('FEATURE_AGENT_ANALYTICS', editionIsCloud),
-  // Cloud waiting list gate. Self-hosted/community installs typically bypass this.
-  WAITING_LIST: featureEnabled('FEATURE_WAITING_LIST', editionIsCloud),
+  CHALLENGES_TAB: featureEnabled('FEATURE_CHALLENGES_TAB', true),
+  LENSER_ACTIVITY: featureEnabled('FEATURE_LENSER_ACTIVITY', true),
+  NOTIFICATIONS: featureEnabled('FEATURE_NOTIFICATIONS', true),
+  NETWORK_LINKS: featureEnabled('FEATURE_NETWORK_LINKS', true),
+  AGENTS: featureEnabled('FEATURE_AGENTS', true),
+  PUBLIC_BATTLES: featureEnabled('FEATURE_PUBLIC_BATTLES', true),
+  SUPABASE_INTEGRATION: featureEnabled('FEATURE_SUPABASE_INTEGRATION', true),
+  CRON_SCHEDULING: featureEnabled('FEATURE_CRON_SCHEDULING', true),
+  AGENT_ANALYTICS: featureEnabled('FEATURE_AGENT_ANALYTICS', true),
+  BENCHMARK_SUITE: featureEnabled('FEATURE_BENCHMARK_UI', true),
+  // Cloud-only signup gate. Off by default so self-hosted installs aren't trapped behind it.
+  WAITING_LIST: featureEnabled('FEATURE_WAITING_LIST', false),
   // Chainabit execution bridge: routes battle jobs to Chainabit's cloud executor.
   // Requires CHAINABIT_API_URL and CHAINABIT_PARTNER_API_KEY on the server side.
   CHAINABIT_EXECUTION: featureEnabled('FEATURE_CHAINABIT_EXECUTION', false),
 }
-
-export { resolveProductEdition, SURFACE } from './appSurface'
-export type { AppSurface, ProductEdition } from './appSurface'
 
 // Captcha
 export const CAPTCHA_SITE_KEY = import.meta.env.CAPTCHA_SITE_KEY || ''

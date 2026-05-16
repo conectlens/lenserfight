@@ -170,20 +170,32 @@ export function useBattleStream(options: UseBattleStreamOptions = {}): UseBattle
             signal: controller.signal,
             callbacks,
           })
-        } else if (
-          config.fundingSource === 'user_byok_cloud' &&
-          config.byokKeyRefId
-        ) {
-          await walletApiClient.streamWithByok(
-            {
-              key_ref_id: config.byokKeyRefId,
-              provider: config.providerKey as 'openai' | 'anthropic' | 'google',
+        } else if (config.fundingSource === 'user_byok_cloud' && config.byokKeyRefId) {
+          if (import.meta.env.DEV) {
+            // Local dev: resolve cloud vault key client-side, stream directly to provider.
+            // This branch is tree-shaken away in production builds (Vite replaces DEV=false).
+            const decryptedKey = await walletApiClient.resolveByokKeyForLocalDev(config.byokKeyRefId)
+            if (!isActive()) return
+            await streamLocalProvider({
+              provider: config.providerKey,
               model: config.modelKey,
               messages,
-            },
-            controller.signal,
-            callbacks,
-          )
+              decryptedKey,
+              signal: controller.signal,
+              callbacks,
+            })
+          } else {
+            await walletApiClient.streamWithByok(
+              {
+                key_ref_id: config.byokKeyRefId,
+                provider: config.providerKey as 'openai' | 'anthropic' | 'google',
+                model: config.modelKey,
+                messages,
+              },
+              controller.signal,
+              callbacks,
+            )
+          }
         } else {
           await walletApiClient.streamWithWallet(
             {

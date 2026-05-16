@@ -35,7 +35,7 @@ export interface SubmitDeps {
 export interface UseLabParamFormResult {
   inputValues: Record<string, unknown>
   fieldErrors: Record<string, string>
-  legacyParamSchemas: LensParam[]
+  effectiveParams: LensVersionParam[]
   usingVersionParams: boolean
   handleChange: (name: string, value: unknown) => void
   handleMultiselectToggle: (name: string, option: string) => void
@@ -56,6 +56,38 @@ export function useLabParamForm(
     if (params && params.length > 0) return params
     return variables.map((v) => ({ name: v, type: 'string' as const, required: true, placeholder: `Enter ${v}…` }))
   }, [usingVersionParams, params, variables])
+
+  const effectiveParams = useMemo<LensVersionParam[]>(() => {
+    if (usingVersionParams && versionParams) return versionParams
+    return legacyParamSchemas.map((lp) => ({
+      id: lp.name,
+      versionId: '',
+      label: lp.name,
+      toolId: lp.name,
+      tool: {
+        id: lp.name,
+        key: lp.name,
+        label: lp.name,
+        description: lp.description ?? null,
+        category: 'input',
+        type: lp.type === 'string' ? 'text' : (lp.type as any),
+        required: lp.required,
+        minLength: 0,
+        maxLength: 0,
+        placeholder: lp.placeholder ?? null,
+        helpText: lp.description ?? null,
+        validationSchema: {
+          min: lp.min,
+          max: lp.max,
+        },
+        options: lp.options ?? null,
+        sortOrder: 0,
+        isSystem: false,
+        icon: null,
+        color: null,
+      },
+    }))
+  }, [usingVersionParams, versionParams, legacyParamSchemas])
 
   const [inputValues, setInputValues] = useState<Record<string, unknown>>({})
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -147,7 +179,7 @@ export function useLabParamForm(
   return {
     inputValues,
     fieldErrors,
-    legacyParamSchemas,
+    effectiveParams,
     usingVersionParams,
     handleChange,
     handleMultiselectToggle,

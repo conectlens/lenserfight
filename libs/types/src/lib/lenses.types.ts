@@ -125,6 +125,8 @@ export type LensVersionParamType =
   | 'decimal'
   | 'boolean'
   | 'select'
+  | 'multiselect'
+  | 'array'
   | 'url'
   | 'date'
   | 'datetime'

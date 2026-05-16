@@ -325,13 +325,8 @@ export const agentWorkspaceService = {
   // Post-run evaluation trigger
   triggerPostRunEvaluations: agentWorkspaceRepo.triggerPostRunEvaluations.bind(agentWorkspaceRepo),
 
-  // AR: BYOK key management
-  listByokKeyHints,
-  rotateByokKey,
-  revokeByokKey,
-  registerByokKey,
-
-  // BZ: BYOK v2 — validation, usage audit, rotation check
+  // BZ: BYOK v2 — execution-layer: validation, usage audit, rotation check
+  // UI key management is handled by apiKeysService (ai.keys / Vault) — not here.
   validateForBattle,
   logUsage,
   listRotationDue,

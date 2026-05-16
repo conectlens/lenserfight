@@ -31,7 +31,7 @@ describe('klingI2vAdapter', () => {
   it('throws when image_url is missing', async () => {
     await expect(
       klingI2vAdapter.generate('jwt-token', 'kling-2.0', 'test', {}),
-    ).rejects.toThrow('kling-i2v requires params.image_url')
+    ).rejects.toMatchObject({ code: 'invalid_request' })
   })
 
   it('pollTask returns completed with video URL', async () => {

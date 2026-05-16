@@ -10,12 +10,15 @@ export const echoAdapter: GenerativeMediaAdapter = {
   },
 
   async generate(_apiKey, _model, prompt): Promise<GenerativeMediaResult> {
+    // Echo the prompt back as a base64-encoded data URL so callers receive a
+    // valid `urls[0]` without making an HTTP call. Useful for local dev.
+    const encoded = typeof btoa === 'function'
+      ? btoa(unescape(encodeURIComponent(prompt)))
+      : Buffer.from(prompt, 'utf-8').toString('base64');
     return {
       status: 'completed',
-      urls: [],
+      urls: [`data:text/plain;base64,${encoded}`],
       mimeType: 'text/plain',
-      // Store echoed text in metadata for callers that want to inspect it
-      ...(({ text: prompt }) as unknown as object),
-    } as GenerativeMediaResult & { text: string };
+    };
   },
 };

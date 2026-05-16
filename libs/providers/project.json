@@ -9,5 +9,14 @@
     "license:oss"
   ],
   "// targets": "to see all targets run: nx show project providers --web",
-  "targets": {}
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/providers"],
+      "options": {
+        "jestConfig": "libs/providers/jest.config.cts",
+        "passWithNoTests": false
+      }
+    }
+  }
 }
