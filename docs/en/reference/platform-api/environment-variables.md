@@ -9,7 +9,6 @@ description: Complete reference for all environment variables used by LenserFigh
 
 ```bash
 DATA_SOURCE=file
-PRODUCT_EDITION=community
 WEB_BASE_URL=http://localhost:3000
 API_URL=http://localhost:8786
 ```
@@ -21,7 +20,6 @@ SUPABASE_URL=https://<project>.supabase.co
 SUPABASE_ANON_KEY=<anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 DATA_SOURCE=supabase
-PRODUCT_EDITION=community
 WEB_BASE_URL=http://localhost:3000
 AUTH_BASE_URL=http://localhost:3004
 API_URL=http://localhost:8786
@@ -80,34 +78,25 @@ Token precedence in the CLI: `LENSERFIGHT_API_KEY` → explicit developer-token 
 
 ---
 
-## Product edition
-
-| Variable | Default | Values | Description |
-|----------|---------|--------|-------------|
-| `PRODUCT_EDITION` | `community` | `community` \| `cloud` | Controls which feature surface is active. Community Edition disables billing, public battles, and enterprise APIs. |
-
----
-
 ## Feature flags
 
-All feature flags default to `false`. Set to `true` to enable in dev/test builds.
+Feature flags are a single boolean: set `FEATURE_*=false` to disable, `FEATURE_*=true` to force-enable, or leave unset to inherit the default below. There is no community/cloud split — every install uses the same defaults.
 
-| Variable | Description |
-|----------|-------------|
-| `FEATURE_AGENTS` | AI workspace — agent management and automation log |
-| `FEATURE_CRON_SCHEDULING` | Reserved Wave 2 flag for scheduled workflow execution. Keep disabled in public cloud and OSS builds for now. |
-| `FEATURE_NOTIFICATIONS` | In-app notification system |
-| `FEATURE_NETWORK_LINKS` | Social graph link display on profiles |
-| `FEATURE_LENSER_ACTIVITY` | Per-lenser activity feed |
-| `FEATURE_CHALLENGES_TAB` | Challenges tab on lenser profiles |
-| `FEATURE_BENCHMARK_UI` | Benchmark suites and results UI |
-| `FEATURE_BILLING_UI` | Billing, credits, and store UI |
-| `FEATURE_PUBLIC_BATTLES` | Public battles and voting surface |
-| `FEATURE_SUPABASE_INTEGRATION` | Explicit toggle for Supabase integration (overrides `DATA_SOURCE`) |
-
-::: warning Community Edition defaults
-In Community Edition (`PRODUCT_EDITION=community`), billing, public battles, and benchmark UI are disabled regardless of feature flags.
-:::
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FEATURE_AGENTS` | `true` | AI workspace — agent management and automation log |
+| `FEATURE_CRON_SCHEDULING` | `true` | Scheduled workflow execution (requires Supabase `pg_cron`) |
+| `FEATURE_NOTIFICATIONS` | `true` | In-app notification system |
+| `FEATURE_NETWORK_LINKS` | `true` | Social graph link display on profiles |
+| `FEATURE_LENSER_ACTIVITY` | `true` | Per-lenser activity feed |
+| `FEATURE_CHALLENGES_TAB` | `true` | Challenges tab on lenser profiles |
+| `FEATURE_BENCHMARK_UI` | `true` | Benchmark suites and results UI |
+| `FEATURE_PUBLIC_BATTLES` | `true` | Public battles and voting surface |
+| `FEATURE_SUPABASE_INTEGRATION` | `true` | Explicit toggle for Supabase integration (overrides `DATA_SOURCE`) |
+| `FEATURE_AGENT_ANALYTICS` | `true` | Cost / quality / performance charts per agent |
+| `FEATURE_CHAINABIT_SIGNIN` | `true` | Show the "Continue with Chainabit" button on auth screens |
+| `FEATURE_WAITING_LIST` | `false` | Cloud signup gate — off by default so self-hosted installs aren't trapped behind it |
+| `FEATURE_CHAINABIT_EXECUTION` | `false` | Route battle jobs to Chainabit's cloud executor — requires partner credentials |
 
 ---
 
