@@ -1,9 +1,13 @@
 import { apiKeysService, lensesService, walletApiClient, workflowsService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
-import { WorkflowExecutionService, getExecutionProvider } from '@lenserfight/infra/execution'
+import {
+  WorkflowExecutionService,
+  getExecutionProvider,
+  normalizeWorkflowNodeConfigForExecution,
+  registerDefaultNodeRunners,
+} from '@lenserfight/infra/execution'
 import { createWorkflowModerationGateway } from '@lenserfight/infra/moderation'
 import { byokKeyResolver, callProvider } from '@lenserfight/providers'
-import type { ContentPart, ProviderMessage } from '@lenserfight/providers'
 import { mapEngineEventToSse, WorkflowEventType } from '@lenserfight/types'
 import { useCallback, useRef } from 'react'
 
@@ -21,7 +25,7 @@ import type {
   MergeStrategy,
   WorkflowNodeConfig,
 } from '@lenserfight/infra/execution'
-import type { Provider } from '@lenserfight/providers'
+import type { ContentPart, Provider, ProviderMessage } from '@lenserfight/providers'
 import type {
   AIModel,
   FundingSource,
@@ -207,6 +211,7 @@ export function useWorkflowExecution({
         }
         await appendRunEventSafe(WorkflowEventType.RUN_STARTED, { status: 'starting' })
         await appendRunEventSafe(WorkflowEventType.RUN_STATUS_CHANGED, { status: 'running' })
+        registerDefaultNodeRunners()
 
         // Resolve model → provider + API key (per unique model key in the DAG).
         const resolveWorkflowApiKey = async (prov: string): Promise<string> => {
@@ -287,7 +292,7 @@ export function useWorkflowExecution({
         // so retry/timeout/merge/moderation hints from the builder flow through.
         const execNodes: WorkflowNode[] = nodes.map((n) => ({
           id: n.id,
-          lensId: n.lens_id,
+          lensId: n.lens_id ?? null,
           versionId: n.version_id,
           config: readNodeConfig(n.config),
         }))
@@ -526,15 +531,7 @@ function resultStatusToRunEvent(status: 'completed' | 'failed' | 'cancelled'): W
 }
 
 function readNodeConfig(raw: Record<string, unknown> | null | undefined): WorkflowNodeConfig | undefined {
-  if (!raw) return undefined
-  const cfg: WorkflowNodeConfig = {}
-  if (raw['retry'] && typeof raw['retry'] === 'object') cfg.retry = raw['retry'] as WorkflowNodeConfig['retry']
-  if (typeof raw['timeoutMs'] === 'number') cfg.timeoutMs = raw['timeoutMs'] as number
-  if (typeof raw['onParentFailure'] === 'string') cfg.onParentFailure = raw['onParentFailure'] as WorkflowNodeConfig['onParentFailure']
-  if (typeof raw['merge'] === 'string') cfg.merge = raw['merge'] as MergeStrategy
-  if (typeof raw['moderation'] === 'string') cfg.moderation = raw['moderation'] as WorkflowNodeConfig['moderation']
-  if (typeof raw['model_id'] === 'string' && raw['model_id'].trim()) cfg.modelId = raw['model_id'].trim()
-  return Object.keys(cfg).length ? cfg : undefined
+  return normalizeWorkflowNodeConfigForExecution(raw)
 }
 
 function readEdgeCondition(raw: Record<string, unknown> | null | undefined) {
