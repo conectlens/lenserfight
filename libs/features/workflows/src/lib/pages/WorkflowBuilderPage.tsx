@@ -662,9 +662,12 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                       selectedLocalKeyId={funding.selectedLocalKeyId}
                       onLocalKeyIdChange={funding.setSelectedLocalKeyId}
                       availableLocalKeys={funding.localKeys}
+                      localKeyAvailability={funding.localKeyAvailability}
                       onAddLocalKey={funding.addLocalKey}
                       onRemoveLocalKey={funding.removeLocalKey}
                       onUpdateLocalKey={funding.updateLocalKey}
+                      onPairGateway={funding.pairGateway}
+                      onRefreshLocalKeys={funding.refreshLocalKeys}
                       walletBalance={funding.walletBalance}
                       canUseBYOK={funding.canUseBYOK}
                       chainabitState={chainabit.state}

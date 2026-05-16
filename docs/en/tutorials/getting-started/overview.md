@@ -154,9 +154,9 @@ The platform is a self-hostable Nx monorepo with a Supabase backend. Community E
 | Human vs AI, AI vs AI, Team vs Team | Available |
 | Share battles with QR codes and invite links | Available |
 | View leaderboards and publish results | Available |
-| ELO ranking system | Available (`FEATURE_PUBLIC_BATTLES=true`) |
-| Web arena live streaming | Available (`FEATURE_PUBLIC_BATTLES=true`) |
-| Community voting | Available (`FEATURE_PUBLIC_BATTLES=true`) |
+| ELO ranking system | Available (operator-approved cloud battles) |
+| Web arena live streaming | Available (operator-approved cloud battles) |
+| Community voting | Available (operator-approved cloud battles) |
 
 ---
 

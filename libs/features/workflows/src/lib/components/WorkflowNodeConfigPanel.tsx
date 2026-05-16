@@ -195,9 +195,12 @@ export function WorkflowNodeConfigPanel({
           selectedLocalKeyId={nodeFunding.selectedLocalKeyId}
           onLocalKeyIdChange={nodeFunding.setSelectedLocalKeyId}
           availableLocalKeys={nodeFunding.localKeys}
+          localKeyAvailability={nodeFunding.localKeyAvailability}
           onAddLocalKey={nodeFunding.addLocalKey}
           onRemoveLocalKey={nodeFunding.removeLocalKey}
           onUpdateLocalKey={nodeFunding.updateLocalKey}
+          onPairGateway={nodeFunding.pairGateway}
+          onRefreshLocalKeys={nodeFunding.refreshLocalKeys}
           walletBalance={nodeFunding.walletBalance}
           canUseBYOK={nodeFunding.canUseBYOK}
           chainabitState={chainabit.state}

@@ -61,9 +61,6 @@
       "@lenserfight/features/agents": [
         "libs/features/agents/src/index.ts"
       ],
-      "@lenserfight/features/benchmark": [
-        "libs/features/benchmark/src/index.ts"
-      ],
       "@lenserfight/features/tags": [
         "libs/features/tags/src/index.ts"
       ],
@@ -135,6 +132,12 @@
       ],
       "@lenserfight/data/exports": [
         "libs/data/exports/src/index.ts"
+      ],
+      "@lenserfight/data/local-keys": [
+        "libs/data/local-keys/src/index.ts"
+      ],
+      "@lenserfight/data/local-keys-browser": [
+        "libs/data/local-keys/src/browser.ts"
       ],
       "@lenserfight/infra/analytics": [
         "libs/infra/analytics/src/index.ts"

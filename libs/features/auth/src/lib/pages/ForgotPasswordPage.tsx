@@ -2,7 +2,7 @@ import { Turnstile } from '@marsidev/react-turnstile'
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { isMock, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
+import { ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
@@ -80,11 +80,6 @@ export const ForgotPasswordPage: React.FC = () => {
             If an account exists for <strong>{formData.email}</strong>, you will receive
             instructions to reset your password.
           </p>
-          {isMock && (
-            <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded-lg mb-6 text-left">
-              <strong>Mock Mode Tip:</strong> Check your browser console (F12) for the reset link.
-            </div>
-          )}
           <Link to="/auth/login">
             <Button type="button" >Return to Sign In</Button>
           </Link>

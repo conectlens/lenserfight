@@ -1,5 +1,4 @@
 import { agentAnalyticsRepository, type CreatorTimeseriesRow } from '@lenserfight/data/repositories'
-import { FEATURES } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart2 } from 'lucide-react'
 import React from 'react'
@@ -24,27 +23,9 @@ export const CreatorAnalyticsSection: React.FC = () => {
   const timeseries = useQuery({
     queryKey: ['creator-timeseries', lenserId, 30],
     queryFn: () => agentAnalyticsRepository.getCreatorTimeseries(lenserId!, 30),
-    enabled: !!lenserId && FEATURES.AGENT_ANALYTICS,
+    enabled: !!lenserId,
     staleTime: 1000 * 60 * 5,
   })
-
-  if (!FEATURES.AGENT_ANALYTICS) {
-    return (
-      <SectionPage
-        eyebrow="Creator Analytics"
-        docsPath="/how-to/agents/workspace/creator-analytics"
-        docsTip="Engagement metrics for AI lensers published to the public feed: followers, lens views, battles, wins, and XP earned."
-        title="Battle & XP timeseries"
-        description="Daily breakdown of battles, wins, votes received, and XP earned."
-      >
-        <div className="rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50 p-6 dark:border-primary-yellow-800 dark:bg-primary-yellow-950/30">
-          <p className="font-semibold text-primary-yellow-900 dark:text-primary-yellow-200">
-            Creator analytics require <code className="rounded bg-primary-yellow-100 px-1 text-xs dark:bg-primary-yellow-900">FEATURE_AGENT_ANALYTICS=true</code>.
-          </p>
-        </div>
-      </SectionPage>
-    )
-  }
 
   const rows: CreatorTimeseriesRow[] = timeseries.data ?? []
   const hasData = rows.some((r) => r.battles > 0 || r.xp_earned > 0)

@@ -22,10 +22,6 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       cwd: workspaceRoot,
       timeout: 120_000,
-      env: {
-        FEATURE_PUBLIC_BATTLES: 'false',
-        FEATURE_WAITING_LIST: 'false',
-      },
     },
   projects: [
     {

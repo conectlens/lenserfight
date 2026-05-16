@@ -18,7 +18,6 @@ import { useAnalytics } from '@lenserfight/infra/analytics'
 import { Button, EmptyState, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { useModalRouter } from '@lenserfight/ui/routing'
-import { FEATURES } from '@lenserfight/utils/env'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Activity, Award, Bot, FolderOpen, LogIn, MessageSquare, Plus, Trophy } from 'lucide-react'
 import { supabase } from '@lenserfight/data/supabase'
@@ -108,13 +107,11 @@ function buildProfileTabs(
     tabs.push({ id: 'actions', label: 'Actions' })
   }
 
-  if (FEATURES.CHALLENGES_TAB) {
-    tabs.push({ id: 'challenges', label: 'Challenge History' })
-  }
+  tabs.push({ id: 'challenges', label: 'Challenge History' })
 
   tabs.push({ id: 'badges', label: 'Badges' })
 
-  if (FEATURES.AGENTS && isOwner) {
+  if (isOwner) {
     tabs.push({ id: 'agents', label: 'Agents' })
   }
 
@@ -172,7 +169,7 @@ export const LenserProfilePage: React.FC = () => {
   const { data: activity = [] } = useQuery<LenserActivityPoint[]>({
     queryKey: queryKeys.lenser.activity(handle!),
     queryFn: () => lenserService.getLenserActivity(handle!),
-    enabled: !!handle && !!viewedProfile && FEATURES.LENSER_ACTIVITY,
+    enabled: !!handle && !!viewedProfile,
   })
 
   const stats = useMemo<LenserStats | null>(() => {
@@ -543,22 +540,16 @@ export const LenserProfilePage: React.FC = () => {
         isOwner={isOwner}
         onProfileUpdate={handleProfileUpdate}
         relationshipState={relationshipState}
-        onManageAgents={
-          isOwner && FEATURES.AGENTS
-            ? () => handleTabChange('agents')
-            : undefined
-        }
+        onManageAgents={isOwner ? () => handleTabChange('agents') : undefined}
       />
 
       <div className="px-4 md:px-0">
         <LenserStatsRow stats={stats} xpSummary={xpSummary} />
       </div>
 
-      {FEATURES.LENSER_ACTIVITY && (
-        <div className="px-4 md:px-0">
-          <LenserActivityHeatmap data={activity} />
-        </div>
-      )}
+      <div className="px-4 md:px-0">
+        <LenserActivityHeatmap data={activity} />
+      </div>
 
       <div className="mt-8 px-0 md:px-0">
         <div className="px-4 md:px-0">
@@ -678,7 +669,7 @@ export const LenserProfilePage: React.FC = () => {
             <BadgeDisplay lenserId={viewedProfile.id} detailed />
           )}
 
-          {authUser && activeStandardTab === 'agents' && FEATURES.AGENTS && (
+          {authUser && activeStandardTab === 'agents' && (
             <>
               {items.length > 0 ? (
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

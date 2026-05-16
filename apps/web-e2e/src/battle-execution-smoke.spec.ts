@@ -1,8 +1,7 @@
 /**
  * Phase 7 — battle execution smoke (@smoke).
  *
- * The webServer in playwright.config.ts boots with FEATURE_PUBLIC_BATTLES=false.
- * The smoke validates two invariants:
+ * Validates two invariants:
  *   1. The battles browse route loads (or correctly gates) without runtime
  *      errors.
  *   2. Direct deep links into a battle slug never explode — even when the

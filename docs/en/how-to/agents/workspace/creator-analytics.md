@@ -11,7 +11,7 @@ Creator Analytics is the **public-engagement** dashboard. Where [Analytics](./an
 
 ## Feature flag
 
-This section requires `FEATURE_AGENT_ANALYTICS=true`. When disabled, the section renders a guard banner.
+This section requires creator analytics enabled. When disabled, the section renders a guard banner.
 
 ## Timeseries (last 30 days)
 

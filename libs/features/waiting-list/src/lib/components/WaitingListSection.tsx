@@ -1,7 +1,6 @@
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
 import { Button } from '@lenserfight/ui/components'
-import { FEATURES } from '@lenserfight/utils/env'
 import {
   CheckCircle,
   Lock,
@@ -15,9 +14,6 @@ import { Link } from 'react-router-dom'
 import { useWaitingList } from '../hooks/useWaitingList'
 
 export const WaitingListSection: React.FC = () => {
-  if (!FEATURES.WAITING_LIST) {
-    return null
-  }
   return <WaitingListSectionContent />
 }
 

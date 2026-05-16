@@ -28,7 +28,6 @@ import {
   useWorkspaceSwitchController,
 } from '@lenserfight/features/profile'
 import { AgentSettingsSheet } from '@lenserfight/features/agents'
-import { FEATURES } from '@lenserfight/utils/env'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
 
@@ -424,7 +423,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 )}
 
                 {/* Workspace switcher — visible when there are multiple profiles (human + AI) */}
-                {showLabels && FEATURES.AGENTS && workspaces.length > 1 && (
+                {showLabels && workspaces.length > 1 && (
                   <div className="relative flex-shrink-0">
                     <button
                       ref={switcherButtonRef}
@@ -542,7 +541,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       className={`p-1.5 rounded-lg transition-colors relative ${isDropdownOpen ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                     >
                       <MoreHorizontal size={18} />
-                      {FEATURES.NOTIFICATIONS && unreadCount > 0 && (
+                      {unreadCount > 0 && (
                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                       )}
                     </button>
@@ -579,7 +578,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             My Profile
                           </button>
 
-                          {FEATURES.AGENTS && hasLenser && !isAIWorkspace && (
+                          {hasLenser && !isAIWorkspace && (
                             <button
                               role="menuitem"
                               className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
