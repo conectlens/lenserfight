@@ -65,8 +65,8 @@ export function useSaveWorkflow() {
       if (validateBeforeSave && nodes.length > 0) {
         const result = validateWorkflow(
           nodes.map((n) => ({
-            id: n.id ?? `__new__:${n.lens_id}:${n.ordinal ?? 0}`,
-            lensId: n.lens_id,
+            id: n.id ?? `__new__:${n.lens_id ?? 'utility'}:${n.ordinal ?? 0}`,
+            lensId: n.lens_id ?? undefined,
             versionId: n.version_id ?? null,
             config: (n.config ?? null) as Record<string, unknown> | null,
           })),
