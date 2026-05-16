@@ -38297,71 +38297,7 @@ $$;
 ALTER FUNCTION "public"."fn_upsert_notification_preference"("p_type" "text", "p_enabled" boolean) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_upsert_profile_from_chainabit"("p_user_id" "uuid", "p_email" "text", "p_handle" "text" DEFAULT NULL::"text", "p_display_name" "text" DEFAULT NULL::"text", "p_avatar_url" "text" DEFAULT NULL::"text") RETURNS "uuid"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public', 'lensers'
-    AS $$
-DECLARE
-  v_handle       TEXT;
-  v_profile_id   UUID;
-  v_attempt      INT := 0;
-BEGIN
-  -- Derive a handle from email prefix when Chainabit did not provide one
-  v_handle := COALESCE(
-    NULLIF(regexp_replace(lower(p_handle), '[^a-z0-9._]', '', 'g'), ''),
-    NULLIF(regexp_replace(split_part(lower(p_email), '@', 1), '[^a-z0-9._]', '', 'g'), ''),
-    'user'
-  );
-  -- Enforce min length
-  IF length(v_handle) < 4 THEN v_handle := v_handle || '0000'; END IF;
-  -- Truncate to 24 chars
-  v_handle := left(v_handle, 24);
-
-  -- Upsert existing user (by user_id) — update display_name and avatar on repeat sign-ins
-  UPDATE lensers.profiles SET
-    display_name  = COALESCE(NULLIF(p_display_name, ''), display_name),
-    avatar_url    = COALESCE(NULLIF(p_avatar_url,   ''), avatar_url),
-    last_login_at = now(),
-    login_count   = login_count + 1
-  WHERE user_id = p_user_id
-  RETURNING id INTO v_profile_id;
-
-  IF FOUND THEN
-    RETURN v_profile_id;
-  END IF;
-
-  -- New user: try inserting with derived handle; append suffix on collision
-  LOOP
-    BEGIN
-      INSERT INTO lensers.profiles (
-        user_id, handle, display_name, avatar_url,
-        type, onboarding_step, last_login_at, login_count
-      ) VALUES (
-        p_user_id,
-        CASE WHEN v_attempt = 0 THEN v_handle
-             ELSE left(v_handle, 20) || lpad(v_attempt::TEXT, 4, '0')
-        END,
-        COALESCE(NULLIF(p_display_name, ''), v_handle),
-        NULLIF(p_avatar_url, ''),
-        'human',
-        1,      -- skip onboarding step 0; user came from Chainabit so account is pre-verified
-        now(),
-        1
-      )
-      RETURNING id INTO v_profile_id;
-      RETURN v_profile_id;
-    EXCEPTION WHEN unique_violation THEN
-      v_attempt := v_attempt + 1;
-      IF v_attempt > 9999 THEN
-        RAISE EXCEPTION 'fn_upsert_profile_from_chainabit: exhausted handle variants for %', v_handle;
-      END IF;
-    END;
-  END LOOP;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."fn_upsert_profile_from_chainabit"("p_user_id" "uuid", "p_email" "text", "p_handle" "text", "p_display_name" "text", "p_avatar_url" "text") OWNER TO "postgres";
+-- fn_upsert_profile_from_chainabit removed: dropped by migration 20271225000000.
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_upsert_provider_config"("p_ai_lenser_id" "uuid", "p_provider_key" "text", "p_base_url" "text" DEFAULT NULL::"text", "p_status" "text" DEFAULT 'unconfigured'::"text", "p_ai_key_id" "uuid" DEFAULT NULL::"uuid") RETURNS "agents"."provider_configs"
@@ -67771,10 +67707,7 @@ GRANT ALL ON FUNCTION "public"."fn_upsert_notification_preference"("p_type" "tex
 
 
 
-REVOKE ALL ON FUNCTION "public"."fn_upsert_profile_from_chainabit"("p_user_id" "uuid", "p_email" "text", "p_handle" "text", "p_display_name" "text", "p_avatar_url" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."fn_upsert_profile_from_chainabit"("p_user_id" "uuid", "p_email" "text", "p_handle" "text", "p_display_name" "text", "p_avatar_url" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."fn_upsert_profile_from_chainabit"("p_user_id" "uuid", "p_email" "text", "p_handle" "text", "p_display_name" "text", "p_avatar_url" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."fn_upsert_profile_from_chainabit"("p_user_id" "uuid", "p_email" "text", "p_handle" "text", "p_display_name" "text", "p_avatar_url" "text") TO "service_role";
+-- fn_upsert_profile_from_chainabit removed: dropped by migration 20271225000000.
 
 
 

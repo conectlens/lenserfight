@@ -12,25 +12,9 @@
 
 BEGIN;
 
--- E2E password injected at apply time via `PGOPTIONS="-c seed.e2e_password=..."`.
--- Falls back to a random UUID per row so accounts exist but cannot be guessed
--- when the harness is invoked without a configured password. See scripts/e2e-battle.sh.
-CREATE OR REPLACE FUNCTION pg_temp.fn_seed_password(p_guc text)
-RETURNS text
-LANGUAGE plpgsql
-AS $$
-DECLARE
-  v_val text;
-BEGIN
-  v_val := current_setting(p_guc, true);
-  IF v_val IS NULL OR length(v_val) = 0 THEN
-    RETURN gen_random_uuid()::text;
-  END IF;
-  RETURN v_val;
-END;
-$$;
-
 -- Auth users -----------------------------------------------------------------
+-- E2E password injected at apply time via `PGOPTIONS="-c seed.e2e_password=..."`.
+-- Falls back to a random UUID per row so accounts exist but cannot be guessed.
 INSERT INTO auth.users (
     instance_id, id, aud, role,
     email, encrypted_password,
@@ -45,7 +29,7 @@ VALUES
      'e2e00001-0000-0000-0000-000000000001',
      'authenticated', 'authenticated',
      'e2e_alice@lenserfight.local',
-     extensions.crypt(pg_temp.fn_seed_password('seed.e2e_password'), extensions.gen_salt('bf')),
+     extensions.crypt(coalesce(nullif(current_setting('seed.e2e_password', true), ''), gen_random_uuid()::text), extensions.gen_salt('bf')),
      now(), now(), now(), now(),
      '', '', '', '', '', '',
      '{"provider":"email","providers":["email"]}',
@@ -55,7 +39,7 @@ VALUES
      'e2e00001-0000-0000-0000-000000000002',
      'authenticated', 'authenticated',
      'e2e_bob@lenserfight.local',
-     extensions.crypt(pg_temp.fn_seed_password('seed.e2e_password'), extensions.gen_salt('bf')),
+     extensions.crypt(coalesce(nullif(current_setting('seed.e2e_password', true), ''), gen_random_uuid()::text), extensions.gen_salt('bf')),
      now(), now(), now(), now(),
      '', '', '', '', '', '',
      '{"provider":"email","providers":["email"]}',
@@ -65,7 +49,7 @@ VALUES
      'e2e00001-0000-0000-0000-000000000003',
      'authenticated', 'authenticated',
      'e2e_voter1@lenserfight.local',
-     extensions.crypt(pg_temp.fn_seed_password('seed.e2e_password'), extensions.gen_salt('bf')),
+     extensions.crypt(coalesce(nullif(current_setting('seed.e2e_password', true), ''), gen_random_uuid()::text), extensions.gen_salt('bf')),
      now(), now(), now(), now(),
      '', '', '', '', '', '',
      '{"provider":"email","providers":["email"]}',
@@ -75,7 +59,7 @@ VALUES
      'e2e00001-0000-0000-0000-000000000004',
      'authenticated', 'authenticated',
      'e2e_voter2@lenserfight.local',
-     extensions.crypt(pg_temp.fn_seed_password('seed.e2e_password'), extensions.gen_salt('bf')),
+     extensions.crypt(coalesce(nullif(current_setting('seed.e2e_password', true), ''), gen_random_uuid()::text), extensions.gen_salt('bf')),
      now(), now(), now(), now(),
      '', '', '', '', '', '',
      '{"provider":"email","providers":["email"]}',
