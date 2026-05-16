@@ -355,31 +355,85 @@ COMMENT ON FUNCTION public.fn_worker_persist_execution_artifacts(uuid, uuid, uui
   'Delegates to execution.fn_persist_execution_artifacts.';
 
 -- ─── 12. fn_worker_get_ai_key_secret ─────────────────────────────────────────
--- Resolve and decrypt an AI key from ai.keys + vault.decrypted_secrets
--- (supabase/functions/test-provider/index.ts).
--- Replaces: two-step .schema('ai').from('keys') + .schema('vault').from('decrypted_secrets').
+-- Resolve and decrypt an AI key from ai.keys + vault.decrypted_secrets, with
+-- mandatory ownership enforcement.
+--
+-- Security history: prior to 2026-05-16 this function accepted only p_ai_key_id
+-- and performed no ownership check. A service_role caller (e.g. an edge function
+-- using a client-supplied UUID) could therefore decrypt ANY user's stored key —
+-- a cross-tenant IDOR. The current version requires the worker to pass the
+-- authenticated user's auth.uid() so the function can verify the key belongs
+-- to that user before touching the vault.
+--
+-- Worker contract: callers MUST pass auth.uid() of the authenticated request.
+-- Passing NULL or a wrong UUID will fail the ownership check.
 
-CREATE OR REPLACE FUNCTION public.fn_worker_get_ai_key_secret(p_ai_key_id uuid)
+DROP FUNCTION IF EXISTS public.fn_worker_get_ai_key_secret(uuid);
+
+CREATE OR REPLACE FUNCTION public.fn_worker_get_ai_key_secret(
+  p_ai_key_id uuid,
+  p_user_id   uuid
+)
 RETURNS text
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path TO 'public', 'ai', 'vault'
+SET search_path TO 'public', 'ai', 'vault', 'lensers'
 AS $$
-  SELECT vs.decrypted_secret
-  FROM ai.keys k
-  JOIN vault.decrypted_secrets vs ON vs.id = k.encrypted_key_id
-  WHERE k.id = p_ai_key_id
+DECLARE
+  v_lenser_id    uuid;
+  v_encrypted_id uuid;
+  v_decrypted    text;
+BEGIN
+  IF p_ai_key_id IS NULL OR p_user_id IS NULL THEN
+    RAISE EXCEPTION 'p_ai_key_id and p_user_id are required';
+  END IF;
+
+  -- Resolve the human profile for the authenticated user; ai.keys are owned
+  -- by the human profile (not an agent workspace profile).
+  SELECT p.id INTO v_lenser_id
+  FROM lensers.profiles p
+  WHERE p.user_id = p_user_id
+    AND p.type = 'human'
   LIMIT 1;
+
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'Key owner profile not found';
+  END IF;
+
+  -- Ownership check: key must belong to caller AND be active.
+  SELECT k.encrypted_key_id INTO v_encrypted_id
+  FROM ai.keys k
+  WHERE k.id = p_ai_key_id
+    AND k.lenser_id = v_lenser_id
+    AND k.is_active = true
+  LIMIT 1;
+
+  IF v_encrypted_id IS NULL THEN
+    -- Generic message: do not disclose whether the key exists for another user.
+    RAISE EXCEPTION 'Key not found, revoked, or not owned by caller';
+  END IF;
+
+  SELECT decrypted_secret INTO v_decrypted
+  FROM vault.decrypted_secrets
+  WHERE id = v_encrypted_id;
+
+  IF v_decrypted IS NULL THEN
+    RAISE EXCEPTION 'Failed to decrypt key from vault';
+  END IF;
+
+  RETURN v_decrypted;
+END;
 $$;
 
-ALTER FUNCTION public.fn_worker_get_ai_key_secret(uuid) OWNER TO postgres;
-REVOKE ALL ON FUNCTION public.fn_worker_get_ai_key_secret(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.fn_worker_get_ai_key_secret(uuid) TO service_role;
+ALTER FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) TO service_role;
 
-COMMENT ON FUNCTION public.fn_worker_get_ai_key_secret(uuid) IS
-  'Worker-only: resolve and decrypt an API key from ai.keys via vault.decrypted_secrets. '
-  'Single round-trip replacing the two-step lookup in test-provider edge function.';
+COMMENT ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) IS
+  'Worker-only: resolve and decrypt a BYOK API key from ai.keys via vault.decrypted_secrets. '
+  'Requires p_user_id (the authenticated caller''s auth.uid()) and verifies '
+  'the key belongs to that user. Patched 2026-05-16 to close cross-user IDOR.';
 
 -- ─── EDGE FUNCTION WORKER RPCs ───────────────────────────────────────────────
 
