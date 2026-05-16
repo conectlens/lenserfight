@@ -330,13 +330,14 @@ const NodeInspector: React.FC<{
             {ROLE_OPTIONS.map((opt) => (
               <Button
                 key={opt.value}
+                variant="ghost"
                 type="button"
                 onClick={() => handleRoleChange(opt.value)}
                 className={[
                   'rounded-xl px-3 py-1.5 text-xs font-semibold transition',
                   role === opt.value
-                    ? 'bg-primary-yellow-400 text-white dark:bg-primary-yellow-500'
-                    : 'border border-gray-200 text-gray-600 hover:border-primary-yellow-300 hover:text-primary-yellow-600 dark:border-gray-700 dark:text-gray-400',
+                    ? 'border border-primary-yellow-400 hover:border-primary-yellow-300 hover:text-primary-yellow-600'
+                    : 'border border-gray-200 hover:border-primary-yellow-300 hover:text-primary-yellow-600 dark:border-gray-700 dark:text-gray-400',
                 ].join(' ')}
               >
                 {opt.label}
@@ -481,7 +482,7 @@ const EdgeInspector: React.FC<{
           </label>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {EDGE_TYPE_OPTIONS.map((opt) => (
-              <Button
+              <button
                 key={opt.value}
                 type="button"
                 onClick={() => handleEdgeTypeChange(opt.value)}
@@ -493,7 +494,7 @@ const EdgeInspector: React.FC<{
                 ].join(' ')}
               >
                 {opt.label}
-              </Button>
+              </button>
             ))}
           </div>
         </div>
@@ -505,7 +506,7 @@ const EdgeInspector: React.FC<{
               Downstream agents wait for this edge to resolve
             </p>
           </div>
-          <Button
+          <button
             type="button"
             role="switch"
             aria-checked={isBlocking}
@@ -521,7 +522,7 @@ const EdgeInspector: React.FC<{
                 isBlocking ? 'translate-x-5' : 'translate-x-0',
               ].join(' ')}
             />
-          </Button>
+          </button>
         </div>
       </Card>
 
