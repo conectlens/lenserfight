@@ -91,7 +91,7 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 ### Phase 9 — fixes & hardening
 
 - **seed**: prune stale `20_*–32_*` scale entries from `supabase/seed.manifest`; add `45_workflow_runs.sql` so `supabase db reset` produces ≥1 workflow run, ≥1 agent, ≥2 lens versions
-- **gate**: `/lenserboard` is now behind cloud battles surface; onboarding return-URL falls back to `/workflows` when battles are off
+- **gate**: `/lenserboard` is now behind `FEATURES.PUBLIC_BATTLES`; onboarding return-URL falls back to `/workflows` when battles are off
 - **cli**: add `--dry-run` to `lf run exec` — short-circuits before any provider/credential resolution; covered by `apps/cli/src/commands/run.spec.ts`
 - **ci**: new `cli-smoke.yml`, `seeds-smoke.yml`, `web-e2e.yml`, `labels-sync.yml` workflows
 - **e2e**: new `apps/web-e2e/` Playwright project with the arena/battles-gate spec
