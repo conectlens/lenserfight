@@ -1,9 +1,10 @@
+import { LocalKeysGatewayClient } from '@lenserfight/data/local-keys-browser'
 import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { CHAINABIT_APP_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
 import { HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil, Loader2 } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useFundingCapabilities } from '../hooks/useFundingCapabilities'
@@ -13,6 +14,12 @@ import { LabProviderSelector } from './LabProviderSelector'
 
 import type { LocalKeyMeta, ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/types'
 
+type LocalKeyAvailability =
+  | 'available'
+  | 'gateway_unreachable'
+  | 'gateway_not_paired'
+  | 'gateway_forbidden'
+
 interface FundingSourceToggleProps {
   fundingSource: FundingSource
   onFundingSourceChange: (source: FundingSource) => void
@@ -20,13 +27,18 @@ interface FundingSourceToggleProps {
   selectedKeyRefId: string | null
   onKeyRefIdChange: (keyId: string) => void
   availableKeys: UserApiKey[]
-  // Local BYOK
+  // Local BYOK — backed by the LenserFight Gateway daemon, NOT the browser.
   selectedLocalKeyId: string | null
   onLocalKeyIdChange: (keyId: string) => void
   availableLocalKeys: LocalKeyMeta[]
+  /** Pass the gateway availability (`useLocalKeyStore().availability`). */
+  localKeyAvailability?: LocalKeyAvailability
   onAddLocalKey: (provider: string, label: string, rawKey: string) => Promise<void>
   onRemoveLocalKey?: (id: string) => Promise<void>
   onUpdateLocalKey?: (id: string, rawKey: string, label: string) => Promise<void>
+  /** Persist the bearer token from `lf gateway pair --web` (sessionStorage). */
+  onPairGateway?: (token: string) => void
+  onRefreshLocalKeys?: () => Promise<void> | void
   // Common
   walletBalance: WalletBalance | undefined
   canUseBYOK: boolean
@@ -75,6 +87,38 @@ const PROVIDER_OPTIONS = Object.entries(BYOK_PROVIDER_LABELS).map(([value, label
   label,
 }))
 
+/**
+ * Map a thrown error from the gateway client into a user-facing message.
+ * The client raises `LocalKeyStoreError` with a `code` field — but the
+ * generic Error shape only exposes `message`, so check both.
+ */
+function mapGatewayError(err: unknown, op: 'save' | 'update'): string {
+  const fallback = op === 'save' ? 'Failed to save key. Please try again.' : 'Failed to update key. Please try again.'
+  if (!(err instanceof Error)) return fallback
+  const code =
+    (err as Error & { code?: string }).code ??
+    (err.message.match(/^(gateway_[a-z_]+|[a-z_]+)/)?.[1] ?? '')
+  switch (code) {
+    case 'gateway_not_paired':
+      return 'Gateway not paired. Run `lf gateway pair --web` and paste the token.'
+    case 'gateway_unreachable':
+      return 'Gateway is not running. Start it with `lf gateway serve`.'
+    case 'gateway_forbidden':
+      return 'Gateway refused this origin. Add this URL to the allow-list, or open the app at https://lenserfight.com / a permitted origin.'
+    case 'gateway_rate_limited':
+      return 'Too many requests to the gateway. Wait a minute and retry.'
+    case 'passphrase_missing':
+      return 'No master passphrase configured. Run `lf keys init`.'
+    case 'duplicate_key':
+      return 'A key with this id already exists.'
+    case 'invalid_provider':
+    case 'invalid_key_id':
+      return err.message || fallback
+    default:
+      return err.message ? `${fallback} (${err.message})` : fallback
+  }
+}
+
 function AddLocalKeyForm({
   onAdd,
   onCancel,
@@ -103,12 +147,7 @@ function AddLocalKeyForm({
       await onAdd(provider, label || provider, rawKey)
       onCancel()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : ''
-      setError(
-        msg.includes('IndexedDB')
-          ? 'Local keys need IndexedDB — disable private browsing and try again.'
-          : 'Failed to save key. Please try again.',
-      )
+      setError(mapGatewayError(err, 'save'))
     } finally {
       setSaving(false)
     }
@@ -134,13 +173,19 @@ function AddLocalKeyForm({
       />
 
       <div className="relative">
+        {/* type="text" + WebKit text-security mask. Avoids the browser's
+            "password fields on insecure (http://) page" warning while
+            preserving over-the-shoulder masking on Chromium and Safari.
+            Firefox shows cleartext when masked; users can toggle Eye to
+            view explicitly. */}
         <input
-          type={showKey ? 'text' : 'password'}
+          type="text"
           autoComplete="off"
+          spellCheck={false}
           value={rawKey}
           onChange={(e) => setRawKey(e.target.value)}
           placeholder={isOllama ? 'API key (optional, for cloud models)…' : 'API key…'}
-          className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 pr-8 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className={`w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 pr-8 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono ${showKey ? '' : '[-webkit-text-security:disc] [text-security:disc]'}`}
         />
         <button
           type="button"
@@ -179,7 +224,7 @@ function AddLocalKeyForm({
       </div>
 
       <p className="text-[10px] text-gray-400">
-        Encrypted in your browser. Never sent to our servers.
+        Sent to the loopback gateway, encrypted at rest on your machine. Never sent to LenserFight servers.
       </p>
     </div>
   )
@@ -214,12 +259,7 @@ function EditLocalKeyModal({
       await onSave(keyMeta.id, rawKey, label || keyMeta.provider)
       onClose()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : ''
-      setError(
-        msg.includes('IndexedDB')
-          ? 'Local keys need IndexedDB — disable private browsing and try again.'
-          : 'Failed to update key. Please try again.',
-      )
+      setError(mapGatewayError(err, 'update'))
     } finally {
       setSaving(false)
     }
@@ -251,12 +291,13 @@ function EditLocalKeyModal({
           </label>
           <div className="relative">
             <input
-              type={showKey ? 'text' : 'password'}
+              type="text"
               autoComplete="off"
+              spellCheck={false}
               value={rawKey}
               onChange={(e) => setRawKey(e.target.value)}
               placeholder={isOllama ? 'Leave blank to keep existing…' : 'Paste new key…'}
-              className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 pr-8 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className={`w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 pr-8 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono ${showKey ? '' : '[-webkit-text-security:disc] [text-security:disc]'}`}
             />
             <button
               type="button"
@@ -270,7 +311,7 @@ function EditLocalKeyModal({
 
         {error && <p className="text-xs text-red-500">{error}</p>}
 
-        <p className="text-[10px] text-gray-400">Encrypted in your browser. Never sent to our servers.</p>
+        <p className="text-[10px] text-gray-400">Sent to the loopback gateway, encrypted at rest on your machine. Never sent to LenserFight servers.</p>
 
         <div className="flex gap-2 pt-1">
           <button
@@ -303,9 +344,12 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   selectedLocalKeyId,
   onLocalKeyIdChange,
   availableLocalKeys,
+  localKeyAvailability = 'available',
   onAddLocalKey,
   onRemoveLocalKey: _onRemoveLocalKey,
   onUpdateLocalKey,
+  onPairGateway,
+  onRefreshLocalKeys,
   walletBalance,
   canUseBYOK,
   chainabitState,
@@ -331,10 +375,45 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   const caps = useFundingCapabilities({
     availableCloudKeyCount: availableKeys.length,
     chainabitState,
+    localKeyAvailability,
   })
+  const [pairToken, setPairToken] = useState('')
+
+  // Fallback gateway client: when the parent component hasn't piped
+  // `onPairGateway` through (most existing call sites still don't), the
+  // toggle remains self-sufficient — it constructs its own client so the
+  // pairing flow is always reachable from any page that shows this widget.
+  const fallbackClient = useMemo(() => {
+    if (onPairGateway) return null // parent owns it
+    if (typeof window === 'undefined') return null
+    return new LocalKeysGatewayClient()
+  }, [onPairGateway])
+  const handlePairGateway = (token: string) => {
+    if (onPairGateway) {
+      onPairGateway(token)
+      return
+    }
+    if (fallbackClient) {
+      fallbackClient.setToken(token)
+      // Trigger a re-render in the parent's funding flow by reloading the
+      // page when no refresh handler was wired. This is a last resort —
+      // call sites should pass onRefreshLocalKeys to avoid the reload.
+      if (onRefreshLocalKeys) {
+        void onRefreshLocalKeys()
+      } else if (typeof window !== 'undefined') {
+        window.location.reload()
+      }
+    }
+  }
 
   const cloudByokDisabled = !canUseBYOK
-  const localByokDisabled = !canUseBYOK || !caps.canUseLocalByok
+  // Make the Local Keys tile selectable whenever there is *any* path forward:
+  // already available, gateway running but unpaired (click → see pair UI),
+  // or gateway not yet started (click → see "start the gateway" hint).
+  // Only refuse the click when the origin has been forbidden — there is
+  // truly nothing the user can do from this UI in that case.
+  const localByokDisabled =
+    !canUseBYOK || localKeyAvailability === 'gateway_forbidden'
 
   const chainabitActive = chainabitState === 'connected'
   const chainabitNeedsAction = chainabitState === 'no_account' || chainabitState === 'invalid_connection'
@@ -369,13 +448,18 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       return
     }
 
-    if (fundingSource === 'user_byok_local' && !caps.canUseLocalByok) {
+    // Only auto-fallback from local BYOK when the gateway has explicitly forbidden
+    // this origin — there is nothing the user can do from this UI in that case.
+    // gateway_not_paired and gateway_unreachable are *actionable*: the pairing UI
+    // is surfaced precisely for those states, so we must stay on user_byok_local.
+    if (fundingSource === 'user_byok_local' && localKeyAvailability === 'gateway_forbidden') {
       if (caps.canSelectCloudByok) onFundingSourceChange('user_byok_cloud')
       else if (caps.canUseChainabit) onFundingSourceChange('platform_credit')
     }
   }, [
     chainabitState,
     fundingSource,
+    localKeyAvailability,
     caps.canSelectCloudByok,
     caps.canUseLocalByok,
     caps.canUseChainabit,
@@ -518,8 +602,12 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         </Tooltip>
 
         <Tooltip text={caps.canUseLocalByok
-          ? 'BYOK API keys encrypted with AES-GCM in this browser only (IndexedDB). Works on any origin; never sent to our servers.'
-          : 'Local keys need IndexedDB — disable private browsing and try again.'}>
+          ? 'BYOK API keys stored encrypted at rest on your machine (~/.lenserfight/keys/), accessed via the LenserFight Gateway loopback daemon. Plaintext never leaves your computer.'
+          : localKeyAvailability === 'gateway_unreachable'
+            ? 'Start the LenserFight Gateway: run `lf gateway serve` in a terminal.'
+            : localKeyAvailability === 'gateway_not_paired'
+              ? 'Pair the gateway: run `lf gateway pair --web` and paste the token below.'
+              : 'Gateway refused the request (origin blocked).'}>
           <button
             type="button"
             onClick={() => onFundingSourceChange('user_byok_local')}
@@ -548,8 +636,12 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
                 {availableLocalKeys.length > 0
                   ? `${availableLocalKeys.length} key${availableLocalKeys.length > 1 ? 's' : ''}`
                   : caps.canUseLocalByok
-                    ? 'Add a key'
-                    : 'Unavailable'}
+                    ? 'Add via `lf keys add`'
+                    : localKeyAvailability === 'gateway_unreachable'
+                      ? 'Gateway off'
+                      : localKeyAvailability === 'gateway_not_paired'
+                        ? 'Not paired'
+                        : 'Unavailable'}
               </p>
             </div>
           </button>
@@ -598,7 +690,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
             )}
           </div>
           <p className="text-[10px] text-gray-400 dark:text-gray-500">
-            Encrypted in your browser. Never sent to our servers.
+            Stored encrypted on your machine. Resolved on demand through the loopback gateway.
           </p>
         </div>
       )}
@@ -611,15 +703,139 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         />
       )}
 
-      {/* Row 4: Inline add local key form */}
-      {caps.canUseLocalByok && isByokLocal && !showAddLocalKey && (
+      {/* Pair the gateway. Visible whenever the user has switched to Local Keys
+          but no bearer token is paired with this origin. The pair input is the
+          only place to paste the token from `lf gateway pair --web` — keep
+          the instructions explicit so users can't miss the connection. */}
+      {isByokLocal && localKeyAvailability === 'gateway_not_paired' && (
+        <div className="flex flex-col gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
+          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+            Paste your pairing token below ↓
+          </p>
+          <ol className="text-[10px] text-gray-600 dark:text-gray-400 list-decimal pl-4 space-y-0.5">
+            <li>
+              In a terminal on the gateway machine, run{' '}
+              <code className="text-primary-600 dark:text-primary-400">lf gateway pair --web</code>
+            </li>
+            <li>Copy the token printed on the next line</li>
+            <li>Paste it into the field below and click <strong>Pair gateway</strong></li>
+          </ol>
+          <input
+            type="text"
+            autoComplete="off"
+            spellCheck={false}
+            value={pairToken}
+            onChange={(e) => setPairToken(e.target.value)}
+            onPaste={(e) => {
+              // Friendly: auto-pair on paste if the field is empty
+              const pasted = e.clipboardData.getData('text').trim()
+              if (pasted && !pairToken.trim()) {
+                e.preventDefault()
+                setPairToken(pasted)
+              }
+            }}
+            placeholder="Paste pairing token here…"
+            aria-label="LenserFight Gateway pairing token"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono [-webkit-text-security:disc] [text-security:disc]"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const trimmed = pairToken.trim()
+                if (!trimmed) return
+                handlePairGateway(trimmed)
+                setPairToken('')
+              }}
+              disabled={!pairToken.trim()}
+              className="flex-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 hover:bg-primary/90 transition-colors"
+            >
+              Pair gateway
+            </button>
+            {onRefreshLocalKeys && (
+              <button
+                type="button"
+                onClick={() => {
+                  void onRefreshLocalKeys()
+                }}
+                className="rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Recheck
+              </button>
+            )}
+          </div>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500">
+            The token is held in this browser tab only (sessionStorage). Close the tab and you'll need to pair again.
+          </p>
+        </div>
+      )}
+
+      {/* Gateway not running */}
+      {isByokLocal && localKeyAvailability === 'gateway_unreachable' && (
+        <div className="flex flex-col gap-2 p-3 rounded-lg border border-amber-300/40 bg-amber-50 dark:bg-amber-900/10">
+          <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+            Start the LenserFight Gateway
+          </p>
+          <ol className="text-[10px] text-gray-600 dark:text-gray-400 list-decimal pl-4 space-y-0.5">
+            <li>
+              Run <code className="text-primary-600 dark:text-primary-400">lf gateway serve</code>{' '}
+              in a terminal and leave it running.
+            </li>
+            <li>
+              Then run <code className="text-primary-600 dark:text-primary-400">lf gateway pair --web</code>{' '}
+              and copy the token it prints.
+            </li>
+            <li>Come back to this page and paste the token into the field that appears.</li>
+          </ol>
+          {onRefreshLocalKeys && (
+            <button
+              type="button"
+              onClick={() => void onRefreshLocalKeys()}
+              className="self-start rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Recheck gateway
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Gateway forbids this origin */}
+      {isByokLocal && localKeyAvailability === 'gateway_forbidden' && (
+        <p className="text-xs text-red-500">
+          The gateway refused this origin (<code>{typeof window !== 'undefined' ? window.location.origin : ''}</code>).{' '}
+          Add it to the allow-list with{' '}
+          <code>LF_GATEWAY_EXTRA_ORIGINS</code> or open the web app from a permitted URL.
+        </p>
+      )}
+
+      {/* Add-a-key hint: the gateway is paired but no keys are stored yet. */}
+      {caps.canUseLocalByok && isByokLocal && availableLocalKeys.length === 0 && !showAddLocalKey && (
+        <div className="flex flex-col gap-1.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            No local keys yet. Add one with the CLI: <code>lf keys add --provider openai</code>.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowAddLocalKey(true)}
+            className="flex items-center gap-1.5 text-xs text-primary-600 dark:text-primary-400 hover:underline self-start"
+          >
+            <Plus size={12} />
+            Add from the browser instead
+          </button>
+        </div>
+      )}
+
+      {/* Row 4: Inline add local key form — still available as a fallback for users
+          who'd rather paste a key into the browser. The plaintext is sent to the
+          gateway over loopback; it never reaches LenserFight servers. */}
+      {caps.canUseLocalByok && isByokLocal && availableLocalKeys.length > 0 && !showAddLocalKey && (
         <button
           type="button"
           onClick={() => setShowAddLocalKey(true)}
           className="flex items-center gap-1.5 text-xs text-primary-600 dark:text-primary-400 hover:underline self-start"
         >
           <Plus size={12} />
-          {availableLocalKeys.length === 0 ? 'Add a local key' : 'Add another key'}
+          Add another key
         </button>
       )}
 
