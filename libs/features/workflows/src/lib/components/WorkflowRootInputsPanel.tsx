@@ -53,8 +53,8 @@ export function WorkflowRootInputsPanel({
       queryFn: () =>
         node.version_id
           ? lensesService.getVersionById(node.version_id)
-          : lensesService.getLatestPublishedVersion(node.lens_id).then((published) =>
-              published ?? lensesService.getLatestVersion(node.lens_id)
+          : lensesService.getLatestPublishedVersion(node.lens_id!).then((published) =>
+              published ?? lensesService.getLatestVersion(node.lens_id!)
             ),
       staleTime: 1000 * 60 * 5,
       enabled: !!node.lens_id,
