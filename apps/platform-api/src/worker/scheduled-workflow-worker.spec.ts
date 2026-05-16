@@ -43,8 +43,16 @@ function buildClient(
   const mockRpc = jest.fn().mockImplementation(async (name: string, params?: unknown) => {
     if (name === 'fn_worker_claim_scheduled_workflow_run')
       return { data: claimResult ? [claimResult] : [], error: null }
-    // Forward all other calls (fn_update_workflow_run_status etc.) to mockUpdateStatus
-    // so existing assertions on mockUpdateStatus continue to work.
+    if (name === 'fn_worker_get_workflow_context')
+      return { data: [{ workspace_id: null }], error: null }
+    if (name === 'fn_worker_get_workflow_graph')
+      return { data: { nodes, edges }, error: null }
+    if (name === 'fn_worker_get_lens_template_body')
+      return { data: 'template [[x]]', error: null }
+    if (name === 'fn_get_version_contracts')
+      return { data: [], error: null }
+    if (name === 'fn_worker_upsert_node_result')
+      return { data: null, error: null }
     return mockUpdateStatus(name, params)
   })
 
