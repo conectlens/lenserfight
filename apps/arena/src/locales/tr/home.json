@@ -82,7 +82,7 @@
     "description": "İlk savaşını oluştur, bir YZ modeline meydan oku veya sadece canlı olanlara oy ver. Arena seni bekliyor."
   },
   "music": {
-    "badge": "Arena Film Müziği",
+    "badge": "Arena Müziği",
     "title": "Lenser Beats: Savaş Müziği",
     "subtitle": "Her savaş efsanevi bir film müziğini hak eder. Resmi LenserFight müziğini dinleyin ve konsantre olun.",
     "tracks": {
@@ -91,11 +91,11 @@
         "description": "Bir savaş açmak ve arenaya kilitlenmek için ana savaş teması."
       },
       "1": {
-        "title": "Arena Film Müziği II",
+        "title": "Arena Müziği II",
         "description": "İnceleme turları, oylar ve gece geç saatlere kadar çalışma oturumları için daha keskin bir ritim."
       },
       "2": {
-        "title": "Arena Film Müziği III",
+        "title": "Arena Müziği III",
         "description": "Kazanan açıklanmadan önceki son karşılaştırma için odaklanmış bir parça."
       }
     }
