@@ -1,5 +1,8 @@
 import { Card } from '@lenserfight/ui/components'
+import { Shield } from 'lucide-react'
 import React from 'react'
+
+import { EmptyPanel } from './EmptyPanel'
 
 import { usePolicyLog } from '../hooks/usePolicyLog'
 
@@ -54,11 +57,11 @@ export const PolicyDenyLog: React.FC<PolicyDenyLogProps> = ({ aiLenserId }) => {
             />
           ))
         ) : denials.length === 0 ? (
-          <div className="flex h-32 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/30 dark:bg-white/5">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No recent denials.
-            </p>
-          </div>
+          <EmptyPanel
+            icon={<Shield size={20} />}
+            title="No recent denials"
+            description="There are no automated denials or policy violations to review at this time."
+          />
         ) : (
           denials.map((evaluation) => (
             <div
