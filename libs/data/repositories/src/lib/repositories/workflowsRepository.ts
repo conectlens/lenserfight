@@ -77,7 +77,7 @@ export interface TemplateWorkflowRecord {
 export interface WorkflowNodeRecord {
   id: string
   workflow_id: string
-  lens_id: string
+  lens_id: string | null
   version_id?: string | null
   position_x: number
   position_y: number
@@ -204,7 +204,7 @@ export interface UpdateWorkflowInput {
 
 export interface UpsertNodeInput {
   id?: string
-  lens_id: string
+  lens_id: string | null
   version_id?: string | null
   position_x: number
   position_y: number
