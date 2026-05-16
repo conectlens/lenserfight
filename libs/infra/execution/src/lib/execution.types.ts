@@ -1,6 +1,6 @@
 import type { NodeOutputEnvelope } from '@lenserfight/types'
 
-export type MediaType = 'text' | 'image' | 'video' | 'audio' | 'pdf'
+export type MediaType = 'text' | 'json' | 'image' | 'video' | 'audio' | 'pdf'
 
 // AP: Node type taxonomy — includes multimodal_chain for combined image→video workflows
 // CN: Extended with logic, data, and flow-control node types for sector-standard coverage
