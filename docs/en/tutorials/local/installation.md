@@ -205,7 +205,6 @@ pnpm supabase status
 | `DATA_SOURCE` | Yes | `file` | `file` or `supabase` |
 | `SUPABASE_URL` | Supabase mode | — | Local: `http://127.0.0.1:54321` |
 | `SUPABASE_ANON_KEY` | Supabase mode | — | From `pnpm supabase start` output |
-| `PRODUCT_EDITION` | No | `community` | `community` or `cloud` |
 | `WEB_BASE_URL` | No | `http://localhost:3000` | Web app URL |
 | `AUTH_BASE_URL` | No | `http://localhost:3004` | Auth app URL |
 | `ARENA_URL` | No | `http://localhost:3001` | Arena app URL |
