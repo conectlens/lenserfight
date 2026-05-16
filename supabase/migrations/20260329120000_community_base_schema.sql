@@ -1310,7 +1310,14 @@ CREATE OR REPLACE FUNCTION "ai"."fn_get_my_api_keys"() RETURNS TABLE("id" "uuid"
 DECLARE
   v_lenser_id uuid;
 BEGIN
-  v_lenser_id := lensers.get_auth_lenser_id();
+  -- Always resolve to the human profile so this works correctly whether the
+  -- caller is in the main workspace or the agent workspace.
+  SELECT p.id INTO v_lenser_id
+  FROM lensers.profiles p
+  WHERE p.user_id = auth.uid()
+    AND p.type = 'human'
+  LIMIT 1;
+
   IF v_lenser_id IS NULL THEN
     RAISE EXCEPTION 'Unauthenticated: no lenser profile found';
   END IF;
@@ -1339,7 +1346,7 @@ $$;
 ALTER FUNCTION "ai"."fn_get_my_api_keys"() OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "ai"."fn_get_my_api_keys"() IS 'Returns active BYOK API keys for the authenticated lenser, joined with provider metadata. SECURITY DEFINER — runs as postgres to bypass table-level restrictions on ai.keys and ai.providers. Decrypted key material is never returned — only the masked suffix.';
+COMMENT ON FUNCTION "ai"."fn_get_my_api_keys"() IS 'Returns active BYOK API keys for the authenticated lenser, joined with provider metadata. SECURITY DEFINER — runs as postgres to bypass table-level restrictions on ai.keys and ai.providers. Decrypted key material is never returned — only the masked suffix. Resolves against the human profile (not get_auth_lenser_id) so it works correctly from the agent workspace.';
 
 
 
@@ -1348,24 +1355,31 @@ CREATE OR REPLACE FUNCTION "ai"."fn_revoke_api_key"("p_key_id" "uuid") RETURNS "
     SET "search_path" TO 'ai', 'lensers', 'public'
     AS $$
 DECLARE
-    v_lenser_id uuid;
-    v_rows      int;
+  v_lenser_id uuid;
+  v_rows      int;
 BEGIN
-    v_lenser_id := lensers.get_auth_lenser_id();
-    IF v_lenser_id IS NULL THEN
-        RAISE EXCEPTION 'Unauthenticated: no lenser profile found';
-    END IF;
+  -- Always resolve to the human profile so this works correctly whether the
+  -- caller is in the main workspace or the agent workspace.
+  SELECT p.id INTO v_lenser_id
+  FROM lensers.profiles p
+  WHERE p.user_id = auth.uid()
+    AND p.type = 'human'
+  LIMIT 1;
 
-    UPDATE ai.keys
-    SET is_active = false, revoked_at = now()
-    WHERE id = p_key_id
-      AND lenser_id = v_lenser_id
-      AND is_active = true;
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'Unauthenticated: no lenser profile found';
+  END IF;
 
-    GET DIAGNOSTICS v_rows = ROW_COUNT;
-    IF v_rows = 0 THEN
-        RAISE EXCEPTION 'Key not found or already revoked';
-    END IF;
+  UPDATE ai.keys
+  SET is_active = false, revoked_at = now()
+  WHERE id = p_key_id
+    AND lenser_id = v_lenser_id
+    AND is_active = true;
+
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  IF v_rows = 0 THEN
+    RAISE EXCEPTION 'Key not found or already revoked';
+  END IF;
 END;
 $$;
 
@@ -1373,7 +1387,7 @@ $$;
 ALTER FUNCTION "ai"."fn_revoke_api_key"("p_key_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "ai"."fn_revoke_api_key"("p_key_id" "uuid") IS 'Soft-revokes a BYOK API key. Only the key owner can revoke. Revoked keys cannot be used for execution.';
+COMMENT ON FUNCTION "ai"."fn_revoke_api_key"("p_key_id" "uuid") IS 'Soft-revokes a BYOK API key. Only the key owner can revoke. Revoked keys cannot be used for execution. Resolves against the human profile (not get_auth_lenser_id) so it works correctly from the agent workspace.';
 
 
 
@@ -1382,45 +1396,52 @@ CREATE OR REPLACE FUNCTION "ai"."fn_store_api_key"("p_provider" "text", "p_label
     SET "search_path" TO 'ai', 'vault', 'lensers', 'public'
     AS $$
 DECLARE
-    v_lenser_id   uuid;
-    v_secret_id   uuid;
-    v_suffix      text;
-    v_key_id      uuid;
-    v_secret_name text;
-    v_provider_id uuid;
+  v_lenser_id   uuid;
+  v_secret_id   uuid;
+  v_suffix      text;
+  v_key_id      uuid;
+  v_secret_name text;
+  v_provider_id uuid;
 BEGIN
-    v_lenser_id := lensers.get_auth_lenser_id();
-    IF v_lenser_id IS NULL THEN
-        RAISE EXCEPTION 'Unauthenticated: no lenser profile found';
-    END IF;
+  -- Always resolve to the human profile so this works correctly whether the
+  -- caller is in the main workspace or the agent workspace.
+  SELECT p.id INTO v_lenser_id
+  FROM lensers.profiles p
+  WHERE p.user_id = auth.uid()
+    AND p.type = 'human'
+  LIMIT 1;
 
-    IF p_raw_key IS NULL OR length(trim(p_raw_key)) < 8 THEN
-        RAISE EXCEPTION 'Invalid API key: must be at least 8 characters';
-    END IF;
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'Unauthenticated: no lenser profile found';
+  END IF;
 
-    SELECT id INTO v_provider_id
-    FROM ai.providers
-    WHERE key = p_provider AND is_active = true;
+  IF p_raw_key IS NULL OR length(trim(p_raw_key)) < 8 THEN
+    RAISE EXCEPTION 'Invalid API key: must be at least 8 characters';
+  END IF;
 
-    IF v_provider_id IS NULL THEN
-        RAISE EXCEPTION 'Unsupported or inactive provider: %', p_provider;
-    END IF;
+  SELECT id INTO v_provider_id
+  FROM ai.providers
+  WHERE key = p_provider AND is_active = true;
 
-    v_suffix := right(trim(p_raw_key), 4);
+  IF v_provider_id IS NULL THEN
+    RAISE EXCEPTION 'Unsupported or inactive provider: %', p_provider;
+  END IF;
 
-    v_secret_name := 'byok_' || v_lenser_id::text || '_' || p_provider || '_' || gen_random_uuid()::text;
+  v_suffix := right(trim(p_raw_key), 4);
 
-    v_secret_id := vault.create_secret(
-        trim(p_raw_key),
-        v_secret_name,
-        'BYOK API key for ' || p_provider
-    );
+  v_secret_name := 'byok_' || v_lenser_id::text || '_' || p_provider || '_' || gen_random_uuid()::text;
 
-    INSERT INTO ai.keys (lenser_id, provider_id, label, encrypted_key_id, key_suffix)
-    VALUES (v_lenser_id, v_provider_id, p_label, v_secret_id, v_suffix)
-    RETURNING id INTO v_key_id;
+  v_secret_id := vault.create_secret(
+    trim(p_raw_key),
+    v_secret_name,
+    'BYOK API key for ' || p_provider
+  );
 
-    RETURN v_key_id;
+  INSERT INTO ai.keys (lenser_id, provider_id, label, encrypted_key_id, key_suffix)
+  VALUES (v_lenser_id, v_provider_id, p_label, v_secret_id, v_suffix)
+  RETURNING id INTO v_key_id;
+
+  RETURN v_key_id;
 END;
 $$;
 
@@ -1428,7 +1449,7 @@ $$;
 ALTER FUNCTION "ai"."fn_store_api_key"("p_provider" "text", "p_label" "text", "p_raw_key" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "ai"."fn_store_api_key"("p_provider" "text", "p_label" "text", "p_raw_key" "text") IS 'Encrypts and stores a BYOK API key in Vault. Multiple keys per provider per lenser are allowed. The vault secret name includes gen_random_uuid() to guarantee uniqueness and avoid hitting the secrets_name_idx unique constraint. Only the last 4 characters are stored in plain text. Returns the key row UUID.';
+COMMENT ON FUNCTION "ai"."fn_store_api_key"("p_provider" "text", "p_label" "text", "p_raw_key" "text") IS 'Encrypts and stores a BYOK API key in Vault. Multiple keys per provider per lenser are allowed. The vault secret name includes gen_random_uuid() to guarantee uniqueness and avoid hitting the secrets_name_idx unique constraint. Only the last 4 characters are stored in plain text. Returns the key row UUID. Resolves against the human profile (not get_auth_lenser_id) so it works correctly from the agent workspace.';
 
 
 
