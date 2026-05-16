@@ -11209,7 +11209,7 @@ COMMENT ON FUNCTION "identity_gov"."fn_normalize_handle"("p_handle" "text") IS '
 
 CREATE OR REPLACE FUNCTION "identity_gov"."fn_validate_handle"("p_candidate" "text") RETURNS TABLE("verdict" "text", "class_hit" "text", "risk_score" smallint, "reason_codes" "text"[])
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'identity_gov, extensions, pg_catalog'
+    SET "search_path" TO identity_gov, extensions, pg_catalog
     AS $_$
 DECLARE
   v_norm        text;
