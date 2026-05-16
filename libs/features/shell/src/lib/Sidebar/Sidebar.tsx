@@ -12,6 +12,7 @@ import {
   Bot,
   ChevronsUpDown,
   Check,
+  Loader2,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
@@ -22,7 +23,6 @@ import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
 import {
   useLenser,
-  useSidebarProfile,
   useHasLenserProfile,
   useLenserWorkspace,
   useWorkspaceSwitchController,
@@ -88,14 +88,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // All lenser profiles (human + owned AI agents) for workspace switcher
   const { workspaces, activeWorkspace } = useLenserWorkspace()
-  const { switchToProfile } = useWorkspaceSwitchController()
-  const { profile: compactProfile } = useSidebarProfile(
-    activeWorkspace?.handle ?? authLenser?.handle,
-    activeWorkspace?.id ?? authLenser?.id
-  )
+  const { switchToProfile, isSwitching } = useWorkspaceSwitchController()
 
-  // Fallback to authLenser if compact fetch hasn't populated yet to prevent empty state
-  const displayProfile = compactProfile || activeWorkspace || authLenser
+  // Single authoritative source: activeWorkspace (server-authoritative, optimistically updated
+  // on switch via setQueryData) falling back to authLenser from LenserContext.
+  const displayProfile = activeWorkspace ?? authLenser
 
   // Auth-gating helpers for nav items that require a Lenser profile
   const isNavLocked = !hasLenser && !isLenserLoading
@@ -109,16 +106,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navigate = useNavigate()
   const location = useLocation()
-  // Workspace mode is driven by the active workspace identity, not the URL.
-  // activeWorkspace comes from fn_get_my_lensers (server-authoritative); fall back
-  // to displayProfile only while the workspace list is still loading.
-  const workspaceMode = useWorkspaceMode(activeWorkspace ?? displayProfile)
+  // Workspace mode is driven by the unified displayProfile (activeWorkspace ?? authLenser).
+  // activeWorkspace updates optimistically on switch; authLenser is the fallback during load.
+  const workspaceMode = useWorkspaceMode(displayProfile)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null)
 
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
+  const [switchingToId, setSwitchingToId] = useState<string | null>(null)
   const switcherRef = useRef<HTMLDivElement>(null)
   const switcherButtonRef = useRef<HTMLButtonElement>(null)
   const [switcherPos, setSwitcherPos] = useState<{ top: number; left: number } | null>(null)
@@ -397,10 +394,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <div className="relative">
                     <Avatar src={displayProfile?.avatar_url} size="sm" className="!w-9 !h-9" />
-                    {/* Level Badge integrated if compact profile available */}
-                    {compactProfile && (compactProfile.current_level ?? 0) > 1 && (
+                    {/* Level Badge — always from the human profile (Lenser type has current_level) */}
+                    {(authLenser?.current_level ?? 0) > 1 && (
                       <div className="absolute -bottom-1 -right-1 bg-gray-900 text-white text-[8px] font-bold px-1 rounded-full border border-white dark:border-gray-900 shadow-sm">
-                        {compactProfile.current_level}
+                        {authLenser?.current_level}
                       </div>
                     )}
                   </div>
@@ -465,50 +462,64 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                           Switch workspace
                         </p>
-                        {workspaces.map((profile) => (
-                          <button
-                            key={profile.id}
-                            role="option"
-                            aria-selected={profile.is_active}
-                            className={`w-full text-left flex items-center gap-2.5 px-3 py-2 transition-colors ${profile.type === 'ai'
-                              ? profile.is_active
-                                ? 'bg-yellow-50 dark:bg-yellow-900/20'
-                                : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
-                              : profile.is_active
-                                ? 'bg-gray-50 dark:bg-gray-700/50'
-                                : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                              }`}
-                            onClick={async () => {
-                              setIsSwitcherOpen(false)
-                              await switchToProfile(profile)
-                            }}
-                          >
-                            <div className="relative flex-shrink-0">
-                              <Avatar src={profile.avatar_url} size="sm" className="!w-6 !h-6" />
+                        {workspaces.map((profile) => {
+                          const isThisOneSwitching = switchingToId === profile.id
+                          return (
+                            <button
+                              key={profile.id}
+                              role="option"
+                              aria-selected={profile.is_active}
+                              aria-busy={isThisOneSwitching}
+                              disabled={isSwitching}
+                              className={`w-full text-left flex items-center gap-2.5 px-3 py-2 transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${profile.type === 'ai'
+                                ? profile.is_active
+                                  ? 'bg-yellow-50 dark:bg-yellow-900/20'
+                                  : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+                                : profile.is_active
+                                  ? 'bg-gray-50 dark:bg-gray-700/50'
+                                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                                }`}
+                              onClick={async () => {
+                                // Idempotency: skip if already the active workspace
+                                if (profile.is_active || isSwitching) return
+                                setIsSwitcherOpen(false)
+                                setSwitchingToId(profile.id)
+                                try {
+                                  await switchToProfile(profile)
+                                } finally {
+                                  setSwitchingToId(null)
+                                }
+                              }}
+                            >
+                              <div className="relative flex-shrink-0">
+                                <Avatar src={profile.avatar_url} size="sm" className="!w-6 !h-6" />
+                                {profile.type === 'ai' && (
+                                  <span className="absolute -bottom-1 -right-1 flex items-center justify-center w-3 h-3 rounded-full bg-primary border border-white dark:border-gray-800">
+                                    <Bot size={7} className="text-gray-900" />
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
+                                  {profile.display_name}
+                                </p>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
+                                  @{profile.handle}
+                                </p>
+                              </div>
                               {profile.type === 'ai' && (
-                                <span className="absolute -bottom-1 -right-1 flex items-center justify-center w-3 h-3 rounded-full bg-primary border border-white dark:border-gray-800">
-                                  <Bot size={7} className="text-gray-900" />
+                                <span className="text-[9px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400 flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/40 px-1.5 py-0.5 rounded-full">
+                                  AI
                                 </span>
                               )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
-                                {profile.display_name}
-                              </p>
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
-                                @{profile.handle}
-                              </p>
-                            </div>
-                            {profile.type === 'ai' && (
-                              <span className="text-[9px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400 flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/40 px-1.5 py-0.5 rounded-full">
-                                AI
-                              </span>
-                            )}
-                            {profile.is_active && (
-                              <Check size={13} className="text-primary flex-shrink-0" />
-                            )}
-                          </button>
-                        ))}
+                              {isThisOneSwitching ? (
+                                <Loader2 size={13} className="text-primary flex-shrink-0 animate-spin" />
+                              ) : profile.is_active ? (
+                                <Check size={13} className="text-primary flex-shrink-0" />
+                              ) : null}
+                            </button>
+                          )
+                        })}
                       </div>,
                       document.body
                     )}

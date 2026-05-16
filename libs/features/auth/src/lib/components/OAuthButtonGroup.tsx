@@ -1,7 +1,6 @@
-import React, { useState } from 'react'
-import { AlertTriangle } from 'lucide-react'
 import { Button } from '@lenserfight/ui/components'
-import { resolveProductEdition, isLocal as isDevMode } from '@lenserfight/utils/env'
+import { AlertTriangle } from 'lucide-react'
+import React, { useState } from 'react'
 
 interface OAuthButtonGroupProps {
   onChainabit: () => void | Promise<void>
@@ -10,17 +9,18 @@ interface OAuthButtonGroupProps {
   disabled: boolean
 }
 
+const FEATURE_CHAINABIT_SIGNIN = import.meta.env.FEATURE_CHAINABIT_SIGNIN !== 'false'
+
 export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
   onChainabit,
   onOAuth,
   isLoading,
   disabled,
 }) => {
-  const edition = resolveProductEdition()
   const [chainabitError, setChainabitError] = useState<string | null>(null)
   const [chainabitPending, setChainabitPending] = useState(false)
 
-  const showChainabit = edition === 'cloud' || edition === 'local' || isDevMode
+  const showChainabit = FEATURE_CHAINABIT_SIGNIN
   const showOthers = true
 
   const handleChainabit = async () => {
