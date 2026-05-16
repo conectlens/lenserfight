@@ -436,6 +436,16 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
         {templatesLoading && Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-24 rounded-2xl bg-surface-raised animate-pulse" />
         ))}
+        {!templatesLoading && templates.length === 0 && (
+          <div className="sm:col-span-2 flex flex-col items-center gap-3 rounded-2xl border border-surface-border bg-surface-raised p-6 text-center">
+            <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+              No templates available yet.
+            </p>
+            <Button size="sm" onClick={() => setShowTemplatePicker(false)} className="gap-1.5">
+              <GitBranch size={12} /> Start blank
+            </Button>
+          </div>
+        )}
         {!templatesLoading && templates.map((tpl) => (
           <div
             key={tpl.id}
