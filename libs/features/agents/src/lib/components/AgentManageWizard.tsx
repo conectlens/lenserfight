@@ -194,7 +194,7 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
 
   const steps = isCreateMode ? WIZARD_STEPS_CREATE : WIZARD_STEPS_MANAGE
   const maxStep = steps.length - 1
-  const { step, nextStep, prevStep, setStep } = useWizardStep({ maxStep })
+  const { step, nextStep, prevStep } = useWizardStep({ maxStep })
 
   // ── Identity step state (create mode only) ──────────────────────────────
   const { humanWorkspace } = useLenserWorkspace()
