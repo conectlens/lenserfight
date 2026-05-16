@@ -14,15 +14,25 @@ jest.mock('../config/project-config', () => ({
   saveUserConfig: jest.fn(),
   resolveConfig: jest.fn(() => ({ mode: 'local', supabaseUrl: 'http://127.0.0.1:54321', supabaseAnonKey: 'anon' })),
 }));
+jest.mock('../lib/safety', () => ({
+  assertSafe: jest.fn(async (opts: { hasForce?: boolean }) => {
+    if (!opts.hasForce) {
+      process.exitCode = 1
+      throw new Error('aborted by safety gate')
+    }
+  }),
+}));
 
 import { callRpc, handleError } from '../utils/api';
 import { printJson } from '../utils/output';
 import { saveUserConfig } from '../config/project-config';
+import { assertSafe } from '../lib/safety';
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>;
 const mockHandleError = handleError as jest.MockedFunction<typeof handleError>;
 const mockSaveUserConfig = saveUserConfig as jest.MockedFunction<typeof saveUserConfig>;
 const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>;
+const mockAssertSafe = assertSafe as jest.MockedFunction<typeof assertSafe>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCmd = { run?: (ctx: any) => Promise<void>; args?: unknown; subCommands?: Record<string, AnyCmd | (() => Promise<AnyCmd>)> };
@@ -65,7 +75,9 @@ describe('communities delete', () => {
   it('aborts without --confirm', async () => {
     const { default: cmd } = await import('./communities') as { default: AnyCmd };
     const delCmd = await resolveSubCmd(cmd, 'delete');
-    await delCmd.run?.({ args: { slug: 'my-community', confirm: false }, cmd: {}, rawArgs: [] });
+    await expect(delCmd.run?.({ args: { slug: 'my-community', confirm: false }, cmd: {}, rawArgs: [] }))
+      .rejects.toThrow('aborted by safety gate');
+    expect(mockAssertSafe).toHaveBeenCalledWith(expect.objectContaining({ hasForce: false }));
     expect(mockCallRpc).not.toHaveBeenCalled();
   });
 
