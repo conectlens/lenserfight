@@ -72,7 +72,7 @@ This page is the Phase 0 baseline for autonomous-agent work. It is intentionally
 | Operate   | Reports      | yes                | no           | `partial` | Summary cards only; no durable report store yet.                                                 |
 | Build     | Agent Teams  | yes                | no           | `partial` | Team CRUD exists; full coordinator/handoff execution is incomplete.                              |
 | Build     | Workflows    | yes                | yes          | `partial` | Workflow access ships; agent-owned assignment semantics are still maturing.                      |
-| Automate  | Schedules    | yes                | no           | `blocked` | Hidden behind `FEATURES.CRON_SCHEDULING`; forward RPC fix required.                              |
+| Automate  | Schedules    | yes                | no           | `blocked` | Hidden behind workflow scheduling; forward RPC fix required.                              |
 | Automate  | Evaluations  | yes                | no           | `partial` | Evaluation CRUD exists; scheduled/post-run orchestration is not complete.                        |
 | Configure | Memory       | yes                | no           | `partial` | Memory profiles ship; first-class memory entries do not.                                         |
 | Configure | Instructions | yes                | no           | `partial` | Lens bindings ship; policy-aware execution context still needs hardening.                        |
@@ -199,14 +199,14 @@ flowchart TD
 
 - `agents.can_manage_ai_lenser()` is the core owner-authoritative helper for `agents.*` read/write access.
 - Workflow schedule ownership is still derived from the owning workflow's `lenser_id`; agent-specific visibility needs an extra client/read-model filter today.
-- `FEATURES.CRON_SCHEDULING` defaults to `false` in [libs/utils/env/src/lib/runtimeConfig.ts](../../libs/utils/env/src/lib/runtimeConfig.ts). This is the current rollout brake for autonomous scheduling.
+- The Schedules workspace is compiled on in the web app; safe autonomous dispatch still depends on the forward schedule RPC repair, migrations, and operator-run smoke tests (see scheduling docs).
 - Cost-control data already exists in `agents.policies`, `agents.quota_snapshots`, `ai.modality_pricing`, and execution billing metadata, but enforcement is still split across surfaces.
 
 ## Locked and Partial Features
 
 | Feature       | Why locked / partial                                      | Unlock condition                                                                      |
 | ------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Schedules nav | Feature-flagged off and schedule upsert RPC needed repair | Ship forward migration, repo/UI regression tests, and stage CRON smoke tests.         |
+| Schedules nav | Forward `fn_upsert_workflow_schedule` repair + staging CRON smoke still outstanding | Ship forward migration, repo/UI regression tests, and stage CRON smoke tests.         |
 | Drafts nav    | Section exists but nav is intentionally disabled          | Decide whether scratchpad is part of the owner control-room MVP.                      |
 | Reports       | Only summary cards exist                                  | Add durable run reports and a report read model.                                      |
 | Memory        | Profile-only configuration                                | Add memory entries, retrieval, and audit logs.                                        |
@@ -216,7 +216,7 @@ flowchart TD
 ## Docs Drift Reconciled Here
 
 - The approvals queue is **not** future-only. `agents.approval_requests_v`, `fn_decide_approval`, and the `ApprovalsSection` are all shipped.
-- Scheduling is **not** generally available. The schema/runtime exist, but the nav stays hidden until `FEATURES.CRON_SCHEDULING` is enabled.
+- Scheduling UI ships with the agent workspace, but end-to-end autonomous dispatch is **not** generally available until the forward RPC path is repaired and verified in staging.
 - Reports are **not** a durable reporting system yet. They are workspace summaries over existing run/schedule state.
 
 ## Technical Debt Register
@@ -234,9 +234,9 @@ flowchart TD
 
 ## Rollout Rule
 
-Do not enable `FEATURES.CRON_SCHEDULING` in staging or production until:
+Do not treat autonomous schedule dispatch as production-ready in staging or production until:
 
 - the forward schedule migration is applied,
 - repository and UI regressions pass,
 - a production-like dispatch smoke test is run,
-- and the rollback path is confirmed: feature flag off plus CRON job paused.
+- and the rollback path is confirmed: pause `dispatch-scheduled-workflows` in `pg_cron` and verify schedules stop claiming runs.

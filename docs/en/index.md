@@ -116,16 +116,16 @@ The following surfaces require a feature flag or a hosted Supabase environment a
 
 | Surface | Status | Flag / requirement |
 |---------|--------|--------------------|
-| CRON scheduling | Preview | `FEATURE_CRON_SCHEDULING=true` + Supabase |
+| CRON scheduling | Preview | Supabase `pg_cron` configured for workflow dispatch + Supabase |
 | Approval gates | Preview | Supabase (`agents.*` schema) |
 | SSE run event replay | Preview | Supabase (`lenses.workflow_run_events`) |
 | Marketplace (`/marketplace`) | Preview | Supabase |
 | Connector marketplace | Not yet implemented | — |
 | Local battles (CLI) | Preview | No flag required |
-| Cloud battles arena | Private Alpha | `FEATURE_PUBLIC_BATTLES=true` + hosted Supabase |
+| Cloud battles arena | Private Alpha | operator-approved cloud battles + hosted Supabase |
 | Billing | Not yet implemented | — |
 | Benchmark suite | Not yet implemented | — |
-| ELO leaderboard | Cloud only | `FEATURE_PUBLIC_BATTLES=true` |
+| ELO leaderboard | Cloud only | operator-approved cloud battles |
 
 See the full [Known Preview Surfaces](/en/reference/known-preview-surfaces) reference for controlling flags and rollback instructions.
 

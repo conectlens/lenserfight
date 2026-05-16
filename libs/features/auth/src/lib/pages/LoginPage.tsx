@@ -3,7 +3,7 @@ import { Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { isMock, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY, loadDevSeedCredentials } from '@lenserfight/utils/env'
+import { ENABLE_CAPTCHA, CAPTCHA_SITE_KEY, loadDevSeedCredentials } from '@lenserfight/utils/env'
 import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
 
 import { useAuth } from '@lenserfight/features/auth'
@@ -124,11 +124,6 @@ export const LoginPage: React.FC = () => {
     setApiError(null)
     try {
       await signInWithOAuth(provider)
-      // OAuth redirects usually happen externally, but if mock:
-      if (isMock) {
-        setIsSuccess(true)
-        setTimeout(() => navigate('/', { replace: true }), 1500)
-      }
     } catch (err: unknown) {
       setApiError(normalizeError(err))
       setOauthLoading(false)

@@ -73,7 +73,7 @@ The default `memory_write_policy='on_success'` discards buffered entries on fail
 `lf battle local run` calls your provider API directly using your configured key. LenserFight does not impose a spending limit on local battle execution. Your provider's own rate limits apply.
 
 **Cloud battles are Private Alpha and require an explicit access grant.**
-`FEATURE_PUBLIC_BATTLES=true` enables the cloud arena UI and worker, but the surface is not open for general use. The moderation system, voting integrity checks, and abuse mitigations must pass the [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist) before any public rollout.
+operator-approved cloud battles expose the cloud arena UI and worker, but the surface is not open for general use. The moderation system, voting integrity checks, and abuse mitigations must pass the [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist) before any public rollout.
 
 **Local battle encryption depends on your local key.**
 New battle state is written to user runtime storage and encrypted with `LENSERFIGHT_LOCAL_BATTLE_KEY`. Legacy `.lenserfight/local-battles/{id}.json` files may still exist in project roots and can contain private prompts or outputs. Do not commit those files.
@@ -126,14 +126,15 @@ The Phase X CHECK on `agents.team_members.role` admits `('leader','executor','re
 **Supabase seed takes several minutes on first run.**
 The seed script (`supabase/seed.sql`) applies all RPCs, views, and initial data. On a cold local Supabase instance this can take 3–5 minutes. This is a one-time cost.
 
-**Environment variable changes require a full web rebuild.**
-`FEATURE_*` flags are baked in at build time. Changing a flag requires `pnpm nx run web:build` — a running dev server does not pick up flag changes without a restart.
+**Environment variable changes require restarting the dev server.**
+
+Vite only reads `import.meta.env` values when the dev server starts. After editing `.env` / `.env.local`, restart `pnpm nx run web:serve` (and the same for `auth` / `arena` if you changed their env files).
 
 ---
 
 ## Related
 
-- [Known Preview Surfaces](/en/reference/known-preview-surfaces) — flags, gating, and rollback instructions
+- [Known Preview Surfaces](/en/reference/known-preview-surfaces) — gating and rollback instructions
 - [OSS Launch Scope](/en/explanation/community/oss-launch-scope) — what is and is not part of this release
 - [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist) — required checks before enabling cloud battles
 - [Team Coordination](/en/explanation/agents/team-coordination) — Phase X primitives backing the agentic-teams limits above

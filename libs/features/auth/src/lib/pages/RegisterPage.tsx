@@ -4,7 +4,6 @@ import React, { useRef, useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import {
-  isMock,
   isLocal,
   ENABLE_CAPTCHA,
   CAPTCHA_SITE_KEY,
@@ -12,8 +11,6 @@ import {
   loadDevSeedCredentials,
 } from '@lenserfight/utils/env'
 import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
-
-const isDevMode = isLocal || isMock
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
@@ -32,10 +29,10 @@ export const RegisterPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     displayName: '',
-    email: isDevMode ? `newuser_${Date.now()}@lenserfight.local` : '',
+    email: isLocal ? `newuser_${Date.now()}@lenserfight.local` : '',
     password: '',
     preferredLanguage: 'en',
-    agreeTerms: isDevMode,
+    agreeTerms: isLocal,
   })
 
   useEffect(() => {
@@ -168,11 +165,6 @@ export const RegisterPage: React.FC = () => {
     setApiError(null)
     try {
       await signInWithOAuth(provider)
-      // OAuth redirects usually happen externally, but if mock:
-      if (isMock) {
-        setIsSuccess(true)
-        setTimeout(() => navigate('/welcome'), 1500)
-      }
     } catch (err: unknown) {
       setApiError(normalizeError(err))
       setOauthLoading(false)

@@ -4,7 +4,6 @@ import { agentsService, socialLinksService, xpService } from '@lenserfight/data/
 import { Lenser, LenserBadge, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
 import { XPSummary } from '@lenserfight/types'
 import { Avatar, Badge, Button, HelpButton } from '@lenserfight/ui/components'
-import { FEATURES } from '@lenserfight/utils/env'
 import { formatCount } from '@lenserfight/utils/number'
 import {
   Camera,
@@ -402,7 +401,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
 
                 {isOwner ? (
                   <div className="hidden md:flex items-center gap-2 mt-2 md:mt-0">
-                    {FEATURES.AGENTS && onManageAgents && (
+                    {onManageAgents && (
                       <Button
                         variant="secondary"
                         onClick={onManageAgents}

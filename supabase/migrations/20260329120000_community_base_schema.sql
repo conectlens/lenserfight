@@ -53,12 +53,6 @@ CREATE SCHEMA IF NOT EXISTS "battles";
 ALTER SCHEMA "battles" OWNER TO "postgres";
 
 
-CREATE SCHEMA IF NOT EXISTS "benchmark";
-
-
-ALTER SCHEMA "benchmark" OWNER TO "postgres";
-
-
 CREATE SCHEMA IF NOT EXISTS "billing";
 
 
@@ -10724,7 +10718,7 @@ $$;
 ALTER FUNCTION "public"."fn_deny_mutation"() OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."fn_deny_mutation"() IS 'Generic append-only guard. Attach as BEFORE UPDATE/DELETE trigger on any table that must be insert-only (rule_snapshots, action_logs, audit chains, benchmark result_sets, etc.). Raises an exception on any mutation attempt.';
+COMMENT ON FUNCTION "public"."fn_deny_mutation"() IS 'Generic append-only guard. Attach as BEFORE UPDATE/DELETE trigger on any table that must be insert-only (rule_snapshots, action_logs, audit chains, etc.). Raises an exception on any mutation attempt.';
 
 
 
@@ -10972,7 +10966,7 @@ CREATE TABLE IF NOT EXISTS "battles"."rule_snapshots" (
 ALTER TABLE "battles"."rule_snapshots" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "battles"."rule_snapshots" IS 'Append-only snapshot of battle rules at publication. Frozen by public.fn_publish_battle. snapshot_hash = SHA-256(rules_json::text). One row per publication event (re-publication creates a new row). Required for benchmark validity: result_sets must reference a protocol version derived from this snapshot.';
+COMMENT ON TABLE "battles"."rule_snapshots" IS 'Append-only snapshot of battle rules at publication. Frozen by public.fn_publish_battle. snapshot_hash = SHA-256(rules_json::text). One row per publication event (re-publication creates a new row).';
 
 
 
@@ -17560,7 +17554,7 @@ CREATE TABLE IF NOT EXISTS "agents"."lens_bindings" (
 ALTER TABLE "agents"."lens_bindings" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "agents"."lens_bindings" IS 'Which lenses an AI Lenser may use in battles. version_id NULL means the agent always uses the current head version. Pin version_id for reproducible benchmark submissions.';
+COMMENT ON TABLE "agents"."lens_bindings" IS 'Which lenses an AI Lenser may use in battles. version_id NULL means the agent always uses the current head version. Pin version_id for reproducible battle submissions.';
 
 
 
@@ -18118,7 +18112,7 @@ CREATE TABLE IF NOT EXISTS "audit"."attestations" (
     "attestation_type" "text" NOT NULL,
     "proof_payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "attestations_type_check" CHECK (("attestation_type" = ANY (ARRAY['battle_published'::"text", 'battle_finalized'::"text", 'benchmark_frozen'::"text", 'agent_created'::"text", 'agent_suspended'::"text", 'result_invalidated'::"text"])))
+    CONSTRAINT "attestations_type_check" CHECK (("attestation_type" = ANY (ARRAY['battle_published'::"text", 'battle_finalized'::"text", 'agent_created'::"text", 'agent_suspended'::"text", 'result_invalidated'::"text"])))
 );
 
 
@@ -18148,7 +18142,7 @@ CREATE TABLE IF NOT EXISTS "audit"."disputes" (
 ALTER TABLE "audit"."disputes" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "audit"."disputes" IS 'Appeal trail for moderation and benchmark decisions. Mutable: status transitions from open → under_review → resolved/dismissed. A dispute does not modify the original target record — it creates a parallel review record alongside the immutable audit trail.';
+COMMENT ON TABLE "audit"."disputes" IS 'Appeal trail for moderation decisions. Mutable: status transitions from open → under_review → resolved/dismissed. A dispute does not modify the original target record — it creates a parallel review record alongside the immutable audit trail.';
 
 
 
@@ -18825,129 +18819,6 @@ COMMENT ON TABLE "battles"."votes" IS 'Vote records. Direct INSERT restricted to
 
 
 
-CREATE TABLE IF NOT EXISTS "benchmark"."invalidations" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "result_set_id" "uuid" NOT NULL,
-    "reason" "text" NOT NULL,
-    "invalidated_by" "uuid" NOT NULL,
-    "invalidated_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "benchmark"."invalidations" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."invalidations" IS 'Append-only invalidation record for a benchmark result_set. UNIQUE(result_set_id): a result_set can only be invalidated once. To check if a result is valid: NOT EXISTS(SELECT 1 FROM benchmark.invalidations WHERE result_set_id = <id>). Structural triggers prevent mutation — invalidations are permanent decisions.';
-
-
-
-CREATE TABLE IF NOT EXISTS "benchmark"."protocol_versions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "suite_id" "uuid" NOT NULL,
-    "version" "text" NOT NULL,
-    "rules_json" "jsonb" NOT NULL,
-    "frozen_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "frozen_by" "uuid" NOT NULL
-);
-
-
-ALTER TABLE "benchmark"."protocol_versions" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."protocol_versions" IS 'Append-only frozen snapshot of a benchmark suite at a specific version. rules_json captures the complete suite + task definitions at freeze time. All result_sets must reference a protocol_version to be considered valid. UNIQUE(suite_id, version) ensures no version collisions. Structural triggers prevent mutation — this is a research-grade record.';
-
-
-
-CREATE TABLE IF NOT EXISTS "benchmark"."result_sets" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "suite_id" "uuid" NOT NULL,
-    "task_id" "uuid" NOT NULL,
-    "battle_id" "uuid" NOT NULL,
-    "protocol_version_id" "uuid" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "benchmark"."result_sets" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."result_sets" IS 'Append-only record linking a battle result to a benchmark task + protocol. No is_valid column — immutability is structural. Invalidity is expressed via benchmark.invalidations (separate concern). UNIQUE(battle_id, task_id): one result per battle per task.';
-
-
-
-CREATE TABLE IF NOT EXISTS "benchmark"."significance_tests" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "result_set_id" "uuid" NOT NULL,
-    "test_type" "text" NOT NULL,
-    "contender_a_id" "uuid",
-    "contender_b_id" "uuid",
-    "p_value" numeric(10,8),
-    "effect_size" numeric(10,6),
-    "confidence_lower" numeric(10,6),
-    "confidence_upper" numeric(10,6),
-    "is_significant" boolean,
-    "sample_size" integer,
-    "computed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "significance_tests_sample_positive" CHECK ((("sample_size" IS NULL) OR ("sample_size" > 0))),
-    CONSTRAINT "significance_tests_type_check" CHECK (("test_type" = ANY (ARRAY['wilcoxon'::"text", 'ttest_paired'::"text", 'ttest_independent'::"text", 'bootstrap'::"text", 'effect_size_cohens_d'::"text", 'krippendorffs_alpha'::"text", 'cohens_kappa'::"text"])))
-);
-
-
-ALTER TABLE "benchmark"."significance_tests" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."significance_tests" IS 'Statistical significance records for benchmark result sets. is_significant = (p_value < 0.05 AND effect_size > 0.2) by convention. contender_a_id vs contender_b_id: NULL means the test is suite-wide. Computed by edge function or external pipeline, inserted via service_role.';
-
-
-
-CREATE TABLE IF NOT EXISTS "benchmark"."suites" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "title" "text" NOT NULL,
-    "description" "text",
-    "creator_lenser_id" "uuid" NOT NULL,
-    "category" "text",
-    "status" "text" DEFAULT 'draft'::"text" NOT NULL,
-    "version" "text" DEFAULT '0.1.0'::"text" NOT NULL,
-    "is_public" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "suites_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'active'::"text", 'archived'::"text"])))
-);
-
-
-ALTER TABLE "benchmark"."suites" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."suites" IS 'Named benchmark collections. A suite is the top-level grouping for related evaluation tasks. status=active + is_public=true means the suite is published and visible in the benchmark directory.';
-
-
-
-CREATE TABLE IF NOT EXISTS "benchmark"."tasks" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "suite_id" "uuid" NOT NULL,
-    "title" "text" NOT NULL,
-    "prompt_template" "text" NOT NULL,
-    "evaluation_protocol" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "required_repetitions" integer DEFAULT 1 NOT NULL,
-    "ordinal" integer DEFAULT 0 NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "workflow_id" "uuid",
-    CONSTRAINT "tasks_ordinal_nonneg" CHECK (("ordinal" >= 0)),
-    CONSTRAINT "tasks_repetitions_positive" CHECK (("required_repetitions" >= 1))
-);
-
-
-ALTER TABLE "benchmark"."tasks" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "benchmark"."tasks" IS 'Individual evaluation tasks within a benchmark suite. prompt_template may contain {{variable}} placeholders for parameterized runs. evaluation_protocol captures the evaluation config frozen at task creation: {rubric_id, required_repetitions, random_seed, temperature, scoring_method}.';
-
-
-
-COMMENT ON COLUMN "benchmark"."tasks"."workflow_id" IS 'Optional Connected Lens workflow attached to this task. When set, the WorkflowCard is rendered inline in the task detail UI. Benchmark execution runs the full workflow pipeline instead of a direct lens prompt.';
-
-
-
 CREATE TABLE IF NOT EXISTS "lenses"."workflow_runs" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "workflow_id" "uuid" NOT NULL,
@@ -18988,37 +18859,6 @@ COMMENT ON COLUMN "lenses"."workflow_runs"."spent_credits" IS 'Total credits spe
 
 
 COMMENT ON COLUMN "lenses"."workflow_runs"."cost_metadata" IS 'Per-node cost breakdown: { node_id: { input_tokens, output_tokens, cost_credits } }';
-
-
-
-CREATE OR REPLACE VIEW "benchmark"."v_workflow_result_sets" AS
- SELECT "rs"."id" AS "result_set_id",
-    "rs"."suite_id",
-    "rs"."task_id",
-    "rs"."battle_id",
-    "rs"."protocol_version_id",
-    "rs"."created_at",
-    "bt"."title" AS "task_title",
-    "bt"."workflow_id" AS "task_workflow_id",
-    "wr"."id" AS "workflow_run_id",
-    "wr"."status" AS "run_status",
-    "wr"."spent_credits" AS "run_credits",
-    "wr"."started_at" AS "run_started_at",
-    "wr"."completed_at" AS "run_completed_at",
-    "b"."title" AS "battle_title",
-    "b"."status" AS "battle_status",
-    "b"."winner_contender_id"
-   FROM ((("benchmark"."result_sets" "rs"
-     JOIN "benchmark"."tasks" "bt" ON (("bt"."id" = "rs"."task_id")))
-     JOIN "battles"."battles" "b" ON (("b"."id" = "rs"."battle_id")))
-     LEFT JOIN "lenses"."workflow_runs" "wr" ON ((("wr"."workflow_id" = "bt"."workflow_id") AND ("wr"."status" = ANY (ARRAY['completed'::"text", 'failed'::"text"])))))
-  WHERE ("bt"."workflow_id" IS NOT NULL);
-
-
-ALTER VIEW "benchmark"."v_workflow_result_sets" OWNER TO "postgres";
-
-
-COMMENT ON VIEW "benchmark"."v_workflow_result_sets" IS 'Benchmark result sets that use workflow-based tasks, joined with their latest workflow runs.';
 
 
 
@@ -21603,7 +21443,7 @@ CREATE TABLE IF NOT EXISTS "reputation"."judge_calibrations" (
 ALTER TABLE "reputation"."judge_calibrations" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "reputation"."judge_calibrations" IS 'Vote quality metrics for each judge (human or AI). calibration_score: overall judge reliability [0..1]. agreement_rate: fraction of votes agreeing with eventual battle consensus. kappa_score: Cohen''s kappa against expert panel (NULL until calibrated). Used to weight votes in trust-adjusted benchmark scoring.';
+COMMENT ON TABLE "reputation"."judge_calibrations" IS 'Vote quality metrics for each judge (human or AI). calibration_score: overall judge reliability [0..1]. agreement_rate: fraction of votes agreeing with eventual battle consensus. kappa_score: Cohen''s kappa against expert panel (NULL until calibrated). Used to weight votes in trust-adjusted scoring.';
 
 
 
@@ -22782,46 +22622,6 @@ ALTER TABLE ONLY "battles"."vote_choices"
 
 ALTER TABLE ONLY "battles"."votes"
     ADD CONSTRAINT "votes_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."invalidations"
-    ADD CONSTRAINT "invalidations_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."invalidations"
-    ADD CONSTRAINT "invalidations_result_set_id_key" UNIQUE ("result_set_id");
-
-
-
-ALTER TABLE ONLY "benchmark"."protocol_versions"
-    ADD CONSTRAINT "protocol_versions_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."protocol_versions"
-    ADD CONSTRAINT "protocol_versions_suite_id_version_key" UNIQUE ("suite_id", "version");
-
-
-
-ALTER TABLE ONLY "benchmark"."result_sets"
-    ADD CONSTRAINT "result_sets_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."significance_tests"
-    ADD CONSTRAINT "significance_tests_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."suites"
-    ADD CONSTRAINT "suites_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."tasks"
-    ADD CONSTRAINT "tasks_pkey" PRIMARY KEY ("id");
 
 
 
@@ -24155,62 +23955,6 @@ CREATE UNIQUE INDEX "uq_sponsorship_payouts_pool_tx" ON "battles"."sponsorship_p
 
 
 
-CREATE INDEX "idx_benchmark_protocol_suite" ON "benchmark"."protocol_versions" USING "btree" ("suite_id", "frozen_at" DESC);
-
-
-
-CREATE UNIQUE INDEX "idx_benchmark_result_battle_task" ON "benchmark"."result_sets" USING "btree" ("battle_id", "task_id");
-
-
-
-CREATE INDEX "idx_benchmark_result_suite" ON "benchmark"."result_sets" USING "btree" ("suite_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_benchmark_suites_public" ON "benchmark"."suites" USING "btree" ("category", "created_at" DESC) WHERE (("is_public" = true) AND ("status" = 'active'::"text"));
-
-
-
-CREATE INDEX "idx_benchmark_tasks_suite" ON "benchmark"."tasks" USING "btree" ("suite_id", "ordinal");
-
-
-
-CREATE INDEX "idx_benchmark_tasks_workflow" ON "benchmark"."tasks" USING "btree" ("workflow_id") WHERE ("workflow_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_fk_invalidations_invalidated_by" ON "benchmark"."invalidations" USING "btree" ("invalidated_by");
-
-
-
-CREATE INDEX "idx_fk_protocol_versions_frozen_by" ON "benchmark"."protocol_versions" USING "btree" ("frozen_by");
-
-
-
-CREATE INDEX "idx_fk_result_sets_protocol_version_id" ON "benchmark"."result_sets" USING "btree" ("protocol_version_id");
-
-
-
-CREATE INDEX "idx_fk_result_sets_task_id" ON "benchmark"."result_sets" USING "btree" ("task_id");
-
-
-
-CREATE INDEX "idx_fk_significance_tests_contender_a_id" ON "benchmark"."significance_tests" USING "btree" ("contender_a_id");
-
-
-
-CREATE INDEX "idx_fk_significance_tests_contender_b_id" ON "benchmark"."significance_tests" USING "btree" ("contender_b_id");
-
-
-
-CREATE INDEX "idx_fk_suites_creator_lenser_id" ON "benchmark"."suites" USING "btree" ("creator_lenser_id");
-
-
-
-CREATE INDEX "idx_significance_tests_result" ON "benchmark"."significance_tests" USING "btree" ("result_set_id", "test_type");
-
-
-
 CREATE INDEX "idx_billing_checkout_active" ON "billing"."checkout_sessions" USING "btree" ("status") WHERE ("status" = 'created'::"text");
 
 
@@ -25464,30 +25208,6 @@ ALTER TABLE "battles"."battles" DISABLE TRIGGER "trg_xp_battle_published";
 
 
 
-CREATE OR REPLACE TRIGGER "no_delete_invalidations" BEFORE DELETE ON "benchmark"."invalidations" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "no_delete_protocol_versions" BEFORE DELETE ON "benchmark"."protocol_versions" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "no_delete_result_sets" BEFORE DELETE ON "benchmark"."result_sets" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "no_update_invalidations" BEFORE UPDATE ON "benchmark"."invalidations" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "no_update_protocol_versions" BEFORE UPDATE ON "benchmark"."protocol_versions" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
-CREATE OR REPLACE TRIGGER "no_update_result_sets" BEFORE UPDATE ON "benchmark"."result_sets" FOR EACH ROW EXECUTE FUNCTION "public"."fn_deny_mutation"();
-
-
-
 CREATE OR REPLACE TRIGGER "trg_billing_margin_policies_updated_at" BEFORE UPDATE ON "billing"."execution_margin_policies" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
@@ -26351,76 +26071,6 @@ ALTER TABLE ONLY "battles"."votes"
 
 ALTER TABLE ONLY "battles"."votes"
     ADD CONSTRAINT "votes_voter_lenser_id_fkey" FOREIGN KEY ("voter_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "benchmark"."invalidations"
-    ADD CONSTRAINT "invalidations_invalidated_by_fkey" FOREIGN KEY ("invalidated_by") REFERENCES "lensers"."profiles"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."invalidations"
-    ADD CONSTRAINT "invalidations_result_set_id_fkey" FOREIGN KEY ("result_set_id") REFERENCES "benchmark"."result_sets"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."protocol_versions"
-    ADD CONSTRAINT "protocol_versions_frozen_by_fkey" FOREIGN KEY ("frozen_by") REFERENCES "lensers"."profiles"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."protocol_versions"
-    ADD CONSTRAINT "protocol_versions_suite_id_fkey" FOREIGN KEY ("suite_id") REFERENCES "benchmark"."suites"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."result_sets"
-    ADD CONSTRAINT "result_sets_battle_id_fkey" FOREIGN KEY ("battle_id") REFERENCES "battles"."battles"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."result_sets"
-    ADD CONSTRAINT "result_sets_protocol_version_id_fkey" FOREIGN KEY ("protocol_version_id") REFERENCES "benchmark"."protocol_versions"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."result_sets"
-    ADD CONSTRAINT "result_sets_suite_id_fkey" FOREIGN KEY ("suite_id") REFERENCES "benchmark"."suites"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."result_sets"
-    ADD CONSTRAINT "result_sets_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "benchmark"."tasks"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."significance_tests"
-    ADD CONSTRAINT "significance_tests_contender_a_id_fkey" FOREIGN KEY ("contender_a_id") REFERENCES "battles"."contenders"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."significance_tests"
-    ADD CONSTRAINT "significance_tests_contender_b_id_fkey" FOREIGN KEY ("contender_b_id") REFERENCES "battles"."contenders"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."significance_tests"
-    ADD CONSTRAINT "significance_tests_result_set_id_fkey" FOREIGN KEY ("result_set_id") REFERENCES "benchmark"."result_sets"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "benchmark"."suites"
-    ADD CONSTRAINT "suites_creator_lenser_id_fkey" FOREIGN KEY ("creator_lenser_id") REFERENCES "lensers"."profiles"("id");
-
-
-
-ALTER TABLE ONLY "benchmark"."tasks"
-    ADD CONSTRAINT "tasks_suite_id_fkey" FOREIGN KEY ("suite_id") REFERENCES "benchmark"."suites"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "benchmark"."tasks"
-    ADD CONSTRAINT "tasks_workflow_id_fkey" FOREIGN KEY ("workflow_id") REFERENCES "lenses"."workflows"("id") ON DELETE SET NULL;
 
 
 
@@ -28080,95 +27730,6 @@ ALTER TABLE "battles"."votes" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "votes_select" ON "battles"."votes" FOR SELECT USING (((EXISTS ( SELECT 1
    FROM "battles"."battles" "b"
   WHERE (("b"."id" = "votes"."battle_id") AND ("b"."status" = ANY (ARRAY['closed'::"battles"."battle_status_enum", 'published'::"battles"."battle_status_enum"])) AND ("b"."deleted_at" IS NULL)))) OR ("voter_lenser_id" = "lensers"."get_auth_lenser_id"())));
-
-
-
-ALTER TABLE "benchmark"."invalidations" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "invalidations_public_read" ON "benchmark"."invalidations" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "invalidations_service_insert" ON "benchmark"."invalidations" FOR INSERT TO "service_role" WITH CHECK (true);
-
-
-
-ALTER TABLE "benchmark"."protocol_versions" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "protocol_versions_public_read" ON "benchmark"."protocol_versions" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "benchmark"."suites" "s"
-  WHERE (("s"."id" = "protocol_versions"."suite_id") AND ("s"."is_public" = true)))));
-
-
-
-CREATE POLICY "protocol_versions_service_write" ON "benchmark"."protocol_versions" FOR INSERT TO "service_role" WITH CHECK (true);
-
-
-
-ALTER TABLE "benchmark"."result_sets" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "result_sets_public_read" ON "benchmark"."result_sets" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "benchmark"."suites" "s"
-  WHERE (("s"."id" = "result_sets"."suite_id") AND ("s"."is_public" = true)))));
-
-
-
-CREATE POLICY "result_sets_service_insert" ON "benchmark"."result_sets" FOR INSERT TO "service_role" WITH CHECK (true);
-
-
-
-ALTER TABLE "benchmark"."significance_tests" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "significance_tests_public_read" ON "benchmark"."significance_tests" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM ("benchmark"."result_sets" "rs"
-     JOIN "benchmark"."suites" "s" ON (("s"."id" = "rs"."suite_id")))
-  WHERE (("rs"."id" = "significance_tests"."result_set_id") AND ("s"."is_public" = true)))));
-
-
-
-CREATE POLICY "significance_tests_service_write" ON "benchmark"."significance_tests" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "benchmark"."suites" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "suites_creator_update" ON "benchmark"."suites" FOR UPDATE TO "authenticated" USING (("creator_lenser_id" = "lensers"."get_auth_lenser_id"()));
-
-
-
-CREATE POLICY "suites_creator_write" ON "benchmark"."suites" FOR INSERT TO "authenticated" WITH CHECK (("creator_lenser_id" = "lensers"."get_auth_lenser_id"()));
-
-
-
-CREATE POLICY "suites_read" ON "benchmark"."suites" FOR SELECT USING (((("is_public" = true) AND ("status" = 'active'::"text")) OR ("creator_lenser_id" = "lensers"."get_auth_lenser_id"())));
-
-
-
-CREATE POLICY "suites_service_write" ON "benchmark"."suites" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-ALTER TABLE "benchmark"."tasks" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "tasks_creator_write" ON "benchmark"."tasks" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
-   FROM "benchmark"."suites" "s"
-  WHERE (("s"."id" = "tasks"."suite_id") AND ("s"."creator_lenser_id" = "lensers"."get_auth_lenser_id"())))));
-
-
-
-CREATE POLICY "tasks_public_read" ON "benchmark"."tasks" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "benchmark"."suites" "s"
-  WHERE (("s"."id" = "tasks"."suite_id") AND ("s"."is_public" = true)))));
-
-
-
-CREATE POLICY "tasks_service_write" ON "benchmark"."tasks" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
@@ -33517,11 +33078,6 @@ GRANT ALL ON TABLE "battles"."votes" TO "service_role";
 
 GRANT SELECT ON TABLE "lenses"."workflow_runs" TO "anon";
 GRANT SELECT,INSERT ON TABLE "lenses"."workflow_runs" TO "authenticated";
-
-
-
-GRANT SELECT ON TABLE "benchmark"."v_workflow_result_sets" TO "authenticated";
-GRANT SELECT ON TABLE "benchmark"."v_workflow_result_sets" TO "service_role";
 
 
 

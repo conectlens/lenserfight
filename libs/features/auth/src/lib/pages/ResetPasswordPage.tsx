@@ -2,7 +2,6 @@ import { AlertCircle } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
-import { isMock } from '@lenserfight/utils/env'
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, minLength } from '@lenserfight/utils/validation'
@@ -17,8 +16,7 @@ export const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
-  // Try to get token from query params (Mock) or hash (Supabase often puts it there, though auth lib handles it)
-  // For the purpose of this mock/stub dual implementation, we look at query params mainly for the Mock.
+  // Token may appear in query params depending on the reset link format.
   const [token, setToken] = useState<string | null>(null)
 
   useEffect(() => {
@@ -60,8 +58,7 @@ export const ResetPasswordPage: React.FC = () => {
 
     setLoading(true)
     try {
-      // If mock, token is required. If Supabase, token might be null but session active.
-      // We pass the token found in URL if any.
+      // Pass the token from the URL when present; Supabase may also establish a session from the link.
       await resetPassword(formData.password, token || undefined)
 
       window.alert('Password updated successfully!')
@@ -73,9 +70,7 @@ export const ResetPasswordPage: React.FC = () => {
     }
   }
 
-  // Check for session in real auth mode (Supabase)
-  // If not mock, and loading is done, and user is not authenticated, show error.
-  if (!isMock && !isAuthLoading && !isAuthenticated) {
+  if (!isAuthLoading && !isAuthenticated) {
     return (
       <AuthCard title="Reset Password" subtitle="Session Error" backButton={<BackButton />}>
         <div className="flex flex-col items-center justify-center text-center py-6">
@@ -95,8 +90,7 @@ export const ResetPasswordPage: React.FC = () => {
     )
   }
 
-  // Optional: Loading state for auth check to prevent flash of form
-  if (!isMock && isAuthLoading) {
+  if (isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>

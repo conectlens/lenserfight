@@ -6,7 +6,7 @@ description: pg_cron-driven workflow schedules. Covers the schedule row, policy 
 # Scheduling
 
 ::: warning Status: Preview
-CRON scheduling requires a full Supabase instance and the `FEATURE_CRON_SCHEDULING=true` flag. It is **disabled by default** in self-hosted Community Edition installs. See [Known Preview Surfaces](/en/reference/known-preview-surfaces).
+CRON scheduling requires a full Supabase instance and the Supabase `pg_cron` configured for workflow dispatch flag. It is **disabled by default** in self-hosted Community Edition installs. See [Known Preview Surfaces](/en/reference/known-preview-surfaces).
 :::
 
 ConnectedLenses workflows can be triggered on a CRON schedule. The mechanism is `pg_cron` driving rows in [`lenses.workflow_schedules`](./domain-model#lenses-workflow-schedules), each carrying a five-field CRON expression, a timezone, an assignee (agent or team), and a four-policy bundle (approval / retry / failure / queue).

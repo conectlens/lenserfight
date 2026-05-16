@@ -10,7 +10,7 @@ description: Bulut Savaşları yüzeyi için operatör çalışma kitabı — ö
 
 Bu sayfa, Cloud Battles yüzeyini çalıştırmaya yönelik operatör çalışma kitabıdır. Dağıtımın Phase O webhook outbox migration'ını uyguladığı ve `pg_cron` ile `pg_net` mevcut olan barındırılan bir Supabase örneğinin bulunduğu varsayılır.
 
-Yüzeyin bayrak çevrilmeden önce geçmesi gereken bütün bütünlük kontrolleri için bkz. [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist).
+Yüzeyin dış kullanıcılar için açılmadan önce geçmesi gereken bütün bütünlük kontrolleri için bkz. [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist).
 
 ## Ön hazırlık
 
@@ -18,8 +18,8 @@ Yüzeyin bayrak çevrilmeden önce geçmesi gereken bütün bütünlük kontroll
 
 | Değişken | Amaç | Gerekli |
 |---|---|---|
-| `FEATURE_PUBLIC_BATTLES` | `apps/web` içindeki bulut arena UI'sını ve `apps/platform-api` içindeki bulut savaşı işçisini etkinleştirir. | evet |
-| `FEATURES.PUBLIC_BATTLES` | Aynı bayrağın sunucu tarafındaki yansıması; moderasyon yönetici konsolu tarafından okunur. | evet |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` | Savaşları ve işçileri destekleyen barındırılan Supabase projesi | evet |
+| `API_URL` | Web uygulaması ve işçiler tarafından kullanılan `apps/platform-api` kökeni | evet |
 | `ANTHROPIC_API_KEY` (edge function env) | AI hakem edge function tarafından kullanılır. | evet |
 | `CHAINABIT_API_URL` | Savaşlar Chainabit yürütme köprüsünden gönderildiğinde kullanılır. | yalnızca Chainabit köprüsü etkinse |
 
@@ -65,11 +65,10 @@ Her iki satır da `active = true` göstermelidir.
 
 ## Geri alma (Rollback)
 
-Geri alma yıkıcı değildir — uçuştaki savaşlar talep edildikleri yolda biter. Bayrak çevirme sadece yeni girişleri durdurur.
+Geri alma yıkıcı değildir — uçuştaki savaşlar talep edildikleri yolda biter. Yapılandırma değişikliği yalnızca yeni girişleri durdurur.
 
 ```bash
-# 1. UI / işçiyi devre dışı bırakın (bayrak çevrili olarak yeniden dağıtın)
-FEATURE_PUBLIC_BATTLES=false
+# 1. Bulut savaş rotalarını halka açık olarak sunmayı durdurun (reverse-proxy veya web + işçileri yeniden dağıtın)
 ```
 
 ```sql
@@ -83,7 +82,7 @@ ALTER DATABASE postgres SET app.moderation_webhook_url = '';
 
 Yerel savaşlar (`lf battle local`) çalışmaya devam eder — yukarıdakilerin hiçbirine bağlı değildirler.
 
-Daha sonra yeniden etkinleştirmek için bayrak değerlerini geri yükleyin, GUC'leri yeniden ayarlayın ve dispatcher'ı orijinal migration'da kullanılan ifadeyle yeniden zamanlayın.
+Daha sonra yeniden etkinleştirmek için yönlendirmeyi ve yapılandırmayı geri yükleyin, GUC'leri yeniden ayarlayın ve dispatcher'ı orijinal migration'da kullanılan ifadeyle yeniden zamanlayın.
 
 ## Eskalasyon
 

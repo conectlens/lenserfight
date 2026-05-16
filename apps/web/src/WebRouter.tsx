@@ -6,7 +6,7 @@ import { ChainabitWalletGate } from '@lenserfight/features/store'
 import { GlobalErrorRenderer } from '@lenserfight/shared/error'
 import { UIProvider } from '@lenserfight/ui/providers'
 import { ModalRoute } from '@lenserfight/ui/routing'
-import { ARENA_BASE_URL, AUTH_BASE_URL, FEATURES } from '@lenserfight/utils/env'
+import { ARENA_BASE_URL, AUTH_BASE_URL } from '@lenserfight/utils/env'
 import React, { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
@@ -131,6 +131,9 @@ const LazyBattleLenserboardPage = lazy(() =>
 const LazyNotificationsPage = lazy(() =>
   import('@lenserfight/features/notifications').then((module) => ({ default: module.NotificationsPage }))
 )
+const LazyWaitingListPage = lazy(() =>
+  import('@lenserfight/features/waiting-list').then((module) => ({ default: module.WaitingListPage }))
+)
 const LazyAutomationsPage = lazy(() =>
   import('@lenserfight/features/automation').then((module) => ({ default: module.AutomationsPage }))
 )
@@ -235,11 +238,7 @@ const WorkflowBuilderPageRoute: React.FC = () => {
     <LazyWorkflowBuilderPage
       workflowId={id!}
       runId={runId}
-      onBattleClick={
-        FEATURES.PUBLIC_BATTLES
-          ? (workflowId) => navigate(`/battles/create?workflow_id=${workflowId}`)
-          : undefined
-      }
+      onBattleClick={(workflowId) => navigate(`/battles/create?workflow_id=${workflowId}`)}
     />
   )
 }
@@ -355,13 +354,7 @@ export const WebRouter: React.FC = () => {
         <Route path="/auth" element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/login`} />} />
         <Route
           path="/welcome"
-          element={
-            FEATURES.PUBLIC_BATTLES ? (
-              <AuthExternalRedirect to={`${ARENA_BASE_URL}/get-started`} />
-            ) : (
-              <Navigate to="/workflows" replace />
-            )
-          }
+          element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/get-started`} />}
         />
 
         <Route
@@ -370,11 +363,9 @@ export const WebRouter: React.FC = () => {
             <DashboardFrame>
               <LazyHomePage
                 spectatorSlot={
-                  FEATURES.PUBLIC_BATTLES ? (
-                    <Suspense fallback={null}>
-                      <LazySpectatorFeedWidget />
-                    </Suspense>
-                  ) : null
+                  <Suspense fallback={null}>
+                    <LazySpectatorFeedWidget />
+                  </Suspense>
                 }
               />
             </DashboardFrame>
@@ -393,18 +384,12 @@ export const WebRouter: React.FC = () => {
         <Route
           path="/lenserboard"
           element={
-            FEATURES.PUBLIC_BATTLES ? (
-              <DashboardFrame>
-                <LazyLenserBoardPage />
-              </DashboardFrame>
-            ) : (
-              <Navigate to="/" replace />
-            )
+            <DashboardFrame>
+              <LazyLenserBoardPage />
+            </DashboardFrame>
           }
         />
 
-        {FEATURES.PUBLIC_BATTLES && (
-          <>
             <Route
               path="/battles"
               element={
@@ -516,8 +501,6 @@ export const WebRouter: React.FC = () => {
                 </DashboardFrame>
               }
             />
-          </>
-        )}
 
         <Route
           path="/lensers"
@@ -762,6 +745,15 @@ export const WebRouter: React.FC = () => {
           element={
             <DashboardFrame>
               <LazyNotificationsPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/waiting-list"
+          element={
+            <DashboardFrame>
+              <LazyWaitingListPage />
             </DashboardFrame>
           }
         />

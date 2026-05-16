@@ -7,7 +7,6 @@ import { useLenser } from '@lenserfight/features/profile'
 import { useLeaderboard as useActivityLeaderboard } from '@lenserfight/features/home'
 import { LeaderboardTimeframe, LeaderboardScope, FollowPeriod } from '@lenserfight/types'
 import { useError, normalizeError } from '@lenserfight/shared/error'
-import { FEATURES } from '@lenserfight/utils/env'
 import { LenserBoardFilters } from '../components/LenserBoardFilters'
 import { LenserBoardHeader } from '../components/LenserBoardHeader'
 import { LenserBoardList } from '../components/LenserBoardList'
@@ -64,7 +63,7 @@ export const LenserBoardPage: React.FC = () => {
     { key: 'xp', label: 'XP Ranking' },
     { key: 'season', label: 'Season' },
     { key: 'activity', label: 'Activity Score' },
-    ...(FEATURES.AGENTS ? [{ key: 'elo' as BoardType, label: 'ELO Rating' }] : []),
+    { key: 'elo' as BoardType, label: 'ELO Rating' },
   ]
 
   return (
@@ -152,7 +151,7 @@ export const LenserBoardPage: React.FC = () => {
             </div>
           )}
         </>
-      ) : board === 'elo' && FEATURES.AGENTS ? (
+      ) : board === 'elo' ? (
         <>
           {eloLoading ? (
             <div className="space-y-3">

@@ -18,7 +18,7 @@ Bu yüzeyler Community Edition içinde etkin (veya önizleme bayrağıyla) gelir
 | CLI (`lf run exec`, `lf execution wait`) | **Stabil** | Yerel ve BYOK model denemeleri |
 | Sosyal graf (takip et / bırak) | **Stabil** | |
 | Bildirimler (zil, rozet) | **Stabil** | Supabase gerekir |
-| CRON zamanlama | **Önizleme** | `FEATURE_CRON_SCHEDULING=true` + pg_cron gerektirir. Varsayılan olarak onay kapısıyla. |
+| CRON zamanlama | **Önizleme** | Supabase `pg_cron` configured for workflow dispatch + pg_cron gerektirir. Varsayılan olarak onay kapısıyla. |
 | Onay kapıları | **Önizleme** | Zamanlanmış çalıştırmaları ve yazma sınıfı araç çağrılarını insan kararı verene kadar bloklar |
 | Araç çağrısı (salt okur ve yazma sınıfı) | **Önizleme** | Yazma sınıfı araçlar her zaman onay ister |
 | Hafıza (profiller, kayıtlar, enjeksiyon) | **Önizleme** | Başarıda yazma kapısı uygulanır |
@@ -34,7 +34,7 @@ Bu yüzeyler kod tabanında bulunur, ancak OSS lansmanı taahhüdüne dahil değ
 
 | Yüzey | Kapı |
 |-------|------|
-| Bulut savaş arenası | `FEATURE_PUBLIC_BATTLES=true` + barındırılan Supabase + erişim onayı |
+| Bulut savaş arenası | onaylı bulut savaşları + barındırılan Supabase + erişim onayı |
 | Savaş BYOK akışı | Bulut savaşları kapısı + BYOK anahtar referansı |
 | ELO lider tablosu | Bulut savaşları kapısı |
 | Turnuva skorlama | Bulut savaşları kapısı |
