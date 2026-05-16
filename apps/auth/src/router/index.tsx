@@ -11,8 +11,6 @@ import { AccountRecoveryPage } from '../pages/AccountRecoveryPage'
 import { AccountUnavailablePage } from '../pages/AccountUnavailablePage'
 import { DeviceApprovalPage } from '../pages/DeviceApprovalPage'
 import { GatewayGuard } from '../components/GatewayGuard'
-import { OnboardingGuard } from '../components/OnboardingGuard'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 
 export const AuthRouter: React.FC = () => {
   return (
@@ -36,14 +34,6 @@ export const AuthRouter: React.FC = () => {
         <Route path="/account-recovery" element={<AccountRecoveryPage />} />
         <Route path="/account-unavailable" element={<AccountUnavailablePage />} />
         <Route path="/device-approval" element={<DeviceApprovalPage />} />
-        <Route
-          path="/onboarding"
-          element={
-            <OnboardingGuard>
-              <CreateLenserProfileModal />
-            </OnboardingGuard>
-          }
-        />
         <Route
           path="/*"
           element={
