@@ -2,10 +2,12 @@ import { getWorkflowNodeCatalogEntry } from '@lenserfight/infra/execution'
 import { Handle, Position } from '@xyflow/react'
 import {
   AlertTriangle,
+  Bell,
   BookOpen,
   Braces,
   BrainCircuit,
   Calendar,
+  ClipboardList,
   Clock,
   Code2,
   Database,
@@ -17,6 +19,9 @@ import {
   Lock,
   Mail,
   MessageSquare,
+  MousePointerClick,
+  Play,
+  Radio,
   Rss,
   Repeat,
   Table2,
@@ -27,13 +32,18 @@ import {
   Variable,
   Webhook,
   Workflow,
+  Zap,
 } from 'lucide-react'
 import React from 'react'
 
 import { WorkflowNodeQuickActions } from '../canvas/components/WorkflowNodeQuickActions'
-import type { WorkflowNodeData } from '../types'
+import { getNodeExecutionRingClassName } from '../execution/workflowNodeExecutionStatus'
+
+import { WorkflowNodeExecutionBadge } from './WorkflowNodeExecutionBadge'
+
 import type { WorkflowNodeCategory } from '@lenserfight/infra/execution'
 import type { NodeProps } from '@xyflow/react'
+import type { WorkflowNodeData } from '../types'
 
 // Types extracted to shared module — re-exported for backward compatibility
 export type { WorkflowNodeConfig, WorkflowNodeData } from '../types'
@@ -87,8 +97,21 @@ function renderNodeIcon(iconKey: string): React.ReactNode {
   switch (iconKey) {
     case 'AlertTriangle':
       return <AlertTriangle size={10} />
+    case 'Bell':
+      return <Bell size={10} />
     case 'BookOpen':
       return <BookOpen size={10} />
+    case 'ClipboardList':
+    case 'FormInput':
+      return <ClipboardList size={10} />
+    case 'MousePointerClick':
+      return <MousePointerClick size={10} />
+    case 'Play':
+      return <Play size={10} />
+    case 'Radio':
+      return <Radio size={10} />
+    case 'Zap':
+      return <Zap size={10} />
     case 'Brain':
     case 'BrainCircuit':
     case 'Fingerprint':
@@ -158,7 +181,11 @@ const VISIBILITY_ICONS: Record<string, React.ReactNode> = {
 
 export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
   const nodeData = data as WorkflowNodeData
-  const { label, ordinal, isPersisted, lens_id, lensVisibility, isLensOwner, onRemove, onDuplicate, onConfigNode, onEditLens, config } = nodeData
+  const {
+    label, ordinal, isPersisted, lens_id, lensVisibility, isLensOwner,
+    onRemove, onDuplicate, onConfigNode, onEditLens, config,
+    executionStatus, executionWarning,
+  } = nodeData
 
   const categoryMeta = getNodeCategoryMeta(config?.node_type ?? config?.nodeType)
   const visibilityIcon = lensVisibility ? (VISIBILITY_ICONS[lensVisibility] ?? null) : null
@@ -168,14 +195,23 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
 
   const isUtilityNode = !!categoryMeta
 
+  // Execution ring layers outside the category/visibility border via ring-*.
+  // When selected, the selection ring takes visual priority.
+  const executionRing = selected ? '' : getNodeExecutionRingClassName(executionStatus ?? null)
+
+  // Show badge for any non-null, non-pending status.
+  const showBadge = !!executionStatus && executionStatus !== 'pending'
+
   return (
     <div
       onDoubleClick={() => { if (onConfigNode && (lens_id || isUtilityNode)) onConfigNode(id, lens_id ?? '__utility') }}
+      aria-label={`${label}${executionStatus ? `, status: ${executionStatus}` : ''}`}
+      data-execution-status={executionStatus ?? undefined}
       className={`relative flex items-center gap-2 min-w-[160px] max-w-[240px] rounded-2xl border px-3 py-2.5 shadow-neu-1 transition-colors ${
         selected
           ? 'border-primary-yellow-500 bg-primary-yellow-500/10 ring-2 ring-primary-yellow-500/30'
           : visibilityBorder
-      } ${!isPersisted ? 'opacity-60' : ''}`}
+      } ${executionRing} ${!isPersisted ? 'opacity-60' : ''}`}
     >
       {/* Target handle — left */}
       <Handle
@@ -210,6 +246,8 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
         canDuplicate={!!onDuplicate}
         canEditLens={!!isLensOwner && !!onEditLens && !!lens_id}
         canDelete={!!onRemove}
+        canViewDocs={isUtilityNode}
+        nodeType={config?.node_type ?? config?.nodeType}
         onConfigure={() => onConfigNode?.(id, lens_id ?? '__utility')}
         onDuplicate={() => onDuplicate?.(id)}
         onEditLens={() => { if (lens_id) onEditLens?.(lens_id) }}
@@ -222,6 +260,21 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
         position={Position.Right}
         className="!w-3 !h-3 !rounded-full !bg-greyscale-500 dark:!bg-greyscale-400 !border-2 !border-surface-base hover:!bg-primary-yellow-500 transition-colors dark:!border-surface-raised"
       />
+
+      {/* Execution status badge — top-right corner */}
+      {showBadge && <WorkflowNodeExecutionBadge status={executionStatus!} />}
+
+      {/* Dry-run side-effect warning — bottom-center */}
+      {executionWarning && (
+        <div
+          title={executionWarning}
+          aria-label={executionWarning}
+          className="pointer-events-none absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-full border border-amber-400/50 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 text-[8px] font-medium text-amber-700 dark:text-amber-300 whitespace-nowrap"
+        >
+          <AlertTriangle size={7} />
+          dry run
+        </div>
+      )}
     </div>
   )
 }
