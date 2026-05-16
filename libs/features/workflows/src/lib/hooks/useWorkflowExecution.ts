@@ -1,19 +1,27 @@
 import { apiKeysService, lensesService, walletApiClient, workflowsService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
 import {
+  EchoProvider,
   WorkflowExecutionService,
   getExecutionProvider,
+  getNodeRunner,
   normalizeWorkflowNodeConfigForExecution,
   registerDefaultNodeRunners,
+  registerNodeRunner,
 } from '@lenserfight/infra/execution'
 import { createWorkflowModerationGateway } from '@lenserfight/infra/moderation'
 import { byokKeyResolver, callProvider } from '@lenserfight/providers'
 import { mapEngineEventToSse, WorkflowEventType } from '@lenserfight/types'
 import { useCallback, useRef } from 'react'
 
+import {
+  SIDE_EFFECT_NODE_TYPES,
+  createDryRunMockRunner,
+} from '../execution/workflowDryRun'
+
 import { persistNodeMediaArtifact } from '../execution/persistNodeMedia'
 
-import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
+import type { WorkflowNodeRecord, WorkflowEdgeRecord, WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
 import type {
   IExecutionProvider,
   WorkflowNode,
@@ -502,7 +510,134 @@ export function useWorkflowExecution({
     [nodes, edges, models, fundingSource, selectedKeyRefId, selectedLocalKeyId, resolveLocalKey, localKeys, enableModeration, workspaceId],
   )
 
-  return { execute, stopExecution }
+  // ── Dry Run ─────────────────────────────────────────────────────────────────
+
+  const dryRunAbortRef = useRef<AbortController | null>(null)
+
+  const stopDryRun = useCallback(() => {
+    dryRunAbortRef.current?.abort()
+    dryRunAbortRef.current = null
+  }, [])
+
+  /**
+   * Execute the workflow in dry-run mode:
+   * - No DB records created (ephemeral runId, never persisted).
+   * - EchoProvider handles all AI/lens nodes (echoes the resolved prompt).
+   * - Side-effecting node types are mocked via createDryRunMockRunner.
+   * - Results are streamed to `onNodeResult` callback for React state.
+   * - Normal `execute()` is blocked while a dry run is in progress (shared isExecutingRef).
+   */
+  const executeDryRun = useCallback(
+    async (
+      globalModelId: string,
+      rootInputs: Record<string, unknown> = {},
+      onNodeResult: (nodeId: string, record: WorkflowNodeResultRecord) => void,
+    ): Promise<{ status: 'completed' | 'failed' | 'cancelled' }> => {
+      if (isExecutingRef.current) throw new Error('A run is already in progress.')
+      isExecutingRef.current = true
+
+      const controller = new AbortController()
+      dryRunAbortRef.current = controller
+
+      const ephemeralRunId = crypto.randomUUID()
+
+      // Save and replace side-effect runners with mocks
+      const originals = new Map<string, ReturnType<typeof getNodeRunner>>()
+      try {
+        registerDefaultNodeRunners()
+
+        for (const nodeType of SIDE_EFFECT_NODE_TYPES) {
+          originals.set(nodeType, getNodeRunner(nodeType as Parameters<typeof getNodeRunner>[0]))
+          registerNodeRunner(createDryRunMockRunner(nodeType) as Parameters<typeof registerNodeRunner>[0])
+        }
+
+        const echoProvider = new EchoProvider()
+
+        const execNodes: WorkflowNode[] = nodes.map((n) => ({
+          id: n.id,
+          lensId: n.lens_id ?? null,
+          versionId: n.version_id,
+          config: readNodeConfig(n.config),
+        }))
+
+        const execEdges: WorkflowEdge[] = edges.map((e) => ({
+          sourceNodeId: e.source_node_id,
+          targetNodeId: e.target_node_id,
+          sourceOutputKey: e.source_output_key,
+          targetParamLabel: e.target_param_label,
+          mergeStrategy: (e.merge_strategy ?? null) as MergeStrategy | null,
+          condition: readEdgeCondition(e.condition),
+        }))
+
+        const ctx: WorkflowExecutionContext = {
+          runId: ephemeralRunId,
+          rootInputs,
+          defaultModelKey: globalModelId || 'echo',
+          signal: controller.signal,
+
+          // Always use EchoProvider — dry run does not call real AI providers
+          resolveExecutionProvider: async () => echoProvider,
+
+          async resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string> {
+            if (controller.signal.aborted) return ''
+            try {
+              const version = versionId
+                ? await lensesService.getVersionById(versionId)
+                : await lensesService.getLatestPublishedVersion(lensId)
+              return version?.templateBody ?? ''
+            } catch {
+              return ''
+            }
+          },
+
+          async resolveVersionContracts() {
+            return { input: null, output: null }
+          },
+
+          async onNodeStatusChange(nodeId: string, result: NodeResult): Promise<void> {
+            const record: WorkflowNodeResultRecord = {
+              id: `${ephemeralRunId}-${nodeId}`,
+              run_id: ephemeralRunId,
+              node_id: nodeId,
+              status: result.status,
+              output_data: (result.outputData ?? null) as Record<string, unknown> | null,
+              error_message: result.error ?? null,
+              started_at: result.status === 'running' || result.status === 'streaming'
+                ? new Date().toISOString()
+                : null,
+              completed_at:
+                result.status === 'completed' ||
+                result.status === 'failed' ||
+                result.status === 'cancelled' ||
+                result.status === 'skipped' ||
+                result.status === 'timed_out' ||
+                result.status === 'blocked' ||
+                result.status === 'invalidated'
+                  ? new Date().toISOString()
+                  : null,
+              retry_count: result.attempts ?? 0,
+              waiting_reason: result.waitingReason ?? null,
+            }
+            onNodeResult(nodeId, record)
+          },
+        }
+
+        const executionService = new WorkflowExecutionService(echoProvider)
+        const runResult = await executionService.executeWorkflow(execNodes, execEdges, ctx)
+        return { status: runResult.status }
+      } finally {
+        // Re-register all default runners to overwrite any dry-run mocks.
+        // registerDefaultNodeRunners() is idempotent — safe to call after every run.
+        originals.clear()
+        registerDefaultNodeRunners()
+        isExecutingRef.current = false
+        if (dryRunAbortRef.current === controller) dryRunAbortRef.current = null
+      }
+    },
+    [nodes, edges],
+  )
+
+  return { execute, stopExecution, executeDryRun, stopDryRun }
 }
 
 /**
