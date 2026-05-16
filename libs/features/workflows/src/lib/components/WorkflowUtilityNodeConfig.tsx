@@ -22,9 +22,11 @@ import { DescriptorFormRenderer } from '../config/shared/DescriptorFormRenderer'
 import { FundingSection } from '../config/shared/FundingSection'
 import { InputMappingSection } from '../config/shared/InputMappingSection'
 import { OutputContractSection } from '../config/shared/OutputContractSection'
+import { WorkflowUpstreamOutputPanel } from './upstream/WorkflowUpstreamOutputPanel'
+import { useUpstreamNodeOutputs } from '../hooks/useUpstreamNodeOutputs'
 
 import type { WorkflowNodeConfig } from '../types'
-import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
+import type { WorkflowNodeRecord, WorkflowEdgeRecord, WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
@@ -44,6 +46,8 @@ interface WorkflowUtilityNodeConfigProps {
   currentConfig: WorkflowNodeConfig
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
+  /** Latest execution results for upstream output inspection panel */
+  nodeResults: WorkflowNodeResultRecord[]
   onSave: (nodeId: string, config: WorkflowNodeConfig) => void
   onClose: () => void
 }
@@ -56,6 +60,7 @@ export function WorkflowUtilityNodeConfig({
   currentConfig,
   nodes,
   edges,
+  nodeResults,
   onSave,
   onClose,
 }: WorkflowUtilityNodeConfigProps) {
@@ -65,10 +70,14 @@ export function WorkflowUtilityNodeConfig({
   const nodeType = currentConfig.node_type ?? currentConfig.nodeType ?? 'code'
   const entry = getRunnerConfig(nodeType)
 
+  const upstreamOutputs = useUpstreamNodeOutputs({ nodeId, edges, nodes, nodeResults })
+  const hasRun = nodeResults.length > 0
+
   // Fallback: no config registered for this type
   if (!entry) {
     return (
       <ConfigPanelShell nodeLabel={nodeLabel} nodeType={nodeType} onClose={onClose}>
+        <WorkflowUpstreamOutputPanel upstreamOutputs={upstreamOutputs} hasRun={hasRun} />
         <div className="rounded-xl border border-surface-border bg-surface-raised p-4 text-center text-xs text-greyscale-400">
           No configuration available for <span className="font-mono">{nodeType}</span> nodes yet.
         </div>
@@ -81,6 +90,7 @@ export function WorkflowUtilityNodeConfig({
     return (
       <ConfigPanelShell nodeLabel={nodeLabel} nodeType={nodeType} onClose={onClose}>
         <InputMappingSection nodeId={nodeId} nodes={nodes} edges={edges} />
+        <WorkflowUpstreamOutputPanel upstreamOutputs={upstreamOutputs} hasRun={hasRun} />
         <entry.component
           nodeId={nodeId}
           config={currentConfig}
@@ -98,6 +108,7 @@ export function WorkflowUtilityNodeConfig({
   return (
     <ConfigPanelShell nodeLabel={nodeLabel} nodeType={nodeType} onClose={onClose}>
       <InputMappingSection nodeId={nodeId} nodes={nodes} edges={edges} />
+      <WorkflowUpstreamOutputPanel upstreamOutputs={upstreamOutputs} hasRun={hasRun} />
       {descriptor.needsAiProvider && (
         <FundingSection config={currentConfig} onConfigChange={() => {}} />
       )}
