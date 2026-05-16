@@ -1013,6 +1013,7 @@ interface SimpleOptions {
   mapping?: Record<string, string>
   n8nNode?: string
   capabilities?: string[]
+  sideEffectPolicy?: SideEffectPolicy
 }
 
 function simpleNode(
@@ -1050,6 +1051,7 @@ function simpleNode(
     producesOutputType,
     capabilities: options.capabilities ?? [category, displayName.toLowerCase()],
     n8n: options.n8nNode ? n8n(options.n8nNode) : undefined,
+    sideEffectPolicy: options.sideEffectPolicy,
   })
 }
 
