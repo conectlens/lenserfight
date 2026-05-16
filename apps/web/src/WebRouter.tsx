@@ -6,7 +6,7 @@ import { ChainabitWalletGate } from '@lenserfight/features/store'
 import { GlobalErrorRenderer } from '@lenserfight/shared/error'
 import { UIProvider } from '@lenserfight/ui/providers'
 import { ModalRoute } from '@lenserfight/ui/routing'
-import { ARENA_BASE_URL, AUTH_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
+import { ARENA_BASE_URL, AUTH_BASE_URL, FEATURES } from '@lenserfight/utils/env'
 import React, { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
@@ -886,7 +886,7 @@ export const WebRouter: React.FC = () => {
         <Route path="/agents/:id" element={<LazyAgentProfileRedirect />} />
         <Route path="/agents/:agentId/workspace" element={<LazyAgentWorkspacePage />} />
 
-        {SURFACE.showBenchmarkSuite && (
+        {FEATURES.BENCHMARK_SUITE && (
           <Route
             path="/benchmark"
             element={
@@ -896,7 +896,7 @@ export const WebRouter: React.FC = () => {
             }
           />
         )}
-        {SURFACE.showBenchmarkSuite && (
+        {FEATURES.BENCHMARK_SUITE && (
           <Route
             path="/benchmark/:id"
             element={
