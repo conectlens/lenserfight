@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deep Code Reviewer"
+  short_description: "Perform architecture-aware, production-focused code review."
+  default_prompt: "Review this code deeply for correctness, edge cases, architecture, performance, and maintainability risks."
