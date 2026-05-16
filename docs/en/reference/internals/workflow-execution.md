@@ -80,6 +80,11 @@ Edges support a `condition` JSONB (added in [20260417140000_lens_output_contract
 
 Merge strategies on edges: `last_write_wins | concat | array | json_object`.
 
+## Browser vs worker execution
+
+- **Browser path** (`useWorkflowExecution`): structural `validateWorkflow` plus `validateBrowserExecutionPlan` run before `startRun`. The engine resolves **per-node** `config.model_id` (or the run default) to an execution provider. Edges use **`source_output_key`** with dotted paths into upstream `output_data` (see `resolveMappedOutputValue` in `@lenserfight/infra/execution`). **Cloud BYOK** manual runs are not executed in the browser in production keys mode; the UI blocks Execute until a supported funding path is chosen.
+- **Scheduled worker** (`scheduled-workflow-worker`): claims runs via the worker RPC, loads lens template bodies with `fn_worker_get_lens_template_body`, resolves providers per node, and persists full **`output_data` jsonb** plus optional **`resolved_input_snapshot`** / **`provider_route`** on `lenses.workflow_node_results` through `fn_worker_upsert_node_result`.
+
 ## Parallel lanes
 
 The DAG implicitly defines parallelism: any nodes whose parents are all completed run concurrently. For team runs, [`agents.team_members.lane`](./domain-model#agents-team-members) gives the owner an explicit lane index for queue policy purposes.
