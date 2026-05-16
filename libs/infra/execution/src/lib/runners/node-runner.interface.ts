@@ -12,7 +12,8 @@
  * - Indirection: the registry decouples callers from concrete runners.
  */
 
-import type { ExecutionResult, WorkflowNodeType } from '../execution.types'
+import type { ExecutionInput, ExecutionResult, WorkflowNodeType } from '../execution.types'
+import type { LensOutputContract } from '@lenserfight/types'
 
 /**
  * Immutable context passed to every node runner. Contains everything the
@@ -29,6 +30,14 @@ export interface NodeRunnerContext {
   readonly nodeConfig: Record<string, unknown>
   /** AbortSignal for cooperative cancellation. */
   readonly signal?: AbortSignal
+  /** Fully rendered prompt (template after [[label]] substitution). Available for AI-calling runners. */
+  readonly resolvedPrompt?: string
+  /** Provider execution function. Closed over the resolved provider + model for this node. */
+  readonly executeProvider?: (input: ExecutionInput) => Promise<ExecutionResult>
+  /** Output contract for this node's lens version (if resolved). */
+  readonly outputContract?: LensOutputContract | null
+  /** Connector credential resolver. Returns decrypted token or null (browser context). */
+  readonly resolveConnector?: (slug: string, scopes?: string[]) => Promise<string | null>
 }
 
 /**
