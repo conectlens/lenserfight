@@ -24,6 +24,18 @@ DECLARE
   v_encrypted_id uuid;
   v_decrypted    text;
 BEGIN
+  -- SECURITY GATE: this function decrypts plaintext API keys and returns them
+  -- over PostgREST to the browser. It MUST NOT run in production. The DB owner
+  -- must explicitly opt in by setting:
+  --   ALTER DATABASE postgres SET app.allow_dev_byok_resolver = 'true';
+  -- Anything else (missing, false, or wrong value) blocks the call. This is a
+  -- server-side guard — relying solely on `import.meta.env.DEV` on the client
+  -- is insufficient because any authenticated REST client can call this RPC.
+  IF coalesce(current_setting('app.allow_dev_byok_resolver', true), 'false') <> 'true' THEN
+    RAISE EXCEPTION 'fn_get_my_key_secret is disabled in this environment'
+      USING ERRCODE = 'insufficient_privilege';
+  END IF;
+
   v_lenser_id := lensers.get_auth_lenser_id();
   IF v_lenser_id IS NULL THEN
     RAISE EXCEPTION 'Unauthenticated: no lenser profile found';
@@ -60,5 +72,6 @@ COMMENT ON FUNCTION public.fn_get_my_key_secret(uuid) IS
   'SECURITY DEFINER — runs as postgres to read vault.decrypted_secrets. '
   'Ownership enforced: lenser_id must match the authenticated caller. '
   'Only active (non-revoked) keys are returned. '
-  'Client calls MUST be guarded by import.meta.env.DEV. '
-  'Added in migration 20271226000000.';
+  'Gated by GUC app.allow_dev_byok_resolver = ''true'' — disabled by default. '
+  'Client calls MUST also be guarded by import.meta.env.DEV. '
+  'Added in migration 20271226000000; server-side gate added 2026-05-16.';
