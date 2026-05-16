@@ -2,6 +2,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { agentsService, lenserService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
+import { useToast } from '@lenserfight/shared/error'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 
@@ -26,9 +27,13 @@ async function switchActiveLenser(lenserId: string): Promise<void> {
 export function useSwitchLenser() {
   const queryClient = useQueryClient()
   const { user } = useAuth()
+  const { toastError } = useToast()
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: switchActiveLenser,
+    onError: (error) => {
+      toastError(error, { fallbackMessage: 'Failed to switch workspace. Please try again.' })
+    },
     onSuccess: async (_result, targetProfileId) => {
       const profiles =
         queryClient.getQueryData<WorkspaceIdentity[]>(queryKeys.lenser.myLensers()) ?? []

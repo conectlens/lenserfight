@@ -8,7 +8,7 @@ import { useShareContext } from '@lenserfight/features/share'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { LenserPreferences } from '@lenserfight/types'
 import { ReportReasonEnum } from '@lenserfight/types'
-import { Button, SEOHead } from '@lenserfight/ui/components'
+import { Button, HelpButton, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
@@ -396,10 +396,16 @@ export const LensLabPage: React.FC = () => {
       />
 
       {/* Lens body + Execution panel row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-7 flex flex-col gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:items-start">
+        <div className="lg:col-span-7 flex flex-col gap-2 lg:h-full">
           {/* Viewer toolbar — History icon button */}
-          <div className="flex justify-end gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <HelpButton path="/explanation/lenses/what-is-a-lens" label="What is a Lens?" />
+              <HelpButton path="/tutorials/walkthroughs/create-a-lens" label="How to create?" />
+            </div>
+
+            <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => {
@@ -428,6 +434,7 @@ export const LensLabPage: React.FC = () => {
                   : 'Version history'}
               </span>
             </button>
+            </div>
           </div>
 
           <LensBodyViewer
@@ -499,12 +506,13 @@ export const LensLabPage: React.FC = () => {
             streamUsage={lab.streamUsage}
             streamCredits={lab.streamCredits}
             streamError={lab.streamError}
+            localMediaArtifact={lab.localMediaArtifact}
             isOwner={isOwner}
             isAuthenticatedLenser={hasActiveLenserProfile}
           />
         </div>
 
-        <div className="lg:col-span-5 flex flex-col gap-3">
+        <div className="lg:col-span-5 flex flex-col gap-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:overflow-hidden">
           {lab.asyncMediaRunId && (
             <div className="flex items-center gap-3 rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50 px-4 py-3 text-sm dark:border-primary-yellow-800 dark:bg-primary-yellow-950">
               <Loader2 size={16} className="animate-spin shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400" />

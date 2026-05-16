@@ -1,9 +1,8 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { TriggerExecutionDTO, TriggerExecutionResponse } from '@lenserfight/types'
-import { apiFetch } from '../apiFetch'
-import { API_BASE_URL } from '@lenserfight/utils/env'
 
-const API_BASE = API_BASE_URL
+const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
+const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 // --- Port ---
 
@@ -11,7 +10,7 @@ export interface ExecutionApiClientPort {
   triggerExecution(dto: TriggerExecutionDTO): Promise<TriggerExecutionResponse>
 }
 
-// --- HTTP Implementation ---
+// --- Supabase Edge Function Implementation ---
 
 export class HttpExecutionApiClient implements ExecutionApiClientPort {
   private async getAuthHeader(): Promise<Record<string, string>> {
@@ -25,9 +24,7 @@ export class HttpExecutionApiClient implements ExecutionApiClientPort {
   async triggerExecution(dto: TriggerExecutionDTO): Promise<TriggerExecutionResponse> {
     const authHeader = await this.getAuthHeader()
 
-    // Routes to the internal execution worker (/v1/executions), not the gateway /execute/wallet.
-    // apiFetch throws on non-2xx, so no manual ok-check is needed here.
-    const res = await apiFetch(`${API_BASE}/v1/executions`, {
+    const res = await fetch(`${EDGE_BASE}/trigger-execution`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,6 +32,11 @@ export class HttpExecutionApiClient implements ExecutionApiClientPort {
       },
       body: JSON.stringify(dto),
     })
+
+    if (!res.ok) {
+      const body = await res.text()
+      throw new Error(`trigger-execution failed (${res.status}): ${body.slice(0, 300)}`)
+    }
 
     return res.json() as Promise<TriggerExecutionResponse>
   }

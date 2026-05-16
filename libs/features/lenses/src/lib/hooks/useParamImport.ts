@@ -11,7 +11,6 @@ export interface ImportResult {
 function findParamKey(
   rawKey: string,
   versionParams: LensVersionParam[],
-  legacyParams: LensParam[],
 ): string | null {
   // Version params: match on label
   const vExact = versionParams.find((p) => p.label === rawKey)
@@ -20,14 +19,6 @@ function findParamKey(
   if (vCI) return vCI.label
   const vTrimmed = versionParams.find((p) => p.label.trim().toLowerCase() === rawKey.trim().toLowerCase())
   if (vTrimmed) return vTrimmed.label
-
-  // Legacy params: match on name
-  const lExact = legacyParams.find((p) => p.name === rawKey)
-  if (lExact) return lExact.name
-  const lCI = legacyParams.find((p) => p.name.toLowerCase() === rawKey.toLowerCase())
-  if (lCI) return lCI.name
-  const lTrimmed = legacyParams.find((p) => p.name.trim().toLowerCase() === rawKey.trim().toLowerCase())
-  if (lTrimmed) return lTrimmed.name
 
   return null
 }
@@ -93,58 +84,18 @@ function coerceVersionParam(
       return { value: str, error: null }
     }
 
-    default:
-      return { value: str, error: null }
-  }
-}
-
-function coerceLegacyParam(
-  rawValue: unknown,
-  param: LensParam,
-  fromCsv: boolean,
-): { value: unknown; error: string | null } {
-  const type = param.type
-  const name = param.name
-
-  if (rawValue === null || rawValue === undefined) {
-    return { value: '', error: null }
-  }
-
-  const str = String(rawValue)
-
-  switch (type) {
-    case 'string':
-      return { value: str, error: null }
-
-    case 'number': {
-      const n = parseFloat(str)
-      if (isNaN(n)) return { value: null, error: `${name}: expected number, got "${str}"` }
-      return { value: n, error: null }
-    }
-
-    case 'boolean': {
-      const lower = str.toLowerCase()
-      const isTrue = rawValue === true || lower === 'true' || lower === '1' || lower === 'yes'
-      return { value: isTrue, error: null }
-    }
-
-    case 'select':
-      return { value: str, error: null }
-
     case 'multiselect': {
-      if (!fromCsv && Array.isArray(rawValue)) {
+      // JSON or array: use rawValue if it's already an array
+      if (Array.isArray(rawValue)) {
         return { value: rawValue as string[], error: null }
       }
-      // CSV or stringified: split on | or ;
-      const parts = str.split(/[|;]/).map((s) => s.trim()).filter(Boolean)
+      // CSV or stringified: split on | or ; or ,
+      const parts = str.split(/[|;,]/).map((s) => s.trim()).filter(Boolean)
       return { value: parts, error: null }
     }
 
     case 'array': {
-      if (!fromCsv && Array.isArray(rawValue)) {
-        return { value: JSON.stringify(rawValue), error: null }
-      }
-      // CSV: pass raw string (user pastes comma/newline format)
+      // CSV/Text: pass raw string (user pastes comma/newline format)
       return { value: str, error: null }
     }
 
@@ -158,7 +109,6 @@ function coerceLegacyParam(
 export function coerceJsonImport(
   raw: string,
   versionParams: LensVersionParam[],
-  legacyParams: LensParam[],
 ): ImportResult {
   let parsed: unknown
   try {
@@ -177,7 +127,7 @@ export function coerceJsonImport(
   const errors: Record<string, string> = {}
 
   for (const [rawKey, rawValue] of Object.entries(obj)) {
-    const matchedKey = findParamKey(rawKey, versionParams, legacyParams)
+    const matchedKey = findParamKey(rawKey, versionParams)
     if (!matchedKey) continue // silently ignore unmatched keys
 
     // Determine which param type applies
@@ -185,12 +135,6 @@ export function coerceJsonImport(
     if (vp) {
       if (vp.tool.type === 'file') continue // skip file params
       const { value, error } = coerceVersionParam(rawValue, vp)
-      if (error) errors[matchedKey] = error
-      else if (value !== undefined) values[matchedKey] = value
-    } else {
-      const lp = legacyParams.find((p) => p.name === matchedKey)
-      if (!lp) continue
-      const { value, error } = coerceLegacyParam(rawValue, lp, false)
       if (error) errors[matchedKey] = error
       else if (value !== undefined) values[matchedKey] = value
     }
@@ -271,7 +215,6 @@ export function coerceCsvRow(
   headers: string[],
   row: string[],
   versionParams: LensVersionParam[],
-  legacyParams: LensParam[],
 ): ImportResult {
   const values: Record<string, unknown> = {}
   const errors: Record<string, string> = {}
@@ -279,19 +222,13 @@ export function coerceCsvRow(
   for (let i = 0; i < headers.length; i++) {
     const rawKey = headers[i].trim()
     const rawValue = row[i] ?? ''
-    const matchedKey = findParamKey(rawKey, versionParams, legacyParams)
+    const matchedKey = findParamKey(rawKey, versionParams)
     if (!matchedKey) continue
 
     const vp = versionParams.find((p) => p.label === matchedKey)
     if (vp) {
       if (vp.tool.type === 'file') continue
       const { value, error } = coerceVersionParam(rawValue, vp)
-      if (error) errors[matchedKey] = error
-      else if (value !== undefined) values[matchedKey] = value
-    } else {
-      const lp = legacyParams.find((p) => p.name === matchedKey)
-      if (!lp) continue
-      const { value, error } = coerceLegacyParam(rawValue, lp, true)
       if (error) errors[matchedKey] = error
       else if (value !== undefined) values[matchedKey] = value
     }
@@ -317,22 +254,13 @@ function versionParamPlaceholder(param: LensVersionParam): unknown {
     case 'datetime': return '2024-01-15T10:00:00'
     case 'url':      return 'https://example.com'
     case 'select':   return param.tool.options?.[0]?.value ?? 'option_value'
+    case 'multiselect': return [param.tool.options?.[0]?.value ?? 'option1']
+    case 'array':       return 'item1, item2'
     case 'file':     return undefined // skip
     default:         return 'value'
   }
 }
 
-function legacyParamPlaceholder(param: LensParam): unknown {
-  switch (param.type) {
-    case 'string':      return 'text value'
-    case 'number':      return 0
-    case 'boolean':     return true
-    case 'select':      return param.options?.[0]?.value ?? 'option_value'
-    case 'multiselect': return [param.options?.[0]?.value ?? 'option1']
-    case 'array':       return 'item1, item2'
-    default:            return 'value'
-  }
-}
 
 /**
  * Builds a pretty-printed JSON template string from the active params.
@@ -340,16 +268,11 @@ function legacyParamPlaceholder(param: LensParam): unknown {
  */
 export function buildJsonTemplate(
   versionParams: LensVersionParam[],
-  legacyParams: LensParam[],
 ): string {
   const obj: Record<string, unknown> = {}
   for (const p of versionParams) {
     const val = versionParamPlaceholder(p)
     if (val !== undefined) obj[p.label] = val
-  }
-  for (const p of legacyParams) {
-    const val = legacyParamPlaceholder(p)
-    if (val !== undefined) obj[p.name] = val
   }
   return JSON.stringify(obj, null, 2)
 }
@@ -360,7 +283,6 @@ export function buildJsonTemplate(
  */
 export function buildCsvTemplate(
   versionParams: LensVersionParam[],
-  legacyParams: LensParam[],
 ): string {
   const headers: string[] = []
   const values: string[] = []
@@ -370,11 +292,6 @@ export function buildCsvTemplate(
     headers.push(p.label)
     const val = versionParamPlaceholder(p)
     values.push(val === null || val === undefined ? '' : typeof val === 'object' ? JSON.stringify(val) : String(val))
-  }
-  for (const p of legacyParams) {
-    headers.push(p.name)
-    const val = legacyParamPlaceholder(p)
-    values.push(val === null || val === undefined ? '' : Array.isArray(val) ? val.join('|') : String(val))
   }
 
   if (headers.length === 0) return ''

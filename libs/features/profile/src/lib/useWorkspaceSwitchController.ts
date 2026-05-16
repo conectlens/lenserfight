@@ -19,7 +19,7 @@ function getProfileDestination(profile: WorkspaceSwitchTarget): string {
 
 export function useWorkspaceSwitchController() {
   const navigate = useNavigate()
-  const { workspaces, switchWorkspace, isSwitching } = useLenserWorkspace()
+  const { workspaces, activeWorkspace, switchWorkspace, isSwitching } = useLenserWorkspace()
 
   const switchToProfile = useCallback(
     async (target: WorkspaceSwitchTarget | string | null | undefined) => {
@@ -32,11 +32,22 @@ export function useWorkspaceSwitchController() {
         throw new Error('Target profile not found.')
       }
 
+      // Already on this workspace — only navigate, skip the RPC + cache invalidation.
+      if (targetProfile.id === activeWorkspace?.id) {
+        navigate(getProfileDestination(targetProfile))
+        return targetProfile
+      }
+
       await switchWorkspace(targetProfile.id)
+      // Navigate synchronously so React batches the route change with the setQueryData
+      // re-render from onSuccess. Using startTransition here defers the navigate as a
+      // low-priority update, which gives the OLD route's components a window to observe
+      // the new activeWorkspace and fire corrective auto-switch effects (e.g. the
+      // AgentWorkspaceShell auto-switch effect), creating a ping-pong loop.
       navigate(getProfileDestination(targetProfile))
       return targetProfile
     },
-    [navigate, switchWorkspace, workspaces]
+    [navigate, switchWorkspace, workspaces, activeWorkspace?.id]
   )
 
   return {

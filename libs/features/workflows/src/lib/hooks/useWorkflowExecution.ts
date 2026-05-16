@@ -1,4 +1,4 @@
-import { apiKeysService, lensesService, workflowsService } from '@lenserfight/data/repositories'
+import { apiKeysService, lensesService, walletApiClient, workflowsService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
 import { WorkflowExecutionService, getExecutionProvider } from '@lenserfight/infra/execution'
 import { createWorkflowModerationGateway } from '@lenserfight/infra/moderation'
@@ -225,9 +225,16 @@ export function useWorkflowExecution({
             if (selectedKey.providerKey !== providerName) {
               throw new Error(`Selected cloud key is for ${selectedKey.providerDisplayName}, but the model uses ${providerName}.`)
             }
-            throw new Error(
-              'Cloud BYOK workflow execution must run on the platform executor. Use platform credit or a local key for browser execution.'
-            )
+            if (import.meta.env.DEV) {
+              // Local dev: resolve cloud vault key client-side, set apiKey so the provider
+              // call below works identically to user_byok_local.
+              // This branch is tree-shaken away in production builds (Vite replaces DEV=false).
+              apiKey = await walletApiClient.resolveByokKeyForLocalDev(selectedKeyRefId)
+            } else {
+              throw new Error(
+                'Cloud BYOK workflow execution must run on the platform executor. Use platform credit or a local key for browser execution.'
+              )
+            }
           } else {
             // platform_credit path for browser execution falls back to configured provider key.
             apiKey = byokKeyResolver.resolve(providerName)

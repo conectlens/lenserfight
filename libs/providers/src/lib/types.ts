@@ -59,10 +59,16 @@ export interface ImageResponse {
   units: number;
 }
 
-/** Returned immediately by async providers (video, long audio). */
+/**
+ * Returned immediately by async providers (video, long audio).
+ *
+ * The `providerTaskId` field is opaque to LenserFight — pass it back verbatim
+ * to `pollTask(apiKey, providerTaskId)` on the same adapter to fetch status.
+ * (Historic alias `taskId` was renamed for clarity; nothing else read it.)
+ */
 export interface AsyncGenerationResponse {
   status: 'pending';
-  taskId: string;
+  providerTaskId: string;
   /** Estimated seconds until completion, if the provider provides it. */
   estimatedSeconds?: number;
 }
@@ -81,7 +87,23 @@ export interface GenerativeMediaResult {
   durationSeconds?: number;
 }
 
-export type GenerativeMediaResponse = AsyncGenerationResponse | GenerativeMediaResult;
+/**
+ * Returned by `pollTask` when the provider has marked the task failed but the
+ * caller should not see a thrown exception (poll loops want structured results).
+ * Adapters still throw a `ProviderError` from `generate()` for synchronous
+ * failures (auth, rate-limit, content-policy).
+ */
+export interface FailedGenerationResponse {
+  status: 'failed';
+  providerTaskId?: string;
+  /** Provider-side message, already sanitised by the adapter. */
+  message: string;
+}
+
+export type GenerativeMediaResponse =
+  | AsyncGenerationResponse
+  | GenerativeMediaResult
+  | FailedGenerationResponse;
 
 /**
  * Adapter for generative media providers (image / video / audio / music).
@@ -101,7 +123,7 @@ export interface GenerativeMediaAdapter {
   /** Poll a previously submitted async task. Only required for async providers. */
   pollTask?(
     apiKey: string,
-    taskId: string
+    providerTaskId: string
   ): Promise<GenerativeMediaResponse>;
 
   /** Auth header builder (used by callGenerativeMedia registry). */

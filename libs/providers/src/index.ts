@@ -38,6 +38,7 @@ export type {
   ProviderResponse,
   ImageResponse,
   AsyncGenerationResponse,
+  FailedGenerationResponse,
   GenerativeMediaResult,
   GenerativeMediaResponse,
   GenerativeMediaAdapter,
@@ -62,6 +63,34 @@ export {
 // ─── Capability Mapper ────────────────────────────────────────────────────────
 export type { ModelCapabilities, ValidationError } from './lib/capability-mapper';
 export { CapabilityMapper, capabilityMapper } from './lib/capability-mapper';
+
+// ─── Model Registry (canonical LF keys → real provider keys) ─────────────────
+export type { ModelDescriptor, AnyProvider } from './lib/model-registry';
+export {
+  lookupModel,
+  detectProvider,
+  resolveWireModel,
+  modelKind,
+  listModels,
+} from './lib/model-registry';
+
+// ─── Media Capabilities (UI-facing — drives form gating) ─────────────────────
+export type { MediaCapabilities } from './lib/media-capabilities';
+export { getMediaCapabilities } from './lib/media-capabilities';
+
+// ─── Provider Errors (normalised codes, retry/timeout helpers) ───────────────
+export type {
+  ProviderErrorCode,
+  ProviderErrorOptions,
+  RetryOptions,
+  TimeoutOptions,
+} from './lib/provider-errors';
+export {
+  ProviderError,
+  mapHttpError,
+  withTimeout,
+  withRetry,
+} from './lib/provider-errors';
 
 // ─── BYOK Key Resolver ────────────────────────────────────────────────────────
 export type { BYOKKeyResolverOptions } from './lib/byok-key-resolver';
@@ -207,29 +236,85 @@ export const IMAGE_TO_VIDEO_ADAPTERS: Partial<Record<GenerativeMediaProvider, Ge
   fal: falStableVideoAdapter,
 };
 
+import { lookupModel as _lookupModel, resolveWireModel as _resolveWireModel } from './lib/model-registry';
+import { ProviderError as _ProviderError } from './lib/provider-errors';
+
+/**
+ * Dispatch a generative-media request to the right adapter.
+ *
+ * Pre-flight gates (no HTTP, no credit burn):
+ *  1. The model must be registered.
+ *  2. The model's declared `kind` must match the requested modality
+ *     (`music` accepts `audio`-kinded models).
+ *  3. The dispatched adapter must exist for the modality.
+ *
+ * On success the adapter receives the **wire model name** (real provider id),
+ * not the LenserFight canonical key.
+ *
+ * `provider` is allowed to be `null` — when null we resolve from the registry.
+ * Callers that already know the provider (e.g. byok-key-resolver) can pass it
+ * to keep one decision point.
+ */
 export async function callGenerativeMedia(
-  provider: GenerativeMediaProvider,
+  provider: GenerativeMediaProvider | null,
   modality: 'image' | 'video' | 'audio' | 'music',
   apiKey: string,
   model: string,
   prompt: string,
   params?: Record<string, unknown>
 ): Promise<GenerativeMediaResponse> {
-  let adapter: GenerativeMediaAdapter | undefined;
+  const descriptor = _lookupModel(model);
+  if (!descriptor) {
+    throw new _ProviderError({
+      code: 'unsupported_model',
+      message: `Model "${model}" is not registered. Update the model registry or pick a supported model.`,
+      provider: provider ?? 'unknown',
+      model,
+    });
+  }
 
+  const expectedKind = modality === 'music' ? ['music', 'audio'] : [modality];
+  if (!expectedKind.includes(descriptor.kind)) {
+    throw new _ProviderError({
+      code: 'unsupported_model',
+      message: `Model "${model}" produces ${descriptor.kind}, not ${modality}. Pick a ${modality}-capable model.`,
+      provider: descriptor.provider,
+      model,
+    });
+  }
+
+  const resolvedProvider = (provider ?? descriptor.provider) as GenerativeMediaProvider;
+  if (resolvedProvider !== descriptor.provider) {
+    // Caller supplied a provider that conflicts with the registry — refuse
+    // rather than silently miss-route.
+    throw new _ProviderError({
+      code: 'unsupported_model',
+      message: `Model "${model}" belongs to provider "${descriptor.provider}", not "${resolvedProvider}".`,
+      provider: descriptor.provider,
+      model,
+    });
+  }
+
+  let adapter: GenerativeMediaAdapter | undefined;
   if (modality === 'video') {
-    adapter = VIDEO_ADAPTERS[provider as VideoProvider];
+    adapter = VIDEO_ADAPTERS[resolvedProvider as VideoProvider];
   } else if (modality === 'audio' || modality === 'music') {
-    adapter = AUDIO_ADAPTERS[provider as AudioProvider];
+    adapter = AUDIO_ADAPTERS[resolvedProvider as AudioProvider];
   } else {
-    adapter = GENERATIVE_ADAPTERS[provider];
+    adapter = GENERATIVE_ADAPTERS[resolvedProvider];
   }
 
   if (!adapter) {
-    throw new Error(`No generative ${modality} adapter for provider: ${provider}`);
+    throw new _ProviderError({
+      code: 'unsupported_model',
+      message: `No ${modality} adapter is registered for provider "${resolvedProvider}".`,
+      provider: resolvedProvider,
+      model,
+    });
   }
 
-  return adapter.generate(apiKey, model, prompt, params);
+  const wireModel = _resolveWireModel(model);
+  return adapter.generate(apiKey, wireModel, prompt, params);
 }
 
 export function getGenerativeAdapter(

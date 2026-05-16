@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import {
   Type, AlignLeft, Code2, Hash, ToggleLeft,
   ChevronDown, Link, Calendar, Paperclip, Upload, AlertCircle,
+  ListChecks, List,
 } from 'lucide-react'
 import { LensVersionParam, LensVersionParamType } from '@lenserfight/types'
 import { FormError } from '@lenserfight/ui/components'
@@ -24,8 +25,10 @@ const TOOL_REGISTRY: Record<LensVersionParamType, ToolConfig> = {
   float:    { icon: Hash,        colorClass: 'text-amber-500',  label: 'Float' },
   decimal:  { icon: Hash,        colorClass: 'text-amber-500',  label: 'Decimal' },
   boolean:  { icon: ToggleLeft,  colorClass: 'text-purple-500', label: 'Toggle' },
-  select:   { icon: ChevronDown, colorClass: 'text-teal-500',   label: 'Select' },
-  url:      { icon: Link,        colorClass: 'text-green-500',  label: 'URL' },
+  select:      { icon: ChevronDown, colorClass: 'text-teal-500',   label: 'Select' },
+  multiselect: { icon: ListChecks,  colorClass: 'text-emerald-500', label: 'Multi-select' },
+  array:       { icon: List,        colorClass: 'text-sky-500',     label: 'List' },
+  url:         { icon: Link,        colorClass: 'text-green-500',  label: 'URL' },
   date:     { icon: Calendar,    colorClass: 'text-rose-500',   label: 'Date' },
   datetime: { icon: Calendar,    colorClass: 'text-rose-500',   label: 'Datetime' },
   file:     { icon: Paperclip,   colorClass: 'text-slate-500',  label: 'File' },
@@ -272,6 +275,50 @@ export const ToolField: React.FC<ToolFieldProps> = ({
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           className={inputClass}
+        />
+      )}
+
+      {tool.type === 'multiselect' && tool.options && (
+        <div className="flex flex-wrap gap-2 pt-1">
+          {tool.options.map((opt) => {
+            const selected = Array.isArray(value) ? (value as string[]) : []
+            const isChecked = selected.includes(opt.value)
+            return (
+              <label
+                key={opt.value}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer transition-all ${
+                  isChecked
+                    ? 'bg-primary-50 border-primary-200 text-primary-900 dark:bg-primary-900/20 dark:border-primary-800 dark:text-primary-100'
+                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => {
+                    const next = isChecked
+                      ? selected.filter((v) => v !== opt.value)
+                      : [...selected, opt.value]
+                    onChange(next)
+                  }}
+                  disabled={disabled}
+                  className="w-3.5 h-3.5 accent-primary"
+                />
+                <span>{opt.label}</span>
+              </label>
+            )
+          })}
+        </div>
+      )}
+
+      {tool.type === 'array' && (
+        <textarea
+          value={(value as string) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={tool.placeholder ?? 'item1, item2, item3'}
+          rows={3}
+          disabled={disabled}
+          className={`${inputClass} resize-none`}
         />
       )}
 
