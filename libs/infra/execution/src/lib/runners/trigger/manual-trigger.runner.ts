@@ -5,12 +5,12 @@ export class ManualTriggerRunner implements INodeRunner {
   readonly nodeType: WorkflowNodeType = 'manual_trigger'
 
   async execute(ctx: NodeRunnerContext): Promise<NodeRunnerResult> {
-    // TODO: implement — pass through manual trigger inputs to downstream nodes
+    // Propagate all root inputs as a structured payload. Downstream nodes
+    // receive the user-supplied parameters (topic, audience, etc.) via edges.
     return {
       output: {
-        mediaType: 'text',
-        text: 'Manual trigger activated.',
-        data: { nodeId: ctx.nodeId },
+        mediaType: 'json',
+        data: { ...ctx.resolvedParams },
         durationMs: 0,
       },
     }
