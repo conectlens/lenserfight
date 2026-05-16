@@ -410,46 +410,45 @@ const HumanOwnerOverview: React.FC = () => {
         />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <ProfileCard
-          title="Agents"
-          subtitle="Create or jump into any AI lenser you own."
-          toolbar={
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/lensers?type=ai')}
-            >
-              Browse all
-            </Button>
-          }
-        >
-          {ownerFleetAgentsLoading ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
-              {Array.from({ length: 4 }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className="h-44 animate-pulse rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
-                />
-              ))}
-            </div>
-          ) : (
-            <AgentsGrid
-              agents={ownerFleetAgents}
-              mode="owner"
-              onCreateAgent={() => open('create-agent')}
-            />
-          )}
-        </ProfileCard>
+      <ProfileCard
+        title="Agents"
+        subtitle="Create or jump into any AI lenser you own."
+        toolbar={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/lensers?type=ai')}
+          >
+            Browse all
+          </Button>
+        }
+      >
+        {ownerFleetAgentsLoading ? (
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="shrink-0 w-64 h-44 animate-pulse rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+              />
+            ))}
+          </div>
+        ) : (
+          <AgentsGrid
+            agents={ownerFleetAgents}
+            mode="owner"
+            layout="carousel"
+            onCreateAgent={() => open('create-agent')}
+          />
+        )}
+      </ProfileCard>
 
-        <ProfileCard
-          title="Cross-agent activity"
-          subtitle="Recent approvals, runs, and scheduled dispatches across every owned AI lenser."
-        >
-          <CrossAgentActivityFeed humanLenserId={feedLenserId} limit={25} />
-        </ProfileCard>
-      </div>
+      <ProfileCard
+        title="Cross-agent activity"
+        subtitle="Recent approvals, runs, and scheduled dispatches across every owned AI lenser."
+      >
+        <CrossAgentActivityFeed humanLenserId={feedLenserId} limit={25} />
+      </ProfileCard>
     </SectionPage>
   )
 }
