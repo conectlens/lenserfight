@@ -12,6 +12,16 @@ Every workflow is a directed acyclic graph (DAG). Nodes represent discrete units
 
 Edges carry optional `condition` predicates. When a condition evaluates to `false`, the downstream node transitions to `skipped` rather than `pending`.
 
+## Data flow and `source_output_key`
+
+Bindings merge upstream `output_data` / envelope fields into the target lens template labels. `source_output_key` supports **dotted paths** into structured outputs (for example `data.summary` on a research node). Resolution is shared with the prompt resolver via `resolveMappedOutputValue` in `libs/infra/execution/src/lib/output-path.ts`.
+
+When a rendered label value looks like an **image URL**, the engine attaches it as a vision `ExecutionInput.attachments` entry so text providers that support multimodal messages can consume upstream image nodes without ad-hoc string hacks.
+
+## Per-node providers (mixed DAGs)
+
+`WorkflowExecutionContext.resolveExecutionProvider` selects an `IExecutionProvider` **per node** (for example Claude for research, Fal for `fal-ai/...` image models). The browser hook caches providers by model key; the scheduled worker resolves from `workflow_nodes.config.model_id` with the same mechanism. If the hook is omitted, the service falls back to the single provider passed to `new WorkflowExecutionService(provider)`.
+
 ## Node Status State Machine
 
 ```
