@@ -12,6 +12,7 @@ import * as ollama from './lib/ollama';
 import * as openai from './lib/openai';
 import { openaiImageAdapter } from './lib/openai-image';
 import { openaiVideoAdapter } from './lib/openai-video';
+import { mapHttpError, ProviderError } from './lib/provider-errors';
 import { stabilityAdapter } from './lib/stability';
 import { sunoAdapter } from './lib/suno';
 
@@ -77,6 +78,22 @@ export {
 // ─── Media Capabilities (UI-facing — drives form gating) ─────────────────────
 export type { MediaCapabilities } from './lib/media-capabilities';
 export { getMediaCapabilities } from './lib/media-capabilities';
+
+// ─── Capability Matrix (test parametrization SoT) ─────────────────────────────
+export type {
+  ExecutionPath,
+  FundingSource,
+  ProviderSupportLevel,
+  ExpectedOutcome,
+  ExecutionPattern,
+  CapabilityMatrixEntry,
+} from './lib/capability-matrix';
+export {
+  PROVIDER_SUPPORT_LEVEL,
+  LOCAL_PROVIDERS,
+  CHAINABIT_GATEWAY_PROVIDERS,
+  buildCapabilityMatrix,
+} from './lib/capability-matrix';
 
 // ─── Provider Errors (normalised codes, retry/timeout helpers) ───────────────
 export type {
@@ -168,10 +185,16 @@ export async function streamProvider(
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Provider ${provider} stream error: ${response.status} ${text}`);
+    throw await mapHttpError(response, { provider, model });
   }
-  if (!response.body) throw new Error(`Provider ${provider} returned empty stream body`);
+  if (!response.body) {
+    throw new ProviderError({
+      code: 'server_error',
+      message: `${provider} returned an empty stream body.`,
+      provider,
+      model,
+    });
+  }
 
   return response.body;
 }
@@ -196,8 +219,7 @@ export async function callProvider(
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Provider ${provider} error: ${response.status} ${text}`);
+    throw await mapHttpError(response, { provider, model });
   }
 
   const data = await response.json();
