@@ -1,4 +1,4 @@
-export type { IExecutionProvider, ExecutionInput, ExecutionResult, MediaType } from './lib/execution.types'
+export type { IExecutionProvider, ExecutionInput, ExecutionResult, MediaType, WorkflowNodeType } from './lib/execution.types'
 export type {
   IStreamingExecutionProvider,
   StreamChunk,
@@ -108,3 +108,9 @@ export type {
   DelegationDispatchInput,
   DelegationDispatchResult,
 } from './lib/delegation-handler'
+
+// ── CN: Node Runner system (GRASP Polymorphism) ──────────────────────────
+export type { INodeRunner, NodeRunnerContext, NodeRunnerResult } from './lib/runners'
+export { registerNodeRunner, getNodeRunner, hasNodeRunner, clearNodeRunners, registeredNodeTypes } from './lib/runners'
+export { SetVariablesRunner, JsonTransformRunner, SwitchRunner, WaitDelayRunner, ErrorCatchRunner, LoopMapRunner, CodeNodeRunner, SubWorkflowRunner } from './lib/runners'
+export type { SwitchCase, SwitchOperator } from './lib/runners'
