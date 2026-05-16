@@ -209,8 +209,6 @@ pnpm supabase status
 | `AUTH_BASE_URL` | No | `http://localhost:3004` | Auth app URL |
 | `ARENA_URL` | No | `http://localhost:3001` | Arena app URL |
 | `API_URL` | No | `http://localhost:8786` | Platform API URL |
-| `MOCK` | No | `false` | Skip real auth in dev |
-| `FEATURE_AGENTS` | No | `false` | Enable AI workspace tabs |
 
 See `.env.example` for the full list with descriptions.
 

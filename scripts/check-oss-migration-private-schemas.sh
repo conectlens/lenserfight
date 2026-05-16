@@ -11,7 +11,8 @@ if [[ ! -d "$MIG_DIR" ]]; then
 fi
 
 # Schemas that belong exclusively to the Chainabit commercial backend.
-# battles, xp, benchmark are Community Edition features and must NOT appear here.
+# battles and xp are Community Edition features and must NOT appear here.
+# (The legacy `benchmark` schema was dropped from the active product; see 20280101000000_drop_benchmark_feature.sql.)
 PRIVATE=(
   authz billing organizations wallet
 )

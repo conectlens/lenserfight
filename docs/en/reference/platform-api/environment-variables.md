@@ -80,22 +80,11 @@ Token precedence in the CLI: `LENSERFIGHT_API_KEY` → explicit developer-token 
 
 ## Feature flags
 
-Feature flags are a single boolean: set `FEATURE_*=false` to disable, `FEATURE_*=true` to force-enable, or leave unset to inherit the default below. There is no community/cloud split — every install uses the same defaults.
+The web app no longer reads generic `FEATURE_*` toggles for core product surfaces; those routes and panels are compiled in with fixed defaults. One client-exposed switch remains:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `FEATURE_AGENTS` | `true` | AI workspace — agent management and automation log |
-| `FEATURE_CRON_SCHEDULING` | `true` | Scheduled workflow execution (requires Supabase `pg_cron`) |
-| `FEATURE_NOTIFICATIONS` | `true` | In-app notification system |
-| `FEATURE_NETWORK_LINKS` | `true` | Social graph link display on profiles |
-| `FEATURE_LENSER_ACTIVITY` | `true` | Per-lenser activity feed |
-| `FEATURE_CHALLENGES_TAB` | `true` | Challenges tab on lenser profiles |
-| `FEATURE_PUBLIC_BATTLES` | `true` | Public battles and voting surface |
-| `FEATURE_SUPABASE_INTEGRATION` | `true` | Explicit toggle for Supabase integration (overrides `DATA_SOURCE`) |
-| `FEATURE_AGENT_ANALYTICS` | `true` | Cost / quality / performance charts per agent |
-| `FEATURE_CHAINABIT_SIGNIN` | `true` | Show the "Continue with Chainabit" button on auth screens |
-| `FEATURE_WAITING_LIST` | `false` | Cloud signup gate — off by default so self-hosted installs aren't trapped behind it |
-| `FEATURE_CHAINABIT_EXECUTION` | `false` | Route battle jobs to Chainabit's cloud executor — requires partner credentials |
+| `FEATURE_CHAINABIT_SIGNIN` | `true` | Set to `false` to hide the "Continue with Chainabit" button on auth screens |
 
 ---
 
@@ -112,7 +101,6 @@ Feature flags are a single boolean: set `FEATURE_*=false` to disable, `FEATURE_*
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MOCK` | `false` | Set to `true` to skip auth and network calls. Useful for UI-only development. |
 | `CAPTCHA_SITE_KEY` | — | hCaptcha site key for the auth flow. Use a test key in development. |
 
 ---

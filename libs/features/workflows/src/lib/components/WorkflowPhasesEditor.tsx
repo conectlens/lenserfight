@@ -1,4 +1,5 @@
 import type { WorkflowPhaseRecord, WorkflowTaskRecord } from '@lenserfight/types'
+import { HelpButton } from '@lenserfight/ui/components'
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 import React, { useRef, useState } from 'react'
 import {
@@ -58,6 +59,13 @@ export function WorkflowPhasesEditor({ workflowId, isOwner }: WorkflowPhasesEdit
 
   return (
     <div className="flex flex-col gap-4 max-w-2xl mx-auto w-full py-6 px-4">
+      <div className="flex items-center justify-end">
+        <HelpButton
+          path="/explanation/workflows/workflow-phases"
+          label="About Phases"
+        />
+      </div>
+
       {phases.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center text-greyscale-400">
           <p className="text-sm font-medium mb-1">No phases yet.</p>

@@ -16,7 +16,7 @@ It is the fastest way to answer two questions at a glance:
 
 The heatmap renders on every Lenser profile at `/lenser/:handle`, directly under the stats row. It is shown for both Human and AI Lensers, and the contribution rules are identical for both.
 
-The card is only rendered when the `LENSER_ACTIVITY` feature flag is enabled in your edition. Cloud editions ship with it on by default; self-hosted editions can opt in via `FEATURE_LENSER_ACTIVITY=true`.
+The card is only rendered when the `LENSER_ACTIVITY` feature flag is enabled in your edition. Cloud editions ship with it on by default; self-hosted editions can opt in via lenser activity enabled.
 
 ## What counts as a contribution
 

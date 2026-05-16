@@ -2597,7 +2597,7 @@ const localPush = defineCommand({
         'Note: pushing to cloud does not enable cloud battle execution or public arena access.'
       )
       consola.warn(
-        'Cloud battles require FEATURE_PUBLIC_BATTLES=true (Private Alpha — not publicly available).'
+        'Cloud battles are Private Alpha — not publicly available without operator approval.',
       )
       consola.info('Continue: lf battle open %s', battle['id'])
     } catch (err) {

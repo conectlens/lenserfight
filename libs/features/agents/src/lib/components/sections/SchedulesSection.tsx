@@ -2,7 +2,6 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { workflowsService } from '@lenserfight/data/repositories'
 import { Button, Card } from '@lenserfight/ui/components'
 import { AlertDialog } from '@lenserfight/ui/overlays'
-import { FEATURES } from '@lenserfight/utils/env'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CalendarClock, History, Pencil, Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
@@ -73,45 +72,6 @@ export const SchedulesSection: React.FC = () => {
     onSuccess: (_, s) => { toast.success(s.is_active ? 'Schedule paused' : 'Schedule resumed'); invalidate() },
     onError: (e) => toast.error((e as Error).message),
   })
-
-  if (!FEATURES.CRON_SCHEDULING) {
-    return (
-      <SectionPage
-        eyebrow="Schedules"
-        docsPath="/how-to/agents/workspace/schedules"
-        docsTip="Cron-driven workflow triggers. Each schedule pins a workflow, cron expression, timezone, assignee, and JSON inputs template."
-        title="CRON-driven workflow dispatch"
-        description="Workflow schedules dispatch manual, CRON-based, or team-assigned automation runs."
-      >
-        <div className="rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50 p-6 dark:border-primary-yellow-800 dark:bg-primary-yellow-950/30">
-          <div className="flex items-start gap-3">
-            <CalendarClock size={20} className="mt-0.5 shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400" />
-            <div>
-              <p className="font-semibold text-primary-yellow-900 dark:text-primary-yellow-200">
-                Scheduling is not enabled in this edition
-              </p>
-              <p className="mt-1 text-sm text-primary-yellow-800 dark:text-primary-yellow-300">
-                CRON-driven workflow dispatch requires a full Supabase instance and the{' '}
-                <code className="rounded bg-primary-yellow-100 px-1 text-xs dark:bg-primary-yellow-900">
-                  FEATURE_CRON_SCHEDULING=true
-                </code>{' '}
-                environment variable. See the{' '}
-                <a
-                  href="/reference/known-preview-surfaces"
-                  className="underline"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Known Preview Surfaces
-                </a>{' '}
-                guide for setup instructions and rollback steps.
-              </p>
-            </div>
-          </div>
-        </div>
-      </SectionPage>
-    )
-  }
 
   return (
     <SectionPage

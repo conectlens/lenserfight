@@ -189,14 +189,12 @@ async function check_O3_elo_log() {
 }
 
 async function check_O2_arena_gating() {
-  // Hit the web app's /battles/arena route both with the flag on (returns 200/HTML)
-  // and off (returns redirect). The script can only verify one direction since
-  // the flag is build-time. This is reported as advisory.
+  // Advisory: confirm `/battles/arena` and related routes behave as expected for your deployment.
   return {
     id: 'O2',
-    name: 'arena page gating (advisory — build-time flag)',
+    name: 'arena routes (advisory)',
     ok: true,
-    evidence: { advisory: 'Verify by deploying with FEATURE_PUBLIC_BATTLES=true and false in two preview builds.' },
+    evidence: { advisory: 'Manually verify arena and battle entrypoints in staging before production rollout.' },
   }
 }
 

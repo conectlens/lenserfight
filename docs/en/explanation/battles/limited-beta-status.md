@@ -10,7 +10,7 @@ description: Operator runbook for the Cloud Battles surface — preflight env va
 
 This page is the operator runbook for running the Cloud Battles surface. It assumes the deployment has the Phase O webhook outbox migration applied and a hosted Supabase instance with `pg_cron` and `pg_net` available.
 
-For the full set of integrity checks the surface must pass before flipping the flag, see [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist).
+For the full set of integrity checks the surface must pass before enabling cloud battles for external users, see [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist).
 
 ## Preflight
 
@@ -18,8 +18,8 @@ For the full set of integrity checks the surface must pass before flipping the f
 
 | Variable | Purpose | Required |
 |---|---|---|
-| `FEATURE_PUBLIC_BATTLES` | Enables the cloud arena UI in `apps/web` and the cloud battle worker in `apps/platform-api`. | yes |
-| `FEATURES.PUBLIC_BATTLES` | Server-side mirror of the same flag, read by the moderation admin console. | yes |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` | Hosted Supabase project backing battles and workers | yes |
+| `API_URL` | `apps/platform-api` origin used by the web app and workers | yes |
 | `ANTHROPIC_API_KEY` (edge function env) | Used by the AI judge edge function. | yes |
 | `CHAINABIT_API_URL` | Used when battles dispatch through the Chainabit execution bridge. | only if Chainabit bridge is enabled |
 
@@ -68,8 +68,8 @@ Both rows must show `active = true`.
 A rollback is non-destructive — battles already in flight finish on whatever path they were claimed by. The flip just stops new entries.
 
 ```bash
-# 1. Disable the UI / worker (re-deploy with the flag flipped)
-FEATURE_PUBLIC_BATTLES=false
+# 1. Stop serving cloud battle routes to the public (reverse-proxy or redeploy web + workers)
+#    so new cloud battles cannot be created from untrusted clients.
 ```
 
 ```sql
@@ -83,7 +83,7 @@ ALTER DATABASE postgres SET app.moderation_webhook_url = '';
 
 Local battles (`lf battle local`) continue to work — they do not depend on any of the above.
 
-To re-enable later, restore the flag values, re-set the GUCs, and re-schedule the dispatcher with the same expression used in the original migration.
+To re-enable later, restore routing and configuration, re-set the GUCs, and re-schedule the dispatcher with the same expression used in the original migration.
 
 ## Escalation
 
@@ -110,6 +110,6 @@ All four pgTAP files are added to `scripts/coverage-gate.sh` critical-RPC checks
 ## Related
 
 - [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist) — required checks before enabling cloud battles.
-- [Known Preview Surfaces](/en/reference/known-preview-surfaces) — controlling flags, gates, and rollback per surface.
+- [Known Preview Surfaces](/en/reference/known-preview-surfaces) — rollout brakes and rollback per surface.
 - [OSS Launch Scope](/en/explanation/community/oss-launch-scope) — surface status and deployment requirements.
 - [Approvals](/en/reference/internals/approvals) — webhook payload shape and delivery semantics.

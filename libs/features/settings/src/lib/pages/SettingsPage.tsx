@@ -8,7 +8,7 @@ import { Feedback, ProductTag, FeedbackStatus, SocialLink, SocialPlatform } from
 import { Avatar, Button, Card, DangerZone, HelpButton, Table, Column } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
-import { FEATURES, WEB_BASE_URL } from '@lenserfight/utils/env'
+import { WEB_BASE_URL } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
 import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins, ImageIcon, Plus, Trash2, Github, Linkedin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react'
 import { AgentsTab } from '../components/AgentsTab'
@@ -840,7 +840,7 @@ export const SettingsPage: React.FC = () => {
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h2>
                 <div className="flex items-center gap-2">
                   <HelpButton path="/explanation/community/notifications" label="About Notifications" />
-                  {FEATURES.NOTIFICATIONS && notifications.some((n) => !n.read_at) && (
+                  {notifications.some((n) => !n.read_at) && (
                     <Button
                       variant="ghost"
                       onClick={markAllRead}
@@ -855,11 +855,7 @@ export const SettingsPage: React.FC = () => {
                 Manage your alerts and updates.
               </p>
 
-              {!FEATURES.NOTIFICATIONS ? (
-                <NotificationPreferencesTab />
-              ) : (
-                <>
-                  <div className="flex gap-2 mb-6">
+              <div className="flex gap-2 mb-6">
                     <button
                       onClick={() => setNotifTab('All')}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${notifTab === 'All' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
@@ -920,8 +916,6 @@ export const SettingsPage: React.FC = () => {
                     </h3>
                     <NotificationPreferencesTab />
                   </div>
-                </>
-              )}
             </div>
           )}
         </div>

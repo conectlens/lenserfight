@@ -6,7 +6,7 @@ description: Step-by-step guide to scheduling a daily workflow that requires own
 # Daily Workflow with Approval
 
 ::: warning Status: Preview
-CRON scheduling requires a full Supabase instance and `FEATURE_CRON_SCHEDULING=true`. See [Known Preview Surfaces](/en/reference/known-preview-surfaces).
+CRON scheduling requires a full Supabase instance and Supabase `pg_cron` configured for workflow dispatch. See [Known Preview Surfaces](/en/reference/known-preview-surfaces).
 :::
 
 This tutorial sets up a workflow that runs every morning at 08:00 but **waits for your explicit approval before executing**. Nothing runs unattended. You remain in control of every invocation.

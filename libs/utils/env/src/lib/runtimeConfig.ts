@@ -101,9 +101,6 @@ export const dataBackendKind: DataBackendKind =
 
 export const isFileDataBackend = dataBackendKind === 'file'
 
-// Mock flag
-export const isMock = import.meta.env.MOCK === 'true'
-
 // Local development flag (Vite dev server)
 export const isLocal = MODE === 'development'
 
@@ -120,51 +117,18 @@ export type LocalSeedCredentials = {
  * Vite's static replacement of `DEV` with `false` in production builds
  * eliminates the entire branch — the strings never reach the production bundle.
  *
- * Returns `null` in production / non-DEV / non-MOCK builds.
+ * Returns `null` in production / non-DEV builds.
  */
 export async function loadDevSeedCredentials(): Promise<LocalSeedCredentials | null> {
-  if (!import.meta.env.DEV && !isMock) return null
+  if (!import.meta.env.DEV) return null
   const mod = await import('./devSeedCredentials')
   return mod.LOCAL_SEED_CREDENTIALS
-}
-
-/**
- * Resolves a `FEATURE_*` env flag. Explicit `true` / `false` always wins;
- * otherwise the caller-supplied default applies.
- *
- * Default policy: the application is single-mode (no community/cloud split).
- * Most features default **on** — the few that gate launch readiness or signup
- * funnels (waiting list, Chainabit execution) default **off**.
- */
-function featureEnabled(envKey: string, defaultValue: boolean): boolean {
-  const v = import.meta.env[envKey]
-  if (v === 'true') return true
-  if (v === 'false') return false
-  return defaultValue
-}
-
-// Feature Flags — explicit `FEATURE_*=true|false` always wins.
-export const FEATURES = {
-  CHALLENGES_TAB: featureEnabled('FEATURE_CHALLENGES_TAB', true),
-  LENSER_ACTIVITY: featureEnabled('FEATURE_LENSER_ACTIVITY', true),
-  NOTIFICATIONS: featureEnabled('FEATURE_NOTIFICATIONS', true),
-  NETWORK_LINKS: featureEnabled('FEATURE_NETWORK_LINKS', true),
-  AGENTS: featureEnabled('FEATURE_AGENTS', true),
-  PUBLIC_BATTLES: featureEnabled('FEATURE_PUBLIC_BATTLES', true),
-  SUPABASE_INTEGRATION: featureEnabled('FEATURE_SUPABASE_INTEGRATION', true),
-  CRON_SCHEDULING: featureEnabled('FEATURE_CRON_SCHEDULING', true),
-  AGENT_ANALYTICS: featureEnabled('FEATURE_AGENT_ANALYTICS', true),
-  // Cloud-only signup gate. Off by default so self-hosted installs aren't trapped behind it.
-  WAITING_LIST: featureEnabled('FEATURE_WAITING_LIST', false),
-  // Chainabit execution bridge: routes battle jobs to Chainabit's cloud executor.
-  // Requires CHAINABIT_API_URL and CHAINABIT_PARTNER_API_KEY on the server side.
-  CHAINABIT_EXECUTION: featureEnabled('FEATURE_CHAINABIT_EXECUTION', false),
 }
 
 // Captcha
 export const CAPTCHA_SITE_KEY = import.meta.env.CAPTCHA_SITE_KEY || ''
 
-export const ENABLE_CAPTCHA = isProd && !isMock
+export const ENABLE_CAPTCHA = isProd
 
 // Analytics
 export const GA_MEASUREMENT_ID = import.meta.env.GA_MEASUREMENT_ID || ''
