@@ -70,6 +70,18 @@ const WIZARD_STEPS_CREATE: WizardStepConfig[] = [
 
 const WIZARD_STEPS_MANAGE: WizardStepConfig[] = [
   {
+    label: 'Identity',
+    title: 'Agent identity',
+    description: 'Update the display name shown across the platform.',
+    icon: <Sparkles size={20} />,
+    action: (
+      <HelpButton
+        path="/tutorials/agent-walkthroughs/create-your-first-agent"
+        label="Agent Guide"
+      />
+    ),
+  },
+  {
     label: 'Permissions',
     title: 'Agent permissions',
     description: 'Control what this agent is allowed to do.',
@@ -196,11 +208,12 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
   const maxStep = steps.length - 1
   const { step, nextStep, prevStep } = useWizardStep({ maxStep })
 
-  // ── Identity step state (create mode only) ──────────────────────────────
+  // ── Identity step state ──────────────────────────────────────────────────
   const { humanWorkspace } = useLenserWorkspace()
   const { submit: createAgent, isSubmitting: isCreating } = useCreateAgent(humanWorkspace?.id ?? '')
   const [displayName, setDisplayName] = useState('')
-  const [createError, setCreateError] = useState<string | null>(null)
+  const [identityError, setIdentityError] = useState<string | null>(null)
+  const [identitySaving, setIdentitySaving] = useState(false)
   const {
     handle: rawHandle,
     setHandle,
@@ -221,21 +234,27 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
 
   const lensModal = useCreateLens()
 
-  // ── Identity step: create & advance ─────────────────────────────────────
+  // Seed edit display name from loaded agent (manage mode)
+  const [editDisplayName, setEditDisplayName] = useState('')
+  React.useEffect(() => {
+    if (agent && !isCreateMode) setEditDisplayName(agent.display_name)
+  }, [agent, isCreateMode])
+
+  // ── Identity step: create (create mode) ──────────────────────────────────
   const handleCreateNext = async () => {
     const display = displayName.trim()
     if (!display || display.length < 2) {
-      setCreateError('Display name must be at least 2 characters.')
+      setIdentityError('Display name must be at least 2 characters.')
       return
     }
     if (!normalizedHandle || normalizedHandle.length < 3) {
-      setCreateError('Handle must be at least 3 characters.')
+      setIdentityError('Handle must be at least 3 characters.')
       return
     }
     if (!isHandleUnique) return
     if (!humanWorkspace) return
 
-    setCreateError(null)
+    setIdentityError(null)
     try {
       const result = await createAgent(normalizedHandle, display)
       setCreatedAgentId(result.ai_lenser_id)
@@ -244,14 +263,36 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
     } catch (e) {
       const err = e as { code?: string; message?: string }
       if (err?.code === '23505' || err?.message?.includes('unique')) {
-        setCreateError('Handle is already taken.')
+        setIdentityError('Handle is already taken.')
         return
       }
       if (err?.message?.includes('P0004') || err?.message?.includes('Maximum 5')) {
-        setCreateError('Maximum of 5 AI agents reached. Remove an existing agent to create a new one.')
+        setIdentityError('Maximum of 5 AI agents reached. Remove an existing agent to create a new one.')
         return
       }
-      setCreateError(err?.message ?? 'Failed to create agent.')
+      setIdentityError(err?.message ?? 'Failed to create agent.')
+    }
+  }
+
+  // ── Identity step: save display name (manage mode) ────────────────────────
+  const handleEditIdentityNext = async () => {
+    const display = editDisplayName.trim()
+    if (!display || display.length < 2) {
+      setIdentityError('Display name must be at least 2 characters.')
+      return
+    }
+    if (!agent) return
+    setIdentityError(null)
+    setIdentitySaving(true)
+    try {
+      await agentsService.updateAgentProfile(agent.ai_lenser_id, { display_name: display })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agentId) })
+      nextStep()
+    } catch (e) {
+      const err = e as { message?: string }
+      setIdentityError(err?.message ?? 'Failed to save display name.')
+    } finally {
+      setIdentitySaving(false)
     }
   }
 
@@ -290,16 +331,14 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
     onDone()
   }
 
-  // ── Step index offsets (create mode has identity at step 0) ──────────────
-  // In create mode: 0=identity, 1=permissions, 2=personality, 3=status
-  // In manage mode: 0=permissions, 1=personality, 2=status
-  const permissionsStep = isCreateMode ? 1 : 0
-  const personalityStep = isCreateMode ? 2 : 1
-  const statusStep = isCreateMode ? 3 : 2
+  // ── Step indices: both modes share the same 4-step layout ──────────────────
+  // 0=identity, 1=permissions, 2=personality, 3=status
+  const STEP_PERMISSIONS = 1
+  const STEP_PERSONALITY = 2
+  const STEP_STATUS = 3
 
-  // ── Agent loading skeleton (shown after creation while data loads) ────────
-  const needsAgentData = step >= permissionsStep
-  const agentLoading = needsAgentData && agentId && (isLoading || !agent)
+  // ── Agent loading skeleton (shown after creation / while manage data loads)
+  const agentLoading = step >= STEP_PERMISSIONS && agentId && (isLoading || !agent)
 
   if (agentLoading) {
     return (
@@ -333,6 +372,7 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
   let stepContent: React.ReactNode
 
   if (step === 0 && isCreateMode) {
+    // Create mode — both display name and handle are editable
     stepContent = (
       <div className="space-y-4">
         <Field
@@ -396,8 +436,8 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
           )}
         </Field>
 
-        {createError && (
-          <p className="text-sm font-medium text-status-red">{createError}</p>
+        {identityError && (
+          <p className="text-sm font-medium text-status-red">{identityError}</p>
         )}
 
         {!humanWorkspace && (
@@ -407,7 +447,49 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
         )}
       </div>
     )
-  } else if (step === permissionsStep && agent) {
+  } else if (step === 0 && !isCreateMode) {
+    // Manage mode — display name is editable; handle is read-only (immutable)
+    stepContent = (
+      <div className="space-y-4">
+        {identityCard}
+
+        <Field
+          id="agent-display-name"
+          label="Display name"
+          required
+          hint="Shown across the app on cards, profiles, and management panels."
+        >
+          <Input
+            id="agent-display-name"
+            value={editDisplayName}
+            onChange={(e) => setEditDisplayName(e.target.value)}
+            placeholder="My Battle Bot"
+            maxLength={64}
+          />
+        </Field>
+
+        <Field
+          id="agent-handle-readonly"
+          label="Handle"
+          hint="Handles cannot be changed after creation."
+        >
+          <div className="relative">
+            <Input
+              id="agent-handle-readonly"
+              value={agent?.handle ?? handle}
+              readOnly
+              startAdornment={<span className="text-sm text-greyscale-400">@</span>}
+              className="opacity-60 cursor-not-allowed"
+            />
+          </div>
+        </Field>
+
+        {identityError && (
+          <p className="text-sm font-medium text-status-red">{identityError}</p>
+        )}
+      </div>
+    )
+  } else if (step === STEP_PERMISSIONS && agent) {
     stepContent = (
       <div className="space-y-4">
         {identityCard}
@@ -468,7 +550,7 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
         </div>
       </div>
     )
-  } else if (step === personalityStep) {
+  } else if (step === STEP_PERSONALITY) {
     stepContent = (
       <div className="space-y-4">
         {identityCard}
@@ -491,7 +573,7 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
         )}
       </div>
     )
-  } else if (step === statusStep && agent) {
+  } else if (step === STEP_STATUS && agent) {
     stepContent = (
       <div className="space-y-4">
         {identityCard}
@@ -542,9 +624,11 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
   let canProceed: boolean
   if (step === 0 && isCreateMode) {
     canProceed = !!humanWorkspace && isHandleUnique && displayName.trim().length >= 2 && !isCheckingHandle
-  } else if (step === permissionsStep) {
+  } else if (step === 0 && !isCreateMode) {
+    canProceed = editDisplayName.trim().length >= 2 && !identitySaving
+  } else if (step === STEP_PERMISSIONS) {
     canProceed = !policyLoading
-  } else if (step === personalityStep) {
+  } else if (step === STEP_PERSONALITY) {
     canProceed = !personalitySaving
   } else {
     canProceed = true
@@ -553,9 +637,11 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
   // ── onNext per step ───────────────────────────────────────────────────────
   const handleNext = step === 0 && isCreateMode
     ? handleCreateNext
-    : step === personalityStep
-      ? handlePersonalityNext
-      : nextStep
+    : step === 0 && !isCreateMode
+      ? handleEditIdentityNext
+      : step === STEP_PERSONALITY
+        ? handlePersonalityNext
+        : nextStep
 
   return (
     <>
@@ -567,7 +653,7 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId: i
         onComplete={handleDone}
         onCancel={onDone}
         canProceed={canProceed}
-        isNextLoading={step === 0 && isCreateMode ? isCreating : false}
+        isNextLoading={step === 0 ? (isCreateMode ? isCreating : identitySaving) : false}
         completeLabel="Done"
         completeIcon={<Badge color="green" size="sm">✓</Badge>}
       >
