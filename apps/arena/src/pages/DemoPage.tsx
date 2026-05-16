@@ -10,22 +10,17 @@ import { Badge, Button, Card } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
 import {
   Activity,
-  Aperture,
   ArrowRight,
-  Brain,
   ExternalLink,
-  Flame,
-  MessageSquare,
-  Radio,
-  Sparkles,
-  User,
-  Workflow,
 } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
+import { PlatformPillars } from '../components/PlatformPillars'
 import { chainabitContactUrl } from '../utils/chainabitUrls'
+
+const DemoCinematicShowcase = React.lazy(() => import('../components/DemoCinematicShowcase'))
 
 const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
 
@@ -42,18 +37,11 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.1 } },
 }
 
-const PRIMITIVE_LINKS = [
-  { icon: User, key: 'lensers', href: `${RUN_APP_URL}/lensers?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=lensers` },
-  { icon: Aperture, key: 'lenses', href: `${RUN_APP_URL}/lenses?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=lenses` },
-  { icon: Workflow, key: 'workflows', href: `${RUN_APP_URL}/workflows?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=workflows` },
-  { icon: Brain, key: 'agents', href: `${RUN_APP_URL}/agents?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=agents` },
-] as const
-
 export const DemoPage: React.FC = () => {
   const { i18n, t } = useTranslation(['demo', 'common'])
 
   return (
-    <div className="relative overflow-hidden bg-surface-base text-surface-text">
+    <div className="relative overflow-x-clip bg-surface-base text-surface-text">
       <div className="absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(ellipse_at_top,_rgba(255,222,89,0.16),_transparent_55%),linear-gradient(180deg,rgba(248,249,250,0.95),transparent)] dark:bg-[radial-gradient(ellipse_at_top,_rgba(255,222,89,0.10),_transparent_50%),linear-gradient(180deg,rgba(26,26,26,0.95),transparent)]" />
 
       {/* ── HERO ───────────────────────────────────────────────────────── */}
@@ -104,70 +92,69 @@ export const DemoPage: React.FC = () => {
         </motion.div>
       </section>
 
-      {/* ── LIVE WIDGETS — battles, lenses, threads ─────────────────────── */}
-      <section className="mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
-        {/* Live battles — Supabase realtime */}
-        <SpectatorFeedWidget
-          getBattleHref={(slug) => `${RUN_APP_URL}/battles/${slug}`}
-        />
-
-        {/* Hot / trending battles */}
-        <ArenaTrendingBattlesWidget baseUrl={RUN_APP_URL} />
-
-        {/* Hot threads */}
-        <ArenaHotThreadsWidget baseUrl={RUN_APP_URL} />
-
-        {/* Trending lenses */}
-        <ArenaTrendingLensesWidget baseUrl={RUN_APP_URL} />
-      </section>
-
-      {/* ── EXPLORE THE REST OF THE PLATFORM ───────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
-        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="purple" variant="outline">{t('demo:explore.badge')}</Badge>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            {t('demo:explore.title')}
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            {t('demo:explore.subtitle')}
-          </p>
-        </motion.div>
-
+      {/* ── CINEMATIC PLATFORM TOUR — brand-style media ───────────────── */}
+      <section
+        aria-label={t('demo:media.title', { defaultValue: 'Platform tour' })}
+        className="w-full pb-16 lg:pb-20"
+      >
         <motion.div
-          className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4"
-          variants={stagger}
+          className="mx-auto mb-10 max-w-6xl space-y-2 px-4 sm:px-6 lg:px-8"
+          variants={fadeUp}
           initial="hidden"
           whileInView="visible"
           viewport={viewport}
         >
-          {PRIMITIVE_LINKS.map(({ icon: Icon, key, href }) => {
-            const title = t(`demo:explore.items.${key}.title`)
-            const description = t(`demo:explore.items.${key}.description`)
-            return (
-              <motion.a
-                key={key}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                variants={fadeUp}
-                className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500 rounded-2xl"
-              >
-                <Card className="h-full space-y-4 border-t-4 border-t-primary-yellow-500/40 p-6 transition-shadow hover:border-t-primary-yellow-500 hover:shadow-md">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
-                    <Icon size={20} />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="flex items-center gap-1.5 text-base font-bold text-greyscale-900 dark:text-greyscale-50">
-                      {title}
-                      <ExternalLink size={12} className="text-greyscale-400 transition-colors group-hover:text-greyscale-700 dark:group-hover:text-greyscale-200" />
-                    </h3>
-                    <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
-                  </div>
-                </Card>
-              </motion.a>
-            )
-          })}
+          <Badge color="yellow" variant="outline">{t('demo:media.badge')}</Badge>
+          <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            {t('demo:media.headline')}
+          </h2>
+          <p className="max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            {t('demo:media.subtitle')}
+          </p>
         </motion.div>
+        <React.Suspense
+          fallback={
+            <div className="mx-auto h-[400px] max-w-6xl animate-pulse rounded-[2.5rem] bg-surface-raised px-4" />
+          }
+        >
+          <DemoCinematicShowcase />
+        </React.Suspense>
+      </section>
+
+      {/* ── EVERY PILLAR — agents, workflows, prompts, workspaces, CLI… ─ */}
+      <PlatformPillars
+        className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20"
+        i18nNamespace="demo"
+        i18nPrefix="pillars"
+        utm={{ source: 'lenserfight', medium: 'arena_demo' }}
+      />
+
+      {/* ── LIVE WIDGETS — battles, lenses, threads ─────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          className="mb-8 space-y-2"
+        >
+          <Badge color="red" variant="outline">{t('demo:widgets.badge')}</Badge>
+          <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            {t('demo:widgets.title')}
+          </h2>
+          <p className="max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            {t('demo:widgets.subtitle')}
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <SpectatorFeedWidget
+            getBattleHref={(slug) => `${RUN_APP_URL}/battles/${slug}`}
+          />
+          <ArenaTrendingBattlesWidget baseUrl={RUN_APP_URL} />
+          <ArenaHotThreadsWidget baseUrl={RUN_APP_URL} />
+          <ArenaTrendingLensesWidget baseUrl={RUN_APP_URL} />
+        </div>
       </section>
 
       {/* ── CTA ────────────────────────────────────────────────────────── */}
