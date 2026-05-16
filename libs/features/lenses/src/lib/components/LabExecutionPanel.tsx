@@ -65,9 +65,12 @@ interface LabExecutionPanelProps {
   selectedLocalKeyId?: string | null
   onLocalKeyIdChange?: (keyId: string) => void
   availableLocalKeys?: LocalKeyMeta[]
+  localKeyAvailability?: 'available' | 'gateway_unreachable' | 'gateway_not_paired' | 'gateway_forbidden'
   onAddLocalKey?: (provider: string, label: string, rawKey: string) => Promise<void>
   onRemoveLocalKey?: (id: string) => Promise<void>
   onUpdateLocalKey?: (id: string, rawKey: string, label: string) => Promise<void>
+  onPairGateway?: (token: string) => void
+  onRefreshLocalKeys?: () => Promise<void> | void
   /** Called when the user first opens the provider dropdown — triggers lazy data fetch */
   onProviderDropdownOpen?: () => void
   // Chainabit connection state (for funding toggle)
@@ -107,9 +110,12 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   selectedLocalKeyId,
   onLocalKeyIdChange,
   availableLocalKeys,
+  localKeyAvailability,
   onAddLocalKey,
   onRemoveLocalKey,
   onUpdateLocalKey,
+  onPairGateway,
+  onRefreshLocalKeys,
   onProviderDropdownOpen,
   chainabitState,
   chainabitModels,
@@ -295,9 +301,12 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               selectedLocalKeyId={selectedLocalKeyId ?? null}
               onLocalKeyIdChange={onLocalKeyIdChange ?? (() => { })}
               availableLocalKeys={availableLocalKeys ?? []}
+              localKeyAvailability={localKeyAvailability}
               onAddLocalKey={onAddLocalKey ?? (async () => { })}
               onRemoveLocalKey={onRemoveLocalKey}
               onUpdateLocalKey={onUpdateLocalKey}
+              onPairGateway={onPairGateway}
+              onRefreshLocalKeys={onRefreshLocalKeys}
               walletBalance={walletBalance}
               canUseBYOK={canUseBYOK ?? false}
               chainabitState={chainabitState}
