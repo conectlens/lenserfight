@@ -151,7 +151,7 @@ These replace older “adapter marketplace” framing for Community Edition docs
 - Prefer the current repo function names exactly as used by repositories.
 - Use `fn_create_draft_version`, not the older `fn_upsert_draft_version`, when describing the current lens repository flow.
 - Document thread creation as RPC-backed, not as a raw table-only write flow.
-- Keep private platform schemas and unsupported battle/benchmark RPCs out of Community Edition onboarding docs.
+- Keep private platform schemas and unsupported battle RPCs out of Community Edition onboarding docs.
 
 ## Related
 
