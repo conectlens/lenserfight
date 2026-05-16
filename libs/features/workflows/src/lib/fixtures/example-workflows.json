@@ -1,0 +1,85 @@
+[
+  {
+    "id": "example-text-chain",
+    "title": "Research summary → article (text chain)",
+    "description": "Two text nodes: upstream research JSON `data.summary` maps into the next lens via edge `source_output_key: \"data.summary\"`. Requires two published text lenses and Platform credits or Local BYOK.",
+    "funding": "platform_credit",
+    "globalModel": "claude-sonnet-4-6",
+    "nodes": [
+      { "label": "Research", "ordinal": 0, "lensHint": "research_lens" },
+      { "label": "Write article", "ordinal": 1, "lensHint": "text_lens" }
+    ],
+    "edges": [
+      {
+        "sourceOrdinal": 0,
+        "targetOrdinal": 1,
+        "source_output_key": "data.summary",
+        "target_param_label": "input"
+      }
+    ]
+  },
+  {
+    "id": "example-text-to-image",
+    "title": "Prompt → Fal image",
+    "description": "First node produces a prompt string; second node uses a Fal-capable model (`fal-ai/...`). Browser run requires Platform credits or Local BYOK with Fal. Per-node `model_id` on the image node should select the Fal model.",
+    "funding": "platform_credit",
+    "globalModel": "claude-sonnet-4-6",
+    "nodes": [
+      { "label": "Draft prompt", "ordinal": 0, "lensHint": "text_lens" },
+      { "label": "Generate image", "ordinal": 1, "lensHint": "image_lens", "config": { "model_id": "fal-ai/flux/dev" } }
+    ],
+    "edges": [
+      {
+        "sourceOrdinal": 0,
+        "targetOrdinal": 1,
+        "source_output_key": "output",
+        "target_param_label": "input"
+      }
+    ]
+  },
+  {
+    "id": "example-vision-url-to-text",
+    "title": "Image URL → vision caption",
+    "description": "Upstream node exposes `url` (or `data.imageUrl`); edge uses dotted `source_output_key` into a vision-capable text lens. Requires Platform credits or Local BYOK and a vision model on the second node.",
+    "funding": "platform_credit",
+    "globalModel": "gpt-4o",
+    "nodes": [
+      { "label": "Resolve image URL", "ordinal": 0, "lensHint": "text_or_tool_lens" },
+      { "label": "Describe image", "ordinal": 1, "lensHint": "vision_text_lens" }
+    ],
+    "edges": [
+      {
+        "sourceOrdinal": 0,
+        "targetOrdinal": 1,
+        "source_output_key": "url",
+        "target_param_label": "image_url"
+      }
+    ]
+  },
+  {
+    "id": "example-fan-in-merge",
+    "title": "Two branches → merge concat",
+    "description": "Two text nodes feed a merge/synthesis node with `merge: concat` in node config (engine-supported). Same funding as other text chains.",
+    "funding": "user_byok_local",
+    "globalModel": "gpt-4o",
+    "nodes": [
+      { "label": "Branch A", "ordinal": 0, "lensHint": "text_lens" },
+      { "label": "Branch B", "ordinal": 1, "lensHint": "text_lens" },
+      { "label": "Synthesize", "ordinal": 2, "lensHint": "text_lens", "config": { "merge": "concat" } }
+    ],
+    "edges": [
+      {
+        "sourceOrdinal": 0,
+        "targetOrdinal": 2,
+        "source_output_key": "output",
+        "target_param_label": "a"
+      },
+      {
+        "sourceOrdinal": 1,
+        "targetOrdinal": 2,
+        "source_output_key": "output",
+        "target_param_label": "b"
+      }
+    ]
+  }
+]
