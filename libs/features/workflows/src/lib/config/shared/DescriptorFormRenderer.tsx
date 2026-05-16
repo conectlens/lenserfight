@@ -7,9 +7,12 @@
 
 import { Field, Input, TextArea } from '@lenserfight/ui/forms'
 import { SelectField } from '@lenserfight/ui/forms'
+import { Tooltip } from '@lenserfight/ui/components'
+import { HelpCircle } from 'lucide-react'
 import React, { useCallback, useMemo, useState } from 'react'
 
 import type { RunnerConfigDescriptor, WorkflowNodeConfig } from '../../types'
+import { WorkflowExpressionInput } from '../../components/WorkflowExpressionInput'
 import { ConfigFormFooter } from './ConfigFormFooter'
 import { ValidationSummary } from './ValidationSummary'
 
@@ -158,6 +161,29 @@ export function DescriptorFormRenderer({
   )
 }
 
+// ── Parameter Help ──────────────────────────────────────────────────────────
+
+/** Hints longer than this render as a tooltip icon instead of inline text. */
+const INLINE_HINT_MAX = 80
+
+function ParameterHelpTooltip({ hint }: { hint: string }) {
+  return (
+    <Tooltip
+      content={hint}
+      position="right"
+      delayMs={200}
+      contentClassName="max-w-[220px] whitespace-normal"
+    >
+      <span
+        aria-label={`Help: ${hint}`}
+        className="inline-flex text-greyscale-400 hover:text-greyscale-600 cursor-help"
+      >
+        <HelpCircle size={11} />
+      </span>
+    </Tooltip>
+  )
+}
+
 // ── Individual Field Renderer ───────────────────────────────────────────────
 
 interface DescriptorFieldProps {
@@ -170,43 +196,53 @@ interface DescriptorFieldProps {
 
 function DescriptorField({ field, value, error, onChange, onBlur }: DescriptorFieldProps) {
   const fieldId = `runner-cfg-${field.key}`
+  const isLongHint = !!field.hint && field.hint.length > INLINE_HINT_MAX
 
   switch (field.type) {
     case 'textarea':
     case 'code':
     case 'json':
       return (
-        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={field.hint}>
-          <TextArea
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={isLongHint ? undefined : field.hint}>
+          <WorkflowExpressionInput
             id={fieldId}
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={onChange}
             onBlur={onBlur}
+            fieldType={field.type}
+            multiline
             placeholder={field.placeholder}
-            minRows={field.rows ?? 4}
-            autoResize
+            rows={field.rows ?? 4}
+            mono={field.mono || field.type === 'code' || field.type === 'json'}
             error={!!error}
-            className={field.mono || field.type === 'code' || field.type === 'json' ? 'font-mono text-xs' : 'text-xs'}
           />
+          {isLongHint && <ParameterHelpTooltip hint={field.hint!} />}
         </Field>
       )
 
     case 'number':
       return (
-        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={field.hint}>
-          <Input
-            id={fieldId}
-            type="number"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onBlur={onBlur}
-            placeholder={field.placeholder}
-            min={field.min}
-            max={field.max}
-            step={field.step}
-            error={!!error}
-            className="text-xs"
-          />
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={isLongHint ? undefined : field.hint}>
+          <div className="relative">
+            <Input
+              id={fieldId}
+              type="number"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onBlur={onBlur}
+              placeholder={field.placeholder}
+              min={field.min}
+              max={field.max}
+              step={field.step}
+              error={!!error}
+              className="text-xs"
+            />
+            {isLongHint && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2">
+                <ParameterHelpTooltip hint={field.hint!} />
+              </span>
+            )}
+          </div>
         </Field>
       )
 
@@ -224,51 +260,68 @@ function DescriptorField({ field, value, error, onChange, onBlur }: DescriptorFi
           <label htmlFor={fieldId} className="text-[11px] text-greyscale-600 dark:text-greyscale-300">
             {field.label}
           </label>
+          {field.hint && <ParameterHelpTooltip hint={field.hint} />}
         </div>
       )
 
     case 'select':
       return (
-        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={field.hint}>
-          <SelectField
-            value={value}
-            onChange={onChange}
-            options={field.options ?? []}
-            placeholder={field.placeholder}
-            error={error}
-            className="text-xs"
-          />
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={isLongHint ? undefined : field.hint}>
+          <div className="relative">
+            <SelectField
+              value={value}
+              onChange={onChange}
+              options={field.options ?? []}
+              placeholder={field.placeholder}
+              error={error}
+              className="text-xs"
+            />
+            {isLongHint && (
+              <span className="absolute right-8 top-1/2 -translate-y-1/2">
+                <ParameterHelpTooltip hint={field.hint!} />
+              </span>
+            )}
+          </div>
         </Field>
       )
 
     case 'datetime':
       return (
-        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={field.hint}>
-          <Input
-            id={fieldId}
-            type="datetime-local"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onBlur={onBlur}
-            error={!!error}
-            className="text-xs"
-          />
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={isLongHint ? undefined : field.hint}>
+          <div className="relative">
+            <Input
+              id={fieldId}
+              type="datetime-local"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onBlur={onBlur}
+              error={!!error}
+              className="text-xs"
+            />
+            {isLongHint && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2">
+                <ParameterHelpTooltip hint={field.hint!} />
+              </span>
+            )}
+          </div>
         </Field>
       )
 
     case 'text':
     default:
       return (
-        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={field.hint}>
-          <Input
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={isLongHint ? undefined : field.hint}>
+          <WorkflowExpressionInput
             id={fieldId}
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={onChange}
             onBlur={onBlur}
+            fieldType="text"
             placeholder={field.placeholder}
+            mono={field.mono}
             error={!!error}
-            className={`text-xs ${field.mono ? 'font-mono' : ''}`}
           />
+          {isLongHint && <ParameterHelpTooltip hint={field.hint!} />}
         </Field>
       )
   }
