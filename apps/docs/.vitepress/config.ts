@@ -409,6 +409,50 @@ const EN_REFERENCE_WORKFLOWS_SIDEBAR = [
   },
 ]
 
+const EN_REFERENCE_SIDEBAR = [
+  {
+    text: 'Reference',
+    items: [
+      { text: 'Community API', link: '/en/reference/community-api/index' },
+      { text: 'CLI', link: '/en/reference/cli/index' },
+      { text: 'Battles', link: '/en/reference/battles/index' },
+      { text: 'Connectors (alpha)', link: '/en/reference/connectors/index' },
+      { text: 'Automation Objects', link: '/en/reference/automation/markdown-objects' },
+      { text: 'Execution Platform', link: '/en/reference/platform-api/api-overview' },
+      { text: 'Database', link: '/en/reference/database/schema-overview' },
+      { text: 'Workflows', link: '/en/reference/workflows/execution-engine' },
+      { text: 'Workflow Node Catalog', link: '/en/reference/workflows/workflow-node-catalog' },
+      { text: 'AI Providers', link: '/en/reference/ai-providers' },
+      { text: 'AI Models', link: '/en/reference/ai-models' },
+      { text: 'RFCs', link: '/en/rfcs/' },
+      { text: 'Changelog', link: '/changelog' },
+      {
+        text: 'Provider Pages',
+        collapsed: true,
+        items: [
+          { text: 'OpenAI', link: '/en/providers/openai/' },
+          { text: 'Anthropic', link: '/en/providers/anthropic/' },
+          { text: 'Google', link: '/en/providers/google/' },
+          { text: 'Mistral', link: '/en/providers/mistral/' },
+          { text: 'Ollama', link: '/en/providers/ollama/' },
+          { text: 'fal.ai', link: '/en/providers/fal/' },
+          { text: 'Stability AI', link: '/en/providers/stability/' },
+          { text: 'ElevenLabs', link: '/en/providers/elevenlabs/' },
+          { text: 'Kling', link: '/en/providers/kling/' },
+          { text: 'Suno', link: '/en/providers/suno/' },
+          { text: 'OpenRouter', link: '/en/providers/openrouter/' },
+          { text: 'Perplexity', link: '/en/providers/perplexity/' },
+          { text: 'xAI', link: '/en/providers/xai/' },
+          { text: 'Midjourney', link: '/en/providers/midjourney/' },
+        ],
+      },
+      { text: 'Known Preview Surfaces', link: '/en/reference/known-preview-surfaces' },
+      { text: 'Known Limitations', link: '/en/reference/known-limitations' },
+      { text: 'Internals', link: '/en/reference/internals/overview' },
+    ],
+  },
+]
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   srcDir: '../../docs',
@@ -2169,48 +2213,7 @@ export default defineConfig({
       ],
 
       // ── Reference ──────────────────────────────────────────────────────────
-      '/en/reference/': [
-        {
-          text: 'Reference',
-          items: [
-            { text: 'Community API', link: '/en/reference/community-api/index' },
-            { text: 'CLI', link: '/en/reference/cli/index' },
-            { text: 'Battles', link: '/en/reference/battles/index' },
-            { text: 'Connectors (alpha)', link: '/en/reference/connectors/index' },
-            { text: 'Automation Objects', link: '/en/reference/automation/markdown-objects' },
-            { text: 'Execution Platform', link: '/en/reference/platform-api/api-overview' },
-            { text: 'Database', link: '/en/reference/database/schema-overview' },
-            { text: 'Workflows', link: '/en/reference/workflows/execution-engine' },
-            { text: 'AI Providers', link: '/en/reference/ai-providers' },
-            { text: 'AI Models', link: '/en/reference/ai-models' },
-            { text: 'RFCs', link: '/en/rfcs/' },
-            { text: 'Changelog', link: '/changelog' },
-            {
-              text: 'Provider Pages',
-              collapsed: true,
-              items: [
-                { text: 'OpenAI', link: '/en/providers/openai/' },
-                { text: 'Anthropic', link: '/en/providers/anthropic/' },
-                { text: 'Google', link: '/en/providers/google/' },
-                { text: 'Mistral', link: '/en/providers/mistral/' },
-                { text: 'Ollama', link: '/en/providers/ollama/' },
-                { text: 'fal.ai', link: '/en/providers/fal/' },
-                { text: 'Stability AI', link: '/en/providers/stability/' },
-                { text: 'ElevenLabs', link: '/en/providers/elevenlabs/' },
-                { text: 'Kling', link: '/en/providers/kling/' },
-                { text: 'Suno', link: '/en/providers/suno/' },
-                { text: 'OpenRouter', link: '/en/providers/openrouter/' },
-                { text: 'Perplexity', link: '/en/providers/perplexity/' },
-                { text: 'xAI', link: '/en/providers/xai/' },
-                { text: 'Midjourney', link: '/en/providers/midjourney/' },
-              ],
-            },
-            { text: 'Known Preview Surfaces', link: '/en/reference/known-preview-surfaces' },
-            { text: 'Known Limitations', link: '/en/reference/known-limitations' },
-            { text: 'Internals', link: '/en/reference/internals/overview' },
-          ],
-        },
-      ],
+      '/en/reference/': EN_REFERENCE_SIDEBAR,
       '/en/rfcs/': [
         {
           text: 'RFCs',
