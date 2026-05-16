@@ -1,3 +1,4 @@
+import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService, workflowsService, seoService } from '@lenserfight/data/repositories'
 import { validateBrowserExecutionPlan, validateWorkflow } from '@lenserfight/infra/execution'
 import { useAuth } from '@lenserfight/features/auth'
@@ -6,11 +7,11 @@ import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle }
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { useLenser } from '@lenserfight/features/profile'
 import { ExportButton } from '@lenserfight/features/exports'
-import { Avatar, Badge, Button } from '@lenserfight/ui/components'
+import { Badge, Button } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { Dialog } from '@lenserfight/ui/overlays'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Bookmark, CalendarClock, ChevronDown, GitBranch, GitFork, History, Layers, Lock, Pencil, Play, Square, Swords, ThumbsUp, X } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, Bookmark, CalendarClock, ChevronDown, GitBranch, GitFork, History, Layers, Lock, Pencil, Play, Square, ThumbsUp, X } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -20,7 +21,7 @@ import { WorkflowBuilderCanvas } from '../components/WorkflowBuilderCanvas'
 import { WorkflowCronPanel } from '../components/WorkflowCronPanel'
 import { WorkflowFinalOutputBanner } from '../components/WorkflowFinalOutputBanner'
 import { WorkflowLensPalette } from '../components/WorkflowLensPalette'
-import { WorkflowNodeConfigPanel } from '../components/WorkflowNodeConfigPanel'
+import { WorkflowNodeConfigDispatcher } from '../components/WorkflowNodeConfigDispatcher'
 import { WorkflowPhasesEditor } from '../components/WorkflowPhasesEditor'
 import { WorkflowProgressView } from '../components/WorkflowProgressView'
 import { WorkflowRootInputsPanel } from '../components/WorkflowRootInputsPanel'
@@ -46,8 +47,9 @@ interface WorkflowBuilderPageProps {
   onBattleClick?: (workflowId: string) => void
 }
 
-export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuilderPageProps) {
+export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const { lenser } = useLenser()
@@ -175,7 +177,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
   const isOwner = !!lenser && lenser.id === workflow?.lenser_id
   const { mutate: forkWorkflow, isPending: isForking } = useForkWorkflow()
-  const { liked, saved, likeCount, savedCount, toggleLike, toggleSave, isPending: reactionPending } =
+  const { liked, saved, likeCount, toggleLike, toggleSave, isPending: reactionPending } =
     useWorkflowReaction(
       workflowId,
       workflow?.reaction_totals as Record<string, number> | null | undefined,
@@ -234,7 +236,48 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
   const handleSaveNodeConfig = (nodeId: string, config: WorkflowNodeConfig) => {
     setNodeConfigs((prev) => ({ ...prev, [nodeId]: config }))
+    const node = nodes.find((candidate) => candidate.id === nodeId)
+    if (!node || nodeId.startsWith('tmp-')) return
+
+    queryClient.setQueryData(
+      queryKeys.workflows.nodes(workflowId),
+      (old: typeof nodes | undefined) =>
+        (old ?? nodes).map((candidate) =>
+          candidate.id === nodeId ? { ...candidate, config } : candidate
+        ),
+    )
+
+    workflowsService.upsertNodes(workflowId, [{
+      id: node.id,
+      lens_id: node.lens_id,
+      version_id: node.version_id ?? null,
+      label: node.label ?? undefined,
+      ordinal: node.ordinal,
+      position_x: node.position_x,
+      position_y: node.position_y,
+      config: config as Record<string, unknown>,
+    }])
+      .then((savedNodes) => {
+        if (savedNodes.length === 0) return
+        queryClient.setQueryData(
+          queryKeys.workflows.nodes(workflowId),
+          (old: typeof nodes | undefined) => {
+            const byId = new Map((old ?? nodes).map((candidate) => [candidate.id, candidate]))
+            for (const savedNode of savedNodes) byId.set(savedNode.id, savedNode)
+            return Array.from(byId.values()).sort((a, b) => a.ordinal - b.ordinal)
+          },
+        )
+      })
+      .catch(() => {
+        toast.error('Could not save node configuration. Try again in a moment.')
+      })
   }
+
+  const selectedCurrentConfig = useMemo(() => {
+    if (!selectedNodeConfig) return {}
+    const persisted = nodes.find((node) => node.id === selectedNodeConfig.nodeId)?.config
+    return nodeConfigs[selectedNodeConfig.nodeId] ?? (persisted as WorkflowNodeConfig | null | undefined) ?? {}
+  }, [nodeConfigs, nodes, selectedNodeConfig])
 
   // ── Providers/Models derived from flat useAIModels list ─────────────────────
   const providers: AIProvider[] = useMemo(() => {
@@ -304,7 +347,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
       const struct = validateWorkflow(
         nodes.map((n) => ({
           id: n.id,
-          lensId: n.lens_id,
+          lensId: n.lens_id ?? undefined,
           versionId: n.version_id ?? null,
           config: (n.config ?? null) as Record<string, unknown> | null,
         })),
@@ -606,31 +649,19 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 onEditLens={handleEditLens}
                 onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
               />
-
-              {/* Empty state overlay */}
-              {nodes.length === 0 && (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <div className="text-center space-y-2 opacity-40">
-                    <GitBranch size={40} className="mx-auto text-greyscale-300" />
-                    <p className="text-sm font-medium text-greyscale-400">
-                      Drag a lens from the left panel to start building
-                    </p>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </div>
 
-        {/* Node config panel — slides in from right */}
+        {/* Node config panel — GRASP Polymorphism dispatcher (Lens vs Utility) */}
         {selectedNodeConfig && (
-          <WorkflowNodeConfigPanel
+          <WorkflowNodeConfigDispatcher
             nodeId={selectedNodeConfig.nodeId}
             lensId={selectedNodeConfig.lensId}
             versionId={selectedNodeConfig.versionId}
             nodeLabel={selectedNodeConfig.nodeLabel}
             currentUserId={user?.id}
-            currentConfig={nodeConfigs[selectedNodeConfig.nodeId] ?? {}}
+            currentConfig={selectedCurrentConfig}
             nodes={nodes}
             edges={edges}
             onSave={handleSaveNodeConfig}
