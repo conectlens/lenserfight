@@ -51,9 +51,12 @@ async function main(): Promise<void> {
     // this branch is defensive for tests that bypass preconditions.
   }
 
-  const identity = await loadGatewayIdentity(config)
-  const supabaseUrl = process.env['SUPABASE_URL'] ?? ''
-  const supabaseAnonKey = process.env['SUPABASE_ANON_KEY'] ?? ''
+  // In keys-only mode we skip the heavy signed-coordination plumbing —
+  // no identity load, no Supabase heartbeats, no command pull loop. The
+  // daemon's only job is to back /keys/* for the web app.
+  const identity = config.keysOnly ? null : await loadGatewayIdentity(config)
+  const supabaseUrl = config.keysOnly ? '' : (process.env['SUPABASE_URL'] ?? '')
+  const supabaseAnonKey = config.keysOnly ? '' : (process.env['SUPABASE_ANON_KEY'] ?? '')
   const cloudConfigured = Boolean(identity && supabaseUrl && supabaseAnonKey)
 
   const server = await startServer(config, {
@@ -77,6 +80,11 @@ async function main(): Promise<void> {
   process.stdout.write(`[lf-gatewayd] listening on ${server.url}\n`)
   for (const url of server.extraUrls) {
     process.stdout.write(`[lf-gatewayd] also listening on ${url} (tailscale)\n`)
+  }
+  if (config.keysOnly) {
+    process.stdout.write(
+      '[lf-gatewayd] keys-only mode: serving /healthz and /keys/* only — no identity/session/sync loops.\n'
+    )
   }
 
   let heartbeat: { stop: () => void } = { stop: () => undefined }
@@ -107,24 +115,26 @@ async function main(): Promise<void> {
     }
   }
 
-  heartbeat = scheduleLoop('heartbeat', config.heartbeatIntervalMs, fireHeartbeat)
-  outbox = scheduleLoop('outbox', config.outboxFlushIntervalMs, async () => {
-    // Flush sync_outbox via gatewaySyncRepository.push.
-  })
-  pull = scheduleLoop('sync', config.pullIntervalMs, async () => {
-    if (!cloudConfigured || !identity) return
-    try {
-      const cmds = await pullCommands(identity.device_id, supabaseUrl, supabaseAnonKey)
-      for (const cmd of cmds) {
-        await dispatchCommand(cmd, { config, supabaseUrl, anonKey: supabaseAnonKey })
+  if (!config.keysOnly) {
+    heartbeat = scheduleLoop('heartbeat', config.heartbeatIntervalMs, fireHeartbeat)
+    outbox = scheduleLoop('outbox', config.outboxFlushIntervalMs, async () => {
+      // Flush sync_outbox via gatewaySyncRepository.push.
+    })
+    pull = scheduleLoop('sync', config.pullIntervalMs, async () => {
+      if (!cloudConfigured || !identity) return
+      try {
+        const cmds = await pullCommands(identity.device_id, supabaseUrl, supabaseAnonKey)
+        for (const cmd of cmds) {
+          await dispatchCommand(cmd, { config, supabaseUrl, anonKey: supabaseAnonKey })
+        }
+      } catch (err) {
+        process.stderr.write(`[sync] ${(err as Error).message}\n`)
       }
-    } catch (err) {
-      process.stderr.write(`[sync] ${(err as Error).message}\n`)
-    }
-  })
+    })
 
-  // Fire heartbeat once on startup so we surface kill_switch immediately.
-  void fireHeartbeat()
+    // Fire heartbeat once on startup so we surface kill_switch immediately.
+    void fireHeartbeat()
+  }
 
   const shutdown = async (signal: string) => {
     process.stdout.write(`[lf-gatewayd] received ${signal}; shutting down\n`)
