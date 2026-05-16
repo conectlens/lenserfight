@@ -1,6 +1,6 @@
 ---
 title: Workflow Assignment drawer
-description: Bind a workflow to one or more triggers — schedule, webhook, or default team assignee.
+description: Bind a workflow to an executor (agent, team, or evaluator) with an approval policy, retry policy, and active flag.
 ---
 
 # Workflow Assignment drawer
@@ -9,50 +9,57 @@ Opened from the [Workflows Section](../workflows).
 
 ## What it does
 
-A workflow has no value until something dispatches it. The assignment drawer is where you wire that dispatch.
+An assignment tells the platform *who* runs a workflow and *how* failed runs are handled. Without an assignment, a workflow cannot be dispatched.
 
-## Triggers
+## Fields
 
-| Trigger | Configures |
+| Field | Notes |
 |---|---|
-| **Schedule** | Picker of existing schedules (or "Create new" → opens [Schedule drawer](./schedule)) |
-| **Webhook** | Generates a signed URL with HMAC secret rotation |
-| **Default team** | The team that runs the workflow when no explicit assignee is provided |
+| **Workflow** | The workflow to assign. Only workflows visible to this workspace are listed |
+| **Assignee kind** | `agent` · `team` · `evaluator` — see below |
+| **Team** | Shown only when kind = `team`. Picks the crew that receives dispatched runs |
+| **Approval policy (JSON)** | Controls when runs require human sign-off |
+| **Retry policy (JSON)** | Controls automatic retries on failure |
+| **Active** | Inactive assignments are ignored by schedules and webhooks |
 
-## Inputs template
+## Assignee kinds
 
-A JSON object **merged into every dispatch** before the trigger's own payload:
+| Kind | Behavior |
+|---|---|
+| `agent` | Dispatches to this specific AI Lenser |
+| `team` | Dispatches to all active members of the selected crew via the team's edge graph |
+| `evaluator` | Triggers evaluation suites **post-run** instead of executing workflow nodes |
+
+## Approval policy examples
 
 ```json
-{
-  "channel": "ops",
-  "tags": ["nightly", "automated"]
-}
+{ "mode": "none" }           // no gate (default)
+{ "mode": "all" }            // gate every run
+{ "mode": "on_write" }       // gate runs that invoke write-class tools
+{ "mode": "on_cost", "threshold_usd": 0.50 }  // gate runs above cost threshold
 ```
 
-The merge order is:
+## Retry policy examples
 
+```json
+{ "mode": "none" }                                       // no retry (default)
+{ "mode": "linear", "max": 3, "delay_ms": 5000 }        // 3 retries, 5 s apart
+{ "mode": "exponential", "max": 5, "base_delay_ms": 1000 }  // exponential backoff
 ```
-final_inputs = { ...assignment.inputs_template, ...trigger_payload }
-```
 
-## Webhook security
+## Pausing without deleting
 
-- The signed URL embeds an HMAC over `(workflow_id, expiry, nonce)`.
-- Replay protection via the nonce cache (60-second window).
-- Rotating the secret invalidates outstanding URLs immediately.
+Set **Active = false** to stop all dispatches without losing the assignment record or its policy configuration. Re-activate any time.
 
+## Side effects
 
-## Code-backed workflow
-
-Source of truth: WorkflowAssignmentDrawer.tsx.
-
-1. Assign a workflow to an agent or team with trigger and input context.
-2. Saving creates or updates assignment records used by Run now and schedules.
-3. Verify the assignment appears on the workflow card before dispatch.
+- Creates or updates an `agent_workflow_assignments` row.
+- Schedules and webhooks check `is_active` before dispatching — they silently skip inactive assignments.
+- Emits `assignment.created` or `assignment.updated` in the Logs section.
 
 ## Related
 
 - [Workflows Section](../workflows)
 - [Schedule drawer](./schedule)
+- [Workflow Execution Reference](/en/reference/internals/workflow-execution)
 - [Workflow Inputs Template](/en/reference/workflow-inputs-template)
