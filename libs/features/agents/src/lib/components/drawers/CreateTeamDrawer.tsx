@@ -1,10 +1,11 @@
 import { agentWorkspaceService, agentsService } from '@lenserfight/data/repositories'
 import type { AgentProfileView } from '@lenserfight/data/repositories'
 import type { AgentTeamRecord } from '@lenserfight/types'
-import { Button } from '@lenserfight/ui/components'
+import { Tooltip } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
 import { useQuery } from '@tanstack/react-query'
+import { HelpCircle } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { DrawerDocsLink } from './DrawerDocsLink'
@@ -146,7 +147,7 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
       headerExtra={
         <DrawerDocsLink
           path="/how-to/agents/workspace/drawers/create-team"
-          tip="Bootstrap a new team graph. Pick coordination style (round-robin / manager-worker / consensus) and autonomy level (0 = every step gated … 3 = fully autonomous within budget)."
+          tip="Bootstrap a new autonomous crew. Select member agents, choose a lead who coordinates delivery, and set activation mode. Members can be reordered and edges wired afterward in the Team Builder."
         />
       }
       footer={
@@ -165,16 +166,22 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
           and then assign workflows or CRON schedules to this crew.
         </p>
 
-        <Field label="Team name">
+        <FieldLabel
+          label="Team name"
+          tooltip="Label for this autonomous crew. Appears in schedules, run history, and approval queues."
+        >
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Autonomous Crew"
             className={inputClass}
           />
-        </Field>
+        </FieldLabel>
 
-        <Field label="Purpose">
+        <FieldLabel
+          label="Purpose"
+          tooltip="Describes the crew's mission. Injected into the team lead's system prompt for self-coordination decisions."
+        >
           <textarea
             rows={3}
             value={purpose}
@@ -182,17 +189,23 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
             placeholder="Example: Research, draft, review, and publish a weekly AI operations brief."
             className={`${inputClass} resize-none`}
           />
-        </Field>
+        </FieldLabel>
 
-        <Field label="Activation mode">
+        <FieldLabel
+          label="Activation mode"
+          tooltip="'Active crew' can receive dispatched runs immediately after creation. 'Draft crew' is paused — safe for configuring members and edges without triggering workflows."
+        >
           <SelectField
             value={activationMode}
             onChange={(v) => setActivationMode(v as ActivationMode)}
             options={ACTIVATION_OPTIONS}
           />
-        </Field>
+        </FieldLabel>
 
-        <Field label="Lead agent">
+        <FieldLabel
+          label="Lead agent"
+          tooltip="The team member that coordinates the crew and owns final delivery. Must be one of the selected crew members. Assigned the 'leader' role automatically."
+        >
           <SelectField
             value={leadAgentId}
             onChange={setLeadAgentId}
@@ -200,7 +213,7 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
             placeholder="Select a lead"
             disabled={agents.length === 0}
           />
-        </Field>
+        </FieldLabel>
 
         <div className="space-y-3">
           <div>
@@ -257,7 +270,6 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
         </div>
 
         {error && <ErrorBanner message={error} />}
-
       </div>
     </Drawer>
   )
@@ -266,13 +278,28 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
 const inputClass =
   'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )
 
 const ErrorBanner: React.FC<{ message: string }> = ({ message }) => (
