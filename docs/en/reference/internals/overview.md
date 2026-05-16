@@ -90,7 +90,7 @@ These rules must hold across every surface (route, RPC, CLI, UI):
 | Schema          | Production | All core tables exist; one column proposed (`instruction_category` on `lenses.versions`)                                                           |
 | RLS             | Production | Owner-authoritative via `agents.can_manage_ai_lenser()`                                                                                            |
 | Workflow engine | Production | DAG, conditional edges, retries, streaming, provenance                                                                                             |
-| Scheduling      | Partial    | `pg_cron` schema/runtime exist, but `FEATURES.CRON_SCHEDULING` is off and schedule rollout is gated on the forward RPC repair                      |
+| Scheduling      | Partial    | `pg_cron` schema/runtime exist, but workflow scheduling is off and schedule rollout is gated on the forward RPC repair                      |
 | Approvals       | Partial    | Queue view, decision RPC, and UI ship; broader report/notification integration is still maturing                                                   |
 | Evaluations     | Production | Rubric builder (versioned), regression history chart, baseline tracking, post-run trigger, evaluator assignee role — see [evaluations.md](./evaluations.md) |
 | Memory Per Agent | Production | Per-profile entry store, read/write audit trail, dispatch injection, write-on-success gate, redaction — see [memory-per-agent.md](./memory-per-agent.md) |

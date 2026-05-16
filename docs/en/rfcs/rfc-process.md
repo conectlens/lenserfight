@@ -49,4 +49,4 @@ Four-digit zero-padded sequential: RFC-0001, RFC-0002, ...
 
 ## CRON_SCHEDULING sponsor perk
 
-`FEATURES.CRON_SCHEDULING` is cloud-edition-on by default (`editionIsCloud = true`). Self-hosted instances enable it via env var `FEATURE_CRON_SCHEDULING=true`. GitHub Sponsors at the Infrastructure tier receive a managed cloud deployment with `CRON_SCHEDULING` pre-enabled. Governance decisions related to `CRON_SCHEDULING` availability (e.g., deprecation) require an RFC.
+workflow scheduling is cloud-edition-on by default (`editionIsCloud = true`). Self-hosted instances enable it via env var Supabase `pg_cron` configured for workflow dispatch. GitHub Sponsors at the Infrastructure tier receive a managed cloud deployment with `CRON_SCHEDULING` pre-enabled. Governance decisions related to `CRON_SCHEDULING` availability (e.g., deprecation) require an RFC.

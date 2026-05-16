@@ -62,13 +62,13 @@ The following features require a full Supabase instance or a specific feature fl
 
 | Feature | Requirement |
 |---------|-------------|
-| CRON scheduling | Supabase + `FEATURE_CRON_SCHEDULING=true` |
+| CRON scheduling | Supabase + Supabase `pg_cron` configured for workflow dispatch |
 | Approval gates | Supabase (requires `agents.*` schema) |
 | SSE run event replay | Supabase (requires `lenses.workflow_run_events`) |
 | Marketplace (`/marketplace`) | Supabase (requires `lenses.lenses` with visibility) |
 | BYOK cloud execution | Supabase + `CHAINABIT_API_URL` env var |
 | Connector marketplace | Not yet implemented (preview) |
-| Battles arena | Supabase + `FEATURE_PUBLIC_BATTLES=true` |
+| Battles arena | Supabase + operator-approved cloud battles |
 
 See [Known Preview Surfaces](/en/reference/known-preview-surfaces) for the full list.
 

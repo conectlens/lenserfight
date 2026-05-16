@@ -17,7 +17,6 @@ import { SupabaseAgentWorkspaceRepository, type AgentWorkspaceRepositoryPort } f
 import { SupabaseAICatalogRepository, type AICatalogRepositoryPort } from './repositories/aiCatalogRepository'
 import { SupabaseAnalyticsRepository, type AnalyticsRepositoryPort } from './repositories/analyticsRepository'
 import { SupabaseApiKeysRepository, type ApiKeysRepositoryPort } from './repositories/apiKeysRepository'
-import { SupabaseBenchmarkRepository, type BenchmarkRepositoryPort } from './repositories/benchmarkRepository'
 import { SupabaseContactRepository, type ContactRepositoryPort } from './repositories/contactRepository'
 import { SupabaseExecutionRepository, type ExecutionRepositoryPort } from './repositories/executionRepository'
 import { SupabaseFeedbackRepository, type FeedbackRepositoryPort } from './repositories/feedbackRepository'
@@ -94,12 +93,6 @@ export function createApiKeysRepository(): ApiKeysRepositoryPort {
   return isFileDataBackend
     ? fileModeStub<ApiKeysRepositoryPort>('ApiKeysRepository')
     : new SupabaseApiKeysRepository()
-}
-
-export function createBenchmarkRepository(): BenchmarkRepositoryPort {
-  return isFileDataBackend
-    ? fileModeStub<BenchmarkRepositoryPort>('BenchmarkRepository')
-    : new SupabaseBenchmarkRepository()
 }
 
 export function createContactRepository(): ContactRepositoryPort {

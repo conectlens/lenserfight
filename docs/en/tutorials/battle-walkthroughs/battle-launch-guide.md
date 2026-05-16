@@ -79,7 +79,7 @@ A battle starts in `draft` state. This is your private workspace to define:
 - **Voting window** — how long voting is open after execution
 
 ::: warning Feature flags
-Steps 5–6 (voting, AI judging, ELO) require `FEATURE_PUBLIC_BATTLES=true` and a configured Supabase instance. For local-only battles see [Local Battle Quickstart](/en/tutorials/battle-walkthroughs/local-battle-quickstart).
+Steps 5–6 (voting, AI judging, ELO) require operator-approved cloud battles and a configured Supabase instance. For local-only battles see [Local Battle Quickstart](/en/tutorials/battle-walkthroughs/local-battle-quickstart).
 :::
 
 **Web UI:** Navigate to `/arena/new`, choose **Workflow Battle** or **Lens Battle**, fill in the form, click **Create Battle**.
@@ -232,9 +232,9 @@ After publishing:
 |---|---|---|
 | Battle creation | — | Enabled |
 | BYOK execution | `CHAINABIT_EXECUTION_ENABLED` | Disabled |
-| Voting | `FEATURE_PUBLIC_BATTLES=true` | Disabled |
-| AI judging | `FEATURE_PUBLIC_BATTLES=true` | Disabled |
-| ELO leaderboard | `FEATURE_PUBLIC_BATTLES=true` | Disabled |
+| Voting | operator-approved cloud battles | Disabled |
+| AI judging | operator-approved cloud battles | Disabled |
+| ELO leaderboard | operator-approved cloud battles | Disabled |
 | Semantic moderation | `MODERATION_SEMANTIC_ENABLED=true` | Disabled |
 
 ---

@@ -54,7 +54,7 @@ Varsayılan `memory_write_policy='on_success'` başarısızlık durumunda tampon
 `lf battle local run`, yapılandırılmış anahtarınızı kullanarak doğrudan sağlayıcı API'nizi çağırır. LenserFight, yerel savaş yürütmesinde harcama sınırı dayatmaz. Sağlayıcınızın kendi hız sınırları geçerlidir.
 
 **Bulut savaşları Sınırlı Beta'dadır ve açık bir erişim izni gerektirir.**
-`FEATURE_PUBLIC_BATTLES=true`, bulut arena UI'sını ve işçisini etkinleştirir, ancak yüzey genel kullanıma açık değildir. Herhangi bir herkese açık dağıtımdan önce moderasyon sistemi, oylama bütünlüğü kontrolleri ve kötüye kullanım azaltmaları [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist) listesini geçmelidir.
+Onaylı bir bulut savaşları dağıtımı, bulut arena arayüzünü ve işçiyi açar; ancak yüzey genel kullanıma açık değildir. Herhangi bir herkese açık dağıtımdan önce moderasyon sistemi, oylama bütünlüğü kontrolleri ve kötüye kullanım azaltmaları [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist) listesini geçmelidir.
 
 **Yerel savaş şifrelemesi yerel anahtarınıza bağlıdır.**
 Yeni savaş durumu kullanıcı çalışma zamanı depolamasına yazılır ve `LENSERFIGHT_LOCAL_BATTLE_KEY` ile şifrelenir. Eski proje kökü `.lenserfight/local-battles/{id}.json` dosyaları hâlâ bulunabilir ve özel prompt veya çıktılar içerebilir. Bu dosyaları commit etmeyin.
@@ -79,13 +79,14 @@ Referans dokümantasyonunda açıklanan bazı `lf` alt komutları "Önerilen" ol
 **Supabase seed ilk çalıştırmada birkaç dakika sürer.**
 Seed scripti (`supabase/seed.sql`) tüm RPC'leri, görünümleri ve başlangıç verilerini uygular. Soğuk bir yerel Supabase örneğinde bu 3–5 dakika sürebilir. Bu, tek seferlik bir maliyettir.
 
-**Ortam değişkeni değişiklikleri tam web yeniden derlemesi gerektirir.**
-`FEATURE_*` bayrakları derleme zamanında pişirilir. Bir bayrağın değiştirilmesi `pnpm nx run web:build` gerektirir — çalışan bir dev sunucu, yeniden başlatma olmadan bayrak değişikliklerini almaz.
+**Ortam değişkeni değişiklikleri geliştirme sunucusunun yeniden başlatılmasını gerektirir.**
+
+Vite, `import.meta.env` değerlerini yalnızca geliştirme sunucusu başlarken okur. `.env` / `.env.local` düzenledikten sonra `pnpm nx run web:serve` komutunu yeniden başlatın (env dosyalarını değiştirdiyseniz `auth` / `arena` için de aynısı geçerlidir).
 
 ---
 
 ## İlgili
 
-- [Bilinen Önizleme Yüzeyleri](/tr/reference/known-preview-surfaces) — bayraklar, kapılama ve geri alma talimatları
+- [Bilinen Önizleme Yüzeyleri](/tr/reference/known-preview-surfaces) — kapılama ve geri alma talimatları
 - [OSS Lansman Kapsamı](/tr/explanation/community/oss-launch-scope) — bu sürümün kapsamı dahilinde olan ve olmayanlar
 - [Battle Integrity Checklist](/en/how-to/battles/battle-integrity-checklist) — bulut savaşlarını etkinleştirmeden önce gereken kontroller

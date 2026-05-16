@@ -14,7 +14,7 @@ Cloud battles, the public arena, and the ELO leaderboard are **Private Alpha** s
 Local battles (`lf battle local`) do not require this checklist and are available as Preview.
 :::
 
-This checklist must be completed and reviewed by at least one core maintainer before enabling `FEATURE_PUBLIC_BATTLES=true` in any environment that accepts external users.
+This checklist must be completed and reviewed by at least one core maintainer before enabling cloud battles for external users.
 
 ---
 
@@ -22,7 +22,7 @@ This checklist must be completed and reviewed by at least one core maintainer be
 
 ### Infrastructure
 
-- [ ] `FEATURE_PUBLIC_BATTLES=true` is set only in a protected environment — not in a development or staging environment accessible to external users
+- [ ] Cloud battle web routes and workers are reachable only in a protected environment — not in a development or staging environment accessible to untrusted users
 - [ ] BYOK key encryption verified: `fn_encrypt_api_key` stores ciphertext only; plaintext never written to any log table
 - [ ] Worker health endpoint (`/admin/worker-health`) is protected — not publicly accessible
 - [ ] DLQ entries for failed battle jobs are monitored and do not leak contender keys or outputs
@@ -37,8 +37,8 @@ This checklist must be completed and reviewed by at least one core maintainer be
 
 ### Rollback gate
 
-- [ ] Setting `FEATURE_PUBLIC_BATTLES=false` stops new battle creation and cloud execution immediately — verified in staging
-- [ ] Existing battles in `executing` or `voting` status are handled gracefully when the flag is toggled off (no orphaned jobs)
+- [ ] Turning off public cloud battle routing stops new battle creation and cloud execution immediately — verified in staging
+- [ ] Existing battles in `executing` or `voting` status are handled gracefully when routing is withdrawn (no orphaned jobs)
 
 ---
 
@@ -111,7 +111,7 @@ Each case below must be validated before launch. Record the test result and the 
 
 ## Post-checklist sign-off
 
-Before enabling the flag:
+Before enabling cloud battles:
 
 1. Every checkbox above is checked.
 2. At least one core maintainer has reviewed the test results.
@@ -120,11 +120,12 @@ Before enabling the flag:
 **Rollback procedure:**
 
 ```bash
-# Disable cloud battles immediately
-# In your environment variables:
-FEATURE_PUBLIC_BATTLES=false
+# Disable cloud battles immediately:
+# - Block or unmount public /battles/* routes and redeploy web + platform-api
+# - Optionally stop worker dispatch (SQL below)
+```
 
-# In the DB (stops worker from claiming new jobs):
+```sql
 UPDATE platform.system_flags
 SET value = 'false', updated_at = now()
 WHERE key = 'autonomy_dispatch_enabled';
@@ -138,7 +139,7 @@ Before the Limited Beta launch, a maintainer must complete a full rollback drill
 
 **Steps:**
 
-1. Set `FEATURE_PUBLIC_BATTLES=false` in the environment and redeploy. Verify that new battle creation attempts return an appropriate disabled/unavailable response.
+1. Disable public cloud battle routing in the environment and redeploy. Verify that new battle creation attempts return an appropriate disabled/unavailable response.
 2. Run the following in the Supabase SQL editor to stop worker dispatch:
    ```sql
    UPDATE platform.system_flags
@@ -147,18 +148,18 @@ Before the Limited Beta launch, a maintainer must complete a full rollback drill
    ```
 3. Verify no new jobs are being claimed: run `lf schedule health` and confirm no schedules enter a `RUNNING` state within the next minute.
 4. Confirm local battles are unaffected: run `lf battle local init --name "Drill Test" --task "hello"` and verify the init succeeds with no errors.
-5. Restore the environment by reversing steps 1 and 2 (re-enable the flag and re-deploy, set `autonomy_dispatch_enabled` back to `'true'`).
+5. Restore the environment by reversing steps 1 and 2 (re-enable routing and re-deploy, set `autonomy_dispatch_enabled` back to `'true'`).
 
 ### Phase O staging gate (added 2026-05-08)
 
-The maintainer additionally verifies the following items in a hosted staging Supabase environment before flipping `FEATURE_PUBLIC_BATTLES` for any operator:
+The maintainer additionally verifies the following items in a hosted staging Supabase environment before enabling cloud battles for any operator:
 
 - [ ] **K4 — `/health` probe.** `curl -i $PLATFORM_API_URL/health` returns `200` with `{"status":"ok","db":true}`. After stopping the database, the same call returns `503` with `{"status":"degraded"}`.
 - [ ] **J1 — battle creation rate limit.** A user creating their 6th battle in a 24-hour window receives `HTTP 429` with `code='BATTLE_RATE_LIMIT'`.
 - [ ] **J2 — moderation owner override.** Calling `fn_decide_moderation_override` with a valid override appends an `audit.moderation_decisions` row whose `decision_type` reflects the override and whose `moderator_lenser_id` matches the caller.
 - [ ] **O1 — moderation flagged webhook.** With `app.moderation_webhook_url` set to a netcat listener, an `audit.moderation_decisions` INSERT with `decision_type='flagged'` causes the listener to receive a `webhook_version=1` POST within 5 seconds.
 - [ ] **O3 — ELO compute.** After a controlled finalization, both contenders' rows in `reputation.lenser_scores` (score_type='elo') reflect a K=32 update, and an entry exists in `reputation.elo_battle_log` with `battle_id` PK preventing re-scoring on a second `fn_compute_elo_after_battle` call.
-- [ ] **O2 — arena page gating.** With the flag off, `/battles/arena` redirects to `/`. With the flag on, it renders finalized public battles only.
+- [ ] **O2 — arena browse route.** `/battles/arena` responds without `5xx` for anonymous visitors and lists or gates finalized public battles according to deployment policy.
 
 **Sign-off:**
 

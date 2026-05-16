@@ -26,7 +26,7 @@ Bu sayfa, kendi sunucusunda barındırılan bir Community Edition kurulumunda **
 | Bildirim zili ve rozeti | **Stabil** | Supabase | — |
 | Cüzdan bakiye rozeti | **Stabil** | Supabase + Chainabit | — |
 | Sosyal graf (takip et / bırak) | **Stabil** | Supabase | — |
-| CRON zamanlama | **Önizleme** | `FEATURE_CRON_SCHEDULING=true` + Supabase | Bayrağı `false` yapın; psql'de `SELECT cron.unschedule('dispatch-scheduled-workflows')` çalıştırın |
+| CRON zamanlama | **Önizleme** | Supabase `pg_cron` configured for workflow dispatch + Supabase | Bayrağı `false` yapın; psql'de `SELECT cron.unschedule('dispatch-scheduled-workflows')` çalıştırın |
 | Onay kapıları | **Önizleme** | Supabase (`agents.*` şeması) | Zamanlamayı kaldırın veya `approval_policy->>'requiresApproval'` değerini `true` yapın |
 | Onay otomatik zaman aşımı | **Stabil** | `app.approval_timeout_hours` Postgres GUC (varsayılan 24sa); `expire-stale-approvals` pg_cron işi | `SELECT cron.unschedule('expire-stale-approvals')` |
 | Onay bekleyen webhook | **Önizleme** | `app.approval_webhook_url` Postgres GUC + `pg_net` uzantısı | `ALTER DATABASE postgres SET app.approval_webhook_url = ''` |
@@ -36,11 +36,11 @@ Bu sayfa, kendi sunucusunda barındırılan bir Community Edition kurulumunda **
 | Araç çağrı kayıtları | **Önizleme** | Supabase (`platform.tool_invocation_logs`) | Faz 2 göçünü çalıştırmayarak devre dışı bırakın |
 | Araç çağrı onayları | **Önizleme** | Supabase (`agents.*` şeması, Faz 2 göçü) | Faz 2 göçünü çalıştırmayın; onay kapıları yoktur |
 | Platform otonomi acil durdurma | **Önizleme** | `platform.system_flags.autonomy_dispatch_enabled` | `UPDATE platform.system_flags SET value = 'false' WHERE key = 'autonomy_dispatch_enabled'` |
-| Chainabit yürütme köprüsü | **Önizleme** | `FEATURE_CHAINABIT_EXECUTION=true` + `CHAINABIT_API_URL` | Bayrağı `false` yapın |
+| Chainabit yürütme köprüsü | **Önizleme** | İşçilerde `CHAINABIT_EXECUTION_ENABLED` + `CHAINABIT_API_URL` | İşçilerde `CHAINABIT_EXECUTION_ENABLED=false` yapıp yeniden dağıtın |
 | Yerel savaşlar (CLI) | **Önizleme** | Bayrak gerekmez — `lf battle local` komutları bulut altyapısı olmadan çalışır | yok |
-| Bulut savaş arenası | **Özel Alfa** | `FEATURE_PUBLIC_BATTLES=true` + barındırılan Supabase | `FEATURE_PUBLIC_BATTLES=false`; yerel savaşlar çalışmaya devam eder |
-| Savaş BYOK akışı | **Özel Alfa** | `FEATURE_PUBLIC_BATTLES=true` + BYOK anahtar referansı + barındırılan Supabase | Bayrağı `false` yapın |
-| ELO lider tablosu | **Özel Alfa** | `FEATURE_PUBLIC_BATTLES=true` + Supabase (kendi sunucusunda varsayılan `false`) | Bayrağı `false` yapın |
+| Bulut savaş arenası | **Özel Alfa** | Onaylı bulut savaşları + barındırılan Supabase | Bulut savaş yönlendirmesini kapatın; yerel savaşlar çalışmaya devam eder |
+| Savaş BYOK akışı | **Özel Alfa** | Onaylı bulut savaşları + BYOK anahtar referansı + barındırılan Supabase | BYOK anahtarlarını kaldırın veya bulut savaş yönlendirmesini kapatın |
+| ELO lider tablosu | **Özel Alfa** | Onaylı bulut savaşları + Supabase | Bulut savaş beslemesini durdurun (Arena ile aynı geri alma) |
 | Konektör pazarı | **Henüz uygulanmadı** | — | — |
 | Faturalama ve krediler | **Henüz uygulanmadı** | — | — |
 | Kıyaslama paketi | **Henüz uygulanmadı** | — | — |
@@ -55,7 +55,7 @@ Bu sayfa, kendi sunucusunda barındırılan bir Community Edition kurulumunda **
 SELECT cron.unschedule('dispatch-scheduled-workflows');
 
 -- Adım 2: UI'yı kapat (bunu .env dosyanıza ekleyin)
--- FEATURE_CRON_SCHEDULING=false
+-- (workflow dispatch cron disabled in deployment)
 
 -- Adım 3: Daha sonra yeniden etkinleştir (ifade orijinal göçle aynı olmalı)
 SELECT cron.schedule(
