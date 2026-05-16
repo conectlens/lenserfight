@@ -1,0 +1,22 @@
+{
+  "name": "feature-workflows",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/workflows/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:workflows",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project feature-workflows --web",
+  "targets": {
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../../coverage/libs/features/workflows"
+      }
+    }
+  }
+}
