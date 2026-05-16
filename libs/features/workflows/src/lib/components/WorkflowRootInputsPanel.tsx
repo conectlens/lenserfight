@@ -6,7 +6,7 @@ import { FileText } from 'lucide-react'
 import React, { useEffect, useState, useMemo } from 'react'
 
 import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
-import type { LensParam, LensVersionParam } from '@lenserfight/types'
+import type { LensVersionParam } from '@lenserfight/types'
 import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
 import { CsvImportDialog } from '../../../../lenses/src/lib/components/CsvImportDialog'
 import { JsonImportDialog } from '../../../../lenses/src/lib/components/JsonImportDialog'
@@ -18,6 +18,8 @@ interface WorkflowRootInputsPanelProps {
   isRunning: boolean
   /** When false, the Execute button is disabled (funding/model not configured). */
   canExecute?: boolean
+  /** Shown when Execute is disabled (e.g. Cloud BYOK unsupported in prod). */
+  executeHint?: string | null
   /** Optional in-memory config overrides from the builder session. */
   nodeConfigOverrides?: Record<string, { param_overrides?: Record<string, string> }>
 }
@@ -32,6 +34,7 @@ export function WorkflowRootInputsPanel({
   onSubmit,
   isRunning,
   canExecute = true,
+  executeHint,
   nodeConfigOverrides,
 }: WorkflowRootInputsPanelProps) {
   const [inputs, setInputs] = useState<Record<string, string>>({})
@@ -131,6 +134,12 @@ export function WorkflowRootInputsPanel({
     return true
   }, [paramGroups, inputs])
 
+  const disabledReason = useMemo(() => {
+    if (canExecute) return undefined
+    const h = executeHint?.trim()
+    return h && h.length > 0 ? h : 'Select a funding source and model above'
+  }, [canExecute, executeHint])
+
   if (isLoading) {
     return (
       <div className="space-y-3 p-4">
@@ -151,13 +160,13 @@ export function WorkflowRootInputsPanel({
           onClick={() => onSubmit({})}
           disabled={isRunning || !canExecute}
           className="w-full"
-          title={!canExecute ? 'Select a funding source and model above' : undefined}
+          title={disabledReason}
         >
           {isRunning ? 'Running…' : 'Execute Workflow'}
         </Button>
         {!canExecute && (
           <p className="mt-2 text-[10px] text-center text-greyscale-400">
-            Select a funding source and model to run.
+            {disabledReason}
           </p>
         )}
       </div>
@@ -186,8 +195,6 @@ export function WorkflowRootInputsPanel({
           .map(([k, v]) => [k.split(':').slice(1).join(':'), v]),
       )
     : {}
-  const legacyParams: LensParam[] = []
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 border-b border-surface-border">
       <div className="flex items-center gap-2">
@@ -240,7 +247,7 @@ export function WorkflowRootInputsPanel({
         className="w-full"
         title={
           !canExecute
-            ? 'Select a funding source and model above'
+            ? disabledReason
             : !allRequiredFilled
               ? 'Fill all required parameters'
               : undefined
@@ -250,9 +257,7 @@ export function WorkflowRootInputsPanel({
       </Button>
 
       {!canExecute && (
-        <p className="text-[10px] text-center text-greyscale-400">
-          Select a funding source and model to run.
-        </p>
+        <p className="text-[10px] text-center text-greyscale-400">{disabledReason}</p>
       )}
       {canExecute && !allRequiredFilled && (
         <p className="text-[10px] text-center text-amber-500">
@@ -264,7 +269,6 @@ export function WorkflowRootInputsPanel({
         open={jsonImportOpen}
         onClose={() => setJsonImportOpen(false)}
         versionParams={activeImportGroup?.params}
-        legacyParams={legacyParams}
         onApply={(patch) => {
           if (!activeImportNodeId) return
           setInputs((prev) => {
@@ -282,7 +286,6 @@ export function WorkflowRootInputsPanel({
         open={csvImportOpen}
         onClose={() => setCsvImportOpen(false)}
         versionParams={activeImportGroup?.params}
-        legacyParams={legacyParams}
         onApply={(patch) => {
           if (!activeImportNodeId) return
           setInputs((prev) => {
