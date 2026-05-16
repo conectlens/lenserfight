@@ -64,4 +64,45 @@ describe('n8n Export', () => {
     expect(result.nodes).toHaveLength(0)
     expect(result.connections).toEqual({})
   })
+
+  it('maps manual_trigger to n8n-nodes-base.manualTrigger', () => {
+    const result = exportToN8n('WF', [
+      { id: 'n1', label: 'Start', nodeType: 'manual_trigger', ordinal: 0 },
+    ], [])
+    expect(result.nodes[0].type).toBe('n8n-nodes-base.manualTrigger')
+    expect(result._lenserfight.unmappedNodes).not.toContain('manual_trigger')
+  })
+
+  it('maps schedule_trigger to n8n-nodes-base.scheduleTrigger', () => {
+    const result = exportToN8n('WF', [
+      { id: 'n1', label: 'Cron', nodeType: 'schedule_trigger', ordinal: 0 },
+    ], [])
+    expect(result.nodes[0].type).toBe('n8n-nodes-base.scheduleTrigger')
+    expect(result._lenserfight.unmappedNodes).not.toContain('schedule_trigger')
+  })
+
+  it('maps webhook_trigger to n8n-nodes-base.webhook', () => {
+    const result = exportToN8n('WF', [
+      { id: 'n1', label: 'Inbound', nodeType: 'webhook_trigger', ordinal: 0 },
+    ], [])
+    expect(result.nodes[0].type).toBe('n8n-nodes-base.webhook')
+    expect(result._lenserfight.unmappedNodes).not.toContain('webhook_trigger')
+  })
+
+  it('falls back to noOp for event_trigger (no n8n equivalent defined)', () => {
+    const result = exportToN8n('WF', [
+      { id: 'n1', label: 'Event', nodeType: 'event_trigger', ordinal: 0 },
+    ], [])
+    // event_trigger has no n8n counterpart in the infra catalog — noOp is the correct fallback
+    expect(result.nodes[0].type).toBe('n8n-nodes-base.noOp')
+    expect(result._lenserfight.unmappedNodes).toContain('event_trigger')
+  })
+
+  it('maps form_input_trigger to n8n-nodes-base.formTrigger', () => {
+    const result = exportToN8n('WF', [
+      { id: 'n1', label: 'Form', nodeType: 'form_input_trigger', ordinal: 0 },
+    ], [])
+    expect(result.nodes[0].type).toBe('n8n-nodes-base.formTrigger')
+    expect(result._lenserfight.unmappedNodes).not.toContain('form_input_trigger')
+  })
 })
