@@ -336,6 +336,12 @@ export interface WorkflowExecutionContext {
    * thundering-herd; higher values maximise throughput on large fan-out graphs.
    */
   maxWaveConcurrency?: number
+  /**
+   * Optional connector credential resolver. When provided, runners can resolve
+   * connector credentials for credential-backed parameters. In browser context
+   * this should always return null (credentials never leave server).
+   */
+  resolveConnector?: (slug: string, scopes?: string[]) => Promise<string | null>
 }
 
 export interface MemoryFlushSink {
@@ -835,6 +841,20 @@ export class WorkflowExecutionService {
               resolvedParams: { ...renderedInputs },
               nodeConfig: (node.config as Record<string, unknown>) ?? {},
               signal: ctx.signal,
+              resolvedPrompt,
+              outputContract: contracts.output,
+              executeProvider: async (input) => {
+                const provider = ctx.resolveExecutionProvider
+                  ? await ctx.resolveExecutionProvider(node)
+                  : this.provider
+                const modelKey = (
+                  node.config?.modelId?.trim() ||
+                  ctx.defaultModelKey ||
+                  ''
+                ).trim()
+                return provider.execute(modelKey, input, ctx.signal)
+              },
+              resolveConnector: ctx.resolveConnector ?? undefined,
             }
             try {
               const runnerResult = await nodeRunner.execute(runnerCtx)
