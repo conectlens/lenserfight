@@ -427,7 +427,12 @@ END;
 $$;
 
 ALTER FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) OWNER TO postgres;
+-- Supabase sets default privileges granting EXECUTE on public schema functions
+-- to anon and authenticated. We explicitly revoke them to ensure only
+-- service_role workers can touch this vault accessor.
 REVOKE ALL ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) FROM anon;
+REVOKE ALL ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) FROM authenticated;
 GRANT EXECUTE ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) TO service_role;
 
 COMMENT ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) IS
