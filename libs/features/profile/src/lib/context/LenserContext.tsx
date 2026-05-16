@@ -4,7 +4,7 @@ import { lenserService } from '@lenserfight/data/repositories'
 import { useAuth, LENSER_CACHE_KEY } from '@lenserfight/features/auth'
 import { Lenser, CreateLenserDTO } from '@lenserfight/types'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
-import { AUTH_BASE_URL } from '@lenserfight/utils/env'
+import { WEB_BASE_URL } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { createContext, useContext, useEffect, useCallback } from 'react'
@@ -110,7 +110,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const redirectToOnboarding = useCallback((delayMs = 0) => {
     const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
-    const target = `${AUTH_BASE_URL}/onboarding?return_url=${returnUrl}`
+    const target = `${WEB_BASE_URL}/onboarding?return_url=${returnUrl}`
     if (delayMs > 0) setTimeout(() => window.location.replace(target), delayMs)
     else window.location.replace(target)
   }, [])

@@ -15,7 +15,7 @@ import { AUTH_BASE_URL, WEB_BASE_URL } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bot, Check, X, Loader2, User, Palette, Sparkles } from 'lucide-react'
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 
 const AUTH_PROFILE_GATE_QUERY_KEY = ['lenser', 'auth-profile-gate'] as const
@@ -190,6 +190,16 @@ export const CreateLenserProfileModal: React.FC = () => {
     }
   }, [isLoading, isAuthenticated, hasLenser, currentStep, goToStep])
 
+  const sanitizedReturnTo = sanitizeReturnUrl(returnTo)
+
+  const handleClose = useCallback(() => {
+    if (sanitizedReturnTo.startsWith('http://') || sanitizedReturnTo.startsWith('https://')) {
+      window.location.replace(sanitizedReturnTo)
+    } else {
+      navigate(sanitizedReturnTo, { replace: true })
+    }
+  }, [sanitizedReturnTo, navigate])
+
   // Hoist steps array before early returns so useMemo is called unconditionally
   const wizardSteps = useMemo(() => [
     {
@@ -342,266 +352,251 @@ export const CreateLenserProfileModal: React.FC = () => {
   const canProceedForStep =
     currentStep === 0 ? (isHandleUnique && !!displayName.trim()) : true
 
-  const sanitizedReturnTo = sanitizeReturnUrl(
-    searchParams.get('return_url') ?? (location.state as { from?: string } | null)?.from ?? null
-  )
-  const handleClose = () => {
-    if (sanitizedReturnTo.startsWith('http://') || sanitizedReturnTo.startsWith('https://')) {
-      window.location.replace(sanitizedReturnTo)
-    } else {
-      navigate(sanitizedReturnTo, { replace: true })
-    }
-  }
-
   return (
-    <Dialog
-      open
+
+    <StepWizard
+      steps={wizardSteps as any}
+      currentStep={currentStep}
+      onNext={handleNext}
+      onBack={() => goToStep(Math.max(currentStep - 1, 0))}
+      onComplete={() => handleStep3Complete()}
       onClose={handleClose}
-      maxWidth="max-w-xl"
+      canProceed={canProceedForStep}
+      isNextLoading={isSubmittingStep0 || isCompletingStep1 || isCompletingStep2}
+      isCompleting={isCreatingAgent}
+      nextLabel="Continue"
+      completeLabel="Finish"
+      skipButton={
+        currentStep === 1
+          ? { label: 'Skip for now', onClick: () => goToStep(2) }
+          : currentStep === 2
+            ? { label: 'Skip for now', onClick: () => handleStep2Next() }
+            : currentStep === 3
+              ? { label: 'Skip for now', onClick: () => handleStep3Complete(true) }
+              : undefined
+      }
     >
-        <StepWizard
-          steps={wizardSteps as any}
-          currentStep={currentStep}
-          onNext={handleNext}
-          onBack={() => goToStep(Math.max(currentStep - 1, 0))}
-          onComplete={() => handleStep3Complete()}
-          canProceed={canProceedForStep}
-          isNextLoading={isSubmittingStep0 || isCompletingStep1 || isCompletingStep2}
-          isCompleting={isCreatingAgent}
-          nextLabel="Continue"
-          completeLabel="Finish"
-          skipButton={
-            currentStep === 1
-              ? { label: 'Skip for now', onClick: () => goToStep(2) }
-              : currentStep === 2
-                ? { label: 'Skip for now', onClick: () => handleStep2Next() }
-                : currentStep === 3
-                  ? { label: 'Skip for now', onClick: () => handleStep3Complete(true) }
-                  : undefined
-          }
-        >
-          {currentStep === 0 ? (
-            /* ── Step 0: handle + display name ── */
-            <div className="space-y-5">
-              <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
-                Claim your unique handle to join the community.
-              </p>
+      {currentStep === 0 ? (
+        /* ── Step 0: handle + display name ── */
+        <div className="space-y-5">
+          <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
+            Claim your unique handle to join the community.
+          </p>
 
-              <div>
-                <div className="relative">
-                  <InputField
-                    label="Handle"
-                    placeholder="e.g. alexandre_ui"
-                    value={handle}
-                    onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/\s/g, ''))}
-                    error={handleError || undefined}
-                    className={isHandleUnique ? '!border-green-500 !focus:ring-green-200' : ''}
-                  />
-                  <div className="absolute right-3 top-[34px] pointer-events-none">
-                    {isCheckingHandle ? (
-                      <Loader2 className="w-5 h-5 text-greyscale-400 animate-spin" />
-                    ) : isHandleUnique ? (
-                      <Check className="w-5 h-5 text-green-500" />
-                    ) : handleError && handle.length > 0 ? (
-                      <X className="w-5 h-5 text-red-500" />
-                    ) : null}
-                  </div>
-                </div>
-
-                {suggestions.length > 0 && (
-                  <div className="mt-2 animate-in slide-in-from-top-1 fade-in duration-200">
-                    <p className="text-xs text-greyscale-500 mb-2">Suggestions:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {suggestions.map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => setHandle(s)}
-                          className="px-3 py-1 bg-greyscale-25 hover:bg-primary/20 hover:text-greyscale-900 border border-surface-border rounded-full text-xs font-medium text-greyscale-600 transition-colors"
-                        >
-                          @{s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {isCheckingHandle && !handleError && handle.length >= 4 && suggestions.length === 0 && (
-                  <p className="mt-2 text-xs text-greyscale-400">Checking availability…</p>
-                )}
-              </div>
-
+          <div>
+            <div className="relative">
               <InputField
-                label="Display Name"
-                placeholder="e.g. Alexandre"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                required
+                label="Handle"
+                placeholder="e.g. alexandre_ui"
+                value={handle}
+                onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/\s/g, ''))}
+                error={handleError || undefined}
+                className={isHandleUnique ? '!border-green-500 !focus:ring-green-200' : ''}
               />
-
-              {submitError && (
-                <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
-                  {submitError}
-                </div>
-              )}
-            </div>
-          ) : currentStep === 1 ? (
-            /* ── Step 1: language + theme ── */
-            <div className="space-y-5">
-              <div>
-                <p className="text-sm font-medium text-greyscale-700 dark:text-greyscale-300 mb-1">
-                  Preferred Language
-                </p>
-                <p className="text-xs text-greyscale-500 dark:text-greyscale-400 mb-3">
-                  Choose the language for content and interface.
-                </p>
-                <LanguageSelectBox
-                  value={preferredLanguage}
-                  onChange={setPreferredLanguage}
-                  languages={languages}
-                  isLoading={langsLoading}
-                />
+              <div className="absolute right-3 top-[34px] pointer-events-none">
+                {isCheckingHandle ? (
+                  <Loader2 className="w-5 h-5 text-greyscale-400 animate-spin" />
+                ) : isHandleUnique ? (
+                  <Check className="w-5 h-5 text-green-500" />
+                ) : handleError && handle.length > 0 ? (
+                  <X className="w-5 h-5 text-red-500" />
+                ) : null}
               </div>
+            </div>
 
-              <div>
-                <p className="text-sm font-medium text-greyscale-700 dark:text-greyscale-300 mb-1">
-                  Theme
-                </p>
-                <p className="text-xs text-greyscale-500 dark:text-greyscale-400 mb-3">
-                  Choose your preferred colour scheme.
-                </p>
-                <div className="flex gap-3">
-                  {THEME_OPTIONS.map((opt) => (
+            {suggestions.length > 0 && (
+              <div className="mt-2 animate-in slide-in-from-top-1 fade-in duration-200">
+                <p className="text-xs text-greyscale-500 mb-2">Suggestions:</p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestions.map((s) => (
                     <button
-                      key={opt.value}
+                      key={s}
                       type="button"
-                      onClick={() => setSelectedTheme(opt.value)}
-                      className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-colors ${selectedTheme === opt.value
-                        ? 'border-primary bg-primary/10 text-greyscale-900 dark:text-greyscale-0'
-                        : 'border-surface-border text-greyscale-500 dark:text-greyscale-400 hover:border-greyscale-400 dark:hover:border-greyscale-500'
-                        }`}
+                      onClick={() => setHandle(s)}
+                      className="px-3 py-1 bg-greyscale-25 hover:bg-primary/20 hover:text-greyscale-900 border border-surface-border rounded-full text-xs font-medium text-greyscale-600 transition-colors"
                     >
-                      {opt.label}
+                      @{s}
                     </button>
                   ))}
                 </div>
               </div>
+            )}
 
-              {submitError && (
-                <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
-                  {submitError}
-                </div>
-              )}
-            </div>
-          ) : currentStep === 2 ? (
-            /* ── Step 2: AI configuration (optional) ── */
-            <div className="space-y-5">
-              <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
-                Optionally set your preferred AI provider and model. You can change this later in Settings.
-              </p>
+            {isCheckingHandle && !handleError && handle.length >= 4 && suggestions.length === 0 && (
+              <p className="mt-2 text-xs text-greyscale-400">Checking availability…</p>
+            )}
+          </div>
 
-              <SearchSelectField
-                label="Provider"
-                value={aiProviderKey}
-                onChange={(val) => { setAiProviderKey(val); setAiModelKey('') }}
-                options={providers.map((p) => ({ value: p.key, label: p.display_name }))}
-                placeholder="Select a provider (optional)"
-                searchPlaceholder="Search providers..."
-                disabled={isLoadingProviders}
-              />
+          <InputField
+            label="Display Name"
+            placeholder="e.g. Alexandre"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            required
+          />
 
-              {aiProviderKey && (
-                <SearchSelectField
-                  label="Model"
-                  value={aiModelKey}
-                  onChange={setAiModelKey}
-                  options={providerModels.map((m) => ({ value: m.key, label: m.name }))}
-                  placeholder="Select a model (optional)"
-                  searchPlaceholder="Search models..."
-                  disabled={isLoadingModels}
-                />
-              )}
-
-              {submitError && (
-                <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
-                  {submitError}
-                </div>
-              )}
-            </div>
-          ) : (
-            /* ── Step 3: Agent creation (optional) ── */
-            <div className="space-y-5">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-raised border border-surface-border">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-yellow-500/10">
-                  <Bot size={18} className="text-primary-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
-                    Create your first AI Agent
-                  </p>
-                  <p className="text-xs text-greyscale-500 dark:text-greyscale-400">
-                    Agents can be @mentioned in threads and run workflows on your behalf.
-                  </p>
-                </div>
-              </div>
-
-              <InputField
-                label="Agent Display Name"
-                placeholder="e.g. My Assistant"
-                value={agentDisplayName}
-                onChange={(e) => setAgentDisplayName(e.target.value)}
-              />
-
-              <div>
-                <div className="relative">
-                  <InputField
-                    label="Agent Handle"
-                    placeholder="e.g. my_assistant"
-                    value={agentHandle.handle}
-                    onChange={(e) => agentHandle.setHandle(e.target.value.toLowerCase().replace(/\s/g, ''))}
-                    error={agentHandle.handleError || undefined}
-                    className={agentHandle.isHandleUnique ? '!border-green-500 !focus:ring-green-200' : ''}
-                  />
-                  <div className="absolute right-3 top-[34px] pointer-events-none">
-                    {agentHandle.isCheckingHandle ? (
-                      <Loader2 className="w-5 h-5 text-greyscale-400 animate-spin" />
-                    ) : agentHandle.isHandleUnique ? (
-                      <Check className="w-5 h-5 text-green-500" />
-                    ) : agentHandle.handleError && agentHandle.handle.length > 0 ? (
-                      <X className="w-5 h-5 text-red-500" />
-                    ) : null}
-                  </div>
-                </div>
-
-                {agentHandle.suggestions.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {agentHandle.suggestions.map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => agentHandle.setHandle(s)}
-                        className="px-3 py-1 bg-greyscale-25 hover:bg-primary/20 border border-surface-border rounded-full text-xs font-medium text-greyscale-600 transition-colors"
-                      >
-                        @{s}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {createAgent.error && (
-                <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
-                  {createAgent.error}
-                </div>
-              )}
-              {submitError && (
-                <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
-                  {submitError}
-                </div>
-              )}
+          {submitError && (
+            <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
+              {submitError}
             </div>
           )}
-        </StepWizard>
-    </Dialog>
+        </div>
+      ) : currentStep === 1 ? (
+        /* ── Step 1: language + theme ── */
+        <div className="space-y-5">
+          <div>
+            <p className="text-sm font-medium text-greyscale-700 dark:text-greyscale-300 mb-1">
+              Preferred Language
+            </p>
+            <p className="text-xs text-greyscale-500 dark:text-greyscale-400 mb-3">
+              Choose the language for content and interface.
+            </p>
+            <LanguageSelectBox
+              value={preferredLanguage}
+              onChange={setPreferredLanguage}
+              languages={languages}
+              isLoading={langsLoading}
+            />
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-greyscale-700 dark:text-greyscale-300 mb-1">
+              Theme
+            </p>
+            <p className="text-xs text-greyscale-500 dark:text-greyscale-400 mb-3">
+              Choose your preferred colour scheme.
+            </p>
+            <div className="flex gap-3">
+              {THEME_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setSelectedTheme(opt.value)}
+                  className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-colors ${selectedTheme === opt.value
+                    ? 'border-primary bg-primary/10 text-greyscale-900 dark:text-greyscale-0'
+                    : 'border-surface-border text-greyscale-500 dark:text-greyscale-400 hover:border-greyscale-400 dark:hover:border-greyscale-500'
+                    }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {submitError && (
+            <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
+              {submitError}
+            </div>
+          )}
+        </div>
+      ) : currentStep === 2 ? (
+        /* ── Step 2: AI configuration (optional) ── */
+        <div className="space-y-5">
+          <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
+            Optionally set your preferred AI provider and model. You can change this later in Settings.
+          </p>
+
+          <SearchSelectField
+            label="Provider"
+            value={aiProviderKey}
+            onChange={(val) => { setAiProviderKey(val); setAiModelKey('') }}
+            options={providers.map((p) => ({ value: p.key, label: p.display_name }))}
+            placeholder="Select a provider (optional)"
+            searchPlaceholder="Search providers..."
+            disabled={isLoadingProviders}
+          />
+
+          {aiProviderKey && (
+            <SearchSelectField
+              label="Model"
+              value={aiModelKey}
+              onChange={setAiModelKey}
+              options={providerModels.map((m) => ({ value: m.key, label: m.name }))}
+              placeholder="Select a model (optional)"
+              searchPlaceholder="Search models..."
+              disabled={isLoadingModels}
+            />
+          )}
+
+          {submitError && (
+            <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
+              {submitError}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* ── Step 3: Agent creation (optional) ── */
+        <div className="space-y-5">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-raised border border-surface-border">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-yellow-500/10">
+              <Bot size={18} className="text-primary-yellow-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                Create your first AI Agent
+              </p>
+              <p className="text-xs text-greyscale-500 dark:text-greyscale-400">
+                Agents can be @mentioned in threads and run workflows on your behalf.
+              </p>
+            </div>
+          </div>
+
+          <InputField
+            label="Agent Display Name"
+            placeholder="e.g. My Assistant"
+            value={agentDisplayName}
+            onChange={(e) => setAgentDisplayName(e.target.value)}
+          />
+
+          <div>
+            <div className="relative">
+              <InputField
+                label="Agent Handle"
+                placeholder="e.g. my_assistant"
+                value={agentHandle.handle}
+                onChange={(e) => agentHandle.setHandle(e.target.value.toLowerCase().replace(/\s/g, ''))}
+                error={agentHandle.handleError || undefined}
+                className={agentHandle.isHandleUnique ? '!border-green-500 !focus:ring-green-200' : ''}
+              />
+              <div className="absolute right-3 top-[34px] pointer-events-none">
+                {agentHandle.isCheckingHandle ? (
+                  <Loader2 className="w-5 h-5 text-greyscale-400 animate-spin" />
+                ) : agentHandle.isHandleUnique ? (
+                  <Check className="w-5 h-5 text-green-500" />
+                ) : agentHandle.handleError && agentHandle.handle.length > 0 ? (
+                  <X className="w-5 h-5 text-red-500" />
+                ) : null}
+              </div>
+            </div>
+
+            {agentHandle.suggestions.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {agentHandle.suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => agentHandle.setHandle(s)}
+                    className="px-3 py-1 bg-greyscale-25 hover:bg-primary/20 border border-surface-border rounded-full text-xs font-medium text-greyscale-600 transition-colors"
+                  >
+                    @{s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {createAgent.error && (
+            <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
+              {createAgent.error}
+            </div>
+          )}
+          {submitError && (
+            <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
+              {submitError}
+            </div>
+          )}
+        </div>
+      )}
+    </StepWizard>
   )
 }
