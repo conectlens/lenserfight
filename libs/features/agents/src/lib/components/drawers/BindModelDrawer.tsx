@@ -1,7 +1,8 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { AgentModelProfileRecord } from '@lenserfight/types'
-import { Button } from '@lenserfight/ui/components'
+import { Tooltip } from '@lenserfight/ui/components'
 import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
+import { HelpCircle } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 
 import { DrawerDocsLink } from './DrawerDocsLink'
@@ -67,7 +68,7 @@ export const BindModelDrawer: React.FC<BindModelDrawerProps> = ({
       headerExtra={
         <DrawerDocsLink
           path="/how-to/agents/workspace/drawers/bind-model"
-          tip="Create or edit a model profile. Pin provider, model id, and decoding defaults (temperature, top_p, max_tokens). Exactly one profile is the agent default."
+          tip="Edit a model profile's display name and inference parameters. Exactly one profile is the workspace default — promoting a profile demotes the previous one automatically."
         />
       }
       footer={
@@ -90,15 +91,21 @@ export const BindModelDrawer: React.FC<BindModelDrawerProps> = ({
           </p>
         </div>
 
-        <Field label="Profile name">
+        <FieldLabel
+          label="Profile name"
+          tooltip="A human-readable label for this model binding. Example: 'Production — GPT-4o' or 'Fast draft — Haiku'. Used in pickers and run history."
+        >
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             className={inputClass}
           />
-        </Field>
+        </FieldLabel>
 
-        <Field label="Temperature">
+        <FieldLabel
+          label="Temperature"
+          tooltip="Sampling temperature (0.0 – 2.0). Lower values produce more deterministic outputs; higher values increase variety. Recommended: 0.2–0.7 for analytical tasks; 0.8–1.2 for creative work."
+        >
           <input
             type="number"
             min={0}
@@ -108,9 +115,12 @@ export const BindModelDrawer: React.FC<BindModelDrawerProps> = ({
             onChange={(e) => setTemperature(Number(e.target.value))}
             className={inputClass}
           />
-        </Field>
+        </FieldLabel>
 
-        <Field label="Max tokens">
+        <FieldLabel
+          label="Max tokens"
+          tooltip="Upper bound on generated tokens per call. The provider bills per token — set conservatively for cost control. Most modern models support 128 000–200 000 tokens."
+        >
           <input
             type="number"
             min={256}
@@ -120,28 +130,32 @@ export const BindModelDrawer: React.FC<BindModelDrawerProps> = ({
             onChange={(e) => setMaxTokens(Number(e.target.value))}
             className={inputClass}
           />
-        </Field>
+        </FieldLabel>
 
-        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
-          <input
-            type="checkbox"
-            id="isDefault"
-            checked={isDefault}
-            onChange={(e) => setIsDefault(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 accent-primary-yellow-500"
-          />
-          <label htmlFor="isDefault" className="text-sm text-gray-700 dark:text-gray-200">
-            Set as default model for this workspace
-          </label>
-        </div>
+        <Tooltip
+          content="Exactly one model profile is the workspace default. New runs use the default unless the workflow explicitly overrides it. Checking this demotes the previous default."
+          position="top"
+          contentClassName="max-w-xs whitespace-normal text-left"
+        >
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
+            <input
+              type="checkbox"
+              id="isDefault"
+              checked={isDefault}
+              onChange={(e) => setIsDefault(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 accent-primary-yellow-500"
+            />
+            <label htmlFor="isDefault" className="text-sm text-gray-700 dark:text-gray-200">
+              Set as default model for this workspace
+            </label>
+          </div>
+        </Tooltip>
 
         {error && (
           <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
             {error}
           </p>
         )}
-
-
       </div>
     </Drawer>
   )
@@ -150,11 +164,26 @@ export const BindModelDrawer: React.FC<BindModelDrawerProps> = ({
 const inputClass =
   'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )
