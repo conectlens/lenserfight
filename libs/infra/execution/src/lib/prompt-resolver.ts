@@ -17,6 +17,33 @@ import { PlaceholderUnboundError } from './validator'
 
 import type { LensInputContract, NodeOutputEnvelope } from '@lenserfight/types'
 
+// ── Upstream expression resolution ───────────────────────────────────────────
+//
+// [[nodeId.field]] refs stored in param_overrides are distinct from edge-bound
+// [[label]] placeholders: they carry a dot-separated nodeId.fieldPath that must
+// be resolved against upstream execution results rather than the merged label map.
+// This regex is intentionally kept inside this file to avoid a circular dep with
+// the features layer; it mirrors the pattern in workflow-expression.ts.
+
+const UPSTREAM_REF_RE = /\[\[([a-zA-Z0-9_-]+)\.([a-zA-Z0-9_.[\]]+)\]\]/g
+
+function resolveUpstreamRefs(value: string, upstream: Map<string, ResolverUpstreamResult>): string {
+  UPSTREAM_REF_RE.lastIndex = 0
+  if (!UPSTREAM_REF_RE.test(value)) return value
+  UPSTREAM_REF_RE.lastIndex = 0
+  return value.replace(UPSTREAM_REF_RE, (_match, nodeId: string, fieldPath: string) => {
+    const source = upstream.get(nodeId)
+    if (!source) return ''
+    const resolved = resolveMappedOutputValue(
+      { status: source.status, outputData: source.outputData, envelope: source.envelope },
+      fieldPath,
+    )
+    if (resolved === null || resolved === undefined) return ''
+    if (typeof resolved === 'string') return resolved
+    try { return JSON.stringify(resolved) } catch { return String(resolved) }
+  })
+}
+
 export type MergeStrategy = 'last_write_wins' | 'concat' | 'array' | 'json_object'
 
 export interface EdgeCondition {
@@ -36,7 +63,7 @@ export interface ResolverEdge {
 export interface ResolverNode {
   id: string
   paramLabels?: string[]
-  config?: { merge?: MergeStrategy } | null
+  config?: { merge?: MergeStrategy; param_overrides?: Record<string, string> } | null
 }
 
 export interface ResolverUpstreamResult {
@@ -89,6 +116,24 @@ export function resolveRenderedInputs(
     }
     const strategy: MergeStrategy = group[0]?.mergeStrategy ?? defaultMerge
     rendered[label] = applyMerge(strategy, values)
+  }
+
+  // ── Resolve [[nodeId.field]] expressions in param_overrides ───────────────
+  // Config fields may contain upstream output refs (set by the user in the
+  // WorkflowNodeConfigPanel via drag-and-drop or manual typing).  Resolve them
+  // here so runners receive fully substituted values in resolvedParams.
+  const paramOverrides = node.config?.param_overrides
+  if (paramOverrides) {
+    for (const [key, value] of Object.entries(paramOverrides)) {
+      if (typeof value === 'string') {
+        UPSTREAM_REF_RE.lastIndex = 0
+        rendered[key] = UPSTREAM_REF_RE.test(value)
+          ? resolveUpstreamRefs(value, upstream)
+          : value
+      } else {
+        rendered[key] = value
+      }
+    }
   }
 
   return rendered
