@@ -12,6 +12,7 @@ export {
   validateWorkflow,
   detectCycle,
   PlaceholderUnboundError,
+  TRIGGER_NODE_TYPES,
 } from './lib/validator'
 export { validateBrowserExecutionPlan } from './lib/execution-plan-validator'
 export type { ExecutionPlanIssue, ExecutionPlanModel, ExecutionPlanNodeShape } from './lib/execution-plan-validator'
@@ -93,6 +94,7 @@ export type {
   WorkflowRunReplayStatus,
   NodeReplayStatus,
 } from './lib/replay'
+export { EchoProvider, echoProvider } from './lib/providers/echo.provider'
 export { FalAIProvider } from './lib/providers/fal-ai.provider'
 export { GeminiProvider } from './lib/providers/gemini.provider'
 export { OpenAIProvider } from './lib/providers/openai.provider'
