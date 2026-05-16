@@ -3,6 +3,7 @@ import { supabase } from '@lenserfight/data/supabase'
 import { WorkflowExecutionService, getExecutionProvider } from '@lenserfight/infra/execution'
 import { createWorkflowModerationGateway } from '@lenserfight/infra/moderation'
 import { byokKeyResolver, callProvider } from '@lenserfight/providers'
+import type { ContentPart, ProviderMessage } from '@lenserfight/providers'
 import { mapEngineEventToSse, WorkflowEventType } from '@lenserfight/types'
 import { useCallback, useRef } from 'react'
 
@@ -34,6 +35,28 @@ const TEXT_PROVIDERS = new Set<string>(['openai', 'anthropic', 'google', 'mistra
 /** Media providers the browser executor is allowed to call when user_byok_local is selected. */
 const LOCAL_MEDIA_PROVIDERS = new Set<string>(['fal-ai'])
 
+function buildTextProviderMessages(input: ExecutionInput): ProviderMessage[] {
+  const att = input.attachments ?? []
+  if (att.length === 0) {
+    return [{ role: 'user', content: input.prompt }]
+  }
+  const parts: ContentPart[] = [{ type: 'text', text: input.prompt }]
+  for (const a of att) {
+    if (a.kind === 'image') {
+      parts.push({ type: 'image', url: a.url, mimeType: a.mimeType })
+    } else if (a.kind === 'document') {
+      parts.push({
+        type: 'document',
+        url: a.url,
+        mimeType: a.mimeType ?? 'application/octet-stream',
+      })
+    } else if (a.kind === 'audio') {
+      parts.push({ type: 'audio', url: a.url, mimeType: a.mimeType ?? 'audio/mpeg' })
+    }
+  }
+  return [{ role: 'user', content: parts }]
+}
+
 /**
  * Creates an IExecutionProvider that wraps callProvider() for text generation.
  * The first arg from WorkflowExecutionService.execute() is the lensId (ignored) —
@@ -54,7 +77,7 @@ function createTextExecutionProvider(
         provider,
         apiKey,
         modelKey,
-        [{ role: 'user', content: input.prompt }],
+        buildTextProviderMessages(input),
         provider === 'anthropic' ? { maxTokens: 4096 } : undefined,
         signal,
       )
@@ -185,35 +208,13 @@ export function useWorkflowExecution({
         await appendRunEventSafe(WorkflowEventType.RUN_STARTED, { status: 'starting' })
         await appendRunEventSafe(WorkflowEventType.RUN_STATUS_CHANGED, { status: 'running' })
 
-        // Resolve global model → provider + API key
-        // For local BYOK (e.g. Ollama), the model key may not exist in the DB model list.
-        // Fall back to deriving the provider from the selected local key's metadata.
-        const globalModel = models.find((m) => m.key === globalModelId)
-        let providerName: string
-        if (globalModel) {
-          providerName = globalModel.provider
-        } else if (fundingSource === 'user_byok_local' && selectedLocalKeyId && localKeys?.length) {
-          const localKey = localKeys.find((k) => k.id === selectedLocalKeyId)
-          if (!localKey) throw new Error(`Model not found: ${globalModelId}`)
-          providerName = localKey.provider
-        } else {
-          throw new Error(`Model not found: ${globalModelId}`)
-        }
-
-        const isTextProvider = TEXT_PROVIDERS.has(providerName)
-        const isLocalMediaProvider = LOCAL_MEDIA_PROVIDERS.has(providerName)
-        const allowMedia = fundingSource === 'user_byok_local' || fundingSource === 'platform_credit'
-
-        if (!isTextProvider && !(isLocalMediaProvider && allowMedia)) {
-          throw new Error(`Browser-side execution is not supported for provider: ${providerName}`)
-        }
-
-        // Resolve API key based on funding source
-        let apiKey = ''
-        if (providerName !== 'ollama') {
+        // Resolve model → provider + API key (per unique model key in the DAG).
+        const resolveWorkflowApiKey = async (prov: string): Promise<string> => {
+          if (prov === 'ollama') return ''
           if (fundingSource === 'user_byok_local' && selectedLocalKeyId && resolveLocalKey) {
-            apiKey = await resolveLocalKey(selectedLocalKeyId)
-          } else if (fundingSource === 'user_byok_cloud') {
+            return resolveLocalKey(selectedLocalKeyId)
+          }
+          if (fundingSource === 'user_byok_cloud') {
             if (!selectedKeyRefId) {
               throw new Error('Select a cloud key before running this workflow.')
             }
@@ -222,23 +223,52 @@ export function useWorkflowExecution({
             if (!selectedKey) {
               throw new Error('Selected cloud key was not found. Please pick a key again.')
             }
-            if (selectedKey.providerKey !== providerName) {
-              throw new Error(`Selected cloud key is for ${selectedKey.providerDisplayName}, but the model uses ${providerName}.`)
-            }
-            if (import.meta.env.DEV) {
-              // Local dev: resolve cloud vault key client-side, set apiKey so the provider
-              // call below works identically to user_byok_local.
-              // This branch is tree-shaken away in production builds (Vite replaces DEV=false).
-              apiKey = await walletApiClient.resolveByokKeyForLocalDev(selectedKeyRefId)
-            } else {
+            if (selectedKey.providerKey !== prov) {
               throw new Error(
-                'Cloud BYOK workflow execution must run on the platform executor. Use platform credit or a local key for browser execution.'
+                `Selected cloud key is for ${selectedKey.providerDisplayName}, but this node needs ${prov}.`,
               )
             }
-          } else {
-            // platform_credit path for browser execution falls back to configured provider key.
-            apiKey = byokKeyResolver.resolve(providerName)
+            if (import.meta.env.DEV) {
+              return walletApiClient.resolveByokKeyForLocalDev(selectedKeyRefId)
+            }
+            throw new Error(
+              'Cloud BYOK workflow execution must run on the platform executor. Use platform credit or a local key for browser execution.',
+            )
           }
+          return byokKeyResolver.resolve(prov)
+        }
+
+        const providerByModelKey = new Map<string, IExecutionProvider>()
+
+        const getProviderForModelKey = async (modelKey: string): Promise<IExecutionProvider> => {
+          const cached = providerByModelKey.get(modelKey)
+          if (cached) return cached
+
+          const m = models.find((x) => x.key === modelKey)
+          let pn: string
+          if (m) {
+            pn = m.provider
+          } else if (fundingSource === 'user_byok_local' && selectedLocalKeyId && localKeys?.length) {
+            const localKey = localKeys.find((k) => k.id === selectedLocalKeyId)
+            if (!localKey) throw new Error(`Model not found: ${modelKey}`)
+            pn = localKey.provider
+          } else {
+            throw new Error(`Model not found: ${modelKey}`)
+          }
+
+          const isText = TEXT_PROVIDERS.has(pn)
+          const isLocalMedia = LOCAL_MEDIA_PROVIDERS.has(pn)
+          const allowMedia = fundingSource === 'user_byok_local' || fundingSource === 'platform_credit'
+          if (!isText && !(isLocalMedia && allowMedia)) {
+            throw new Error(`Browser-side execution is not supported for provider: ${pn}`)
+          }
+
+          const apiKey = await resolveWorkflowApiKey(pn)
+          const inst: IExecutionProvider = isText
+            ? createTextExecutionProvider(pn as Exclude<Provider, 'fal'>, modelKey, apiKey, controller.signal)
+            : createRegisteredProviderAdapter(pn, modelKey, apiKey)
+          providerByModelKey.set(modelKey, inst)
+          return inst
         }
 
         if (controller.signal.aborted) {
@@ -251,14 +281,7 @@ export function useWorkflowExecution({
           }
         }
 
-        const globalProvider: IExecutionProvider = isTextProvider
-          ? createTextExecutionProvider(
-              providerName as Exclude<Provider, 'fal'>,
-              globalModelId,
-              apiKey,
-              controller.signal,
-            )
-          : createRegisteredProviderAdapter(providerName, globalModelId, apiKey)
+        const bootstrapProvider = await getProviderForModelKey(globalModelId)
 
         // Map DB records → execution service types, preserving per-node config
         // so retry/timeout/merge/moderation hints from the builder flow through.
@@ -284,7 +307,10 @@ export function useWorkflowExecution({
         const ctx: WorkflowExecutionContext = {
           runId,
           rootInputs,
+          defaultModelKey: globalModelId,
           signal: controller.signal,
+          resolveExecutionProvider: (node) =>
+            getProviderForModelKey((node.config?.modelId?.trim() || globalModelId).trim()),
 
           async resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string> {
             if (controller.signal.aborted) return ''
@@ -315,6 +341,15 @@ export function useWorkflowExecution({
             // Failures here are non-fatal: we still persist the node result
             // with the transient URL so the UI can show a best-effort preview.
             let outputData = result.outputData as Record<string, unknown> | undefined
+            if (result.resolvedInputSnapshot && result.status !== 'streaming' && result.status !== 'running') {
+              outputData = {
+                ...(outputData ?? {}),
+                _wf: {
+                  resolvedInputSnapshot: result.resolvedInputSnapshot,
+                  providerRoute: result.providerRoute ?? null,
+                },
+              }
+            }
             if (
               result.status === 'completed' &&
               result.envelope?.media?.url &&
@@ -410,8 +445,8 @@ export function useWorkflowExecution({
           moderation,
         }
 
-        // Execute the DAG using the global provider
-        const executionService = new WorkflowExecutionService(globalProvider)
+        // Execute the DAG — bootstrap provider is unused when resolveExecutionProvider is set
+        const executionService = new WorkflowExecutionService(bootstrapProvider)
         const result = await executionService.executeWorkflow(execNodes, execEdges, ctx)
 
         // Mark run as completed or failed
@@ -498,6 +533,7 @@ function readNodeConfig(raw: Record<string, unknown> | null | undefined): Workfl
   if (typeof raw['onParentFailure'] === 'string') cfg.onParentFailure = raw['onParentFailure'] as WorkflowNodeConfig['onParentFailure']
   if (typeof raw['merge'] === 'string') cfg.merge = raw['merge'] as MergeStrategy
   if (typeof raw['moderation'] === 'string') cfg.moderation = raw['moderation'] as WorkflowNodeConfig['moderation']
+  if (typeof raw['model_id'] === 'string' && raw['model_id'].trim()) cfg.modelId = raw['model_id'].trim()
   return Object.keys(cfg).length ? cfg : undefined
 }
 
