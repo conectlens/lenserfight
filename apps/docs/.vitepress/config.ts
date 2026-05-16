@@ -2476,6 +2476,8 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: 'Workflow Concepts', link: '/en/explanation/workflows/workflow-concepts' },
+            { text: 'What is a DAG?', link: '/en/explanation/workflows/what-is-a-dag' },
+            { text: 'Workflow Phases', link: '/en/explanation/workflows/workflow-phases' },
             { text: 'Workflow Types', link: '/en/explanation/workflows/workflow-types' },
             { text: 'Open Source Workflows', link: '/en/explanation/workflows/open-source-workflows' },
           ],
@@ -2640,6 +2642,8 @@ export default defineConfig({
           text: 'Workflows',
           items: [
             { text: 'Workflow Concepts', link: '/en/explanation/workflows/workflow-concepts' },
+            { text: 'What is a DAG?', link: '/en/explanation/workflows/what-is-a-dag' },
+            { text: 'Workflow Phases', link: '/en/explanation/workflows/workflow-phases' },
             { text: 'Workflow Types', link: '/en/explanation/workflows/workflow-types' },
             { text: 'Open Source Workflows', link: '/en/explanation/workflows/open-source-workflows' },
             {
