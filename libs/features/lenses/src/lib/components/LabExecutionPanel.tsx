@@ -2,7 +2,7 @@ import { getMediaCapabilities } from '@lenserfight/providers'
 import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance, LensVersionParam, GenerativeMediaParams } from '@lenserfight/types'
 import type { ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/types'
 import { Button } from '@lenserfight/ui/components'
-import { copyTextToClipboard, renderLens, renderLensWithSnapshot } from '@lenserfight/utils/text'
+import { copyTextToClipboard, renderLensWithSnapshot } from '@lenserfight/utils/text'
 import { Check, ClipboardCopy, FileJson, Loader2, Play, Square, Table2 } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
 
@@ -204,15 +204,9 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const canCopyWithParams = Object.values(form.inputValues).some(isNonEmpty)
 
   const handleCopyWithParameters = async () => {
-    let rendered: string
-    if (form.usingVersionParams && versionParams) {
-      rendered = renderLensWithSnapshot(lensContent, form.inputValues, versionParams)
-    } else if (form.legacyParamSchemas.length > 0) {
-      rendered = renderLens(lensContent, form.inputValues as Record<string, unknown>, form.legacyParamSchemas)
-    } else {
-      const freeform = (form.inputValues['freeform'] as string) ?? ''
-      rendered = freeform.trim().length > 0 ? `${lensContent}\n\n${freeform}` : lensContent
-    }
+    const rendered = form.effectiveParams.length > 0
+      ? renderLensWithSnapshot(lensContent, form.inputValues, form.effectiveParams, { keepUnsetTokens: true })
+      : lensContent
     try {
       await copyTextToClipboard(rendered)
       setCopiedWithParams(true)
