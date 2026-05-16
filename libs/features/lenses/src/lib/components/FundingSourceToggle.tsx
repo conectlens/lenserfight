@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from 'react'
-import { KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil, Loader2 } from 'lucide-react'
+import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { Dialog } from '@lenserfight/ui/overlays'
-import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
-import { SURFACE, CHAINABIT_APP_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
+import { CHAINABIT_APP_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
+import { HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil, Loader2 } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { LocalKeyMeta, ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/types'
-import { LabProviderSelector } from './LabProviderSelector'
+
+import { useFundingCapabilities } from '../hooks/useFundingCapabilities'
 import { useOllamaModels } from '../hooks/useOllamaModels'
+
+import { LabProviderSelector } from './LabProviderSelector'
+
+import type { LocalKeyMeta, ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/types'
 
 interface FundingSourceToggleProps {
   fundingSource: FundingSource
@@ -101,8 +105,8 @@ function AddLocalKeyForm({
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
       setError(
-        msg.includes('secure context')
-          ? 'Encryption unavailable — local keys require HTTPS or localhost.'
+        msg.includes('IndexedDB')
+          ? 'Local keys need IndexedDB — disable private browsing and try again.'
           : 'Failed to save key. Please try again.',
       )
     } finally {
@@ -212,8 +216,8 @@ function EditLocalKeyModal({
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
       setError(
-        msg.includes('secure context')
-          ? 'Encryption unavailable — local keys require HTTPS or localhost.'
+        msg.includes('IndexedDB')
+          ? 'Local keys need IndexedDB — disable private browsing and try again.'
           : 'Failed to update key. Please try again.',
       )
     } finally {
@@ -321,15 +325,17 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   const isCloud = fundingSource === 'platform_credit'
   const isByokCloud = fundingSource === 'user_byok_cloud'
   const isByokLocal = fundingSource === 'user_byok_local'
-  const isByok = isByokCloud || isByokLocal
   const [showAddLocalKey, setShowAddLocalKey] = useState(false)
   const [editingKey, setEditingKey] = useState<LocalKeyMeta | null>(null)
-  const isCloudEdition = SURFACE.edition === 'cloud'
-  const localKeyEnabled = !isCloudEdition
-  const selectableByokCount = isCloudEdition ? availableKeys.length : availableLocalKeys.length
-  const canSelectByok = canUseBYOK && (isCloudEdition ? true : localKeyEnabled)
 
-  const chainabitConnected = chainabitState === 'connected' || chainabitState === 'no_credits'
+  const caps = useFundingCapabilities({
+    availableCloudKeyCount: availableKeys.length,
+    chainabitState,
+  })
+
+  const cloudByokDisabled = !canUseBYOK
+  const localByokDisabled = !canUseBYOK || !caps.canUseLocalByok
+
   const chainabitActive = chainabitState === 'connected'
   const chainabitNeedsAction = chainabitState === 'no_account' || chainabitState === 'invalid_connection'
   const chainabitIsDisabled =
@@ -347,25 +353,34 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
     onFundingSourceChange('platform_credit')
   }
 
-  useEffect(() => {
-    if (!isCloudEdition && (fundingSource === 'platform_credit' || fundingSource === 'user_byok_cloud')) {
-      setShowAddLocalKey(false)
-      onFundingSourceChange('user_byok_local')
-    }
-  }, [isCloudEdition, fundingSource, onFundingSourceChange])
-
-  // When Chainabit is definitively unavailable and the user is on platform_credit,
-  // fall back to cloud BYOK keys (cloud edition) or local keys (self-hosted).
+  // Auto-fallback when the current funding source is unreachable. Capability-driven,
+  // not edition-driven: the policy reasons about runtime signals (Web Crypto,
+  // Chainabit state, key inventory) rather than build-time flags.
   useEffect(() => {
     const chainabitDefinitelyUnavailable =
       chainabitState === 'no_credits' ||
       chainabitState === 'no_account' ||
       chainabitState === 'invalid_connection' ||
       chainabitState === 'provider_error'
-    if (isCloudEdition && fundingSource === 'platform_credit' && chainabitDefinitelyUnavailable) {
-      onFundingSourceChange('user_byok_cloud')
+
+    if (fundingSource === 'platform_credit' && chainabitDefinitelyUnavailable) {
+      if (caps.canSelectCloudByok) onFundingSourceChange('user_byok_cloud')
+      else if (caps.canUseLocalByok) onFundingSourceChange('user_byok_local')
+      return
     }
-  }, [chainabitState, fundingSource, isCloudEdition, onFundingSourceChange])
+
+    if (fundingSource === 'user_byok_local' && !caps.canUseLocalByok) {
+      if (caps.canSelectCloudByok) onFundingSourceChange('user_byok_cloud')
+      else if (caps.canUseChainabit) onFundingSourceChange('platform_credit')
+    }
+  }, [
+    chainabitState,
+    fundingSource,
+    caps.canSelectCloudByok,
+    caps.canUseLocalByok,
+    caps.canUseChainabit,
+    onFundingSourceChange,
+  ])
 
   // Derive effective provider key based on funding mode
   const effectiveProviderKey = isByokCloud
@@ -385,16 +400,16 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
     refetch: refetchOllama,
   } = useOllamaModels(isOllamaLocal)
 
-  const handleMyKeyClick = () => {
-    if (!canSelectByok) return
-    if (isCloudEdition) {
-      onFundingSourceChange('user_byok_cloud')
-      return
-    }
-    onFundingSourceChange('user_byok_local')
-  }
-
   const fundingDocsUrl = `${DOCS_BASE_URL}/en/explanation/lenses/funding-sources`
+
+  // The three funding sources are independent peers: Chainabit (credit-funded),
+  // LF Cloud Keys (BYOK synced via Supabase), and Local Keys (BYOK encrypted in
+  // this browser via Web Crypto). They have different storage models and trust
+  // boundaries, so we render them side-by-side rather than nesting Cloud / Local
+  // BYOK under a shared "My Keys" parent.
+  const visibleSourceCount =
+    (caps.isChainabitConfigured ? 1 : 0) + 1 /* LF Cloud */ + 1 /* Local */
+  const sourceGridCols = visibleSourceCount === 3 ? 'grid-cols-3' : 'grid-cols-2'
 
   return (
     <div className="flex flex-col gap-2">
@@ -413,10 +428,13 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         </a>
       </div>
 
-      {/* Row 1: Cloud | My Key */}
-      <div className={`grid gap-2 ${isCloudEdition ? 'grid-cols-2' : 'grid-cols-1'}`}>
-        {isCloudEdition && (
-          <Tooltip text="Use your Chainabit credit balance to pay for AI inference. Credits are shared across all LenserFight battles.">
+      {/* Three peer funding sources. Each represents a distinct storage model:
+            - Chainabit: shared credit balance held by Chainabit
+            - LF Cloud Keys: BYOK keys stored encrypted in Supabase (synced across devices)
+            - Local Keys: BYOK keys encrypted in this browser (IndexedDB; never leaves device) */}
+      <div className={`grid gap-2 ${sourceGridCols}`}>
+        {caps.isChainabitConfigured && (
+          <Tooltip text="Pay for AI inference with your Chainabit credit balance. Shared across all LenserFight battles.">
             <button
               type="button"
               onClick={handleChainabitClick}
@@ -465,105 +483,81 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           </Tooltip>
         )}
 
-        <Tooltip text={isCloudEdition ? 'Use your own API key stored securely in LenserFight. Charges go directly to your AI provider account.' : 'Use an API key stored locally in your browser. It is encrypted and never sent to our servers.'}>
+        <Tooltip text="BYOK API keys stored encrypted in LenserFight Cloud (Supabase). Synced across every device you sign into.">
           <button
             type="button"
-            onClick={handleMyKeyClick}
-            disabled={!canSelectByok}
-            className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isByok
+            onClick={() => onFundingSourceChange('user_byok_cloud')}
+            disabled={cloudByokDisabled}
+            className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isByokCloud
               ? 'border-primary bg-primary/5 ring-1 ring-primary'
               : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-              } ${!canSelectByok ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
+              } ${cloudByokDisabled ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
           >
-            <KeyRound size={16} className={isByok ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
-            <div className="min-w-0">
+            <Globe size={16} className={isByokCloud ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1">
-                {isCloudEdition ? 'My Keys' : 'Local Keys'}
+                LF Cloud Keys
                 <a
-                  href={`${fundingDocsUrl}#${isCloudEdition ? 'lf-cloud-keys-byok-cloud' : 'local-keys-byok-local'}`}
+                  href={`${fundingDocsUrl}#lf-cloud-keys-byok-cloud`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-primary-500 transition-colors"
                   onClick={(e) => e.stopPropagation()}
-                  title={isCloudEdition ? 'How LF Cloud Keys work' : 'How Local Keys work'}
+                  title="How LF Cloud Keys work"
                 >
                   <span className="text-[9px] leading-none border border-current rounded-full px-1">?</span>
                 </a>
               </p>
               <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                {selectableByokCount > 0
-                  ? `${selectableByokCount} key${selectableByokCount > 1 ? 's' : ''}`
-                  : isCloudEdition ? 'Add in Settings' : 'Add a key'}
+                {availableKeys.length > 0
+                  ? `${availableKeys.length} key${availableKeys.length > 1 ? 's' : ''}`
+                  : 'Add in Settings'}
+              </p>
+            </div>
+          </button>
+        </Tooltip>
+
+        <Tooltip text={caps.canUseLocalByok
+          ? 'BYOK API keys encrypted with AES-GCM in this browser only (IndexedDB). Works on any origin; never sent to our servers.'
+          : 'Local keys need IndexedDB — disable private browsing and try again.'}>
+          <button
+            type="button"
+            onClick={() => onFundingSourceChange('user_byok_local')}
+            disabled={localByokDisabled}
+            className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isByokLocal
+              ? 'border-primary bg-primary/5 ring-1 ring-primary'
+              : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+              } ${localByokDisabled ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
+          >
+            <HardDrive size={16} className={isByokLocal ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1">
+                Local Keys
+                <a
+                  href={`${fundingDocsUrl}#local-keys-byok-local`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-primary-500 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                  title="How Local Keys work"
+                >
+                  <span className="text-[9px] leading-none border border-current rounded-full px-1">?</span>
+                </a>
+              </p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                {availableLocalKeys.length > 0
+                  ? `${availableLocalKeys.length} key${availableLocalKeys.length > 1 ? 's' : ''}`
+                  : caps.canUseLocalByok
+                    ? 'Add a key'
+                    : 'Unavailable'}
               </p>
             </div>
           </button>
         </Tooltip>
       </div>
 
-      {/* Row 2: LF Cloud Keys | Local Keys sub-mode (visible when isByok) */}
-      {isCloudEdition && (isByokCloud || (isByokLocal && localKeyEnabled)) && (
-        <div className="grid grid-cols-2 gap-2">
-          <Tooltip text="API keys stored securely in LenserFight's cloud. Accessible from any device.">
-            <button
-              type="button"
-              onClick={() => onFundingSourceChange('user_byok_cloud')}
-              className={`w-full flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${isByokCloud
-                ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
-                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
-                }`}
-            >
-              <Globe size={12} />
-              LF Cloud Keys
-              <a
-                href={`${fundingDocsUrl}#lf-cloud-keys-byok-cloud`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-auto text-gray-400 hover:text-primary-500 transition-colors"
-                onClick={(e) => e.stopPropagation()}
-                title="How LF Cloud Keys work"
-              >
-                <span className="text-[9px] leading-none border border-current rounded-full px-1">?</span>
-              </a>
-              {availableKeys.length > 0 && (
-                <span className="text-[10px] text-gray-400">{availableKeys.length}</span>
-              )}
-            </button>
-          </Tooltip>
-
-          <Tooltip text={isCloudEdition ? "Local keys are encrypted in your browser and never leave your device. Available when self-hosting LenserFight." : "API keys encrypted and stored only in your browser. Never leaves your device."}>
-            <button
-              type="button"
-              onClick={localKeyEnabled ? () => onFundingSourceChange('user_byok_local') : undefined}
-              disabled={!localKeyEnabled}
-              className={`w-full flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${isByokLocal
-                ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
-                : !localKeyEnabled
-                  ? 'border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 opacity-50 cursor-not-allowed'
-                  : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
-                }`}
-            >
-              <HardDrive size={12} />
-              Local Keys
-              <a
-                href={`${fundingDocsUrl}#local-keys-byok-local`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-auto text-gray-400 hover:text-primary-500 transition-colors"
-                onClick={(e) => e.stopPropagation()}
-                title="How Local Keys work"
-              >
-                <span className="text-[9px] leading-none border border-current rounded-full px-1">?</span>
-              </a>
-              {availableLocalKeys.length > 0 && (
-                <span className="text-[10px] text-gray-400">{availableLocalKeys.length}</span>
-              )}
-            </button>
-          </Tooltip>
-        </div>
-      )}
-
       {/* Row 3: Key selector */}
-      {isCloudEdition && isByokCloud && availableKeys.length > 0 && (
+      {isByokCloud && availableKeys.length > 0 && (
         <SearchSelectField
           value={selectedKeyRefId ?? ''}
           onChange={onKeyRefIdChange}
@@ -575,7 +569,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         />
       )}
 
-      {localKeyEnabled && isByokLocal && availableLocalKeys.length > 0 && !showAddLocalKey && (
+      {caps.canUseLocalByok && isByokLocal && availableLocalKeys.length > 0 && !showAddLocalKey && (
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-1.5">
             <div className="flex-1 min-w-0">
@@ -618,7 +612,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       )}
 
       {/* Row 4: Inline add local key form */}
-      {localKeyEnabled && isByokLocal && !showAddLocalKey && (
+      {caps.canUseLocalByok && isByokLocal && !showAddLocalKey && (
         <button
           type="button"
           onClick={() => setShowAddLocalKey(true)}
@@ -629,7 +623,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         </button>
       )}
 
-      {localKeyEnabled && isByokLocal && showAddLocalKey && (
+      {caps.canUseLocalByok && isByokLocal && showAddLocalKey && (
         <AddLocalKeyForm
           onAdd={onAddLocalKey}
           onCancel={() => setShowAddLocalKey(false)}
@@ -637,7 +631,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       )}
 
       {/* Cloud BYOK — no keys hint */}
-      {isCloudEdition && isByokCloud && availableKeys.length === 0 && (
+      {isByokCloud && availableKeys.length === 0 && (
         <p className="text-xs text-gray-400 dark:text-gray-500">
           No cloud API keys.{' '}
           <Link to="/settings/api-keys" className="text-primary-600 dark:text-primary-400 hover:underline">
@@ -647,7 +641,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       )}
 
       {/* Low balance hint */}
-      {isCloudEdition && isCloud && chainabitState === 'no_credits' && (
+      {isCloud && chainabitState === 'no_credits' && (
         <p className="text-xs text-amber-600 dark:text-amber-400">
           No credits remaining.{' '}
           <a
@@ -682,7 +676,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           ollamaError={ollamaError}
           refetchOllama={refetchOllama}
           chainabitModels={chainabitModels}
-          chainabitConnected={chainabitConnected}
+          chainabitConnected={caps.canUseChainabit}
           chainabitLoading={chainabitState === 'loading'}
         />
       )}
