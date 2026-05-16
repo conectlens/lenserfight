@@ -1,46 +1,147 @@
-import { Button } from '@lenserfight/ui/components'
+import { getWorkflowNodeCatalogEntry } from '@lenserfight/infra/execution'
 import { Handle, Position } from '@xyflow/react'
-import { EyeOff, Lock, Pencil, Settings2, Trash2 } from 'lucide-react'
+import {
+  AlertTriangle,
+  BookOpen,
+  Braces,
+  BrainCircuit,
+  Calendar,
+  Clock,
+  Code2,
+  Database,
+  EyeOff,
+  FileText,
+  HardDrive,
+  HelpCircle,
+  Link,
+  Lock,
+  Mail,
+  MessageSquare,
+  Rss,
+  Repeat,
+  Table2,
+  Scale,
+  Search,
+  Send,
+  Split,
+  Variable,
+  Webhook,
+  Workflow,
+} from 'lucide-react'
 import React from 'react'
 
+import { WorkflowNodeQuickActions } from '../canvas/components/WorkflowNodeQuickActions'
+import type { WorkflowNodeData } from '../types'
+import type { WorkflowNodeCategory } from '@lenserfight/infra/execution'
 import type { NodeProps } from '@xyflow/react'
 
-export interface WorkflowNodeConfig {
-  model_id?: string | null
-  param_overrides?: Record<string, string>
-  node_type?:
-    | 'lens'
-    | 'image_generate'
-    | 'web_search'
-    | 'http_request'
-    // CN — Logic & Data Foundation
-    | 'code'
-    | 'json_transform'
-    | 'set_variables'
-    | 'switch'
-    | 'loop_map'
-    | 'wait_delay'
-    | 'error_catch'
-    | 'sub_workflow'
-  // Per-node funding source override
-  funding_source?: import('@lenserfight/types').FundingSource
-  key_ref_id?: string | null
-  local_key_id?: string | null
+// Types extracted to shared module — re-exported for backward compatibility
+export type { WorkflowNodeConfig, WorkflowNodeData } from '../types'
+
+interface NodeCategoryMeta {
+  category: WorkflowNodeCategory
+  icon: React.ReactNode
+  accent: string // border + bg accent for category indication
 }
 
-export interface WorkflowNodeData {
-  label: string
-  ordinal: number
-  isPersisted: boolean
-  lens_id?: string
-  lensVisibility?: 'public' | 'private' | 'unlisted'
-  lensLenserId?: string
-  isLensOwner?: boolean
-  config?: WorkflowNodeConfig
-  onRemove?: (id: string) => void
-  onConfigNode?: (nodeId: string, lensId: string) => void
-  onEditLens?: (lensId: string) => void
-  [key: string]: unknown
+const CATEGORY_ACCENT: Record<WorkflowNodeCategory, string> = {
+  lens: 'border-primary-yellow-400/50 bg-primary-yellow-500/5',
+  trigger: 'border-emerald-400/50 bg-emerald-500/5',
+  logic: 'border-violet-400/50 bg-violet-500/5',
+  data: 'border-sky-400/50 bg-sky-500/5',
+  ai_primitive: 'border-fuchsia-400/50 bg-fuchsia-500/5',
+  battle: 'border-rose-400/50 bg-rose-500/5',
+  storage: 'border-cyan-400/50 bg-cyan-500/5',
+  communication: 'border-amber-400/50 bg-amber-500/5',
+  integration: 'border-indigo-400/50 bg-indigo-500/5',
+  media: 'border-pink-400/50 bg-pink-500/5',
+  utility: 'border-zinc-400/50 bg-zinc-500/5',
+}
+
+const CATEGORY_BADGE: Record<WorkflowNodeCategory, string> = {
+  lens: 'bg-primary-yellow-100 text-primary-yellow-700 dark:bg-primary-yellow-900/30 dark:text-primary-yellow-300',
+  trigger: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
+  logic: 'bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400',
+  data: 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400',
+  ai_primitive: 'bg-fuchsia-100 text-fuchsia-600 dark:bg-fuchsia-900/30 dark:text-fuchsia-400',
+  battle: 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400',
+  storage: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400',
+  communication: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+  integration: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
+  media: 'bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400',
+  utility: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-900/30 dark:text-zinc-400',
+}
+
+function getNodeCategoryMeta(nodeType?: string): NodeCategoryMeta | null {
+  if (!nodeType) return null
+  const entry = getWorkflowNodeCatalogEntry(nodeType)
+  if (!entry || entry.category === 'lens') return null
+  return {
+    category: entry.category,
+    icon: renderNodeIcon(entry.iconKey),
+    accent: CATEGORY_ACCENT[entry.category],
+  }
+}
+
+function renderNodeIcon(iconKey: string): React.ReactNode {
+  switch (iconKey) {
+    case 'AlertTriangle':
+      return <AlertTriangle size={10} />
+    case 'BookOpen':
+      return <BookOpen size={10} />
+    case 'Brain':
+    case 'BrainCircuit':
+    case 'Fingerprint':
+      return <BrainCircuit size={10} />
+    case 'Braces':
+      return <Braces size={10} />
+    case 'CalendarClock':
+      return <Calendar size={10} />
+    case 'Clock':
+      return <Clock size={10} />
+    case 'Code2':
+      return <Code2 size={10} />
+    case 'Database':
+      return <Database size={10} />
+    case 'FileText':
+      return <FileText size={10} />
+    case 'HardDrive':
+      return <HardDrive size={10} />
+    case 'HelpCircle':
+    case 'CircleHelp':
+      return <HelpCircle size={10} />
+    case 'Link':
+      return <Link size={10} />
+    case 'Mail':
+      return <Mail size={10} />
+    case 'MessageSquare':
+    case 'MessagesSquare':
+      return <MessageSquare size={10} />
+    case 'Repeat':
+      return <Repeat size={10} />
+    case 'Rss':
+      return <Rss size={10} />
+    case 'Scale':
+      return <Scale size={10} />
+    case 'Search':
+      return <Search size={10} />
+    case 'Send':
+      return <Send size={10} />
+    case 'GitBranch':
+    case 'Split':
+      return <Split size={10} />
+    case 'Table2':
+    case 'Sheet':
+      return <Table2 size={10} />
+    case 'Variable':
+      return <Variable size={10} />
+    case 'Webhook':
+      return <Webhook size={10} />
+    case 'Workflow':
+      return <Workflow size={10} />
+    default:
+      return <Workflow size={10} />
+  }
 }
 
 /** Visibility-based border + background styles (overridden by selected state). */
@@ -57,14 +158,19 @@ const VISIBILITY_ICONS: Record<string, React.ReactNode> = {
 
 export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
   const nodeData = data as WorkflowNodeData
-  const { label, ordinal, isPersisted, lens_id, lensVisibility, isLensOwner, onRemove, onConfigNode, onEditLens } = nodeData
+  const { label, ordinal, isPersisted, lens_id, lensVisibility, isLensOwner, onRemove, onDuplicate, onConfigNode, onEditLens, config } = nodeData
 
+  const categoryMeta = getNodeCategoryMeta(config?.node_type ?? config?.nodeType)
   const visibilityIcon = lensVisibility ? (VISIBILITY_ICONS[lensVisibility] ?? null) : null
-  const visibilityBorder = VISIBILITY_BORDER[lensVisibility ?? 'public'] ?? VISIBILITY_BORDER['public']
+  const visibilityBorder = categoryMeta
+    ? categoryMeta.accent
+    : VISIBILITY_BORDER[lensVisibility ?? 'public'] ?? VISIBILITY_BORDER['public']
+
+  const isUtilityNode = !!categoryMeta
 
   return (
     <div
-      onDoubleClick={() => { if (onConfigNode && lens_id) onConfigNode(id, lens_id) }}
+      onDoubleClick={() => { if (onConfigNode && (lens_id || isUtilityNode)) onConfigNode(id, lens_id ?? '__utility') }}
       className={`relative flex items-center gap-2 min-w-[160px] max-w-[240px] rounded-2xl border px-3 py-2.5 shadow-neu-1 transition-colors ${
         selected
           ? 'border-primary-yellow-500 bg-primary-yellow-500/10 ring-2 ring-primary-yellow-500/30'
@@ -78,10 +184,18 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
         className="!w-3 !h-3 !rounded-full !bg-greyscale-500 dark:!bg-greyscale-400 !border-2 !border-surface-base hover:!bg-primary-yellow-500 transition-colors dark:!border-surface-raised"
       />
 
-      {/* Ordinal badge */}
-      <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-surface-raised text-[10px] font-bold text-greyscale-700 dark:text-greyscale-300 border border-surface-border transition-colors">
-        {ordinal + 1}
-      </span>
+      {/* Category icon or ordinal badge */}
+      {categoryMeta ? (
+        <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${
+          CATEGORY_BADGE[categoryMeta.category]
+        } border border-surface-border transition-colors`}>
+          {categoryMeta.icon}
+        </span>
+      ) : (
+        <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-surface-raised text-[10px] font-bold text-greyscale-700 dark:text-greyscale-300 border border-surface-border transition-colors">
+          {ordinal + 1}
+        </span>
+      )}
 
       {/* Visibility icon — colored by type */}
       {visibilityIcon}
@@ -91,56 +205,16 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
         {label}
       </span>
 
-      {/* Config button — always shown when onConfigNode is provided */}
-      {onConfigNode && lens_id && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation()
-            onConfigNode(id, lens_id)
-          }}
-          className="!p-0 flex-shrink-0 !text-greyscale-400 dark:!text-greyscale-500 hover:!text-primary-yellow-600 !bg-transparent hover:!bg-transparent transition-colors"
-          title="Configure node"
-        >
-          <Settings2 size={11} />
-        </Button>
-      )}
-
-      {/* Edit lens source — only for the lens owner */}
-      {isLensOwner && onEditLens && lens_id && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation()
-            onEditLens(lens_id)
-          }}
-          className="!p-0 flex-shrink-0 !text-greyscale-400 dark:!text-greyscale-500 hover:!text-primary-yellow-600 !bg-transparent hover:!bg-transparent transition-colors"
-          title="Edit lens source"
-        >
-          <Pencil size={11} />
-        </Button>
-      )}
-
-      {/* Remove button */}
-      {onRemove && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation()
-            onRemove(id)
-          }}
-          className="!p-0 flex-shrink-0 !text-greyscale-400 dark:!text-greyscale-500 hover:!text-status-red !bg-transparent hover:!bg-transparent transition-colors"
-          title="Remove node"
-        >
-          <Trash2 size={11} />
-        </Button>
-      )}
+      <WorkflowNodeQuickActions
+        canConfigure={!!onConfigNode && (Boolean(lens_id) || isUtilityNode)}
+        canDuplicate={!!onDuplicate}
+        canEditLens={!!isLensOwner && !!onEditLens && !!lens_id}
+        canDelete={!!onRemove}
+        onConfigure={() => onConfigNode?.(id, lens_id ?? '__utility')}
+        onDuplicate={() => onDuplicate?.(id)}
+        onEditLens={() => { if (lens_id) onEditLens?.(lens_id) }}
+        onDelete={() => onRemove?.(id)}
+      />
 
       {/* Source handle — right */}
       <Handle
