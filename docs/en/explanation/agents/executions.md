@@ -122,6 +122,20 @@ When multiple nodes feed into one target, a **merge strategy** resolves conflict
 | `array` | Values collected into an array |
 | `json_object` | Values merged into a JSONB object |
 
+### Output keys and dotted paths
+
+Edges use `source_output_key` to read a field from the upstream node's normalized output (for example `output`, `text`, `url`, or nested paths such as `data.summary`). The engine resolves dotted paths against the upstream envelope so research-style JSON can feed the next node's template parameter without a separate transform node.
+
+### Per-node models and multimodal input
+
+The workflow builder can set **`model_id` per node** (stored in `workflow_nodes.config`). The execution engine picks the provider for each node from that model key (falling back to the run's global model). Text providers accept optional **attachments** (for example image URLs) when upstream outputs map into vision-capable models.
+
+### Cloud BYOK vs browser execution
+
+**Cloud BYOK** (`user_byok_cloud`) stores API keys in the vault for server-side use. There is **no** platform worker that claims arbitrary manual runs queued only for cloud execution, so **in production the workflow builder does not start a client-side run** when Cloud BYOK is selected (Execute stays disabled with an explanatory hint). **Local BYOK** and **platform credits** still run in the browser subject to `validateBrowserExecutionPlan` (text providers plus Fal-style media when funding allows media).
+
+Scheduled runs use the platform worker path, which mirrors template resolution and full JSON node persistence.
+
 ---
 
 ## Triggering a run
