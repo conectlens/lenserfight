@@ -16,6 +16,39 @@ export {
 export { validateBrowserExecutionPlan } from './lib/execution-plan-validator'
 export type { ExecutionPlanIssue, ExecutionPlanModel, ExecutionPlanNodeShape } from './lib/execution-plan-validator'
 export { resolveMappedOutputValue } from './lib/output-path'
+export {
+  WORKFLOW_NODE_CATALOG,
+  WORKFLOW_NODE_CATEGORIES,
+  areWorkflowNodesCompatible,
+  buildWorkflowNodeCardMetadata,
+  getWorkflowNodeCatalogEntry,
+  getWorkflowNodeCategoryColor,
+  getWorkflowNodeCategoryCounts,
+  getWorkflowNodeCategoryIcon,
+  getWorkflowNodeCategoryLabel,
+  getWorkflowNodeCompatibilityWarning,
+  getWorkflowNodesByCategory,
+  isWorkflowUtilityNodeType,
+  normalizeWorkflowNodeConfigForExecution,
+  searchWorkflowNodeCatalog,
+  validateWorkflowNodeCatalog,
+} from './lib/catalog'
+export type {
+  ExecutableWorkflowNodeConfig,
+  WorkflowCatalogNodeType,
+  WorkflowExecutionEnvironment,
+  WorkflowFundingMode,
+  WorkflowNodeCatalogEntry,
+  WorkflowNodeCategory,
+  WorkflowNodeConfigExample,
+  WorkflowNodeConfigField,
+  WorkflowNodeConfigKind,
+  WorkflowNodeErrorBehavior,
+  WorkflowNodeIOType,
+  WorkflowNodeN8nMapping,
+  WorkflowNodeRetryBehavior,
+  WorkflowNodeSchemaField,
+} from './lib/catalog'
 export type {
   ValidationIssue,
   ValidationCode,
@@ -112,5 +145,15 @@ export type {
 // ── CN: Node Runner system (GRASP Polymorphism) ──────────────────────────
 export type { INodeRunner, NodeRunnerContext, NodeRunnerResult } from './lib/runners'
 export { registerNodeRunner, getNodeRunner, hasNodeRunner, clearNodeRunners, registeredNodeTypes } from './lib/runners'
+export { registerDefaultNodeRunners } from './lib/runners'
 export { SetVariablesRunner, JsonTransformRunner, SwitchRunner, WaitDelayRunner, ErrorCatchRunner, LoopMapRunner, CodeNodeRunner, SubWorkflowRunner } from './lib/runners'
 export type { SwitchCase, SwitchOperator } from './lib/runners'
+
+// ── CO: AI Primitive Node Runners ────────────────────────────────────────
+export { PromptTemplateRunner, OutputParserRunner, EmbeddingRunner, RagRetrievalRunner, JudgeEvaluatorRunner, MemoryReadRunner, MemoryWriteRunner, ChainRunner } from './lib/runners'
+
+// ── CP: Storage & I/O Node Runners ──────────────────────────────────────
+export { SupabaseQueryRunner, isRpcAllowed, KVStoreReadRunner, KVStoreWriteRunner, FileReaderRunner, FileWriterRunner, WebhookTriggerRunner, WebhookSenderRunner, ScheduleTriggerRunner } from './lib/runners'
+
+// ── CQ: Communication & Integration Node Runners ────────────────────────
+export { EmailSendRunner, SlackNotifyRunner, DiscordNotifyRunner, GitHubReadRunner, RssFeedRunner, NotionReadRunner, GoogleSheetsReadRunner, GoogleSheetsWriteRunner } from './lib/runners'
