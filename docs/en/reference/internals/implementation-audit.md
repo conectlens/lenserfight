@@ -42,7 +42,7 @@ This page is the Phase 0 baseline for autonomous-agent work. It is intentionally
 | `/billing`, `/store`                                                             | Billing/store gated by `SURFACE.showBillingAndStore`        | `features/store`           | `flagged` |
 | `/workflows`, `/workflows/manage`, `/workflows/:id`, `/workflows/:id/run/:runId` | Workflow list, creation, builder, run inspector             | `features/workflows`       | `ready`   |
 | `/agents/:id`, `/agents/:agentId/workspace`                                      | Legacy agent redirects / workspace entry                    | `features/agents`          | `partial` |
-| `/benchmark`, `/benchmark/:id`                                                   | Benchmark suite pages gated by `SURFACE.showBenchmarkSuite` | `features/benchmark`       | `flagged` |
+| `/benchmark`, `/benchmark/:id`                                                   | Benchmark suite pages gated by `FEATURES.BENCHMARK_SUITE` | `features/benchmark`       | `flagged` |
 | `/onboarding`                                                                    | Workspace/profile creation modal                            | `features/onboarding`      | `ready`   |
 | `/not-authorized`                                                                | Authz failure page                                          | `apps/web`                 | `ready`   |
 | `*`                                                                              | Root redirect fallback                                      | `apps/web`                 | `ready`   |
