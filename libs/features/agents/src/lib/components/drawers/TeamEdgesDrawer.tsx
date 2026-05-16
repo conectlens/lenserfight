@@ -1,11 +1,12 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { Button } from '@lenserfight/ui/components'
+import { Button, Tooltip } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Drawer } from '@lenserfight/ui/overlays'
-import { Trash2 } from 'lucide-react'
+import { HelpCircle, Trash2 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 
 import type { AgentTeamEdgeRecord, AgentTeamEdgeType, AgentTeamMemberRecord } from '@lenserfight/types'
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface TeamEdgesDrawerProps {
   open: boolean
@@ -93,7 +94,19 @@ export const TeamEdgesDrawer: React.FC<TeamEdgesDrawerProps> = ({
   }
 
   return (
-    <Drawer open={open} onClose={onClose} side="right" width="w-[560px]" title="Delegation edges">
+    <Drawer
+      open={open}
+      onClose={onClose}
+      side="right"
+      width="w-[560px]"
+      title="Delegation edges"
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/team-edges"
+          tip="Wire handoff edges between team members. An edge says 'after member A finishes, pass output to member B'. Blocking edges halt the run until the target step completes."
+        />
+      }
+    >
       <div className="space-y-6">
         <section>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
@@ -101,30 +114,45 @@ export const TeamEdgesDrawer: React.FC<TeamEdgesDrawerProps> = ({
           </p>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Source member">
+              <FieldLabel
+                label="Source member"
+                tooltip="The member that initiates the handoff. After this member's step completes, execution follows this edge."
+              >
                 <SelectField
                   value={sourceMemberId}
                   onChange={setSourceMemberId}
                   options={memberOptions}
                 />
-              </Field>
-              <Field label="Target member">
+              </FieldLabel>
+
+              <FieldLabel
+                label="Target member"
+                tooltip="The member that receives the handoff. Becomes the active executor for the next step."
+              >
                 <SelectField
                   value={targetMemberId}
                   onChange={setTargetMemberId}
                   options={memberOptions}
                 />
-              </Field>
+              </FieldLabel>
             </div>
+
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Edge type">
+              <FieldLabel
+                label="Edge type"
+                tooltip="'delegates' — source hands off ownership; 'reviews' — source checks target's output; 'reports_to' — source sends status up; 'shares_context' — copies memory; 'handoff' — sequential execution transfer."
+              >
                 <SelectField
                   value={edgeType}
                   onChange={(value) => setEdgeType(value as AgentTeamEdgeType)}
                   options={EDGE_TYPES.map((type) => ({ value: type, label: type }))}
                 />
-              </Field>
-              <Field label="Blocking">
+              </FieldLabel>
+
+              <FieldLabel
+                label="Blocking"
+                tooltip="When checked, the run halts at this edge until the target member's step completes. Use for synchronous sequential pipelines."
+              >
                 <div className="flex h-[42px] items-center">
                   <input
                     type="checkbox"
@@ -136,13 +164,15 @@ export const TeamEdgesDrawer: React.FC<TeamEdgesDrawerProps> = ({
                     Block run until edge completes
                   </span>
                 </div>
-              </Field>
+              </FieldLabel>
             </div>
+
             {error && (
               <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
                 {error}
               </p>
             )}
+
             <div className="flex justify-end">
               <Button
                 type="button"
@@ -217,11 +247,26 @@ export const TeamEdgesDrawer: React.FC<TeamEdgesDrawerProps> = ({
   )
 }
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )
