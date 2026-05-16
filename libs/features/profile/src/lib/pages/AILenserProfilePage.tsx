@@ -14,6 +14,7 @@ import {
   AgentStatusBadge,
   useRunUnified,
 } from '@lenserfight/features/agents'
+import { BadgeDisplay } from '@lenserfight/features/lenserboard'
 import { ExportButton } from '@lenserfight/features/exports'
 import { ThreadsListCard } from '@lenserfight/features/home'
 import { EmptyState } from '@lenserfight/ui/components'
@@ -64,6 +65,7 @@ const AI_TAB_MAP: Record<string, LenserTabId> = {
   ab: 'ai_about',
   aw: 'ai_workflows',
   aac: 'ai_actions',
+  abd: 'ai_badges',
   // Legacy mappings for backward compatibility
   ao: 'ai_about',
   at: 'ai_about',
@@ -77,6 +79,7 @@ const AI_REVERSE_TAB_MAP: Partial<Record<LenserTabId, string>> = {
   ai_about: 'ab',
   ai_workflows: 'aw',
   ai_actions: 'aac',
+  ai_badges: 'abd',
 }
 
 const AI_TABS: LenserTabDefinition[] = [
@@ -84,6 +87,7 @@ const AI_TABS: LenserTabDefinition[] = [
   { id: 'ai_about', label: 'About' },
   { id: 'ai_workflows', label: 'Workflows' },
   { id: 'ai_actions', label: 'Activity' },
+  { id: 'ai_badges', label: 'Badges' },
 ]
 
 // ── Main component ───────────────────────────────────────────────────────────
@@ -266,6 +270,10 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
               </div>
 
             </div>
+          )}
+
+          {activeTab === 'ai_badges' && (
+            <BadgeDisplay lenserId={viewedProfile.id} detailed />
           )}
 
         </div>
