@@ -37,7 +37,10 @@ export class Scheduler {
     this.dependents = new Map<string, string[]>(nodes.map((n) => [n.id, []]))
 
     for (const edge of edges) {
-      this.inDegree.set(edge.targetNodeId, (this.inDegree.get(edge.targetNodeId) ?? 0) + 1)
+      const currentInDegree = this.inDegree.get(edge.targetNodeId)
+      if (currentInDegree !== undefined) {
+        this.inDegree.set(edge.targetNodeId, currentInDegree + 1)
+      }
       this.dependents.get(edge.sourceNodeId)?.push(edge.targetNodeId)
     }
   }
