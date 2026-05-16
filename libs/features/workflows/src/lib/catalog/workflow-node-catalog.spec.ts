@@ -111,3 +111,58 @@ describe('searchCatalog', () => {
     expect(searchCatalog('xyznonexistent123')).toHaveLength(0)
   })
 })
+
+// ── Trigger node category correctness ─────────────────────────────────────────
+
+describe('trigger node catalog entries', () => {
+  const TRIGGER_TYPES = [
+    'manual_trigger',
+    'event_trigger',
+    'form_input_trigger',
+    'webhook_trigger',
+    'schedule_trigger',
+  ]
+
+  it.each(TRIGGER_TYPES)('%s is in the trigger category, not storage', (nodeType) => {
+    const entry = getNodeCatalogEntry(nodeType)
+    expect(entry).toBeDefined()
+    expect(entry!.category).toBe('trigger')
+    expect(entry!.category).not.toBe('storage')
+  })
+
+  it.each(TRIGGER_TYPES)('%s accepts void inputs (no upstream edges required)', (nodeType) => {
+    const entry = getNodeCatalogEntry(nodeType)
+    expect(entry!.acceptsInputTypes).toContain('void')
+  })
+
+  it.each(TRIGGER_TYPES)('%s has at least one output field', (nodeType) => {
+    const entry = getNodeCatalogEntry(nodeType)
+    expect(entry!.outputs.length).toBeGreaterThan(0)
+  })
+
+  it.each(TRIGGER_TYPES)('%s has an empty inputs array (triggers have no upstream)', (nodeType) => {
+    const entry = getNodeCatalogEntry(nodeType)
+    expect(entry!.inputs).toHaveLength(0)
+  })
+
+  it('webhook_trigger has a secret in requiredConfig', () => {
+    const entry = getNodeCatalogEntry('webhook_trigger')
+    expect(entry!.requiredConfig).toContain('secret')
+  })
+
+  it('schedule_trigger has cronExpression in requiredConfig', () => {
+    const entry = getNodeCatalogEntry('schedule_trigger')
+    expect(entry!.requiredConfig).toContain('cronExpression')
+  })
+
+  it('webhook_trigger and schedule_trigger have n8n equivalents defined', () => {
+    expect(getNodeCatalogEntry('webhook_trigger')!.n8nEquivalent).toBe('n8n-nodes-base.webhook')
+    expect(getNodeCatalogEntry('schedule_trigger')!.n8nEquivalent).toBe('n8n-nodes-base.scheduleTrigger')
+  })
+
+  it('trigger category is first or second in CATEGORY_ORDER (after lens)', () => {
+    const idx = CATEGORY_ORDER.indexOf('trigger')
+    expect(idx).toBeGreaterThanOrEqual(0)
+    expect(idx).toBeLessThanOrEqual(1) // 0=lens or 1=trigger right after lens
+  })
+})
