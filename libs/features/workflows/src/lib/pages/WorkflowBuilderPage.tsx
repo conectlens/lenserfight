@@ -1,6 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService, workflowsService, seoService } from '@lenserfight/data/repositories'
-import { validateBrowserExecutionPlan, validateWorkflow } from '@lenserfight/infra/execution'
+import type { WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
+import { validateBrowserExecutionPlan, validateWorkflow, TRIGGER_NODE_TYPES } from '@lenserfight/infra/execution'
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
@@ -11,7 +12,7 @@ import { Badge, Button } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Bookmark, CalendarClock, ChevronDown, GitBranch, GitFork, History, Layers, Lock, Pencil, Play, Square, ThumbsUp, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Bookmark, CalendarClock, ChevronDown, FlaskConical, GitBranch, GitFork, History, Layers, Lock, Pencil, Play, Square, ThumbsUp, X, Zap } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -27,6 +28,7 @@ import { WorkflowProgressView } from '../components/WorkflowProgressView'
 import { WorkflowRootInputsPanel } from '../components/WorkflowRootInputsPanel'
 import { WorkflowRunHistoryPanel } from '../components/WorkflowRunHistoryPanel'
 import { WorkflowRunRecoveryBanner } from '../components/WorkflowRunRecoveryBanner'
+import { validateDryRunPlan } from '../execution/workflowDryRun'
 import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { useWorkflow } from '../hooks/useWorkflow'
 import { useWorkflowExecution } from '../hooks/useWorkflowExecution'
@@ -90,7 +92,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
     [],
   )
 
-  const { execute: executeWorkflow, stopExecution } = useWorkflowExecution({
+  const { execute: executeWorkflow, stopExecution, executeDryRun, stopDryRun } = useWorkflowExecution({
     nodes,
     edges,
     models,
@@ -100,6 +102,11 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
     resolveLocalKey: stableResolveLocalKey,
     localKeys: funding.localKeys,
   })
+
+  // ── Dry Run state ───────────────────────────────────────────────────────────
+  const [isDryRunning, setIsDryRunning] = useState(false)
+  const [dryRunNodeResults, setDryRunNodeResults] = useState<WorkflowNodeResultRecord[]>([])
+  const [showDryRunPanel, setShowDryRunPanel] = useState(false)
 
   // Per-node config overrides — synced to DB via canvas debounced save (workflow_nodes.config)
   const [nodeConfigs, setNodeConfigs] = useState<Record<string, WorkflowNodeConfig>>({})
@@ -153,6 +160,17 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
   const terminalNodeLabel =
     nodes.find((n) => n.id === terminalNodeId)?.label ??
     `Node ${(nodes.find((n) => n.id === terminalNodeId)?.ordinal ?? 0) + 1}`
+
+  // ── Trigger node presence check (editor warning + execution gate) ──────────
+  const hasTriggerNode = useMemo(() => {
+    if (nodes.length === 0) return true // empty canvas — no warning yet
+    const targetSet = new Set(edges.map((e) => e.target_node_id))
+    const rootNodes = nodes.filter((n) => !targetSet.has(n.id))
+    return rootNodes.some((n) => {
+      const nodeType = (n.config as Record<string, unknown> | null)?.['node_type'] as string | undefined
+      return TRIGGER_NODE_TYPES.has(nodeType ?? '')
+    })
+  }, [nodes, edges])
 
   // ── Output callbacks — defined after handleExecuteClick (see below) ──────────
   const handlePostToThread = useCallback(
@@ -345,12 +363,19 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
 
     if (nodes.length > 0) {
       const struct = validateWorkflow(
-        nodes.map((n) => ({
-          id: n.id,
-          lensId: n.lens_id ?? undefined,
-          versionId: n.version_id ?? null,
-          config: (n.config ?? null) as Record<string, unknown> | null,
-        })),
+        nodes.map((n) => {
+          const cfg = (n.config ?? null) as Record<string, unknown> | null
+          const nodeType = cfg?.['node_type'] as string | undefined
+          return {
+            id: n.id,
+            lensId: n.lens_id ?? undefined,
+            versionId: n.version_id ?? null,
+            config: cfg,
+            // Pass node_type as kind so the trigger presence rule can identify
+            // entry nodes independently of lens-kind classifications.
+            kind: nodeType,
+          }
+        }),
         edges.map((e) => ({
           id: e.id,
           sourceNodeId: e.source_node_id,
@@ -362,6 +387,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
             | null
             | undefined,
         })),
+        { requireTriggerNode: true },
       )
       if (!struct.ok) {
         toast.error(struct.errors[0]?.message ?? 'Workflow validation failed')
@@ -395,6 +421,65 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
     stopExecution()
     stopRun()
   }
+
+  const handleDryRunClick = async (rootInputs: Record<string, unknown> = {}) => {
+    const validation = validateDryRunPlan(nodes, edges)
+    if (!validation.ok) {
+      toast.error(validation.errors[0] ?? 'Dry run validation failed.')
+      return
+    }
+    if (validation.warnings.length > 0) {
+      toast.info(validation.warnings[0], { duration: 6000 })
+    }
+
+    setDryRunNodeResults([])
+    setShowRunPanel(false)
+    setShowDryRunPanel(true)
+    setSelectedNodeConfig(null)
+    setIsDryRunning(true)
+
+    try {
+      await executeDryRun(
+        selectedModelKey,
+        rootInputs,
+        (nodeId, record) => {
+          setDryRunNodeResults((prev) => {
+            const idx = prev.findIndex((r) => r.node_id === nodeId)
+            if (idx === -1) return [...prev, record]
+            const next = [...prev]
+            next[idx] = record
+            return next
+          })
+        },
+      )
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (!msg.includes('aborted') && !msg.includes('already in progress')) {
+        toast.error(`Dry run failed: ${msg}`)
+      }
+    } finally {
+      setIsDryRunning(false)
+    }
+  }
+
+  const handleStopDryRun = () => {
+    stopDryRun()
+    setIsDryRunning(false)
+    setDryRunNodeResults((prev) =>
+      prev.map((r) => {
+        const terminal = ['completed', 'failed', 'cancelled', 'skipped', 'timed_out', 'blocked', 'invalidated'].includes(r.status)
+        return terminal ? r : { ...r, status: 'cancelled' as const, error_message: 'Dry run cancelled' }
+      }),
+    )
+  }
+
+  // Canvas uses whichever result set is active: dry-run results take priority,
+  // then fall back to the most recent real run results.
+  const activeNodeResults = useMemo<WorkflowNodeResultRecord[]>(() => {
+    if (dryRunNodeResults.length > 0) return dryRunNodeResults
+    if (runId && nodeResults.length > 0) return nodeResults
+    return []
+  }, [dryRunNodeResults, runId, nodeResults])
 
   const handleRerunWithContext = useCallback(
     (data: Record<string, unknown>) => {
@@ -584,35 +669,59 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
             )}
 
             <div className="flex items-center gap-1.5 pl-2 border-l border-surface-border/50">
-              {isRunning ? (
+              {isRunning || isDryRunning ? (
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={handleStopClick}
+                  onClick={isDryRunning ? handleStopDryRun : handleStopClick}
                   className="h-9 gap-1.5 rounded-xl px-4 border-status-red/30 text-status-red hover:bg-status-red/5"
                 >
-                  <Square size={12} className="fill-current" /> Stop
+                  <Square size={12} className="fill-current" />
+                  {isDryRunning ? 'Stop Test' : 'Stop'}
                 </Button>
               ) : (
-                <Button
-                  size="sm"
-                  onClick={() => { setShowRunPanel(true); setSelectedNodeConfig(null) }}
-                  isLoading={starting}
-                  disabled={nodes.length === 0}
-                  className="h-9 gap-1.5 rounded-xl px-4 bg-primary-yellow-500 hover:bg-primary-yellow-600 text-black shadow-md shadow-primary-yellow-500/20"
-                >
-                  <Play size={12} className="fill-current" /> Run
-                </Button>
+                <>
+                  {/* Test (dry run) button */}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleDryRunClick()}
+                    disabled={nodes.length === 0}
+                    title="Run a dry test without side effects or a saved run record"
+                    className="h-9 gap-1.5 rounded-xl px-3 border-surface-border bg-surface-base text-greyscale-600 hover:text-greyscale-900 dark:hover:text-greyscale-100"
+                  >
+                    <FlaskConical size={13} />
+                    <span className="hidden xl:inline">Test</span>
+                  </Button>
+
+                  {/* Run button */}
+                  <Button
+                    size="sm"
+                    onClick={() => { setShowRunPanel(true); setShowDryRunPanel(false); setSelectedNodeConfig(null) }}
+                    isLoading={starting}
+                    disabled={nodes.length === 0}
+                    className="h-9 gap-1.5 rounded-xl px-4 bg-primary-yellow-500 hover:bg-primary-yellow-600 text-black shadow-md shadow-primary-yellow-500/20"
+                  >
+                    <Play size={12} className="fill-current" /> Run
+                  </Button>
+                </>
               )}
 
-              {runId && (
+              {(runId || dryRunNodeResults.length > 0) && (
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => { setShowRunPanel((v) => !v); setSelectedNodeConfig(null) }}
+                  onClick={() => {
+                    if (dryRunNodeResults.length > 0 && !runId) {
+                      setShowDryRunPanel((v) => !v)
+                    } else {
+                      setShowRunPanel((v) => !v)
+                      setSelectedNodeConfig(null)
+                    }
+                  }}
                   className="h-9 w-auto rounded-xl border border-surface-border bg-surface-raised px-2 text-greyscale-600"
                 >
-                  <ChevronDown size={16} className={`transition-transform duration-200 ${showRunPanel ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={16} className={`transition-transform duration-200 ${(showRunPanel || showDryRunPanel) ? 'rotate-180' : ''}`} />
                 </Button>
               )}
             </div>
@@ -633,6 +742,30 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
 
         {/* Canvas or Phases editor — fills remaining space */}
         <div className="relative flex-1 overflow-hidden">
+          {/* No-trigger warning banner — non-blocking, shown while editing */}
+          {!hasTriggerNode && nodes.length > 0 && isOwner && (
+            <div className="flex items-center gap-2 border-b border-amber-400/30 bg-amber-50/80 px-4 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+              <AlertTriangle size={13} className="flex-shrink-0" />
+              <span>
+                No trigger node — add a{' '}
+                <span className="font-semibold">Manual Trigger</span>,{' '}
+                <span className="font-semibold">Webhook Trigger</span>,{' '}
+                <span className="font-semibold">Schedule Trigger</span>,{' '}
+                <span className="font-semibold">Event Trigger</span>, or{' '}
+                <span className="font-semibold">Form Input Trigger</span>{' '}
+                to define how this workflow starts.
+              </span>
+              <button
+                type="button"
+                className="ml-auto flex items-center gap-1 rounded-md border border-amber-400/50 bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 hover:bg-amber-200 dark:bg-amber-800/30 dark:text-amber-300"
+                onClick={() => setPaletteCollapsed(false)}
+              >
+                <Zap size={10} />
+                Add Trigger
+              </button>
+            </div>
+          )}
+
           {builderMode === 'phases' ? (
             <div className="h-full overflow-y-auto bg-surface-base">
               <WorkflowPhasesEditor workflowId={workflow.id} isOwner={isOwner} />
@@ -648,6 +781,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                 onConfigNode={handleConfigNode}
                 onEditLens={handleEditLens}
                 onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
+                nodeResults={activeNodeResults}
               />
             </>
           )}
@@ -664,6 +798,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
             currentConfig={selectedCurrentConfig}
             nodes={nodes}
             edges={edges}
+            nodeResults={activeNodeResults}
             onSave={handleSaveNodeConfig}
             onClose={() => setSelectedNodeConfig(null)}
             onEditLens={handleEditLens}
@@ -844,6 +979,51 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                   )}
                 </>
               )}
+            </div>
+          </aside>
+        )}
+
+        {/* Dry-run results panel — ephemeral test mode, no history or schedule */}
+        {showDryRunPanel && !selectedNodeConfig && (
+          <aside className="flex flex-col w-100 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
+            {/* Panel header */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-border">
+              <div className="flex items-center gap-2">
+                <FlaskConical size={13} className="text-primary-yellow-500" />
+                <span className="text-xs font-semibold text-greyscale-900 dark:text-greyscale-50">
+                  Test Run
+                </span>
+                <span className="rounded-full border border-primary-yellow-400/50 bg-primary-yellow-500/10 px-2 py-0.5 text-[9px] font-medium text-primary-yellow-600 dark:text-primary-yellow-300">
+                  dry run
+                </span>
+                {isDryRunning && (
+                  <span className="text-[9px] text-greyscale-400 animate-pulse">running…</span>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setDryRunNodeResults([])
+                  setShowDryRunPanel(false)
+                }}
+                className="!p-1 !h-6 !w-6 text-greyscale-400 hover:text-greyscale-700 transition-colors"
+              >
+                <X size={14} />
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              <WorkflowProgressView
+                nodes={nodes}
+                edges={edges}
+                nodeResults={dryRunNodeResults}
+                terminalNodeId={null}
+                activeNodeId={null}
+                runStartedAt={null}
+                runCompletedAt={null}
+                runStatus={isDryRunning ? 'running' : dryRunNodeResults.length > 0 ? 'completed' : null}
+              />
             </div>
           </aside>
         )}
