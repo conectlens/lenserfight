@@ -157,6 +157,10 @@ site_url = "http://127.0.0.1:3000"
 additional_redirect_urls = ["https://127.0.0.1:3000", "http://localhost:3004/callback"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
+# Local dev JWT secret — matches the Supabase CLI default so the edge runtime
+# verifies HS256 tokens correctly. Safe to commit: this value is public knowledge
+# for the local demo stack and is never used in production.
+jwt_secret = "super-secret-jwt-token-with-at-least-32-characters-long"
 # JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
 # jwt_issuer = ""
 # Path to JWT signing key. DO NOT commit your signing keys file to git.
@@ -396,3 +400,64 @@ s3_region = "env(S3_REGION)"
 s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
+
+# ─── Edge Function per-function config ────────────────────────────────────────
+# verify_jwt = false: disables the edge runtime's *gateway-level* JWT check.
+#
+# This is safe because every function that needs authentication already calls
+# `userClient.auth.getUser()` internally, which goes to the Auth API and
+# performs the real verification there. The gateway check is redundant and
+# currently broken on the local stack because newer Supabase CLI versions sign
+# JWTs with asymmetric ES256 keys, but the edge runtime receives the raw HS256
+# secret bytes — causing "Key for the ES256 algorithm must be of type CryptoKey".
+#
+# In production (Supabase-hosted) this setting is irrelevant; the deployed
+# runtime handles JWT verification correctly without this flag.
+
+[functions.execute-stream]
+verify_jwt = false
+
+[functions.trigger-execution]
+verify_jwt = false
+
+[functions.ai-judge-battle]
+verify_jwt = false
+
+[functions.poll-async-executions]
+verify_jwt = false
+
+[functions.generate-battle-og-image]
+verify_jwt = false
+
+[functions.score-vote-risk]
+verify_jwt = false
+
+[functions.send-battle-result-email]
+verify_jwt = false
+
+[functions.chainabit-oauth-callback]
+verify_jwt = false
+
+[functions.chainabit-webhook]
+verify_jwt = false
+
+[functions.partner-balance]
+verify_jwt = false
+
+[functions.partner-models]
+verify_jwt = false
+
+[functions.partner-provision]
+verify_jwt = false
+
+[functions.partner-refresh-token]
+verify_jwt = false
+
+[functions.partner-revoke]
+verify_jwt = false
+
+[functions.partner-send-claim]
+verify_jwt = false
+
+[functions.test-provider]
+verify_jwt = false

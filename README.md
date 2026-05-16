@@ -171,6 +171,8 @@ pnpm nx run docs:serve
 
 For the full local database flow, see `docs/en/reference/database/local-setup.md`.
 
+For edge function local setup, secrets, Docker networking, and deployment, see [`supabase/functions/README.md`](supabase/functions/README.md).
+
 ### Quick Start fails?
 
 | Symptom | What to check |
@@ -179,6 +181,7 @@ For the full local database flow, see `docs/en/reference/database/local-setup.md
 | `pnpm supabase:db:reset` fails with `relation "…" does not exist` | The seed references schema objects created by migrations. Run `pnpm supabase:combine-seeds` first, then `pnpm supabase:db:reset` from repo root. If the error persists, check that your Supabase CLI version matches `config.toml`. |
 | Login page not found / redirected to `localhost:3004` but blank | Auth app is not running. Start it in a separate terminal: `pnpm nx run auth:serve`. |
 | Web app blank or API errors | Copy `.env.example` → `.env.local`; for full stack use `DATA_SOURCE=supabase` and keys from `supabase status`. |
+| Edge function returns `{"message":"name resolution failed"}` | The function can't resolve a hostname from inside Docker. Use `host.docker.internal` instead of `localhost` in `supabase/functions/.env`. See [`supabase/functions/README.md`](supabase/functions/README.md#common-error-name-resolution-failed). |
 | Node version warning (`wanted >=22 <23`) | The repo targets Node 22 LTS. Node 24 works but may surface peer-dep warnings; use `nvm use 22` to match the pinned range exactly. |
 | Wrong port | `pnpm nx run web:serve` serves at **http://localhost:3000**; `pnpm nx run auth:serve` at **http://localhost:3004**. Set `WEB_BASE_URL` and `AUTH_BASE_URL` accordingly in `.env.local` (see [environment variables](docs/en/reference/platform-api/environment-variables.md)). |
 
