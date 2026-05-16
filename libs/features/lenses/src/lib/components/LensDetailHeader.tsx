@@ -1,5 +1,5 @@
 import { ForkNode, LensDetailViewModel } from '@lenserfight/types'
-import { Avatar, HelpButton } from '@lenserfight/ui/components'
+import { Avatar } from '@lenserfight/ui/components'
 import { TagBadge } from '@lenserfight/ui/components'
 import { formatCount } from '@lenserfight/utils/number'
 import { GitFork, Lock, Bookmark, Pencil, Copy, Check, Loader2, Download, Plus } from 'lucide-react'
@@ -73,14 +73,6 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
         </h1>
 
         <div className="flex items-center gap-2">
-          <HelpButton
-            path="/explanation/lenses/what-is-a-lens"
-            label="What is a Lens?"
-          />
-          <HelpButton
-            path="/tutorials/walkthroughs/create-a-lens"
-            label="How to create?"
-          />
           <button
             type="button"
             onClick={onCreate}
