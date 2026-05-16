@@ -1,6 +1,6 @@
 ---
 title: Team Edges drawer
-description: Edit handoff edges between team members — from, to, optional condition, priority.
+description: Create and delete directed handoff edges between team members — source, target, edge type, and optional blocking flag.
 ---
 
 # Team Edges drawer
@@ -9,49 +9,51 @@ Opened from the [Team Builder Section](../team-builder).
 
 ## What's an edge?
 
-An **edge** says: *"after node A finishes, hand the output to node B."* Edges are the wiring of a multi-agent graph.
+An **edge** says: *"after member A's step completes, pass execution (and output) to member B."* Edges are the wiring of a multi-agent execution graph.
 
-## Fields per edge
+## Fields (Add edge form)
 
-| Field | Required | Notes |
-|---|---|---|
-| **From** | yes | A node currently in the team |
-| **To** | yes | A different node currently in the team |
-| **Condition** | no | JSONPath predicate evaluated against the previous node's output |
-| **Priority** | yes (default 0) | When multiple edges match, the highest priority wins |
+| Field | Notes |
+|---|---|
+| **Source member** | The member that initiates the handoff. Identified by role + lane |
+| **Target member** | The member that receives the handoff. Must differ from source |
+| **Edge type** | Semantic label — see table below |
+| **Blocking** | When checked, the run halts at this edge until the target step completes |
 
-## Condition syntax
+## Edge types
 
-The condition is evaluated against the upstream node's output JSON. The edge fires only when the expression is truthy.
+| Type | Meaning |
+|---|---|
+| `delegates` | Source hands off ownership of a task to target |
+| `reviews` | Source checks and validates target's output before the run continues |
+| `reports_to` | Source sends status/summary upward in the hierarchy |
+| `shares_context` | Source copies relevant memory to target without transferring execution |
+| `handoff` | Sequential execution transfer — source is done, target picks up |
 
-```
-$.status == "approved"
-$.score >= 0.8
-$.flagged == true
-```
+## Blocking vs. non-blocking
 
-## Priority example
+| Mode | Behaviour |
+|---|---|
+| Non-blocking (default) | Source's output is forwarded; the run continues in parallel |
+| Blocking | The run pauses at this edge until the target member's step is marked complete |
 
-If node A has two outgoing edges:
+Use blocking edges for synchronous pipelines where downstream steps depend on the upstream result. Use non-blocking for fire-and-forget notifications or parallel enrichment.
 
-| Edge | Condition | Priority |
-|---|---|---|
-| A → judge | `$.score < 0.5` | 100 |
-| A → publisher | `true` | 0 |
+## Validation
 
-The first matching edge by priority wins, so low-scoring outputs go to the judge instead of being published.
+- Source and target must be different members in the same team.
+- At least two members must exist before edges can be added.
+- Duplicate edges (same source, target, and type) overwrite rather than stack.
 
+## Side effects
 
-## Code-backed workflow
-
-Source of truth: TeamEdgesDrawer.tsx and direct edge creation in AgentTeamSection.tsx.
-
-1. Create or update handoff edges between two different team members.
-2. Edges model responsibility transfer, not workflow graph nodes.
-3. Verify the edge line appears in Builder and run traces show the handoff path.
+- Inserts or updates an `agent_team_edges` row.
+- Edge connections are reflected in the Team Builder graph view immediately after save.
+- In-flight runs follow the edge graph as it existed when the run was dispatched.
 
 ## Related
 
 - [Team Builder Section](../team-builder)
 - [Add Team Member drawer](./add-team-member)
+- [Create Team drawer](./create-team)
 - [Team Coordination](/en/explanation/agents/team-coordination)
