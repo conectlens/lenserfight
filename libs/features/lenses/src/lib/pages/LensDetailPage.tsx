@@ -9,7 +9,7 @@ import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
 import { ExportModal, useExportRunner, LocalDownloadTransport, CloudDownloadTransport } from '@lenserfight/features/exports'
 import { SupabaseExportsRepository } from '@lenserfight/data/exports'
 import { supabase } from '@lenserfight/data/supabase'
-import { SEOHead, Badge, Button, Card, DesktopFrame } from '@lenserfight/ui/components'
+import { SEOHead, Badge, Button, Card, DesktopFrame, HelpButton } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
@@ -459,7 +459,13 @@ export const LensDetailPage: React.FC = () => {
           </Card>
 
           <Card className="space-y-4 p-5">
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <HelpButton path="/explanation/lenses/what-is-a-lens" label="What is a Lens?" />
+                <HelpButton path="/tutorials/walkthroughs/create-a-lens" label="How to create?" />
+              </div>
+
+              <div className="flex items-center gap-2">
               {isOwner && (
                 <button
                   type="button"
@@ -512,6 +518,7 @@ export const LensDetailPage: React.FC = () => {
                     : 'Version history'}
                 </span>
               </button>
+              </div>
 
             </div>
 
@@ -670,6 +677,7 @@ export const LensDetailPage: React.FC = () => {
                   streamUsage={lab.streamUsage}
                   streamCredits={lab.streamCredits}
                   streamError={lab.streamError}
+                  localMediaArtifact={lab.localMediaArtifact}
                   isOwner={isOwner}
                   isAuthenticatedLenser={hasActiveLenserProfile}
                 />
