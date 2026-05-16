@@ -12653,6 +12653,7 @@ CREATE OR REPLACE FUNCTION "public"."fn_lensers_update_preferences"("p_data" "js
 DECLARE
     v_uid              uuid;
     v_lenser_id        uuid;
+    v_active_lenser_id uuid;
     v_selected_key_id  uuid;
     v_key_owner        uuid;
     v_row              lensers.preferences;
@@ -12665,11 +12666,16 @@ BEGIN
     SELECT id INTO v_lenser_id
       FROM lensers.profiles
      WHERE user_id = v_uid
+       AND type    = 'human'
      LIMIT 1;
 
     IF v_lenser_id IS NULL THEN
         RAISE EXCEPTION 'Profile not found';
     END IF;
+
+    -- Resolve the active workspace context; may differ from v_lenser_id when
+    -- the user has switched into an AI agent workspace.
+    v_active_lenser_id := lensers.get_auth_lenser_id();
 
     -- Validate selected_api_key_id ownership when provided
     IF p_data ? 'selected_api_key_id' AND p_data->>'selected_api_key_id' IS NOT NULL THEN
@@ -12685,7 +12691,9 @@ BEGIN
                 USING ERRCODE = 'P0002';
         END IF;
 
-        IF v_key_owner <> v_lenser_id THEN
+        -- Allow keys belonging to the human profile OR the currently active
+        -- workspace (e.g. an AI agent the user has switched into).
+        IF v_key_owner <> v_lenser_id AND v_key_owner <> v_active_lenser_id THEN
             RAISE EXCEPTION 'API key does not belong to this lenser'
                 USING ERRCODE = 'P0003';
         END IF;
@@ -12760,7 +12768,7 @@ $$;
 ALTER FUNCTION "public"."fn_lensers_update_preferences"("p_data" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."fn_lensers_update_preferences"("p_data" "jsonb") IS 'Partial-patch update of the authenticated user''s lensers.preferences row. Accepts any subset of preference fields as jsonb — only supplied keys are written. When selected_api_key_id is provided, validates the key is active and owned by this lenser. SECURITY DEFINER — runs as postgres, bypasses table-level permission check. Auto-creates the preferences row if missing (legacy profile guard). Added in migration 000061. Updated in 000063 to support selected_api_key_id.';
+COMMENT ON FUNCTION "public"."fn_lensers_update_preferences"("p_data" "jsonb") IS 'Partial-patch update of the authenticated user''s lensers.preferences row. Accepts any subset of preference fields as jsonb — only supplied keys are written. When selected_api_key_id is provided, validates the key is active and owned by this lenser''s human profile OR by the currently active workspace context (e.g. an AI agent the user has switched into). SECURITY DEFINER — runs as postgres, bypasses table-level permission check. Auto-creates the preferences row if missing (legacy profile guard). Added in migration 000061. Updated in 000063 to support selected_api_key_id.';
 
 
 
