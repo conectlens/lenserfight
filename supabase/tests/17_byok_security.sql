@@ -141,8 +141,11 @@ RESET ROLE;
 
 -- ─── Env-gate on fn_get_my_key_secret (local dev resolver) ───────────────────
 
--- 15. With app.allow_dev_byok_resolver unset (default), the function refuses
---     to run — closing the staging/preview key-exfiltration path.
+-- 15. When app.allow_dev_byok_resolver is explicitly disabled, the function
+--     refuses to run — closing the staging/preview key-exfiltration path.
+--     SET LOCAL overrides the database-level GUC for this transaction only,
+--     allowing the test to verify the gate regardless of the local dev setting.
+SET LOCAL "app.allow_dev_byok_resolver" = 'false';
 SELECT throws_ok(
   $$ SELECT public.fn_get_my_key_secret('00000000-0000-0000-0000-0000000000cc'::uuid) $$,
   '42501',
