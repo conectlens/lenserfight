@@ -8,11 +8,13 @@ import { Pencil, X } from 'lucide-react'
 import React, { useState, useEffect, useMemo } from 'react'
 
 import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
-import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
+import type { WorkflowEdgeRecord, WorkflowNodeRecord, WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
 import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
 import { CsvImportDialog } from '../../../../lenses/src/lib/components/CsvImportDialog'
 import { JsonImportDialog } from '../../../../lenses/src/lib/components/JsonImportDialog'
+import { WorkflowUpstreamOutputPanel } from './upstream/WorkflowUpstreamOutputPanel'
+import { useUpstreamNodeOutputs } from '../hooks/useUpstreamNodeOutputs'
 
 interface WorkflowNodeConfigPanelProps {
   nodeId: string
@@ -23,6 +25,8 @@ interface WorkflowNodeConfigPanelProps {
   currentConfig: WorkflowNodeConfig
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
+  /** Latest execution results for upstream output inspection panel */
+  nodeResults?: WorkflowNodeResultRecord[]
   onSave: (nodeId: string, config: WorkflowNodeConfig) => void
   onClose: () => void
   onEditLens?: (lensId: string) => void
@@ -37,6 +41,7 @@ export function WorkflowNodeConfigPanel({
   currentConfig,
   nodes,
   edges,
+  nodeResults = [],
   onSave,
   onClose,
   onEditLens,
@@ -78,6 +83,9 @@ export function WorkflowNodeConfigPanel({
     setParamOverrides(currentConfig.param_overrides ?? {})
     setSelectedProviderKey('')
   }, [nodeId, currentConfig.model_id, currentConfig.param_overrides])
+
+  const upstreamOutputs = useUpstreamNodeOutputs({ nodeId, edges, nodes, nodeResults })
+  const hasRun = nodeResults.length > 0
 
   // Incoming edge mappings for this node (which params are auto-wired from previous nodes)
   const incomingEdges = edges.filter((e) => e.target_node_id === nodeId)
@@ -214,6 +222,8 @@ export function WorkflowNodeConfigPanel({
           selectedModelKey={selectedModelKey}
           onModelChange={setSelectedModelKey}
         />
+
+        <WorkflowUpstreamOutputPanel upstreamOutputs={upstreamOutputs} hasRun={hasRun} />
 
         {/* Parameters from lens version */}
         {versionParams.length > 0 && (
