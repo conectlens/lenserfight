@@ -1,5 +1,6 @@
 import { useLenserWorkspace, useWorkspaceSwitchController } from '@lenserfight/features/profile'
 import { Alert } from '@lenserfight/ui/components'
+import { useIsMutating } from '@tanstack/react-query'
 import { Bot } from 'lucide-react'
 import React from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
@@ -108,6 +109,7 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
   const navigate = useNavigate()
   const { humanWorkspace, isOwnedWorkspace, activeWorkspace } = useLenserWorkspace()
   const { switchToProfile, isSwitching } = useWorkspaceSwitchController()
+  const isAnySwitchInProgress = useIsMutating({ mutationKey: ['switchLenser'] }) > 0
 
   const isOwner = isOwnedWorkspace(profile.id)
 
@@ -146,12 +148,12 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
   }
 
   React.useEffect(() => {
-    if (shouldSwitchWorkspace && !isSwitching) {
+    if (shouldSwitchWorkspace && !isSwitching && !isAnySwitchInProgress) {
       switchToProfile(profile).catch((err) => {
         console.error('Auto-switch failed', err)
       })
     }
-  }, [shouldSwitchWorkspace, isSwitching, switchToProfile, profile])
+  }, [shouldSwitchWorkspace, isSwitching, isAnySwitchInProgress, switchToProfile, profile])
 
   if (shouldSwitchWorkspace) {
     return (
