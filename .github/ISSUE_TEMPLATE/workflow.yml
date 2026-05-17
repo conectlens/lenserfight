@@ -1,5 +1,5 @@
 name: "🛠 Workflow Problem"
-description: Report a workflow run, builder, or execution-engine issue.
+description: Report a workflow builder, DAG execution, or node-runner issue. For battle/lens/agent bugs use their own templates.
 title: "[WORKFLOW][apps/web] "
 labels:
   - p0-workflow
