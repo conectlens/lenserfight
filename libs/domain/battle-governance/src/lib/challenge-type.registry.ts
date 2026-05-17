@@ -14,6 +14,26 @@ import type { JudgingMode } from './judging-mode.types'
 
 // ─── Challenge Type Definition ──────────────────────────────────────────────
 
+/** Output schema expectations for the generator Lens. */
+export type ChallengeGeneratorOutputSchema =
+  | 'question_text'
+  | 'question_with_options'
+  | 'question_with_code'
+
+/** Generator requirements for AI-generated challenge questions. */
+export interface ChallengeGeneratorRequirements {
+  /** Expected output schema of the generator Lens. */
+  outputSchema: ChallengeGeneratorOutputSchema
+  /** Whether the generator must produce an answer key for auto-scoring. */
+  requiresAnswerKey: boolean
+  /** Available difficulty levels (empty = no difficulty selection). */
+  difficultyLevels?: readonly string[]
+  /** Default platform-provided generator lens slug. */
+  defaultGeneratorLensSlug?: string
+  /** Input parameters the generator accepts (e.g. ['topic', 'language', 'difficulty']). */
+  inputParameters?: readonly string[]
+}
+
 export interface ChallengeTypeDefinition {
   /** Unique identifier for this challenge type. */
   id: string
@@ -41,6 +61,8 @@ export interface ChallengeTypeDefinition {
   localeDependent: boolean
   /** Whether the game UI is implemented and ready. */
   implemented: boolean
+  /** AI question generator requirements. If present, this challenge type uses generated questions. */
+  generatorRequirements?: ChallengeGeneratorRequirements
 }
 
 // ─── Registry ───────────────────────────────────────────────────────────────
@@ -60,6 +82,13 @@ export const CHALLENGE_TYPE_REGISTRY: Record<string, ChallengeTypeDefinition> = 
     outputType: 'text',
     localeDependent: false,
     implemented: true,
+    generatorRequirements: {
+      outputSchema: 'question_text',
+      requiresAnswerKey: false,
+      difficultyLevels: ['easy', 'medium', 'hard'],
+      defaultGeneratorLensSlug: 'platform/writing-prompt-generator',
+      inputParameters: ['topic', 'genre', 'language', 'difficulty'],
+    },
   },
   math_calculation: {
     id: 'math_calculation',
@@ -75,6 +104,13 @@ export const CHALLENGE_TYPE_REGISTRY: Record<string, ChallengeTypeDefinition> = 
     outputType: 'text',
     localeDependent: false,
     implemented: true,
+    generatorRequirements: {
+      outputSchema: 'question_text',
+      requiresAnswerKey: true,
+      difficultyLevels: ['easy', 'medium', 'hard', 'expert'],
+      defaultGeneratorLensSlug: 'platform/math-challenge-generator',
+      inputParameters: ['topic', 'difficulty', 'number_of_questions'],
+    },
   },
   grammar_quiz: {
     id: 'grammar_quiz',
@@ -90,6 +126,13 @@ export const CHALLENGE_TYPE_REGISTRY: Record<string, ChallengeTypeDefinition> = 
     outputType: 'text',
     localeDependent: true,
     implemented: true,
+    generatorRequirements: {
+      outputSchema: 'question_with_options',
+      requiresAnswerKey: true,
+      difficultyLevels: ['easy', 'medium', 'hard'],
+      defaultGeneratorLensSlug: 'platform/grammar-quiz-generator',
+      inputParameters: ['language', 'difficulty', 'topic'],
+    },
   },
   hand_drawing: {
     id: 'hand_drawing',
@@ -105,6 +148,13 @@ export const CHALLENGE_TYPE_REGISTRY: Record<string, ChallengeTypeDefinition> = 
     outputType: 'drawing',
     localeDependent: false,
     implemented: false,
+    generatorRequirements: {
+      outputSchema: 'question_text',
+      requiresAnswerKey: false,
+      difficultyLevels: ['easy', 'medium', 'hard'],
+      defaultGeneratorLensSlug: 'platform/drawing-prompt-generator',
+      inputParameters: ['theme', 'difficulty'],
+    },
   },
   fill_in_blanks: {
     id: 'fill_in_blanks',
@@ -120,6 +170,13 @@ export const CHALLENGE_TYPE_REGISTRY: Record<string, ChallengeTypeDefinition> = 
     outputType: 'text',
     localeDependent: true,
     implemented: false,
+    generatorRequirements: {
+      outputSchema: 'question_with_options',
+      requiresAnswerKey: true,
+      difficultyLevels: ['easy', 'medium', 'hard'],
+      defaultGeneratorLensSlug: 'platform/fill-blanks-generator',
+      inputParameters: ['language', 'difficulty', 'topic'],
+    },
   },
   first_code_error: {
     id: 'first_code_error',
@@ -135,6 +192,13 @@ export const CHALLENGE_TYPE_REGISTRY: Record<string, ChallengeTypeDefinition> = 
     outputType: 'code',
     localeDependent: false,
     implemented: false,
+    generatorRequirements: {
+      outputSchema: 'question_with_code',
+      requiresAnswerKey: true,
+      difficultyLevels: ['easy', 'medium', 'hard', 'expert'],
+      defaultGeneratorLensSlug: 'platform/code-bug-generator',
+      inputParameters: ['programming_language', 'difficulty', 'topic'],
+    },
   },
   logic_puzzle: {
     id: 'logic_puzzle',
@@ -150,6 +214,13 @@ export const CHALLENGE_TYPE_REGISTRY: Record<string, ChallengeTypeDefinition> = 
     outputType: 'text',
     localeDependent: false,
     implemented: false,
+    generatorRequirements: {
+      outputSchema: 'question_text',
+      requiresAnswerKey: true,
+      difficultyLevels: ['easy', 'medium', 'hard', 'expert'],
+      defaultGeneratorLensSlug: 'platform/logic-puzzle-generator',
+      inputParameters: ['puzzle_type', 'difficulty'],
+    },
   },
   prompt_duel: {
     id: 'prompt_duel',
@@ -165,6 +236,13 @@ export const CHALLENGE_TYPE_REGISTRY: Record<string, ChallengeTypeDefinition> = 
     outputType: 'text',
     localeDependent: false,
     implemented: false,
+    generatorRequirements: {
+      outputSchema: 'question_text',
+      requiresAnswerKey: false,
+      difficultyLevels: ['easy', 'medium', 'hard'],
+      defaultGeneratorLensSlug: 'platform/prompt-duel-generator',
+      inputParameters: ['target_output_type', 'difficulty'],
+    },
   },
   debate: {
     id: 'debate',
@@ -180,6 +258,91 @@ export const CHALLENGE_TYPE_REGISTRY: Record<string, ChallengeTypeDefinition> = 
     outputType: 'text',
     localeDependent: false,
     implemented: false,
+    generatorRequirements: {
+      outputSchema: 'question_text',
+      requiresAnswerKey: false,
+      difficultyLevels: ['easy', 'medium', 'hard'],
+      defaultGeneratorLensSlug: 'platform/debate-topic-generator',
+      inputParameters: ['subject_area', 'difficulty', 'language'],
+    },
+  },
+
+  // ── Benchmark Game Types ────────────────────────────────────────────────────
+  // AI-focused benchmark challenge types used with task_source='lens'.
+  // These use shared_input_snapshot for fairness instead of generated_challenges.
+  //
+  // community_vote enforcement:
+  //   - ai_vs_ai structure: community_vote is blocked by validateBenchmarkAIvsAIConstraints.
+  //   - human_vs_ai structure: community_vote is permitted (human audience can judge).
+  //   Types that support only ai_vs_ai must NOT list community_vote in scoringOptions.
+
+  code_completion_benchmark: {
+    id: 'code_completion_benchmark',
+    label: 'Code Completion Benchmark',
+    description: 'AI models complete a partial code snippet. Evaluated on correctness, style, and efficiency.',
+    icon: 'Code2',
+    badgeColor: 'green',
+    allowedContenders: ['ai_vs_ai', 'human_vs_ai'],
+    humanUIRequired: false,
+    aiCompatible: true,
+    scoringOptions: ['ai_judge', 'community_vote'],
+    timeLimitDefault: 300, // 5 minutes
+    outputType: 'code',
+    localeDependent: false,
+    implemented: true,
+    generatorRequirements: {
+      outputSchema: 'question_with_code',
+      requiresAnswerKey: true,
+      difficultyLevels: ['easy', 'medium', 'hard', 'expert'],
+      defaultGeneratorLensSlug: 'platform/code-completion-generator',
+      inputParameters: ['programming_language', 'difficulty', 'topic'],
+    },
+  },
+  instruction_following_benchmark: {
+    id: 'instruction_following_benchmark',
+    label: 'Instruction Following Benchmark',
+    description: 'AI models follow multi-constraint instructions precisely. Evaluated on adherence and quality.',
+    icon: 'ListChecks',
+    badgeColor: 'blue',
+    allowedContenders: ['ai_vs_ai'],
+    humanUIRequired: false,
+    aiCompatible: true,
+    // community_vote omitted: this type only supports ai_vs_ai, where community_vote
+    // is always blocked by validateBenchmarkAIvsAIConstraints.
+    scoringOptions: ['ai_judge'],
+    timeLimitDefault: 300, // 5 minutes
+    outputType: 'text',
+    localeDependent: false,
+    implemented: true,
+    generatorRequirements: {
+      outputSchema: 'question_text',
+      requiresAnswerKey: false,
+      difficultyLevels: ['easy', 'medium', 'hard', 'expert'],
+      defaultGeneratorLensSlug: 'platform/instruction-task-generator',
+      inputParameters: ['domain', 'difficulty', 'num_constraints'],
+    },
+  },
+  reasoning_benchmark: {
+    id: 'reasoning_benchmark',
+    label: 'Reasoning Benchmark',
+    description: 'AI models solve logical and analytical reasoning problems. Evaluated on accuracy and reasoning chain.',
+    icon: 'BrainCircuit',
+    badgeColor: 'purple',
+    allowedContenders: ['ai_vs_ai', 'human_vs_ai'],
+    humanUIRequired: false,
+    aiCompatible: true,
+    scoringOptions: ['ai_judge', 'community_vote'],
+    timeLimitDefault: 600, // 10 minutes
+    outputType: 'text',
+    localeDependent: false,
+    implemented: true,
+    generatorRequirements: {
+      outputSchema: 'question_text',
+      requiresAnswerKey: true,
+      difficultyLevels: ['easy', 'medium', 'hard', 'expert'],
+      defaultGeneratorLensSlug: 'platform/reasoning-puzzle-generator',
+      inputParameters: ['reasoning_type', 'difficulty'],
+    },
   },
 }
 
@@ -196,6 +359,10 @@ export const CHALLENGE_TYPE_ORDER: readonly string[] = [
   'logic_puzzle',
   'prompt_duel',
   'debate',
+  // Benchmark game types (AI-focused)
+  'code_completion_benchmark',
+  'instruction_following_benchmark',
+  'reasoning_benchmark',
 ]
 
 // ─── Queries ────────────────────────────────────────────────────────────────
@@ -224,4 +391,17 @@ export function listChallengeTypesForContender(
   return listChallengeTypeDefinitions().filter((def) =>
     def.allowedContenders.includes(contender),
   )
+}
+
+/** Check if a challenge type requires AI-generated questions. */
+export function challengeTypeRequiresGenerator(id: string): boolean {
+  const def = getChallengeType(id)
+  return def?.generatorRequirements !== undefined
+}
+
+/** Get generator requirements for a challenge type, or undefined if none. */
+export function getGeneratorRequirements(
+  id: string,
+): ChallengeGeneratorRequirements | undefined {
+  return getChallengeType(id)?.generatorRequirements
 }

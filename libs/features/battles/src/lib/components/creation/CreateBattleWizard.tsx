@@ -18,6 +18,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { BattleAutomationSettings } from './BattleAutomationSettings'
+import { ChallengeGeneratorStep } from './ChallengeGeneratorStep'
 import { ContenderInviteStep } from './ContenderInviteStep'
 import { HandicapConfigPanel } from './HandicapConfigPanel'
 import { LensAssignmentStep } from './LensAssignmentStep'
@@ -42,12 +43,14 @@ import {
   type TaskSource,
   type ContenderStructure,
   type JudgingMode,
+  type GeneratedChallengeStatus,
   isContenderAllowedForTaskSource,
   getRecommendedContender,
   isJudgingAllowedForContender,
   getRecommendedJudging,
   hasHumanContenders,
   resolveToLegacyBattleType,
+  challengeTypeRequiresGenerator,
 } from '@lenserfight/domain/battle-governance'
 import type { LenserBattlePolicy } from '@lenserfight/domain/battle-governance'
 
@@ -305,6 +308,16 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [contenderStructure, setContenderStructure] = useState<ContenderStructure>('ai_vs_ai')
   const [judgingMode, setJudgingMode] = useState<JudgingMode>('community_vote')
   const [challengeType, setChallengeType] = useState<string | null>(null)
+  // Challenge generator state
+  const [generatorLensId, setGeneratorLensId] = useState<string | null>(null)
+  const [generatorModelId, setGeneratorModelId] = useState<string | null>(null)
+  const [generatorDifficulty, setGeneratorDifficulty] = useState('medium')
+  const [generatorLanguage, setGeneratorLanguage] = useState('en')
+  const [generationStatus, setGenerationStatus] = useState<GeneratedChallengeStatus | null>(null)
+  const [questionPreview, setQuestionPreview] = useState<string | null>(null)
+  const [challengeLocked, setChallengeLocked] = useState(false)
+  const [generationError, setGenerationError] = useState<string | null>(null)
+  const [generatedChallengeId, setGeneratedChallengeId] = useState<string | null>(null)
   const [voterEligibility, setVoterEligibility] = useState<VoterEligibility>('open')
   const [handicap, setHandicap] = useState<AIHandicapConfig>(DEFAULT_HANDICAP)
   // Non-blocking note shown when a Format change auto-cleared an incompatible
@@ -627,8 +640,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   const inputsStepValid = true
 
-  // Challenge type is required when task source is challenge
-  const challengeStepValid = taskSource !== 'challenge' || !!challengeType
+  // Challenge type is required when task source is challenge.
+  // If the challenge type requires a generator, the challenge must also be locked.
+  const challengeNeedsGenerator = !!challengeType && challengeTypeRequiresGenerator(challengeType)
+  const challengeStepValid = taskSource !== 'challenge' || (
+    !!challengeType && (!challengeNeedsGenerator || challengeLocked)
+  )
 
   const canProceed = (() => {
     if (step === 0) return taskSource !== null
@@ -743,6 +760,30 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           max_tokens: 4096,
           temperature: 0.7,
         })
+      }
+
+      // Persist and lock generated challenge for challenge battles
+      if (taskSource === 'challenge' && challengeNeedsGenerator && questionPreview && generatorLensId && generatorModelId) {
+        try {
+          const { challengeGenerationService } = await import('@lenserfight/data/repositories')
+          const result = await challengeGenerationService.generate({
+            battleId: battle.id,
+            config: {
+              generatorLensId,
+              generatorModelId,
+              challengeType: challengeType!,
+              difficulty: generatorDifficulty as 'easy' | 'medium' | 'hard' | 'expert',
+              language: generatorLanguage,
+            },
+            createdBy: lenser?.id ?? '',
+          })
+          if (result.status === 'ready') {
+            await challengeGenerationService.lockChallenge(result.challengeId, battle.id)
+          }
+        } catch (err) {
+          // Non-blocking — challenge can be linked later
+          console.warn('Failed to persist generated challenge:', err)
+        }
       }
 
       setCreatedBattleSlug(battle.slug)
@@ -1105,13 +1146,94 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               />
             )}
 
-            {/* ── Step 5: Challenge Type (V2, human contenders only) ─── */}
+            {/* ── Step 5: Challenge Type + Generator (V2, human contenders only) ─── */}
             {step === 5 && (
-              <ChallengeTypeSelector
-                value={challengeType}
-                onChange={setChallengeType}
-                contenderStructure={contenderStructure}
-              />
+              <div className="space-y-6">
+                <ChallengeTypeSelector
+                  value={challengeType}
+                  onChange={(ct) => {
+                    setChallengeType(ct)
+                    // Reset generator state on challenge type change
+                    setGenerationStatus(null)
+                    setQuestionPreview(null)
+                    setChallengeLocked(false)
+                    setGenerationError(null)
+                    setGeneratedChallengeId(null)
+                  }}
+                  contenderStructure={contenderStructure}
+                />
+                {/* Show generator step when challenge type requires it */}
+                {challengeType && challengeNeedsGenerator && (
+                  <ChallengeGeneratorStep
+                    challengeType={challengeType}
+                    generatorLensId={generatorLensId}
+                    onGeneratorLensChange={setGeneratorLensId}
+                    generatorModelId={generatorModelId}
+                    onGeneratorModelChange={setGeneratorModelId}
+                    difficulty={generatorDifficulty}
+                    onDifficultyChange={setGeneratorDifficulty}
+                    language={generatorLanguage}
+                    onLanguageChange={setGeneratorLanguage}
+                    generationStatus={generationStatus}
+                    questionPreview={questionPreview}
+                    onGenerate={async () => {
+                      if (!generatorLensId || !generatorModelId || !challengeType) return
+                      setGenerationStatus('generating')
+                      setGenerationError(null)
+                      try {
+                        // Preview generation — triggers execution and shows result.
+                        // The challenge is persisted + locked when the battle is created.
+                        const { executionService } = await import('@lenserfight/data/repositories')
+                        const execResult = await executionService.triggerExecution({
+                          lens_id: generatorLensId,
+                          model_id: generatorModelId,
+                          input_snapshot: {
+                            challenge_type: challengeType,
+                            difficulty: generatorDifficulty,
+                            language: generatorLanguage,
+                          },
+                          funding_source: 'platform_credit',
+                          origin_type: 'battle',
+                        })
+                        const execRunId = execResult?.execution_run_id
+                        if (!execRunId) throw new Error('No run ID returned')
+                        // Poll for result
+                        let run = await executionService.pollRunStatus(execRunId)
+                        let attempts = 0
+                        while (run.status !== 'succeeded' && run.status !== 'failed' && attempts < 30) {
+                          await new Promise((r) => setTimeout(r, 2000))
+                          run = await executionService.pollRunStatus(execRunId)
+                          attempts++
+                        }
+                        if (run.status === 'failed') throw new Error('Generation failed')
+                        // Fetch primary artifact for the response text
+                        const artifacts = await executionService.getArtifacts(execRunId)
+                        const primary = artifacts.find((a) => a.isPrimaryOutput)
+                        const text = primary?.contentText ?? ''
+                        let questionText = text
+                        try {
+                          const parsed = JSON.parse(text)
+                          questionText = parsed.question ?? parsed.question_text ?? parsed.prompt ?? text
+                        } catch { /* plain text */ }
+                        setGenerationStatus('ready')
+                        setQuestionPreview(questionText.trim())
+                      } catch (err) {
+                        setGenerationStatus('failed')
+                        setGenerationError(normalizeError(err).message)
+                      }
+                    }}
+                    onLock={() => {
+                      // Wizard-level lock — actual persistence happens at battle creation
+                      setChallengeLocked(true)
+                      setGenerationStatus('locked')
+                    }}
+                    isLocked={challengeLocked}
+                    generationError={generationError}
+                    availableLenses={[]}
+                    availableModels={battleProviderModels.map((m) => ({ id: m.key, label: m.name }))}
+                  />
+                )}
+              </div>
             )}
 
             {/* ── Step 6: Judging Mode (V2) ────────────────────────── */}

@@ -1,6 +1,7 @@
 import { BattleCreationValidator, type BattleCreationInput } from './battle-creation-validator'
 import type { BattleContentType, BattleFormat, BattleType } from './battle.constants'
 import type { LenserBattlePolicy } from './lenser-battle-policy.types'
+import type { BattleCreationInputV2 } from './battle-creation-validator'
 
 describe('BattleCreationValidator', () => {
   const validator = new BattleCreationValidator()
@@ -423,12 +424,17 @@ describe('BattleCreationValidator', () => {
       expect(result.errors.some((e) => e.code === 'CHALLENGE_TYPE_INVALID')).toBe(true)
     })
 
-    it('validates challenge + human_vs_human + auto_score as valid', () => {
+    it('validates challenge + human_vs_human + auto_score as valid (with locked generator)', () => {
       const result = validator.validateAllV2({
         taskSource: 'challenge',
         contenderStructure: 'human_vs_human',
         judgingMode: 'auto_score',
         challengeType: 'math_calculation',
+        generatorConfig: {
+          generatorLensId: 'lens-gen',
+          generatorModelId: 'model-gen',
+          challengeLocked: true,
+        },
       })
       expect(result.valid).toBe(true)
     })
@@ -446,6 +452,374 @@ describe('BattleCreationValidator', () => {
       })
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => e.code === 'LENSER_POLICY_INVALID')).toBe(true)
+    })
+  })
+
+  // ── Generated Challenge Validation ─────────────────────────────────────────
+
+  describe('validateGeneratorRequired', () => {
+    it('requires generator for human_vs_human challenge with generatorRequirements', () => {
+      const violations = validator.validateGeneratorRequired(
+        'challenge', 'human_vs_human', 'math_calculation', undefined,
+      )
+      expect(violations.length).toBeGreaterThanOrEqual(1)
+      expect(violations.some((v) => v.code === 'GENERATOR_REQUIRED')).toBe(true)
+    })
+
+    it('requires generator model when lens is set but model is missing', () => {
+      const violations = validator.validateGeneratorRequired(
+        'challenge', 'human_vs_human', 'grammar_quiz',
+        { generatorLensId: 'lens-123', generatorModelId: null },
+      )
+      expect(violations).toHaveLength(1)
+      expect(violations[0].code).toBe('GENERATOR_MODEL_MISSING')
+    })
+
+    it('returns no violations when generator is fully configured', () => {
+      const violations = validator.validateGeneratorRequired(
+        'challenge', 'human_vs_human', 'math_calculation',
+        { generatorLensId: 'lens-123', generatorModelId: 'model-456' },
+      )
+      expect(violations).toHaveLength(0)
+    })
+
+    it('skips validation for ai_vs_ai contender structure', () => {
+      const violations = validator.validateGeneratorRequired(
+        'challenge', 'ai_vs_ai', 'math_calculation', undefined,
+      )
+      expect(violations).toHaveLength(0)
+    })
+
+    it('skips validation for non-challenge task source', () => {
+      const violations = validator.validateGeneratorRequired(
+        'lens', 'human_vs_human', null, undefined,
+      )
+      expect(violations).toHaveLength(0)
+    })
+
+    it('requires generator for human_vs_ai challenge battles', () => {
+      const violations = validator.validateGeneratorRequired(
+        'challenge', 'human_vs_ai', 'writing_contest', undefined,
+      )
+      expect(violations.some((v) => v.code === 'GENERATOR_REQUIRED')).toBe(true)
+    })
+  })
+
+  describe('validateGeneratorContenderConflict', () => {
+    it('warns when generator lens matches a contender lens', () => {
+      const violations = validator.validateGeneratorContenderConflict(
+        'lens-same-id', ['lens-same-id', 'lens-other'],
+      )
+      expect(violations).toHaveLength(1)
+      expect(violations[0].code).toBe('GENERATOR_CONTENDER_CONFLICT')
+      expect(violations[0].severity).toBe('warning')
+    })
+
+    it('returns no violations when generator lens differs from contenders', () => {
+      const violations = validator.validateGeneratorContenderConflict(
+        'lens-generator', ['lens-a', 'lens-b'],
+      )
+      expect(violations).toHaveLength(0)
+    })
+
+    it('returns no violations when no contender lens IDs provided', () => {
+      const violations = validator.validateGeneratorContenderConflict(
+        'lens-generator', undefined,
+      )
+      expect(violations).toHaveLength(0)
+    })
+
+    it('returns no violations when generator lens is null', () => {
+      const violations = validator.validateGeneratorContenderConflict(
+        null, ['lens-a'],
+      )
+      expect(violations).toHaveLength(0)
+    })
+  })
+
+  describe('validateChallengeLocked', () => {
+    it('errors when generator is configured but not locked', () => {
+      const violations = validator.validateChallengeLocked(
+        'challenge', 'human_vs_human', 'math_calculation',
+        { generatorLensId: 'lens-123', generatorModelId: 'model-456', challengeLocked: false },
+      )
+      expect(violations).toHaveLength(1)
+      expect(violations[0].code).toBe('CHALLENGE_NOT_LOCKED')
+      expect(violations[0].severity).toBe('error')
+    })
+
+    it('returns no violations when challenge is locked', () => {
+      const violations = validator.validateChallengeLocked(
+        'challenge', 'human_vs_human', 'math_calculation',
+        { generatorLensId: 'lens-123', generatorModelId: 'model-456', challengeLocked: true },
+      )
+      expect(violations).toHaveLength(0)
+    })
+
+    it('skips validation for non-challenge task source', () => {
+      const violations = validator.validateChallengeLocked(
+        'lens', 'human_vs_human', null, undefined,
+      )
+      expect(violations).toHaveLength(0)
+    })
+
+    it('skips validation for ai_vs_ai', () => {
+      const violations = validator.validateChallengeLocked(
+        'challenge', 'ai_vs_ai', 'math_calculation',
+        { generatorLensId: 'lens-123', challengeLocked: false },
+      )
+      expect(violations).toHaveLength(0)
+    })
+  })
+
+  describe('validateAllV2 with generator config', () => {
+    it('human_vs_human challenge battle without generator is invalid', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'challenge',
+        contenderStructure: 'human_vs_human',
+        judgingMode: 'auto_score',
+        challengeType: 'math_calculation',
+      })
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.code === 'GENERATOR_REQUIRED')).toBe(true)
+    })
+
+    it('human_vs_human challenge with locked generator is valid', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'challenge',
+        contenderStructure: 'human_vs_human',
+        judgingMode: 'auto_score',
+        challengeType: 'math_calculation',
+        generatorConfig: {
+          generatorLensId: 'lens-123',
+          generatorModelId: 'model-456',
+          challengeLocked: true,
+        },
+      })
+      expect(result.valid).toBe(true)
+    })
+
+    it('human_vs_human challenge with unlocked generator is invalid', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'challenge',
+        contenderStructure: 'human_vs_human',
+        judgingMode: 'auto_score',
+        challengeType: 'math_calculation',
+        generatorConfig: {
+          generatorLensId: 'lens-123',
+          generatorModelId: 'model-456',
+          challengeLocked: false,
+        },
+      })
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.code === 'CHALLENGE_NOT_LOCKED')).toBe(true)
+    })
+
+    it('warns on generator-contender conflict', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'challenge',
+        contenderStructure: 'human_vs_ai',
+        judgingMode: 'community_vote',
+        challengeType: 'grammar_quiz',
+        generatorConfig: {
+          generatorLensId: 'lens-shared',
+          generatorModelId: 'model-456',
+          challengeLocked: true,
+        },
+        contenderLensIds: ['lens-shared'],
+      })
+      expect(result.valid).toBe(true) // warning, not error
+      expect(result.warnings.some((w) => w.code === 'GENERATOR_CONTENDER_CONFLICT')).toBe(true)
+    })
+
+    it('existing lens battle flow is unaffected', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'lens',
+        contenderStructure: 'ai_vs_ai',
+        judgingMode: 'community_vote',
+      })
+      expect(result.valid).toBe(true)
+      expect(result.errors).toHaveLength(0)
+    })
+  })
+
+  // ── Benchmark: AI vs AI judging constraints ──────────────────────────────
+
+  describe('validateBenchmarkAIvsAIConstraints', () => {
+    it('blocks community_vote for ai_vs_ai benchmark games', () => {
+      const violations = validator.validateBenchmarkAIvsAIConstraints(
+        'ai_vs_ai', 'community_vote', 'code_completion_benchmark',
+      )
+      expect(violations).toHaveLength(1)
+      expect(violations[0].code).toBe('BENCHMARK_JUDGING_INCOMPATIBLE')
+      expect(violations[0].severity).toBe('error')
+    })
+
+    it('allows ai_judge for ai_vs_ai benchmark games', () => {
+      expect(validator.validateBenchmarkAIvsAIConstraints(
+        'ai_vs_ai', 'ai_judge', 'code_completion_benchmark',
+      )).toHaveLength(0)
+    })
+
+    it('allows ai_judge for reasoning_benchmark', () => {
+      expect(validator.validateBenchmarkAIvsAIConstraints(
+        'ai_vs_ai', 'ai_judge', 'reasoning_benchmark',
+      )).toHaveLength(0)
+    })
+
+    it('allows ai_judge for instruction_following_benchmark', () => {
+      expect(validator.validateBenchmarkAIvsAIConstraints(
+        'ai_vs_ai', 'ai_judge', 'instruction_following_benchmark',
+      )).toHaveLength(0)
+    })
+
+    it('does not apply to non-benchmark challenge types', () => {
+      expect(validator.validateBenchmarkAIvsAIConstraints(
+        'ai_vs_ai', 'community_vote', 'writing_contest',
+      )).toHaveLength(0)
+    })
+
+    it('does not apply when challenge type is null', () => {
+      expect(validator.validateBenchmarkAIvsAIConstraints(
+        'ai_vs_ai', 'community_vote', null,
+      )).toHaveLength(0)
+    })
+
+    it('does not apply to human_vs_ai contender structure', () => {
+      expect(validator.validateBenchmarkAIvsAIConstraints(
+        'human_vs_ai', 'community_vote', 'code_completion_benchmark',
+      )).toHaveLength(0)
+    })
+
+    it('does not apply to human_vs_human contender structure', () => {
+      expect(validator.validateBenchmarkAIvsAIConstraints(
+        'human_vs_human', 'community_vote', 'code_completion_benchmark',
+      )).toHaveLength(0)
+    })
+  })
+
+  // ── Benchmark: model conflict detection ──────────────────────────────────
+
+  describe('validateBenchmarkModelConflict', () => {
+    it('warns when generator model key matches a contender model key', () => {
+      const violations = validator.validateBenchmarkModelConflict(
+        'claude-sonnet-4-6', ['claude-sonnet-4-6', 'gpt-5.4-pro'],
+      )
+      expect(violations).toHaveLength(1)
+      expect(violations[0].code).toBe('BENCHMARK_MODEL_CONFLICT')
+      expect(violations[0].severity).toBe('warning')
+    })
+
+    it('returns no violations when generator model differs from all contenders', () => {
+      const violations = validator.validateBenchmarkModelConflict(
+        'gemini-3.1-pro-preview', ['claude-sonnet-4-6', 'gpt-5.4-pro'],
+      )
+      expect(violations).toHaveLength(0)
+    })
+
+    it('returns no violations when contender model keys is empty', () => {
+      expect(validator.validateBenchmarkModelConflict('claude-sonnet-4-6', [])).toHaveLength(0)
+    })
+
+    it('returns no violations when contender model keys is undefined', () => {
+      expect(validator.validateBenchmarkModelConflict('claude-sonnet-4-6', undefined)).toHaveLength(0)
+    })
+
+    it('returns no violations when generator model key is null', () => {
+      expect(validator.validateBenchmarkModelConflict(null, ['claude-sonnet-4-6'])).toHaveLength(0)
+    })
+
+    it('returns no violations when generator model key is undefined', () => {
+      expect(validator.validateBenchmarkModelConflict(undefined, ['claude-sonnet-4-6'])).toHaveLength(0)
+    })
+  })
+
+  // ── Benchmark: validateAllV2 integration ─────────────────────────────────
+
+  describe('validateAllV2 benchmark integration', () => {
+    it('ai_vs_ai benchmark with ai_judge is valid', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'lens',
+        contenderStructure: 'ai_vs_ai',
+        judgingMode: 'ai_judge',
+        challengeType: 'code_completion_benchmark',
+      })
+      expect(result.valid).toBe(true)
+      expect(result.errors).toHaveLength(0)
+    })
+
+    it('ai_vs_ai benchmark with community_vote is invalid', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'lens',
+        contenderStructure: 'ai_vs_ai',
+        judgingMode: 'ai_judge',
+        challengeType: 'code_completion_benchmark',
+        // Simulate community_vote being checked separately
+      })
+      const violations = validator.validateBenchmarkAIvsAIConstraints(
+        'ai_vs_ai', 'community_vote', 'code_completion_benchmark',
+      )
+      expect(violations.some((v) => v.code === 'BENCHMARK_JUDGING_INCOMPATIBLE')).toBe(true)
+    })
+
+    it('warns on generator-model conflict via validateAllV2', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'lens',
+        contenderStructure: 'ai_vs_ai',
+        judgingMode: 'ai_judge',
+        challengeType: 'reasoning_benchmark',
+        generatorConfig: {
+          generatorLensId: 'lens-gen',
+          generatorModelId: 'model-uuid',
+          generatorModelKey: 'claude-sonnet-4-6',
+        },
+        contenderModelKeys: ['claude-sonnet-4-6', 'gpt-5.4-pro'],
+      })
+      expect(result.valid).toBe(true) // warning only, not blocking
+      expect(result.warnings.some((w) => w.code === 'BENCHMARK_MODEL_CONFLICT')).toBe(true)
+    })
+
+    it('no warning when generator model key differs from all contender models', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'lens',
+        contenderStructure: 'ai_vs_ai',
+        judgingMode: 'ai_judge',
+        challengeType: 'reasoning_benchmark',
+        generatorConfig: {
+          generatorLensId: 'lens-gen',
+          generatorModelId: 'model-uuid',
+          generatorModelKey: 'gemini-3.1-pro-preview',
+        },
+        contenderModelKeys: ['claude-sonnet-4-6', 'gpt-5.4-pro'],
+      })
+      expect(result.valid).toBe(true)
+      expect(result.warnings.some((w) => w.code === 'BENCHMARK_MODEL_CONFLICT')).toBe(false)
+    })
+
+    it('existing non-benchmark lens battle is unaffected by benchmark validators', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'lens',
+        contenderStructure: 'ai_vs_ai',
+        judgingMode: 'community_vote',
+      })
+      expect(result.valid).toBe(true)
+      expect(result.errors.some((e) => e.code === 'BENCHMARK_JUDGING_INCOMPATIBLE')).toBe(false)
+    })
+
+    it('existing human challenge battle is unaffected by benchmark validators', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'challenge',
+        contenderStructure: 'human_vs_human',
+        judgingMode: 'auto_score',
+        challengeType: 'math_calculation',
+        generatorConfig: {
+          generatorLensId: 'lens-math',
+          generatorModelId: 'model-math',
+          challengeLocked: true,
+        },
+      })
+      expect(result.valid).toBe(true)
+      expect(result.errors.some((e) => e.code === 'BENCHMARK_JUDGING_INCOMPATIBLE')).toBe(false)
     })
   })
 })

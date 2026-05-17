@@ -12,6 +12,7 @@ import {
   writeWorkflowSimulationArtifacts,
 } from '../utils/automation-objects'
 import { printTable, printJson, truncate } from '../utils/output'
+import { runLifecycleAction, type CliLifecycleAction } from '../utils/lifecycle'
 import { A } from '../utils/ansi'
 import {
   battleCreationValidator,
@@ -22,10 +23,34 @@ import {
   type BattleType,
   type BattleContentType,
   type BattleCreationInput,
+  type BattleCreationInputV2,
   MEMORY_MODES,
   INSTRUCTION_DISCLOSURES,
   type MemoryMode,
   type InstructionDisclosure,
+  // V2 concept separation
+  TASK_SOURCES,
+  TASK_SOURCE_LABEL,
+  TASK_SOURCE_DESCRIPTION,
+  type TaskSource,
+  CONTENDER_STRUCTURES,
+  CONTENDER_STRUCTURE_LABEL,
+  CONTENDER_STRUCTURE_DESCRIPTION,
+  type ContenderStructure,
+  JUDGING_MODES,
+  JUDGING_MODE_LABEL,
+  JUDGING_MODE_DESCRIPTION,
+  type JudgingMode,
+  getAllowedContendersForTaskSource,
+  getAllowedJudgingForContender,
+  getContenderDisabledReason,
+  getJudgingDisabledReason,
+  isExperimentalTaskSource,
+  isExperimentalJudgingMode,
+  listChallengeTypeDefinitions,
+  listAvailableChallengeTypes,
+  listChallengeTypesForContender,
+  getChallengeType,
 } from '@lenserfight/domain/battle-governance'
 
 function defaultPrivateBattlePath(): string {
@@ -1122,7 +1147,7 @@ const clone = defineCommand({
 const deleteBattle = defineCommand({
   meta: {
     name: 'delete',
-    description: 'Delete a draft battle (creator only, irreversible).',
+    description: 'Request dependency-aware battle deletion. Historical battles become tombstones.',
   },
   args: {
     id: {
@@ -1135,22 +1160,26 @@ const deleteBattle = defineCommand({
       description: 'Skip confirmation prompt',
       default: false,
     },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
   },
   async run({ args }) {
     await assertSafe({
       risk: 'HIGH',
-      reversibility: 'IRREVERSIBLE',
+      reversibility: 'REVERSIBLE',
       confirmationPolicy: 'FLAG',
       forceFlag: '--confirm',
       hasForce: args.confirm,
-      description: `Permanently delete battle ${args.id} (creator only).`,
+      description: `Withdraw battle ${args.id}. Historical evidence is preserved by tombstone when dependencies exist.`,
       affectedResources: [{ type: 'battle', name: args.id, scope: 'remote' }],
-      rollbackAvailable: false,
+      rollbackAvailable: true,
     })
 
     try {
-      await callRpc('fn_battles_delete', { p_battle_id: args.id }, { requireAuth: true })
-      consola.success('Battle %s deleted.', args.id)
+      await runLifecycleAction('battle', args.id, 'delete', args.json)
     } catch (err) {
       handleError(err)
     }
@@ -1809,7 +1838,7 @@ const closeBattle = defineCommand({
 const archive = defineCommand({
   meta: {
     name: 'archive',
-    description: 'Archive a battle — removes it from the public feed.',
+    description: 'Archive a battle without deleting votes, submissions, or execution evidence.',
   },
   args: {
     id: {
@@ -1817,11 +1846,15 @@ const archive = defineCommand({
       description: 'Battle UUID',
       required: true,
     },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
   },
   async run({ args }) {
     try {
-      await callRpc('fn_battles_archive', { p_battle_id: args.id }, { requireAuth: true })
-      consola.success('Battle %s archived.', args.id)
+      await runLifecycleAction('battle', args.id, 'archive', args.json)
     } catch (err) {
       handleError(err)
     }
@@ -1834,7 +1867,7 @@ const archive = defineCommand({
 const retract = defineCommand({
   meta: {
     name: 'retract',
-    description: 'Retract a published battle — reverts it to draft.',
+    description: 'Retract a battle from active surfaces. Historical evidence remains archived.',
   },
   args: {
     id: {
@@ -1846,12 +1879,29 @@ const retract = defineCommand({
   async run({ args }) {
     try {
       await callRpc('fn_battles_retract', { p_battle_id: args.id }, { requireAuth: true })
-      consola.success('Battle %s retracted and reverted to draft.', args.id)
+      consola.success('Battle %s retracted and archived. Existing votes, submissions, and logs remain auditable.', args.id)
     } catch (err) {
       handleError(err)
     }
   },
 })
+
+function battleLifecycleCommand(action: CliLifecycleAction, description: string) {
+  return defineCommand({
+    meta: { name: action === 'status' ? 'lifecycle' : action, description },
+    args: {
+      id: { type: 'positional', description: 'Battle UUID', required: true },
+      json: { type: 'boolean', description: 'Output as JSON', default: false },
+    },
+    async run({ args }) {
+      try {
+        await runLifecycleAction('battle', args.id, action, args.json)
+      } catch (err) {
+        handleError(err)
+      }
+    },
+  })
+}
 
 // ---------------------------------------------------------------------------
 // battle comments
@@ -4235,7 +4285,208 @@ const webhook = defineCommand({
 })
 
 // ---------------------------------------------------------------------------
-// battle validate
+// battle formats — list task sources and their allowed contender/judging combos
+// ---------------------------------------------------------------------------
+const formats = defineCommand({
+  meta: {
+    name: 'formats',
+    description: 'List supported battle task sources and their allowed contender structures and judging modes.',
+  },
+  args: {
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const data = (TASK_SOURCES as readonly string[]).map((ts) => {
+      const source = ts as TaskSource
+      const contenders = getAllowedContendersForTaskSource(source)
+      const judgingByContender: Record<string, readonly string[]> = {}
+      for (const c of contenders) {
+        judgingByContender[c] = getAllowedJudgingForContender(c) as readonly string[]
+      }
+      return {
+        taskSource: source,
+        label: TASK_SOURCE_LABEL[source],
+        description: TASK_SOURCE_DESCRIPTION[source],
+        experimental: isExperimentalTaskSource(source),
+        contenders: contenders.map((c) => ({
+          id: c,
+          label: CONTENDER_STRUCTURE_LABEL[c],
+          judgingModes: judgingByContender[c].map((j) => ({
+            id: j,
+            label: JUDGING_MODE_LABEL[j as JudgingMode],
+            experimental: isExperimentalJudgingMode(j as JudgingMode),
+          })),
+        })),
+      }
+    })
+
+    if (args.json) {
+      printJson(data)
+      return
+    }
+
+    for (const src of data) {
+      const expTag = src.experimental ? ` ${A.brightYellow}[experimental]${A.reset}` : ''
+      consola.log(`${A.bold}${src.label}${A.reset} (${src.taskSource})${expTag}`)
+      consola.log(`  ${A.gray}${src.description}${A.reset}`)
+      for (const c of src.contenders) {
+        consola.log(`  ${A.brightCyan}├─${A.reset} ${c.label} (${c.id})`)
+        for (let i = 0; i < c.judgingModes.length; i++) {
+          const j = c.judgingModes[i]
+          const prefix = i === c.judgingModes.length - 1 ? '└─' : '├─'
+          const jExp = j.experimental ? ` ${A.brightYellow}[exp]${A.reset}` : ''
+          consola.log(`  ${A.gray}│  ${prefix}${A.reset} ${j.label} (${j.id})${jExp}`)
+        }
+      }
+      consola.log('')
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// battle challenge-types — list challenge type registry
+// ---------------------------------------------------------------------------
+const challengeTypes = defineCommand({
+  meta: {
+    name: 'challenge-types',
+    description: 'List supported human game/challenge types for Challenge task source battles.',
+  },
+  args: {
+    'contender-structure': {
+      type: 'string',
+      description: `Filter by contender structure: ${CONTENDER_STRUCTURES.join(' | ')}`,
+      default: '',
+    },
+    available: {
+      type: 'boolean',
+      description: 'Show only implemented challenge types',
+      default: false,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const contenderFilter = args['contender-structure'] as ContenderStructure | ''
+
+    if (contenderFilter && !(CONTENDER_STRUCTURES as readonly string[]).includes(contenderFilter)) {
+      consola.error('Invalid --contender-structure: %s', contenderFilter)
+      consola.info('Allowed values: %s', CONTENDER_STRUCTURES.join(', '))
+      process.exitCode = 1
+      return
+    }
+
+    let types = contenderFilter
+      ? listChallengeTypesForContender(contenderFilter as ContenderStructure)
+      : listChallengeTypeDefinitions()
+
+    if (args.available) {
+      types = types.filter((t) => t.implemented)
+    }
+
+    if (args.json) {
+      printJson(types)
+      return
+    }
+
+    if (types.length === 0) {
+      consola.info('No challenge types match the given filters.')
+      return
+    }
+
+    const headers = ['ID', 'LABEL', 'OUTPUT', 'TIME', 'STATUS', 'CONTENDERS']
+    const rows = types.map((t) => [
+      t.id,
+      t.label,
+      t.outputType,
+      t.timeLimitDefault ? `${t.timeLimitDefault}s` : '—',
+      t.implemented ? 'ready' : 'planned',
+      t.allowedContenders.join(', '),
+    ])
+    printTable(headers, rows, [22, 22, 10, 8, 8, 30])
+  },
+})
+
+// ---------------------------------------------------------------------------
+// battle explain-invalid — explain why a combination is invalid
+// ---------------------------------------------------------------------------
+const explainInvalid = defineCommand({
+  meta: {
+    name: 'explain-invalid',
+    description: 'Explain why a task source / contender structure / judging mode combination is invalid.',
+  },
+  args: {
+    'task-source': {
+      type: 'string',
+      description: `Task source: ${TASK_SOURCES.join(' | ')}`,
+      required: true,
+    },
+    'contender-structure': {
+      type: 'string',
+      description: `Contender structure: ${CONTENDER_STRUCTURES.join(' | ')}`,
+      required: true,
+    },
+    'judging-mode': {
+      type: 'string',
+      description: `Judging mode: ${JUDGING_MODES.join(' | ')}`,
+      default: '',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const ts = args['task-source'] as TaskSource
+    const cs = args['contender-structure'] as ContenderStructure
+    const jm = args['judging-mode'] as JudgingMode | ''
+
+    const reasons: Array<{ axis: string; reason: string }> = []
+
+    const contenderReason = getContenderDisabledReason(ts, cs)
+    if (contenderReason) {
+      reasons.push({ axis: 'task-source ↔ contender-structure', reason: contenderReason })
+    }
+
+    if (jm) {
+      const judgingReason = getJudgingDisabledReason(cs, jm)
+      if (judgingReason) {
+        reasons.push({ axis: 'contender-structure ↔ judging-mode', reason: judgingReason })
+      }
+    }
+
+    if (args.json) {
+      printJson({ valid: reasons.length === 0, reasons })
+      if (reasons.length > 0) process.exitCode = 1
+      return
+    }
+
+    if (reasons.length === 0) {
+      consola.success('Combination is valid.')
+      consola.info('  Task source:          %s (%s)', TASK_SOURCE_LABEL[ts], ts)
+      consola.info('  Contender structure:  %s (%s)', CONTENDER_STRUCTURE_LABEL[cs], cs)
+      if (jm) consola.info('  Judging mode:         %s (%s)', JUDGING_MODE_LABEL[jm], jm)
+      return
+    }
+
+    consola.error('Combination is invalid:')
+    for (const r of reasons) {
+      consola.log(`  ${A.brightRed}✘${A.reset}  ${A.bold}${r.axis}${A.reset}`)
+      consola.log(`     ${r.reason}`)
+    }
+    process.exitCode = 1
+  },
+})
+
+// ---------------------------------------------------------------------------
+// battle validate — validates both legacy V1 and V2 concept-separated inputs
 // ---------------------------------------------------------------------------
 const validateBattle = defineCommand({
   meta: {
@@ -4244,15 +4495,37 @@ const validateBattle = defineCommand({
       'Validate a battle creation configuration against governance rules.',
   },
   args: {
+    // V2 flags (preferred)
+    'task-source': {
+      type: 'string',
+      description: `V2 task source: ${TASK_SOURCES.join(' | ')} (use instead of --format)`,
+      default: '',
+    },
+    'contender-structure': {
+      type: 'string',
+      description: `V2 contender structure: ${CONTENDER_STRUCTURES.join(' | ')} (use instead of --type)`,
+      default: '',
+    },
+    'judging-mode': {
+      type: 'string',
+      description: `V2 judging mode: ${JUDGING_MODES.join(' | ')} (use instead of --type)`,
+      default: '',
+    },
+    'challenge-type': {
+      type: 'string',
+      description: 'Challenge type ID (e.g. writing_contest, math_calculation)',
+      default: '',
+    },
+    // Legacy V1 flags (still supported)
     format: {
       type: 'string',
-      description: `Battle format: ${BATTLE_FORMATS.join(' | ')}`,
-      required: true,
+      description: `[Legacy] Battle format: ${BATTLE_FORMATS.join(' | ')}`,
+      default: '',
     },
     type: {
       type: 'string',
-      description: `Battle type: ${BATTLE_TYPES.join(' | ')}`,
-      required: true,
+      description: `[Legacy] Battle type: ${BATTLE_TYPES.join(' | ')}`,
+      default: '',
     },
     'content-type': {
       type: 'string',
@@ -4276,6 +4549,54 @@ const validateBattle = defineCommand({
     },
   },
   async run({ args }) {
+    const useV2 = !!(args['task-source'] || args['contender-structure'] || args['judging-mode'])
+
+    if (useV2) {
+      // ── V2 validation ──
+      if (!args['task-source'] || !args['contender-structure'] || !args['judging-mode']) {
+        consola.error('V2 validation requires all three: --task-source, --contender-structure, --judging-mode')
+        process.exitCode = 1
+        return
+      }
+
+      const input: BattleCreationInputV2 = {
+        taskSource: args['task-source'] as TaskSource,
+        contenderStructure: args['contender-structure'] as ContenderStructure,
+        judgingMode: args['judging-mode'] as JudgingMode,
+        challengeType: args['challenge-type'] || null,
+        contentType: (args['content-type'] || null) as BattleContentType | null,
+      }
+
+      const result = battleCreationValidator.validateAllV2(input)
+
+      if (args.json) {
+        printJson({ ...result, mode: 'v2' })
+        if (!result.valid) process.exitCode = 1
+        return
+      }
+
+      if (result.valid && result.warnings.length === 0) {
+        consola.success('V2 configuration is valid.')
+        consola.info('  Task source:          %s', args['task-source'])
+        consola.info('  Contender structure:  %s', args['contender-structure'])
+        consola.info('  Judging mode:         %s', args['judging-mode'])
+        if (args['challenge-type']) consola.info('  Challenge type:       %s', args['challenge-type'])
+        if (args['content-type']) consola.info('  Content type:         %s', args['content-type'])
+        return
+      }
+
+      printViolations(result.errors, result.warnings)
+      if (!result.valid) process.exitCode = 1
+      return
+    }
+
+    // ── Legacy V1 validation ──
+    if (!args.format || !args.type) {
+      consola.error('Legacy validation requires --format and --type (or use V2 flags: --task-source, --contender-structure, --judging-mode)')
+      process.exitCode = 1
+      return
+    }
+
     const format = args.format as BattleFormat
     const battleType = args.type as BattleType
     const contentType = (args['content-type'] || null) as BattleContentType | null
@@ -4286,7 +4607,6 @@ const validateBattle = defineCommand({
       contentType,
     }
 
-    // Attach lenser battle policy when relevant flags are provided
     if (format === 'lenser_battle' && (args['memory-mode'] || args['instruction-disclosure'])) {
       input.lenserBattlePolicy = {
         memory_mode: (args['memory-mode'] || 'personality') as MemoryMode,
@@ -4298,7 +4618,7 @@ const validateBattle = defineCommand({
     const result = battleCreationValidator.validateAll(input)
 
     if (args.json) {
-      printJson(result)
+      printJson({ ...result, mode: 'v1' })
       if (!result.valid) process.exitCode = 1
       return
     }
@@ -4311,29 +4631,35 @@ const validateBattle = defineCommand({
       return
     }
 
-    if (result.errors.length > 0) {
-      consola.error('%d error(s) found:', result.errors.length)
-      for (const v of result.errors) {
-        consola.log(
-          `  ${A.brightRed}error${A.reset}  ${A.bold}${v.code}${A.reset}  ${A.gray}${v.field}${A.reset}`
-        )
-        consola.log(`         ${v.message}`)
-      }
-    }
-
-    if (result.warnings.length > 0) {
-      consola.warn('%d warning(s):', result.warnings.length)
-      for (const v of result.warnings) {
-        consola.log(
-          `  ${A.brightYellow}warn${A.reset}   ${A.bold}${v.code}${A.reset}  ${A.gray}${v.field}${A.reset}`
-        )
-        consola.log(`         ${v.message}`)
-      }
-    }
-
+    printViolations(result.errors, result.warnings)
     if (!result.valid) process.exitCode = 1
   },
 })
+
+function printViolations(
+  errors: ReadonlyArray<{ code: string; field: string; message: string }>,
+  warnings: ReadonlyArray<{ code: string; field: string; message: string }>
+) {
+  if (errors.length > 0) {
+    consola.error('%d error(s) found:', errors.length)
+    for (const v of errors) {
+      consola.log(
+        `  ${A.brightRed}error${A.reset}  ${A.bold}${v.code}${A.reset}  ${A.gray}${v.field}${A.reset}`
+      )
+      consola.log(`         ${v.message}`)
+    }
+  }
+
+  if (warnings.length > 0) {
+    consola.warn('%d warning(s):', warnings.length)
+    for (const v of warnings) {
+      consola.log(
+        `  ${A.brightYellow}warn${A.reset}   ${A.bold}${v.code}${A.reset}  ${A.gray}${v.field}${A.reset}`
+      )
+      consola.log(`         ${v.message}`)
+    }
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Root command
@@ -4370,6 +4696,10 @@ export default defineCommand({
     'close-voting': closeVoting,
     close: closeBattle,
     archive,
+    restore: battleLifecycleCommand('restore', 'Restore an archived or tombstoned battle when policy allows it.'),
+    lifecycle: battleLifecycleCommand('status', 'Show remote lifecycle state, pinned state, snapshots, and delete blockers.'),
+    pin: battleLifecycleCommand('pin', 'Pin a battle to your saved artifacts.'),
+    unpin: battleLifecycleCommand('unpin', 'Remove your saved pin from a battle.'),
     retract,
     comments,
     messages,
@@ -4399,5 +4729,8 @@ export default defineCommand({
     'auto-promote': autoPromote,
     webhook,
     validate: validateBattle,
+    formats,
+    'challenge-types': challengeTypes,
+    'explain-invalid': explainInvalid,
   },
 })
