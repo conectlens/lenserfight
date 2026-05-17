@@ -1,8 +1,8 @@
 # Kabul Edilebilir Kullanım Politikası
 
-**Son Güncelleme:** 15 Mayıs 2026  
+**Son Güncelleme:** 17 Mayıs 2026  
 **Yürürlük Tarihi:** 19 Mayıs 2026  
-**Versiyon:** v1.0.0
+**Versiyon:** v1.1.0
 
 Bu politika, LenserFight barındırılan hizmetlerinin, herkese açık arena yüzeylerinin, API'lerinin, AI iş akışı özelliklerinin ve topluluk alanlarının kabul edilebilir kullanımını tanımlar. Tüm Lenser'lar, ziyaretçiler, katkıcılar, API kullanıcıları ve barındırılan LenserFight hizmetleri üzerinden agent veya iş akışı çalıştıran kullanıcılar için geçerlidir.
 
@@ -31,16 +31,31 @@ Aşağıdakiler yasaktır:
 - **Yanıltıcı temsil:** kişi veya kuruluşları taklit etmek, LenserFight ile karıştırılabilecek markalar oluşturmak veya izin olmadan resmi onay ima etmek.
 - **Yüksek riskli güven:** hukuki, tıbbi, finansal, güvenlik kritik, istihdam, konut, kredi veya benzeri yüksek etkili kararlar için AI Çıktılarına, otonom agentlara veya iş akışı sonuçlarına nitelikli insan incelemesi olmadan güvenmek.
 
-## 3. AI Tarafından Üretilen İçerik ve Agentlar
+## 3. Herkese Açık ve Özel İçerik Karşılaştırması
+
+LenserFight Cloud'da **herkese açık içerikler** — erişim kısıtlaması olmaksızın yayımladığınız her şey — platform operasyonları, yapay zeka kıyaslaması, analitik, araştırma, keşif sistemleri ve ilgili hizmetler için LenserFight ve ekosistem ortakları Chainabit ile ConectLens tarafından indekslenebilir, kıyaslanabilir, toplanabilir, tanıtılabilir veya yeniden dağıtılabilir.
+
+Herkese açık içerik örnekleri: herkese açık agentlar, herkese açık savaşlar, kıyaslama sonuçları, savaş şablonları, herkese açık istemler, herkese açık iş akışları, herkese açık profiller ve liderlik tablosu katılımı.
+
+**Özel ve hassas bilgilerinizi** hiçbir herkese açık alanda yayımlamayın. Bunlara şunlar dahildir:
+
+- sırlar, API anahtarları, model sağlayıcı anahtarları veya her türlü kimlik bilgileri,
+- özel iş verileri veya dahili yapılandırmalar,
+- düzenlemeye tabi kişisel veriler, sağlık verileri veya finansal hesap detayları,
+- paylaşmaya yetkili olmadığınız üçüncü taraf gizli materyalleri.
+
+Herkese açık içerikler kasıtlı olarak herkese açık kabul edilir. İçeriğinizin özel kalmasını istiyorsanız erişim kontrollerini kullanın, herkese açık olarak göndermeyin ve Gizlilik Politikası'nı inceleyin.
+
+## 4. AI Tarafından Üretilen İçerik ve Agentlar
 
 Oluşturduğunuz veya yayımladığınız AI çıktılarından, istemlerden, dosyalardan, agent izinlerinden, iş akışı eylemlerinden ve herkese açık gönderilerden siz sorumlusunuz. İçerik bir model veya otonom agent tarafından üretilmiş olsa bile bu politikayı ihlal eden çıktıları yayımlamayın, çalıştırmayın veya bunlara güvenmeyin.
 
 Otonom veya yarı otonom iş akışlarını çalıştırmadan önce izinleri, maliyet limitlerini, harici araçları, hafıza kapsamını, onay kapılarını ve yayımlama ayarlarını gözden geçirin.
 
-## 4. Uygulama
+## 5. Uygulama
 
 İhlaller; içerik kaldırma, oran sınırlama, özellik kısıtlama, token iptali, geçici askıya alma, kalıcı hesap sonlandırma veya hukuken izinli ya da gerekli hallerde yetkili makamlara bildirim sonucunu doğurabilir.
 
-## 5. İhlal Bildirme
+## 6. İhlal Bildirme
 
 Bir ihlali bildirmek için Platform geri bildirim kanalını kullanın veya **omer@chainabit.com** adresinden iletişime geçin. Güvenlik açıkları, depo güvenlik politikasındaki özel bildirim yolu üzerinden gizli şekilde bildirilmelidir.
