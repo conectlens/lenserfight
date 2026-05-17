@@ -6,6 +6,10 @@ outline: deep
 
 # Workflow Engine Architecture
 
+::: info Current Implementation Status
+The workflow engine supports **Lens-type nodes** via the execution provider registry (OpenAI, Anthropic, Google, Mistral, Ollama, Fal.ai). DAG validation (cycle detection, binding completeness, wave calculation) is fully implemented. Multi-node orchestration with inter-node data flow is available for Lens-to-Lens chains. Non-Lens node types (Logic, Data, Storage, Communication, etc.) are defined in the UI catalog but do not yet have runtime execution implementations.
+:::
+
 ## DAG Execution Model
 
 Every workflow is a directed acyclic graph (DAG). Nodes represent discrete units of work; edges encode execution order and data dependencies. `WorkflowExecutionService` (`libs/infra/execution/src/lib/workflow-execution.service.ts`) is the central orchestrator — it resolves the traversal order, fans out to execution providers, and aggregates status.
@@ -88,7 +92,7 @@ Steps 1–4 are guard clauses that leave no partial state. A schedule either ful
 
 ## Worker Loop
 
-`apps/platform-api/src/worker/scheduled-workflow-worker.ts` follows a claim → execute → complete cycle:
+`apps/worker/src/worker/scheduled-workflow-worker.ts` follows a claim → execute → complete cycle:
 
 1. **Claim** — calls `fn_claim_scheduled_workflow_run`; receives an exclusive run ID or `null` if nothing is ready.
 2. **Execute** — calls `WorkflowExecutionService.execute()` with the claimed run's context and node graph.

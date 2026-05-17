@@ -44,7 +44,10 @@ These providers are represented in the catalog for comparison, workflow planning
 - `runway`
 - `litellm`
 - `lmstudio`
-- `midjourney`
+
+## Deprecated providers
+
+- `midjourney` — no public API available; use `fal` or `stability` for image generation
 
 ## Provider metadata carried by the catalog
 
