@@ -209,7 +209,7 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                         </Heading>
                       </div>
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <HelpButton path="/reference/ai-providers" label="Docs" />
+                        <HelpButton path={`/reference/ai-providers/${provider.key}`} label="Docs" />
                         <Badge color={supportTone(provider.support_level ?? 'catalog_only')} variant="outline">
                           {provider.support_level ?? 'catalog'}
                         </Badge>
