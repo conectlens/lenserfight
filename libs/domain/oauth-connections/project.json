@@ -1,0 +1,13 @@
+{
+  "name": "oauth-connections",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/oauth-connections/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:oauth-connections",
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {}
+}
