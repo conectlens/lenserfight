@@ -357,6 +357,25 @@ export function validateAutomationDocument(
     issues.push({ path: 'id', message: 'Missing string `id`.', severity: 'error' })
   }
 
+  // apiVersion: warning-only so existing files keep validating while users migrate.
+  if (!options.minimalUnit) {
+    const av = (frontmatter as unknown as Record<string, unknown>).apiVersion
+    if (av === undefined) {
+      issues.push({
+        path: 'apiVersion',
+        message:
+          'Missing `apiVersion`. Add `apiVersion: lenserfight.dev/v1alpha1` to opt into the versioned spec format, or run `lf spec migrate` to add it automatically.',
+        severity: 'warning',
+      })
+    } else if (typeof av !== 'string' || !av.startsWith('lenserfight.dev/')) {
+      issues.push({
+        path: 'apiVersion',
+        message: `Unrecognized \`apiVersion\` value "${String(av)}". Expected: lenserfight.dev/v1alpha1.`,
+        severity: 'warning',
+      })
+    }
+  }
+
   if (frontmatter.kind && isAutomationObjectKind(frontmatter.kind)) {
     for (const key of REQUIRED_FRONTMATTER_KEYS[frontmatter.kind]) {
       if (!(key in frontmatter)) {

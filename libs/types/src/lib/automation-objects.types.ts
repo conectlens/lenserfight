@@ -66,6 +66,14 @@ export interface AutomationObjectOwner {
 }
 
 export interface AutomationObjectFrontmatter {
+  /**
+   * Versioned spec API version in `group/version` form.
+   * Canonical value: `lenserfight.dev/v1alpha1`.
+   *
+   * New spec files should include this field. Existing files with only
+   * `schema_version` are still valid — run `lf spec migrate` to add it.
+   */
+  apiVersion?: string
   kind: AutomationObjectKind
   schema_version: number
   id: string
