@@ -22,7 +22,7 @@ export class CalendarCreateRunner implements INodeRunner {
         output: {
           mediaType: 'text',
           text: '',
-          data: { error: 'Missing event summary' },
+          data: { error: 'Missing event summary', nodeId: ctx.nodeId },
           durationMs: 0,
         },
       }
@@ -33,28 +33,28 @@ export class CalendarCreateRunner implements INodeRunner {
         output: {
           mediaType: 'text',
           text: '',
-          data: { error: 'Missing startTime or endTime (ISO 8601 format required)' },
+          data: { error: 'Missing startTime or endTime (ISO 8601 format required)', nodeId: ctx.nodeId },
           durationMs: 0,
         },
       }
     }
 
-    // Resolve OAuth token for Google Calendar
-    let accessToken: string | null = null
-    if (connectorRef && ctx.resolveConnector) {
-      accessToken = await ctx.resolveConnector(connectorRef, CALENDAR_REQUIRED_SCOPES)
-      if (!accessToken) {
-        return {
-          output: {
-            mediaType: 'text',
-            text: '',
-            data: {
-              error: 'connector_not_resolved',
-              detail: `Could not resolve connector: ${connectorRef}. Ensure a Google Calendar connection is active at /settings/connections.`,
-            },
-            durationMs: 0,
+    if (connectorRef && ctx.executeConnectorOperation) {
+      return {
+        output: await ctx.executeConnectorOperation({
+          connectorRef,
+          provider: 'google',
+          capability: 'calendar',
+          operation: 'create_event',
+          requiredScopes: CALENDAR_REQUIRED_SCOPES,
+          params: {
+            calendarId,
+            summary: summary.trim(),
+            description: description ?? null,
+            startTime,
+            endTime,
           },
-        }
+        }),
       }
     }
 
@@ -69,8 +69,8 @@ export class CalendarCreateRunner implements INodeRunner {
           description: description ?? null,
           startTime,
           endTime,
-          // accessToken included for worker; never logged or returned to frontend
-          ...(accessToken ? { __oauth_access_token: accessToken } : {}),
+          connectorRef: connectorRef ?? null,
+          mock: true,
         },
         durationMs: 0,
       },
