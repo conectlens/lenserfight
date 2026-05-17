@@ -57,12 +57,12 @@ export const CHAINABIT_OAUTH_CLIENT_ID: string = (import.meta.env['CHAINABIT_OAU
  */
 export const CHAINABIT_OAUTH_CALLBACK_URL: string = (import.meta.env['CHAINABIT_OAUTH_REDIRECT_URI'] as string) ?? ''
 
-/** Default local Platform API origin (`pnpm nx serve platform-api`). */
+/** Default local API origin — not the worker, which has no HTTP surface. */
 const DEV_API_BASE_URL = 'http://localhost:8786'
 
 /**
- * LenserFight Platform API base URL (no trailing slash).
- * In development, defaults to the local platform-api server. To proxy through a
+ * LenserFight API base URL (no trailing slash).
+ * In development, defaults to the local dev URL above. To proxy through a
  * tunnel (e.g. ngrok) for CORS or webhook testing, set `API_URL` in your
  * `.env.local`. Production resolves to `https://api.lenserfight.com` unless
  * `API_URL` is provided.
