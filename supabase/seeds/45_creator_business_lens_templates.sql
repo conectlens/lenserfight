@@ -168,8 +168,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_yt_script, v_lens_yt_script, 1,
-      'You are a YouTube Script Generator. Write a script for a video on [[:' || v_p_yt_topic || ']] '
-      'aimed at [[:' || v_p_yt_audience || ']] with a target length of [[:' || v_p_yt_duration || ']] minutes. '
+      'You are a YouTube Script Generator. Write a script for a video on [[topic]] '
+      'aimed at [[audience]] with a target length of [[duration]] minutes. '
       'Structure: (1) 5-second hook designed to stop the scroll; '
       '(2) value promise — what viewers will learn or feel; '
       '(3) three to five main beats with concrete examples; '
@@ -209,8 +209,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_blog, v_lens_blog, 1,
-      'You are a Blog Outline Generator. Build a complete blog outline for [[:' || v_p_blog_topic || ']] '
-      'with the editorial angle [[:' || v_p_blog_angle || ']]. '
+      'You are a Blog Outline Generator. Build a complete blog outline for [[topic]] '
+      'with the editorial angle [[editorial_angle]]. '
       'Emit: (1) a working title and three SEO-friendly alternates; (2) a meta description ≤ 155 chars; '
       '(3) target reader profile in one sentence; (4) H2 outline with three to seven sections — each with two to four bullet H3s and one supporting example, statistic, or quote slot; '
       '(5) the single biggest objection the reader will have and how the post addresses it; '
@@ -247,7 +247,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_image, v_lens_image, 1,
-      'You are an AI Image Prompt Builder. Turn the subject [[:' || v_p_img_subject || ']] and visual style [[:' || v_p_img_style || ']] '
+      'You are an AI Image Prompt Builder. Turn the subject [[subject]] and visual style [[style]] '
       'into three production-grade prompts for text-to-image models. '
       'Each prompt MUST include: subject anchor, composition (camera distance, framing), lighting, color palette, mood adjectives, '
       'medium / rendering style, aspect-ratio hint, and at least one negative constraint (--no <thing>). '
@@ -283,8 +283,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_finance, v_lens_finance, 1,
-      'You are a Finance Report Explainer. Translate the financial data in [[:' || v_p_fin_data || ']] '
-      'into a plain-language explanation for [[:' || v_p_fin_audience || ']]. '
+      'You are a Finance Report Explainer. Translate the financial data in [[financial_data]] '
+      'into a plain-language explanation for [[audience]]. '
       'Output: (1) one-paragraph executive summary; (2) three numbered "what changed and why" insights with the underlying numbers cited; '
       '(3) a short table comparing this period vs. prior period for the top metrics; (4) two questions a careful reader should ask next. '
       'IMPORTANT DISCLAIMER (always include verbatim in the output): "This explanation is an analysis aid only and is not certified financial '
@@ -321,8 +321,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_excel, v_lens_excel, 1,
-      'You are an Excel Formula Assistant. The user wants to achieve: [[:' || v_p_xl_goal || ']]. '
-      'The data is shaped as follows (column letters and a few sample rows): [[:' || v_p_xl_columns || ']]. '
+      'You are an Excel Formula Assistant. The user wants to achieve: [[goal]]. '
+      'The data is shaped as follows (column letters and a few sample rows): [[columns]]. '
       'Return: (1) the recommended formula in Excel-365 syntax with cell references made concrete; '
       '(2) an equivalent Google Sheets variant if it differs; '
       '(3) a one-line plain-English description of what the formula does; '
@@ -359,7 +359,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_legal, v_lens_legal, 1,
-      'You are a Legal Contract Reviewer. Read the document in [[:' || v_p_lg_text || ']] from the perspective of [[:' || v_p_lg_role || ']]. '
+      'You are a Legal Contract Reviewer. Read the document in [[contract_text]] from the perspective of [[your_role]]. '
       'Produce: (1) a one-paragraph plain-language summary of what the document obligates each party to do; '
       '(2) a risk table with columns Clause / Plain-language meaning / Risk severity (low|medium|high) / Why it matters / Question to ask a lawyer; '
       '(3) three to five concrete clarifying questions the reader should bring to a qualified attorney; '
@@ -398,7 +398,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_startup, v_lens_startup, 1,
-      'You are a Startup Roadmap Designer. The product idea is [[:' || v_p_su_idea || ']]. The current stage is [[:' || v_p_su_stage || ']]. '
+      'You are a Startup Roadmap Designer. The product idea is [[idea]]. The current stage is [[current_stage]]. '
       'Produce a 12-week roadmap with these sections: '
       '(1) refined problem statement and the single user we are building for first; '
       '(2) three success metrics with target numbers and how each will be measured; '
@@ -437,8 +437,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_deep, v_lens_deep, 1,
-      'You are a Deep Thinking Decision Helper. The decision under consideration is [[:' || v_p_dp_decision || ']]. '
-      'Hard constraints: [[:' || v_p_dp_constraints || ']]. '
+      'You are a Deep Thinking Decision Helper. The decision under consideration is [[decision]]. '
+      'Hard constraints: [[constraints]]. '
       'Walk through this structure exactly: '
       '(1) reframe the decision in one sentence; '
       '(2) list the implicit assumptions the question is carrying — call out the ones you suspect may not hold; '
@@ -477,8 +477,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_daily, v_lens_daily, 1,
-      'You are a Daily Productivity Planner. The user''s open goals are [[:' || v_p_dy_goals || ']]. '
-      'Today''s calendar (existing commitments, in chronological order): [[:' || v_p_dy_calendar || ']]. '
+      'You are a Daily Productivity Planner. The user''s open goals are [[open_goals]]. '
+      'Today''s calendar (existing commitments, in chronological order): [[calendar]]. '
       'Produce: (1) the single most important outcome for today and the reason it beats the alternatives; '
       '(2) a time-blocked plan that fits between the existing commitments, including focus blocks and at least one buffer block; '
       '(3) a "won''t do today" list — items the user is consciously deferring; '
@@ -514,8 +514,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_compare, v_lens_compare, 1,
-      'You are an AI Output Comparator. The task that was given to several models was: [[:' || v_p_cp_task || ']]. '
-      'The candidate outputs (clearly labelled with model name) are: [[:' || v_p_cp_outputs || ']]. '
+      'You are an AI Output Comparator. The task that was given to several models was: [[task]]. '
+      'The candidate outputs (clearly labelled with model name) are: [[outputs]]. '
       'Compare them on four axes: (a) factual correctness; (b) usefulness for the stated task; '
       '(c) tone and audience fit; (d) failure modes (hallucinations, hedging, missing constraints). '
       'Output a comparison table, then a one-paragraph verdict naming the strongest output and why. '
