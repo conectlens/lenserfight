@@ -1,5 +1,5 @@
-import { callProvider } from '@lenserfight/providers'
-import type { ProviderMessage } from '@lenserfight/providers'
+import { callProvider, callGenerativeMedia, modelKind } from '@lenserfight/providers'
+import type { ProviderMessage, GenerativeMediaProvider } from '@lenserfight/providers'
 import { byokKeyResolver } from '@lenserfight/providers'
 import { nodeLogger } from '@lenserfight/utils/logger'
 import { chainabitExecutionRepository } from '@lenserfight/data/repositories'
@@ -29,6 +29,28 @@ interface ClaimedBattleJob {
 
 const WORKER_ID = process.env['BATTLE_WORKER_ID'] ?? `battle-worker-${process.pid}`
 const MAX_RETRIES = parseInt(process.env['BATTLE_WORKER_MAX_RETRIES'] ?? '3', 10)
+
+/** Map model kind → execution branch. Unknown models fall back to 'text'. */
+function resolveExecutionKind(
+  modelKey: string,
+): 'text' | 'image' | 'audio' | 'video' | 'music' {
+  return modelKind(modelKey) ?? 'text'
+}
+
+/** Map model output kind → output_modality value stored in battles.submissions. */
+function kindToOutputModality(
+  kind: 'text' | 'image' | 'audio' | 'video' | 'music',
+): 'text' | 'image' | 'audio' | 'video' {
+  if (kind === 'music') return 'audio'
+  return kind
+}
+
+/** Map model output kind → generative media modality. */
+function kindToGenerativeModality(
+  kind: 'image' | 'audio' | 'video' | 'music',
+): 'image' | 'audio' | 'video' | 'music' {
+  return kind
+}
 
 async function resolveApiKey(job: ClaimedBattleJob): Promise<string> {
   if (job.provider_key === 'ollama') return ''
@@ -67,6 +89,7 @@ export async function processNextBattleJob(): Promise<boolean> {
   }
 
   const startedAt = Date.now()
+  const execKind = resolveExecutionKind(job.model_key)
 
   try {
     let prompt = job.task_prompt
@@ -84,56 +107,111 @@ export async function processNextBattleJob(): Promise<boolean> {
       prompt = rendered as string
     }
 
-    // Build system prompt from agent personality (ai_agent contenders only).
-    // Personality lens template takes precedence over the plain personality_note.
-    let systemPrompt: string | undefined
-    if (job.personality_version_id) {
-      const { data: rendered, error: renderErr } = await serviceClient
-        .rpc('fn_worker_render_template', {
-          p_template_body: job.personality_note ?? '',
-          p_inputs: {},
-        })
-      if (!renderErr && rendered) {
-        systemPrompt = rendered as string
+    if (execKind === 'text') {
+      // ── Text execution path ────────────────────────────────────────────────
+
+      // Build system prompt from agent personality (ai_agent contenders only).
+      // Personality lens template takes precedence over the plain personality_note.
+      let systemPrompt: string | undefined
+      if (job.personality_version_id) {
+        const { data: rendered, error: renderErr } = await serviceClient
+          .rpc('fn_worker_render_template', {
+            p_template_body: job.personality_note ?? '',
+            p_inputs: {},
+          })
+        if (!renderErr && rendered) {
+          systemPrompt = rendered as string
+        }
+      } else if (job.personality_note) {
+        systemPrompt = job.personality_note
       }
-    } else if (job.personality_note) {
-      systemPrompt = job.personality_note
+
+      const messages: ProviderMessage[] = [
+        ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+        { role: 'user' as const, content: prompt },
+      ]
+
+      const apiKey = await resolveApiKey(job)
+      const response = await callProvider(
+        job.provider_key as 'openai' | 'anthropic' | 'google' | 'mistral' | 'ollama',
+        apiKey,
+        job.model_key,
+        messages,
+      )
+
+      await serviceClient
+        .rpc('fn_worker_upsert_battle_submission', {
+          p_battle_id:        job.battle_id,
+          p_contender_id:     job.contender_id,
+          p_content_text:     response.content,
+          p_execution_run_id: null,
+          p_artifact_id:      null,
+          p_is_final:         true,
+          p_output_modality:  'text',
+        })
+    } else {
+      // ── Generative media execution path ───────────────────────────────────
+      // Covers image (sync), audio (sync/async), video (async), music (async).
+
+      const apiKey = await resolveApiKey(job)
+      const modality = kindToGenerativeModality(execKind)
+      const outputModality = kindToOutputModality(execKind)
+
+      const mediaResponse = await callGenerativeMedia(
+        job.provider_key as GenerativeMediaProvider | null,
+        modality,
+        apiKey,
+        job.model_key,
+        prompt,
+      )
+
+      if (mediaResponse.status === 'failed') {
+        throw new Error(mediaResponse.message)
+      }
+
+      if (mediaResponse.status === 'completed') {
+        // Sync result — store media URL immediately.
+        const mediaUrl = mediaResponse.urls[0] ?? null
+        await serviceClient
+          .rpc('fn_worker_upsert_battle_submission', {
+            p_battle_id:        job.battle_id,
+            p_contender_id:     job.contender_id,
+            p_content_text:     null,
+            p_execution_run_id: null,
+            p_artifact_id:      null,
+            p_is_final:         true,
+            p_media_url:        mediaUrl,
+            p_mime_type:        mediaResponse.mimeType,
+            p_output_modality:  outputModality,
+          })
+      } else {
+        // Async result — store providerTaskId in artifact_id for the
+        // poll-async-executions edge function to pick up and complete.
+        // Status is 'pending' until the poll worker finalises it.
+        await serviceClient
+          .rpc('fn_worker_upsert_battle_submission', {
+            p_battle_id:        job.battle_id,
+            p_contender_id:     job.contender_id,
+            p_content_text:     null,
+            p_execution_run_id: null,
+            p_artifact_id:      mediaResponse.providerTaskId,
+            p_is_final:         false,
+            p_output_modality:  outputModality,
+          })
+      }
     }
-
-    const messages: ProviderMessage[] = [
-      ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
-      { role: 'user' as const, content: prompt },
-    ]
-
-    const apiKey = await resolveApiKey(job)
-    const response = await callProvider(
-      job.provider_key as 'openai' | 'anthropic' | 'google' | 'mistral' | 'ollama',
-      apiKey,
-      job.model_key,
-      messages,
-    )
-
-    await serviceClient
-      .rpc('fn_worker_upsert_battle_submission', {
-        p_battle_id:       job.battle_id,
-        p_contender_id:    job.contender_id,
-        p_content_text:    response.content,
-        p_execution_run_id: null,
-        p_artifact_id:     null,
-        p_is_final:        true,
-      })
 
     await serviceClient
       .rpc('fn_worker_complete_battle_job', {
-        p_job_id:        job.job_id,
-        p_status:        'completed',
-        p_error_message: null,
+        p_job_id: job.job_id,
+        p_status: 'completed',
       })
 
     nodeLogger.info('battle job completed', {
       jobId:     job.job_id,
       battleId:  job.battle_id,
       slot:      job.slot,
+      execKind,
       durationMs: Date.now() - startedAt,
       provider:  job.provider_key,
       model:     job.model_key,
@@ -152,6 +230,7 @@ export async function processNextBattleJob(): Promise<boolean> {
         jobId:      job.job_id,
         retryCount: job.retry_count + 1,
         backoffMs:  backoffMs(job.retry_count),
+        execKind,
         message,
       })
     } else {
@@ -164,6 +243,7 @@ export async function processNextBattleJob(): Promise<boolean> {
         jobId:    job.job_id,
         battleId: job.battle_id,
         slot:     job.slot,
+        execKind,
         message,
       })
     }
@@ -241,19 +321,19 @@ async function processNextBattleJobViaChainabit(
 
     await serviceClient
       .rpc('fn_worker_upsert_battle_submission', {
-        p_battle_id:       job.battle_id,
-        p_contender_id:    job.contender_id,
-        p_content_text:    result.outputText ?? '',
+        p_battle_id:        job.battle_id,
+        p_contender_id:     job.contender_id,
+        p_content_text:     result.outputText ?? '',
         p_execution_run_id: null,
-        p_artifact_id:     null,
-        p_is_final:        true,
+        p_artifact_id:      null,
+        p_is_final:         true,
+        p_output_modality:  'text',
       })
 
     await serviceClient
       .rpc('fn_worker_complete_battle_job', {
-        p_job_id:        job.job_id,
-        p_status:        'completed',
-        p_error_message: null,
+        p_job_id: job.job_id,
+        p_status: 'completed',
       })
 
     nodeLogger.info('battle job completed via Chainabit', {
