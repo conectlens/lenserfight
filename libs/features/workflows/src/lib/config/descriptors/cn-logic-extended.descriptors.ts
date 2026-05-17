@@ -18,12 +18,23 @@ export const ifConditionDescriptor: RunnerConfigDescriptor = {
       required: true,
       mono: true,
       placeholder: 'e.g. {{n1.score}} > 7',
+      tooltip: {
+        summary: 'A boolean expression evaluated at runtime to decide which branch the workflow takes.',
+        format: 'JavaScript-like expression. Use {{nodeId.field}} to reference upstream values. Supports ==, !=, >, <, >=, <=, &&, ||.',
+        commonMistakes: 'Using = instead of == for comparison. Comparing strings without quotes (use {{n1.status}} == "done").',
+        executionImpact: 'If true, the "true" branch executes. If false, the "false" branch executes. Non-boolean results are truthy/falsy coerced.',
+      },
     },
     {
       key: 'inputPath',
       label: 'Input Path',
       type: 'text',
       hint: 'Optional path to extract value before evaluating.',
+      tooltip: {
+        summary: 'Extracts a nested value from the upstream output before the condition is evaluated.',
+        format: 'Dot-notation path (e.g. data.results). The extracted value becomes the evaluation context.',
+        whenRequired: 'When the upstream output is deeply nested and you want a cleaner condition expression.',
+      },
     },
   ],
   outputFields: [
@@ -47,6 +58,11 @@ export const tryCatchDescriptor: RunnerConfigDescriptor = {
       defaultValue: '2',
       min: 0,
       max: 5,
+      tooltip: {
+        summary: 'How many times the wrapped downstream nodes are retried after a failure.',
+        format: 'Integer between 0 and 5. 0 means no retries (fail immediately).',
+        executionImpact: 'Each retry re-executes all downstream nodes in the try block. High values with AI nodes multiply token costs.',
+      },
     },
     {
       key: 'retryDelayMs',
@@ -55,6 +71,11 @@ export const tryCatchDescriptor: RunnerConfigDescriptor = {
       defaultValue: '1000',
       min: 0,
       max: 30000,
+      tooltip: {
+        summary: 'How long to wait between retry attempts.',
+        format: 'Integer in milliseconds. 0 = immediate retry.',
+        commonMistakes: 'Setting to 0 for rate-limited APIs, which causes repeated 429 errors.',
+      },
     },
   ],
   outputFields: [
@@ -79,12 +100,23 @@ export const mergeDescriptor: RunnerConfigDescriptor = {
         { label: 'Append', value: 'append' },
         { label: 'Outer Join', value: 'outer_join' },
       ],
+      tooltip: {
+        summary: 'How multiple upstream inputs are combined into a single output.',
+        format: 'Combine merges objects by key. Zip pairs items by index. Append concatenates arrays. Outer Join matches on a shared key.',
+        commonMistakes: 'Using Zip when arrays have different lengths — shorter array determines output size. Using Outer Join without setting mergeKey.',
+      },
     },
     {
       key: 'mergeKey',
       label: 'Merge Key',
       type: 'text',
       hint: 'Required for outer_join mode.',
+      tooltip: {
+        summary: 'The field name used to match records across inputs when using Outer Join mode.',
+        whenRequired: 'Required when mode is set to outer_join. Ignored for other modes.',
+        format: 'Field name present in both input datasets (e.g. id, email).',
+        commonMistakes: 'Referencing a key that exists in only one of the inputs, which produces empty matches.',
+      },
     },
   ],
   outputFields: [
@@ -105,6 +137,11 @@ export const splitInBatchesDescriptor: RunnerConfigDescriptor = {
       defaultValue: '10',
       min: 1,
       max: 1000,
+      tooltip: {
+        summary: 'Number of items to include in each batch when splitting the input array.',
+        format: 'Integer between 1 and 1000.',
+        executionImpact: 'Smaller batches create more iterations but reduce memory per iteration. Larger batches are fewer iterations but heavier.',
+      },
     },
     {
       key: 'delayBetweenMs',
@@ -113,6 +150,12 @@ export const splitInBatchesDescriptor: RunnerConfigDescriptor = {
       defaultValue: '0',
       min: 0,
       max: 60000,
+      tooltip: {
+        summary: 'Pause duration between processing consecutive batches.',
+        format: 'Integer in milliseconds. 0 = no pause between batches.',
+        whenRequired: 'Useful when downstream nodes call rate-limited APIs to avoid 429 errors.',
+        executionImpact: 'Adds total delay of (totalBatches - 1) * delayBetweenMs to the workflow run.',
+      },
     },
   ],
   outputFields: [
@@ -137,12 +180,21 @@ export const stopReturnDescriptor: RunnerConfigDescriptor = {
         { label: 'Error', value: 'error' },
         { label: 'Cancelled', value: 'cancelled' },
       ],
+      tooltip: {
+        summary: 'The final status code the workflow reports when it terminates at this node.',
+        executionImpact: 'Determines the workflow run result status. "Error" marks the run as failed even if all prior nodes succeeded.',
+      },
     },
     {
       key: 'message',
       label: 'Message',
       type: 'textarea',
       placeholder: 'Optional exit message.',
+      tooltip: {
+        summary: 'A human-readable message explaining why the workflow was stopped.',
+        format: 'Free-form text. Supports {{variable}} interpolation.',
+        executionImpact: 'Stored in the workflow run record and visible in the run history UI.',
+      },
     },
   ],
   outputFields: [
