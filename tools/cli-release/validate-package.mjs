@@ -105,7 +105,7 @@ try {
   assert(existsSync(mainPath), 'Built main.js is missing');
 
   const pkg = readJson(packageJsonPath);
-  assert(pkg.name === 'lenserfight', 'Unexpected package name', { name: pkg.name });
+  assert(pkg.name === '@lenserfight/cli', 'Unexpected package name', { name: pkg.name });
   assert(pkg.private !== true, 'Package must not be private');
   assert(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(pkg.version), 'Package version is not semver', {
     version: pkg.version,
