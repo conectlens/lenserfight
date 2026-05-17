@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/lens/v1alpha1",
+  "title": "LenserFight Lens Spec",
+  "description": "A reusable, versioned prompt contract with typed inputs and outputs. The fundamental executable unit of LenserFight.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "lens" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "author": { "type": "string", "description": "Author handle or workspace reference." },
+    "forkable": { "type": "boolean", "default": false },
+    "input_schema": { "$ref": "common.schema.json#/$defs/jsonSchema" },
+    "output_schema": { "$ref": "common.schema.json#/$defs/jsonSchema" },
+    "evaluation_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "References to evaluation specs that test this lens."
+    },
+    "parameters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable parameter name. Must match [[label]] placeholder in the prompt body."
+          },
+          "tool_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "description": "UUID referencing lenses.tools(id). Required when using the hosted parameter form."
+          }
+        },
+        "required": ["label"],
+        "additionalProperties": false
+      },
+      "description": "Typed parameter declarations for prompt placeholders."
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "tool": { "type": "string" },
+          "required": { "type": "boolean" }
+        },
+        "required": ["label"],
+        "additionalProperties": true
+      },
+      "description": "Legacy UI input declarations (alternate to parameters)."
+    },
+    "outputs": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string" }
+          }
+        },
+        {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      ]
+    },
+    "rays": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Ray slugs this lens belongs to."
+    },
+    "references": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/disclosureRef" }
+    }
+  },
+  "required": ["kind", "name", "description"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "lens",
+      "schema_version": 1,
+      "id": "lens_code_reviewer",
+      "slug": "code-reviewer",
+      "name": "Code Reviewer",
+      "description": "Review a diff for correctness, security, tests, maintainability, and release risk.",
+      "version": "0.1.0",
+      "visibility": "public",
+      "status": "active",
+      "tags": ["developer", "review"]
+    }
+  ]
+}

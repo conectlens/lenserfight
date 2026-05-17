@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/battle/v1alpha1",
+  "title": "LenserFight Battle Spec",
+  "description": "A public comparison template between lenses, lensers, workflows, or models. Supports AI-vs-AI, human-vs-human, and human-vs-AI contender structures with independent judging modes.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "enum": ["battle", "private_battle"] },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "battle_type": {
+      "type": "string",
+      "description": "Legacy V1 battle type. Prefer task_source + contender_structure + judging_mode."
+    },
+    "task_source": {
+      "type": "string",
+      "enum": ["lens", "workflow", "challenge"],
+      "description": "Where the challenge comes from. V2 concept-separated field."
+    },
+    "contender_structure": {
+      "type": "string",
+      "enum": ["ai_vs_ai", "human_vs_human", "human_vs_ai"],
+      "description": "Who competes. V2 concept-separated field."
+    },
+    "judging_mode": {
+      "type": "string",
+      "enum": ["ai_judge", "human_vote", "consensus", "rubric_only", "community_vote"],
+      "description": "How winners are decided. V2 concept-separated field."
+    },
+    "lens": {
+      "type": "string",
+      "description": "Slug or ID of the lens used as the task source."
+    },
+    "workflow_id": {
+      "type": "string",
+      "description": "ID of the workflow used as the task source."
+    },
+    "rubric": {
+      "type": "string",
+      "description": "Slug or ID of the rubric used for scoring."
+    },
+    "rubric_ref": {
+      "type": "string",
+      "description": "Reference to an Evaluation spec ID."
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "minLength": 1 },
+          "ref": { "type": "string", "minLength": 1 },
+          "provider": { "type": "string" },
+          "model": { "type": "string" },
+          "label": { "type": "string" }
+        },
+        "required": ["type", "ref"],
+        "additionalProperties": true
+      }
+    },
+    "contenders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string", "minLength": 1 },
+          "model": { "type": "string" },
+          "label": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "voter_eligibility": {
+      "type": "string",
+      "enum": ["open", "authenticated", "workspace", "invited"],
+      "description": "Who may cast votes."
+    },
+    "forkable": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this battle template may be forked by others."
+    },
+    "metrics": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Evaluation metric identifiers used in scoring."
+    },
+    "human_judge_required": {
+      "type": "boolean",
+      "description": "Whether a human judge must approve the AI verdict."
+    },
+    "evaluation_method": {
+      "type": "string",
+      "description": "Evaluation method identifier (e.g. rubric_plus_judge)."
+    },
+    "lenses": { "type": "array", "items": { "type": "string" } },
+    "colenses": { "type": "array", "items": { "type": "string" } },
+    "lensers": { "type": "array", "items": { "type": "string" } },
+    "evals": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/disclosureRef" }
+    },
+    "rays": { "type": "array", "items": { "type": "string" } },
+    "seed_uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "Reserved UUID for canonical seed data."
+    },
+    "references": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/disclosureRef" }
+    }
+  },
+  "required": ["kind", "name", "description"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "battle",
+      "schema_version": 1,
+      "id": "battle_claude_vs_openai_pr_review",
+      "slug": "claude-vs-openai-pr-review",
+      "name": "Claude vs OpenAI — Pull Request Review",
+      "description": "Battle template comparing Claude and OpenAI on the same code review task.",
+      "visibility": "public",
+      "task_source": "lens",
+      "contender_structure": "ai_vs_ai",
+      "judging_mode": "human_vote",
+      "lens": "code-reviewer",
+      "rubric": "code-quality-rubric",
+      "voter_eligibility": "open",
+      "forkable": true
+    }
+  ]
+}
