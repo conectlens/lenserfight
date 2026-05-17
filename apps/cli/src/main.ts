@@ -135,6 +135,7 @@ const main = defineCommand({
     update: () => import('./commands/update').then((m) => m.default),
     examples: () => import('./commands/examples').then((m) => m.default),
     env: () => import('./commands/env').then((m) => m.default),
+    docs: () => import('./commands/docs').then((m) => m.default),
   },
 });
 
