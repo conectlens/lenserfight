@@ -46,7 +46,33 @@ export const GOOGLE_CAPABILITIES: readonly OAuthCapabilityDefinition[] = [
     ],
     displayName: 'Google Sheets',
     description: 'Read and write Google Sheets data',
-    supportedOperations: ['read', 'write', 'create'],
+    supportedOperations: ['read_range', 'append_row', 'update_range'],
+    operations: [
+      {
+        operation: 'read_range',
+        displayName: 'Read range',
+        description: 'Read a Google Sheets range.',
+        availability: 'experimental',
+        requiredScopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        outputShape: 'array',
+      },
+      {
+        operation: 'append_row',
+        displayName: 'Append row',
+        description: 'Append data to a Google Sheets range.',
+        availability: 'experimental',
+        requiredScopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        outputShape: 'status',
+      },
+      {
+        operation: 'update_range',
+        displayName: 'Update range',
+        description: 'Update a Google Sheets range.',
+        availability: 'experimental',
+        requiredScopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        outputShape: 'status',
+      },
+    ],
   },
   {
     capability: 'docs',
@@ -67,14 +93,55 @@ export const GOOGLE_CAPABILITIES: readonly OAuthCapabilityDefinition[] = [
     ],
     displayName: 'Google Calendar',
     description: 'Create and manage Google Calendar events',
-    supportedOperations: ['read', 'create', 'update', 'delete'],
+    supportedOperations: ['create_event', 'read', 'update', 'delete'],
+    operations: [
+      {
+        operation: 'create_event',
+        displayName: 'Create event',
+        description: 'Create a Google Calendar event.',
+        availability: 'experimental',
+        requiredScopes: [
+          'https://www.googleapis.com/auth/calendar',
+          'https://www.googleapis.com/auth/calendar.events',
+        ],
+        outputShape: 'object',
+      },
+    ],
   },
 ]
 
 export const googleProvider: OAuthProviderDefinition = {
   provider: 'google',
   displayName: 'Google',
+  description: 'Google Workspace services including Gmail, Drive, Docs, Sheets, and Calendar.',
+  authStrategy: 'oauth2',
   capabilities: GOOGLE_CAPABILITIES,
+  availability: 'available',
+  revocationBehavior: 'Revoke the stored user connection and stop resolving access tokens.',
+  tokenRefreshBehavior: 'Refresh OAuth access tokens with the stored refresh token before expiry.',
+  secretStorageRequirements: 'Store access and refresh tokens in Supabase Vault; expose metadata only.',
+  rateLimit: {
+    requestsPerMinute: 60,
+    providerPolicyUrl: 'https://developers.google.com/sheets/api/limits',
+  },
+  executionSafety: {
+    serverSideOnly: true,
+    allowAiPromptUseByDefault: false,
+    masksSecretsInLogs: true,
+  },
+  docs: {
+    docsSlug: 'google',
+    examples: ['Google Sheets row to workflow generation node'],
+  },
+  ui: {
+    category: 'productivity',
+    availability: 'available',
+    connectLabel: 'Connect Google',
+  },
+  testFixtures: {
+    fixtureKind: 'mock_adapter',
+    notes: 'Use deterministic Google Sheets and Calendar adapter fixtures; no live API calls in normal tests.',
+  },
 
   buildAuthUrl(capability, redirectUri, state) {
     const capDef = GOOGLE_CAPABILITIES.find((c) => c.capability === capability)
@@ -84,7 +151,9 @@ export const googleProvider: OAuthProviderDefinition = {
 
     // GOOGLE_OAUTH_CLIENT_ID must be set in the environment
     const clientId =
-      (typeof process !== 'undefined' && process.env?.['GOOGLE_OAUTH_CLIENT_ID']) ?? ''
+      typeof process !== 'undefined'
+        ? (process.env?.['GOOGLE_OAUTH_CLIENT_ID'] ?? '')
+        : ''
 
     const params = new URLSearchParams({
       client_id: clientId,

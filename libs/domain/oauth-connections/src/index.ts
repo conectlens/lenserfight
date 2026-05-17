@@ -1,8 +1,15 @@
 // ── Types ────────────────────────────────────────────────────────────────────
 export type {
+  ConnectorProvider,
   OAuthProvider,
+  ConnectorCapability,
   OAuthCapability,
   GoogleCapability,
+  ConnectorAuthStrategy,
+  ConnectorAvailability,
+  ConnectorCapabilityDefinition,
+  ConnectorProviderDefinition,
+  ConnectorOperationDefinition,
   OAuthCapabilityDefinition,
   OAuthProviderDefinition,
   UserOAuthConnection,
@@ -26,7 +33,10 @@ export {
   getOAuthProvider,
   listOAuthProviders,
   getOAuthCapabilityDefinition,
+  isRegisteredOAuthProvider,
+  isRegisteredOAuthCapability,
 } from './lib/provider.registry'
 
 // ── Built-in providers ───────────────────────────────────────────────────────
 export { googleProvider, GOOGLE_CAPABILITIES } from './lib/providers/google.provider'
+export { automationProviders } from './lib/providers/automation.providers'
