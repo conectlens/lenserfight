@@ -5,6 +5,7 @@ import {
   listChallengeTypeDefinitions,
   listAvailableChallengeTypes,
   listChallengeTypesForContender,
+  challengeTypeRequiresGenerator,
 } from './challenge-type.registry'
 import { BATTLE_CONTENT_TYPES } from './battle.constants'
 import { CONTENDER_STRUCTURES } from './contender-structure.types'
@@ -123,6 +124,88 @@ describe('challenge-type.registry', () => {
       const hva = listChallengeTypesForContender('human_vs_ai')
       expect(hvh.find((d) => d.id === 'prompt_duel')).toBeDefined()
       expect(hva.find((d) => d.id === 'prompt_duel')).toBeUndefined()
+    })
+  })
+
+  // ── Benchmark game types ───────────────────────────────────────────────────
+
+  describe('benchmark game types in registry', () => {
+    const BENCHMARK_TYPES = [
+      'code_completion_benchmark',
+      'instruction_following_benchmark',
+      'reasoning_benchmark',
+    ] as const
+
+    it('all 3 benchmark types exist in the registry', () => {
+      for (const id of BENCHMARK_TYPES) {
+        expect(getChallengeType(id)).toBeDefined()
+      }
+    })
+
+    it('benchmark types are included in CHALLENGE_TYPE_ORDER', () => {
+      for (const id of BENCHMARK_TYPES) {
+        expect(CHALLENGE_TYPE_ORDER).toContain(id)
+      }
+    })
+
+    it('benchmark types are implemented (playable)', () => {
+      for (const id of BENCHMARK_TYPES) {
+        expect(getChallengeType(id)?.implemented).toBe(true)
+      }
+    })
+
+    it('benchmark types support ai_vs_ai in allowedContenders', () => {
+      // instruction_following_benchmark is ai_vs_ai only
+      expect(getChallengeType('instruction_following_benchmark')?.allowedContenders).toContain('ai_vs_ai')
+      // code_completion and reasoning support both ai_vs_ai and human_vs_ai
+      expect(getChallengeType('code_completion_benchmark')?.allowedContenders).toContain('ai_vs_ai')
+      expect(getChallengeType('reasoning_benchmark')?.allowedContenders).toContain('ai_vs_ai')
+    })
+
+    it('benchmark types are AI compatible', () => {
+      for (const id of BENCHMARK_TYPES) {
+        expect(getChallengeType(id)?.aiCompatible).toBe(true)
+      }
+    })
+
+    it('benchmark types do not require a human UI', () => {
+      for (const id of BENCHMARK_TYPES) {
+        expect(getChallengeType(id)?.humanUIRequired).toBe(false)
+      }
+    })
+
+    it('benchmark types have generator requirements defined', () => {
+      for (const id of BENCHMARK_TYPES) {
+        expect(challengeTypeRequiresGenerator(id)).toBe(true)
+      }
+    })
+
+    it('existing human challenge types are unchanged', () => {
+      // Regression: original 9 types still exist and are correct
+      expect(getChallengeType('writing_contest')?.allowedContenders).not.toContain('ai_vs_ai')
+      expect(getChallengeType('math_calculation')?.implemented).toBe(true)
+      expect(getChallengeType('grammar_quiz')?.localeDependent).toBe(true)
+      expect(getChallengeType('debate')?.implemented).toBe(false)
+      expect(getChallengeType('prompt_duel')?.aiCompatible).toBe(false)
+    })
+
+    it('instruction_following_benchmark is only for ai_vs_ai (no human contenders)', () => {
+      const def = getChallengeType('instruction_following_benchmark')!
+      expect(def.allowedContenders).not.toContain('human_vs_human')
+      expect(def.allowedContenders).not.toContain('human_vs_ai')
+    })
+
+    it('benchmark types do not appear in human-only contender queries', () => {
+      const hvhTypes = listChallengeTypesForContender('human_vs_human')
+      const hvhIds = hvhTypes.map((d) => d.id)
+      for (const id of BENCHMARK_TYPES) {
+        expect(hvhIds).not.toContain(id)
+      }
+    })
+
+    it('total registry size is 12 (9 original + 3 benchmark)', () => {
+      expect(Object.keys(CHALLENGE_TYPE_REGISTRY)).toHaveLength(12)
+      expect(CHALLENGE_TYPE_ORDER).toHaveLength(12)
     })
   })
 })

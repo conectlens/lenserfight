@@ -50,6 +50,17 @@ draft → open → close → published  (skipping voting)
 | `human_vs_human_ai_votes` | Two humans compete; AI model(s) judge the entries |
 | `human_vs_ai` | A human competes against an AI model or agent |
 | `workflow_battle` | Both contenders run a Connected Lens workflow; outputs are compared |
+| `lenser_battle` | Named lensers (human or AI) compete using their own lens, memory, and configuration |
+
+::: tip V2 Concept Separation
+The legacy `battle_type` enum conflates who competes with how the winner is decided. The V2 model separates these into three orthogonal axes:
+
+- **Task source** (`lens`, `workflow`, `challenge`) — what the battle is about
+- **Contender structure** (`ai_vs_ai`, `human_vs_human`, `human_vs_ai`) — who competes
+- **Judging mode** (`community_vote`, `ai_judge`, `rubric_score`, `auto_score`) — how the winner is decided
+
+New battles dual-write both the legacy column and the new V2 columns. Use `lf battle validate` or `lf battle formats` to explore valid combinations.
+:::
 
 ---
 

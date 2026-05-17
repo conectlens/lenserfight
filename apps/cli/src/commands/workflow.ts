@@ -10,6 +10,7 @@ import {
   writeWorkflowSimulationArtifacts,
 } from '../utils/automation-objects'
 import { printJson, printTable, truncate } from '../utils/output'
+import { makeLifecycleCommand } from '../utils/lifecycle'
 
 function parseInputs(raw: string | undefined): Record<string, unknown> | undefined {
   if (!raw) return undefined
@@ -254,7 +255,7 @@ const list = defineCommand({
         {
           requireAuth: true,
           query: {
-            select: 'id,name,description,status,created_at',
+            select: 'id,title,description,visibility,archived_at,deleted_at,created_at',
             order: 'created_at.desc',
             limit: args.limit,
             offset: args.offset,
@@ -274,11 +275,12 @@ const list = defineCommand({
       }
 
       printTable(
-        ['ID', 'Name', 'Status', 'Created'],
+        ['ID', 'Name', 'State', 'Visibility', 'Created'],
         rows.map((r) => [
           String(r['id'] ?? ''),
-          truncate(String(r['name'] ?? ''), 36),
-          String(r['status'] ?? '—'),
+          truncate(String(r['title'] ?? ''), 36),
+          r['deleted_at'] ? 'deleted' : r['archived_at'] ? 'archived' : 'active',
+          String(r['visibility'] ?? '—'),
           r['created_at'] ? new Date(String(r['created_at'])).toLocaleDateString() : '—',
         ])
       )
@@ -288,6 +290,9 @@ const list = defineCommand({
     }
   },
 })
+
+const lifecycleCommand = (action: Parameters<typeof makeLifecycleCommand>[1], description: string) =>
+  makeLifecycleCommand('workflow', action, description, 'Workflow UUID')
 
 // ---------------------------------------------------------------------------
 // CD: workflow trigger add
@@ -393,6 +398,12 @@ export default defineCommand({
     validate,
     create,
     list,
+    status: lifecycleCommand('status', 'Show lifecycle state, pinned state, version snapshot, and delete blockers.'),
+    archive: lifecycleCommand('archive', 'Archive a workflow without breaking historical runs or battles.'),
+    restore: lifecycleCommand('restore', 'Restore an archived or tombstoned workflow when policy allows it.'),
+    delete: lifecycleCommand('delete', 'Request dependency-aware workflow deletion; used workflows become tombstones.'),
+    pin: lifecycleCommand('pin', 'Pin a workflow to your saved artifacts.'),
+    unpin: lifecycleCommand('unpin', 'Remove your saved pin from a workflow.'),
     trigger,
   },
 })

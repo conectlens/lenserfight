@@ -23,12 +23,17 @@ jest.mock('../utils/output', () => ({
 
 import consola from 'consola'
 import { callRpc, callRest, handleError } from '../utils/api'
+import { printTable, printJson } from '../utils/output'
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
 const mockCallRest = callRest as jest.MockedFunction<typeof callRest>
 const mockHandleError = handleError as jest.MockedFunction<typeof handleError>
+const mockPrintTable = printTable as jest.MockedFunction<typeof printTable>
+const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
 const consolaSuccess = (consola as unknown as { success: jest.Mock }).success
+const consolaError = (consola as unknown as { error: jest.Mock }).error
 const consolaInfo = (consola as unknown as { info: jest.Mock }).info
+const consolaLog = (consola as unknown as { log: jest.Mock }).log
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCmd = {
@@ -340,5 +345,405 @@ describe('battle webhook add', () => {
       { requireAuth: true }
     )
     expect(consolaSuccess).toHaveBeenCalledWith('Webhook subscription created: %s', subId)
+  })
+})
+
+// ── V2 concept separation commands ──────────────────────────────────────────
+
+describe('battle formats', () => {
+  it('lists task sources with contender and judging tree', async () => {
+    const cmd = await getSubCmd('formats')
+    await cmd.run?.({ args: { json: false }, cmd: {}, rawArgs: [] })
+
+    // Should print at least 3 task sources (lens, workflow, challenge)
+    expect(consolaLog).toHaveBeenCalled()
+    const calls = consolaLog.mock.calls.map(([msg]) => String(msg))
+    expect(calls.some((c) => c.includes('Lens Task'))).toBe(true)
+    expect(calls.some((c) => c.includes('Workflow Task'))).toBe(true)
+    expect(calls.some((c) => c.includes('Challenge Task'))).toBe(true)
+  })
+
+  it('outputs JSON with all three task sources', async () => {
+    const cmd = await getSubCmd('formats')
+    await cmd.run?.({ args: { json: true }, cmd: {}, rawArgs: [] })
+
+    expect(mockPrintJson).toHaveBeenCalledTimes(1)
+    const data = mockPrintJson.mock.calls[0][0] as Array<{ taskSource: string }>
+    const sources = data.map((d) => d.taskSource)
+    expect(sources).toContain('lens')
+    expect(sources).toContain('workflow')
+    expect(sources).toContain('challenge')
+  })
+})
+
+describe('battle challenge-types', () => {
+  it('lists all challenge types in table format', async () => {
+    const cmd = await getSubCmd('challenge-types')
+    await cmd.run?.({
+      args: { 'contender-structure': '', available: false, json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockPrintTable).toHaveBeenCalled()
+    const [headers, rows] = mockPrintTable.mock.calls[0]
+    expect(headers).toEqual(['ID', 'LABEL', 'OUTPUT', 'TIME', 'STATUS', 'CONTENDERS'])
+    // At least the 3 implemented types
+    expect(rows.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('filters by --contender-structure', async () => {
+    const cmd = await getSubCmd('challenge-types')
+    await cmd.run?.({
+      args: { 'contender-structure': 'human_vs_human', available: false, json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockPrintTable).toHaveBeenCalled()
+    const rows = mockPrintTable.mock.calls[0][1] as string[][]
+    for (const row of rows) {
+      // CONTENDERS column should include human_vs_human
+      expect(row[5]).toContain('human_vs_human')
+    }
+  })
+
+  it('filters by --available to only implemented types', async () => {
+    const cmd = await getSubCmd('challenge-types')
+    await cmd.run?.({
+      args: { 'contender-structure': '', available: true, json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockPrintTable).toHaveBeenCalled()
+    const rows = mockPrintTable.mock.calls[0][1] as string[][]
+    for (const row of rows) {
+      expect(row[4]).toBe('ready')
+    }
+  })
+
+  it('rejects invalid --contender-structure', async () => {
+    const cmd = await getSubCmd('challenge-types')
+    await cmd.run?.({
+      args: { 'contender-structure': 'invalid_contender', available: false, json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(1)
+    expect(consolaError).toHaveBeenCalled()
+    expect(mockPrintTable).not.toHaveBeenCalled()
+  })
+
+  it('outputs JSON when --json flag is set', async () => {
+    const cmd = await getSubCmd('challenge-types')
+    await cmd.run?.({
+      args: { 'contender-structure': '', available: false, json: true },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockPrintJson).toHaveBeenCalledTimes(1)
+    const data = mockPrintJson.mock.calls[0][0] as Array<{ id: string }>
+    expect(data.length).toBeGreaterThanOrEqual(3)
+    expect(data.some((d) => d.id === 'writing_contest')).toBe(true)
+  })
+})
+
+describe('battle explain-invalid', () => {
+  it('reports valid combination', async () => {
+    const cmd = await getSubCmd('explain-invalid')
+    await cmd.run?.({
+      args: {
+        'task-source': 'lens',
+        'contender-structure': 'ai_vs_ai',
+        'judging-mode': 'community_vote',
+        json: false,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(0)
+    expect(consolaSuccess).toHaveBeenCalledWith('Combination is valid.')
+  })
+
+  it('reports invalid task-source ↔ contender-structure', async () => {
+    const cmd = await getSubCmd('explain-invalid')
+    await cmd.run?.({
+      args: {
+        'task-source': 'workflow',
+        'contender-structure': 'human_vs_human',
+        'judging-mode': '',
+        json: false,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(1)
+    expect(consolaError).toHaveBeenCalledWith('Combination is invalid:')
+  })
+
+  it('reports invalid contender-structure ↔ judging-mode', async () => {
+    const cmd = await getSubCmd('explain-invalid')
+    await cmd.run?.({
+      args: {
+        'task-source': 'lens',
+        'contender-structure': 'ai_vs_ai',
+        'judging-mode': 'auto_score',
+        json: false,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(1)
+    expect(consolaError).toHaveBeenCalledWith('Combination is invalid:')
+  })
+
+  it('outputs JSON for invalid combination with exit code 1', async () => {
+    const cmd = await getSubCmd('explain-invalid')
+    await cmd.run?.({
+      args: {
+        'task-source': 'workflow',
+        'contender-structure': 'human_vs_human',
+        'judging-mode': '',
+        json: true,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(1)
+    expect(mockPrintJson).toHaveBeenCalledTimes(1)
+    const data = mockPrintJson.mock.calls[0][0] as { valid: boolean; reasons: unknown[] }
+    expect(data.valid).toBe(false)
+    expect(data.reasons.length).toBeGreaterThan(0)
+  })
+})
+
+describe('battle validate (V2 mode)', () => {
+  it('validates a valid V2 lens + ai_vs_ai + community_vote combination', async () => {
+    const cmd = await getSubCmd('validate')
+    await cmd.run?.({
+      args: {
+        'task-source': 'lens',
+        'contender-structure': 'ai_vs_ai',
+        'judging-mode': 'community_vote',
+        'challenge-type': '',
+        format: '',
+        type: '',
+        'content-type': '',
+        'memory-mode': '',
+        'instruction-disclosure': '',
+        json: false,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(0)
+    expect(consolaSuccess).toHaveBeenCalledWith('V2 configuration is valid.')
+  })
+
+  it('rejects V2 when only partial axes are provided', async () => {
+    const cmd = await getSubCmd('validate')
+    await cmd.run?.({
+      args: {
+        'task-source': 'lens',
+        'contender-structure': '',
+        'judging-mode': '',
+        'challenge-type': '',
+        format: '',
+        type: '',
+        'content-type': '',
+        'memory-mode': '',
+        'instruction-disclosure': '',
+        json: false,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(1)
+    expect(consolaError).toHaveBeenCalled()
+  })
+
+  it('returns V2 violations for invalid challenge + workflow combination', async () => {
+    const cmd = await getSubCmd('validate')
+    await cmd.run?.({
+      args: {
+        'task-source': 'workflow',
+        'contender-structure': 'human_vs_human',
+        'judging-mode': 'community_vote',
+        'challenge-type': '',
+        format: '',
+        type: '',
+        'content-type': '',
+        'memory-mode': '',
+        'instruction-disclosure': '',
+        json: true,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(1)
+    expect(mockPrintJson).toHaveBeenCalledTimes(1)
+    const data = mockPrintJson.mock.calls[0][0] as { valid: boolean; mode: string }
+    expect(data.valid).toBe(false)
+    expect(data.mode).toBe('v2')
+  })
+
+  it('validates AI judge as judging mode (not contender structure)', async () => {
+    const cmd = await getSubCmd('validate')
+    await cmd.run?.({
+      args: {
+        'task-source': 'lens',
+        'contender-structure': 'human_vs_human',
+        'judging-mode': 'ai_judge',
+        'challenge-type': '',
+        format: '',
+        type: '',
+        'content-type': '',
+        'memory-mode': '',
+        'instruction-disclosure': '',
+        json: false,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(0)
+    expect(consolaSuccess).toHaveBeenCalledWith('V2 configuration is valid.')
+  })
+
+  it('rejects challenge task without challenge-type', async () => {
+    const cmd = await getSubCmd('validate')
+    await cmd.run?.({
+      args: {
+        'task-source': 'challenge',
+        'contender-structure': 'human_vs_human',
+        'judging-mode': 'community_vote',
+        'challenge-type': '',
+        format: '',
+        type: '',
+        'content-type': '',
+        'memory-mode': '',
+        'instruction-disclosure': '',
+        json: true,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(1)
+    expect(mockPrintJson).toHaveBeenCalledTimes(1)
+    const data = mockPrintJson.mock.calls[0][0] as { valid: boolean; mode: string }
+    expect(data.valid).toBe(false)
+    expect(data.mode).toBe('v2')
+  })
+
+  it('reports V2 violations for challenge with writing_contest missing generator config', async () => {
+    const cmd = await getSubCmd('validate')
+    await cmd.run?.({
+      args: {
+        'task-source': 'challenge',
+        'contender-structure': 'human_vs_human',
+        'judging-mode': 'community_vote',
+        'challenge-type': 'writing_contest',
+        format: '',
+        type: '',
+        'content-type': '',
+        'memory-mode': '',
+        'instruction-disclosure': '',
+        json: true,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    // Should fail because writing_contest requires generator config
+    expect(process.exitCode).toBe(1)
+    expect(mockPrintJson).toHaveBeenCalledTimes(1)
+    const data = mockPrintJson.mock.calls[0][0] as { valid: boolean; mode: string }
+    expect(data.valid).toBe(false)
+    expect(data.mode).toBe('v2')
+  })
+})
+
+describe('battle validate (legacy V1 mode)', () => {
+  it('requires --format and --type when no V2 flags', async () => {
+    const cmd = await getSubCmd('validate')
+    await cmd.run?.({
+      args: {
+        'task-source': '',
+        'contender-structure': '',
+        'judging-mode': '',
+        'challenge-type': '',
+        format: '',
+        type: '',
+        'content-type': '',
+        'memory-mode': '',
+        'instruction-disclosure': '',
+        json: false,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(1)
+    expect(consolaError).toHaveBeenCalled()
+  })
+
+  it('validates a valid lens + ai_vs_ai legacy combination', async () => {
+    const cmd = await getSubCmd('validate')
+    await cmd.run?.({
+      args: {
+        'task-source': '',
+        'contender-structure': '',
+        'judging-mode': '',
+        'challenge-type': '',
+        format: 'lens',
+        type: 'ai_vs_ai',
+        'content-type': '',
+        'memory-mode': '',
+        'instruction-disclosure': '',
+        json: false,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(0)
+    expect(consolaSuccess).toHaveBeenCalledWith('Configuration is valid.')
+  })
+
+  it('returns V1 violations in JSON mode', async () => {
+    const cmd = await getSubCmd('validate')
+    await cmd.run?.({
+      args: {
+        'task-source': '',
+        'contender-structure': '',
+        'judging-mode': '',
+        'challenge-type': '',
+        format: 'workflow',
+        type: 'human_vs_human_open_votes',
+        'content-type': '',
+        'memory-mode': '',
+        'instruction-disclosure': '',
+        json: true,
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(process.exitCode).toBe(1)
+    expect(mockPrintJson).toHaveBeenCalledTimes(1)
+    const data = mockPrintJson.mock.calls[0][0] as { valid: boolean; mode: string }
+    expect(data.valid).toBe(false)
+    expect(data.mode).toBe('v1')
   })
 })

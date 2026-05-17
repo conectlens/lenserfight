@@ -2609,6 +2609,14 @@ export default defineConfig({
               text: 'Output Compatibility',
               link: '/en/explanation/battles/output-compatibility',
             },
+            {
+              text: 'V2 Concept Separation',
+              link: '/en/explanation/battles/concept-separation',
+            },
+            {
+              text: 'Challenge Types',
+              link: '/en/explanation/battles/challenge-types',
+            },
             { text: 'Limited Beta Status', link: '/en/explanation/battles/limited-beta-status' },
           ],
         },
@@ -2657,6 +2665,14 @@ export default defineConfig({
             {
               text: 'Output Compatibility',
               link: '/en/explanation/battles/output-compatibility',
+            },
+            {
+              text: 'V2 Concept Separation',
+              link: '/en/explanation/battles/concept-separation',
+            },
+            {
+              text: 'Challenge Types',
+              link: '/en/explanation/battles/challenge-types',
             },
             { text: 'Limited Beta Status', link: '/en/explanation/battles/limited-beta-status' },
           ],

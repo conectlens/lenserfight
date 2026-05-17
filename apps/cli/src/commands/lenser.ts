@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, callRest, handleError } from '../utils/api';
 import { printTable, printJson, truncate } from '../utils/output';
+import { runLifecycleAction, type CliLifecycleAction } from '../utils/lifecycle';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -138,6 +139,12 @@ async function resolveAiLenserId(handle: string): Promise<string> {
   const agent = agents?.[0];
   if (!agent) throw new Error(`No AI lenser found for @${normalized}`);
   return agent.id;
+}
+
+async function resolveLifecycleAgentId(identifier: string): Promise<string> {
+  const raw = identifier.trim();
+  if (UUID_RE.test(raw)) return raw;
+  return resolveAiLenserId(raw);
 }
 
 // ---------------------------------------------------------------------------
@@ -535,6 +542,22 @@ const lenserStatus = defineCommand({
   },
 });
 
+function agentLifecycleCommand(action: CliLifecycleAction, description: string) {
+  return defineCommand({
+    meta: { name: action === 'status' ? 'lifecycle' : action, description },
+    args: {
+      id: { type: 'positional', description: 'AI lenser UUID or handle', required: true },
+      json: { type: 'boolean', description: 'Output as JSON', default: false },
+    },
+    async run({ args }) {
+      try {
+        const aiLenserId = await resolveLifecycleAgentId(args.id);
+        await runLifecycleAction('agent', aiLenserId, action, args.json);
+      } catch (err) { handleError(err); }
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Root: lf lenser
 // ---------------------------------------------------------------------------
@@ -561,5 +584,11 @@ export default defineCommand({
     pause,
     resume,
     status: lenserStatus,
+    lifecycle: agentLifecycleCommand('status', 'Show agent lifecycle state, pinned state, snapshot hash, and delete blockers.'),
+    archive: agentLifecycleCommand('archive', 'Archive an AI lenser without deleting historical battle or run evidence.'),
+    restore: agentLifecycleCommand('restore', 'Restore an archived or tombstoned AI lenser when policy allows it.'),
+    delete: agentLifecycleCommand('delete', 'Request dependency-aware AI lenser deletion; used agents become tombstones.'),
+    pin: agentLifecycleCommand('pin', 'Pin an AI lenser to your saved artifacts.'),
+    unpin: agentLifecycleCommand('unpin', 'Remove your saved pin from an AI lenser.'),
   },
 });
