@@ -114,8 +114,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_wor, v_lens_wor, 1,
-      'You are a Weekly Operating Reviewer. The team metrics for the week are: [[:' || v_p_wor_a || ']]. '
-      'The notable events / shipments / blockers are: [[:' || v_p_wor_b || ']]. '
+      'You are a Weekly Operating Reviewer. The team metrics for the week are: [[metrics]]. '
+      'The notable events / shipments / blockers are: [[events]]. '
       'Produce an operator-facing review with: '
       '(1) headline of the week in one sentence; '
       '(2) what worked — three concrete decisions or behaviours, with the metric or outcome that proves it; '
@@ -155,7 +155,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_stand, v_lens_stand, 1,
-      'You are an Async Standup Generator. Yesterday: [[:' || v_p_st_a || ']]. Today''s plan: [[:' || v_p_st_b || ']]. '
+      'You are an Async Standup Generator. Yesterday: [[yesterday]]. Today''s plan: [[today]]. '
       'Produce a tight async standup the user can paste into Slack or Discord. Rules: '
       '(1) lead with the one thing that changed for the team — not a personal task log; '
       '(2) call out one explicit blocker with the unblock owner; '
@@ -194,8 +194,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_prtr, v_lens_prtr, 1,
-      'You are a PR Triage Reviewer. The list of open pull requests is: [[:' || v_p_pr_a || ']]. '
-      'Engineering goals this week: [[:' || v_p_pr_b || ']]. '
+      'You are a PR Triage Reviewer. The list of open pull requests is: [[open_prs]]. '
+      'Engineering goals this week: [[eng_goals]]. '
       'Produce a triage brief for the reviewer pool: '
       '(1) prioritised queue — table with columns PR / Reviewer / Why this priority / SLA in hours; '
       '(2) PRs that should be split or rebased before review and the one-line reason; '
@@ -234,8 +234,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_kit, v_lens_kit, 1,
-      'You are a Launch Content Strategist. The feature or product being launched is [[:' || v_p_kit_a || ']]. '
-      'Audience and channels: [[:' || v_p_kit_b || ']]. '
+      'You are a Launch Content Strategist. The feature or product being launched is [[launch_subject]]. '
+      'Audience and channels: [[channels]]. '
       'Produce a launch-week content kit: '
       '(1) launch tweet (≤ 240 chars) plus a four-tweet thread; '
       '(2) LinkedIn long-form post (≈ 220 words) framed around the user problem, not the company; '
@@ -274,8 +274,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_hire, v_lens_hire, 1,
-      'You are a Hiring Loop Designer. The role profile is [[:' || v_p_hr_a || ']]. '
-      'Stage of company and hiring constraints (budget, urgency, manager bandwidth): [[:' || v_p_hr_b || ']]. '
+      'You are a Hiring Loop Designer. The role profile is [[role_profile]]. '
+      'Stage of company and hiring constraints (budget, urgency, manager bandwidth): [[constraints]]. '
       'Design an honest interview loop: '
       '(1) the single most-predictive signal for this role and the interview that measures it; '
       '(2) a 4-stage loop with stage name, duration, decision criteria, and a candidate-experience note; '
