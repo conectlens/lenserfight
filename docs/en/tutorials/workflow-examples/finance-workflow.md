@@ -8,6 +8,10 @@ description: Three complete Workflow examples for founders and operators — wee
 > **⚠️ Informational only — not financial advice.**
 > These Workflows help you structure thinking, explain numbers in plain language, and draft documents for internal use. They do not constitute financial, investment, tax, accounting, or legal advice. Always verify AI-generated financial output with a qualified professional before making decisions or sharing with external parties.
 
+::: warning Design reference — not yet end-to-end executable
+These examples show Workflow structure and Lens definitions. **Individual `lens`-type nodes are executable now** via `lf lens run` or from the web UI. Multi-node end-to-end Workflow execution (the full DAG runner) is not yet available in the CLI. Use these as design templates and wire individual Lenses yourself until the hosted runner ships.
+:::
+
 Three pipelines for founders, operators, and analysts who need to turn raw numbers into structured narratives quickly.
 
 ---
