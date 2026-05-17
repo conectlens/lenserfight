@@ -1,0 +1,98 @@
+name: "🐛 Bug Report"
+description: Something is broken in LenserFight.
+title: "[BUG] "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Please [search existing issues](../../issues) before opening a new one.
+        Connector bugs: select "connector / adapter" in the area dropdown below.
+        Install failures: select "install / setup".
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      description: Which part of the project is broken?
+      options:
+        - apps/web
+        - apps/mobile
+        - apps/cli
+        - apps/arena
+        - apps/gateway
+        - libs/features
+        - libs/ui
+        - supabase / database
+        - connector / adapter
+        - install / setup
+        - docs
+        - other
+    validations:
+      required: true
+
+  - type: input
+    id: connector_name
+    attributes:
+      label: Connector name
+      description: Only fill in if area is "connector / adapter".
+      placeholder: e.g. http-connector, chainabit-execution
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What is broken?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: "OS, Node version, browser (web bugs) or Supabase CLI version (install bugs)."
+      placeholder: "macOS 14.4, Node 20.11, Chrome 124 / Supabase CLI 1.150"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error output
+      render: text
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true
+        - label: I reproduced this on the latest commit or release
+          required: true
