@@ -11,7 +11,6 @@ import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
 import { useCallback } from 'react'
 import type { OAuthCapability, OAuthProvider, UserOAuthConnection } from '@lenserfight/domain/oauth-connections'
-import { getOAuthProvider } from '@lenserfight/domain/oauth-connections'
 
 const FUNCTIONS_BASE_URL =
   typeof process !== 'undefined'
@@ -25,6 +24,7 @@ const QUERY_KEY = ['oauth-connections'] as const
 function mapRow(row: Record<string, unknown>): UserOAuthConnection {
   return {
     id: row['id'] as string,
+    workspaceId: (row['workspace_id'] as string | null) ?? null,
     provider: row['provider'] as OAuthProvider,
     capability: row['capability'] as OAuthCapability,
     connectionLabel: row['connection_label'] as string,
@@ -61,33 +61,22 @@ export function useOAuthConnections() {
     capability: OAuthCapability,
     label: string = 'primary',
   ) => {
-    if (!user?.id) return
+    if (!user?.id || provider !== 'google') return
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData.session?.access_token
+    if (!accessToken) return
 
-    // Fetch the lenser profile id (needed for the state payload)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (!profile?.id) return
-
-    const statePayload = {
-      lenser_id: profile.id as string,
-      capability,
-      label,
-      nonce: crypto.randomUUID(),
-    }
-
-    const state = btoa(JSON.stringify(statePayload))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '')
-
-    const redirectUri = `${FUNCTIONS_BASE_URL}/oauth-google-callback`
-    const providerDef = getOAuthProvider(provider)
-
-    window.location.href = providerDef.buildAuthUrl(capability, redirectUri, state)
+    const res = await fetch(`${FUNCTIONS_BASE_URL}/oauth-google-callback/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ provider, capability, label }),
+    })
+    if (!res.ok) throw new Error('oauth_start_failed')
+    const body = await res.json() as { authUrl?: string }
+    if (body.authUrl) window.location.href = body.authUrl
   }, [user?.id])
 
   const revokeMutation = useMutation({
