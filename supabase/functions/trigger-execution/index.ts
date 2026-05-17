@@ -39,6 +39,7 @@ interface TriggerExecutionBody {
     prompt?: string
     width?: number
     height?: number
+    aspect_ratio?: string
     duration_s?: number
     n?: number
     quality?: string
@@ -241,6 +242,45 @@ async function generateStabilityImage(
   return { url, mimeType: 'image/png', width: params?.width, height: params?.height }
 }
 
+async function generateGoogleImage(
+  apiKey: string,
+  model: string,
+  prompt: string,
+  params: TriggerExecutionBody['generative_media_params'],
+): Promise<MediaResult> {
+  const wireModel = resolveWireModel(model)
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${wireModel}:generateImages`
+
+  // Google Imagen accepts aspect_ratio as a colon-separated string ("16:9", "1:1", etc.).
+  // Fall back to square when the caller doesn't specify.
+  const aspectRatio = params?.aspect_ratio ?? '1:1'
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify({
+      prompt: { text: prompt },
+      number_of_images: Math.min(Math.max(1, params?.n ?? 1), 4),
+      aspect_ratio: aspectRatio,
+      safety_filter_level: 'BLOCK_MEDIUM_AND_ABOVE',
+    }),
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Google Imagen error ${res.status}: ${text.slice(0, 300)}`)
+  }
+
+  const data = await res.json() as {
+    generatedImages?: Array<{ image?: { imageBytes?: string; mimeType?: string } }>
+  }
+  const img = data.generatedImages?.[0]?.image
+  if (!img?.imageBytes) throw new Error('Google Imagen returned no image data')
+
+  const mimeType = img.mimeType ?? 'image/png'
+  return { url: `data:${mimeType};base64,${img.imageBytes}`, mimeType }
+}
+
 async function generateElevenLabsAudio(
   apiKey: string,
   model: string,
@@ -385,6 +425,7 @@ async function dispatchSync(
     if (providerKey === 'openai') return generateOpenAIImage(apiKey, modelKey, prompt, params)
     if (providerKey === 'fal') return generateFALImage(apiKey, modelKey, prompt, params)
     if (providerKey === 'stability') return generateStabilityImage(apiKey, modelKey, prompt, params)
+    if (providerKey === 'google') return generateGoogleImage(apiKey, modelKey, prompt, params)
   }
   if (modality === 'audio') {
     if (providerKey === 'elevenlabs') return generateElevenLabsAudio(apiKey, modelKey, prompt, params)
