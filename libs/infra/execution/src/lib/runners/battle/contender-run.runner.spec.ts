@@ -3,6 +3,7 @@
 // Covers: happy path, fallback (no provider), abort signal, provider throws,
 // personality note passed in params, battle metadata in output.
 
+import { vi } from 'vitest'
 import { ContenderRunRunner } from './contender-run.runner'
 import type { NodeRunnerContext } from '../node-runner.interface'
 import type { ExecutionResult } from '../../execution.types'
@@ -40,7 +41,7 @@ describe('ContenderRunRunner', () => {
 
   describe('happy path', () => {
     it('calls executeProvider with the resolved prompt and returns text output', async () => {
-      const executeProvider = jest.fn<Promise<ExecutionResult>, [unknown]>().mockResolvedValue(MOCK_RESULT)
+      const executeProvider = vi.fn<Promise<ExecutionResult>, [unknown]>().mockResolvedValue(MOCK_RESULT)
       const ctx = makeCtx({ resolvedPrompt: 'Write a haiku', executeProvider })
 
       const result = await runner.execute(ctx)
@@ -53,7 +54,7 @@ describe('ContenderRunRunner', () => {
     })
 
     it('attaches battle metadata to result.metadata', async () => {
-      const executeProvider = jest.fn().mockResolvedValue({ ...MOCK_RESULT, metadata: {} })
+      const executeProvider = vi.fn().mockResolvedValue({ ...MOCK_RESULT, metadata: {} })
       const ctx = makeCtx({ resolvedPrompt: 'prompt', executeProvider })
 
       const result = await runner.execute(ctx)
@@ -67,7 +68,7 @@ describe('ContenderRunRunner', () => {
     })
 
     it('merges personality note into params as __system_prompt', async () => {
-      const executeProvider = jest.fn().mockResolvedValue(MOCK_RESULT)
+      const executeProvider = vi.fn().mockResolvedValue(MOCK_RESULT)
       const ctx = makeCtx({
         resolvedPrompt: 'Do the task',
         executeProvider,
@@ -113,7 +114,7 @@ describe('ContenderRunRunner', () => {
     it('throws when signal is already aborted before provider call', async () => {
       const controller = new AbortController()
       controller.abort()
-      const executeProvider = jest.fn().mockResolvedValue(MOCK_RESULT)
+      const executeProvider = vi.fn().mockResolvedValue(MOCK_RESULT)
       const ctx = makeCtx({
         resolvedPrompt: 'prompt',
         executeProvider,
@@ -127,7 +128,7 @@ describe('ContenderRunRunner', () => {
 
   describe('provider throws', () => {
     it('propagates provider errors for engine retry handling', async () => {
-      const executeProvider = jest.fn().mockRejectedValue(new Error('Rate limit exceeded'))
+      const executeProvider = vi.fn().mockRejectedValue(new Error('Rate limit exceeded'))
       const ctx = makeCtx({ resolvedPrompt: 'prompt', executeProvider })
 
       await expect(runner.execute(ctx)).rejects.toThrow('Rate limit exceeded')
