@@ -38,13 +38,19 @@ export const CONTENDER_STRUCTURE_DOCS_PATH: Record<ContenderStructure, string> =
 /**
  * Which contender structures are valid for each task source.
  *
- * - lens: any combination — AI benchmarking (recommended) or human contests
- * - workflow: AI or mixed — workflows typically need AI execution
+ * - lens: AI only — Lens execution is a deterministic prompt contract;
+ *   human contestants cannot be evaluated fairly against it.
+ * - workflow: AI only — Workflow pipelines are automated execution graphs;
+ *   human participation is architecturally incompatible.
  * - challenge: human-involving only — standalone human game mechanics
+ *
+ * This is the single source of truth enforced by the wizard, the backend
+ * CHECK constraint, and the CLI validator. Do not relax these rules without
+ * updating all three enforcement layers.
  */
 export const CONTENDER_BY_TASK_SOURCE: Record<TaskSource, readonly ContenderStructure[]> = {
-  lens: ['ai_vs_ai', 'human_vs_ai', 'human_vs_human'],
-  workflow: ['ai_vs_ai', 'human_vs_ai'],
+  lens: ['ai_vs_ai'],
+  workflow: ['ai_vs_ai'],
   challenge: ['human_vs_human', 'human_vs_ai'],
 }
 

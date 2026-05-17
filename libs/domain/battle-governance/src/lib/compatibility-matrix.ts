@@ -15,9 +15,11 @@ import {
 
 // ─── Format → Type matrix ────────────────────────────────────────────────────
 
+// V1 format→type matrix. Must agree with V2 CONTENDER_BY_TASK_SOURCE.
+// lens/workflow are AI-only execution contracts — no human contender types.
 const FORMAT_TYPE_MATRIX: Record<BattleFormat, readonly BattleType[]> = {
-  workflow: ['ai_vs_ai', 'human_vs_ai', 'workflow_battle'],
-  lens: ['ai_vs_ai', 'human_vs_ai', 'human_vs_human_open_votes', 'human_vs_human_ai_votes'],
+  workflow: ['ai_vs_ai', 'workflow_battle'],
+  lens: ['ai_vs_ai'],
   lenser_battle: ['lenser_battle'],
 }
 
