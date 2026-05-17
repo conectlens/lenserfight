@@ -1222,6 +1222,7 @@ export default defineConfig({
                 { text: 'Lens Parametreleri', link: '/tr/explanation/lenses/lens-parameters' },
                 { text: 'İş Akışları', link: '/tr/explanation/lenses/workflows' },
                 { text: 'Finansman Kaynakları', link: '/tr/explanation/lenses/funding-sources' },
+                { text: 'Yerel Anahtarlar ve Gateway', link: '/tr/explanation/lenses/local-keys-gateway' },
               ],
             },
             {
@@ -1377,6 +1378,7 @@ export default defineConfig({
                 { text: 'Lens Parametreleri', link: '/tr/explanation/lenses/lens-parameters' },
                 { text: 'İş Akışları', link: '/tr/explanation/lenses/workflows' },
                 { text: 'Finansman Kaynakları', link: '/tr/explanation/lenses/funding-sources' },
+                { text: 'Yerel Anahtarlar ve Gateway', link: '/tr/explanation/lenses/local-keys-gateway' },
               ],
             },
           ],
@@ -2526,6 +2528,7 @@ export default defineConfig({
             { text: 'Lens Parameters', link: '/en/explanation/lenses/lens-parameters' },
             { text: 'Connected Lens Workflows', link: '/en/explanation/lenses/workflows' },
             { text: 'Funding Sources', link: '/en/explanation/lenses/funding-sources' },
+            { text: 'Local Keys & Gateway', link: '/en/explanation/lenses/local-keys-gateway' },
           ],
         },
         {
@@ -2779,6 +2782,7 @@ export default defineConfig({
             { text: 'Lens Parameters', link: '/en/explanation/lenses/lens-parameters' },
             { text: 'Connected Lens Workflows', link: '/en/explanation/lenses/workflows' },
             { text: 'Funding Sources', link: '/en/explanation/lenses/funding-sources' },
+            { text: 'Local Keys & Gateway', link: '/en/explanation/lenses/local-keys-gateway' },
           ],
         },
       ],
