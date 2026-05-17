@@ -39,6 +39,10 @@ Primary battle record.
 | `total_vote_count` | integer | Denormalized vote count |
 | `handicap_config` | jsonb | Frozen AI handicap settings |
 | `content_type` | text | Submission format: `text`, `code`, `image`, `video`, etc. |
+| `contender_structure` | `contender_structure_enum` | V2: who competes — derived from or alongside `battle_type` |
+| `judging_mode` | `judging_mode_enum` | V2: how the winner is decided — derived from or alongside `battle_type` |
+| `task_source` | text | V2: what the battle is about — `lens`, `workflow`, or `challenge` |
+| `challenge_type` | text | V2: challenge game type ID (e.g. `writing_contest`, `math_calculation`) |
 | `workflow_id` | uuid | FK → `workflows.workflows` (optional) |
 | `created_at` | timestamptz | — |
 | `updated_at` | timestamptz | — |
@@ -207,7 +211,13 @@ Append-only audit trail of all battle lifecycle events.
 `draft` | `open` | `executing` | `voting` | `scoring` | `closed` | `published` | `archived`
 
 ### `battle_type_enum`
-`ai_vs_ai` | `human_vs_human_ai_votes` | `human_vs_human_open_votes` | `human_vs_ai` | `workflow_battle`
+`ai_vs_ai` | `human_vs_human_ai_votes` | `human_vs_human_open_votes` | `human_vs_ai` | `workflow_battle` | `lenser_battle`
+
+### `contender_structure_enum` (V2)
+`ai_vs_ai` | `human_vs_human` | `human_vs_ai`
+
+### `judging_mode_enum` (V2)
+`community_vote` | `ai_judge` | `rubric_score` | `auto_score`
 
 ### `contender_type_enum`
 `human` | `ai_model` | `ai_agent`

@@ -19,6 +19,14 @@ export type BattleViolationCode =
   | 'CONTENDER_JUDGING_INCOMPATIBLE'
   | 'CHALLENGE_TYPE_INVALID'
   | 'CHALLENGE_TYPE_CONTENDER_INCOMPATIBLE'
+  // Generated challenge violation codes
+  | 'GENERATOR_REQUIRED'
+  | 'GENERATOR_MODEL_MISSING'
+  | 'GENERATOR_CONTENDER_CONFLICT'
+  | 'CHALLENGE_NOT_LOCKED'
+  // Benchmark game violation codes
+  | 'BENCHMARK_JUDGING_INCOMPATIBLE'
+  | 'BENCHMARK_MODEL_CONFLICT'
 
 export type BattleViolationSeverity = 'error' | 'warning'
 
