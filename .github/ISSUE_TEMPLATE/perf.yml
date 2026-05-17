@@ -1,0 +1,60 @@
+name: "⚡ Performance Issue"
+description: Report a performance regression, slowness, or resource problem.
+title: "[PERF] "
+labels:
+  - perf
+  - needs-triage
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - apps/web (page load, rendering, bundle size)
+        - apps/mobile (startup, jank, memory)
+        - apps/cli (command latency)
+        - supabase / database (query latency, missing index)
+        - workflow execution (node latency, worker throughput)
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: observation
+    attributes:
+      label: What is slow or degraded?
+      description: Include measured values where possible (response times, bundle sizes, query duration).
+    validations:
+      required: true
+
+  - type: textarea
+    id: baseline
+    attributes:
+      label: Expected performance
+      description: What was it before, or what should it be?
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce or measure
+      placeholder: |
+        - Run `lf execution list` with 1000 items — response takes 8s
+        - Lighthouse score on /battles/browse drops to 42
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "macOS 14.4, Node 20.11, Chrome 124"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true
