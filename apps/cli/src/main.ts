@@ -133,6 +133,8 @@ const main = defineCommand({
     security: () => import('./commands/security').then((m) => m.default),
     admin: () => import('./commands/admin').then((m) => m.default),
     update: () => import('./commands/update').then((m) => m.default),
+    examples: () => import('./commands/examples').then((m) => m.default),
+    env: () => import('./commands/env').then((m) => m.default),
   },
 });
 
