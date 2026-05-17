@@ -1,0 +1,90 @@
+name: "🔭 Lens Issue"
+description: Report a bug or unexpected behavior in lens creation, parameters, kinds, generation, or governance.
+title: "[LENS] "
+labels:
+  - area:lenses
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Title format:** `[LENS][apps/web] Short description`
+        Use this template for issues with lenses — AI lenses, human lenses, workflow lenses, lens parameters, kinds, generation output, or lens governance rules.
+        For battle execution failures that involve a lens, use the [⚔️ Battle Issue](battle) template instead.
+
+  - type: dropdown
+    id: lens_kind
+    attributes:
+      label: Lens kind
+      options:
+        - AI Lens
+        - Human Lens
+        - Workflow Lens
+        - Lens kind definition (meta / kind registry)
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Issue area
+      options:
+        - Lens creation / wizard
+        - Parameters / configuration
+        - Generation / output quality
+        - Governance / policy enforcement
+        - Lens detail page (UI)
+        - Lens listing / discovery
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: lens_id
+    attributes:
+      label: Lens ID or handle
+      description: The lens ID or @handle affected (if applicable).
+      placeholder: e.g. lens_01abc… or @my-lens
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened vs what you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open lens "..."
+        2. Set parameter X to Y
+        3. Start generation / battle
+        4. See error / unexpected output
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error output
+      render: text
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Edition (community / cloud), Node version, browser.
+      placeholder: "community, Node 20.11, Chrome 124"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true
