@@ -105,10 +105,17 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
           description="Compare providers, inspect model capabilities, and decide which runtime belongs in a workflow or an agent team."
           actions={
             <>
-              <HelpButton
-                path={focus === 'providers' ? '/reference/ai-providers' : '/reference/ai-models'}
-                label={focus === 'models' ? 'Models Docs' : focus === 'providers' ? 'Provider Docs' : 'AI Catalog'}
-              />
+              {focus === 'all' ? (
+                <>
+                  <HelpButton path="/reference/ai-providers" label="Provider Docs" />
+                  <HelpButton path="/reference/ai-models" label="Models Docs" />
+                </>
+              ) : (
+                <HelpButton
+                  path={focus === 'providers' ? '/reference/ai-providers' : '/reference/ai-models'}
+                  label={focus === 'providers' ? 'Provider Docs' : 'Models Docs'}
+                />
+              )}
               <MetricCard
                 className="!bg-transparent !shadow-none !p-0 gap-8"
                 stats={[
@@ -134,12 +141,20 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
               Compare providers, inspect model capabilities, and decide which runtime belongs in a workflow or an agent team.
             </Text>
           </div>
-          <MetricCard
-            stats={[
-              { label: 'Providers', value: String(providers.length), icon: <Layers size={14} /> },
-              { label: 'Models', value: String(filteredModels.length), icon: <Box size={14} /> },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            {focus !== 'models' && (
+              <HelpButton path="/reference/ai-providers" label="Provider Docs" />
+            )}
+            {focus !== 'providers' && (
+              <HelpButton path="/reference/ai-models" label="Models Docs" />
+            )}
+            <MetricCard
+              stats={[
+                { label: 'Providers', value: String(providers.length), icon: <Layers size={14} /> },
+                { label: 'Models', value: String(filteredModels.length), icon: <Box size={14} /> },
+              ]}
+            />
+          </div>
         </div>
       )}
 
@@ -193,9 +208,12 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                           {provider.display_name}
                         </Heading>
                       </div>
-                      <Badge color={supportTone(provider.support_level ?? 'catalog_only')} variant="outline">
-                        {provider.support_level ?? 'catalog'}
-                      </Badge>
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <HelpButton path="/reference/ai-providers" label="Docs" />
+                        <Badge color={supportTone(provider.support_level ?? 'catalog_only')} variant="outline">
+                          {provider.support_level ?? 'catalog'}
+                        </Badge>
+                      </div>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <Badge color={configured ? 'green' : 'gray'} variant="solid">
@@ -251,9 +269,12 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                             {model.name}
                           </Heading>
                         </div>
-                        <Badge color={supportTone(model.support_level)} variant="outline">
-                          {model.support_level}
-                        </Badge>
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <HelpButton path="/reference/ai-models" label="Docs" />
+                          <Badge color={supportTone(model.support_level)} variant="outline">
+                            {model.support_level}
+                          </Badge>
+                        </div>
                       </div>
                       <Text variant="body-m" color="muted" className="mt-3 line-clamp-3 leading-relaxed">
                         {model.user_summary || model.description}
@@ -317,13 +338,16 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                     <Info size={14} />
                     <span className="uppercase tracking-widest text-[10px] font-black">Model Details</span>
                   </Badge>
-                  {activeModel && (
-                    <Link to={`/ai/catalog/${activeModel.provider_key}/${activeModel.key}`}>
-                      <Text variant="caption" className="text-primary-yellow-600 hover:underline font-bold">
-                        Full Specs
-                      </Text>
-                    </Link>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <HelpButton path="/reference/ai-models" label="Docs" />
+                    {activeModel && (
+                      <Link to={`/ai/catalog/${activeModel.provider_key}/${activeModel.key}`}>
+                        <Text variant="caption" className="text-primary-yellow-600 hover:underline font-bold">
+                          Full Specs
+                        </Text>
+                      </Link>
+                    )}
+                  </div>
                 </div>
                 {activeModel ? (
                   <Stack gap="gap-4">
