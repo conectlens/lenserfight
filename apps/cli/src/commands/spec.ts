@@ -11,7 +11,8 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { resolve, basename } from 'node:path'
+import { resolve, basename, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { defineCommand } from 'citty'
 import consola from 'consola'
@@ -462,19 +463,31 @@ const specSchema = defineCommand({
 
     // Locate schema file relative to this package's distribution location.
     // In the monorepo source tree the schemas live alongside the TypeScript.
+    // CJS-compatible: use __filename / __dirname, fall back to import.meta when
+    // running under an ESM loader (avoids the empty-import-meta build warning).
+    const _thisFile: string =
+      typeof __filename !== 'undefined'
+        ? __filename
+        : typeof (globalThis as Record<string, unknown>)['import'] === 'object' &&
+            (globalThis as Record<string, unknown>)['import'] !== null
+          ? fileURLToPath(
+              ((globalThis as Record<string, unknown>)['import'] as Record<string, string>)[
+                'meta'
+              ] ?? 'file:///unknown'
+            )
+          : resolve('unknown')
+
+    const _thisDir = dirname(_thisFile)
+
     const candidates = [
-      // Monorepo source (development)
+      // Monorepo source (development) — walk up to repo root
       resolve(
-        import.meta.url.replace(/^file:\/\//, '').replace(/\/apps\/cli\/.*$/, ''),
+        _thisFile.replace(/\/apps\/cli\/.*$/, ''),
         'libs/domain/spec-governance/src/lib/schemas',
         schemaFileName
       ),
-      // Built distribution
-      resolve(
-        import.meta.url.replace(/^file:\/\//, '').replace(/\/[^/]+\.js$/, ''),
-        '../schemas',
-        schemaFileName
-      ),
+      // Built distribution — schemas bundled next to this file
+      resolve(_thisDir, '../schemas', schemaFileName),
     ]
 
     const schemaPath = candidates.find((p) => existsSync(p))
