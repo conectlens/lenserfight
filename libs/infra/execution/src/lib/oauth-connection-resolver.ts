@@ -50,6 +50,7 @@ export function createOAuthConnectionResolver(
         // Step 1: Pre-emptive refresh check
         const { data: refreshMeta } = await serviceClient.rpc<{
           connection_id: string
+          workspace_id?: string
           refresh_token: string
           expires_at: string | null
           granted_scopes: string[]
@@ -69,6 +70,7 @@ export function createOAuthConnectionResolver(
             ref,
             refreshMeta.refresh_token,
             refreshMeta.provider,
+            refreshMeta.workspace_id,
             edgeFunctionBaseUrl,
           )
         }
@@ -105,6 +107,7 @@ async function triggerTokenRefresh(
   ref: string,
   refreshToken: string,
   provider: string,
+  workspaceId?: string,
   edgeFunctionBaseUrl?: string,
 ): Promise<void> {
   try {
@@ -117,6 +120,7 @@ async function triggerTokenRefresh(
         ref,
         refresh_token: refreshToken,
         provider,
+        workspace_id: workspaceId,
       },
     })
   } catch {
@@ -132,6 +136,7 @@ async function triggerTokenRefresh(
             ref,
             refresh_token: refreshToken,
             provider,
+            workspace_id: workspaceId,
           }),
         })
       } catch {

@@ -17,6 +17,7 @@ import type {
   WorkflowNodeType,
 } from './execution.types'
 import type { PinnedOutputStore } from './pinned-output'
+import type { ConnectorOperationExecutor } from './connector-runtime.types'
 import type { NodeRunnerContext } from './runners/node-runner.interface'
 import type {
   LensInputContract,
@@ -343,6 +344,11 @@ export interface WorkflowExecutionContext {
    * this should always return null (credentials never leave server).
    */
   resolveConnector?: (slug: string, scopes?: string[]) => Promise<string | null>
+  /**
+   * Server-side connector operation executor. Browser/dry-run callers should
+   * omit this so side-effect nodes return explicit mocked/unavailable outputs.
+   */
+  executeConnectorOperation?: ConnectorOperationExecutor
   /**
    * Pinned output store for development/dry-run. When a node has a pinned
    * output AND `isDevExecution` is true, the engine short-circuits execution
@@ -876,6 +882,7 @@ export class WorkflowExecutionService {
                 return provider.execute(modelKey, input, ctx.signal)
               },
               resolveConnector: ctx.resolveConnector ?? undefined,
+              executeConnectorOperation: ctx.executeConnectorOperation ?? undefined,
             }
             try {
               const runnerResult = await nodeRunner.execute(runnerCtx)
