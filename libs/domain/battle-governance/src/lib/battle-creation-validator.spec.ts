@@ -367,4 +367,85 @@ describe('BattleCreationValidator', () => {
       expect(result.violations).toHaveLength(0)
     })
   })
+
+  // ── V2 validateAllV2 ────────────────────────────────────────────────────
+
+  describe('validateAllV2', () => {
+    it('returns valid for lens + ai_vs_ai + community_vote', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'lens',
+        contenderStructure: 'ai_vs_ai',
+        judgingMode: 'community_vote',
+      })
+      expect(result.valid).toBe(true)
+      expect(result.errors).toHaveLength(0)
+    })
+
+    it('catches task source / contender incompatibility', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'challenge',
+        contenderStructure: 'ai_vs_ai',
+        judgingMode: 'community_vote',
+      })
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.code === 'TASK_SOURCE_CONTENDER_INCOMPATIBLE')).toBe(true)
+    })
+
+    it('catches contender / judging incompatibility', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'lens',
+        contenderStructure: 'ai_vs_ai',
+        judgingMode: 'auto_score',
+      })
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.code === 'CONTENDER_JUDGING_INCOMPATIBLE')).toBe(true)
+    })
+
+    it('catches missing challenge type for challenge task source', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'challenge',
+        contenderStructure: 'human_vs_human',
+        judgingMode: 'community_vote',
+        challengeType: null,
+      })
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.code === 'CHALLENGE_TYPE_INVALID')).toBe(true)
+    })
+
+    it('catches invalid challenge type', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'challenge',
+        contenderStructure: 'human_vs_human',
+        judgingMode: 'community_vote',
+        challengeType: 'nonexistent_game',
+      })
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.code === 'CHALLENGE_TYPE_INVALID')).toBe(true)
+    })
+
+    it('validates challenge + human_vs_human + auto_score as valid', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'challenge',
+        contenderStructure: 'human_vs_human',
+        judgingMode: 'auto_score',
+        challengeType: 'math_calculation',
+      })
+      expect(result.valid).toBe(true)
+    })
+
+    it('validates lenser policy on any task source', () => {
+      const result = validator.validateAllV2({
+        taskSource: 'lens',
+        contenderStructure: 'ai_vs_ai',
+        judgingMode: 'community_vote',
+        lenserBattlePolicy: {
+          memory_mode: 'invalid' as any,
+          instruction_disclosure: 'hidden',
+          model_binding_override: false,
+        },
+      })
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.code === 'LENSER_POLICY_INVALID')).toBe(true)
+    })
+  })
 })

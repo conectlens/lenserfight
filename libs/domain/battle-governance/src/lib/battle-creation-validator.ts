@@ -17,6 +17,16 @@ import { CONTENT_TYPE_TO_MODALITY, HUMAN_PRODUCIBLE_CONTENT_TYPES } from './cont
 import type { LenserBattlePolicy } from './lenser-battle-policy.types'
 import { MEMORY_MODES, INSTRUCTION_DISCLOSURES } from './lenser-battle-policy.types'
 import type { BattleViolation } from './violation.types'
+import type { TaskSource as TaskSourceType } from './task-source.types'
+import { TASK_SOURCE_LABEL as TASK_SOURCE_LABEL_MAP } from './task-source.types'
+import type { ContenderStructure as ContenderStructureType } from './contender-structure.types'
+import {
+  isContenderAllowedForTaskSource as isContenderAllowedForTaskSourceFn,
+  CONTENDER_STRUCTURE_LABEL as CONTENDER_STRUCTURE_LABEL_MAP,
+} from './contender-structure.types'
+import type { JudgingMode as JudgingModeType } from './judging-mode.types'
+import { isJudgingAllowedForContender as isJudgingAllowedForContenderFn } from './judging-mode.types'
+import { getChallengeType as getChallengeTypeFn } from './challenge-type.registry'
 
 // ─── Input shape ─────────────────────────────────────────────────────────────
 
@@ -34,6 +44,21 @@ export interface BattleCreationInput {
   /** Provided lens parameter values — keys are param IDs */
   lensParamValues?: Record<string, unknown>
   /** Lenser Battle policy (only for lenser_battle format) */
+  lenserBattlePolicy?: LenserBattlePolicy | null
+}
+
+// ─── V2 Input shape (concept separation) ────────────────────────────────────
+
+export interface BattleCreationInputV2 {
+  taskSource: TaskSourceType | null
+  contenderStructure: ContenderStructureType
+  judgingMode: JudgingModeType
+  challengeType?: string | null
+  contentType?: BattleContentType | null
+  modelOutputModalities?: string[]
+  voterEligibility?: VoterEligibility
+  lensParamRequirements?: Array<{ id: string; label: string; required: boolean }>
+  lensParamValues?: Record<string, unknown>
   lenserBattlePolicy?: LenserBattlePolicy | null
 }
 
@@ -229,6 +254,135 @@ export class BattleCreationValidator {
       ...this.validateJudgingVsContentType(input.voterEligibility, input.contentType),
       ...this.validateLensParams(input.lensParamRequirements, input.lensParamValues),
       ...this.validateLenserBattlePolicy(input.format, input.lenserBattlePolicy),
+    ]
+
+    const errors = violations.filter((v) => v.severity === 'error')
+    const warnings = violations.filter((v) => v.severity === 'warning')
+
+    return {
+      valid: errors.length === 0,
+      violations,
+      errors,
+      warnings,
+    }
+  }
+
+  // ─── V2 validation methods (concept separation refactor) ─────────────────
+
+  /**
+   * Validates task source ↔ contender structure compatibility.
+   */
+  validateTaskSourceContenderCompatibility(
+    taskSource: TaskSourceType | null,
+    contenderStructure: ContenderStructureType,
+  ): BattleViolation[] {
+    if (!isContenderAllowedForTaskSourceFn(taskSource, contenderStructure)) {
+      const sourceLabel = taskSource
+        ? TASK_SOURCE_LABEL_MAP[taskSource]
+        : 'unknown task source'
+      return [
+        {
+          code: 'TASK_SOURCE_CONTENDER_INCOMPATIBLE',
+          field: 'contender_structure',
+          message: `"${contenderStructure}" contenders are not available for ${sourceLabel}. Choose a compatible contender structure.`,
+          severity: 'error',
+        },
+      ]
+    }
+    return []
+  }
+
+  /**
+   * Validates contender structure ↔ judging mode compatibility.
+   */
+  validateContenderJudgingCompatibility(
+    contenderStructure: ContenderStructureType | null,
+    judgingMode: JudgingModeType,
+  ): BattleViolation[] {
+    if (!isJudgingAllowedForContenderFn(contenderStructure, judgingMode)) {
+      const contenderLabel = contenderStructure
+        ? CONTENDER_STRUCTURE_LABEL_MAP[contenderStructure]
+        : 'unknown contender structure'
+      return [
+        {
+          code: 'CONTENDER_JUDGING_INCOMPATIBLE',
+          field: 'judging_mode',
+          message: `"${judgingMode}" judging is not available for ${contenderLabel} battles. Choose a compatible judging mode.`,
+          severity: 'error',
+        },
+      ]
+    }
+    return []
+  }
+
+  /**
+   * Validates challenge type selection.
+   */
+  validateChallengeType(
+    taskSource: TaskSourceType | null,
+    challengeType: string | null | undefined,
+    contenderStructure?: ContenderStructureType,
+  ): BattleViolation[] {
+    // Only required for challenge task source
+    if (taskSource !== 'challenge') return []
+    if (!challengeType) {
+      return [
+        {
+          code: 'CHALLENGE_TYPE_INVALID',
+          field: 'challenge_type',
+          message: 'A challenge type must be selected for Challenge tasks.',
+          severity: 'error',
+        },
+      ]
+    }
+
+    const def = getChallengeTypeFn(challengeType)
+    if (!def) {
+      return [
+        {
+          code: 'CHALLENGE_TYPE_INVALID',
+          field: 'challenge_type',
+          message: `Unknown challenge type "${challengeType}".`,
+          severity: 'error',
+        },
+      ]
+    }
+
+    if (contenderStructure && !def.allowedContenders.includes(contenderStructure)) {
+      return [
+        {
+          code: 'CHALLENGE_TYPE_CONTENDER_INCOMPATIBLE',
+          field: 'challenge_type',
+          message: `"${def.label}" does not support ${contenderStructure} contenders.`,
+          severity: 'error',
+        },
+      ]
+    }
+
+    return []
+  }
+
+  /**
+   * Runs all V2 validation checks using the new 3-axis model.
+   */
+  validateAllV2(input: BattleCreationInputV2): BattleValidationResult {
+    const violations: BattleViolation[] = [
+      ...this.validateTaskSourceContenderCompatibility(input.taskSource, input.contenderStructure),
+      ...this.validateContenderJudgingCompatibility(input.contenderStructure, input.judgingMode),
+      ...this.validateChallengeType(input.taskSource, input.challengeType, input.contenderStructure),
+      ...this.validateContentTypeVsModelOutput(input.contentType, input.modelOutputModalities),
+      ...this.validateHumanPerformability(
+        // Map contender structure to a legacy battle type for human performability check
+        input.contenderStructure === 'human_vs_human' ? 'human_vs_human_open_votes' : input.contenderStructure === 'human_vs_ai' ? 'human_vs_ai' : 'ai_vs_ai',
+        input.contentType,
+      ),
+      ...this.validateJudgingVsContentType(input.voterEligibility, input.contentType),
+      ...this.validateLensParams(input.lensParamRequirements, input.lensParamValues),
+      ...this.validateLenserBattlePolicy(
+        // Policy is now valid for any task source when AI lensers are present
+        input.lenserBattlePolicy ? 'lenser_battle' : null,
+        input.lenserBattlePolicy,
+      ),
     ]
 
     const errors = violations.filter((v) => v.severity === 'error')
