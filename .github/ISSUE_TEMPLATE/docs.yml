@@ -1,6 +1,6 @@
 name: "📚 Docs Fix"
 description: Report a documentation error or propose a correction.
-title: "[DOCS] "
+title: "[DOCS][apps/docs] "
 labels:
   - docs
 body:

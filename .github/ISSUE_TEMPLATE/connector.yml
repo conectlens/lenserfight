@@ -7,7 +7,9 @@ labels:
 body:
   - type: markdown
     attributes:
-      value: >
+      value: |
+        **Title format:** `[CONNECTOR][apps/web] Short description`
+
         Use this template for **new connector proposals only**.
         For bugs in an existing connector, use the [🐛 Bug Report](bug) template and select "connector / adapter" as the affected area.
 

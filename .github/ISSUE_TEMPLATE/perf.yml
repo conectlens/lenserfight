@@ -5,6 +5,11 @@ labels:
   - perf
   - needs-triage
 body:
+  - type: markdown
+    attributes:
+      value: |
+        **Title format:** `[PERF][apps/web] Short description`
+        Use the area prefix matching your selection below: `[apps/web]`, `[apps/mobile]`, `[apps/cli]`, `[supabase]`, etc.
   - type: dropdown
     id: area
     attributes:

@@ -1,10 +1,14 @@
 name: "🛠 Workflow Problem"
 description: Report a workflow run, builder, or execution-engine issue.
-title: "[WORKFLOW] "
+title: "[WORKFLOW][apps/web] "
 labels:
   - p0-workflow
   - needs-triage
 body:
+  - type: markdown
+    attributes:
+      value: |
+        **Title format:** `[WORKFLOW][apps/web] Short description`
   - type: textarea
     id: scenario
     attributes:

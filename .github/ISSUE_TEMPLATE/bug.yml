@@ -7,10 +7,13 @@ labels:
 body:
   - type: markdown
     attributes:
-      value: >
+      value: |
         Please [search existing issues](../../issues) before opening a new one.
-        Connector bugs: select "connector / adapter" in the area dropdown below.
-        Install failures: select "install / setup".
+
+        **Title format:** `[BUG][apps/web] Short description`
+        Use the area prefix that matches your selection below: `[apps/web]`, `[apps/cli]`, `[apps/mobile]`, `[apps/arena]`, `[apps/gateway]`, `[libs/ui]`, `[supabase]`, `[connector]`, `[install]`, etc.
+
+        Connector bugs → select "connector / adapter". Install failures → select "install / setup".
 
   - type: dropdown
     id: area
