@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/ray/v1alpha1",
+  "title": "LenserFight Ray Spec",
+  "description": "A thematic category that groups related lenses, lensers, colenses, and battles for discovery.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "ray" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "title": {
+      "type": "string",
+      "description": "Human-readable display title (may differ from name slug)."
+    },
+    "route": {
+      "type": "string",
+      "pattern": "^/ray/[a-z0-9-]+$",
+      "description": "URL route for this ray's discovery page."
+    },
+    "aliases": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Alternative slug names for this ray."
+    },
+    "related_item_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["lens", "lenser", "colens", "battle", "team", "skill", "evaluation"]
+      },
+      "description": "Which spec kinds are expected in this ray."
+    }
+  },
+  "required": ["kind", "name", "description"],
+  "additionalProperties": true
+}
