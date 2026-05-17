@@ -152,7 +152,7 @@ export class LocalKeysGatewayClient implements LocalKeyStorePort {
   async healthCheck(): Promise<{ reachable: boolean; paired: boolean }> {
     let reachable = false
     try {
-      const res = await this.doFetch(`${this.baseUrl}/healthz`, { method: 'GET' })
+      const res = await this.doFetch(`${this.baseUrl}/healthz`, { method: 'GET', credentials: 'omit' })
       reachable = res.ok
     } catch {
       return { reachable: false, paired: false }
