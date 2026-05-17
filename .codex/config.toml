@@ -52,3 +52,7 @@ enabled = true
 [[skills.config]]
 path = ".agents/skills/supabase-rls-security-reviewer/SKILL.md"
 enabled = true
+
+[[skills.config]]
+path = ".agents/skills/github-issue-solver/SKILL.md"
+enabled = true
