@@ -4,13 +4,20 @@
   "title": "LenserFight Execution Spec",
   "description": "An immutable snapshot of a completed execution: inputs, outputs, model config, provenance, and content hashes. Enables reproduction, verification, and audit.",
   "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
   "properties": {
     "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
-    "kind": { "type": "string", "const": "Execution" },
+    "kind": { "type": "string", "const": "execution" },
     "schema_version": { "type": "integer", "minimum": 1 },
     "id": { "$ref": "common.schema.json#/$defs/specId" },
-    "name": { "type": "string", "minLength": 1 },
-    "status": { "type": "string", "enum": ["completed", "failed", "cancelled", "timeout", "partial"] },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "type": "string", "enum": ["completed", "failed", "cancelled", "timeout", "partial", "draft", "active", "archived"] },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
     "execution_id": {
       "type": "string",
       "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
@@ -18,12 +25,10 @@
     },
     "started_at": {
       "type": "string",
-      "format": "date-time",
       "description": "ISO-8601 timestamp when execution started."
     },
     "finished_at": {
       "type": "string",
-      "format": "date-time",
       "description": "ISO-8601 timestamp when execution finished."
     },
     "runtime_version": {
@@ -45,7 +50,7 @@
       "type": "object",
       "properties": {
         "input_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-        "locked_at": { "type": "string", "format": "date-time" }
+        "locked_at": { "type": "string" }
       },
       "required": ["input_hash", "locked_at"]
     },
@@ -64,7 +69,7 @@
       "type": "object",
       "properties": {
         "output_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-        "produced_at": { "type": "string", "format": "date-time" },
+        "produced_at": { "type": "string" },
         "modality": {
           "type": "string",
           "enum": ["text", "image", "audio", "video", "structured", "file"]
@@ -99,6 +104,17 @@
       "additionalProperties": { "type": "string" }
     }
   },
-  "required": ["apiVersion", "kind", "id", "name", "status", "execution_id", "started_at", "finished_at", "spec_ref", "inputs", "output", "execution_hash"],
-  "additionalProperties": true
+  "required": ["kind", "name"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "execution",
+      "schema_version": 1,
+      "id": "execution_001",
+      "name": "Code Review Run",
+      "status": "completed",
+      "execution_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    }
+  ]
 }
