@@ -14,6 +14,10 @@
  */
 
 import type { ConnectorRef, ConnectorRefParseResult, OAuthCapability, OAuthProvider } from './oauth-connection.types'
+import {
+  getOAuthCapabilityDefinition,
+  isRegisteredOAuthProvider,
+} from './provider.registry'
 
 /**
  * Regex that matches a complete [[:connector:ref]] token anywhere in a string.
@@ -21,7 +25,7 @@ import type { ConnectorRef, ConnectorRefParseResult, OAuthCapability, OAuthProvi
  *
  * Reset lastIndex before iterating: CONNECTOR_REF_OUTER_RE.lastIndex = 0
  */
-export const CONNECTOR_REF_OUTER_RE = /\[\[:connector:([a-z][a-z0-9._-]{0,118})\]\]/g
+export const CONNECTOR_REF_OUTER_RE = /\[\[:connector:([a-z][a-z0-9_.-]{0,118})\]\]/g
 
 /**
  * Extracts all inner ref strings from [[:connector:ref]] tokens in a template.
@@ -48,17 +52,6 @@ export function hasConnectorRef(value: string): boolean {
   return re.test(value)
 }
 
-// Allowlists kept in sync with DB CHECK constraints in 20280101000000.sql.
-// New providers/capabilities extend these sets + the DB constraint.
-const VALID_PROVIDERS = new Set<OAuthProvider>(['google'])
-const VALID_CAPABILITIES = new Set<OAuthCapability>([
-  'gmail',
-  'drive',
-  'sheets',
-  'docs',
-  'calendar',
-])
-
 /**
  * Parses a raw inner ref string into a typed ConnectorRef.
  * Does NOT validate that the connection exists — only validates syntax.
@@ -72,26 +65,25 @@ const VALID_CAPABILITIES = new Set<OAuthCapability>([
  */
 export function parseConnectorRef(raw: string): ConnectorRefParseResult {
   const parts = raw.split('.')
-  if (parts.length < 3) {
+  if (parts.length !== 3) {
     return {
       ok: false,
       raw,
-      reason: 'ref must have format: provider.capability.label (at least 3 dot-separated parts)',
+      reason: 'ref must have format: provider.capability.label',
     }
   }
 
-  const [provider, capability, ...labelParts] = parts
-  const label = labelParts.join('.')
+  const [provider, capability, label] = parts
 
-  if (!VALID_PROVIDERS.has(provider as OAuthProvider)) {
+  if (!provider || !isRegisteredOAuthProvider(provider)) {
     return { ok: false, raw, reason: `unknown provider: ${provider}` }
   }
 
-  if (!VALID_CAPABILITIES.has(capability as OAuthCapability)) {
+  if (!capability || !getOAuthCapabilityDefinition(provider, capability)) {
     return { ok: false, raw, reason: `unknown capability: ${capability}` }
   }
 
-  if (!/^[a-z0-9][a-z0-9_-]{0,47}$/.test(label)) {
+  if (!label || !/^[a-z0-9][a-z0-9_-]{0,47}$/.test(label)) {
     return {
       ok: false,
       raw,

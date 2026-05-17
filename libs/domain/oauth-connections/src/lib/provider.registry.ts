@@ -16,12 +16,15 @@
  *   4. See docs/how-to/contributors/adding-oauth-providers.md for the full checklist.
  */
 
-import type { OAuthProvider, OAuthProviderDefinition } from './oauth-connection.types'
+import type { ConnectorCapability, OAuthProvider, OAuthProviderDefinition } from './oauth-connection.types'
+import { automationProviders } from './providers/automation.providers'
 import { googleProvider } from './providers/google.provider'
 
 const REGISTRY = new Map<OAuthProvider, OAuthProviderDefinition>()
 
-// Pre-register the Google provider (Phase 1)
+for (const definition of automationProviders) {
+  REGISTRY.set(definition.provider, definition)
+}
 REGISTRY.set('google', googleProvider)
 
 /**
@@ -78,4 +81,14 @@ export function getOAuthCapabilityDefinition(
   const def = REGISTRY.get(provider)
   if (!def) return undefined
   return def.capabilities.find((c) => c.capability === capability)
+}
+
+export function isRegisteredOAuthProvider(provider: string): provider is OAuthProvider {
+  return REGISTRY.has(provider as OAuthProvider)
+}
+
+export function isRegisteredOAuthCapability(capability: string): capability is ConnectorCapability {
+  return listOAuthProviders().some((provider) =>
+    provider.capabilities.some((definition) => definition.capability === capability),
+  )
 }
