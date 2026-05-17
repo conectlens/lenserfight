@@ -13,6 +13,7 @@
  */
 
 import type { ExecutionInput, ExecutionResult, WorkflowNodeType } from '../execution.types'
+import type { ConnectorOperationExecutor } from '../connector-runtime.types'
 import type { LensOutputContract } from '@lenserfight/types'
 
 /**
@@ -38,6 +39,12 @@ export interface NodeRunnerContext {
   readonly outputContract?: LensOutputContract | null
   /** Connector credential resolver. Returns decrypted token or null (browser context). */
   readonly resolveConnector?: (slug: string, scopes?: string[]) => Promise<string | null>
+  /**
+   * Server-side connector operation executor. Runners pass sanitized operation
+   * requests here; adapters resolve credentials internally and return only safe
+   * workflow output data.
+   */
+  readonly executeConnectorOperation?: ConnectorOperationExecutor
 }
 
 /**

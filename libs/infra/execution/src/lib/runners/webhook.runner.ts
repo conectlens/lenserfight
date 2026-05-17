@@ -84,6 +84,7 @@ export class WebhookSenderRunner implements INodeRunner {
     const headers = ctx.nodeConfig['headers'] as Record<string, string> | undefined
     const bodyTemplate = ctx.nodeConfig['bodyTemplate'] as string | undefined
     const retries = Math.max(0, Math.min(Number(ctx.nodeConfig['retries'] ?? MAX_RETRIES), MAX_RETRIES))
+    const connectorRef = ctx.nodeConfig['connectorRef'] as string | undefined
 
     if (!url || typeof url !== 'string') {
       return {
@@ -128,6 +129,19 @@ export class WebhookSenderRunner implements INodeRunner {
       }
     }
 
+    if (connectorRef && ctx.executeConnectorOperation) {
+      return {
+        output: await ctx.executeConnectorOperation({
+          connectorRef,
+          provider: 'custom_http',
+          capability: 'http',
+          operation: 'send_request',
+          requiredScopes: ['custom_http:send'],
+          params: { url, method, headers: headers ?? {}, body: body ?? null, retries },
+        }),
+      }
+    }
+
     return {
       output: {
         mediaType: 'text',
@@ -139,6 +153,7 @@ export class WebhookSenderRunner implements INodeRunner {
           headers: headers ?? {},
           bodyLength: body?.length ?? 0,
           retries,
+          connectorRef: connectorRef ?? null,
         },
         durationMs: 0,
       },

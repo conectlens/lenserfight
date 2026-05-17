@@ -91,6 +91,7 @@ import { NotionWriteRunner } from './notion-write.runner'
 import { CalendarCreateRunner } from './calendar-create.runner'
 import { LinearIssueCreateRunner } from './linear-issue-create.runner'
 import { JiraIssueCreateRunner } from './jira-issue-create.runner'
+import { automationConnectorRunnerFactories } from './automation-connectors.runner'
 
 import type { INodeRunner } from './node-runner.interface'
 
@@ -189,6 +190,7 @@ const runnerFactories: Array<() => INodeRunner> = [
   () => new CalendarCreateRunner(),
   () => new LinearIssueCreateRunner(),
   () => new JiraIssueCreateRunner(),
+  ...automationConnectorRunnerFactories,
 ]
 
 export function registerDefaultNodeRunners(): void {
