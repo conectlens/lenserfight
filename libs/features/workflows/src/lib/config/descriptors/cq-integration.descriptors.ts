@@ -12,6 +12,16 @@ export const githubReadDescriptor: RunnerConfigDescriptor = {
   category: 'integration',
   fields: [
     {
+      key: 'connectorRef',
+      label: 'GitHub Connection',
+      type: 'connector_ref',
+      connectorProvider: 'github',
+      connectorCapability: 'repos',
+      tooltip: {
+        summary: 'The GitHub connection to use for repository metadata.',
+      },
+    },
+    {
       key: 'repo',
       label: 'Repository (owner/repo)',
       type: 'text',
@@ -96,6 +106,16 @@ export const notionReadDescriptor: RunnerConfigDescriptor = {
   displayName: 'Notion Read',
   category: 'integration',
   fields: [
+    {
+      key: 'connectorRef',
+      label: 'Notion Connection',
+      type: 'connector_ref',
+      connectorProvider: 'notion',
+      connectorCapability: 'database',
+      tooltip: {
+        summary: 'The Notion connection to use for database or page reads.',
+      },
+    },
     {
       key: 'pageId',
       label: 'Page ID (optional)',
