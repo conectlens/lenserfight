@@ -42,8 +42,28 @@ export interface WinnerInfo {
 }
 
 export const battlesService = {
-  createBattle: (input: CreateBattleInput): Promise<BattleRecord> =>
-    battlesRepo.createBattle(input),
+  createBattle: async (input: CreateBattleInput): Promise<BattleRecord> => {
+    // Server-side validation mirrors the domain rules — ensures CLI and API
+    // callers get the same protection as the wizard UI.
+    const { battleCreationValidator, isCompatibleCombination } = await import('@lenserfight/domain/battle-governance')
+    const format = input.workflow_id ? 'workflow' : input.lens_id ? 'lens' : null
+    if (format && !isCompatibleCombination(format, input.battle_type)) {
+      throw new Error(
+        `Battle type "${input.battle_type}" is not allowed for format "${format}". ` +
+        `Pick a compatible battle type.`
+      )
+    }
+    if (input.lenser_battle_policy) {
+      const policyViolations = battleCreationValidator.validateLenserBattlePolicy(
+        'lenser_battle',
+        input.lenser_battle_policy as any,
+      )
+      if (policyViolations.some((v) => v.severity === 'error')) {
+        throw new Error(policyViolations.map((v) => v.message).join('; '))
+      }
+    }
+    return battlesRepo.createBattle(input)
+  },
 
   getBattleById: (id: string): Promise<BattleRecord | null> =>
     battlesRepo.getBattleById(id),
