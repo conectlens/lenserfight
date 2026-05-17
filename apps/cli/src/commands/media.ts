@@ -160,21 +160,36 @@ const mediaDownload = defineCommand({
         return
       }
 
-      // Internal bucket path: hit the platform-api media-proxy, which gates
-      // on RLS and 302s to a 1-hour signed URL. We use cloudApiUrl (the
-      // platform-api URL) + the user's bearer token.
+      // Internal bucket path: request a signed URL from Supabase storage, then
+      // download. The storage sign endpoint enforces RLS via the bearer token.
       const config = resolveBaseConfig()
-      const apiBase = process.env['PLATFORM_API_URL'] || config.cloudApiUrl || config.supabaseUrl
-      if (!apiBase) {
-        throw new Error('platform-api URL not configured. Set PLATFORM_API_URL or run `lf init`.')
+      if (!config.supabaseUrl || !config.supabaseAnonKey) {
+        throw new Error('Supabase URL/anon key not configured. Run `lf init`.')
       }
-      const proxyUrl = `${apiBase.replace(/\/+$/, '')}/v1/media/${encodeURIComponent(obj.id)}`
-      const headers: Record<string, string> = {}
-      if (config.authToken) headers['Authorization'] = `Bearer ${config.authToken}`
+      const bucket = obj.bucket || 'generated-media'
+      const signUrl = `${config.supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/sign/${encodeURIComponent(bucket)}/${obj.object_key}`
+      const signHeaders: Record<string, string> = {
+        apikey: config.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      }
+      if (config.authToken) signHeaders['Authorization'] = `Bearer ${config.authToken}`
 
-      const proxied = await fetch(proxyUrl, { headers, redirect: 'follow' })
+      const signRes = await fetch(signUrl, {
+        method: 'POST',
+        headers: signHeaders,
+        body: JSON.stringify({ expiresIn: 3600 }),
+      })
+      if (!signRes.ok) {
+        throw new Error(`Storage sign request failed: ${signRes.status} ${signRes.statusText}`)
+      }
+      const { signedURL } = await signRes.json() as { signedURL: string }
+      if (!signedURL) {
+        throw new Error('Supabase storage did not return a signed URL.')
+      }
+
+      const proxied = await fetch(signedURL)
       if (!proxied.ok) {
-        throw new Error(`media-proxy fetch failed: ${proxied.status} ${proxied.statusText}`)
+        throw new Error(`Signed URL download failed: ${proxied.status} ${proxied.statusText}`)
       }
       const proxiedBytes = Buffer.from(await proxied.arrayBuffer())
       if (args.out) {
@@ -272,11 +287,29 @@ const mediaPlay = defineCommand({
         url = obj.external_url
       } else {
         const config = resolveBaseConfig()
-        const apiBase = process.env['PLATFORM_API_URL'] || config.cloudApiUrl || config.supabaseUrl
-        if (!apiBase) {
-          throw new Error('platform-api URL not configured. Set PLATFORM_API_URL or run `lf init`.')
+        if (!config.supabaseUrl || !config.supabaseAnonKey) {
+          throw new Error('Supabase URL/anon key not configured. Run `lf init`.')
         }
-        url = `${apiBase.replace(/\/+$/, '')}/v1/media/${encodeURIComponent(obj.id)}`
+        const bucket = obj.bucket || 'generated-media'
+        const signUrl = `${config.supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/sign/${encodeURIComponent(bucket)}/${obj.object_key}`
+        const signHeaders: Record<string, string> = {
+          apikey: config.supabaseAnonKey,
+          'Content-Type': 'application/json',
+        }
+        if (config.authToken) signHeaders['Authorization'] = `Bearer ${config.authToken}`
+        const signRes = await fetch(signUrl, {
+          method: 'POST',
+          headers: signHeaders,
+          body: JSON.stringify({ expiresIn: 3600 }),
+        })
+        if (!signRes.ok) {
+          throw new Error(`Storage sign request failed: ${signRes.status} ${signRes.statusText}`)
+        }
+        const { signedURL } = await signRes.json() as { signedURL: string }
+        if (!signedURL) {
+          throw new Error('Supabase storage did not return a signed URL.')
+        }
+        url = signedURL
       }
 
       const opener =
