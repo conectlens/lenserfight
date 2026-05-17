@@ -152,6 +152,18 @@ export const googleSheetsReadDescriptor: RunnerConfigDescriptor = {
   category: 'integration',
   fields: [
     {
+      key: 'connectorRef',
+      label: 'Google Account',
+      type: 'connector_ref',
+      required: true,
+      connectorProvider: 'google',
+      connectorCapability: 'sheets',
+      tooltip: {
+        summary: 'The Google account connection to use for this operation.',
+        whenRequired: 'Add a Google Sheets connection in Settings → Connected Accounts.',
+      },
+    },
+    {
       key: 'spreadsheetId',
       label: 'Spreadsheet ID',
       type: 'text',
@@ -189,6 +201,18 @@ export const googleSheetsWriteDescriptor: RunnerConfigDescriptor = {
   displayName: 'Google Sheets Write',
   category: 'integration',
   fields: [
+    {
+      key: 'connectorRef',
+      label: 'Google Account',
+      type: 'connector_ref',
+      required: true,
+      connectorProvider: 'google',
+      connectorCapability: 'sheets',
+      tooltip: {
+        summary: 'The Google account connection to use for this operation.',
+        whenRequired: 'Add a Google Sheets connection in Settings → Connected Accounts.',
+      },
+    },
     {
       key: 'spreadsheetId',
       label: 'Spreadsheet ID',
