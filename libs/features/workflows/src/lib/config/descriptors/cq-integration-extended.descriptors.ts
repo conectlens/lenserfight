@@ -175,6 +175,18 @@ export const calendarCreateDescriptor: RunnerConfigDescriptor = {
   category: 'integration',
   fields: [
     {
+      key: 'connectorRef',
+      label: 'Google Account',
+      type: 'connector_ref',
+      required: true,
+      connectorProvider: 'google',
+      connectorCapability: 'calendar',
+      tooltip: {
+        summary: 'The Google account connection to use for Calendar access.',
+        whenRequired: 'Add a Google Calendar connection in Settings → Connected Accounts.',
+      },
+    },
+    {
       key: 'calendarId',
       label: 'Calendar ID',
       type: 'text',
