@@ -6,14 +6,14 @@ layout: doc
 
 # CLI Release Guide
 
-This guide covers the npm release system for `apps/cli`, published as `lenserfight`.
+This guide covers the npm release system for `apps/cli`, published as `@lenserfight/cli`.
 
 The release path is intentionally narrow:
 
 - Source package: `apps/cli/package.json`
 - Build output: `dist/apps/cli`
 - Nx project: `cli`
-- npm package: `lenserfight`
+- npm package: `@lenserfight/cli`
 - Git tag pattern: `cli@<version>`
 - Release workflow: `.github/workflows/release-cli.yml`
 - Package validation workflow: `.github/workflows/cli-package.yml`
@@ -23,9 +23,9 @@ The release path is intentionally narrow:
 Every release must support:
 
 ```bash
-npm install -g lenserfight
+npm install -g @lenserfight/cli
 npx lenserfight --version
-npm install --save-dev lenserfight
+npm install --save-dev @lenserfight/cli
 ```
 
 The package exposes both `lenserfight` and `lf` bins. The production artifact is a bundled CommonJS Node executable with a shebang and Node `>=22`.
