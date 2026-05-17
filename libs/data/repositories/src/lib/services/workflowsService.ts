@@ -110,8 +110,9 @@ export const workflowsService = {
     inputs?: Record<string, unknown>,
     globalModelId?: string,
     idempotencyKey?: string,
+    versionId?: string | null,
   ): Promise<WorkflowRunRecord> =>
-    workflowsRepo.startRun(workflowId, inputs, globalModelId, idempotencyKey),
+    workflowsRepo.startRun(workflowId, inputs, globalModelId, idempotencyKey, versionId),
 
   getRun: (runId: string): Promise<WorkflowRunRecord | null> =>
     workflowsRepo.getRun(runId),
