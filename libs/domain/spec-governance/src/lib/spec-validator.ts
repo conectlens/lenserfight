@@ -8,8 +8,7 @@
  * GRASP: Controller — coordinates validation layers and returns unified results.
  */
 
-import { existsSync } from 'node:fs'
-import { dirname, isAbsolute, resolve } from 'node:path'
+const isNode = typeof process !== 'undefined' && process.versions?.node != null
 
 import type { AutomationValidationIssue } from '@lenserfight/types'
 import { extractParams } from '@lenserfight/utils/text'
@@ -138,14 +137,18 @@ function disclosureEntries(frontmatter: Record<string, unknown>, key: string): u
   return Array.isArray(value) ? value : [value]
 }
 
-function resolveUnitRelativePath(unitRoot: string, relativePath: string): string {
+function resolveUnitRelativePath(
+  unitRoot: string,
+  relativePath: string,
+  nodePath: typeof import('node:path'),
+): string {
   if (!relativePath || typeof relativePath !== 'string') {
     throw new Error('Unit reference path must be a non-empty string.')
   }
-  if (isAbsolute(relativePath) || relativePath.split(/[\\/]+/).includes('..')) {
+  if (nodePath.isAbsolute(relativePath) || relativePath.split(/[\\/]+/).includes('..')) {
     throw new Error(`Unit reference must stay inside the unit root: ${relativePath}`)
   }
-  return resolve(unitRoot, relativePath)
+  return nodePath.resolve(unitRoot, relativePath)
 }
 
 function validateProgressiveDisclosureRefs(
@@ -153,8 +156,10 @@ function validateProgressiveDisclosureRefs(
   filePath: string | undefined,
   issues: AutomationValidationIssue[],
 ): void {
-  if (!filePath) return
-  const unitRoot = dirname(resolve(filePath))
+  if (!filePath || !isNode) return
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const nodePath = require('node:path') as typeof import('node:path')
+  const unitRoot = nodePath.dirname(nodePath.resolve(filePath))
 
   for (const [key, expectedDir] of Object.entries(DISCLOSURE_DIRS) as Array<[keyof typeof DISCLOSURE_DIRS, string]>) {
     const entries = disclosureEntries(frontmatter, key)
@@ -170,7 +175,7 @@ function validateProgressiveDisclosureRefs(
       }
 
       try {
-        const resolved = resolveUnitRelativePath(unitRoot, relPath)
+        const resolved = resolveUnitRelativePath(unitRoot, relPath, nodePath)
         if (!relPath.replace(/\\/g, '/').startsWith(`${expectedDir}/`)) {
           issues.push({
             path: `${key}[${index}]`,
@@ -178,12 +183,16 @@ function validateProgressiveDisclosureRefs(
             severity: 'error',
           })
         }
-        if (!existsSync(resolved)) {
-          issues.push({
-            path: `${key}[${index}]`,
-            message: `Referenced file does not exist: ${relPath}`,
-            severity: 'error',
-          })
+        if (isNode) {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { existsSync } = require('node:fs') as typeof import('node:fs')
+          if (!existsSync(resolved)) {
+            issues.push({
+              path: `${key}[${index}]`,
+              message: `Referenced file does not exist: ${relPath}`,
+              severity: 'error',
+            })
+          }
         }
       } catch (error) {
         issues.push({
