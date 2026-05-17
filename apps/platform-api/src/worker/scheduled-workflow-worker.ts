@@ -1,5 +1,11 @@
 import { WorkflowExecutionService, SupabaseDelegationHandler } from '@lenserfight/infra/execution'
 import { getExecutionProvider } from '@lenserfight/infra/execution'
+import {
+  createOAuthConnectionResolver,
+  createCompositeConnectorResolver,
+  createServerConnectorResolver,
+  nullOAuthConnectionResolver,
+} from '@lenserfight/infra/execution'
 import { nodeLogger } from '@lenserfight/utils/logger'
 import { createServiceSupabaseClient } from '../lib/supabase'
 
@@ -255,6 +261,15 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
             })
         }
       },
+
+      resolveConnector: createCompositeConnectorResolver(
+        claimed.ai_lenser_id
+          ? createOAuthConnectionResolver(serviceClient, claimed.ai_lenser_id)
+          : nullOAuthConnectionResolver,
+        createServerConnectorResolver(
+          (name, params) => serviceClient.rpc(name, params).then((r) => r.data),
+        ),
+      ).resolve,
     }
 
     const bootstrapProvider = getExecutionProvider(resolveProviderKey(defaultModelId))
