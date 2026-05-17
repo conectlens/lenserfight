@@ -11,7 +11,8 @@ describe('BattleCreationValidator', () => {
   describe('validateFormatTypeCompatibility', () => {
     it('returns no violations for valid format-type pairs', () => {
       expect(validator.validateFormatTypeCompatibility('workflow', 'ai_vs_ai')).toHaveLength(0)
-      expect(validator.validateFormatTypeCompatibility('lens', 'human_vs_ai')).toHaveLength(0)
+      expect(validator.validateFormatTypeCompatibility('workflow', 'workflow_battle')).toHaveLength(0)
+      expect(validator.validateFormatTypeCompatibility('lens', 'ai_vs_ai')).toHaveLength(0)
       expect(validator.validateFormatTypeCompatibility('lenser_battle', 'lenser_battle')).toHaveLength(0)
       expect(validator.validateFormatTypeCompatibility(null, 'ai_vs_ai')).toHaveLength(0)
     })
@@ -305,8 +306,10 @@ describe('BattleCreationValidator', () => {
     })
 
     it('collects warnings without making result invalid', () => {
+      // drawing is a warning (not an error) for human_vs_ai.
+      // lens format is ai_vs_ai only; use null format to test the warning path.
       const input: BattleCreationInput = {
-        format: 'lens',
+        format: null,
         battleType: 'human_vs_ai',
         contentType: 'drawing',
       }

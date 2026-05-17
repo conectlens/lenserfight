@@ -40,15 +40,15 @@ describe('contender-structure.types', () => {
       }
     })
 
-    it('lens allows all three structures', () => {
+    it('lens allows ai_vs_ai only — lens is an AI execution contract', () => {
       expect(CONTENDER_BY_TASK_SOURCE.lens).toContain('ai_vs_ai')
-      expect(CONTENDER_BY_TASK_SOURCE.lens).toContain('human_vs_ai')
-      expect(CONTENDER_BY_TASK_SOURCE.lens).toContain('human_vs_human')
+      expect(CONTENDER_BY_TASK_SOURCE.lens).not.toContain('human_vs_ai')
+      expect(CONTENDER_BY_TASK_SOURCE.lens).not.toContain('human_vs_human')
     })
 
-    it('workflow allows ai_vs_ai and human_vs_ai only', () => {
+    it('workflow allows ai_vs_ai only — workflow pipelines are AI-only', () => {
       expect(CONTENDER_BY_TASK_SOURCE.workflow).toContain('ai_vs_ai')
-      expect(CONTENDER_BY_TASK_SOURCE.workflow).toContain('human_vs_ai')
+      expect(CONTENDER_BY_TASK_SOURCE.workflow).not.toContain('human_vs_ai')
       expect(CONTENDER_BY_TASK_SOURCE.workflow).not.toContain('human_vs_human')
     })
 
@@ -72,6 +72,18 @@ describe('contender-structure.types', () => {
 
     it('validates workflow rejects human_vs_human', () => {
       expect(isContenderAllowedForTaskSource('workflow', 'human_vs_human')).toBe(false)
+    })
+
+    it('validates lens rejects human_vs_ai', () => {
+      expect(isContenderAllowedForTaskSource('lens', 'human_vs_ai')).toBe(false)
+    })
+
+    it('validates lens rejects human_vs_human', () => {
+      expect(isContenderAllowedForTaskSource('lens', 'human_vs_human')).toBe(false)
+    })
+
+    it('validates workflow rejects human_vs_ai', () => {
+      expect(isContenderAllowedForTaskSource('workflow', 'human_vs_ai')).toBe(false)
     })
   })
 
@@ -110,10 +122,14 @@ describe('contender-structure.types', () => {
 
     it('returns null for allowed combinations', () => {
       expect(getContenderDisabledReason('lens', 'ai_vs_ai')).toBeNull()
+      expect(getContenderDisabledReason('workflow', 'ai_vs_ai')).toBeNull()
     })
 
     it('returns reason for disallowed combinations', () => {
       expect(getContenderDisabledReason('challenge', 'ai_vs_ai')).toBeTruthy()
+      expect(getContenderDisabledReason('lens', 'human_vs_ai')).toBeTruthy()
+      expect(getContenderDisabledReason('lens', 'human_vs_human')).toBeTruthy()
+      expect(getContenderDisabledReason('workflow', 'human_vs_ai')).toBeTruthy()
     })
   })
 
