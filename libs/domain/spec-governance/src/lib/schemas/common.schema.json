@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/common/v1alpha1",
+  "title": "LenserFight Common Schema Definitions",
+  "description": "Shared $defs reused across all LenserFight spec kinds.",
+  "$defs": {
+    "apiVersion": {
+      "type": "string",
+      "pattern": "^lenserfight\\.dev/v[0-9]+(?:alpha[0-9]+|beta[0-9]+)?$",
+      "examples": ["lenserfight.dev/v1alpha1"],
+      "description": "LenserFight spec API version. Must be in group/version form."
+    },
+    "specId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for the spec. Recommended format: <kind>_<slug> (e.g. lens_code_reviewer)."
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+      "minLength": 2,
+      "maxLength": 64,
+      "description": "URL-safe slug. Lowercase alphanumeric with hyphens. No leading/trailing hyphens."
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[a-zA-Z0-9.]+)?(?:\\+[a-zA-Z0-9.]+)?$",
+      "examples": ["0.1.0", "1.0.0-alpha.1"],
+      "description": "Semantic version string (SemVer 2.0.0)."
+    },
+    "visibility": {
+      "type": "string",
+      "enum": ["private", "workspace", "public"],
+      "description": "Who can discover and read this spec."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "active", "archived"],
+      "description": "Lifecycle state of the spec."
+    },
+    "owner": {
+      "type": "object",
+      "properties": {
+        "workspace_id": { "type": "string", "minLength": 1 },
+        "created_by": { "type": "string", "minLength": 1 }
+      },
+      "required": ["workspace_id"],
+      "additionalProperties": false
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "description": "Tag slugs for discovery and categorization."
+    },
+    "jsonSchema": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "properties": { "type": "object" },
+        "required": { "type": "array", "items": { "type": "string" } },
+        "additionalProperties": {}
+      },
+      "description": "Inline JSON Schema (subset) for input/output contract validation."
+    },
+    "disclosureRef": {
+      "oneOf": [
+        { "type": "string", "description": "Relative path to the disclosed file." },
+        {
+          "type": "object",
+          "properties": {
+            "path": { "type": "string", "minLength": 1 },
+            "description": { "type": "string" }
+          },
+          "required": ["path"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "modelPolicy": {
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string", "enum": ["single", "multi", "dynamic"] },
+        "preferred_models": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "fallback_models": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["mode", "preferred_models"],
+      "additionalProperties": true
+    },
+    "toolPolicy": {
+      "type": "object",
+      "properties": {
+        "allow": { "type": "array", "items": { "type": "string" } },
+        "deny": { "type": "array", "items": { "type": "string" } },
+        "approval_required": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "baseSpec": {
+      "type": "object",
+      "properties": {
+        "apiVersion": { "$ref": "#/$defs/apiVersion" },
+        "kind": { "type": "string", "minLength": 1 },
+        "schema_version": { "type": "integer", "minimum": 1 },
+        "id": { "$ref": "#/$defs/specId" },
+        "slug": { "$ref": "#/$defs/slug" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "version": { "$ref": "#/$defs/semver" },
+        "visibility": { "$ref": "#/$defs/visibility" },
+        "status": { "$ref": "#/$defs/status" },
+        "owner": { "$ref": "#/$defs/owner" },
+        "tags": { "$ref": "#/$defs/tags" }
+      },
+      "required": ["kind", "name"]
+    }
+  }
+}
