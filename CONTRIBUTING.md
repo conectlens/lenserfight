@@ -75,9 +75,11 @@ pnpm nx test <project> --testFile=path/to/file.spec.ts
 
 Never run `pnpm nx test cli` without `--testFile` — the CLI test suite includes integration specs that time out on most developer machines.
 
-## Contribution license and safety expectations
+## Contribution license and expectations
 
 Unless you explicitly state otherwise, contributions intentionally submitted to this repository are provided under the repository license, currently Apache-2.0. Do not submit code, docs, prompts, templates, media, generated output, or data that you do not have the right to contribute.
+
+Open-source contributions are voluntary. Contributing does not create employment, payment rights, ownership, or governance authority. Any paid arrangement requires a separate written agreement with LenserFight maintainers. Questions or commercial proposals: lets@conectlens.com
 
 Do not include secrets, private keys, provider credentials, customer data, regulated data, private prompts, non-public third-party content, or exploit details in issues, pull requests, examples, screenshots, logs, or generated fixtures. Report vulnerabilities privately through [SECURITY.md](SECURITY.md).
 
