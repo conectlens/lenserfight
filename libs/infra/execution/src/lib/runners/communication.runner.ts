@@ -2,7 +2,7 @@
  * Communication Runners — email, Slack, Discord outbound notifications.
  *
  * All communication nodes validate their target, structure a request envelope,
- * and delegate actual delivery to the engine (or platform-api worker).
+ * and delegate actual delivery to the engine (or the background worker).
  *
  * Security:
  * - URLs validated (no private IPs).
