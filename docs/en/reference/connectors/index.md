@@ -10,6 +10,7 @@ The connector SDK lets external systems integrate with LenserFight: register ada
 ## Quick links
 
 - [Adapter Interface](adapter-interface.md) — `ConnectorAdapterV1` shape and lifecycle.
+- [Workflow Connectors](workflow-connectors.md) — outbound user/workspace connectors for workflow automation providers.
 - [Token Scopes](scopes.md) — the v1 scope grammar (additive-only).
 - [CLI: `lf connectors`](/en/reference/cli/connectors) — register, view, rotate, test connectors.
 - [Build an adapter](/en/how-to/integrations/build-an-adapter) — quickstart for new integrations.
