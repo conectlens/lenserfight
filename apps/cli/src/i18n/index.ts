@@ -2,10 +2,13 @@ import type { Locale, LenserQuote, QuoteContext } from './types'
 import { en } from './quotes/en'
 import { tr } from './quotes/tr'
 import { es } from './quotes/es'
+import { fr } from './quotes/fr'
+import { de } from './quotes/de'
+import { zh } from './quotes/zh'
 
 export type { Locale, LenserQuote, LenserPersona, QuoteContext } from './types'
 
-const registry: Record<Locale, LenserQuote[]> = { en, tr, es }
+const registry: Record<Locale, LenserQuote[]> = { en, tr, es, fr, de, zh }
 
 /**
  * Detect the user's preferred locale from environment.
