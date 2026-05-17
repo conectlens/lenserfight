@@ -112,6 +112,9 @@
       "@lenserfight/domain/exports": [
         "libs/domain/exports/src/index.ts"
       ],
+      "@lenserfight/domain/spec-governance": [
+        "libs/domain/spec-governance/src/index.ts"
+      ],
       "@lenserfight/features/auth": [
         "libs/features/auth/src/index.ts"
       ],
