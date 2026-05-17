@@ -13,9 +13,16 @@ export const manualTriggerDescriptor: RunnerConfigDescriptor = {
   fields: [
     {
       key: 'inputSchema',
-      label: 'Input Schema',
-      type: 'json',
-      hint: 'JSON schema describing the expected input payload.',
+      label: 'Input Fields',
+      type: 'schema_builder',
+      hint: 'Define the input fields available to downstream nodes during test and production runs.',
+      tooltip: {
+        summary: 'Defines the payload shape available to all downstream nodes when this workflow is triggered manually.',
+        whenRequired: 'Required when downstream nodes depend on dynamic input values (e.g., a topic, language, or file).',
+        format: 'Add fields with name, type, and optionally default values. Names must be valid identifiers.',
+        commonMistakes: 'Using spaces in field names, forgetting to mark required fields, not providing defaults for optional fields.',
+        executionImpact: 'At runtime, users will be prompted to fill these fields before the workflow starts. Values flow as payload.fieldName to downstream nodes.',
+      },
     },
   ],
   outputFields: [
@@ -40,12 +47,24 @@ export const eventTriggerDescriptor: RunnerConfigDescriptor = {
         { label: 'Vote Cast', value: 'vote.cast' },
         { label: 'Leaderboard Updated', value: 'leaderboard.updated' },
       ],
+      tooltip: {
+        summary: 'The platform event that starts this workflow.',
+        whenRequired: 'Always required — determines when the workflow fires.',
+        format: 'Select from available platform events.',
+        executionImpact: 'The workflow runs automatically each time this event occurs. The full event payload is available to downstream nodes.',
+      },
     },
     {
       key: 'filterExpression',
       label: 'Filter Expression',
       type: 'text',
-      placeholder: 'Optional filter to narrow matching events',
+      placeholder: 'e.g. event.metadata.category == "ai"',
+      tooltip: {
+        summary: 'Optional expression to narrow which events trigger this workflow.',
+        format: 'JavaScript-like expression evaluated against the event object. Must return truthy to proceed.',
+        commonMistakes: 'Using single = instead of == for comparison. Referencing fields that don\'t exist on the event.',
+        executionImpact: 'If the filter returns falsy, the workflow is silently skipped for that event.',
+      },
     },
   ],
   outputFields: [
@@ -62,24 +81,41 @@ export const formInputTriggerDescriptor: RunnerConfigDescriptor = {
       key: 'title',
       label: 'Form Title',
       type: 'text',
+      tooltip: {
+        summary: 'Title shown at the top of the input form presented to users.',
+        executionImpact: 'Displayed to end-users when they trigger this workflow via its public form URL.',
+      },
     },
     {
       key: 'description',
       label: 'Description',
       type: 'textarea',
+      tooltip: {
+        summary: 'Help text shown below the title, explaining what the form is for.',
+      },
     },
     {
       key: 'fields',
       label: 'Form Fields',
-      type: 'json',
+      type: 'schema_builder',
       required: true,
-      hint: 'Array of field definitions for the input form.',
+      hint: 'Define the fields users see and fill when triggering this workflow.',
+      tooltip: {
+        summary: 'Defines the form fields presented to users. Each field becomes available as formData.fieldName to downstream nodes.',
+        whenRequired: 'Always required — the form needs at least one field.',
+        format: 'Add fields using the builder. Names must be valid identifiers (no spaces).',
+        commonMistakes: 'Not marking essential fields as required, using duplicate field names.',
+        executionImpact: 'Users fill this form to start the workflow. Submitted data flows as formData to the next node.',
+      },
     },
     {
       key: 'submitLabel',
       label: 'Submit Button Label',
       type: 'text',
       defaultValue: 'Submit',
+      tooltip: {
+        summary: 'Text shown on the form submit button.',
+      },
     },
   ],
   outputFields: [
