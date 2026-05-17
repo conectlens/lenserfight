@@ -97,6 +97,13 @@ export type WorkflowNodeType =
   | 'calendar_create'
   | 'linear_issue_create'
   | 'jira_issue_create'
+  | 'asana_task_create'
+  | 'asana_task_update'
+  | 'asana_project_tasks_list'
+  | 'monday_item_create'
+  | 'monday_item_update'
+  | 'monday_board_items_list'
+  | 'zapier_webhook_trigger'
   // CM — Media Generation
   | 'text_to_image'
   | 'image_to_image'
