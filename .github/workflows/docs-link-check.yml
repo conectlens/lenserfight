@@ -25,17 +25,20 @@ jobs:
       - name: Find changed markdown files
         id: changed
         # SUPPLY-CHAIN: tj-actions has had token-exfiltration incidents in the past.
-        # Pin to an audited SHA before public OSS launch. Resolve via:
-        #   gh api repos/tj-actions/changed-files/git/refs/tags/<exact-version> | jq -r .object.sha
-        # then replace `@v44` with `@<full-40-char-sha>  # <version>`.
+        # Pin to an immutable SHA before public OSS launch. To resolve:
+        #   gh api repos/tj-actions/changed-files/git/refs/tags/v44 | jq -r .object.sha
+        # Replace `@v44` with `@<40-char-sha>  # v44`
+        # Tracked: https://github.com/conectlens/lenserfight/issues — label: supply-chain
         uses: tj-actions/changed-files@v44
         with:
           files: docs/**/*.md
 
       - name: Run markdown-link-check on changed files
         if: steps.changed.outputs.any_changed == 'true'
-        # SUPPLY-CHAIN: Pin to immutable SHA before public OSS launch. Resolve via:
-        #   gh api repos/gaurav-nelson/github-action-markdown-link-check/git/refs/tags/<exact-version> | jq -r .object.sha
+        # SUPPLY-CHAIN: Pin to an immutable SHA before public OSS launch. To resolve:
+        #   gh api repos/gaurav-nelson/github-action-markdown-link-check/git/refs/tags/v1 | jq -r .object.sha
+        # Replace `@v1` with `@<40-char-sha>  # v1`
+        # Tracked: https://github.com/conectlens/lenserfight/issues — label: supply-chain
         uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
           use-quiet-mode: 'yes'
