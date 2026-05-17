@@ -1,11 +1,11 @@
 module.exports = {
-  displayName: 'platform-api',
+  displayName: 'worker',
   preset: '../../jest.preset.cjs',
   testEnvironment: 'node',
   transform: {
     '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json', isolatedModules: true }],
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
-  coverageDirectory: '../../coverage/apps/platform-api',
+  coverageDirectory: '../../coverage/apps/worker',
   forceExit: true,
 }
