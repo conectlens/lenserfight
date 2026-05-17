@@ -13,6 +13,20 @@ import {
 } from '../utils/automation-objects'
 import { printTable, printJson, truncate } from '../utils/output'
 import { A } from '../utils/ansi'
+import {
+  battleCreationValidator,
+  BATTLE_FORMATS,
+  BATTLE_TYPES,
+  BATTLE_CONTENT_TYPES,
+  type BattleFormat,
+  type BattleType,
+  type BattleContentType,
+  type BattleCreationInput,
+  MEMORY_MODES,
+  INSTRUCTION_DISCLOSURES,
+  type MemoryMode,
+  type InstructionDisclosure,
+} from '@lenserfight/domain/battle-governance'
 
 function defaultPrivateBattlePath(): string {
   return resolve(homedir(), '.lenserfight', 'PRIVATE_BATTLE.md')
@@ -4221,6 +4235,107 @@ const webhook = defineCommand({
 })
 
 // ---------------------------------------------------------------------------
+// battle validate
+// ---------------------------------------------------------------------------
+const validateBattle = defineCommand({
+  meta: {
+    name: 'validate',
+    description:
+      'Validate a battle creation configuration against governance rules.',
+  },
+  args: {
+    format: {
+      type: 'string',
+      description: `Battle format: ${BATTLE_FORMATS.join(' | ')}`,
+      required: true,
+    },
+    type: {
+      type: 'string',
+      description: `Battle type: ${BATTLE_TYPES.join(' | ')}`,
+      required: true,
+    },
+    'content-type': {
+      type: 'string',
+      description: `Content type: ${BATTLE_CONTENT_TYPES.join(' | ')}`,
+      default: '',
+    },
+    'memory-mode': {
+      type: 'string',
+      description: `Lenser battle memory mode: ${MEMORY_MODES.join(' | ')}`,
+      default: '',
+    },
+    'instruction-disclosure': {
+      type: 'string',
+      description: `Lenser battle instruction disclosure: ${INSTRUCTION_DISCLOSURES.join(' | ')}`,
+      default: '',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const format = args.format as BattleFormat
+    const battleType = args.type as BattleType
+    const contentType = (args['content-type'] || null) as BattleContentType | null
+
+    const input: BattleCreationInput = {
+      format,
+      battleType,
+      contentType,
+    }
+
+    // Attach lenser battle policy when relevant flags are provided
+    if (format === 'lenser_battle' && (args['memory-mode'] || args['instruction-disclosure'])) {
+      input.lenserBattlePolicy = {
+        memory_mode: (args['memory-mode'] || 'personality') as MemoryMode,
+        instruction_disclosure: (args['instruction-disclosure'] || 'visible_after_close') as InstructionDisclosure,
+        model_binding_override: false,
+      }
+    }
+
+    const result = battleCreationValidator.validateAll(input)
+
+    if (args.json) {
+      printJson(result)
+      if (!result.valid) process.exitCode = 1
+      return
+    }
+
+    if (result.valid && result.warnings.length === 0) {
+      consola.success('Configuration is valid.')
+      consola.info('  Format:  %s', format)
+      consola.info('  Type:    %s', battleType)
+      if (contentType) consola.info('  Content: %s', contentType)
+      return
+    }
+
+    if (result.errors.length > 0) {
+      consola.error('%d error(s) found:', result.errors.length)
+      for (const v of result.errors) {
+        consola.log(
+          `  ${A.brightRed}error${A.reset}  ${A.bold}${v.code}${A.reset}  ${A.gray}${v.field}${A.reset}`
+        )
+        consola.log(`         ${v.message}`)
+      }
+    }
+
+    if (result.warnings.length > 0) {
+      consola.warn('%d warning(s):', result.warnings.length)
+      for (const v of result.warnings) {
+        consola.log(
+          `  ${A.brightYellow}warn${A.reset}   ${A.bold}${v.code}${A.reset}  ${A.gray}${v.field}${A.reset}`
+        )
+        consola.log(`         ${v.message}`)
+      }
+    }
+
+    if (!result.valid) process.exitCode = 1
+  },
+})
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -4283,5 +4398,6 @@ export default defineCommand({
     'check-readiness': checkReadiness,
     'auto-promote': autoPromote,
     webhook,
+    validate: validateBattle,
   },
 })
