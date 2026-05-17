@@ -63,6 +63,12 @@ export type {
 // ── Connector credential resolution ──────────────────────────────────────
 export { nullConnectorResolver, createServerConnectorResolver } from './lib/connector-credential-resolver'
 export type { ConnectorCredentialResolver } from './lib/connector-credential-resolver'
+export {
+  createOAuthConnectionResolver,
+  nullOAuthConnectionResolver,
+} from './lib/oauth-connection-resolver'
+export type { OAuthResolverServiceClient } from './lib/oauth-connection-resolver'
+export { createCompositeConnectorResolver } from './lib/composite-connector-resolver'
 
 // ── Pinned output (dev/dry-run) ──────────────────────────────────────────
 export { createPinnedOutputStore } from './lib/pinned-output'
