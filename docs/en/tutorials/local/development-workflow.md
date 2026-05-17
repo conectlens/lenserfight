@@ -36,7 +36,7 @@ lenserfight/
 │   ├── mobile/              # Expo mobile app
 │   ├── cli/                 # lf CLI (citty)
 │   ├── gateway/             # Trust Gateway service
-│   └── platform-api/        # Execution worker + HTTP API
+│   └── worker/              # Background worker (scheduled jobs, async tasks)
 ├── libs/                    # Shared libraries (layered)
 │   ├── features/            # Vertical feature slices (UI + logic)
 │   ├── domain/              # Business logic and domain types
@@ -296,10 +296,10 @@ Create `.vscode/launch.json`:
 }
 ```
 
-### Node.js debugging (platform-api)
+### Node.js debugging (worker)
 
 ```bash
-node --inspect-brk apps/platform-api/dist/main.js
+node --inspect-brk dist/apps/worker/main.js
 ```
 
 Then attach VS Code debugger to port 9229.

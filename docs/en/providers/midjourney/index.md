@@ -6,9 +6,13 @@ description: Midjourney on LenserFight — premium artistic image generation, su
 # Midjourney
 
 **Provider key:** `midjourney`  
-**Support tier:** `byok_only`
+**Support tier:** `deprecated`
 
-Midjourney produces highly artistic, stylised images from text prompts. It is available via BYOK — not included in LenserFight platform credits.
+::: warning Deprecated Provider
+Midjourney is currently **deprecated** in LenserFight. No public API is available from Midjourney, and no adapter implementation exists. This provider entry is retained for reference only. Consider using **Fal.ai** (Flux models) or **Stability AI** for image generation instead.
+:::
+
+Midjourney produces highly artistic, stylised images from text prompts. It was planned as a BYOK provider pending Midjourney's public API availability.
 
 ## Configuration
 

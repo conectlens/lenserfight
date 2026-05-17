@@ -1,15 +1,28 @@
 # Workflow Node Catalog
 
+::: warning Implementation Status
+This catalog defines all node types available in the **workflow builder canvas** (UI palette). However, only the following node types are currently **executable at runtime**:
+
+- **Lens** — fully implemented via the execution provider registry
+- **Lens Execute** — alias for Lens node execution
+
+All other node types (Logic, Data, AI Primitives, Storage/IO, Communication, Integrations, Battle/Arena, Media) are **designed and documented** but do not yet have runtime execution implementations. They appear in the canvas palette for workflow design and planning purposes.
+
+The execution engine currently supports DAG validation (cycle detection, binding completeness) and single-provider-per-node execution via the provider registry (`openai`, `anthropic`, `google`, `mistral`, `ollama`, `fal-ai`, `research`, `pdf-export`). Multi-node orchestration with inter-node data flow is scheduled for implementation.
+
+**Status key:** 🟢 Executable | 🟡 Schema & validation only | 🔴 Design-only (no runtime)
+:::
+
 This is the human reference for the typed catalog in `libs/infra/execution/src/lib/catalog/workflow-node-catalog.ts`.
 Every row includes the requested structure: Node, Purpose, Inputs, Outputs, Required Configuration, Optional Configuration, Example Configuration, Common Valid Connections, Common Invalid Connections, and Execution Notes.
 
-## Lenses
+## Lenses 🟢
 
 | Node | Purpose | Inputs | Outputs | Required Configuration | Optional Configuration | Example Configuration | Common Valid Connections | Common Invalid Connections | Execution Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Lens | Execute a LenserFight lens prompt with model and funding controls. | text or json prompt context. | text result with model metadata. | `model_id`. | `param_overrides`, `funding_source`, `key_ref_id`, `local_key_id`, retry policy. | `model_id: openai:gpt-4.1-mini`, `funding_source: platform_credit`, `param_overrides: { tone: "concise" }`; input `{ text: "Summarize weekly battle results" }`; output `{ text: "Weekly digest..." }`; downstream `Email Send.body = $.text`. | Prompt Template -> Lens, RAG Retriever -> Lens, Lens -> Output Parser, Lens -> Email Send. | Embedding -> Lens without query text. | Existing workflows keep `model_id` and `param_overrides`; execution normalizes `model_id` to `modelId`. |
 
-## Triggers
+## Triggers 🟡
 
 | Node | Purpose | Inputs | Outputs | Required Configuration | Optional Configuration | Example Configuration | Common Valid Connections | Common Invalid Connections | Execution Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -19,7 +32,7 @@ Every row includes the requested structure: Node, Purpose, Inputs, Outputs, Requ
 | Event Trigger | Start from a LenserFight domain event. | none. | json event envelope. | `eventType`. | `workspaceId`, filters. | `eventType: "battle.completed"`, `workspaceId: "{{workspace.id}}"`; output `{ eventType: "battle.completed", payload: { winner: "sourced" } }`; downstream `Slack Notify.text = $.payload.winner`. | Event Trigger -> Slack Notify, Event Trigger -> Leaderboard Update. | Event Trigger -> Speech To Text without audio. | Worker/server event bus; useful for production automation. |
 | Form / Input Trigger | Start from a rendered user form. | none. | json submitted fields. | `fields`. | submitter policy, validation messages. | `fields: [{ key: "prompt", type: "textarea", required: true }, { key: "contenders", type: "array", required: true }]`; output `{ fields: { prompt: "Judge these answers", contenders: ["concise","sourced"] } }`; downstream `Battle Execute.prompt = $.fields.prompt`. | Form Trigger -> Battle Execute, Form Trigger -> Prompt Template. | Form Trigger -> Vector Search without embedding. | Browser entry point; validation runs before DAG execution. |
 
-## Logic
+## Logic 🔴
 
 | Node | Purpose | Inputs | Outputs | Required Configuration | Optional Configuration | Example Configuration | Common Valid Connections | Common Invalid Connections | Execution Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -35,7 +48,7 @@ Every row includes the requested structure: Node, Purpose, Inputs, Outputs, Requ
 | Sub-Workflow | Invoke another workflow with mapped inputs. | json. | workflow_result. | `workflowId`. | `inputMapping`, `maxDepth`. | `workflowId: "wf_weekly_digest"`, `inputMapping: { topic: "$.topic", window: "$.window" }`, `maxDepth: 2`; output `{ workflowResult: { status: "completed", output: "Digest ready" } }`; downstream `Email Send.body = $.workflowResult.output`. | Parent workflow -> Sub-Workflow, Sub-Workflow -> Stop / Return. | Sub-Workflow -> Image Upscale without image. | Guard recursion depth. |
 | Stop / Return | End execution and return a final payload. | any. | workflow_result. | none. | `returnPath`, `status`. | `returnPath: "$.answer"`, `status: "completed"`; output `{ workflowResult: { status: "completed", output: "Approved answer" } }`; downstream `Logger.message = $.workflowResult.output`. | Any terminal branch -> Stop / Return. | Stop / Return -> required downstream production action. | Usually terminal; downstream Logger is only for debugging. |
 
-## Data
+## Data 🔴
 
 | Node | Purpose | Inputs | Outputs | Required Configuration | Optional Configuration | Example Configuration | Common Valid Connections | Common Invalid Connections | Execution Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -50,7 +63,7 @@ Every row includes the requested structure: Node, Purpose, Inputs, Outputs, Requ
 | Text Splitter | Chunk long text/documents. | text. | document[]. | `chunkSize`. | `chunkOverlap`. | `chunkSize: 1000`, `chunkOverlap: 120`; output `{ documents: [{ pageContent: "Battle report chunk...", metadata: { chunk: 1 } }] }`; downstream `Embedding.documents = $.documents`. | File Reader -> Text Splitter, Text Splitter -> Embedding. | Text Splitter -> Email Send without summarizer. | Required bridge for RAG indexing. |
 | Data Mapper | Map fields into target schema. | any. | json. | `mapping`. | defaults. | `mapping: { to: "$.owner.email", subject: "PR Review: {{title}}", body: "$.summary" }`; output `{ to: "owner@example.com", subject: "PR Review: Add runners", body: "Review summary..." }`; downstream `Email Send = $`. | Embedding -> Data Mapper, Data Mapper -> Email Send. | Data Mapper -> Image Upscale without image URL. | Primary bridge for incompatible edges. |
 
-## AI Primitives
+## AI Primitives 🔴
 
 | Node | Purpose | Inputs | Outputs | Required Configuration | Optional Configuration | Example Configuration | Common Valid Connections | Common Invalid Connections | Execution Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -72,7 +85,7 @@ Every row includes the requested structure: Node, Purpose, Inputs, Outputs, Requ
 | Audio Transcribe | Transcribe audio. | audio. | text. | `model`. | language, timestamps. | `provider: "openai"`, `model: "gpt-4o-transcribe"`, `audioPath: "$.audio.url"`, `timestamps: true`; output `{ text: "The battle winner is..." }`; downstream `Summarizer.content = $.text`. | File Reader -> Audio Transcribe, Audio Transcribe -> Summarizer. | Audio Transcribe -> Image Upscale. | Media artifact should be durable before worker execution. |
 | Video Analyze | Analyze video. | video. | json notes. | `model`. | frame sampling, transcript. | `provider: "openai"`, `model: "gpt-4.1-mini"`, `videoPath: "$.video.url"`, `sampleEverySeconds: 5`; output `{ scenes: ["scoreboard"], summary: "Battle replay..." }`; downstream `Summarizer.content = $.summary`. | Object Storage Download -> Video Analyze, Video Analyze -> Summarizer. | Video Analyze -> Embedding without text extraction. | Long videos require worker/server execution. |
 
-## Battle / Arena
+## Battle / Arena 🔴
 
 | Node | Purpose | Inputs | Outputs | Required Configuration | Optional Configuration | Example Configuration | Common Valid Connections | Common Invalid Connections | Execution Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -84,7 +97,7 @@ Every row includes the requested structure: Node, Purpose, Inputs, Outputs, Requ
 | Score Aggregator | Aggregate scores/votes. | json. | battle_result. | `aggregation`. | weights. | `aggregation: "weighted_average"`, `weights: { judge: 0.8, vote: 0.2 }`; output `{ winner: "sourced", finalScore: 91.6 }`; downstream `Leaderboard Update.score = $.finalScore`. | Judge Battle -> Score Aggregator, Vote Collector -> Score Aggregator. | Score Aggregator -> Speech To Text without audio. | Keep scoring scale explicit. |
 | Leaderboard Update | Update arena leaderboard. | battle_result. | json update status. | `leaderboardId`. | `scorePath`, visibility. | `leaderboardId: "arena_weekly"`, `scorePath: "$.finalScore"`, `visibility: "workspace"`; output `{ updated: true, rank: 1 }`; downstream `Slack Notify.text = $.rank`. | Battle Execute -> Leaderboard Update, Leaderboard Update -> Slack Notify. | Leaderboard Update -> Output Parser without text. | Server-side mutation; require workspace permissions. |
 
-## Storage And I/O
+## Storage And I/O 🔴
 
 | Node | Purpose | Inputs | Outputs | Required Configuration | Optional Configuration | Example Configuration | Common Valid Connections | Common Invalid Connections | Execution Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -100,7 +113,7 @@ Every row includes the requested structure: Node, Purpose, Inputs, Outputs, Requ
 | HTTP Request | Call an HTTP endpoint. | any. | json response. | `url`. | `method`, headers, body, timeout. | `url: "https://api.github.com/repos/org/repo/pulls/42"`, `method: "GET"`, `headers: { Authorization: "Bearer {{secrets.github}}" }`; output `{ status: 200, body: { title: "Add catalog" } }`; downstream `GitHub PR Review.input = $.body`. | Webhook Trigger -> HTTP Request, HTTP Request -> Data Mapper. | HTTP Request -> Speech To Text without audio. | Use Secret Resolver for credentials. |
 | GraphQL Request | Call GraphQL endpoint. | json variables. | json data. | `query`. | `endpoint`, variables, headers. | `endpoint: "https://api.github.com/graphql"`, `query: "query($owner:String!){repository(owner:$owner,name:\"lenserfight-web\"){name}}"`, `variables: { owner: "ofcskn" }`; output `{ data: { repository: { name: "lenserfight-web" } } }`; downstream `Summarizer.content = $.data`. | Manual Trigger -> GraphQL Request, GraphQL Request -> Summarizer. | GraphQL Request -> Image Analyze without image. | Same network safety rules as HTTP Request. |
 
-## Communication
+## Communication 🔴
 
 | Node | Purpose | Inputs | Outputs | Required Configuration | Optional Configuration | Example Configuration | Common Valid Connections | Common Invalid Connections | Execution Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -111,7 +124,7 @@ Every row includes the requested structure: Node, Purpose, Inputs, Outputs, Requ
 | Push Notification | Send in-app/device push. | any. | json queued notification. | `audience`. | title, body, deep link. | `audience: "workspace_admins"`, `title: "Digest ready"`, `body: "{{$.summaryTitle}}"`; output `{ status: "queued", notificationId: "push_123" }`; downstream `Logger.message = $.notificationId`. | Schedule Trigger -> Push Notification. | Embedding -> Push Notification without mapper. | Rate limit by audience. |
 | SMS Send | Send SMS alert. | any. | json delivery. | `to`, `body`. | provider, country rules. | `to: "{{workspace.owner.phone}}"`, `body: "Critical workflow failed: {{$.workflowName}}"`; output `{ status: "sent", messageId: "sms_123" }`; downstream `Logger.message = $.messageId`. | Error Catch -> SMS Send. | Document[] -> SMS Send without summary. | Server-only; use sparingly due cost/compliance. |
 
-## Integrations
+## Integrations 🔴
 
 | Node | Purpose | Inputs | Outputs | Required Configuration | Optional Configuration | Example Configuration | Common Valid Connections | Common Invalid Connections | Execution Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -127,7 +140,7 @@ Every row includes the requested structure: Node, Purpose, Inputs, Outputs, Requ
 | Linear Issue Create | Create Linear issue. | json. | json issue id/url. | `teamId`, `title`. | priority, labels. | `teamId: "{{secrets.linearTeamId}}"`, `title: "Investigate low-confidence judge result"`, `description: "$.reasoning"`, `priority: 2`; output `{ issueId: "LIN-321", url: "https://linear.app/..." }`; downstream `Slack Notify.text = $.url`. | Judge / Eval -> Linear Issue Create. | Image -> Linear Issue Create without analysis text. | Credentials server-side. |
 | Jira Issue Create | Create Jira issue. | json. | json issue key/url. | `projectKey`, `issueType`, `summary`. | labels, assignee. | `projectKey: "LF"`, `issueType: "Task"`, `summary: "Workflow validation warning"`, `description: "$.warning"`; output `{ issueKey: "LF-42", url: "https://jira.example.com/browse/LF-42" }`; downstream `Slack Notify.text = $.url`. | Error Catch -> Jira Issue Create. | Embedding -> Jira Issue Create without mapper. | Server-side credentials and project permissions. |
 
-## Media Generation
+## Media Generation 🔴
 
 | Node | Purpose | Inputs | Outputs | Required Configuration | Optional Configuration | Example Configuration | Common Valid Connections | Common Invalid Connections | Execution Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -140,7 +153,7 @@ Every row includes the requested structure: Node, Purpose, Inputs, Outputs, Requ
 | Image Upscale | Upscale an image. | image. | image. | `scale`. | provider, model. | `provider: "fal-ai"`, `model: "fal-ai/esrgan"`, `imagePath: "$.image.url"`, `scale: 2`; output `{ image: { url: "blob:upscaled", mimeType: "image/png" } }`; downstream `Object Storage Upload.file = $.image`. | Text to Image -> Image Upscale. | Email Send -> Image Upscale. | Requires image input. |
 | Media Convert | Convert media/file format. | file. | file. | `targetFormat`. | bitrate, codec. | `targetFormat: "mp3"`, `inputPath: "$.file.url"`, `audioBitrate: "128k"`; output `{ file: { url: "blob:converted", mimeType: "audio/mpeg" } }`; downstream `Object Storage Upload.file = $.file`. | File Reader -> Media Convert. | RAG Retriever -> Media Convert without file. | Worker/server byte processing. |
 
-## Utility
+## Utility 🔴
 
 | Node | Purpose | Inputs | Outputs | Required Configuration | Optional Configuration | Example Configuration | Common Valid Connections | Common Invalid Connections | Execution Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
