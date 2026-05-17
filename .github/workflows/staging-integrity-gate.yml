@@ -1,7 +1,7 @@
 name: Staging Integrity Gate
 
 # Phase P automation. Runs the Phase O staging integrity checklist programmatically
-# against a hosted staging Supabase + platform-api. The maintainer's role narrows
+# against a hosted staging Supabase + worker. The maintainer's role narrows
 # to reviewing the generated report and merging the sign-off PR — not executing
 # the checks by hand.
 #
