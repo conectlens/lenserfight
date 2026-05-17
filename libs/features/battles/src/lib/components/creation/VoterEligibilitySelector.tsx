@@ -1,9 +1,15 @@
 import React from 'react'
 
 import type { BattleType, VoterEligibility } from '../../types/battle.types'
+import type { ContenderStructure, JudgingMode } from '@lenserfight/domain/battle-governance'
 
 interface VoterEligibilitySelectorProps {
-  battleType: BattleType
+  /** @deprecated Use contenderStructure + judgingMode instead. */
+  battleType?: BattleType
+  /** V2: Contender structure for eligibility resolution. */
+  contenderStructure?: ContenderStructure
+  /** V2: Judging mode — when ai_judge, locks to ai_only. */
+  judgingMode?: JudgingMode
   value: VoterEligibility
   onChange: (v: VoterEligibility) => void
 }
@@ -36,8 +42,30 @@ const ELIGIBILITY_OPTIONS: Record<BattleType, { value: VoterEligibility; label: 
   ],
 }
 
-export function VoterEligibilitySelector({ battleType, value, onChange }: VoterEligibilitySelectorProps) {
-  const options = ELIGIBILITY_OPTIONS[battleType]
+// V2 eligibility resolution from ContenderStructure + JudgingMode
+function resolveEligibilityOptions(
+  contenderStructure?: ContenderStructure,
+  judgingMode?: JudgingMode,
+): { value: VoterEligibility; label: string; description: string }[] {
+  // AI judge locks to ai_only
+  if (judgingMode === 'ai_judge') {
+    return [{ value: 'ai_only', label: 'AI judge only', description: 'Only AI lensers cast weighted votes. Locked for AI judge mode.' }]
+  }
+  const base = [
+    { value: 'open' as const, label: 'Open', description: 'Any authenticated lenser can vote.' },
+    { value: 'verified_lenser' as const, label: 'Verified lensers', description: 'Only lensers who completed onboarding.' },
+  ]
+  // No additional options needed for V2 — lenser_only was format-specific
+  return base
+}
+
+export function VoterEligibilitySelector({ battleType, contenderStructure, judgingMode, value, onChange }: VoterEligibilitySelectorProps) {
+  // V2 path: use contenderStructure + judgingMode when available
+  const options = contenderStructure
+    ? resolveEligibilityOptions(contenderStructure, judgingMode)
+    : battleType
+      ? ELIGIBILITY_OPTIONS[battleType]
+      : ELIGIBILITY_OPTIONS.ai_vs_ai
 
   return (
     <div className="space-y-3">

@@ -20,3 +20,26 @@ export {
   isExperimentalBattleFormat,
   isExperimentalBattleType,
 } from '@lenserfight/domain/battle-governance'
+
+// V2 concept separation re-exports
+export type { TaskSource } from '@lenserfight/domain/battle-governance'
+export type { ContenderStructure } from '@lenserfight/domain/battle-governance'
+export type { JudgingMode } from '@lenserfight/domain/battle-governance'
+
+export {
+  TASK_SOURCES,
+  TASK_SOURCE_LABEL,
+  isExperimentalTaskSource,
+  CONTENDER_STRUCTURES,
+  isContenderAllowedForTaskSource,
+  getRecommendedContender,
+  getContenderDisabledReason,
+  hasHumanContenders,
+  JUDGING_MODES,
+  isJudgingAllowedForContender,
+  getRecommendedJudging,
+  getJudgingDisabledReason,
+  isExperimentalJudgingMode,
+  resolveToLegacyBattleType,
+  decomposeFromLegacyBattleType,
+} from '@lenserfight/domain/battle-governance'

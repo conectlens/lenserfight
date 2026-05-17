@@ -18,7 +18,6 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { BattleAutomationSettings } from './BattleAutomationSettings'
-import { BattleTypeSelector } from './BattleTypeSelector'
 import { ContenderInviteStep } from './ContenderInviteStep'
 import { HandicapConfigPanel } from './HandicapConfigPanel'
 import { LensAssignmentStep } from './LensAssignmentStep'
@@ -26,6 +25,10 @@ import { LenserBattlePolicyPanel } from './LenserBattlePolicyPanel'
 import type { LenserSearchResult } from './LenserSearchPicker'
 import { SharedParameterStep } from './SharedParameterStep'
 import { VoterEligibilitySelector } from './VoterEligibilitySelector'
+import { TaskSourceSelector } from './TaskSourceSelector'
+import { ContenderStructureSelector } from './ContenderStructureSelector'
+import { ChallengeTypeSelector } from './ChallengeTypeSelector'
+import { JudgingModeSelector } from './JudgingModeSelector'
 import {
   type BattleFormat,
   FORMAT_LABEL,
@@ -34,7 +37,18 @@ import {
   isBattleTypeAllowedForFormat,
   isCompatibleCombination,
 } from './battleCompatibility'
-import { DEFAULT_LENSER_BATTLE_POLICY } from '@lenserfight/domain/battle-governance'
+import {
+  DEFAULT_LENSER_BATTLE_POLICY,
+  type TaskSource,
+  type ContenderStructure,
+  type JudgingMode,
+  isContenderAllowedForTaskSource,
+  getRecommendedContender,
+  isJudgingAllowedForContender,
+  getRecommendedJudging,
+  hasHumanContenders,
+  resolveToLegacyBattleType,
+} from '@lenserfight/domain/battle-governance'
 import type { LenserBattlePolicy } from '@lenserfight/domain/battle-governance'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../../types/battle.types'
@@ -72,9 +86,9 @@ const stepAction = (path: string, label: string) => (
 
 const BASE_WIZARD_STEPS: WizardStepConfig[] = [
   {
-    label: 'Format',
-    title: 'Choose battle format',
-    description: 'Select whether to use a workflow, a single lens prompt, or start a Lenser Battle.',
+    label: 'Task',
+    title: 'Choose task source',
+    description: 'Select the foundation for your battle — a lens prompt, a workflow pipeline, or a human challenge.',
     action: stepAction('/tutorials/battle-walkthroughs/your-first-battle', 'Your first battle'),
   },
   {
@@ -96,10 +110,22 @@ const BASE_WIZARD_STEPS: WizardStepConfig[] = [
     action: stepAction('/how-to/battles/create-a-battle', 'Create a battle'),
   },
   {
-    label: 'Type',
-    title: 'Battle type',
-    description: 'Choose who competes and how voting works.',
+    label: 'Contenders',
+    title: 'Who competes?',
+    description: 'Choose the contender structure — AI vs AI, Human vs AI, or Human vs Human.',
     action: stepAction('/how-to/battles/battle-types', 'Battle types'),
+  },
+  {
+    label: 'Challenge',
+    title: 'Choose your challenge',
+    description: 'Pick a game type for human contestants — writing, math, grammar, and more.',
+    action: stepAction('/tutorials/battle-walkthroughs/challenge-battle', 'Challenge types'),
+  },
+  {
+    label: 'Judging',
+    title: 'How is the winner decided?',
+    description: 'Choose the judging method — community vote, AI judge, rubric, or automatic scoring.',
+    action: stepAction('/how-to/battles/voting', 'Judging modes'),
   },
   {
     label: 'Config',
@@ -131,7 +157,7 @@ const BASE_WIZARD_STEPS: WizardStepConfig[] = [
     action: stepAction('/tutorials/agent-walkthroughs/cron-scheduling', 'Scheduling'),
   },
   {
-    label: 'Contenders',
+    label: 'Invite',
     title: 'Invite contenders',
     description: 'Add up to two contenders by their lenser handle or display name. You can skip and invite later.',
     action: stepAction('/how-to/battles/join-and-submit', 'Joining a battle'),
@@ -143,7 +169,7 @@ const BASE_WIZARD_STEPS: WizardStepConfig[] = [
     action: stepAction('/tutorials/walkthroughs/create-a-lens', 'About lenses'),
   },
   {
-    label: 'Automation',
+    label: 'Finish',
     title: 'Battle automation',
     description: 'Configure auto-assign contenders and auto-promote rules.',
     action: stepAction('/tutorials/battle-walkthroughs/battle-launch-guide', 'Battle automation'),
@@ -240,10 +266,16 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [error, setError] = useState<string | null>(null)
   const [inviteError, setInviteError] = useState<string | null>(null)
 
-  // Step 0 — format choice (lazy-init from URL so query is enabled on first render)
-  const [battleFormat, setBattleFormat] = useState<'workflow' | 'lens' | 'lenser_battle' | null>(() =>
+  // Step 0 — task source (V2: replaces old battleFormat)
+  const [taskSource, setTaskSource] = useState<TaskSource | null>(() =>
     readSearchParam(searchParams, 'workflow_id') ? 'workflow' : null
   )
+  // Legacy alias — derived from taskSource for backward compat with unchanged sub-components
+  const battleFormat: BattleFormat | null = taskSource === 'challenge' ? null : taskSource as BattleFormat | null
+  const setBattleFormat = (f: BattleFormat | 'workflow' | 'lens' | 'lenser_battle' | null) => {
+    if (f === 'lenser_battle') { setTaskSource('lens'); return }
+    setTaskSource(f as TaskSource | null)
+  }
 
   // Step 1 — source selection (lazy-init from URL)
   const [workflowScope, setWorkflowScope] = useState<'mine' | 'popular'>('mine')
@@ -269,6 +301,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // Auto-corrected via useEffect below if it becomes incompatible with the
   // selected format (e.g. on Lenser Battle).
   const [battleType, setBattleType] = useState<BattleType>('ai_vs_ai')
+  // V2 contender structure + judging mode (replaces battleType for the wizard UI)
+  const [contenderStructure, setContenderStructure] = useState<ContenderStructure>('ai_vs_ai')
+  const [judgingMode, setJudgingMode] = useState<JudgingMode>('community_vote')
+  const [challengeType, setChallengeType] = useState<string | null>(null)
   const [voterEligibility, setVoterEligibility] = useState<VoterEligibility>('open')
   const [handicap, setHandicap] = useState<AIHandicapConfig>(DEFAULT_HANDICAP)
   // Non-blocking note shown when a Format change auto-cleared an incompatible
@@ -310,10 +346,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }, [battleFunding.fundingSource, battleFunding.selectedLocalKeyId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Format → Type compatibility enforcement. When Format changes and the
-  // current Type is no longer in the matrix, snap to the format's recommended
-  // default and surface a non-blocking note. Deps are intentionally narrow
-  // (battleFormat only) so we don't loop on battleType changes.
+  // Format → Type compatibility enforcement (V1 legacy). When Format changes
+  // and the current Type is no longer in the matrix, snap to the format's
+  // recommended default.
   useEffect(() => {
     if (!battleFormat) return
     if (isBattleTypeAllowedForFormat(battleFormat, battleType)) return
@@ -325,6 +360,35 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     })
     setBattleType(recommended)
   }, [battleFormat]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // V2: Task Source → Contender Structure compatibility enforcement
+  useEffect(() => {
+    if (!taskSource) return
+    if (isContenderAllowedForTaskSource(taskSource, contenderStructure)) return
+    const recommended = getRecommendedContender(taskSource)
+    if (recommended) setContenderStructure(recommended)
+  }, [taskSource]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // V2: Contender Structure → Judging Mode compatibility enforcement
+  useEffect(() => {
+    if (!isJudgingAllowedForContender(contenderStructure, judgingMode)) {
+      const recommended = getRecommendedJudging(contenderStructure)
+      if (recommended) setJudgingMode(recommended)
+    }
+  }, [contenderStructure]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // V2: Sync legacy battleType from V2 state for backward compat
+  useEffect(() => {
+    if (!taskSource) return
+    const legacyType = resolveToLegacyBattleType({
+      taskSource,
+      contenderStructure,
+      judgingMode,
+      lenserPolicy: lenserBattlePolicy.memory_mode !== DEFAULT_LENSER_BATTLE_POLICY.memory_mode
+        ? lenserBattlePolicy : undefined,
+    })
+    setBattleType(legacyType)
+  }, [taskSource, contenderStructure, judgingMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Step 6 — scheduling (optional, only for ai_vs_ai / workflow_battle)
   const [scheduleEnabled, setScheduleEnabled] = useState(false)
@@ -390,10 +454,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   }, [preselectedTemplateId]) // eslint-disable-line
 
   // ── Fetch existing battle for editing ─────────────────────────────────────
-  const isEditMode = !!battleIdFromUrl && step < 7
+  const isEditMode = !!battleIdFromUrl && step < 9
 
   useEffect(() => {
-    if (battleIdFromUrl && step < 6) {
+    if (battleIdFromUrl && step < 8) {
       const fetchBattleData = async () => {
         try {
           const battle = await battlesService.getBattleById(battleIdFromUrl)
@@ -406,7 +470,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               setHandicap(battle.handicap_config as unknown as AIHandicapConfig)
             }
             if (battle.battle_type === 'lenser_battle') {
-              setBattleFormat('lenser_battle')
+              setTaskSource('lens') // V2: lenser_battle is now a policy overlay, default to lens
             } else if (battle.workflow_id) {
               setBattleFormat('workflow')
               setSelectedWorkflowId(battle.workflow_id)
@@ -438,7 +502,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     const hasBogusBattleId = battleIdRaw !== null && !isValidUUID(battleIdRaw)
     const hasBogusSlug = slugRaw === 'undefined' || slugRaw === 'null'
 
-    if (step >= 7 && !battleIdFromUrl) {
+    if (step >= 9 && !battleIdFromUrl) {
       navigate('/battles/create', { replace: true })
       return
     }
@@ -468,7 +532,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const { data: myWorkflowsData, isLoading: loadingWorkflows } = useQuery({
     queryKey: ['battle-wizard-workflows', lenser?.id],
     queryFn: () => workflowsService.listByLenserPaginated(lenser?.id ?? '', 0, 50),
-    enabled: !!lenser?.id && battleFormat === 'workflow' && step === 1 && workflowScope === 'mine',
+    enabled: !!lenser?.id && taskSource === 'workflow' && step === 1 && workflowScope === 'mine',
     staleTime: 1000 * 60,
   })
   const workflows = (myWorkflowsData?.data ?? []) as WorkflowRecord[]
@@ -476,7 +540,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const { data: popularWorkflowsData, isLoading: loadingPopularWorkflows } = useQuery({
     queryKey: ['battle-wizard-popular-workflows'],
     queryFn: () => workflowsService.getPopular(0, 30),
-    enabled: battleFormat === 'workflow' && step === 1 && workflowScope === 'popular',
+    enabled: taskSource === 'workflow' && step === 1 && workflowScope === 'popular',
     staleTime: 1000 * 60,
   })
   const popularWorkflows = (popularWorkflowsData?.data ?? []) as WorkflowRecord[]
@@ -484,7 +548,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const { data: lensesData, isLoading: loadingLenses } = useQuery({
     queryKey: ['battle-wizard-lenses', lenser?.id],
     queryFn: () => lensesService.getPersonalFeed(lenser?.id ?? '', 0, 30),
-    enabled: !!lenser?.id && battleFormat === 'lens' && step === 1,
+    enabled: !!lenser?.id && taskSource === 'lens' && step === 1,
     staleTime: 1000 * 60,
   })
   const myLenses: LensViewModel[] = (lensesData?.data ?? []) as LensViewModel[]
@@ -506,22 +570,38 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // ── Validation ───────────────────────────────────────────────────────────
 
-  const showsHandicap = AI_BATTLE_TYPES.includes(battleType)
+  const showsHandicap = contenderStructure === 'ai_vs_ai' || contenderStructure === 'human_vs_ai'
 
-  // Skip steps that don't apply for the selected format:
-  // - lenser_battle: skips Source (1), Inputs (2), Type (4)
-  // - workflow: skips Inputs (2)
-  // - lens: shows all steps
+  // Skip steps that don't apply for the selected task source and contender structure:
+  // New steps: 0=Task, 1=Source, 2=Inputs, 3=Basics, 4=Contenders, 5=Challenge,
+  //            6=Judging, 7=Config, 8=Schedule, 9=Invite, 10=Lenses, 11=Finish
+  //
+  // - challenge task: skip Source (1) and Inputs (2)
+  // - workflow task: skip Inputs (2) and Challenge (5)
+  // - lens task: skip Challenge (5) unless human contenders
+  // - ai_vs_ai contenders: skip Challenge (5), auto-skip Judging (6) if desired
   const go = (next: number) => {
     const isForward = next > step
     let target = next
-    if (battleFormat === 'lenser_battle') {
+
+    if (taskSource === 'challenge') {
       if (next === 1) target = isForward ? 3 : 0
       if (next === 2) target = isForward ? 3 : 0
-      if (next === 4) target = isForward ? 5 : 3
-    } else if (battleFormat === 'workflow') {
+    } else if (taskSource === 'workflow') {
       if (next === 2) target = isForward ? 3 : 1
+      if (next === 5) target = isForward ? 6 : 4
+    } else if (taskSource === 'lens') {
+      // Skip challenge type for lens unless human contenders
+      if (next === 5 && !hasHumanContenders(contenderStructure)) {
+        target = isForward ? 6 : 4
+      }
     }
+
+    // Skip challenge for ai_vs_ai regardless of task source
+    if (next === 5 && contenderStructure === 'ai_vs_ai') {
+      target = isForward ? 6 : 4
+    }
+
     setDirection(isForward ? 1 : -1)
     goToStep(target)
   }
@@ -534,48 +614,50 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       ? battleIdFromUrl
       : null
 
-  // Step 5 needs an execution context (provider + model) when the battle will
-  // run AI contenders managed by the platform. Lenser Battles bring their own
-  // model binding, so no execution context is required there.
-  const aiExecutionRequired = battleFormat !== 'lenser_battle' && AI_BATTLE_TYPES.includes(battleType)
+  // Step 7 (Config) needs an execution context when AI contenders are managed
+  // by the platform. Challenge tasks with human-only contenders don't need it.
+  const aiExecutionRequired = contenderStructure === 'ai_vs_ai' || contenderStructure === 'human_vs_ai'
   const aiExecutionValid = !aiExecutionRequired || (!!selectedProviderKey && !!selectedModelKey)
 
-  const sourceValid = battleFormat === 'lenser_battle'
+  const sourceValid = taskSource === 'challenge'
     ? true
-    : battleFormat === 'workflow'
+    : taskSource === 'workflow'
       ? !!selectedWorkflowId
       : !!selectedLensId
 
-  // Step 2 (Inputs) is always valid for non-lens formats (skipped).
-  // For lens format, it's always passable — the parameter step shows a
-  // "no params needed" state when the lens has no parameters.
   const inputsStepValid = true
 
+  // Challenge type is required when task source is challenge
+  const challengeStepValid = taskSource !== 'challenge' || !!challengeType
+
   const canProceed = (() => {
-    if (step === 0) return battleFormat !== null
+    if (step === 0) return taskSource !== null
     if (step === 1) return sourceValid
     if (step === 2) return inputsStepValid
     if (step === 3) return title.trim().length >= 3
-    if (step === 5) return aiExecutionValid
-    // Step 9 (automation) requires the battle to actually exist so we have a
-    // target to attach automation rules to. Otherwise users can press
-    // "Complete" with no battle and trip the missing-slug guard in handleFinish.
-    if (step === 9) return automationReady && !!computedActiveBattleId
-    // Steps 4, 6–8 are always skippable / valid
+    if (step === 4) return true // contender structure — always valid once selected
+    if (step === 5) return challengeStepValid
+    if (step === 6) return true // judging mode — always valid once selected
+    if (step === 7) return aiExecutionValid
+    // Step 11 (automation/finish) requires the battle to exist
+    if (step === 11) return automationReady && !!computedActiveBattleId
+    // Steps 8–10 are always skippable / valid
     return true
   })()
 
   const stepValidity: boolean[] = [
-    battleFormat !== null,                 // 0: Format
-    sourceValid,                           // 1: Source
-    inputsStepValid,                       // 2: Inputs (lens only)
-    title.trim().length >= 3,              // 3: Basics
-    true,                                  // 4: Type — always valid
-    aiExecutionValid,                      // 5: Config — gates on AI execution context
-    true,                                  // 6: Schedule — always skippable
-    true,                                  // 7: Contenders — always skippable
-    true,                                  // 8: Lenses — always skippable
-    automationReady && !!computedActiveBattleId, // 9: Automation
+    taskSource !== null,                        // 0: Task Source
+    sourceValid,                                // 1: Source
+    inputsStepValid,                            // 2: Inputs (lens only)
+    title.trim().length >= 3,                   // 3: Basics
+    true,                                       // 4: Contenders — always valid
+    challengeStepValid,                         // 5: Challenge Type
+    true,                                       // 6: Judging — always valid
+    aiExecutionValid,                            // 7: Config
+    true,                                       // 8: Schedule — always skippable
+    true,                                       // 9: Invite — always skippable
+    true,                                       // 10: Lenses — always skippable
+    automationReady && !!computedActiveBattleId, // 11: Finish/Automation
   ]
 
   // ── Create battle (step 5 → 6) ───────────────────────────────────────────
@@ -585,22 +667,30 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     setSubmitting(true)
     setError(null)
     try {
-      const resolvedBattleType: BattleType = battleFormat === 'lenser_battle' ? 'lenser_battle' : battleType
+      // V2: Resolve the legacy battle_type from the new 3-axis model
+      const resolvedBattleType: BattleType = taskSource
+        ? resolveToLegacyBattleType({
+            taskSource,
+            contenderStructure,
+            judgingMode,
+            lenserPolicy: lenserBattlePolicy.memory_mode !== DEFAULT_LENSER_BATTLE_POLICY.memory_mode
+              ? lenserBattlePolicy : undefined,
+          })
+        : battleType
 
-      // Final compatibility gate — third validation tier matching the matrix.
-      // If this ever fires it means the UI permitted an invalid state; fail
-      // safely with a structured-ish error rather than corrupting a battle.
-      if (!isCompatibleCombination(battleFormat as BattleFormat | null, resolvedBattleType)) {
-        throw new Error(
-          `Battle type "${resolvedBattleType}" is not allowed for format "${battleFormat}". ` +
-          `Go back to the Type step and pick a compatible option.`
+      // Final compatibility gate — if the legacy format is available, validate.
+      if (battleFormat && !isCompatibleCombination(battleFormat as BattleFormat | null, resolvedBattleType)) {
+        // For V2 model this is a soft warning since the mapper handles the mapping
+        console.warn(
+          `Legacy compatibility note: "${resolvedBattleType}" mapped from V2 model ` +
+          `(${taskSource}/${contenderStructure}/${judgingMode}) for format "${battleFormat}".`
         )
       }
 
-      const resolvedPrompt = description.trim() || (battleFormat === 'workflow'
+      const resolvedPrompt = description.trim() || (taskSource === 'workflow'
         ? `Workflow battle: ${selectedWorkflowTitle || selectedWorkflowId}`
-        : battleFormat === 'lenser_battle'
-          ? `Lenser battle`
+        : taskSource === 'challenge'
+          ? `Challenge battle: ${challengeType || 'unspecified'}`
           : `Lens battle: ${selectedLensTitle || selectedLensId}`)
 
       const battleInput = {
@@ -609,16 +699,21 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         battle_type: resolvedBattleType,
         voter_eligibility: voterEligibility,
         handicap: AI_BATTLE_TYPES.includes(resolvedBattleType) ? handicap : undefined,
-        ...(battleFormat === 'workflow' && selectedWorkflowId ? { workflow_id: selectedWorkflowId } : {}),
-        ...(battleFormat === 'lens' && selectedLensId ? { lens_id: selectedLensId } : {}),
+        ...(taskSource === 'workflow' && selectedWorkflowId ? { workflow_id: selectedWorkflowId } : {}),
+        ...(taskSource === 'lens' && selectedLensId ? { lens_id: selectedLensId } : {}),
         // Store shared Lens parameter values for fairness
-        ...(battleFormat === 'lens' && Object.keys(sharedParamValues).length > 0
+        ...(taskSource === 'lens' && Object.keys(sharedParamValues).length > 0
           ? { shared_input_snapshot: sharedParamValues }
           : {}),
-        // Store Lenser Battle memory/instruction policy
-        ...(battleFormat === 'lenser_battle'
+        // Store Lenser Battle memory/instruction policy when configured
+        ...(lenserBattlePolicy.memory_mode !== DEFAULT_LENSER_BATTLE_POLICY.memory_mode
           ? { lenser_battle_policy: lenserBattlePolicy as unknown as Record<string, unknown> }
           : {}),
+        // V2 fields
+        ...(taskSource ? { task_source: taskSource } : {}),
+        contender_structure: contenderStructure,
+        judging_mode: judgingMode,
+        ...(challengeType ? { challenge_type: challengeType } : {}),
       }
 
       let battle
@@ -656,7 +751,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev)
-          next.set('step', '6')
+          next.set('step', '8')
           next.set('battleId', battle.id)
           next.set('battleSlug', battle.slug)
           return next
@@ -743,7 +838,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         setContenderBName(undefined)
       }
 
-      go(8)
+      go(10)
     } catch (e) {
       const msg = (e as any)?.message ?? ''
       if (msg.includes('contenders_battle_ref_unique') || msg.includes('duplicate key')) {
@@ -777,7 +872,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         setSubmitting(false)
       }
     }
-    go(7)
+    go(9)
   }
 
   const handleFinish = () => {
@@ -791,35 +886,32 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // ── Render ────────────────────────────────────────────────────────────────
 
   // Skip button config per step
-  const skipButton = step === 6
-    ? { label: 'Skip for now', onClick: () => go(7) }
-    : step === 7
-      ? { label: 'Skip for now', onClick: () => go(8) }
-      : step === 8
-        ? { label: 'Skip for now', onClick: () => go(9) }
-        : step === 9
+  const skipButton = step === 8
+    ? { label: 'Skip for now', onClick: () => go(9) }
+    : step === 9
+      ? { label: 'Skip for now', onClick: () => go(10) }
+      : step === 10
+        ? { label: 'Skip for now', onClick: () => go(11) }
+        : step === 11
           ? { label: 'Skip for now', onClick: handleFinish }
           : undefined
 
   // Next / complete handler varies by step
-  const handleNext = step === 5
+  const handleNext = step === 7
     ? handleCreateBattle
-    : step === 6
+    : step === 8
       ? handleScheduleAndNext
-      : step === 7
+      : step === 9
         ? handleInvite
         : () => go(step + 1)
 
   const handleComplete = handleFinish
 
-  // Step 4 (Type) heading + description mutate with Format so users read
-  // Step 5 as a refinement of Step 1, not a parallel decision.
+  // Wizard steps are used as-is — titles/descriptions are already set
+  // in BASE_WIZARD_STEPS for the new 12-step sequence.
   const wizardSteps = useMemo<WizardStepConfig[]>(() => {
-    const typeCopy = getTypeStepCopy(battleFormat)
-    return BASE_WIZARD_STEPS.map((s, idx) =>
-      idx === 4 ? { ...s, title: typeCopy.title, description: typeCopy.description } : s
-    )
-  }, [battleFormat])
+    return BASE_WIZARD_STEPS
+  }, [])
 
   return (
     <div className="w-full">
@@ -831,11 +923,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         onComplete={handleComplete}
         onCancel={onClose}
         canProceed={canProceed}
-        isCompleting={(step === 5 || step === 6) ? submitting : step === 7 ? inviting : false}
-        isNextLoading={(step === 5 || step === 6) ? submitting : step === 7 ? inviting : false}
+        isCompleting={(step === 7 || step === 8) ? submitting : step === 9 ? inviting : false}
+        isNextLoading={(step === 7 || step === 8) ? submitting : step === 9 ? inviting : false}
         completeLabel="Go to Battle"
         completeIcon={<Swords size={15} className="mr-1.5" />}
-        nextLabel={step === 5 ? (isEditMode ? 'Update Battle' : 'Create Battle') : step === 7 ? 'Invite' : 'Next'}
+        nextLabel={step === 7 ? (isEditMode ? 'Update Battle' : 'Create Battle') : step === 9 ? 'Invite' : 'Next'}
         skipButton={skipButton}
         stepValidity={stepValidity}
         onStepClick={go}
@@ -850,75 +942,16 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             exit="exit"
           >
 
-            {/* ── Step 0: Format chooser ────────────────────────────── */}
+            {/* ── Step 0: Task Source chooser ─────────────────────────── */}
             {step === 0 && (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                {FORMAT_CARDS.map((card) => {
-                  const isSelected = battleFormat === card.value
-                  // Two orthogonal visual channels so users never confuse
-                  // "this is selected" with "this is recommended":
-                  //   • Selected → greyscale ring + tinted neutral surface (state)
-                  //   • Recommended → yellow badge + soft yellow icon  (tier)
-                  // Yellow is reserved for tier; greyscale carries selection.
-                  return (
-                    <div key={card.value} className="flex flex-col gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => setBattleFormat(card.value)}
-                        aria-pressed={isSelected}
-                        className={`relative !flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
-                          isSelected
-                            ? '!border-greyscale-900 !bg-greyscale-900/[0.04] dark:!border-greyscale-0 dark:!bg-greyscale-0/[0.06] !ring-2 !ring-greyscale-900/10 dark:!ring-greyscale-0/10'
-                            : card.tier === 'flagship'
-                              ? '!border-primary-yellow-500/30 hover:!border-greyscale-400 dark:hover:!border-greyscale-500 !bg-transparent'
-                              : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent'
-                        }`}
-                      >
-                        {card.tier === 'flagship' && (
-                          <span className="absolute right-3 top-3">
-                            <Badge color="yellow" variant="solid" size="sm">
-                              Recommended
-                            </Badge>
-                          </span>
-                        )}
-                        {card.tier === 'experimental' && (
-                          <span className="absolute right-3 top-3">
-                            <Badge color="purple" variant="outline" size="sm">
-                              Experimental
-                            </Badge>
-                          </span>
-                        )}
-                        <card.Icon
-                          size={28}
-                          className={
-                            isSelected
-                              ? 'text-greyscale-900 dark:text-greyscale-0'
-                              : card.tier === 'flagship'
-                                ? 'text-primary-yellow-500'
-                                : 'text-greyscale-400'
-                          }
-                        />
-                        <div>
-                          <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
-                            {card.title}
-                          </p>
-                          <p className="text-xs text-greyscale-400 mt-0.5">
-                            {card.subtitle}
-                          </p>
-                        </div>
-                      </Button>
-                      <div className="flex justify-center">
-                        <HelpButton path={card.docsPath} label={card.helpLabel} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              <TaskSourceSelector
+                value={taskSource}
+                onChange={setTaskSource}
+              />
             )}
 
             {/* ── Step 1: Workflow picker ───────────────────────────── */}
-            {step === 1 && battleFormat === 'workflow' && (() => {
+            {step === 1 && taskSource === 'workflow' && (() => {
               const isLoading = workflowScope === 'mine' ? loadingWorkflows : loadingPopularWorkflows
               const list = workflowScope === 'mine' ? (workflows as WorkflowRecord[]) : popularWorkflows
               return (
@@ -975,7 +1008,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             })()}
 
             {/* ── Step 1: Lens picker ───────────────────────────────── */}
-            {step === 1 && battleFormat === 'lens' && (
+            {step === 1 && taskSource === 'lens' && (
               <div className="space-y-2">
                 {loadingLenses && Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="h-14 rounded-2xl bg-surface-raised animate-pulse" />
@@ -1014,8 +1047,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 2: Shared inputs (Lens Battle only) ──────────── */}
-            {step === 2 && battleFormat === 'lens' && (
+            {/* ── Step 2: Shared inputs (Lens Task only) ──────────── */}
+            {step === 2 && taskSource === 'lens' && (
               <SharedParameterStep
                 lensId={selectedLensId}
                 values={sharedParamValues}
@@ -1058,32 +1091,45 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 4: Battle Type ───────────────────────────────── */}
+            {/* ── Step 4: Contender Structure (V2) ──────────────────── */}
             {step === 4 && (
-              <div className="space-y-4">
-                {compatibilityNote && (
-                  <div
-                    role="status"
-                    className="rounded-2xl border border-primary-yellow-500/30 bg-primary-yellow-500/5 px-4 py-3 text-sm text-greyscale-700 dark:text-greyscale-200"
-                  >
-                    <p className="font-semibold">Selection updated for compatibility</p>
-                    <p className="mt-0.5 text-xs text-greyscale-500 dark:text-greyscale-400">
-                      {compatibilityNote.formatLabel} doesn&apos;t support that battle type, so we switched to{' '}
-                      the recommended option. You can change it below.
-                    </p>
-                  </div>
-                )}
-                <BattleTypeSelector
-                  value={battleType}
-                  onChange={handleBattleTypeChange}
-                  battleFormat={battleFormat}
-                  onChangeFormat={() => go(0)}
-                />
-              </div>
+              <ContenderStructureSelector
+                value={contenderStructure}
+                onChange={(cs) => {
+                  setContenderStructure(cs)
+                  // Clear challenge type when switching to AI-only
+                  if (cs === 'ai_vs_ai') setChallengeType(null)
+                }}
+                taskSource={taskSource}
+                onChangeTaskSource={() => go(0)}
+              />
             )}
 
-            {/* ── Step 5: Configuration ─────────────────────────────── */}
+            {/* ── Step 5: Challenge Type (V2, human contenders only) ─── */}
             {step === 5 && (
+              <ChallengeTypeSelector
+                value={challengeType}
+                onChange={setChallengeType}
+                contenderStructure={contenderStructure}
+              />
+            )}
+
+            {/* ── Step 6: Judging Mode (V2) ────────────────────────── */}
+            {step === 6 && (
+              <JudgingModeSelector
+                value={judgingMode}
+                onChange={(mode) => {
+                  setJudgingMode(mode)
+                  // Sync voter eligibility for AI judge
+                  if (mode === 'ai_judge') setVoterEligibility('ai_only')
+                  else if (voterEligibility === 'ai_only') setVoterEligibility('open')
+                }}
+                contenderStructure={contenderStructure}
+              />
+            )}
+
+            {/* ── Step 7: Configuration ─────────────────────────────── */}
+            {step === 7 && (
               <div className="space-y-6">
                 <div>
                   <div className="mb-4 flex items-center gap-1.5">
@@ -1100,17 +1146,19 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   </div>
                   <div className="space-y-6">
                     <VoterEligibilitySelector
-                      battleType={battleFormat === 'lenser_battle' ? 'lenser_battle' : battleType}
+                      contenderStructure={contenderStructure}
+                      judgingMode={judgingMode}
                       value={voterEligibility}
                       onChange={setVoterEligibility}
                     />
-                    {showsHandicap && battleFormat !== 'lenser_battle' && (
+                    {showsHandicap && (
                       <HandicapConfigPanel value={handicap} onChange={setHandicap} />
                     )}
                   </div>
                 </div>
 
-                {battleFormat !== 'lenser_battle' && (
+                {/* Execution context — required for AI contenders */}
+                {(contenderStructure === 'ai_vs_ai' || contenderStructure === 'human_vs_ai') && (
                   <div className="border-t border-surface-border pt-6">
                     <div className="mb-4 flex items-center gap-1.5">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-greyscale-400">
@@ -1155,17 +1203,17 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                     />
                   </div>
                 )}
-                {battleFormat === 'lenser_battle' && (
-                  <div className="border-t border-surface-border pt-6 space-y-4">
-                    <div className="rounded-2xl border border-primary-yellow-500/20 bg-primary-yellow-500/5 px-4 py-3 text-sm text-greyscale-700 dark:text-greyscale-300">
-                      AI lensers in a Lenser Battle use their own model binding, funding source, and memory — no execution context needed from the battle creator.
-                    </div>
-                    <LenserBattlePolicyPanel
-                      value={lenserBattlePolicy}
-                      onChange={setLenserBattlePolicy}
-                    />
+
+                {/* Lenser policy — overlay for any battle when AI lensers participate */}
+                <div className="border-t border-surface-border pt-6 space-y-4">
+                  <div className="rounded-2xl border border-primary-yellow-500/20 bg-primary-yellow-500/5 px-4 py-3 text-sm text-greyscale-700 dark:text-greyscale-300">
+                    AI lensers use their own model binding, funding source, and memory. Configure the policy below to control fairness.
                   </div>
-                )}
+                  <LenserBattlePolicyPanel
+                    value={lenserBattlePolicy}
+                    onChange={setLenserBattlePolicy}
+                  />
+                </div>
 
                 {error && (
                   <div className="rounded-2xl border border-status-red/20 bg-status-red/5 px-4 py-3 text-sm text-status-red">
@@ -1175,8 +1223,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 6: Schedule execution ────────────────────────── */}
-            {step === 6 && (
+            {/* ── Step 8: Schedule execution ────────────────────────── */}
+            {step === 8 && (
               <div className="space-y-5">
                 {AUTO_EXEC_TYPES.includes(battleType) ? (
                   <>
@@ -1283,8 +1331,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 7: Invite contenders ─────────────────────────── */}
-            {step === 7 && (
+            {/* ── Step 9: Invite contenders ─────────────────────────── */}
+            {step === 9 && (
               <ContenderInviteStep
                 slotA={slotA}
                 slotB={slotB}
@@ -1295,8 +1343,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               />
             )}
 
-            {/* ── Step 8: Assign Lenses ─────────────────────────────── */}
-            {step === 8 && activeBattleId && (
+            {/* ── Step 10: Assign Lenses ────────────────────────────── */}
+            {step === 10 && activeBattleId && (
               <LensAssignmentStep
                 battleId={activeBattleId}
                 contenderAId={contenderAId}
@@ -1306,8 +1354,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               />
             )}
 
-            {/* ── Step 9: Automation (owner-only, requires battle to exist) ── */}
-            {step === 9 && activeBattleId && (
+            {/* ── Step 11: Automation (owner-only, requires battle to exist) ── */}
+            {step === 11 && activeBattleId && (
               <BattleAutomationSettings
                 battleId={activeBattleId}
                 autoAssignContenders={autoAssignContenders}
@@ -1317,7 +1365,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                 onReadinessChange={setAutomationReady}
               />
             )}
-            {step === 9 && !activeBattleId && (
+            {step === 11 && !activeBattleId && (
               <p className="py-8 text-center text-sm text-greyscale-400">
                 Complete the previous steps to configure automation settings.
               </p>
