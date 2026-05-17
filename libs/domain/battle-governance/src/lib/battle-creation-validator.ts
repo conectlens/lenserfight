@@ -26,7 +26,8 @@ import {
 } from './contender-structure.types'
 import type { JudgingMode as JudgingModeType } from './judging-mode.types'
 import { isJudgingAllowedForContender as isJudgingAllowedForContenderFn } from './judging-mode.types'
-import { getChallengeType as getChallengeTypeFn } from './challenge-type.registry'
+import { getChallengeType as getChallengeTypeFn, challengeTypeRequiresGenerator } from './challenge-type.registry'
+import { isBenchmarkChallengeType } from './benchmark-game.registry'
 
 // ─── Input shape ─────────────────────────────────────────────────────────────
 
@@ -49,6 +50,14 @@ export interface BattleCreationInput {
 
 // ─── V2 Input shape (concept separation) ────────────────────────────────────
 
+export interface GeneratorConfig {
+  generatorLensId?: string | null
+  generatorModelId?: string | null
+  challengeLocked?: boolean
+  /** Canonical model key (e.g. 'claude-sonnet-4-6') for benchmark model conflict detection. */
+  generatorModelKey?: string | null
+}
+
 export interface BattleCreationInputV2 {
   taskSource: TaskSourceType | null
   contenderStructure: ContenderStructureType
@@ -60,6 +69,12 @@ export interface BattleCreationInputV2 {
   lensParamRequirements?: Array<{ id: string; label: string; required: boolean }>
   lensParamValues?: Record<string, unknown>
   lenserBattlePolicy?: LenserBattlePolicy | null
+  /** Generator configuration for challenge battles with AI-generated questions. */
+  generatorConfig?: GeneratorConfig
+  /** Contender lens IDs — used to detect generator-contender identity conflicts. */
+  contenderLensIds?: string[]
+  /** Contender model keys — used to detect generator-model conflicts in benchmark games. */
+  contenderModelKeys?: string[]
 }
 
 // ─── Result ──────────────────────────────────────────────────────────────────
@@ -363,6 +378,160 @@ export class BattleCreationValidator {
   }
 
   /**
+   * Validates that a challenge generator is configured when required.
+   *
+   * For challenge task source with human contenders, if the challenge type
+   * declares generatorRequirements, the generator lens and model must be set.
+   */
+  validateGeneratorRequired(
+    taskSource: TaskSourceType | null,
+    contenderStructure: ContenderStructureType,
+    challengeType: string | null | undefined,
+    generatorConfig: GeneratorConfig | undefined,
+  ): BattleViolation[] {
+    if (taskSource !== 'challenge') return []
+    if (contenderStructure === 'ai_vs_ai') return []
+    if (!challengeType) return []
+    if (!challengeTypeRequiresGenerator(challengeType)) return []
+
+    const violations: BattleViolation[] = []
+
+    if (!generatorConfig?.generatorLensId) {
+      violations.push({
+        code: 'GENERATOR_REQUIRED',
+        field: 'generator_lens_id',
+        message: 'This challenge type requires an AI question generator. Select a generator Lens.',
+        severity: 'error',
+      })
+    }
+
+    if (!generatorConfig?.generatorModelId) {
+      violations.push({
+        code: 'GENERATOR_MODEL_MISSING',
+        field: 'generator_model_id',
+        message: 'A model must be selected for the AI question generator.',
+        severity: 'error',
+      })
+    }
+
+    return violations
+  }
+
+  /**
+   * Validates that the generator Lens is not the same as a contender's Lens.
+   *
+   * This prevents information leakage where the AI that generated the question
+   * is the same AI competing in the battle (especially in Human vs AI).
+   */
+  validateGeneratorContenderConflict(
+    generatorLensId: string | null | undefined,
+    contenderLensIds: string[] | undefined,
+  ): BattleViolation[] {
+    if (!generatorLensId || !contenderLensIds || contenderLensIds.length === 0) return []
+
+    if (contenderLensIds.includes(generatorLensId)) {
+      return [
+        {
+          code: 'GENERATOR_CONTENDER_CONFLICT',
+          field: 'generator_lens_id',
+          message: 'The question generator Lens is the same as a contender\'s Lens. This may create an unfair advantage due to information leakage.',
+          severity: 'warning',
+        },
+      ]
+    }
+
+    return []
+  }
+
+  /**
+   * Validates that a generated challenge is locked before battle can start.
+   *
+   * This is a pre-start check: the challenge must be in 'locked' state
+   * (i.e. challengeLocked = true) before the battle transitions to executing.
+   */
+  validateChallengeLocked(
+    taskSource: TaskSourceType | null,
+    contenderStructure: ContenderStructureType,
+    challengeType: string | null | undefined,
+    generatorConfig: GeneratorConfig | undefined,
+  ): BattleViolation[] {
+    if (taskSource !== 'challenge') return []
+    if (contenderStructure === 'ai_vs_ai') return []
+    if (!challengeType || !challengeTypeRequiresGenerator(challengeType)) return []
+
+    if (generatorConfig?.generatorLensId && !generatorConfig.challengeLocked) {
+      return [
+        {
+          code: 'CHALLENGE_NOT_LOCKED',
+          field: 'generated_challenge',
+          message: 'The generated challenge must be locked before the battle can start. Generate and lock the challenge question.',
+          severity: 'error',
+        },
+      ]
+    }
+
+    return []
+  }
+
+  /**
+   * Validates that benchmark AI-vs-AI games do not use community_vote judging.
+   *
+   * Community voting introduces human subjectivity bias into AI-only benchmark
+   * comparisons. AI-vs-AI benchmarks must use ai_judge, rubric_score, or
+   * auto_score to ensure reproducible, objective scoring.
+   *
+   * Only applies when the challenge_type is a registered benchmark game type.
+   */
+  validateBenchmarkAIvsAIConstraints(
+    contenderStructure: ContenderStructureType,
+    judgingMode: JudgingModeType,
+    challengeType: string | null | undefined,
+  ): BattleViolation[] {
+    if (contenderStructure !== 'ai_vs_ai') return []
+    if (!isBenchmarkChallengeType(challengeType)) return []
+    if (judgingMode === 'community_vote') {
+      return [
+        {
+          code: 'BENCHMARK_JUDGING_INCOMPATIBLE',
+          field: 'judging_mode',
+          message:
+            'Community vote is not allowed for AI vs AI benchmark games. ' +
+            'Use AI Judge to ensure reproducible, bias-free scoring.',
+          severity: 'error',
+        },
+      ]
+    }
+    return []
+  }
+
+  /**
+   * Validates that the generator model key does not match any contender model key.
+   *
+   * When the same model generates the benchmark question and competes as a contender,
+   * it may have a structural advantage (e.g. familiarity with its own output patterns).
+   * This is a warning rather than a hard block to allow intentional same-model tests.
+   */
+  validateBenchmarkModelConflict(
+    generatorModelKey: string | null | undefined,
+    contenderModelKeys: string[] | undefined,
+  ): BattleViolation[] {
+    if (!generatorModelKey || !contenderModelKeys || contenderModelKeys.length === 0) return []
+    if (contenderModelKeys.includes(generatorModelKey)) {
+      return [
+        {
+          code: 'BENCHMARK_MODEL_CONFLICT',
+          field: 'generator_model_key',
+          message:
+            'The benchmark generator model matches a contender model. ' +
+            'This may create an advantage if the model is familiar with its own output patterns.',
+          severity: 'warning',
+        },
+      ]
+    }
+    return []
+  }
+
+  /**
    * Runs all V2 validation checks using the new 3-axis model.
    */
   validateAllV2(input: BattleCreationInputV2): BattleValidationResult {
@@ -382,6 +551,23 @@ export class BattleCreationValidator {
         // Policy is now valid for any task source when AI lensers are present
         input.lenserBattlePolicy ? 'lenser_battle' : null,
         input.lenserBattlePolicy,
+      ),
+      // Generated challenge validation
+      ...this.validateGeneratorRequired(
+        input.taskSource, input.contenderStructure, input.challengeType, input.generatorConfig,
+      ),
+      ...this.validateGeneratorContenderConflict(
+        input.generatorConfig?.generatorLensId, input.contenderLensIds,
+      ),
+      ...this.validateChallengeLocked(
+        input.taskSource, input.contenderStructure, input.challengeType, input.generatorConfig,
+      ),
+      // Benchmark game validation
+      ...this.validateBenchmarkAIvsAIConstraints(
+        input.contenderStructure, input.judgingMode, input.challengeType,
+      ),
+      ...this.validateBenchmarkModelConflict(
+        input.generatorConfig?.generatorModelKey, input.contenderModelKeys,
       ),
     ]
 

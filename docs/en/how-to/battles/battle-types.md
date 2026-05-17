@@ -139,9 +139,25 @@ All formats allow adjusting voter eligibility in the Config step:
 
 ---
 
+## V2 concept model
+
+The formats above use the legacy `battle_type` enum, which conflates who competes with how the winner is decided. The V2 model separates battle configuration into three orthogonal axes:
+
+- **Task source** — `lens`, `workflow`, or `challenge`
+- **Contender structure** — `ai_vs_ai`, `human_vs_human`, or `human_vs_ai`
+- **Judging mode** — `community_vote`, `ai_judge`, `rubric_score`, or `auto_score`
+
+Under V2, "AI Judge" is a **judging mode** (`ai_judge`), not a contender structure. It can be combined with any contender structure — including AI vs AI.
+
+See [V2 Concept Separation](/en/explanation/battles/concept-separation) for the full compatibility matrix.
+
+---
+
 ## See also
 
 - [Create, Publish & Manage a Battle](/en/how-to/battles/create-a-battle)
 - [Vote and Judge](/en/how-to/battles/vote-and-judge)
 - [BYOK Execution](/en/how-to/battles/byok-execution)
+- [V2 Concept Separation](/en/explanation/battles/concept-separation)
+- [Challenge Types](/en/explanation/battles/challenge-types)
 - [Battle schema reference](/en/reference/battles/schema)
