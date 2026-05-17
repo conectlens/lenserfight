@@ -59,3 +59,22 @@ Run `pnpm supabase logs` to see what failed. Common cause: Docker doesn't have e
 
 **`lf battle browse` returns empty**  
 Seeds didn't run. Re-run: `bash scripts/seed-local.sh` or `pnpm supabase db reset --local`.
+
+**`fn_get_my_key_secret is disabled in this environment` (code 42501)**  
+You're testing Cloud BYOK (a vault-stored key) locally. The function is intentionally off by default — it decrypts plaintext API keys over PostgREST and must only run when you explicitly opt in.
+
+Enable it once per local DB lifetime:
+
+```bash
+pnpm supabase:enable-byok-resolver
+```
+
+or directly:
+
+```bash
+bash scripts/enable-byok-dev-resolver.sh
+```
+
+This sets `app.allow_dev_byok_resolver = 'true'` on the Postgres database. The setting persists until you drop the DB (`supabase stop --no-backup` or `pnpm supabase db reset`). Re-run the script after every reset.
+
+> **This script has no effect in production.** The GUC is never set there, so the function stays disabled. Client calls are also tree-shaken in production builds via the `import.meta.env.DEV` guard in `walletApiClient.ts`.
