@@ -19,7 +19,7 @@ import { InputField } from '../components/InputField'
 import { OAuthButtonGroup } from '../components/OAuthButtonGroup'
 
 export const LoginPage: React.FC = () => {
-  const { login, signInWithOAuth, sendMagicLink } = useAuth()
+  const { login, signInWithOAuth } = useAuth()
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
@@ -56,11 +56,6 @@ export const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(true)
   const turnstileRef = useRef<TurnstileInstance>(null)
 
-  const [magicLinkEmail, setMagicLinkEmail] = useState('')
-  const [magicLinkSending, setMagicLinkSending] = useState(false)
-  const [magicLinkSent, setMagicLinkSent] = useState(false)
-  const [magicLinkError, setMagicLinkError] = useState<string | null>(null)
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -94,24 +89,6 @@ export const LoginPage: React.FC = () => {
       }
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  const handleMagicLink = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setMagicLinkError(null)
-    if (!magicLinkEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(magicLinkEmail)) {
-      setMagicLinkError('Enter a valid email address.')
-      return
-    }
-    setMagicLinkSending(true)
-    try {
-      await sendMagicLink(magicLinkEmail, captchaToken || undefined)
-      setMagicLinkSent(true)
-    } catch {
-      setMagicLinkError('Something went wrong. Please try again.')
-    } finally {
-      setMagicLinkSending(false)
     }
   }
 
@@ -242,43 +219,16 @@ export const LoginPage: React.FC = () => {
           disabled={isSubmitting || isSuccess}
         />
 
-        <div className="mt-6 border-t border-gray-100 dark:border-gray-800 pt-6">
-          <p className="text-xs text-center text-gray-400 dark:text-gray-500 mb-3 font-medium uppercase tracking-wide">
-            Or sign in with email link
-          </p>
-          {magicLinkSent ? (
-            <div className="flex items-start gap-2 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 p-3 rounded-xl text-green-700 dark:text-green-400 text-sm">
-              <Check size={16} className="mt-0.5 flex-shrink-0" />
-              <span>Check your inbox — we sent you a sign-in link.</span>
-            </div>
-          ) : (
-            <form onSubmit={handleMagicLink} className="space-y-3" noValidate>
-              <InputField
-                label=""
-                name="magicLinkEmail"
-                type="email"
-                placeholder="Enter your email"
-                value={magicLinkEmail}
-                onChange={(e) => { setMagicLinkEmail(e.target.value); setMagicLinkError(null) }}
-                error={magicLinkError ?? undefined}
-              />
-              {magicLinkError && (
-                <p className="text-xs text-red-600 dark:text-red-400">{magicLinkError}</p>
-              )}
-              <Button
-                type="submit"
-                fullWidth
-                variant="secondary"
-                isLoading={magicLinkSending}
-                disabled={isSubmitting || oauthLoading || isSuccess}
-              >
-                Send Sign-In Link
-              </Button>
-            </form>
-          )}
+        <div className="mt-6 border-t border-gray-100 dark:border-gray-800 pt-6 text-center">
+          <Link
+            to="/magic-link"
+            className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-primary-700 dark:hover:text-primary-400 hover:underline transition-colors"
+          >
+            Sign in with email link
+          </Link>
         </div>
 
-        <div className="mt-8 text-center text-sm text-gray-500 font-medium">
+        <div className="mt-4 text-center text-sm text-gray-500 font-medium">
           New to LenserFight?
           <Link
             to="/register"
