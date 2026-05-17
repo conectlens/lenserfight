@@ -601,8 +601,9 @@ describe('battle validate (V2 mode)', () => {
     const cmd = await getSubCmd('validate')
     await cmd.run?.({
       args: {
+        // lens task source only allows ai_vs_ai contenders; ai_vs_ai supports ai_judge.
         'task-source': 'lens',
-        'contender-structure': 'human_vs_human',
+        'contender-structure': 'ai_vs_ai',
         'judging-mode': 'ai_judge',
         'challenge-type': '',
         format: '',
