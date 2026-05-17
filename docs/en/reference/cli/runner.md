@@ -1,21 +1,36 @@
 ---
-title: lf lenser
-description: "Manage runners: connect, list, view, enable, remove, test, types, pause, resume, status."
+title: "lf runner — Deprecated Alias"
+description: "'lf runner' is a deprecated alias for 'lf lenser'. Use lf lenser instead."
 ---
 
-<!-- AUTO-GEN-START -->
+# `lf runner` — Deprecated
 
-# `lf lenser`
+> **Deprecated.** `lf runner` is an alias that will be removed in a future release.
+> Use [`lf lenser`](lenser.md) for all lenser management operations.
 
-Manage runners: connect, list, view, enable, remove, test, types, pause, resume, status.
+Running `lf runner <subcommand>` is functionally identical to `lf lenser <subcommand>`. A deprecation warning is printed to stderr on every invocation:
 
-## `lf lenser status`
+```
+WARN  'runner' is deprecated. Use 'lenser' instead.
+```
 
-Show workspace settings and active run count for an agent.
+## Migration
 
-| Flag | Type | Required | Description |
-|---|---|---|---|
-| `<handle>` | positional | yes | Agent handle (without @) |
-| `--json` | boolean | no | Output as JSON |
+Replace all uses of `lf runner` with `lf lenser`:
 
-<!-- AUTO-GEN-END -->
+```bash
+# Before
+lf runner connect --name "My Agent" --type ollama --config '{"model":"llama3.2"}'
+lf runner list
+lf runner test <handle>
+
+# After
+lf lenser connect --name "My Agent" --type ollama --config '{"model":"llama3.2"}'
+lf lenser list
+lf lenser test <handle>
+```
+
+## Related
+
+- [`lf lenser`](lenser.md) — canonical lenser management command
+- [`lf agent`](agent.md) — the other deprecated alias (`agent` → `lenser`)
