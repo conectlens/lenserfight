@@ -5,16 +5,19 @@
  * Manages local state from config.param_overrides. Writes back with __ prefix.
  */
 
-import { Field, Input, TextArea } from '@lenserfight/ui/forms'
-import { SelectField } from '@lenserfight/ui/forms'
 import { Tooltip } from '@lenserfight/ui/components'
+import { Field, Input, SelectField } from '@lenserfight/ui/forms'
 import { HelpCircle } from 'lucide-react'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import type { RunnerConfigDescriptor, WorkflowNodeConfig } from '../../types'
 import { WorkflowExpressionInput } from '../../components/WorkflowExpressionInput'
 import { ConfigFormFooter } from './ConfigFormFooter'
+import { KeyValueField } from './KeyValueField'
+import { SchemaBuilderField } from './SchemaBuilderField'
+import { StringArrayField } from './StringArrayField'
 import { ValidationSummary } from './ValidationSummary'
+
+import type { RunnerConfigDescriptor, RunnerFieldTooltip, WorkflowNodeConfig } from '../../types'
 
 export interface DescriptorFormRendererProps {
   descriptor: RunnerConfigDescriptor
@@ -184,6 +187,45 @@ function ParameterHelpTooltip({ hint }: { hint: string }) {
   )
 }
 
+/** Rich tooltip with structured metadata — node-aware, field-aware help. */
+function RichFieldTooltip({ tooltip }: { tooltip: RunnerFieldTooltip }) {
+  const content = (
+    <div className="space-y-1.5 text-[10px]">
+      <p className="font-medium">{tooltip.summary}</p>
+      {tooltip.whenRequired && (
+        <p><span className="font-semibold text-primary-yellow-500">When needed:</span> {tooltip.whenRequired}</p>
+      )}
+      {tooltip.format && (
+        <p><span className="font-semibold text-primary-yellow-500">Format:</span> {tooltip.format}</p>
+      )}
+      {tooltip.commonMistakes && (
+        <p><span className="font-semibold text-status-red">Common mistakes:</span> {tooltip.commonMistakes}</p>
+      )}
+      {tooltip.executionImpact && (
+        <p><span className="font-semibold text-deep-lens-navy-400">Execution:</span> {tooltip.executionImpact}</p>
+      )}
+    </div>
+  )
+
+  return (
+    <Tooltip
+      content={content}
+      position="right"
+      delayMs={200}
+      contentClassName="max-w-[280px] whitespace-normal"
+    >
+      <span
+        aria-label={`Help: ${tooltip.summary}`}
+        className="inline-flex text-greyscale-400 hover:text-primary-yellow-500 cursor-help transition-colors"
+        tabIndex={0}
+        role="button"
+      >
+        <HelpCircle size={11} />
+      </span>
+    </Tooltip>
+  )
+}
+
 // ── Individual Field Renderer ───────────────────────────────────────────────
 
 interface DescriptorFieldProps {
@@ -194,16 +236,49 @@ interface DescriptorFieldProps {
   onBlur: () => void
 }
 
+/** Renders the tooltip trigger (rich or simple) for a field label. */
+function FieldTooltipTrigger({ field }: { field: import('../../types').RunnerConfigFieldDescriptor }) {
+  if (field.tooltip) return <RichFieldTooltip tooltip={field.tooltip} />
+  if (field.hint && field.hint.length > INLINE_HINT_MAX) return <ParameterHelpTooltip hint={field.hint} />
+  return null
+}
+
 function DescriptorField({ field, value, error, onChange, onBlur }: DescriptorFieldProps) {
   const fieldId = `runner-cfg-${field.key}`
   const isLongHint = !!field.hint && field.hint.length > INLINE_HINT_MAX
+  const hasRichTooltip = !!field.tooltip
+  // Show inline hint only if short and no rich tooltip replaces it
+  const inlineHint = !hasRichTooltip && !isLongHint ? field.hint : undefined
 
   switch (field.type) {
+    case 'schema_builder':
+      return (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label className="text-[11px] font-medium text-greyscale-600 dark:text-greyscale-300">
+              {field.label}
+            </label>
+            {field.required && <span className="text-[9px] text-status-red">*</span>}
+            <FieldTooltipTrigger field={field} />
+          </div>
+          {inlineHint && (
+            <p className="text-[10px] text-greyscale-400">{inlineHint}</p>
+          )}
+          <SchemaBuilderField
+            value={value}
+            onChange={onChange}
+            onBlur={onBlur}
+            error={error}
+            allowedTypes={field.allowedSchemaTypes}
+          />
+        </div>
+      )
+
     case 'textarea':
     case 'code':
     case 'json':
       return (
-        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={isLongHint ? undefined : field.hint}>
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={inlineHint}>
           <WorkflowExpressionInput
             id={fieldId}
             value={value}
@@ -216,13 +291,13 @@ function DescriptorField({ field, value, error, onChange, onBlur }: DescriptorFi
             mono={field.mono || field.type === 'code' || field.type === 'json'}
             error={!!error}
           />
-          {isLongHint && <ParameterHelpTooltip hint={field.hint!} />}
+          <FieldTooltipTrigger field={field} />
         </Field>
       )
 
     case 'number':
       return (
-        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={isLongHint ? undefined : field.hint}>
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={inlineHint}>
           <div className="relative">
             <Input
               id={fieldId}
@@ -237,11 +312,9 @@ function DescriptorField({ field, value, error, onChange, onBlur }: DescriptorFi
               error={!!error}
               className="text-xs"
             />
-            {isLongHint && (
-              <span className="absolute right-2 top-1/2 -translate-y-1/2">
-                <ParameterHelpTooltip hint={field.hint!} />
-              </span>
-            )}
+            <span className="absolute right-2 top-1/2 -translate-y-1/2">
+              <FieldTooltipTrigger field={field} />
+            </span>
           </div>
         </Field>
       )
@@ -260,13 +333,13 @@ function DescriptorField({ field, value, error, onChange, onBlur }: DescriptorFi
           <label htmlFor={fieldId} className="text-[11px] text-greyscale-600 dark:text-greyscale-300">
             {field.label}
           </label>
-          {field.hint && <ParameterHelpTooltip hint={field.hint} />}
+          <FieldTooltipTrigger field={field} />
         </div>
       )
 
     case 'select':
       return (
-        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={isLongHint ? undefined : field.hint}>
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={inlineHint}>
           <div className="relative">
             <SelectField
               value={value}
@@ -276,18 +349,16 @@ function DescriptorField({ field, value, error, onChange, onBlur }: DescriptorFi
               error={error}
               className="text-xs"
             />
-            {isLongHint && (
-              <span className="absolute right-8 top-1/2 -translate-y-1/2">
-                <ParameterHelpTooltip hint={field.hint!} />
-              </span>
-            )}
+            <span className="absolute right-8 top-1/2 -translate-y-1/2">
+              <FieldTooltipTrigger field={field} />
+            </span>
           </div>
         </Field>
       )
 
     case 'datetime':
       return (
-        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={isLongHint ? undefined : field.hint}>
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={inlineHint}>
           <div className="relative">
             <Input
               id={fieldId}
@@ -298,19 +369,47 @@ function DescriptorField({ field, value, error, onChange, onBlur }: DescriptorFi
               error={!!error}
               className="text-xs"
             />
-            {isLongHint && (
-              <span className="absolute right-2 top-1/2 -translate-y-1/2">
-                <ParameterHelpTooltip hint={field.hint!} />
-              </span>
-            )}
+            <span className="absolute right-2 top-1/2 -translate-y-1/2">
+              <FieldTooltipTrigger field={field} />
+            </span>
           </div>
+        </Field>
+      )
+
+    case 'string_array':
+      return (
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={inlineHint}>
+          <StringArrayField
+            value={value}
+            onChange={onChange}
+            onBlur={onBlur}
+            error={!!error}
+            placeholder={field.placeholder}
+            itemPlaceholder={field.label}
+          />
+          <FieldTooltipTrigger field={field} />
+        </Field>
+      )
+
+    case 'key_value':
+      return (
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={inlineHint}>
+          <KeyValueField
+            value={value}
+            onChange={onChange}
+            onBlur={onBlur}
+            error={!!error}
+            keyPlaceholder={field.placeholder ?? 'Key'}
+            valuePlaceholder="Value"
+          />
+          <FieldTooltipTrigger field={field} />
         </Field>
       )
 
     case 'text':
     default:
       return (
-        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={isLongHint ? undefined : field.hint}>
+        <Field label={field.label} id={fieldId} required={field.required} error={error} hint={inlineHint}>
           <WorkflowExpressionInput
             id={fieldId}
             value={value}
@@ -321,7 +420,7 @@ function DescriptorField({ field, value, error, onChange, onBlur }: DescriptorFi
             mono={field.mono}
             error={!!error}
           />
-          {isLongHint && <ParameterHelpTooltip hint={field.hint!} />}
+          <FieldTooltipTrigger field={field} />
         </Field>
       )
   }
