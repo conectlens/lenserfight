@@ -127,6 +127,13 @@ export class NotionReadRunner implements INodeRunner {
 }
 
 // ── GoogleSheetsReadRunner / GoogleSheetsWriteRunner ──────────────────────────
+// connectorRef: optional [[:connector:google.sheets.primary]] reference.
+// When present, the resolver fetches the user's OAuth access token server-side.
+// The token is included in the request envelope for the worker to use when
+// calling the Google Sheets API. Execution proceeds without a token if
+// connectorRef is absent (e.g. dry-run) — the request envelope marks it.
+
+const SHEETS_REQUIRED_SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 export class GoogleSheetsReadRunner implements INodeRunner {
   readonly nodeType: WorkflowNodeType = 'google_sheets_read'
@@ -134,6 +141,7 @@ export class GoogleSheetsReadRunner implements INodeRunner {
   async execute(ctx: NodeRunnerContext): Promise<NodeRunnerResult> {
     const spreadsheetId = ctx.nodeConfig['spreadsheetId'] as string | undefined
     const range = ctx.nodeConfig['range'] as string | undefined
+    const connectorRef = ctx.nodeConfig['connectorRef'] as string | undefined
 
     if (!spreadsheetId || !SPREADSHEET_ID_REGEX.test(spreadsheetId)) {
       return { output: { mediaType: 'text', text: '', data: { error: 'Invalid or missing spreadsheetId' }, durationMs: 0 } }
@@ -143,11 +151,36 @@ export class GoogleSheetsReadRunner implements INodeRunner {
       return { output: { mediaType: 'text', text: '', data: { error: 'Missing range (e.g. "Sheet1!A1:D10")' }, durationMs: 0 } }
     }
 
+    // Resolve OAuth token server-side (returns null in browser/dry-run)
+    let accessToken: string | null = null
+    if (connectorRef && ctx.resolveConnector) {
+      accessToken = await ctx.resolveConnector(connectorRef, SHEETS_REQUIRED_SCOPES)
+      if (!accessToken) {
+        return {
+          output: {
+            mediaType: 'text',
+            text: '',
+            data: {
+              error: 'connector_not_resolved',
+              detail: `Could not resolve connector: ${connectorRef}. Ensure a Google Sheets connection is active at /settings/connections.`,
+            },
+            durationMs: 0,
+          },
+        }
+      }
+    }
+
     return {
       output: {
         mediaType: 'text',
         text: `[Sheets Read: ${range}]`,
-        data: { __google_sheets_read_request: true, spreadsheetId, range },
+        data: {
+          __google_sheets_read_request: true,
+          spreadsheetId,
+          range,
+          // accessToken is included for the worker; never logged or sent to frontend
+          ...(accessToken ? { __oauth_access_token: accessToken } : {}),
+        },
         durationMs: 0,
       },
     }
@@ -161,6 +194,7 @@ export class GoogleSheetsWriteRunner implements INodeRunner {
     const spreadsheetId = ctx.nodeConfig['spreadsheetId'] as string | undefined
     const range = ctx.nodeConfig['range'] as string | undefined
     const mode = (ctx.nodeConfig['mode'] as string) ?? 'append'
+    const connectorRef = ctx.nodeConfig['connectorRef'] as string | undefined
 
     if (!spreadsheetId || !SPREADSHEET_ID_REGEX.test(spreadsheetId)) {
       return { output: { mediaType: 'text', text: '', data: { error: 'Invalid or missing spreadsheetId' }, durationMs: 0 } }
@@ -168,6 +202,25 @@ export class GoogleSheetsWriteRunner implements INodeRunner {
 
     if (!range || typeof range !== 'string') {
       return { output: { mediaType: 'text', text: '', data: { error: 'Missing range' }, durationMs: 0 } }
+    }
+
+    // Resolve OAuth token server-side
+    let accessToken: string | null = null
+    if (connectorRef && ctx.resolveConnector) {
+      accessToken = await ctx.resolveConnector(connectorRef, SHEETS_REQUIRED_SCOPES)
+      if (!accessToken) {
+        return {
+          output: {
+            mediaType: 'text',
+            text: '',
+            data: {
+              error: 'connector_not_resolved',
+              detail: `Could not resolve connector: ${connectorRef}`,
+            },
+            durationMs: 0,
+          },
+        }
+      }
     }
 
     // Get data to write from upstream
@@ -182,7 +235,14 @@ export class GoogleSheetsWriteRunner implements INodeRunner {
       output: {
         mediaType: 'text',
         text: `[Sheets ${mode}: ${range}]`,
-        data: { __google_sheets_write_request: true, spreadsheetId, range, mode, hasData: true },
+        data: {
+          __google_sheets_write_request: true,
+          spreadsheetId,
+          range,
+          mode,
+          hasData: true,
+          ...(accessToken ? { __oauth_access_token: accessToken } : {}),
+        },
         durationMs: 0,
       },
     }
