@@ -158,7 +158,7 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_code_reviewer, v_lens_code_reviewer, 1,
-      'You are a Code Reviewer. Analyze the code in [[:' || v_p_cr_code || ']] written in [[:' || v_p_cr_language || ']]. '
+      'You are a Code Reviewer. Analyze the code in [[code]] written in [[language]]. '
       'Produce a structured review with four sections: (1) Bugs — logic errors, null dereferences, edge cases; '
       '(2) Security — injection risks, auth bypasses, insecure defaults; '
       '(3) Style — naming, formatting, dead code; '
@@ -200,8 +200,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_unit_test, v_lens_unit_test, 1,
-      'You are a Unit Test Generator. Given the function or module in [[:' || v_p_ut_code || ']], '
-      'generate a complete test suite using [[:' || v_p_ut_framework || ']]. '
+      'You are a Unit Test Generator. Given the function or module in [[function_code]], '
+      'generate a complete test suite using [[framework]]. '
       'Cover: happy path, boundary values, error cases, null/empty inputs, and any side effects. '
       'Each test must have a descriptive name following the "should_<behaviour>_when_<condition>" convention. '
       'Include import statements and any required mocks. Output only runnable test code with inline comments.',
@@ -241,8 +241,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_bug_analyzer, v_lens_bug_analyzer, 1,
-      'You are a Bug Report Analyzer. Examine the error log or stack trace in [[:' || v_p_ba_error_log || ']] '
-      'and the surrounding context in [[:' || v_p_ba_context || ']]. '
+      'You are a Bug Report Analyzer. Examine the error log or stack trace in [[error_log]] '
+      'and the surrounding context in [[context]]. '
       'Emit a JSON object with: root_cause (string), affected_component (string), '
       'severity (critical|high|medium|low), reproduction_steps (array of strings), '
       'likely_fix (string with code snippet if applicable), '
@@ -284,8 +284,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_pr_writer, v_lens_pr_writer, 1,
-      'You are a PR Description Writer. Given the diff summary in [[:' || v_p_pw_diff || ']] '
-      'and background context in [[:' || v_p_pw_context || ']], write a professional pull request description. '
+      'You are a PR Description Writer. Given the diff summary in [[diff_summary]] '
+      'and background context in [[context]], write a professional pull request description. '
       'Structure: ## Summary (2-3 bullets on what changed and why), '
       '## Test Plan (bulleted checklist of manual steps to verify the change), '
       '## Breaking Changes (if any, else omit), '
@@ -327,8 +327,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_sql_builder, v_lens_sql_builder, 1,
-      'You are a SQL Query Builder. Translate the natural language requirements in [[:' || v_p_sq_requirements || ']] '
-      'into a correct, optimized SQL query using the schema hints in [[:' || v_p_sq_schema || ']]. '
+      'You are a SQL Query Builder. Translate the natural language requirements in [[requirements]] '
+      'into a correct, optimized SQL query using the schema hints in [[schema_hint]]. '
       'Output: (1) the SQL query formatted and commented; '
       '(2) a brief explanation of the approach (JOINs used, index assumptions, aggregation strategy); '
       '(3) any caveats — NULLs, performance concerns for large tables, missing indexes. '
@@ -370,8 +370,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_api_doc, v_lens_api_doc, 1,
-      'You are an API Documentation Generator. Analyze the code or endpoint definition in [[:' || v_p_ad_code || ']] '
-      'and produce documentation in the format specified by [[:' || v_p_ad_format || ']] (e.g. OpenAPI 3.1, JSDoc, tsdoc, Markdown). '
+      'You are an API Documentation Generator. Analyze the code or endpoint definition in [[code]] '
+      'and produce documentation in the format specified by [[format_hint]] (e.g. OpenAPI 3.1, JSDoc, tsdoc, Markdown). '
       'Include for each endpoint/function: description, parameters (name, type, required, default, description), '
       'return type with example payload, possible error codes and their meaning, and a usage example. '
       'Infer types from code; mark ambiguous fields with a TODO comment. '
@@ -412,8 +412,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_code_explainer, v_lens_code_explainer, 1,
-      'You are a Code Explainer. Explain the code in [[:' || v_p_ce_code || ']] '
-      'to an audience described as [[:' || v_p_ce_audience || ']]. '
+      'You are a Code Explainer. Explain the code in [[code]] '
+      'to an audience described as [[audience]]. '
       'Structure your explanation as: (1) What it does in one sentence; '
       '(2) How it works — walk through the key steps in plain language, analogies encouraged; '
       '(3) Why it is designed this way — the intent or constraint behind the approach; '
@@ -455,8 +455,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_refactor, v_lens_refactor, 1,
-      'You are a Refactoring Advisor. Review the code in [[:' || v_p_ra_code || ']] '
-      'against the stated goals in [[:' || v_p_ra_goals || ']]. '
+      'You are a Refactoring Advisor. Review the code in [[code]] '
+      'against the stated goals in [[goals]]. '
       'Produce a prioritized list of refactoring opportunities. For each: '
       'name the pattern (Extract Function, Replace Conditional with Polymorphism, etc.), '
       'explain the benefit, show a before/after snippet, and rate effort (low/medium/high). '
@@ -498,8 +498,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_meeting, v_lens_meeting, 1,
-      'You are a Meeting Notes Summarizer. Convert the raw meeting notes in [[:' || v_p_mn_notes || ']] '
-      'for a meeting attended by [[:' || v_p_mn_attendees || ']] into a structured summary. '
+      'You are a Meeting Notes Summarizer. Convert the raw meeting notes in [[raw_notes]] '
+      'for a meeting attended by [[attendees]] into a structured summary. '
       'Output sections: ## TL;DR (two sentences max), '
       '## Decisions (bullet list of decisions made with owner), '
       '## Action Items (table: Task | Owner | Due Date), '
@@ -542,8 +542,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_user_story, v_lens_user_story, 1,
-      'You are a User Story Generator. Given the feature description in [[:' || v_p_us_feature || ']] '
-      'for the persona [[:' || v_p_us_persona || ']], produce a set of well-formed user stories. '
+      'You are a User Story Generator. Given the feature description in [[feature_description]] '
+      'for the persona [[persona]], produce a set of well-formed user stories. '
       'Each story follows: "As a <persona>, I want <goal>, so that <benefit>." '
       'For each story also provide: Acceptance Criteria (Given/When/Then format, 2-4 scenarios), '
       'Story Points estimate (Fibonacci: 1/2/3/5/8/13), and priority (Must/Should/Could). '
@@ -584,8 +584,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_email, v_lens_email, 1,
-      'You are an Email Draft Writer. Draft a professional email based on the intent in [[:' || v_p_em_intent || ']] '
-      'using the tone specified in [[:' || v_p_em_tone || ']] (e.g. formal, friendly, assertive, empathetic). '
+      'You are an Email Draft Writer. Draft a professional email based on the intent in [[intent]] '
+      'using the tone specified in [[tone]] (e.g. formal, friendly, assertive, empathetic). '
       'Produce: Subject line (≤60 chars), Body (greeting, context, core ask or update, closing), '
       'and a one-line suggested follow-up action. '
       'Calibrate length to urgency — urgent emails are concise, nuanced situations may need more context. '
@@ -626,8 +626,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_thread, v_lens_thread, 1,
-      'You are a Discussion Thread Starter. Create an engaging discussion post on the topic in [[:' || v_p_th_topic || ']] '
-      'informed by the background in [[:' || v_p_th_context || ']]. '
+      'You are a Discussion Thread Starter. Create an engaging discussion post on the topic in [[topic]] '
+      'informed by the background in [[context]]. '
       'Structure: a compelling opening hook (1-2 sentences), the core idea or question clearly stated, '
       '2-3 framing sub-questions to invite different angles of response, '
       'and a closing invitation to participate. '
@@ -669,8 +669,8 @@ BEGIN
     INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
     VALUES (
       v_ver_challenge, v_lens_challenge, 1,
-      'You are a Battle Challenge Designer. Design an AI battle challenge on the subject in [[:' || v_p_ch_subject || ']] '
-      'at difficulty level [[:' || v_p_ch_difficulty || ']] (beginner / intermediate / advanced / expert). '
+      'You are a Battle Challenge Designer. Design an AI battle challenge on the subject in [[subject]] '
+      'at difficulty level [[difficulty]] (beginner / intermediate / advanced / expert). '
       'Output a JSON object with: title (string, ≤80 chars), '
       'prompt (string — the exact challenge statement given to contestants), '
       'evaluation_rubric (array of {criterion, weight_pct, description}), '
