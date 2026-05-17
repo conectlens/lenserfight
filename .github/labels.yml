@@ -69,7 +69,11 @@
 
 - name: area:cli
   color: 0e8a16
-  description: lf command-line tool
+  description: lf command-line tool (auto-applied by cli template)
+
+- name: area:local-config
+  color: fbca04
+  description: ~/.lenserfight/* local config tree (auto-applied by local-config template)
 
 - name: area:web
   color: 1d76db
@@ -89,7 +93,11 @@
 
 - name: area:battles
   color: e4e669
-  description: Battle execution, voting, streaming, arena
+  description: Battle execution, voting, streaming, arena (auto-applied by battle template)
+
+- name: area:lenses
+  color: 0e8a16
+  description: Lens creation, parameters, kinds, generation, governance (auto-applied by lens template)
 
 - name: area:mobile
   color: 1d76db

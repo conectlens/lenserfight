@@ -1,0 +1,76 @@
+name: "🖥 CLI Issue"
+description: Report a bug or unexpected behavior in the lf command-line tool.
+title: "[CLI][apps/cli] "
+labels:
+  - area:cli
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Title format:** `[CLI][apps/cli] Short description`
+        Use this template for bugs, errors, or unexpected output from the `lf` CLI (`apps/cli`).
+        For issues with the web or arena surface, use the [🐛 Bug Report](bug) template instead.
+
+  - type: dropdown
+    id: subcommand
+    attributes:
+      label: Affected command
+      description: Which `lf` subcommand is affected?
+      options:
+        - lf auth
+        - lf battle
+        - lf execution
+        - lf lens
+        - lf lenser
+        - lf workflow
+        - lf config
+        - lf run
+        - lf (root / help / version)
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command and output
+      description: Paste the full command you ran and the relevant output or error.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: input
+    id: cli_version
+    attributes:
+      label: CLI version
+      description: Run `lf --version` and paste the output.
+      placeholder: e.g. 0.4.1
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node version, pnpm version.
+      placeholder: "macOS 14.4, Node 20.11, pnpm 9.1"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true
+        - label: I reproduced this on the latest CLI release or main branch
+          required: true
