@@ -26,6 +26,15 @@
       "options": {
         "command": "npm publish dist/libs/sdk --access public --tag alpha"
       }
+    },
+    "nx-release-publish": {
+      "executor": "@nx/js:release-publish",
+      "dependsOn": ["build"],
+      "options": {
+        "packageRoot": "dist/libs/sdk",
+        "tag": "alpha",
+        "access": "public"
+      }
     }
   }
 }
