@@ -11,7 +11,7 @@
  * - Google Sheets spreadsheet ID format validated.
  */
 
-import type { WorkflowNodeType } from '../execution.types'
+import type { ExecutionResult, WorkflowNodeType } from '../execution.types'
 import type { INodeRunner, NodeRunnerContext, NodeRunnerResult } from './node-runner.interface'
 
 const GITHUB_REPO_REGEX = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/
@@ -27,6 +27,32 @@ function isPrivateUrl(url: string): boolean {
   catch { return true }
 }
 
+async function executeConnectorOrMock(
+  ctx: NodeRunnerContext,
+  request: Parameters<NonNullable<NodeRunnerContext['executeConnectorOperation']>>[0],
+  fallbackText: string,
+  fallbackData: Record<string, unknown>,
+): Promise<NodeRunnerResult> {
+  if (ctx.executeConnectorOperation) {
+    return { output: await ctx.executeConnectorOperation(request) }
+  }
+  return {
+    output: {
+      mediaType: 'json',
+      text: fallbackText,
+      data: {
+        ...fallbackData,
+        connectorRef: request.connectorRef,
+        provider: request.provider,
+        capability: request.capability,
+        operation: request.operation,
+        mock: true,
+      },
+      durationMs: 0,
+    },
+  }
+}
+
 // ── GitHubReadRunner ─────────────────────────────────────────────────────────
 
 export class GitHubReadRunner implements INodeRunner {
@@ -36,6 +62,7 @@ export class GitHubReadRunner implements INodeRunner {
     const repo = ctx.nodeConfig['repo'] as string | undefined
     const resourceType = (ctx.nodeConfig['resourceType'] as string) ?? 'issue'
     const number = ctx.nodeConfig['number'] as number | string | undefined
+    const connectorRef = ctx.nodeConfig['connectorRef'] as string | undefined
 
     if (!repo || !GITHUB_REPO_REGEX.test(repo)) {
       return { output: { mediaType: 'text', text: '', data: { error: 'Invalid repo format. Expected "owner/repo"' }, durationMs: 0 } }
@@ -46,18 +73,36 @@ export class GitHubReadRunner implements INodeRunner {
       return { output: { mediaType: 'text', text: '', data: { error: 'Invalid issue/PR number' }, durationMs: 0 } }
     }
 
-    return {
-      output: {
-        mediaType: 'text',
-        text: `[GitHub ${resourceType} ${repo}${resourceNumber ? `#${resourceNumber}` : ''}]`,
-        data: {
-          __github_read_request: true,
-          repo,
-          resourceType,
-          number: resourceNumber ?? null,
+    const result: NodeRunnerResult = connectorRef
+      ? await executeConnectorOrMock(
+        ctx,
+        {
+          connectorRef,
+          provider: 'github',
+          capability: 'repos',
+          operation: 'read_repository_metadata',
+          requiredScopes: ['repo'],
+          params: { repo, resourceType, number: resourceNumber ?? null },
         },
-        durationMs: 0,
-      },
+        `[GitHub ${resourceType} ${repo}${resourceNumber ? `#${resourceNumber}` : ''}]`,
+        { __github_read_request: true, repo, resourceType, number: resourceNumber ?? null },
+      )
+      : {
+        output: {
+          mediaType: 'text' as ExecutionResult['mediaType'],
+          text: `[GitHub ${resourceType} ${repo}${resourceNumber ? `#${resourceNumber}` : ''}]`,
+          data: {
+            __github_read_request: true,
+            repo,
+            resourceType,
+            number: resourceNumber ?? null,
+          },
+          durationMs: 0,
+        },
+      }
+
+    return {
+      ...result,
       variableMutations: { __github_repo: repo },
     }
   }
@@ -105,9 +150,31 @@ export class NotionReadRunner implements INodeRunner {
     const pageId = ctx.nodeConfig['pageId'] as string | undefined
     const databaseId = ctx.nodeConfig['databaseId'] as string | undefined
     const queryFilter = ctx.nodeConfig['queryFilter'] as Record<string, unknown> | undefined
+    const connectorRef = ctx.nodeConfig['connectorRef'] as string | undefined
 
     if (!pageId && !databaseId) {
       return { output: { mediaType: 'text', text: '', data: { error: 'Either pageId or databaseId must be configured' }, durationMs: 0 } }
+    }
+
+    if (connectorRef) {
+      return executeConnectorOrMock(
+        ctx,
+        {
+          connectorRef,
+          provider: 'notion',
+          capability: databaseId ? 'database' : 'page',
+          operation: databaseId ? 'query_database' : 'read_database',
+          requiredScopes: ['notion:read'],
+          params: { pageId: pageId ?? null, databaseId: databaseId ?? null, queryFilter: queryFilter ?? null },
+        },
+        `[Notion ${pageId ? `Page: ${pageId}` : `DB: ${databaseId}`}]`,
+        {
+          __notion_read_request: true,
+          pageId: pageId ?? null,
+          databaseId: databaseId ?? null,
+          queryFilter: queryFilter ?? null,
+        },
+      )
     }
 
     return {
@@ -128,10 +195,8 @@ export class NotionReadRunner implements INodeRunner {
 
 // ── GoogleSheetsReadRunner / GoogleSheetsWriteRunner ──────────────────────────
 // connectorRef: optional [[:connector:google.sheets.primary]] reference.
-// When present, the resolver fetches the user's OAuth access token server-side.
-// The token is included in the request envelope for the worker to use when
-// calling the Google Sheets API. Execution proceeds without a token if
-// connectorRef is absent (e.g. dry-run) — the request envelope marks it.
+// When present, a server-side connector runtime resolves credentials and
+// returns sanitized workflow output. Tokens must never enter node output data.
 
 const SHEETS_REQUIRED_SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
@@ -151,23 +216,20 @@ export class GoogleSheetsReadRunner implements INodeRunner {
       return { output: { mediaType: 'text', text: '', data: { error: 'Missing range (e.g. "Sheet1!A1:D10")' }, durationMs: 0 } }
     }
 
-    // Resolve OAuth token server-side (returns null in browser/dry-run)
-    let accessToken: string | null = null
-    if (connectorRef && ctx.resolveConnector) {
-      accessToken = await ctx.resolveConnector(connectorRef, SHEETS_REQUIRED_SCOPES)
-      if (!accessToken) {
-        return {
-          output: {
-            mediaType: 'text',
-            text: '',
-            data: {
-              error: 'connector_not_resolved',
-              detail: `Could not resolve connector: ${connectorRef}. Ensure a Google Sheets connection is active at /settings/connections.`,
-            },
-            durationMs: 0,
-          },
-        }
-      }
+    if (connectorRef) {
+      return executeConnectorOrMock(
+        ctx,
+        {
+          connectorRef,
+          provider: 'google',
+          capability: 'sheets',
+          operation: 'read_range',
+          requiredScopes: SHEETS_REQUIRED_SCOPES,
+          params: { spreadsheetId, range },
+        },
+        `[Sheets Read: ${range}]`,
+        { __google_sheets_read_request: true, spreadsheetId, range },
+      )
     }
 
     return {
@@ -178,8 +240,6 @@ export class GoogleSheetsReadRunner implements INodeRunner {
           __google_sheets_read_request: true,
           spreadsheetId,
           range,
-          // accessToken is included for the worker; never logged or sent to frontend
-          ...(accessToken ? { __oauth_access_token: accessToken } : {}),
         },
         durationMs: 0,
       },
@@ -204,31 +264,28 @@ export class GoogleSheetsWriteRunner implements INodeRunner {
       return { output: { mediaType: 'text', text: '', data: { error: 'Missing range' }, durationMs: 0 } }
     }
 
-    // Resolve OAuth token server-side
-    let accessToken: string | null = null
-    if (connectorRef && ctx.resolveConnector) {
-      accessToken = await ctx.resolveConnector(connectorRef, SHEETS_REQUIRED_SCOPES)
-      if (!accessToken) {
-        return {
-          output: {
-            mediaType: 'text',
-            text: '',
-            data: {
-              error: 'connector_not_resolved',
-              detail: `Could not resolve connector: ${connectorRef}`,
-            },
-            durationMs: 0,
-          },
-        }
-      }
-    }
-
     // Get data to write from upstream
     const firstUpstream = ctx.upstreamOutputs.values().next().value
     const writeData = firstUpstream?.data ?? (firstUpstream?.text ? [firstUpstream.text] : null)
 
     if (!writeData) {
       return { output: { mediaType: 'text', text: '', data: { error: 'No data to write' }, durationMs: 0 } }
+    }
+
+    if (connectorRef) {
+      return executeConnectorOrMock(
+        ctx,
+        {
+          connectorRef,
+          provider: 'google',
+          capability: 'sheets',
+          operation: mode === 'overwrite' ? 'update_range' : 'append_row',
+          requiredScopes: SHEETS_REQUIRED_SCOPES,
+          params: { spreadsheetId, range, mode, writeData },
+        },
+        `[Sheets ${mode}: ${range}]`,
+        { __google_sheets_write_request: true, spreadsheetId, range, mode, hasData: true },
+      )
     }
 
     return {
@@ -241,7 +298,6 @@ export class GoogleSheetsWriteRunner implements INodeRunner {
           range,
           mode,
           hasData: true,
-          ...(accessToken ? { __oauth_access_token: accessToken } : {}),
         },
         durationMs: 0,
       },
