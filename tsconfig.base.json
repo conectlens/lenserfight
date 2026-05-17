@@ -82,6 +82,9 @@
       "@lenserfight/utils/locale": [
         "libs/utils/locale/src/index.ts"
       ],
+      "@lenserfight/domain/oauth-connections": [
+        "libs/domain/oauth-connections/src/index.ts"
+      ],
       "@lenserfight/domain/lenses": [
         "libs/domain/lenses/src/index.ts"
       ],
