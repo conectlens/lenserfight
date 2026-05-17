@@ -1,7 +1,7 @@
 name: Docs drift
 
-# AA-3: CLI reference drift gate — fails when committed docs diverge from auto-generation.
-# AA-5: OpenAPI drift gate — fails when route handler signatures diverge from openapi.yaml.
+# CLI reference drift gate — fails when committed docs diverge from auto-generation.
+# OpenAPI drift gate — fails when route handler signatures diverge from openapi.yaml.
 
 on:
   pull_request:
@@ -9,8 +9,8 @@ on:
       - 'apps/cli/src/commands/**'
       - 'apps/cli/src/main.ts'
       - 'apps/platform-api/src/http/**'
-      - 'docs/reference/cli/**'
-      - 'docs/reference/platform-api/openapi.yaml'
+      - 'docs/en/reference/cli/**'
+      - 'docs/en/reference/platform-api/openapi.yaml'
       - 'tools/gen-cli-docs.mjs'
       - 'tools/check-cli-docs.mjs'
       - 'tools/verify-openapi.mjs'
@@ -23,8 +23,8 @@ on:
       - 'apps/cli/src/commands/**'
       - 'apps/cli/src/main.ts'
       - 'apps/platform-api/src/http/**'
-      - 'docs/reference/cli/**'
-      - 'docs/reference/platform-api/openapi.yaml'
+      - 'docs/en/reference/cli/**'
+      - 'docs/en/reference/platform-api/openapi.yaml'
       - 'tools/gen-cli-docs.mjs'
       - 'tools/check-cli-docs.mjs'
       - 'tools/verify-openapi.mjs'
