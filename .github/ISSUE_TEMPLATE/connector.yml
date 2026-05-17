@@ -1,0 +1,92 @@
+name: "🔌 Connector Proposal"
+description: Propose a new connector adapter — claim a slug and confirm scope before writing code.
+title: "[CONNECTOR] "
+labels:
+  - adapter-idea
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Use this template for **new connector proposals only**.
+        For bugs in an existing connector, use the [🐛 Bug Report](bug) template and select "connector / adapter" as the affected area.
+
+        A mentor will reply within 5 business days confirming slug availability and scope.
+        See [Adapter Mentorship Paths](https://docs.lenserfight.com/how-to/contributors/adapter-mentorship).
+
+  - type: input
+    id: slug
+    attributes:
+      label: Proposed adapter slug
+      description: Stable kebab-case identifier. Must not collide with anything in `examples/connectors/`.
+      placeholder: e.g. github-issues, slack-events, my-service
+    validations:
+      required: true
+
+  - type: input
+    id: service
+    attributes:
+      label: Target service
+      placeholder: e.g. GitHub Issues API, Slack Events API
+    validations:
+      required: true
+
+  - type: dropdown
+    id: auth_model
+    attributes:
+      label: Auth model
+      options:
+        - Static API token (single-tenant)
+        - Per-user API token
+        - OAuth 2.0 — installation token
+        - OAuth 2.0 — user token (refresh required)
+        - HMAC signing (no upstream token)
+        - Other / not yet decided
+    validations:
+      required: true
+
+  - type: textarea
+    id: scopes
+    attributes:
+      label: Scopes needed
+      description: Which v1 scopes does this adapter require? New top-level scopes require an RFC first.
+      placeholder: |
+        - lenses:read
+        - workflows:write
+    validations:
+      required: true
+
+  - type: textarea
+    id: value
+    attributes:
+      label: Value to LenserFight users
+      description: What workflow or capability does this unlock?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: intent
+    attributes:
+      label: Will you implement this?
+      options:
+        - "Yes — I plan to open the PR myself"
+        - "Maybe — I can scaffold but need mentor pairing"
+        - "No — flagging the gap for someone else"
+    validations:
+      required: true
+
+  - type: textarea
+    id: prior_art
+    attributes:
+      label: Prior art
+      description: Existing adapters this would be modeled on (e.g. `examples/connectors/chainabit-example`). Optional.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked that this slug is not already in `examples/connectors/`
+          required: true
+        - label: I confirmed no existing issue proposes the same adapter
+          required: true
