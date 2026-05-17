@@ -19,6 +19,7 @@ import { callRpc } from '../utils/api'
 import { CHECK_ID_TO_CODE, type OnboardingErrorCode } from '../lib/onboarding/errors'
 import { checkForUpdate } from '@lenserfight/utils/update-check'
 import { readCliVersion } from '../lib/version'
+import { getQuote, formatQuote } from '../i18n'
 
 type DoctorCheckId = 'core' | 'api' | 'byok' | 'ollama' | 'auth' | 'journey'
 
@@ -194,9 +195,13 @@ export default defineCommand({
 
     if (hasError) {
       printError('Some checks failed.')
+      const hint = formatQuote(getQuote('doctor.warning'))
+      if (hint) printWarn(`  ${hint}`)
       process.exitCode = 1
     } else {
       printSuccess('All requested checks passed.')
+      const hint = formatQuote(getQuote('doctor.success'))
+      if (hint) printSuccess(`  ${hint}`)
     }
   },
 })
