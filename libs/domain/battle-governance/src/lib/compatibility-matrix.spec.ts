@@ -26,26 +26,26 @@ describe('compatibility-matrix', () => {
       })
     })
 
-    it('workflow allows ai_vs_ai, human_vs_ai, workflow_battle', () => {
+    it('workflow allows ai_vs_ai and workflow_battle only', () => {
       expect(isBattleTypeAllowedForFormat('workflow', 'ai_vs_ai')).toBe(true)
-      expect(isBattleTypeAllowedForFormat('workflow', 'human_vs_ai')).toBe(true)
       expect(isBattleTypeAllowedForFormat('workflow', 'workflow_battle')).toBe(true)
     })
 
-    it('workflow rejects human-vs-human and lenser_battle types', () => {
+    it('workflow rejects all human types and lenser_battle', () => {
+      expect(isBattleTypeAllowedForFormat('workflow', 'human_vs_ai')).toBe(false)
       expect(isBattleTypeAllowedForFormat('workflow', 'human_vs_human_open_votes')).toBe(false)
       expect(isBattleTypeAllowedForFormat('workflow', 'human_vs_human_ai_votes')).toBe(false)
       expect(isBattleTypeAllowedForFormat('workflow', 'lenser_battle')).toBe(false)
     })
 
-    it('lens allows ai_vs_ai, human_vs_ai, hvh_open, hvh_ai_votes', () => {
+    it('lens allows ai_vs_ai only — lens is an AI-only execution contract', () => {
       expect(isBattleTypeAllowedForFormat('lens', 'ai_vs_ai')).toBe(true)
-      expect(isBattleTypeAllowedForFormat('lens', 'human_vs_ai')).toBe(true)
-      expect(isBattleTypeAllowedForFormat('lens', 'human_vs_human_open_votes')).toBe(true)
-      expect(isBattleTypeAllowedForFormat('lens', 'human_vs_human_ai_votes')).toBe(true)
     })
 
-    it('lens rejects workflow_battle and lenser_battle types', () => {
+    it('lens rejects all human types, workflow_battle, and lenser_battle', () => {
+      expect(isBattleTypeAllowedForFormat('lens', 'human_vs_ai')).toBe(false)
+      expect(isBattleTypeAllowedForFormat('lens', 'human_vs_human_open_votes')).toBe(false)
+      expect(isBattleTypeAllowedForFormat('lens', 'human_vs_human_ai_votes')).toBe(false)
       expect(isBattleTypeAllowedForFormat('lens', 'workflow_battle')).toBe(false)
       expect(isBattleTypeAllowedForFormat('lens', 'lenser_battle')).toBe(false)
     })
@@ -106,12 +106,16 @@ describe('compatibility-matrix', () => {
 
     it('returns null for allowed combinations', () => {
       expect(getDisabledReason('workflow', 'ai_vs_ai')).toBeNull()
-      expect(getDisabledReason('lens', 'human_vs_human_open_votes')).toBeNull()
+      expect(getDisabledReason('workflow', 'workflow_battle')).toBeNull()
+      expect(getDisabledReason('lens', 'ai_vs_ai')).toBeNull()
       expect(getDisabledReason('lenser_battle', 'lenser_battle')).toBeNull()
     })
 
     it('returns reason with format label for disallowed pairs', () => {
       expect(getDisabledReason('workflow', 'human_vs_human_open_votes')).toMatch(/Workflow Battle/)
+      expect(getDisabledReason('workflow', 'human_vs_ai')).toMatch(/Workflow Battle/)
+      expect(getDisabledReason('lens', 'human_vs_ai')).toMatch(/Lens Battle/)
+      expect(getDisabledReason('lens', 'human_vs_human_open_votes')).toMatch(/Lens Battle/)
       expect(getDisabledReason('lens', 'workflow_battle')).toMatch(/Lens Battle/)
       expect(getDisabledReason('lenser_battle', 'ai_vs_ai')).toMatch(/Lenser Battle/)
     })

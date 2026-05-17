@@ -1,4 +1,4 @@
-import { Badge, Button, HelpButton, SegmentedControl, StepWizard, Tooltip } from '@lenserfight/ui/components'
+import { Button, HelpButton, SegmentedControl, StepWizard, Tooltip } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Input, TextArea } from '@lenserfight/ui/forms'
 import { battlesService, battlesRepository, workflowsService, lensesService, battleExecutionService } from '@lenserfight/data/repositories'
@@ -25,6 +25,7 @@ import { LensAssignmentStep } from './LensAssignmentStep'
 import { LenserBattlePolicyPanel } from './LenserBattlePolicyPanel'
 import type { LenserSearchResult } from './LenserSearchPicker'
 import { SharedParameterStep } from './SharedParameterStep'
+import { WorkflowInputStep } from './WorkflowInputStep'
 import { VoterEligibilitySelector } from './VoterEligibilitySelector'
 import { TaskSourceSelector } from './TaskSourceSelector'
 import { ContenderStructureSelector } from './ContenderStructureSelector'
@@ -597,22 +598,31 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     const isForward = next > step
     let target = next
 
+    // ── Challenge: no Source (1) or Inputs (2) steps ───────────────────────
     if (taskSource === 'challenge') {
       if (next === 1) target = isForward ? 3 : 0
       if (next === 2) target = isForward ? 3 : 0
     } else if (taskSource === 'workflow') {
-      if (next === 2) target = isForward ? 3 : 1
+      // Workflow shows Inputs (2) via WorkflowInputStep — no longer skipped.
+      // Challenge (5) is always skipped for workflow (no human challenge types).
       if (next === 5) target = isForward ? 6 : 4
-    } else if (taskSource === 'lens') {
-      // Skip challenge type for lens unless human contenders
-      if (next === 5 && !hasHumanContenders(contenderStructure)) {
-        target = isForward ? 6 : 4
-      }
+    }
+    // Lens: uses Inputs (2) as normal; Challenge (5) skip covered by ai_vs_ai check below.
+
+    // ── Lens & Workflow: Contenders (4) is ai_vs_ai only — skip the step ───
+    // contenderStructure is auto-locked to ai_vs_ai via the domain useEffect.
+    if ((taskSource === 'lens' || taskSource === 'workflow') && target === 4) {
+      target = isForward ? 5 : 3
     }
 
-    // Skip challenge for ai_vs_ai regardless of task source
-    if (next === 5 && contenderStructure === 'ai_vs_ai') {
+    // ── ai_vs_ai (covers all Lens/Workflow battles): skip Challenge (5) ─────
+    if (target === 5 && contenderStructure === 'ai_vs_ai') {
       target = isForward ? 6 : 4
+    }
+
+    // ── Second pass: challenge-skip may re-land on 4 for lens/workflow ──────
+    if ((taskSource === 'lens' || taskSource === 'workflow') && target === 4) {
+      target = isForward ? 5 : 3
     }
 
     setDirection(isForward ? 1 : -1)
@@ -631,6 +641,20 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // by the platform. Challenge tasks with human-only contenders don't need it.
   const aiExecutionRequired = contenderStructure === 'ai_vs_ai' || contenderStructure === 'human_vs_ai'
   const aiExecutionValid = !aiExecutionRequired || (!!selectedProviderKey && !!selectedModelKey)
+
+  // Output modality required by the selected lens (from its declared output_contract.kind).
+  // Used to filter the model list in Step 7 and for pre-flight validation at creation.
+  const requiredOutputModality: string | null = taskSource === 'lens'
+    ? (myLenses.find((l) => l.id === selectedLensId)?.outputKind ?? null)
+    : null
+
+  // Filter models to those that support the required output modality.
+  // If a model has no declared output_modalities (legacy), it's included (safe default).
+  const filteredProviderModels = requiredOutputModality
+    ? battleProviderModels.filter(
+        (m) => !m.outputModalities?.length || m.outputModalities.includes(requiredOutputModality),
+      )
+    : battleProviderModels
 
   const sourceValid = taskSource === 'challenge'
     ? true
@@ -681,6 +705,22 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   const handleCreateBattle = async () => {
     if (!canProceed) return
+
+    // Pre-flight: verify selected model can produce the output required by the lens.
+    // This blocks creation before any DB write — backend constraint backs this up.
+    if (requiredOutputModality && selectedModelKey) {
+      const selectedModel = battleProviderModels.find((m) => m.key === selectedModelKey)
+      if (
+        selectedModel?.outputModalities?.length &&
+        !selectedModel.outputModalities.includes(requiredOutputModality)
+      ) {
+        setError(
+          `The selected model does not support "${requiredOutputModality}" output, which is required by the chosen lens. Select a compatible model in the Config step.`,
+        )
+        return
+      }
+    }
+
     setSubmitting(true)
     setError(null)
     try {
@@ -1079,22 +1119,38 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
                         {lens.title}
                       </p>
-                      {lens.visibility !== 'public' && (
-                        <p className="text-xs text-greyscale-400 capitalize">{lens.visibility}</p>
-                      )}
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {lens.visibility !== 'public' && (
+                          <span className="text-xs text-greyscale-400 capitalize">{lens.visibility}</span>
+                        )}
+                        {lens.outputKind && (
+                          <span className="rounded border border-surface-border bg-surface-base px-1.5 py-0.5 font-mono text-[10px] capitalize text-greyscale-500 dark:text-greyscale-400">
+                            {lens.outputKind}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </Button>
                 ))}
               </div>
             )}
 
-            {/* ── Step 2: Shared inputs (Lens Task only) ──────────── */}
+            {/* ── Step 2: Shared inputs (Lens Task) ───────────────── */}
             {step === 2 && taskSource === 'lens' && (
               <SharedParameterStep
                 lensId={selectedLensId}
                 values={sharedParamValues}
                 onChange={setSharedParamValues}
                 lens={myLenses.find((l) => l.id === selectedLensId) ?? null}
+              />
+            )}
+
+            {/* ── Step 2: Trigger inputs (Workflow Task) ───────────── */}
+            {step === 2 && taskSource === 'workflow' && (
+              <WorkflowInputStep
+                workflowId={selectedWorkflowId}
+                values={sharedParamValues}
+                onChange={setSharedParamValues}
               />
             )}
 
@@ -1295,6 +1351,16 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                         <Info size={13} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
                       </Tooltip>
                     </div>
+                    {requiredOutputModality && (
+                      <div className="mb-3 flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-xs text-greyscale-500 dark:text-greyscale-400">
+                        <Info size={13} className="flex-shrink-0 text-primary-yellow-500" />
+                        Showing models that support{' '}
+                        <span className="font-semibold capitalize text-greyscale-900 dark:text-greyscale-50">
+                          {requiredOutputModality}
+                        </span>{' '}
+                        output — required by the selected lens.
+                      </div>
+                    )}
                     <FundingSourceToggle
                       fundingSource={battleFunding.fundingSource}
                       onFundingSourceChange={battleFunding.setFundingSource}
@@ -1317,7 +1383,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       onChainabitConnect={chainabit.reconnect}
                       providers={battleProviders}
                       isLoadingProviders={isLoadingProviders}
-                      providerModels={battleProviderModels}
+                      providerModels={filteredProviderModels}
                       isLoadingModels={isLoadingModels}
                       selectedProviderKey={selectedProviderKey}
                       onProviderChange={(key) => { setSelectedProviderKey(key); setSelectedModelKey('') }}
