@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import {
   ForgotPasswordPage,
   LoginPage,
+  MagicLinkPage,
   RegisterPage,
   ResetPasswordPage,
 } from '@lenserfight/features/auth'
@@ -41,6 +42,7 @@ export const AuthRouter: React.FC = () => {
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/magic-link" element={<MagicLinkPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/" element={<Navigate to="/login" replace />} />
