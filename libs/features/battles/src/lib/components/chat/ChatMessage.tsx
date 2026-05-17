@@ -63,7 +63,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           </div>
           <span className="text-[10px] text-surface-text-disabled flex-shrink-0 font-medium group-hover:text-surface-text-muted transition-colors">{timeAgo}</span>
         </div>
-        <p className="text-[13px] text-surface-text-muted leading-relaxed break-words break-all sm:break-normal">
+        <p className="text-[13px] text-surface-text-muted leading-relaxed break-words overflow-hidden">
           {body}
         </p>
       </div>
