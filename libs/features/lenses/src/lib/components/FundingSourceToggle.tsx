@@ -1,6 +1,7 @@
 import { LocalKeysGatewayClient } from '@lenserfight/data/local-keys-browser'
 import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
+import { HelpButton } from '@lenserfight/ui/components'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { CHAINABIT_APP_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
 import { HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil, Loader2 } from 'lucide-react'
@@ -332,6 +333,59 @@ function EditLocalKeyModal({
         </div>
       </div>
     </Dialog>
+  )
+}
+
+const GATEWAY_DOCS_PATH = '/explanation/lenses/local-keys-gateway'
+
+function GatewayUnreachablePanel({
+  onRefreshLocalKeys,
+}: {
+  onRefreshLocalKeys?: () => Promise<void> | void
+}) {
+  const [rechecking, setRechecking] = useState(false)
+
+  const handleRecheck = async () => {
+    if (!onRefreshLocalKeys) return
+    setRechecking(true)
+    try {
+      await onRefreshLocalKeys()
+    } finally {
+      setRechecking(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2 p-3 rounded-lg border border-amber-300/40 bg-amber-50 dark:bg-amber-900/10">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+          Start the LenserFight Gateway
+        </p>
+        <HelpButton path={GATEWAY_DOCS_PATH} label="Gateway docs" className="shrink-0" />
+      </div>
+      <ol className="text-[10px] text-gray-600 dark:text-gray-400 list-decimal pl-4 space-y-0.5">
+        <li>
+          Run <code className="text-primary-600 dark:text-primary-400">lf gateway serve</code>{' '}
+          in a terminal and leave it running.
+        </li>
+        <li>
+          Then run <code className="text-primary-600 dark:text-primary-400">lf gateway pair --web</code>{' '}
+          and copy the token it prints.
+        </li>
+        <li>Come back to this page and paste the token into the field that appears.</li>
+      </ol>
+      {onRefreshLocalKeys && (
+        <button
+          type="button"
+          onClick={() => void handleRecheck()}
+          disabled={rechecking}
+          className="self-start inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60"
+        >
+          {rechecking ? <Loader2 size={11} className="animate-spin" /> : null}
+          {rechecking ? 'Checking…' : 'Recheck gateway'}
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -772,31 +826,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
 
       {/* Gateway not running */}
       {isByokLocal && localKeyAvailability === 'gateway_unreachable' && (
-        <div className="flex flex-col gap-2 p-3 rounded-lg border border-amber-300/40 bg-amber-50 dark:bg-amber-900/10">
-          <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-            Start the LenserFight Gateway
-          </p>
-          <ol className="text-[10px] text-gray-600 dark:text-gray-400 list-decimal pl-4 space-y-0.5">
-            <li>
-              Run <code className="text-primary-600 dark:text-primary-400">lf gateway serve</code>{' '}
-              in a terminal and leave it running.
-            </li>
-            <li>
-              Then run <code className="text-primary-600 dark:text-primary-400">lf gateway pair --web</code>{' '}
-              and copy the token it prints.
-            </li>
-            <li>Come back to this page and paste the token into the field that appears.</li>
-          </ol>
-          {onRefreshLocalKeys && (
-            <button
-              type="button"
-              onClick={() => void onRefreshLocalKeys()}
-              className="self-start rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              Recheck gateway
-            </button>
-          )}
-        </div>
+        <GatewayUnreachablePanel onRefreshLocalKeys={onRefreshLocalKeys} />
       )}
 
       {/* Gateway forbids this origin */}
