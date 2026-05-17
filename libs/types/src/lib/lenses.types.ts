@@ -131,6 +131,7 @@ export type LensVersionParamType =
   | 'date'
   | 'datetime'
   | 'file'
+  | 'connector'
 
 /** Mirrors lenses.tools */
 export interface ToolRecord {
