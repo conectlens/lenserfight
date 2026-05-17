@@ -913,4 +913,137 @@ describe('SupabaseWorkflowsRepository', () => {
       })
     })
   })
+
+  // ---------------------------------------------------------------------------
+  // Versioning
+  // ---------------------------------------------------------------------------
+
+  const VERSION_ID = 'version-uuid-1'
+
+  const fakeVersion = {
+    id: VERSION_ID,
+    workflow_id: WF_ID,
+    version_number: 1,
+    changelog: 'Initial version',
+    status: 'draft',
+    published_at: null,
+    created_by: LENSER_ID,
+    created_at: '2026-01-01T00:00:00Z',
+    node_count: 2,
+    edge_count: 1,
+  }
+
+  describe('getVersions', () => {
+    it('calls fn_get_workflow_versions with p_workflow_id', async () => {
+      mockRpc.mockResolvedValue({ data: [fakeVersion], error: null })
+      const result = await repo.getVersions(WF_ID)
+      expect(mockRpc).toHaveBeenCalledWith('fn_get_workflow_versions', { p_workflow_id: WF_ID })
+      expect(result).toEqual([fakeVersion])
+    })
+
+    it('returns empty array when no versions exist', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: null })
+      expect(await repo.getVersions(WF_ID)).toEqual([])
+    })
+
+    it('rethrows errors', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: new Error('rpc error') })
+      await expect(repo.getVersions(WF_ID)).rejects.toThrow('rpc error')
+    })
+  })
+
+  describe('createVersion', () => {
+    it('calls fn_create_workflow_version with workflow_id and changelog', async () => {
+      mockRpc.mockResolvedValue({ data: VERSION_ID, error: null })
+      const result = await repo.createVersion(WF_ID, 'v1 release')
+      expect(mockRpc).toHaveBeenCalledWith('fn_create_workflow_version', {
+        p_workflow_id: WF_ID,
+        p_changelog: 'v1 release',
+      })
+      expect(result).toBe(VERSION_ID)
+    })
+
+    it('passes null changelog when omitted', async () => {
+      mockRpc.mockResolvedValue({ data: VERSION_ID, error: null })
+      await repo.createVersion(WF_ID)
+      expect(mockRpc).toHaveBeenCalledWith('fn_create_workflow_version', {
+        p_workflow_id: WF_ID,
+        p_changelog: null,
+      })
+    })
+
+    it('rethrows errors', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: new Error('create version error') })
+      await expect(repo.createVersion(WF_ID)).rejects.toThrow('create version error')
+    })
+  })
+
+  describe('publishVersion', () => {
+    it('calls fn_publish_workflow_version with p_version_id', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: null })
+      await repo.publishVersion(VERSION_ID)
+      expect(mockRpc).toHaveBeenCalledWith('fn_publish_workflow_version', { p_version_id: VERSION_ID })
+    })
+
+    it('rethrows errors on failure', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: new Error('already published') })
+      await expect(repo.publishVersion(VERSION_ID)).rejects.toThrow('already published')
+    })
+  })
+
+  describe('restoreVersion', () => {
+    it('calls fn_restore_workflow_version with p_version_id', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: null })
+      await repo.restoreVersion(VERSION_ID)
+      expect(mockRpc).toHaveBeenCalledWith('fn_restore_workflow_version', { p_version_id: VERSION_ID })
+    })
+
+    it('rethrows errors on failure', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: new Error('not found') })
+      await expect(repo.restoreVersion(VERSION_ID)).rejects.toThrow('not found')
+    })
+  })
+
+  describe('startRun — version binding', () => {
+    const fakeRunWithVersion = {
+      ...fakeRun,
+      workflow_version_id: VERSION_ID,
+    }
+
+    beforeEach(() => {
+      // First rpc call starts the run, second fetches the run record
+      mockRpc
+        .mockResolvedValueOnce({ data: RUN_ID, error: null })           // fn_start_workflow_run
+        .mockResolvedValueOnce({ data: [fakeRunWithVersion], error: null }) // fn_get_workflow_run
+    })
+
+    it('passes p_version_id when versionId is provided', async () => {
+      await repo.startRun(WF_ID, {}, undefined, undefined, VERSION_ID)
+      expect(mockRpc).toHaveBeenCalledWith(
+        'fn_start_workflow_run',
+        expect.objectContaining({ p_version_id: VERSION_ID }),
+      )
+    })
+
+    it('does NOT include p_version_id when versionId is omitted', async () => {
+      await repo.startRun(WF_ID, {})
+      expect(mockRpc).toHaveBeenCalledWith(
+        'fn_start_workflow_run',
+        expect.not.objectContaining({ p_version_id: expect.anything() }),
+      )
+    })
+
+    it('does NOT include p_version_id when versionId is null', async () => {
+      await repo.startRun(WF_ID, {}, undefined, undefined, null)
+      expect(mockRpc).toHaveBeenCalledWith(
+        'fn_start_workflow_run',
+        expect.not.objectContaining({ p_version_id: expect.anything() }),
+      )
+    })
+
+    it('returned run record exposes workflow_version_id', async () => {
+      const result = await repo.startRun(WF_ID, {}, undefined, undefined, VERSION_ID)
+      expect(result.workflow_version_id).toBe(VERSION_ID)
+    })
+  })
 })

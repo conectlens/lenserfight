@@ -133,6 +133,12 @@ export interface WorkflowRunRecord {
   parent_run_id?: string | null
   /** Nesting depth of subflow chains (0 = root, max 8). */
   recursion_depth?: number
+  /**
+   * Immutable workflow version snapshot bound at run start.
+   * NULL for runs created before versioning was introduced or workflows with no published version.
+   * Added in migration 20271230000000_artifact_lifecycle_governance.sql.
+   */
+  workflow_version_id?: string | null
 }
 
 export interface WorkflowNodeResultRecord {
@@ -288,7 +294,7 @@ export interface WorkflowsRepositoryPort {
   upsertEdges(workflowId: string, edges: UpsertEdgeInput[]): Promise<WorkflowEdgeRecord[]>
   deleteNode(nodeId: string): Promise<void>
   deleteEdge(edgeId: string): Promise<void>
-  startRun(workflowId: string, inputs?: Record<string, unknown>, globalModelId?: string, idempotencyKey?: string): Promise<WorkflowRunRecord>
+  startRun(workflowId: string, inputs?: Record<string, unknown>, globalModelId?: string, idempotencyKey?: string, versionId?: string | null): Promise<WorkflowRunRecord>
   getRun(runId: string): Promise<WorkflowRunRecord | null>
   getNodeResults(runId: string): Promise<WorkflowNodeResultRecord[]>
   updateNodeResult(
@@ -584,6 +590,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     inputs: Record<string, unknown> = {},
     globalModelId?: string,
     idempotencyKey?: string,
+    versionId?: string | null,
   ): Promise<WorkflowRunRecord> {
     const payload: Record<string, unknown> = {
       p_workflow_id: workflowId,
@@ -591,6 +598,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
       p_global_model_id: globalModelId ?? null,
     }
     if (idempotencyKey) payload['p_idempotency_key'] = idempotencyKey
+    if (versionId) payload['p_version_id'] = versionId
 
     const { data, error } = await supabase.rpc('fn_start_workflow_run', payload)
 
