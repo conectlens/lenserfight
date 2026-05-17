@@ -65,9 +65,9 @@ describe('LoginPage', () => {
     expect(screen.getByRole('heading', { name: 'Sign In' })).toBeTruthy()
   })
 
-  it('renders email and password inputs', () => {
+  it('renders identifier and password inputs', () => {
     renderPage()
-    expect(screen.getByPlaceholderText('Enter your email')).toBeTruthy()
+    expect(screen.getByPlaceholderText('Enter email or @username')).toBeTruthy()
     expect(screen.getByPlaceholderText('Enter your password')).toBeTruthy()
   })
 
