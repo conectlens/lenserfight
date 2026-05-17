@@ -7,7 +7,7 @@ export type {
   ModerationPhase,
   ModerationDecision,
 } from './lib/execution.types'
-export { validateInputs, validateOutput } from './lib/contract-validator'
+export { validateInputs, validateOutput, validateSpecFrontmatter } from './lib/contract-validator'
 export {
   validateWorkflow,
   detectCycle,
