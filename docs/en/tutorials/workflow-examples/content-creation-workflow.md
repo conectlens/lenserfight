@@ -7,6 +7,10 @@ description: Three complete Workflow examples for YouTubers, bloggers, and podca
 
 This page shows three complete Workflows for content creators. Each one takes a raw topic or brief and produces a complete, publish-ready content package through a series of connected Lens steps.
 
+::: warning Design reference — not yet end-to-end executable
+These examples show Workflow structure and Lens definitions. **Individual `lens`-type nodes are executable now** via `lf lens run` or from the web UI. Multi-node end-to-end Workflow execution (the full DAG runner) is not yet available in the CLI. Use these as design templates and wire individual Lenses yourself until the hosted runner ships.
+:::
+
 ## Workflow 1 — YouTube Video Production Pipeline
 
 **Goal:** Go from a topic idea and research notes to a complete video production package: script outline, hook, thumbnail concepts, video description, and short-form repurposing ideas.
