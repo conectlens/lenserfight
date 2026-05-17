@@ -436,7 +436,13 @@ const EN_REFERENCE_SIDEBAR = [
       { text: 'Battles', link: '/en/reference/battles/index' },
       { text: 'Connectors (alpha)', link: '/en/reference/connectors/index' },
       { text: 'Automation Objects', link: '/en/reference/automation/markdown-objects' },
-      { text: 'Execution Platform', link: '/en/reference/platform-api/api-overview' },
+      {
+        text: 'Background Worker',
+        items: [
+          { text: 'Overview', link: '/en/reference/worker/overview' },
+          { text: 'Environment Variables', link: '/en/reference/worker/environment-variables' },
+        ],
+      },
       { text: 'Database', link: '/en/reference/database/schema-overview' },
       { text: 'Workflows', link: '/en/reference/workflows/execution-engine' },
       { text: 'Workflow Node Catalog', link: '/en/reference/workflows/workflow-node-catalog' },
@@ -1560,7 +1566,7 @@ export default defineConfig({
           { text: 'Integrations', link: '/en/how-to/integrations/index' },
           { text: 'Workflow Guides', link: '/en/how-to/workflows/build-a-lens-chain' },
           { text: 'Battle Guides', link: '/en/how-to/battles/create-a-battle' },
-          { text: 'Operations', link: '/en/how-to/operations/cli-dashboard' },
+          { text: 'Operations', link: '/en/how-to/operations/running-the-worker' },
           { text: 'Contributors', link: '/en/how-to/contributors/contributing' },
         ],
       },
@@ -2112,7 +2118,7 @@ export default defineConfig({
             { text: 'Workflow Guides', link: '/en/how-to/workflows/build-a-lens-chain' },
             { text: 'Battle Guides', link: '/en/how-to/battles/create-a-battle' },
             { text: 'Agents & AI Lensers', link: '/en/how-to/agents/manage-agent-settings' },
-            { text: 'Operations', link: '/en/how-to/operations/cli-dashboard' },
+            { text: 'Operations', link: '/en/how-to/operations/running-the-worker' },
             { text: 'Developer Guides', link: '/en/how-to/dev/update-your-installation' },
             { text: 'Contributors & Maintainers', link: '/en/how-to/contributors/contributing' },
           ],
@@ -2173,6 +2179,7 @@ export default defineConfig({
         {
           text: 'Operations',
           items: [
+            { text: 'Running the Worker', link: '/en/how-to/operations/running-the-worker' },
             { text: 'CLI TUI Dashboard', link: '/en/how-to/operations/cli-dashboard' },
             { text: 'Dark Launch', link: '/en/how-to/dark-launch' },
             { text: 'Kill Switch', link: '/en/how-to/kill-switch' },
