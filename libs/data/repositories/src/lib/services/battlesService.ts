@@ -47,7 +47,10 @@ export const battlesService = {
     // callers get the same protection as the wizard UI.
     const { battleCreationValidator, isCompatibleCombination } = await import('@lenserfight/domain/battle-governance')
     const format = input.workflow_id ? 'workflow' : input.lens_id ? 'lens' : null
-    if (format && !isCompatibleCombination(format, input.battle_type)) {
+    // Skip the format/type check when a lenser_battle_policy is present — the V2
+    // mapper legitimately produces battle_type='lenser_battle' from a lens task with
+    // a policy overlay, which is not in the legacy lens format matrix.
+    if (format && !input.lenser_battle_policy && !isCompatibleCombination(format, input.battle_type)) {
       throw new Error(
         `Battle type "${input.battle_type}" is not allowed for format "${format}". ` +
         `Pick a compatible battle type.`

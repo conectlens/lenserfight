@@ -1094,6 +1094,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                 lensId={selectedLensId}
                 values={sharedParamValues}
                 onChange={setSharedParamValues}
+                lens={myLenses.find((l) => l.id === selectedLensId) ?? null}
               />
             )}
 

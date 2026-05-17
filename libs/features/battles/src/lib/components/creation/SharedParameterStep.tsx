@@ -8,10 +8,11 @@
  */
 
 import { lensesService } from '@lenserfight/data/repositories'
-import { VersionParamFields } from '@lenserfight/features/lenses'
-import type { LensVersionParam } from '@lenserfight/types'
+import { LensBodyViewer, VersionParamFields } from '@lenserfight/features/lenses'
+import type { LensVersionParam, LensViewModel } from '@lenserfight/types'
+import { Avatar } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, CheckCircle2, Info } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Info, Layers } from 'lucide-react'
 import React from 'react'
 
 export interface SharedParameterStepProps {
@@ -23,6 +24,8 @@ export interface SharedParameterStepProps {
   values: Record<string, unknown>
   /** Called when any parameter value changes. */
   onChange: (values: Record<string, unknown>) => void
+  /** Optional lens view model for displaying lens identity above the params. */
+  lens?: LensViewModel | null
 }
 
 export const SharedParameterStep: React.FC<SharedParameterStepProps> = ({
@@ -30,6 +33,7 @@ export const SharedParameterStep: React.FC<SharedParameterStepProps> = ({
   versionId,
   values,
   onChange,
+  lens,
 }) => {
   // Fetch lens versions to resolve the effective version
   const { data: versions = [] } = useQuery({
@@ -113,6 +117,59 @@ export const SharedParameterStep: React.FC<SharedParameterStepProps> = ({
           </p>
         </div>
       </div>
+
+      {/* Lens identity card */}
+      {lens && (
+        <div className="flex items-start gap-3 rounded-2xl border border-surface-border bg-surface-raised px-4 py-3">
+          <div className="mt-0.5 flex-shrink-0 rounded-lg bg-primary-yellow-500/10 p-1.5">
+            <Layers size={15} className="text-primary-yellow-600" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                {lens.title}
+              </p>
+              {lens.latestVersionNumber != null && lens.latestVersionNumber > 1 && (
+                <span className="flex-shrink-0 rounded border border-surface-border bg-surface-base px-1 py-0.5 font-mono text-[10px] text-greyscale-500 dark:text-greyscale-400">
+                  v{lens.latestVersionNumber}
+                </span>
+              )}
+            </div>
+            {lens.description && (
+              <p className="mt-0.5 line-clamp-2 text-xs text-greyscale-500 dark:text-greyscale-400">
+                {lens.description}
+              </p>
+            )}
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <Avatar
+                src={lens.author.avatarUrl}
+                alt={lens.author.displayName}
+                size="sm"
+                className="!h-4 !w-4"
+              />
+              <span className="text-[11px] text-greyscale-500 dark:text-greyscale-400">
+                {lens.author.displayName}
+              </span>
+              {(lens.tags ?? []).slice(0, 3).map((tag) => (
+                <span
+                  key={tag.id}
+                  className="rounded-md border border-surface-border bg-surface-base px-1.5 py-0.5 text-[10px] font-medium text-greyscale-500 dark:text-greyscale-400"
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lens template */}
+      {versionDetail?.templateBody && (
+        <LensBodyViewer
+          content={versionDetail.templateBody}
+          versionParams={params}
+        />
+      )}
 
       {/* Parameter fields */}
       <div className="rounded-2xl border border-surface-border bg-surface-raised p-4 space-y-3">
