@@ -9,8 +9,8 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { CheckCircle, AlertCircle, Link2, Unlink, Loader2 } from 'lucide-react'
-import { GOOGLE_CAPABILITIES } from '@lenserfight/domain/oauth-connections'
-import type { OAuthCapability, UserOAuthConnection } from '@lenserfight/domain/oauth-connections'
+import { listOAuthProviders } from '@lenserfight/domain/oauth-connections'
+import type { OAuthCapability, OAuthProvider, UserOAuthConnection } from '@lenserfight/domain/oauth-connections'
 import { useOAuthConnections } from '../hooks/useOAuthConnections'
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -55,16 +55,24 @@ function Toast({ message, variant, onDismiss }: ToastProps) {
 // ── Capability card ───────────────────────────────────────────────────────────
 
 interface CapabilityCardProps {
+  provider: OAuthProvider
+  providerName: string
+  availability: string
+  canConnect: boolean
   capability: OAuthCapability
   displayName: string
   description: string
   connection: UserOAuthConnection | undefined
-  onConnect: (capability: OAuthCapability) => void
+  onConnect: (provider: OAuthProvider, capability: OAuthCapability) => void
   onRevoke: (connectionId: string) => void
   isRevoking: boolean
 }
 
 function CapabilityCard({
+  provider,
+  providerName,
+  availability,
+  canConnect,
   capability,
   displayName,
   description,
@@ -88,7 +96,7 @@ function CapabilityCard({
     <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">{displayName}</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">{providerName} - {displayName}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{description}</p>
         </div>
         <div className="shrink-0">
@@ -99,7 +107,7 @@ function CapabilityCard({
             </span>
           ) : (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600">
-              Not connected
+              {availability === 'available' || availability === 'experimental' ? 'Not connected' : 'Planned'}
             </span>
           )}
         </div>
@@ -130,11 +138,12 @@ function CapabilityCard({
         ) : (
           <button
             type="button"
-            onClick={() => onConnect(capability)}
+            disabled={!canConnect}
+            onClick={() => onConnect(provider, capability)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary transition-colors"
           >
             <Link2 size={12} />
-            Connect
+            {canConnect ? 'Connect' : 'Unavailable'}
           </button>
         )}
       </div>
@@ -158,7 +167,9 @@ export function OAuthConnectionsSection() {
     const errorParam = params.get('error')
 
     if (connected) {
-      const capDef = GOOGLE_CAPABILITIES.find((c) => c.capability === connected)
+      const capDef = listOAuthProviders()
+        .flatMap((provider) => provider.capabilities)
+        .find((c) => c.capability === connected)
       const name = capDef?.displayName ?? connected
       setToast({ message: `${name} connected successfully.`, variant: 'success' })
       // Clean up URL without re-navigating
@@ -180,16 +191,17 @@ export function OAuthConnectionsSection() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search])
 
-  const getConnection = (capability: OAuthCapability) =>
-    connections.find((c) => c.capability === capability && c.isActive)
+  const providers = listOAuthProviders()
+  const getConnection = (provider: OAuthProvider, capability: OAuthCapability) =>
+    connections.find((c) => c.provider === provider && c.capability === capability && c.isActive)
 
   return (
     <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-800">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">Google Connections</h3>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white">Connected Accounts</h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Connect your Google account to use Gmail, Sheets, Drive, Docs, and Calendar in Workflows and Agents.
+            Connect external services once and reuse them safely in Workflows and Agents.
           </p>
         </div>
       </div>
@@ -210,18 +222,24 @@ export function OAuthConnectionsSection() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {GOOGLE_CAPABILITIES.map((cap) => (
-            <CapabilityCard
-              key={cap.capability}
-              capability={cap.capability}
-              displayName={cap.displayName}
-              description={cap.description}
-              connection={getConnection(cap.capability)}
-              onConnect={connect}
-              onRevoke={revoke}
-              isRevoking={isRevoking}
-            />
-          ))}
+          {providers.flatMap((provider) =>
+            provider.capabilities.map((cap) => (
+              <CapabilityCard
+                key={`${provider.provider}.${cap.capability}`}
+                provider={provider.provider}
+                providerName={provider.displayName}
+                availability={provider.availability}
+                canConnect={provider.provider === 'google' && provider.availability === 'available'}
+                capability={cap.capability}
+                displayName={cap.displayName}
+                description={cap.description}
+                connection={getConnection(provider.provider, cap.capability)}
+                onConnect={connect}
+                onRevoke={revoke}
+                isRevoking={isRevoking}
+              />
+            )),
+          )}
         </div>
       )}
     </div>
