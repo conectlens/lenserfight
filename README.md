@@ -393,6 +393,8 @@ We welcome focused contributions that improve installability, workflow reliabili
 
 If you change behavior, run the smallest relevant validation and mention what you did in your PR.
 
+Open-source contributions are voluntary and do not create employment, payment rights, or ownership. Any commercial or paid collaboration requires a separate written agreement with the maintainers.
+
 ---
 
 ## 👥 Community
