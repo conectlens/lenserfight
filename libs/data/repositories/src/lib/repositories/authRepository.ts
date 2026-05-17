@@ -37,6 +37,9 @@ export interface AuthRepositoryPort {
   exchangeDeviceApproval(dto: ExchangeDeviceApprovalDTO): Promise<DeveloperTokenExchangeResultDTO>
   listDeveloperTokens(): Promise<DeveloperTokenSummaryDTO[]>
   revokeDeveloperToken(tokenId: string): Promise<void>
+  /** Resolve a profile handle to its auth email for username-based login.
+   *  Returns null for unknown, deleted, or non-human handles. */
+  resolveHandleToEmail(handle: string): Promise<string | null>
 }
 export class SupabaseAuthRepository implements AuthRepositoryPort {
   async login(email: string, password: string, captchaToken?: string): Promise<User> {
@@ -186,5 +189,14 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
       p_token_id: tokenId,
     })
     if (error) throw error
+  }
+
+  async resolveHandleToEmail(handle: string): Promise<string | null> {
+    const { data, error } = await supabase.rpc('fn_resolve_handle_to_email', {
+      p_handle: handle,
+    })
+    // Fail silently — callers must surface only a generic "Invalid credentials" message
+    if (error) return null
+    return (data as string | null) ?? null
   }
 }

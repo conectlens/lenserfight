@@ -45,3 +45,27 @@ export const minLength = (min: number, message?: string): Validator => {
     return String(value).length >= min ? null : msg
   }
 }
+
+/** Validates a profile handle (without or with a leading @).
+ *  Matches the lensers.profiles storage format: 4–24 chars, [a-z0-9._]. */
+export const isHandle = (
+  message = 'Username must be 4–24 characters (letters, numbers, dots, underscores)'
+): Validator => {
+  return (value) => {
+    if (!value) return null
+    const stripped = String(value).startsWith('@') ? String(value).slice(1) : String(value)
+    return /^[a-zA-Z0-9._]{4,24}$/.test(stripped) ? null : message
+  }
+}
+
+/** Accepts either a valid email address or a valid profile handle (with or without @). */
+export const isEmailOrHandle = (
+  message = 'Please enter a valid email or username'
+): Validator => {
+  return (value) => {
+    if (!value) return null
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value))) return null
+    const stripped = String(value).startsWith('@') ? String(value).slice(1) : String(value)
+    return /^[a-zA-Z0-9._]{4,24}$/.test(stripped) ? null : message
+  }
+}

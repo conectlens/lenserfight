@@ -89,4 +89,10 @@ export const authService = {
   revokeDeveloperToken: async (tokenId: string): Promise<void> => {
     return authRepo.revokeDeveloperToken(tokenId)
   },
+
+  /** Resolve a profile handle to its auth email for username-based login.
+   *  Returns null for unknown handles — callers must NOT surface this to the user. */
+  resolveHandleToEmail: (handle: string): Promise<string | null> => {
+    return authRepo.resolveHandleToEmail(handle)
+  },
 }

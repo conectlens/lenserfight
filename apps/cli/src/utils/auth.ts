@@ -93,6 +93,41 @@ export function clearDeveloperToken(): void {
   });
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** Resolve a profile handle to its auth email via the public RPC.
+ *  Returns null for unknown or inactive handles — never throw. */
+async function resolveHandleToEmail(handle: string): Promise<string | null> {
+  try {
+    const result = await callRpc<string | null>(
+      'fn_resolve_handle_to_email',
+      { p_handle: handle },
+      { noAuth: true },
+    );
+    return result ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Login with either an email address or a profile handle + password.
+ *  Detects the identifier type and resolves handle → email when needed. */
+export async function loginWithIdentifier(
+  identifier: string,
+  password: string,
+): Promise<AuthTokens> {
+  const trimmed = identifier.trim();
+  if (EMAIL_RE.test(trimmed)) {
+    return loginWithEmail(trimmed, password);
+  }
+  const handle = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed;
+  const email = await resolveHandleToEmail(handle);
+  if (!email) {
+    throw new Error('Invalid login credentials');
+  }
+  return loginWithEmail(email, password);
+}
+
 export async function loginWithEmail(
   email: string,
   password: string

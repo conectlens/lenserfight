@@ -12,7 +12,8 @@ interface RegisterOptions {
 }
 
 interface AuthContextType extends AuthState {
-  login: (email: string, pass: string, captchaToken?: string) => Promise<void>
+  /** Accepts an email address OR a profile handle (with or without a leading @). */
+  login: (identifier: string, pass: string, captchaToken?: string) => Promise<void>
   register: (
     email: string,
     pass: string,
@@ -41,6 +42,8 @@ if (import.meta.hot) {
 // sessionStorage-backed guard: survives React Strict Mode and HMR (unlike module-level booleans
 // which reset on every hot-reload in dev). Key is scoped by user ID so switching accounts works.
 const _deletionCheckKey = (userId: string) => `acdr_${userId}`
+
+const isEmailLike = (s: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)
 
 const getErrorMessage = (err: unknown): string => {
   if (err instanceof Error) return err.message
@@ -181,10 +184,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [restoreLenserAccountIfNeeded])
 
-  const login = useCallback(async (email: string, pass: string, captchaToken?: string) => {
+  const login = useCallback(async (identifier: string, pass: string, captchaToken?: string) => {
     setState((s) => ({ ...s, error: null }))
     loginTransitionInFlight.current = true
     try {
+      // Resolve handle → email when the identifier is not an email address.
+      // The email is used only as the Supabase auth credential and is never
+      // surfaced to the user. Return a generic error if the handle is unknown
+      // to prevent account-existence enumeration.
+      let email = identifier.trim()
+      if (!isEmailLike(email)) {
+        const handle = email.startsWith('@') ? email.slice(1) : email
+        const resolved = await authService.resolveHandleToEmail(handle)
+        if (!resolved) {
+          throw new Error('Invalid login credentials')
+        }
+        email = resolved
+      }
       const user = await authService.login(email, pass, captchaToken)
       if (!sessionStorage.getItem(_deletionCheckKey(user.id))) {
         const restored = await restoreLenserAccountIfNeeded()

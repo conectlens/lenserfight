@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import { printJson, printTable } from '../utils/output';
 import {
+  loginWithIdentifier,
   loginWithEmail,
   clearAuthTokens,
   getUserInfo,
@@ -35,6 +36,11 @@ const login = defineCommand({
       description: 'Account email address (optional — omit to use browser login)',
       alias: 'e',
     },
+    username: {
+      type: 'string',
+      description: 'Account username / handle, e.g. alice or @alice (alternative to --email)',
+      alias: 'u',
+    },
     password: {
       type: 'string',
       description: 'Account password (optional — omit to use browser login)',
@@ -53,9 +59,10 @@ const login = defineCommand({
         return;
       }
 
-      if (args.email && args.password) {
-        // Headless / scripted path — email + password
-        const tokens = await loginWithEmail(args.email, args.password);
+      const identifier = args.email ?? args.username;
+      if (identifier && args.password) {
+        // Headless / scripted path — email or username + password
+        const tokens = await loginWithIdentifier(identifier, args.password);
         consola.success('Logged in successfully. Token expires at %s', tokens.expiresAt);
         return;
       }
