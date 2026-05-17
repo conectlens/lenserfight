@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://docs.lenserfight.com/how-to/contributors/security
+    about: Report vulnerabilities privately — not in public issues.
+  - name: Support & help
+    url: https://docs.lenserfight.com/how-to/contributors/support
+    about: Not sure which template to use? Start here.
+  - name: Connector mentorship
+    url: https://docs.lenserfight.com/how-to/contributors/adapter-mentorship
+    about: Guidance before building a new connector adapter.

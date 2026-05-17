@@ -1,0 +1,137 @@
+# Canonical label set for the LenserFight OSS repo.
+# Synced to GitHub by .github/workflows/labels-sync.yml.
+# Adding/removing/renaming a label here is the only supported way to change
+# repo labels — manual edits in the GitHub UI will be reverted on next sync.
+
+# ── Priority triage labels ─────────────────────────────────────────────────
+- name: p0-install
+  color: b60205
+  description: Setup, install, or local-env failure (auto-applied by bug template, area=install)
+
+- name: p0-workflow
+  color: b60205
+  description: Workflow run, builder, or execution-engine failure (auto-applied by workflow template)
+
+- name: docs
+  color: 0075ca
+  description: Documentation fix or improvement
+
+- name: good-first-issue
+  color: 7057ff
+  description: Scoped, low-context issue suitable for new contributors
+
+- name: deferred
+  color: cccccc
+  description: Recorded but not on the current roadmap (Phases 9–16)
+
+# ── Standard issue types ───────────────────────────────────────────────────
+- name: bug
+  color: d73a4a
+  description: Something is broken
+
+- name: enhancement
+  color: a2eeef
+  description: Improvement or new functionality
+
+- name: perf
+  color: e4b400
+  description: Performance regression or slowness (auto-applied by perf template)
+
+- name: question
+  color: d876e3
+  description: Further information is requested
+
+# ── Status / housekeeping ──────────────────────────────────────────────────
+- name: needs-triage
+  color: fbca04
+  description: Maintainer review pending
+
+- name: blocked
+  color: e99695
+  description: Cannot progress until something else lands
+
+- name: duplicate
+  color: cccccc
+  description: This issue or PR already exists
+
+- name: invalid
+  color: e4e669
+  description: This doesn't seem right
+
+- name: wontfix
+  color: ffffff
+  description: This will not be worked on
+
+# ── Phase / area markers (optional, used by maintainers) ───────────────────
+- name: area:supabase
+  color: 3ecf8e
+  description: Database, migrations, RLS, RPCs
+
+- name: area:cli
+  color: 0e8a16
+  description: lf command-line tool
+
+- name: area:web
+  color: 1d76db
+  description: apps/web frontend
+
+- name: area:docs
+  color: 0075ca
+  description: docs site or contributor guides
+
+- name: area:schedules
+  color: 0e8a16
+  description: CRON scheduling, pg_cron, dispatch, missed-run
+
+- name: area:agents
+  color: 1d76db
+  description: Agent workspace, teams, autonomy, memory, approvals
+
+- name: area:battles
+  color: e4e669
+  description: Battle execution, voting, streaming, arena
+
+- name: area:mobile
+  color: 1d76db
+  description: apps/mobile React Native / Expo
+
+- name: area:arena
+  color: e4e669
+  description: apps/arena battle viewer and arena surface
+
+- name: area:gateway
+  color: 0e8a16
+  description: apps/gateway and libs/infra/gateway
+
+- name: area:sdk
+  color: a2eeef
+  description: libs/sdk public SDK and API client
+
+- name: area:connectors
+  color: 5319e7
+  description: connector adapters, libs/adapters, examples/connectors
+
+- name: area:security
+  color: b60205
+  description: RLS, permissions, key handling, audit, kill switch
+
+# ── Contribution opportunity labels ───────────────────────────────────────────
+- name: good-first-adapter
+  color: 7057ff
+  description: Suitable first adapter/connector contribution — interface documented, scope bounded
+
+- name: good-first-workflow-template
+  color: 7057ff
+  description: Suitable first workflow template contribution — schema documented, example available
+
+- name: schema-proposal
+  color: 3ecf8e
+  description: Proposes a database schema change or new migration
+
+- name: adapter-idea
+  color: a2eeef
+  description: Exploratory connector or adapter proposal before implementation
+
+- name: adapter-bug
+  color: d73a4a
+  description: Bug in an existing adapter or connector implementation
