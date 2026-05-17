@@ -25,6 +25,7 @@ import { ChevronDown, Loader2, AlertCircle } from 'lucide-react'
 function mapRow(row: Record<string, unknown>): UserOAuthConnection {
   return {
     id: row['id'] as string,
+    workspaceId: (row['workspace_id'] as string | null) ?? null,
     provider: row['provider'] as OAuthProvider,
     capability: row['capability'] as OAuthCapability,
     connectionLabel: row['connection_label'] as string,
@@ -107,7 +108,7 @@ export function ConnectorRefField({
           `}
         >
           <option value="" disabled>
-            {isLoading ? 'Loading connections…' : isEmpty ? 'No connections — add one in Settings' : placeholder}
+            {isLoading ? 'Loading connections...' : isEmpty ? 'No connections - add one in Settings' : placeholder}
           </option>
           {filtered.map((c) => (
             <option key={c.id} value={c.ref}>
@@ -140,7 +141,7 @@ export function ConnectorRefField({
           >
             Manage connections
           </a>{' '}
-          to link a Google account.
+          to link an external account.
         </p>
       )}
     </div>
