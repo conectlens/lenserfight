@@ -7,6 +7,27 @@ import {
   type LensOutputContract,
   type NodeOutputEnvelope,
 } from '@lenserfight/types'
+import { validateFrontmatterSchema, hasSchema } from '@lenserfight/domain/spec-governance'
+
+/**
+ * Validate spec frontmatter against its JSON Schema before execution.
+ * Returns ok: true if the kind has no schema or validation passes.
+ */
+export function validateSpecFrontmatter(
+  kind: string,
+  frontmatter: Record<string, unknown>,
+): ContractValidationResult {
+  if (!hasSchema(kind)) return { ok: true, errors: [] }
+  const issues = validateFrontmatterSchema(kind, frontmatter)
+  return {
+    ok: issues.length === 0,
+    errors: issues.map((i) => ({
+      field: i.path,
+      reason: 'schema_violation',
+      details: i.message,
+    })),
+  }
+}
 
 /**
  * Validate a rendered-input map against a lens's input contract.
