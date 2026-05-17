@@ -24,6 +24,14 @@
       "options": {
         "command": "npm publish dist/libs/adapters/connector --access public"
       }
+    },
+    "nx-release-publish": {
+      "executor": "@nx/js:release-publish",
+      "dependsOn": ["build"],
+      "options": {
+        "packageRoot": "dist/libs/adapters/connector",
+        "access": "public"
+      }
     }
   }
 }
