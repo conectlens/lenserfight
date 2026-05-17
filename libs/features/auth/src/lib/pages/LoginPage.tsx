@@ -9,7 +9,7 @@ import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
 import { useAuth } from '@lenserfight/features/auth'
 import { rememberMeStorage } from '@lenserfight/data/supabase'
 import { useFormValidation } from '@lenserfight/utils/validation'
-import { isRequired, isEmail } from '@lenserfight/utils/validation'
+import { isRequired, isEmailOrHandle } from '@lenserfight/utils/validation'
 import { normalizeError, type AppError } from '@lenserfight/shared/error'
 import { AuthCard } from '../components/AuthCard'
 import { BackButton } from '../components/BackButton'
@@ -23,7 +23,7 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '',
     password: '',
   })
 
@@ -32,8 +32,8 @@ export const LoginPage: React.FC = () => {
     loadDevSeedCredentials().then((creds) => {
       if (cancelled || !creds) return
       setFormData((prev) =>
-        prev.email === '' && prev.password === ''
-          ? { email: creds.email, password: creds.password }
+        prev.identifier === '' && prev.password === ''
+          ? { identifier: creds.email, password: creds.password }
           : prev,
       )
     })
@@ -43,7 +43,7 @@ export const LoginPage: React.FC = () => {
   }, [])
 
   const { errors, validate, clearError } = useFormValidation<typeof formData>({
-    email: [isRequired(), isEmail()],
+    identifier: [isRequired(), isEmailOrHandle()],
     password: [isRequired()],
   })
 
@@ -77,7 +77,7 @@ export const LoginPage: React.FC = () => {
     try {
       // Apply the remember-me preference before the session token is written
       rememberMeStorage.setRememberMe(rememberMe)
-      await login(formData.email, formData.password, captchaToken || undefined)
+      await login(formData.identifier, formData.password, captchaToken || undefined)
 
       // Success State Trigger - effectively starts the transition animation
       setIsSuccess(true)
@@ -115,15 +115,16 @@ export const LoginPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
           <div>
             <InputField
-              label="Email"
-              name="email"
-              type="email"
-              placeholder="Enter your email"
-              value={formData.email}
+              label="Email or username"
+              name="identifier"
+              type="text"
+              placeholder="Enter email or @username"
+              autoComplete="username"
+              value={formData.identifier}
               onChange={handleChange}
-              error={errors.email}
+              error={errors.identifier}
               className={
-                errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''
+                errors.identifier ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''
               }
             />
           </div>
