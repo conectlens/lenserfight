@@ -80,13 +80,15 @@ export class SlackNotifyRunner implements INodeRunner {
 
   async execute(ctx: NodeRunnerContext): Promise<NodeRunnerResult> {
     const webhookUrl = ctx.nodeConfig['webhookUrl'] as string | undefined
+    const connectorRef = ctx.nodeConfig['connectorRef'] as string | undefined
+    const channelId = ctx.nodeConfig['channelId'] as string | undefined
     const messageTemplate = ctx.nodeConfig['messageTemplate'] as string | undefined
 
-    if (!webhookUrl || typeof webhookUrl !== 'string') {
+    if (!connectorRef && (!webhookUrl || typeof webhookUrl !== 'string')) {
       return { output: { mediaType: 'text', text: '', data: { error: 'No Slack webhook URL configured' }, durationMs: 0 } }
     }
 
-    if (isPrivateUrl(webhookUrl)) {
+    if (webhookUrl && isPrivateUrl(webhookUrl)) {
       return { output: { mediaType: 'text', text: '', data: { error: 'Cannot send to private URLs' }, durationMs: 0 } }
     }
 
@@ -96,11 +98,24 @@ export class SlackNotifyRunner implements INodeRunner {
       message = firstUpstream?.text ?? 'Workflow notification'
     }
 
+    if (connectorRef && ctx.executeConnectorOperation) {
+      return {
+        output: await ctx.executeConnectorOperation({
+          connectorRef,
+          provider: 'slack',
+          capability: 'chat',
+          operation: 'send_message',
+          requiredScopes: ['chat:write'],
+          params: { channelId: channelId ?? null, message },
+        }),
+      }
+    }
+
     return {
       output: {
         mediaType: 'text',
-        text: `[Slack → ${webhookUrl.slice(0, 40)}...]`,
-        data: { __slack_notify_request: true, webhookUrl, messageLength: message.length },
+        text: `[Slack → ${webhookUrl ? `${webhookUrl.slice(0, 40)}...` : 'connector'}]`,
+        data: { __slack_notify_request: true, webhookUrl: webhookUrl ?? null, connectorRef: connectorRef ?? null, messageLength: message.length, mock: Boolean(connectorRef) },
         durationMs: 0,
       },
     }
