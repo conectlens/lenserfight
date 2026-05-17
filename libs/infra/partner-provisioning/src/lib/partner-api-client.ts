@@ -3,7 +3,7 @@ import { apiFetch, unwrapEnvelope } from '@lenserfight/data/repositories'
 import { CHAINABIT_OAUTH_URL, CHAINABIT_OAUTH_CLIENT_ID, CHAINABIT_OAUTH_CALLBACK_URL } from '@lenserfight/utils/env'
 import type { ChainabitAiModel, PartnerBalance, PartnerProvision, PartnerTokenRefreshResult } from './partner-provider.interface'
 
-// Partner provisioning calls go to Supabase Edge Functions (no platform-api needed).
+// Partner provisioning calls go to Supabase Edge Functions (no worker HTTP surface needed).
 const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
