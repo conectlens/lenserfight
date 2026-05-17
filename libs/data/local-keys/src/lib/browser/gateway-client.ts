@@ -49,11 +49,17 @@ export function deriveGatewayUrl(): string {
   if (!host || host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
     return DEFAULT_GATEWAY_URL
   }
-  // The web page is served from a non-loopback host (LAN IP, Tailscale CGNAT,
-  // mDNS .local hostname, …). Assume the gateway is reachable at the same
-  // host on its default port. Users with a different topology can override
-  // via SESSION_GATEWAY_URL_KEY.
-  return `${window.location.protocol}//${host}:${DEFAULT_GATEWAY_PORT}`
+  // The gateway daemon always runs on the local machine. When the web page is
+  // served from a non-loopback host (Tailscale CGNAT, LAN IP, mDNS .local),
+  // the browser origin differs from loopback, but the gateway is still at
+  // 127.0.0.1. Routing the fetch to the same non-loopback host causes Chrome's
+  // Private Network Access pre-flight to fire against an address the gateway
+  // may not be bound on, resulting in a null-status CORS failure.
+  //
+  // Use loopback unconditionally. Users who run the gateway on a *remote*
+  // machine (rare) must set SESSION_GATEWAY_URL_KEY explicitly via
+  // `lf gateway pair --web`, which is handled by the override above.
+  return DEFAULT_GATEWAY_URL
 }
 
 export interface GatewayClientOptions {
