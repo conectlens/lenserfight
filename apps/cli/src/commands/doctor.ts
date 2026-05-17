@@ -16,6 +16,7 @@ import { byokKeyResolver } from '@lenserfight/providers'
 import { formatCheck, printJson, printSuccess, printWarn, printError } from '../utils/output'
 import { isAuthenticated, getUserInfo } from '../utils/auth'
 import { callRpc } from '../utils/api'
+import { CHECK_ID_TO_CODE, type OnboardingErrorCode } from '../lib/onboarding/errors'
 
 type DoctorCheckId = 'core' | 'api' | 'byok' | 'ollama' | 'auth' | 'journey'
 
@@ -45,9 +46,10 @@ export default defineCommand({
     const requestedCheck = (args.check as DoctorCheckId | undefined) ?? 'core'
     let hasError = false
 
-    const results: Array<{ id: string; status: 'pass' | 'warn' | 'fail'; detail: string }> = []
+    const results: Array<{ id: string; status: 'pass' | 'warn' | 'fail'; detail: string; code?: OnboardingErrorCode }> = []
     const push = (id: string, status: 'pass' | 'warn' | 'fail', detail: string) => {
-      results.push({ id, status, detail })
+      const code = status !== 'pass' ? CHECK_ID_TO_CODE[id] : undefined
+      results.push({ id, status, detail, ...(code ? { code } : {}) })
       if (status === 'fail') hasError = true
     }
 
