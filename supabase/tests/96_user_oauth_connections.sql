@@ -152,7 +152,7 @@ SELECT ok(
 SELECT ok(
   NOT has_function_privilege(
     'authenticated',
-    'public.fn_oauth_resolve_connection(uuid, text, text[])',
+    'public.fn_oauth_resolve_connection(uuid, text, text[], uuid)',
     'EXECUTE'
   ),
   'authenticated must NOT have EXECUTE on fn_oauth_resolve_connection'
