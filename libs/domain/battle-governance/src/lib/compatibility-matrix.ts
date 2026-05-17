@@ -107,3 +107,23 @@ export function getTypeStepCopy(format: BattleFormat | null): StepCopy {
 export function isCompatibleCombination(format: BattleFormat | null, type: BattleType): boolean {
   return isBattleTypeAllowedForFormat(format, type)
 }
+
+// ─── V2 re-exports ──────────────────────────────────────────────────────────
+// Convenience re-exports so consumers can import from the compatibility module.
+
+export {
+  isContenderAllowedForTaskSource,
+  getRecommendedContender,
+  getAllowedContendersForTaskSource,
+  getContenderDisabledReason,
+  hasHumanContenders,
+} from './contender-structure.types'
+
+export {
+  isJudgingAllowedForContender,
+  getRecommendedJudging,
+  getAllowedJudgingForContender,
+  getJudgingDisabledReason,
+} from './judging-mode.types'
+
+export { isExperimentalTaskSource } from './task-source.types'
