@@ -39,7 +39,7 @@ Render a prompt from variables and upstream data. Use before `lens_execute` or `
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `template` | `template` | Prompt template using `{{variable}}` syntax. |
+| `template` | `template` | Prompt template using <code v-pre>{{variable}}</code> syntax. |
 
 ### Optional Config
 
@@ -116,7 +116,7 @@ Delegate work to a configured LenserFight agent. The agent runs autonomously and
 | Field | Type | Description |
 |-------|------|-------------|
 | `agentId` | `string` | Agent id to invoke. |
-| `task` | `template` | Task prompt with `{{variable}}` interpolation. |
+| `task` | `template` | Task prompt with <code v-pre>{{variable}}</code> interpolation. |
 
 ### Optional Config
 

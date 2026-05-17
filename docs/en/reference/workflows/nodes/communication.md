@@ -42,7 +42,7 @@ Send an email with mapped subject, body, recipients, and optional attachments.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `to` | `string` | Recipient email or mapping (e.g. `{{workspace.owner.email}}`). |
+| `to` | `string` | Recipient email or mapping (e.g. <code v-pre>{{workspace.owner.email}}</code>). |
 | `subject` | `template` | Subject template. |
 | `body` | `template` | Body template (markdown supported by most providers). |
 
@@ -85,13 +85,13 @@ Send an email with mapped subject, body, recipients, and optional attachments.
 
 - Runs in `worker` / `server` environments.
 - `fromProfile` must be configured in Workspace Settings → Email Profiles.
-- Use `{{secrets.keyName}}` to reference API keys from secret storage.
+- Use <code v-pre>{{secrets.keyName}}</code> to reference API keys from secret storage.
 
 ### Troubleshooting
 
 - **"Delivery failed"** — check the provider configuration and `fromProfile`.
 - **"Missing attachment"** — ensure `filePath` resolves to a valid URL; use Object Storage Upload first.
-- **"Template not rendering"** — verify that `{{variable}}` paths exist in the upstream payload.
+- **"Template not rendering"** — verify that <code v-pre>{{variable}}</code> paths exist in the upstream payload.
 
 ### Related Nodes
 
@@ -110,7 +110,7 @@ Send a Slack message to a channel using the configured workspace Slack integrati
 | Field | Type | Description |
 |-------|------|-------------|
 | `channel` | `string` | Channel name (e.g. `#arena-alerts`) or user id. |
-| `text` | `template` | Message template. Supports `{{variable}}` interpolation. |
+| `text` | `template` | Message template. Supports <code v-pre>{{variable}}</code> interpolation. |
 
 ### Optional Config
 

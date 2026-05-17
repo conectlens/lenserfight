@@ -323,7 +323,7 @@ Call an HTTP endpoint and return response data. Use for REST API calls, authenti
 
 ### Execution Notes
 
-- Secrets referenced with `{{secrets.keyName}}` are resolved at runtime.
+- Secrets referenced with <code v-pre>{{secrets.keyName}}</code> are resolved at runtime.
 - `timeoutMs` defaults to `15000` ms.
 
 ---
