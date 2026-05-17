@@ -7,6 +7,10 @@ description: Three complete Workflow examples for early-stage founders — weekl
 
 This page shows three complete Workflows for founders and early-stage teams. These pipelines are optimised for speed: small teams with broad responsibilities who need structured, high-quality outputs without spending hours writing from scratch.
 
+::: warning Design reference — not yet end-to-end executable
+These examples show Workflow structure and Lens definitions. **Individual `lens`-type nodes are executable now** via `lf lens run` or from the web UI. Multi-node end-to-end Workflow execution (the full DAG runner) is not yet available in the CLI. Use these as design templates and wire individual Lenses yourself until the hosted runner ships.
+:::
+
 ---
 
 ## Workflow 1 — Weekly Operating Review
