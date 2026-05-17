@@ -18,6 +18,7 @@
  * Credits are always 0 for local execution — the platform does not bill for BYOK-local runs.
  */
 import { streamProvider, getStreamAdapter, OLLAMA_DEFAULT_BASE_URL } from '@lenserfight/providers'
+import { generateUUID } from '@lenserfight/utils/text'
 import type { ProviderMessage } from '@lenserfight/providers'
 import type { StreamCallbacks } from '@lenserfight/types'
 
@@ -74,7 +75,7 @@ export async function streamLocalProvider(req: LocalStreamRequest): Promise<void
   }
 
   // Synthetic run ID — local executions are not tracked in the platform DB
-  const syntheticRunId = crypto.randomUUID()
+  const syntheticRunId = generateUUID()
   callbacks.onStart(syntheticRunId)
 
   const adapter = getStreamAdapter(provider as Parameters<typeof getStreamAdapter>[0])
