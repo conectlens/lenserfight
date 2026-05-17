@@ -60,6 +60,14 @@ export type {
   ValidateWorkflowOptions,
 } from './lib/validator'
 
+// ── Connector credential resolution ──────────────────────────────────────
+export { nullConnectorResolver, createServerConnectorResolver } from './lib/connector-credential-resolver'
+export type { ConnectorCredentialResolver } from './lib/connector-credential-resolver'
+
+// ── Pinned output (dev/dry-run) ──────────────────────────────────────────
+export { createPinnedOutputStore } from './lib/pinned-output'
+export type { PinnedOutput, PinnedOutputStore } from './lib/pinned-output'
+
 // ── Phase 3 kernel seams ──────────────────────────────────────────────────
 export { Scheduler } from './lib/scheduler'
 export type { SchedulerEdge, SchedulerNode } from './lib/scheduler'
