@@ -204,14 +204,14 @@ describe('deriveGatewayUrl', () => {
     expect(deriveGatewayUrl()).toBe(DEFAULT_GATEWAY_URL)
   })
 
-  it('derives a Tailscale-IP gateway URL from window.location', () => {
+  it('returns loopback when served from a Tailscale IP (gateway is always local)', () => {
     setBrowser('100.88.58.68', 'http:')
-    expect(deriveGatewayUrl()).toBe('http://100.88.58.68:38080')
+    expect(deriveGatewayUrl()).toBe(DEFAULT_GATEWAY_URL)
   })
 
-  it('derives a LAN-IP gateway URL', () => {
+  it('returns loopback when served from a LAN IP (gateway is always local)', () => {
     setBrowser('192.168.1.42', 'http:')
-    expect(deriveGatewayUrl()).toBe('http://192.168.1.42:38080')
+    expect(deriveGatewayUrl()).toBe(DEFAULT_GATEWAY_URL)
   })
 
   it('honors the sessionStorage override', () => {
