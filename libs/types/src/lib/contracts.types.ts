@@ -132,6 +132,7 @@ export interface ContractValidationError {
     | 'enum_mismatch'
     | 'unknown_field'
     | 'invalid_envelope'
+    | 'schema_violation'
   details?: string
 }
 
