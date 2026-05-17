@@ -69,6 +69,22 @@ export {
 } from './lib/oauth-connection-resolver'
 export type { OAuthResolverServiceClient } from './lib/oauth-connection-resolver'
 export { createCompositeConnectorResolver } from './lib/composite-connector-resolver'
+export {
+  ConnectorRuntime,
+  createConnectorOperationExecutor,
+  createDefaultConnectorAdapters,
+} from './lib/connector-runtime'
+export type {
+  ConnectorOperationAdapter,
+  ConnectorOperationExecutor,
+  ConnectorOperationRequest,
+  ConnectorResolvedCredential,
+} from './lib/connector-runtime.types'
+export {
+  validateCustomHttpUrl,
+  sanitizeCustomHttpHeaders,
+  maskSensitiveFields,
+} from './lib/custom-http-safety'
 
 // ── Pinned output (dev/dry-run) ──────────────────────────────────────────
 export { createPinnedOutputStore } from './lib/pinned-output'
