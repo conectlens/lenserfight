@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
 import {
   Type, AlignLeft, Code2, Hash, ToggleLeft,
-  ChevronDown, Link, Calendar, Paperclip, Upload, AlertCircle,
+  ChevronDown, Link, Calendar, Paperclip, Upload, AlertCircle, Cable,
   ListChecks, List,
 } from 'lucide-react'
 import { LensVersionParam, LensVersionParamType } from '@lenserfight/types'
@@ -32,6 +32,7 @@ const TOOL_REGISTRY: Record<LensVersionParamType, ToolConfig> = {
   date:     { icon: Calendar,    colorClass: 'text-rose-500',   label: 'Date' },
   datetime: { icon: Calendar,    colorClass: 'text-rose-500',   label: 'Datetime' },
   file:     { icon: Paperclip,   colorClass: 'text-slate-500',  label: 'File' },
+  connector: { icon: Cable,      colorClass: 'text-cyan-500',   label: 'Connector' },
 }
 
 const NUMERIC_TYPES: LensVersionParamType[] = ['integer', 'float', 'decimal', 'number']
