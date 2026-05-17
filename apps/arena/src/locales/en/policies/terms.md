@@ -1,8 +1,8 @@
 # Terms of Service
 
-**Last Updated:** May 15, 2026  
+**Last Updated:** May 17, 2026  
 **Effective Date:** May 19, 2026  
-**Version:** v1.0.0
+**Version:** v1.1.0
 
 These Terms of Service ("Terms") govern access to and use of LenserFight websites, hosted applications, arena surfaces, documentation, APIs, public battle features, AI workflow features, and related community services (collectively, the "Platform").
 
@@ -38,9 +38,11 @@ LenserFight does not guarantee uninterrupted service, production readiness, secu
 
 ---
 
-## 3. Accounts and Security Responsibilities
+## 3. Accounts, BYOK, and Security Responsibilities
 
 You agree to provide accurate account information, keep credentials and devices secure, protect OAuth accounts, API keys, and model provider keys, avoid account sharing and impersonation, maintain independent backups of content or data you need, and promptly report suspected compromise or security issues.
+
+**Bring Your Own Key (BYOK) Responsibility:** When using your own API keys or provider credentials on the Platform, you are solely responsible for protecting those keys, managing provider limits, monitoring usage, reviewing provider billing, rotating compromised credentials, and maintaining secure local environments. You must keep any self-hosted installations and dependencies updated with the latest security patches. LenserFight is not responsible for third-party provider misuse, leaked user keys resulting from user environments, compromised local setups, provider-side outages, or unexpected billing from your configured providers.
 
 Actions performed through your account may be treated as your actions unless evidence shows otherwise. LenserFight may record device, session, IP, and security metadata to protect the Platform.
 
@@ -70,6 +72,55 @@ Public content may be indexed, copied, discussed, forked, reviewed, or reused by
 
 ---
 
+## 5a. LenserFight Cloud — Public Content, Telemetry, and Ecosystem Partner Data Use
+
+LenserFight Cloud operates as a hosted AI evaluation, benchmarking, and workflow platform. By using hosted LenserFight Cloud services, you acknowledge that:
+
+**1. Public Content**
+Public content you publish on LenserFight Cloud — including but not limited to:
+- public battles, battle templates, and benchmark results,
+- public agents, agent configurations, and workflows,
+- public lenses, prompts, and rubrics,
+- public leaderboard participation and rankings,
+- platform analytics events, newsletter submissions, and contact form submissions,
+- community interactions in public spaces
+
+**2. Telemetry and Operational Metadata**
+To ensure platform reliability, security, and performance, LenserFight Cloud collects operational telemetry. This may include:
+- operational metadata,
+- logs and diagnostics,
+- analytics and performance metrics,
+- infrastructure telemetry,
+- workflow metrics,
+- benchmark activity,
+- moderation and security signals,
+- and related technical platform data.
+
+**3. Open-Source Transparency**
+LenserFight operates as an open-source ecosystem. Many operational systems and telemetry behaviors are publicly inspectable. Users may review publicly available source code and infrastructure documentation where applicable to understand how telemetry and operational systems function.
+
+**4. Ecosystem Partner Processing and Usage**
+Public content, telemetry, and operational metadata may be processed by **LenserFight, Chainabit, ConectLens, future ecosystem partners, infrastructure providers, analytics providers, enterprise service providers, and moderation/security systems** for a broad range of operational, research, and commercial purposes, including but not limited to:
+
+- **Security & Abuse Prevention:** fraud detection, abuse prevention, moderation systems, platform integrity, spam prevention, and threat analysis.
+- **AI & Research:** AI evaluation, benchmarking, model analysis, dataset generation, synthetic evaluation, ranking systems, model-improvement pipelines, training-support systems, and research publications.
+- **Performance & Product Improvement:** infrastructure optimization, recommendation systems, search systems, performance monitoring, diagnostics, and UX improvements.
+- **Enterprise & Commercial Solutions:** enterprise analytics, customer benchmarking, platform integrations, managed services, commercial research offerings, and ecosystem reporting.
+- **Marketing & Ecosystem Promotion:** newsletters, product announcements, ecosystem showcases, featured workflows, public rankings, and community campaigns.
+
+Certain operational telemetry and metadata collection may be necessary for platform functionality, security, moderation, analytics, and infrastructure reliability. Continued use of LenserFight Cloud implies acceptance of such operational processing where legally permitted.
+
+**Intellectual Property and Ownership**
+You retain ownership of your User Content. This section does not transfer ownership of your intellectual property. Rather, it grants LenserFight and its ecosystem partners the broad operational and commercial rights necessary to index, analyze, benchmark, promote, redistribute, cache, archive, process, and reference public content and operational telemetry across the ecosystem. Public content may remain discoverable even after redistribution.
+
+**Chainabit** and **ConectLens** are ecosystem partners operating within the ConectLens ecosystem. Chainabit and ConectLens provide infrastructure, analytics, research, and platform-services collaboration for LenserFight Cloud. This relationship is transparent and operational — they are not unrelated third-party data brokers.
+
+**Private and sensitive content** — including secrets, API keys, credentials, private uploads, non-public business data, regulated personal data, and private agent configurations — is not covered by the public content sharing provisions and must not be published publicly. You remain solely responsible for keeping such information private.
+
+> **Tip:** Before publishing content publicly, consider whether it contains any sensitive information. Public content on LenserFight Cloud is treated as intentionally public and may be used broadly across the ecosystem as described above.
+
+---
+
 ## 6. Prohibited Use
 
 You must not violate law or third-party rights; harass, threaten, target, impersonate, or deceive others; manipulate votes, rankings, scores, ELO, leaderboards, benchmarks, evaluations, or execution counts; spam, scrape excessively, overload, attack, or disrupt the Platform; perform credential theft, phishing, malware distribution, illegal surveillance, unauthorized scraping, unauthorized automation, or abuse of third-party systems; attempt prompt injection, jailbreaks, system prompt extraction, secret extraction, malicious file analysis, reverse engineering of hosted scoring systems, or bypassing safety controls; upload malware, exploit payloads, credential dumps, private keys, or secrets; use bots, scripts, or automation to abuse resources or evade limits; probe vulnerabilities outside authorized security research and disclosure channels; publish illegal, hateful, abusive, sexually exploitative, fraudulent, misleading, or unsafe content; or use the Platform for high-risk decisions without qualified human review.
@@ -86,11 +137,22 @@ The repository license permits use of the code according to its terms. It does n
 
 ---
 
-## 8. Third-Party Services, Privacy, and Cookies
+## 8. Ecosystem Partners, Authentication, and Privacy
 
-LenserFight may rely on third-party providers for infrastructure, authentication, storage, analytics, AI processing, media handling, moderation, communications, and payments where applicable. These may include Cloudflare, Supabase, Google Analytics, PostHog, GitHub, Google, AI model providers, and other processors or subprocessors.
+LenserFight may rely on third-party providers, ecosystem partners, affiliates, infrastructure operators, and research collaborators for infrastructure, authentication, storage, analytics, AI processing, media handling, moderation, communications, enterprise solutions, and payments where applicable. These may include Cloudflare, Chainabit, Supabase, Google Analytics, PostHog, GitHub, Google, AI model providers, and other processors or subprocessors.
 
-Third-party services may be unavailable, insecure, delayed, or subject to their own terms, privacy policies, quotas, and restrictions. LenserFight is not responsible for third-party service failures, external links, OAuth providers, model provider outputs, payment portals, browser extensions, operating-system share sheets, or external destinations.
+**Chainabit** (chainabit.com) and **LenserFight** (lenserfight.com) are ecosystem partners and infrastructure/analytics/research collaborators within the ConectLens ecosystem (conectlens.com). Chainabit, LenserFight, and future ecosystem partners may process public platform content, benchmark data, analytics signals, newsletter submissions, and platform interactions as described in Section 5a above and in the Privacy Policy to support platform operations, research, and enterprise expansion.
+
+**OAuth and Authentication Providers**
+LenserFight uses OAuth (via GitHub, Google, and Chainabit) to provide seamless sign-in. These are independent providers with their own policies. You can review their privacy and terms pages during authentication.
+
+**Chainabit Integrations and AI Credits**
+Chainabit acts as a strategic ecosystem partner, providing seamless authentication, AI infrastructure, and AI-credit systems for LenserFight users. If you utilize Chainabit OAuth, Chainabit AI credits, sponsored model provider credits, or ecosystem-funded AI services on LenserFight:
+- Additional Chainabit operational and legal policies apply to that usage.
+- Chainabit maintains separate infrastructure rules governing rate limits, abuse prevention, and credit consumption.
+- For full details, please review the [Chainabit Terms](https://chainabit.com/policies/terms) and [Chainabit Privacy Policy](https://chainabit.com/policies/privacy).
+
+Third-party services and ecosystem features may be unavailable, insecure, delayed, or subject to their own terms, privacy policies, quotas, and restrictions. LenserFight is not responsible for third-party service failures, external links, OAuth providers, model provider outputs, payment portals, browser extensions, operating-system share sheets, or external destinations.
 
 Personal data is processed according to the **Privacy Policy**. Cookies and similar technologies are handled according to the **Cookie Policy**.
 
@@ -110,9 +172,11 @@ If paid hosted features, sponsorships, subscriptions, usage credits, model credi
 
 The Platform, OSS Code, AI Outputs, documentation, examples, templates, workflows, benchmarks, and public content are provided "AS IS" and "AS AVAILABLE" to the maximum extent permitted by law.
 
-LenserFight disclaims warranties of accuracy, reliability, non-infringement, merchantability, fitness for a particular purpose, uninterrupted operation, security completeness, data integrity, and guaranteed outcomes. You use the Platform and OSS Code at your own risk.
+**No Perpetual Warranty or Absolute Security:** The Platform evolves continuously. Features, APIs, integrations, and workflows may change, be deprecated, or operate in experimental beta states without guarantee of perpetual compatibility. While LenserFight attempts to identify and mitigate vulnerabilities promptly, no platform can guarantee complete security. Unexpected incidents may occur, cloud systems may experience failures, integrations may break, and data exposure risks may exist in public systems. You accept these reasonable operational risks.
 
-To the maximum extent permitted by applicable law, LenserFight shall not be liable for indirect, incidental, special, consequential, exemplary, or punitive damages, or for loss of data, revenue, profits, reputation, business opportunity, productivity, model credits, or expected outcomes.
+LenserFight disclaims all warranties, including accuracy, reliability, non-infringement, merchantability, fitness for a particular purpose, uninterrupted operation, security completeness, data integrity, and guaranteed outcomes. You use the Platform and OSS Code at your own risk.
+
+To the maximum extent permitted by applicable law, LenserFight and its ecosystem partners shall not be liable for indirect, incidental, special, consequential, exemplary, or punitive damages, or for loss of data, revenue, profits, reputation, business opportunity, productivity, model credits, or expected outcomes. This limitation applies to platform downtime, provider outages, data loss, public-content redistribution, AI inaccuracies, model hallucinations, workflow failures, automation failures, enterprise usage, third-party integrations, or unexpected operational behavior.
 
 Where liability cannot be excluded, LenserFight's total liability shall be limited to the amount you paid to LenserFight for the hosted Platform in the 12 months before the claim, or EUR 100 if no paid hosted relationship exists, unless mandatory law requires otherwise.
 
@@ -124,13 +188,15 @@ You agree to indemnify and hold LenserFight harmless, to the extent permitted by
 
 ---
 
-## 12. Governing Law, Language, and Updates
+## 12. Governing Law, Language, and Global Acceptance
 
-These Terms are governed by the laws of the Republic of Turkiye. Disputes arising from these Terms or the hosted Platform are subject to the jurisdiction of the Istanbul Courts and Enforcement Offices, unless mandatory consumer or data-protection law requires otherwise.
+**Governing Law:** These Terms are governed by the laws of the Republic of Turkiye. Disputes arising from these Terms or the hosted Platform are subject to the exclusive jurisdiction of the Istanbul Courts and Enforcement Offices, unless mandatory consumer law requires otherwise. The Turkish Personal Data Protection Law (KVKK) serves as the primary data-protection framework, alongside international standards where operationally appropriate.
 
-The English version of these Terms is the source text for interpretation. If there is any inconsistency between the English version and a translation, the English version controls unless mandatory applicable law requires otherwise.
+**Governing Language:** The primary governing language of these Terms and all ecosystem policies is **Turkish**. English and other localized versions are provided strictly for accessibility and international usability. If there is any inconsistency between the Turkish version and a translation, the **Turkish version controls** and takes precedence.
 
-These Terms are effective as of **May 19, 2026**. Continued use of the Platform after publication of updated Terms constitutes acceptance of the updated Terms.
+**Global Acceptance:** The Platform supports global onboarding. By registering, authenticating, publishing content, or using LenserFight Cloud services from any region or in any supported language, you are legally accepting these Terms, the Privacy Policy, and all related cloud usage policies. 
+
+These Terms are effective as of **May 19, 2026**. Continued use of the Platform after the publication of updated Terms constitutes your acceptance of the updated Terms.
 
 ---
 
@@ -138,4 +204,5 @@ These Terms are effective as of **May 19, 2026**. Continued use of the Platform 
 
 For questions about these Terms:
 
-**Email:** omer@chainabit.com
+**Email:** omer@chainabit.com  
+**Chainabit Partner:** [chainabit.com](https://chainabit.com)
