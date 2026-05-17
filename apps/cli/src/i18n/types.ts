@@ -42,6 +42,6 @@ export interface LenserQuote {
   icon?: string
 }
 
-export type Locale = 'en' | 'tr' | 'es'
+export type Locale = 'en' | 'tr' | 'es' | 'fr' | 'de' | 'zh'
 
 export type QuoteRegistry = Record<Locale, LenserQuote[]>
