@@ -1,8 +1,10 @@
+import { randomBytes } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { keychain } from '@lenserfight/utils/keychain'
-import { canonicalize, ed25519Verify } from '@lenserfight/utils/signing'
+import { canonicalize, ed25519Sign, ed25519Verify } from '@lenserfight/utils/signing'
+import type { SignedEnvelope, SyncEntry } from '@lenserfight/types'
 
 import type { GatewayConfig } from './config'
 
@@ -196,5 +198,99 @@ async function ackSafely(cmd: GatewayCommand, options: DispatchOptions): Promise
     await ackCommands([cmd.id], options.supabaseUrl, options.anonKey, { fetchImpl: options.fetchImpl })
   } catch (err) {
     process.stderr.write(`[sync] ack failed for ${cmd.id}: ${(err as Error).message}\n`)
+  }
+}
+
+// ─── Outbox flush ─────────────────────────────────────────────────────────────
+
+export interface OutboxFlushOptions {
+  config: GatewayConfig
+  deviceId: string
+  publicKey: string
+  supabaseUrl: string
+  anonKey: string
+  /** Returns the next batch of pending entries (from SyncEngine.takeBatch). */
+  takeBatch: () => SyncEntry[]
+  fetchImpl?: typeof fetch
+}
+
+/**
+ * Leader-guarded outbox flush.
+ *
+ * 1. Acquires the gateway outbox leader lease via fn_acquire_leader_lease.
+ *    If this daemon is not the current leader, returns { skipped: true }.
+ * 2. Takes a batch from the caller's SyncEngine.
+ *    If the batch is empty, returns { skipped: true }.
+ * 3. Builds a signed Ed25519 envelope and POSTs to fn_sync_push.
+ *
+ * Errors propagate to the caller's scheduleLoop, which logs and continues.
+ */
+export async function outboxFlush(options: OutboxFlushOptions): Promise<{
+  skipped: boolean
+  appliedCount?: number
+  rejectedCount?: number
+}> {
+  const { config, deviceId, publicKey, supabaseUrl, anonKey, takeBatch } = options
+  const fetchImpl = options.fetchImpl ?? fetch
+
+  // 1. Acquire leader lease (30 s TTL).
+  const leaseUrl = rpcUrl(supabaseUrl, 'fn_acquire_leader_lease')
+  const leaseRes = await fetchImpl(leaseUrl, {
+    method:  'POST',
+    headers: rpcHeaders(anonKey),
+    body:    JSON.stringify({ p_lease_kind: 'sync_flush', p_device_id: deviceId, p_lease_seconds: 30 }),
+  })
+  if (!leaseRes.ok) {
+    const text = await leaseRes.text().catch(() => '')
+    throw new Error(`outbox_flush: leader lease RPC failed ${leaseRes.status}: ${text}`)
+  }
+  const leaseRow = (await leaseRes.json()) as { holder_acquired?: boolean } | null
+  if (!leaseRow?.holder_acquired) {
+    return { skipped: true }
+  }
+
+  // 2. Take pending batch.
+  const entries = takeBatch()
+  if (entries.length === 0) {
+    return { skipped: true }
+  }
+
+  // 3. Sign envelope and push.
+  const privateKey = await keychain.getSecret({
+    service: config.keychainService,
+    account: 'device:active',
+  })
+  if (!privateKey) {
+    throw new Error('outbox_flush: private key not found in keychain — daemon not provisioned')
+  }
+
+  const body = { entries }
+  const canonical = canonicalize(body)
+  const nonce = randomBytes(16).toString('base64url')
+  const iat   = Math.floor(Date.now() / 1000)
+
+  const toSign = canonicalize({ v: 1, alg: 'ed25519', kid: deviceId, iat, nonce, body })
+  const sig = ed25519Sign(privateKey, Buffer.from(toSign, 'utf8'))
+
+  const envelope: SignedEnvelope<{ entries: SyncEntry[] }> = {
+    v: 1, alg: 'ed25519', kid: deviceId, iat, nonce, body, sig,
+  }
+
+  const pushUrl = rpcUrl(supabaseUrl, 'fn_sync_push')
+  const pushRes = await fetchImpl(pushUrl, {
+    method:  'POST',
+    headers: rpcHeaders(anonKey),
+    body:    JSON.stringify({ p_envelope: envelope }),
+  })
+  if (!pushRes.ok) {
+    const text = await pushRes.text().catch(() => '')
+    throw new Error(`outbox_flush: fn_sync_push failed ${pushRes.status}: ${text}`)
+  }
+
+  const result = (await pushRes.json()) as { applied_count?: number; rejected_count?: number } | null
+  return {
+    skipped:       false,
+    appliedCount:  result?.applied_count  ?? 0,
+    rejectedCount: result?.rejected_count ?? 0,
   }
 }
