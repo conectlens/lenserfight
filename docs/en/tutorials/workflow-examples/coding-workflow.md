@@ -7,6 +7,10 @@ description: Three complete developer Workflow examples — feature delivery, bu
 
 This page shows three complete Workflows for software development teams. Each one defines every Lens node, the exact template body to write, the parameters to add, and how to wire the edges so outputs flow from one step to the next.
 
+::: warning Design reference — not yet end-to-end executable
+These examples show Workflow structure and Lens definitions. **Individual `lens`-type nodes are executable now** via `lf lens run` or from the web UI. Multi-node end-to-end Workflow execution (the full DAG runner) is not yet available in the CLI. Use these as design templates and wire individual Lenses yourself until the hosted runner ships.
+:::
+
 ## Workflow 1 — Feature Implementation Pipeline
 
 **Goal:** Turn a GitHub issue or feature spec into a reviewed, tested, and documented pull request package.
