@@ -22,7 +22,9 @@ import { BattleTypeSelector } from './BattleTypeSelector'
 import { ContenderInviteStep } from './ContenderInviteStep'
 import { HandicapConfigPanel } from './HandicapConfigPanel'
 import { LensAssignmentStep } from './LensAssignmentStep'
+import { LenserBattlePolicyPanel } from './LenserBattlePolicyPanel'
 import type { LenserSearchResult } from './LenserSearchPicker'
+import { SharedParameterStep } from './SharedParameterStep'
 import { VoterEligibilitySelector } from './VoterEligibilitySelector'
 import {
   type BattleFormat,
@@ -32,6 +34,8 @@ import {
   isBattleTypeAllowedForFormat,
   isCompatibleCombination,
 } from './battleCompatibility'
+import { DEFAULT_LENSER_BATTLE_POLICY } from '@lenserfight/domain/battle-governance'
+import type { LenserBattlePolicy } from '@lenserfight/domain/battle-governance'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../../types/battle.types'
 import type { LensViewModel } from '@lenserfight/types'
@@ -78,6 +82,12 @@ const BASE_WIZARD_STEPS: WizardStepConfig[] = [
     title: 'Select your source',
     description: 'Choose which workflow or lens to use for this battle.',
     action: stepAction('/tutorials/walkthroughs/create-a-workflow', 'Workflows'),
+  },
+  {
+    label: 'Inputs',
+    title: 'Shared inputs',
+    description: 'Set fair input values that every contender receives. Ensures an apples-to-apples comparison.',
+    action: stepAction('/tutorials/battle-walkthroughs/lens-battle-params', 'Lens parameters'),
   },
   {
     label: 'Basics',
@@ -244,7 +254,15 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [selectedLensId, setSelectedLensId] = useState<string | null>(null)
   const [selectedLensTitle, setSelectedLensTitle] = useState('')
 
-  // Steps 2–4 — battle config
+  // Step 2 — shared parameter values (Lens Battle only)
+  const [sharedParamValues, setSharedParamValues] = useState<Record<string, unknown>>({})
+
+  // Lenser Battle policy
+  const [lenserBattlePolicy, setLenserBattlePolicy] = useState<LenserBattlePolicy>(
+    DEFAULT_LENSER_BATTLE_POLICY,
+  )
+
+  // Steps 3–5 — battle config
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   // Default executor: AI vs AI reinforces LenserFight's AI-arena positioning.
@@ -308,7 +326,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     setBattleType(recommended)
   }, [battleFormat]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Step 4 — scheduling (optional, only for ai_vs_ai / workflow_battle)
+  // Step 6 — scheduling (optional, only for ai_vs_ai / workflow_battle)
   const [scheduleEnabled, setScheduleEnabled] = useState(false)
   const [executionStartsAt, setExecutionStartsAt] = useState('')
   const [votingDurationHours, setVotingDurationHours] = useState(24)
@@ -372,10 +390,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   }, [preselectedTemplateId]) // eslint-disable-line
 
   // ── Fetch existing battle for editing ─────────────────────────────────────
-  const isEditMode = !!battleIdFromUrl && step < 6
+  const isEditMode = !!battleIdFromUrl && step < 7
 
   useEffect(() => {
-    if (battleIdFromUrl && step < 5) {
+    if (battleIdFromUrl && step < 6) {
       const fetchBattleData = async () => {
         try {
           const battle = await battlesService.getBattleById(battleIdFromUrl)
@@ -400,7 +418,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             setCreatedBattleSlug(battle.slug)
             // Skip format/source/type steps if we already have them
             if (step === 0 && (battle.workflow_id || battle.lens_id || battle.battle_type === 'lenser_battle')) {
-              goToStep(2)
+              goToStep(3)
             }
           }
         } catch (e) {
@@ -420,7 +438,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     const hasBogusBattleId = battleIdRaw !== null && !isValidUUID(battleIdRaw)
     const hasBogusSlug = slugRaw === 'undefined' || slugRaw === 'null'
 
-    if (step >= 6 && !battleIdFromUrl) {
+    if (step >= 7 && !battleIdFromUrl) {
       navigate('/battles/create', { replace: true })
       return
     }
@@ -490,13 +508,19 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   const showsHandicap = AI_BATTLE_TYPES.includes(battleType)
 
-  // Lenser Battle skips source (step 1) and type (step 3) — navigate around them
+  // Skip steps that don't apply for the selected format:
+  // - lenser_battle: skips Source (1), Inputs (2), Type (4)
+  // - workflow: skips Inputs (2)
+  // - lens: shows all steps
   const go = (next: number) => {
     const isForward = next > step
     let target = next
     if (battleFormat === 'lenser_battle') {
-      if (next === 1) target = isForward ? 2 : 0
-      if (next === 3) target = isForward ? 4 : 2
+      if (next === 1) target = isForward ? 3 : 0
+      if (next === 2) target = isForward ? 3 : 0
+      if (next === 4) target = isForward ? 5 : 3
+    } else if (battleFormat === 'workflow') {
+      if (next === 2) target = isForward ? 3 : 1
     }
     setDirection(isForward ? 1 : -1)
     goToStep(target)
@@ -510,7 +534,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       ? battleIdFromUrl
       : null
 
-  // Step 4 needs an execution context (provider + model) when the battle will
+  // Step 5 needs an execution context (provider + model) when the battle will
   // run AI contenders managed by the platform. Lenser Battles bring their own
   // model binding, so no execution context is required there.
   const aiExecutionRequired = battleFormat !== 'lenser_battle' && AI_BATTLE_TYPES.includes(battleType)
@@ -522,32 +546,39 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       ? !!selectedWorkflowId
       : !!selectedLensId
 
+  // Step 2 (Inputs) is always valid for non-lens formats (skipped).
+  // For lens format, it's always passable — the parameter step shows a
+  // "no params needed" state when the lens has no parameters.
+  const inputsStepValid = true
+
   const canProceed = (() => {
     if (step === 0) return battleFormat !== null
     if (step === 1) return sourceValid
-    if (step === 2) return title.trim().length >= 3
-    if (step === 4) return aiExecutionValid
-    // Step 8 (automation) requires the battle to actually exist so we have a
+    if (step === 2) return inputsStepValid
+    if (step === 3) return title.trim().length >= 3
+    if (step === 5) return aiExecutionValid
+    // Step 9 (automation) requires the battle to actually exist so we have a
     // target to attach automation rules to. Otherwise users can press
     // "Complete" with no battle and trip the missing-slug guard in handleFinish.
-    if (step === 8) return automationReady && !!computedActiveBattleId
-    // Steps 3, 5–7 are always skippable / valid
+    if (step === 9) return automationReady && !!computedActiveBattleId
+    // Steps 4, 6–8 are always skippable / valid
     return true
   })()
 
   const stepValidity: boolean[] = [
-    battleFormat !== null,
-    sourceValid,
-    title.trim().length >= 3,
-    true,                                  // type step always valid
-    aiExecutionValid,                      // config step gates on AI execution context
-    true,                                  // schedule always skippable
-    true,                                  // contenders always skippable
-    true,                                  // lenses always skippable
-    automationReady && !!computedActiveBattleId, // automation requires battle + readiness
+    battleFormat !== null,                 // 0: Format
+    sourceValid,                           // 1: Source
+    inputsStepValid,                       // 2: Inputs (lens only)
+    title.trim().length >= 3,              // 3: Basics
+    true,                                  // 4: Type — always valid
+    aiExecutionValid,                      // 5: Config — gates on AI execution context
+    true,                                  // 6: Schedule — always skippable
+    true,                                  // 7: Contenders — always skippable
+    true,                                  // 8: Lenses — always skippable
+    automationReady && !!computedActiveBattleId, // 9: Automation
   ]
 
-  // ── Create battle (step 4 → 5) ───────────────────────────────────────────
+  // ── Create battle (step 5 → 6) ───────────────────────────────────────────
 
   const handleCreateBattle = async () => {
     if (!canProceed) return
@@ -580,6 +611,14 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         handicap: AI_BATTLE_TYPES.includes(resolvedBattleType) ? handicap : undefined,
         ...(battleFormat === 'workflow' && selectedWorkflowId ? { workflow_id: selectedWorkflowId } : {}),
         ...(battleFormat === 'lens' && selectedLensId ? { lens_id: selectedLensId } : {}),
+        // Store shared Lens parameter values for fairness
+        ...(battleFormat === 'lens' && Object.keys(sharedParamValues).length > 0
+          ? { shared_input_snapshot: sharedParamValues }
+          : {}),
+        // Store Lenser Battle memory/instruction policy
+        ...(battleFormat === 'lenser_battle'
+          ? { lenser_battle_policy: lenserBattlePolicy as unknown as Record<string, unknown> }
+          : {}),
       }
 
       let battle
@@ -617,7 +656,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev)
-          next.set('step', '5')
+          next.set('step', '6')
           next.set('battleId', battle.id)
           next.set('battleSlug', battle.slug)
           return next
@@ -631,7 +670,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }
 
-  // ── Invite contenders (step 6 → 7) ───────────────────────────────────────
+  // ── Invite contenders (step 7 → 8) ───────────────────────────────────────
 
   const activeBattleId = computedActiveBattleId
 
@@ -704,7 +743,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         setContenderBName(undefined)
       }
 
-      go(7)
+      go(8)
     } catch (e) {
       const msg = (e as any)?.message ?? ''
       if (msg.includes('contenders_battle_ref_unique') || msg.includes('duplicate key')) {
@@ -717,7 +756,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }
 
-  // ── Schedule submission (step 5 → 6) ─────────────────────────────────────
+  // ── Schedule submission (step 6 → 7) ─────────────────────────────────────
 
   const handleScheduleAndNext = async () => {
     if (scheduleEnabled && executionStartsAt && activeBattleId && AUTO_EXEC_TYPES.includes(battleType)) {
@@ -738,7 +777,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         setSubmitting(false)
       }
     }
-    go(6)
+    go(7)
   }
 
   const handleFinish = () => {
@@ -752,33 +791,33 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // ── Render ────────────────────────────────────────────────────────────────
 
   // Skip button config per step
-  const skipButton = step === 5
-    ? { label: 'Skip for now', onClick: () => go(6) }
-    : step === 6
-      ? { label: 'Skip for now', onClick: () => go(7) }
-      : step === 7
-        ? { label: 'Skip for now', onClick: () => go(8) }
-        : step === 8
+  const skipButton = step === 6
+    ? { label: 'Skip for now', onClick: () => go(7) }
+    : step === 7
+      ? { label: 'Skip for now', onClick: () => go(8) }
+      : step === 8
+        ? { label: 'Skip for now', onClick: () => go(9) }
+        : step === 9
           ? { label: 'Skip for now', onClick: handleFinish }
           : undefined
 
   // Next / complete handler varies by step
-  const handleNext = step === 4
+  const handleNext = step === 5
     ? handleCreateBattle
-    : step === 5
+    : step === 6
       ? handleScheduleAndNext
-      : step === 6
+      : step === 7
         ? handleInvite
         : () => go(step + 1)
 
   const handleComplete = handleFinish
 
-  // Step 3 (Type) heading + description mutate with Format so users read
-  // Step 4 as a refinement of Step 1, not a parallel decision.
+  // Step 4 (Type) heading + description mutate with Format so users read
+  // Step 5 as a refinement of Step 1, not a parallel decision.
   const wizardSteps = useMemo<WizardStepConfig[]>(() => {
     const typeCopy = getTypeStepCopy(battleFormat)
     return BASE_WIZARD_STEPS.map((s, idx) =>
-      idx === 3 ? { ...s, title: typeCopy.title, description: typeCopy.description } : s
+      idx === 4 ? { ...s, title: typeCopy.title, description: typeCopy.description } : s
     )
   }, [battleFormat])
 
@@ -792,11 +831,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         onComplete={handleComplete}
         onCancel={onClose}
         canProceed={canProceed}
-        isCompleting={(step === 4 || step === 5) ? submitting : step === 6 ? inviting : false}
-        isNextLoading={(step === 4 || step === 5) ? submitting : step === 6 ? inviting : false}
+        isCompleting={(step === 5 || step === 6) ? submitting : step === 7 ? inviting : false}
+        isNextLoading={(step === 5 || step === 6) ? submitting : step === 7 ? inviting : false}
         completeLabel="Go to Battle"
         completeIcon={<Swords size={15} className="mr-1.5" />}
-        nextLabel={step === 4 ? (isEditMode ? 'Update Battle' : 'Create Battle') : step === 6 ? 'Invite' : 'Next'}
+        nextLabel={step === 5 ? (isEditMode ? 'Update Battle' : 'Create Battle') : step === 7 ? 'Invite' : 'Next'}
         skipButton={skipButton}
         stepValidity={stepValidity}
         onStepClick={go}
@@ -975,8 +1014,17 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 2: Battle basics ─────────────────────────────── */}
-            {step === 2 && (
+            {/* ── Step 2: Shared inputs (Lens Battle only) ──────────── */}
+            {step === 2 && battleFormat === 'lens' && (
+              <SharedParameterStep
+                lensId={selectedLensId}
+                values={sharedParamValues}
+                onChange={setSharedParamValues}
+              />
+            )}
+
+            {/* ── Step 3: Battle basics ─────────────────────────────── */}
+            {step === 3 && (
               <div className="space-y-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
@@ -1010,8 +1058,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 3: Battle Type ───────────────────────────────── */}
-            {step === 3 && (
+            {/* ── Step 4: Battle Type ───────────────────────────────── */}
+            {step === 4 && (
               <div className="space-y-4">
                 {compatibilityNote && (
                   <div
@@ -1034,8 +1082,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 4: Configuration ─────────────────────────────── */}
-            {step === 4 && (
+            {/* ── Step 5: Configuration ─────────────────────────────── */}
+            {step === 5 && (
               <div className="space-y-6">
                 <div>
                   <div className="mb-4 flex items-center gap-1.5">
@@ -1108,8 +1156,14 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   </div>
                 )}
                 {battleFormat === 'lenser_battle' && (
-                  <div className="rounded-2xl border border-primary-yellow-500/20 bg-primary-yellow-500/5 px-4 py-3 text-sm text-greyscale-700 dark:text-greyscale-300">
-                    AI lensers in a Lenser Battle use their own model binding, funding source, and memory — no execution context needed from the battle creator.
+                  <div className="border-t border-surface-border pt-6 space-y-4">
+                    <div className="rounded-2xl border border-primary-yellow-500/20 bg-primary-yellow-500/5 px-4 py-3 text-sm text-greyscale-700 dark:text-greyscale-300">
+                      AI lensers in a Lenser Battle use their own model binding, funding source, and memory — no execution context needed from the battle creator.
+                    </div>
+                    <LenserBattlePolicyPanel
+                      value={lenserBattlePolicy}
+                      onChange={setLenserBattlePolicy}
+                    />
                   </div>
                 )}
 
@@ -1121,8 +1175,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 5: Schedule execution ────────────────────────── */}
-            {step === 5 && (
+            {/* ── Step 6: Schedule execution ────────────────────────── */}
+            {step === 6 && (
               <div className="space-y-5">
                 {AUTO_EXEC_TYPES.includes(battleType) ? (
                   <>
@@ -1229,8 +1283,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 6: Invite contenders ─────────────────────────── */}
-            {step === 6 && (
+            {/* ── Step 7: Invite contenders ─────────────────────────── */}
+            {step === 7 && (
               <ContenderInviteStep
                 slotA={slotA}
                 slotB={slotB}
@@ -1241,8 +1295,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               />
             )}
 
-            {/* ── Step 7: Assign Lenses ─────────────────────────────── */}
-            {step === 7 && activeBattleId && (
+            {/* ── Step 8: Assign Lenses ─────────────────────────────── */}
+            {step === 8 && activeBattleId && (
               <LensAssignmentStep
                 battleId={activeBattleId}
                 contenderAId={contenderAId}
@@ -1252,8 +1306,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               />
             )}
 
-            {/* ── Step 8: Automation (owner-only, requires battle to exist) ── */}
-            {step === 8 && activeBattleId && (
+            {/* ── Step 9: Automation (owner-only, requires battle to exist) ── */}
+            {step === 9 && activeBattleId && (
               <BattleAutomationSettings
                 battleId={activeBattleId}
                 autoAssignContenders={autoAssignContenders}
@@ -1263,7 +1317,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                 onReadinessChange={setAutomationReady}
               />
             )}
-            {step === 8 && !activeBattleId && (
+            {step === 9 && !activeBattleId && (
               <p className="py-8 text-center text-sm text-greyscale-400">
                 Complete the previous steps to configure automation settings.
               </p>
