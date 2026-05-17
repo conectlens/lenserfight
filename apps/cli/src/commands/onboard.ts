@@ -3,6 +3,7 @@ import consola from 'consola'
 
 import { isAuthenticated } from '../utils/auth'
 import { callRpc } from '../utils/api'
+import { printJson } from '../utils/output'
 import setupCommand from './setup'
 
 // Phase BA: friendly first-run flow.
@@ -35,28 +36,32 @@ function templateSlug(title: string): string {
     .replace(/-+/g, '-')
 }
 
-async function showTopTemplates(): Promise<void> {
+async function fetchTopTemplates(): Promise<PublicTemplate[]> {
   try {
     const templates = await callRpc<PublicTemplate[]>(
       'fn_list_public_battle_templates',
       { p_category: null, p_limit: 3 },
       { requireAuth: false }
     )
-    if (!templates || templates.length === 0) {
-      consola.info('No public templates published yet. Skipping template suggestions.')
-      return
+    return templates ?? []
+  } catch {
+    return []
+  }
+}
+
+function showTopTemplates(templates: PublicTemplate[]): void {
+  if (templates.length === 0) {
+    consola.info('No public templates published yet. Skipping template suggestions.')
+    return
+  }
+  consola.box('Top public battle templates:')
+  for (const t of templates) {
+    const slug = templateSlug(t.title)
+    consola.info(`  • ${t.title}${t.category ? ` (${t.category})` : ''}`)
+    if (t.description) {
+      consola.log(`      ${t.description.slice(0, 100)}`)
     }
-    consola.box('Top public battle templates:')
-    for (const t of templates) {
-      const slug = templateSlug(t.title)
-      consola.info(`  • ${t.title}${t.category ? ` (${t.category})` : ''}`)
-      if (t.description) {
-        consola.log(`      ${t.description.slice(0, 100)}`)
-      }
-      consola.log(`      run: lf battle new --from-template ${slug}`)
-    }
-  } catch (err) {
-    consola.warn('Could not fetch public templates: %s', (err as Error).message)
+    consola.log(`      run: lf battle new --from-template ${slug}`)
   }
 }
 
@@ -93,28 +98,49 @@ export default defineCommand({
       return (setupCommand as any).run?.(ctx)
     }
 
-    consola.start('LenserFight onboarding')
+    const json = Boolean(ctx.args.json)
 
     // 1. Auth check.
     if (!isAuthenticated()) {
-      consola.warn('You are not signed in.')
-      consola.info('Run: lf auth login')
+      if (json) {
+        printJson({ status: 'unauthenticated', error: 'Not signed in. Run: lf auth login' })
+      } else {
+        consola.warn('You are not signed in.')
+        consola.info('Run: lf auth login')
+      }
       process.exitCode = 1
       return
     }
-    consola.success('Signed in.')
+
+    if (!json) consola.start('LenserFight onboarding')
+    if (!json) consola.success('Signed in.')
 
     // 2. Profile completeness.
     const profile = await fetchProfile()
-    if (!profile || !profile.handle || !profile.display_name) {
-      consola.warn('Profile incomplete — set your handle and display name.')
-      consola.info('Run: lf profile update --handle <handle> --display-name "<your name>"')
-    } else {
-      consola.success('Profile ready: @%s (%s)', profile.handle, profile.display_name)
+    const profileComplete = !!(profile?.handle && profile?.display_name)
+    if (!json) {
+      if (!profileComplete) {
+        consola.warn('Profile incomplete — set your handle and display name.')
+        consola.info('Run: lf profile update --handle <handle> --display-name "<your name>"')
+      } else {
+        consola.success('Profile ready: @%s (%s)', profile!.handle, profile!.display_name)
+      }
     }
 
     // 3. Public templates → first action.
-    await showTopTemplates()
+    const templates = await fetchTopTemplates()
+
+    if (json) {
+      printJson({
+        status: 'ok',
+        profile: profile ? { handle: profile.handle, display_name: profile.display_name } : null,
+        profileComplete,
+        templates: templates.map((t) => ({ title: t.title, slug: templateSlug(t.title), category: t.category ?? null })),
+      })
+      return
+    }
+
+    showTopTemplates(templates)
 
     consola.box(
       [
