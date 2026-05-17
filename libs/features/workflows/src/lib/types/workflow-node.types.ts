@@ -7,6 +7,7 @@
  */
 import type { WorkflowNodeRecord, WorkflowEdgeRecord, WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
 import type { FundingSource } from '@lenserfight/types'
+import type { OAuthCapability, OAuthProvider } from '@lenserfight/domain/oauth-connections'
 
 // ── Core Node Types ─────────────────────────────────────────────────────────
 
@@ -160,6 +161,7 @@ export type RunnerConfigFieldType =
   | 'schema_builder'
   | 'string_array'
   | 'key_value'
+  | 'connector_ref'
 
 export interface RunnerConfigFieldDescriptor {
   /** Key in param_overrides (without __ prefix — the system adds it) */
@@ -181,6 +183,10 @@ export interface RunnerConfigFieldDescriptor {
   step?: number
   /** For 'select' type */
   options?: Array<{ value: string; label: string }>
+  /** For 'connector_ref' type — filters the connection picker by provider */
+  connectorProvider?: OAuthProvider
+  /** For 'connector_ref' type — filters the connection picker by capability */
+  connectorCapability?: OAuthCapability
   /** For 'textarea'/'code' type */
   rows?: number
   mono?: boolean

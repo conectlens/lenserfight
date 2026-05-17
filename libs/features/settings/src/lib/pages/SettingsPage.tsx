@@ -16,6 +16,7 @@ import { ApiKeysTab } from '../components/ApiKeysTab'
 import { GeneralTab } from '../components/GeneralTab'
 import { NotificationPreferencesTab } from '../components/NotificationPreferencesTab'
 import { PartnerAccountsTab } from '../components/PartnerAccountsTab'
+import { OAuthConnectionsSection } from '../components/OAuthConnectionsSection'
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, Link, useParams, useNavigate } from 'react-router-dom'
 
@@ -831,7 +832,12 @@ export const SettingsPage: React.FC = () => {
           )}
 
           {/* CONNECTED ACCOUNTS TAB */}
-          {activeTab === 'connected-accounts' && <PartnerAccountsTab />}
+          {activeTab === 'connected-accounts' && (
+            <>
+              <PartnerAccountsTab />
+              <OAuthConnectionsSection />
+            </>
+          )}
 
           {/* NOTIFICATIONS TAB */}
           {activeTab === 'notifications' && (
