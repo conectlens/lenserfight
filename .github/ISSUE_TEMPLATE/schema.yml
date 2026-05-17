@@ -8,7 +8,9 @@ labels:
 body:
   - type: markdown
     attributes:
-      value: >
+      value: |
+        **Title format:** `[SCHEMA][supabase] Short description`
+
         Schema changes require an RFC-style review before implementation.
         Changes touching `lensers.*`, `agents.*`, or `platform.*` schemas require core maintainer sign-off.
 
