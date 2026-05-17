@@ -89,10 +89,10 @@ fi
 log_ok "Database seeded"
 
 # ---------------------------------------------------------------------------
-# 5. Start platform-api worker in background (ECHO_PROVIDER=1)
+# 5. Start worker in background (ECHO_PROVIDER=1)
 # ---------------------------------------------------------------------------
 echo ""
-echo "Starting platform-api worker (echo mode)..."
+echo "Starting worker (echo mode)..."
 ECHO_PROVIDER=1 pnpm nx serve worker &
 PLATFORM_PID=$!
 echo "$PLATFORM_PID" > /tmp/lf-worker.pid
@@ -110,7 +110,7 @@ echo "  Supabase Studio     http://localhost:54323"
 echo "  Supabase API        http://localhost:54321"
 echo "  Supabase MailHog    http://localhost:54324"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  (platform-api runs as background worker, no HTTP port)"
+echo "  (worker runs in background, no HTTP port)"
 echo ""
 log_ok "Dev stack is running. Open http://localhost:3000 in your browser."
 echo ""

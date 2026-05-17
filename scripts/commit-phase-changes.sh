@@ -33,8 +33,8 @@ commit_file() {
     file)
       local dir=$(dirname "$file")
       local basename=$(basename "$file")
-      if [[ "$dir" == *"platform-api"* ]]; then
-        msg="feat(platform-api): add ${basename%.ts}"
+      if [[ "$dir" == *"apps/worker"* ]]; then
+        msg="feat(worker): add ${basename%.ts}"
       elif [[ "$dir" == *"infra/execution"* ]]; then
         msg="feat(execution): add ${basename%.ts}"
       elif [[ "$dir" == *"cli"* ]]; then
@@ -74,14 +74,12 @@ echo ""
 # Stage 2: Files (code, components, tests, scripts)
 echo -e "${YELLOW}Stage 2: Committing code files...${NC}"
 
-# Platform API files
-for file in apps/platform-api/src/lib/storage.ts \
-            apps/platform-api/src/http/routes/media-proxy.route.ts \
-            apps/platform-api/src/http/routes/media-proxy.route.spec.ts \
-            apps/platform-api/src/worker/async-media-poll-worker.ts \
-            apps/platform-api/src/worker/async-media-poll-worker.spec.ts \
-            apps/platform-api/src/worker/team-run-worker.ts \
-            apps/platform-api/src/lib/provider-status.ts; do
+# Worker files
+for file in apps/worker/src/lib/storage.ts \
+            apps/worker/src/worker/async-media-poll-worker.ts \
+            apps/worker/src/worker/async-media-poll-worker.spec.ts \
+            apps/worker/src/worker/team-run-worker.ts \
+            apps/worker/src/lib/provider-status.ts; do
   commit_file "$file" "file"
 done
 
