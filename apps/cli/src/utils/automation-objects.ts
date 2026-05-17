@@ -11,9 +11,8 @@ import {
   type AutomationObjectSummary,
   type AutomationValidationIssue,
   type AutomationValidationResult,
-  type LensVersionParameterDeclaration,
 } from '@lenserfight/types'
-import { extractParams } from '@lenserfight/utils/text'
+import { validateSpec } from '@lenserfight/domain/spec-governance'
 import { parse } from 'yaml'
 import { getLenserfightRuntimeDir } from './local-battle-paths'
 
@@ -51,55 +50,11 @@ const CANONICAL_KIND_ALIASES: Partial<Record<AutomationObjectKind, AutomationObj
   workflow: 'colens',
 }
 
-const REQUIRED_FRONTMATTER_KEYS: Record<AutomationObjectKind, string[]> = {
-  lens: ['name', 'description'],
-  lenser: ['name', 'description'],
-  colens: ['name', 'description'],
-  battle: ['name', 'description'],
-  ray: ['name', 'description'],
-  team: ['name', 'description'],
-  agent: ['name'],
-  agent_team: ['name'],
-  tool: ['name'],
-  workflow: ['name'],
-  private_battle: ['name'],
-  skill: ['name', 'description'],
-  memory_policy: ['name'],
-  evaluation: ['name'],
-  run_report: ['name'],
-}
-
-const REQUIRED_SECTIONS: Record<AutomationObjectKind, string[]> = {
-  lens: ['Purpose', 'Prompt', 'Inputs', 'Outputs'],
-  lenser: ['Mission', 'Activation', 'Operating Rules'],
-  colens: ['Purpose', 'Inputs', 'Steps', 'Outputs'],
-  battle: ['Purpose', 'Participants', 'Evaluation', 'Report'],
-  ray: ['Purpose', 'Related Items', 'Routing'],
-  team: ['Team Purpose', 'LENSERS', 'Collaboration Rules'],
-  agent: ['Purpose', 'Instructions', 'Execution Policy'],
-  agent_team: ['Team Purpose', 'Members', 'Collaboration Rules'],
-  tool: ['Capability Description', 'Inputs', 'Outputs', 'Failure Modes'],
-  workflow: ['Purpose', 'Inputs', 'Steps', 'Outputs'],
-  private_battle: ['Purpose', 'Participants', 'Evaluation', 'Report'],
-  skill: ['Purpose', 'When To Use', 'Workflow'],
-  memory_policy: ['Purpose', 'What To Store', 'What Not To Store'],
-  evaluation: ['Purpose', 'Dataset', 'Metrics', 'Judging'],
-  run_report: ['Summary', 'Inputs', 'Results'],
-}
-
 const AUTOMATION_REGISTRY_FILE = '.lenserfight/automation-registry.json'
 const AUTOMATION_RUNS_DIR = 'runs'
 const AUTOMATION_REPORTS_DIR = 'reports'
 const LENSERFIGHT_DIR_NAME = '.lenserfight'
 const CONFIG_FILE_NAMES = ['config.json', 'config.yaml', 'config.yml'] as const
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const DISCLOSURE_DIRS = {
-  references: 'references',
-  scripts: 'scripts',
-  assets: 'assets',
-  evals: 'evals',
-} as const
-
 const PRIMARY_FILE_KIND_BY_NAME: Record<string, AutomationObjectKind> = Object.fromEntries(
   [
     ...Object.entries(AUTOMATION_FILE_NAMES).map(([kind, fileName]) => [
@@ -339,6 +294,7 @@ export function validateAutomationDocument(
   const issues = [...initialIssues]
   const { frontmatter, sections } = document
 
+  // Kind presence check (must happen before delegating to schema validator).
   if (!frontmatter.kind) {
     issues.push({ path: 'kind', message: 'Missing required frontmatter key `kind`.', severity: 'error' })
   } else if (!isAutomationObjectKind(frontmatter.kind)) {
@@ -349,60 +305,19 @@ export function validateAutomationDocument(
     })
   }
 
-  if (!options.minimalUnit && typeof frontmatter.schema_version !== 'number') {
-    issues.push({ path: 'schema_version', message: 'Missing numeric `schema_version`.', severity: 'error' })
-  }
-
-  if (!options.minimalUnit && (!frontmatter.id || typeof frontmatter.id !== 'string')) {
-    issues.push({ path: 'id', message: 'Missing string `id`.', severity: 'error' })
-  }
-
-  // apiVersion: warning-only so existing files keep validating while users migrate.
-  if (!options.minimalUnit) {
-    const av = (frontmatter as unknown as Record<string, unknown>).apiVersion
-    if (av === undefined) {
-      issues.push({
-        path: 'apiVersion',
-        message:
-          'Missing `apiVersion`. Add `apiVersion: lenserfight.dev/v1alpha1` to opt into the versioned spec format, or run `lf spec migrate` to add it automatically.',
-        severity: 'warning',
-      })
-    } else if (typeof av !== 'string' || !av.startsWith('lenserfight.dev/')) {
-      issues.push({
-        path: 'apiVersion',
-        message: `Unrecognized \`apiVersion\` value "${String(av)}". Expected: lenserfight.dev/v1alpha1.`,
-        severity: 'warning',
-      })
-    }
-  }
-
+  // Delegate to three-layer spec validator for all structural,
+  // section, and semantic validation.
   if (frontmatter.kind && isAutomationObjectKind(frontmatter.kind)) {
-    for (const key of REQUIRED_FRONTMATTER_KEYS[frontmatter.kind]) {
-      if (!(key in frontmatter)) {
-        issues.push({
-          path: key,
-          message: `Missing required frontmatter key \`${key}\` for ${frontmatter.kind}.`,
-          severity: 'error',
-        })
-      }
-    }
-
-    if (!options.minimalUnit) {
-      for (const section of REQUIRED_SECTIONS[frontmatter.kind]) {
-        if (!sections[section]) {
-          issues.push({
-            path: `section:${section}`,
-            message: `Missing required markdown section \`# ${section}\`.`,
-            severity: 'error',
-          })
-        }
-      }
-    }
-
-    validateProgressiveDisclosureRefs(document, issues)
-    validateLensParameterContract(document, issues)
-    validateBattleReferences(document, issues)
-    validateDisclaimerMarkers(document, issues)
+    const specIssues = validateSpec(
+      {
+        frontmatter: frontmatter as unknown as Record<string, unknown>,
+        body: document.body,
+        sections,
+        filePath: document.filePath,
+      },
+      { minimalUnit: options.minimalUnit },
+    )
+    issues.push(...specIssues)
   }
 
   return {
@@ -729,222 +644,6 @@ function parseSections(body: string): Record<string, string> {
   return sections
 }
 
-function getDisclosurePath(entry: unknown): string | null {
-  if (typeof entry === 'string') return entry
-  if (entry && typeof entry === 'object' && typeof (entry as Record<string, unknown>).path === 'string') {
-    return (entry as Record<string, string>).path
-  }
-  return null
-}
-
-function disclosureEntries(frontmatter: AutomationObjectFrontmatter, key: keyof typeof DISCLOSURE_DIRS): unknown[] {
-  const value = (frontmatter as unknown as Record<string, unknown>)[key]
-  if (!value) return []
-  return Array.isArray(value) ? value : [value]
-}
-
-function validateProgressiveDisclosureRefs(
-  document: AutomationMarkdownDocument,
-  issues: AutomationValidationIssue[]
-): void {
-  if (!document.filePath) return
-  const unitRoot = resolveUnitRoot(document.filePath)
-
-  for (const [key, expectedDir] of Object.entries(DISCLOSURE_DIRS) as Array<[keyof typeof DISCLOSURE_DIRS, string]>) {
-    const entries = disclosureEntries(document.frontmatter, key)
-    entries.forEach((entry, index) => {
-      const relPath = getDisclosurePath(entry)
-      if (!relPath) {
-        issues.push({
-          path: `${key}[${index}]`,
-          message: 'Disclosure entries must be strings or objects with a `path` string.',
-          severity: 'error',
-        })
-        return
-      }
-
-      try {
-        const resolved = resolveUnitRelativePath(unitRoot, relPath)
-        if (!relPath.replace(/\\/g, '/').startsWith(`${expectedDir}/`)) {
-          issues.push({
-            path: `${key}[${index}]`,
-            message: `Path must live under \`${expectedDir}/\` and be relative to the unit root.`,
-            severity: 'error',
-          })
-        }
-        if (!existsSync(resolved)) {
-          issues.push({
-            path: `${key}[${index}]`,
-            message: `Referenced file does not exist: ${relPath}`,
-            severity: 'error',
-          })
-        }
-      } catch (error) {
-        issues.push({
-          path: `${key}[${index}]`,
-          message: (error as Error).message,
-          severity: 'error',
-        })
-      }
-
-      if (
-        key === 'scripts' &&
-        entry &&
-        typeof entry === 'object' &&
-        (entry as Record<string, unknown>).interactive === true
-      ) {
-        issues.push({
-          path: `${key}[${index}].interactive`,
-          message: 'Scripts referenced by automation units must be non-interactive.',
-          severity: 'warning',
-        })
-      }
-    })
-  }
-}
-
-function normalizeParamLabel(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, '_')
-}
-
-function getLensParameters(frontmatter: AutomationObjectFrontmatter): LensVersionParameterDeclaration[] {
-  const raw = (frontmatter as unknown as Record<string, unknown>).parameters
-  if (!Array.isArray(raw)) return []
-  return raw as LensVersionParameterDeclaration[]
-}
-
-function validateLensParameterContract(
-  document: AutomationMarkdownDocument,
-  issues: AutomationValidationIssue[]
-): void {
-  if (document.frontmatter.kind !== 'lens') return
-
-  const bodyParams = extractParams(document.body).map((param) => param.name)
-  const declaredParams = getLensParameters(document.frontmatter)
-  const declaredLabels = new Set<string>()
-
-  declaredParams.forEach((param, index) => {
-    if (!param || typeof param !== 'object') {
-      issues.push({ path: `parameters[${index}]`, message: 'Parameter declarations must be objects.', severity: 'error' })
-      return
-    }
-    if (!param.label || typeof param.label !== 'string') {
-      issues.push({ path: `parameters[${index}].label`, message: 'Parameter label is required.', severity: 'error' })
-      return
-    }
-    declaredLabels.add(normalizeParamLabel(param.label))
-
-    const toolId = param.tool_id ?? param.toolId
-    if (!toolId || typeof toolId !== 'string') {
-      issues.push({
-        path: `parameters[${index}].tool_id`,
-        message: 'Parameter declarations must include `tool_id`, mirroring lenses.version_parameters.tool_id.',
-        severity: 'error',
-      })
-    } else if (!UUID_REGEX.test(toolId)) {
-      issues.push({
-        path: `parameters[${index}].tool_id`,
-        message: '`tool_id` must be a UUID because lenses.version_parameters.tool_id references lenses.tools(id).',
-        severity: 'error',
-      })
-    }
-  })
-
-  if (bodyParams.length > 0 && declaredParams.length === 0) {
-    issues.push({
-      path: 'parameters',
-      message: 'LENS.MD body contains [[parameters]] but no frontmatter `parameters` declarations.',
-      severity: 'error',
-    })
-    return
-  }
-
-  for (const name of bodyParams) {
-    if (!declaredLabels.has(name)) {
-      issues.push({
-        path: `parameters.${name}`,
-        message: `Placeholder [[${name}]] must be declared in frontmatter parameters.`,
-        severity: 'error',
-      })
-    }
-  }
-
-  for (const label of declaredLabels) {
-    if (!bodyParams.includes(label)) {
-      issues.push({
-        path: `parameters.${label}`,
-        message: `Parameter \`${label}\` is declared but not used in the LENS.MD body.`,
-        severity: 'warning',
-      })
-    }
-  }
-}
-
-function validateBattleReferences(
-  document: AutomationMarkdownDocument,
-  issues: AutomationValidationIssue[]
-): void {
-  if (document.frontmatter.kind !== 'battle') return
-
-  const frontmatter = document.frontmatter as unknown as Record<string, unknown>
-  const participants = Array.isArray(frontmatter.participants) ? frontmatter.participants : []
-  const orchestrationKeys = ['lenses', 'colenses', 'lensers', 'teams', 'evals', 'scoring', 'comparison']
-  const hasOrchestration = participants.length > 0 || orchestrationKeys.some((key) => frontmatter[key] !== undefined)
-
-  if (!hasOrchestration) {
-    issues.push({
-      path: 'battle',
-      message: 'BATTLE.MD should declare participants or orchestration references.',
-      severity: 'warning',
-    })
-  }
-
-  participants.forEach((participant, index) => {
-    if (!participant || typeof participant !== 'object') {
-      issues.push({ path: `participants[${index}]`, message: 'Battle participants must be objects.', severity: 'error' })
-      return
-    }
-    const row = participant as Record<string, unknown>
-    if (typeof row.type !== 'string' || typeof row.ref !== 'string' || row.ref.trim() === '') {
-      issues.push({
-        path: `participants[${index}]`,
-        message: 'Battle participants require string `type` and `ref` fields.',
-        severity: 'error',
-      })
-    }
-  })
-}
-
-function validateDisclaimerMarkers(
-  document: AutomationMarkdownDocument,
-  issues: AutomationValidationIssue[]
-): void {
-  const frontmatter = document.frontmatter as unknown as Record<string, unknown>
-  const rayValues = new Set(
-    [frontmatter['rays'], frontmatter['tags']]
-      .flatMap((value) => (Array.isArray(value) ? value : []))
-      .map((value) => String(value).toLowerCase())
-  )
-  const text = `${document.body}\n${frontmatter.description ?? ''}`.toLowerCase()
-  const isLegal = rayValues.has('legal') || rayValues.has('legal-adjacent') || text.includes('legal')
-  const isFinance = rayValues.has('finance') || text.includes('financial advice') || text.includes('finance report')
-
-  if (isLegal && !text.includes('not legal advice')) {
-    issues.push({
-      path: 'disclaimer.legal',
-      message: 'Legal-adjacent templates must say the output is not legal advice and should be reviewed by a qualified lawyer.',
-      severity: 'error',
-    })
-  }
-
-  if (isFinance && !text.includes('not financial advice') && !text.includes('not certified financial advice')) {
-    issues.push({
-      path: 'disclaimer.finance',
-      message: 'Finance templates must say the output is not financial advice.',
-      severity: 'error',
-    })
-  }
-}
 
 function validateWorkspaceReferences(objects: DiscoveredAutomationObject[]): void {
   const keys = new Set(objects.map((object) => object.key))
