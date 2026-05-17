@@ -12,6 +12,7 @@ import type {
 import type { ApiResponseEnvelope } from '@lenserfight/api/contracts'
 import { paginatedResponse } from '@lenserfight/api/contracts'
 import { FileDataStore } from '@lenserfight/infra/storage'
+import { generateUUID } from '@lenserfight/utils/text'
 import type { LensesRepositoryPort } from '../lensesRepository'
 
 const FILE_MODE_LENSER_ID = 'file-lenser-00000000-0000-0000-0000-000000000001'
@@ -160,7 +161,7 @@ export class FileLensesRepository implements LensesRepositoryPort {
   }
 
   async createLens(input: CreateLensDTO): Promise<LensRecord> {
-    const id = crypto.randomUUID()
+    const id = generateUUID()
     const record = buildLensRecord(input, id)
     await lensStore.save(record)
     return record
@@ -213,7 +214,7 @@ export class FileLensesRepository implements LensesRepositoryPort {
   async createVersion(input: CreateLensVersionDTO): Promise<LensVersion> {
     const existing = await this.getVersions(input.lensId)
     const version: LensVersion = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       lensId: input.lensId,
       versionNumber: existing.length + 1,
       templateBody: input.templateBody,
@@ -242,7 +243,7 @@ export class FileLensesRepository implements LensesRepositoryPort {
     if (!source) throw new Error(`Source lens not found: ${sourceLensId}`)
     const cloned: LensRecord = {
       ...source,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       parent_lens_id: sourceLensId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
