@@ -59,7 +59,10 @@ export const AUTOMATION_KIND_TO_SPEC_KIND: Record<string, SpecKind> = {
   skill: 'Skill',
   memory_policy: 'MemoryPolicy',
   evaluation: 'Evaluation',
+  execution: 'Execution',
   run_report: 'RunReport',
+  dataset: 'Dataset',
+  benchmark: 'Benchmark',
   // PascalCase (new-format) pass-through
   Lens: 'Lens',
   Lenser: 'Lenser',

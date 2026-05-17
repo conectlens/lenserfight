@@ -2,7 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../../dist/out-tsc",
-    "types": ["node"]
+    "types": ["node"],
+    "resolveJsonModule": true
   },
   "exclude": [
     "**/*.spec.ts",
@@ -16,5 +17,5 @@
     "src/**/*.test.ts",
     "src/**/*.spec.ts"
   ],
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.json"]
 }
