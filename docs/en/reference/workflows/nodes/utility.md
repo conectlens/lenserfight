@@ -42,7 +42,7 @@ Write a structured log entry for debugging and audit trails. Use as the final no
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `message` | `string` | Log message template. Supports `{{variable}}` interpolation. |
+| `message` | `string` | Log message template. Supports <code v-pre>{{variable}}</code> interpolation. |
 
 ### Optional Config
 
@@ -132,7 +132,7 @@ Expose upstream payload shape in manual executions. Use during workflow design t
 
 **Type:** `secret_resolver` · **Category:** Utility
 
-Resolve a named secret reference for downstream server-side nodes. Use when a node's configuration cannot use `{{secrets.keyName}}` inline syntax and needs the resolved value as a payload field.
+Resolve a named secret reference for downstream server-side nodes. Use when a node's configuration cannot use <code v-pre>{{secrets.keyName}}</code> inline syntax and needs the resolved value as a payload field.
 
 ### Required Config
 
@@ -155,7 +155,7 @@ Resolve a named secret reference for downstream server-side nodes. Use when a no
 }
 ```
 
-**Expected output:** `{ "githubToken": "{{resolved-secret-ref}}" }` (value is masked in logs)
+**Expected output:** <code v-pre>{ "githubToken": "{{resolved-secret-ref}}" }</code> (value is masked in logs)
 
 ### Execution Notes
 
