@@ -26,16 +26,13 @@ describe('parseConnectorRef', () => {
     expect(result.ref.label).toBe('work-account_2')
   })
 
-  it('parses a dotted label (multi-segment)', () => {
-    // 'google.calendar.team.eng' → label = 'team.eng'
+  it('rejects a dotted label', () => {
     const result = parseConnectorRef('google.calendar.team.eng')
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.ref.label).toBe('team.eng')
+    expect(result.ok).toBe(false)
   })
 
   it('returns error for unknown provider', () => {
-    const result = parseConnectorRef('github.sheets.primary')
+    const result = parseConnectorRef('unknown.sheets.primary')
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(result.reason).toMatch(/unknown provider/)
