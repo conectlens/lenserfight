@@ -24,7 +24,7 @@ import {
   useEdgesState,
   useReactFlow,
 } from '@xyflow/react'
-import { AlertTriangle, Info, Pencil, X } from 'lucide-react'
+import { AlertTriangle, Info, Pencil, X, Zap } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -549,6 +549,8 @@ function WorkflowBuilderCanvasInner({
                 }))
               }
               lastSavedNodeFingerprintRef.current = nextNodeMap
+              // Sync live-nodes cache so the page's execution hook sees current state
+              queryClient.setQueryData(queryKeys.workflows.nodes(workflowId), savedNodes)
               setNodes(
                 savedNodes.map((record) =>
                   toFlowNode(record, handleRemoveNode, handleDuplicateNode, onConfigNodeRef.current, onEditLensRef.current, currentUserIdRef.current, nodeConfigOverridesRef.current)
@@ -568,6 +570,8 @@ function WorkflowBuilderCanvasInner({
                 }))
               }
               lastSavedEdgeFingerprintRef.current = nextEdgeMap
+              // Sync live-edges cache so the page's execution hook sees current state
+              queryClient.setQueryData(queryKeys.workflows.edges(workflowId), savedEdges)
               setEdges(savedEdges.map((record) => toFlowEdge(record, handleRemoveEdge, savedNodes, nodeConfigOverridesRef.current)))
             }
             return
@@ -588,6 +592,15 @@ function WorkflowBuilderCanvasInner({
               }))
             }
             lastSavedNodeFingerprintRef.current = nextNodeMap
+            // Sync live-nodes cache so the page's execution hook sees current state
+            queryClient.setQueryData(
+              queryKeys.workflows.nodes(workflowId),
+              (old: WorkflowNodeRecord[] | undefined) => {
+                const byId = new Map((old ?? []).map((n) => [n.id, n]))
+                for (const record of savedNodes) byId.set(record.id, record)
+                return Array.from(byId.values()).sort((a, b) => a.ordinal - b.ordinal)
+              },
+            )
             setNodes((prev) => {
               const byId = new Map(prev.map((n) => [n.id, n]))
               for (const record of savedNodes) {
@@ -609,6 +622,15 @@ function WorkflowBuilderCanvasInner({
               }))
             }
             lastSavedEdgeFingerprintRef.current = nextEdgeMap
+            // Sync live-edges cache so the page's execution hook sees current state
+            queryClient.setQueryData(
+              queryKeys.workflows.edges(workflowId),
+              (old: WorkflowEdgeRecord[] | undefined) => {
+                const byId = new Map((old ?? []).map((e) => [e.id, e]))
+                for (const record of savedEdges) byId.set(record.id, record)
+                return Array.from(byId.values())
+              },
+            )
             setEdges((prev) => {
               const byId = new Map(prev.map((e) => [e.id, e]))
               for (const record of savedEdges) {
@@ -996,24 +1018,58 @@ function WorkflowBuilderCanvasInner({
     deleteEdge: () => deleteGraphItems('Delete edge', { nodeIds: [], edgeIds: selectionRef.current.edgeIds }),
     inspectEdgeCompatibility: inspectSelectedEdgeCompatibility,
     viewEdgeContract: viewSelectedEdgeContract,
-    addNode: () => toast.info('Drag a lens or utility node from the left sidebar to add it here.'),
+    addNode: () => {
+      const rect = canvasContainerRef.current?.getBoundingClientRect()
+      const cx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
+      const cy = rect ? rect.top + rect.height / 2 : window.innerHeight / 2
+      const pos = screenToFlowPosition({ x: cx, y: cy })
+      const nextOrdinal = flowNodes.length
+      const newNode: Node<WorkflowNodeData> = {
+        id: `tmp-${Date.now()}`,
+        type: 'workflowNode',
+        position: pos,
+        data: {
+          label: 'Manual Trigger',
+          ordinal: nextOrdinal,
+          isPersisted: false,
+          lens_id: '__utility_manual_trigger',
+          config: { node_type: 'manual_trigger', nodeType: 'manual_trigger' } as WorkflowNodeConfig,
+          onRemove: handleRemoveNode,
+          onDuplicate: handleDuplicateNode,
+          onConfigNode,
+        } as WorkflowNodeData,
+      }
+      const before = makeSnapshot()
+      commitGraphSnapshot('Add node', before, {
+        nodes: [...before.nodes.map((n) => ({ ...n, selected: false })), newNode],
+        edges: before.edges.map((e) => ({ ...e, selected: false })),
+        selection: { nodeIds: [newNode.id], edgeIds: [] },
+      })
+    },
     createNote: () => toast.info('Canvas notes are not part of the workflow schema yet.'),
     createGroup: () => toast.info('Canvas groups are not part of the workflow schema yet.'),
     changeEdgeMode: () => toast.info('Edge modes are not part of the workflow schema yet.'),
   }, commandState), [
     autoLayoutSelectionOrGraph,
     commandState,
+    commitGraphSnapshot,
     configureSelectedNode,
     copySelection,
     deleteGraphItems,
     duplicateSelection,
     fitView,
+    flowNodes,
+    handleDuplicateNode,
+    handleRemoveNode,
     inspectSelectedEdgeCompatibility,
+    makeSnapshot,
+    onConfigNode,
     pastePayload,
     readClipboardPayload,
     redoCanvas,
     renameSelectedNode,
     scheduleSave,
+    screenToFlowPosition,
     setGraphWithoutHistory,
     toggleSelectedNodesDisabled,
     undoCanvas,
@@ -1386,6 +1442,16 @@ function WorkflowBuilderCanvasInner({
                     <span className="ml-1 text-greyscale-600 dark:text-greyscale-300">
                       {d.message}
                     </span>
+                    {d.code === 'no_trigger_node' && !readOnly && (
+                      <button
+                        type="button"
+                        onClick={() => getWorkflowCanvasCommand(commands, 'canvas.addNode')?.run()}
+                        className="mt-1 inline-flex items-center gap-1 rounded-md border border-amber-400/50 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 hover:bg-amber-200 dark:bg-amber-800/30 dark:text-amber-300 dark:border-amber-500/30"
+                      >
+                        <Zap size={9} />
+                        Add Trigger
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
