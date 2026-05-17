@@ -18,6 +18,11 @@ export const githubReadDescriptor: RunnerConfigDescriptor = {
       required: true,
       placeholder: 'lenserfight-org/lenserfight-web',
       mono: true,
+      tooltip: {
+        summary: 'The GitHub repository to read from.',
+        format: 'owner/repo format (e.g. lenserfight-org/lenserfight-web).',
+        commonMistakes: 'Using the full URL instead of owner/repo format.',
+      },
     },
     {
       key: 'resourceType',
@@ -29,6 +34,9 @@ export const githubReadDescriptor: RunnerConfigDescriptor = {
         { value: 'pull_request', label: 'Pull Request' },
         { value: 'release', label: 'Release' },
       ],
+      tooltip: {
+        summary: 'The type of GitHub resource to fetch.',
+      },
     },
     {
       key: 'number',
@@ -36,6 +44,10 @@ export const githubReadDescriptor: RunnerConfigDescriptor = {
       type: 'number',
       placeholder: 'Leave empty for latest',
       min: 1,
+      tooltip: {
+        summary: 'The specific issue or PR number to fetch. Fetches the latest if left empty.',
+        format: 'Positive integer. Supports {{variable}} interpolation.',
+      },
     },
   ],
   outputFields: [
@@ -54,6 +66,10 @@ export const rssFeedDescriptor: RunnerConfigDescriptor = {
       type: 'text',
       required: true,
       placeholder: 'https://example.com/feed.xml',
+      tooltip: {
+        summary: 'The URL of the RSS or Atom feed to read.',
+        format: 'Full HTTPS URL pointing to a valid XML feed.',
+      },
     },
     {
       key: 'maxItems',
@@ -62,6 +78,11 @@ export const rssFeedDescriptor: RunnerConfigDescriptor = {
       defaultValue: '10',
       min: 1,
       max: 50,
+      tooltip: {
+        summary: 'Maximum number of feed entries to return.',
+        format: 'Integer between 1 and 50.',
+        executionImpact: 'The feed is fetched in full but output is limited to this count, starting from the most recent.',
+      },
     },
   ],
   outputFields: [
@@ -82,6 +103,11 @@ export const notionReadDescriptor: RunnerConfigDescriptor = {
       placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
       mono: true,
       hint: 'Provide either Page ID or Database ID.',
+      tooltip: {
+        summary: 'The Notion page ID to read content from.',
+        format: 'UUID format (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx). Found in the page URL.',
+        whenRequired: 'Provide either Page ID or Database ID, not both.',
+      },
     },
     {
       key: 'databaseId',
@@ -89,6 +115,11 @@ export const notionReadDescriptor: RunnerConfigDescriptor = {
       type: 'text',
       placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
       mono: true,
+      tooltip: {
+        summary: 'The Notion database ID to query. Use with queryFilter to fetch specific rows.',
+        format: 'UUID format. Found in the database URL.',
+        whenRequired: 'Provide either Page ID or Database ID, not both.',
+      },
     },
     {
       key: 'queryFilter',
@@ -96,6 +127,11 @@ export const notionReadDescriptor: RunnerConfigDescriptor = {
       type: 'json',
       rows: 4,
       placeholder: '{ "property": "Status", "select": { "equals": "Done" } }',
+      tooltip: {
+        summary: 'A Notion filter object to narrow database query results.',
+        format: 'Notion filter API format: { "property": "Status", "select": { "equals": "Done" } }.',
+        whenRequired: 'Only applicable when querying a database (databaseId is set).',
+      },
     },
   ],
   validate: (values) => {
@@ -123,6 +159,10 @@ export const googleSheetsReadDescriptor: RunnerConfigDescriptor = {
       placeholder: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms',
       mono: true,
       hint: 'Found in the spreadsheet URL.',
+      tooltip: {
+        summary: 'The Google Sheets spreadsheet identifier.',
+        format: 'The long ID from the spreadsheet URL (between /d/ and /edit).',
+      },
     },
     {
       key: 'range',
@@ -131,6 +171,11 @@ export const googleSheetsReadDescriptor: RunnerConfigDescriptor = {
       required: true,
       placeholder: 'Sheet1!A1:D10',
       mono: true,
+      tooltip: {
+        summary: 'The cell range to read from the spreadsheet.',
+        format: 'A1 notation: SheetName!StartCell:EndCell (e.g. Sheet1!A1:D10).',
+        commonMistakes: 'Omitting the sheet name, which defaults to the first sheet. Using column-only ranges (A:D) returns all rows.',
+      },
     },
   ],
   outputFields: [
@@ -151,6 +196,10 @@ export const googleSheetsWriteDescriptor: RunnerConfigDescriptor = {
       required: true,
       placeholder: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms',
       mono: true,
+      tooltip: {
+        summary: 'The Google Sheets spreadsheet identifier to write to.',
+        format: 'The long ID from the spreadsheet URL (between /d/ and /edit).',
+      },
     },
     {
       key: 'range',
@@ -159,6 +208,11 @@ export const googleSheetsWriteDescriptor: RunnerConfigDescriptor = {
       required: true,
       placeholder: 'Sheet1!A1:D10',
       mono: true,
+      tooltip: {
+        summary: 'The cell range to write data into.',
+        format: 'A1 notation: SheetName!StartCell:EndCell (e.g. Sheet1!A1:D10).',
+        executionImpact: 'In append mode, data is added after the last row in the range. In overwrite mode, existing cells are replaced.',
+      },
     },
     {
       key: 'mode',
@@ -169,6 +223,10 @@ export const googleSheetsWriteDescriptor: RunnerConfigDescriptor = {
         { value: 'append', label: 'Append' },
         { value: 'overwrite', label: 'Overwrite' },
       ],
+      tooltip: {
+        summary: 'Whether to add data after existing rows (Append) or replace the specified range (Overwrite).',
+        executionImpact: 'Overwrite permanently replaces cell values in the range. Append is non-destructive.',
+      },
     },
   ],
   outputFields: [
