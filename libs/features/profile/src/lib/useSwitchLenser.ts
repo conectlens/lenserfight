@@ -30,6 +30,7 @@ export function useSwitchLenser() {
   const { toastError } = useToast()
 
   const { mutateAsync, isPending } = useMutation({
+    mutationKey: ['switchLenser'],
     mutationFn: switchActiveLenser,
     onError: (error) => {
       toastError(error, { fallbackMessage: 'Failed to switch workspace. Please try again.' })
