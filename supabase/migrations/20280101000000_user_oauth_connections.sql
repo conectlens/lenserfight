@@ -24,10 +24,13 @@
 CREATE TABLE IF NOT EXISTS public.user_oauth_connections (
   id                uuid        NOT NULL DEFAULT gen_random_uuid(),
   lenser_id         uuid        NOT NULL,
+  workspace_id      uuid        NOT NULL,
   provider          text        NOT NULL,
   capability        text        NOT NULL,
   connection_label  text        NOT NULL,
   ref               text        NOT NULL,
+  auth_strategy     text        NOT NULL DEFAULT 'oauth2',
+  provider_config   jsonb       NOT NULL DEFAULT '{}'::jsonb,
   access_token_id   uuid        NOT NULL,
   refresh_token_id  uuid,
   granted_scopes    text[]      NOT NULL DEFAULT '{}',
@@ -44,17 +47,36 @@ CREATE TABLE IF NOT EXISTS public.user_oauth_connections (
     REFERENCES lensers.profiles(id)
     ON DELETE CASCADE,
 
+  CONSTRAINT user_oauth_connections_workspace_fk
+    FOREIGN KEY (workspace_id)
+    REFERENCES tenancy.workspaces(id)
+    ON DELETE CASCADE,
+
   -- Stable ref uniqueness per user: 'google.gmail.primary' is one connection
-  CONSTRAINT user_oauth_connections_ref_unique
-    UNIQUE (lenser_id, ref),
+  CONSTRAINT uoc_unique_ref_per_lenser
+    UNIQUE (lenser_id, workspace_id, ref),
 
   -- Only known providers (extend with new CHECK constraint in future migration)
   CONSTRAINT uoc_provider_check
-    CHECK (provider IN ('google')),
+    CHECK (provider IN (
+      'notion', 'google', 'asana', 'monday', 'zapier', 'slack', 'github',
+      'gitlab', 'jira', 'linear', 'trello', 'airtable', 'hubspot',
+      'salesforce', 'discord', 'microsoft_teams', 'microsoft_outlook',
+      'microsoft_onedrive', 'microsoft_excel', 'dropbox', 'box',
+      'calendly', 'clickup', 'todoist', 'custom_http'
+    )),
 
   -- Only known Google capabilities (additive; extend in future migration)
   CONSTRAINT uoc_capability_check
-    CHECK (capability IN ('gmail', 'drive', 'sheets', 'docs', 'calendar')),
+    CHECK (capability IN (
+      'database', 'page', 'gmail', 'drive', 'sheets', 'docs', 'calendar',
+      'tasks', 'boards', 'webhooks', 'chat', 'repos', 'issues', 'projects',
+      'lists', 'records', 'crm', 'messages', 'channels', 'files', 'events',
+      'http'
+    )),
+
+  CONSTRAINT uoc_auth_strategy_check
+    CHECK (auth_strategy IN ('oauth2', 'api_key', 'webhook', 'none')),
 
   -- Label format: lowercase alphanumeric + hyphen/underscore, 1-48 chars
   CONSTRAINT uoc_label_format
@@ -63,7 +85,7 @@ CREATE TABLE IF NOT EXISTS public.user_oauth_connections (
   -- Ref format: provider.capability.label with max 120 chars
   CONSTRAINT uoc_ref_format
     CHECK (
-      ref ~ '^[a-z]+\.[a-z]+\.[a-z0-9_-]+$'
+      ref ~ '^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*\.[a-z0-9][a-z0-9_-]{0,47}$'
       AND char_length(ref) <= 120
     ),
 
@@ -106,10 +128,15 @@ CREATE INDEX IF NOT EXISTS idx_uoc_lenser_provider
   ON public.user_oauth_connections (lenser_id, provider)
   WHERE is_active = true;
 
+CREATE INDEX IF NOT EXISTS idx_uoc_workspace_lenser_ref_active
+  ON public.user_oauth_connections (workspace_id, lenser_id, ref)
+  WHERE is_active = true AND revoked_at IS NULL;
+
 -- ── Row Level Security ────────────────────────────────────────────────────────
--- All writes go through SECURITY DEFINER RPCs. Authenticated users can only
--- SELECT their own rows (for fn_oauth_list_connections coverage). All writes
--- are done by service_role (execution workers, Edge Functions).
+-- All reads and writes go through SECURITY DEFINER RPCs so browser clients
+-- never receive Vault secret identifiers or raw provider config fields.
+-- All direct table access is reserved for service_role (execution workers,
+-- Edge Functions, and migrations).
 
 ALTER TABLE public.user_oauth_connections ENABLE ROW LEVEL SECURITY;
 
@@ -122,12 +149,11 @@ CREATE POLICY "uoc_owner_select"
     )
   );
 
--- Block direct INSERT/UPDATE/DELETE from authenticated users.
--- All mutations go through fn_oauth_upsert_connection (service_role)
--- or fn_oauth_revoke_connection (SECURITY DEFINER with owner check).
-REVOKE INSERT, UPDATE, DELETE
+-- Block direct table access from browser roles. Safe user-facing reads go
+-- through fn_oauth_list_connections, which returns sanitized metadata only.
+REVOKE ALL
   ON public.user_oauth_connections
-  FROM authenticated;
+  FROM PUBLIC, anon, authenticated;
 
 GRANT SELECT, INSERT, UPDATE, DELETE
   ON public.user_oauth_connections
