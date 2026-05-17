@@ -80,16 +80,16 @@
     }
   ],
   "release": {
-    "projects": [
-      "adapters-connector",
-      "cli"
-    ],
+    "projectsRelationship": "independent",
     "releaseTag": {
       "pattern": "{projectName}@{version}",
       "requireSemver": true
     },
     "git": {
-      "commitMessage": "chore(release): publish {version} [skip ci]"
+      "commitMessage": "chore(release): publish [skip ci]",
+      "stageChanges": true,
+      "commit": false,
+      "tag": false
     },
     "version": {
       "conventionalCommits": true
@@ -97,6 +97,29 @@
     "changelog": {
       "workspaceChangelog": false,
       "projectChangelogs": true
+    },
+    "groups": {
+      "sdk": {
+        "projects": ["sdk"],
+        "version": {
+          "conventionalCommits": true,
+          "fallbackCurrentVersionResolver": "disk"
+        }
+      },
+      "adapters": {
+        "projects": ["adapters-connector"],
+        "version": {
+          "conventionalCommits": true,
+          "fallbackCurrentVersionResolver": "disk"
+        }
+      },
+      "cli": {
+        "projects": ["cli"],
+        "version": {
+          "conventionalCommits": true,
+          "fallbackCurrentVersionResolver": "disk"
+        }
+      }
     }
   },
   "generators": {

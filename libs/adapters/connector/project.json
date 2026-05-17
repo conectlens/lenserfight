@@ -1,0 +1,37 @@
+{
+  "name": "adapters-connector",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/adapters/connector/src",
+  "projectType": "library",
+  "tags": [
+    "layer:infra",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project adapters-connector --web",
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "options": {
+        "configFile": "libs/adapters/connector/vite.config.mts",
+        "outputPath": "dist/libs/adapters/connector"
+      },
+      "outputs": ["{workspaceRoot}/dist/libs/adapters/connector"]
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "npm publish dist/libs/adapters/connector --access public"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "@nx/js:release-publish",
+      "dependsOn": ["build"],
+      "options": {
+        "packageRoot": "dist/libs/adapters/connector",
+        "access": "public"
+      }
+    }
+  }
+}

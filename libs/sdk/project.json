@@ -1,0 +1,40 @@
+{
+  "name": "sdk",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/sdk/src",
+  "projectType": "library",
+  "tags": ["layer:infra", "scope:public", "license:oss"],
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "options": {
+        "configFile": "libs/sdk/vite.config.mts",
+        "outputPath": "dist/libs/sdk"
+      },
+      "outputs": ["{workspaceRoot}/dist/libs/sdk"]
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "configFile": "libs/sdk/vite.config.mts"
+      },
+      "outputs": ["{workspaceRoot}/coverage/libs/sdk"]
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "npm publish dist/libs/sdk --access public --tag alpha"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "@nx/js:release-publish",
+      "dependsOn": ["build"],
+      "options": {
+        "packageRoot": "dist/libs/sdk",
+        "tag": "alpha",
+        "access": "public"
+      }
+    }
+  }
+}
