@@ -7,6 +7,10 @@ description: Three complete Workflow examples for researchers, students, and ana
 
 This page shows three complete Workflows for systematic research work. Each one breaks a messy, open-ended research task into structured, verifiable steps so you can audit the model's reasoning at every stage rather than accepting a single opaque summary.
 
+::: warning Design reference — not yet end-to-end executable
+These examples show Workflow structure and Lens definitions. **Individual `lens`-type nodes are executable now** via `lf lens run` or from the web UI. Multi-node end-to-end Workflow execution (the full DAG runner) is not yet available in the CLI. Use these as design templates and wire individual Lenses yourself until the hosted runner ships.
+:::
+
 ---
 
 ## Workflow 1 — Literature Review Pipeline
