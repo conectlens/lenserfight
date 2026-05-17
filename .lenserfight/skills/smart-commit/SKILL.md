@@ -1,13 +1,13 @@
 ---
 name: smart-commit
-description: Detect staged and unstaged git changes, classify them by type (feat/fix/refactor/docs/chore/test/style/perf), draft a conventional commit message, then ask the user for approval before committing. Use when the user wants to commit their current work, wants help writing a commit message, or says /commit or /smart-commit.
+description: Detect staged and unstaged git changes, classify them by type (feat/fix/refactor/docs/chore/test/style/perf), group into logical commit units, then commit each group separately with user approval. Use when the user wants to commit their current work, wants help writing a commit message, or says /commit or /smart-commit.
 ---
 
 # Smart Commit
 
-Inspect the working tree, classify every change, propose a commit message, and wait for explicit user approval before running `git commit`.
+Inspect the working tree, **classify every change first**, group into logical commits, then handle each commit separately with explicit user approval.
 
-**Never commit without user confirmation.**
+**Never commit without user confirmation. Never lump unrelated changes into one commit.**
 
 ---
 
@@ -25,21 +25,23 @@ git diff --cached --stat
 
 If both staged and unstaged areas are empty, tell the user there is nothing to commit and stop.
 
-### Step 2 — Read the diff content
+### Step 2 — Read the full diff
 
 ```bash
-# Staged changes (will be in next commit)
+# Staged changes
 git diff --cached
 
-# Unstaged changes (not yet staged)
+# Unstaged changes
 git diff
 ```
 
-Skim hunks to understand *what* changed, not just *which* files.
+Skim hunks to understand *what* changed, not just *which* files. Treat both staged and unstaged as candidates — classification covers everything.
 
-### Step 3 — Classify changes
+### Step 3 — Classify ALL changes (REQUIRED FIRST STEP)
 
-Map each file or logical group to one of these conventional-commit types:
+This step is mandatory before any staging or committing decision is made.
+
+Map **every changed file** (staged or unstaged) to a conventional-commit type:
 
 | Type       | When to use |
 |------------|-------------|
@@ -54,22 +56,60 @@ Map each file or logical group to one of these conventional-commit types:
 | `ci`       | CI/CD pipeline changes |
 | `revert`   | Reverts a previous commit |
 
-One commit may cover multiple types; choose the dominant one for the header. List secondary types in the body if significant.
+Output a **classification table** immediately:
 
-Use scope when the change is scoped to a single app/lib (e.g. `feat(auth)`, `fix(api)`, `chore(deps)`).
+| File | Status | Type | Scope | Brief description |
+|------|--------|------|-------|-------------------|
+| `path/to/file.ts` | staged/unstaged | `feat` | `auth` | Added login form |
+| `path/to/other.ts` | unstaged | `chore` | `deps` | Updated lockfile |
 
-### Step 4 — Detect unstaged changes
+Do not proceed to Step 4 until this table is shown to the user.
 
-If there are **unstaged** changes alongside staged ones, flag them explicitly:
+### Step 4 — Group into logical commit units
 
-> ⚠️ The following files have unstaged changes that will **not** be included:
-> - `path/to/file.ts` — [brief reason]
+Based on the classification, propose separate commits for each distinct type/scope cluster. **Do not merge unrelated types into one commit.**
+
+Rules for grouping:
+- Same type + same scope → one commit candidate
+- Different types → separate commits
+- Unrelated features in the same type → separate commits (use judgment)
+- A single large feat that also touches tests → two commits (`feat` + `test`) unless trivially inseparable
+- Purely mechanical changes (style, chore, docs) should never be bundled with feat/fix
+
+Present the proposed grouping:
+
+> **Proposed commit plan (N commits):**
 >
-> Do you want to stage them too, or commit only the staged portion?
+> **Commit 1** — `feat(auth)`: login form + validation
+> Files: `src/auth/LoginForm.tsx`, `src/auth/validators.ts`
+>
+> **Commit 2** — `test(auth)`: add login form tests
+> Files: `src/auth/LoginForm.test.tsx`
+>
+> **Commit 3** — `chore(deps)`: update lockfile
+> Files: `pnpm-lock.yaml`
 
-Wait for the user's answer before continuing.
+Ask the user:
 
-### Step 5 — Draft the commit message
+> Does this grouping look right? Reply **yes** to proceed group by group, **regroup \<instructions\>** to adjust, or **cancel** to abort.
+
+Wait for confirmation before continuing.
+
+### Step 5 — Handle each commit group, one at a time
+
+For each proposed commit group (in order):
+
+#### 5a — Stage the files for this group
+
+Stage only the files belonging to this group:
+
+```bash
+git add path/to/file1 path/to/file2
+```
+
+Never use `git add -A` or `git add .` unless the user explicitly requests it for a specific group.
+
+#### 5b — Draft the commit message
 
 Format: Conventional Commits v1.0
 
@@ -87,38 +127,52 @@ Rules:
 - Breaking change: add `BREAKING CHANGE:` footer or `!` after type
 - Co-author line added automatically on user approval
 
-### Step 6 — Present and ask for confirmation
+#### 5c — Present and ask for confirmation
 
 Show the user:
 
-1. **Change summary table** — file, type, brief description
+1. **Files being staged** for this commit
 2. **Proposed commit message** (in a code block)
-3. **Explicit question** — one of:
+3. **Progress indicator** — e.g., "Commit 1 of 3"
+4. **Explicit question:**
 
-> Shall I commit these changes with the message above?
-> Reply **yes** to proceed, **edit** to change the message, **stage-all** to also stage unstaged files first, or **cancel** to abort.
+> Shall I commit group 1/3 with this message?
+> Reply **yes** to commit, **edit \<new message\>** to change the message, **skip** to skip this group, or **cancel** to abort all remaining commits.
 
-### Step 7 — Act on the user's reply
+#### 5d — Act on the user's reply
 
 | Reply | Action |
 |-------|--------|
-| `yes` / `y` | Run `git commit -m "..."` with the approved message + Co-Authored-By footer |
-| `edit <new message>` | Use the provided message instead, then ask once more |
-| `stage-all` | Run `git add -A`, then return to Step 5 with refreshed diff |
-| `stage <file>` | Run `git add <file>`, then return to Step 5 |
-| `cancel` / `no` | Abort — do not commit anything |
+| `yes` / `y` | Run `git commit -m "..."` with approved message + Co-Authored-By footer |
+| `edit <new message>` | Use provided message instead, ask once more |
+| `skip` | Skip this group, move to next |
+| `cancel` / `no` | Abort all remaining commits, leave working tree as-is |
 
-After a successful commit, show the short SHA and the first line of the commit message.
+After each successful commit, show the short SHA and commit summary, then move to the next group.
+
+### Step 6 — Final summary
+
+After all groups are processed, show a summary:
+
+> **Done. N commits created:**
+> - `abc1234` feat(auth): add login form
+> - `def5678` test(auth): add login form tests
+> - `ghi9012` chore(deps): update lockfile
+>
+> M file(s) still have unstaged changes: [list if any]
 
 ---
 
 ## Constraints
 
+- **Classification (Step 3) is always the first substantive action.** Never stage or commit before classifying.
+- **Never merge unrelated types into one commit.** If in doubt, split.
 - **Never skip the confirmation step.** Not even when the change looks trivial.
 - Never use `--no-verify`. If a hook fails, report the error and ask the user how to proceed.
 - Never force-push or amend a published commit.
 - Never commit files that look like secrets (`.env`, credentials, private keys). Warn and exclude them.
-- Prefer staging specific files by name over `git add -A` unless the user explicitly asks.
+- Stage specific files by name — never `git add -A` unless the user explicitly requests it for a group.
+- If the user has already staged some files, include them in the classification and respect existing staging in the grouping proposal.
 
 ---
 
