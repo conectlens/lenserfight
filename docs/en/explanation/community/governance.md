@@ -34,6 +34,12 @@ RFCs must remain open for a minimum of 48 hours and receive approval from at lea
 
 LenserFight Community Edition is licensed under the **Apache License, Version 2.0**. Contributors may fork, modify, redistribute, and use the code—including in commercial software—subject to Apache-2.0 notice requirements. The **LenserFight** name and logos are governed separately; see [Brand guidelines](/en/explanation/community/brand-guidelines) and [License](/en/explanation/community/license).
 
+## Contributor expectations
+
+Open-source contributions are voluntary. Contributing does not create employment, payment rights, ownership, or governance authority.
+Maintainers are responsible for final merge and release decisions based on technical quality, security, long-term maintainability, and project direction.
+Any paid collaboration or commercial engagement requires a separate written agreement with the maintainers.
+
 ## Release Authority
 
 - **Core maintainers** tag versioned releases (`vX.Y.Z`) and push to the registry.
