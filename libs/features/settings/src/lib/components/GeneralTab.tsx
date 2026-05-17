@@ -26,9 +26,23 @@ export const GeneralTab: React.FC = () => {
     staleTime: Infinity,
   })
 
+  const LOCAL_PREFS_KEY = 'lenserfight:preferences'
+
   const { data: preferences } = useQuery<LenserPreferences | null>({
     queryKey: ['preferences'],
-    queryFn: () => preferencesService.getPreferences(),
+    queryFn: async () => {
+      try {
+        const remote = await preferencesService.getPreferences()
+        if (remote) return remote
+      } catch {
+        // ignore — fall through to localStorage
+      }
+      const raw = localStorage.getItem(LOCAL_PREFS_KEY)
+      if (raw) {
+        try { return JSON.parse(raw) as LenserPreferences } catch { /* ignore */ }
+      }
+      return null
+    },
     staleTime: 1000 * 60 * 5,
   })
 
@@ -72,6 +86,19 @@ export const GeneralTab: React.FC = () => {
     setHideActions(currentHideActions)
   }
 
+  const applyAndPersistLocally = async () => {
+    const prefs = { language, theme, content_visibility: contentVisibility, email_digest: emailDigest, hide_actions: hideActions }
+    localStorage.setItem(LOCAL_PREFS_KEY, JSON.stringify(prefs))
+    if (language !== currentLanguage) {
+      await i18n.changeLanguage(language)
+      document.documentElement.lang = language
+    }
+    if (theme !== currentTheme) {
+      applyTheme(theme)
+    }
+    await queryClient.invalidateQueries({ queryKey: ['preferences'] })
+  }
+
   const handleSave = async () => {
     setIsSaving(true)
     try {
@@ -91,8 +118,15 @@ export const GeneralTab: React.FC = () => {
       }
       await queryClient.invalidateQueries({ queryKey: ['preferences'] })
     } catch (e) {
-      console.error('Failed to save general preferences', e)
-      alert('Failed to save preferences.')
+      const isNoProfile =
+        (e as any)?.code === 'P0001' ||
+        (e as any)?.message?.includes('Profile not found')
+      if (isNoProfile) {
+        await applyAndPersistLocally()
+      } else {
+        console.error('Failed to save general preferences', e)
+        alert('Failed to save preferences.')
+      }
     } finally {
       setIsSaving(false)
     }
