@@ -1,0 +1,13 @@
+{
+  "name": "domain-spec-governance",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/spec-governance/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:spec-governance",
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {}
+}
