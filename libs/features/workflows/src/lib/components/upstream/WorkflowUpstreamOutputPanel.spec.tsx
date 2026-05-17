@@ -130,12 +130,12 @@ describe('WorkflowUpstreamOutputPanel', () => {
     // Field name 'score' is unique (type badge shows 'number')
     expect(screen.getByText('score')).toBeDefined()
 
-    // Click to collapse
-    fireEvent.click(screen.getByRole('button'))
+    // Click the collapse toggle (has aria-expanded)
+    fireEvent.click(screen.getByRole('button', { expanded: true }))
     expect(screen.queryByText('score')).toBeNull()
 
     // Click to expand again
-    fireEvent.click(screen.getByRole('button'))
+    fireEvent.click(screen.getByRole('button', { expanded: false }))
     expect(screen.getByText('score')).toBeDefined()
   })
 
