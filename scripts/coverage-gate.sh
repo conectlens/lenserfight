@@ -61,9 +61,9 @@ RPC_FAIL=0
 # Search test files across the three surfaces that can claim coverage:
 #   - supabase/tests           pgTAP RLS / lifecycle / RPC behavior tests
 #   - libs/data/repositories   repository-layer integration tests
-#   - apps/platform-api/src    worker-layer Jest tests that consume RPCs
+#   - apps/worker/src          worker-layer Jest tests that consume RPCs
 for rpc in "${CRITICAL_RPCS[@]}"; do
-  hits=$(grep -rE "\\b${rpc}\\b" supabase/tests/ libs/data/repositories/src/ apps/platform-api/src/ 2>/dev/null | wc -l || true)
+  hits=$(grep -rE "\\b${rpc}\\b" supabase/tests/ libs/data/repositories/src/ apps/worker/src/ 2>/dev/null | wc -l || true)
   if [[ "$hits" -eq 0 ]]; then
     printf '  ✗ %-40s  no test references\n' "$rpc"
     RPC_FAIL=1
