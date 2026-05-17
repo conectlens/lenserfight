@@ -8,8 +8,8 @@
  * Large values are truncated at 200 chars. Sensitive fields show a mask
  * instead of the value and are not copyable.
  */
-import React, { useState } from 'react'
-import { GripVertical } from 'lucide-react'
+import { Check, Copy, GripVertical } from 'lucide-react'
+import React, { useCallback, useState } from 'react'
 
 import type { WorkflowNodeIOType } from '@lenserfight/infra/execution'
 
@@ -33,7 +33,16 @@ export function WorkflowOutputFieldRow({
   sensitive,
 }: WorkflowOutputFieldRowProps) {
   const [isDragging, setIsDragging] = useState(false)
+  const [copied, setCopied] = useState(false)
   const expression = `[[${nodeId}.${fieldName}]]`
+
+  const handleCopyRef = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(expression).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }, [expression])
 
   const hasValue = liveValue !== undefined && liveValue !== null
   const displayValue = hasValue ? formatValue(liveValue, sensitive) : null
@@ -68,12 +77,27 @@ export function WorkflowOutputFieldRow({
       />
 
       <div className="flex-1 min-w-0">
-        {/* Field name + type badge */}
+        {/* Field name + type badge + copy button */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] font-medium text-greyscale-800 dark:text-greyscale-100 font-mono truncate">
             {fieldName}
           </span>
           <TypeBadge type={fieldType} />
+          {!sensitive && (
+            <button
+              type="button"
+              onClick={handleCopyRef}
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-surface-raised"
+              title={`Copy ${expression}`}
+              aria-label={`Copy reference ${expression}`}
+            >
+              {copied ? (
+                <Check size={10} className="text-emerald-500" />
+              ) : (
+                <Copy size={10} className="text-greyscale-400" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Live value or schema description */}
