@@ -60,10 +60,29 @@ export const slackNotifyDescriptor: RunnerConfigDescriptor = {
   category: 'communication',
   fields: [
     {
+      key: 'connectorRef',
+      label: 'Slack Connection',
+      type: 'connector_ref',
+      connectorProvider: 'slack',
+      connectorCapability: 'chat',
+      tooltip: {
+        summary: 'The Slack connection to use for chat.postMessage. If omitted, webhookUrl is used.',
+      },
+    },
+    {
+      key: 'channelId',
+      label: 'Channel ID',
+      type: 'text',
+      placeholder: 'C0123456789',
+      tooltip: {
+        summary: 'Slack channel ID used when sending through a Slack connection.',
+      },
+    },
+    {
       key: 'webhookUrl',
       label: 'Webhook URL',
       type: 'text',
-      required: true,
+      required: false,
       placeholder: 'https://hooks.slack.com/services/...',
       tooltip: {
         summary: 'The Slack incoming webhook URL to post messages to.',
