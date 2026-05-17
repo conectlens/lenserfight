@@ -36,7 +36,7 @@ export interface LiveBattleCardProps {
   contenderBType?: ContenderType | null
 }
 
-const MotionLink = motion(Link)
+const MotionLink = motion.create(Link)
 
 export function LiveBattleCard({
   slug,
