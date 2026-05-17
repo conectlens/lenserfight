@@ -7,4 +7,7 @@ export type {
   RunnerConfigCategory,
   RunnerConfigDescriptor,
   RunnerConfigFormProps,
+  SchemaFieldType,
+  SchemaFieldEntry,
+  RunnerFieldTooltip,
 } from './workflow-node.types'

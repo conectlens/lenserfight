@@ -157,6 +157,9 @@ export type RunnerConfigFieldType =
   | 'json'
   | 'code'
   | 'datetime'
+  | 'schema_builder'
+  | 'string_array'
+  | 'key_value'
 
 export interface RunnerConfigFieldDescriptor {
   /** Key in param_overrides (without __ prefix — the system adds it) */
@@ -167,6 +170,11 @@ export interface RunnerConfigFieldDescriptor {
   required?: boolean
   placeholder?: string
   hint?: string
+  /**
+   * Extended tooltip content — node-aware, field-aware help.
+   * Shown in a tooltip trigger next to the label.
+   */
+  tooltip?: RunnerFieldTooltip
   /** For 'number' type */
   min?: number
   max?: number
@@ -176,8 +184,61 @@ export interface RunnerConfigFieldDescriptor {
   /** For 'textarea'/'code' type */
   rows?: number
   mono?: boolean
+  /**
+   * For 'schema_builder' type — allowed field types in the builder.
+   * If omitted, all standard types are available.
+   */
+  allowedSchemaTypes?: SchemaFieldType[]
   /** Validation function — returns error string or null */
   validate?: (value: string, allValues: Record<string, string>) => string | null
+}
+
+// ── Schema Builder Types ───────────────────────────────────────────────────
+
+/** Supported types for schema builder fields */
+export type SchemaFieldType =
+  | 'text'
+  | 'long_text'
+  | 'number'
+  | 'boolean'
+  | 'select'
+  | 'multi_select'
+  | 'json'
+  | 'array'
+  | 'file'
+  | 'image'
+  | 'audio'
+  | 'video'
+  | 'url'
+  | 'datetime'
+
+/** A single field entry in the schema builder */
+export interface SchemaFieldEntry {
+  id: string
+  name: string
+  type: SchemaFieldType
+  required: boolean
+  defaultValue: string
+  description: string
+  example: string
+  /** For 'select'/'multi_select' — pipe-delimited options */
+  options?: string
+}
+
+// ── Tooltip Metadata ───────────────────────────────────────────────────────
+
+/** Extended tooltip metadata for a field */
+export interface RunnerFieldTooltip {
+  /** Short summary of what the field does */
+  summary: string
+  /** When this field is required or important */
+  whenRequired?: string
+  /** Expected value format or valid inputs */
+  format?: string
+  /** Common mistakes users make */
+  commonMistakes?: string
+  /** How this field affects execution behavior */
+  executionImpact?: string
 }
 
 export interface RunnerOutputField {

@@ -55,7 +55,27 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const { lenser } = useLenser()
-  const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
+  const { workflow, nodes: bootstrapNodes, edges: bootstrapEdges, isLoading } = useWorkflow(workflowId)
+
+  // Live node/edge state: the canvas writes its saves back to these cache keys
+  // via queryClient.setQueryData. Subscribing here ensures execution and the
+  // progress view always see the current canvas state, not the stale bootstrap
+  // snapshot captured at page load.
+  const { data: liveNodes } = useQuery<typeof bootstrapNodes>({
+    queryKey: queryKeys.workflows.nodes(workflowId),
+    queryFn: () => Promise.resolve([] as typeof bootstrapNodes),
+    staleTime: Infinity,
+    enabled: false, // Never auto-fetch — the canvas owns this cache via setQueryData
+  })
+  const { data: liveEdges } = useQuery<typeof bootstrapEdges>({
+    queryKey: queryKeys.workflows.edges(workflowId),
+    queryFn: () => Promise.resolve([] as typeof bootstrapEdges),
+    staleTime: Infinity,
+    enabled: false, // Never auto-fetch — the canvas owns this cache via setQueryData
+  })
+
+  const nodes = liveNodes ?? bootstrapNodes
+  const edges = liveEdges ?? bootstrapEdges
   const { models, isLoading: modelsLoading } = useAIModels()
   const [showRunPanel, setShowRunPanel] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -781,6 +801,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                 onConfigNode={handleConfigNode}
                 onEditLens={handleEditLens}
                 onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
+
                 nodeResults={activeNodeResults}
               />
             </>

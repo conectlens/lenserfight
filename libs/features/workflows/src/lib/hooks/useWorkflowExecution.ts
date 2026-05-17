@@ -12,6 +12,7 @@ import {
 import { createWorkflowModerationGateway } from '@lenserfight/infra/moderation'
 import { byokKeyResolver, callProvider } from '@lenserfight/providers'
 import { mapEngineEventToSse, WorkflowEventType } from '@lenserfight/types'
+import { generateUUID } from '@lenserfight/utils/text'
 import { useCallback, useRef } from 'react'
 
 import {
@@ -539,7 +540,7 @@ export function useWorkflowExecution({
       const controller = new AbortController()
       dryRunAbortRef.current = controller
 
-      const ephemeralRunId = crypto.randomUUID()
+      const ephemeralRunId = generateUUID()
 
       // Save and replace side-effect runners with mocks
       const originals = new Map<string, ReturnType<typeof getNodeRunner>>()
