@@ -16,7 +16,7 @@ Install the CLI:
 ::: code-group
 
 ```bash [npm]
-npm install -g lenserfight
+npm install -g @lenserfight/cli
 ```
 
 ```bash [Local (monorepo)]

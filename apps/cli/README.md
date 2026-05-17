@@ -24,13 +24,13 @@ Built on [citty](https://github.com/unjs/citty) and [consola](https://github.com
 ## Installation
 
 ```bash
-npm install -g lenserfight
+npm install -g @lenserfight/cli
 lenserfight --version
 
-npx lenserfight --help
+npx @lenserfight/cli --help
 npx lf --version
 
-npm install --save-dev lenserfight
+npm install --save-dev @lenserfight/cli
 ```
 
 The package supports global installs, `npx`/`npm exec`, local project installs,
