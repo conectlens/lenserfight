@@ -1,10 +1,9 @@
-import { validateInputs, validateOutput } from './contract-validator'
-import { detectCycle as validatorDetectCycle, PlaceholderUnboundError } from './validator'
 import { shouldHaltScheduling, type BudgetSnapshot } from './budget-reconciler'
+import { validateInputs, validateOutput } from './contract-validator'
 import { inferAttachmentsFromRendered } from './execution-attachments'
 import { resolveMappedOutputValue } from './output-path'
 import { getNodeRunner } from './runners/node-runner.registry'
-import type { NodeRunnerContext } from './runners/node-runner.interface'
+import { detectCycle as validatorDetectCycle, PlaceholderUnboundError } from './validator'
 
 import type {
   ExecutionInput,
@@ -17,6 +16,8 @@ import type {
   PartialOutputSink,
   WorkflowNodeType,
 } from './execution.types'
+import type { PinnedOutputStore } from './pinned-output'
+import type { NodeRunnerContext } from './runners/node-runner.interface'
 import type {
   LensInputContract,
   LensOutputContract,
@@ -342,6 +343,14 @@ export interface WorkflowExecutionContext {
    * this should always return null (credentials never leave server).
    */
   resolveConnector?: (slug: string, scopes?: string[]) => Promise<string | null>
+  /**
+   * Pinned output store for development/dry-run. When a node has a pinned
+   * output AND `isDevExecution` is true, the engine short-circuits execution
+   * and uses the pinned data.
+   */
+  pinnedOutputs?: PinnedOutputStore
+  /** When true, enables dev-mode behaviors: pinned data, side-effect mocking. */
+  isDevExecution?: boolean
 }
 
 export interface MemoryFlushSink {
@@ -815,6 +824,18 @@ export class WorkflowExecutionService {
               })
               return
             }
+          }
+
+          // ── Pinned output short-circuit (dev/dry-run only) ─────────��────
+          if (ctx.isDevExecution && ctx.pinnedOutputs?.get(nodeId)) {
+            const pinned = ctx.pinnedOutputs.get(nodeId)!
+            const envelope = toEnvelope(pinned.output, contracts.output)
+            const outputData = { ...envelopeToOutputData(envelope), ...(pinned.output.data ?? {}) }
+            const result: NodeResult = { nodeId, status: 'completed', envelope, outputData, attempts: 0 }
+            results.set(nodeId, result)
+            await ctx.onNodeStatusChange(nodeId, result)
+            await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_completed', metadata: { pinned: true } })
+            return
           }
 
           // ── CN: Node Runner dispatch — utility nodes bypass the provider pipeline ──
