@@ -8,8 +8,11 @@
 
 // ─── Battle Format ───────────────────────────────────────────────────────────
 // Step 0 of the creation wizard — determines the overall execution model.
+// @deprecated — Use TaskSource from './task-source.types' instead.
+// Kept for backward compatibility with existing consumers.
 
 export const BATTLE_FORMATS = ['workflow', 'lens', 'lenser_battle'] as const
+/** @deprecated Use `TaskSource` from `task-source.types` instead. */
 export type BattleFormat = (typeof BATTLE_FORMATS)[number]
 
 // ─── Battle Type ─────────────────────────────────────────────────────────────

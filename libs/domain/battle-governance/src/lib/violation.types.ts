@@ -14,6 +14,11 @@ export type BattleViolationCode =
   | 'LENS_PARAMS_INCOMPLETE'
   | 'LENSER_POLICY_INVALID'
   | 'CONTENDER_CAPABILITY_MISMATCH'
+  // V2 violation codes (concept separation refactor)
+  | 'TASK_SOURCE_CONTENDER_INCOMPATIBLE'
+  | 'CONTENDER_JUDGING_INCOMPATIBLE'
+  | 'CHALLENGE_TYPE_INVALID'
+  | 'CHALLENGE_TYPE_CONTENDER_INCOMPATIBLE'
 
 export type BattleViolationSeverity = 'error' | 'warning'
 
