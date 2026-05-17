@@ -2096,6 +2096,7 @@ export default defineConfig({
             { text: 'Battle Guides', link: '/en/how-to/battles/create-a-battle' },
             { text: 'Agents & AI Lensers', link: '/en/how-to/agents/manage-agent-settings' },
             { text: 'Operations', link: '/en/how-to/operations/cli-dashboard' },
+            { text: 'Developer Guides', link: '/en/how-to/dev/update-your-installation' },
             { text: 'Contributors & Maintainers', link: '/en/how-to/contributors/contributing' },
           ],
         },
@@ -2237,6 +2238,18 @@ export default defineConfig({
         },
       ],
 
+      '/en/how-to/dev/': [
+        {
+          text: 'Developer Guides',
+          items: [
+            {
+              text: 'Update your installation',
+              link: '/en/how-to/dev/update-your-installation',
+            },
+            { text: 'Battle Dev Cycle', link: '/en/how-to/dev/battle-dev-cycle' },
+          ],
+        },
+      ],
       // ── Reference ──────────────────────────────────────────────────────────
       '/en/reference/': EN_REFERENCE_SIDEBAR,
       '/en/rfcs/': [
@@ -2344,6 +2357,7 @@ export default defineConfig({
             { text: 'Runtime Telemetry (lf top)', link: '/en/reference/cli/top' },
             { text: 'Doctor & Health Checks', link: '/en/reference/cli/doctor' },
             { text: 'Status', link: '/en/reference/cli/status' },
+            { text: 'Update (lf update)', link: '/en/reference/cli/update' },
           ],
         },
         {
