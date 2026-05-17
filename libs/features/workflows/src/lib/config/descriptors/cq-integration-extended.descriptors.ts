@@ -68,6 +68,17 @@ export const githubIssueCreateDescriptor: RunnerConfigDescriptor = {
   category: 'integration',
   fields: [
     {
+      key: 'connectorRef',
+      label: 'GitHub Connection',
+      type: 'connector_ref',
+      required: true,
+      connectorProvider: 'github',
+      connectorCapability: 'repos',
+      tooltip: {
+        summary: 'The GitHub connection to use for issue creation.',
+      },
+    },
+    {
       key: 'repo',
       label: 'Repository',
       type: 'text',
@@ -129,6 +140,17 @@ export const notionWriteDescriptor: RunnerConfigDescriptor = {
   displayName: 'Notion Write',
   category: 'integration',
   fields: [
+    {
+      key: 'connectorRef',
+      label: 'Notion Connection',
+      type: 'connector_ref',
+      required: true,
+      connectorProvider: 'notion',
+      connectorCapability: 'database',
+      tooltip: {
+        summary: 'The Notion connection to use for page creation.',
+      },
+    },
     {
       key: 'databaseId',
       label: 'Database ID',
@@ -271,6 +293,17 @@ export const linearIssueCreateDescriptor: RunnerConfigDescriptor = {
   category: 'integration',
   fields: [
     {
+      key: 'connectorRef',
+      label: 'Linear Connection',
+      type: 'connector_ref',
+      required: true,
+      connectorProvider: 'linear',
+      connectorCapability: 'issues',
+      tooltip: {
+        summary: 'The Linear connection to use for issue creation.',
+      },
+    },
+    {
       key: 'teamId',
       label: 'Team ID',
       type: 'text',
@@ -334,6 +367,17 @@ export const jiraIssueCreateDescriptor: RunnerConfigDescriptor = {
   displayName: 'Jira Issue Create',
   category: 'integration',
   fields: [
+    {
+      key: 'connectorRef',
+      label: 'Jira Connection',
+      type: 'connector_ref',
+      required: true,
+      connectorProvider: 'jira',
+      connectorCapability: 'issues',
+      tooltip: {
+        summary: 'The Jira connection to use for issue creation.',
+      },
+    },
     {
       key: 'projectKey',
       label: 'Project Key',
