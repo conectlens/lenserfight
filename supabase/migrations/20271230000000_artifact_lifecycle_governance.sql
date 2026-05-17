@@ -418,7 +418,7 @@ BEGIN
     FROM battles.battles
     WHERE id = p_artifact_id AND status <> 'draft'::battles.battle_status_enum;
     v_counts := v_counts || jsonb_build_object('started_or_public_state', v_count);
-    IF v_count > 0 THEN v_total := v_total + v_count; v_reasons := v_reasons || 'battle has started or been published'; END IF;
+    IF v_count > 0 THEN v_total := v_total + v_count; v_reasons := v_reasons || 'battle has started or been published'::text; END IF;
 
   ELSIF v_type IN ('agent', 'ai_lenser', 'ai_lenser_id', 'lenser') THEN
     SELECT count(*)::int INTO v_count FROM battles.contender_entity_map WHERE ai_lenser_id = p_artifact_id;

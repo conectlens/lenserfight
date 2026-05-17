@@ -188,8 +188,8 @@ BEGIN
     VALUES (
       v_ver_dna_gen, v_lens_dna_gen, 1,
       'You are the Lenser DNA Spec Generator. '
-      'The user wants to create a new Lenser character named or described as [[:' || v_p_dg_concept || ']] '
-      'with the emotional role of [[:' || v_p_dg_role || ']]. '
+      'The user wants to create a new Lenser character named or described as [[concept]] '
+      'with the emotional role of [[emotional_role]]. '
       'Output a valid lenser.json variant block (JSON only, no markdown wrapper) that: '
       '(1) sets "inherits_from": "lenser.json", "status": "proposed"; '
       '(2) defines body_modifications including height_cm, body_shape, antenna_tip, and lens_frame; '
@@ -236,7 +236,7 @@ BEGIN
     VALUES (
       v_ver_dna_val, v_lens_dna_val, 1,
       'You are the Lenser DNA Validator. '
-      'Review the following Lenser variant JSON: [[:' || v_p_dv_json || ']]. '
+      'Review the following Lenser variant JSON: [[variant_json]]. '
       'Check all rules from the lenser.json spec: '
       '(1) Name starts with L or C, max 8 characters; '
       '(2) No additional eyes or optical elements are defined (visual_rule); '
@@ -281,8 +281,8 @@ BEGIN
     VALUES (
       v_ver_concept, v_lens_concept, 1,
       'You are the Lenser Concept Brief generator. '
-      'The designer has this one-line character idea: [[:' || v_p_cb_idea || ']]. '
-      'It may be used by the ecosystem: [[:' || v_p_cb_ecosystem || ']]. '
+      'The designer has this one-line character idea: [[character_idea]]. '
+      'It may be used by the ecosystem: [[ecosystem]]. '
       'Expand this into a structured creative brief with these sections: '
       '(1) Character Name (must start with L or C, max 8 chars); '
       '(2) Emotional Role — a short phrase describing the character''s primary function; '
@@ -329,8 +329,8 @@ BEGIN
     VALUES (
       v_ver_storyboard, v_lens_storyboard, 1,
       'You are the Lenser Animation Storyboard generator. '
-      'Character: [[:' || v_p_sb_character || ']]. '
-      'Action or emotion to animate: [[:' || v_p_sb_action || ']]. '
+      'Character: [[character]]. '
+      'Action or emotion to animate: [[action]]. '
       'Produce a frame-by-frame storyboard for a short looping GIF animation (6–12 frames at 24fps). '
       'For each frame provide: Frame number, Duration (ms), Pose description, Lens-eye expression, Core glow intensity (%), Antenna tip state. '
       'Use the character DNA constraints: one central eye-lens, yellow body #ffde59, no additional optical elements. '
@@ -371,8 +371,8 @@ BEGIN
     VALUES (
       v_ver_logo, v_lens_logo, 1,
       'You are the Lenser Logo Brief generator. '
-      'Brand or product: [[:' || v_p_lb_brand || ']]. '
-      'Featured Lenser character (optional): [[:' || v_p_lb_character || ']]. '
+      'Brand or product: [[brand]]. '
+      'Featured Lenser character (optional): [[character]]. '
       'Generate a design brief for a logo. Include: '
       '(1) Logo concept — primary and secondary concept options (2 sentences each); '
       '(2) Color palette — hex values with roles (primary, secondary, accent) derived from the Lenser DNA palette (#ffde59, #213f74, character core_color if specified); '
