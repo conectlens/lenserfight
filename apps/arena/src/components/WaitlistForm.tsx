@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { ArrowRight, CheckCircle, Loader2 } from 'lucide-react'
 import { chainabitUrl } from '@lenserfight/utils/env'
 import { Trans, useTranslation } from 'react-i18next'
+import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
 const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
 
@@ -114,6 +115,18 @@ export const WaitlistForm: React.FC<WaitlistFormProps> = ({ className = '' }) =>
                 href="https://chainabit.com"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="underline hover:text-greyscale-600 dark:hover:text-greyscale-300"
+              />
+            ),
+            termsLink: (
+              <Link
+                to="/policies/terms"
+                className="underline hover:text-greyscale-600 dark:hover:text-greyscale-300"
+              />
+            ),
+            privacyLink: (
+              <Link
+                to="/policies/privacy"
                 className="underline hover:text-greyscale-600 dark:hover:text-greyscale-300"
               />
             ),
