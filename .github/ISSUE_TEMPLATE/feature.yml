@@ -5,6 +5,11 @@ labels:
   - enhancement
   - needs-triage
 body:
+  - type: markdown
+    attributes:
+      value: |
+        **Title format:** `[FEATURE][apps/web] Short description`
+        Use the area prefix matching your selection below: `[apps/web]`, `[apps/cli]`, `[apps/mobile]`, `[libs/ui]`, `[supabase]`, `[connector]`, etc.
   - type: dropdown
     id: area
     attributes:
