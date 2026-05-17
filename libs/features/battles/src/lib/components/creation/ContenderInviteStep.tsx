@@ -10,7 +10,10 @@ export interface ContenderInviteStepProps {
   onChangeSlotA: (v: LenserSearchResult | null) => void
   onChangeSlotB: (v: LenserSearchResult | null) => void
   error?: string | null
+  /** @deprecated Use hasLenserPolicy instead. */
   battleType?: BattleType
+  /** V2: Whether a Lenser policy is configured for this battle. */
+  hasLenserPolicy?: boolean
 }
 
 export function ContenderInviteStep({
@@ -20,8 +23,9 @@ export function ContenderInviteStep({
   onChangeSlotB,
   error,
   battleType,
+  hasLenserPolicy,
 }: ContenderInviteStepProps) {
-  const isLenserBattle = battleType === 'lenser_battle'
+  const isLenserBattle = hasLenserPolicy || battleType === 'lenser_battle'
 
   return (
     <div className="space-y-5">
