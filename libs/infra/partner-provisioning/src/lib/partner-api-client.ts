@@ -33,6 +33,11 @@ function generateCodeVerifier(): string {
 }
 
 async function deriveCodeChallenge(verifier: string): Promise<string> {
+  if (!crypto.subtle) {
+    throw new Error(
+      'Chainabit OAuth requires a secure context (HTTPS). This page must be served over HTTPS to use Chainabit sign-in.',
+    )
+  }
   const encoded = new TextEncoder().encode(verifier)
   const digest = await crypto.subtle.digest('SHA-256', encoded)
   return btoa(String.fromCharCode(...new Uint8Array(digest)))
