@@ -4,7 +4,7 @@ import { scheduleLoop } from './loops'
 import { evaluatePreconditions, preconditionsAllPass } from './preconditions'
 import { createGatewayPreconditionProbes } from './probes'
 import { startServer } from './server'
-import { dispatchCommand, pullCommands } from './sync'
+import { dispatchCommand, outboxFlush, pullCommands } from './sync'
 import { resolveTailscaleConsent } from './tailscale'
 
 /**
@@ -118,7 +118,15 @@ async function main(): Promise<void> {
   if (!config.keysOnly) {
     heartbeat = scheduleLoop('heartbeat', config.heartbeatIntervalMs, fireHeartbeat)
     outbox = scheduleLoop('outbox', config.outboxFlushIntervalMs, async () => {
-      // Flush sync_outbox via gatewaySyncRepository.push.
+      if (!cloudConfigured || !identity) return
+      await outboxFlush({
+        config,
+        deviceId:  identity.device_id,
+        publicKey: identity.public_key,
+        supabaseUrl,
+        anonKey: supabaseAnonKey,
+        takeBatch: () => [], // SyncEngine not yet instantiated; empty queue = no-op
+      })
     })
     pull = scheduleLoop('sync', config.pullIntervalMs, async () => {
       if (!cloudConfigured || !identity) return
