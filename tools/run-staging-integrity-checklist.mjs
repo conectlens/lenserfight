@@ -4,7 +4,7 @@
  *
  * Runs every check enumerated in
  * docs/how-to/battles/battle-integrity-checklist.md "Phase O staging gate"
- * against a hosted staging Supabase + platform-api and emits a JSON report.
+ * against a hosted staging Supabase + worker and emits a JSON report.
  *
  * The maintainer's role narrows from "execute the checks" to "review the
  * evidence and merge the sign-off PR".
@@ -74,7 +74,7 @@ async function check_K4_health() {
 
 async function check_J1_rate_limit() {
   // Fire 6 fn_battles_create calls with the test user's token; expect the 6th to 429.
-  // The platform-api enforces this, not Supabase RPC directly. Hit POST /v1/battles.
+  // Rate limit enforced by Supabase RPC. STAGING_PLATFORM_API_URL used as base for legacy checks.
   const url = `${env.STAGING_PLATFORM_API_URL.replace(/\/$/, '')}/v1/battles`
   let lastStatus = 0
   for (let i = 0; i < 6; i++) {
