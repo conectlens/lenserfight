@@ -6,7 +6,7 @@ import { AnalyticsProvider, RouteTracker } from '@lenserfight/infra/analytics'
 import { usePartnerProvisioning } from '@lenserfight/features/onboarding'
 import { useNotificationToast } from '@lenserfight/features/notifications'
 import { ErrorProvider, ErrorClearer } from '@lenserfight/shared/error'
-import { AppToaster } from '@lenserfight/ui/components'
+import { AppToaster, UpdateBanner } from '@lenserfight/ui/components'
 import { ModalQueryDriven } from '@lenserfight/ui/routing'
 import { ThemeProvider } from '@lenserfight/ui/theme'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -16,6 +16,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import { BrowserRouter } from 'react-router-dom'
 
 import { LocaleProviderBridge } from './locale/LocaleProviderBridge'
+import { useAppUpdate } from './update/useAppUpdate'
 import { WebRouter } from './WebRouter'
 
 const LazyAgentManageWizard = lazy(() =>
@@ -32,6 +33,11 @@ function NotificationToastBootstrap() {
   return null
 }
 
+function AppUpdateBanner() {
+  const update = useAppUpdate()
+  return <UpdateBanner {...update} />
+}
+
 const App: React.FC = () => {
   return (
     <HelmetProvider>
@@ -39,6 +45,7 @@ const App: React.FC = () => {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <ThemeProvider>
+              <AppUpdateBanner />
               <SessionBoundary>
                 <LenserProvider>
                   <LocaleProviderBridge>

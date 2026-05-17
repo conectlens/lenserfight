@@ -1,0 +1,14 @@
+{
+  "name": "update-check",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/utils/update-check/src",
+  "projectType": "library",
+  "tags": [
+    "layer:utils",
+    "util:update-check",
+    "scope:shared",
+    "license:shared"
+  ],
+  "// targets": "to see all targets run: nx show project update-check --web",
+  "targets": {}
+}
