@@ -38,6 +38,7 @@ serve(async (req: Request) => {
     ref: string
     refresh_token: string
     provider: string
+    workspace_id?: string
   }
 
   try {
@@ -49,9 +50,9 @@ serve(async (req: Request) => {
     })
   }
 
-  const { lenser_id, ref, refresh_token, provider } = body
+  const { lenser_id, ref, refresh_token, provider, workspace_id } = body
 
-  if (!lenser_id || !ref || !refresh_token || !provider) {
+  if (!lenser_id || !ref || !refresh_token || !provider || !workspace_id) {
     return new Response(JSON.stringify({ error: 'missing_fields' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -126,6 +127,7 @@ serve(async (req: Request) => {
 
   const { error: upsertError } = await supabase.rpc('fn_oauth_upsert_connection', {
     p_lenser_id: lenser_id,
+    p_workspace_id: workspace_id,
     p_provider: provider,
     p_capability: capability,
     p_label: label,
