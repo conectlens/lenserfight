@@ -1,8 +1,8 @@
 # Privacy Policy (KVKK & GDPR)
 
-**Last Updated:** May 15, 2026  
+**Last Updated:** May 17, 2026  
 **Effective Date:** May 19, 2026  
-**Version:** v1.0.0
+**Version:** v1.1.0
 
 This Privacy Policy explains how personal data is collected, used, stored, transferred, and protected when you visit or use LenserFight websites, hosted applications, documentation, public arena surfaces, APIs, and related community services (collectively, the "Platform").
 
@@ -90,7 +90,8 @@ Personal data may be processed for the following purposes:
 7. measuring product quality, debugging failures, monitoring performance, and improving user experience,
 8. handling support, feedback, deletion requests, contributor communications, and legal notices,
 9. complying with legal obligations and responding to lawful requests from authorized authorities,
-10. producing aggregated or anonymized analytics, benchmarks, or reports where individual users are not identified.
+10. producing aggregated or anonymized analytics, benchmarks, or reports where individual users are not identified,
+11. **sharing public platform content, operational telemetry, metadata, benchmark results, analytics signals, newsletter submissions, and community interactions with Chainabit, ConectLens, and other ecosystem partners** for platform operations, security, infrastructure reliability, AI benchmarking, analytics, commercial research, discovery systems, ecosystem integrations, recommendations, newsletters, and related platform services, as described in the Terms of Service.
 
 LenserFight does not sell individual personal data.
 
@@ -149,14 +150,29 @@ To provide the Platform, LenserFight may use third-party service providers, incl
 
 ### 7.3 Authentication
 
-- **GitHub Sign-In:** secure authentication and basic profile data such as email, username, and avatar where authorized.
-- **Google Sign-In:** secure authentication and basic profile data such as email, name, and avatar where authorized.
+LenserFight uses OAuth (GitHub, Google, Chainabit) to let you sign in seamlessly. When you use them, they process your sign-in request and share basic profile data (like email and username) with us. They operate under their own independent privacy policies, which you can review during authentication.
 
 ### 7.4 AI and Model Infrastructure
 
 - **AI model and inference providers:** prompt processing, output generation, media generation, evaluation, embeddings, moderation, and related service operations.
 
-When you use AI-enabled features, prompts, attachments, selected model identifiers, workflow context, account/workspace identifiers, technical request metadata, and safety signals may be transmitted to LenserFight systems and the selected AI or infrastructure provider to generate results, maintain continuity, troubleshoot failures, account for usage, and prevent abuse.
+### 7.5 Ecosystem Partners — Chainabit and ConectLens
+
+**Chainabit** (chainabit.com) and **LenserFight** (lenserfight.com) are ecosystem partners operating within the ConectLens ecosystem (conectlens.com). Chainabit and LenserFight provide infrastructure, analytics, AI benchmarking, research, and platform-services collaboration for LenserFight Cloud.
+
+Chainabit, LenserFight, and future ecosystem partners may process:
+
+- public platform content (battles, agents, workflows, templates, prompts, benchmark results, leaderboard data),
+- operational telemetry, metadata, logs, and diagnostics,
+- platform analytics events, performance metrics, and usage signals,
+- moderation and security signals,
+- newsletter and contact form submissions,
+- community interactions in public spaces,
+- aggregated or anonymized benchmark and usage data.
+
+This processing supports platform operations, reliability, security, abuse prevention, AI benchmarking, analytics, commercial research, discovery systems, public rankings, enterprise solutions, ecosystem integrations, newsletters, and related services. Certain operational telemetry and metadata collection may be necessary for platform functionality. LenserFight operates as an open-source ecosystem, and many operational and telemetry behaviors may be publicly inspectable via repository source code. Chainabit and ConectLens are not unrelated third-party data brokers — they are defined operational partners of LenserFight Cloud.
+
+Private and sensitive content (secrets, API keys, credentials, private uploads, non-public business data) is not shared with ecosystem partners under these provisions and must not be published publicly by users.
 
 Third-party providers act under their own terms and privacy policies for their independent services.
 
@@ -239,7 +255,11 @@ LenserFight uses cookies and similar technologies. See the **Cookie Policy** for
 
 ---
 
-## 14. Updates and Effective Date
+## 14. Governing Law, Language, and Updates
+
+**Governing Law and Language:** This Privacy Policy is governed by the laws of the Republic of Turkiye, with the Turkish Personal Data Protection Law (KVKK) as the primary framework. The primary governing language of this policy is **Turkish**. English and other localized versions are provided for accessibility. In case of any inconsistency between the Turkish version and a translation, the **Turkish version controls**.
+
+**Global Acceptance:** By registering, authenticating, publishing content, or using LenserFight Cloud services from any region or in any supported language, you acknowledge and accept this Privacy Policy and its processing terms.
 
 This Privacy Policy is effective as of **May 19, 2026**. LenserFight may update this policy when necessary. Updated versions become effective when published unless a later effective date is stated.
 
