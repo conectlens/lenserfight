@@ -1,28 +1,7 @@
 import { defineCommand, runMain } from 'citty';
 import consola from 'consola';
-import { existsSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
 import { setExecContext, getExecContext } from './lib/exec-context';
-
-function readCliVersion(): string {
-  const packageJsonPaths = [
-    join(__dirname, 'package.json'),
-    resolve(__dirname, '../package.json'),
-    resolve(process.cwd(), 'apps/cli/package.json'),
-  ];
-
-  for (const packageJsonPath of packageJsonPaths) {
-    if (!existsSync(packageJsonPath)) continue;
-    try {
-      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version?: string };
-      if (packageJson.version) return packageJson.version;
-    } catch {
-      // Fall through to the static fallback below.
-    }
-  }
-
-  return '0.0.0-dev';
-}
+import { readCliVersion } from './lib/version';
 
 // Parse --local and --debug before citty takes over so they activate even
 // when placed after the subcommand name (e.g. `lf cmd --local`).
@@ -152,14 +131,44 @@ const main = defineCommand({
     keys: () => import('./commands/keys').then((m) => m.default),
     security: () => import('./commands/security').then((m) => m.default),
     admin: () => import('./commands/admin').then((m) => m.default),
+    update: () => import('./commands/update').then((m) => m.default),
   },
 });
 
 runMain(main);
 
+// Background update-check: runs after the command completes, never blocks.
+// Prints a one-line hint to stderr so it never pollutes stdout/JSON output.
 process.on('exit', () => {
   const { isDebug, commandStartMs } = getExecContext();
   if (isDebug) process.stderr.write(`done in ${Date.now() - commandStartMs}ms\n`);
+});
+
+// Fire-and-forget: scheduled after event loop yields so it never delays startup.
+setImmediate(() => {
+  // Skip the hint when the user is already running `lf update`
+  const subcommand = process.argv[2];
+  if (subcommand === 'update') return;
+
+  import('@lenserfight/utils/update-check').then(({ checkForUpdate, isNewer }) => {
+    const current = readCliVersion();
+    checkForUpdate(current)
+      .then((result) => {
+        if (result?.hasUpdate && isNewer(result.current, result.latest)) {
+          process.stderr.write(
+            `\n  ╭─────────────────────────────────────────────────────╮\n` +
+            `  │  Update available: v${result.current} → v${result.latest.padEnd(Math.max(0, result.current.length))}  │\n` +
+            `  │  Run \`lf update\` for upgrade instructions.           │\n` +
+            `  ╰─────────────────────────────────────────────────────╯\n\n`,
+          );
+        }
+      })
+      .catch(() => {
+        // fire-and-forget — never surface update-check errors
+      });
+  }).catch(() => {
+    // module load failure is non-fatal
+  });
 });
 
 // TODO(Y5): `lf platform` subcommand and remote-control RPCs.

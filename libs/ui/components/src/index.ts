@@ -38,6 +38,9 @@ export * from './lib/ModelProviderBadge'
 // Logo
 export * from './lib/Logo'
 
+// Update notification
+export * from './lib/UpdateBanner'
+
 // Brand components
 export * from './lib/Alert'
 export * from './lib/Badge'

@@ -232,6 +232,9 @@
       "@lenserfight/utils/validation": [
         "libs/utils/validation/src/index.ts"
       ],
+      "@lenserfight/utils/update-check": [
+        "libs/utils/update-check/src/index.ts"
+      ],
       "@lenserfight/utils/webhook-signing": [
         "libs/utils/webhook-signing/src/index.ts"
       ],
