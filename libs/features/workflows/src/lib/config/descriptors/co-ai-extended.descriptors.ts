@@ -18,6 +18,14 @@ export const lensExecuteDescriptor: RunnerConfigDescriptor = {
       label: 'Lens ID',
       type: 'text',
       required: true,
+      hint: 'The ID of the lens to execute in this workflow step.',
+    },
+    {
+      key: 'versionId',
+      label: 'Version',
+      type: 'text',
+      placeholder: 'Latest published (default)',
+      hint: 'Pin to a specific lens version ID. Leave empty for latest published.',
     },
     {
       key: 'temperature',
@@ -26,6 +34,7 @@ export const lensExecuteDescriptor: RunnerConfigDescriptor = {
       min: 0,
       max: 2,
       step: 0.1,
+      hint: 'Controls randomness. Lower = more deterministic.',
     },
     {
       key: 'maxTokens',
@@ -33,11 +42,19 @@ export const lensExecuteDescriptor: RunnerConfigDescriptor = {
       type: 'number',
       min: 1,
       max: 16384,
+      hint: 'Maximum tokens to generate.',
+    },
+    {
+      key: 'connectorSlug',
+      label: 'Connector',
+      type: 'text',
+      hint: 'Optional connector slug for credential-backed parameters (e.g. API key injection).',
     },
   ],
   outputFields: [
     { key: 'text', type: 'string', description: 'Generated text output' },
-    { key: 'result', type: 'object', description: 'Full execution result' },
+    { key: 'result', type: 'object', description: 'Full structured execution result' },
+    { key: 'media', type: 'object', description: 'Media metadata (for image/video/audio lens kinds)' },
   ],
 }
 
