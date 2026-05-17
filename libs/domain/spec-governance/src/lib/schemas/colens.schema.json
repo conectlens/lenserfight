@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/colens/v1alpha1",
+  "title": "LenserFight CoLens Spec",
+  "description": "A multi-step workflow DAG that chains lenses and lensers. Supports text-to-text, text-to-image, image-to-audio, and other multimodal pipelines.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "enum": ["colens", "workflow"] },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "workflow_type": {
+      "type": "string",
+      "enum": [
+        "manual", "scheduled", "event_triggered", "agent_initiated",
+        "tool_triggered", "evaluation", "private_battle", "report_generation"
+      ]
+    },
+    "triggers": {
+      "type": "array",
+      "items": { "type": "object" },
+      "description": "Trigger definitions (schedule, event, webhook, etc.)."
+    },
+    "inputs": {
+      "type": "object",
+      "description": "Input contract for the workflow."
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "minLength": 1 },
+          "lens_ref": { "type": "string" },
+          "lenser_ref": { "type": "string" },
+          "agent_ref": { "type": "string" },
+          "tool_ref": { "type": "string" }
+        },
+        "required": ["id", "type"]
+      },
+      "description": "Ordered workflow steps."
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "minLength": 1 }
+        },
+        "required": ["id", "kind"]
+      },
+      "description": "DAG node definitions (used by the visual workflow editor)."
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source": { "type": "string" },
+          "target": { "type": "string" }
+        },
+        "required": ["source", "target"]
+      },
+      "description": "DAG edges connecting nodes."
+    },
+    "outputs": {
+      "type": "object",
+      "description": "Output contract for the workflow."
+    },
+    "retry_policy": { "type": "object" },
+    "approval_gates": {
+      "type": "array",
+      "items": { "oneOf": [{ "type": "string" }, { "type": "object" }] }
+    },
+    "references": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/disclosureRef" }
+    }
+  },
+  "required": ["kind", "name", "description"],
+  "additionalProperties": true
+}

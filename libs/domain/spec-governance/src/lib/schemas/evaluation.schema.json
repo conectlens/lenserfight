@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/evaluation/v1alpha1",
+  "title": "LenserFight Evaluation Spec",
+  "description": "A quality evaluation dataset, rubric, and judging configuration for a battle or workflow.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "evaluation" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "rubric_ref": {
+      "type": "string",
+      "description": "Reference to a rubric spec or database rubric ID."
+    },
+    "dataset_ref": {
+      "type": "string",
+      "description": "Reference to a Dataset spec ID."
+    },
+    "metrics": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "description": "Metric identifiers to compute."
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": { "type": "number" },
+      "description": "Pass thresholds per metric (metric_id → minimum score)."
+    },
+    "judge_agent_ref": {
+      "type": "string",
+      "description": "Reference to a Lenser spec used as the AI judge."
+    },
+    "human_review_required": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether a human must review the AI verdict before it is final."
+    },
+    "rubric": {
+      "type": "object",
+      "properties": {
+        "criteria": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "weight": { "type": "number", "exclusiveMinimum": 0 },
+              "description": { "type": "string" }
+            },
+            "required": ["name", "weight"]
+          }
+        },
+        "pass_threshold": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "references": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/disclosureRef" }
+    }
+  },
+  "required": ["kind", "name"],
+  "additionalProperties": true
+}
