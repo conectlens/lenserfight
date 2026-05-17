@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/run-report/v1alpha1",
+  "title": "LenserFight Run Report Spec",
+  "description": "A human-readable simulation report produced by lf run or lf battle simulate.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "run_report" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "source_spec_ref": { "type": "string", "description": "Spec ID of the lens, workflow, or battle that generated this report." },
+    "execution_id": { "type": "string", "description": "Execution record ID." },
+    "run_status": {
+      "type": "string",
+      "enum": ["ready", "blocked", "failed", "completed"],
+      "description": "Final status of the run."
+    }
+  },
+  "required": ["kind", "name"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "run_report",
+      "schema_version": 1,
+      "id": "run_report_workflow_001",
+      "name": "Workflow Run Report",
+      "description": "Simulation report for competitor research workflow.",
+      "version": "0.1.0",
+      "run_status": "completed"
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/agent/v1alpha1",
+  "title": "LenserFight Agent Spec",
+  "description": "A structured AI agent definition (legacy alias for Lenser). Prefer Lenser for new specs.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "agent" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "role": { "type": "string", "description": "Agent role label." },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Capability identifiers the agent supports."
+    },
+    "model_policy": { "$ref": "common.schema.json#/$defs/modelPolicy" },
+    "tool_policy": { "$ref": "common.schema.json#/$defs/toolPolicy" },
+    "memory_policy_ref": { "type": "string", "description": "Reference to a MemoryPolicy spec ID." },
+    "workspace_permissions": {
+      "type": "object",
+      "properties": {
+        "read_scopes": { "type": "array", "items": { "type": "string" } },
+        "write_scopes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "allowed_actions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Actions the agent may perform: read, suggest, draft, execute, etc."
+    },
+    "safety_boundaries": {
+      "type": "object",
+      "description": "Safety and autonomy constraints.",
+      "additionalProperties": true
+    }
+  },
+  "required": ["kind", "name"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "agent",
+      "schema_version": 1,
+      "id": "agent_research_analyst",
+      "name": "Research Analyst",
+      "description": "Investigates topics, synthesizes findings, and drafts reports.",
+      "version": "0.1.0",
+      "role": "researcher"
+    }
+  ]
+}

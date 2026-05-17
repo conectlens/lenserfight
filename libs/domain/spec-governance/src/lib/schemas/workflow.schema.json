@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/workflow/v1alpha1",
+  "title": "LenserFight Workflow Spec",
+  "description": "A structured automation workflow (alias for CoLens in agentic contexts). Prefer CoLens for new specs.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "workflow" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "workflow_type": {
+      "type": "string",
+      "enum": ["manual", "scheduled", "event_driven"],
+      "description": "Workflow trigger mode."
+    },
+    "triggers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "config": { "type": "object", "additionalProperties": true }
+        },
+        "required": ["type"],
+        "additionalProperties": true
+      },
+      "description": "Trigger configurations."
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "required": { "type": "boolean" }
+        },
+        "required": ["label"],
+        "additionalProperties": true
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "type": { "type": "string" },
+          "lens_ref": { "type": "string" },
+          "lenser_ref": { "type": "string" }
+        },
+        "required": ["id"],
+        "additionalProperties": true
+      },
+      "description": "Ordered execution steps."
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": true }
+    }
+  },
+  "required": ["kind", "name"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "workflow",
+      "schema_version": 1,
+      "id": "wf_competitor_research",
+      "name": "Competitor Research Report",
+      "description": "Research competitors, validate findings, and generate a report.",
+      "version": "0.1.0",
+      "workflow_type": "scheduled"
+    }
+  ]
+}
