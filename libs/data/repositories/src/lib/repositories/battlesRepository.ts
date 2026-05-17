@@ -168,6 +168,15 @@ export interface CreateBattleInput {
   shared_input_snapshot?: Record<string, unknown>
   /** Memory/instruction policy for Lenser Battles. */
   lenser_battle_policy?: Record<string, unknown>
+  // V2 concept separation fields (optional, dual-write alongside battle_type)
+  /** Task source: 'lens' | 'workflow' | 'challenge'. */
+  task_source?: string
+  /** Contender structure: 'ai_vs_ai' | 'human_vs_human' | 'human_vs_ai'. */
+  contender_structure?: string
+  /** Judging mode: 'community_vote' | 'ai_judge' | 'rubric_score' | 'auto_score'. */
+  judging_mode?: string
+  /** Challenge type ID from the challenge registry. */
+  challenge_type?: string
 }
 
 export interface ContenderRecord {
