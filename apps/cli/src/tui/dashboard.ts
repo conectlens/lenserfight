@@ -253,6 +253,8 @@ export const COMMAND_CATALOG: Array<{ cmd: string; desc: string }> = [
   // ── standalone ────────────────────────────────────────────────────────────────
   { cmd: 'examples',                      desc: 'Show common CLI usage examples' },
   { cmd: 'env',                           desc: 'Show environment variable status' },
+  { cmd: 'docs open <topic>',             desc: 'Open LenserFight docs in browser' },
+  { cmd: 'docs list',                     desc: 'List available documentation topics' },
   { cmd: 'doctor',                        desc: 'Diagnose environment issues' },
   { cmd: 'top',                           desc: 'Real-time runtime telemetry dashboard' },
   { cmd: 'top monitor',                   desc: 'Expanded telemetry — all panels, per-core CPU, graphs' },
