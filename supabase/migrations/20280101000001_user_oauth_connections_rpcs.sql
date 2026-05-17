@@ -22,6 +22,7 @@
 CREATE OR REPLACE FUNCTION public.fn_oauth_list_connections()
 RETURNS TABLE (
   id               uuid,
+  workspace_id     uuid,
   provider         text,
   capability       text,
   connection_label text,
@@ -39,6 +40,7 @@ SET search_path = public, lensers
 AS $$
   SELECT
     c.id,
+    c.workspace_id,
     c.provider,
     c.capability,
     c.connection_label,
@@ -65,6 +67,7 @@ GRANT EXECUTE ON FUNCTION public.fn_oauth_list_connections() TO authenticated, s
 
 CREATE OR REPLACE FUNCTION public.fn_oauth_upsert_connection(
   p_lenser_id      uuid,
+  p_workspace_id   uuid,
   p_provider       text,
   p_capability     text,
   p_label          text,
@@ -127,6 +130,7 @@ BEGIN
   -- Upsert the connection row (on conflict: update tokens + scopes + expiry)
   INSERT INTO public.user_oauth_connections (
     lenser_id,
+    workspace_id,
     provider,
     capability,
     connection_label,
@@ -141,6 +145,7 @@ BEGIN
   )
   VALUES (
     p_lenser_id,
+    p_workspace_id,
     p_provider,
     p_capability,
     p_label,
@@ -153,7 +158,7 @@ BEGIN
     NULL,
     now()
   )
-  ON CONFLICT (lenser_id, ref) DO UPDATE
+  ON CONFLICT (lenser_id, workspace_id, ref) DO UPDATE
     SET access_token_id  = EXCLUDED.access_token_id,
         -- Only update refresh_token_id if a new one was provided
         refresh_token_id = COALESCE(
@@ -172,9 +177,9 @@ END;
 $$;
 
 -- service_role only — never callable from PostgREST/authenticated users
-REVOKE ALL ON FUNCTION public.fn_oauth_upsert_connection(uuid,text,text,text,text,text,text[],timestamptz)
+REVOKE ALL ON FUNCTION public.fn_oauth_upsert_connection(uuid,uuid,text,text,text,text,text,text[],timestamptz)
   FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.fn_oauth_upsert_connection(uuid,text,text,text,text,text,text[],timestamptz)
+GRANT EXECUTE ON FUNCTION public.fn_oauth_upsert_connection(uuid,uuid,text,text,text,text,text,text[],timestamptz)
   TO service_role;
 
 -- ── 3. fn_oauth_revoke_connection ────────────────────────────────────────────
@@ -234,7 +239,8 @@ GRANT EXECUTE ON FUNCTION public.fn_oauth_revoke_connection(uuid) TO authenticat
 CREATE OR REPLACE FUNCTION public.fn_oauth_resolve_connection(
   p_lenser_id       uuid,
   p_ref             text,
-  p_required_scopes text[] DEFAULT '{}'
+  p_required_scopes text[] DEFAULT '{}',
+  p_workspace_id    uuid DEFAULT NULL
 )
 RETURNS text
 LANGUAGE plpgsql
@@ -249,6 +255,7 @@ BEGIN
   FROM public.user_oauth_connections
   WHERE lenser_id = p_lenser_id
     AND ref       = p_ref
+    AND (p_workspace_id IS NULL OR workspace_id = p_workspace_id)
     AND is_active = true
     AND revoked_at IS NULL;
 
@@ -282,9 +289,9 @@ END;
 $$;
 
 -- service_role only — execution workers run as service_role
-REVOKE ALL ON FUNCTION public.fn_oauth_resolve_connection(uuid,text,text[])
+REVOKE ALL ON FUNCTION public.fn_oauth_resolve_connection(uuid,text,text[],uuid)
   FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.fn_oauth_resolve_connection(uuid,text,text[])
+GRANT EXECUTE ON FUNCTION public.fn_oauth_resolve_connection(uuid,text,text[],uuid)
   TO service_role;
 
 -- ── 5. fn_oauth_get_connection_for_refresh ──────────────────────────────────
@@ -294,7 +301,8 @@ GRANT EXECUTE ON FUNCTION public.fn_oauth_resolve_connection(uuid,text,text[])
 
 CREATE OR REPLACE FUNCTION public.fn_oauth_get_connection_for_refresh(
   p_lenser_id uuid,
-  p_ref       text
+  p_ref       text,
+  p_workspace_id uuid DEFAULT NULL
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -309,6 +317,7 @@ BEGIN
   FROM public.user_oauth_connections
   WHERE lenser_id = p_lenser_id
     AND ref       = p_ref
+    AND (p_workspace_id IS NULL OR workspace_id = p_workspace_id)
     AND is_active = true
     AND revoked_at IS NULL;
 
@@ -338,6 +347,7 @@ BEGIN
 
   RETURN jsonb_build_object(
     'connection_id',   v_conn.id,
+    'workspace_id',    v_conn.workspace_id,
     'refresh_token',   v_refresh_token,
     'expires_at',      v_conn.expires_at,
     'granted_scopes',  v_conn.granted_scopes,
@@ -347,7 +357,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.fn_oauth_get_connection_for_refresh(uuid,text)
+REVOKE ALL ON FUNCTION public.fn_oauth_get_connection_for_refresh(uuid,text,uuid)
   FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.fn_oauth_get_connection_for_refresh(uuid,text)
+GRANT EXECUTE ON FUNCTION public.fn_oauth_get_connection_for_refresh(uuid,text,uuid)
   TO service_role;
