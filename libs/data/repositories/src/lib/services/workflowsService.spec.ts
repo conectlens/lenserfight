@@ -89,7 +89,15 @@ describe('workflowsService', () => {
     const run = { id: RUN_ID }
     mockRepo.startRun.mockResolvedValue(run)
     const result = await workflowsService.startRun(WORKFLOW_ID, { x: 1 }, 'model-1', 'idem-key')
-    expect(mockRepo.startRun).toHaveBeenCalledWith(WORKFLOW_ID, { x: 1 }, 'model-1', 'idem-key')
+    expect(mockRepo.startRun).toHaveBeenCalledWith(WORKFLOW_ID, { x: 1 }, 'model-1', 'idem-key', undefined)
+    expect(result).toEqual(run)
+  })
+
+  it('startRun forwards versionId when provided', async () => {
+    const run = { id: RUN_ID, workflow_version_id: 'v-1' }
+    mockRepo.startRun.mockResolvedValue(run)
+    const result = await workflowsService.startRun(WORKFLOW_ID, {}, undefined, undefined, 'v-1')
+    expect(mockRepo.startRun).toHaveBeenCalledWith(WORKFLOW_ID, {}, undefined, undefined, 'v-1')
     expect(result).toEqual(run)
   })
 
