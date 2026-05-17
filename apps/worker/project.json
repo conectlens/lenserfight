@@ -1,12 +1,12 @@
 {
-  "name": "platform-api",
+  "name": "worker",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/platform-api/src",
+  "sourceRoot": "apps/worker/src",
   "projectType": "application",
   "tags": [
     "scope:public",
     "license:oss",
-    "layer:api"
+    "layer:worker"
   ],
   "targets": {
     "build": {
@@ -17,13 +17,13 @@
       "defaultConfiguration": "production",
       "options": {
         "platform": "node",
-        "outputPath": "dist/apps/platform-api",
+        "outputPath": "dist/apps/worker",
         "format": [
           "esm"
         ],
         "bundle": true,
-        "main": "apps/platform-api/src/worker/main.ts",
-        "tsConfig": "apps/platform-api/tsconfig.app.json",
+        "main": "apps/worker/src/worker/main.ts",
+        "tsConfig": "apps/worker/tsconfig.app.json",
         "generatePackageJson": true
       },
       "configurations": {
@@ -39,15 +39,15 @@
         "build"
       ],
       "options": {
-        "buildTarget": "platform-api:build",
+        "buildTarget": "worker:build",
         "runBuildTargetDependencies": false
       },
       "configurations": {
         "development": {
-          "buildTarget": "platform-api:build:development"
+          "buildTarget": "worker:build:development"
         },
         "production": {
-          "buildTarget": "platform-api:build:production"
+          "buildTarget": "worker:build:production"
         }
       }
     },
