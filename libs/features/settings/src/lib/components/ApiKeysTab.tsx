@@ -4,6 +4,7 @@ import { Button, Badge, Skeleton } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { ByokProvider, BYOK_PROVIDER_LABELS, UserApiKey } from '@lenserfight/types'
+import { useLenser } from '@lenserfight/features/profile'
 import { useApiKeys } from '../hooks/useApiKeys'
 
 const PROVIDER_OPTIONS = (Object.keys(BYOK_PROVIDER_LABELS) as ByokProvider[]).map((key) => ({
@@ -14,6 +15,7 @@ const PROVIDER_OPTIONS = (Object.keys(BYOK_PROVIDER_LABELS) as ByokProvider[]).m
 const maskKey = (suffix: string) => `${'•'.repeat(8)}${suffix}`
 
 export const ApiKeysTab: React.FC = () => {
+  const { hasLenser } = useLenser()
   const { keys, isLoading, selectedKeyId, storeKey, isStoring, storeError, revokeKey, isRevoking, selectKey, isSelecting } = useApiKeys()
 
   // Form state
@@ -55,7 +57,17 @@ export const ApiKeysTab: React.FC = () => {
       </p>
 
       {/* Add Key Section */}
-      {!showForm ? (
+      {!hasLenser ? (
+        <div className="flex items-start gap-3 p-4 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 mb-8">
+          <Key size={18} className="mt-0.5 flex-shrink-0 text-gray-400" />
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Create a Lenser profile first</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              API keys are tied to your Lenser identity. Set up your profile to start adding keys.
+            </p>
+          </div>
+        </div>
+      ) : !showForm ? (
         <Button
           onClick={() => setShowForm(true)}
           variant="secondary"
