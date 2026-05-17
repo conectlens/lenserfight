@@ -12,3 +12,17 @@ export { OutputContractSection } from './OutputContractSection'
 export type { OutputContractSectionProps } from './OutputContractSection'
 export { FundingSection } from './FundingSection'
 export type { FundingSectionProps } from './FundingSection'
+export { SchemaBuilderField } from './SchemaBuilderField'
+export type { SchemaBuilderFieldProps } from './SchemaBuilderField'
+export { StringArrayField } from './StringArrayField'
+export type { StringArrayFieldProps } from './StringArrayField'
+export { KeyValueField } from './KeyValueField'
+export type { KeyValueFieldProps } from './KeyValueField'
+export {
+  schemaFieldsToJsonSchema,
+  jsonSchemaToFields,
+  serializeSchemaFields,
+  deserializeSchemaFields,
+  validateSchemaFields,
+} from './schema-parser'
+export type { GeneratedSchema, ParseResult, SchemaValidationError } from './schema-parser'
