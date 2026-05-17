@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/tool/v1alpha1",
+  "title": "LenserFight Tool Spec",
+  "description": "A registered external capability (API, service, or local action) that lensers can invoke.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "tool" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "category": {
+      "type": "string",
+      "enum": ["read_only", "write", "execute", "network", "storage"],
+      "description": "Tool capability category."
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["none", "api_key", "oauth", "bearer"] },
+        "scopes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "permission_level": {
+      "type": "string",
+      "enum": ["read", "write", "admin"],
+      "description": "Minimum permission level required."
+    },
+    "cost_level": {
+      "type": "string",
+      "enum": ["free", "low", "medium", "high"],
+      "description": "Relative cost of invocation."
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["safe", "low", "medium", "high", "critical"],
+      "description": "Risk assessment for the tool."
+    },
+    "rate_limits": {
+      "type": "object",
+      "properties": {
+        "requests_per_minute": { "type": "integer", "minimum": 1 },
+        "requests_per_hour": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "input_schema": { "$ref": "common.schema.json#/$defs/jsonSchema" },
+    "output_schema": { "$ref": "common.schema.json#/$defs/jsonSchema" }
+  },
+  "required": ["kind", "name"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "tool",
+      "schema_version": 1,
+      "id": "tool_web_search",
+      "name": "Web Search",
+      "description": "Query public web sources and return ranked results.",
+      "version": "0.1.0",
+      "category": "read_only",
+      "permission_level": "read"
+    }
+  ]
+}

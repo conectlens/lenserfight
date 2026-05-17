@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/agent-team/v1alpha1",
+  "title": "LenserFight Agent Team Spec",
+  "description": "A multi-agent team with a defined lead agent, member roster, and collaboration rules.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "agent_team" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "purpose": { "type": "string", "description": "Why the team exists and what outcomes it owns." },
+    "team_lead_agent": { "type": "string", "description": "Agent spec ID designated as team lead." },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "agent_id": { "type": "string", "minLength": 1 },
+          "role": { "type": "string" }
+        },
+        "required": ["agent_id"],
+        "additionalProperties": true
+      },
+      "description": "Agent members with roles."
+    },
+    "shared_tools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tool IDs available to all team members."
+    },
+    "shared_memory_policy_ref": { "type": "string", "description": "Shared memory policy spec ID." }
+  },
+  "required": ["kind", "name"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "agent_team",
+      "schema_version": 1,
+      "id": "team_research_ops",
+      "name": "Research Ops Team",
+      "description": "Multi-agent team for researching, validating, and reporting findings.",
+      "version": "0.1.0",
+      "purpose": "Produce validated research reports with human approval for publication."
+    }
+  ]
+}
