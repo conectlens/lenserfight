@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react'
 import { useLocation } from 'react-router-dom'
-import { ChainabitOnboardingModal, useLenserOptional } from '@lenserfight/features/profile'
+import { useLenserOptional } from '@lenserfight/features/profile'
 import { Footer } from '@lenserfight/ui/layout'
 import { Loader } from '@lenserfight/ui/feedback'
 import { WEB_BASE_URL } from '@lenserfight/utils/env'
@@ -124,7 +124,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, full
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-transparent overflow-hidden transition-colors duration-200">
-      <ChainabitOnboardingModal />
       <Sidebar
         isOpen={sidebarOpen}
         isMobile={isMobile}
