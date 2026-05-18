@@ -23,7 +23,7 @@ interface AuthContextType extends AuthState {
   logout: () => Promise<void>
   requestPasswordReset: (email: string, captchaToken?: string) => Promise<void>
   resetPassword: (password: string) => Promise<void>
-  signInWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>
+  signInWithOAuth: (provider: 'google' | 'github' | 'azure' | 'custom:chainabit') => Promise<void>
   resendSignupConfirmation: (email: string) => Promise<void>
   sendMagicLink: (email: string, captchaToken?: string) => Promise<void>
   /** Redirect to the external auth app login page, preserving the current page as return_url. */
@@ -296,7 +296,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsRecoverySession(false)
   }, [])
 
-  const signInWithOAuth = useCallback(async (provider: 'google' | 'github' | 'azure') => {
+  const signInWithOAuth = useCallback(async (provider: 'google' | 'github' | 'azure' | 'custom:chainabit') => {
     try {
       await authService.signInWithOAuth(provider)
     } catch (err: unknown) {
