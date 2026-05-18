@@ -32,7 +32,7 @@ RFCs must remain open for a minimum of 48 hours and receive approval from at lea
 
 ## License Boundaries
 
-LenserFight Community Edition is licensed under the **Apache License, Version 2.0**. Contributors may fork, modify, redistribute, and use the code—including in commercial software—subject to Apache-2.0 notice requirements. The **LenserFight** name and logos are governed separately; see [Brand guidelines](/en/explanation/community/brand-guidelines) and [License](/en/explanation/community/license).
+LenserFight Community Edition is licensed under the **Apache License, Version 2.0**. Contributors may fork, modify, redistribute, and use the code—including in commercial software—subject to Apache-2.0 notice requirements. The **LenserFight** name and logos are governed separately; see [License](/en/explanation/community/license).
 
 ## Contributor expectations
 

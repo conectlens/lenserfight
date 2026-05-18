@@ -51,7 +51,7 @@ Full synchronization audit of `apps/docs`, `docs/en/**`, README files, CLI docs,
 
 | Issue | Locations | Recommendation |
 |-------|-----------|----------------|
-| Changelog synced in 3 places | root `changelog.md`, `apps/docs/changelog.md`, `docs/changelog.md` | Already auto-synced by VitePress config — acceptable |
+| Changelog synced in 2 places | root `changelog.md`, `apps/docs/changelog.md` | Auto-synced by VitePress config — acceptable |
 | Turkish translations (113 files) | `docs/tr/` | Subset of English; may lag behind — acceptable for now |
 
 ### DEAD (References removed systems)
