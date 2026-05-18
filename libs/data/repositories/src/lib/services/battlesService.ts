@@ -65,6 +65,33 @@ export const battlesService = {
         throw new Error(policyViolations.map((v) => v.message).join('; '))
       }
     }
+    // Validate shared_input_snapshot against the lens's required parameters.
+    // Fetches the published (or latest) version to resolve param requirements.
+    if (input.lens_id) {
+      const { lensesService } = await import('./lensesService')
+      const versions = await lensesService.getVersions(input.lens_id)
+      const resolvedVersion =
+        versions.find((v) => (v as { status?: string }).status === 'published') ?? versions[0]
+      if (resolvedVersion) {
+        const versionDetail = await lensesService.getVersionById(resolvedVersion.id)
+        const params = ((versionDetail as { parameters?: unknown[] })?.parameters ?? []) as Array<{
+          label: string
+          tool?: { required?: boolean }
+        }>
+        const requirements = params.map((p) => ({
+          id: p.label,
+          label: p.label,
+          required: !!p.tool?.required,
+        }))
+        const paramViolations = battleCreationValidator.validateLensParams(
+          requirements,
+          (input.shared_input_snapshot ?? {}) as Record<string, unknown>,
+        )
+        if (paramViolations.some((v) => v.severity === 'error')) {
+          throw new Error(paramViolations.map((v) => v.message).join('; '))
+        }
+      }
+    }
     return battlesRepo.createBattle(input)
   },
 
