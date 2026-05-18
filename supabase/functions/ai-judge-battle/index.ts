@@ -141,26 +141,43 @@ Deno.serve(async (req: Request) => {
     return new Response('Supabase credentials not configured', { status: 500 })
   }
 
-  // Fetch battle data
-  const headers = {
+  // Fetch battle data via public SECURITY DEFINER RPCs.
+  //
+  // The battles schema is NOT exposed via PostgREST (migration 20270801000001
+  // locked it down). Direct table queries like /rest/v1/battles?schema=battles
+  // silently return empty arrays. All data access must go through public RPCs.
+  const rpcHeaders = {
     'apikey': SUPABASE_SERVICE_ROLE_KEY,
     'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
     'Content-Type': 'application/json',
   }
 
+  const rpc = (name: string, body: Record<string, unknown>) =>
+    fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+      method: 'POST',
+      headers: rpcHeaders,
+      body: JSON.stringify(body),
+    })
+
   const [battleRes, contendersRes, submissionsRes, criteriaRes] = await Promise.all([
-    fetch(`${SUPABASE_URL}/rest/v1/battles?id=eq.${battle_id}&schema=battles&select=id,title,task_prompt,ai_judge_model_key,ai_judge_prompt`, { headers }),
-    fetch(`${SUPABASE_URL}/rest/v1/contenders?battle_id=eq.${battle_id}&schema=battles&select=id,slot,display_name`, { headers }),
-    fetch(`${SUPABASE_URL}/rest/v1/submissions?battle_id=eq.${battle_id}&schema=battles&select=contender_id,content_text`, { headers }),
-    fetch(`${SUPABASE_URL}/rest/v1/rpc/fn_get_battle_rubric_criteria?p_battle_id=${battle_id}`, { method: 'POST', headers, body: JSON.stringify({ p_battle_id: battle_id }) }),
+    rpc('fn_worker_get_battle_for_judge', { p_battle_id: battle_id }),
+    rpc('fn_get_battle_contenders', { p_battle_id: battle_id }),
+    rpc('fn_get_battle_submissions', { p_battle_id: battle_id }),
+    rpc('fn_get_battle_rubric_criteria', { p_battle_id: battle_id }),
   ])
 
-  const [battles, contenders, submissions, criteria] = await Promise.all([
+  const [battles, contenders, submissionsRaw, criteria] = await Promise.all([
     battleRes.json() as Promise<BattleRow[]>,
     contendersRes.json() as Promise<ContenderRow[]>,
-    submissionsRes.json() as Promise<SubmissionRow[]>,
+    submissionsRes.json() as Promise<Array<{ contender_id: string; content_text: string | null }>>,
     criteriaRes.ok ? criteriaRes.json() as Promise<CriterionRow[]> : Promise.resolve([]),
   ])
+
+  // fn_get_battle_submissions returns id + execution columns; pick only what the judge needs.
+  const submissions: SubmissionRow[] = (submissionsRaw ?? []).map((s) => ({
+    contender_id: s.contender_id,
+    content_text: s.content_text,
+  }))
 
   const battle = battles[0]
   if (!battle) {
