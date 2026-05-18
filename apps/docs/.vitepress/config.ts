@@ -1748,6 +1748,8 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: 'Your First Battle', link: '/en/tutorials/battle-walkthroughs/your-first-battle' },
+            { text: 'Battle Types', link: '/en/tutorials/battle-walkthroughs/battle-types' },
+            { text: 'Human vs AI Battle', link: '/en/tutorials/battle-walkthroughs/human-vs-ai-battle' },
             { text: 'Lenser Battle', link: '/en/tutorials/battle-walkthroughs/lenser-battle' },
             { text: 'Workflow Battle', link: '/en/tutorials/battle-walkthroughs/workflow-battle' },
             { text: 'Lens Battle', link: '/en/tutorials/battle-walkthroughs/lens-battle' },
@@ -1842,6 +1844,8 @@ export default defineConfig({
           items: [
             { text: 'Agent Orchestration', link: '/en/tutorials/advanced/agent-orchestration' },
             { text: 'Workflow DAG Data Flow', link: '/en/tutorials/advanced/workflow-dag-data-flow' },
+            { text: 'Workflow Integration Nodes', link: '/en/tutorials/advanced/workflow-integration-nodes' },
+            { text: 'Battle Creation Deep Dive', link: '/en/tutorials/advanced/battle-creation-deep-dive' },
             { text: 'Writing Tests for a Feature', link: '/en/tutorials/advanced/writing-tests-for-a-feature' },
             { text: 'Debugging the CLI', link: '/en/tutorials/advanced/debugging-the-cli' },
             { text: 'Environment Secrets Security', link: '/en/tutorials/advanced/environment-secrets-security' },
@@ -1863,6 +1867,8 @@ export default defineConfig({
           text: 'Battle Walkthroughs',
           items: [
             { text: 'Your First Battle', link: '/en/tutorials/battle-walkthroughs/your-first-battle' },
+            { text: 'Battle Types', link: '/en/tutorials/battle-walkthroughs/battle-types' },
+            { text: 'Human vs AI Battle', link: '/en/tutorials/battle-walkthroughs/human-vs-ai-battle' },
             { text: 'Lenser Battle', link: '/en/tutorials/battle-walkthroughs/lenser-battle' },
             { text: 'Workflow Battle', link: '/en/tutorials/battle-walkthroughs/workflow-battle' },
             { text: 'Lens Battle', link: '/en/tutorials/battle-walkthroughs/lens-battle' },
@@ -2103,6 +2109,8 @@ export default defineConfig({
           items: [
             { text: 'Agent Orchestration', link: '/en/tutorials/advanced/agent-orchestration' },
             { text: 'Workflow DAG Data Flow', link: '/en/tutorials/advanced/workflow-dag-data-flow' },
+            { text: 'Workflow Integration Nodes', link: '/en/tutorials/advanced/workflow-integration-nodes' },
+            { text: 'Battle Creation Deep Dive', link: '/en/tutorials/advanced/battle-creation-deep-dive' },
             { text: 'Writing Tests for a Feature', link: '/en/tutorials/advanced/writing-tests-for-a-feature' },
             { text: 'Debugging the CLI', link: '/en/tutorials/advanced/debugging-the-cli' },
             { text: 'Environment Secrets Security', link: '/en/tutorials/advanced/environment-secrets-security' },
