@@ -10,7 +10,7 @@ Reference for CLI configuration precedence.
 ## Rules of thumb
 
 - Keep `.lenserfight.json` free of secrets.
-- Store session tokens and developer tokens in the user config at `~/.lenserfight/config.json`.
+- Store session tokens and developer tokens in the user config at `~/.lenserfight/lenserfight.json`.
 - Use `lf connect` to link your project to LenserFight Cloud.
 - Use `LENSERFIGHT_DEVELOPER_TOKEN` only when you intentionally want to override the saved developer token.
 

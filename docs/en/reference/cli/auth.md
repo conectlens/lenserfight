@@ -24,7 +24,7 @@ lf auth login
 2. Your browser opens `https://auth.lenserfight.com/device-approval?mode=login`.
 3. Sign in (or you are already signed in) — the code is pre-filled.
 4. Click **Approve login**.
-5. The CLI detects approval and saves your session to `~/.lenserfight/config.json`.
+5. The CLI detects approval and saves your session to `~/.lenserfight/lenserfight.json`.
 
 If the browser does not open automatically, copy the URL printed in the terminal and open it manually.
 
@@ -153,7 +153,7 @@ lenserfight auth developer-token revoke <token-id>
 ## Security model
 
 - Session tokens continue to power the normal Supabase auth flow.
-- Developer tokens are time-bounded and stored separately in `~/.lenserfight/config.json`.
+- Developer tokens are time-bounded and stored separately in `~/.lenserfight/lenserfight.json`.
 - The browser approval page only approves the request; it never reveals the session token or password.
 - The approval and token RPCs require an authenticated session.
 

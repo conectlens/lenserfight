@@ -57,7 +57,7 @@ We solve this without breaking the current CLI, by layering crypto, signed envel
 ## Goals
 
 - **G1** — Preserve every existing `lf gateway` subcommand and its observable behavior.
-- **G2** — Establish per-device cryptographic identity (Ed25519) without storing private keys in the database, the project, or `~/.lenserfight/config.json`.
+- **G2** — Establish per-device cryptographic identity (Ed25519) without storing private keys in the database, the project, or `~/.lenserfight/lenserfight.json`.
 - **G3** — Introduce a signed envelope used uniformly for: execution attestations, sync push, sync pull, peer-to-peer messages, and any future signed RPC.
 - **G4** — Enforce server-side trust evaluation: clients can never set `gateway_verified = true` directly.
 - **G5** — Make sync deterministic via an outbox + watermarks model with explicit per-object-class authority and merge policy.

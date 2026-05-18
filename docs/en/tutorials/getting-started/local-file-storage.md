@@ -5,7 +5,7 @@ description: Start LenserFight without Supabase using local file storage in ~/.l
 
 # Local File Storage
 
-You can run LenserFight locally without installing Docker or setting up Supabase. In local mode the web app stores all data in the browser's IndexedDB — no filesystem setup required. The CLI writes auth tokens to `~/.lenserfight/config.json`, which it creates automatically on first use.
+You can run LenserFight locally without installing Docker or setting up Supabase. In local mode the web app stores all data in the browser's IndexedDB — no filesystem setup required. The CLI writes auth tokens to `~/.lenserfight/lenserfight.json`, which it creates automatically on first use.
 
 Use this path to:
 - Try LenserFight before committing to a full deployment

@@ -9,9 +9,9 @@ description: LenserFight CLI'yi macOS üzerinde kurun ve yapılandırın — App
 
 | Katman | Yol |
 |--------|-----|
-| Proje yapılandırması | `.lenserfight/config.json` (proje kök dizininde) |
+| Proje yapılandırması | `.lenserfight/lenserfight.json` (proje kök dizininde) |
 | Cihaz yapılandırması | `~/Library/Application Support/lenserfight/config.json` |
-| Eski cihaz | `~/.lenserfight/config.json` (yalnızca yedek okuma) |
+| Eski cihaz | `~/.lenserfight/lenserfight.json` (yalnızca yedek okuma) |
 
 `~/Library/Application Support/lenserfight/` macOS'un kullanıcı başına uygulama verisi için belirlediği standart konumdur.
 

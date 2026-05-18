@@ -71,7 +71,7 @@ When two discovered items share the same `kind:slug`, the higher-precedence item
 
 ## Config files
 
-`.lenserfight/config.json`, `.lenserfight/config.yaml`, and `.lenserfight/config.yml` may define safe, commit-friendly defaults:
+`.lenserfight/lenserfight.json`, `.lenserfight/config.yaml`, and `.lenserfight/config.yml` may define safe, commit-friendly defaults:
 
 ```json
 {
