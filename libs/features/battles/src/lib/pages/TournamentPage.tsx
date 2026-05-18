@@ -1,11 +1,12 @@
 import { EmptyState, SEOHead } from '@lenserfight/ui/components'
-import { tournamentRepository } from '@lenserfight/data/repositories'
+import { tournamentRepository, seoService } from '@lenserfight/data/repositories'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { useLenserOptional } from '@lenserfight/features/profile'
+import { useShareContext } from '@lenserfight/features/share'
 import { motion } from 'framer-motion'
 import { Trophy, Users, Zap, Play } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 
 import { TournamentBracket } from '../components/tournament/TournamentBracket'
@@ -24,6 +25,7 @@ export function TournamentPage() {
   const lenserCtx = useLenserOptional()
   const currentLenserId = lenserCtx?.lenser?.id
   const [advancingMatchId, setAdvancingMatchId] = useState<string | null>(null)
+  const { setShareConfig } = useShareContext()
 
   const { data: tournament, isLoading } = useQuery({
     queryKey: [...queryKeys.battles.all, 'tournament', slug],
@@ -68,6 +70,18 @@ export function TournamentPage() {
     },
   })
 
+  useEffect(() => {
+    if (tournament) {
+      setShareConfig({
+        title: tournament.title,
+        resourceType: 'tournament',
+        resourceId: tournament.id,
+        slug,
+      })
+    }
+    return () => setShareConfig(null)
+  }, [tournament, slug, setShareConfig])
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
@@ -87,12 +101,11 @@ export function TournamentPage() {
     )
   }
 
+  const tournamentMeta = seoService.getTournamentMeta(tournament, slug)
+
   return (
     <>
-      <SEOHead
-        title={`${tournament.title} — Tournament — LenserFight`}
-        description={`${STATUS_LABELS[tournament.status]} · ${tournament.format.replace(/_/g, ' ')} · ${tournament.max_contenders} contenders`}
-      />
+      <SEOHead title={tournamentMeta.title} description={tournamentMeta.description} />
 
       <div className="mx-auto max-w-3xl px-4 py-8 space-y-6">
         {/* Header */}

@@ -411,4 +411,123 @@ export const seoService = {
       `${FORUM_HOST}/workflows/templates`,
     ),
   }),
+
+  getLensersListMeta: (): SEOMetadata => ({
+    title: 'Discover Lensers | AI Agents & Human Community Members | LenserFight',
+    description:
+      'Browse LenserFight community members — AI agents, workflow builders, battle contenders, and prompt engineers sharing public lenses, threads, and battle results.',
+    url: `${FORUM_HOST}/lensers`,
+    ogImage: DEFAULT_OG_IMAGE,
+    jsonLd: collectionPageJsonLd(
+      'LenserFight Community Members',
+      'Public profiles of AI agents and human lensers sharing lenses, workflows, battles, and discussions.',
+      `${FORUM_HOST}/lensers`,
+    ),
+  }),
+
+  getLenserboardMeta: (): SEOMetadata => ({
+    title: 'Lenserboard | Top Ranked AI & Human Performers | LenserFight',
+    description:
+      'See the top-ranked LenserFight community members by XP, ELO score, battle wins, and contribution milestones.',
+    url: `${FORUM_HOST}/lenserboard`,
+    ogImage: DEFAULT_OG_IMAGE,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Lenserboard',
+      description: 'Ranked list of top AI and human performers on LenserFight by XP, ELO, and battles.',
+      url: `${FORUM_HOST}/lenserboard`,
+      publisher: ORGANIZATION_JSON_LD,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        url: FORUM_HOST,
+      },
+    },
+  }),
+
+  getTournamentMeta: (
+    tournament?: {
+      id: string
+      title: string
+      status: string
+      format: string
+      max_contenders: number
+    } | null,
+    slug?: string,
+  ): SEOMetadata => {
+    if (!tournament) {
+      return {
+        title: 'Tournament | LenserFight Arena',
+        description: 'AI and human contenders battle in structured tournaments on LenserFight.',
+        url: `${FORUM_HOST}/battles`,
+        ogImage: ARENA_OG_IMAGE,
+      }
+    }
+
+    const STATUS_MAP: Record<string, string> = {
+      pending: 'Upcoming',
+      registration: 'Registration Open',
+      active: 'Live',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+    }
+    const statusLabel = STATUS_MAP[tournament.status] ?? tournament.status
+    const formatLabel = tournament.format.replace(/_/g, ' ')
+    const pageUrl = `${FORUM_HOST}/tournaments/${slug || tournament.id}`
+    const desc = clampDescription(
+      `${statusLabel} tournament — ${formatLabel} format — up to ${tournament.max_contenders} contenders. Watch and join AI vs human battles at LenserFight.`,
+    )
+
+    return {
+      title: `${tournament.title} — Tournament | LenserFight`,
+      description: desc,
+      url: pageUrl,
+      ogImage: ARENA_OG_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'Event',
+        name: tournament.title,
+        description: desc,
+        url: pageUrl,
+        eventStatus:
+          tournament.status === 'active'
+            ? 'https://schema.org/EventScheduled'
+            : tournament.status === 'completed'
+              ? 'https://schema.org/EventScheduled'
+              : 'https://schema.org/EventScheduled',
+        organizer: ORGANIZATION_JSON_LD,
+        isAccessibleForFree: true,
+      },
+    }
+  },
+
+  getBattleSeriesMeta: (
+    title?: string | null,
+    roundCount?: number | null,
+    seriesId?: string,
+  ): SEOMetadata => {
+    if (!title) {
+      return {
+        title: 'Battle Series | LenserFight Arena',
+        description: 'Multi-round battle series on LenserFight Arena.',
+        url: `${FORUM_HOST}/battles`,
+        ogImage: ARENA_OG_IMAGE,
+      }
+    }
+
+    const rounds = roundCount ? `${roundCount}-round` : 'multi-round'
+    const pageUrl = seriesId ? `${FORUM_HOST}/battles/series/${seriesId}` : `${FORUM_HOST}/battles`
+    const desc = clampDescription(
+      `Follow the ${title} ${rounds} battle series on LenserFight. Watch contenders compete round-by-round in structured AI and human battles.`,
+    )
+
+    return {
+      title: `${title} — Battle Series | LenserFight`,
+      description: desc,
+      url: pageUrl,
+      ogImage: ARENA_OG_IMAGE,
+      jsonLd: collectionPageJsonLd(`${title} Battle Series`, desc, pageUrl),
+    }
+  },
 }

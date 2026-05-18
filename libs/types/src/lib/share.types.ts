@@ -1,4 +1,15 @@
-export type ShareResourceType = 'lens' | 'thread' | 'arena' | 'profile' | 'challenge' | 'external'
+export type ShareResourceType =
+  | 'lens'
+  | 'thread'
+  | 'arena'
+  | 'profile'
+  | 'challenge'
+  | 'external'
+  | 'battle'
+  | 'workflow'
+  | 'tournament'
+  | 'series'
+  | 'tag'
 
 export interface SharedLink {
   id: string
