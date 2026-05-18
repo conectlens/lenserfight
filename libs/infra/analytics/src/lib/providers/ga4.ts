@@ -1,4 +1,4 @@
-import { GA_MEASUREMENT_ID } from '@lenserfight/utils/env';
+import { GA_MEASUREMENT_ID, isProd } from '@lenserfight/utils/env';
 import { AnalyticsEvent, AnalyticsProvider } from '../types';
 
 declare global {
@@ -12,7 +12,7 @@ export class GA4Provider implements AnalyticsProvider {
   private initialized = false;
 
   init() {
-    if (this.initialized || !GA_MEASUREMENT_ID) return;
+    if (this.initialized || !GA_MEASUREMENT_ID || !isProd || typeof window === 'undefined') return;
 
     window.dataLayer = window.dataLayer || [];
     window.gtag = function () {
