@@ -1,7 +1,6 @@
 import {
   ApproveDeviceRequestDTO,
   ApproveDeviceRequestResultDTO,
-  AuthStateChangeCallback,
   DeviceApprovalRequestDTO,
   DeviceApprovalRequestResultDTO,
   DeveloperTokenExchangeResultDTO,
@@ -10,6 +9,7 @@ import {
   User,
   UserMetadata,
 } from '@lenserfight/types'
+import type { AuthChangeEvent } from '@supabase/supabase-js'
 import { createAuthRepository } from '../factory'
 
 const authRepo = createAuthRepository()
@@ -44,8 +44,8 @@ export const authService = {
     return authRepo.requestPasswordReset(email, captchaToken)
   },
 
-  resetPassword: async (password: string, token?: string): Promise<void> => {
-    return authRepo.resetPassword(password, token)
+  resetPassword: async (password: string): Promise<void> => {
+    return authRepo.resetPassword(password)
   },
 
   signInWithOAuth: async (provider: 'google' | 'github' | 'azure'): Promise<void> => {
@@ -60,7 +60,9 @@ export const authService = {
     return authRepo.sendMagicLink(email, captchaToken)
   },
 
-  onAuthStateChange: (callback: AuthStateChangeCallback): (() => void) => {
+  onAuthStateChange: (
+    callback: (user: User | null, event: AuthChangeEvent) => void
+  ): (() => void) => {
     return authRepo.onAuthStateChange(callback)
   },
 

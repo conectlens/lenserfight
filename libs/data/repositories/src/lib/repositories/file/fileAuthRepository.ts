@@ -1,7 +1,6 @@
 import type {
   ApproveDeviceRequestDTO,
   ApproveDeviceRequestResultDTO,
-  AuthStateChangeCallback,
   DeviceApprovalRequestDTO,
   DeviceApprovalRequestResultDTO,
   DeveloperTokenExchangeResultDTO,
@@ -10,6 +9,7 @@ import type {
   User,
   UserMetadata,
 } from '@lenserfight/types'
+import type { AuthChangeEvent } from '@supabase/supabase-js'
 import type { AuthRepositoryPort } from '../authRepository'
 
 const SESSION_KEY = 'lf_file_auth_session'
@@ -88,10 +88,12 @@ export class FileAuthRepository implements AuthRepositoryPort {
     saveSession(updated)
   }
 
-  onAuthStateChange(callback: AuthStateChangeCallback): () => void {
+  onAuthStateChange(
+    callback: (user: User | null, event: AuthChangeEvent) => void
+  ): () => void {
     // Synchronously notify with the provisioned user and return a no-op unsubscribe.
     const user = ensureSession()
-    callback(user)
+    callback(user, 'INITIAL_SESSION')
     return () => {}
   }
 
@@ -99,7 +101,7 @@ export class FileAuthRepository implements AuthRepositoryPort {
     // No-op in file mode.
   }
 
-  async resetPassword(_password: string, _token?: string): Promise<void> {
+  async resetPassword(_password: string): Promise<void> {
     // No-op in file mode.
   }
 
