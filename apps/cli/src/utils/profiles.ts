@@ -1,11 +1,11 @@
 import { promises as fsp } from 'node:fs'
 import { existsSync, mkdirSync } from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
+import { getDeviceConfigDir } from '../config/project-config'
 
 // ─── Profile shape ──────────────────────────────────────────────────────────
 //
-// Each profile is a JSON file under `~/.lenserfight/profiles/<name>.json` that
+// Each profile is a JSON file under `<device-config-dir>/profiles/<name>.json` that
 // holds the credentials and defaults needed to point the CLI at a specific
 // Supabase backend. The file is written with mode 0o600 because it contains
 // access tokens. An optional `default_workflow_id` is kept so commands like
@@ -25,7 +25,7 @@ export interface LenserfightProfile {
 // ─── Path helpers ────────────────────────────────────────────────────────────
 
 export function getProfilesDir(): string {
-  const dir = path.join(os.homedir(), '.lenserfight', 'profiles')
+  const dir = path.join(getDeviceConfigDir(), 'profiles')
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
   }

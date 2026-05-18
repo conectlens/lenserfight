@@ -1,9 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import consola from 'consola';
 import { toSnakeCaseKeys } from '@lenserfight/utils/text';
-import { resolveConfig as resolveBaseConfig, loadUserConfig, saveUserConfig, type LenserfightConfig } from '../config/project-config';
+import { resolveConfig as resolveBaseConfig, loadUserConfig, saveUserConfig, getDeviceConfigDir, type LenserfightConfig } from '../config/project-config';
 import { reportCliError } from './error-reporter';
 import { getExecContext } from '../lib/exec-context';
 import { redactHeaders, redactUrl } from '../lib/redact';
@@ -11,7 +10,7 @@ import { attemptAuthRecovery } from './auth-recovery';
 
 // ─── Profile overlay (Y1) ────────────────────────────────────────────────────
 //
-// Profiles live at `~/.lenserfight/profiles/<name>.json` and overlay the
+// Profiles live at `<device-config-dir>/profiles/<name>.json` and overlay the
 // resolved config without touching the legacy env-based path. Read is
 // synchronous-and-cheap so it stays compatible with both `callRpc` and
 // `callRest` (which were originally synchronous resolvers).
@@ -27,7 +26,7 @@ interface RawProfile {
 
 function readActiveProfileSync(): RawProfile | null {
   try {
-    const dir = path.join(os.homedir(), '.lenserfight', 'profiles')
+    const dir = path.join(getDeviceConfigDir(), 'profiles')
     const activeFile = path.join(dir, '.active')
     let name: string | undefined
     if (existsSync(activeFile)) {
@@ -181,7 +180,7 @@ async function callRpcInner<T = unknown>(
   if (options.useServiceRole) {
     if (!config.supabaseServiceRoleKey) {
       throw new Error(
-        'Service role key not found. Set SUPABASE_SERVICE_ROLE_KEY in your environment or ~/.lenserfight/config.json.'
+        'Service role key not found. Set SUPABASE_SERVICE_ROLE_KEY in your environment or the device config (run `lf doctor` to see the path).'
       );
     }
     headers['Authorization'] = `Bearer ${config.supabaseServiceRoleKey}`;
@@ -294,7 +293,7 @@ async function callRestInner<T = unknown>(
   if (options.useServiceRole) {
     if (!config.supabaseServiceRoleKey) {
       throw new Error(
-        'Service role key not found. Set SUPABASE_SERVICE_ROLE_KEY in your environment or ~/.lenserfight/config.json.'
+        'Service role key not found. Set SUPABASE_SERVICE_ROLE_KEY in your environment or the device config (run `lf doctor` to see the path).'
       )
     }
     headers['Authorization'] = `Bearer ${config.supabaseServiceRoleKey}`
