@@ -50,7 +50,7 @@ export const CHAINABIT_APP_URL = readPublicBaseUrl('CHAINABIT_APP_URL', 'https:/
  */
 export const API_BASE_URL = stripSupabaseRestPath(readPublicBaseUrl(
   'API_URL',
-  import.meta.env.DEV ? DEV_API_BASE_URL : 'https://api.lenserfight.com',
+  'https://api.lenserfight.com',
 ))
 
 /**
