@@ -43,7 +43,7 @@ This document is a one-time operator reference for configuring GitHub Discussion
 | Propose a new feature | Discussions → Ideas |
 | Show off a lens or battle result | Discussions → Show & Tell |
 | Coordinate on a PR | Discussions → Contributors |
-| Report a security issue | security@lenserfight.com (never public) |
+| Report a security issue | lets@conectlens.com (never public) |
 
 ## Community health signals to watch
 

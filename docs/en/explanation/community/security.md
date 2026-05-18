@@ -19,4 +19,4 @@ For the full policy — supported versions, scope, response time expectations, a
 
 If you cannot access the Security tab, contact the maintainer through a private channel before disclosing anything publicly.
 
-**Contact**: `security@lenserfight.com`
+**Contact**: `lets@conectlens.com`

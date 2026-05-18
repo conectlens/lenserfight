@@ -21,7 +21,7 @@ export const Logo: React.FC<LogoProps> = ({
     <span className={`inline-flex items-center gap-2 relative ${className}`}>
       {/* Light theme icon */}
       <img
-        src="/favicons/original/ms-icon-150x150.png"
+        src="https://cdn.lenserfight.com/brand/favicons/original/ms-icon-150x150.png"
         alt="LenserFight"
         width={size}
         height={size}

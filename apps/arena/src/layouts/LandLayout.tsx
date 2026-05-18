@@ -43,7 +43,7 @@ import { chainabitContactUrl } from '../utils/chainabitUrls'
 
 const NAV_LINKS = [
   { to: '/about', key: 'about' },
-  { to: '/note-from-omer', key: 'note' },
+  { to: '/note', key: 'note' },
   { to: '/faq', key: 'faq' },
 ] as const
 
@@ -144,32 +144,32 @@ export const LandLayout: React.FC = () => {
                       const description = t(`nav:items.${key}.description`)
                       const badge = hasBadge ? t(`nav:items.${key}.badge`) : undefined
                       return (
-                      <Link
-                        key={to}
-                        to={to}
-                        className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-raised ${isActive(to) ? 'bg-surface-raised' : ''
-                          }`}
-                        onClick={() => setProductOpen(false)}
-                      >
-                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
-                          <Icon size={15} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                              {label}
-                            </span>
-                            {badge && (
-                              <span className="rounded-full bg-primary-yellow-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-yellow-700 dark:text-primary-yellow-400">
-                                {badge}
-                              </span>
-                            )}
+                        <Link
+                          key={to}
+                          to={to}
+                          className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-raised ${isActive(to) ? 'bg-surface-raised' : ''
+                            }`}
+                          onClick={() => setProductOpen(false)}
+                        >
+                          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
+                            <Icon size={15} />
                           </div>
-                          <p className="mt-0.5 truncate text-xs text-greyscale-500 dark:text-greyscale-400">
-                            {description}
-                          </p>
-                        </div>
-                      </Link>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                                {label}
+                              </span>
+                              {badge && (
+                                <span className="rounded-full bg-primary-yellow-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-yellow-700 dark:text-primary-yellow-400">
+                                  {badge}
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-0.5 truncate text-xs text-greyscale-500 dark:text-greyscale-400">
+                              {description}
+                            </p>
+                          </div>
+                        </Link>
                       )
                     })}
                   </div>
@@ -206,22 +206,22 @@ export const LandLayout: React.FC = () => {
                       const label = t(`nav:items.${key}.label`)
                       const description = t(`nav:items.${key}.description`)
                       return (
-                      <Link
-                        key={to}
-                        to={to}
-                        className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-raised ${isActive(to) ? 'bg-surface-raised' : ''
-                          }`}
-                        onClick={() => setStoryOpen(false)}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <span className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                            {label}
-                          </span>
-                          <p className="mt-0.5 truncate text-xs text-greyscale-500 dark:text-greyscale-400">
-                            {description}
-                          </p>
-                        </div>
-                      </Link>
+                        <Link
+                          key={to}
+                          to={to}
+                          className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-raised ${isActive(to) ? 'bg-surface-raised' : ''
+                            }`}
+                          onClick={() => setStoryOpen(false)}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <span className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                              {label}
+                            </span>
+                            <p className="mt-0.5 truncate text-xs text-greyscale-500 dark:text-greyscale-400">
+                              {description}
+                            </p>
+                          </div>
+                        </Link>
                       )
                     })}
                   </div>
@@ -332,20 +332,20 @@ export const LandLayout: React.FC = () => {
                     const label = t(`nav:items.${key}.label`)
                     const badge = hasBadge ? t(`nav:items.${key}.badge`) : undefined
                     return (
-                    <Link
-                      key={to}
-                      to={to}
-                      onClick={() => { setMobileOpen(false); setMobileProductOpen(false) }}
-                      className="flex items-center gap-2 py-1.5 text-sm text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
-                    >
-                      <Icon size={14} className="shrink-0" />
-                      {label}
-                      {badge && (
-                        <span className="rounded-full bg-primary-yellow-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-yellow-700 dark:text-primary-yellow-400">
-                          {badge}
-                        </span>
-                      )}
-                    </Link>
+                      <Link
+                        key={to}
+                        to={to}
+                        onClick={() => { setMobileOpen(false); setMobileProductOpen(false) }}
+                        className="flex items-center gap-2 py-1.5 text-sm text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
+                      >
+                        <Icon size={14} className="shrink-0" />
+                        {label}
+                        {badge && (
+                          <span className="rounded-full bg-primary-yellow-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-yellow-700 dark:text-primary-yellow-400">
+                            {badge}
+                          </span>
+                        )}
+                      </Link>
                     )
                   })}
                 </div>
@@ -369,14 +369,14 @@ export const LandLayout: React.FC = () => {
                   {NAV_LINKS.map(({ to, key }) => {
                     const label = t(`nav:items.${key}.label`)
                     return (
-                    <Link
-                      key={to}
-                      to={to}
-                      onClick={() => { setMobileOpen(false); setMobileStoryOpen(false); trackNav(label, 'arena_header_mobile') }}
-                      className="flex items-center py-1.5 text-sm text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
-                    >
-                      {label}
-                    </Link>
+                      <Link
+                        key={to}
+                        to={to}
+                        onClick={() => { setMobileOpen(false); setMobileStoryOpen(false); trackNav(label, 'arena_header_mobile') }}
+                        className="flex items-center py-1.5 text-sm text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
+                      >
+                        {label}
+                      </Link>
                     )
                   })}
                 </div>

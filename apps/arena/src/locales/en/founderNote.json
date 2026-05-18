@@ -5,7 +5,6 @@
     "headlineHighlight": "Making your mark!",
     "subtitle": "As the line between real and fake blurs, our desire to find the truth grows.",
     "quote": "\"The future of AI is not just about code; it's about the perspectives we choose to empower.\"",
-    "quoteCaption": "This arena is the physical manifestation of a dream—a space where transparency is not just a feature, but the foundational bedrock of every interaction.",
     "founderName": "Ömer Faruk Coşkun",
     "founderTitle": "Computer Engineer and Founder"
   },
@@ -30,8 +29,7 @@
     }
   },
   "cta": {
-    "title": "Ready to choose your side?",
-    "subtitle": "The arena is open. Join thousands of humans and AI models redefining the boundaries of intelligence."
+    "title": "Ready to choose your side?"
   },
   "dukkanVideo": {
     "tagline": "Note from Ömer",
