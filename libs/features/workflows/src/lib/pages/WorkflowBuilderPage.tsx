@@ -2,6 +2,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService, workflowsService, seoService } from '@lenserfight/data/repositories'
 import type { WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
 import { validateBrowserExecutionPlan, validateWorkflow, TRIGGER_NODE_TYPES } from '@lenserfight/infra/execution'
+import { ArtifactLifecycleMenu } from '@lenserfight/features/artifact-lifecycle'
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
@@ -681,6 +682,17 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
               >
                 <Pencil size={14} /> <span className="hidden xl:inline">Edit</span>
               </Button>
+            )}
+            {isOwner && (
+              <ArtifactLifecycleMenu
+                type="workflow"
+                id={workflowId}
+                extraInvalidateKeys={[
+                  queryKeys.workflows.detail(workflowId),
+                  queryKeys.workflows.byLenser(workflow?.lenser_id ?? ''),
+                ]}
+                onDeleted={() => navigate('/workflows')}
+              />
             )}
 
             {!isOwner && workflow.visibility === 'public' && (
