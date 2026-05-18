@@ -10,6 +10,7 @@ export type ShareResourceType =
   | 'tournament'
   | 'series'
   | 'tag'
+  | 'page'
 
 export interface SharedLink {
   id: string
@@ -42,7 +43,7 @@ export interface ShareEvent {
 
 export interface CreateLinkDTO {
   resourceType: ShareResourceType
-  resourceId: string
+  resourceId?: string
   slug?: string
   channel?: string
   campaignKey?: string
