@@ -107,7 +107,7 @@ When you're ready to use the full cloud stack:
 | Layer | Storage |
 |-------|---------|
 | Lenses, workflows, agents (web app) | Browser IndexedDB — origin `http://localhost:3000` |
-| Auth tokens, developer tokens (CLI) | `~/.lenserfight/config.json` — created by `lf init` or `lf auth login` |
+| Auth tokens, developer tokens (CLI) | `~/.config/lenserfight/config.json` (Linux/Pardus) · `~/Library/Application Support/lenserfight/config.json` (macOS) · `%APPDATA%\lenserfight\config.json` (Windows) — created by `lf init` or `lf auth login` |
 | Keychain secrets (CLI, CI) | OS keychain, or `~/.lenserfight/gateway/keys/` when `LF_GATEWAY_KEY_FILE_FALLBACK=1` |
 
 ---
