@@ -1,9 +1,10 @@
 import { useLenserOptional } from '@lenserfight/features/profile'
+import { useShareContext } from '@lenserfight/features/share'
 import { Button } from '@lenserfight/ui/components'
 import { TrustMetadataPanel } from '@lenserfight/ui/widgets'
 import type { ExecutionTrustEvaluation } from '@lenserfight/types'
 import { Loader2, ShieldAlert, Swords } from 'lucide-react'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@lenserfight/data/supabase'
@@ -115,6 +116,7 @@ function RematchButton({ slug }: { slug: string }) {
 export function BattleResultPage() {
   const { slug } = useParams<{ slug: string }>()
   const { data: battle } = useBattle(slug ?? '')
+  const { setShareConfig } = useShareContext()
 
   const submissionIds = ((battle as unknown as { submissions?: Array<{ id: string }> } | undefined)?.submissions)
     ?.map((s) => s.id) ?? []
@@ -122,6 +124,18 @@ export function BattleResultPage() {
   const verifiedSubmissions = trustEvaluations.filter(
     (te) => te.trustLevel !== 'unverified'
   )
+
+  useEffect(() => {
+    if (battle) {
+      setShareConfig({
+        title: `${battle.title} — Results`,
+        resourceType: 'battle',
+        resourceId: battle.id,
+        slug: battle.slug,
+      })
+    }
+    return () => setShareConfig(null)
+  }, [battle, setShareConfig])
 
   return (
     <>

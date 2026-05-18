@@ -5,7 +5,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { useModalRouter } from '@lenserfight/ui/routing'
 import { Bot } from 'lucide-react'
-import { agentsService } from '@lenserfight/data/repositories'
+import { agentsService, seoService } from '@lenserfight/data/repositories'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import type { LenserType } from '@lenserfight/types'
@@ -19,6 +19,7 @@ export const LensersPage: React.FC = () => {
   const { humanWorkspace } = useLenserWorkspace()
   const { open } = useModalRouter()
   const [searchParams] = useSearchParams()
+  const lensersListMeta = seoService.getLensersListMeta()
   const initialType = searchParams.get('type')
   const [filter, setFilter] = useState<LenserFilterValue>(
     initialType === 'my_agents' || initialType === 'ai' || initialType === 'human'
@@ -59,7 +60,7 @@ export const LensersPage: React.FC = () => {
 
   return (
     <div className="">
-      <SEOHead type="default" overrideTitle="Lensers" />
+      <SEOHead title={lensersListMeta.title} description={lensersListMeta.description} />
 
       <PageHeader
         title="Lensers"
