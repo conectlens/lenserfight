@@ -61,6 +61,9 @@
       "@lenserfight/features/agents": [
         "libs/features/agents/src/index.ts"
       ],
+      "@lenserfight/features/artifact-lifecycle": [
+        "libs/features/artifact-lifecycle/src/index.ts"
+      ],
       "@lenserfight/features/tags": [
         "libs/features/tags/src/index.ts"
       ],
