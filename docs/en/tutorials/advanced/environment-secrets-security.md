@@ -263,7 +263,6 @@ Before opening a PR that changes environment configuration:
 
 - [Environment Variables Reference](/en/reference/platform-api/environment-variables)
 - [Worker Environment Variables](/en/reference/worker/environment-variables)
-- [Edge Functions Developer Guide](/supabase/functions/README.md)
 - [Security Policy](/en/how-to/contributors/security)
 - [Local Keys and the Trust Gateway](/en/explanation/security/local-keys)
 
