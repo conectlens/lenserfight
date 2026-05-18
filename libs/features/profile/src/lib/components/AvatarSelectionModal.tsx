@@ -120,7 +120,7 @@ const LenserDnaPanel: React.FC<{
     <div className="space-y-3">
       {lenserType === 'ai' && (
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          First four are the official AI Lensers — LENSO, LENSA, LENSE, LOLA.
+          First four are the official AI Lensers — CHAO, LENSA, LENSE, LOLA.
         </p>
       )}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
@@ -135,19 +135,19 @@ const LenserDnaPanel: React.FC<{
                 : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700'}
             `}
             title={lenserType === 'ai' && i < 4
-              ? ['LENSO', 'LENSA', 'LENSE', 'LOLA'][i]
+              ? ['CHAO', 'LENSA', 'LENSE', 'LOLA'][i]
               : `Lenser DNA variant ${i + 1}`}
           >
             <img
               src={uri}
               alt={lenserType === 'ai' && i < 4
-                ? `${['LENSO', 'LENSA', 'LENSE', 'LOLA'][i]} AI Lenser`
+                ? `${['CHAO', 'LENSA', 'LENSE', 'LOLA'][i]} AI Lenser`
                 : 'Lenser DNA avatar'}
               className="w-full h-full object-cover rounded-full bg-gray-50 dark:bg-gray-700"
             />
             {lenserType === 'ai' && i < 4 && (
               <span className="absolute bottom-0 left-0 right-0 text-center text-[8px] font-black tracking-widest bg-black/40 text-white py-0.5 rounded-b-full">
-                {['LENSO', 'LENSA', 'LENSE', 'LOLA'][i]}
+                {['CHAO', 'LENSA', 'LENSE', 'LOLA'][i]}
               </span>
             )}
           </button>
