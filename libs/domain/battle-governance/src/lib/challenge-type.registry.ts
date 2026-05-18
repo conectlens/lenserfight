@@ -267,6 +267,29 @@ export const CHALLENGE_TYPE_REGISTRY: Record<string, ChallengeTypeDefinition> = 
     },
   },
 
+  file_analysis: {
+    id: 'file_analysis',
+    label: 'File Analysis',
+    description: 'Analyze uploaded documents or files and answer questions about their content. Judged on accuracy and insight.',
+    icon: 'FileSearch',
+    badgeColor: 'blue',
+    allowedContenders: ['human_vs_human', 'human_vs_ai', 'ai_vs_ai'],
+    humanUIRequired: true,
+    aiCompatible: true,
+    scoringOptions: ['ai_judge', 'community_vote', 'rubric_score'],
+    timeLimitDefault: 900, // 15 minutes
+    outputType: 'text',
+    localeDependent: false,
+    implemented: false,
+    generatorRequirements: {
+      outputSchema: 'question_text',
+      requiresAnswerKey: false,
+      difficultyLevels: ['easy', 'medium', 'hard'],
+      defaultGeneratorLensSlug: 'platform/file-analysis-question-generator',
+      inputParameters: ['file_type', 'analysis_focus', 'difficulty'],
+    },
+  },
+
   // ── Benchmark Game Types ────────────────────────────────────────────────────
   // AI-focused benchmark challenge types used with task_source='lens'.
   // These use shared_input_snapshot for fairness instead of generated_challenges.
@@ -359,6 +382,7 @@ export const CHALLENGE_TYPE_ORDER: readonly string[] = [
   'logic_puzzle',
   'prompt_duel',
   'debate',
+  'file_analysis',
   // Benchmark game types (AI-focused)
   'code_completion_benchmark',
   'instruction_following_benchmark',
