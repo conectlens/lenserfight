@@ -16,6 +16,7 @@ jest.mock('../config/project-config', () => ({
   saveConfig: jest.fn(),
   ensureUserConfigDir: jest.fn(),
   loadEnvConfig: jest.fn(),
+  getDeviceConfigPath: jest.fn().mockReturnValue('/home/user/.config/lenserfight/lenserfight.json'),
 }))
 
 import consola from 'consola'
@@ -66,7 +67,7 @@ describe('init', () => {
       })
     )
     expect(consolaSuccess).toHaveBeenCalledWith(
-      expect.stringContaining('.lenserfight.json'),
+      expect.stringContaining('.lenserfight/lenserfight.json'),
       expect.anything(),
     )
   })
@@ -101,7 +102,10 @@ describe('init', () => {
 
     await initCmd.run?.({ args: { mode: 'local', source: 'auto' }, cmd: {}, rawArgs: [] })
 
-    expect(consolaSuccess).toHaveBeenCalledWith(expect.stringContaining('~/.lenserfight/config.json'))
+    expect(consolaSuccess).toHaveBeenCalledWith(
+      expect.stringContaining('tokens stored here'),
+      expect.stringContaining('lenserfight.json'),
+    )
   })
 
   it('shows info when user config dir already exists', async () => {
@@ -109,7 +113,10 @@ describe('init', () => {
 
     await initCmd.run?.({ args: { mode: 'local', source: 'auto' }, cmd: {}, rawArgs: [] })
 
-    expect(consolaInfo).toHaveBeenCalledWith(expect.stringContaining('~/.lenserfight/config.json already exists'))
+    expect(consolaInfo).toHaveBeenCalledWith(
+      expect.stringContaining('already exists'),
+      expect.stringContaining('lenserfight.json'),
+    )
   })
 
   it('warns about missing anon key in cloud mode', async () => {
