@@ -175,6 +175,12 @@ function makeHandler(options: StartServerOptions): http.RequestListener {
     if (origin && originAllowed) {
       res.setHeader('access-control-allow-origin', origin)
       res.setHeader('vary', 'origin')
+      // Chrome's Private Network Access spec requires this header on the actual
+      // response (not just the OPTIONS pre-flight) when a public/non-loopback
+      // origin fetches a loopback or private-network resource. Without it the
+      // browser blocks the response even after a successful pre-flight, producing
+      // the "Status code: (null)" CORS error users see on /healthz.
+      res.setHeader('access-control-allow-private-network', 'true')
     }
 
     if (
@@ -189,7 +195,7 @@ function makeHandler(options: StartServerOptions): http.RequestListener {
       if (handled) return
     }
     res.setHeader('content-type', 'application/json')
-    if (req.url === '/healthz') {
+    if (url === '/healthz') {
       res.statusCode = 200
       res.end(
         JSON.stringify({
@@ -201,7 +207,7 @@ function makeHandler(options: StartServerOptions): http.RequestListener {
       )
       return
     }
-    if (req.url === '/peers') {
+    if (url === '/peers') {
       const local = normalizeLocalAddress(req.socket.localAddress)
       const primary = normalizeLocalAddress(options.primaryBind)
       const onExtraBind =
@@ -219,7 +225,7 @@ function makeHandler(options: StartServerOptions): http.RequestListener {
       )
       return
     }
-    if (req.url === '/identity' && req.method === 'GET') {
+    if (url === '/identity' && req.method === 'GET') {
       const identity = await readIdentity(options)
       if (!identity) {
         res.statusCode = 404
@@ -230,13 +236,13 @@ function makeHandler(options: StartServerOptions): http.RequestListener {
       res.end(JSON.stringify(identity))
       return
     }
-    if (req.url === '/outbox' && req.method === 'GET') {
+    if (url === '/outbox' && req.method === 'GET') {
       const stats = (await options.onOutboxStats?.()) ?? { pending: 0 }
       res.statusCode = 200
       res.end(JSON.stringify(stats))
       return
     }
-    if (req.url === '/sync/pull' && req.method === 'POST') {
+    if (url === '/sync/pull' && req.method === 'POST') {
       const result = (await options.onSyncPull?.()) ?? { claimed: 0 }
       res.statusCode = 200
       res.end(JSON.stringify(result))
