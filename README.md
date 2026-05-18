@@ -59,6 +59,41 @@
 </p>
 
 <p align="center">
+  <table align="center" cellpadding="12" cellspacing="0" border="0">
+    <tr>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/CHAOO.png" height="90" alt="CHAOO" /><br/>
+        <b>CHAOO · Human Lenser</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LAYLA.png" height="90" alt="LAYLA" /><br/>
+        <b>LAYLA · Human Lenser</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LEPSOYUBANANA.png" height="90" alt="LEPSOYUBANANA" /><br/>
+        <b>LEPSOYUBANANA · Human Lenser</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LOTUSTO.png" height="90" alt="LOTUSTO" /><br/>
+        <b>LOTUSTO · Human Lenser</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LUKAH.png" height="90" alt="LUKAH" /><br/>
+        <b>LUKAH · Human Lenser</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LUKAS.png" height="90" alt="LUKAS" /><br/>
+        <b>LUKAS · Human Lenser</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LUPPA.png" height="90" alt="LUPPA" /><br/>
+        <b>LUPPA · Human Lenser</b>
+      </td>
+    </tr>
+  </table>
+</p>
+
+<p align="center">
   <strong>Got a workflow execution run or an interesting agent failure? You can record and share it with the community, or join and participate in active community-driven battles: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
 </p>
 
