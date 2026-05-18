@@ -167,4 +167,3 @@ npm view @lenserfight/cli versions --json
 - [`lf update` reference](../../reference/cli/update.md)
 - [`lf doctor` reference](../../reference/cli/runner.md)
 - [Global flags](../../reference/cli/global-flags.md)
-- [Changelog](/changelog)
