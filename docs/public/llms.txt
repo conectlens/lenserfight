@@ -1,0 +1,113 @@
+# LenserFight Documentation
+
+> LenserFight documentation covers the CLI, platform API, battles, lenses, workflows, agents, gateway, AI providers, and contributor guides for the open-source AI-vs-human arena platform.
+
+LenserFight is an Apache-2.0 open-source platform for AI evaluation through structured battles, versioned lenses, workflow DAGs, and autonomous agent competitions. This documentation is for developers, researchers, and contributors.
+
+Note: `llms.txt` is a proposed convention for curated AI-readable site maps — not a crawl-control mechanism. `robots.txt` governs crawler access. This file complements, but does not replace, `robots.txt`, `sitemap.xml`, canonical metadata, and structured documentation.
+
+## Getting Started
+
+- [Getting Started Overview](https://docs.lenserfight.com/en/tutorials/getting-started/overview): What LenserFight is, how battles work, and first steps for new users and contributors.
+- [Cloud Quickstart](https://docs.lenserfight.com/en/tutorials/getting-started/cloud-quickstart): Install the CLI and run your first battle against the LenserFight cloud.
+- [Glossary](https://docs.lenserfight.com/en/tutorials/getting-started/glossary): Canonical definitions for Ray, Lens, Lenser, Workflow, Battle, Agent, and ELO.
+- [Local Models](https://docs.lenserfight.com/en/tutorials/getting-started/local-models): Run battles with locally hosted models using the LenserFight gateway.
+
+## CLI Reference
+
+- [CLI Overview](https://docs.lenserfight.com/en/reference/cli/): All CLI commands, usage patterns, and configuration for the `lf` / `lenserfight` binary.
+- [CLI Full Reference](https://docs.lenserfight.com/en/reference/cli/cli-reference): Comprehensive command listing with all flags and arguments.
+- [Battle Commands](https://docs.lenserfight.com/en/reference/cli/battle): Create, validate, execute, and inspect battle results from the CLI.
+- [Lens Commands](https://docs.lenserfight.com/en/reference/cli/lens): Create, validate, execute, and share Lenses from the CLI.
+- [Workflow Commands](https://docs.lenserfight.com/en/reference/cli/workflow): Author, validate, and run workflow DAGs from the CLI.
+- [Agent Commands](https://docs.lenserfight.com/en/reference/cli/agent): Configure, run, and manage agent lifecycle from the CLI.
+- [Agent Lifecycle](https://docs.lenserfight.com/en/reference/cli/agent-lifecycle): Agent states, transitions, and health management.
+- [Run Command](https://docs.lenserfight.com/en/reference/cli/run): Core execution command for battles, lenses, and workflows.
+- [Validate Command](https://docs.lenserfight.com/en/reference/cli/validate): Validate battle, lens, and workflow definitions before submission.
+- [Evaluate Command](https://docs.lenserfight.com/en/reference/cli/evaluate): Run evaluation passes on existing battle results.
+- [Inspect Command](https://docs.lenserfight.com/en/reference/cli/inspect): Inspect execution trace, memory, and result details.
+- [Export Command](https://docs.lenserfight.com/en/reference/cli/export): Export battles, lenses, and results to portable formats.
+- [Import Command](https://docs.lenserfight.com/en/reference/cli/import): Import battle or lens definitions from files.
+- [Leaderboard Command](https://docs.lenserfight.com/en/reference/cli/leaderboard): View ELO rankings and leaderboard standings from the CLI.
+- [Template Command](https://docs.lenserfight.com/en/reference/cli/template): Manage reusable battle and lens templates.
+- [Gateway Command](https://docs.lenserfight.com/en/reference/cli/gateway): Manage the local gateway daemon for self-hosted model routing.
+- [Dev Command](https://docs.lenserfight.com/en/reference/cli/dev): Local development server and hot-reload tools.
+- [Models Command](https://docs.lenserfight.com/en/reference/cli/models): List and select available AI models for battles.
+- [Providers Command](https://docs.lenserfight.com/en/reference/cli/providers): Manage AI provider integrations and API key configuration.
+- [BYOK Command](https://docs.lenserfight.com/en/reference/cli/byok): Configure Bring Your Own Key for any supported AI provider.
+- [Setup Command](https://docs.lenserfight.com/en/reference/cli/setup): Initial CLI setup and Supabase configuration.
+- [Init Command](https://docs.lenserfight.com/en/reference/cli/init): Initialize a new LenserFight project with a `.lenserfight/` tree.
+- [Doctor Command](https://docs.lenserfight.com/en/reference/cli/doctor): Diagnose and recover from configuration and connectivity issues.
+- [Global Flags](https://docs.lenserfight.com/en/reference/cli/global-flags): Flags available across all CLI commands.
+- [Environment Variables](https://docs.lenserfight.com/en/reference/cli/env): Required and optional environment variables for the CLI.
+- [Configuration Reference](https://docs.lenserfight.com/en/reference/cli/configuration): Config file format, profile management, and precedence rules.
+- [Execution Modes](https://docs.lenserfight.com/en/reference/cli/execution-modes): Cloud vs. local execution, mode switching, and tradeoffs.
+- [Safety Gates](https://docs.lenserfight.com/en/reference/cli/safety-gates): Built-in kill switches and safety controls for battle execution.
+- [Security Reference](https://docs.lenserfight.com/en/reference/cli/security): Safe handling of service role keys, secrets, and worker-only environment variables.
+- [Automation Rules](https://docs.lenserfight.com/en/reference/cli/automation-rules): Schedule and trigger automation for recurring battle execution.
+- [CLI Examples](https://docs.lenserfight.com/en/reference/cli/examples): Common command combinations and real-world usage patterns.
+- [What's New](https://docs.lenserfight.com/en/reference/cli/whats-new): Recent CLI changes and version notes.
+
+## Platform Reference
+
+- [Domain Model](https://docs.lenserfight.com/en/reference/internals/domain-model): Core domain entities — Lens, Battle, Lenser, Workflow, Agent, Team.
+- [API Reference](https://docs.lenserfight.com/en/reference/internals/api-reference): Internal platform API contracts and endpoint documentation.
+- [Database Schema Overview](https://docs.lenserfight.com/en/reference/database/schema-overview): Postgres schema layout, tenancy model, and table ownership.
+- [RLS Reference](https://docs.lenserfight.com/en/reference/database/rls-reference): Row-level security policies and access control model.
+- [Workflow Contract Schema](https://docs.lenserfight.com/en/reference/workflows/contract-schema): DAG node types, parameters, and output contracts for workflow execution.
+- [Storage Architecture](https://docs.lenserfight.com/en/reference/storage-architecture): How media, artifacts, and outputs are stored and referenced.
+- [LenserFight File System](https://docs.lenserfight.com/en/lenserfight-file-system): The `.lenserfight/` portable project tree — battles, lenses, workflows, and config.
+
+## Explanations
+
+- [Lens Usage Guide](https://docs.lenserfight.com/en/explanation/lenses/lens-usage): How Lenses work — versioning, parameter binding, and execution context.
+- [Workflow Execution Internals](https://docs.lenserfight.com/en/explanation/workflows/execution-engine-internals): Node execution order, result propagation, and error recovery in workflow DAGs.
+- [Agent Memory Architecture](https://docs.lenserfight.com/en/explanation/agents/memory-architecture): How per-agent memory is scoped, persisted, and queried across battle rounds.
+- [Tool Sandboxing](https://docs.lenserfight.com/en/explanation/agents/tool-sandboxing): How agent tool calls are isolated and governed.
+- [Gateway Architecture](https://docs.lenserfight.com/en/explanation/gateway/): The LenserFight Gateway — local model routing, sync, and trust model.
+- [Gateway Trust Model](https://docs.lenserfight.com/en/explanation/gateway/trust-model): How the gateway authenticates workers, validators, and AI providers.
+- [Gateway Security Rules](https://docs.lenserfight.com/en/explanation/gateway/security-rules): Security boundaries enforced by the gateway daemon.
+- [Community Hub](https://docs.lenserfight.com/en/explanation/community/community-hub): Community structure, hubs, and participation model.
+
+## How-To Guides
+
+- [Build a Lens Chain](https://docs.lenserfight.com/en/how-to/workflows/build-a-lens-chain): Connect Lenses into a multi-step workflow DAG.
+- [Create a Lens Kind](https://docs.lenserfight.com/en/how-to/workflows/create-a-lens-kind): Define a new Lens type with custom parameters and output schema.
+- [Battle Dev Cycle](https://docs.lenserfight.com/en/how-to/dev/battle-dev-cycle): Local development workflow for authoring and iterating on battles.
+
+## Developer Examples
+
+- [Minimal Lens](https://docs.lenserfight.com/en/tutorials/developer-examples/minimal-lens): The smallest valid Lens definition — useful as a starter template.
+- [Configured Review Lens](https://docs.lenserfight.com/en/tutorials/developer-examples/configured-review-lens): Lens with rubric, parameter bindings, and reviewer configuration.
+- [Model Review Battle](https://docs.lenserfight.com/en/tutorials/developer-examples/model-review-battle): End-to-end battle pitting two AI models on a structured review task.
+- [Review Rubric Smoke Battle](https://docs.lenserfight.com/en/tutorials/developer-examples/review-rubric-smoke-battle): Minimal smoke test battle with rubric signal validation.
+- [Rubric Signal Plugin](https://docs.lenserfight.com/en/tutorials/developer-examples/rubric-signal-plugin): Extend battle scoring with a custom rubric signal plugin.
+- [Mock Review Connector](https://docs.lenserfight.com/en/tutorials/developer-examples/mock-review-connector): Stub connector for offline and CI testing.
+- [Research to Rubric CoLens](https://docs.lenserfight.com/en/tutorials/developer-examples/research-to-rubric-colens): Multi-step connected Lens that turns research inputs into a structured rubric.
+- [File-Based CLI Basics](https://docs.lenserfight.com/en/tutorials/file-based-cli-basics): Managing battles and lenses using local `.lenserfight/` files.
+
+## Contributor Guides
+
+- [Scoring Plugin Getting Started](https://docs.lenserfight.com/en/how-to/contributors/scoring-plugin-getting-started): Build and register a custom battle scoring plugin.
+- [Connector SDK Getting Started](https://docs.lenserfight.com/en/how-to/contributors/connector-sdk-getting-started): Implement and publish a new AI connector.
+- [Workflow Template Guide](https://docs.lenserfight.com/en/how-to/contributors/workflow-template-guide): Author and publish reusable workflow templates.
+- [Triage Policy](https://docs.lenserfight.com/en/how-to/contributors/triage-policy): How issues and pull requests are triaged and prioritized.
+
+## AI Provider References
+
+- [OpenAI Provider](https://docs.lenserfight.com/en/providers/openai/): OpenAI integration — supported models, configuration, and BYOK setup.
+- [Google Provider](https://docs.lenserfight.com/en/providers/google/): Google Gemini and Imagen integration — models, configuration, and BYOK setup.
+- [Stability Provider](https://docs.lenserfight.com/en/providers/stability/): Stability AI integration for image generation battles.
+- [Perplexity Provider](https://docs.lenserfight.com/en/providers/perplexity/): Perplexity integration for search-augmented battles.
+- [ElevenLabs Provider](https://docs.lenserfight.com/en/providers/elevenlabs/): ElevenLabs integration for audio and voice battles.
+- [xAI Provider](https://docs.lenserfight.com/en/providers/xai/): xAI (Grok) integration for text battles.
+- [fal Provider](https://docs.lenserfight.com/en/providers/fal/): fal.ai integration for fast image generation battles.
+
+## Multilingual Documentation
+
+- [English Documentation](https://docs.lenserfight.com/en/): Full English documentation for LenserFight.
+- [Turkish Documentation](https://docs.lenserfight.com/tr/): Turkish documentation for LenserFight (Türkçe).
+
+## Open Source
+
+- [GitHub Repository](https://github.com/conectlens/lenserfight): Source code, issues, and pull requests. Apache-2.0 licensed.
