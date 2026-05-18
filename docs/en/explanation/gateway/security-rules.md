@@ -44,7 +44,7 @@ These are the security rules that govern the LTG. They are enforced at multiple 
 
 - **R5.1** — Private keys live in the OS keychain via [`libs/utils/keychain`](../../../libs/utils/keychain). They are never written to:
   - the database,
-  - `~/.lenserfight/config.json`,
+  - `~/.lenserfight/lenserfight.json`,
   - any project-level file (`.lenserfight.json`, `.lenserfight/*`),
   - environment variables.
 - **R5.2** — BYOK API keys remain in env or OS keychain per [`libs/providers/src/lib/byok-key-resolver.ts`](../../../libs/providers/src/lib/byok-key-resolver.ts). The daemon never logs them.
@@ -104,7 +104,7 @@ A single layer failure cannot silently elevate trust. For example, even if a mal
 ## R11 — Config ownership
 
 - **R11.1** — `.lenserfight.json` (project-level, commit-safe): NO secrets, NO tokens, NO keys. Existing `ProjectConfig` shape in [`apps/cli/src/config/project-config.ts`](../../../apps/cli/src/config/project-config.ts) is authoritative.
-- **R11.2** — `~/.lenserfight/config.json` (user-level): tokens only; NEVER signing keys.
+- **R11.2** — `~/.lenserfight/lenserfight.json` (user-level): tokens only; NEVER signing keys.
 - **R11.3** — `~/.lenserfight/gateway/state.json` (daemon-level): non-secret runtime state (last heartbeat, current peer roster cache).
 - **R11.4** — OS keychain: signing keys, optionally BYOK keys.
 - **R11.5** — Environment: bootstrap secrets only (Supabase URL, anon key, optional dev tokens).
