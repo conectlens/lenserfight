@@ -1,6 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
+
+vi.mock('@lenserfight/ui/components', () => ({
+  Badge: ({ children }: { children: React.ReactNode }) =>
+    React.createElement('span', { 'data-testid': 'badge' }, children),
+}))
+
 import { ArtifactLifecycleStatusBadge } from './ArtifactLifecycleStatusBadge'
 
 describe('ArtifactLifecycleStatusBadge', () => {
