@@ -1,5 +1,6 @@
 import { History, X, RotateCcw, Loader2 } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 import { useLensVersions, useLensVersionDetail } from '../hooks/useLensVersions'
 
@@ -16,8 +17,9 @@ export const LensVersionHistoryButton: React.FC<LensVersionHistoryButtonProps> =
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const { versions, isLoading } = useLensVersions(lensId, { enabled: isOpen })
+  const { versions, isLoading, publishVersion, isPublishing } = useLensVersions(lensId, { enabled: isOpen })
   const { data: versionDetail, isLoading: isLoadingDetail } = useLensVersionDetail(selectedVersionId)
+  const [isRestoring, setIsRestoring] = useState(false)
 
   // Close on outside click
   useEffect(() => {
@@ -36,11 +38,19 @@ export const LensVersionHistoryButton: React.FC<LensVersionHistoryButtonProps> =
     if (isOpen) setSelectedVersionId(null)
   }
 
-  const handleRestore = () => {
-    if (!versionDetail?.templateBody) return
-    onRestore(versionDetail.templateBody)
-    setIsOpen(false)
-    setSelectedVersionId(null)
+  const handleRestore = async () => {
+    if (!versionDetail?.templateBody || !selectedVersionId) return
+    setIsRestoring(true)
+    try {
+      await publishVersion(selectedVersionId)
+      onRestore(versionDetail.templateBody)
+      setIsOpen(false)
+      setSelectedVersionId(null)
+    } catch {
+      toast.error('Failed to restore version. Please try again.')
+    } finally {
+      setIsRestoring(false)
+    }
   }
 
   return (
@@ -136,9 +146,14 @@ export const LensVersionHistoryButton: React.FC<LensVersionHistoryButtonProps> =
                     <button
                       type="button"
                       onClick={handleRestore}
-                      className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white transition-colors"
+                      disabled={isRestoring || isPublishing}
+                      className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      <RotateCcw size={12} />
+                      {isRestoring || isPublishing ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <RotateCcw size={12} />
+                      )}
                       Restore this version
                     </button>
                   </div>
