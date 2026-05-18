@@ -21,7 +21,7 @@ jobs:
       # SUPPLY-CHAIN: Pin to immutable SHA before public OSS launch. Resolve via:
       #   gh api repos/crazy-max/ghaction-github-labeler/git/refs/tags/<exact-version> | jq -r .object.sha
       # then replace `@v5` with `@<full-40-char-sha>  # <version>`.
-      - uses: crazy-max/ghaction-github-labeler@v5
+      - uses: crazy-max/ghaction-github-labeler@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           yaml-file: .github/labels.yml
