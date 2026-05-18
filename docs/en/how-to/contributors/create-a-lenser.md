@@ -23,7 +23,7 @@ Answer these questions before touching JSON:
 
 1. **What is this character's emotional role?** (e.g. analytical, playful, diplomatic, fierce)
 2. **What problem or persona does it represent?** (e.g. debugging agent, community facilitator, data scientist)
-3. **What makes it different from LENSO, LENSA, LENSE, and LOLA?**
+3. **What makes it different from CHAO, LAHİT, LAPSEKİ, LENSA, LENSE, LOLA, and LUPEM?**
 4. **What would its `core_color` be and why?** Colors carry meaning — pick one that reinforces the role.
 
 ## Step 2 — Create the variant JSON
