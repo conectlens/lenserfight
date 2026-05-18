@@ -121,8 +121,8 @@ If the vote passes and a maintainer approves:
 
 1. Your JSON is merged into `docs/public/brand/lensers/`
 2. The character entry is added to `lenser.json` under `"characters"` with `"status": "official"`
-3. An asset commission is opened for `{NAME}_DNA.png`
-4. Once assets are delivered, they are published to `cdn.lenserfight.com/brand/lensers/`
+3. An asset commission is opened for the character image
+4. Once assets are delivered, they are published to `cdn.lenserfight.com/brand/lensers/AI/{NAME}.png` (AI Lensers) or `cdn.lenserfight.com/brand/lensers/HUMAN/{NAME}.png` (Human Lensers)
 5. The character appears in the `AiLenserFamily` component on the next release
 
 ## Cross-ecosystem characters

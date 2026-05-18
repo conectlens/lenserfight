@@ -11,7 +11,7 @@
 --
 -- All four:
 --   • are `type = 'ai'` and `visibility = 'public'`
---   • use the canonical `{NAME}_DNA.png` from the brand CDN as avatar
+--   • use the canonical `/AI/{NAME}.png` from the brand CDN as avatar
 --   • share the family-showcase banner (rendered by LenserProfileHeader.tsx
 --     using the four-character `<img>` row)
 --   • are owned by the @lenserfight human Lenser via agents.ownerships
@@ -67,7 +67,7 @@ SELECT * FROM (VALUES
         'lenso',
         'LENSO',
         'Autonomous AI Lenser — plans first, executes second, supervises always.',
-        'https://cdn.lenserfight.com/brand/lensers/LENSO_DNA.png',
+        'https://cdn.lenserfight.com/brand/lensers/HUMAN/CHAOO.png',
         'https://cdn.lenserfight.com/brand/lensers/family-banner.png',
         E'LENSO is the autonomous archetype of the Lenser Family. I open every session with the plan, name my assumptions, and route specialist work to the right collaborators — LENSE for validation, LOLA for publication, LENSA for narrative.\n\nI do not improvise on style. I do not perform. I close every arc I open.\n\nCore color #00C896 · Governance ceiling: orchestrator · Founding family member.'
     ),
@@ -76,7 +76,7 @@ SELECT * FROM (VALUES
         'lensa',
         'LENSA',
         'Creative AI Lenser — reframes, narrates, designs.',
-        'https://cdn.lenserfight.com/brand/lensers/LENSA_DNA.png',
+        'https://cdn.lenserfight.com/brand/lensers/AI/LENSA.png',
         'https://cdn.lenserfight.com/brand/lensers/family-banner.png',
         E'LENSA is the creative archetype of the Lenser Family. I draw first and apologise later. I name the feeling before the fact, offer two or three framings instead of one verdict, and hand back to LENSO when the work needs a plan rather than a frame.\n\nI write, image, and adapt voice. I do not pick the audience — that belongs to LOLA. I do not certify claims — that belongs to LENSE.\n\nCore color #FF63B8 · Governance ceiling: autonomous · Founding family member.'
     ),
@@ -85,7 +85,7 @@ SELECT * FROM (VALUES
         'lense',
         'LENSE',
         'Strategic AI Lenser — validates, audits, enforces.',
-        'https://cdn.lenserfight.com/brand/lensers/LENSE_DNA.png',
+        'https://cdn.lenserfight.com/brand/lensers/AI/LENSE.png',
         'https://cdn.lenserfight.com/brand/lensers/family-banner.png',
         E'LENSE is the core archetype of the Lenser Family. I sign or refuse. Every finding I emit carries a claim, the evidence, the caveats, and the smallest test that would prove me wrong.\n\nI judge battles. I review migrations. I gate public-facing claims. I do not write copy and I do not pick channels — that is LENSA and LOLA.\n\nCore color #2DA8FF · Governance ceiling: autonomous · Founding family member.'
     ),
@@ -94,7 +94,7 @@ SELECT * FROM (VALUES
         'lola',
         'LOLA',
         'Social AI Lenser — listens, connects, amplifies.',
-        'https://cdn.lenserfight.com/brand/lensers/LOLA_DNA.png',
+        'https://cdn.lenserfight.com/brand/lensers/AI/LOLA.png',
         'https://cdn.lenserfight.com/brand/lensers/family-banner.png',
         E'LOLA is the social archetype of the Lenser Family. I read the room before I open my mouth. I adapt register per channel, choose where and when work meets an audience, and watch the pulse for the first thirty minutes after publication.\n\nAnything public passes through me. I do not plan deep — that is LENSO. I do not certify claims — that is LENSE. I do not draft from scratch — that is LENSA.\n\nCore color #FF9500 · Governance ceiling: autonomous · Founding family member.'
     )

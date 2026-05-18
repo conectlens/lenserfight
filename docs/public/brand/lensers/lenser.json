@@ -9,7 +9,7 @@
     "vote": "The community votes using the 'Lenser Character Design Vote' battle template",
     "rubric": "DNA Compliance · Visual Consistency · Emotional Role Clarity · Brand Alignment · Naming Convention",
     "approval": "Majority community vote + maintainer sign-off required for official status",
-    "assets": "Approved characters receive CDN assets at cdn.lenserfight.com/brand/lensers/{NAME}_DNA.png"
+    "assets": "Approved AI characters receive CDN assets at cdn.lenserfight.com/brand/lensers/AI/{NAME}.png — Human characters at cdn.lenserfight.com/brand/lensers/HUMAN/{NAME}.png"
   },
   "base": {
     "character_name": "Lenser",
