@@ -7,7 +7,6 @@ import { ChainabitModal } from '@lenserfight/ui/modals'
 import { ActionMenu, Breadcrumbs, Button } from '@lenserfight/ui/components'
 import { useUI } from '@lenserfight/ui/providers'
 import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
-import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
 import { useLocale } from '@lenserfight/shared/i18n-locale'
 import { LocaleLanguageSelect } from '@lenserfight/ui/forms'
 import { Bell, ChevronLeft, Menu, Share2, Shield, LogOut, Github } from 'lucide-react'
@@ -27,7 +26,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { shareConfig } = useShareContext()
   const { pageActions } = useUI()
   const { lenser } = useLenser()
-  const { logout, isAuthenticated } = useAuth()
+  const { logout, isAuthenticated, signInWithOAuth } = useAuth()
   const navigate = useNavigate()
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isChainabitOpen, setIsChainabitOpen] = useState(false)
@@ -98,11 +97,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           {!isAuthenticated && (
             <button
               onClick={() =>
-                partnerApiClient
-                  .startOAuthLogin(window.location.origin)
-                  .catch((err: unknown) =>
-                    toast.error(err instanceof Error ? err.message : 'Chainabit sign-in unavailable.')
-                  )
+                signInWithOAuth('custom:chainabit').catch((err: unknown) =>
+                  toast.error(err instanceof Error ? err.message : 'Chainabit sign-in unavailable.')
+                )
               }
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
               title="Sign in with Chainabit"

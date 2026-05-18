@@ -46,15 +46,15 @@ async function deriveCodeChallenge(verifier: string): Promise<string> {
     .replace(/=/g, '')
 }
 
-export interface ChainabitOAuthState {
-  flowType: 'login' | 'connect'
+interface ChainabitOAuthState {
+  flowType: 'connect'
   userId?: string
   codeVerifier: string
   returnUrl: string
   nonce: string
 }
 
-export function encodeOAuthState(state: ChainabitOAuthState): string {
+function encodeOAuthState(state: ChainabitOAuthState): string {
   return btoa(JSON.stringify(state))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
@@ -129,39 +129,6 @@ export const partnerApiClient = {
       headers: { ...authHeader },
     })
     return unwrapEnvelope<ChainabitAiModel[]>(res)
-  },
-
-  /**
-   * Initiates the Chainabit OAuth login flow for unauthenticated users (social sign-in).
-   * No Supabase session required — this is the entry point for "Continue with Chainabit"
-   * on the Login/Register pages. The platform API callback creates the Supabase session.
-   */
-  async startOAuthLogin(returnUrl: string = window.location.href): Promise<void> {
-    if (!CHAINABIT_OAUTH_CLIENT_ID) {
-      throw new Error('Chainabit OAuth is not configured (missing CHAINABIT_OAUTH_CLIENT_ID).')
-    }
-    if (!CHAINABIT_OAUTH_CALLBACK_URL) {
-      throw new Error('Chainabit OAuth is not configured (missing CHAINABIT_OAUTH_REDIRECT_URI).')
-    }
-
-    const codeVerifier = generateCodeVerifier()
-    const codeChallenge = await deriveCodeChallenge(codeVerifier)
-    const nonce = Array.from(crypto.getRandomValues(new Uint8Array(8)))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')
-
-    const state = encodeOAuthState({ flowType: 'login', codeVerifier, returnUrl, nonce })
-
-    const authorizeUrl = new URL(`${CHAINABIT_OAUTH_URL}/oauth/authorize`)
-    authorizeUrl.searchParams.set('client_id', CHAINABIT_OAUTH_CLIENT_ID)
-    authorizeUrl.searchParams.set('response_type', 'code')
-    authorizeUrl.searchParams.set('redirect_uri', CHAINABIT_OAUTH_CALLBACK_URL)
-    authorizeUrl.searchParams.set('scope', 'email:read profile:read wallet:read execution:run')
-    authorizeUrl.searchParams.set('code_challenge', codeChallenge)
-    authorizeUrl.searchParams.set('code_challenge_method', 'S256')
-    authorizeUrl.searchParams.set('state', state)
-
-    window.location.href = authorizeUrl.toString()
   },
 
   async revokeToken(partnerName: string): Promise<void> {
