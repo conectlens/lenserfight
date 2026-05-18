@@ -1,4 +1,4 @@
-import { AiLenserFamily, Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
+import { AiLenserFamily, HumanLenserFamily, Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Bolt, CheckCircle, Heart, MessagesSquare, Music, PlayCircle, Shield, Star, Swords, Youtube } from 'lucide-react'
 import React, { useRef } from 'react'
@@ -53,6 +53,7 @@ const viewport = { once: true, margin: '-60px' }
 const HERO_BULLET_INDICES = [0, 1, 2] as const
 const HOW_IT_WORKS_ICONS = [Swords, MessagesSquare, Star] as const
 const SOUNDTRACKS = [
+  { videoId: 's-NegE5sK9o', href: 'https://youtu.be/s-NegE5sK9o' },
   { videoId: 'kine5GjALC0', href: 'https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0' },
   { videoId: 'yN_44HCS1tE', href: 'https://www.youtube.com/watch?v=yN_44HCS1tE' },
   { videoId: 'FM1z-M3DD24', href: 'https://www.youtube.com/watch?v=FM1z-M3DD24' },
@@ -77,20 +78,6 @@ export const LandHomePage: React.FC = () => {
         className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:px-8 lg:py-24"
       >
         <motion.div className="space-y-6" style={{ y: heroY }}>
-          {/* Floating badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...spring, delay: 0.05 }}
-          >
-            <motion.div
-              animate={{ y: [0, -5, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              className="inline-block"
-            >
-              <Badge color="yellow" variant="outline">{t('common:badges.liveArena')}</Badge>
-            </motion.div>
-          </motion.div>
 
           <motion.div className="space-y-4" variants={fadeUp} initial="hidden" animate="visible">
             <h1 className="max-w-3xl text-5xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-6xl lg:text-7xl">
@@ -150,8 +137,6 @@ export const LandHomePage: React.FC = () => {
       </section>
 
 
-      {/* ─── 3.5: AI Lenser Family ──────────────────────────────────── */}
-      <AiLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20" centered />
 
 
       {/* ─── 2: Battle types ────────────────────────────────────────── */}
@@ -206,6 +191,12 @@ export const LandHomePage: React.FC = () => {
         </motion.div>
       </section>
 
+      {/* ─── 3.7: Arena Pulse (live real-time data) ──────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
+        <ArenaPulseSection />
+      </section>
+
+
       {/* ─── 3.2: Brand Motion ──────────────────────────────────────── */}
       <section className="w-full pb-16 lg:pb-20">
         <motion.div
@@ -234,10 +225,6 @@ export const LandHomePage: React.FC = () => {
         </React.Suspense>
       </section>
 
-      {/* ─── 3.7: Arena Pulse (live real-time data) ──────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
-        <ArenaPulseSection />
-      </section>
 
       {/* ─── 4: Gamification ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
@@ -354,27 +341,31 @@ export const LandHomePage: React.FC = () => {
             whileInView="visible"
             viewport={viewport}
           >
-              <motion.a
-                href={`${ARENA_APP_URL}/battles/create`}
-                variants={cardVariant}
-                whileHover={{ scale: 1.05, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-2 rounded-full bg-primary-yellow-500 px-8 py-3.5 text-sm font-bold text-greyscale-900 shadow-lg shadow-primary-yellow-500/20 transition-all hover:bg-primary-yellow-400"
-              >
+            <motion.a
+              href={`${ARENA_APP_URL}/battles/create`}
+              variants={cardVariant}
+              whileHover={{ scale: 1.05, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center gap-2 rounded-full bg-primary-yellow-500 px-8 py-3.5 text-sm font-bold text-greyscale-900 shadow-lg shadow-primary-yellow-500/20 transition-all hover:bg-primary-yellow-400"
+            >
               <Swords size={18} /> {t('common:cta.createFirstBattle')}
             </motion.a>
-              <motion.a
-                href={`${ARENA_APP_URL}/battles`}
-                variants={cardVariant}
-                whileHover={{ scale: 1.05, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-2 rounded-full border-2 border-greyscale-200 dark:border-greyscale-700 bg-transparent px-8 py-3 text-sm font-bold text-greyscale-700 dark:text-greyscale-300 transition-all hover:border-primary-yellow-500 hover:text-greyscale-950 dark:hover:border-greyscale-400 dark:hover:text-greyscale-0"
-              >
+            <motion.a
+              href={`${ARENA_APP_URL}/battles`}
+              variants={cardVariant}
+              whileHover={{ scale: 1.05, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center gap-2 rounded-full border-2 border-greyscale-200 dark:border-greyscale-700 bg-transparent px-8 py-3 text-sm font-bold text-greyscale-700 dark:text-greyscale-300 transition-all hover:border-primary-yellow-500 hover:text-greyscale-950 dark:hover:border-greyscale-400 dark:hover:text-greyscale-0"
+            >
               {t('common:cta.browseBattles')} <ArrowRight size={18} />
             </motion.a>
           </motion.div>
         </motion.div>
       </section>
+
+      {/* ─── Lenser Families ────────────────────────────────────────── */}
+      <AiLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20" centered />
+      <HumanLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20" centered />
 
       {/* ─── 8: YouTube Music Section ──────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8">
@@ -397,7 +388,7 @@ export const LandHomePage: React.FC = () => {
         </motion.div>
 
         <motion.div
-          className="grid gap-5 md:grid-cols-3"
+          className="grid gap-5 md:grid-cols-2 lg:grid-cols-4"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
@@ -407,43 +398,43 @@ export const LandHomePage: React.FC = () => {
             const title = t(`home:music.tracks.${i}.title`)
             const description = t(`home:music.tracks.${i}.description`)
             return (
-            <motion.a
-              key={videoId}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              variants={cardVariant}
-              whileHover={{ y: -4 }}
-              className="group overflow-hidden rounded-2xl border border-surface-border bg-surface-raised shadow-xl transition-colors hover:border-primary-yellow-500/70 focus:outline-none focus:ring-4 focus:ring-primary-yellow-500/25"
-            >
-              <div className="relative aspect-video overflow-hidden bg-greyscale-900">
-                <img
-                  src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-                  alt={t('home:soundtracks.thumbnailAlt', { title })}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-greyscale-950/70 via-transparent to-transparent" />
-                <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-greyscale-950/80 px-3 py-1 text-xs font-bold text-greyscale-0 ring-1 ring-white/10">
-                  <Youtube size={14} className="text-status-red" />
-                  {t('home:soundtracks.musicLabel')}
+              <motion.a
+                key={videoId}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                variants={cardVariant}
+                whileHover={{ y: -4 }}
+                className="group overflow-hidden rounded-2xl border border-surface-border bg-surface-raised shadow-xl transition-colors hover:border-primary-yellow-500/70 focus:outline-none focus:ring-4 focus:ring-primary-yellow-500/25"
+              >
+                <div className="relative aspect-video overflow-hidden bg-greyscale-900">
+                  <img
+                    src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                    alt={t('home:soundtracks.thumbnailAlt', { title })}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-greyscale-950/70 via-transparent to-transparent" />
+                  <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-greyscale-950/80 px-3 py-1 text-xs font-bold text-greyscale-0 ring-1 ring-white/10">
+                    <Youtube size={14} className="text-status-red" />
+                    {t('home:soundtracks.musicLabel')}
+                  </div>
+                  <div className="absolute bottom-4 right-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-yellow-500 text-greyscale-900 shadow-lg shadow-primary-yellow-500/20 transition-transform group-hover:scale-105">
+                    <PlayCircle size={24} />
+                  </div>
                 </div>
-                <div className="absolute bottom-4 right-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-yellow-500 text-greyscale-900 shadow-lg shadow-primary-yellow-500/20 transition-transform group-hover:scale-105">
-                  <PlayCircle size={24} />
+                <div className="space-y-3 p-5">
+                  <h3 className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+                    {title}
+                  </h3>
+                  <p className="text-sm leading-6 text-greyscale-600 dark:text-greyscale-400">
+                    {description}
+                  </p>
+                  <span className="inline-flex items-center gap-2 text-sm font-bold text-greyscale-900 dark:text-greyscale-0">
+                    {t('common:cta.playOnYoutube')} <ArrowRight size={14} />
+                  </span>
                 </div>
-              </div>
-              <div className="space-y-3 p-5">
-                <h3 className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-                  {title}
-                </h3>
-                <p className="text-sm leading-6 text-greyscale-600 dark:text-greyscale-400">
-                  {description}
-                </p>
-                <span className="inline-flex items-center gap-2 text-sm font-bold text-greyscale-900 dark:text-greyscale-0">
-                  {t('common:cta.playOnYoutube')} <ArrowRight size={14} />
-                </span>
-              </div>
-            </motion.a>
+              </motion.a>
             )
           })}
         </motion.div>

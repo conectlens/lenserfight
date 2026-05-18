@@ -71,7 +71,7 @@ const App: React.FC = () => {
                         <Route element={<LandLayout />}>
                           <Route index element={<LandHomePage />} />
                           <Route path="about" element={<AboutPage />} />
-                          <Route path="note-from-omer" element={<FounderNotePage />} />
+                          <Route path="note" element={<FounderNotePage />} />
                           <Route path="product" element={<ProductPage />} />
                           <Route path="product/cli" element={<CLIPage />} />
                           <Route path="product/cli/quickstart" element={<CLIQuickstartPage />} />
@@ -97,7 +97,7 @@ const App: React.FC = () => {
                         {/* Localized backward-compat aliases */}
                         <Route path="ecosystem" element={<Navigate to="../product" replace />} />
                         <Route path="mission" element={<Navigate to="../about" replace />} />
-                        <Route path="founder-note" element={<Navigate to="../note-from-omer" replace />} />
+                        <Route path="founder-note" element={<Navigate to="../note" replace />} />
                         <Route path="what-is-lenserfight" element={<Navigate to="../about" replace />} />
                         <Route path="login" element={<Navigate to="../auth/login" replace />} />
                         <Route path="register" element={<Navigate to="../auth/register" replace />} />

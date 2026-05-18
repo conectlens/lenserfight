@@ -15,7 +15,7 @@ Report security vulnerabilities using **GitHub Security Advisories** (private by
 3. Select **Advisories**.
 4. Choose **Report a vulnerability** (or create a new draft advisory, depending on permissions).
 
-If you cannot access the Security tab, contact `security@lenserfight.com` or ask maintainers for a safe private reporting path first. Do not disclose publicly.
+If you cannot access the Security tab, contact `lets@conectlens.com` or ask maintainers for a safe private reporting path first. Do not disclose publicly.
 
 ## Response Time Expectations
 
