@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react'
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineConfig, type Plugin } from 'vite'
+import { themeInitPlugin } from '../../libs/ui/theme/src/lib/viteThemePlugin'
 
 /**
  * Emits /version.json into the build output so the running app can detect
@@ -47,7 +48,7 @@ export default defineConfig(() => {
   return {
     root: import.meta.dirname,
     envDir: import.meta.dirname,
-    envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'API_', 'CHAINABIT_API_URL', 'CHAINABIT_OAUTH_', 'AUTH_', 'ARENA_', 'WEB_', 'DOCS_', 'STATUS_', 'OLLAMA_', 'POSTHOG_', 'CAPTCHA_', 'PRODUCT_', 'FEATURE_CHAINABIT_', 'DATA_SOURCE', 'ENABLE_', 'ALLOWED_', 'GOOGLE_'],
+    envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'API_', 'CHAINABIT_API_URL', 'AUTH_', 'ARENA_', 'WEB_', 'DOCS_', 'STATUS_', 'OLLAMA_', 'POSTHOG_', 'CAPTCHA_', 'PRODUCT_', 'FEATURE_CHAINABIT_', 'DATA_SOURCE', 'ENABLE_', 'ALLOWED_', 'GOOGLE_'],
     cacheDir: '../../node_modules/.vite/apps/web',
     define: {
       __APP_VERSION__: JSON.stringify(version),
@@ -60,7 +61,7 @@ export default defineConfig(() => {
       port: 3000,
       host: '0.0.0.0',
     },
-    plugins: [react(), tailwindcss(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md']), versionManifestPlugin(version, channel)],
+    plugins: [react(), tailwindcss(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md']), versionManifestPlugin(version, channel), themeInitPlugin()],
     // Pre-bundle CJS deps that use the lazy-getter pattern; without this Rollup's CJS plugin
     // converts `var` to `const` and crashes at runtime with TDZ errors.
     optimizeDeps: {

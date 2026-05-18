@@ -1,5 +1,6 @@
 import { SupabasePreferencesRepository } from '@lenserfight/data/repositories'
 import { storage } from '@lenserfight/utils/storage'
+import { THEME_COOKIE_NAME, THEME_LS_KEY } from './themeConstants'
 
 export type Theme = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
@@ -24,7 +25,7 @@ export const getSystemTheme = (): ResolvedTheme =>
 export const resolveTheme = (theme: Theme): ResolvedTheme =>
   theme === 'system' ? getSystemTheme() : theme
 
-const COOKIE_NAME = 'lf_theme'
+const COOKIE_NAME = THEME_COOKIE_NAME
 const COOKIE_DOMAIN = '.lenserfight.com'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
 
@@ -69,7 +70,7 @@ export const themeController = {
     // 1) Fast path: localStorage or system
     let resolved: Theme = 'system'
 
-    const ls = storage.getItem('theme')
+    const ls = storage.getItem(THEME_LS_KEY)
     if (isValidStoredTheme(ls)) {
       resolved = ls
     }
@@ -86,7 +87,7 @@ export const themeController = {
 
         resolved = cached.theme
         applyToDOM(resolved)
-        storage.setItem('theme', resolved)
+        storage.setItem(THEME_LS_KEY, resolved)
 
         if (isFresh) {
           return resolved
@@ -115,7 +116,7 @@ export const themeController = {
         if (isValidTheme(dbTheme)) {
           resolved = dbTheme
           applyToDOM(resolved)
-          storage.setItem('theme', resolved)
+          storage.setItem(THEME_LS_KEY, resolved)
           writeCache(userId, resolved)
         } else {
           // Persist current resolved theme to DB (only once)
@@ -130,7 +131,7 @@ export const themeController = {
     }
 
     // 3) Unauthenticated
-    storage.setItem('theme', resolved)
+    storage.setItem(THEME_LS_KEY, resolved)
     return resolved
   },
 
@@ -138,7 +139,7 @@ export const themeController = {
     if (!isValidTheme(theme)) return
 
     applyToDOM(theme)
-    storage.setItem('theme', theme)
+    storage.setItem(THEME_LS_KEY, theme)
 
     if (userId) {
       writeCache(userId, theme)
