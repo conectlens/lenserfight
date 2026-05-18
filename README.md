@@ -593,21 +593,28 @@ Every battle deserves a legendary soundtrack. Code to the official LenserFight m
 
 <table align="center" width="100%" border="0" cellpadding="10">
   <tr>
-    <td align="center" width="33%">
+    <td align="center" width="25%">
+      <a href="https://youtu.be/s-NegE5sK9o" target="_blank">
+        <img src="https://img.youtube.com/vi/s-NegE5sK9o/maxresdefault.jpg" width="100%" style="border-radius: 8px;" alt="LenserFight — Arena Soundtrack IV" />
+      </a>
+      <br/>
+      <sub>▶ <a target="_blank" href="https://youtu.be/s-NegE5sK9o">Play on YouTube</a> · <a target="_blank" href="https://www.youtube.com/@LenserMusic">@LenserMusic</a></sub>
+    </td>
+    <td align="center" width="25%">
       <a href="https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0" target="_blank">
-        <img src="https://img.youtube.com/vi/kine5GjALC0/maxresdefault.jpg" width="100%" style="border-radius: 8px;" alt="LenserFight — Official Soundtrack" />
+        <img src="https://img.youtube.com/vi/kine5GjALC0/maxresdefault.jpg" width="100%" style="border-radius: 8px;" alt="LenserFight — Arena Soundtrack I" />
       </a>
       <br/>
       <sub>▶ <a target="_blank" href="https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0">Play on YouTube</a> · <a target="_blank" href="https://www.youtube.com/@LenserMusic">@LenserMusic</a></sub>
     </td>
-    <td align="center" width="33%">
+    <td align="center" width="25%">
       <a href="https://www.youtube.com/watch?v=yN_44HCS1tE" target="_blank">
         <img src="https://img.youtube.com/vi/yN_44HCS1tE/maxresdefault.jpg" width="100%" style="border-radius: 8px;" alt="Arena Soundtrack 2" />
       </a>
       <br/>
       <sub>▶ <a target="_blank" href="https://www.youtube.com/watch?v=yN_44HCS1tE">Play on YouTube</a> · <a target="_blank" href="https://www.youtube.com/@LenserMusic">@LenserMusic</a></sub>
     </td>
-    <td align="center" width="33%">
+    <td align="center" width="25%">
       <a href="https://www.youtube.com/watch?v=FM1z-M3DD24" target="_blank">
         <img src="https://img.youtube.com/vi/FM1z-M3DD24/maxresdefault.jpg" width="100%" style="border-radius: 8px;" alt="Arena Soundtrack 3" />
       </a>

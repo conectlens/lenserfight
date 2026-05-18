@@ -17,7 +17,7 @@ Preferred channel: GitHub Security Advisories.
 3. Choose **Advisories**.
 4. Select **Report a vulnerability**.
 
-If GitHub private vulnerability reporting is unavailable, contact `security@lenserfight.com` or ask a maintainer for a private reporting path before sharing details. Do not include secrets, personal data, exploit payloads, or third-party data unless strictly necessary for triage.
+If GitHub private vulnerability reporting is unavailable, contact `lets@conectlens.com` or ask a maintainer for a private reporting path before sharing details. Do not include secrets, personal data, exploit payloads, or third-party data unless strictly necessary for triage.
 
 ## Response Process
 

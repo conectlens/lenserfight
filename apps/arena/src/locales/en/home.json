@@ -87,14 +87,18 @@
     "subtitle": "Every battle deserves a legendary soundtrack. Listen to the official LenserFight music and get in the zone.",
     "tracks": {
       "0": {
-        "title": "Official Soundtrack",
-        "description": "The main fight theme for opening a battle and locking into the arena."
+        "title": "Arena Soundtrack IV",
+        "description": "The latest fight anthem — drop in, focus up, and run your best."
       },
       "1": {
+        "title": "Arena Soundtrack I",
+        "description": "The main fight theme for opening a battle and locking into the arena."
+      },
+      "2": {
         "title": "Arena Soundtrack II",
         "description": "A sharper beat for review rounds, votes, and late-night building sessions."
       },
-      "2": {
+      "3": {
         "title": "Arena Soundtrack III",
         "description": "A focused track for the final comparison before the winner is revealed."
       }
