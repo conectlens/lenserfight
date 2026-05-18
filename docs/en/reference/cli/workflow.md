@@ -222,7 +222,7 @@ Lists all triggers attached to the workflow, including trigger type, enabled sta
 
 ## Related commands
 
-- [`lf spec validate`](./spec.md) — Validate workflow frontmatter schema
+- [`lf validate`](./validate.md) — Validate workflow frontmatter schema
 - [`lf schedule`](./schedule.md) — Create recurring workflow schedules
 - [`lf execution`](./execution.md) — Inspect workflow run history
 - [`lf examples`](./examples.md) — See workflow usage examples
