@@ -448,12 +448,6 @@ verify_jwt = false
 [functions.send-battle-result-email]
 verify_jwt = false
 
-[functions.chainabit-oauth-callback]
-verify_jwt = false
-
-[functions.chainabit-webhook]
-verify_jwt = false
-
 [functions.partner-balance]
 verify_jwt = false
 
