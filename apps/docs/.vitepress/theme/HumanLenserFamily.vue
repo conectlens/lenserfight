@@ -1,5 +1,5 @@
 <template>
-  <div class="ai-lenser-family">
+  <div class="human-lenser-family">
     <div class="mascots">
       <div v-for="mascot in MASCOTS" :key="mascot.name" class="mascot">
         <img :src="mascot.src" :alt="mascot.name" class="mascot-img" />
@@ -11,21 +11,21 @@
 </template>
 
 <script setup lang="ts">
-const CDN_AI = 'https://cdn.lenserfight.com/brand/lensers/AI'
+const CDN_HUMAN = 'https://cdn.lenserfight.com/brand/lensers/HUMAN'
 
 const MASCOTS = [
-  { src: `${CDN_AI}/CHAO.png`, name: 'CHAO', role: 'Builder & Architect AI Lenser' },
-  { src: `${CDN_AI}/LAHİT.png`, name: 'LAHİT', role: 'AI Lenser' },
-  { src: `${CDN_AI}/LAPSEKİ.png`, name: 'LAPSEKİ', role: 'AI Lenser' },
-  { src: `${CDN_AI}/LENSA.png`, name: 'LENSA', role: 'Creative AI Lenser' },
-  { src: `${CDN_AI}/LENSE.png`, name: 'LENSE', role: 'Strategic AI Lenser' },
-  { src: `${CDN_AI}/LOLA.png`, name: 'LOLA', role: 'Social AI Lenser' },
-  { src: `${CDN_AI}/LUPEM.png`, name: 'LUPEM', role: 'AI Lenser' },
+  { src: `${CDN_HUMAN}/CHAOO.png`, name: 'CHAOO', role: 'Human Lenser' },
+  { src: `${CDN_HUMAN}/LAYLA.png`, name: 'LAYLA', role: 'Human Lenser' },
+  { src: `${CDN_HUMAN}/LEPSOYUBANANA.png`, name: 'LEPSOYUBANANA', role: 'Human Lenser' },
+  { src: `${CDN_HUMAN}/LOTUSTO.png`, name: 'LOTUSTO', role: 'Human Lenser' },
+  { src: `${CDN_HUMAN}/LUKAH.png`, name: 'LUKAH', role: 'Human Lenser' },
+  { src: `${CDN_HUMAN}/LUKAS.png`, name: 'LUKAS', role: 'Human Lenser' },
+  { src: `${CDN_HUMAN}/LUPPA.png`, name: 'LUPPA', role: 'Human Lenser' },
 ]
 </script>
 
 <style scoped>
-.ai-lenser-family {
+.human-lenser-family {
   padding: 2rem 0 1rem;
 }
 .mascots {
