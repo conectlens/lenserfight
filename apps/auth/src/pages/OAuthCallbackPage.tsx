@@ -20,14 +20,16 @@ function resolveReturnUrl(): string {
 /**
  * Handles the post-OAuth redirect from Supabase / provider.
  *
- * The previous implementation called `getSession()` immediately, which raced
- * against Supabase's `detectSessionInUrl` processing of the URL hash fragment
- * (PKCE / implicit flows). When the race was lost, getSession() returned null
- * and the user was incorrectly sent back to /login.
+ * With PKCE flow (Supabase JS v2 default) the provider redirects back with
+ * ?code=XXXX. Supabase's detectSessionInUrl exchanges the code asynchronously
+ * and fires onAuthStateChange. Two events can signal a completed exchange:
  *
- * Fix: subscribe to `onAuthStateChange` and wait for the `SIGNED_IN` event.
- * As a belt-and-suspenders measure we also call getSession() in case the code
- * exchange already completed before the component mounted.
+ *  - SIGNED_IN     — new session for a user who was not previously signed in
+ *  - INITIAL_SESSION — session restored from storage OR the code was exchanged
+ *                      and the user was already signed in (same UID). Supabase
+ *                      fires this instead of SIGNED_IN in that case.
+ *
+ * We handle both, plus a getSession() poll as a belt-and-suspenders measure.
  *
  * After OAuth succeeds we return to apps/auth first so the same profile-gate
  * logic runs for OAuth and password sign-ins.
@@ -46,25 +48,38 @@ export const OAuthCallbackPage: React.FC = () => {
       replaceLocationSafely(getPostOAuthRedirectUrl(returnUrl))
     }
 
-    // 1. Subscribe first so we don't miss the SIGNED_IN event
+    // 1. Subscribe first so we don't miss the session event.
+    //    Handle both SIGNED_IN (new session) and INITIAL_SESSION (returning user
+    //    whose UID didn't change — Supabase v2 fires this instead of SIGNED_IN).
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         redirect(session)
-      } else if (!redirected && (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED')) {
-        // Unexpected terminal state without a session
+      } else if (!redirected && event === 'SIGNED_OUT') {
+        // Exchange failed or session was revoked — abort to login
         navigate('/login', { replace: true })
       }
+      // TOKEN_REFRESHED is intentionally not handled here: it can fire as a
+      // side-effect of the PKCE exchange before SIGNED_IN and must not abort.
     })
 
-    // 2. Belt-and-suspenders: session may already be available if the code
-    //    exchange completed before the component mounted (PKCE with server redirect)
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        redirect(data.session)
+    // 2. Belt-and-suspenders: poll getSession() in case the code exchange
+    //    completed before our subscription was set up. Retry a few times to
+    //    handle the async PKCE exchange window.
+    const pollSession = async () => {
+      for (let attempt = 0; attempt < 3 && !redirected; attempt++) {
+        const { data } = await supabase.auth.getSession()
+        if (data.session) {
+          redirect(data.session)
+          return
+        }
+        if (attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 500))
+        }
       }
-    })
+    }
+    pollSession()
 
     // Timeout guard: if neither event fires within 10s, abort to login
     const timeout = setTimeout(() => {
