@@ -292,6 +292,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // Step 2 — shared parameter values (Lens Battle only)
   const [sharedParamValues, setSharedParamValues] = useState<Record<string, unknown>>({})
+  // Step 2 — validity gate: false when required params exist but are unfilled
+  const [inputsStepValidity, setInputsStepValidity] = useState(true)
 
   // Lenser Battle policy
   const [lenserBattlePolicy, setLenserBattlePolicy] = useState<LenserBattlePolicy>(
@@ -437,6 +439,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const preselectedTemplateId = readSearchParam(searchParams, 'template')
 
   const invite = useInviteContender(createdBattleId ?? '')
+
+  // Reset inputs-step validity when the selected source changes so switching
+  // lens/workflow does not leave the Next button permanently disabled.
+  useEffect(() => {
+    setInputsStepValidity(true)
+  }, [selectedLensId, selectedWorkflowId])
 
   // Auto-advance to step 1 when arriving with ?workflow_id param
   useEffect(() => {
@@ -662,7 +670,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       ? !!selectedWorkflowId
       : !!selectedLensId
 
-  const inputsStepValid = true
+  const inputsStepValid = inputsStepValidity
 
   // Challenge type is required when task source is challenge.
   // If the challenge type requires a generator, the challenge must also be locked.
@@ -1142,6 +1150,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                 values={sharedParamValues}
                 onChange={setSharedParamValues}
                 lens={myLenses.find((l) => l.id === selectedLensId) ?? null}
+                onValidityChange={setInputsStepValidity}
               />
             )}
 
@@ -1151,6 +1160,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                 workflowId={selectedWorkflowId}
                 values={sharedParamValues}
                 onChange={setSharedParamValues}
+                onValidityChange={setInputsStepValidity}
               />
             )}
 
