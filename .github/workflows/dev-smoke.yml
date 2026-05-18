@@ -1,0 +1,52 @@
+name: Dev smoke (CE)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seeds/**'
+      - 'scripts/dev-start.sh'
+      - 'scripts/smoke-dev.sh'
+      - 'apps/cli/**'
+
+jobs:
+  dev-smoke:
+    name: Dev stack smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        run: pnpm supabase start
+
+      - name: Build CLI
+        run: pnpm nx build cli --skip-nx-cache
+
+      - name: Run smoke-dev.sh
+        run: bash scripts/smoke-dev.sh
+
+      - name: Upload timing report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-dev-timing
+          path: tmp/smoke-timings.txt
+          if-no-files-found: ignore
+          retention-days: 7
