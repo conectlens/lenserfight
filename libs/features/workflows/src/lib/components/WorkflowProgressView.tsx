@@ -1,4 +1,4 @@
-import { Badge, StreamingOutput } from '@lenserfight/ui/components'
+import { Badge, HelpButton, StreamingOutput, Tooltip } from '@lenserfight/ui/components'
 import { getErrorCopy } from '../utils/workflowErrorMessages'
 import {
   isActiveNodeStatus,
@@ -526,7 +526,12 @@ export function WorkflowProgressView({
       />
 
       <div className="flex items-center gap-2 text-[10px] font-semibold text-greyscale-500 uppercase tracking-wide">
-        <Workflow size={11} /> Execution timeline
+        <Tooltip content="Each card shows one workflow node — its live status, output, and any errors." position="right">
+          <span className="inline-flex items-center gap-1.5 cursor-default">
+            <Workflow size={11} /> Execution timeline
+          </span>
+        </Tooltip>
+        <HelpButton path="/tutorials/getting-started/local-file-storage" label="How workflows run" className="normal-case tracking-normal ml-1" />
         <button
           type="button"
           onClick={() => setShowProvenance((v) => !v)}
@@ -655,7 +660,21 @@ export function WorkflowProgressView({
               )}
               {status === 'blocked' && (
                 <div className="mt-3 flex items-center gap-2 rounded-xl border border-status-red/30 bg-status-red/5 p-3 text-xs font-medium text-status-red">
-                  <AlertTriangle size={12} /> {result?.error_message ?? 'Blocked — unresolved placeholder or missing dependency'}
+                  <AlertTriangle size={12} />
+                  <span className="flex-1">{getErrorCopy(result?.error_message) || 'Blocked — unresolved placeholder or missing dependency'}</span>
+                  {result?.error_message === 'placeholder_unbound' && (
+                    <Tooltip
+                      content={
+                        <span className="max-w-[220px] block">
+                          A <code className="font-mono">{'[[variable]]'}</code> in this node&apos;s template has no value. Check that the upstream node produces the expected output key and the binding is correct.
+                        </span>
+                      }
+                      position="left"
+                      contentClassName=""
+                    >
+                      <HelpButton path="/tutorials/getting-started/local-file-storage" label="Fix this" className="shrink-0 border-status-red/40 text-status-red hover:border-status-red hover:text-status-red" />
+                    </Tooltip>
+                  )}
                 </div>
               )}
               {status === 'invalidated' && (
