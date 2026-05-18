@@ -1,5 +1,6 @@
 export { LocaleGuard } from './lib/LocaleGuard'
 export { UnprefixedRedirect } from './lib/UnprefixedRedirect'
+export { detectLocale } from './lib/detect'
 export { NotFoundRedirect } from './lib/NotFoundRedirect'
 export { LocaleLink } from './lib/LocaleLink'
 export type { LocaleLinkProps } from './lib/LocaleLink'

@@ -7,16 +7,24 @@ export class AnalyticsController {
     this.providers.push(provider);
   }
 
+  /** No-op outside production or SSR — centralized gate for all providers. */
   init() {
-    this.providers.forEach((p) => p.init());
+    if (process.env.NODE_ENV !== 'production' || typeof window === 'undefined') return;
+    for (const p of this.providers) {
+      try { p.init() } catch { /* providers must fail silently */ }
+    }
   }
 
   trackPageView(path: string) {
-    this.providers.forEach((p) => p.trackPageView(path));
+    for (const p of this.providers) {
+      try { p.trackPageView(path) } catch { /* fail silently */ }
+    }
   }
 
   trackEvent(event: AnalyticsEvent) {
-    this.providers.forEach((p) => p.trackEvent(event));
+    for (const p of this.providers) {
+      try { p.trackEvent(event) } catch { /* fail silently */ }
+    }
   }
 }
 
