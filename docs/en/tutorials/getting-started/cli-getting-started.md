@@ -259,6 +259,19 @@ lf execution retry <run-id>
 
 ---
 
+## Step 11 — 🤝 Document and Share Your CLI Experiments
+
+Running agentic workflows and local model battles directly from the CLI produces descriptive, color-coded terminal streams that can help show other developers how LenserFight executes:
+
+*   **Record Terminal Execution**: Record your terminal when running parallel side-by-side matches using `lf battle local run`. Streaming token outputs in real-time is a great way to visually evaluate model latency.
+*   **Share Diagnostic Summaries**: Post a screenshot of your `lf execution inspect <run-id>` breakdown to show execution paths, local GPU latency, and model accuracy.
+*   **Hardware Configurations**: Share details or photos of your local GPU rig setup alongside the active CLI status output.
+*   **Connect with the Community**: If you share your walkthroughs or diagnostic runs on developer channels (such as YouTube, Twitter/X, or LinkedIn), feel free to use the hashtag **`#LenserFight`** so other developers can discover your work. You can also open a Pull Request to propose adding your guide to our community showcase tables.
+
+
+
+---
+
 ## Key environment variables
 
 | Variable | Purpose |

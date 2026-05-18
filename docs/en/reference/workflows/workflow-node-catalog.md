@@ -1,3 +1,5 @@
+<div v-pre>
+
 # Workflow Node Catalog
 
 ::: warning Implementation Status
@@ -165,3 +167,5 @@ Every row includes the requested structure: Node, Purpose, Inputs, Outputs, Requ
 | Cache Write | Write cached data. | any. | json written. | `key`. | `valuePath`, `ttlSeconds`. | `key: "rss:github-blog:last-summary"`, `valuePath: "$.summary"`, `ttlSeconds: 3600`; output `{ written: true }`; downstream `Logger.message = $.written`. | Summarizer -> Cache Write. | Cache Write -> Embedding without text. | Keep TTL intentional. |
 | Retry | Retry a branch. | any. | json attempts/succeeded. | `attempts`. | `backoffMs`, `retryOn`. | `attempts: 3`, `backoffMs: 2000`, `retryOn: ["timeout","rate_limit"]`; output `{ attempts: 2, succeeded: true }`; downstream `Logger.message = $.succeeded`. | HTTP Request -> Retry, Retry -> Logger. | Retry -> Image Upscale without image. | Prefer node-level retry when possible. |
 | No-Op | Pass input through unchanged. | any. | any. | `label`. | enabled. | `label: "placeholder while designing PR review workflow"`; output `{ output: "unchanged" }`; downstream `Logger.message = $.output`. | Any -> No-Op. | No-Op as production terminal for required side effects. | Useful while designing templates. |
+
+</div>
