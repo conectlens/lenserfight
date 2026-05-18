@@ -51,7 +51,7 @@ VALUES
         '51000000-0001-0001-0000-000000000001',
         2,
         'Visual Consistency',
-        'Does the character design feel coherent with LENSO, LENSA, LENSE, and LOLA? Would it fit naturally alongside the existing four in the AiLenserFamily component?',
+        'Does the character design feel coherent with CHAO, LAHİT, LAPSEKİ, LENSA, LENSE, LOLA, and LUPEM? Would it fit naturally alongside the existing seven in the AiLenserFamily component?',
         2.5
     ),
     (
