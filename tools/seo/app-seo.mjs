@@ -14,7 +14,7 @@ const ARENA_DEFAULT_LOCALE = 'en'
 const ARENA_SEO_KEY_BY_PATH = {
   '/': 'home',
   '/about': 'about',
-  '/note-from-omer': 'founder_note',
+  '/note': 'founder_note',
   '/product': 'product',
   '/product/cli': 'product_cli',
   '/product/cli/quickstart': 'product_cli_quickstart',
@@ -534,7 +534,7 @@ const arenaStaticRoutes = [
     ],
   },
   {
-    path: '/note-from-omer',
+    path: '/note',
     title: 'Note from Omer | The Founder Story Behind LenserFight',
     description:
       'Read Omer Faruk Coskun’s founder note on the dream, story, and first spark behind LenserFight, the public arena for AI and human evaluation.',
@@ -783,11 +783,11 @@ function withResolvedLinks(app, route) {
     }),
     ...(links.length
       ? {
-          hasPart: collectionSchema(
-            `${route.heading ?? route.title} internal links`,
-            links.map((link) => ({ name: link.name, url: link.url })),
-          ),
-        }
+        hasPart: collectionSchema(
+          `${route.heading ?? route.title} internal links`,
+          links.map((link) => ({ name: link.name, url: link.url })),
+        ),
+      }
       : {}),
   }
   return {
@@ -947,22 +947,21 @@ const renderSitemap = (appName) => {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset ${xmlns}>
 ${urls
-  .map(
-    (route) => `  <url>
-    <loc>${route.canonicalUrl}</loc>${
-      (route.alternates ?? [])
-        .map(
-          (alt) =>
-            `\n    <xhtml:link rel="alternate" hreflang="${escapeAttr(alt.hrefLang)}" href="${escapeAttr(alt.href)}" />`,
-        )
-        .join('')
-    }
+      .map(
+        (route) => `  <url>
+    <loc>${route.canonicalUrl}</loc>${(route.alternates ?? [])
+            .map(
+              (alt) =>
+                `\n    <xhtml:link rel="alternate" hreflang="${escapeAttr(alt.hrefLang)}" href="${escapeAttr(alt.href)}" />`,
+            )
+            .join('')
+          }
     <lastmod>${DEFAULT_DATE}</lastmod>
     <changefreq>${route.changefreq}</changefreq>
     <priority>${route.priority}</priority>
   </url>`,
-  )
-  .join('\n')}
+      )
+      .join('\n')}
 </urlset>
 `
 }

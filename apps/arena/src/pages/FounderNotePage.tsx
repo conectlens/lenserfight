@@ -122,9 +122,6 @@ export const FounderNotePage: React.FC = () => {
                 <blockquote className="text-3xl font-black leading-[1.1] tracking-tight text-greyscale-950 dark:text-white sm:text-4xl italic">
                   {t('founderNote:hero.quote')}
                 </blockquote>
-                <p className="mt-8 text-base leading-relaxed text-greyscale-600 dark:text-greyscale-400 font-medium italic">
-                  {t('founderNote:hero.quoteCaption')}
-                </p>
                 <div className="mt-10 flex items-center gap-4 border-t border-black/5 dark:border-white/10 pt-8">
                   <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary-yellow-500 to-orange-500 p-[1px]">
                     <div className="h-full w-full rounded-full bg-greyscale-900 flex items-center justify-center overflow-hidden">
@@ -171,13 +168,13 @@ export const FounderNotePage: React.FC = () => {
             variants={fadeUp}
             className="mt-10 relative"
           >
-             <div className="absolute -inset-1 bg-gradient-to-r from-primary-yellow-500/10 to-transparent blur-2xl -z-10" />
-             <Card className="border-none bg-white/40 dark:bg-greyscale-900/40 backdrop-blur-xl p-8 sm:p-10 shadow-xl ring-1 ring-black/5 dark:ring-white/5">
-                <p className="text-lg leading-relaxed text-greyscale-700 dark:text-greyscale-300 font-medium italic relative z-10">
-                   <span className="absolute -left-4 -top-2 text-6xl text-primary-yellow-500/20 font-serif leading-none">"</span>
-                   {t('founderNote:dukkan.note')}
-                </p>
-             </Card>
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary-yellow-500/10 to-transparent blur-2xl -z-10" />
+            <Card className="border-none bg-white/40 dark:bg-greyscale-900/40 backdrop-blur-xl p-8 sm:p-10 shadow-xl ring-1 ring-black/5 dark:ring-white/5">
+              <p className="text-lg leading-relaxed text-greyscale-700 dark:text-greyscale-300 font-medium italic relative z-10">
+                <span className="absolute -left-4 -top-2 text-6xl text-primary-yellow-500/20 font-serif leading-none">"</span>
+                {t('founderNote:dukkan.note')}
+              </p>
+            </Card>
           </motion.div>
         </motion.div>
 
@@ -232,19 +229,16 @@ export const FounderNotePage: React.FC = () => {
           className="space-y-8 py-20 rounded-[3rem] bg-gradient-to-b from-primary-yellow-500/5 to-transparent border border-primary-yellow-500/10"
         >
           <div className="flex flex-col items-center space-y-4">
-             <Sparkles className="text-primary-yellow-500" size={32} />
-             <h2 className="text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-5xl">
-                {t('founderNote:cta.title')}
-             </h2>
-             <p className="text-lg text-greyscale-600 dark:text-greyscale-400 max-w-xl mx-auto font-medium">
-                {t('founderNote:cta.subtitle')}
-             </p>
+            <Sparkles className="text-primary-yellow-500" size={32} />
+            <h2 className="text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-5xl">
+              {t('founderNote:cta.title')}
+            </h2>
           </div>
           <Link to="/battles" className="inline-block">
-             <Button size="lg" className="h-16 px-10 rounded-2xl text-lg font-black shadow-xl shadow-primary-yellow-500/20">
-                {t('common:cta.enterArena')}
-                <ArrowRight size={20} />
-             </Button>
+            <Button size="lg" className="h-16 px-10 rounded-2xl text-lg font-black shadow-xl shadow-primary-yellow-500/20">
+              {t('common:cta.enterArena')}
+              <ArrowRight size={20} />
+            </Button>
           </Link>
         </motion.div>
       </section>
