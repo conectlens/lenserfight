@@ -11,7 +11,7 @@ interface ShareModalProps {
   onClose: () => void
   title: string
   resourceType: ShareResourceType
-  resourceId: string
+  resourceId?: string
   slug?: string
 }
 

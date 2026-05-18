@@ -9,7 +9,7 @@ export const useShareLink = () => {
 
   const generateLink = async (
     resourceType: ShareResourceType,
-    resourceId: string,
+    resourceId?: string,
     slug?: string,
     meta?: Record<string, any>
   ) => {

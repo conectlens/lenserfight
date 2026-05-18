@@ -11,7 +11,7 @@ export class SupabaseShareRepository implements ShareRepositoryPort {
   async createOrGetSharedLink(dto: CreateLinkDTO): Promise<SharedLink> {
     const { data, error } = await supabase.rpc('fn_analytics_shared_links_create', {
       p_resource_type: dto.resourceType,
-      p_resource_id: dto.resourceId, // REQUIRED
+      p_resource_id: dto.resourceId ?? null,
       p_slug: dto.slug ?? null,
       p_channel: dto.channel ?? 'in_app',
       p_meta: dto.meta ?? {},
@@ -69,6 +69,10 @@ export class SupabaseShareRepository implements ShareRepositoryPort {
 
       case 'tag':
         path = `/ray/${link.slug || link.resource_id}`
+        break
+
+      case 'page':
+        path = link.slug || '/'
         break
     }
 
