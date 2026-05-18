@@ -35,13 +35,13 @@ export interface UseLocalKeyStore {
   refresh: () => Promise<void>
 }
 
-export function useLocalKeyStore(): UseLocalKeyStore {
+export function useLocalKeyStore(enabled = true): UseLocalKeyStore {
   const clientRef = useRef<LocalKeysGatewayClient | null>(null)
   if (!clientRef.current) clientRef.current = new LocalKeysGatewayClient()
   const client = clientRef.current
 
   const [localKeys, setLocalKeys] = useState<LocalKeyMeta[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [availability, setAvailability] = useState<LocalKeyAvailabilityReason>('gateway_unreachable')
 
   const refresh = useCallback(async () => {
@@ -75,8 +75,9 @@ export function useLocalKeyStore(): UseLocalKeyStore {
   }, [client])
 
   useEffect(() => {
+    if (!enabled) return
     void refresh()
-  }, [refresh])
+  }, [enabled, refresh])
 
   const addKey = useCallback(
     async (provider: string, label: string, rawKey: string) => {
