@@ -139,6 +139,15 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const [mediaHeight, setMediaHeight] = useState(1024)
   const [mediaDurationS, setMediaDurationS] = useState(5)
   const [mediaAspectRatio, setMediaAspectRatio] = useState('16:9')
+  // Extended image params
+  const [mediaQuality, setMediaQuality] = useState<'standard' | 'hd'>('standard')
+  const [mediaStyle, setMediaStyle] = useState('')
+  const [mediaBatch, setMediaBatch] = useState(1)
+  // Extended video params
+  const [mediaFps, setMediaFps] = useState<number | ''>('')
+  // Shared advanced params
+  const [mediaNegativePrompt, setMediaNegativePrompt] = useState('')
+  const [mediaSeed, setMediaSeed] = useState<number | ''>('')
 
   // Read the wire-truth capability map for the active model. Drives which
   // media params we actually emit, so we never ship a value the adapter will
@@ -151,20 +160,31 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const buildMediaParams = (): GenerativeMediaParams | undefined => {
     if (effectiveModality === 'text') return undefined
     const base: GenerativeMediaParams = { output_modality: effectiveModality }
+    const sharedAdvanced: Partial<GenerativeMediaParams> = {
+      ...(mediaNegativePrompt.trim() ? { negative_prompt: mediaNegativePrompt.trim() } : {}),
+      ...(mediaSeed !== '' ? { seed: Number(mediaSeed) } : {}),
+    }
 
     if (effectiveModality === 'image') {
       // Only include width/height when the model accepts custom sizes (OpenAI image).
       // For models that key off aspectRatio (Imagen, Stability, fal) we send aspect_ratio.
+      let sizeParams: Partial<GenerativeMediaParams> = {}
       if (mediaCapabilities.imageSizes.length > 0) {
-        return { ...base, width: mediaWidth, height: mediaHeight }
-      }
-      if (mediaCapabilities.aspectRatios.length > 0) {
+        sizeParams = { width: mediaWidth, height: mediaHeight }
+      } else if (mediaCapabilities.aspectRatios.length > 0) {
         const aspect = mediaCapabilities.aspectRatios.includes(mediaAspectRatio)
           ? mediaAspectRatio
           : mediaCapabilities.aspectRatios[0]
-        return { ...base, aspect_ratio: aspect }
+        sizeParams = { aspect_ratio: aspect }
       }
-      return base
+      return {
+        ...base,
+        ...sizeParams,
+        ...(mediaCapabilities.imageQualities.length > 0 ? { quality: mediaQuality } : {}),
+        ...(mediaCapabilities.supportsStyle && mediaStyle.trim() ? { style: mediaStyle.trim() } : {}),
+        ...(mediaCapabilities.maxBatch > 1 && mediaBatch > 1 ? { n: mediaBatch } : {}),
+        ...sharedAdvanced,
+      }
     }
 
     if (effectiveModality === 'video') {
@@ -174,7 +194,13 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
       const duration = mediaCapabilities.durations.length === 0 || mediaCapabilities.durations.includes(mediaDurationS)
         ? mediaDurationS
         : mediaCapabilities.durations[0]
-      return { ...base, duration_s: duration, aspect_ratio: aspect }
+      return {
+        ...base,
+        duration_s: duration,
+        aspect_ratio: aspect,
+        ...(mediaFps !== '' ? { fps: Number(mediaFps) } : {}),
+        ...sharedAdvanced,
+      }
     }
 
     if (effectiveModality === 'audio' || effectiveModality === 'music') {
@@ -348,52 +374,200 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
 
           {/* 2b. Media generation params */}
           {effectiveModality === 'image' && (
-            <div className="flex gap-3">
-              <label className="flex flex-1 flex-col gap-1">
-                <span className="text-xs text-greyscale-500">Width</span>
+            <div className="flex flex-col gap-2">
+              {/* Size: width/height or aspect ratio */}
+              {mediaCapabilities.imageSizes.length > 0 ? (
+                <div className="flex gap-3">
+                  <label className="flex flex-1 flex-col gap-1">
+                    <span className="text-xs text-greyscale-500">Width</span>
+                    <input
+                      type="number"
+                      min={64} max={4096} step={64}
+                      value={mediaWidth}
+                      onChange={(e) => setMediaWidth(Number(e.target.value))}
+                      className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                    />
+                  </label>
+                  <label className="flex flex-1 flex-col gap-1">
+                    <span className="text-xs text-greyscale-500">Height</span>
+                    <input
+                      type="number"
+                      min={64} max={4096} step={64}
+                      value={mediaHeight}
+                      onChange={(e) => setMediaHeight(Number(e.target.value))}
+                      className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                    />
+                  </label>
+                </div>
+              ) : mediaCapabilities.aspectRatios.length > 0 ? (
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs text-greyscale-500">Aspect ratio</span>
+                  <select
+                    value={mediaCapabilities.aspectRatios.includes(mediaAspectRatio) ? mediaAspectRatio : mediaCapabilities.aspectRatios[0]}
+                    onChange={(e) => setMediaAspectRatio(e.target.value)}
+                    className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                  >
+                    {mediaCapabilities.aspectRatios.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+
+              {/* Quality */}
+              {mediaCapabilities.imageQualities.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-greyscale-500">Quality</span>
+                  <div className="flex gap-1.5">
+                    {mediaCapabilities.imageQualities.map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => setMediaQuality(q as 'standard' | 'hd')}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors capitalize ${mediaQuality === q
+                          ? 'bg-primary-yellow-500 text-greyscale-900'
+                          : 'border border-surface-border bg-surface-raised text-greyscale-600 hover:border-primary-yellow-400 dark:text-greyscale-300'
+                        }`}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Style */}
+              {mediaCapabilities.supportsStyle && (
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs text-greyscale-500">Style <span className="text-greyscale-400">(optional)</span></span>
+                  <input
+                    type="text"
+                    placeholder="e.g. vivid, natural"
+                    value={mediaStyle}
+                    onChange={(e) => setMediaStyle(e.target.value)}
+                    className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50 placeholder:text-greyscale-400"
+                  />
+                </label>
+              )}
+
+              {/* Batch size */}
+              {mediaCapabilities.maxBatch > 1 && (
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs text-greyscale-500">Images (n)</span>
+                  <input
+                    type="number"
+                    min={1} max={mediaCapabilities.maxBatch} step={1}
+                    value={mediaBatch}
+                    onChange={(e) => setMediaBatch(Math.min(mediaCapabilities.maxBatch, Math.max(1, Number(e.target.value))))}
+                    className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                  />
+                </label>
+              )}
+
+              {/* Negative prompt */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-greyscale-500">Negative prompt <span className="text-greyscale-400">(optional)</span></span>
                 <input
-                  type="number"
-                  min={64} max={4096} step={64}
-                  value={mediaWidth}
-                  onChange={(e) => setMediaWidth(Number(e.target.value))}
-                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                  type="text"
+                  placeholder="What to avoid in the image"
+                  value={mediaNegativePrompt}
+                  onChange={(e) => setMediaNegativePrompt(e.target.value)}
+                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50 placeholder:text-greyscale-400"
                 />
               </label>
-              <label className="flex flex-1 flex-col gap-1">
-                <span className="text-xs text-greyscale-500">Height</span>
+
+              {/* Seed */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-greyscale-500">Seed <span className="text-greyscale-400">(optional)</span></span>
                 <input
                   type="number"
-                  min={64} max={4096} step={64}
-                  value={mediaHeight}
-                  onChange={(e) => setMediaHeight(Number(e.target.value))}
-                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                  min={0}
+                  placeholder="Random"
+                  value={mediaSeed}
+                  onChange={(e) => setMediaSeed(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50 placeholder:text-greyscale-400"
                 />
               </label>
             </div>
           )}
           {effectiveModality === 'video' && (
-            <div className="flex gap-3">
-              <label className="flex flex-1 flex-col gap-1">
-                <span className="text-xs text-greyscale-500">Duration (s)</span>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-3">
+                <label className="flex flex-1 flex-col gap-1">
+                  <span className="text-xs text-greyscale-500">Duration (s)</span>
+                  {mediaCapabilities.durations.length > 0 ? (
+                    <select
+                      value={mediaCapabilities.durations.includes(mediaDurationS) ? mediaDurationS : mediaCapabilities.durations[0]}
+                      onChange={(e) => setMediaDurationS(Number(e.target.value))}
+                      className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                    >
+                      {mediaCapabilities.durations.map((d) => (
+                        <option key={d} value={d}>{d}s</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="number"
+                      min={1} max={60} step={1}
+                      value={mediaDurationS}
+                      onChange={(e) => setMediaDurationS(Number(e.target.value))}
+                      className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                    />
+                  )}
+                </label>
+                <label className="flex flex-1 flex-col gap-1">
+                  <span className="text-xs text-greyscale-500">Aspect ratio</span>
+                  <select
+                    value={mediaAspectRatio}
+                    onChange={(e) => setMediaAspectRatio(e.target.value)}
+                    className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                  >
+                    {(mediaCapabilities.aspectRatios.length > 0
+                      ? mediaCapabilities.aspectRatios
+                      : ['16:9', '9:16', '1:1', '4:3', '3:4']
+                    ).map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {/* FPS */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-greyscale-500">FPS <span className="text-greyscale-400">(optional)</span></span>
                 <input
                   type="number"
-                  min={1} max={60} step={1}
-                  value={mediaDurationS}
-                  onChange={(e) => setMediaDurationS(Number(e.target.value))}
-                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                  min={1} max={120} step={1}
+                  placeholder="Default"
+                  value={mediaFps}
+                  onChange={(e) => setMediaFps(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50 placeholder:text-greyscale-400"
                 />
               </label>
-              <label className="flex flex-1 flex-col gap-1">
-                <span className="text-xs text-greyscale-500">Aspect ratio</span>
-                <select
-                  value={mediaAspectRatio}
-                  onChange={(e) => setMediaAspectRatio(e.target.value)}
-                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
-                >
-                  {['16:9', '9:16', '1:1', '4:3', '3:4'].map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
+
+              {/* Negative prompt */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-greyscale-500">Negative prompt <span className="text-greyscale-400">(optional)</span></span>
+                <input
+                  type="text"
+                  placeholder="What to avoid in the video"
+                  value={mediaNegativePrompt}
+                  onChange={(e) => setMediaNegativePrompt(e.target.value)}
+                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50 placeholder:text-greyscale-400"
+                />
+              </label>
+
+              {/* Seed */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-greyscale-500">Seed <span className="text-greyscale-400">(optional)</span></span>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="Random"
+                  value={mediaSeed}
+                  onChange={(e) => setMediaSeed(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50 placeholder:text-greyscale-400"
+                />
               </label>
             </div>
           )}
