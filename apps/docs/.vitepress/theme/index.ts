@@ -60,7 +60,7 @@ function redirectUnprefixedPath(): void {
 
 const POSTHOG_TOKEN = import.meta.env['PUBLIC_POSTHOG_PROJECT_TOKEN'] as string | undefined
 const POSTHOG_HOST = (import.meta.env['PUBLIC_POSTHOG_HOST'] as string | undefined) ?? 'https://us.i.posthog.com'
-const isProd = import.meta.env.MODE === 'production'
+const isProd = process.env.NODE_ENV === 'production'
 
 // Initialize analytics once — GA4 always, PostHog only in production
 globalAnalyticsController.registerProvider(new GA4Provider())
