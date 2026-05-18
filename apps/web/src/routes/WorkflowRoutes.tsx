@@ -54,7 +54,8 @@ const CreateWorkflowModal: React.FC = () => {
   )
 }
 
-export const WorkflowRoutes: React.FC = () => (
+export function WorkflowRoutes(): React.ReactElement {
+  return (
   <>
     <Route
       path="/workflows"
@@ -103,4 +104,5 @@ export const WorkflowRoutes: React.FC = () => (
       }
     />
   </>
-)
+  )
+}
