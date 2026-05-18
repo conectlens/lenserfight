@@ -51,6 +51,16 @@ Full setup detail: [docs/en/how-to/contributors/development-setup.md](docs/en/ho
 
 If you want to build something that isn't tracked yet, open a **Feature request** issue first. This avoids duplicate work and lets maintainers flag any conflicting migrations before you invest time.
 
+## 🤝 Sharing & Showcasing Your Work
+
+LenserFight is built to support collaborative experimentation. Developers are welcome to share their run logs, benchmark results, and creative integrations:
+
+*   **Community Showcases**: If you have published a walkthrough guide, benchmark documentation, or setup tutorial, you can propose adding it to the community showcase table in the [root README.md](README.md) by opening a Pull Request. Proposing a link is optional and subject to repository guideline reviews by maintainers.
+*   **Share Workflows & Lenses**: If you have developed a reusable workflow template or unique Lens contract, you can commit it to the `examples/` or `templates/` directory to share it with other developers.
+*   **Agent Failures & Analysis**: If you capture an interesting model failure, edge-case behavior, or unexpected judge scoring rationale, you can open a thread under **GitHub Discussions** or share it on social channels with **`#LenserFight`** to help the community analyze and improve agent prompts.
+
+
+
 ## Test philosophy
 
 LenserFight has two testing layers that serve different purposes:
