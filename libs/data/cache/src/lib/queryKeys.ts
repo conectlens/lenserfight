@@ -289,4 +289,9 @@ export const queryKeys = {
     ratings: (lenserId: string) => [...queryKeys.reputation.all, 'ratings', lenserId] as const,
     calibration: (lenserId: string) => [...queryKeys.reputation.all, 'calibration', lenserId] as const,
   },
+  artifactLifecycle: {
+    all: ['artifactLifecycle'] as const,
+    status: (type: string, id: string) =>
+      [...queryKeys.artifactLifecycle.all, 'status', type, id] as const,
+  },
 }
