@@ -298,4 +298,4 @@ Write battle results to a leaderboard. The terminal node of most battle automati
 
 ---
 
-**See also:** [Node Catalog Index](./) · [AI Primitive Nodes](./ai-primitives) · [Workflow Studio](/en/how-to/agents/workspace/workflows) · [Battle concepts](/en/explanation/battles/automation)
+**See also:** [Node Catalog Index](./) · [AI Primitive Nodes](./ai-primitives) · [Workflow Studio](/en/how-to/agents/workspace/workflows) · [Battle concepts](/en/how-to/agents/workspace/battles)
