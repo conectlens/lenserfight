@@ -36,7 +36,7 @@ Pre–first-public OSS publishing pass: permissive license, brand guidelines, do
 ### Changed
 
 - **license**: Community Edition relicensed from **BSL 1.1** to **Apache-2.0** (`LICENSE`, root and app `package.json` SPDX fields, OpenAPI `info.license`).
-- **docs**: `open-core-model`, `license`, `governance`, `pricing`, `for-organizations` updated for Apache-2.0; new [Brand guidelines](docs/en/explanation/community/brand-guidelines.md) and root [`BRAND.md`](BRAND.md); VitePress sidebar link.
+- **docs**: `open-core-model`, `license`, `governance`, `pricing`, `for-organizations` updated for Apache-2.0; VitePress sidebar link.
 - **readme**: Day-one scope paragraph, `development` branch note for PRs, Trust Gateway preview framing, Node `>=22` badge, Community links include brand guidelines.
 - **chore**: Root `package.json` `version` set to `0.10.0-alpha.2` to match changelog and future tags.
 

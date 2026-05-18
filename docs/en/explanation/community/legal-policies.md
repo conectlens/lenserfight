@@ -69,4 +69,3 @@ Before publishing or changing user-facing docs, check:
 - [Public Beta Release Risk Register](/en/explanation/community/beta-release-risk-register)
 - [Known Preview Surfaces](/en/reference/known-preview-surfaces)
 - [Security Policy](/en/how-to/contributors/security)
-- [Brand guidelines](/en/explanation/community/brand-guidelines)
