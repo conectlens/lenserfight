@@ -27,7 +27,7 @@ interface RouteMeta {
 const routeMeta: Record<string, RouteMeta> = {
   '/': { key: 'home', schemaType: 'SoftwareApplication' },
   '/about': { key: 'about', schemaType: 'AboutPage' },
-  '/note-from-omer': { key: 'founder_note', schemaType: 'AboutPage' },
+  '/note': { key: 'founder_note', schemaType: 'AboutPage' },
   '/product': { key: 'product', schemaType: 'SoftwareApplication' },
   '/product/cli': { key: 'product_cli', schemaType: 'SoftwareApplication' },
   '/product/cli/quickstart': { key: 'product_cli_quickstart', schemaType: 'WebPage' },

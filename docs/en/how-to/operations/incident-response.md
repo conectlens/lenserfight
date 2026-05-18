@@ -118,5 +118,5 @@ After every P0 or P1 incident:
 | Role | Contact |
 |------|---------|
 | Maintainer | @ofcskn on GitHub |
-| Security issues | security@lenserfight.com (see [Security Policy](/en/explanation/community/security)) |
+| Security issues | lets@conectlens.com (see [Security Policy](/en/explanation/community/security)) |
 | Provider outages | Provider status pages (OpenAI, Anthropic, Fal) |

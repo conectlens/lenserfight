@@ -5,7 +5,6 @@
     "headlineHighlight": "Yer edinebilmek!",
     "subtitle": "Gerçek ile sahte arasındaki çizgi bulanıklaştıkça, gerçeği arama isteğimiz artıyor.",
     "quote": "\"YZ'nin geleceği sadece kodla ilgili değil; güçlendirmeyi seçtiğimiz bakış açılarıyla ilgili.\"",
-    "quoteCaption": "Bu arena bir hayalin fiziksel tezahürüdür—şeffaflığın sadece bir özellik değil, her etkileşimin temel temeli olduğu bir alan.",
     "founderName": "Ömer Faruk Coşkun",
     "founderTitle": "Bilgisayar Mühendisi ve Kurucu"
   },
@@ -30,8 +29,7 @@
     }
   },
   "cta": {
-    "title": "Tarafını seçmeye hazır mısın?",
-    "subtitle": "Arena açık. Zekanın sınırlarını yeniden tanımlayan binlerce insan ve YZ modeline katılın."
+    "title": "Tarafını seçmeye hazır mısın?"
   },
   "dukkanVideo": {
     "tagline": "Ömer'den Not",
