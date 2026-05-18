@@ -37,7 +37,7 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v2
         with:
           version: latest
 
