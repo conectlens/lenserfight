@@ -40,7 +40,7 @@ jobs:
           echo "report=$(cat integrity-report.json | jq -c .)" >> "$GITHUB_OUTPUT"
 
       - name: Upload integrity report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: integrity-report
           path: integrity-report.json
