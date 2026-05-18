@@ -34,6 +34,21 @@ export interface MediaCapabilities {
    * AI-Studio-only models leave this `false`.
    */
   supportsVertexProject: boolean
+  /**
+   * Known voice IDs for audio providers (e.g. ElevenLabs voices).
+   * Empty array means voice selection is not applicable or not available.
+   * Each entry: { id: string; label: string }
+   */
+  voices: readonly { id: string; label: string }[]
+  /**
+   * Whether the adapter accepts a `speed` parameter for audio playback/TTS.
+   * When true, the UI should render a speed slider (0.5–2.0).
+   */
+  supportsAudioSpeed: boolean
+  /**
+   * Accepted audio output formats. Empty means the adapter controls the format.
+   */
+  audioFormats: readonly ('mp3' | 'wav' | 'opus' | 'flac')[]
 }
 
 const EMPTY: MediaCapabilities = {
@@ -45,7 +60,23 @@ const EMPTY: MediaCapabilities = {
   aspectRatios: [],
   durations: [],
   supportsVertexProject: false,
+  voices: [],
+  supportsAudioSpeed: false,
+  audioFormats: [],
 }
+
+/** Well-known ElevenLabs voice presets exposed in the UI. */
+const ELEVENLABS_VOICES: readonly { id: string; label: string }[] = [
+  { id: '21m00Tcm4TlvDq8ikWAM', label: 'Rachel (default)' },
+  { id: 'AZnzlk1XvdvUeBnXmlld', label: 'Domi' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', label: 'Bella' },
+  { id: 'ErXwobaYiN019PkySvjV', label: 'Antoni' },
+  { id: 'MF3mGyEYCl7XYWbV9V6O', label: 'Elli' },
+  { id: 'TxGEqnHWrfWFTfGW9XjX', label: 'Josh' },
+  { id: 'VR6AewLTigWG4xSOukaG', label: 'Arnold' },
+  { id: 'pNInz6obpgDQGcFmaJgB', label: 'Adam' },
+  { id: 'yoZ06aMxZJJ28mfd3POQ', label: 'Sam' },
+]
 
 export function getMediaCapabilities(modelKey: string): MediaCapabilities {
   const descriptor = lookupModel(modelKey)
@@ -112,7 +143,13 @@ export function getMediaCapabilities(modelKey: string): MediaCapabilities {
         aspectRatios: ['1:1', '16:9', '21:9', '2:3', '3:2', '4:5', '5:4', '9:16', '9:21'],
       }
     case 'elevenlabs':
-      return { ...EMPTY, kind: 'audio' }
+      return {
+        ...EMPTY,
+        kind: 'audio',
+        voices: ELEVENLABS_VOICES,
+        supportsAudioSpeed: true,
+        audioFormats: ['mp3', 'wav', 'opus', 'flac'],
+      }
     case 'kling':
       return { ...EMPTY, kind: 'video', aspectRatios: ['16:9', '9:16', '1:1'], durations: [5, 10] }
     case 'suno':
