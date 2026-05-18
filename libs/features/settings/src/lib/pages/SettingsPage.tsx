@@ -152,6 +152,10 @@ export const SettingsPage: React.FC = () => {
   const { notifications, isLoading: notifLoading, markAllRead } = useNotifications(50)
   const [notifTab, setNotifTab] = useState<'All' | 'Unread'>('All')
 
+  // Deactivation State
+  const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false)
+  const [isDeactivating, setIsDeactivating] = useState(false)
+
   // Deletion State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -277,6 +281,22 @@ export const SettingsPage: React.FC = () => {
       console.error(e)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleDeactivateRequest = async () => {
+    if (!lenser) return
+    setIsDeactivating(true)
+    try {
+      await lenserService.deactivateAccount()
+      await logout()
+      navigate('/auth/login')
+    } catch (e) {
+      console.error('Failed to deactivate', e)
+      alert('Failed to deactivate account.')
+    } finally {
+      setIsDeactivating(false)
+      setIsDeactivateModalOpen(false)
     }
   }
 
@@ -546,16 +566,7 @@ export const SettingsPage: React.FC = () => {
                   <Button
                     variant="secondary"
                     className="!w-auto px-4 text-sm border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/30"
-                    onClick={async () => {
-                      try {
-                        await lenserService.deactivateAccount()
-                        await logout()
-                        navigate('/auth/login')
-                      } catch (e) {
-                        console.error('Failed to deactivate', e)
-                        alert('Failed to deactivate account.')
-                      }
-                    }}
+                    onClick={() => setIsDeactivateModalOpen(true)}
                   >
                     Deactivate Account
                   </Button>
@@ -934,6 +945,17 @@ export const SettingsPage: React.FC = () => {
         onSelect={handleAvatarUpdate}
         isLoading={isSaving}
         currentUrl={lenser?.avatar_url}
+      />
+
+      {/* Deactivate Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isDeactivateModalOpen}
+        onClose={() => setIsDeactivateModalOpen(false)}
+        onConfirm={handleDeactivateRequest}
+        title="Deactivate Account"
+        message="Are you sure you want to deactivate your account? Your profile will be hidden immediately. You can reactivate at any time by signing back in."
+        confirmLabel="Deactivate"
+        isLoading={isDeactivating}
       />
 
       {/* Delete Confirmation Modal */}
