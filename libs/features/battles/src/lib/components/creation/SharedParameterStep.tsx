@@ -13,7 +13,7 @@ import type { LensVersionParam, LensViewModel } from '@lenserfight/types'
 import { Avatar } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, Info, Layers } from 'lucide-react'
-import React from 'react'
+import React, { useEffect } from 'react'
 
 export interface SharedParameterStepProps {
   /** ID of the selected lens. */
@@ -26,6 +26,8 @@ export interface SharedParameterStepProps {
   onChange: (values: Record<string, unknown>) => void
   /** Optional lens view model for displaying lens identity above the params. */
   lens?: LensViewModel | null
+  /** Called whenever the validity of required params changes. */
+  onValidityChange?: (valid: boolean) => void
 }
 
 export const SharedParameterStep: React.FC<SharedParameterStepProps> = ({
@@ -34,6 +36,7 @@ export const SharedParameterStep: React.FC<SharedParameterStepProps> = ({
   values,
   onChange,
   lens,
+  onValidityChange,
 }) => {
   // Fetch lens versions to resolve the effective version
   const { data: versions = [] } = useQuery({
@@ -63,6 +66,14 @@ export const SharedParameterStep: React.FC<SharedParameterStepProps> = ({
     const v = values[p.label]
     return v !== undefined && v !== null && v !== ''
   })
+
+  // Bubble validity up so the wizard can gate the Next button
+  useEffect(() => {
+    if (!onValidityChange) return
+    // While loading or no required params: unblock the wizard
+    onValidityChange(isLoading || requiredParams.length === 0 ? true : filledRequired)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filledRequired, isLoading, requiredParams.length])
 
   const handleParamChange = (name: string, value: unknown) => {
     onChange({ ...values, [name]: value })

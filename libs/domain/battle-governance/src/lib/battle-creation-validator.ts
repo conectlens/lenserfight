@@ -211,7 +211,8 @@ export class BattleCreationValidator {
 
     for (const param of lensParamRequirements) {
       if (!param.required) continue
-      const value = values[param.id]
+      // Snapshot is keyed by param.label (as written by VersionParamFields)
+      const value = values[param.label]
       if (value === undefined || value === null || value === '') {
         violations.push({
           code: 'LENS_PARAMS_INCOMPLETE',
