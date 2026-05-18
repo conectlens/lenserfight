@@ -1,0 +1,58 @@
+name: smoke-timing
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-timing:
+    name: pnpm smoke ≤ 5 min (Phase BU)
+    runs-on: ubuntu-latest
+    # Hard ceiling: if smoke takes longer than this the runner is killed before
+    # the script's own SMOKE_MAX_SECONDS check fires. Keep this above the
+    # in-script cap (300s) so the script's own message wins in the typical case.
+    timeout-minutes: 10
+    env:
+      # Smoke should run credentialless. Explicitly clear keys.
+      OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      GOOGLE_API_KEY: ''
+      MISTRAL_API_KEY: ''
+      # In-script timing cap. Override to debug a slow runner without lifting
+      # the production gate.
+      SMOKE_MAX_SECONDS: '300'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install supabase CLI
+        run: |
+          curl -sL https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz \
+            | sudo tar xz -C /usr/local/bin
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: pnpm smoke (≤ 5 min hard fail)
+        run: pnpm smoke
+
+      - name: Upload per-step timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-timings
+          path: tmp/smoke-timings.txt
+          if-no-files-found: ignore

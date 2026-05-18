@@ -1,0 +1,32 @@
+name: coverage-gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  coverage-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run scripts/coverage-gate.sh
+        run: bash scripts/coverage-gate.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Repository unit tests
+        run: pnpm nx test repositories --reporter=verbose
