@@ -25,7 +25,8 @@ const LazyWaitingListPage = lazy(() =>
   import('@lenserfight/features/waiting-list').then((module) => ({ default: module.WaitingListPage }))
 )
 
-export const AccountRoutes: React.FC = () => (
+export function AccountRoutes(): React.ReactElement {
+  return (
   <>
     <Route path="/settings" element={<Navigate to="/settings/account" replace />} />
     <Route
@@ -88,4 +89,5 @@ export const AccountRoutes: React.FC = () => (
       }
     />
   </>
-)
+  )
+}

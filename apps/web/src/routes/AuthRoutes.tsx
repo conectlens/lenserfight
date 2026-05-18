@@ -3,7 +3,8 @@ import { ARENA_BASE_URL, AUTH_BASE_URL } from '@lenserfight/utils/env'
 import React from 'react'
 import { Navigate, Route } from 'react-router-dom'
 
-export const AuthRoutes: React.FC = () => (
+export function AuthRoutes(): React.ReactElement {
+  return (
   <>
     <Route path="/auth/login" element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/login`} />} />
     <Route path="/auth/register" element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/register`} />} />
@@ -18,4 +19,5 @@ export const AuthRoutes: React.FC = () => (
     <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
     <Route path="/reset-password" element={<Navigate to="/auth/reset-password" replace />} />
   </>
-)
+  )
+}
