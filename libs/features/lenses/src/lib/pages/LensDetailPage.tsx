@@ -10,7 +10,7 @@ import { ExportModal, useExportRunner, LocalDownloadTransport, CloudDownloadTran
 import { SupabaseExportsRepository } from '@lenserfight/data/exports'
 import { supabase } from '@lenserfight/data/supabase'
 import { SEOHead, Badge, Button, Card, DesktopFrame, HelpButton } from '@lenserfight/ui/components'
-import { ConfirmModal } from '@lenserfight/ui/modals'
+import { ArtifactLifecycleMenu, ArtifactLifecycleStatusBadge, ArtifactDeleteConfirmDialog, useDeleteArtifact, useArtifactLifecycleStatus } from '@lenserfight/features/artifact-lifecycle'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
 import { useDrawerRouter } from '@lenserfight/ui/routing'
@@ -60,8 +60,9 @@ export const LensDetailPage: React.FC = () => {
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [reportReason, setReportReason] = useState<ReportReasonEnum>('spam')
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const deleteMutation = useDeleteArtifact()
+  const { data: lensLifecycleStatus } = useArtifactLifecycleStatus('lens', lens?.id)
 
   // Execution panel state
   const [showRunPanel, setShowRunPanel] = useState(false)
@@ -269,7 +270,6 @@ export const LensDetailPage: React.FC = () => {
     if (isOwner && lens?.id) {
       actions.push(
         { label: 'Edit Lens', icon: <Pencil size={16} />, onClick: () => handleEditClick(lens.id) },
-        { label: 'Delete Lens', icon: <Trash2 size={16} />, onClick: () => handleDeleteClick(lens.id), variant: 'danger' as const },
       )
     } else if (lens?.id && hasActiveLenserProfile) {
       actions.push({
@@ -280,7 +280,7 @@ export const LensDetailPage: React.FC = () => {
       })
     }
     return actions
-  }, [handleCreateClick, hasActiveLenserProfile, handleDeleteClick, handleEditClick, isOwner, lens])
+  }, [handleCreateClick, hasActiveLenserProfile, handleEditClick, isOwner, lens])
 
   useEffect(() => { setPageActions(pageActions) }, [pageActions, setPageActions])
 
@@ -298,24 +298,24 @@ export const LensDetailPage: React.FC = () => {
     try { await actions.saveLens() } finally { setIsSaving(false) }
   }
 
-  const confirmDelete = async () => {
-    if (!deleteTargetId || !lenser) return
-    setIsDeleting(true)
-    try {
-      await lensesService.deleteLens(deleteTargetId, lenser.id)
-      setIsDeleteModalOpen(false)
-      if (lens && deleteTargetId === lens.id) {
-        navigate('/lenses')
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['lens-list'] })
-        queryClient.invalidateQueries({ queryKey: ['lens-core', lens?.id] })
-        queryClient.invalidateQueries({ queryKey: ['lens-related', lens?.id] })
-        queryClient.invalidateQueries({ queryKey: ['lens-author-list', lens?.id] })
-      }
-    } finally {
-      setIsDeleting(false)
-      setDeleteTargetId(null)
-    }
+  const confirmDelete = () => {
+    if (!deleteTargetId) return
+    const isCurrentLens = lens && deleteTargetId === lens.id
+    deleteMutation.mutate({
+      type: 'lens',
+      id: deleteTargetId,
+      extraInvalidateKeys: [
+        ['lens-list'],
+        ['lens-core', lens?.id ?? ''],
+        ['lens-related', lens?.id ?? ''],
+        ['lens-author-list', lens?.id ?? ''],
+      ],
+      onDeleted: () => {
+        setIsDeleteModalOpen(false)
+        setDeleteTargetId(null)
+        if (isCurrentLens) navigate('/lenses')
+      },
+    })
   }
 
   const handleCreateSubmit = (newId: string) => {
@@ -466,6 +466,13 @@ export const LensDetailPage: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2">
+              {lensLifecycleStatus && (
+                <ArtifactLifecycleStatusBadge
+                  archivedAt={lensLifecycleStatus.archived_at}
+                  deletedAt={lensLifecycleStatus.deleted_at}
+                  pinned={lensLifecycleStatus.pinned}
+                />
+              )}
               {isOwner && (
                 <button
                   type="button"
@@ -476,6 +483,17 @@ export const LensDetailPage: React.FC = () => {
                   <Pencil size={13} />
                   <span>Edit</span>
                 </button>
+              )}
+              {isOwner && lens?.id && (
+                <ArtifactLifecycleMenu
+                  type="lens"
+                  id={lens.id}
+                  extraInvalidateKeys={[
+                    queryKeys.lenses.byOwner(lenser?.id ?? ''),
+                    queryKeys.lenses.detail(lens.id),
+                  ]}
+                  onDeleted={() => navigate('/lenses')}
+                />
               )}
 
               <button
@@ -753,14 +771,14 @@ export const LensDetailPage: React.FC = () => {
       />
 
 
-      <ConfirmModal
+      <ArtifactDeleteConfirmDialog
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
-        title="Delete Lens"
-        message="Are you sure you want to delete this lens? This action cannot be undone."
-        confirmLabel="Delete"
-        isLoading={isDeleting}
+        artifactType="lens"
+        dependencySummary={lensLifecycleStatus?.dependency_summary ?? null}
+        deleteMode={lensLifecycleStatus?.delete_mode}
+        isDeleting={deleteMutation.isPending}
       />
 
       {isReportOpen && (
