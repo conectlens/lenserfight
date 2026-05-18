@@ -2,6 +2,7 @@
 import { queryClient } from '@lenserfight/data/cache'
 import { AuthProvider, SessionBoundary } from '@lenserfight/features/auth'
 import { LenserProvider } from '@lenserfight/features/profile'
+import { ShareProvider } from '@lenserfight/features/share'
 import { AnalyticsProvider, RouteTracker } from '@lenserfight/infra/analytics'
 
 import { useNotificationToast } from '@lenserfight/features/notifications'
@@ -52,31 +53,33 @@ const App: React.FC = () => {
                       }}
                     >
                       <AnalyticsProvider>
-                        <RouteTracker />
-                        <NotificationToastBootstrap />
-                        <ErrorClearer />
-                        <AppToaster />
-                        <WebRouter />
-                        <ModalQueryDriven
-                          name="create-agent"
-                          accessCheck={({ isAuthenticated, hasLenser }) =>
-                            isAuthenticated && hasLenser
-                          }
-                          maxWidth="max-w-lg"
-                          icon={<Sparkles size={18} />}
-                        >
-                          {({ close }) => (
-                            <Suspense
-                              fallback={
-                                <div className="p-6 text-sm text-gray-500 dark:text-gray-400">
-                                  Loading agent creator...
-                                </div>
-                              }
-                            >
-                              <LazyAgentManageWizard onDone={close} />
-                            </Suspense>
-                          )}
-                        </ModalQueryDriven>
+                        <ShareProvider>
+                          <RouteTracker />
+                          <NotificationToastBootstrap />
+                          <ErrorClearer />
+                          <AppToaster />
+                          <WebRouter />
+                          <ModalQueryDriven
+                            name="create-agent"
+                            accessCheck={({ isAuthenticated, hasLenser }) =>
+                              isAuthenticated && hasLenser
+                            }
+                            maxWidth="max-w-lg"
+                            icon={<Sparkles size={18} />}
+                          >
+                            {({ close }) => (
+                              <Suspense
+                                fallback={
+                                  <div className="p-6 text-sm text-gray-500 dark:text-gray-400">
+                                    Loading agent creator...
+                                  </div>
+                                }
+                              >
+                                <LazyAgentManageWizard onDone={close} />
+                              </Suspense>
+                            )}
+                          </ModalQueryDriven>
+                        </ShareProvider>
                       </AnalyticsProvider>
                     </BrowserRouter>
                   </LocaleProviderBridge>
