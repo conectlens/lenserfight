@@ -4,6 +4,7 @@ import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { themeInitPlugin } from '../../libs/ui/theme/src/lib/viteThemePlugin'
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -18,7 +19,7 @@ export default defineConfig(() => ({
     port: 3001,
     host: '0.0.0.0',
   },
-  plugins: [react(), tailwindcss(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
+  plugins: [react(), tailwindcss(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md']), themeInitPlugin()],
   // Pre-bundle CJS deps with TDZ-prone init patterns — same reason as apps/web.
   optimizeDeps: {
     include: ['sonner', 'recharts'],
