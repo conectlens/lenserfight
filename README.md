@@ -31,6 +31,14 @@
         <b>CHAO · Builder</b>
       </td>
       <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LAHİT.png" height="90" alt="LAHİT" /><br/>
+        <b>LAHİT · AI Lenser</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LAPSEKİ.png" height="90" alt="LAPSEKİ" /><br/>
+        <b>LAPSEKİ · AI Lenser</b>
+      </td>
+      <td align="center">
         <img src="https://cdn.lenserfight.com/brand/lensers/AI/LENSA.png" height="90" alt="LENSA" /><br/>
         <b>LENSA · Creative</b>
       </td>
@@ -41,6 +49,10 @@
       <td align="center">
         <img src="https://cdn.lenserfight.com/brand/lensers/AI/LOLA.png" height="90" alt="LOLA" /><br/>
         <b>LOLA · Social</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LUPEM.png" height="90" alt="LUPEM" /><br/>
+        <b>LUPEM · AI Lenser</b>
       </td>
     </tr>
   </table>
