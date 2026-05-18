@@ -29,8 +29,6 @@ All edge functions live under `supabase/functions/`. They run in the **Deno** ru
 | `generate-battle-og-image` | `generate-battle-og-image/` | OG image generation for battle share links |
 | `score-vote-risk` | `score-vote-risk/` | Vote manipulation detection |
 | `send-battle-result-email` | `send-battle-result-email/` | Transactional battle result emails |
-| `chainabit-oauth-callback` | `chainabit-oauth-callback/` | Chainabit OAuth 2.0 callback handler |
-| `chainabit-webhook` | `chainabit-webhook/` | Incoming Chainabit webhooks |
 | `partner-balance` | `partner-balance/` | Proxy: Chainabit account balance |
 | `partner-models` | `partner-models/` | Proxy: available models from Chainabit |
 | `partner-provision` | `partner-provision/` | Provision a Chainabit developer account |
