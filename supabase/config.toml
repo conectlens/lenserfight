@@ -322,11 +322,24 @@ skip_nonce_check = false
 # If enabled, it will allow the user to successfully authenticate when the provider does not return an email address.
 email_optional = false
 
-# Chainabit — self-hosted OIDC provider configured via the keycloak slot.
-# keycloak uses url + /.well-known/openid-configuration for discovery, making it
-# compatible with any standards-compliant OIDC provider.
-[auth.external.keycloak]
+# Google OAuth — used for social sign-in and connector scopes (Gmail, Drive, Calendar, etc.)
+# Configure Authorized JavaScript origins and redirect URIs in Google Cloud Console.
+# Supabase callback URL: https://<project>.supabase.co/auth/v1/callback
+[auth.external.google]
 enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+skip_nonce_check = false
+
+# Chainabit sign-in is now handled by the Supabase Auth custom:chainabit provider.
+# Custom OAuth providers (custom: prefix) must be configured in the Supabase dashboard
+# (Auth → Providers → Add custom provider) — they cannot be declared in config.toml.
+# Chainabit sign-in will NOT work in local development until a custom:chainabit provider
+# is manually configured in the local Supabase instance via the dashboard or management API.
+#
+# Legacy keycloak slot kept disabled — was previously used as a workaround for local dev.
+[auth.external.keycloak]
+enabled = false
 client_id = "env(SUPABASE_AUTH_CHAINABIT_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_CHAINABIT_SECRET)"
 url = "env(CHAINABIT_API_URL)"

@@ -2,7 +2,10 @@
  * useOAuthConnections — manages the user's OAuth connections to external providers.
  *
  * Data: fetches via fn_oauth_list_connections (authenticated, owner-scoped).
- * Connect: builds the Google OAuth 2.0 URL and redirects the browser.
+ * Connect: uses supabase.auth.signInWithOAuth with capability scopes per the
+ *          Supabase Google OAuth guide (https://supabase.com/docs/guides/auth/social-login/auth-google).
+ *          After the OAuth redirect, provider_token is available in the Supabase session
+ *          and can be captured at the existing /callback route.
  * Revoke: calls fn_oauth_revoke_connection and invalidates the query cache.
  */
 
@@ -11,13 +14,7 @@ import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
 import { useCallback } from 'react'
 import type { OAuthCapability, OAuthProvider, UserOAuthConnection } from '@lenserfight/domain/oauth-connections'
-
-const FUNCTIONS_BASE_URL =
-  typeof process !== 'undefined'
-    ? (process.env['SUPABASE_FUNCTIONS_URL'] ??
-       process.env['VITE_SUPABASE_FUNCTIONS_URL'] ??
-       '')
-    : (import.meta.env?.['VITE_SUPABASE_FUNCTIONS_URL'] ?? '')
+import { GOOGLE_CAPABILITIES } from '@lenserfight/domain/oauth-connections'
 
 const QUERY_KEY = ['oauth-connections'] as const
 
@@ -59,24 +56,27 @@ export function useOAuthConnections() {
   const connect = useCallback(async (
     provider: OAuthProvider,
     capability: OAuthCapability,
-    label: string = 'primary',
+    _label: string = 'primary',
   ) => {
     if (!user?.id || provider !== 'google') return
-    const { data: sessionData } = await supabase.auth.getSession()
-    const accessToken = sessionData.session?.access_token
-    if (!accessToken) return
 
-    const res = await fetch(`${FUNCTIONS_BASE_URL}/oauth-google-callback/start`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
+    const capDef = GOOGLE_CAPABILITIES.find((c) => c.capability === capability)
+    if (!capDef) throw new Error(`Unknown Google capability: ${capability}`)
+
+    const redirectTo = `${window.location.origin}/callback?next=${encodeURIComponent('/settings/connections')}`
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        scopes: capDef.requiredScopes.join(' '),
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+        redirectTo,
       },
-      body: JSON.stringify({ provider, capability, label }),
     })
-    if (!res.ok) throw new Error('oauth_start_failed')
-    const body = await res.json() as { authUrl?: string }
-    if (body.authUrl) window.location.href = body.authUrl
+    if (oauthError) throw oauthError
   }, [user?.id])
 
   const revokeMutation = useMutation({

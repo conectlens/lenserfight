@@ -10,7 +10,6 @@ import {
   WEB_BASE_URL,
   loadDevSeedCredentials,
 } from '@lenserfight/utils/env'
-import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
@@ -156,8 +155,15 @@ export const RegisterPage: React.FC = () => {
     }
   }
 
-  const handleChainabit = () => {
-    return partnerApiClient.startOAuthLogin(window.location.origin)
+  const handleChainabit = async () => {
+    setOauthLoading(true)
+    setApiError(null)
+    try {
+      await signInWithOAuth('custom:chainabit')
+    } catch (err: unknown) {
+      setApiError(normalizeError(err))
+      setOauthLoading(false)
+    }
   }
 
   const handleOAuth = async (provider: 'google' | 'github') => {

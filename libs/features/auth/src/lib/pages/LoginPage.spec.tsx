@@ -16,6 +16,7 @@ vi.mock('@lenserfight/features/auth', () => ({
 vi.mock('@lenserfight/utils/env', () => ({
   ENABLE_CAPTCHA: false,
   CAPTCHA_SITE_KEY: '',
+  isLocal: false,
   loadDevSeedCredentials: () => Promise.resolve(null),
 }))
 
@@ -26,10 +27,6 @@ vi.mock('@lenserfight/utils/dom', () => ({
 
 vi.mock('@lenserfight/data/supabase', () => ({
   rememberMeStorage: { setRememberMe: vi.fn() },
-}))
-
-vi.mock('@lenserfight/infra/partner-provisioning', () => ({
-  partnerApiClient: { startOAuthLogin: vi.fn() },
 }))
 
 vi.mock('@lenserfight/ui/components', () => ({
