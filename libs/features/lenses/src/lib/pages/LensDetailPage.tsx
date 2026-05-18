@@ -701,6 +701,7 @@ export const LensDetailPage: React.FC = () => {
                   localMediaArtifact={lab.localMediaArtifact}
                   isOwner={isOwner}
                   isAuthenticatedLenser={hasActiveLenserProfile}
+                  onSignIn={ensureProfile}
                 />
               </div>
             )}
