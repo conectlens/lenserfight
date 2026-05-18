@@ -120,24 +120,20 @@ If you publish your walkthroughs, benchmark guides, or screenshots on social net
 
 ---
 
-## Beta Edition Boundaries
+## Community Edition Boundaries
 
 The following surfaces require a feature flag or a hosted Supabase environment and are **not available out of the box** in a fresh Community Edition install:
 
 | Surface | Status | Flag / requirement |
 |---------|--------|--------------------|
-| CRON scheduling | Preview | Supabase `pg_cron` configured for workflow dispatch + Supabase |
+| CRON scheduling | Preview | Supabase `pg_cron` configured for workflow dispatch |
 | Approval gates | Preview | Supabase (`agents.*` schema) |
 | SSE run event replay | Preview | Supabase (`lenses.workflow_run_events`) |
 | Marketplace (`/marketplace`) | Preview | Supabase |
-| Connector marketplace | Not yet implemented | — |
-| Local battles (CLI) | Preview | No flag required |
-| Cloud battles arena | Private Alpha | operator-approved cloud battles + hosted Supabase |
-| Billing | Not yet implemented | — |
-| Benchmark suite | Not yet implemented | — |
-| ELO leaderboard | Cloud only | operator-approved cloud battles |
-
-See the full [Known Preview Surfaces](/en/reference/known-preview-surfaces) reference for controlling flags and rollback instructions.
+| AI judge (battle) | Preview | Supabase + `ANTHROPIC_API_KEY` in edge function env |
+| Tournament system | Preview | Supabase |
+| Local battles (CLI) | Preview | No flag required — `lf battle local` works without cloud infra |
+| Cloud battles arena + ELO | Preview | operator-approved cloud battles + hosted Supabase |
 
 ---
 
@@ -186,7 +182,7 @@ Every iteration should make the workflow clearer, more reliable, and easier for 
 
 ## Meet the AI Lenser Family
 
-LENSO, LENSA, LENSE, and LOLA are the AI lenser mascots of LenserFight — your guides through the arena.
+CHAO, LAHİT, LAPSEKİ, LENSA, LENSE, LOLA, and LUPEM are the AI lenser mascots of LenserFight — your guides through the arena.
 
 <AiLenserFamily />
 
