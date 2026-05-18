@@ -480,7 +480,6 @@ Open-source contributions are voluntary and do not create employment, payment ri
 - [Security policy](SECURITY.md) — how to report a vulnerability privately
 - [Support](SUPPORT.md) — where to ask questions, file bugs, request features
 - [Disclaimer](DISCLAIMER.md) — beta, AI-output, deployment, and professional-advice limits
-- [Brand and trademark guidelines](BRAND.md) — identity at <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">lenserfight.com</a> vs. open-source use of the code
 
 ---
 
@@ -502,7 +501,7 @@ Open-source contributions are voluntary and do not create employment, payment ri
 
 LenserFight Community Edition is licensed under the [Apache License 2.0](LICENSE).
 
-The **LenserFight** name and logos are trademarks; see [BRAND.md](BRAND.md). Apache-2.0 governs the **source code**; it does not grant unrestricted use of project marks.
+The **LenserFight** name and logos are trademarks. Apache-2.0 governs the **source code**; it does not grant unrestricted use of project marks.
 
 ---
 
