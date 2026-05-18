@@ -1,11 +1,24 @@
+// Public API for the provider connector infra lib.
+// Library rename: infra-partner-provisioning → infra-provider-connectors is tracked as a follow-up.
+
 export type {
   ChainabitAiModel,
-  IPartnerProvider,
-  PartnerProvision,
+  ProviderBalance,
+  ProviderConnectionState,
+  // Back-compat aliases kept so existing consumers compile without changes
   PartnerBalance,
-  PartnerTokenRefreshResult,
+  PartnerConnectionState,
 } from './lib/partner-provider.interface'
-export { PartnerRegistry, partnerRegistry } from './lib/partner-registry'
-export { ChainbitPartnerProvider } from './lib/providers/chainabit/chainabit.provider'
-export { partnerApiClient } from './lib/partner-api-client'
-export type { PartnerProvisionRecord, ChainabitOAuthState } from './lib/partner-api-client'
+
+export {
+  connectorApiClient,
+  isChainabitConnected,
+  // Back-compat alias — migrate call sites to connectorApiClient
+  partnerApiClient,
+} from './lib/partner-api-client'
+
+export type {
+  // @deprecated — provisioning removed; these are `never` placeholders
+  PartnerProvisionRecord,
+  ChainabitOAuthState,
+} from './lib/partner-api-client'

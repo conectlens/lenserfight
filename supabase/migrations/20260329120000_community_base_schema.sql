@@ -7931,7 +7931,8 @@ BEGIN
     -- 3. Validate resource_type
     IF p_resource_type NOT IN (
         'thread', 'lens', 'battle', 'profile', 'tag',
-        'group_invite', 'org_member_invite', 'battle_invite'
+        'group_invite', 'org_member_invite', 'battle_invite',
+        'workflow', 'page'
     ) THEN
         RAISE EXCEPTION 'Invalid resource_type: %', p_resource_type;
     END IF;
