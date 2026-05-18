@@ -160,11 +160,17 @@ export class SupabaseXPRepository implements XPRepositoryPort {
   ): Promise<{ list: LeaderboardEntry[]; userEntry?: LeaderboardEntry | null }> {
     const viewName = scope === 'season' ? 'vw_xp_leaderboard_season' : 'vw_xp_leaderboard_global'
 
-    const { data, error } = await supabase
+    const query = supabase
       .from(viewName)
       .select('*')
       .order('rank', { ascending: true })
       .range(offset, offset + limit - 1)
+
+    if (scope !== 'season') {
+      query.eq('app_id', XP_APP_IDS.global)
+    }
+
+    const { data, error } = await query
 
     if (error) throw error
 
