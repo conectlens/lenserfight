@@ -1839,7 +1839,13 @@ export default defineConfig({
         {
           text: 'Advanced',
           collapsed: true,
-          items: [{ text: 'Agent Orchestration', link: '/en/tutorials/advanced/agent-orchestration' }],
+          items: [
+            { text: 'Agent Orchestration', link: '/en/tutorials/advanced/agent-orchestration' },
+            { text: 'Workflow DAG Data Flow', link: '/en/tutorials/advanced/workflow-dag-data-flow' },
+            { text: 'Writing Tests for a Feature', link: '/en/tutorials/advanced/writing-tests-for-a-feature' },
+            { text: 'Debugging the CLI', link: '/en/tutorials/advanced/debugging-the-cli' },
+            { text: 'Environment Secrets Security', link: '/en/tutorials/advanced/environment-secrets-security' },
+          ],
         },
         {
           text: 'Troubleshooting',
@@ -2094,7 +2100,13 @@ export default defineConfig({
       '/en/tutorials/advanced/': [
         {
           text: 'Advanced',
-          items: [{ text: 'Agent Orchestration', link: '/en/tutorials/advanced/agent-orchestration' }],
+          items: [
+            { text: 'Agent Orchestration', link: '/en/tutorials/advanced/agent-orchestration' },
+            { text: 'Workflow DAG Data Flow', link: '/en/tutorials/advanced/workflow-dag-data-flow' },
+            { text: 'Writing Tests for a Feature', link: '/en/tutorials/advanced/writing-tests-for-a-feature' },
+            { text: 'Debugging the CLI', link: '/en/tutorials/advanced/debugging-the-cli' },
+            { text: 'Environment Secrets Security', link: '/en/tutorials/advanced/environment-secrets-security' },
+          ],
         },
       ],
       '/en/tutorials/troubleshooting/': [
