@@ -98,7 +98,7 @@ This is the sector-standard requirements checklist that the LTG implements. Ever
 | ID | Requirement | Acceptance test |
 |----|-------------|-----------------|
 | CO-1 | `.lenserfight.json` MUST NOT contain secrets. | `saveConfig` strips secrets; doctor warns if any leak. |
-| CO-2 | `~/.lenserfight/config.json` MUST hold tokens only, never signing keys. | Schema-tested. |
+| CO-2 | `~/.lenserfight/lenserfight.json` MUST hold tokens only, never signing keys. | Schema-tested. |
 | CO-3 | `~/.lenserfight/gateway/` is daemon-private state, mode `0700` (dir) and `0600` (files). | Filesystem check. |
 | CO-4 | OS keychain holds signing keys; access mediated by `libs/utils/keychain`. | Verified at boot. |
 | CO-5 | Environment variables hold bootstrap secrets only. | Doctor confirms. |

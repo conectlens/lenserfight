@@ -205,7 +205,7 @@ If you want to try LenserFight without Docker or a database, use the local file 
 mkdir -p ~/.lenserfight/lenses ~/.lenserfight/media
 
 # Configure the adapter
-echo '{ "defaultAdapterId": "local" }' > ~/.lenserfight/config.json
+echo '{ "defaultAdapterId": "local" }' > ~/.lenserfight/lenserfight.json
 
 # Set data source
 echo 'DATA_SOURCE=file' >> .env.local

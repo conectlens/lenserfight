@@ -11,10 +11,10 @@ description: LenserFight CLI'yi Pardus üzerinde kurun — TÜBİTAK'ın ulusal 
 
 | Katman | Yol |
 |--------|-----|
-| Proje yapılandırması | `.lenserfight/config.json` (proje kök dizininde) |
+| Proje yapılandırması | `.lenserfight/lenserfight.json` (proje kök dizininde) |
 | Cihaz yapılandırması | `$XDG_CONFIG_HOME/lenserfight/config.json` |
 | Varsayılan cihaz | `~/.config/lenserfight/config.json` (`XDG_CONFIG_HOME` tanımlı değilse) |
-| Eski cihaz | `~/.lenserfight/config.json` (yalnızca yedek okuma) |
+| Eski cihaz | `~/.lenserfight/lenserfight.json` (yalnızca yedek okuma) |
 
 ## Pardus'a Node.js kurulumu
 
@@ -71,7 +71,7 @@ pnpm lf --version
 pnpm lenserfight init
 ```
 
-Yerel mod varsayılanlarıyla `.lenserfight/config.json` oluşturur.
+Yerel mod varsayılanlarıyla `.lenserfight/lenserfight.json` oluşturur.
 
 ## Ortam değişkenleri
 

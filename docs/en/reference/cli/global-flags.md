@@ -32,7 +32,7 @@ When `--local` is active the config resolution order becomes:
 1. Explicit CLI flags on the command itself
 2. Environment variables and `.env.local`
 3. `.env`
-4. `~/.lenserfight/config.json` (user-level)
+4. `~/.lenserfight/lenserfight.json` (user-level)
 5. **Well-known local Supabase defaults** (forced by `--local`)
 
 The project config file (`mode` field in `.lenserfight.json`) is overridden for this invocation only and is not modified on disk.

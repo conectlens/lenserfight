@@ -11,10 +11,10 @@ Debian/Ubuntu, Fedora, Arch ve XDG uyumlu tüm dağıtımları kapsar. Pardus'a 
 
 | Katman | Yol |
 |--------|-----|
-| Proje yapılandırması | `.lenserfight/config.json` (proje kök dizininde) |
+| Proje yapılandırması | `.lenserfight/lenserfight.json` (proje kök dizininde) |
 | Cihaz yapılandırması | `$XDG_CONFIG_HOME/lenserfight/config.json` |
 | Varsayılan cihaz | `~/.config/lenserfight/config.json` (`XDG_CONFIG_HOME` tanımlı değilse) |
-| Eski cihaz | `~/.lenserfight/config.json` (yalnızca yedek okuma) |
+| Eski cihaz | `~/.lenserfight/lenserfight.json` (yalnızca yedek okuma) |
 
 CLI, [XDG Temel Dizin Spesifikasyonu](https://specifications.freedesktop.org/basedir-spec/latest/)'na uymaktadır. Özel bir `XDG_CONFIG_HOME` kullanıyorsanız cihaz yapılandırması ona göre otomatik konumlanır.
 
@@ -69,7 +69,7 @@ pnpm lf --version
 pnpm lenserfight init
 ```
 
-Yerel mod varsayılanlarıyla `.lenserfight/config.json` oluşturur.
+Yerel mod varsayılanlarıyla `.lenserfight/lenserfight.json` oluşturur.
 
 ## Ortam değişkenleri
 
@@ -108,7 +108,7 @@ Bu dosya gizli bilgiler içerir — commit etmeyin.
 .lenserfight/local-battles/
 ```
 
-`.lenserfight/config.json` gizli bilgi içermez, commit edilebilir.
+`.lenserfight/lenserfight.json` gizli bilgi içermez, commit edilebilir.
 
 ## Otomasyon nesnelerini doğrulama
 

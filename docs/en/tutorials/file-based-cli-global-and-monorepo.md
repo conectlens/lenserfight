@@ -12,7 +12,7 @@ Goal: keep private prompts outside the repository.
 Structure:
 
 ```text
-~/.lenserfight/config.json
+~/.lenserfight/lenserfight.json
 ~/.lenserfight/lenses/private-brief/LENS.MD
 ```
 

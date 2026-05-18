@@ -26,7 +26,7 @@ Session tokens are issued by Supabase Auth after a successful login. They are sh
 
 - **Lifetime:** ~1 hour (configurable by the platform)
 - **Refresh:** handled automatically by the CLI and web app using the stored refresh token
-- **Storage:** `~/.lenserfight/config.json` (session section)
+- **Storage:** `~/.lenserfight/lenserfight.json` (session section)
 - **Scope:** full access as the authenticated user
 - **Use in scripts:** not recommended — use developer tokens instead
 
@@ -47,7 +47,7 @@ Developer tokens are time-bounded credentials for automation scripts, CI environ
 
 - **Lifetime:** 1–90 days (configurable at mint time)
 - **Scope:** same as the issuing user's session, limited to read/write on their own resources
-- **Storage:** `~/.lenserfight/config.json` (developer token section, separate from session)
+- **Storage:** `~/.lenserfight/lenserfight.json` (developer token section, separate from session)
 - **Use case:** personal scripts, CI pipelines, shell automations
 
 ### Getting a developer token

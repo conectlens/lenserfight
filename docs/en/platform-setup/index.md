@@ -11,13 +11,13 @@ The LenserFight CLI uses a **two-layer configuration model**: a project-level co
 
 | Layer | File / Directory | Purpose |
 |-------|-----------------|---------|
-| Project | `.lenserfight/config.json` | Mode, ports, app list — safe to commit |
+| Project | `.lenserfight/lenserfight.json` | Mode, ports, app list — safe to commit |
 | Project (legacy) | `.lenserfight.json` | Older flat file — still read, never written |
 | Device — Windows | `%APPDATA%\lenserfight\config.json` | Auth tokens, API keys |
 | Device — macOS | `~/Library/Application Support/lenserfight/config.json` | Auth tokens, API keys |
 | Device — Linux | `$XDG_CONFIG_HOME/lenserfight/config.json` (default: `~/.config/lenserfight/`) | Auth tokens, API keys |
 | Device — Pardus | same as Linux (XDG-compliant) | Auth tokens, API keys |
-| Legacy device | `~/.lenserfight/config.json` | Kept for backward compat; mirrored on write |
+| Legacy device | `~/.lenserfight/lenserfight.json` | Kept for backward compat; mirrored on write |
 
 ## Resolution order
 
@@ -25,7 +25,7 @@ When the CLI resolves a config value, it checks sources in this priority:
 
 1. `process.env` / `.env.local` / `.env` (highest)
 2. Device config at the OS-aware path above
-3. Legacy `~/.lenserfight/config.json` (fallback read only)
+3. Legacy `~/.lenserfight/lenserfight.json` (fallback read only)
 4. Well-known local Supabase defaults *(local mode only)*
 5. Built-in defaults (lowest)
 
@@ -39,7 +39,7 @@ Every time `saveConfig` writes a project config, it also registers the workspace
     "/home/user/projects/my-lenserfight-project": {
       "mode": "local",
       "lastSeenAt": "2026-05-09T12:00:00.000Z",
-      "configPath": "/home/user/projects/my-lenserfight-project/.lenserfight/config.json"
+      "configPath": "/home/user/projects/my-lenserfight-project/.lenserfight/lenserfight.json"
     }
   }
 }
