@@ -86,10 +86,10 @@ const CHANGELOG_DEST = resolve(docsDir, 'changelog.md')
 
 /**
  * The root CHANGELOG.md is authored for GitHub, so its markdown links use
- * repo-relative paths (`docs/foo/bar.md`, `BRAND.md`). Rewrite them so the
+ * repo-relative paths (`docs/foo/bar.md`, `README.md`). Rewrite them so the
  * VitePress build resolves them:
  *   - `docs/<path>.md` → `/<path>` (in-tree docs link, drop `docs/` and `.md`)
- *   - other root-relative paths (e.g. `BRAND.md`) → absolute GitHub blob URL
+ *   - other root-relative paths (e.g. `README.md`) → absolute GitHub blob URL
  */
 function rewriteChangelogLinks(content: string): string {
   return content.replace(/\]\(([^)]+)\)/g, (match, href: string) => {
