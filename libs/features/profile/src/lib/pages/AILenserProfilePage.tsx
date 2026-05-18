@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { queryKeys } from '@lenserfight/data/cache'
+import { ArtifactLifecycleMenu } from '@lenserfight/features/artifact-lifecycle'
 import {
   agentsService,
   reactionService,
@@ -180,6 +181,18 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
         onControlRoom={() => switchToProfile(viewedProfile)}
         agentLenserId={agentProfile?.id}
       />
+      {isOwner && agentProfile?.id && (
+        <div className="flex justify-end px-4 md:px-0 mt-2">
+          <ArtifactLifecycleMenu
+            type="agent"
+            id={agentProfile.id}
+            extraInvalidateKeys={[
+              queryKeys.agents.detail(agentProfile.id),
+              queryKeys.agents.detailByProfile(viewedProfile.id),
+            ]}
+          />
+        </div>
+      )}
 
 
       <div className="mt-8 px-4 md:px-0">
