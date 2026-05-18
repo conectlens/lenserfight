@@ -100,10 +100,10 @@ export const LenserChatRail: React.FC<LenserChatRailProps> = ({
   }
 
   return (
-    <div className={`flex flex-col border-l border-surface-border-subtle bg-surface-base shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-20 ${className ?? 'w-72 lg:w-80 flex-shrink-0'}`}>
+    <div className={`flex flex-col overflow-hidden border-l border-surface-border-subtle bg-surface-base shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-20 ${className ?? 'w-72 lg:w-80 flex-shrink-0'}`}>
       {/* Header */}
       <div className="flex-shrink-0 h-14 flex items-center justify-between px-5 border-b border-surface-border-subtle bg-surface-base">
-        <span className="text-[11px] font-bold text-surface-text uppercase tracking-widest flex items-center gap-2">
+        <span className="text-[11px] font-bold text-surface-text uppercase tracking-widest flex items-center gap-2 min-w-0 truncate">
           Lenser Chat
         </span>
         <LiveIndicator status={realtimeStatus} />
@@ -155,7 +155,7 @@ export const LenserChatRail: React.FC<LenserChatRailProps> = ({
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
                 placeholder="Say something…"
                 maxLength={300}
-                className="flex-1 bg-transparent text-sm text-surface-text placeholder:text-surface-text-disabled outline-none py-1"
+                className="flex-1 min-w-0 bg-transparent text-sm text-surface-text placeholder:text-surface-text-disabled outline-none py-1"
               />
               <Button
                 type="button"
