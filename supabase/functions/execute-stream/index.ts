@@ -9,8 +9,9 @@
 //   user_byok_local  — Client handles this itself via streamLocalProvider().
 //                      This edge function is NOT called for local BYOK.
 //
-//   platform_credit  — User's Chainabit developer token fetched from partner_provisions
-//                      → Chainabit's API handles model execution + credit deduction
+//   platform_credit  — User's Chainabit OAuth token resolved from auth.identities
+//                      (keycloak slot) → Chainabit API handles execution + billing
+//                      Replaces the removed partner_provisions.token lookup.
 //
 // SSE event format (consumed by walletApiClient stream parsers):
 //   event: start → data: { run_id: string }
@@ -24,6 +25,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders, handleCors, errResponse } from '../_shared/cors.ts'
+import {
+  resolveChainabitToken,
+  ProviderNotConnectedError,
+} from '../_shared/provider-token.ts'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -197,26 +202,12 @@ async function streamMistral(
   await pumpOpenAIStream(response.body!, signal, emit)
 }
 
-// ─── Path 2: platform_credit — user's Chainabit token → Chainabit API ────────
+// ─── Path 2: platform_credit — user's Chainabit OAuth token → Chainabit API ──
 //
-// Chainabit exposes an OpenAI-compatible streaming endpoint authenticated with
-// the user's developer token. Credits are deducted from their Chainabit balance.
-
-async function resolveChainabitToken(
-  userId: string,
-  serviceClient: ReturnType<typeof createClient>,
-): Promise<string> {
-  const { data, error } = await serviceClient
-    .from('partner_provisions')
-    .select('token')
-    .eq('user_id', userId)
-    .eq('partner_name', 'chainabit')
-    .maybeSingle<{ token: string | null }>()
-
-  if (error) throw new Error('Failed to look up Chainabit provision')
-  if (!data?.token) throw new Error('No Chainabit account connected — connect your Chainabit account to use platform credits')
-  return data.token
-}
+// The user's Chainabit access token is resolved from auth.identities (keycloak
+// slot).  Supabase Custom OAuth Provider stores it there when the user connects
+// via supabase.auth.linkIdentity({ provider: 'keycloak' }).
+// Credits are deducted from their own Chainabit wallet — LenserFight owns nothing.
 
 async function streamChainabit(
   chainabitToken: string,
@@ -449,12 +440,14 @@ serve(async (req: Request): Promise<Response> => {
         else if (provider === 'mistral') await streamMistral(apiKey, model, messages, maxTokens, temperature, signal, emit)
 
       } else {
-        // ── Path 2: platform_credit — user's Chainabit token ─────────────────
+        // ── Path 2: platform_credit — user's Chainabit OAuth token ───────────
         let chainabitToken: string
         try {
-          chainabitToken = await resolveChainabitToken(user.id, serviceClient)
+          const tokenResult = await resolveChainabitToken(user.id, serviceClient)
+          chainabitToken = tokenResult.accessToken
         } catch (err: unknown) {
-          emit('error', { message: err instanceof Error ? err.message : 'Chainabit account not connected', code: 'chainabit_not_connected' })
+          const code = err instanceof ProviderNotConnectedError ? 'chainabit_not_connected' : 'token_resolution_failed'
+          emit('error', { message: err instanceof Error ? err.message : 'Chainabit account not connected', code })
           return
         }
 

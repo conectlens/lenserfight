@@ -1,52 +1,34 @@
-import React, { useState } from 'react'
-import { usePartnerConnection } from '@lenserfight/features/store'
-import { partnerProvisioningRepository } from '@lenserfight/data/repositories'
+import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useChainabitCapabilities } from '@lenserfight/features/store'
+import { connectorApiClient } from '@lenserfight/infra/partner-provisioning'
 import { Button } from '@lenserfight/ui/components'
 
-const REGISTERED_PARTNERS = [
-  { name: 'chainabit', displayName: 'Chainabit' },
+// Statically-known capability connectors.  Add new entries when more OAuth
+// providers are supported (each uses the same connect/disconnect flow).
+const REGISTERED_CONNECTORS = [
+  { id: 'chainabit', displayName: 'Chainabit' },
 ] as const
 
-interface PartnerCardProps {
-  partnerName: string
-  displayName: string
-}
+// ---------------------------------------------------------------------------
 
-function PartnerCard({ partnerName, displayName }: PartnerCardProps) {
-  const [claimSent, setClaimSent] = useState(false)
-  const [isSendingClaim, setIsSendingClaim] = useState(false)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-
-  const { state, credits, invalidate } = usePartnerConnection(partnerName)
+function ChainabitCard() {
+  const [isDisconnecting, setIsDisconnecting] = useState(false)
+  const { state, credits, reconnect, invalidate } = useChainabitCapabilities()
 
   const isLoading = state === 'loading'
   const isConnected = state === 'connected' || state === 'no_credits'
+  const needsReconnect = state === 'token_expired' || state === 'insufficient_scope'
 
-  const handleConnect = async () => {
-    await partnerProvisioningRepository.startOAuthConnect(window.location.href)
-  }
-
-  const handleSendClaim = async () => {
-    setIsSendingClaim(true)
+  const handleDisconnect = async () => {
+    setIsDisconnecting(true)
     try {
-      await partnerProvisioningRepository.sendClaimEmail(partnerName)
-      setClaimSent(true)
-    } catch {
-      // Silently fail — not blocking UX
-    } finally {
-      setIsSendingClaim(false)
-    }
-  }
-
-  const handleRefreshToken = async () => {
-    setIsRefreshing(true)
-    try {
-      await partnerProvisioningRepository.refreshToken(partnerName)
+      await connectorApiClient.disconnect()
       await invalidate()
     } catch {
-      // Silently fail
+      // Non-blocking
     } finally {
-      setIsRefreshing(false)
+      setIsDisconnecting(false)
     }
   }
 
@@ -63,31 +45,48 @@ function PartnerCard({ partnerName, displayName }: PartnerCardProps) {
       <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">{displayName}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Not connected</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+              Chainabit
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                Experimental
+              </span>
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              {needsReconnect ? 'Reconnect required' : 'Not connected'}
+            </p>
           </div>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600">
-            Inactive
+            {needsReconnect ? 'Expired' : 'Inactive'}
           </span>
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          Connect your {displayName} account to use wallet credits for AI battles.
-        </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500">
-          By connecting, you agree to {displayName}&apos;s{' '}
-          <a href="https://chainabit.com/policies/terms" target="_blank" rel="noopener noreferrer"
-             className="underline text-blue-500 hover:text-blue-600">Terms of Service</a>,{' '}
-          <a href="https://chainabit.com/policies/cookies" target="_blank" rel="noopener noreferrer"
-             className="underline text-blue-500 hover:text-blue-600">Cookie Policy</a>, and{' '}
-          <a href="https://chainabit.com/policies/privacy" target="_blank" rel="noopener noreferrer"
-             className="underline text-blue-500 hover:text-blue-600">Privacy Policy</a>.
-        </p>
+
+        {needsReconnect ? (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            Your Chainabit session has expired. Reconnect to restore wallet access.
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Connect your Chainabit account to use your wallet credits for AI battles.
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              By connecting, you agree to Chainabit&apos;s{' '}
+              <a href="https://chainabit.com/policies/terms" target="_blank" rel="noopener noreferrer"
+                 className="underline text-blue-500 hover:text-blue-600">Terms of Service</a>,{' '}
+              <a href="https://chainabit.com/policies/cookies" target="_blank" rel="noopener noreferrer"
+                 className="underline text-blue-500 hover:text-blue-600">Cookie Policy</a>, and{' '}
+              <a href="https://chainabit.com/policies/privacy" target="_blank" rel="noopener noreferrer"
+                 className="underline text-blue-500 hover:text-blue-600">Privacy Policy</a>.
+            </p>
+          </>
+        )}
+
         <Button
           variant="secondary"
           className="!w-auto px-4 text-xs"
-          onClick={handleConnect}
+          onClick={reconnect}
         >
-          Connect {displayName}
+          {needsReconnect ? 'Reconnect Chainabit' : 'Connect Chainabit'}
         </Button>
       </div>
     )
@@ -97,8 +96,13 @@ function PartnerCard({ partnerName, displayName }: PartnerCardProps) {
     <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">{displayName}</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Connected partner account</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+              Chainabit
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                Experimental
+              </span>
+            </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Connected via OAuth</p>
         </div>
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800">
           Active
@@ -107,50 +111,72 @@ function PartnerCard({ partnerName, displayName }: PartnerCardProps) {
 
       <div className="flex items-center justify-between py-3 border-t border-gray-200 dark:border-gray-700">
         <div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Credit Balance</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Wallet Balance</p>
           <p className="text-lg font-bold text-gray-900 dark:text-white tabular-nums mt-0.5">
             {credits != null ? credits.toLocaleString() : '—'}
             <span className="text-sm font-normal text-gray-400 ml-1">cr</span>
           </p>
         </div>
+        <a
+          href="https://chainabit.com/wallet"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-500 hover:text-blue-600 underline"
+        >
+          Manage wallet
+        </a>
       </div>
 
       <div className="flex flex-wrap gap-2 pt-1">
         <Button
-          variant="secondary"
-          className="!w-auto px-4 text-xs"
-          onClick={handleSendClaim}
-          isLoading={isSendingClaim}
-          disabled={claimSent || isSendingClaim}
-        >
-          {claimSent ? 'Claim email sent' : `Claim ${displayName} account`}
-        </Button>
-        <Button
           variant="ghost"
-          className="!w-auto px-4 text-xs"
-          onClick={handleRefreshToken}
-          isLoading={isRefreshing}
-          disabled={isRefreshing}
+          className="!w-auto px-4 text-xs text-red-500 hover:text-red-600"
+          onClick={handleDisconnect}
+          isLoading={isDisconnecting}
+          disabled={isDisconnecting}
         >
-          Refresh token
+          Disconnect
         </Button>
       </div>
     </div>
   )
 }
 
+// ---------------------------------------------------------------------------
+
 export function PartnerAccountsTab() {
+  const navigate = useNavigate()
+  const [connectionMessage, setConnectionMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const connected = params.get('partner_connected')
+    if (connected) {
+      setConnectionMessage(`${connected} connected successfully.`)
+      const next = new URLSearchParams(params)
+      next.delete('partner_connected')
+      navigate({ search: next.toString() }, { replace: true })
+    }
+  }, [navigate])
+
   return (
     <div>
       <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Connected Accounts</h2>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
-        Optionally connect partner accounts to unlock additional features like wallet credits for AI battles.
+        Connect provider accounts to unlock wallet credits and AI capabilities for battles.
       </p>
 
+      {connectionMessage && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-sm text-green-800 dark:text-green-300">
+          {connectionMessage}
+        </div>
+      )}
+
       <div className="space-y-4">
-        {REGISTERED_PARTNERS.map((p) => (
-          <PartnerCard key={p.name} partnerName={p.name} displayName={p.displayName} />
-        ))}
+        {REGISTERED_CONNECTORS.map((c) => {
+          if (c.id === 'chainabit') return <ChainabitCard key={c.id} />
+          return null
+        })}
       </div>
     </div>
   )

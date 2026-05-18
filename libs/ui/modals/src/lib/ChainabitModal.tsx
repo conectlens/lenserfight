@@ -117,6 +117,12 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
           )
       }
     >
+      <div className="flex mb-3">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+          Experimental
+        </span>
+      </div>
+
       {state === 'loading' && (
         <div className="flex items-center justify-center py-8">
           <Loader2 size={24} className="animate-spin text-gray-400" />

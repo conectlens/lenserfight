@@ -590,6 +590,9 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1">
                   Chainabit
+                  <span className="inline-flex items-center px-1 py-px rounded text-[8px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-wide leading-none">
+                    Experimental
+                  </span>
                   <a
                     href={`${fundingDocsUrl}#chainabit-credits`}
                     target="_blank"

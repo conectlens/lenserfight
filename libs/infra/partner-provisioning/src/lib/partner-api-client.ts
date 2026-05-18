@@ -1,9 +1,9 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { apiFetch, unwrapEnvelope } from '@lenserfight/data/repositories'
-import { CHAINABIT_OAUTH_URL, CHAINABIT_OAUTH_CLIENT_ID, CHAINABIT_OAUTH_CALLBACK_URL } from '@lenserfight/utils/env'
-import type { ChainabitAiModel, PartnerBalance, PartnerProvision, PartnerTokenRefreshResult } from './partner-provider.interface'
+import { AUTH_BASE_URL } from '@lenserfight/utils/env'
+import type { ChainabitAiModel, ProviderBalance } from './partner-provider.interface'
 
-// Partner provisioning calls go to Supabase Edge Functions (no worker HTTP surface needed).
+// All connector calls go through Supabase Edge Functions.
 const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
@@ -13,161 +13,86 @@ async function getAuthHeader(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${data.session.access_token}` }
 }
 
-export interface PartnerProvisionRecord {
-  partnerName: string
-  displayName: string
-  accountId: string | null
-  tokenScopes: string[]
-  starterCredits: number
+/**
+ * Checks whether the current user has a Chainabit account linked via OAuth.
+ * Reads the provider list from the in-memory Supabase session — no extra network call.
+ */
+export function isChainabitConnected(): boolean {
+  // currentSession is a getter on SupabaseClient in supabase-js v2
+  const session = (supabase.auth as unknown as { currentSession: { user?: { app_metadata?: { provider?: string; providers?: string[] } } } | null }).currentSession
+  if (!session?.user) return false
+  const meta = session.user.app_metadata ?? {}
+  return (
+    meta.provider === 'keycloak' ||
+    (Array.isArray(meta.providers) && meta.providers.includes('keycloak'))
+  )
 }
 
-// ── PKCE helpers (Web Crypto, browser-side) ───────────────────────────────────
-
-function generateCodeVerifier(): string {
-  const bytes = new Uint8Array(32)
-  crypto.getRandomValues(bytes)
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '')
-}
-
-async function deriveCodeChallenge(verifier: string): Promise<string> {
-  if (!crypto.subtle) {
-    throw new Error(
-      'Chainabit OAuth requires a secure context (HTTPS). This page must be served over HTTPS to use Chainabit sign-in.',
-    )
-  }
-  const encoded = new TextEncoder().encode(verifier)
-  const digest = await crypto.subtle.digest('SHA-256', encoded)
-  return btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '')
-}
-
-interface ChainabitOAuthState {
-  flowType: 'connect'
-  userId?: string
-  codeVerifier: string
-  returnUrl: string
-  nonce: string
-}
-
-function encodeOAuthState(state: ChainabitOAuthState): string {
-  return btoa(JSON.stringify(state))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '')
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Module-level dedupe for partner-provision: collapses StrictMode double-effects,
-// remounts, and concurrent callers into a single network call per (user, partner).
-// Keyed by access-token tail so a session change naturally invalidates.
-const provisionInFlight = new Map<string, Promise<PartnerProvisionRecord>>()
-
-function provisionKey(token: string, partnerName: string): string {
-  return `${partnerName}:${token.slice(-24)}`
-}
-
-export const partnerApiClient = {
-  async provision(partnerName: string): Promise<PartnerProvisionRecord> {
-    const { data } = await supabase.auth.getSession()
-    const token = data.session?.access_token
-    if (!token) throw new Error('401: Unauthenticated')
-
-    const key = provisionKey(token, partnerName)
-    const existing = provisionInFlight.get(key)
-    if (existing) return existing
-
-    const promise = (async () => {
-      const res = await apiFetch(`${EDGE_BASE}/partner-provision`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      return unwrapEnvelope<PartnerProvisionRecord>(res)
-    })()
-
-    provisionInFlight.set(key, promise)
-    promise.catch(() => {
-      // Drop failed promises so callers can retry; successes stay cached for the session.
-      provisionInFlight.delete(key)
-    })
-    return promise
-  },
-
-  async getBalance(partnerName: string): Promise<PartnerBalance> {
+export const connectorApiClient = {
+  /**
+   * Fetches the user's Chainabit wallet balance.
+   * Token is resolved server-side from auth.identities — not passed by the client.
+   */
+  async getBalance(): Promise<ProviderBalance> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${EDGE_BASE}/partner-balance`, {
+    const res = await apiFetch(`${EDGE_BASE}/chainabit-wallet`, {
       headers: { ...authHeader },
     })
-    return unwrapEnvelope<PartnerBalance>(res)
+    return unwrapEnvelope<ProviderBalance>(res)
   },
 
-  async refreshToken(partnerName: string): Promise<PartnerTokenRefreshResult> {
+  /**
+   * Fetches available Chainabit AI models.
+   */
+  async getAiModels(): Promise<ChainabitAiModel[]> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${EDGE_BASE}/partner-refresh-token`, {
-      method: 'POST',
-      headers: { ...authHeader },
-    })
-    return unwrapEnvelope<PartnerTokenRefreshResult>(res)
-  },
-
-  async sendClaimEmail(partnerName: string): Promise<void> {
-    const authHeader = await getAuthHeader()
-    await apiFetch(`${EDGE_BASE}/partner-send-claim`, {
-      method: 'POST',
-      headers: { ...authHeader },
-    })
-  },
-
-  async getAiModels(partnerName: string): Promise<ChainabitAiModel[]> {
-    const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${EDGE_BASE}/partner-models`, {
+    const res = await apiFetch(`${EDGE_BASE}/chainabit-models`, {
       headers: { ...authHeader },
     })
     return unwrapEnvelope<ChainabitAiModel[]>(res)
   },
 
-  async revokeToken(partnerName: string): Promise<void> {
-    const authHeader = await getAuthHeader()
-    await apiFetch(`${EDGE_BASE}/partner-revoke`, {
-      method: 'POST',
-      headers: { ...authHeader },
+  /**
+   * Initiates Chainabit OAuth via Supabase linkIdentity.
+   * Supabase handles PKCE, token exchange, and storage in auth.identities.
+   */
+  async connect(returnUrl: string = window.location.href): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.auth as any).linkIdentity({
+      provider: 'keycloak',
+      options: {
+        redirectTo: `${AUTH_BASE_URL}/callback?return_url=${encodeURIComponent(returnUrl)}`,
+      },
     })
+    if (error) throw error
+    if (data?.url) {
+      window.location.href = data.url
+    }
   },
 
   /**
-   * Initiates the Chainabit OAuth 2.0 Authorization Code + PKCE flow.
-   * PKCE is generated in the browser — no client_secret is needed or stored.
-   * The browser redirects directly to Chainabit's authorize endpoint
-   * (Chainabit = provider, LenserFight = partner/consumer).
-   * The code exchange happens server-side in the platform API callback.
+   * Unlinks the Chainabit identity from the current user's account.
    */
-  async startOAuthConnect(returnUrl: string = window.location.href): Promise<void> {
-    const { data } = await supabase.auth.getSession()
-    const userId = data.session?.user?.id
-    if (!userId) throw new Error('Must be authenticated to connect Chainabit')
-
-    const codeVerifier = generateCodeVerifier()
-    const codeChallenge = await deriveCodeChallenge(codeVerifier)
-    const nonce = Array.from(crypto.getRandomValues(new Uint8Array(8)))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')
-
-    const state = encodeOAuthState({ flowType: 'connect', userId, codeVerifier, returnUrl, nonce })
-
-    const authorizeUrl = new URL(`${CHAINABIT_OAUTH_URL}/oauth/authorize`)
-    authorizeUrl.searchParams.set('client_id', CHAINABIT_OAUTH_CLIENT_ID)
-    authorizeUrl.searchParams.set('response_type', 'code')
-    authorizeUrl.searchParams.set('redirect_uri', CHAINABIT_OAUTH_CALLBACK_URL)
-    authorizeUrl.searchParams.set('scope', 'wallet:read execution:run')
-    authorizeUrl.searchParams.set('code_challenge', codeChallenge)
-    authorizeUrl.searchParams.set('code_challenge_method', 'S256')
-    authorizeUrl.searchParams.set('state', state)
-
-    window.location.href = authorizeUrl.toString()
+  async disconnect(): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser()
+    const identity = user?.identities?.find((i) => i.provider === 'keycloak')
+    if (!identity) return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.auth as any).unlinkIdentity(identity)
+    if (error) throw error
   },
 }
+
+// Back-compat aliases: existing code that imports `partnerApiClient` continues to
+// compile.  Migrate call sites to `connectorApiClient` over time.
+/** @deprecated Use connectorApiClient.getBalance() */
+export const partnerApiClient = {
+  getBalance: (_partnerName: string) => connectorApiClient.getBalance(),
+  getAiModels: (_partnerName: string) => connectorApiClient.getAiModels(),
+  startOAuthConnect: (returnUrl: string) => connectorApiClient.connect(returnUrl),
+}
+
+/** @deprecated No longer used — provisioning removed */
+export type PartnerProvisionRecord = never
+/** @deprecated No longer used — provisioning removed */
+export type ChainabitOAuthState = never

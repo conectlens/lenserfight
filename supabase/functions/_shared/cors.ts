@@ -22,6 +22,7 @@ const DEFAULT_ALLOWED_ORIGINS: readonly string[] = [
   'https://lenserfight.com',
   'https://www.lenserfight.com',
   'https://moon.lenserfight.com',
+  'https://auth.lenserfight.com',
 ]
 
 function getAllowedOrigins(): readonly string[] {
