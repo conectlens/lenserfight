@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import { execSync } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { findConfigPath, getDeviceConfigPath } from '../config/project-config';
 import { runCombineSeedsIfPresent } from '../lib/combine-seeds';
 import { assertSafe } from '../lib/safety';
