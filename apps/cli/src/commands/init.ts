@@ -16,7 +16,7 @@ export default defineCommand({
   meta: {
     name: 'init',
     description:
-      'Initialize .lenserfight/config.json. Keys are never stored here — use env vars or the device config (run `lf doctor` to see the path).',
+      'Initialize .lenserfight/lenserfight.json. Keys are never stored here — use env vars or the device config (run `lf doctor` to see the path).',
   },
   args: {
     mode: {
@@ -39,7 +39,7 @@ export default defineCommand({
 
     if (configExists()) {
       const existing = loadConfig();
-      consola.warn('.lenserfight.json already exists (mode: %s)', existing.mode);
+      consola.warn('.lenserfight/lenserfight.json already exists (mode: %s)', existing.mode);
       consola.info('Overwriting with mode: %s', mode);
     }
 
@@ -47,7 +47,7 @@ export default defineCommand({
 
     saveConfig({ mode: mode as 'local' | 'cloud', supabaseUrl, dbPort: 54322, apiPort: 54321 });
     const userConfigCreated = ensureUserConfigDir();
-    consola.success('Created .lenserfight.json (mode: %s)', mode);
+    consola.success('Created .lenserfight/lenserfight.json (mode: %s)', mode);
     if (userConfigCreated) {
       consola.success('Created %s (tokens stored here after login)', getDeviceConfigPath());
     } else {
@@ -79,7 +79,7 @@ export default defineCommand({
       }
 
       if (source === 'env') {
-        consola.info('Keys are resolved from environment variables — nothing secret is written to .lenserfight.json.');
+        consola.info('Keys are resolved from environment variables — nothing secret is written to .lenserfight/lenserfight.json.');
       }
     }
   },
