@@ -1,4 +1,3 @@
-import { homedir } from 'node:os'
 import { resolve } from 'node:path'
 
 import { getDeviceConfigDir } from '../config/project-config'
@@ -8,7 +7,7 @@ export const LOCAL_BATTLE_DIR_NAME = 'local-battles'
 export const LEGACY_PROJECT_LOCAL_BATTLE_DIR = '.lenserfight/local-battles'
 
 export function getLenserfightRuntimeDir(): string {
-  return process.env[LENSERFIGHT_RUNTIME_DIR_ENV] || getDeviceConfigDir() || resolve(homedir(), '.lenserfight')
+  return process.env[LENSERFIGHT_RUNTIME_DIR_ENV] || getDeviceConfigDir()
 }
 
 export function getLocalBattleRuntimeDir(): string {
