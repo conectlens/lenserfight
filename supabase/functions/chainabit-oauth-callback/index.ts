@@ -1,11 +1,12 @@
 // Supabase Edge Function: chainabit-oauth-callback
 //
 // GET /functions/v1/chainabit-oauth-callback?code=...&state=...
-// Replaces: GET /v1/partners/chainabit/oauth/callback (platform-api)
 //
-// Handles both OAuth flows:
-//   'login'   — Chainabit social sign-in: exchanges code → fetches userinfo → generates Supabase magic link
-//   'connect' — Wallet link for authenticated user: exchanges code → upserts partner_provisions
+// Handles the wallet-link OAuth flow for already-authenticated users:
+//   'connect' — exchanges authorization code → upserts partner_provisions with access_token
+//
+// Sign-in (login/register) is handled by Supabase Auth using the custom:chainabit provider.
+// This function only processes the connect flow initiated by startOAuthConnect().
 //
 // PKCE code_verifier is embedded in the base64url-encoded state — no client_secret required.
 // Requires secrets: CHAINABIT_API_URL, CHAINABIT_CLIENT_ID, CHAINABIT_OAUTH_REDIRECT_URI
@@ -17,13 +18,23 @@ const CHAINABIT_CLIENT_ID = Deno.env.get('CHAINABIT_CLIENT_ID') ?? ''
 const CHAINABIT_OAUTH_REDIRECT_URI = Deno.env.get('CHAINABIT_OAUTH_REDIRECT_URI') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-// Auth app callback — Supabase magic link must redirect here so the browser
-// lands via a user-initiated navigation (not a cross-origin 302 chain), which
-// prevents browsers from sending Origin: null on subsequent API calls.
-const AUTH_CALLBACK_URL = Deno.env.get('AUTH_CALLBACK_URL') ?? 'https://auth.lenserfight.com/callback'
+// APP_URL is the canonical web app origin used for return-URL allow-listing.
+const APP_URL = Deno.env.get('APP_URL') ?? 'https://lenserfight.com'
+const AUTH_APP_URL = Deno.env.get('AUTH_APP_URL') ?? 'https://auth.lenserfight.com'
+
+/** Prevent open-redirect: returnUrl must share origin with APP_URL or AUTH_APP_URL. */
+function isAllowedReturnUrl(url: string): boolean {
+  try {
+    const target = new URL(url)
+    const allowed = [new URL(APP_URL).origin, new URL(AUTH_APP_URL).origin]
+    return allowed.includes(target.origin)
+  } catch {
+    return false
+  }
+}
 
 interface ChainabitOAuthState {
-  flowType: 'login' | 'connect'
+  flowType: 'connect'
   userId?: string
   codeVerifier: string
   returnUrl: string
@@ -34,13 +45,6 @@ interface ChainabitTokenResponse {
   access_token: string
   refresh_token?: string
   expires_in?: number
-}
-
-interface ChainabitUserInfo {
-  sub: string
-  email?: string
-  name?: string
-  preferred_username?: string
 }
 
 function decodeOAuthState(raw: string): ChainabitOAuthState | null {
@@ -71,14 +75,6 @@ async function exchangeCode(code: string, codeVerifier: string): Promise<Chainab
   return res.json() as Promise<ChainabitTokenResponse>
 }
 
-async function getUserInfo(accessToken: string): Promise<ChainabitUserInfo | null> {
-  const res = await fetch(`${CHAINABIT_API_URL}/oauth/userinfo`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
-  if (!res.ok) return null
-  return res.json() as Promise<ChainabitUserInfo>
-}
-
 function redirect(url: string): Response {
   return new Response(null, { status: 302, headers: { Location: url } })
 }
@@ -99,56 +95,34 @@ Deno.serve(async (req: Request) => {
   const state = decodeOAuthState(stateParam)
   if (!state) return errorRedirect('invalid_state')
 
+  // Validate returnUrl origin before using it in any redirect to prevent open-redirect.
+  const safeReturnUrl = isAllowedReturnUrl(state.returnUrl) ? state.returnUrl : APP_URL
+
+  // Guard: this callback only handles the wallet-connect flow.
+  // Sign-in is handled by Supabase Auth (custom:chainabit provider).
+  if (state.flowType !== 'connect') {
+    return errorRedirect('unsupported_flow', safeReturnUrl)
+  }
+
+  if (!state.userId) return errorRedirect('missing_user', safeReturnUrl)
+
   const tokens = await exchangeCode(code, state.codeVerifier)
-  if (!tokens) return errorRedirect('token_exchange_failed', state.returnUrl)
+  if (!tokens) return errorRedirect('token_exchange_failed', safeReturnUrl)
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
   })
 
-  if (state.flowType === 'connect') {
-    if (!state.userId) return errorRedirect('missing_user', state.returnUrl)
-
-    await supabase.from('partner_provisions').upsert(
-      {
-        user_id: state.userId,
-        partner_name: 'chainabit',
-        token: tokens.access_token,
-        token_scopes: ['wallet:read', 'execution:run'],
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id,partner_name' },
-    )
-
-    return redirect(`${state.returnUrl}?chainabit_connected=true`)
-  }
-
-  // flowType === 'login': resolve Chainabit identity → Supabase user → session magic link
-  const userInfo = await getUserInfo(tokens.access_token)
-  if (!userInfo?.email) return errorRedirect('userinfo_failed', state.returnUrl)
-
-  // redirectTo must point to auth.lenserfight.com/callback, not the final returnUrl
-  // directly. A magic-link chain: supabase/auth/v1/verify → direct-to-app produces
-  // 3+ cross-origin 302 hops, causing browsers to send Origin: null on all subsequent
-  // fetches from the landing page. Routing through the auth callback breaks the chain.
-  const authCallbackWithReturn = `${AUTH_CALLBACK_URL}?return_url=${encodeURIComponent(state.returnUrl)}`
-  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-    type: 'magiclink',
-    email: userInfo.email,
-    options: {
-      redirectTo: authCallbackWithReturn,
-      data: {
-        display_name: userInfo.name ?? userInfo.preferred_username ?? userInfo.email,
-        chainabit_id: userInfo.sub,
-      },
+  await supabase.from('partner_provisions').upsert(
+    {
+      user_id: state.userId,
+      partner_name: 'chainabit',
+      token: tokens.access_token,
+      token_scopes: ['wallet:read', 'execution:run'],
+      updated_at: new Date().toISOString(),
     },
-  })
+    { onConflict: 'user_id,partner_name' },
+  )
 
-  if (linkError || !linkData?.properties?.action_link) {
-    return errorRedirect('session_failed', state.returnUrl)
-  }
-
-  // Wallet access (partner_provisions) is not provisioned automatically on login.
-  // Users connect their Chainabit wallet explicitly from Settings → Partner Accounts.
-  return redirect(linkData.properties.action_link)
+  return redirect(`${safeReturnUrl}?chainabit_connected=true`)
 })
