@@ -3,6 +3,7 @@ import consola from 'consola';
 import {
   configExists,
   ensureUserConfigDir,
+  getDeviceConfigPath,
   loadConfig,
   loadEnvConfig,
   saveConfig,
@@ -15,7 +16,7 @@ export default defineCommand({
   meta: {
     name: 'init',
     description:
-      'Initialize .lenserfight.json. Keys are never stored here — use env vars or ~/.lenserfight/config.json.',
+      'Initialize .lenserfight/config.json. Keys are never stored here — use env vars or the device config (run `lf doctor` to see the path).',
   },
   args: {
     mode: {
@@ -48,9 +49,9 @@ export default defineCommand({
     const userConfigCreated = ensureUserConfigDir();
     consola.success('Created .lenserfight.json (mode: %s)', mode);
     if (userConfigCreated) {
-      consola.success('Created ~/.lenserfight/config.json (tokens stored here after login)');
+      consola.success('Created %s (tokens stored here after login)', getDeviceConfigPath());
     } else {
-      consola.info('~/.lenserfight/config.json already exists');
+      consola.info('%s already exists', getDeviceConfigPath());
     }
 
     // Show resolution summary

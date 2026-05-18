@@ -2,13 +2,11 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import { execSync } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { resolve } from 'node:path';
-import { findConfigPath } from '../config/project-config';
+import { findConfigPath, getDeviceConfigPath } from '../config/project-config';
 import { runCombineSeedsIfPresent } from '../lib/combine-seeds';
 import { assertSafe } from '../lib/safety';
 
-const USER_CONFIG_PATH = resolve(homedir(), '.lenserfight', 'config.json');
+const USER_CONFIG_PATH = getDeviceConfigPath();
 
 export default defineCommand({
   meta: {
@@ -39,7 +37,7 @@ export default defineCommand({
       description: 'Full reset of project config, auth credentials, and local database.',
       affectedResources: [
         { type: 'config', name: '.lenserfight.json', scope: 'local' },
-        { type: 'config', name: '~/.lenserfight/config.json (auth tokens + keys)', scope: 'local' },
+        { type: 'config', name: 'device config (auth tokens + keys)', scope: 'local' },
         ...(!args['skip-db']
           ? [{ type: 'database', name: 'local Supabase database (supabase db reset)', scope: 'local' as const }]
           : []),
