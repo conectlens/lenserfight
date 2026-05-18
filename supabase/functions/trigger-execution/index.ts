@@ -6,7 +6,8 @@
 //
 //   user_byok_cloud  → decrypt vault key via fn_worker_get_ai_key_secret → call provider directly
 //   user_byok_local  → keys are browser-only; this path must not reach the edge function
-//   platform_credit  → resolve Chainabit developer token from partner_provisions → Chainabit API
+//   platform_credit  → resolve Chainabit OAuth token from auth.identities (keycloak slot)
+//                      → Chainabit API handles execution + billing from user's own wallet
 //
 // No platform-owned provider API keys exist. Everything is BYOK or Chainabit.
 //
@@ -19,6 +20,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders, handleCors, errResponse, jsonResponse } from '../_shared/cors.ts'
 import { buildOpenAIImageBody } from '../_shared/providers/openai-image-profiles.ts'
 import { detectProvider as detectProviderFromRegistry, resolveWireModel } from '../_shared/providers/model-registry.ts'
+import {
+  resolveChainabitToken,
+  ProviderNotConnectedError,
+} from '../_shared/provider-token.ts'
 
 declare const Deno: { env: { get(key: string): string | undefined } }
 
@@ -84,20 +89,10 @@ async function resolveVaultKey(
   return data as string
 }
 
-async function resolveChainabitToken(
-  userId: string,
-  serviceClient: ReturnType<typeof createClient>,
-): Promise<string> {
-  const { data, error } = await serviceClient
-    .from('partner_provisions')
-    .select('token')
-    .eq('user_id', userId)
-    .eq('partner_name', 'chainabit')
-    .maybeSingle()
-  if (error) throw new Error('Failed to look up Chainabit account')
-  if (!data?.token) throw new Error('No Chainabit account connected. Connect your Chainabit account to use platform credits for media generation.')
-  return data.token as string
-}
+// resolveChainabitToken is imported from _shared/provider-token.ts.
+// It reads the OAuth access token from auth.identities (keycloak slot).
+// Supabase handles token refresh via its session refresh cycle.
+// No partner_provisions table lookup — that table no longer exists.
 
 // ─── Provider detection ───────────────────────────────────────────────────────
 
@@ -529,11 +524,13 @@ serve(async (req: Request): Promise<Response> => {
       return errResponse('key_resolution_failed', err instanceof Error ? err.message : 'Key resolution failed', 403, req)
     }
   } else {
-    // platform_credit — user's Chainabit developer token
+    // platform_credit — user's Chainabit OAuth token (from auth.identities)
     try {
-      chainabitToken = await resolveChainabitToken(user.id, serviceClient)
+      const tokenResult = await resolveChainabitToken(user.id, serviceClient)
+      chainabitToken = tokenResult.accessToken
     } catch (err: unknown) {
-      return errResponse('no_chainabit_account', err instanceof Error ? err.message : 'Chainabit account required', 403, req)
+      const code = err instanceof ProviderNotConnectedError ? 'no_chainabit_account' : 'token_resolution_failed'
+      return errResponse(code, err instanceof Error ? err.message : 'Chainabit account required', 403, req)
     }
   }
 

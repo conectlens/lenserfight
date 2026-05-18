@@ -14,7 +14,12 @@
  */
 
 const PREF_KEY = 'lf_remember_me'
-const CHUNK_SIZE = 3500 // chars — safely under the 4KB cookie size limit
+// Raw chars per chunk. After encodeURIComponent (JSON braces/colons/quotes
+// expand 1→3), plus the cookie attribute suffix (~120 chars for
+// Domain + Max-Age + Path + SameSite + Secure), the total must stay under the
+// browser's ~4 096-byte per-cookie limit. 2800 raw JSON chars ≈ 3 600 encoded
+// in the worst case + 120 attributes = 3 720, well within budget.
+const CHUNK_SIZE = 2800
 
 const getRememberMe = (): boolean => {
   try {

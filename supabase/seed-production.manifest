@@ -22,10 +22,27 @@
 # After applying, production users start at XP 0, zero battles, zero reactions.
 # All XP is earned organically. Templates and rubrics are the only pre-populated
 # content visible to real users.
+#
+# Cleared by 00_clear_xp_elo_activity.sql:
+#   xp.events, xp.event_verifications, xp.level_ups, xp.contributions,
+#   xp.streaks, xp.monthly_rollup, xp.season_totals, xp.totals,
+#   reputation.lenser_scores, reputation.contender_ratings,
+#   reputation.elo_battle_log, reputation.judge_calibrations,
+#   reputation.vote_risk_scores,
+#   analytics.lenser_activity, analytics.tag_activity_events,
+#   lensers.badges
+#   analytics.lenser_stats.xp → reset to 0
 # =============================================================================
 
 # ── [1] CI safety gate — aborts on accidental real API keys in execution.byok_keys
 seeds/00_ci_guard.sql
+
+# ── [1b] Pre-launch data reset — clears all earned/transactional XP, ELO,
+#    season totals, streaks, badges, and activity events so every production
+#    lenser starts at zero. Configuration rows (xp.seasons, xp.rules,
+#    xp.levels, xp.apps, xp.difficulty_multipliers, xp.policy) are preserved.
+#    Idempotent: safe to re-run on an already-clean DB.
+seeds/00_clear_xp_elo_activity.sql
 
 # ── [2] Core runtime lookups (required by FK triggers before any profile can exist)
 seeds/01_core_languages.sql
