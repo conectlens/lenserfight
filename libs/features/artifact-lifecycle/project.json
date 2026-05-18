@@ -1,0 +1,27 @@
+{
+  "name": "feature-artifact-lifecycle",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/artifact-lifecycle/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:artifact-lifecycle"
+  ],
+  "// targets": "to see all targets run: nx show project feature-artifact-lifecycle --web",
+  "targets": {
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../../coverage/libs/features/artifact-lifecycle"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p tsconfig.lib.json --noEmit",
+        "cwd": "libs/features/artifact-lifecycle"
+      }
+    }
+  }
+}
