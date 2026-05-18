@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 // Interfaces
 // ---------------------------------------------------------------------------
 
-/** Project-level config (.lenserfight/config.json) — no secrets, safe to commit. */
+/** Project-level config (.lenserfight/lenserfight.json) — no secrets, safe to commit. */
 export interface ProjectConfig {
   mode: 'local' | 'cloud';
   supabaseUrl?: string;
@@ -125,20 +125,20 @@ export function getDeviceConfigPath(): string {
 
 // Legacy ~/.lenserfight — kept for backward compatibility
 const LEGACY_DEVICE_CONFIG_DIR = resolve(homedir(), '.lenserfight');
-const LEGACY_DEVICE_CONFIG_PATH = resolve(LEGACY_DEVICE_CONFIG_DIR, 'config.json');
+const LEGACY_DEVICE_CONFIG_PATH = resolve(LEGACY_DEVICE_CONFIG_DIR, 'lenserfight.json');
 
 // ---------------------------------------------------------------------------
 // Project-level config
 //
-// Primary  : .lenserfight/config.json   (directory-based, new)
-// Legacy   : .lenserfight.json          (flat file, read-only for compat)
+// Primary  : .lenserfight/lenserfight.json   (directory-based, new)
+// Legacy   : .lenserfight.json               (flat file, read-only for compat)
 //
 // `saveConfig` always writes to the directory-based path and creates the
 // .lenserfight/ directory if it does not yet exist.
 // ---------------------------------------------------------------------------
 
 const PROJECT_CONFIG_DIR_NAME = '.lenserfight';
-const PROJECT_CONFIG_FILE_IN_DIR = 'config.json';
+const PROJECT_CONFIG_FILE_IN_DIR = 'lenserfight.json';
 const PROJECT_CONFIG_LEGACY_FILE = '.lenserfight.json';
 
 const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
@@ -152,7 +152,7 @@ export function findProjectConfigDir(cwd = process.cwd()): string {
   return resolve(cwd, PROJECT_CONFIG_DIR_NAME);
 }
 
-/** Returns the canonical project config path (.lenserfight/config.json). */
+/** Returns the canonical project config path (.lenserfight/lenserfight.json). */
 export function findConfigPath(cwd = process.cwd()): string {
   return resolve(cwd, PROJECT_CONFIG_DIR_NAME, PROJECT_CONFIG_FILE_IN_DIR);
 }
