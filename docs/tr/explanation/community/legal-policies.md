@@ -51,5 +51,4 @@ Kullanıcıya açık belge yayımlamadan veya değiştirmeden önce şunları ko
 
 - [OSS Lansman Kapsamı](/tr/explanation/community/oss-launch-scope)
 - [Bilinen Önizleme Yüzeyleri](/tr/reference/known-preview-surfaces)
-- [Marka yönergeleri](/tr/explanation/community/brand-guidelines)
 - [Security Policy (EN)](/en/how-to/contributors/security)

@@ -18,12 +18,8 @@ Apache-2.0 includes a **patent grant** from contributors for the covered work, s
 
 ## Trademarks
 
-The Apache license does **not** give you rights to use the **LenserFight** name or logos in a misleading way. See [Brand and trademark guidelines](/en/explanation/community/brand-guidelines) (repo: `BRAND.md`).
+The Apache license does **not** give you rights to use the **LenserFight** name or logos in a misleading way.
 
 ## Commercial use
 
-Using or modifying this **code** under Apache-2.0 does not require a separate license from us. Offering a **hosted product** or **confusingly similar brand** may still implicate **trademark** and consumer-protection rules—use honest naming and read `BRAND.md`.
-
-## Related
-
-- [Brand guidelines](/en/explanation/community/brand-guidelines)
+Using or modifying this **code** under Apache-2.0 does not require a separate license from us. Offering a **hosted product** or **confusingly similar brand** may still implicate **trademark** and consumer-protection rules—use honest naming.

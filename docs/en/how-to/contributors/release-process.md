@@ -35,7 +35,7 @@ Use when publishing **`v0.10.0-alpha.2`** (or the current `package.json` version
 
 **License:** Apache-2.0 — see the `LICENSE` file in this repository.
 
-**Trademarks:** The LenserFight name and logos are governed separately; see `BRAND.md` and [Brand guidelines](https://docs.lenserfight.com/explanation/community/brand-guidelines).
+**Trademarks:** The LenserFight name and logos are governed separately.
 
 **Docs:** https://docs.lenserfight.com
 
