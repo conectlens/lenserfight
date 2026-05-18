@@ -52,7 +52,7 @@ jobs:
       GOOGLE_API_KEY: ''
       MISTRAL_API_KEY: ''
     steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
 
@@ -86,7 +86,7 @@ jobs:
       # File-backed keychain (CI must not require a real OS keyring).
       LF_GATEWAY_KEY_FILE_FALLBACK: '1'
     steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
 

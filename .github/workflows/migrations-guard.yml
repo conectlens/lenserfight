@@ -17,7 +17,7 @@ jobs:
     name: Validate no private schema in OSS migrations
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run OSS migration guard
         run: bash scripts/validate-oss-migrations.sh

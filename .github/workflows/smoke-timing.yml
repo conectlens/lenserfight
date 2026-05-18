@@ -27,7 +27,7 @@ jobs:
       # the production gate.
       SMOKE_MAX_SECONDS: '300'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
