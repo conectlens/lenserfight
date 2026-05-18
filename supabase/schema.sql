@@ -28593,6 +28593,48 @@ $$;
 ALTER FUNCTION "public"."fn_device_register_with_key"("p_name" "text", "p_public_key" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_daemon_version" "text", "p_capabilities" "jsonb") OWNER TO "postgres";
 
 --
+-- Name: fn_device_list("text", integer, "uuid"); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE OR REPLACE FUNCTION "public"."fn_device_list"("p_trust_level" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 50, "p_cursor" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "name" "text", "device_type" "text", "os" "text", "arch" "text", "cli_version" "text", "runner_version" "text", "capabilities" "jsonb", "trust_level" "text", "gateway_status" "text", "last_seen_at" timestamp with time zone, "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'devices', 'extensions'
+    AS $$
+  SELECT * FROM devices.fn_device_list(p_trust_level, p_limit, p_cursor);
+$$;
+
+
+ALTER FUNCTION "public"."fn_device_list"("p_trust_level" "text", "p_limit" integer, "p_cursor" "uuid") OWNER TO "postgres";
+
+--
+-- Name: fn_device_register("text", "text", "text", "text", "text", "jsonb"); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE OR REPLACE FUNCTION "public"."fn_device_register"("p_name" "text", "p_device_type" "text" DEFAULT 'other'::"text", "p_os" "text" DEFAULT NULL::"text", "p_arch" "text" DEFAULT NULL::"text", "p_cli_version" "text" DEFAULT NULL::"text", "p_capabilities" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'devices', 'extensions'
+    AS $$
+  SELECT devices.fn_device_register(p_name, p_device_type, p_os, p_arch, p_cli_version, p_capabilities);
+$$;
+
+
+ALTER FUNCTION "public"."fn_device_register"("p_name" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_capabilities" "jsonb") OWNER TO "postgres";
+
+--
+-- Name: fn_device_revoke("uuid"); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE OR REPLACE FUNCTION "public"."fn_device_revoke"("p_device_id" "uuid") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'devices', 'extensions'
+    AS $$
+  SELECT devices.fn_device_revoke(p_device_id);
+$$;
+
+
+ALTER FUNCTION "public"."fn_device_revoke"("p_device_id" "uuid") OWNER TO "postgres";
+
+--
 -- Name: fn_dispatch_scheduled_workflows_with_approval(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -82748,6 +82790,30 @@ GRANT ALL ON FUNCTION "public"."fn_device_post_challenge"("p_device_id" "uuid", 
 GRANT ALL ON FUNCTION "public"."fn_device_register_with_key"("p_name" "text", "p_public_key" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_daemon_version" "text", "p_capabilities" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_device_register_with_key"("p_name" "text", "p_public_key" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_daemon_version" "text", "p_capabilities" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_device_register_with_key"("p_name" "text", "p_public_key" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_daemon_version" "text", "p_capabilities" "jsonb") TO "service_role";
+
+
+--
+-- Name: FUNCTION "fn_device_list"("p_trust_level" "text", "p_limit" integer, "p_cursor" "uuid"); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION "public"."fn_device_list"("p_trust_level" "text", "p_limit" integer, "p_cursor" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_device_list"("p_trust_level" "text", "p_limit" integer, "p_cursor" "uuid") TO "service_role";
+
+
+--
+-- Name: FUNCTION "fn_device_register"("p_name" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_capabilities" "jsonb"); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION "public"."fn_device_register"("p_name" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_capabilities" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_device_register"("p_name" "text", "p_device_type" "text", "p_os" "text", "p_arch" "text", "p_cli_version" "text", "p_capabilities" "jsonb") TO "service_role";
+
+
+--
+-- Name: FUNCTION "fn_device_revoke"("p_device_id" "uuid"); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION "public"."fn_device_revoke"("p_device_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_device_revoke"("p_device_id" "uuid") TO "service_role";
 
 
 --
