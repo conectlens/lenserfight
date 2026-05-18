@@ -7,6 +7,7 @@ import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { useLenser } from '@lenserfight/features/profile'
+import { useShareContext } from '@lenserfight/features/share'
 import { ExportButton } from '@lenserfight/features/exports'
 import { Badge, Button } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
@@ -55,6 +56,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const { lenser } = useLenser()
+  const { setShareConfig } = useShareContext()
   const { workflow, nodes: bootstrapNodes, edges: bootstrapEdges, isLoading } = useWorkflow(workflowId)
 
   // Live node/edge state: the canvas writes its saves back to these cache keys
@@ -258,6 +260,17 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
       setEditingLensId(null)
     }
   }, [lensModal.isOpen])
+
+  useEffect(() => {
+    if (workflow) {
+      setShareConfig({
+        title: workflow.title,
+        resourceType: 'workflow',
+        resourceId: workflow.id,
+      })
+    }
+    return () => setShareConfig(null)
+  }, [workflow, setShareConfig])
 
   // ── Node config panel ───────────────────────────────────────────────────────
   const handleConfigNode = (nodeId: string, lensId: string) => {
