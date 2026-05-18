@@ -70,7 +70,7 @@ export function chainabitUrl(path: string, version = 1): string {
 
 // Environment
 export const MODE = import.meta.env.MODE // "development", "production", "test"
-export const isProd = MODE === 'production'
+export const isProd = process.env.NODE_ENV === 'production'
 
 // Data Source — `supabase` (default) or `file` (planned lightweight workspace; use Supabase for full fidelity)
 export type DataBackendKind = 'supabase' | 'file'
@@ -83,7 +83,7 @@ export const dataBackendKind: DataBackendKind =
 export const isFileDataBackend = dataBackendKind === 'file'
 
 // Local development flag (Vite dev server)
-export const isLocal = MODE === 'development'
+export const isLocal = process.env.NODE_ENV === 'development'
 
 export type LocalSeedCredentials = {
   email: string
