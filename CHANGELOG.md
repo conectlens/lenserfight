@@ -1,9 +1,3 @@
----
-title: Changelog
-description: Full release history for LenserFight — every version, every change.
-layout: doc
----
-
 ## [0.1.0-rc1] - 2026-05-13
 
 Release candidate for the 2026-06-12 OSS announcement. Closes the BR–BQ pre-launch wave: e2e automation, model conformance, media gates, vote hardening, wizard v2, coverage gate, browse API, anon RLS, plus the BR sign-off sweep.
