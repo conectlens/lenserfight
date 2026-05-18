@@ -95,7 +95,7 @@ In the node config panel:
 |---|---|
 | **Method** | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
 | **URL** | The endpoint URL (can reference upstream output via edge) |
-| **Headers** | Key-value pairs; reference secrets with `{{ secret:MY_API_KEY }}` |
+| **Headers** | Key-value pairs; reference secrets with <code v-pre>{{ secret:MY_API_KEY }}</code> |
 | **Body** | JSON payload (POST/PUT/PATCH only) |
 | **Timeout** | Request timeout in milliseconds (default: 30000) |
 
@@ -154,7 +154,7 @@ Headers:
   X-API-Key: {{ secret:MY_SERVICE_KEY }}
 ```
 
-The `{{ secret:NAME }}` syntax resolves at execution time from the platform key store. Secrets are:
+The <code v-pre>{{ secret:NAME }}</code> syntax resolves at execution time from the platform key store. Secrets are:
 - Never included in workflow definitions stored in the database
 - Never visible in workflow editor UI (only the reference name is shown)
 - Only resolved server-side by the execution engine — never sent to the browser
@@ -169,7 +169,7 @@ For self-hosted deployments, secrets are stored in Supabase's encrypted secrets 
 pnpm supabase secrets set GITHUB_API_TOKEN=ghp_your_token_here
 ```
 
-**Critical rule:** `SUPABASE_SERVICE_ROLE_KEY` and AI provider API keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, etc.) must never be placed in workflow node config fields directly. They belong in the key store and referenced via `{{ secret:NAME }}`.
+**Critical rule:** `SUPABASE_SERVICE_ROLE_KEY` and AI provider API keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, etc.) must never be placed in workflow node config fields directly. They belong in the key store and referenced via <code v-pre>{{ secret:NAME }}</code>.
 
 ---
 
@@ -343,7 +343,7 @@ This shows per-node status, output, duration, and any error messages.
 
 Before publishing a workflow that uses integration nodes:
 
-- [ ] All API keys use `{{ secret:NAME }}` syntax — no hardcoded values in node fields
+- [ ] All API keys use <code v-pre>{{ secret:NAME }}</code> syntax — no hardcoded values in node fields
 - [ ] Secrets are registered with `lf keys set` or `pnpm supabase secrets set`
 - [ ] No `VITE_`-prefixed secrets are used in workflow node config (VITE_ variables go to the browser)
 - [ ] The workflow definition (stored in the database) does not contain any credential strings
@@ -354,7 +354,7 @@ Before publishing a workflow that uses integration nodes:
 
 ## Common Issues
 
-### Issue: `{{ secret:MY_KEY }}` resolves to an empty string
+### Issue: <code v-pre>{{ secret:MY_KEY }}</code> resolves to an empty string
 
 **Cause:** The secret is not registered in the key store for the current environment.
 
@@ -376,7 +376,7 @@ pnpm supabase secrets set MY_KEY=value
 **Cause:** The `Authorization` header is missing or the token is invalid.
 
 **Fix:**
-1. Verify the secret name in `{{ secret:NAME }}` matches exactly what is in the key store
+1. Verify the secret name in <code v-pre>{{ secret:NAME }}</code> matches exactly what is in the key store
 2. Test the credential independently: `curl -H "Authorization: Bearer $(lf keys get MY_KEY)" https://api.example.com`
 
 ---
