@@ -71,6 +71,9 @@ Desktop.ini
 
 .notes
 
+# Private internal docs (audits, drafts, pre-launch notes)
+docs/internal/
+
 .data/*
 
 
