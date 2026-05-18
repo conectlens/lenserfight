@@ -1,5 +1,4 @@
 export * from './lib/components/AvatarSelectionModal'
-export * from './lib/components/ChainabitOnboardingModal'
 export * from './lib/components/BannerSelectionModal'
 export * from './lib/components/AILenserAutomationLogPanel'
 export * from './lib/components/AILenserLensesPanel'

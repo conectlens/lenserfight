@@ -90,6 +90,7 @@ export const partnerApiClient = {
   getBalance: (_partnerName: string) => connectorApiClient.getBalance(),
   getAiModels: (_partnerName: string) => connectorApiClient.getAiModels(),
   startOAuthConnect: (returnUrl: string) => connectorApiClient.connect(returnUrl),
+  revokeToken: (_partnerName: string) => connectorApiClient.disconnect(),
 }
 
 /** @deprecated No longer used — provisioning removed */
