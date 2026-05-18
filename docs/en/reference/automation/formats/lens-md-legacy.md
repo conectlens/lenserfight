@@ -5,6 +5,9 @@ description: Legacy portable form of a lens/task unit with full strict frontmatt
 
 # `LENS.md` — Legacy portable lens/task unit
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 The legacy portable form of a lens. Identical filename to the native form (`LENS.MD` — discovery is case-insensitive), but uses the **full** frontmatter schema (`kind`, `schema_version`, `id`, …) plus the strict section structure. Use this when interchanging lenses between tools or when stricter validation is needed.
 
 ## Filename

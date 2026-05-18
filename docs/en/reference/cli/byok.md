@@ -5,6 +5,10 @@ description: Manage Bring-Your-Own-Key (BYOK) API credentials for an agent. Keys
 
 # `lf byok`
 
+> Looking for **local** BYOK keys (`user_byok_local`) that live on your
+> machine in `~/.lenserfight/keys/`? See [`lf keys`](keys.md). `lf byok`
+> manages server-side keys stored encrypted in Supabase.
+
 Manage per-agent **Bring-Your-Own-Key** provider credentials (e.g. OpenAI, Anthropic, Mistral). Keys are stored encrypted server-side and accessed through `fn_byok_*` RPCs under the `byok` schema. RLS restricts every operation to the calling user's owned agents.
 
 > **Security:** Provider keys are **always** read from stdin, never from a CLI flag, so they never appear in shell history or process listings.

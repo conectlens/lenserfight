@@ -24,13 +24,75 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
   )
 }
 
+/**
+ * Canonical error envelope rendered by `StreamingOutput`. Callers should pass
+ * a structured object (typically the `code` and `message` lifted off a
+ * `ProviderError`) so the UI can branch on `code` instead of regex-matching
+ * provider strings — that pattern previously produced false positives like
+ * showing "Insufficient credits" for an `invalid_funding_source` error that
+ * happened to contain the substring "credit".
+ */
+export type StreamingErrorCode =
+  | 'auth_failed'
+  | 'permission_denied'
+  | 'not_found'
+  | 'invalid_request'
+  | 'unsupported_model'
+  | 'content_policy'
+  | 'rate_limited'
+  | 'quota_exceeded'
+  | 'timeout'
+  | 'server_error'
+  | 'network_error'
+  | 'unknown'
+
+export interface StreamingErrorEnvelope {
+  message: string
+  code?: StreamingErrorCode
+  /** Operator-facing ref shown next to the toast so support can correlate logs. */
+  traceId?: string
+}
+
 export interface StreamingOutputProps {
   state: StreamState
   output: string
   runId?: string | null
   usage?: StreamUsage | null
   credits?: number | null
-  error?: string | null
+  /** Accepts either a structured envelope or a free-form string (legacy). */
+  error?: StreamingErrorEnvelope | string | null
+}
+
+const FRIENDLY_BY_CODE: Record<StreamingErrorCode, string> = {
+  auth_failed: 'Authentication failed. Please sign in again to continue.',
+  permission_denied: 'Access denied. Your key may not be authorized for this model.',
+  not_found: 'Model not found. Update your model selection.',
+  invalid_request: 'The request was malformed.',
+  unsupported_model: 'This model is not supported here. Pick a different one.',
+  content_policy: 'The provider safety filter blocked this prompt.',
+  rate_limited: 'Rate limit reached. Please wait a moment before trying again.',
+  quota_exceeded: 'Insufficient credits. Please top up your wallet to continue.',
+  timeout: 'The request timed out. Try again shortly.',
+  server_error: 'The provider returned an error. Please try again shortly.',
+  network_error: 'Network error. Check your connection and try again.',
+  unknown: 'An unexpected error occurred. Please try again.',
+}
+
+/**
+ * Lossless fallback for legacy callers that still pass free-form strings.
+ * Each branch is anchored with `\b` to avoid the historical bug of substring
+ * matches firing on innocuous text like "platform_credit".
+ */
+function classifyLegacyError(error: string): StreamingErrorCode {
+  if (/\b401\b/.test(error)) return 'auth_failed'
+  if (/\b403\b/.test(error)) return 'permission_denied'
+  if (/\b402\b|insufficient\s+(credit|fund|balance)|out\s+of\s+credit|no\s+credits?\s+remaining/i.test(error))
+    return 'quota_exceeded'
+  if (/\b429\b|rate.?limit/i.test(error)) return 'rate_limited'
+  if (/\b50[0234]\b/.test(error)) return 'server_error'
+  if (/network|fetch|failed to fetch/i.test(error)) return 'network_error'
+  if (/timeout|timed out/i.test(error)) return 'timeout'
+  return 'unknown'
 }
 
 export const StreamingOutput: React.FC<StreamingOutputProps> = ({
@@ -120,38 +182,40 @@ export const StreamingOutput: React.FC<StreamingOutputProps> = ({
         </div>
       </div>
 
-      {error ? (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <div className="rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10 p-5 backdrop-blur-sm">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400">
-                <Loader2 size={16} className="rotate-45" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-red-800 dark:text-red-300">Execution failed</p>
-                <p className="text-sm text-red-700/80 dark:text-red-400/80 leading-relaxed mt-1">
-                  {/401/.test(error)
-                    ? 'Authentication failed. Please sign in again to continue.'
-                    : /403/.test(error)
-                      ? 'Access denied. You do not have permission to use this model.'
-                      : /402|insufficient|credit/i.test(error)
-                        ? 'Insufficient credits. Please top up your wallet to continue.'
-                        : /429|rate.?limit/i.test(error)
-                          ? 'Rate limit reached. Please wait a moment before trying again.'
-                          : /500|502|503|504/.test(error)
-                            ? 'The server encountered an error. Please try again shortly.'
-                            : /network|fetch|failed to fetch/i.test(error)
-                              ? 'Network error. Check your connection and try again.'
-                              : error || 'An unexpected error occurred. Please try again.'}
-                </p>
+      {error ? (() => {
+        const envelope: StreamingErrorEnvelope =
+          typeof error === 'string'
+            ? { message: error, code: classifyLegacyError(error) }
+            : error
+        const code = envelope.code ?? 'unknown'
+        const friendly = FRIENDLY_BY_CODE[code]
+        // Prefer the provider's own message when it's actionable; otherwise
+        // fall back to the localized friendly string.
+        const body = envelope.message && envelope.message !== friendly ? envelope.message : friendly
+        return (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10 p-5 backdrop-blur-sm">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400">
+                  <Loader2 size={16} className="rotate-45" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-red-800 dark:text-red-300">Execution failed</p>
+                  <p className="text-sm text-red-700/80 dark:text-red-400/80 leading-relaxed mt-1">{body}</p>
+                  {envelope.traceId && (
+                    <p className="mt-2 text-[10px] font-mono text-red-500/70 dark:text-red-400/60">
+                      ref: {envelope.traceId}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
-      ) : (
+          </motion.div>
+        )
+      })() : (
         <div className="relative group/content">
           <AnimatePresence mode="wait">
             {state === 'complete' && output && (

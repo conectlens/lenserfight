@@ -1,14 +1,28 @@
-import { apiKeysService, lensesService, workflowsService } from '@lenserfight/data/repositories'
+import { apiKeysService, lensesService, walletApiClient, workflowsService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
-import { WorkflowExecutionService, getExecutionProvider } from '@lenserfight/infra/execution'
+import {
+  EchoProvider,
+  WorkflowExecutionService,
+  getExecutionProvider,
+  getNodeRunner,
+  normalizeWorkflowNodeConfigForExecution,
+  registerDefaultNodeRunners,
+  registerNodeRunner,
+} from '@lenserfight/infra/execution'
 import { createWorkflowModerationGateway } from '@lenserfight/infra/moderation'
 import { byokKeyResolver, callProvider } from '@lenserfight/providers'
 import { mapEngineEventToSse, WorkflowEventType } from '@lenserfight/types'
+import { generateUUID } from '@lenserfight/utils/text'
 import { useCallback, useRef } from 'react'
+
+import {
+  SIDE_EFFECT_NODE_TYPES,
+  createDryRunMockRunner,
+} from '../execution/workflowDryRun'
 
 import { persistNodeMediaArtifact } from '../execution/persistNodeMedia'
 
-import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
+import type { WorkflowNodeRecord, WorkflowEdgeRecord, WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
 import type {
   IExecutionProvider,
   WorkflowNode,
@@ -20,7 +34,7 @@ import type {
   MergeStrategy,
   WorkflowNodeConfig,
 } from '@lenserfight/infra/execution'
-import type { Provider } from '@lenserfight/providers'
+import type { ContentPart, Provider, ProviderMessage } from '@lenserfight/providers'
 import type {
   AIModel,
   FundingSource,
@@ -33,6 +47,28 @@ import type {
 const TEXT_PROVIDERS = new Set<string>(['openai', 'anthropic', 'google', 'mistral', 'ollama'])
 /** Media providers the browser executor is allowed to call when user_byok_local is selected. */
 const LOCAL_MEDIA_PROVIDERS = new Set<string>(['fal-ai'])
+
+function buildTextProviderMessages(input: ExecutionInput): ProviderMessage[] {
+  const att = input.attachments ?? []
+  if (att.length === 0) {
+    return [{ role: 'user', content: input.prompt }]
+  }
+  const parts: ContentPart[] = [{ type: 'text', text: input.prompt }]
+  for (const a of att) {
+    if (a.kind === 'image') {
+      parts.push({ type: 'image', url: a.url, mimeType: a.mimeType })
+    } else if (a.kind === 'document') {
+      parts.push({
+        type: 'document',
+        url: a.url,
+        mimeType: a.mimeType ?? 'application/octet-stream',
+      })
+    } else if (a.kind === 'audio') {
+      parts.push({ type: 'audio', url: a.url, mimeType: a.mimeType ?? 'audio/mpeg' })
+    }
+  }
+  return [{ role: 'user', content: parts }]
+}
 
 /**
  * Creates an IExecutionProvider that wraps callProvider() for text generation.
@@ -54,7 +90,7 @@ function createTextExecutionProvider(
         provider,
         apiKey,
         modelKey,
-        [{ role: 'user', content: input.prompt }],
+        buildTextProviderMessages(input),
         provider === 'anthropic' ? { maxTokens: 4096 } : undefined,
         signal,
       )
@@ -184,36 +220,15 @@ export function useWorkflowExecution({
         }
         await appendRunEventSafe(WorkflowEventType.RUN_STARTED, { status: 'starting' })
         await appendRunEventSafe(WorkflowEventType.RUN_STATUS_CHANGED, { status: 'running' })
+        registerDefaultNodeRunners()
 
-        // Resolve global model → provider + API key
-        // For local BYOK (e.g. Ollama), the model key may not exist in the DB model list.
-        // Fall back to deriving the provider from the selected local key's metadata.
-        const globalModel = models.find((m) => m.key === globalModelId)
-        let providerName: string
-        if (globalModel) {
-          providerName = globalModel.provider
-        } else if (fundingSource === 'user_byok_local' && selectedLocalKeyId && localKeys?.length) {
-          const localKey = localKeys.find((k) => k.id === selectedLocalKeyId)
-          if (!localKey) throw new Error(`Model not found: ${globalModelId}`)
-          providerName = localKey.provider
-        } else {
-          throw new Error(`Model not found: ${globalModelId}`)
-        }
-
-        const isTextProvider = TEXT_PROVIDERS.has(providerName)
-        const isLocalMediaProvider = LOCAL_MEDIA_PROVIDERS.has(providerName)
-        const allowMedia = fundingSource === 'user_byok_local' || fundingSource === 'platform_credit'
-
-        if (!isTextProvider && !(isLocalMediaProvider && allowMedia)) {
-          throw new Error(`Browser-side execution is not supported for provider: ${providerName}`)
-        }
-
-        // Resolve API key based on funding source
-        let apiKey = ''
-        if (providerName !== 'ollama') {
+        // Resolve model → provider + API key (per unique model key in the DAG).
+        const resolveWorkflowApiKey = async (prov: string): Promise<string> => {
+          if (prov === 'ollama') return ''
           if (fundingSource === 'user_byok_local' && selectedLocalKeyId && resolveLocalKey) {
-            apiKey = await resolveLocalKey(selectedLocalKeyId)
-          } else if (fundingSource === 'user_byok_cloud') {
+            return resolveLocalKey(selectedLocalKeyId)
+          }
+          if (fundingSource === 'user_byok_cloud') {
             if (!selectedKeyRefId) {
               throw new Error('Select a cloud key before running this workflow.')
             }
@@ -222,16 +237,52 @@ export function useWorkflowExecution({
             if (!selectedKey) {
               throw new Error('Selected cloud key was not found. Please pick a key again.')
             }
-            if (selectedKey.providerKey !== providerName) {
-              throw new Error(`Selected cloud key is for ${selectedKey.providerDisplayName}, but the model uses ${providerName}.`)
+            if (selectedKey.providerKey !== prov) {
+              throw new Error(
+                `Selected cloud key is for ${selectedKey.providerDisplayName}, but this node needs ${prov}.`,
+              )
+            }
+            if (import.meta.env.DEV) {
+              return walletApiClient.resolveByokKeyForLocalDev(selectedKeyRefId)
             }
             throw new Error(
-              'Cloud BYOK workflow execution must run on the platform executor. Use platform credit or a local key for browser execution.'
+              'Cloud BYOK workflow execution must run on the platform executor. Use platform credit or a local key for browser execution.',
             )
-          } else {
-            // platform_credit path for browser execution falls back to configured provider key.
-            apiKey = byokKeyResolver.resolve(providerName)
           }
+          return byokKeyResolver.resolve(prov)
+        }
+
+        const providerByModelKey = new Map<string, IExecutionProvider>()
+
+        const getProviderForModelKey = async (modelKey: string): Promise<IExecutionProvider> => {
+          const cached = providerByModelKey.get(modelKey)
+          if (cached) return cached
+
+          const m = models.find((x) => x.key === modelKey)
+          let pn: string
+          if (m) {
+            pn = m.provider
+          } else if (fundingSource === 'user_byok_local' && selectedLocalKeyId && localKeys?.length) {
+            const localKey = localKeys.find((k) => k.id === selectedLocalKeyId)
+            if (!localKey) throw new Error(`Model not found: ${modelKey}`)
+            pn = localKey.provider
+          } else {
+            throw new Error(`Model not found: ${modelKey}`)
+          }
+
+          const isText = TEXT_PROVIDERS.has(pn)
+          const isLocalMedia = LOCAL_MEDIA_PROVIDERS.has(pn)
+          const allowMedia = fundingSource === 'user_byok_local' || fundingSource === 'platform_credit'
+          if (!isText && !(isLocalMedia && allowMedia)) {
+            throw new Error(`Browser-side execution is not supported for provider: ${pn}`)
+          }
+
+          const apiKey = await resolveWorkflowApiKey(pn)
+          const inst: IExecutionProvider = isText
+            ? createTextExecutionProvider(pn as Exclude<Provider, 'fal'>, modelKey, apiKey, controller.signal)
+            : createRegisteredProviderAdapter(pn, modelKey, apiKey)
+          providerByModelKey.set(modelKey, inst)
+          return inst
         }
 
         if (controller.signal.aborted) {
@@ -244,20 +295,13 @@ export function useWorkflowExecution({
           }
         }
 
-        const globalProvider: IExecutionProvider = isTextProvider
-          ? createTextExecutionProvider(
-              providerName as Exclude<Provider, 'fal'>,
-              globalModelId,
-              apiKey,
-              controller.signal,
-            )
-          : createRegisteredProviderAdapter(providerName, globalModelId, apiKey)
+        const bootstrapProvider = await getProviderForModelKey(globalModelId)
 
         // Map DB records → execution service types, preserving per-node config
         // so retry/timeout/merge/moderation hints from the builder flow through.
         const execNodes: WorkflowNode[] = nodes.map((n) => ({
           id: n.id,
-          lensId: n.lens_id,
+          lensId: n.lens_id ?? null,
           versionId: n.version_id,
           config: readNodeConfig(n.config),
         }))
@@ -277,7 +321,10 @@ export function useWorkflowExecution({
         const ctx: WorkflowExecutionContext = {
           runId,
           rootInputs,
+          defaultModelKey: globalModelId,
           signal: controller.signal,
+          resolveExecutionProvider: (node) =>
+            getProviderForModelKey((node.config?.modelId?.trim() || globalModelId).trim()),
 
           async resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string> {
             if (controller.signal.aborted) return ''
@@ -308,6 +355,15 @@ export function useWorkflowExecution({
             // Failures here are non-fatal: we still persist the node result
             // with the transient URL so the UI can show a best-effort preview.
             let outputData = result.outputData as Record<string, unknown> | undefined
+            if (result.resolvedInputSnapshot && result.status !== 'streaming' && result.status !== 'running') {
+              outputData = {
+                ...(outputData ?? {}),
+                _wf: {
+                  resolvedInputSnapshot: result.resolvedInputSnapshot,
+                  providerRoute: result.providerRoute ?? null,
+                },
+              }
+            }
             if (
               result.status === 'completed' &&
               result.envelope?.media?.url &&
@@ -403,8 +459,8 @@ export function useWorkflowExecution({
           moderation,
         }
 
-        // Execute the DAG using the global provider
-        const executionService = new WorkflowExecutionService(globalProvider)
+        // Execute the DAG — bootstrap provider is unused when resolveExecutionProvider is set
+        const executionService = new WorkflowExecutionService(bootstrapProvider)
         const result = await executionService.executeWorkflow(execNodes, execEdges, ctx)
 
         // Mark run as completed or failed
@@ -455,7 +511,134 @@ export function useWorkflowExecution({
     [nodes, edges, models, fundingSource, selectedKeyRefId, selectedLocalKeyId, resolveLocalKey, localKeys, enableModeration, workspaceId],
   )
 
-  return { execute, stopExecution }
+  // ── Dry Run ─────────────────────────────────────────────────────────────────
+
+  const dryRunAbortRef = useRef<AbortController | null>(null)
+
+  const stopDryRun = useCallback(() => {
+    dryRunAbortRef.current?.abort()
+    dryRunAbortRef.current = null
+  }, [])
+
+  /**
+   * Execute the workflow in dry-run mode:
+   * - No DB records created (ephemeral runId, never persisted).
+   * - EchoProvider handles all AI/lens nodes (echoes the resolved prompt).
+   * - Side-effecting node types are mocked via createDryRunMockRunner.
+   * - Results are streamed to `onNodeResult` callback for React state.
+   * - Normal `execute()` is blocked while a dry run is in progress (shared isExecutingRef).
+   */
+  const executeDryRun = useCallback(
+    async (
+      globalModelId: string,
+      rootInputs: Record<string, unknown> = {},
+      onNodeResult: (nodeId: string, record: WorkflowNodeResultRecord) => void,
+    ): Promise<{ status: 'completed' | 'failed' | 'cancelled' }> => {
+      if (isExecutingRef.current) throw new Error('A run is already in progress.')
+      isExecutingRef.current = true
+
+      const controller = new AbortController()
+      dryRunAbortRef.current = controller
+
+      const ephemeralRunId = generateUUID()
+
+      // Save and replace side-effect runners with mocks
+      const originals = new Map<string, ReturnType<typeof getNodeRunner>>()
+      try {
+        registerDefaultNodeRunners()
+
+        for (const nodeType of SIDE_EFFECT_NODE_TYPES) {
+          originals.set(nodeType, getNodeRunner(nodeType as Parameters<typeof getNodeRunner>[0]))
+          registerNodeRunner(createDryRunMockRunner(nodeType) as Parameters<typeof registerNodeRunner>[0])
+        }
+
+        const echoProvider = new EchoProvider()
+
+        const execNodes: WorkflowNode[] = nodes.map((n) => ({
+          id: n.id,
+          lensId: n.lens_id ?? null,
+          versionId: n.version_id,
+          config: readNodeConfig(n.config),
+        }))
+
+        const execEdges: WorkflowEdge[] = edges.map((e) => ({
+          sourceNodeId: e.source_node_id,
+          targetNodeId: e.target_node_id,
+          sourceOutputKey: e.source_output_key,
+          targetParamLabel: e.target_param_label,
+          mergeStrategy: (e.merge_strategy ?? null) as MergeStrategy | null,
+          condition: readEdgeCondition(e.condition),
+        }))
+
+        const ctx: WorkflowExecutionContext = {
+          runId: ephemeralRunId,
+          rootInputs,
+          defaultModelKey: globalModelId || 'echo',
+          signal: controller.signal,
+
+          // Always use EchoProvider — dry run does not call real AI providers
+          resolveExecutionProvider: async () => echoProvider,
+
+          async resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string> {
+            if (controller.signal.aborted) return ''
+            try {
+              const version = versionId
+                ? await lensesService.getVersionById(versionId)
+                : await lensesService.getLatestPublishedVersion(lensId)
+              return version?.templateBody ?? ''
+            } catch {
+              return ''
+            }
+          },
+
+          async resolveVersionContracts() {
+            return { input: null, output: null }
+          },
+
+          async onNodeStatusChange(nodeId: string, result: NodeResult): Promise<void> {
+            const record: WorkflowNodeResultRecord = {
+              id: `${ephemeralRunId}-${nodeId}`,
+              run_id: ephemeralRunId,
+              node_id: nodeId,
+              status: result.status,
+              output_data: (result.outputData ?? null) as Record<string, unknown> | null,
+              error_message: result.error ?? null,
+              started_at: result.status === 'running' || result.status === 'streaming'
+                ? new Date().toISOString()
+                : null,
+              completed_at:
+                result.status === 'completed' ||
+                result.status === 'failed' ||
+                result.status === 'cancelled' ||
+                result.status === 'skipped' ||
+                result.status === 'timed_out' ||
+                result.status === 'blocked' ||
+                result.status === 'invalidated'
+                  ? new Date().toISOString()
+                  : null,
+              retry_count: result.attempts ?? 0,
+              waiting_reason: result.waitingReason ?? null,
+            }
+            onNodeResult(nodeId, record)
+          },
+        }
+
+        const executionService = new WorkflowExecutionService(echoProvider)
+        const runResult = await executionService.executeWorkflow(execNodes, execEdges, ctx)
+        return { status: runResult.status }
+      } finally {
+        // Re-register all default runners to overwrite any dry-run mocks.
+        // registerDefaultNodeRunners() is idempotent — safe to call after every run.
+        originals.clear()
+        registerDefaultNodeRunners()
+        isExecutingRef.current = false
+        if (dryRunAbortRef.current === controller) dryRunAbortRef.current = null
+      }
+    },
+    [nodes, edges],
+  )
+
+  return { execute, stopExecution, executeDryRun, stopDryRun }
 }
 
 /**
@@ -484,14 +667,7 @@ function resultStatusToRunEvent(status: 'completed' | 'failed' | 'cancelled'): W
 }
 
 function readNodeConfig(raw: Record<string, unknown> | null | undefined): WorkflowNodeConfig | undefined {
-  if (!raw) return undefined
-  const cfg: WorkflowNodeConfig = {}
-  if (raw['retry'] && typeof raw['retry'] === 'object') cfg.retry = raw['retry'] as WorkflowNodeConfig['retry']
-  if (typeof raw['timeoutMs'] === 'number') cfg.timeoutMs = raw['timeoutMs'] as number
-  if (typeof raw['onParentFailure'] === 'string') cfg.onParentFailure = raw['onParentFailure'] as WorkflowNodeConfig['onParentFailure']
-  if (typeof raw['merge'] === 'string') cfg.merge = raw['merge'] as MergeStrategy
-  if (typeof raw['moderation'] === 'string') cfg.moderation = raw['moderation'] as WorkflowNodeConfig['moderation']
-  return Object.keys(cfg).length ? cfg : undefined
+  return normalizeWorkflowNodeConfigForExecution(raw)
 }
 
 function readEdgeCondition(raw: Record<string, unknown> | null | undefined) {

@@ -304,6 +304,196 @@ function buildDocsJsonLd(relativePath: string, title: string, description: strin
 
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
 
+const AGENT_WORKSPACE_OPERATE_SIDEBAR = [
+  { text: 'Overview', link: '/en/how-to/agents/workspace/overview' },
+  { text: 'Drafts / Scratchpad', link: '/en/how-to/agents/workspace/scratchpad' },
+  { text: 'Runs', link: '/en/how-to/agents/workspace/runs' },
+  { text: 'Logs', link: '/en/how-to/agents/workspace/logs' },
+  { text: 'Reports', link: '/en/how-to/agents/workspace/reports' },
+  { text: 'Analytics', link: '/en/how-to/agents/workspace/analytics' },
+  { text: 'Creator Analytics', link: '/en/how-to/agents/workspace/creator-analytics' },
+  { text: 'Battles', link: '/en/how-to/agents/workspace/battles' },
+]
+
+const AGENT_WORKSPACE_BUILD_SIDEBAR = [
+  { text: 'Team Builder', link: '/en/how-to/agents/workspace/team-builder' },
+  { text: 'Workflows', link: '/en/how-to/agents/workspace/workflows' },
+]
+
+const AGENT_WORKSPACE_AUTOMATE_SIDEBAR = [
+  { text: 'Schedules', link: '/en/how-to/agents/workspace/schedules' },
+  { text: 'Evaluations', link: '/en/how-to/agents/workspace/evaluations' },
+]
+
+const AGENT_WORKSPACE_CONFIGURE_SIDEBAR = [
+  { text: 'Memory', link: '/en/how-to/agents/workspace/memory' },
+  { text: 'Instructions', link: '/en/how-to/agents/workspace/instructions' },
+  { text: 'Personality', link: '/en/how-to/agents/workspace/personality' },
+  { text: 'Tools', link: '/en/how-to/agents/workspace/tools' },
+  { text: 'Models', link: '/en/how-to/agents/workspace/models' },
+  { text: 'Providers', link: '/en/how-to/agents/workspace/providers' },
+  { text: 'BYOK', link: '/en/how-to/agents/workspace/byok' },
+  { text: 'BYOK Usage Log', link: '/en/how-to/agents/workspace/byok-usage-log' },
+  { text: 'Approvals', link: '/en/how-to/agents/workspace/approvals' },
+  { text: 'Cost', link: '/en/how-to/agents/workspace/cost' },
+  { text: 'Settings', link: '/en/how-to/agents/workspace/settings' },
+]
+
+const AGENT_WORKSPACE_DRAWER_SIDEBAR = [
+  { text: 'Add Team Member', link: '/en/how-to/agents/workspace/drawers/add-team-member' },
+  { text: 'Assign Tool', link: '/en/how-to/agents/workspace/drawers/assign-tool' },
+  { text: 'Bind Model', link: '/en/how-to/agents/workspace/drawers/bind-model' },
+  { text: 'Configure Provider', link: '/en/how-to/agents/workspace/drawers/configure-provider' },
+  { text: 'Create Team', link: '/en/how-to/agents/workspace/drawers/create-team' },
+  { text: 'Evaluation', link: '/en/how-to/agents/workspace/drawers/evaluation' },
+  { text: 'Evaluation Cases', link: '/en/how-to/agents/workspace/drawers/evaluation-cases' },
+  { text: 'Failed Case', link: '/en/how-to/agents/workspace/drawers/failed-case' },
+  { text: 'Memory Entry', link: '/en/how-to/agents/workspace/drawers/memory-entry' },
+  { text: 'Memory Profile', link: '/en/how-to/agents/workspace/drawers/memory-profile' },
+  { text: 'New Battle Subscription', link: '/en/how-to/agents/workspace/drawers/new-battle-subscription' },
+  { text: 'Personality Profile', link: '/en/how-to/agents/workspace/drawers/personality-profile' },
+  { text: 'Register Tool', link: '/en/how-to/agents/workspace/drawers/register-tool' },
+  { text: 'Run Detail', link: '/en/how-to/agents/workspace/drawers/run-detail' },
+  { text: 'Schedule', link: '/en/how-to/agents/workspace/drawers/schedule' },
+  { text: 'Schedule Run History', link: '/en/how-to/agents/workspace/drawers/schedule-run-history' },
+  { text: 'Team Edges', link: '/en/how-to/agents/workspace/drawers/team-edges' },
+  { text: 'Tool Invocation', link: '/en/how-to/agents/workspace/drawers/tool-invocation' },
+  { text: 'Tool Profile', link: '/en/how-to/agents/workspace/drawers/tool-profile' },
+  { text: 'Workflow Assignment', link: '/en/how-to/agents/workspace/drawers/workflow-assignment' },
+]
+
+const AGENT_WORKSPACE_SIDEBAR = [
+  {
+    text: 'Agent Workspace',
+    collapsed: false,
+    items: [{ text: 'Workspace Index', link: '/en/how-to/agents/workspace/' }],
+  },
+  {
+    text: 'Operate',
+    collapsed: false,
+    items: AGENT_WORKSPACE_OPERATE_SIDEBAR,
+  },
+  {
+    text: 'Build',
+    collapsed: false,
+    items: AGENT_WORKSPACE_BUILD_SIDEBAR,
+  },
+  {
+    text: 'Automate',
+    collapsed: false,
+    items: AGENT_WORKSPACE_AUTOMATE_SIDEBAR,
+  },
+  {
+    text: 'Configure',
+    collapsed: false,
+    items: AGENT_WORKSPACE_CONFIGURE_SIDEBAR,
+  },
+  {
+    text: 'Drawers',
+    collapsed: true,
+    items: AGENT_WORKSPACE_DRAWER_SIDEBAR,
+  },
+]
+
+const EN_REFERENCE_WORKFLOWS_SIDEBAR = [
+  {
+    text: 'Workflows',
+    items: [
+      { text: 'Execution Engine', link: '/en/reference/workflows/execution-engine' },
+      { text: 'Node Catalog', link: '/en/reference/workflows/workflow-node-catalog' },
+      { text: 'Contract Schema', link: '/en/reference/workflows/contract-schema' },
+      { text: 'Test Plan', link: '/en/reference/workflows/test-plan' },
+      { text: 'CRON Expressions', link: '/en/reference/cron-expressions' },
+      { text: 'Workflow Inputs Template', link: '/en/reference/workflow-inputs-template' },
+    ],
+  },
+  {
+    text: 'Node Reference',
+    collapsed: true,
+    items: [
+      { text: 'Overview', link: '/en/reference/workflows/nodes/' },
+      { text: 'Lens', link: '/en/reference/workflows/nodes/lens' },
+      { text: 'Triggers', link: '/en/reference/workflows/nodes/trigger' },
+      { text: 'Logic', link: '/en/reference/workflows/nodes/logic' },
+      { text: 'Data', link: '/en/reference/workflows/nodes/data' },
+      { text: 'AI Primitives', link: '/en/reference/workflows/nodes/ai-primitives' },
+      { text: 'Battle / Arena', link: '/en/reference/workflows/nodes/battle' },
+      { text: 'Storage & I/O', link: '/en/reference/workflows/nodes/storage' },
+      { text: 'Communication', link: '/en/reference/workflows/nodes/communication' },
+      { text: 'Integrations', link: '/en/reference/workflows/nodes/integration' },
+      { text: 'Media Generation', link: '/en/reference/workflows/nodes/media' },
+      { text: 'Utility', link: '/en/reference/workflows/nodes/utility' },
+    ],
+  },
+]
+
+const EN_REFERENCE_SIDEBAR = [
+  {
+    text: 'Reference',
+    items: [
+      { text: 'Community API', link: '/en/reference/community-api/index' },
+      { text: 'CLI', link: '/en/reference/cli/index' },
+      { text: 'Battles', link: '/en/reference/battles/index' },
+      { text: 'Connectors (alpha)', link: '/en/reference/connectors/index' },
+      { text: 'Automation Objects', link: '/en/reference/automation/markdown-objects' },
+      {
+        text: 'Background Worker',
+        items: [
+          { text: 'Overview', link: '/en/reference/worker/overview' },
+          { text: 'Environment Variables', link: '/en/reference/worker/environment-variables' },
+        ],
+      },
+      { text: 'Database', link: '/en/reference/database/schema-overview' },
+      { text: 'Workflows', link: '/en/reference/workflows/execution-engine' },
+      { text: 'Workflow Node Catalog', link: '/en/reference/workflows/workflow-node-catalog' },
+      {
+        text: 'AI Providers',
+        collapsed: true,
+        items: [
+          { text: 'Overview', link: '/en/reference/ai-providers' },
+          { text: 'OpenAI', link: '/en/reference/ai-providers/openai' },
+          { text: 'Anthropic', link: '/en/reference/ai-providers/anthropic' },
+          { text: 'Google', link: '/en/reference/ai-providers/google' },
+          { text: 'Mistral', link: '/en/reference/ai-providers/mistral' },
+          { text: 'Stability AI', link: '/en/reference/ai-providers/stability' },
+          { text: 'ElevenLabs', link: '/en/reference/ai-providers/elevenlabs' },
+          { text: 'Kling', link: '/en/reference/ai-providers/kling' },
+          { text: 'Suno', link: '/en/reference/ai-providers/suno' },
+          { text: 'Midjourney', link: '/en/reference/ai-providers/midjourney' },
+          { text: 'Ollama', link: '/en/reference/ai-providers/ollama' },
+          { text: 'Fal', link: '/en/reference/ai-providers/fal' },
+        ],
+      },
+      { text: 'AI Models', link: '/en/reference/ai-models' },
+      { text: 'RFCs', link: '/en/rfcs/' },
+      { text: 'Changelog', link: '/changelog' },
+      {
+        text: 'Provider Pages',
+        collapsed: true,
+        items: [
+          { text: 'OpenAI', link: '/en/providers/openai/' },
+          { text: 'Anthropic', link: '/en/providers/anthropic/' },
+          { text: 'Google', link: '/en/providers/google/' },
+          { text: 'Mistral', link: '/en/providers/mistral/' },
+          { text: 'Ollama', link: '/en/providers/ollama/' },
+          { text: 'fal.ai', link: '/en/providers/fal/' },
+          { text: 'Stability AI', link: '/en/providers/stability/' },
+          { text: 'ElevenLabs', link: '/en/providers/elevenlabs/' },
+          { text: 'Kling', link: '/en/providers/kling/' },
+          { text: 'Suno', link: '/en/providers/suno/' },
+          { text: 'OpenRouter', link: '/en/providers/openrouter/' },
+          { text: 'Perplexity', link: '/en/providers/perplexity/' },
+          { text: 'xAI', link: '/en/providers/xai/' },
+          { text: 'Midjourney', link: '/en/providers/midjourney/' },
+        ],
+      },
+      { text: 'Known Preview Surfaces', link: '/en/reference/known-preview-surfaces' },
+      { text: 'Known Limitations', link: '/en/reference/known-limitations' },
+      { text: 'Internals', link: '/en/reference/internals/overview' },
+    ],
+  },
+]
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   srcDir: '../../docs',
@@ -323,7 +513,9 @@ export default defineConfig({
     /\.\.\/\.\.\//,
     // Web-app routes referenced from docs (live at lenserfight.com, not in this docs site)
     /^\/settings\//,
+    /^\/ray$/,
     /^\/ray\//,
+    /ConectLens-agent-skills$/,
   ],
 
   title: 'LenserFight Docs',
@@ -1026,6 +1218,7 @@ export default defineConfig({
                 { text: 'İnsan Lenserlar', link: '/tr/explanation/lensers/human-lensers' },
                 { text: 'AI Lenserlar', link: '/tr/explanation/lensers/ai-lensers' },
                 { text: 'Lenser Profili', link: '/tr/explanation/lensers/lenser-profile' },
+                { text: 'Lenser Aktivitesi', link: '/tr/explanation/lensers/lenser-activity' },
                 { text: 'Lenser DNA', link: '/en/explanation/lensers/lenser-dna' },
               ],
             },
@@ -1051,6 +1244,8 @@ export default defineConfig({
                 { text: "LenserFight'ta Lensler", link: '/tr/explanation/lenses/lens-usage' },
                 { text: 'Lens Parametreleri', link: '/tr/explanation/lenses/lens-parameters' },
                 { text: 'İş Akışları', link: '/tr/explanation/lenses/workflows' },
+                { text: 'Finansman Kaynakları', link: '/tr/explanation/lenses/funding-sources' },
+                { text: 'Yerel Anahtarlar ve Gateway', link: '/tr/explanation/lenses/local-keys-gateway' },
               ],
             },
             {
@@ -1151,6 +1346,7 @@ export default defineConfig({
                 { text: 'İnsan Lenserlar', link: '/tr/explanation/lensers/human-lensers' },
                 { text: 'AI Lenserlar', link: '/tr/explanation/lensers/ai-lensers' },
                 { text: 'Lenser Profili', link: '/tr/explanation/lensers/lenser-profile' },
+                { text: 'Lenser Aktivitesi', link: '/tr/explanation/lensers/lenser-activity' },
                 { text: 'Lenser DNA', link: '/en/explanation/lensers/lenser-dna' },
               ],
             },
@@ -1204,6 +1400,8 @@ export default defineConfig({
                 { text: "LenserFight'ta Lensler", link: '/tr/explanation/lenses/lens-usage' },
                 { text: 'Lens Parametreleri', link: '/tr/explanation/lenses/lens-parameters' },
                 { text: 'İş Akışları', link: '/tr/explanation/lenses/workflows' },
+                { text: 'Finansman Kaynakları', link: '/tr/explanation/lenses/funding-sources' },
+                { text: 'Yerel Anahtarlar ve Gateway', link: '/tr/explanation/lenses/local-keys-gateway' },
               ],
             },
           ],
@@ -1368,7 +1566,7 @@ export default defineConfig({
           { text: 'Integrations', link: '/en/how-to/integrations/index' },
           { text: 'Workflow Guides', link: '/en/how-to/workflows/build-a-lens-chain' },
           { text: 'Battle Guides', link: '/en/how-to/battles/create-a-battle' },
-          { text: 'Operations', link: '/en/how-to/operations/cli-dashboard' },
+          { text: 'Operations', link: '/en/how-to/operations/running-the-worker' },
           { text: 'Contributors', link: '/en/how-to/contributors/contributing' },
         ],
       },
@@ -1550,13 +1748,28 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: 'Your First Battle', link: '/en/tutorials/battle-walkthroughs/your-first-battle' },
+            { text: 'Battle Types', link: '/en/tutorials/battle-walkthroughs/battle-types' },
+            { text: 'Human vs AI Battle', link: '/en/tutorials/battle-walkthroughs/human-vs-ai-battle' },
             { text: 'Lenser Battle', link: '/en/tutorials/battle-walkthroughs/lenser-battle' },
             { text: 'Workflow Battle', link: '/en/tutorials/battle-walkthroughs/workflow-battle' },
             { text: 'Lens Battle', link: '/en/tutorials/battle-walkthroughs/lens-battle' },
+            { text: 'Lens Battle Shared Parameters', link: '/en/tutorials/battle-walkthroughs/lens-battle-params' },
             { text: 'Battle Launch Guide', link: '/en/tutorials/battle-walkthroughs/battle-launch-guide' },
             { text: 'Local Battle Quickstart', link: '/en/tutorials/battle-walkthroughs/local-battle-quickstart' },
             { text: 'BYOK Cloud Battle Streaming', link: '/en/tutorials/battle-walkthroughs/byok-cloud-battle' },
             { text: 'Execute a PRIVATE_BATTLE.md', link: '/en/tutorials/battle-walkthroughs/private-battle-execute' },
+          ],
+        },
+        {
+          text: 'Workflow Examples',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/en/tutorials/workflow-examples/' },
+            { text: 'Coding Workflows', link: '/en/tutorials/workflow-examples/coding-workflow' },
+            { text: 'Content Creation Workflows', link: '/en/tutorials/workflow-examples/content-creation-workflow' },
+            { text: 'Finance Workflows ⚠️', link: '/en/tutorials/workflow-examples/finance-workflow' },
+            { text: 'Research Workflows', link: '/en/tutorials/workflow-examples/research-workflow' },
+            { text: 'Startup Workflows', link: '/en/tutorials/workflow-examples/startup-workflow' },
           ],
         },
         {
@@ -1628,7 +1841,15 @@ export default defineConfig({
         {
           text: 'Advanced',
           collapsed: true,
-          items: [{ text: 'Agent Orchestration', link: '/en/tutorials/advanced/agent-orchestration' }],
+          items: [
+            { text: 'Agent Orchestration', link: '/en/tutorials/advanced/agent-orchestration' },
+            { text: 'Workflow DAG Data Flow', link: '/en/tutorials/advanced/workflow-dag-data-flow' },
+            { text: 'Workflow Integration Nodes', link: '/en/tutorials/advanced/workflow-integration-nodes' },
+            { text: 'Battle Creation Deep Dive', link: '/en/tutorials/advanced/battle-creation-deep-dive' },
+            { text: 'Writing Tests for a Feature', link: '/en/tutorials/advanced/writing-tests-for-a-feature' },
+            { text: 'Debugging the CLI', link: '/en/tutorials/advanced/debugging-the-cli' },
+            { text: 'Environment Secrets Security', link: '/en/tutorials/advanced/environment-secrets-security' },
+          ],
         },
         {
           text: 'Troubleshooting',
@@ -1646,9 +1867,15 @@ export default defineConfig({
           text: 'Battle Walkthroughs',
           items: [
             { text: 'Your First Battle', link: '/en/tutorials/battle-walkthroughs/your-first-battle' },
+            { text: 'Battle Types', link: '/en/tutorials/battle-walkthroughs/battle-types' },
+            { text: 'Human vs AI Battle', link: '/en/tutorials/battle-walkthroughs/human-vs-ai-battle' },
             { text: 'Lenser Battle', link: '/en/tutorials/battle-walkthroughs/lenser-battle' },
             { text: 'Workflow Battle', link: '/en/tutorials/battle-walkthroughs/workflow-battle' },
             { text: 'Lens Battle', link: '/en/tutorials/battle-walkthroughs/lens-battle' },
+            {
+              text: 'Lens Battle Shared Parameters',
+              link: '/en/tutorials/battle-walkthroughs/lens-battle-params',
+            },
             {
               text: 'Battle Launch Guide',
               link: '/en/tutorials/battle-walkthroughs/battle-launch-guide',
@@ -1746,6 +1973,22 @@ export default defineConfig({
             { text: 'For Communities', link: '/en/tutorials/getting-started/for-communities' },
             { text: 'For Organizations', link: '/en/tutorials/getting-started/for-organizations' },
             { text: 'SaaS Integration', link: '/en/how-to/integrations/saas-quickstart' },
+          ],
+        },
+      ],
+      '/en/tutorials/workflow-examples/': [
+        {
+          text: 'Workflow Examples',
+          items: [
+            { text: 'Overview', link: '/en/tutorials/workflow-examples/' },
+            { text: 'Coding Workflows', link: '/en/tutorials/workflow-examples/coding-workflow' },
+            {
+              text: 'Content Creation Workflows',
+              link: '/en/tutorials/workflow-examples/content-creation-workflow',
+            },
+            { text: 'Finance Workflows ⚠️', link: '/en/tutorials/workflow-examples/finance-workflow' },
+            { text: 'Research Workflows', link: '/en/tutorials/workflow-examples/research-workflow' },
+            { text: 'Startup Workflows', link: '/en/tutorials/workflow-examples/startup-workflow' },
           ],
         },
       ],
@@ -1863,7 +2106,15 @@ export default defineConfig({
       '/en/tutorials/advanced/': [
         {
           text: 'Advanced',
-          items: [{ text: 'Agent Orchestration', link: '/en/tutorials/advanced/agent-orchestration' }],
+          items: [
+            { text: 'Agent Orchestration', link: '/en/tutorials/advanced/agent-orchestration' },
+            { text: 'Workflow DAG Data Flow', link: '/en/tutorials/advanced/workflow-dag-data-flow' },
+            { text: 'Workflow Integration Nodes', link: '/en/tutorials/advanced/workflow-integration-nodes' },
+            { text: 'Battle Creation Deep Dive', link: '/en/tutorials/advanced/battle-creation-deep-dive' },
+            { text: 'Writing Tests for a Feature', link: '/en/tutorials/advanced/writing-tests-for-a-feature' },
+            { text: 'Debugging the CLI', link: '/en/tutorials/advanced/debugging-the-cli' },
+            { text: 'Environment Secrets Security', link: '/en/tutorials/advanced/environment-secrets-security' },
+          ],
         },
       ],
       '/en/tutorials/troubleshooting/': [
@@ -1887,7 +2138,8 @@ export default defineConfig({
             { text: 'Workflow Guides', link: '/en/how-to/workflows/build-a-lens-chain' },
             { text: 'Battle Guides', link: '/en/how-to/battles/create-a-battle' },
             { text: 'Agents & AI Lensers', link: '/en/how-to/agents/manage-agent-settings' },
-            { text: 'Operations', link: '/en/how-to/operations/cli-dashboard' },
+            { text: 'Operations', link: '/en/how-to/operations/running-the-worker' },
+            { text: 'Developer Guides', link: '/en/how-to/dev/update-your-installation' },
             { text: 'Contributors & Maintainers', link: '/en/how-to/contributors/contributing' },
           ],
         },
@@ -1898,9 +2150,11 @@ export default defineConfig({
           items: [
             { text: 'Manage Agent Settings', link: '/en/how-to/agents/manage-agent-settings' },
             { text: 'Build a Multi-Agent Team', link: '/en/how-to/agents/build-a-multi-agent-team' },
+            { text: 'Agent Workspace', link: '/en/how-to/agents/workspace/' },
           ],
         },
       ],
+      '/en/how-to/agents/workspace/': AGENT_WORKSPACE_SIDEBAR,
       '/en/how-to/battles/': [
         {
           text: 'Battle Guides',
@@ -1945,6 +2199,7 @@ export default defineConfig({
         {
           text: 'Operations',
           items: [
+            { text: 'Running the Worker', link: '/en/how-to/operations/running-the-worker' },
             { text: 'CLI TUI Dashboard', link: '/en/how-to/operations/cli-dashboard' },
             { text: 'Dark Launch', link: '/en/how-to/dark-launch' },
             { text: 'Kill Switch', link: '/en/how-to/kill-switch' },
@@ -2027,49 +2282,20 @@ export default defineConfig({
         },
       ],
 
-      // ── Reference ──────────────────────────────────────────────────────────
-      '/en/reference/': [
+      '/en/how-to/dev/': [
         {
-          text: 'Reference',
+          text: 'Developer Guides',
           items: [
-            { text: 'Community API', link: '/en/reference/community-api/index' },
-            { text: 'CLI', link: '/en/reference/cli/index' },
-            { text: 'Battles', link: '/en/reference/battles/index' },
-            { text: 'Connectors (alpha)', link: '/en/reference/connectors/index' },
-            { text: 'Automation Objects', link: '/en/reference/automation/markdown-objects' },
-            { text: 'Execution Platform', link: '/en/reference/platform-api/api-overview' },
-            { text: 'Database', link: '/en/reference/database/schema-overview' },
-            { text: 'Workflows', link: '/en/reference/workflows/execution-engine' },
-            { text: 'AI Providers', link: '/en/reference/ai-providers' },
-            { text: 'AI Models', link: '/en/reference/ai-models' },
-            { text: 'RFCs', link: '/en/rfcs/' },
-            { text: 'Changelog', link: '/changelog' },
             {
-              text: 'Provider Pages',
-              collapsed: true,
-              items: [
-                { text: 'OpenAI', link: '/en/providers/openai/' },
-                { text: 'Anthropic', link: '/en/providers/anthropic/' },
-                { text: 'Google', link: '/en/providers/google/' },
-                { text: 'Mistral', link: '/en/providers/mistral/' },
-                { text: 'Ollama', link: '/en/providers/ollama/' },
-                { text: 'fal.ai', link: '/en/providers/fal/' },
-                { text: 'Stability AI', link: '/en/providers/stability/' },
-                { text: 'ElevenLabs', link: '/en/providers/elevenlabs/' },
-                { text: 'Kling', link: '/en/providers/kling/' },
-                { text: 'Suno', link: '/en/providers/suno/' },
-                { text: 'OpenRouter', link: '/en/providers/openrouter/' },
-                { text: 'Perplexity', link: '/en/providers/perplexity/' },
-                { text: 'xAI', link: '/en/providers/xai/' },
-                { text: 'Midjourney', link: '/en/providers/midjourney/' },
-              ],
+              text: 'Update your installation',
+              link: '/en/how-to/dev/update-your-installation',
             },
-            { text: 'Known Preview Surfaces', link: '/en/reference/known-preview-surfaces' },
-            { text: 'Known Limitations', link: '/en/reference/known-limitations' },
-            { text: 'Internals', link: '/en/reference/internals/overview' },
+            { text: 'Battle Dev Cycle', link: '/en/how-to/dev/battle-dev-cycle' },
           ],
         },
       ],
+      // ── Reference ──────────────────────────────────────────────────────────
+      '/en/reference/': EN_REFERENCE_SIDEBAR,
       '/en/rfcs/': [
         {
           text: 'RFCs',
@@ -2151,16 +2377,7 @@ export default defineConfig({
           ],
         },
       ],
-      '/en/reference/workflows/': [
-        {
-          text: 'Workflows',
-          items: [
-            { text: 'Execution Engine', link: '/en/reference/workflows/execution-engine' },
-            { text: 'Contract Schema', link: '/en/reference/workflows/contract-schema' },
-            { text: 'Test Plan', link: '/en/reference/workflows/test-plan' },
-          ],
-        },
-      ],
+      '/en/reference/workflows/': EN_REFERENCE_WORKFLOWS_SIDEBAR,
       '/en/reference/cli/': [
         {
           text: 'CLI',
@@ -2184,6 +2401,7 @@ export default defineConfig({
             { text: 'Runtime Telemetry (lf top)', link: '/en/reference/cli/top' },
             { text: 'Doctor & Health Checks', link: '/en/reference/cli/doctor' },
             { text: 'Status', link: '/en/reference/cli/status' },
+            { text: 'Update (lf update)', link: '/en/reference/cli/update' },
           ],
         },
         {
@@ -2336,6 +2554,7 @@ export default defineConfig({
             { text: 'Human Lensers', link: '/en/explanation/lensers/human-lensers' },
             { text: 'AI Lensers', link: '/en/explanation/lensers/ai-lensers' },
             { text: 'Lenser Profile', link: '/en/explanation/lensers/lenser-profile' },
+            { text: 'Lenser Activity', link: '/en/explanation/lensers/lenser-activity' },
             { text: 'Lenser DNA', link: '/en/explanation/lensers/lenser-dna' },
           ],
         },
@@ -2366,6 +2585,8 @@ export default defineConfig({
             { text: 'Lenses in LenserFight', link: '/en/explanation/lenses/lens-usage' },
             { text: 'Lens Parameters', link: '/en/explanation/lenses/lens-parameters' },
             { text: 'Connected Lens Workflows', link: '/en/explanation/lenses/workflows' },
+            { text: 'Funding Sources', link: '/en/explanation/lenses/funding-sources' },
+            { text: 'Local Keys & Gateway', link: '/en/explanation/lenses/local-keys-gateway' },
           ],
         },
         {
@@ -2373,6 +2594,8 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: 'Workflow Concepts', link: '/en/explanation/workflows/workflow-concepts' },
+            { text: 'What is a DAG?', link: '/en/explanation/workflows/what-is-a-dag' },
+            { text: 'Workflow Phases', link: '/en/explanation/workflows/workflow-phases' },
             { text: 'Workflow Types', link: '/en/explanation/workflows/workflow-types' },
             { text: 'Open Source Workflows', link: '/en/explanation/workflows/open-source-workflows' },
           ],
@@ -2439,6 +2662,22 @@ export default defineConfig({
               text: 'Rematches, Replays, and Series',
               link: '/en/explanation/battles/rematches-and-series',
             },
+            {
+              text: 'Lenser Battle Policy',
+              link: '/en/explanation/battles/lenser-battle-policy',
+            },
+            {
+              text: 'Output Compatibility',
+              link: '/en/explanation/battles/output-compatibility',
+            },
+            {
+              text: 'V2 Concept Separation',
+              link: '/en/explanation/battles/concept-separation',
+            },
+            {
+              text: 'Challenge Types',
+              link: '/en/explanation/battles/challenge-types',
+            },
             { text: 'Limited Beta Status', link: '/en/explanation/battles/limited-beta-status' },
           ],
         },
@@ -2480,6 +2719,22 @@ export default defineConfig({
               text: 'Rematches, Replays, and Series',
               link: '/en/explanation/battles/rematches-and-series',
             },
+            {
+              text: 'Lenser Battle Policy',
+              link: '/en/explanation/battles/lenser-battle-policy',
+            },
+            {
+              text: 'Output Compatibility',
+              link: '/en/explanation/battles/output-compatibility',
+            },
+            {
+              text: 'V2 Concept Separation',
+              link: '/en/explanation/battles/concept-separation',
+            },
+            {
+              text: 'Challenge Types',
+              link: '/en/explanation/battles/challenge-types',
+            },
             { text: 'Limited Beta Status', link: '/en/explanation/battles/limited-beta-status' },
           ],
         },
@@ -2492,6 +2747,7 @@ export default defineConfig({
             { text: 'Human Lensers', link: '/en/explanation/lensers/human-lensers' },
             { text: 'AI Lensers', link: '/en/explanation/lensers/ai-lensers' },
             { text: 'Lenser Profile', link: '/en/explanation/lensers/lenser-profile' },
+            { text: 'Lenser Activity', link: '/en/explanation/lensers/lenser-activity' },
             { text: 'Lenser DNA', link: '/en/explanation/lensers/lenser-dna' },
           ],
         },
@@ -2536,6 +2792,8 @@ export default defineConfig({
           text: 'Workflows',
           items: [
             { text: 'Workflow Concepts', link: '/en/explanation/workflows/workflow-concepts' },
+            { text: 'What is a DAG?', link: '/en/explanation/workflows/what-is-a-dag' },
+            { text: 'Workflow Phases', link: '/en/explanation/workflows/workflow-phases' },
             { text: 'Workflow Types', link: '/en/explanation/workflows/workflow-types' },
             { text: 'Open Source Workflows', link: '/en/explanation/workflows/open-source-workflows' },
             {
@@ -2581,6 +2839,8 @@ export default defineConfig({
             { text: 'Lenses in LenserFight', link: '/en/explanation/lenses/lens-usage' },
             { text: 'Lens Parameters', link: '/en/explanation/lenses/lens-parameters' },
             { text: 'Connected Lens Workflows', link: '/en/explanation/lenses/workflows' },
+            { text: 'Funding Sources', link: '/en/explanation/lenses/funding-sources' },
+            { text: 'Local Keys & Gateway', link: '/en/explanation/lenses/local-keys-gateway' },
           ],
         },
       ],

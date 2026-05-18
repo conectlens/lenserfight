@@ -101,14 +101,24 @@ export class BYOKKeyClient {
 }
 
 /**
- * Pass-through decryptor for the legacy app-layer path. Reads the ciphertext
- * format already produced by the CLI (`ENC::<base64>` or raw). Real callers
- * inject a real adapter (e.g. CryptoEnvelopeDecryptor); this exists so unit
- * tests and dev environments can run without a key store dependency.
+ * Test-only no-op decryptor. Passes plaintext through unchanged so unit tests
+ * and dev fixtures can use the BYOKKeyClient without a real KMS wired up.
+ *
+ * SECURITY: this decryptor will REJECT any value carrying the `ENC::` prefix.
+ * Older fixtures relied on the prefix being silently stripped as a "decryption"
+ * step, which meant an attacker-controlled ENC::<plaintext> value would be
+ * returned as a real key. Production deployments MUST inject a real adapter
+ * (e.g. CryptoEnvelopeDecryptor) — IdentityDecryptor is for test wiring only.
  */
 export class IdentityDecryptor implements KeyDecryptor {
   async decrypt(ciphertext: string): Promise<string> {
-    return ciphertext.startsWith('ENC::') ? ciphertext.slice(5) : ciphertext
+    if (ciphertext.startsWith('ENC::')) {
+      throw new BYOKError(
+        'E_BYOK_DECRYPTOR_MISCONFIGURED',
+        'IdentityDecryptor cannot handle encrypted ciphertext; inject a real decryptor',
+      )
+    }
+    return ciphertext
   }
 }
 

@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/execution/v1alpha1",
+  "title": "LenserFight Execution Spec",
+  "description": "An immutable snapshot of a completed execution: inputs, outputs, model config, provenance, and content hashes. Enables reproduction, verification, and audit.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "execution" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "type": "string", "enum": ["completed", "failed", "cancelled", "timeout", "partial", "draft", "active", "archived"] },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "execution_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUID identifying this unique execution."
+    },
+    "started_at": {
+      "type": "string",
+      "description": "ISO-8601 timestamp when execution started."
+    },
+    "finished_at": {
+      "type": "string",
+      "description": "ISO-8601 timestamp when execution finished."
+    },
+    "runtime_version": {
+      "type": "string",
+      "description": "LenserFight CLI or platform version."
+    },
+    "spec_ref": {
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string" },
+        "id": { "type": "string" },
+        "version": { "type": "string" },
+        "content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "required": ["kind", "id", "version", "content_hash"],
+      "description": "Reference to the spec that was executed, frozen at execution time."
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "input_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "locked_at": { "type": "string" }
+      },
+      "required": ["input_hash", "locked_at"]
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "model_id": { "type": "string", "minLength": 1 },
+        "model_key": { "type": "string", "minLength": 1 },
+        "sampler_config": { "type": "object" },
+        "byok_key_ref": { "type": "string" }
+      },
+      "required": ["provider", "model_id", "model_key"]
+    },
+    "output": {
+      "type": "object",
+      "properties": {
+        "output_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "produced_at": { "type": "string" },
+        "modality": {
+          "type": "string",
+          "enum": ["text", "image", "audio", "video", "structured", "file"]
+        }
+      },
+      "required": ["output_hash", "produced_at", "modality"]
+    },
+    "execution_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of (spec_content_hash + input_hash + output_hash). The execution seal."
+    },
+    "evaluation": {
+      "type": "object",
+      "properties": {
+        "evaluation_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "score": { "type": "number" },
+        "passed": { "type": "boolean" }
+      }
+    },
+    "parent_execution_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "ID of the parent execution (replay, fork, rematch)."
+    },
+    "signature": {
+      "type": "string",
+      "description": "Optional Ed25519 signature hex over sha256(canonical_json(provenance))."
+    },
+    "annotations": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "required": ["kind", "name"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "execution",
+      "schema_version": 1,
+      "id": "execution_001",
+      "name": "Code Review Run",
+      "status": "completed",
+      "execution_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    }
+  ]
+}

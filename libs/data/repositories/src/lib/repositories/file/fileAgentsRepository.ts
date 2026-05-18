@@ -11,6 +11,7 @@ import type {
   CreateAILenserResult,
 } from '@lenserfight/types'
 import { FileDataStore } from '@lenserfight/infra/storage'
+import { generateUUID } from '@lenserfight/utils/text'
 import type {
   AgentProfilePatch,
   AgentProfileView,
@@ -79,8 +80,8 @@ export class FileAgentsRepository implements AgentsRepositoryPort {
   }
 
   async createAgent(input: CreateAILenserInput): Promise<CreateAILenserResult> {
-    const aiLenserId = crypto.randomUUID()
-    const profileId = crypto.randomUUID()
+    const aiLenserId = generateUUID()
+    const profileId = generateUUID()
     const view = defaultAgentProfileView(
       aiLenserId,
       profileId,
@@ -93,7 +94,7 @@ export class FileAgentsRepository implements AgentsRepositoryPort {
 
   async recordAction(_input: AgentActionInput): Promise<AgentActionResponse> {
     console.warn('[file mode] FileAgentsRepository.recordAction — no-op in file-storage mode')
-    return { success: true, action_id: crypto.randomUUID() } as unknown as AgentActionResponse
+    return { success: true, action_id: generateUUID() } as unknown as AgentActionResponse
   }
 
   async getActionLogs(_aiLenserId: string, _limit?: number): Promise<AgentActionLogRecord[]> {
@@ -133,7 +134,7 @@ export class FileAgentsRepository implements AgentsRepositoryPort {
       }
     }
     const binding: AgentLensBindingRecord = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       ai_lenser_id: aiLenserId,
       lens_id: lensId,
       version_id: versionId ?? null,
@@ -154,7 +155,7 @@ export class FileAgentsRepository implements AgentsRepositoryPort {
       await modelBindingStore.save({ ...b, is_default: false })
     }
     const binding: AgentModelBindingRecord = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       ai_lenser_id: aiLenserId,
       model_id: modelId,
       is_default: true,

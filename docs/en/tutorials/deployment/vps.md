@@ -61,7 +61,7 @@ pnpm install --frozen-lockfile
 
 # Build the apps
 pnpm nx run web:build
-pnpm nx run platform-api:build
+pnpm nx run worker:build
 
 # Configure environment
 cp .env.example .env.local
@@ -105,9 +105,9 @@ server {
         }
     }
 
-    # API proxy
-    location /api/ {
-        proxy_pass http://127.0.0.1:8786/;
+    # Gateway API (local trust daemon, if running)
+    location /gateway/ {
+        proxy_pass http://127.0.0.1:38080/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -138,8 +138,8 @@ sudo certbot --nginx -d yourdomain.com
 ## Step 5 — Process management with PM2
 
 ```bash
-# Start the platform API
-pm2 start dist/apps/platform-api/main.js --name lenserfight-api
+# Start the background worker
+pm2 start dist/apps/worker/main.js --name lenserfight-worker
 
 # Save process list
 pm2 save
@@ -147,6 +147,8 @@ pm2 save
 # Enable startup on boot
 pm2 startup
 ```
+
+> **Note:** The worker is a background job processor (no HTTP surface). It handles scheduled tasks, event-driven automation, and async execution.
 
 ---
 
@@ -157,7 +159,7 @@ pm2 startup
 pm2 status
 
 # Logs
-pm2 logs lenserfight-api
+pm2 logs lenserfight-worker
 
 # Resource usage
 pm2 monit

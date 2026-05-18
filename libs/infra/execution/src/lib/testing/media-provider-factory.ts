@@ -4,7 +4,7 @@ import type { AsyncGenerationResponse, GenerativeMediaResult } from '@lenserfigh
 // ─── Result builders ─────────────────────────────────────────────────────────
 
 export function makePendingResult(taskId: string): AsyncGenerationResponse {
-  return { status: 'pending', taskId }
+  return { status: 'pending', providerTaskId: taskId }
 }
 
 export function makeCompletedImageResult(

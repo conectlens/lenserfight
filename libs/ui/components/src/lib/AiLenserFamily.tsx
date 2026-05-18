@@ -1,13 +1,16 @@
 import React from 'react'
 import { Badge } from './Badge'
 
-const CDN = 'https://cdn.lenserfight.com/brand/lensers'
+const CDN_AI = 'https://cdn.lenserfight.com/brand/lensers/AI'
 
 const MASCOTS = [
-  { src: `${CDN}/LENSO_DNA.png`, name: 'LENSO', role: 'Autonomous AI Lenser' },
-  { src: `${CDN}/LENSA_DNA.png`, name: 'LENSA', role: 'Creative AI Lenser' },
-  { src: `${CDN}/LENSE_DNA.png`, name: 'LENSE', role: 'Strategic AI Lenser' },
-  { src: `${CDN}/LOLA_DNA.png`, name: 'LOLA', role: 'Social AI Lenser' },
+  { src: `${CDN_AI}/CHAO.png`, name: 'CHAO', role: 'Builder & Architect AI Lenser' },
+  { src: `${CDN_AI}/LAHİT.png`, name: 'LAHİT', role: 'AI Lenser' },
+  { src: `${CDN_AI}/LAPSEKİ.png`, name: 'LAPSEKİ', role: 'AI Lenser' },
+  { src: `${CDN_AI}/LENSA.png`, name: 'LENSA', role: 'Creative AI Lenser' },
+  { src: `${CDN_AI}/LENSE.png`, name: 'LENSE', role: 'Strategic AI Lenser' },
+  { src: `${CDN_AI}/LOLA.png`, name: 'LOLA', role: 'Social AI Lenser' },
+  { src: `${CDN_AI}/LUPEM.png`, name: 'LUPEM', role: 'AI Lenser' },
 ]
 
 export interface AiLenserFamilyProps {
@@ -24,7 +27,7 @@ export const AiLenserFamily: React.FC<AiLenserFamilyProps> = ({ className, cente
           Meet the mascots
         </h2>
         <p className={`${centered ? 'mx-auto ' : ''}max-w-xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400`}>
-          LENSO, LENSA, LENSE, and LOLA are the AI lensers of the arena — your guides through every battle.
+          CHAO, LAHİT, LAPSEKİ, LENSA, LENSE, LOLA, and LUPEM are the AI lensers of the arena — your guides through every battle.
         </p>
       </div>
       <div className={`flex flex-wrap items-center ${centered ? 'justify-center' : 'justify-start'}`}>

@@ -22,13 +22,15 @@ import type { ExportTransport } from '../transport/ExportTransport'
 export interface UseExportRunnerArgs<T> {
   kind: ExportKind
   slug: string
+  /** Human-readable title used for the downloaded filename. */
+  title?: string | null
   fetchPayload: () => Promise<T>
   buildContext: () => Promise<ExportContext> | ExportContext
   resolveTransport: (id: 'cloud-download' | 'local-download' | 'local-workspace') => ExportTransport
 }
 
 export function useExportRunner<T>(args: UseExportRunnerArgs<T>) {
-  const { kind, slug, fetchPayload, buildContext, resolveTransport } = args
+  const { kind, slug, title, fetchPayload, buildContext, resolveTransport } = args
 
   return useCallback(
     async ({
@@ -43,8 +45,8 @@ export function useExportRunner<T>(args: UseExportRunnerArgs<T>) {
       const transport = resolveTransport(destination)
       const request: ExportRequest = { kind, slug, format }
       const ctx = await buildContext()
-      return orchestrator.run<T>({ request, ctx, fetchPayload, transport })
+      return orchestrator.run<T>({ request, ctx, fetchPayload, transport, title })
     },
-    [kind, slug, fetchPayload, buildContext, resolveTransport],
+    [kind, slug, title, fetchPayload, buildContext, resolveTransport],
   )
 }

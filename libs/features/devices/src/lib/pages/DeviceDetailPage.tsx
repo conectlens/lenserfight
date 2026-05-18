@@ -32,9 +32,9 @@ export const DeviceDetailPage: React.FC = () => {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 text-center text-muted-foreground">
         Device not found.{' '}
-        <button className="underline" onClick={() => navigate('/account/devices')}>
+        <Button variant="ghost" size="sm" onClick={() => navigate('/account/devices')}>
           Back to devices
-        </button>
+        </Button>
       </div>
     )
   }

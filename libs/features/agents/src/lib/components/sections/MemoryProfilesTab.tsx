@@ -124,7 +124,7 @@ export const MemoryProfilesTab: React.FC<MemoryProfilesTabProps> = ({ aiLenserId
 
 const SCOPE_COLORS: Record<string, string> = {
   team: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20',
-  agent: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20',
+  agent: 'bg-primary-yellow-50 text-primary-yellow-700 border-primary-yellow-200 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-300 dark:border-primary-yellow-500/20',
   workflow: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:border-violet-500/20',
   global: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20',
 }
@@ -154,27 +154,27 @@ const MemoryProfileCard: React.FC<{
   onEdit: () => void
   onDelete: () => void
 }> = ({ record, canManage, onEdit, onDelete }) => (
-  <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+  <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
     <div className="flex items-start justify-between gap-3">
       <h3 className="text-base font-semibold text-gray-900 dark:text-white">{record.name}</h3>
       {canManage && (
         <div className="flex flex-shrink-0 gap-1.5">
-          <button
+          <Button
             type="button"
             onClick={onEdit}
-            className="rounded-xl border border-gray-200 p-1.5 text-gray-500 transition hover:text-amber-600 dark:border-gray-700 dark:text-gray-400"
+            className="rounded-xl border border-gray-200 p-1.5 text-gray-500 transition hover:text-primary-yellow-600 dark:border-gray-700 dark:text-gray-400"
             aria-label="Edit"
           >
             <Pencil size={13} />
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onDelete}
             className="rounded-xl border border-gray-200 p-1.5 text-gray-500 transition hover:text-red-600 dark:border-gray-700 dark:text-gray-400"
             aria-label="Delete"
           >
             <Trash2 size={13} />
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -202,7 +202,7 @@ const MetaItem: React.FC<{ icon: React.ReactNode; label: string; value: string }
   label,
   value,
 }) => (
-  <div className="rounded-[16px] border border-gray-100 bg-gray-50 px-3 py-2.5 dark:border-gray-800 dark:bg-gray-700">
+  <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 dark:border-gray-800 dark:bg-gray-700">
     <div className="flex items-center gap-1 text-gray-400 dark:text-gray-500">
       {icon}
       <span className="text-[10px] font-semibold uppercase tracking-[0.16em]">{label}</span>

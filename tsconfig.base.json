@@ -61,8 +61,8 @@
       "@lenserfight/features/agents": [
         "libs/features/agents/src/index.ts"
       ],
-      "@lenserfight/features/benchmark": [
-        "libs/features/benchmark/src/index.ts"
+      "@lenserfight/features/artifact-lifecycle": [
+        "libs/features/artifact-lifecycle/src/index.ts"
       ],
       "@lenserfight/features/tags": [
         "libs/features/tags/src/index.ts"
@@ -85,11 +85,17 @@
       "@lenserfight/utils/locale": [
         "libs/utils/locale/src/index.ts"
       ],
+      "@lenserfight/domain/oauth-connections": [
+        "libs/domain/oauth-connections/src/index.ts"
+      ],
       "@lenserfight/domain/lenses": [
         "libs/domain/lenses/src/index.ts"
       ],
       "@lenserfight/domain/lens-governance": [
         "libs/domain/lens-governance/src/index.ts"
+      ],
+      "@lenserfight/domain/battle-governance": [
+        "libs/domain/battle-governance/src/index.ts"
       ],
       "@lenserfight/domain/identity-governance": [
         "libs/domain/identity-governance/src/index.ts"
@@ -108,6 +114,9 @@
       ],
       "@lenserfight/domain/exports": [
         "libs/domain/exports/src/index.ts"
+      ],
+      "@lenserfight/domain/spec-governance": [
+        "libs/domain/spec-governance/src/index.ts"
       ],
       "@lenserfight/features/auth": [
         "libs/features/auth/src/index.ts"
@@ -135,6 +144,12 @@
       ],
       "@lenserfight/data/exports": [
         "libs/data/exports/src/index.ts"
+      ],
+      "@lenserfight/data/local-keys": [
+        "libs/data/local-keys/src/index.ts"
+      ],
+      "@lenserfight/data/local-keys-browser": [
+        "libs/data/local-keys/src/browser.ts"
       ],
       "@lenserfight/infra/analytics": [
         "libs/infra/analytics/src/index.ts"
@@ -223,6 +238,9 @@
       "@lenserfight/utils/validation": [
         "libs/utils/validation/src/index.ts"
       ],
+      "@lenserfight/utils/update-check": [
+        "libs/utils/update-check/src/index.ts"
+      ],
       "@lenserfight/utils/webhook-signing": [
         "libs/utils/webhook-signing/src/index.ts"
       ],
@@ -282,6 +300,9 @@
       ],
       "@lenserfight/features/chat": [
         "libs/features/chat/src/index.ts"
+      ],
+      "@lenserfight/features/connectors": [
+        "libs/features/connectors/src/index.ts"
       ]
     }
   }

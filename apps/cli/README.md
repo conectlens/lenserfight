@@ -15,7 +15,7 @@
 
 ## Overview
 
-`lf` is the CLI for LenserFight. Running `lf` with no arguments opens an interactive TUI dashboard. Every battle, lens, runner, workflow, and agent operation is accessible from the terminal — you do not need the web UI for any of it.
+`lf` is the CLI for LenserFight. Running `lf` with no arguments opens an interactive TUI dashboard. Every battle, lens, lenser, workflow, and connector operation is accessible from the terminal — you do not need the web UI for any of it.
 
 Built on [citty](https://github.com/unjs/citty) and [consola](https://github.com/unjs/consola). Distributed as a single CJS bundle (`dist/apps/cli/main.js`) compiled by esbuild. Supports `local` mode (Supabase running on localhost) and `cloud` mode (lenserfight.com API). Mode is set in `.lenserfight.json` at project root or via `--mode` flag at runtime.
 
@@ -24,13 +24,13 @@ Built on [citty](https://github.com/unjs/citty) and [consola](https://github.com
 ## Installation
 
 ```bash
-npm install -g lenserfight
+npm install -g @lenserfight/cli
 lenserfight --version
 
-npx lenserfight --help
+npx @lenserfight/cli --help
 npx lf --version
 
-npm install --save-dev lenserfight
+npm install --save-dev @lenserfight/cli
 ```
 
 The package supports global installs, `npx`/`npm exec`, local project installs,
@@ -156,16 +156,18 @@ lf status                        # confirm everything is green
 | `lf run exec --provider ollama --model llama3` | Execute directly against a model (BYOK/Ollama) |
 | `lf run full <battle-id>` | Submit + vote end-to-end |
 
-### Runners & Connectors
+### Connectors
 
 | Command | Description |
 |---------|-------------|
-| `lf runner connect --name N --type T` | Register a runner (types: openai-agents, langchain, crewai, mcp, ollama, http, custom) |
-| `lf runner list` | List registered runners |
-| `lf runner deactivate <id>` | Deactivate a runner |
-| `lf connectors list` | List community connectors |
-| `lf connectors register` | Register a connector + issue service token |
-| `lf connectors inspect <id>` | Show connector config + token metadata |
+| `lf connectors list` | List registered connectors |
+| `lf connectors view <slug>` | Show connector details and token metadata |
+| `lf connectors add` | Register a new connector and issue service token |
+| `lf connectors remove <slug>` | Deactivate a connector |
+| `lf connectors rotate <slug>` | Rotate the service token for a connector |
+| `lf connectors test <slug>` | Test connector connectivity |
+
+> **Deprecated aliases:** `lf runner` and `lf agent` are deprecated and redirect to `lf lenser` with a warning. Update scripts to use `lf lenser` directly.
 
 ### Workflows
 
@@ -223,7 +225,10 @@ lf status                        # confirm everything is green
 
 | Command | Description |
 |---------|-------------|
-| `lf gateway` | Trust Gateway daemon control |
+| `lf gateway` | Trust Gateway daemon control (loopback HTTP) |
+| `lf gateway pair --web` | Print the bearer token that the web app pastes into Settings → Local Keys |
+| `lf keys init` | One-time: generate the master passphrase (OS keychain) and create `~/.lenserfight/keys/` |
+| `lf keys list` / `add` / `update` / `rotate` / `remove` / `export` / `doctor` | Manage local BYOK keys (file-backed, AES-256-GCM at rest, accessed by the gateway from the browser) |
 | `lf approval` | Approve pending tool invocations |
 | `lf execution` | Execution management |
 | `lf budget` | Budget management |
@@ -239,6 +244,15 @@ lf status                        # confirm everything is green
 | `lf export` | Export data |
 | `lf profile` | Profile management |
 | `lf config` | Manage project config |
+| `lf env` | Inspect resolved environment variables |
+| `lf update` | Check for and apply CLI updates |
+| `lf whats-new` | Show recent CLI release notes |
+| `lf examples` | Browse runnable example workflows |
+| `lf docs` | Open documentation in the browser |
+| `lf onboard` | Re-run the guided onboarding wizard |
+| `lf migrate-terminology` | Migrate config files from old runner/agent naming to lenser |
+| `lf top` | Live CPU/memory usage for local Supabase and gateway processes |
+| `lf connect` | Manage remote sync connections (`list`, `sync`, `disconnect`) |
 | `lf completion --shell zsh\|bash\|fish` | Install shell completion |
 
 ---

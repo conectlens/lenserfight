@@ -18,12 +18,6 @@ function expect(name, predicate, helpText) {
   checks.push({ name, ok, value, helpText })
 }
 
-expect('FEATURE_PUBLIC_BATTLES', (v) => v === '' || v === 'false', 'must remain false for private-beta battle mode')
-expect(
-  'FEATURE_SUPABASE_INTEGRATION',
-  (v) => v === '' || v === 'false',
-  'must remain false until Supabase publication completes',
-)
 expect(
   'API_URL',
   (v) => v.length === 0 || /^https?:\/\//.test(v),

@@ -39,22 +39,22 @@ export interface CreateApiKeyDTO {
 }
 
 /**
- * A locally stored API key — encrypted with AES-GCM in IndexedDB.
- * The raw key is NEVER stored in React state; only decrypted transiently at execution time.
+ * Metadata for a locally stored BYOK key. Local keys live in
+ * `~/.lenserfight/keys/` on the user's machine, encrypted at rest with
+ * AES-256-GCM, and are accessed from the browser only via the LenserFight
+ * Gateway loopback daemon. The ciphertext NEVER touches the browser; only
+ * this metadata shape does.
  */
-export interface LocalKey {
-  id: string
-  provider: string
-  label: string
-  encryptedKey: ArrayBuffer
-  iv: Uint8Array
-  createdAt: string
-}
-
-/** Safe subset of LocalKey for React state — no ciphertext or IV */
 export interface LocalKeyMeta {
   id: string
   provider: string
   label: string
   createdAt: string
 }
+
+/** Whether the LenserFight Gateway is reachable for Local Keys. */
+export type GatewayPairingStatus =
+  | 'available'
+  | 'gateway_unreachable'
+  | 'gateway_not_paired'
+  | 'gateway_forbidden'

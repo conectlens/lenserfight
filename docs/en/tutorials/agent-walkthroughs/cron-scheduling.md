@@ -23,7 +23,7 @@ CRON scheduling is **off by default** in Community Edition and requires `pg_cron
 
 ```bash
 # In your .env or .env.local at the project root
-FEATURE_CRON_SCHEDULING=true
+Supabase `pg_cron` configured for workflow dispatch
 ```
 
 This flag enables the **Schedules** section in the Automation workspace and the CRON dispatch UI.

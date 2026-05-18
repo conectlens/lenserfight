@@ -1,15 +1,15 @@
-import { Turnstile } from '@marsidev/react-turnstile'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { isMock, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY, loadDevSeedCredentials } from '@lenserfight/utils/env'
+import { ENABLE_CAPTCHA, CAPTCHA_SITE_KEY, loadDevSeedCredentials } from '@lenserfight/utils/env'
 import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
 
 import { useAuth } from '@lenserfight/features/auth'
 import { rememberMeStorage } from '@lenserfight/data/supabase'
 import { useFormValidation } from '@lenserfight/utils/validation'
-import { isRequired, isEmail } from '@lenserfight/utils/validation'
+import { isRequired, isEmailOrHandle } from '@lenserfight/utils/validation'
 import { normalizeError, type AppError } from '@lenserfight/shared/error'
 import { AuthCard } from '../components/AuthCard'
 import { BackButton } from '../components/BackButton'
@@ -23,7 +23,7 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '',
     password: '',
   })
 
@@ -32,8 +32,8 @@ export const LoginPage: React.FC = () => {
     loadDevSeedCredentials().then((creds) => {
       if (cancelled || !creds) return
       setFormData((prev) =>
-        prev.email === '' && prev.password === ''
-          ? { email: creds.email, password: creds.password }
+        prev.identifier === '' && prev.password === ''
+          ? { identifier: creds.email, password: creds.password }
           : prev,
       )
     })
@@ -43,7 +43,7 @@ export const LoginPage: React.FC = () => {
   }, [])
 
   const { errors, validate, clearError } = useFormValidation<typeof formData>({
-    email: [isRequired(), isEmail()],
+    identifier: [isRequired(), isEmailOrHandle()],
     password: [isRequired()],
   })
 
@@ -54,6 +54,7 @@ export const LoginPage: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [rememberMe, setRememberMe] = useState(true)
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -76,14 +77,18 @@ export const LoginPage: React.FC = () => {
     try {
       // Apply the remember-me preference before the session token is written
       rememberMeStorage.setRememberMe(rememberMe)
-      await login(formData.email, formData.password, captchaToken || undefined)
+      await login(formData.identifier, formData.password, captchaToken || undefined)
 
       // Success State Trigger - effectively starts the transition animation
       setIsSuccess(true)
     } catch (err: unknown) {
       setApiError(normalizeError(err))
-      setIsSubmitting(false) // Only stop loading on error
-      if (ENABLE_CAPTCHA) setCaptchaToken(null) // Reset captcha on error
+      if (ENABLE_CAPTCHA) {
+        setCaptchaToken(null)
+        turnstileRef.current?.reset()
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -96,11 +101,6 @@ export const LoginPage: React.FC = () => {
     setApiError(null)
     try {
       await signInWithOAuth(provider)
-      // OAuth redirects usually happen externally, but if mock:
-      if (isMock) {
-        setIsSuccess(true)
-        setTimeout(() => navigate('/', { replace: true }), 1500)
-      }
     } catch (err: unknown) {
       setApiError(normalizeError(err))
       setOauthLoading(false)
@@ -115,15 +115,16 @@ export const LoginPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
           <div>
             <InputField
-              label="Email"
-              name="email"
-              type="email"
-              placeholder="Enter your email"
-              value={formData.email}
+              label="Email or username"
+              name="identifier"
+              type="text"
+              placeholder="Enter email or @username"
+              autoComplete="username"
+              value={formData.identifier}
               onChange={handleChange}
-              error={errors.email}
+              error={errors.identifier}
               className={
-                errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''
+                errors.identifier ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''
               }
             />
           </div>
@@ -182,7 +183,7 @@ export const LoginPage: React.FC = () => {
 
           {ENABLE_CAPTCHA && (
             <div className="flex justify-center my-4">
-              <Turnstile siteKey={CAPTCHA_SITE_KEY} onSuccess={setCaptchaToken} />
+              <Turnstile ref={turnstileRef} siteKey={CAPTCHA_SITE_KEY} onSuccess={setCaptchaToken} />
             </div>
           )}
 
@@ -219,7 +220,16 @@ export const LoginPage: React.FC = () => {
           disabled={isSubmitting || isSuccess}
         />
 
-        <div className="mt-8 text-center text-sm text-gray-500 font-medium">
+        <div className="mt-6 border-t border-gray-100 dark:border-gray-800 pt-6 text-center">
+          <Link
+            to="/magic-link"
+            className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-primary-700 dark:hover:text-primary-400 hover:underline transition-colors"
+          >
+            Sign in with email link
+          </Link>
+        </div>
+
+        <div className="mt-4 text-center text-sm text-gray-500 font-medium">
           New to LenserFight?
           <Link
             to="/register"

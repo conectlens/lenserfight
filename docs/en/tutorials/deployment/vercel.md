@@ -49,7 +49,6 @@ Add to Vercel project settings (**Settings → Environment Variables**):
 | `SUPABASE_URL` | Your Supabase project URL |
 | `SUPABASE_ANON_KEY` | Your Supabase anon key |
 | `WEB_BASE_URL` | Your Vercel domain |
-| `PRODUCT_EDITION` | `community` or `cloud` |
 
 ---
 

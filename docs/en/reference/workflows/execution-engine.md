@@ -183,7 +183,7 @@ Every partial output emits a `node.stream.delta` event with a `deltaIndex` that 
 
 ### Reconnection & `Last-Event-ID` fallback
 
-The SSE route in [`apps/api/src/routes/execute/workflow-events.route.ts`](../../../../lenserfight-platform/apps/api/src/routes/execute/workflow-events.route.ts) resumes from a cursor in two ways, in this order of precedence:
+The SSE route (deployed as a Cloudflare Worker) resumes from a cursor in two ways, in this order of precedence:
 
 1. Query string: `GET /execute/workflows/:runId/events?afterEventId=<n>`
 2. Request header: `Last-Event-ID: <n>`

@@ -42,8 +42,58 @@ export interface WinnerInfo {
 }
 
 export const battlesService = {
-  createBattle: (input: CreateBattleInput): Promise<BattleRecord> =>
-    battlesRepo.createBattle(input),
+  createBattle: async (input: CreateBattleInput): Promise<BattleRecord> => {
+    // Server-side validation mirrors the domain rules — ensures CLI and API
+    // callers get the same protection as the wizard UI.
+    const { battleCreationValidator, isCompatibleCombination } = await import('@lenserfight/domain/battle-governance')
+    const format = input.workflow_id ? 'workflow' : input.lens_id ? 'lens' : null
+    // Skip the format/type check when a lenser_battle_policy is present — the V2
+    // mapper legitimately produces battle_type='lenser_battle' from a lens task with
+    // a policy overlay, which is not in the legacy lens format matrix.
+    if (format && !input.lenser_battle_policy && !isCompatibleCombination(format, input.battle_type)) {
+      throw new Error(
+        `Battle type "${input.battle_type}" is not allowed for format "${format}". ` +
+        `Pick a compatible battle type.`
+      )
+    }
+    if (input.lenser_battle_policy) {
+      const policyViolations = battleCreationValidator.validateLenserBattlePolicy(
+        'lenser_battle',
+        input.lenser_battle_policy as any,
+      )
+      if (policyViolations.some((v) => v.severity === 'error')) {
+        throw new Error(policyViolations.map((v) => v.message).join('; '))
+      }
+    }
+    // Validate shared_input_snapshot against the lens's required parameters.
+    // Fetches the published (or latest) version to resolve param requirements.
+    if (input.lens_id) {
+      const { lensesService } = await import('./lensesService')
+      const versions = await lensesService.getVersions(input.lens_id)
+      const resolvedVersion =
+        versions.find((v) => (v as { status?: string }).status === 'published') ?? versions[0]
+      if (resolvedVersion) {
+        const versionDetail = await lensesService.getVersionById(resolvedVersion.id)
+        const params = ((versionDetail as { parameters?: unknown[] })?.parameters ?? []) as Array<{
+          label: string
+          tool?: { required?: boolean }
+        }>
+        const requirements = params.map((p) => ({
+          id: p.label,
+          label: p.label,
+          required: !!p.tool?.required,
+        }))
+        const paramViolations = battleCreationValidator.validateLensParams(
+          requirements,
+          (input.shared_input_snapshot ?? {}) as Record<string, unknown>,
+        )
+        if (paramViolations.some((v) => v.severity === 'error')) {
+          throw new Error(paramViolations.map((v) => v.message).join('; '))
+        }
+      }
+    }
+    return battlesRepo.createBattle(input)
+  },
 
   getBattleById: (id: string): Promise<BattleRecord | null> =>
     battlesRepo.getBattleById(id),

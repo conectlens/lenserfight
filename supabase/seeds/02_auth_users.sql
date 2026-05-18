@@ -26,22 +26,6 @@
 -- access these accounts in that case.
 -- =============================================================================
 
--- Reserved-seed password resolver. Returns the GUC if set, else a random UUID.
-CREATE OR REPLACE FUNCTION pg_temp.fn_seed_password(p_guc text)
-RETURNS text
-LANGUAGE plpgsql
-AS $$
-DECLARE
-  v_val text;
-BEGIN
-  v_val := current_setting(p_guc, true);
-  IF v_val IS NULL OR length(v_val) = 0 THEN
-    RETURN gen_random_uuid()::text;
-  END IF;
-  RETURN v_val;
-END;
-$$;
-
 INSERT INTO auth.users (
     instance_id, id, aud, role,
     email, encrypted_password,
@@ -60,7 +44,7 @@ VALUES
         'a1000000-0000-0000-0000-000000000001',
         'authenticated', 'authenticated',
         'hey@lenserfight.com',
-        extensions.crypt(pg_temp.fn_seed_password('seed.lf_password'), extensions.gen_salt('bf')),
+        extensions.crypt(coalesce(nullif(current_setting('seed.lf_password', true), ''), gen_random_uuid()::text), extensions.gen_salt('bf')),
         now(), now(), now(), now(),
         '', NULL,
         '', NULL,
@@ -76,7 +60,7 @@ VALUES
         'a1000000-0000-0000-0000-000000000002',
         'authenticated', 'authenticated',
         'bit@chainabit.com',
-        extensions.crypt(pg_temp.fn_seed_password('seed.chainabit_password'), extensions.gen_salt('bf')),
+        extensions.crypt(coalesce(nullif(current_setting('seed.chainabit_password', true), ''), gen_random_uuid()::text), extensions.gen_salt('bf')),
         now(), now(), now(), now(),
         '', NULL,
         '', NULL,
@@ -92,7 +76,7 @@ VALUES
         'a1000000-0000-0000-0000-000000000003',
         'authenticated', 'authenticated',
         'lets@conectlens.com',
-        extensions.crypt(pg_temp.fn_seed_password('seed.conectlens_password'), extensions.gen_salt('bf')),
+        extensions.crypt(coalesce(nullif(current_setting('seed.conectlens_password', true), ''), gen_random_uuid()::text), extensions.gen_salt('bf')),
         now(), now(), now(), now(),
         '', NULL,
         '', NULL,

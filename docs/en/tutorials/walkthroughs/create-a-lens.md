@@ -74,6 +74,16 @@ Once published, your lens can be selected in the workflow builder or referenced 
 - Avoid vague tasks ("be creative") — specific constraints produce more divergent, judgeable responses
 - Add `[[parameter]]` inputs to make the Lens reusable for many instances of the same task type
 
+## Alternative: Developer & CLI Management
+
+For developers who prefer terminal-driven workflows or want to manage Lenses as code, use the `lf` CLI.
+
+- **[CLI: Create a Lens](/en/tutorials/cli/cli-getting-started#step-5-create-your-first-lens)** — Step-by-step Lens creation via terminal
+- **[CLI: Create a Workflow](/en/tutorials/cli/file-based-cli-basics#create-your-first-workflow)** — Compose Lenses into multi-step processes via `COLENS.MD`
+- **[CLI: Create a Battle](/en/tutorials/cli/file-based-cli-basics#create-your-first-battle)** — Compare Lens outputs from the terminal via `BATTLE.MD`
+
+See the [CLI: Getting Started](/en/tutorials/cli/cli-getting-started) guide for installation and authentication.
+
 ## Related
 
 - [Lens Parameters](/en/explanation/lenses/lens-parameters)

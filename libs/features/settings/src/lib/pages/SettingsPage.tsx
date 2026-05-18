@@ -8,7 +8,7 @@ import { Feedback, ProductTag, FeedbackStatus, SocialLink, SocialPlatform } from
 import { Avatar, Button, Card, DangerZone, HelpButton, Table, Column } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
-import { FEATURES, WEB_BASE_URL } from '@lenserfight/utils/env'
+import { WEB_BASE_URL } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
 import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins, ImageIcon, Plus, Trash2, Github, Linkedin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react'
 import { AgentsTab } from '../components/AgentsTab'
@@ -16,6 +16,7 @@ import { ApiKeysTab } from '../components/ApiKeysTab'
 import { GeneralTab } from '../components/GeneralTab'
 import { NotificationPreferencesTab } from '../components/NotificationPreferencesTab'
 import { PartnerAccountsTab } from '../components/PartnerAccountsTab'
+import { OAuthConnectionsSection } from '../components/OAuthConnectionsSection'
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, Link, useParams, useNavigate } from 'react-router-dom'
 
@@ -151,6 +152,10 @@ export const SettingsPage: React.FC = () => {
   const { notifications, isLoading: notifLoading, markAllRead } = useNotifications(50)
   const [notifTab, setNotifTab] = useState<'All' | 'Unread'>('All')
 
+  // Deactivation State
+  const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false)
+  const [isDeactivating, setIsDeactivating] = useState(false)
+
   // Deletion State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -276,6 +281,22 @@ export const SettingsPage: React.FC = () => {
       console.error(e)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleDeactivateRequest = async () => {
+    if (!lenser) return
+    setIsDeactivating(true)
+    try {
+      await lenserService.deactivateAccount()
+      await logout()
+      navigate('/auth/login')
+    } catch (e) {
+      console.error('Failed to deactivate', e)
+      alert('Failed to deactivate account.')
+    } finally {
+      setIsDeactivating(false)
+      setIsDeactivateModalOpen(false)
     }
   }
 
@@ -545,16 +566,7 @@ export const SettingsPage: React.FC = () => {
                   <Button
                     variant="secondary"
                     className="!w-auto px-4 text-sm border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/30"
-                    onClick={async () => {
-                      try {
-                        await lenserService.deactivateAccount()
-                        await logout()
-                        navigate('/auth/login')
-                      } catch (e) {
-                        console.error('Failed to deactivate', e)
-                        alert('Failed to deactivate account.')
-                      }
-                    }}
+                    onClick={() => setIsDeactivateModalOpen(true)}
                   >
                     Deactivate Account
                   </Button>
@@ -831,7 +843,12 @@ export const SettingsPage: React.FC = () => {
           )}
 
           {/* CONNECTED ACCOUNTS TAB */}
-          {activeTab === 'connected-accounts' && <PartnerAccountsTab />}
+          {activeTab === 'connected-accounts' && (
+            <>
+              <PartnerAccountsTab />
+              <OAuthConnectionsSection />
+            </>
+          )}
 
           {/* NOTIFICATIONS TAB */}
           {activeTab === 'notifications' && (
@@ -840,7 +857,7 @@ export const SettingsPage: React.FC = () => {
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h2>
                 <div className="flex items-center gap-2">
                   <HelpButton path="/explanation/community/notifications" label="About Notifications" />
-                  {FEATURES.NOTIFICATIONS && notifications.some((n) => !n.read_at) && (
+                  {notifications.some((n) => !n.read_at) && (
                     <Button
                       variant="ghost"
                       onClick={markAllRead}
@@ -855,11 +872,7 @@ export const SettingsPage: React.FC = () => {
                 Manage your alerts and updates.
               </p>
 
-              {!FEATURES.NOTIFICATIONS ? (
-                <NotificationPreferencesTab />
-              ) : (
-                <>
-                  <div className="flex gap-2 mb-6">
+              <div className="flex gap-2 mb-6">
                     <button
                       onClick={() => setNotifTab('All')}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${notifTab === 'All' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
@@ -920,8 +933,6 @@ export const SettingsPage: React.FC = () => {
                     </h3>
                     <NotificationPreferencesTab />
                   </div>
-                </>
-              )}
             </div>
           )}
         </div>
@@ -934,6 +945,17 @@ export const SettingsPage: React.FC = () => {
         onSelect={handleAvatarUpdate}
         isLoading={isSaving}
         currentUrl={lenser?.avatar_url}
+      />
+
+      {/* Deactivate Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isDeactivateModalOpen}
+        onClose={() => setIsDeactivateModalOpen(false)}
+        onConfirm={handleDeactivateRequest}
+        title="Deactivate Account"
+        message="Are you sure you want to deactivate your account? Your profile will be hidden immediately. You can reactivate at any time by signing back in."
+        confirmLabel="Deactivate"
+        isLoading={isDeactivating}
       />
 
       {/* Delete Confirmation Modal */}

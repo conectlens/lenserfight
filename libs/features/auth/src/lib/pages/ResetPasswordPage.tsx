@@ -1,8 +1,7 @@
-import { AlertCircle } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react'
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 
-import { isMock } from '@lenserfight/utils/env'
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, minLength } from '@lenserfight/utils/validation'
@@ -12,21 +11,12 @@ import { Button, FormError } from '@lenserfight/ui/components'
 import { InputField } from '../components/InputField'
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
 
+/** Minimum password length — must match PasswordStrengthMeter's visual indicator and supabase config. */
+const MIN_PASSWORD_LENGTH = 8
+
 export const ResetPasswordPage: React.FC = () => {
-  const { resetPassword, isAuthenticated, isLoading: isAuthLoading } = useAuth()
+  const { resetPassword, isAuthenticated, isLoading: isAuthLoading, isRecoverySession } = useAuth()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-
-  // Try to get token from query params (Mock) or hash (Supabase often puts it there, though auth lib handles it)
-  // For the purpose of this mock/stub dual implementation, we look at query params mainly for the Mock.
-  const [token, setToken] = useState<string | null>(null)
-
-  useEffect(() => {
-    const tokenParam = searchParams.get('token')
-    if (tokenParam) {
-      setToken(tokenParam)
-    }
-  }, [searchParams])
 
   const [formData, setFormData] = useState({
     password: '',
@@ -34,12 +24,13 @@ export const ResetPasswordPage: React.FC = () => {
   })
 
   const { errors, validate, clearError, setErrors } = useFormValidation<typeof formData>({
-    password: [isRequired(), minLength(6)],
+    password: [isRequired(), minLength(MIN_PASSWORD_LENGTH)],
     confirmPassword: [isRequired()],
   })
 
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -60,12 +51,8 @@ export const ResetPasswordPage: React.FC = () => {
 
     setLoading(true)
     try {
-      // If mock, token is required. If Supabase, token might be null but session active.
-      // We pass the token found in URL if any.
-      await resetPassword(formData.password, token || undefined)
-
-      window.alert('Password updated successfully!')
-      navigate('/login')
+      await resetPassword(formData.password)
+      setSuccess(true)
     } catch (err: any) {
       setApiError(err.message || 'Failed to reset password. The link may have expired.')
     } finally {
@@ -73,37 +60,71 @@ export const ResetPasswordPage: React.FC = () => {
     }
   }
 
-  // Check for session in real auth mode (Supabase)
-  // If not mock, and loading is done, and user is not authenticated, show error.
-  if (!isMock && !isAuthLoading && !isAuthenticated) {
+  // ── Loading state: waiting for Supabase to establish the recovery session ──
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-greyscale-900">
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent" />
+      </div>
+    )
+  }
+
+  // ── Success state ──
+  if (success) {
+    return (
+      <AuthCard title="Password Updated" subtitle="Your password has been changed successfully">
+        <div className="flex flex-col items-center justify-center text-center py-6">
+          <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-full mb-4">
+            <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+            All done!
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm max-w-xs mx-auto">
+            Your password has been updated. You can now sign in with your new password.
+          </p>
+          <Button
+            type="button"
+            onClick={() => navigate('/login', { replace: true })}
+          >
+            Back to Sign In
+          </Button>
+        </div>
+      </AuthCard>
+    )
+  }
+
+  // ── No recovery session: user didn't arrive via a reset-password email link ──
+  // This guards against two scenarios:
+  //   1. The user navigates to /reset-password manually (no session at all)
+  //   2. An already-authenticated user navigates here (has a SIGNED_IN session, not PASSWORD_RECOVERY)
+  if (!isRecoverySession) {
     return (
       <AuthCard title="Reset Password" subtitle="Session Error" backButton={<BackButton />}>
         <div className="flex flex-col items-center justify-center text-center py-6">
-          <div className="bg-red-50 p-4 rounded-full mb-4">
-            <AlertCircle className="w-8 h-8 text-red-500" />
+          <div className="bg-red-50 dark:bg-red-950/30 p-4 rounded-full mb-4">
+            <AlertCircle className="w-8 h-8 text-red-500 dark:text-red-400" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Auth session missing!</h3>
-          <p className="text-gray-500 mb-6 text-sm max-w-xs mx-auto">
-            We couldn't verify your identity. Please try clicking the reset link again or request a
-            new one.
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+            {isAuthenticated ? 'Invalid reset link' : 'Auth session missing!'}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm max-w-xs mx-auto">
+            {isAuthenticated
+              ? 'This link has already been used or has expired. Please request a new password reset.'
+              : "We couldn't verify your identity. Please try clicking the reset link again or request a new one."}
           </p>
           <Link to="/forgot-password" className="w-full">
-            <Button type="button" >Request New Link</Button>
+            <Button type="button">
+              <RefreshCw className="w-4 h-4 mr-2 inline" />
+              Request New Link
+            </Button>
           </Link>
         </div>
       </AuthCard>
     )
   }
 
-  // Optional: Loading state for auth check to prevent flash of form
-  if (!isMock && isAuthLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
-      </div>
-    )
-  }
-
+  // ── Reset password form ──
   return (
     <AuthCard
       title="Set New Password"
@@ -145,7 +166,10 @@ export const ResetPasswordPage: React.FC = () => {
         </div>
 
         {apiError && (
-          <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>
+          <div className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-950/30 p-3 rounded-lg flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span>{apiError}</span>
+          </div>
         )}
 
         <Button type="submit" fullWidth={true} isLoading={loading} className="mt-2 text-base font-semibold">
@@ -155,18 +179,10 @@ export const ResetPasswordPage: React.FC = () => {
 
       <div className="mt-8 text-center text-sm text-gray-500 font-medium">
         <Link
-          to="/auth/login"
-          className="flex items-center justify-center gap-2 text-gray-900 dark:text-white hover:text-primary-700 dark:hover:text-primary-400 hover:underline transition-colors"
+          to="/forgot-password"
+          className="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary-700 dark:hover:text-primary-400 hover:underline transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-          Back to Sign In
+          Request a new reset link
         </Link>
       </div>
     </AuthCard>

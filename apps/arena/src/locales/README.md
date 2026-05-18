@@ -77,4 +77,4 @@ const { t } = useTranslation(['home', 'common'])
 
 ## Brand Terms (Never Translate)
 
-- LenserFight, Lenser, Lens, Battle, Arena, Dukkan, Chainabit, ConnectLens
+- LenserFight, Lenser, Lens, Battle, Arena, Dukkan, Chainabit, ConectLens

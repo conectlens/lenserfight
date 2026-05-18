@@ -10,9 +10,13 @@ import {
   User,
   UserMetadata,
 } from '@lenserfight/types'
+import type { AuthChangeEvent } from '@supabase/supabase-js'
 import { supabase } from '@lenserfight/data/supabase'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL } from '@lenserfight/utils/env'
+
+/** Auth event types surfaced to callers of {@link AuthRepositoryPort.onAuthStateChange}. */
+export type { AuthChangeEvent }
 
 // --- Port (Interface) ---
 export interface AuthRepositoryPort {
@@ -30,12 +34,18 @@ export interface AuthRepositoryPort {
   resetPassword(password: string, token?: string): Promise<void>
   signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void>
   resendSignupConfirmation(email: string): Promise<void>
-  onAuthStateChange(callback: AuthStateChangeCallback): () => void
+  sendMagicLink(email: string, captchaToken?: string): Promise<void>
+  onAuthStateChange(
+    callback: (user: User | null, event: AuthChangeEvent) => void
+  ): () => void
   requestDeviceApproval(dto?: DeviceApprovalRequestDTO): Promise<DeviceApprovalRequestResultDTO>
   approveDeviceRequest(dto: ApproveDeviceRequestDTO): Promise<ApproveDeviceRequestResultDTO>
   exchangeDeviceApproval(dto: ExchangeDeviceApprovalDTO): Promise<DeveloperTokenExchangeResultDTO>
   listDeveloperTokens(): Promise<DeveloperTokenSummaryDTO[]>
   revokeDeveloperToken(tokenId: string): Promise<void>
+  /** Resolve a profile handle to its auth email for username-based login.
+   *  Returns null for unknown, deleted, or non-human handles. */
+  resolveHandleToEmail(handle: string): Promise<string | null>
 }
 export class SupabaseAuthRepository implements AuthRepositoryPort {
   async login(email: string, password: string, captchaToken?: string): Promise<User> {
@@ -90,8 +100,10 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     if (error) throw error
   }
 
-  async resetPassword(password: string, token?: string): Promise<void> {
-    const { error } = await supabase.auth.updateUser({ password: password })
+  async resetPassword(password: string): Promise<void> {
+    // updateUser operates on the current active session (established by Supabase
+    // when the user clicked the reset-password email link — PASSWORD_RECOVERY event).
+    const { error } = await supabase.auth.updateUser({ password })
     if (error) throw error
   }
 
@@ -117,12 +129,25 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     if (error) throw error
   }
 
-  onAuthStateChange(callback: AuthStateChangeCallback): () => void {
+  async sendMagicLink(email: string, captchaToken?: string): Promise<void> {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${AUTH_BASE_URL}/callback`,
+        captchaToken,
+      },
+    })
+    if (error) throw error
+  }
+
+  onAuthStateChange(
+    callback: (user: User | null, event: AuthChangeEvent) => void
+  ): () => void {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       const user = session?.user as unknown as User
-      callback(user || null)
+      callback(user || null, event)
     })
     return () => subscription.unsubscribe()
   }
@@ -174,5 +199,14 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
       p_token_id: tokenId,
     })
     if (error) throw error
+  }
+
+  async resolveHandleToEmail(handle: string): Promise<string | null> {
+    const { data, error } = await supabase.rpc('fn_resolve_handle_to_email', {
+      p_handle: handle,
+    })
+    // Fail silently — callers must surface only a generic "Invalid credentials" message
+    if (error) return null
+    return (data as string | null) ?? null
   }
 }

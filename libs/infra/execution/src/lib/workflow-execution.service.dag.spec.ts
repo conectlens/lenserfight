@@ -1,9 +1,12 @@
 // Core DAG execution tests for WorkflowExecutionService.
 // Covers the main executeWorkflow() path: topology, conditional edges,
 // parent-failure policies, retry, timeout, cancellation, moderation, and memory.
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 
 import { WorkflowExecutionService } from './workflow-execution.service'
+import { registerNodeRunner, clearNodeRunners } from './runners/node-runner.registry'
+import { SetVariablesRunner } from './runners/set-variables.runner'
+import { JsonTransformRunner } from './runners/json-transform.runner'
 
 import type {
   WorkflowNode,
@@ -656,5 +659,84 @@ describe('WorkflowExecutionService.detectCycle', () => {
     )
     expect(result).not.toBeNull()
     expect(result).toEqual(expect.arrayContaining(['a', 'b']))
+  })
+})
+
+// ── CN: Node Runner dispatch integration ─────────────────────────────────────
+
+describe('Node Runner dispatch', () => {
+  afterEach(() => {
+    clearNodeRunners()
+  })
+
+  it('dispatches to SetVariablesRunner when nodeType is set_variables', async () => {
+    registerNodeRunner(new SetVariablesRunner())
+    const service = new WorkflowExecutionService(echoProvider())
+    const ctx = makeCtx({ rootInputs: { input: 'hello' } })
+
+    const result = await service.executeWorkflow(
+      [n('sv', { config: { nodeType: 'set_variables', variables: { myVar: 'myValue' } } })],
+      [],
+      ctx,
+    )
+
+    expect(result.status).toBe('completed')
+    expect(result.nodeResults[0].status).toBe('completed')
+    expect(result.nodeResults[0].outputData?.['myVar']).toBe('myValue')
+  })
+
+  it('falls back to provider when no runner registered for nodeType', async () => {
+    // No runner registered for 'text' — should use provider
+    const service = new WorkflowExecutionService(echoProvider(() => 'provider response'))
+    const ctx = makeCtx({ rootInputs: { input: 'world' } })
+
+    const result = await service.executeWorkflow(
+      [n('a', { config: { nodeType: 'text' } })],
+      [],
+      ctx,
+    )
+
+    expect(result.status).toBe('completed')
+    expect(result.nodeResults[0].envelope?.output).toContain('provider response')
+  })
+
+  it('propagates runner variable mutations to downstream root inputs', async () => {
+    registerNodeRunner(new SetVariablesRunner())
+    const service = new WorkflowExecutionService(echoProvider((prompt) => `got: ${prompt}`))
+    const ctx = makeCtx({ rootInputs: { input: 'original' } })
+
+    const result = await service.executeWorkflow(
+      [
+        n('sv', { config: { nodeType: 'set_variables', variables: { extra: 'injected' } } }),
+        n('b'),
+      ],
+      [e('sv', 'b')],
+      ctx,
+    )
+
+    expect(result.status).toBe('completed')
+    // The variable mutation from sv should be in rootInputs
+    expect(ctx.rootInputs['extra']).toBe('injected')
+  })
+
+  it('handles runner failure gracefully', async () => {
+    // Register a broken runner that throws
+    registerNodeRunner({
+      nodeType: 'set_variables',
+      async execute() {
+        throw new Error('Runner exploded')
+      },
+    })
+    const service = new WorkflowExecutionService(echoProvider())
+    const ctx = makeCtx({ rootInputs: { input: 'test' } })
+
+    const result = await service.executeWorkflow(
+      [n('sv', { config: { nodeType: 'set_variables' } })],
+      [],
+      ctx,
+    )
+
+    expect(result.nodeResults[0].status).toBe('failed')
+    expect(result.nodeResults[0].error).toContain('Runner exploded')
   })
 })

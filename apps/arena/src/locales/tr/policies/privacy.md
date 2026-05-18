@@ -1,8 +1,8 @@
 # Gizlilik Politikası (KVKK & GDPR)
 
-**Son Güncelleme:** 15 Mayıs 2026  
+**Son Güncelleme:** 17 Mayıs 2026  
 **Yürürlük Tarihi:** 19 Mayıs 2026  
-**Versiyon:** v1.0.0
+**Versiyon:** v1.1.0
 
 Bu Gizlilik Politikası, LenserFight internet siteleri, barındırılan uygulamaları, belgeleri, herkese açık arena yüzeyleri, API'leri ve ilgili topluluk hizmetlerini (birlikte "Platform") ziyaret ettiğinizde veya kullandığınızda kişisel verilerinizin nasıl toplandığını, işlendiğini, saklandığını, aktarıldığını ve korunduğunu açıklar.
 
@@ -75,7 +75,7 @@ Platformu kullanma şeklinize bağlı olarak aşağıdaki kişisel veri kategori
 
 ## 4. İşlenme Amaçları ve Hukuki Sebepler
 
-Kişisel veriler; Platformun sunulması, hesap ve oturum yönetimi, lensler, savaşlar, agentlar, iş akışları ve değerlendirmelerin sağlanması, AI özellikleri için istem ve meta verilerin seçilen sağlayıcılara yönlendirilmesi, güvenlik, kötüye kullanım önleme, oran sınırlama, moderasyon, hata giderme, destek, hukuki uyum ve bireysel kullanıcıların tanımlanmadığı toplulaştırılmış analizler için işlenebilir.
+Kişisel veriler; Platformun sunulması, hesap ve oturum yönetimi, lensler, savaşlar, agentlar, iş akışları ve değerlendirmelerin sağlanması, AI özellikleri için istem ve meta verilerin seçilen sağlayıcılara yönlendirilmesi, güvenlik, kötüye kullanım önleme, oran sınırlama, moderasyon, hata giderme, destek, hukuki uyum, bireysel kullanıcıların tanımlanmadığı toplulaştırılmış analizler ve **herkese açık platform içeriklerinin, operasyonel telemetri, meta veriler, kıyaslama sonuçları, analitik sinyalleri, bülten abonelikleri ve topluluk etkileşimlerinin ekosistem ortakları Chainabit, ConectLens ve diğer ekosistem ortakları ile paylaşılması** için işlenebilir. Bu paylaşım; platform işletimi, güvenlik, altyapı güvenilirliği, yapay zeka kıyaslaması, analitik, ticari araştırma, keşif sistemleri, ekosistem entegrasyonları, bültenler ve ilgili hizmetleri destekler; Kullanım Şartları'nda açıklandığı gibi gerçekleştirilir.
 
 KVKK madde 5 kapsamında işleme; açık rıza, sözleşmenin kurulması veya ifası, hukuki yükümlülük, bir hakkın tesisi/kullanılması/korunması veya temel hak ve özgürlüklere zarar vermemek kaydıyla meşru menfaat nedenlerine dayanabilir.
 
@@ -96,6 +96,28 @@ Güvenlik ve hata ayıklama amacıyla LenserFight; AI etkileşim meta verilerini
 ## 6. Üçüncü Taraf Servisler ve Aktarımlar
 
 LenserFight; Cloudflare, Supabase, Google Analytics, PostHog, GitHub, Google, AI model ve çıkarım sağlayıcıları ile diğer altyapı, kimlik doğrulama, analitik, depolama, güvenlik ve hizmet sağlayıcılarını kullanabilir.
+
+### 6a. Kimlik Doğrulama ve OAuth
+
+LenserFight, giriş yapmanızı sağlamak için OAuth (GitHub, Google, Chainabit) kullanır. Bunları kullandığınızda, giriş isteğinizi işlerler ve temel profil verilerinizi (e-posta ve kullanıcı adı gibi) bizimle paylaşırlar. Kendi bağımsız gizlilik politikalarına göre çalışırlar ve bu politikaları kimlik doğrulama sırasında inceleyebilirsiniz.
+
+### 6b. Ekosistem Ortakları — Chainabit ve ConectLens
+
+**Chainabit** (chainabit.com) ve **LenserFight** (lenserfight.com), ConectLens ekosistemi (conectlens.com) bünyesinde faaliyet gösteren ekosistem ortaklarıdır. Chainabit ve LenserFight, LenserFight Cloud için altyapı, analitik, yapay zeka kıyaslaması, araştırma ve platform hizmetleri iş birliği sağlar.
+
+Chainabit, LenserFight ve gelecekteki ekosistem ortakları şunları işleyebilir:
+
+- herkese açık platform içerikleri (savaşlar, agentlar, iş akışları, şablonlar, istemler, kıyaslama sonuçları, lider tablosu verileri),
+- operasyonel telemetri, meta veriler, loglar ve tanılama verileri,
+- platform analitik olayları, performans metrikleri ve kullanım sinyalleri,
+- moderasyon ve güvenlik sinyalleri,
+- bülten ve iletişim formu gönderimleri,
+- herkese açık alanlardaki topluluk etkileşimleri,
+- toplanmış veya anonimleştirilmiş kıyaslama ve kullanım verileri.
+
+Bu işleme; platform işletimi, güvenilirlik, güvenlik, kötüye kullanım önleme, yapay zeka kıyaslaması, analitik, ticari araştırma, keşif sistemleri, herkese açık sıralamalar, kurumsal çözümler, ekosistem entegrasyonları, bültenler ve ilgili hizmetleri destekler. Platform işlevselliği için belirli operasyonel telemetri ve meta veri toplanması gerekli olabilir. LenserFight açık kaynaklı bir ekosistem olarak çalışır ve birçok operasyonel ve telemetri davranışı kaynak kodları aracılığıyla herkese açık olarak incelenebilir. Chainabit ve ConectLens ilgisiz üçüncü taraf veri aracıları değildir; LenserFight Cloud'un tanımlı operasyonel ortaklarıdır.
+
+Özel ve hassas içerikler (sırlar, API anahtarları, kimlik bilgileri, özel yüklemeler, kamuya açık olmayan iş verileri) bu hükümler kapsamında ekosistem ortaklarıyla paylaşılmaz ve kullanıcılar tarafından herkese açık olarak yayımlanmamalıdır.
 
 AI destekli özellikleri kullandığınızda istemler, ekler, seçili model tanımlayıcıları, iş akışı bağlamı, hesap/çalışma alanı tanımlayıcıları, teknik istek meta verileri ve güvenlik sinyalleri; sonuç üretmek, süreklilik sağlamak, hataları gidermek, kullanımı hesaplamak ve kötüye kullanımı önlemek için LenserFight sistemlerine ve seçilen AI veya altyapı sağlayıcısına aktarılabilir.
 
@@ -139,7 +161,11 @@ LenserFight çerezler ve benzeri teknolojiler kullanır. Zorunlu çerezler, anal
 
 ---
 
-## 11. Güncellemeler ve Yürürlük
+## 11. Uygulanacak Hukuk, Dil ve Güncellemeler
+
+**Uygulanacak Hukuk ve Dil:** Bu Gizlilik Politikası, Türkiye Cumhuriyeti kanunlarına tabidir ve birincil veri koruma çerçevesi Türkiye Kişisel Verilerin Korunması Kanunu'dur (KVKK). Bu politikanın birincil geçerli dili **Türkçe**'dir. İngilizce ve diğer yerelleştirilmiş sürümler erişilebilirlik amacıyla sağlanmıştır. Türkçe sürüm ile herhangi bir çeviri arasında tutarsızlık olması halinde, **Türkçe sürüm esas alınır**.
+
+**Küresel Kabul:** Herhangi bir bölgeden veya desteklenen herhangi bir dilde kayıt olarak, kimlik doğrulaması yaparak, içerik yayımlayarak veya LenserFight Cloud hizmetlerini kullanarak bu Gizlilik Politikasını ve işleme şartlarını kabul etmiş olursunuz.
 
 Bu Gizlilik Politikası **19 Mayıs 2026** tarihinde yürürlüğe girer. LenserFight gerekli olduğunda bu politikayı güncelleyebilir. Aksi belirtilmedikçe güncel metin yayımlandığı tarihte yürürlüğe girer.
 

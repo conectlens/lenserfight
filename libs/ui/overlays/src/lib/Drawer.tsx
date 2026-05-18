@@ -22,6 +22,8 @@ export interface DrawerProps {
    */
   height?: string
   children: React.ReactNode
+  footer?: React.ReactNode
+  headerExtra?: React.ReactNode
   dismissOnBackdrop?: boolean
   className?: string
 }
@@ -82,6 +84,8 @@ export const Drawer: React.FC<DrawerProps> = ({
   width = 'w-80',
   height = 'h-80',
   children,
+  footer,
+  headerExtra,
   dismissOnBackdrop = true,
   className = '',
 }) => {
@@ -134,32 +138,41 @@ export const Drawer: React.FC<DrawerProps> = ({
           `}
         >
           {/* Header */}
-          {(title || onClose) && (
+          {(title || onClose || headerExtra) && (
             <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border flex-shrink-0">
               {title && (
                 <h2 className="text-base font-semibold text-greyscale-900 dark:text-greyscale-50">
                   {title}
                 </h2>
               )}
-              {onClose && (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Close drawer"
-                  className="rounded-lg p-1.5 text-greyscale-400 hover:text-greyscale-600 hover:bg-greyscale-100 dark:hover:bg-greyscale-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500/50"
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {headerExtra}
+                {onClose && (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label="Close drawer"
+                    className="rounded-lg p-1.5 text-greyscale-400 hover:text-greyscale-600 hover:bg-greyscale-100 dark:hover:bg-greyscale-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500/50"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Content */}
           <div className="flex-1 overflow-y-auto overscroll-contain p-5">
             {children}
           </div>
+
+          {/* Footer */}
+          {footer && (
+            <div className="px-5 pb-5 flex-shrink-0">
+              {footer}
+            </div>
+          )}
         </div>
       </div>
     </Portal>

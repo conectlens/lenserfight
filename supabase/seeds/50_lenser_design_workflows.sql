@@ -188,8 +188,8 @@ BEGIN
     VALUES (
       v_ver_dna_gen, v_lens_dna_gen, 1,
       'You are the Lenser DNA Spec Generator. '
-      'The user wants to create a new Lenser character named or described as [[:' || v_p_dg_concept || ']] '
-      'with the emotional role of [[:' || v_p_dg_role || ']]. '
+      'The user wants to create a new Lenser character named or described as [[concept]] '
+      'with the emotional role of [[emotional_role]]. '
       'Output a valid lenser.json variant block (JSON only, no markdown wrapper) that: '
       '(1) sets "inherits_from": "lenser.json", "status": "proposed"; '
       '(2) defines body_modifications including height_cm, body_shape, antenna_tip, and lens_frame; '
@@ -212,7 +212,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_dna_gen, 'en', true,
-       'Lenser DNA Spec Generator (template)',
+       'Lenser DNA Spec Generator',
        'Turns a character concept and emotional role into a valid lenser.json variant block.',
        'Generate a Lenser DNA variant JSON from [[concept]] and [[emotional_role]].'),
       ('lens', v_lens_dna_gen, 'tr', false,
@@ -236,7 +236,7 @@ BEGIN
     VALUES (
       v_ver_dna_val, v_lens_dna_val, 1,
       'You are the Lenser DNA Validator. '
-      'Review the following Lenser variant JSON: [[:' || v_p_dv_json || ']]. '
+      'Review the following Lenser variant JSON: [[variant_json]]. '
       'Check all rules from the lenser.json spec: '
       '(1) Name starts with L or C, max 8 characters; '
       '(2) No additional eyes or optical elements are defined (visual_rule); '
@@ -257,7 +257,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_dna_val, 'en', true,
-       'Lenser DNA Validator (template)',
+       'Lenser DNA Validator',
        'Validates a Lenser variant JSON against all base DNA rules. Returns PASS/FAIL per check.',
        'Validate [[variant_json]] against Lenser DNA rules.'),
       ('lens', v_lens_dna_val, 'tr', false,
@@ -281,8 +281,8 @@ BEGIN
     VALUES (
       v_ver_concept, v_lens_concept, 1,
       'You are the Lenser Concept Brief generator. '
-      'The designer has this one-line character idea: [[:' || v_p_cb_idea || ']]. '
-      'It may be used by the ecosystem: [[:' || v_p_cb_ecosystem || ']]. '
+      'The designer has this one-line character idea: [[character_idea]]. '
+      'It may be used by the ecosystem: [[ecosystem]]. '
       'Expand this into a structured creative brief with these sections: '
       '(1) Character Name (must start with L or C, max 8 chars); '
       '(2) Emotional Role — a short phrase describing the character''s primary function; '
@@ -291,7 +291,7 @@ BEGIN
       '(5) Personality — 3 primary traits and 2 secondary traits; '
       '(6) Visual Signature — the one feature that makes this character instantly recognizable; '
       '(7) Symbolism — what 2 design elements represent; '
-      '(8) Differentiation — one paragraph on how this differs from LENSO (Autonomous), LENSA (Creative), LENSE (Strategic), and LOLA (Social). '
+      '(8) Differentiation — one paragraph on how this differs from CHAO (Builder), LAHİT, LAPSEKİ, LENSA (Creative), LENSE (Strategic), LOLA (Social), and LUPEM. '
       'Be specific and actionable. The brief will be handed to a 3D designer.',
       'published', now()
     );
@@ -305,7 +305,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_concept, 'en', true,
-       'Lenser Concept Brief (template)',
+       'Lenser Concept Brief',
        'Expands a one-line character idea into a full creative brief for designers.',
        'Generate a creative brief from [[character_idea]] for ecosystem [[ecosystem]].'),
       ('lens', v_lens_concept, 'tr', false,
@@ -329,8 +329,8 @@ BEGIN
     VALUES (
       v_ver_storyboard, v_lens_storyboard, 1,
       'You are the Lenser Animation Storyboard generator. '
-      'Character: [[:' || v_p_sb_character || ']]. '
-      'Action or emotion to animate: [[:' || v_p_sb_action || ']]. '
+      'Character: [[character]]. '
+      'Action or emotion to animate: [[action]]. '
       'Produce a frame-by-frame storyboard for a short looping GIF animation (6–12 frames at 24fps). '
       'For each frame provide: Frame number, Duration (ms), Pose description, Lens-eye expression, Core glow intensity (%), Antenna tip state. '
       'Use the character DNA constraints: one central eye-lens, yellow body #ffde59, no additional optical elements. '
@@ -347,7 +347,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_storyboard, 'en', true,
-       'Lenser Animation Storyboard (template)',
+       'Lenser Animation Storyboard',
        'Generates a frame-by-frame GIF animation storyboard for a Lenser character.',
        'Generate an animation storyboard for [[character]] performing [[action]].'),
       ('lens', v_lens_storyboard, 'tr', false,
@@ -371,8 +371,8 @@ BEGIN
     VALUES (
       v_ver_logo, v_lens_logo, 1,
       'You are the Lenser Logo Brief generator. '
-      'Brand or product: [[:' || v_p_lb_brand || ']]. '
-      'Featured Lenser character (optional): [[:' || v_p_lb_character || ']]. '
+      'Brand or product: [[brand]]. '
+      'Featured Lenser character (optional): [[character]]. '
       'Generate a design brief for a logo. Include: '
       '(1) Logo concept — primary and secondary concept options (2 sentences each); '
       '(2) Color palette — hex values with roles (primary, secondary, accent) derived from the Lenser DNA palette (#ffde59, #213f74, character core_color if specified); '
@@ -394,7 +394,7 @@ BEGIN
     INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
     VALUES
       ('lens', v_lens_logo, 'en', true,
-       'Lenser Logo Brief (template)',
+       'Lenser Logo Brief',
        'Generates a complete logo design brief for a brand referencing Lenser DNA colors and identity.',
        'Generate a logo brief for [[brand]] featuring [[character]].'),
       ('lens', v_lens_logo, 'tr', false,
@@ -478,7 +478,7 @@ BEGIN
 
     INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, ordinal) VALUES
       (WF2_T1, WF2_P1, WF2, 'Enter brand name',      'What brand or product is this logo for?',                                          'text', 1),
-      (WF2_T2, WF2_P1, WF2, 'Pick Lenser character', 'Which Lenser character should feature? (LENSO, LENSA, LENSE, LOLA, or leave blank)',  'text', 2),
+      (WF2_T2, WF2_P1, WF2, 'Pick Lenser character', 'Which Lenser character should feature? (CHAO, LAHİT, LAPSEKİ, LENSA, LENSE, LOLA, LUPEM, or leave blank)',  'text', 2),
       (WF2_T3, WF2_P2, WF2, 'Check color palette',   'Are the hex values in the brief derived from #ffde59 and #213f74? Confirm or adjust.','text', 1),
       (WF2_T4, WF2_P2, WF2, 'Review typography',     'Does the font style match the character''s personality (e.g. sharp for LENSE)?',      'text', 2),
       (WF2_T5, WF2_P3, WF2, 'Approve and export',    'Sign off on the brief and hand it to a designer with the file format requirements.',   'text', 1);
@@ -513,7 +513,7 @@ BEGIN
       (WF3_P2, WF3, 'Polish',      'Refine and validate the animation spec.',     2);
 
     INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, ordinal) VALUES
-      (WF3_T1, WF3_P1, WF3, 'Pick character',    'Which Lenser? (LENSO, LENSA, LENSE, LOLA, or proposed name)',                         'text', 1),
+      (WF3_T1, WF3_P1, WF3, 'Pick character',    'Which Lenser? (CHAO, LAHİT, LAPSEKİ, LENSA, LENSE, LOLA, LUPEM, or proposed name)',   'text', 1),
       (WF3_T2, WF3_P1, WF3, 'Describe action',   'What emotion or action should the animation show? (e.g. celebrating a win, thinking)', 'text', 2),
       (WF3_T3, WF3_P2, WF3, 'Review frame count','Are 6–12 frames sufficient for the action? Adjust the storyboard if needed.',          'text', 1),
       (WF3_T4, WF3_P2, WF3, 'Confirm tech spec', 'Verify canvas size, loop behavior, and export format. Approve for animator handoff.',  'text', 2);

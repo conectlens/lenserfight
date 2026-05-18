@@ -1,7 +1,6 @@
 import { seoService } from '@lenserfight/data/repositories'
 import { PageHeader } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
-import { FEATURES } from '@lenserfight/utils/env'
 import { Sparkles } from 'lucide-react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -14,20 +13,6 @@ export function WorkflowTemplateGalleryPage() {
   const navigate = useNavigate()
   const { data: templates = [], isLoading } = useTemplateWorkflows(24)
   const fork = useForkWorkflow()
-
-  if (!FEATURES.AGENTS) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-        <Sparkles size={32} className="text-gray-400" />
-        <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-          Workflow templates require the Agents feature.
-        </p>
-        <p className="text-sm text-gray-500">
-          Enable <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">FEATURE_AGENTS=true</code> to access templates.
-        </p>
-      </div>
-    )
-  }
 
   async function handleUseTemplate(templateId: string) {
     const workflow = await fork.mutateAsync(templateId)

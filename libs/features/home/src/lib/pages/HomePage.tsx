@@ -20,7 +20,7 @@ import { CreateThreadModal } from '@lenserfight/features/threads'
 import { Avatar, Button, Card, EmptyState, HelpButton, TagBadge } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
-import { AUTH_BASE_URL, FEATURES } from '@lenserfight/utils/env'
+import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 import {
   Plus,
   ChevronRight,
@@ -193,7 +193,6 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
   }
 
   const handleCreateBattleClick = () => {
-    if (!FEATURES.PUBLIC_BATTLES) return navigate('/workflows')
     if (!isAuthenticated) {
       window.location.href = `${AUTH_BASE_URL}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
@@ -231,7 +230,6 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
             Icon: Swords,
             action: 'Create battle',
             onClick: handleCreateBattleClick,
-            hidden: !FEATURES.PUBLIC_BATTLES,
           },
           {
             title: 'Run workflow',
@@ -254,7 +252,7 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
             action: 'View feed',
             onClick: () => navigate('/'),
           },
-        ].filter((item) => !item.hidden).map(({ title, body, Icon, action, onClick }) => (
+        ].map(({ title, body, Icon, action, onClick }) => (
           <button
             key={title}
             type="button"

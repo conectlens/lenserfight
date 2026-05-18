@@ -1,6 +1,7 @@
 import React from 'react'
 import { Bot } from 'lucide-react'
 import type { AgentProfileView } from '@lenserfight/data/repositories'
+import { Button } from '@lenserfight/ui/components'
 import { AgentCard } from './AgentCard'
 import { EmptyPanel } from './EmptyPanel'
 
@@ -13,6 +14,8 @@ interface AgentsGridProps {
   onCreateAgent?: () => void
   emptyTitle?: string
   emptyDescription?: string
+  /** 'grid' (default) wraps cards in a responsive grid; 'carousel' shows a single horizontal scrollable row. */
+  layout?: 'grid' | 'carousel'
 }
 
 /**
@@ -26,6 +29,7 @@ export const AgentsGrid: React.FC<AgentsGridProps> = ({
   onCreateAgent,
   emptyTitle,
   emptyDescription,
+  layout = 'grid',
 }) => {
   if (agents.length === 0) {
     const isOwner = mode === 'owner'
@@ -42,16 +46,28 @@ export const AgentsGrid: React.FC<AgentsGridProps> = ({
       >
         {isOwner && onCreateAgent && (
           <div className="mt-6 flex justify-center">
-            <button
+            <Button
               type="button"
+              variant="dark"
               onClick={onCreateAgent}
-              className="rounded-2xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
             >
               Create Agent
-            </button>
+            </Button>
           </div>
         )}
       </EmptyPanel>
+    )
+  }
+
+  if (layout === 'carousel') {
+    return (
+      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700">
+        {agents.map((agent) => (
+          <div key={agent.id} className="snap-start shrink-0 w-64">
+            <AgentCard agent={agent} isOwner={mode === 'owner'} />
+          </div>
+        ))}
+      </div>
     )
   }
 

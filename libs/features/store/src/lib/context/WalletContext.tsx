@@ -35,6 +35,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     enabled: isAuthenticated && hasLenser,
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
+    retry: 1,
     refetchOnWindowFocus: false,
   })
 

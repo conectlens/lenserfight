@@ -1,0 +1,87 @@
+name: "⚔️ Battle Issue"
+description: Report a bug or unexpected behavior in battle creation, execution, voting, or results.
+title: "[BATTLE] "
+labels:
+  - area:battles
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Title format:** `[BATTLE][apps/web] Short description`
+        Use this template for issues with the battle lifecycle — creation wizard, execution, voting, results, series, or the arena surface.
+        For workflow *node execution* failures inside a battle, use the [🛠 Workflow Problem](workflow) template instead.
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Battle phase
+      description: Where in the battle lifecycle does the issue occur?
+      options:
+        - Creation / wizard
+        - Execution / streaming
+        - Voting / judging
+        - Results / ELO / scoring
+        - Rematch / series
+        - Arena surface (apps/arena)
+        - Battle templates / gallery
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: battle_id
+    attributes:
+      label: Battle ID
+      description: From the URL or run history (if available).
+      placeholder: e.g. bat_01abc…
+
+  - type: input
+    id: template_name
+    attributes:
+      label: Battle template or type
+      description: Template name or battle kind used (if applicable).
+      placeholder: e.g. "Code Review", "Creative Writing", custom
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened vs what you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Create a battle with template "..."
+        2. Start execution
+        3. See error / unexpected state
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error output
+      render: text
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Edition (community / cloud), Node version, browser.
+      placeholder: "community, Node 20.11, Chrome 124"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true
+        - label: I included the battle ID or reproduction steps
+          required: false

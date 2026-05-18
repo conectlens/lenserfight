@@ -3,7 +3,7 @@
 // validation-node policy, and orchestration caps.
 import { describe, it, expect } from 'vitest'
 
-import { validateWorkflow, detectCycle } from './validator'
+import { validateWorkflow, detectCycle, TRIGGER_NODE_TYPES } from './validator'
 import type { ValidationNodeShape, ValidationEdgeShape } from './validator'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -492,5 +492,78 @@ describe('validateWorkflow — result structure', () => {
   it('never throws — returns a result even on pathological input', () => {
     const weirdNode = { id: '', lensId: undefined as never }
     expect(() => validateWorkflow([weirdNode], [])).not.toThrow()
+  })
+})
+
+// ── Rule 7: trigger/input node presence ──────────────────────────────────────
+
+describe('validateWorkflow — no_trigger_node rule', () => {
+  it('TRIGGER_NODE_TYPES contains all 5 expected trigger types', () => {
+    expect(TRIGGER_NODE_TYPES.has('manual_trigger')).toBe(true)
+    expect(TRIGGER_NODE_TYPES.has('event_trigger')).toBe(true)
+    expect(TRIGGER_NODE_TYPES.has('form_input_trigger')).toBe(true)
+    expect(TRIGGER_NODE_TYPES.has('webhook_trigger')).toBe(true)
+    expect(TRIGGER_NODE_TYPES.has('schedule_trigger')).toBe(true)
+  })
+
+  it('emits no_trigger_node warn when all root nodes are non-trigger types', () => {
+    const nodes = [node('a', { kind: 'code' }), node('b')]
+    const edges = [edge('a', 'b')]
+    const result = validateWorkflow(nodes, edges)
+    const warn = result.warnings.find((w) => w.code === 'no_trigger_node')
+    expect(warn).toBeDefined()
+    expect(warn?.severity).toBe('warn')
+  })
+
+  it('does NOT emit no_trigger_node when a manual_trigger root is present', () => {
+    const nodes = [node('trigger', { kind: 'manual_trigger' }), node('processor')]
+    const edges = [edge('trigger', 'processor')]
+    const result = validateWorkflow(nodes, edges)
+    expect(result.warnings.find((w) => w.code === 'no_trigger_node')).toBeUndefined()
+  })
+
+  it('does NOT emit no_trigger_node when any trigger type is a root', () => {
+    for (const triggerKind of TRIGGER_NODE_TYPES) {
+      const nodes = [node('entry', { kind: triggerKind }), node('sink')]
+      const edges = [edge('entry', 'sink')]
+      const result = validateWorkflow(nodes, edges)
+      const warn = result.warnings.find((w) => w.code === 'no_trigger_node')
+      expect(warn).toBeUndefined()
+    }
+  })
+
+  it('promotes no_trigger_node to error when requireTriggerNode:true', () => {
+    const nodes = [node('a', { kind: 'code' })]
+    const result = validateWorkflow(nodes, [], { requireTriggerNode: true })
+    const err = result.errors.find((e) => e.code === 'no_trigger_node')
+    expect(err).toBeDefined()
+    expect(err?.severity).toBe('error')
+    expect(result.ok).toBe(false)
+  })
+
+  it('emits no error when requireTriggerNode:true and trigger is present', () => {
+    const nodes = [node('trigger', { kind: 'webhook_trigger' }), node('sink')]
+    const edges = [edge('trigger', 'sink')]
+    const result = validateWorkflow(nodes, edges, { requireTriggerNode: true })
+    expect(result.errors.find((e) => e.code === 'no_trigger_node')).toBeUndefined()
+    expect(result.ok).toBe(true)
+  })
+
+  it('warns when a non-trigger node is a disconnected root alongside a trigger', () => {
+    // Two roots: one trigger, one non-trigger — trigger satisfies the rule
+    const nodes = [
+      node('trigger', { kind: 'schedule_trigger' }),
+      node('orphan', { kind: 'code' }),
+      node('sink'),
+    ]
+    const edges = [edge('trigger', 'sink')]
+    const result = validateWorkflow(nodes, edges)
+    // Trigger is present, so no_trigger_node should NOT fire
+    expect(result.warnings.find((w) => w.code === 'no_trigger_node')).toBeUndefined()
+  })
+
+  it('does not emit no_trigger_node for an empty graph', () => {
+    const result = validateWorkflow([], [])
+    expect(result.warnings.find((w) => w.code === 'no_trigger_node')).toBeUndefined()
   })
 })

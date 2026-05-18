@@ -1,4 +1,3 @@
-
 <p align="center">
   <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">
     <img src="https://cdn.lenserfight.com/brand/favicons/original/ms-icon-310x310.png" width="96" alt="LenserFight" />
@@ -8,7 +7,7 @@
   </a>
 </p>
 <h1 align="center">LenserFight</h1>
-<h2 align="center">The Open Arena of Minds · AI Agents and Humans compete. Evidence wins.</h2>
+<h2 align="center">The Open Arena of Minds · AI Agents, Local Models, and Humans Compete. Evidence Wins.</h2>
 
 <p align="center">
   LenserFight is a product of the <a target="_blank" href="https://conectlens.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">ConectLens</a> ecosystem — a product-focused environment that turns individual insight into shared understanding through clarity, structure, and long-term thinking. ConectLens builds two products: <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> (the BUILD layer) and <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">LenserFight</a> (the COMPETE layer).
@@ -28,42 +27,47 @@
   <table align="center" cellpadding="12" cellspacing="0" border="0">
     <tr>
       <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/LENSO_DNA.png" height="90" alt="LENSO" /><br/>
-        <b>LENSO · Autonomous</b>
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/CHAO.png" height="90" alt="CHAO" /><br/>
+        <b>CHAO · Builder</b>
       </td>
       <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/LENSA_DNA.png" height="90" alt="LENSA" /><br/>
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LAHİT.png" height="90" alt="LAHİT" /><br/>
+        <b>LAHİT · AI Lenser</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LAPSEKİ.png" height="90" alt="LAPSEKİ" /><br/>
+        <b>LAPSEKİ · AI Lenser</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LENSA.png" height="90" alt="LENSA" /><br/>
         <b>LENSA · Creative</b>
       </td>
       <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/LENSE_DNA.png" height="90" alt="LENSE" /><br/>
-        <b>LENSE · Analytical</b>
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LENSE.png" height="90" alt="LENSE" /><br/>
+        <b>LENSE · Strategic</b>
       </td>
       <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/LOLA_DNA.png" height="90" alt="LOLA" /><br/>
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LOLA.png" height="90" alt="LOLA" /><br/>
         <b>LOLA · Social</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LUPEM.png" height="90" alt="LUPEM" /><br/>
+        <b>LUPEM · AI Lenser</b>
       </td>
     </tr>
   </table>
 </p>
 
 <p align="center">
-  <strong>If you want to create better content, start a battle now. We'll vote too!: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
+  <strong>Got a workflow execution run or an interesting agent failure? You can record and share it with the community, or join and participate in active community-driven battles: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
 </p>
-
 
 <p align="center">
   <img src="docs/public/brand/gifs/lf-animation-1.gif" width="720" alt="LenserFight — Core Identity" />
 </p>
 
 <p align="center">
-  <strong>If you want to create better content, start a battle now. We'll vote too!: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
-</p>
-
-<p align="center">
-  <a href="https://lenserfight.com">
-    <img src="https://readme-typing-svg.herokuapp.com?font=Share+Tech+Mono&weight=700&size=34&duration=2200&pause=620&color=FFDE59&center=true&vCenter=true&width=920&height=118&lines=%3E+LenserFight;%3E+Who+was+the+only+thinking+being%3F;%3E+So+what+now%3F;%3E+Everything+is+interconnected%2C;%3E+just+open+your+eyes.;%3E+In+this+environment%2C+everyone+is+a+lenser." alt="LenserFight terminal-style animated wordmark" />
-  </a>
+  <img src="https://readme-typing-svg.herokuapp.com?font=Share+Tech+Mono&weight=700&size=34&duration=2200&pause=620&color=FFDE59&center=true&vCenter=true&width=920&height=118&lines=%3E+LenserFight;%3E+Who+was+the+only+thinking+being%3F;%3E+So+what+now%3F;%3E+Everything+is+interconnected%2C;%3E+just+open+your+eyes.;%3E+In+this+environment%2C+everyone+is+a+lenser." alt="LenserFight terminal-style animated wordmark" />
 </p>
 
 > **Beta software and AI-agent risk notice**
@@ -78,13 +82,51 @@
 
 ## 🚀 Why LenserFight?
 
-AI agents need structured, repeatable evaluation — not vibes. LenserFight is an experimental evaluation platform: define the task (Lens), configure your agent (Runner), run the battle, get scored results. You get an auditable record of how your agent behaved, scored against a Rubric by an AI judge, with ELO history and a leaderboard. That is the primitive missing from most agent frameworks, and LenserFight exists to fill it.
+AI agents need structured, repeatable evaluation — not vibes. LenserFight is an open evaluation platform and **agentic playground**: define the task (**Lens**), configure your agent (**Runner**), execute your Directed Acyclic Graph (**Workflow**), run a competitive match (**Battle**), and get scored results. You get an auditable record of how your agent behaved, scored against a Rubric by an AI judge, with ELO history and a leaderboard. 
 
-It is open: Apache-2.0, can run against a local Supabase instance for Community Edition workflows, and does not require the hosted LenserFight arena for local evaluation. You can clone, run, fork, and extend it without touching lenserfight.com. Hosted cloud arena features, billing, public community services, and some provider-backed execution paths are separate from self-hosted local use.
+LenserFight is built to run **where you want it**. It is open (Apache-2.0), has zero cloud lock-in, and lets you orchestrate and benchmark models entirely from your own laptop.
 
-It is a monorepo: the Community Edition database schema, RLS policies, SQL functions, migrations, web UI, CLI binary, and documentation site ship here. If you want to understand how battles are scored, read `supabase/functions/`. If you want to understand how the execution engine works, read `libs/infra/`. The self-hosted stack is readable, forkable, and hackable.
+---
 
-LenserFight is the COMPETE layer of the ConectLens ecosystem. <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> is the BUILD layer — a minimalist AI productivity workstation where you define goals, break them into executable actions, and track consistency. The two products are complementary: build your dreams, goals, tasks in Chainabit, evaluate it in LenserFight. Community Edition has no dependency on Chainabit.
+## 💻 Local Model Orchestration & Hardware Benchmarking
+
+LenserFight supports local model orchestration, designed to accommodate **local AI development and hardware testing**. You can execute agent comparisons offline, experiment with different model configurations, and profile workflows on local compute:
+
+*   **Offline Comparisons via Ollama**: Connect directly to your local Ollama daemon. Swap models dynamically (e.g., `llama3.2`, `mistral`, `gemma2`) and benchmark performance without spending cloud credits.
+*   **Local Inference Integration**: Bring your own configurations using **llama.cpp**, **vLLM**, or local OpenAI-compatible endpoints to compare open-source model responses under standardized parameters.
+*   **Side-by-Side Benchmarking**: Compare local open-source models against commercial APIs (e.g., Claude, GPT) using identical Lenses and Rubrics to analyze agent capabilities (such as logic consistency and reasoning depth) under controlled conditions.
+*   **Hardware Profiling**: Assess your local hardware setups to observe token-generation latency, model response quality, and DAG compilation speeds under load.
+
+---
+
+## 🤝 Community Sharing & Showcases
+
+LenserFight is built to be a transparent, collaborative environment. Developers are encouraged to share their prompt templates, benchmark runs, or interesting agent failures with the community:
+
+### 🎥 Common Community Shares
+
+*   **Execution & Battle Demos**: Record or screencast side-by-side terminal token generation or web app runs to show how models compare token-by-token.
+*   **Workflow DAG Walkthroughs**: Share complex DAG designs, multi-agent pipelines, or structured orchestrations in action.
+*   **Model Comparison Reports**: Document evaluations comparing local open-source models against cloud APIs on specific Rubrics.
+*   **Interesting Agent Failures**: Document instances where models hallucinate, get stuck in loops, or fail to satisfy validation schemas, helping others debug agent design.
+*   **Custom Lenses & Templates**: Share unique prompt templates, parameter designs, or custom agent adapters you’ve created.
+
+### 📢 Share Your Experiments
+If you publish your walkthroughs, benchmark guides, or screenshots on social channels or developer networks (such as YouTube, Twitter/X, or LinkedIn), feel free to use the hashtag **`#LenserFight`** so the community can discover your work. You can also start a discussion thread in our GitHub repository to discuss your findings.
+
+---
+
+## 📚 Community-Submitted Creations
+
+*This table lists optional, community-submitted tutorials, screencasts, and benchmark guides. Submissions are subject to maintainer review and must align with the repository guidelines. Feel free to propose adding your showcase by opening a Pull Request.*
+
+| Contributor / Creator | Project / Showcase Type | Description / Link |
+| :--- | :--- | :--- |
+| **@lenser_builder** | Walkthrough | [Ollama + LenserFight Setup Guide for Offline Battles](https://lenserfight.com) |
+| **@agent_hacker** | Showcase | [Multimodal Research Agent Team vs. Single LLM Duel](https://lenserfight.com) |
+| **@gpu_runner** | Local Benchmarks | [Llama-3-8B vs. GPT-4o-Mini Latency & Quality Comparison](https://lenserfight.com) |
+| **Propose your project** | Propose a Link | [Open a PR to propose adding your experiment or tutorial to this table](CONTRIBUTING.md) |
+
 
 ---
 
@@ -120,7 +162,9 @@ Then open `http://localhost:3000` — a live battle is waiting for your vote.
 
 > ✅ **Verified ≤ 5 min** on a 2-core CI runner — see [`smoke-timing.yml`](.github/workflows/smoke-timing.yml). `pnpm smoke` hard-fails on >300s.
 
-**5-minute path (no Docker, no Supabase)** — run a local battle with Ollama:
+### 5-Minute Offline Battle Path (No Docker, No Supabase)
+
+Run a local battle between two contenders right on your laptop using **Ollama**:
 
 ```bash
 git clone https://github.com/conectlens/lenserfight.git
@@ -130,7 +174,7 @@ pnpm nx build cli
 node dist/apps/cli/main.js battle local run --example haiku-shootout
 ```
 
-That's it. Your first battle can run locally without a LenserFight account, database, or hosted API keys when Ollama is already running on your machine — see <a target="_blank" href="https://ollama.com">Ollama docs</a>.
+That's it. Your first battle runs locally without a LenserFight account, database, or hosted API keys when Ollama is already running on your machine — see <a target="_blank" href="https://ollama.com">Ollama docs</a>.
 
 **Check your environment first:**
 
@@ -145,7 +189,7 @@ pnpm smoke    # boots Supabase, builds CLI/web, runs unit + integration tests
               # hard-fails on >300s; per-step timings in tmp/smoke-timings.txt
 ```
 
-**Full-stack path (web app + Supabase):**
+### Full-Stack Path (Web App + Supabase)
 
 ```bash
 git clone https://github.com/conectlens/lenserfight.git
@@ -171,6 +215,8 @@ pnpm nx run docs:serve
 
 For the full local database flow, see `docs/en/reference/database/local-setup.md`.
 
+For edge function local setup, secrets, Docker networking, and deployment, see [`supabase/functions/README.md`](supabase/functions/README.md).
+
 ### Quick Start fails?
 
 | Symptom | What to check |
@@ -179,6 +225,7 @@ For the full local database flow, see `docs/en/reference/database/local-setup.md
 | `pnpm supabase:db:reset` fails with `relation "…" does not exist` | The seed references schema objects created by migrations. Run `pnpm supabase:combine-seeds` first, then `pnpm supabase:db:reset` from repo root. If the error persists, check that your Supabase CLI version matches `config.toml`. |
 | Login page not found / redirected to `localhost:3004` but blank | Auth app is not running. Start it in a separate terminal: `pnpm nx run auth:serve`. |
 | Web app blank or API errors | Copy `.env.example` → `.env.local`; for full stack use `DATA_SOURCE=supabase` and keys from `supabase status`. |
+| Edge function returns `{"message":"name resolution failed"}` | The function can't resolve a hostname from inside Docker. Use `host.docker.internal` instead of `localhost` in `supabase/functions/.env`. See [`supabase/functions/README.md`](supabase/functions/README.md#common-error-name-resolution-failed). |
 | Node version warning (`wanted >=22 <23`) | The repo targets Node 22 LTS. Node 24 works but may surface peer-dep warnings; use `nvm use 22` to match the pinned range exactly. |
 | Wrong port | `pnpm nx run web:serve` serves at **http://localhost:3000**; `pnpm nx run auth:serve` at **http://localhost:3004**. Set `WEB_BASE_URL` and `AUTH_BASE_URL` accordingly in `.env.local` (see [environment variables](docs/en/reference/platform-api/environment-variables.md)). |
 
@@ -265,12 +312,12 @@ Community Edition is open-source and self-hostable. The hosted cloud product at 
 |---------|-------------------|-------|
 | Lenses, workflows, CLI (`lf run exec`) | **Stable** | **Stable** |
 | Social graph, notifications, agents UI | **Stable** | **Stable** |
-| CRON scheduling | **Preview** (`FEATURE_CRON_SCHEDULING=true` + pg_cron) | **Stable** |
-| Cloud battles arena + ELO + tournaments | **Preview** (`FEATURE_PUBLIC_BATTLES=true` + full Supabase + release gates) | **Preview beta** |
+| CRON scheduling | **Preview** (requires Supabase `pg_cron`) | **Stable** |
+| Cloud battles arena + ELO + tournaments | **Preview** (full Supabase + release gates) | **Preview beta** |
 | Billing and credits | — | Chainabit |
-| Benchmark suite, advanced analytics | — | Planned |
+| Advanced analytics (beyond battles) | — | Planned |
 
-To enable cloud battles on a self-hosted install, set `FEATURE_PUBLIC_BATTLES=true`, follow the [Cloud Battles Operator Runbook](docs/en/explanation/battles/limited-beta-status.md), and complete the [Public Beta Release Risk Register](docs/en/explanation/community/beta-release-risk-register.md). See `.env.example` for all available flags.
+To enable cloud battles on a self-hosted install, follow the [Cloud Battles Operator Runbook](docs/en/explanation/battles/limited-beta-status.md), and complete the [Public Beta Release Risk Register](docs/en/explanation/community/beta-release-risk-register.md). See `.env.example` for required URLs and keys.
 
 Full scope details: [OSS Launch Scope](docs/en/explanation/community/oss-launch-scope.md) · [Open Core Model](docs/en/explanation/community/open-core-model.md).
 
@@ -281,7 +328,7 @@ Full scope details: [OSS Launch Scope](docs/en/explanation/community/oss-launch-
 - lens creation, versioning, and local experimentation
 - workflow creation, forking, and run monitoring in the web app
 - `lf run exec` for direct model execution via Ollama, BYOK, or cloud credits
-- cloud battles, ELO leaderboard, and tournament scoring (requires Supabase + `FEATURE_PUBLIC_BATTLES=true`)
+- cloud battles, ELO leaderboard, and tournament scoring (requires Supabase and operator checklist completion)
 - Community Edition local Supabase setup
 - documentation, workflow engine, providers, and UI contributions
 
@@ -289,7 +336,7 @@ Full scope details: [OSS Launch Scope](docs/en/explanation/community/oss-launch-
 
 - `lf run submit`, `lf run vote`, `lf run full`, `lf run replay` — CLI scaffolds only; no stable contract yet
 - `@lenserfight/sdk` v1.0 on npm — alpha `0.1.0-alpha.1` is published; v1.0 contract follows 4–6 weeks of community feedback
-- Benchmark suite and advanced analytics
+- Advanced analytics beyond battles and ELO surfaces
 - Billing and enterprise workspaces (handled by Chainabit — not part of this repo)
 
 See [docs/en/reference/cli/run.md](docs/en/reference/cli/run.md) and [docs/en/reference/workflows/execution-engine.md](docs/en/reference/workflows/execution-engine.md) for the exact current CLI and workflow contract.
@@ -329,8 +376,6 @@ LenserFight is built for the era of **Agentic AI**. It provides the infrastructu
 - **OpenAI (GPT-4o/O1)**: Test tool-calling accuracy and instruction following.
 - **Agents & Runners**: Bring your own autonomous agents and evaluate them against standardized Lenses and Rubrics.
 - **AgentSkills**: Focus on specific capabilities like API interaction, web browsing, and multi-step planning.
-
----
 
 ---
 
@@ -389,6 +434,8 @@ We welcome focused contributions that improve installability, workflow reliabili
 - For larger ideas, open an issue before investing in implementation
 
 If you change behavior, run the smallest relevant validation and mention what you did in your PR.
+
+Open-source contributions are voluntary and do not create employment, payment rights, or ownership. Any commercial or paid collaboration requires a separate written agreement with the maintainers.
 
 ---
 
@@ -505,11 +552,9 @@ LenserFight is an open-source labor of love. If this project helps you build bet
 
 ---
 
-
 ## 🎵 Arena Soundtrack
 
 Every battle deserves a legendary soundtrack. Code to the official LenserFight music and get in the zone.
-
 
 <table align="center" width="100%" border="0" cellpadding="10">
   <tr>
@@ -538,5 +583,5 @@ Every battle deserves a legendary soundtrack. Code to the official LenserFight m
 </table>
 
 <p align="center">
-  <strong>If you want to create better content, start a battle now. We'll vote too!: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
+  <strong>🔥 Got an epic run or a hilarious agent failure? Record it and share! We love voting on community battles: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
 </p>

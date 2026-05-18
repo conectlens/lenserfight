@@ -1,0 +1,77 @@
+name: "✨ Feature Request"
+description: Propose a focused improvement for LenserFight.
+title: "[FEATURE] "
+labels:
+  - enhancement
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Title format:** `[FEATURE][apps/web] Short description`
+        Use the area prefix matching your selection below: `[apps/web]`, `[apps/cli]`, `[apps/mobile]`, `[libs/ui]`, `[supabase]`, `[connector]`, etc.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Target area
+      description: Where would this feature live?
+      options:
+        - apps/web
+        - apps/mobile
+        - apps/cli
+        - apps/arena
+        - apps/gateway
+        - libs/features
+        - libs/ui
+        - supabase / database
+        - connector / adapter
+        - docs
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or developer pain does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope notes
+      description: Mention if this touches migrations, CLI, SDK, docs, mobile, or other surfaces.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not already proposed
+          required: true
+        - label: I checked whether an existing workflow or feature already covers this
+          required: true

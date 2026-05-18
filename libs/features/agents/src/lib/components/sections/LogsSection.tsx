@@ -1,4 +1,5 @@
 import { queryKeys } from '@lenserfight/data/cache'
+import { Card, Button } from '@lenserfight/ui/components'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { AgentRunEventRecord, AgentTeamRunRecord, FleetLogRow } from '@lenserfight/types'
 import { useQuery } from '@tanstack/react-query'
@@ -40,8 +41,8 @@ const RunEventsAccordion: React.FC<{
   })
 
   return (
-    <div className="rounded-[20px] border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <button
+    <Card className="!p-0">
+      <Button
         type="button"
         className="flex w-full items-center justify-between px-4 py-3 text-left"
         onClick={() => setExpanded((v) => !v)}
@@ -49,7 +50,7 @@ const RunEventsAccordion: React.FC<{
       >
         <div className="flex items-center gap-3">
           {expanded ? (
-            <ChevronDown size={15} className="text-amber-600 dark:text-amber-400" />
+            <ChevronDown size={15} className="text-primary-yellow-600 dark:text-primary-yellow-400" />
           ) : (
             <ChevronRight size={15} className="text-gray-400" />
           )}
@@ -63,7 +64,7 @@ const RunEventsAccordion: React.FC<{
           </span>
           <span>{formatDateTime(run.started_at)}</span>
         </div>
-      </button>
+      </Button>
 
       {expanded && (
         <div className="border-t border-gray-100 px-4 pb-3 pt-2 dark:border-gray-800">
@@ -81,9 +82,9 @@ const RunEventsAccordion: React.FC<{
                 return (
                   <div
                     key={ev.id}
-                    className="rounded-[14px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-700"
+                    className="rounded-xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-800"
                   >
-                    <button
+                    <Button
                       type="button"
                       disabled={!hasPayload}
                       onClick={() =>
@@ -98,7 +99,7 @@ const RunEventsAccordion: React.FC<{
                       <span className="font-mono text-gray-400 dark:text-gray-500">
                         {formatDateTime(ev.occurred_at)}
                       </span>
-                      <span className="rounded-full border border-amber-200 px-2 py-0.5 font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                      <span className="rounded-full border border-primary-yellow-200 px-2 py-0.5 font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300">
                         {ev.event_type}
                       </span>
                       {ev.agent_run_step_id && (
@@ -106,9 +107,9 @@ const RunEventsAccordion: React.FC<{
                           step {ev.agent_run_step_id.slice(0, 8)}
                         </span>
                       )}
-                    </button>
+                    </Button>
                     {isExpanded && hasPayload && (
-                      <pre className="overflow-auto border-t border-gray-100 px-3 pb-3 pt-2 font-mono text-xs leading-5 text-amber-100 dark:border-gray-800 bg-gray-950 rounded-b-[14px]">
+                      <pre className="overflow-auto border-t border-gray-100 px-3 pb-3 pt-2 font-mono text-xs leading-5 text-primary-yellow-100 dark:border-gray-800 bg-gray-950 rounded-b-xl">
                         {JSON.stringify(ev.payload, null, 2)}
                       </pre>
                     )}
@@ -124,7 +125,7 @@ const RunEventsAccordion: React.FC<{
           )}
         </div>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -151,6 +152,8 @@ export const LogsSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Logs"
+      docsPath="/how-to/agents/workspace/logs"
+      docsTip="Append-only event stream: lifecycle transitions, tool invocations, policy denials, gateway pings. Filterable by event_type and time window."
       title="Run event stream"
       description="Click a run to expand its events. Click an event to inspect its payload. Filter by event_type or search within payloads."
       toolbar={
@@ -214,6 +217,8 @@ const HumanFleetLogs: React.FC<{
   return (
     <SectionPage
       eyebrow="Logs"
+      docsPath="/how-to/agents/workspace/logs"
+      docsTip="Cross-agent event log. Useful for spotting tool-call failures, approval waits, and step transitions across the entire fleet."
       title="Fleet event log"
       description="Cross-agent event log. Useful for spotting tool-call failures, approval waits, and step transitions across the fleet."
       toolbar={
@@ -236,9 +241,9 @@ const HumanFleetLogs: React.FC<{
       ) : (
         <div className="space-y-2">
           {(logs.data ?? []).map((row) => (
-            <div
+            <Card
               key={row.event_id}
-              className="rounded-[16px] border border-gray-200 bg-white px-4 py-3 text-xs dark:border-gray-800 dark:bg-gray-900"
+              className="!px-4 !py-3 text-xs"
             >
               <div className="flex flex-wrap items-center gap-3">
                 <span className="font-mono text-gray-500 dark:text-gray-400">
@@ -247,14 +252,14 @@ const HumanFleetLogs: React.FC<{
                 <span className="rounded-full border border-gray-200 px-2 py-0.5 font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300">
                   @{row.agent_handle}
                 </span>
-                <span className="rounded-full border border-amber-200 px-2 py-0.5 font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                <span className="rounded-full border border-primary-yellow-200 px-2 py-0.5 font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300">
                   {row.event_type}
                 </span>
                 <span className="font-mono text-gray-500 dark:text-gray-400">
                   run {row.team_run_id.slice(0, 8)}
                 </span>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

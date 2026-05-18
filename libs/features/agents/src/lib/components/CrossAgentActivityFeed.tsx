@@ -1,8 +1,9 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { CrossAgentFeedItem, CrossAgentFeedKind } from '@lenserfight/types'
+import { Alert, Card } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
-import { Activity, AlertTriangle, Bot, CalendarClock, ShieldCheck } from 'lucide-react'
+import { Activity, Bot, CalendarClock, ShieldCheck } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyPanel } from './EmptyPanel'
@@ -19,7 +20,7 @@ const KIND_META: Record<
   approval_pending: {
     label: 'Approval pending',
     icon: <ShieldCheck size={16} />,
-    tone: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200',
+    tone: 'border-primary-yellow-200 bg-primary-yellow-50 text-primary-yellow-800 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-200',
   },
   team_run: {
     label: 'Team run',
@@ -82,15 +83,9 @@ export const CrossAgentActivityFeed: React.FC<CrossAgentActivityFeedProps> = ({
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-        <div className="flex items-start gap-3">
-          <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="font-semibold">Activity feed failed to load</p>
-            <p className="mt-1">{(error as Error).message}</p>
-          </div>
-        </div>
-      </div>
+      <Alert variant="error" title="Activity feed failed to load">
+        {(error as Error).message}
+      </Alert>
     )
   }
 
@@ -114,8 +109,9 @@ export const CrossAgentActivityFeed: React.FC<CrossAgentActivityFeedProps> = ({
           <Link
             key={`${item.kind}-${item.team_run_id ?? item.schedule_id ?? item.occurred_at}-${item.ai_lenser_id}`}
             to={destinationFor(item)}
-            className="block rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm transition hover:border-amber-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-amber-500/40"
+            className="block"
           >
+          <Card className="transition hover:border-primary-yellow-300 hover:shadow-md dark:hover:border-primary-yellow-500/40">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
@@ -140,6 +136,7 @@ export const CrossAgentActivityFeed: React.FC<CrossAgentActivityFeedProps> = ({
                 </p>
               </div>
             </div>
+          </Card>
           </Link>
         )
       })}

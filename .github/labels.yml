@@ -3,14 +3,14 @@
 # Adding/removing/renaming a label here is the only supported way to change
 # repo labels — manual edits in the GitHub UI will be reverted on next sync.
 
-# ── Phase 9 triage labels ──────────────────────────────────────────────────
+# ── Priority triage labels ─────────────────────────────────────────────────
 - name: p0-install
   color: b60205
-  description: Setup, install, or local-env failure (auto-applied by install_problem template)
+  description: Setup, install, or local-env failure (auto-applied by bug template, area=install)
 
 - name: p0-workflow
   color: b60205
-  description: Workflow run, builder, or execution-engine failure (auto-applied by workflow_problem template)
+  description: Workflow run, builder, or execution-engine failure (auto-applied by workflow template)
 
 - name: docs
   color: 0075ca
@@ -33,15 +33,15 @@
   color: a2eeef
   description: Improvement or new functionality
 
+- name: perf
+  color: e4b400
+  description: Performance regression or slowness (auto-applied by perf template)
+
 - name: question
   color: d876e3
   description: Further information is requested
 
 # ── Status / housekeeping ──────────────────────────────────────────────────
-- name: first-week-triage
-  color: fbca04
-  description: Flagged for first-week maintainer curation — high signal, new OSS launch window
-
 - name: needs-triage
   color: fbca04
   description: Maintainer review pending
@@ -69,7 +69,11 @@
 
 - name: area:cli
   color: 0e8a16
-  description: lf command-line tool
+  description: lf command-line tool (auto-applied by cli template)
+
+- name: area:local-config
+  color: fbca04
+  description: ~/.lenserfight/* local config tree (auto-applied by local-config template)
 
 - name: area:web
   color: 1d76db
@@ -89,7 +93,31 @@
 
 - name: area:battles
   color: e4e669
-  description: Battle execution, voting, streaming, arena
+  description: Battle execution, voting, streaming, arena (auto-applied by battle template)
+
+- name: area:lenses
+  color: 0e8a16
+  description: Lens creation, parameters, kinds, generation, governance (auto-applied by lens template)
+
+- name: area:mobile
+  color: 1d76db
+  description: apps/mobile React Native / Expo
+
+- name: area:arena
+  color: e4e669
+  description: apps/arena battle viewer and arena surface
+
+- name: area:gateway
+  color: 0e8a16
+  description: apps/gateway and libs/infra/gateway
+
+- name: area:sdk
+  color: a2eeef
+  description: libs/sdk public SDK and API client
+
+- name: area:connectors
+  color: 5319e7
+  description: connector adapters, libs/adapters, examples/connectors
 
 - name: area:security
   color: b60205

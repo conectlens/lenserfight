@@ -1,12 +1,16 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { Drawer } from '@lenserfight/ui/overlays'
 import type {
   CreateEvaluationInput,
   EvaluationRecord,
   EvaluationTargetType,
 } from '@lenserfight/types'
-import { Plus, Trash2 } from 'lucide-react'
+import { Button, Tooltip } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
+import { HelpCircle, Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
+
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface Props {
   open: boolean
@@ -17,6 +21,7 @@ interface Props {
 }
 
 const TARGETS: EvaluationTargetType[] = ['lens', 'workflow', 'agent', 'team']
+const TARGET_OPTIONS = TARGETS.map((t) => ({ value: t, label: t }))
 
 const RUBRIC_OPTIONS = [
   { value: 'binary_pass', label: 'Binary pass / fail' },
@@ -158,83 +163,108 @@ export const EvaluationDrawer: React.FC<Props> = ({
       onClose={onClose}
       side="right"
       width="w-[640px]"
-      title="Create evaluation"
+      title="Add automated evaluation"
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/evaluation"
+          tip="Create an evaluation suite that runs assertions against a target (workflow, agent, lens, or team). Simple mode guides you through common fields; Advanced mode accepts raw JSON for full control."
+        />
+      }
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          onSubmit={handleSave}
+          submitLabel={submitting ? 'Saving…' : 'Create evaluation'}
+          isLoading={submitting}
+          disabled={
+            submitting ||
+            !name ||
+            !targetId ||
+            (mode === 'advanced' && (!!scoringJsonError || !!casesJsonError))
+          }
+        />
+      }
     >
       <div className="space-y-4">
         {/* Mode toggle */}
         <div className="flex gap-1 rounded-2xl border border-gray-200 p-1 dark:border-gray-700">
           {(['simple', 'advanced'] as const).map((m) => (
-            <button
+            <Button
               key={m}
               type="button"
+              size="sm"
+              variant={mode === m ? 'dark' : 'ghost'}
               onClick={() => (m === 'advanced' ? switchToAdvanced() : setMode('simple'))}
-              className={
-                mode === m
-                  ? 'flex-1 rounded-xl bg-gray-900 py-1.5 text-xs font-semibold text-white dark:bg-white dark:text-gray-900'
-                  : 'flex-1 rounded-xl py-1.5 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-              }
+              className="flex-1"
+              aria-pressed={mode === m}
             >
               {m === 'simple' ? 'Simple' : 'Advanced (JSON)'}
-            </button>
+            </Button>
           ))}
         </div>
 
-        <Field label="Name">
+        <FieldLabel
+          label="Name"
+          tooltip="Label for this evaluation suite. Should describe what's being tested, e.g. 'Response quality — GPT-4o' or 'Edge case coverage'."
+        >
           <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-        </Field>
-        <Field label="Description">
+        </FieldLabel>
+
+        <FieldLabel
+          label="Description"
+          tooltip="Optional long-form context for reviewers. Explain what this suite validates, when it should run, and what a passing score means for the agent's behavior."
+        >
           <textarea
             rows={2}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className={`${inputClass} resize-none`}
           />
-        </Field>
+        </FieldLabel>
+
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Target type">
-            <select
+          <FieldLabel
+            label="Target type"
+            tooltip="What entity is under test — 'lens' tests a single lens; 'workflow' tests end-to-end execution; 'agent' tests the agent's responses directly; 'team' tests multi-agent coordination."
+          >
+            <SelectField
               value={targetType}
-              onChange={(e) => setTargetType(e.target.value as EvaluationTargetType)}
-              className={inputClass}
-            >
-              {TARGETS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Target ID">
+              onChange={(v) => setTargetType(v as EvaluationTargetType)}
+              options={TARGET_OPTIONS}
+            />
+          </FieldLabel>
+
+          <FieldLabel
+            label="Target ID"
+            tooltip="UUID of the target entity. Copy from the entity's settings page or its URL segment."
+          >
             <input
               value={targetId}
               onChange={(e) => setTargetId(e.target.value)}
               placeholder="uuid"
               className={inputClass}
             />
-          </Field>
+          </FieldLabel>
         </div>
 
         {mode === 'simple' ? (
           <>
-            <div className="rounded-[20px] border border-gray-200 p-4 dark:border-gray-700">
+            <div className="rounded-2xl border border-gray-200 p-4 dark:border-gray-700">
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
                 Scoring rules
               </p>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Rubric">
-                  <select
-                    value={rubric}
-                    onChange={(e) => setRubric(e.target.value)}
-                    className={inputClass}
-                  >
-                    {RUBRIC_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Weight">
+                <FieldLabel
+                  label="Rubric"
+                  tooltip="The scoring algorithm. 'Binary pass/fail' is strict — any deviation fails; 'scale 1–5' grades partial quality; 'custom' lets you define your own scoring function in Advanced mode."
+                >
+                  <SelectField value={rubric} onChange={setRubric} options={RUBRIC_OPTIONS} />
+                </FieldLabel>
+
+                <FieldLabel
+                  label="Weight"
+                  tooltip="How much this evaluation suite contributes to the agent's overall quality score. Higher weight suites have more influence on the final grade."
+                >
                   <input
                     type="number"
                     min={0}
@@ -243,23 +273,24 @@ export const EvaluationDrawer: React.FC<Props> = ({
                     onChange={(e) => setWeight(Number(e.target.value))}
                     className={inputClass}
                   />
-                </Field>
+                </FieldLabel>
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-gray-200 p-4 dark:border-gray-700">
+            <div className="rounded-2xl border border-gray-200 p-4 dark:border-gray-700">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
                   Test cases
                 </p>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={addCase}
-                  className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
                 >
-                  <Plus size={12} />
+                  <Plus size={12} className="mr-1 inline" />
                   Add case
-                </button>
+                </Button>
               </div>
               <div className="space-y-3">
                 {cases.map((c, idx) => (
@@ -272,35 +303,46 @@ export const EvaluationDrawer: React.FC<Props> = ({
                         Case {idx + 1}
                       </span>
                       {cases.length > 1 && (
-                        <button
+                        <Button
                           type="button"
                           onClick={() => removeCase(idx)}
                           className="text-gray-400 hover:text-red-500"
                           aria-label="Remove case"
                         >
                           <Trash2 size={13} />
-                        </button>
+                        </Button>
                       )}
                     </div>
                     <div className="grid gap-2">
-                      <Field label="Prompt">
+                      <FieldLabel
+                        label="Prompt"
+                        tooltip="The input prompt sent to the target. This is what the agent will receive and respond to."
+                      >
                         <input
                           value={c.prompt}
                           onChange={(e) => updateCase(idx, { prompt: e.target.value })}
                           placeholder="Input prompt"
                           className={inputClass}
                         />
-                      </Field>
-                      <Field label="Expected output contains">
+                      </FieldLabel>
+
+                      <FieldLabel
+                        label="Expected output contains"
+                        tooltip="A substring that must appear in the agent's response for this case to pass. Case-sensitive. Leave empty to skip assertion."
+                      >
                         <input
                           value={c.expected}
                           onChange={(e) => updateCase(idx, { expected: e.target.value })}
                           placeholder="ok"
                           className={inputClass}
                         />
-                      </Field>
+                      </FieldLabel>
+
                       <div className="grid grid-cols-2 gap-2">
-                        <Field label="Weight">
+                        <FieldLabel
+                          label="Weight"
+                          tooltip="Relative contribution of this case to the suite score."
+                        >
                           <input
                             type="number"
                             min={0}
@@ -309,15 +351,19 @@ export const EvaluationDrawer: React.FC<Props> = ({
                             onChange={(e) => updateCase(idx, { weight: Number(e.target.value) })}
                             className={inputClass}
                           />
-                        </Field>
-                        <Field label="Tags (comma separated)">
+                        </FieldLabel>
+
+                        <FieldLabel
+                          label="Tags (comma separated)"
+                          tooltip="Labels for filtering. Standard tags: 'smoke', 'regression', 'edge-case'."
+                        >
                           <input
                             value={c.tags}
                             onChange={(e) => updateCase(idx, { tags: e.target.value })}
                             placeholder="smoke, regression"
                             className={inputClass}
                           />
-                        </Field>
+                        </FieldLabel>
                       </div>
                     </div>
                   </div>
@@ -327,7 +373,10 @@ export const EvaluationDrawer: React.FC<Props> = ({
           </>
         ) : (
           <>
-            <Field label="Scoring rules (JSON)">
+            <FieldLabel
+              label="Scoring rules (JSON)"
+              tooltip="Advanced JSON override for the scoring configuration. Must be a valid JSON object. Replaces the rubric and weight pickers from Simple mode."
+            >
               <textarea
                 rows={3}
                 value={scoringJson}
@@ -337,8 +386,12 @@ export const EvaluationDrawer: React.FC<Props> = ({
               {scoringJsonError && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">{scoringJsonError}</p>
               )}
-            </Field>
-            <Field label="Cases (JSON array)">
+            </FieldLabel>
+
+            <FieldLabel
+              label="Cases (JSON array)"
+              tooltip="Array of case objects with 'input', 'expected', 'weight', and 'tags' keys. Must be a valid JSON array."
+            >
               <textarea
                 rows={6}
                 value={casesJson}
@@ -348,7 +401,7 @@ export const EvaluationDrawer: React.FC<Props> = ({
               {casesJsonError && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">{casesJsonError}</p>
               )}
-            </Field>
+            </FieldLabel>
           </>
         )}
 
@@ -357,42 +410,34 @@ export const EvaluationDrawer: React.FC<Props> = ({
             {error}
           </p>
         )}
-
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={
-              submitting ||
-              !name ||
-              !targetId ||
-              (mode === 'advanced' && (!!scoringJsonError || !!casesJsonError))
-            }
-            className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-          >
-            {submitting ? 'Saving…' : 'Create evaluation'}
-          </button>
-        </div>
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )

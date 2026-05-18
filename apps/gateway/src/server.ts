@@ -2,6 +2,12 @@ import { readFile } from 'node:fs/promises'
 import http from 'node:http'
 import path from 'node:path'
 
+import { LocalKeyStore } from '@lenserfight/data/local-keys'
+
+import { BearerAuthGuard, loadAllowedOriginPatterns } from './auth/bearer'
+import { handleKeysRequest } from './handlers/keys'
+
+import type { LocalKeyStorePort } from '@lenserfight/data/local-keys'
 import type { GatewayConfig } from './config'
 
 export interface ServerHandle {
@@ -45,6 +51,13 @@ export interface StartServerOptions {
   onSyncPull?: () => Promise<{ claimed: number }>
   /** Path to identity.json. Defaults to `<config.stateDir>/identity.json`. */
   stateDir?: string
+  /**
+   * Local-keys store and auth guard. When omitted the server constructs
+   * defaults (file-backed store + OS-keychain bearer token). Override for
+   * tests.
+   */
+  localKeyStore?: LocalKeyStorePort
+  bearerAuth?: BearerAuthGuard
 }
 
 /**
@@ -64,9 +77,14 @@ export async function startServer(
   config: GatewayConfig,
   options: StartServerOptions
 ): Promise<ServerHandle> {
+  const localKeyStore = options.localKeyStore ?? new LocalKeyStore()
+  const bearerAuth = options.bearerAuth ?? new BearerAuthGuard()
+
   const handler = makeHandler({
     ...options,
     stateDir: options.stateDir ?? config.stateDir,
+    localKeyStore,
+    bearerAuth,
   })
 
   const primary = http.createServer(handler)
@@ -115,7 +133,61 @@ export async function startServer(
 }
 
 function makeHandler(options: StartServerOptions): http.RequestListener {
+  // Compute once per handler — patterns are static for the daemon's lifetime.
+  const allowedOriginPatterns = loadAllowedOriginPatterns()
+
   return async (req, res) => {
+    const url = (req.url ?? '').split('?')[0]
+
+    // CORS pre-handling. Every gateway endpoint — /healthz, /peers, /identity,
+    // /sync/pull, /outbox, /keys/* — is callable from the LenserFight web app
+    // (the browser uses /healthz to probe reachability before pairing). Apply
+    // the same origin allow-list everywhere so the very first cross-origin
+    // fetch isn't blocked by the missing Access-Control-Allow-Origin header.
+    const origin = (req.headers['origin'] as string | undefined) ?? null
+    const originAllowed =
+      origin == null || origin === '' || allowedOriginPatterns.some((p) => p.test(origin))
+
+    if (req.method === 'OPTIONS') {
+      if (originAllowed && origin) {
+        res.setHeader('access-control-allow-origin', origin)
+        res.setHeader('access-control-allow-headers', 'authorization, content-type')
+        res.setHeader('access-control-allow-methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        res.setHeader('access-control-allow-credentials', 'false')
+        res.setHeader('access-control-max-age', '60')
+        res.setHeader('vary', 'origin')
+        // Chrome's Private Network Access spec: when a non-private origin
+        // (or any origin per the new pre-flight rules) targets a private
+        // resource, the browser sends `Access-Control-Request-Private-Network`
+        // and only proceeds if we respond with this header. Loopback and
+        // Tailscale CGNAT both count as private — answer yes.
+        if (req.headers['access-control-request-private-network']) {
+          res.setHeader('access-control-allow-private-network', 'true')
+        }
+        res.statusCode = 204
+      } else {
+        res.statusCode = 403
+      }
+      res.end()
+      return
+    }
+
+    if (origin && originAllowed) {
+      res.setHeader('access-control-allow-origin', origin)
+      res.setHeader('vary', 'origin')
+    }
+
+    if (
+      options.localKeyStore &&
+      options.bearerAuth &&
+      url.startsWith('/keys')
+    ) {
+      const handled = await handleKeysRequest(req, res, {
+        store: options.localKeyStore,
+        auth: options.bearerAuth,
+      })
+      if (handled) return
+    }
     res.setHeader('content-type', 'application/json')
     if (req.url === '/healthz') {
       res.statusCode = 200

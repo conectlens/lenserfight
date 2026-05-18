@@ -38,9 +38,13 @@ export * from './lib/ModelProviderBadge'
 // Logo
 export * from './lib/Logo'
 
+// Update notification
+export * from './lib/UpdateBanner'
+
 // Brand components
 export * from './lib/Alert'
 export * from './lib/Badge'
+export * from './lib/ExperimentalBadge'
 export * from './lib/Tooltip'
 export * from './lib/Progress'
 export * from './lib/Accordion'
@@ -56,3 +60,4 @@ export * from './lib/useDocsLocale'
 export * from './lib/MarkdownRenderer'
 export * from './lib/StreamingOutput'
 export * from './lib/AiLenserFamily'
+export * from './lib/XCarousel'

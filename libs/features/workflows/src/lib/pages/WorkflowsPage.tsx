@@ -1,6 +1,6 @@
 import { seoService } from '@lenserfight/data/repositories'
 import { useLenser } from '@lenserfight/features/profile'
-import { Button, EmptyState, HelpButton, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
+import { Button, EmptyState, ExperimentalBadge, HelpButton, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { SearchBar, SelectField } from '@lenserfight/ui/forms'
 import { ArrowRight, GitBranch, ImageIcon, Plus, Search, Sparkles, Video } from 'lucide-react'
@@ -8,6 +8,7 @@ import React, { useMemo, useState } from 'react'
 import { Link, Outlet, useSearchParams } from 'react-router-dom'
 
 import { WorkflowCard } from '../components/WorkflowCard'
+import { WorkflowTemplateCarousel } from '../components/WorkflowTemplateCarousel'
 import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { usePopularWorkflows } from '../hooks/usePopularWorkflows'
 import { useTemplateWorkflows } from '../hooks/useTemplateWorkflows'
@@ -83,7 +84,7 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
     <div className="">
       <PageMeta title={wfListMeta.title} description={wfListMeta.description} />
       <PageHeader
-        title="Connected Lenses & AI Workflows"
+        title={<span className="inline-flex items-center gap-2">Connected Lenses & AI Workflows <ExperimentalBadge mode="inline" title="Experimental" /></span>}
         description="Run reusable, multi-step AI pipelines that turn an idea into copy, media prompts, scripts, code, or launch assets."
         action={
           <>
@@ -95,34 +96,11 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
         }
       />
 
-      <section className="my-5 rounded-2xl border border-surface-border bg-white p-4 shadow-sm dark:bg-gray-800">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
-              Workflow flow
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-greyscale-800 dark:text-greyscale-100">
-              {['Input', 'Lens or agent step', 'Human review', 'Media output', 'Final artifact'].map((step, index) => (
-                <React.Fragment key={step}>
-                  <span className="rounded-full bg-surface-raised px-3 py-1">{step}</span>
-                  {index < 4 && <ArrowRight size={14} className="text-greyscale-300" />}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs font-semibold">
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <GitBranch size={13} /> Multi-step
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <ImageIcon size={13} /> Image prompts
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <Video size={13} /> Video scripts
-            </span>
-          </div>
-        </div>
-      </section>
+      <ExperimentalBadge
+        title="Workflows"
+        description="Workflows are live but still being polished. Templates, scheduling, and run history work — but I haven't finished the regression tests, so please try them and tell me what breaks."
+        className="mb-4"
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center mb-4">
@@ -160,61 +138,12 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
       </div>
 
       {/* Start from template strip — always visible (tiny, horizontally-scrolling) */}
-      {(templates.isLoading || (templates.data && templates.data.length > 0)) && (
-        <section className="mb-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-greyscale-500 dark:text-greyscale-400">
-              <Sparkles size={13} className="text-primary-yellow-500" />
-              Start from template
-            </div>
-            <span className="text-[11px] text-greyscale-400">
-              Forks into your workspace so you can edit safely.
-            </span>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
-            {templates.isLoading &&
-              Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex-shrink-0 w-60 h-28 rounded-2xl border border-surface-border bg-surface-raised animate-pulse snap-start"
-                />
-              ))}
-            {templates.data?.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                disabled={forkWorkflow.isPending}
-                onClick={() => forkWorkflow.mutate(t.id)}
-                className="group flex-shrink-0 w-60 rounded-2xl border border-surface-border bg-surface-base p-3 text-left hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5 transition-colors snap-start disabled:opacity-60 disabled:cursor-wait"
-              >
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50 leading-tight line-clamp-2">
-                    {t.title.replace(/^Template · /, '')}
-                  </p>
-                  <span className="text-[10px] font-semibold text-greyscale-400 whitespace-nowrap">
-                    {t.node_count} steps
-                  </span>
-                </div>
-                {t.description && (
-                  <p className="text-[11px] leading-4 text-greyscale-500 line-clamp-2 mb-2">
-                    {t.description}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-1">
-                  {t.kinds.slice(0, 4).map((k) => (
-                    <span
-                      key={k}
-                      className="text-[10px] font-semibold rounded-full bg-surface-raised text-greyscale-500 px-1.5 py-0.5"
-                    >
-                      {k}
-                    </span>
-                  ))}
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+      <WorkflowTemplateCarousel
+        templates={templates.data ?? []}
+        isLoading={templates.isLoading}
+        isForking={forkWorkflow.isPending}
+        onFork={(id) => forkWorkflow.mutate(id)}
+      />
 
       {isLoading && (
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">

@@ -12,6 +12,7 @@ import DocsFooter from './DocsFooter.vue'
 import HotLenses from './HotLenses.vue'
 import AiLenserFamily from './AiLenserFamily.vue'
 import NotFoundActions from './NotFoundActions.vue'
+import ExperimentalBadge from './ExperimentalBadge.vue'
 import { globalAnalyticsController, GA4Provider } from '@lenserfight/infra/analytics'
 
 const KNOWN_LOCALES = new Set(['en', 'tr', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ru', 'pt', 'it'])
@@ -115,6 +116,7 @@ export default {
     ctx.app.component('DocsLogo', DocsLogo)
     ctx.app.component('HotLenses', HotLenses)
     ctx.app.component('AiLenserFamily', AiLenserFamily)
+    ctx.app.component('ExperimentalBadge', ExperimentalBadge)
 
     // Redirect any path without a locale prefix to the cookie's locale (or /en)
     redirectUnprefixedPath()

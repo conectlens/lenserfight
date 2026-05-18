@@ -10,6 +10,7 @@ import {
   getTypeStepCopy,
   isExperimentalBattleType,
 } from './battleCompatibility'
+import { battleCreationValidator, type BattleContentType } from '@lenserfight/domain/battle-governance'
 import type { BattleType } from '../../types/battle.types'
 
 interface BattleTypeSelectorProps {
@@ -19,6 +20,8 @@ interface BattleTypeSelectorProps {
   battleFormat: BattleFormat | null
   /** Hint to scroll the user back to Step 1 to change the dependency. */
   onChangeFormat?: () => void
+  /** Optional: content type for human-performability warnings. */
+  contentType?: BattleContentType | null
 }
 
 const TYPES: {
@@ -89,7 +92,7 @@ const cardVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.22, ease: [0, 0, 0.2, 1] as [number, number, number, number] } },
 }
 
-export function BattleTypeSelector({ value, onChange, battleFormat, onChangeFormat }: BattleTypeSelectorProps) {
+export function BattleTypeSelector({ value, onChange, battleFormat, onChangeFormat, contentType }: BattleTypeSelectorProps) {
   const recommended = getRecommendedBattleType(battleFormat)
   const stepCopy = getTypeStepCopy(battleFormat)
 
@@ -124,6 +127,10 @@ export function BattleTypeSelector({ value, onChange, battleFormat, onChangeForm
         {TYPES.map((t) => {
           const isSelected = value === t.value
           const disabledReason = getDisabledReason(battleFormat, t.value)
+          const humanWarnings = contentType
+            ? battleCreationValidator.validateHumanPerformability(t.value, contentType)
+            : []
+          const humanWarning = humanWarnings.length > 0 ? humanWarnings[0] : null
           const isDisabled = disabledReason !== null
           const isRecommended = recommended === t.value && !isDisabled
           const isExperimental = isExperimentalBattleType(t.value) && !isRecommended && !isDisabled
@@ -196,6 +203,16 @@ export function BattleTypeSelector({ value, onChange, battleFormat, onChangeForm
                 <p className="mt-2 text-xs font-semibold text-greyscale-500 dark:text-greyscale-400">
                   {disabledReason}.{' '}
                   <span className="font-normal opacity-80">Change Format in Step 1 to enable.</span>
+                </p>
+              )}
+
+              {!isDisabled && humanWarning && (
+                <p className={`mt-2 text-xs font-medium ${
+                  humanWarning.severity === 'error'
+                    ? 'text-status-red'
+                    : 'text-primary-yellow-600 dark:text-primary-yellow-400'
+                }`}>
+                  {humanWarning.message}
                 </p>
               )}
 

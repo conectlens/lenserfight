@@ -23,6 +23,7 @@ import type { ThreadRecord } from '@lenserfight/types'
 import type { ApiResponseEnvelope } from '@lenserfight/api/contracts'
 import { paginatedResponse } from '@lenserfight/api/contracts'
 import { FileDataStore } from '@lenserfight/infra/storage'
+import { generateUUID } from '@lenserfight/utils/text'
 import type { LenserRepositoryPort, LenserSearchResult } from '../lenserRepository'
 
 const FILE_MODE_LENSER_ID = 'file-lenser-00000000-0000-0000-0000-000000000001'
@@ -94,7 +95,7 @@ export class FileLenserRepository implements LenserRepositoryPort {
   async createLenser(data: CreateLenserDTO): Promise<Lenser> {
     const lenser: Lenser = {
       ...DEV_LENSER,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       handle: data.handle,
       display_name: data.display_name,
       bio: data.bio ?? undefined,
@@ -229,7 +230,7 @@ export class FileLenserRepository implements LenserRepositoryPort {
     )
     if (existing.length === 0) {
       await followStore.save({
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         follower_id: FILE_MODE_LENSER_ID,
         following_id: followingId,
         created_at: new Date().toISOString(),

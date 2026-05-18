@@ -1,0 +1,169 @@
+name: Release npm packages (sdk + adapter-connector)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'libs/sdk/**'
+      - 'libs/adapters/connector/**'
+      - 'nx.json'
+      - '.github/workflows/release-npm.yml'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Preview versioning and npm publish without changing git or npm.
+        required: true
+        type: boolean
+        default: true
+      first_release:
+        description: Use only for the very first release (no prior nx-managed git tag exists).
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-npm
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: ${{ inputs.dry_run && 'Preview' || 'Publish' }} sdk + adapter-connector
+    runs-on: ubuntu-latest
+    environment: npm-production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Preflight tests
+        run: |
+          pnpm nx test sdk --ci
+          pnpm nx test adapters-connector --ci
+
+      - name: Preview version + changelog (dry run)
+        if: inputs.dry_run
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(release --projects=sdk,adapters-connector --skip-publish --dry-run --yes)
+          if [[ '${{ inputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
+          pnpm nx "${args[@]}"
+          npm publish dist/libs/sdk --dry-run --access public --tag alpha
+          npm publish dist/libs/adapters/connector --dry-run --access public
+
+      - name: Version packages
+        if: ${{ !inputs.dry_run }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          args=(release version --projects=sdk,adapters-connector --stage-changes)
+          if [[ '${{ inputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
+          pnpm nx "${args[@]}"
+
+      - name: Generate changelogs
+        if: ${{ !inputs.dry_run }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_version="$(node -p "require('./libs/sdk/package.json').version")"
+          connector_version="$(node -p "require('./libs/adapters/connector/package.json').version")"
+
+          sdk_args=(release changelog "$sdk_version" --projects=sdk)
+          connector_args=(release changelog "$connector_version" --projects=adapters-connector)
+          if [[ '${{ inputs.first_release }}' = 'true' ]]; then
+            sdk_args+=(--first-release)
+            connector_args+=(--first-release)
+          fi
+          pnpm nx "${sdk_args[@]}"
+          pnpm nx "${connector_args[@]}"
+
+      - name: Commit and tag release
+        if: ${{ !inputs.dry_run }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_version="$(node -p "require('./libs/sdk/package.json').version")"
+          connector_version="$(node -p "require('./libs/adapters/connector/package.json').version")"
+          sdk_tag="sdk@${sdk_version}"
+          connector_tag="adapters-connector@${connector_version}"
+
+          git add libs/sdk/package.json libs/adapters/connector/package.json \
+                  libs/sdk/CHANGELOG.md libs/adapters/connector/CHANGELOG.md \
+                  --ignore-missing || true
+
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(release): sdk@${sdk_version} adapters-connector@${connector_version} [skip ci]"
+          else
+            echo "No changed files to commit (versions unchanged)."
+          fi
+
+          for tag in "$sdk_tag" "$connector_tag"; do
+            if git rev-parse "$tag" >/dev/null 2>&1; then
+              echo "Tag already exists: $tag — skipping."
+            else
+              git tag -a "$tag" -m "$tag"
+              echo "Tagged: $tag"
+            fi
+          done
+
+          git push origin "HEAD:main"
+          git push origin "$sdk_tag" "$connector_tag" || true
+
+      - name: Build publishable packages
+        run: |
+          pnpm nx build sdk
+          pnpm nx build adapters-connector
+
+      - name: Publish @lenserfight/sdk to npm
+        if: ${{ !inputs.dry_run }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish dist/libs/sdk --access public --tag alpha --provenance
+
+      - name: Publish @lenserfight/adapter-connector to npm
+        if: ${{ !inputs.dry_run }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish dist/libs/adapters/connector --access public --provenance
+
+      - name: Verify published packages
+        if: ${{ !inputs.dry_run }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_version="$(node -p "require('./libs/sdk/package.json').version")"
+          connector_version="$(node -p "require('./libs/adapters/connector/package.json').version")"
+          for attempt in 1 2 3 4 5; do
+            if npm view "@lenserfight/sdk@$sdk_version" version --json > /dev/null 2>&1 && \
+               npm view "@lenserfight/adapter-connector@$connector_version" version --json > /dev/null 2>&1; then
+              echo "Verified: @lenserfight/sdk@$sdk_version"
+              echo "Verified: @lenserfight/adapter-connector@$connector_version"
+              break
+            fi
+            echo "Attempt $attempt: registry not yet propagated, waiting..."
+            sleep $((attempt * 10))
+          done

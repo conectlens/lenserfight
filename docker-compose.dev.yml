@@ -33,22 +33,8 @@ services:
       # intentionally non-functional so misconfigured stacks fail loudly.
       PGRST_JWT_SECRET: ${PGRST_JWT_SECRET:?set PGRST_JWT_SECRET in .env.local before running docker-compose.dev.yml}
 
-  platform-api:
-    build:
-      context: .
-      dockerfile: apps/platform-api/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - supabase-api
-    ports:
-      - "3001:3001"
-    environment:
-      SUPABASE_URL: http://supabase-api:3000
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-dev-anon-key}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-dev-service-key}
-      ECHO_PROVIDER: "1"
-      NODE_ENV: development
-      PLATFORM_API_PORT: "3001"
+  # platform-api worker runs via `pnpm nx serve platform-api` (see scripts/dev-start.sh).
+  # It has no HTTP server and no Dockerfile; do not add it here.
 
 volumes:
   supabase-db-data:

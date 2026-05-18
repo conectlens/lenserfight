@@ -23,8 +23,6 @@ import {
   Wrench,
 } from 'lucide-react'
 
-import { FEATURES } from '@lenserfight/utils/env'
-
 import type { AgentViewMode } from '../context/AgentWorkspaceContext'
 
 export type AgentSection =
@@ -88,7 +86,7 @@ export const NAV_ITEMS: AgentNavItem[] = [
   { id: 'team', label: 'Agent Teams', zone: 'build', icon: Network, visibleIn: OWNER_ONLY },
   { id: 'workflows', label: 'Workflows', zone: 'build', icon: GitBranch, visibleIn: PUBLIC_VISIBLE },
   // AUTOMATE
-  { id: 'schedules', label: 'Schedules', zone: 'automate', icon: CalendarClock, visibleIn: OWNER_ONLY, enabled: FEATURES.CRON_SCHEDULING },
+  { id: 'schedules', label: 'Schedules', zone: 'automate', icon: CalendarClock, visibleIn: OWNER_ONLY },
   { id: 'evaluations', label: 'Evaluations', zone: 'automate', icon: ListChecks, visibleIn: OWNER_ONLY },
   // CONFIGURE
   { id: 'memory', label: 'Memory', zone: 'configure', icon: Sparkles, visibleIn: OWNER_ONLY },
@@ -106,7 +104,6 @@ export const NAV_ITEMS: AgentNavItem[] = [
     zone: 'operate' as AgentNavZone,
     icon: BarChart2,
     visibleIn: ALL_OWNER_MODES,
-    enabled: FEATURES.AGENT_ANALYTICS,
   },
   { id: 'settings', label: 'Settings', zone: 'configure', icon: SettingsIcon, visibleIn: AGENT_OWNER_ONLY },
   {
@@ -115,7 +112,6 @@ export const NAV_ITEMS: AgentNavItem[] = [
     zone: 'operate',
     icon: Swords,
     visibleIn: OWNER_ONLY,
-    enabled: FEATURES.PUBLIC_BATTLES,
   },
 ]
 

@@ -1,8 +1,8 @@
 # Kullanım Şartları
 
-**Son Güncelleme:** 15 Mayıs 2026  
+**Son Güncelleme:** 17 Mayıs 2026  
 **Yürürlük Tarihi:** 19 Mayıs 2026  
-**Versiyon:** v1.0.0
+**Versiyon:** v1.1.0
 
 İşbu Kullanım Şartları ("Şartlar"), LenserFight internet siteleri, barındırılan uygulamaları, arena yüzeyleri, dokümantasyonu, API'leri, herkese açık savaş özellikleri, AI iş akışı özellikleri ve ilgili topluluk hizmetlerine (birlikte "Platform") erişimi ve kullanımı düzenler.
 
@@ -38,13 +38,15 @@ LenserFight kesintisiz hizmet, üretime hazır olma, güvenlik bütünlüğü, d
 
 ---
 
-## 3. Hesap ve Güvenlik Sorumlulukları
+## 3. Hesaplar, Kendi Anahtarını Getir (BYOK) ve Güvenlik Sorumlulukları
 
-Doğru ve güncel hesap bilgileri sağlamayı; kimlik bilgilerini, OAuth hesaplarını, API anahtarlarını, model sağlayıcı anahtarlarını ve cihazları güvende tutmayı; hesap paylaşmamayı ve başka kişi veya kuruluşları taklit etmemeyi; ihtiyaç duyduğunuz içerik veya verilerin bağımsız yedeklerini tutmayı; şüpheli hesap ele geçirme veya güvenlik sorunlarını gecikmeden bildirmeyi kabul edersiniz.
+Doğru hesap bilgileri sağlamayı, kimlik bilgilerini ve cihazları güvende tutmayı, OAuth hesaplarını, API anahtarlarını ve model sağlayıcı anahtarlarını korumayı, hesap paylaşımından ve taklitçilikten kaçınmayı, ihtiyacınız olan içerik veya verilerin bağımsız yedeklerini almayı ve şüpheli güvenlik ihlallerini derhal bildirmeyi kabul edersiniz.
 
-Hesabınız üzerinden yapılan işlemler, aksi kanıtlanmadıkça sizin işleminiz olarak değerlendirilebilir. LenserFight, Platformu korumak için cihaz, oturum, IP ve güvenlik meta verilerini kaydedebilir.
+**Kendi Anahtarını Getir (BYOK) Sorumluluğu:** Platformda kendi API anahtarlarınızı veya sağlayıcı kimlik bilgilerinizi kullanırken; bu anahtarları korumaktan, sağlayıcı sınırlarını yönetmekten, kullanımı izlemekten, sağlayıcı faturalandırmasını incelemekten, ele geçirilmiş kimlik bilgilerini değiştirmekten ve güvenli yerel ortamlar sağlamaktan tamamen siz sorumlusunuz. Kendi barındırdığınız (self-hosted) kurulumları ve bağımlılıkları en son güvenlik yamalarıyla güncel tutmalısınız. LenserFight; üçüncü taraf sağlayıcıların kötüye kullanılmasından, kullanıcı ortamlarından kaynaklanan sızdırılmış kullanıcı anahtarlarından, ele geçirilmiş yerel kurulumlardan, sağlayıcı tarafındaki kesintilerden veya yapılandırılmış sağlayıcılarınızdan gelen beklenmedik faturalardan sorumlu değildir.
 
-LenserFight; kötüye kullanım, güvenlik riski, politika ihlali, hukuki risk veya operasyonel zarar tespit ederse hesapları, tokenları, içerikleri veya API erişimini askıya alabilir, kısıtlayabilir, karantinaya alabilir veya sonlandırabilir.
+Hesabınız üzerinden gerçekleştirilen işlemler, aksini gösteren kanıtlar bulunmadıkça sizin işlemleriniz olarak kabul edilebilir. LenserFight, Platformu korumak için cihaz, oturum, IP ve güvenlik meta verilerini kaydedebilir.
+
+Kötüye kullanım, güvenlik riski, politika ihlali, yasal risk veya operasyonel zarar tespit etmemiz halinde hesapları, tokenları, içerikleri veya API erişimini askıya alabilir, kısıtlayabilir, karantinaya alabilir veya sonlandırabiliriz.
 
 ---
 
@@ -70,6 +72,55 @@ Herkese açık içerik; özellik ayarlarına ve uygulanabilir lisanslara bağlı
 
 ---
 
+## 5a. LenserFight Cloud — Herkese Açık İçerik, Telemetri ve Ekosistem Ortağı Veri Kullanımı
+
+LenserFight Cloud, barındırılan bir yapay zeka değerlendirme, kıyaslama ve iş akışı platformu olarak işletilir. LenserFight Cloud barındırılan hizmetlerini kullanarak şunları kabul edersiniz:
+
+**1. Herkese Açık İçerik**
+LenserFight Cloud'da yayımladığınız herkese açık içerikler — başta olmak üzere:
+- herkese açık savaşlar, savaş şablonları ve kıyaslama sonuçları,
+- herkese açık agentlar, agent yapılandırmaları ve iş akışları,
+- herkese açık lensler, istemler ve rubrikler,
+- lider tablosu katılımı ve sıralamaları,
+- platform analitik olayları, bülten abonelikleri ve iletişim formu gönderimleri,
+- herkese açık alanlardaki topluluk etkileşimleri
+
+**2. Telemetri ve Operasyonel Meta Veriler**
+Platform güvenilirliğini, güvenliğini ve performansını sağlamak için LenserFight Cloud operasyonel telemetri toplar. Bu şunları içerebilir:
+- operasyonel meta veriler,
+- loglar ve tanılama verileri,
+- analitik ve performans metrikleri,
+- altyapı telemetrisi,
+- iş akışı metrikleri,
+- kıyaslama (benchmark) etkinliği,
+- moderasyon ve güvenlik sinyalleri,
+- ve ilgili teknik platform verileri.
+
+**3. Açık Kaynak Şeffaflığı**
+LenserFight açık kaynaklı bir ekosistem olarak çalışır. Birçok operasyonel sistem ve telemetri davranışı herkese açık olarak incelenebilir. Kullanıcılar, telemetri ve operasyonel sistemlerin nasıl işlediğini anlamak için geçerli olan herkese açık kaynak kodlarını ve altyapı dokümantasyonunu inceleyebilir.
+
+**4. Ekosistem Ortağı İşleme ve Kullanım**
+Herkese açık içerik, telemetri ve operasyonel meta veriler; **LenserFight, Chainabit, ConectLens, gelecekteki ekosistem ortakları, altyapı sağlayıcıları, analitik sağlayıcıları, kurumsal hizmet sağlayıcıları ve moderasyon/güvenlik sistemleri** tarafından operasyonel, araştırma ve ticari amaçlarla geniş bir yelpazede kullanılabilir; bunlara şunlar dâhildir ancak bunlarla sınırlı değildir:
+
+- **Güvenlik ve Kötüye Kullanım Önleme:** dolandırıcılık tespiti, kötüye kullanım önleme, moderasyon sistemleri, platform bütünlüğü, spam önleme ve tehdit analizi.
+- **Yapay Zeka ve Araştırma:** yapay zeka değerlendirmesi, kıyaslama, model analizi, veri seti oluşturma, sentetik değerlendirme, sıralama sistemleri, model iyileştirme hatları, eğitim destek sistemleri ve araştırma yayınları.
+- **Performans ve Ürün İyileştirme:** altyapı optimizasyonu, öneri sistemleri, arama sistemleri, performans izleme, tanılama ve UX iyileştirmeleri.
+- **Kurumsal ve Ticari Çözümler:** kurumsal analitik, müşteri kıyaslaması, platform entegrasyonları, yönetilen hizmetler, ticari araştırma teklifleri ve ekosistem raporlaması.
+- **Pazarlama ve Ekosistem Tanıtımı:** bültenler, ürün duyuruları, ekosistem vitrinleri, öne çıkan iş akışları, herkese açık sıralamalar ve topluluk kampanyaları.
+
+Platform işlevselliği, güvenliği, moderasyonu, analitiği ve altyapı güvenilirliği için belirli operasyonel telemetri ve meta veri toplanması gerekli olabilir. LenserFight Cloud'un kullanılmaya devam edilmesi, yasal olarak izin verilen yerlerde bu operasyonel işlemlerin kabul edildiği anlamına gelir.
+
+**Fikri Mülkiyet ve Sahiplik**
+Kullanıcı İçeriğinizin mülkiyeti sizde kalır. Bu bölüm, fikri mülkiyetinizin mülkiyetini devretmez. Aksine, LenserFight ve ekosistem ortaklarına herkese açık içeriği ve operasyonel telemetriyi ekosistem genelinde indekslemek, analiz etmek, kıyaslamak, tanıtmak, yeniden dağıtmak, önbelleğe almak, arşivlemek, işlemek ve referans göstermek için gerekli geniş operasyonel ve ticari hakları verir. Herkese açık içerikler, yeniden dağıtımdan sonra bile keşfedilebilir kalabilir.
+
+**Chainabit** ve **ConectLens**, ConectLens ekosistemi bünyesinde faaliyet gösteren ekosistem ortaklarıdır. Chainabit ve ConectLens, LenserFight Cloud için altyapı, analitik, araştırma ve platform hizmetleri iş birliği sağlar. Bu ilişki şeffaf ve operasyoneldir — ilgisiz üçüncü taraf veri aracıları değildir.
+
+**Özel ve hassas içerikler** — sırlar, API anahtarları, kimlik bilgileri, özel yüklemeler, kamuya açık olmayan iş verileri, düzenlemeye tabi kişisel veriler ve özel agent yapılandırmaları dahil — herkese açık içerik paylaşım hükümleri kapsamında değildir ve herkese açık olarak yayımlanmamalıdır. Bu tür bilgilerin gizli tutulmasından yalnızca siz sorumlusunuz.
+
+> **İpucu:** Herhangi bir içeriği herkese açık olarak yayımlamadan önce hassas bilgi içerip içermediğini değerlendirin. LenserFight Cloud'daki herkese açık içerikler kasıtlı olarak herkese açık kabul edilir ve ekosistem genelinde yukarıda açıklandığı şekilde geniş çapta kullanılabilir.
+
+---
+
 ## 6. Yasaklı Kullanımlar
 
 Hukuku veya üçüncü taraf haklarını ihlal edemez; başkalarını taciz edemez, tehdit edemez, hedef alamaz, taklit edemez veya aldatamaz; oyları, sıralamaları, skorları, ELO'yu, lider tablolarını, kıyaslamaları, değerlendirmeleri veya çalıştırma sayılarını manipüle edemez; spam yapamaz, aşırı veri çekemez, Platformu aşırı yükleyemez, saldıramaz veya kesintiye uğratamaz; kimlik bilgisi hırsızlığı, phishing, zararlı yazılım dağıtımı, hukuka aykırı gözetim, yetkisiz scraping, yetkisiz otomasyon veya üçüncü taraf sistemlerinin kötüye kullanımı amacıyla Platformu kullanamaz; prompt injection, jailbreak, sistem talimatı çıkarma, sır çıkarma, kötü amaçlı dosya analizi, barındırılan puanlama sistemlerinin tersine mühendisliği veya güvenlik kontrollerini aşmaya çalışamaz; zararlı yazılım, exploit yükü, kimlik bilgisi dökümü, özel anahtar veya sır yükleyemez; kaynakları kötüye kullanmak veya sınırları aşmak için bot, script ya da otomasyon kullanamaz; yetkili güvenlik araştırması ve bildirim kanalları dışında açık taraması yapamaz; yasa dışı, nefret içerikli, istismarcı, cinsel sömürü içeren, dolandırıcı, yanıltıcı veya güvensiz içerik yayımlayamaz; nitelikli insan incelemesi olmadan Platformu yüksek riskli kararlar için kullanamazsınız.
@@ -86,11 +137,22 @@ Depo lisansı, kodun kendi şartları kapsamında kullanılmasına izin verir. A
 
 ---
 
-## 8. Üçüncü Taraf Hizmetleri, Gizlilik ve Çerezler
+## 8. Ekosistem Ortakları, Kimlik Doğrulama ve Gizlilik
 
-LenserFight; altyapı, kimlik doğrulama, depolama, analitik, AI işleme, medya işleme, moderasyon, iletişim ve uygulanabilir olduğu ölçüde ödeme hizmetleri için üçüncü taraf sağlayıcılara dayanabilir. Bunlar Cloudflare, Supabase, Google Analytics, PostHog, GitHub, Google, AI model sağlayıcıları ve diğer işleyenleri ya da alt işleyenleri içerebilir.
+LenserFight; altyapı, kimlik doğrulama, depolama, analitik, AI işleme, medya işleme, moderasyon, iletişim, kurumsal çözümler ve uygulanabilir olduğu ölçüde ödeme hizmetleri için üçüncü taraf sağlayıcılara, ekosistem ortaklarına, bağlı kuruluşlara, altyapı operatörlerine ve araştırma ortaklarına dayanabilir. Bunlar Cloudflare, Chainabit, Supabase, Google Analytics, PostHog, GitHub, Google, AI model sağlayıcıları ve diğer işleyenleri ya da alt işleyenleri içerebilir.
 
-Üçüncü taraf hizmetleri erişilemez, güvensiz, gecikmeli olabilir veya kendi şartlarına, gizlilik politikalarına, kotalarına ve sınırlamalarına tabi olabilir. LenserFight; üçüncü taraf kesintilerinden, harici bağlantılardan, OAuth sağlayıcılarından, model sağlayıcı çıktılarından, ödeme portallarından, tarayıcı eklentilerinden, işletim sistemi paylaşım ekranlarından veya harici hedeflerden sorumlu değildir.
+**Chainabit** (chainabit.com) ve **LenserFight** (lenserfight.com), ConectLens ekosistemi (conectlens.com) bünyesinde altyapı, analitik ve araştırma iş birliği sağlayan ekosistem ortaklarıdır. Chainabit, LenserFight ve gelecekteki ekosistem ortakları; platform operasyonlarını, araştırmaları ve kurumsal genişlemeyi desteklemek için herkese açık platform içeriklerini, kıyaslama verilerini, analitik sinyallerini, bülten aboneliklerini ve platform etkileşimlerini yukarıdaki 5a Bölümü'nde ve Gizlilik Politikası'nda açıklandığı şekilde işleyebilir.
+
+**OAuth ve Kimlik Doğrulama Sağlayıcıları**
+LenserFight, sorunsuz giriş sağlamak için OAuth (GitHub, Google ve Chainabit üzerinden) kullanır. Bunlar kendi politikalarına sahip bağımsız sağlayıcılardır. Kimlik doğrulama sırasında gizlilik ve hizmet şartları sayfalarını inceleyebilirsiniz.
+
+**Chainabit Entegrasyonları ve AI Kredileri**
+Chainabit, LenserFight kullanıcıları için sorunsuz kimlik doğrulama, AI altyapısı ve AI kredi sistemleri sağlayan stratejik bir ekosistem ortağı olarak hareket eder. LenserFight üzerinde Chainabit OAuth, Chainabit AI kredileri, desteklenen model sağlayıcı kredileri veya ekosistem tarafından finanse edilen AI hizmetlerini kullanırsanız:
+- Bu kullanıma ek Chainabit operasyonel ve yasal politikaları uygulanır.
+- Chainabit, oran sınırlarını, kötüye kullanım önlemlerini ve kredi tüketimini düzenleyen ayrı altyapı kuralları sürdürür.
+- Tüm detaylar için lütfen [Chainabit Şartları](https://chainabit.com/tr/policies/terms) ve [Chainabit Gizlilik Politikası](https://chainabit.com/tr/policies/privacy) belgelerini inceleyiniz.
+
+Üçüncü taraf hizmetleri ve ekosistem özellikleri erişilemez, güvensiz, gecikmeli olabilir veya kendi şartlarına, gizlilik politikalarına, kotalarına ve sınırlamalarına tabi olabilir. LenserFight; üçüncü taraf kesintilerinden, harici bağlantılardan, OAuth sağlayıcılarından, model sağlayıcı çıktılarından, ödeme portallarından, tarayıcı eklentilerinden, işletim sistemi paylaşım ekranlarından veya harici hedeflerden sorumlu değildir.
 
 Kişisel veriler **Gizlilik Politikası** uyarınca işlenir. Çerezler ve benzeri teknolojiler **Çerez Politikası** uyarınca yönetilir.
 
@@ -106,15 +168,17 @@ Platform herhangi bir SLA, erişilebilirlik taahhüdü, yedekleme garantisi, ver
 
 ---
 
-## 10. Sorumluluk Reddi ve Sorumluluğun Sınırlandırılması
+## 10. Sorumluluk Reddi ve Sınırlandırılması
 
-Platform, OSS Kodu, AI Çıktıları, dokümantasyon, örnekler, şablonlar, iş akışları, kıyaslamalar ve herkese açık içerikler, hukukun izin verdiği azami ölçüde "OLDUĞU GİBİ" ve "MEVCUT OLDUĞU ŞEKİLDE" sunulur.
+Platform, OSS Kodu, AI Çıktıları, dokümantasyon, örnekler, şablonlar, iş akışları, kıyaslamalar ve herkese açık içerikler yasaların izin verdiği azami ölçüde "OLDUĞU GİBİ" ve "MEVCUT OLDUĞU ŞEKİLDE" sağlanır.
 
-LenserFight doğruluk, güvenilirlik, ihlal etmeme, ticarete elverişlilik, belirli bir amaca uygunluk, kesintisiz çalışma, güvenlik bütünlüğü, veri bütünlüğü ve garanti edilmiş sonuçlar dahil hiçbir garanti vermez. Platformu ve OSS Kodunu kendi riskinizle kullanırsınız.
+**Kalıcı Garanti veya Mutlak Güvenlik Yoktur:** Platform sürekli olarak gelişmektedir. Özellikler, API'ler, entegrasyonlar ve iş akışları kalıcı uyumluluk garantisi olmaksızın değişebilir, kullanımdan kaldırılabilir veya deneysel beta durumlarında çalışabilir. LenserFight güvenlik açıklarını tespit edip hızla azaltmaya çalışsa da, hiçbir platform mutlak güvenlik garanti edemez. Beklenmedik olaylar meydana gelebilir, bulut sistemleri arızalar yaşayabilir, entegrasyonlar bozulabilir ve herkese açık sistemlerde veri ifşa riskleri bulunabilir. Bu makul operasyonel riskleri kabul edersiniz.
 
-Uygulanabilir hukukun izin verdiği azami ölçüde LenserFight; dolaylı, arızi, özel, sonuçsal, örnek niteliğinde veya cezai zararlardan; veri, gelir, kar, itibar, iş fırsatı, üretkenlik, model kredisi veya beklenen sonuç kayıplarından sorumlu değildir.
+LenserFight; doğruluk, güvenilirlik, ihlal etmeme, ticari elverişlilik, belirli bir amaca uygunluk, kesintisiz çalışma, güvenlik eksiksizliği, veri bütünlüğü ve garantili sonuçlar dâhil olmak üzere tüm garantileri reddeder. Platformu ve OSS Kodunu kendi riskinizle kullanırsınız.
 
-Sorumluluğun tamamen hariç tutulamadığı hallerde LenserFight'ın toplam sorumluluğu, talep öncesindeki 12 ay içinde barındırılan Platform için LenserFight'a ödediğiniz tutar ile; ücretli bir barındırılmış ilişki yoksa 100 EUR ile sınırlıdır. Emredici hukuk aksini gerektirirse ilgili hüküm uygulanır.
+Geçerli yasaların izin verdiği azami ölçüde, LenserFight ve ekosistem ortakları; dolaylı, arızi, özel, sonuç olarak ortaya çıkan, cezai veya örnek teşkil eden zararlardan ya da veri, gelir, kâr, itibar, iş fırsatı, üretkenlik, model kredisi veya beklenen sonuç kayıplarından sorumlu tutulamaz. Bu sınırlama; platform kesintisi, sağlayıcı kesintileri, veri kaybı, herkese açık içeriğin yeniden dağıtımı, yapay zeka yanlışlıkları, model halüsinasyonları, iş akışı arızaları, otomasyon arızaları, kurumsal kullanım, üçüncü taraf entegrasyonları veya beklenmedik operasyonel davranışlar için geçerlidir.
+
+Sorumluluğun hariç tutulamadığı durumlarda LenserFight'ın toplam sorumluluğu, talep tarihinden önceki 12 ay içinde barındırılan Platform için LenserFight'a ödediğiniz tutarla veya ücretli bir barındırma ilişkisi yoksa, emredici hukuk kuralları aksini gerektirmedikçe 100 EUR ile sınırlı olacaktır.
 
 ---
 
@@ -124,11 +188,13 @@ Kullanıcı İçeriğiniz, Platformu kötüye kullanımınız, bu Şartları ihl
 
 ---
 
-## 12. Uygulanacak Hukuk, Dil ve Güncellemeler
+## 12. Uygulanacak Hukuk, Dil ve Küresel Kabul
 
-Bu Şartlar Türkiye Cumhuriyeti kanunlarına tabidir. Bu Şartlardan veya barındırılan Platformdan doğan uyuşmazlıklarda, emredici tüketici veya veri koruma hukuku aksini gerektirmedikçe İstanbul Mahkemeleri ve İcra Daireleri yetkilidir.
+**Uygulanacak Hukuk:** Bu Şartlar Türkiye Cumhuriyeti kanunlarına tabidir. Bu Şartlardan veya barındırılan Platformdan doğan uyuşmazlıklarda, emredici tüketici hukuku aksini gerektirmedikçe İstanbul Mahkemeleri ve İcra Daireleri münhasıran yetkilidir. Türkiye Kişisel Verilerin Korunması Kanunu (KVKK), operasyonel olarak uygun olduğunda uluslararası standartlarla birlikte birincil veri koruma çerçevesi olarak hizmet eder.
 
-Bu Şartların İngilizce versiyonu yorum bakımından kaynak metindir. İngilizce versiyon ile herhangi bir çeviri arasında tutarsızlık olması halinde, emredici uygulanabilir hukuk aksini gerektirmedikçe İngilizce versiyon esas alınır.
+**Geçerli Dil:** Bu Şartların ve tüm ekosistem politikalarının birincil geçerli dili **Türkçe**'dir. İngilizce ve diğer yerelleştirilmiş sürümler kesinlikle erişilebilirlik ve uluslararası kullanılabilirlik için sağlanmıştır. Türkçe sürüm ile herhangi bir çeviri arasında tutarsızlık olması halinde, **Türkçe sürüm esas alınır** ve geçerli olur.
+
+**Küresel Kabul:** Platform küresel katılımı destekler. Herhangi bir bölgeden veya desteklenen herhangi bir dilde kayıt olarak, kimlik doğrulaması yaparak, içerik yayımlayarak veya LenserFight Cloud hizmetlerini kullanarak bu Şartları, Gizlilik Politikasını ve ilgili tüm bulut kullanım politikalarını yasal olarak kabul etmiş olursunuz.
 
 Bu Şartlar **19 Mayıs 2026** tarihinde yürürlüğe girer. Güncellenmiş Şartların yayımlanmasından sonra Platformu kullanmaya devam etmeniz, güncellenmiş Şartları kabul ettiğiniz anlamına gelir.
 
@@ -138,4 +204,5 @@ Bu Şartlar **19 Mayıs 2026** tarihinde yürürlüğe girer. Güncellenmiş Şa
 
 Bu Şartlarla ilgili sorularınız için:
 
-**E-posta:** omer@chainabit.com
+**E-posta:** omer@chainabit.com  
+**Chainabit Ortaklığı:** [chainabit.com](https://chainabit.com)

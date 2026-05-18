@@ -24,3 +24,5 @@ export * from './lib/LensContentEditor'
 export * from './lib/OTPInput'
 // Auth-style labeled input
 export * from './lib/InputField'
+// OAuth connector ref picker
+export * from './lib/ConnectorRefField'

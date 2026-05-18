@@ -8,6 +8,7 @@ import {
   threadsService,
 } from '@lenserfight/data/repositories'
 import { AgentCard } from '@lenserfight/features/agents'
+import { BadgeDisplay } from '@lenserfight/features/lenserboard'
 import { useAuth } from '@lenserfight/features/auth'
 import { ThreadsListCard } from '@lenserfight/features/home'
 import { CreateLensModal, LensCard, useCreateLens } from '@lenserfight/features/lenses'
@@ -17,9 +18,8 @@ import { useAnalytics } from '@lenserfight/infra/analytics'
 import { Button, EmptyState, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { useModalRouter } from '@lenserfight/ui/routing'
-import { FEATURES } from '@lenserfight/utils/env'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Activity, Bot, FolderOpen, LogIn, MessageSquare, Plus, Trophy } from 'lucide-react'
+import { Activity, Award, Bot, FolderOpen, LogIn, MessageSquare, Plus, Trophy } from 'lucide-react'
 import { supabase } from '@lenserfight/data/supabase'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useNavigate, useParams } from 'react-router-dom'
@@ -50,7 +50,7 @@ import type {
   XPSummary,
 } from '@lenserfight/types'
 
-type StandardTab = 'actions' | 'lenses' | 'threads' | 'challenges' | 'agents'
+type StandardTab = 'actions' | 'lenses' | 'threads' | 'challenges' | 'agents' | 'badges'
 
 interface TabState {
   data: any[]
@@ -72,6 +72,7 @@ const TAB_MAP: Record<string, LenserTabId> = {
   a: 'actions',
   c: 'challenges',
   ag: 'agents',
+  bd: 'badges',
 }
 
 const REVERSE_TAB_MAP: Partial<Record<LenserTabId, string>> = {
@@ -80,6 +81,7 @@ const REVERSE_TAB_MAP: Partial<Record<LenserTabId, string>> = {
   actions: 'a',
   challenges: 'c',
   agents: 'ag',
+  badges: 'bd',
   overview: 'ov',
   workflows: 'wf',
   logs: 'lg',
@@ -89,7 +91,7 @@ const REVERSE_TAB_MAP: Partial<Record<LenserTabId, string>> = {
 const PAGE_SIZE = 9
 
 function isStandardTab(tab: LenserTabId): tab is StandardTab {
-  return ['actions', 'lenses', 'threads', 'challenges', 'agents'].includes(tab)
+  return ['actions', 'lenses', 'threads', 'challenges', 'agents', 'badges'].includes(tab)
 }
 
 function buildProfileTabs(
@@ -105,11 +107,11 @@ function buildProfileTabs(
     tabs.push({ id: 'actions', label: 'Actions' })
   }
 
-  if (FEATURES.CHALLENGES_TAB) {
-    tabs.push({ id: 'challenges', label: 'Challenge History' })
-  }
+  tabs.push({ id: 'challenges', label: 'Challenge History' })
 
-  if (FEATURES.AGENTS && isOwner) {
+  tabs.push({ id: 'badges', label: 'Badges' })
+
+  if (isOwner) {
     tabs.push({ id: 'agents', label: 'Agents' })
   }
 
@@ -167,7 +169,7 @@ export const LenserProfilePage: React.FC = () => {
   const { data: activity = [] } = useQuery<LenserActivityPoint[]>({
     queryKey: queryKeys.lenser.activity(handle!),
     queryFn: () => lenserService.getLenserActivity(handle!),
-    enabled: !!handle && !!viewedProfile && FEATURES.LENSER_ACTIVITY,
+    enabled: !!handle && !!viewedProfile,
   })
 
   const stats = useMemo<LenserStats | null>(() => {
@@ -198,6 +200,7 @@ export const LenserProfilePage: React.FC = () => {
     actions: { ...INITIAL_TAB_STATE },
     challenges: { ...INITIAL_TAB_STATE },
     agents: { ...INITIAL_TAB_STATE },
+    badges: { ...INITIAL_TAB_STATE },
   })
   const [loadingTab, setLoadingTab] = useState(false)
   const observer = useRef<IntersectionObserver | null>(null)
@@ -238,6 +241,7 @@ export const LenserProfilePage: React.FC = () => {
       actions: { ...INITIAL_TAB_STATE },
       challenges: { ...INITIAL_TAB_STATE },
       agents: { ...INITIAL_TAB_STATE },
+      badges: { ...INITIAL_TAB_STATE },
     })
   }, [handle])
 
@@ -536,22 +540,16 @@ export const LenserProfilePage: React.FC = () => {
         isOwner={isOwner}
         onProfileUpdate={handleProfileUpdate}
         relationshipState={relationshipState}
-        onManageAgents={
-          isOwner && FEATURES.AGENTS
-            ? () => handleTabChange('agents')
-            : undefined
-        }
+        onManageAgents={isOwner ? () => handleTabChange('agents') : undefined}
       />
 
       <div className="px-4 md:px-0">
         <LenserStatsRow stats={stats} xpSummary={xpSummary} />
       </div>
 
-      {FEATURES.LENSER_ACTIVITY && (
-        <div className="px-4 md:px-0">
-          <LenserActivityHeatmap data={activity} />
-        </div>
-      )}
+      <div className="px-4 md:px-0">
+        <LenserActivityHeatmap data={activity} />
+      </div>
 
       <div className="mt-8 px-0 md:px-0">
         <div className="px-4 md:px-0">
@@ -667,7 +665,11 @@ export const LenserProfilePage: React.FC = () => {
             <EmptyState icon={Trophy} title="No challenge history available." />
           )}
 
-          {authUser && activeStandardTab === 'agents' && FEATURES.AGENTS && (
+          {authUser && activeStandardTab === 'badges' && (
+            <BadgeDisplay lenserId={viewedProfile.id} detailed />
+          )}
+
+          {authUser && activeStandardTab === 'agents' && (
             <>
               {items.length > 0 ? (
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

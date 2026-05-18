@@ -3,7 +3,7 @@ import { apiFetch, unwrapEnvelope } from '@lenserfight/data/repositories'
 import { CHAINABIT_OAUTH_URL, CHAINABIT_OAUTH_CLIENT_ID, CHAINABIT_OAUTH_CALLBACK_URL } from '@lenserfight/utils/env'
 import type { ChainabitAiModel, PartnerBalance, PartnerProvision, PartnerTokenRefreshResult } from './partner-provider.interface'
 
-// Partner provisioning calls go to Supabase Edge Functions (no platform-api needed).
+// Partner provisioning calls go to Supabase Edge Functions (no worker HTTP surface needed).
 const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
@@ -33,6 +33,11 @@ function generateCodeVerifier(): string {
 }
 
 async function deriveCodeChallenge(verifier: string): Promise<string> {
+  if (!crypto.subtle) {
+    throw new Error(
+      'Chainabit OAuth requires a secure context (HTTPS). This page must be served over HTTPS to use Chainabit sign-in.',
+    )
+  }
   const encoded = new TextEncoder().encode(verifier)
   const digest = await crypto.subtle.digest('SHA-256', encoded)
   return btoa(String.fromCharCode(...new Uint8Array(digest)))

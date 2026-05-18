@@ -19,7 +19,6 @@
  * subset of the API we want to document.
  */
 
-import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve, join } from 'node:path'
@@ -238,12 +237,20 @@ function mergeWithExisting(generated, existingPath) {
     // permanently appending machine output.
     return null
   }
+  const existingGeneratedBlock = existing.slice(
+    startIdx + SENTINEL_START.length,
+    endIdx
+  )
+  if (existingGeneratedBlock.trim().length > 0) {
+    return existing
+  }
   const before = existing.slice(0, startIdx)
   const after = existing.slice(endIdx + SENTINEL_END.length)
   return before + generated.body + after
 }
 
 const generated = []
+const stale = []
 for (const f of files) {
   const src = readFileSync(f.path, 'utf-8')
   // Find the default export's meta.
@@ -257,27 +264,23 @@ for (const f of files) {
   const outPath = join(OUT_DIR, `${meta.name}.md`)
   const merged = mergeWithExisting({ cmdName: meta.name, description: meta.description, body }, outPath)
   if (merged === null) continue // hand-authored page with no sentinels — opt-in only
-  writeFileSync(outPath, merged, 'utf-8')
-  generated.push(outPath)
+  const existing = existsSync(outPath) ? readFileSync(outPath, 'utf-8') : ''
+  if (checkMode) {
+    if (merged !== existing) stale.push(outPath)
+  } else {
+    writeFileSync(outPath, merged, 'utf-8')
+    generated.push(outPath)
+  }
 }
 
-console.log(`Generated/updated ${generated.length} CLI doc page(s).`)
-
 if (checkMode) {
-  let dirty = ''
-  try {
-    dirty = execSync('git status --porcelain docs/en/reference/cli/', {
-      cwd: repoRoot,
-      encoding: 'utf-8',
-    })
-  } catch (e) {
-    console.error('git status failed:', e.message)
-    process.exit(2)
-  }
-  if (dirty.trim().length > 0) {
+  console.log(`Checked ${files.length} CLI command source file(s).`)
+  if (stale.length > 0) {
     console.error('\nCLI reference docs are out of date. Run: node tools/gen-cli-docs.mjs')
-    console.error(dirty)
+    for (const file of stale) console.error(` M ${file.replace(`${repoRoot}/`, '')}`)
     process.exit(1)
   }
   console.log('CLI reference docs are up to date.')
+} else {
+  console.log(`Generated/updated ${generated.length} CLI doc page(s).`)
 }

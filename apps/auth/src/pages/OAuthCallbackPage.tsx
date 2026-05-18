@@ -7,6 +7,16 @@ import { replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateRetur
 
 const RETURN_URL_KEY = 'auth_return_url'
 
+// When arriving via a Chainabit magic-link redirect the sessionStorage key is
+// not set (the user never visited LoginPage in this tab). Fall back to the
+// ?return_url query param that the Edge Function embeds in the redirectTo URL.
+function resolveReturnUrl(): string {
+  const fromStorage = sessionStorage.getItem(RETURN_URL_KEY)
+  if (fromStorage) return fromStorage
+  const params = new URLSearchParams(window.location.search)
+  return params.get('return_url') ?? ''
+}
+
 /**
  * Handles the post-OAuth redirect from Supabase / provider.
  *
@@ -31,7 +41,7 @@ export const OAuthCallbackPage: React.FC = () => {
     const redirect = (session: { user: unknown } | null) => {
       if (redirected || !session) return
       redirected = true
-      const returnUrl = sanitizeReturnUrl(sessionStorage.getItem(RETURN_URL_KEY))
+      const returnUrl = sanitizeReturnUrl(resolveReturnUrl())
       sessionStorage.removeItem(RETURN_URL_KEY)
       replaceLocationSafely(getPostOAuthRedirectUrl(returnUrl))
     }

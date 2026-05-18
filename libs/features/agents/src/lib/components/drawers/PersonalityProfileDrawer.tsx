@@ -1,7 +1,12 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { Drawer } from '@lenserfight/ui/overlays'
 import type { AgentPersonalityProfileRecord } from '@lenserfight/types'
+import { Tooltip } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
+import { Drawer, DrawerFooter } from '@lenserfight/ui/overlays'
+import { HelpCircle } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
+
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface Props {
   open: boolean
@@ -92,31 +97,92 @@ export const PersonalityProfileDrawer: React.FC<Props> = ({
       onClose={onClose}
       side="right"
       width="w-[560px]"
-      title={isEdit ? 'Edit personality profile' : 'Create personality profile'}
+      title={isEdit ? 'Edit personality' : 'Add personality profile'}
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/personality-profile"
+          tip="Define a named behavioral preset. Multiple profiles can coexist — only one is active at a time. The active profile's system_prompt_patch is appended verbatim to the agent's system prompt on every run."
+        />
+      }
+      footer={
+        <DrawerFooter
+          onCancel={onClose}
+          onSubmit={handleSave}
+          submitLabel={submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create'}
+          isLoading={submitting}
+          disabled={submitting}
+        />
+      }
     >
       <div className="space-y-4">
-        <Field label="Name">
+        <FieldLabel
+          label="Name"
+          tooltip="A label for this personality variant. Use descriptive names like 'Formal analyst' or 'Creative assistant' to distinguish profiles."
+        >
           <input
             value={state.name}
             onChange={(e) => setState({ ...state, name: e.target.value })}
             className={inputClass}
           />
-        </Field>
+        </FieldLabel>
+
         <div className="grid grid-cols-2 gap-3">
-          <Selector label="Tone" value={state.tone} onChange={(v) => setState({ ...state, tone: v })} options={TONES} />
-          <Selector label="Expertise" value={state.expertise_level} onChange={(v) => setState({ ...state, expertise_level: v })} options={EXPERTISE} />
-          <Selector label="Risk" value={state.risk_tolerance} onChange={(v) => setState({ ...state, risk_tolerance: v })} options={RISK} />
-          <Selector label="Autonomy" value={state.autonomy_level} onChange={(v) => setState({ ...state, autonomy_level: v })} options={AUTONOMY} />
-          <Selector label="Communication" value={state.communication_style} onChange={(v) => setState({ ...state, communication_style: v })} options={COMMUNICATION} />
-          <Selector label="Decision" value={state.decision_style} onChange={(v) => setState({ ...state, decision_style: v })} options={DECISION} />
+          <Selector
+            label="Tone"
+            tooltip="Affects phrasing and assertiveness in every response. 'Decisive' skips hedging; 'Reserved' adds more caveats."
+            value={state.tone}
+            onChange={(v) => setState({ ...state, tone: v })}
+            options={TONES}
+          />
+          <Selector
+            label="Expertise"
+            tooltip="Models how the agent frames explanations — 'novice' uses plain language; 'principal' assumes deep domain knowledge."
+            value={state.expertise_level}
+            onChange={(v) => setState({ ...state, expertise_level: v })}
+            options={EXPERTISE}
+          />
+          <Selector
+            label="Risk"
+            tooltip="'Conservative' avoids uncertain actions; 'aggressive' accepts higher-variance bets."
+            value={state.risk_tolerance}
+            onChange={(v) => setState({ ...state, risk_tolerance: v })}
+            options={RISK}
+          />
+          <Selector
+            label="Autonomy"
+            tooltip="'Observed' emits approval requests for every action; 'autonomous' runs without gates within the assigned budget."
+            value={state.autonomy_level}
+            onChange={(v) => setState({ ...state, autonomy_level: v })}
+            options={AUTONOMY}
+          />
+          <Selector
+            label="Communication"
+            tooltip="'Concise' outputs minimal text; 'explanatory' adds rationale and context to every response."
+            value={state.communication_style}
+            onChange={(v) => setState({ ...state, communication_style: v })}
+            options={COMMUNICATION}
+          />
+          <Selector
+            label="Decision"
+            tooltip="'Evidence-first' delays output until reasoning is complete; 'speed-first' prioritizes throughput over completeness."
+            value={state.decision_style}
+            onChange={(v) => setState({ ...state, decision_style: v })}
+            options={DECISION}
+          />
         </div>
+
         <Selector
           label="Escalation behavior"
+          tooltip="When the agent hits a blocker — 'ask_when_blocked' pauses and prompts the owner; 'never' fails silently; 'always_for_writes' gates every write action."
           value={state.escalation_behavior}
           onChange={(v) => setState({ ...state, escalation_behavior: v })}
           options={ESCALATION}
         />
-        <Field label="System prompt patch">
+
+        <FieldLabel
+          label="System prompt patch"
+          tooltip="Appended verbatim to the agent's system prompt when this profile is active. Avoid duplicating instructions already in the workflow. Max effect with 1–3 focused sentences."
+        >
           <textarea
             rows={4}
             value={state.system_prompt_patch}
@@ -125,55 +191,57 @@ export const PersonalityProfileDrawer: React.FC<Props> = ({
             }
             className={`${inputClass} resize-none`}
           />
-        </Field>
+        </FieldLabel>
+
         {error && (
           <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
             {error}
           </p>
         )}
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={submitting}
-            className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-          >
-            {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create'}
-          </button>
-        </div>
       </div>
     </Drawer>
   )
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">{label}</span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )
 
 const Selector: React.FC<{
   label: string
+  tooltip?: string
   value: string
   onChange: (v: string) => void
   options: string[]
-}> = ({ label, value, onChange, options }) => (
-  <Field label={label}>
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
-      {options.map((o) => (
-        <option key={o} value={o}>{o}</option>
-      ))}
-    </select>
-  </Field>
+}> = ({ label, tooltip, value, onChange, options }) => (
+  <FieldLabel label={label} tooltip={tooltip}>
+    <SelectField
+      value={value}
+      onChange={onChange}
+      options={options.map((o) => ({ value: o, label: o }))}
+    />
+  </FieldLabel>
 )

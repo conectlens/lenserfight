@@ -10,6 +10,33 @@ import {
   writeWorkflowSimulationArtifacts,
 } from '../utils/automation-objects'
 import { printJson, printTable, truncate } from '../utils/output'
+import { makeLifecycleCommand } from '../utils/lifecycle'
+import { A, c, sym } from '../utils/ansi'
+
+// Node types that can execute in the current CLI context.
+// All other types require the full hosted DAG runner.
+const EXECUTABLE_NODE_TYPES = new Set([
+  'lens',
+  'lens_execute',
+  'prompt_template',
+  'output_parser',
+  'set_variables',
+  'json_transform',
+  'switch',
+  'if_condition',
+  'loop_map',
+  'wait_delay',
+  'noop',
+  'code',
+  'error_catch',
+  'manual_trigger',
+  'event_trigger',
+  'schedule_trigger',
+])
+
+function classifyStep(type: string): 'executable' | 'design-only' {
+  return EXECUTABLE_NODE_TYPES.has(type) ? 'executable' : 'design-only'
+}
 
 function parseInputs(raw: string | undefined): Record<string, unknown> | undefined {
   if (!raw) return undefined
@@ -70,21 +97,38 @@ const run = defineCommand({
 
     const frontmatter = parsed.document.frontmatter as WorkflowFrontmatter
     const inputs = parseInputs(args.inputs || undefined)
-    const steps = (frontmatter.steps ?? []).map((step) => `${step.id} (${step.type})`)
-    const status = steps.length > 0 ? 'ready' : 'blocked'
+
+    // Classify each step by executability
+    const rawSteps = frontmatter.steps ?? []
+    const classifiedSteps = rawSteps.map((step) => ({
+      id: step.id,
+      type: step.type as string,
+      classification: classifyStep(step.type as string),
+      label: `${step.id} (${step.type})`,
+    }))
+
+    const executableCount = classifiedSteps.filter((s) => s.classification === 'executable').length
+    const designOnlyCount = classifiedSteps.filter((s) => s.classification === 'design-only').length
+    const status = classifiedSteps.length > 0 ? (designOnlyCount === 0 ? 'ready' : 'partial') : 'blocked'
+
     const summary = {
-      source: {
-        kind: parsed.kind,
-        id: frontmatter.id,
-        name: frontmatter.name,
-      },
+      source: { kind: parsed.kind, id: frontmatter.id, name: frontmatter.name },
       status,
       inputs: inputs ?? {},
-      step_count: steps.length,
-      steps,
+      step_count: classifiedSteps.length,
+      executable_step_count: executableCount,
+      design_only_step_count: designOnlyCount,
+      steps: classifiedSteps.map((s) => s.label),
+      step_details: classifiedSteps,
       generated_at: new Date().toISOString(),
     }
-    const report = buildWorkflowSimulationReport(frontmatter.name ?? frontmatter.id, status, steps, inputs)
+
+    const report = buildWorkflowSimulationReport(
+      frontmatter.name ?? frontmatter.id,
+      status === 'partial' ? 'ready' : status,
+      classifiedSteps.map((s) => s.label),
+      inputs
+    )
     const artifacts = writeWorkflowSimulationArtifacts(frontmatter.slug ?? frontmatter.id, summary, report)
 
     if (args.json) {
@@ -92,10 +136,43 @@ const run = defineCommand({
       return
     }
 
-    consola.success('Simulated workflow %s', frontmatter.name ?? frontmatter.id)
+    consola.success('Workflow parsed: %s', frontmatter.name ?? frontmatter.id)
     consola.info('Status: %s', status)
-    consola.info('Steps: %d', steps.length)
-    consola.info('JSON report: %s', artifacts.jsonPath)
+    consola.info('')
+
+    if (classifiedSteps.length === 0) {
+      consola.warn('No steps declared. Add steps to your workflow before running.')
+    } else {
+      // Print per-step classification table
+      const stepRows = classifiedSteps.map((s) => [
+        s.id,
+        s.type,
+        s.classification === 'executable'
+          ? `${A.brightGreen}${sym.pass} executable${A.reset}`
+          : `${A.yellow}${sym.warn} design-only${A.reset}`,
+      ])
+      printTable(['Step', 'Type', 'Status'], stepRows, [20, 24, 16])
+      consola.info('')
+      if (designOnlyCount > 0) {
+        consola.warn(
+          '%d of %d steps are design-only and require the hosted DAG runner.',
+          designOnlyCount,
+          classifiedSteps.length,
+        )
+        consola.info(
+          '  Executable node types: %s',
+          [...EXECUTABLE_NODE_TYPES].slice(0, 8).join(', ') + '…',
+        )
+        consola.info(
+          '  For multi-node execution, publish the workflow and run it from the web UI.',
+        )
+      } else {
+        consola.success('All %d step(s) are executable locally.', classifiedSteps.length)
+      }
+    }
+
+    consola.info('')
+    consola.info('JSON report:     %s', artifacts.jsonPath)
     consola.info('Markdown report: %s', artifacts.reportPath)
   },
 })
@@ -254,7 +331,7 @@ const list = defineCommand({
         {
           requireAuth: true,
           query: {
-            select: 'id,name,description,status,created_at',
+            select: 'id,title,description,visibility,archived_at,deleted_at,created_at',
             order: 'created_at.desc',
             limit: args.limit,
             offset: args.offset,
@@ -274,11 +351,12 @@ const list = defineCommand({
       }
 
       printTable(
-        ['ID', 'Name', 'Status', 'Created'],
+        ['ID', 'Name', 'State', 'Visibility', 'Created'],
         rows.map((r) => [
           String(r['id'] ?? ''),
-          truncate(String(r['name'] ?? ''), 36),
-          String(r['status'] ?? '—'),
+          truncate(String(r['title'] ?? ''), 36),
+          r['deleted_at'] ? 'deleted' : r['archived_at'] ? 'archived' : 'active',
+          String(r['visibility'] ?? '—'),
           r['created_at'] ? new Date(String(r['created_at'])).toLocaleDateString() : '—',
         ])
       )
@@ -288,6 +366,9 @@ const list = defineCommand({
     }
   },
 })
+
+const lifecycleCommand = (action: Parameters<typeof makeLifecycleCommand>[1], description: string) =>
+  makeLifecycleCommand('workflow', action, description, 'Workflow UUID')
 
 // ---------------------------------------------------------------------------
 // CD: workflow trigger add
@@ -393,6 +474,12 @@ export default defineCommand({
     validate,
     create,
     list,
+    status: lifecycleCommand('status', 'Show lifecycle state, pinned state, version snapshot, and delete blockers.'),
+    archive: lifecycleCommand('archive', 'Archive a workflow without breaking historical runs or battles.'),
+    restore: lifecycleCommand('restore', 'Restore an archived or tombstoned workflow when policy allows it.'),
+    delete: lifecycleCommand('delete', 'Request dependency-aware workflow deletion; used workflows become tombstones.'),
+    pin: lifecycleCommand('pin', 'Pin a workflow to your saved artifacts.'),
+    unpin: lifecycleCommand('unpin', 'Remove your saved pin from a workflow.'),
     trigger,
   },
 })

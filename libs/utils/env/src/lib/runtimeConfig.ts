@@ -1,5 +1,3 @@
-import { resolveProductEdition } from './appSurface'
-
 function readPublicBaseUrl(envKey: string, fallback: string): string {
   const raw = import.meta.env[envKey] as string | undefined
   const s =
@@ -59,12 +57,12 @@ export const CHAINABIT_OAUTH_CLIENT_ID: string = (import.meta.env['CHAINABIT_OAU
  */
 export const CHAINABIT_OAUTH_CALLBACK_URL: string = (import.meta.env['CHAINABIT_OAUTH_REDIRECT_URI'] as string) ?? ''
 
-/** Default local Platform API origin (`pnpm nx serve platform-api`). */
+/** Default local API origin — not the worker, which has no HTTP surface. */
 const DEV_API_BASE_URL = 'http://localhost:8786'
 
 /**
- * LenserFight Platform API base URL (no trailing slash).
- * In development, defaults to the local platform-api server. To proxy through a
+ * LenserFight API base URL (no trailing slash).
+ * In development, defaults to the local dev URL above. To proxy through a
  * tunnel (e.g. ngrok) for CORS or webhook testing, set `API_URL` in your
  * `.env.local`. Production resolves to `https://api.lenserfight.com` unless
  * `API_URL` is provided.
@@ -103,9 +101,6 @@ export const dataBackendKind: DataBackendKind =
 
 export const isFileDataBackend = dataBackendKind === 'file'
 
-// Mock flag
-export const isMock = import.meta.env.MOCK === 'true'
-
 // Local development flag (Vite dev server)
 export const isLocal = MODE === 'development'
 
@@ -122,52 +117,18 @@ export type LocalSeedCredentials = {
  * Vite's static replacement of `DEV` with `false` in production builds
  * eliminates the entire branch — the strings never reach the production bundle.
  *
- * Returns `null` in production / non-DEV / non-MOCK builds.
+ * Returns `null` in production / non-DEV builds.
  */
 export async function loadDevSeedCredentials(): Promise<LocalSeedCredentials | null> {
-  if (!import.meta.env.DEV && !isMock) return null
+  if (!import.meta.env.DEV) return null
   const mod = await import('./devSeedCredentials')
   return mod.LOCAL_SEED_CREDENTIALS
 }
 
-function featureEnabled(envKey: string, editionDefault: boolean): boolean {
-  const v = import.meta.env[envKey]
-  if (v === 'true') return true
-  if (v === 'false') return false
-  return editionDefault
-}
-
-const editionIsCloud = resolveProductEdition() === 'cloud'
-
-// Feature Flags — explicit `FEATURE_*=true|false` wins; otherwise cloud edition defaults on.
-export const FEATURES = {
-  CHALLENGES_TAB: featureEnabled('FEATURE_CHALLENGES_TAB', editionIsCloud),
-  LENSER_ACTIVITY: featureEnabled('FEATURE_LENSER_ACTIVITY', editionIsCloud),
-  NOTIFICATIONS: featureEnabled('FEATURE_NOTIFICATIONS', editionIsCloud),
-  NETWORK_LINKS: featureEnabled('FEATURE_NETWORK_LINKS', editionIsCloud),
-  AGENTS: featureEnabled('FEATURE_AGENTS', editionIsCloud),
-  // MVP launch guard: battle entrypoints stay private until public arena is ready.
-  PUBLIC_BATTLES: featureEnabled('FEATURE_PUBLIC_BATTLES', editionIsCloud),
-  // Supabase publishing and cloud wiring are still staged for post-MVP rollout.
-  SUPABASE_INTEGRATION: featureEnabled('FEATURE_SUPABASE_INTEGRATION', editionIsCloud),
-  // CRON scheduling: on by default for cloud; off by default for self-hosted/community.
-  CRON_SCHEDULING: featureEnabled('FEATURE_CRON_SCHEDULING', editionIsCloud),
-  // Analytics dashboard: cost/quality/performance charts per agent.
-  AGENT_ANALYTICS: featureEnabled('FEATURE_AGENT_ANALYTICS', editionIsCloud),
-  // Cloud waiting list gate. Self-hosted/community installs typically bypass this.
-  WAITING_LIST: featureEnabled('FEATURE_WAITING_LIST', editionIsCloud),
-  // Chainabit execution bridge: routes battle jobs to Chainabit's cloud executor.
-  // Requires CHAINABIT_API_URL and CHAINABIT_PARTNER_API_KEY on the server side.
-  CHAINABIT_EXECUTION: featureEnabled('FEATURE_CHAINABIT_EXECUTION', false),
-}
-
-export { resolveProductEdition, SURFACE } from './appSurface'
-export type { AppSurface, ProductEdition } from './appSurface'
-
 // Captcha
 export const CAPTCHA_SITE_KEY = import.meta.env.CAPTCHA_SITE_KEY || ''
 
-export const ENABLE_CAPTCHA = isProd && !isMock
+export const ENABLE_CAPTCHA = isProd
 
 // Analytics
 export const GA_MEASUREMENT_ID = import.meta.env.GA_MEASUREMENT_ID || ''

@@ -65,7 +65,14 @@ export function ExportButton<T>({
     return new CloudDownloadTransport(new SupabaseExportsRepository(supabase as any))
   }, [])
 
-  const runExportInner = useExportRunner<T>({ kind, slug, fetchPayload, buildContext, resolveTransport })
+  const runExportInner = useExportRunner<T>({
+    kind,
+    slug,
+    title,
+    fetchPayload,
+    buildContext,
+    resolveTransport,
+  })
   const runExport = useCallback(
     async (input: { format: ExportFormat; destination: TransportId }) => { await runExportInner(input) },
     [runExportInner],

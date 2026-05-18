@@ -33,8 +33,8 @@ Deploy LenserFight using Docker containers for reproducible, portable production
 │   (80/443)   │     └──────────────┘     └──────────────┘
 └──────────────┘            │                    │
                      ┌──────────────┐     ┌──────────────┐
-                     │ Platform API │     │   Supabase   │
-                     │   (8786)     │────▶│  (54321)     │
+                     │    Worker    │     │   Supabase   │
+                     │  (background)│────▶│  (54321)     │
                      └──────────────┘     └──────────────┘
 ```
 
@@ -59,30 +59,31 @@ COPY nginx.conf /etc/nginx/nginx.conf
 EXPOSE 80
 ```
 
-### Platform API
+### Worker (background processor)
 
 ```dockerfile
-# Dockerfile.api
+# Dockerfile.worker
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm nx run platform-api:build
+RUN pnpm nx run worker:build
 
 FROM node:20-alpine
 WORKDIR /app
-COPY --from=builder /app/dist/apps/platform-api ./
+COPY --from=builder /app/dist/apps/worker ./
 COPY --from=builder /app/node_modules ./node_modules
-EXPOSE 8786
 CMD ["node", "main.js"]
 ```
+
+> **Note:** The worker is a pure background processor (no HTTP surface). It handles scheduled jobs, event processing, and async execution tasks.
 
 ### Build all images
 
 ```bash
 docker build -f Dockerfile.web -t lenserfight-web .
-docker build -f Dockerfile.api -t lenserfight-api .
+docker build -f Dockerfile.worker -t lenserfight-worker .
 ```
 
 ---
@@ -100,19 +101,14 @@ services:
       - "3000:80"
     environment:
       - SUPABASE_URL=http://supabase:54321
-      - API_URL=http://api:8786
     depends_on:
-      - api
       - supabase
 
-  api:
-    image: lenserfight-api
-    ports:
-      - "8786:8786"
+  worker:
+    image: lenserfight-worker
     environment:
       - SUPABASE_URL=http://supabase:54321
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - PORT=8786
     depends_on:
       - supabase
 
@@ -221,14 +217,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-  api:
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8786/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 ```
+
+> The worker process is a background job runner with no HTTP surface. Monitor it via Docker container health and logs.
 
 ---
 

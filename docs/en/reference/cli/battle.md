@@ -86,6 +86,10 @@ Run `pnpm nx run cli:chmod` — the executable bit is sometimes lost after a cle
 | `local list` | no | List all local battles |
 | `local push` | yes | Publish a local battle shell to LenserFight Cloud |
 | `stream-feed` | yes | Tail INSERT/UPDATE events on `battles.battles` via Supabase realtime |
+| `validate` | no | Validate a battle creation configuration (V1 legacy or V2 concept-separated) |
+| `formats` | no | List supported task sources with allowed contender structures and judging modes |
+| `challenge-types` | no | List supported human game/challenge types |
+| `explain-invalid` | no | Explain why a task-source / contender / judging combination is invalid |
 
 *`exec`: auth only required when using `--stream-to-web`
 
@@ -1011,5 +1015,187 @@ Push a local battle to LenserFight Cloud as a draft.
 | `--id` | string | no | Local battle ID (omit to use most recent) |
 | `--slug` | string | yes | Cloud URL slug (required) |
 | `--json` | boolean | no | Output result as JSON |
+
+---
+
+## V2 Concept Separation Commands
+
+The V2 battle model separates battle configuration into three orthogonal axes:
+
+- **Task source** — what the battle is about (`lens`, `workflow`, `challenge`)
+- **Contender structure** — who competes (`ai_vs_ai`, `human_vs_human`, `human_vs_ai`)
+- **Judging mode** — how the winner is decided (`community_vote`, `ai_judge`, `rubric_score`, `auto_score`)
+
+These replace the legacy `battle_type` enum (which conflated contender structure and judging mode into a single value).
+
+## `lf battle validate`
+
+Validate a battle creation configuration against governance rules. Supports both legacy V1 flags and V2 concept-separated flags.
+
+### V2 mode (preferred)
+
+```
+lf battle validate \
+  --task-source <source> \
+  --contender-structure <structure> \
+  --judging-mode <mode> \
+  [--challenge-type <type>] \
+  [--content-type <type>] \
+  [--json]
+```
+
+All three V2 flags are required when using V2 mode.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--task-source` | string | yes | `lens` \| `workflow` \| `challenge` |
+| `--contender-structure` | string | yes | `ai_vs_ai` \| `human_vs_human` \| `human_vs_ai` |
+| `--judging-mode` | string | yes | `community_vote` \| `ai_judge` \| `rubric_score` \| `auto_score` |
+| `--challenge-type` | string | no | Challenge type ID (e.g. `writing_contest`, `math_calculation`) |
+| `--content-type` | string | no | Expected output type (e.g. `text`, `code`, `image`) |
+| `--json` | boolean | no | Output as JSON |
+
+**Example — valid AI vs AI lens battle with community voting:**
+```
+lf battle validate \
+  --task-source lens \
+  --contender-structure ai_vs_ai \
+  --judging-mode community_vote
+# ✓ V2 configuration is valid.
+```
+
+**Example — invalid workflow + human vs human:**
+```
+lf battle validate \
+  --task-source workflow \
+  --contender-structure human_vs_human \
+  --judging-mode community_vote
+# ✗ 1 error(s) found:
+#   error  TASK_SOURCE_CONTENDER_INCOMPATIBLE  contenderStructure
+#          Human vs Human is not allowed for Workflow tasks.
+```
+
+### Legacy V1 mode
+
+```
+lf battle validate \
+  --format <format> \
+  --type <type> \
+  [--content-type <type>] \
+  [--memory-mode <mode>] \
+  [--instruction-disclosure <mode>] \
+  [--json]
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--format` | string | yes | `workflow` \| `lens` \| `lenser_battle` |
+| `--type` | string | yes | Legacy `battle_type` enum value |
+| `--content-type` | string | no | Expected output type |
+| `--memory-mode` | string | no | Lenser battle memory mode |
+| `--instruction-disclosure` | string | no | Lenser battle instruction disclosure |
+| `--json` | boolean | no | Output as JSON |
+
+**Exit code:** `0` if valid, `1` if errors found.
+
+---
+
+## `lf battle formats`
+
+List all supported task sources and their allowed contender structures and judging modes in a tree view.
+
+```
+lf battle formats [--json]
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--json` | boolean | no | Output as JSON |
+
+**Example output:**
+```
+Lens Task (lens)
+  Single prompt — ideal for model comparison
+  ├─ AI vs AI (ai_vs_ai)
+  │  ├─ Community Vote (community_vote)
+  │  └─ AI Judge (ai_judge)
+  ├─ Human vs Human (human_vs_human)
+  │  ├─ Community Vote (community_vote)
+  │  ├─ AI Judge (ai_judge)
+  │  ├─ Rubric Score (rubric_score) [exp]
+  │  └─ Auto Score (auto_score) [exp]
+  └─ Human vs AI (human_vs_ai)
+     ├─ Community Vote (community_vote)
+     └─ AI Judge (ai_judge)
+
+Workflow Task (workflow)
+  Multi-step pipeline
+  ├─ AI vs AI (ai_vs_ai)
+  ...
+
+Challenge Task (challenge) [experimental]
+  Human-friendly contests
+  ...
+```
+
+---
+
+## `lf battle challenge-types`
+
+List supported human game/challenge types from the challenge type registry.
+
+```
+lf battle challenge-types [--contender-structure <structure>] [--available] [--json]
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--contender-structure` | string | no | Filter by contender structure |
+| `--available` | boolean | no | Show only implemented challenge types |
+| `--json` | boolean | no | Output as JSON |
+
+**Example:**
+```
+lf battle challenge-types --available
+# ID                   LABEL                 OUTPUT    TIME     STATUS   CONTENDERS
+# writing_contest      Writing Contest        text      900s     ready    human_vs_human, human_vs_ai
+# math_calculation     Math Calculation       text      300s     ready    human_vs_human, human_vs_ai
+# grammar_quiz         Grammar Quiz           text      300s     ready    human_vs_human, human_vs_ai
+```
+
+Planned types (not yet implemented): `hand_drawing`, `fill_in_blanks`, `first_code_error`, `logic_puzzle`, `prompt_duel`, `debate`.
+
+---
+
+## `lf battle explain-invalid`
+
+Explain why a specific task-source / contender-structure / judging-mode combination is invalid.
+
+```
+lf battle explain-invalid \
+  --task-source <source> \
+  --contender-structure <structure> \
+  [--judging-mode <mode>] \
+  [--json]
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--task-source` | string | yes | `lens` \| `workflow` \| `challenge` |
+| `--contender-structure` | string | yes | `ai_vs_ai` \| `human_vs_human` \| `human_vs_ai` |
+| `--judging-mode` | string | no | `community_vote` \| `ai_judge` \| `rubric_score` \| `auto_score` |
+| `--json` | boolean | no | Output as JSON |
+
+**Example — explain why workflow + human_vs_human is invalid:**
+```
+lf battle explain-invalid \
+  --task-source workflow \
+  --contender-structure human_vs_human
+# ✗ Combination is invalid:
+#   task-source ↔ contender-structure
+#     Human vs Human is not allowed for Workflow tasks.
+```
+
+**Exit code:** `0` if valid, `1` if invalid.
 
 <!-- AUTO-GEN-END -->

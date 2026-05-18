@@ -55,3 +55,11 @@ Can label, close, and redirect issues. No merge access.
 GitHub Sponsors at the **Infrastructure** tier receive a managed LenserFight cloud deployment
 with `CRON_SCHEDULING` pre-enabled. See [`docs/rfcs/rfc-process.md`](docs/rfcs/rfc-process.md)
 for governance rules around this feature.
+
+## Paid roles and commercial engagement
+
+Open-source contributions are voluntary and do not create employment or payment rights.
+
+If LenserFight introduces sponsored maintainer programs, bounties, grants, contractor roles, or other paid opportunities in the future, they will be announced separately with clear written terms.
+
+Any current paid or commercial collaboration requires a separate written agreement with the maintainers. Contact: lets@conectlens.com

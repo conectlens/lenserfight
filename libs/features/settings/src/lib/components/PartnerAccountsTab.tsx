@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { usePartnerConnection } from '@lenserfight/features/store'
 import { partnerProvisioningRepository } from '@lenserfight/data/repositories'
 import { Button } from '@lenserfight/ui/components'
-import type { PartnerBalance } from '@lenserfight/types'
 
 const REGISTERED_PARTNERS = [
   { name: 'chainabit', displayName: 'Chainabit' },
@@ -17,27 +16,14 @@ function PartnerCard({ partnerName, displayName }: PartnerCardProps) {
   const [claimSent, setClaimSent] = useState(false)
   const [isSendingClaim, setIsSendingClaim] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [isConnecting, setIsConnecting] = useState(false)
 
-  const { data: balance, isLoading: balanceLoading, error: balanceError } = useQuery<PartnerBalance>({
-    queryKey: ['partner-balance', partnerName],
-    queryFn: () => partnerProvisioningRepository.getBalance(partnerName),
-    staleTime: 1000 * 60 * 2,
-    retry: false,
-  })
+  const { state, credits, invalidate } = usePartnerConnection(partnerName)
 
-  const isNotProvisioned =
-    balanceError != null &&
-    typeof (balanceError as Record<string, unknown>)['error'] === 'string' &&
-    (balanceError as Record<string, unknown>)['error'] === 'not_provisioned'
+  const isLoading = state === 'loading'
+  const isConnected = state === 'connected' || state === 'no_credits'
 
   const handleConnect = async () => {
-    setIsConnecting(true)
-    try {
-      await partnerProvisioningRepository.startOAuthConnect(window.location.href)
-    } catch {
-      setIsConnecting(false)
-    }
+    await partnerProvisioningRepository.startOAuthConnect(window.location.href)
   }
 
   const handleSendClaim = async () => {
@@ -56,6 +42,7 @@ function PartnerCard({ partnerName, displayName }: PartnerCardProps) {
     setIsRefreshing(true)
     try {
       await partnerProvisioningRepository.refreshToken(partnerName)
+      await invalidate()
     } catch {
       // Silently fail
     } finally {
@@ -63,7 +50,7 @@ function PartnerCard({ partnerName, displayName }: PartnerCardProps) {
     }
   }
 
-  if (balanceLoading) {
+  if (isLoading) {
     return (
       <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60">
         <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
@@ -71,7 +58,7 @@ function PartnerCard({ partnerName, displayName }: PartnerCardProps) {
     )
   }
 
-  if (isNotProvisioned || (!balanceLoading && !balance && balanceError)) {
+  if (!isConnected) {
     return (
       <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 space-y-4">
         <div className="flex items-center justify-between">
@@ -86,12 +73,19 @@ function PartnerCard({ partnerName, displayName }: PartnerCardProps) {
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Connect your {displayName} account to use wallet credits for AI battles.
         </p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          By connecting, you agree to {displayName}&apos;s{' '}
+          <a href="https://chainabit.com/policies/terms" target="_blank" rel="noopener noreferrer"
+             className="underline text-blue-500 hover:text-blue-600">Terms of Service</a>,{' '}
+          <a href="https://chainabit.com/policies/cookies" target="_blank" rel="noopener noreferrer"
+             className="underline text-blue-500 hover:text-blue-600">Cookie Policy</a>, and{' '}
+          <a href="https://chainabit.com/policies/privacy" target="_blank" rel="noopener noreferrer"
+             className="underline text-blue-500 hover:text-blue-600">Privacy Policy</a>.
+        </p>
         <Button
           variant="secondary"
           className="!w-auto px-4 text-xs"
           onClick={handleConnect}
-          isLoading={isConnecting}
-          disabled={isConnecting}
         >
           Connect {displayName}
         </Button>
@@ -115,7 +109,7 @@ function PartnerCard({ partnerName, displayName }: PartnerCardProps) {
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-400">Credit Balance</p>
           <p className="text-lg font-bold text-gray-900 dark:text-white tabular-nums mt-0.5">
-            {balance != null ? balance.credits.toLocaleString() : '—'}
+            {credits != null ? credits.toLocaleString() : '—'}
             <span className="text-sm font-normal text-gray-400 ml-1">cr</span>
           </p>
         </div>

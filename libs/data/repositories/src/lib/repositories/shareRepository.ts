@@ -50,6 +50,26 @@ export class SupabaseShareRepository implements ShareRepositoryPort {
       case 'profile':
         path = `/lenser/${link.slug || link.resource_id}`
         break
+
+      case 'battle':
+        path = `/battles/${link.slug || link.resource_id}`
+        break
+
+      case 'workflow':
+        path = `/workflows/${link.resource_id}`
+        break
+
+      case 'tournament':
+        path = `/tournaments/${link.slug || link.resource_id}`
+        break
+
+      case 'series':
+        path = `/battles/series/${link.resource_id}`
+        break
+
+      case 'tag':
+        path = `/ray/${link.slug || link.resource_id}`
+        break
     }
 
     return {

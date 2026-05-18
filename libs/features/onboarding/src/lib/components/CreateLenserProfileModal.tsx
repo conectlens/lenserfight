@@ -1,6 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService, preferencesService } from '@lenserfight/data/repositories'
-import { useAuth } from '@lenserfight/features/auth'
+import { useAuth, sanitizeReturnUrl } from '@lenserfight/features/auth'
 import { useHandleCheck, useCreateAgent } from '@lenserfight/features/agents'
 import { InputField } from '@lenserfight/ui/forms'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
@@ -8,13 +8,14 @@ import { CreateLenserDTO, Lenser } from '@lenserfight/types'
 import { LanguageSelectBox } from '@lenserfight/ui/components'
 import { StepWizard } from '@lenserfight/ui/widgets'
 import { SearchSelectField } from '@lenserfight/ui/forms'
+import { Dialog } from '@lenserfight/ui/overlays'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { buildAuthReturnUrl, replaceLocationSafely } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL, WEB_BASE_URL } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bot, Check, X, Loader2, User, Palette, Sparkles } from 'lucide-react'
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 
 const AUTH_PROFILE_GATE_QUERY_KEY = ['lenser', 'auth-profile-gate'] as const
@@ -189,6 +190,16 @@ export const CreateLenserProfileModal: React.FC = () => {
     }
   }, [isLoading, isAuthenticated, hasLenser, currentStep, goToStep])
 
+  const sanitizedReturnTo = sanitizeReturnUrl(returnTo)
+
+  const handleClose = useCallback(() => {
+    if (sanitizedReturnTo.startsWith('http://') || sanitizedReturnTo.startsWith('https://')) {
+      window.location.replace(sanitizedReturnTo)
+    } else {
+      navigate(sanitizedReturnTo, { replace: true })
+    }
+  }, [sanitizedReturnTo, navigate])
+
   // Hoist steps array before early returns so useMemo is called unconditionally
   const wizardSteps = useMemo(() => [
     {
@@ -342,12 +353,14 @@ export const CreateLenserProfileModal: React.FC = () => {
     currentStep === 0 ? (isHandleUnique && !!displayName.trim()) : true
 
   return (
+
     <StepWizard
       steps={wizardSteps as any}
       currentStep={currentStep}
       onNext={handleNext}
       onBack={() => goToStep(Math.max(currentStep - 1, 0))}
       onComplete={() => handleStep3Complete()}
+      onClose={handleClose}
       canProceed={canProceedForStep}
       isNextLoading={isSubmittingStep0 || isCompletingStep1 || isCompletingStep2}
       isCompleting={isCreatingAgent}
@@ -357,10 +370,10 @@ export const CreateLenserProfileModal: React.FC = () => {
         currentStep === 1
           ? { label: 'Skip for now', onClick: () => goToStep(2) }
           : currentStep === 2
-          ? { label: 'Skip for now', onClick: () => handleStep2Next() }
-          : currentStep === 3
-          ? { label: 'Skip for now', onClick: () => handleStep3Complete(true) }
-          : undefined
+            ? { label: 'Skip for now', onClick: () => handleStep2Next() }
+            : currentStep === 3
+              ? { label: 'Skip for now', onClick: () => handleStep3Complete(true) }
+              : undefined
       }
     >
       {currentStep === 0 ? (
@@ -460,8 +473,8 @@ export const CreateLenserProfileModal: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedTheme(opt.value)}
                   className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-colors ${selectedTheme === opt.value
-                      ? 'border-primary bg-primary/10 text-greyscale-900 dark:text-greyscale-0'
-                      : 'border-surface-border text-greyscale-500 dark:text-greyscale-400 hover:border-greyscale-400 dark:hover:border-greyscale-500'
+                    ? 'border-primary bg-primary/10 text-greyscale-900 dark:text-greyscale-0'
+                    : 'border-surface-border text-greyscale-500 dark:text-greyscale-400 hover:border-greyscale-400 dark:hover:border-greyscale-500'
                     }`}
                 >
                   {opt.label}

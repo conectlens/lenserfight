@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/private-battle/v1alpha1",
+  "title": "LenserFight Private Battle Spec",
+  "description": "A workspace-scoped battle template for internal evaluation. Not publicly discoverable.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "private_battle" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": {
+      "type": "string",
+      "enum": ["private", "workspace"],
+      "description": "Private battles are scoped to private or workspace visibility."
+    },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "ref": { "type": "string" }
+        },
+        "required": ["type", "ref"],
+        "additionalProperties": true
+      },
+      "description": "Contender declarations."
+    },
+    "evaluation_method": {
+      "type": "string",
+      "enum": ["rubric", "judge_agent", "rubric_plus_judge", "human_only", "blind_vote"],
+      "description": "How battle results are evaluated."
+    },
+    "judge_agent_ref": { "type": "string", "description": "Agent spec ID for AI judging." },
+    "human_judge_required": { "type": "boolean", "description": "Whether a human must review results." },
+    "inputs_ref": { "type": "string", "description": "Reference to shared input dataset." }
+  },
+  "required": ["kind", "name"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "private_battle",
+      "schema_version": 1,
+      "id": "pb_support_agent_ab",
+      "name": "Support Agent A vs B",
+      "description": "Internal comparison of support agent v1 vs v2.",
+      "version": "0.1.0",
+      "visibility": "private",
+      "evaluation_method": "rubric_plus_judge"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import type {
   WorkflowTaskRecord,
 } from '@lenserfight/types'
 import { FileDataStore } from '@lenserfight/infra/storage'
+import { generateUUID } from '@lenserfight/utils/text'
 import type {
   CreateWorkflowInput,
   RecordRunProvenanceInput,
@@ -106,7 +107,7 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
   async createWorkflow(input: CreateWorkflowInput): Promise<WorkflowRecord> {
     const now = new Date().toISOString()
     const record: WorkflowRecord = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       lenser_id: FILE_MODE_LENSER_ID,
       title: input.title,
       description: input.description ?? null,
@@ -142,7 +143,7 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
     const now = new Date().toISOString()
     const forked: WorkflowRecord = {
       ...source,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       parent_workflow_id: sourceId,
       fork_count: 0,
       battle_count: 0,
@@ -155,14 +156,14 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
     const [nodes, edges] = await Promise.all([this.getNodes(sourceId), this.getEdges(sourceId)])
     const nodeIdMap = new Map<string, string>()
     for (const node of nodes) {
-      const newId = crypto.randomUUID()
+      const newId = generateUUID()
       nodeIdMap.set(node.id, newId)
       await nodeStore.save({ ...node, id: newId, workflow_id: forked.id, created_at: now })
     }
     for (const edge of edges) {
       await edgeStore.save({
         ...edge,
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         workflow_id: forked.id,
         source_node_id: nodeIdMap.get(edge.source_node_id) ?? edge.source_node_id,
         target_node_id: nodeIdMap.get(edge.target_node_id) ?? edge.target_node_id,
@@ -175,7 +176,7 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
     const now = new Date().toISOString()
     const results: WorkflowNodeRecord[] = []
     for (const input of inputs) {
-      const id = input.id ?? crypto.randomUUID()
+      const id = input.id ?? generateUUID()
       const node: WorkflowNodeRecord = {
         id,
         workflow_id: workflowId,
@@ -197,7 +198,7 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
   async upsertEdges(workflowId: string, inputs: UpsertEdgeInput[]): Promise<WorkflowEdgeRecord[]> {
     const results: WorkflowEdgeRecord[] = []
     for (const input of inputs) {
-      const id = input.id ?? crypto.randomUUID()
+      const id = input.id ?? generateUUID()
       const edge: WorkflowEdgeRecord = {
         id,
         workflow_id: workflowId,
@@ -230,7 +231,7 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
   ): Promise<WorkflowRunRecord> {
     const now = new Date().toISOString()
     const run: WorkflowRunRecord = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       workflow_id: workflowId,
       triggered_by: FILE_MODE_LENSER_ID,
       status: 'pending',
@@ -265,7 +266,7 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
     _options?: UpdateNodeResultOptions
   ): Promise<void> {
     const existing = await nodeResultStore.findWhere((r) => r.run_id === runId && r.node_id === nodeId)
-    const id = existing[0]?.id ?? crypto.randomUUID()
+    const id = existing[0]?.id ?? generateUUID()
     await nodeResultStore.save({
       id,
       run_id: runId,
@@ -298,7 +299,7 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
     type: string,
     payload: Record<string, unknown> = {}
   ): Promise<WorkflowRunEventRecord | null> {
-    const id = crypto.randomUUID()
+    const id = generateUUID()
     const event: WorkflowRunEventRow = {
       id,
       event_id: Date.now(),
@@ -328,7 +329,7 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
   }
 
   async recordRunProvenance(_input: RecordRunProvenanceInput): Promise<string> {
-    return crypto.randomUUID()
+    return generateUUID()
   }
 
   async getSchedules(_workflowId?: string): Promise<WorkflowScheduleRecord[]> {
@@ -354,7 +355,7 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
   async createVersion(workflowId: string, changelog?: string): Promise<string> {
     const existing = await this.getVersions(workflowId)
     const record: WorkflowVersionRecord = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       workflow_id: workflowId,
       version_number: existing.length + 1,
       changelog: changelog ?? null,
@@ -394,7 +395,7 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
 
   async upsertPhase(phase: Partial<WorkflowPhaseRecord> & { workflow_id: string }): Promise<WorkflowPhaseRecord> {
     const record: WorkflowPhaseRecord = {
-      id: (phase as WorkflowPhaseRecord).id ?? crypto.randomUUID(),
+      id: (phase as WorkflowPhaseRecord).id ?? generateUUID(),
       workflow_id: phase.workflow_id,
       title: phase.title ?? 'Untitled Phase',
       description: phase.description ?? null,
@@ -423,7 +424,7 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
 
   async upsertTask(task: Partial<WorkflowTaskRecord> & { phase_id: string; workflow_id: string }): Promise<WorkflowTaskRecord> {
     return {
-      id: (task as WorkflowTaskRecord).id ?? crypto.randomUUID(),
+      id: (task as WorkflowTaskRecord).id ?? generateUUID(),
       phase_id: task.phase_id,
       workflow_id: task.workflow_id,
       title: task.title ?? 'Untitled Task',

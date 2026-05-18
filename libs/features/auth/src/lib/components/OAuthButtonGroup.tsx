@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
-import { AlertTriangle } from 'lucide-react'
 import { Button } from '@lenserfight/ui/components'
-import { resolveProductEdition, isLocal as isDevMode } from '@lenserfight/utils/env'
+import { AlertTriangle } from 'lucide-react'
+import React, { useState } from 'react'
+import { isLocal } from '@lenserfight/utils/env'
 
 interface OAuthButtonGroupProps {
   onChainabit: () => void | Promise<void>
@@ -10,17 +10,18 @@ interface OAuthButtonGroupProps {
   disabled: boolean
 }
 
+const FEATURE_CHAINABIT_SIGNIN = import.meta.env.FEATURE_CHAINABIT_SIGNIN !== 'false'
+
 export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
   onChainabit,
   onOAuth,
   isLoading,
   disabled,
 }) => {
-  const edition = resolveProductEdition()
   const [chainabitError, setChainabitError] = useState<string | null>(null)
   const [chainabitPending, setChainabitPending] = useState(false)
 
-  const showChainabit = edition === 'cloud' || edition === 'local' || isDevMode
+  const showChainabit = FEATURE_CHAINABIT_SIGNIN
   const showOthers = true
 
   const handleChainabit = async () => {
@@ -54,11 +55,11 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
             type="button"
             onClick={handleChainabit}
             isLoading={isLoading || chainabitPending}
-            disabled={disabled || chainabitPending}
+            disabled={disabled || chainabitPending || isLocal}
             variant="secondary"
             fullWidth
             className="flex items-center justify-center gap-3 py-2.5 mb-3 border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm text-emerald-700 dark:text-emerald-300 rounded-xl"
-            title="Continue with Chainabit"
+            title={isLocal ? "OAuth is disabled in localhost development" : "Continue with Chainabit"}
           >
             <img
               src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
@@ -83,10 +84,10 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
           <Button
             type="button"
             onClick={() => onOAuth('google')}
-            disabled={disabled || isLoading}
+            disabled={disabled || isLoading || isLocal}
             variant="secondary"
             className="flex items-center justify-center py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Sign in with Google"
+            title={isLocal ? "OAuth is disabled in localhost development" : "Sign in with Google"}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -110,10 +111,10 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
           <Button
             type="button"
             onClick={() => onOAuth('github')}
-            disabled={disabled || isLoading}
+            disabled={disabled || isLoading || isLocal}
             variant="secondary"
             className="flex items-center justify-center py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Sign in with GitHub"
+            title={isLocal ? "OAuth is disabled in localhost development" : "Sign in with GitHub"}
           >
             <svg
               className="w-5 h-5 text-gray-800 dark:text-gray-300"
@@ -129,6 +130,10 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
           </Button>
         </div>
       )}
+
+      <div className="mt-5 text-center text-[11px] leading-relaxed text-gray-400 dark:text-gray-500 max-w-[260px] mx-auto">
+        OAuth providers operate under their own independent terms and policies.
+      </div>
     </>
   )
 }

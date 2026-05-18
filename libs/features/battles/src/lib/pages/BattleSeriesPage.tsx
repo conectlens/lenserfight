@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowRight, CheckCircle2, ChevronRight, Trophy } from 'lucide-react'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { battlesRepository } from '@lenserfight/data/repositories'
+import { battlesRepository, seoService } from '@lenserfight/data/repositories'
 import type { SeriesRoundRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
+import { useShareContext } from '@lenserfight/features/share'
 import { Button, EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
 
 // Phase BH — bracket-style view for a battle series. Owner sees an
@@ -17,6 +18,7 @@ export function BattleSeriesPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { user } = useAuth()
+  const { setShareConfig } = useShareContext()
 
   const { data: rounds = [], isLoading } = useQuery<SeriesRoundRecord[]>({
     queryKey: ['battle-series', id],
@@ -33,6 +35,18 @@ export function BattleSeriesPage() {
     },
     onError: (err: Error) => toast.error(err.message),
   })
+
+  useEffect(() => {
+    if (rounds.length > 0) {
+      const head = rounds[0]
+      setShareConfig({
+        title: head.title,
+        resourceType: 'series',
+        resourceId: id ?? '',
+      })
+    }
+    return () => setShareConfig(null)
+  }, [rounds, id, setShareConfig])
 
   if (isLoading) {
     return (
@@ -61,9 +75,11 @@ export function BattleSeriesPage() {
     head.status === 'active' &&
     currentRound?.battle_status === 'closed'
 
+  const seriesMeta = seoService.getBattleSeriesMeta(head.title, head.round_count, id)
+
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6">
-      <SEOHead type="battles-list" overrideTitle={`${head.title} — Series — LenserFight`} />
+      <SEOHead title={seriesMeta.title} description={seriesMeta.description} />
       <PageHeader
         title={head.title}
         description={

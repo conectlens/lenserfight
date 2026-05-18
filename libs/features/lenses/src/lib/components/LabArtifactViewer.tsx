@@ -1,8 +1,8 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { executionService, mediaRepository } from '@lenserfight/data/repositories'
 import { ExecutionArtifact, ExecuteResponse, StreamState, StreamUsage, ArtifactVisibility } from '@lenserfight/types'
+import { StreamingOutput, type StreamingErrorEnvelope } from '@lenserfight/ui/components'
 import { MediaViewer } from '@lenserfight/ui/data-display'
-import { StreamingOutput } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
 import { Copy, Check, LayoutPanelLeft, Coins, Loader2, Eye, EyeOff, Users, Archive } from 'lucide-react'
 import React, { useState } from 'react'
@@ -10,6 +10,23 @@ import React, { useState } from 'react'
 import { useArtifactVisibility } from '../hooks/useArtifactVisibility'
 
 const FAILED_STATUSES = ['failed', 'canceled', 'timed_out'] as const
+
+/**
+ * Transient media result returned by the Local BYOK adapter. The provider
+ * answered synchronously from the browser, so there is no server run to query;
+ * we render the URL(s) inline until the user selects a different run.
+ */
+export interface LocalMediaArtifact {
+  runId: string
+  provider: string
+  model: string
+  modality: 'image' | 'video' | 'audio' | 'music'
+  urls: string[]
+  mimeType: string
+  width?: number
+  height?: number
+  durationSeconds?: number
+}
 
 interface LabArtifactViewerProps {
   selectedRunId: string | null
@@ -20,7 +37,9 @@ interface LabArtifactViewerProps {
   streamRunId: string | null
   streamUsage: StreamUsage | null
   streamCredits: number | null
-  streamError: string | null
+  streamError: StreamingErrorEnvelope | string | null
+  /** Local BYOK only — set when the browser fetched media directly from the provider. */
+  localMediaArtifact?: LocalMediaArtifact | null
   isOwner?: boolean
   isAuthenticatedLenser?: boolean
 }
@@ -252,6 +271,58 @@ const ArtifactBlock: React.FC<{ artifact: ExecutionArtifact; isOwner?: boolean; 
   return null
 }
 
+/**
+ * Inline renderer for Local BYOK media results — the provider returned URL(s)
+ * synchronously to the browser, so no run/artifact record exists in the DB.
+ */
+const LocalMediaArtifactView: React.FC<{ artifact: LocalMediaArtifact }> = ({ artifact }) => {
+  const { modality, urls, mimeType, provider, model, width, height, durationSeconds } = artifact
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <LayoutPanelLeft size={16} className="text-gray-400" />
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 capitalize">{modality}</span>
+          <span className="text-[10px] uppercase tracking-wide text-greyscale-400">Local BYOK</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+          <span>{provider}</span>
+          <span>·</span>
+          <span className="truncate max-w-[160px]" title={model}>{model}</span>
+        </div>
+      </div>
+      <div className="flex flex-col gap-3">
+        {urls.map((url, i) => (
+          <div key={`${url}-${i}`} className="rounded-2xl overflow-hidden border border-surface-border bg-surface-raised">
+            {modality === 'image' ? (
+              <img
+                src={url}
+                alt={`Generated ${modality} ${i + 1}`}
+                width={width}
+                height={height}
+                className="w-full h-auto"
+              />
+            ) : modality === 'video' ? (
+              <video src={url} controls className="w-full h-auto" />
+            ) : (
+              // audio / music
+              <div className="flex flex-col gap-2 p-4">
+                <audio src={url} controls className="w-full" />
+                {durationSeconds != null && (
+                  <span className="text-[11px] text-greyscale-400">{durationSeconds.toFixed(1)}s</span>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <p className="text-[10px] text-greyscale-400">
+        Generated directly by your browser using your local BYOK key. The result is not stored on LenserFight servers; download or save it locally before navigating away. ({mimeType})
+      </p>
+    </div>
+  )
+}
+
 const RunArtifacts: React.FC<{ runId: string; showAll: boolean; isOwner?: boolean }> = ({
   runId,
   showAll,
@@ -317,6 +388,7 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
   streamUsage,
   streamCredits,
   streamError,
+  localMediaArtifact,
   isOwner,
   isAuthenticatedLenser = false,
 }) => {
@@ -334,6 +406,12 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
         error={streamError}
       />
     )
+  }
+
+  // Local BYOK media — render the provider's URLs directly. No DB run to query
+  // for; takes priority over selectedRunId until the user picks another run.
+  if (localMediaArtifact && !isComparing && (!selectedRunId || selectedRunId === localMediaArtifact.runId)) {
+    return <LocalMediaArtifactView artifact={localMediaArtifact} />
   }
 
   if (!selectedRunId && !isComparing) {

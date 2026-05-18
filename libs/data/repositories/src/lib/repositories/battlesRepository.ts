@@ -164,6 +164,19 @@ export interface CreateBattleInput {
   max_budget_credits?: number
   workflow_id?: string
   lens_id?: string
+  /** Immutable snapshot of shared Lens [[parameter]] values for Lens Battles. */
+  shared_input_snapshot?: Record<string, unknown>
+  /** Memory/instruction policy for Lenser Battles. */
+  lenser_battle_policy?: Record<string, unknown>
+  // V2 concept separation fields (optional, dual-write alongside battle_type)
+  /** Task source: 'lens' | 'workflow' | 'challenge'. */
+  task_source?: string
+  /** Contender structure: 'ai_vs_ai' | 'human_vs_human' | 'human_vs_ai'. */
+  contender_structure?: string
+  /** Judging mode: 'community_vote' | 'ai_judge' | 'rubric_score' | 'auto_score'. */
+  judging_mode?: string
+  /** Challenge type ID from the challenge registry. */
+  challenge_type?: string
 }
 
 export interface ContenderRecord {
@@ -648,6 +661,8 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       p_handicap_config: input.handicap ?? null,
       p_workflow_id: input.workflow_id ?? null,
       p_lens_id: input.lens_id ?? null,
+      p_shared_input_snapshot: input.shared_input_snapshot ?? null,
+      p_lenser_battle_policy: input.lenser_battle_policy ?? null,
     })
     if (error) this.handleError(error)
     const row = Array.isArray(data) ? data[0] : data

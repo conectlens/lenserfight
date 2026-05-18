@@ -93,7 +93,7 @@ export const Footer: React.FC<FooterProps> = ({
   const conectlensUrl = appendUtm('https://conectlens.com', utmMedium, 'footer_conectlens_link')
 
   return (
-    <footer className="w-full py-12 px-4 mt-auto border-t border-surface-border-subtle bg-surface-base text-surface-text-muted dark:bg-greyscale-950 dark:border-surface-border transition-colors duration-200">
+    <footer className="w-full py-12 px-4 mt-auto border-t border-surface-border-subtle bg-surface-base text-surface-text-muted dark:bg-transparent dark:border-surface-border transition-colors duration-200">
       <div
         className={`${isDashboard ? 'w-full' : 'max-w-5xl mx-auto px-6'} flex flex-col gap-12`}
       >

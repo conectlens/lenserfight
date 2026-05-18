@@ -9,7 +9,6 @@ interface JsonImportDialogProps {
   open: boolean
   onClose: () => void
   versionParams?: LensVersionParam[]
-  legacyParams: LensParam[]
   onApply: (values: Record<string, unknown>) => void
   currentValues?: Record<string, unknown>
 }
@@ -18,7 +17,6 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
   open,
   onClose,
   versionParams = [],
-  legacyParams,
   onApply,
   currentValues,
 }) => {
@@ -30,10 +28,7 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
   useEffect(() => {
     if (!open) return
     if (!currentValues) return
-    const allParamKeys = [
-      ...versionParams.map((p) => p.label),
-      ...legacyParams.map((p) => p.name),
-    ]
+    const allParamKeys = versionParams.map((p) => p.label)
     const filtered = Object.fromEntries(
       Object.entries(currentValues).filter(([k, v]) => allParamKeys.includes(k) && v !== undefined && v !== '')
     )
@@ -42,12 +37,12 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
     }
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const totalParams = versionParams.length + legacyParams.length
+  const totalParams = versionParams.length
 
   // Build typed template from actual params
   const templateJson = useMemo(
-    () => buildJsonTemplate(versionParams, legacyParams),
-    [versionParams, legacyParams],
+    () => buildJsonTemplate(versionParams),
+    [versionParams],
   )
 
   const handleCopyTemplate = async () => {
@@ -62,7 +57,7 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
 
   const handleParse = () => {
     if (!rawText.trim()) return
-    const result = coerceJsonImport(rawText, versionParams, legacyParams)
+    const result = coerceJsonImport(rawText, versionParams)
     setParseResult(result)
   }
 
@@ -88,10 +83,7 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
   const canApply = !!parseResult && !hasParseError && coercionErrorCount === 0 && matchedCount > 0
 
   // All param labels/names for display in the preview
-  const allParamKeys = [
-    ...versionParams.map((p) => p.label),
-    ...legacyParams.map((p) => p.name),
-  ]
+  const allParamKeys = versionParams.map((p) => p.label)
 
   return (
     <Dialog

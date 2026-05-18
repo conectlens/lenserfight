@@ -20,7 +20,7 @@ interface LocaleProviderBridgeProps {
  */
 export function LocaleProviderBridge({ children }: LocaleProviderBridgeProps) {
   const { isAuthenticated } = useAuth()
-  const { lenser } = useLenser()
+  const { lenser, isReady } = useLenser()
   const authLocale = lenser?.preferences?.language ?? null
   const hasBackfilledProfileLocale = useRef(false)
 
@@ -38,6 +38,7 @@ export function LocaleProviderBridge({ children }: LocaleProviderBridgeProps) {
   )
 
   useEffect(() => {
+    if (!isReady) return
     if (!isAuthenticated || !lenser) return
     if (lenser.preferences?.language) return
     if (hasBackfilledProfileLocale.current) return
@@ -49,7 +50,7 @@ export function LocaleProviderBridge({ children }: LocaleProviderBridgeProps) {
       .catch((err) => {
         console.warn('Failed to backfill profile locale', err)
       })
-  }, [isAuthenticated, lenser])
+  }, [isReady, isAuthenticated, lenser])
 
   return (
     <LocaleProvider authLocale={authLocale} onLocaleChange={handleLocaleChange}>

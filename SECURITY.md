@@ -66,6 +66,27 @@ For agentic issues, include the smallest safe reproduction:
 - whether the issue can trigger file access, command execution, network calls, external writes, cost consumption, or data exposure;
 - expected approval/sandbox behavior and actual behavior.
 
+## Local BYOK Keys
+
+Local BYOK keys (`user_byok_local`) live under `~/.lenserfight/keys/` on the
+user's machine. They are encrypted at rest with AES-256-GCM under a master
+passphrase held in the OS keychain. The LenserFight web app **never** stores
+ciphertext or plaintext locally — it accesses keys through the loopback
+gateway daemon (`apps/gateway`), authenticated by a paired bearer token.
+
+Full threat model: `docs/en/explanation/security/local-keys.md`.
+
+Quick rules for contributors touching `libs/data/local-keys/`,
+`apps/gateway/src/handlers/keys.ts`, or `apps/gateway/src/auth/bearer.ts`:
+
+- Do not log plaintext key material, ciphertext, or the master passphrase.
+- Do not introduce a path that lets the browser read or write directly to
+  `~/.lenserfight/keys/`; the gateway is the only sanctioned bridge.
+- Keep the strict id regex (`/^[A-Za-z0-9_-]{20,40}$/`), `O_NOFOLLOW`, and
+  `O_EXCL` checks intact.
+- Update tests in `libs/data/local-keys/tests/` and `apps/gateway/src/{auth,handlers}/`
+  when modifying any of the above files.
+
 ## Leaked Secrets
 
 If you find a leaked API key, model-provider key, OAuth token, Supabase service key, webhook secret, signing key, or private key:

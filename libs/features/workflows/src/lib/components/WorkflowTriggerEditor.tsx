@@ -1,8 +1,9 @@
-import { Badge, Button } from '@lenserfight/ui/components'
 import { supabase } from '@lenserfight/data/supabase'
+import { Badge, Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Plus, Trash2 } from 'lucide-react'
 import React, { useCallback, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 type TriggerType = 'cron' | 'battle_event' | 'webhook' | 'manual'
 
@@ -105,7 +106,7 @@ export function WorkflowTriggerEditor({ workflowId }: WorkflowTriggerEditorProps
             <label className="block text-xs font-medium text-surface-text-muted mb-1">Type</label>
             <div className="flex flex-wrap gap-2">
               {(['cron', 'battle_event', 'webhook', 'manual'] as TriggerType[]).map((t) => (
-                <button
+                <Button
                   key={t}
                   onClick={() => setTriggerType(t)}
                   className={[
@@ -116,7 +117,7 @@ export function WorkflowTriggerEditor({ workflowId }: WorkflowTriggerEditorProps
                   ].join(' ')}
                 >
                   {t}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -131,13 +132,13 @@ export function WorkflowTriggerEditor({ workflowId }: WorkflowTriggerEditorProps
               />
               <div className="flex gap-2 mt-1.5">
                 {CRON_PRESETS.map((p) => (
-                  <button
+                  <Button
                     key={p.value}
                     onClick={() => setCronExpr(p.value)}
                     className="text-[10px] text-accent-primary hover:underline"
                   >
                     {p.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
               <p className="text-xs text-surface-text-muted mt-1">{nextCronRuns(cronExpr)[0]}</p>
@@ -146,16 +147,15 @@ export function WorkflowTriggerEditor({ workflowId }: WorkflowTriggerEditorProps
 
           {triggerType === 'battle_event' && (
             <div>
-              <label className="block text-xs font-medium text-surface-text-muted mb-1">Battle status condition</label>
-              <select
+              <SelectField
+                label="Battle status condition"
                 value={battleStatus}
-                onChange={(e) => setBattleStatus(e.target.value)}
-                className="w-full rounded-lg border border-surface-border bg-surface px-3 py-2 text-sm focus:outline-none"
-              >
-                {['open', 'voting', 'closed', 'archived'].map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+                onChange={setBattleStatus}
+                options={['open', 'voting', 'closed', 'archived'].map((status) => ({
+                  value: status,
+                  label: status,
+                }))}
+              />
             </div>
           )}
 

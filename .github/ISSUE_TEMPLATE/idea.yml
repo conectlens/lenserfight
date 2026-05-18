@@ -1,0 +1,32 @@
+name: "💡 Parking Lot"
+description: Record an idea worth keeping but not on the current roadmap.
+title: "[IDEA] "
+labels:
+  - deferred
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What's the change or capability?
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Why it might matter
+      description: User pain, ecosystem leverage, or strategic angle.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why_not_now
+    attributes:
+      label: Why it's not ready now
+      description: e.g. depends on another feature, blocked by an open RFC, needs design work, etc.
+
+  - type: textarea
+    id: links
+    attributes:
+      label: Related issues or discussions

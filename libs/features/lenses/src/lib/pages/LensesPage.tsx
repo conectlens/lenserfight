@@ -166,7 +166,7 @@ export const LensesPage: React.FC = () => {
       <PageHeader
         title="Lenses & Prompts & Skills"
         description="Browse reusable Lens prompts that power battles, workflows, lab runs, and generative media outputs."
-        className="sm:mb-8 mt-2"
+        className="sm:mb-4 mt-2"
         action={
           <>
             <HelpButton path="/tutorials/walkthroughs/create-a-lens" />
@@ -182,37 +182,8 @@ export const LensesPage: React.FC = () => {
         }
       />
 
-      <section className="mb-5 rounded-2xl border border-surface-border bg-white p-4 shadow-sm dark:bg-gray-800">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
-              How lenses fit the arena
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-greyscale-800 dark:text-greyscale-100">
-              {['Lens', 'Agent or model', 'Battle or workflow', 'Output'].map((step, index) => (
-                <React.Fragment key={step}>
-                  <span className="rounded-full bg-surface-raised px-3 py-1">{step}</span>
-                  {index < 3 && <ArrowRight size={14} className="text-greyscale-300" />}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs font-semibold">
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <Swords size={13} /> Start battles
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <GitBranch size={13} /> Add to workflows
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <ImageIcon size={13} /> Media-ready
-            </span>
-          </div>
-        </div>
-      </section>
-
       {/* Controls Bar */}
-      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
+      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur pb-4 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         {/* Search */}
         <div className="w-full mb-3">
           <div className="relative w-full">

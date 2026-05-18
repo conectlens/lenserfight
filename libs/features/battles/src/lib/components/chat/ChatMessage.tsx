@@ -41,7 +41,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const timeAgo = formatTimeAgo(createdAt)
 
   return (
-    <div className="flex items-start gap-3 px-4 py-2 hover:bg-surface-raised/50 transition-colors group">
+    <div className="flex items-start gap-3 px-4 py-2 overflow-hidden hover:bg-surface-raised/50 transition-colors group">
       <div className="flex-shrink-0 h-8 w-8 rounded-full bg-surface-interactive flex items-center justify-center overflow-hidden border border-surface-border sombra-sm">
         {avatarUrl ? (
           <img src={avatarUrl} alt={senderHandle} className="h-full w-full object-cover" />
@@ -63,7 +63,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           </div>
           <span className="text-[10px] text-surface-text-disabled flex-shrink-0 font-medium group-hover:text-surface-text-muted transition-colors">{timeAgo}</span>
         </div>
-        <p className="text-[13px] text-surface-text-muted leading-relaxed break-words break-all sm:break-normal">
+        <p className="text-[13px] text-surface-text-muted leading-relaxed break-words overflow-hidden">
           {body}
         </p>
       </div>

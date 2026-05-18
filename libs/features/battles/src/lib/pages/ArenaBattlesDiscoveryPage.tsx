@@ -1,5 +1,4 @@
 import { EmptyState, InfiniteScrollSentinel, PageHeader, SEOHead } from '@lenserfight/ui/components'
-import { FEATURES } from '@lenserfight/utils/env'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Trophy } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
@@ -24,8 +23,8 @@ const cardVariants = {
 
 // Phase O2 — Arena discovery
 //
-// Surfaces finalized public battles to anyone with the FEATURES.PUBLIC_BATTLES
-// flag enabled. Distinct from BattlesFeedPage (creator/contender flows) — this
+// Surfaces finalized public battles in the arena discovery view.
+// Distinct from BattlesFeedPage (creator/contender flows) — this
 // view is read-only and shaped for spectators.
 //
 // Status filter is hard-coded to 'published' (the terminal "voting closed +
@@ -54,11 +53,9 @@ export function ArenaBattlesDiscoveryPage() {
       </div>
 
       {/* V5 — Live public battles spectator widget */}
-      {FEATURES.PUBLIC_BATTLES && (
-        <div className="mb-6">
-          <SpectatorFeedWidget />
-        </div>
-      )}
+      <div className="mb-6">
+        <SpectatorFeedWidget />
+      </div>
 
       {isLoading ? (
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">

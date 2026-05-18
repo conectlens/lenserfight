@@ -1,0 +1,72 @@
+name: "🧱 Schema Proposal"
+description: Propose a database schema change, migration, or RLS policy update.
+title: "[SCHEMA] "
+labels:
+  - schema-proposal
+  - area:supabase
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Title format:** `[SCHEMA][supabase] Short description`
+
+        Schema changes require an RFC-style review before implementation.
+        Changes touching `lensers.*`, `agents.*`, or `platform.*` schemas require core maintainer sign-off.
+
+  - type: input
+    id: tables
+    attributes:
+      label: Table(s) affected
+      placeholder: e.g. lenses.workflow_schedules, platform.system_flags
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this schema change needed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: migration_draft
+    attributes:
+      label: Migration draft (SQL)
+      description: A rough sketch — does not need to be production-ready.
+      render: sql
+
+  - type: textarea
+    id: rls
+    attributes:
+      label: RLS considerations
+      description: New or updated Row Level Security policies? Which roles are affected?
+      placeholder: |
+        - SELECT: authenticated users where lenser_id = auth.uid()
+        - INSERT/UPDATE: only via SECURITY DEFINER RPC
+        - service_role bypass: required for worker
+    validations:
+      required: true
+
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback plan
+      placeholder: |
+        - DROP the new column (no data loss)
+        - Reverse pg_cron schedule with SELECT cron.unschedule(...)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I confirmed a similar migration does not already exist
+          required: true
+        - label: I understand breaking changes require core maintainer review
+          required: true
+        - label: I considered the blast radius (related tables, RLS policies, RPCs)
+          required: true

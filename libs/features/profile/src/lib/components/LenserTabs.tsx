@@ -7,6 +7,7 @@ export type LenserTabId =
   | 'threads'
   | 'challenges'
   | 'agents'
+  | 'badges'
   | 'overview'
   | 'workflows'
   | 'logs'
@@ -19,6 +20,7 @@ export type LenserTabId =
   | 'ai_threads'
   | 'ai_actions'
   | 'ai_cron'
+  | 'ai_badges'
 
 export interface LenserTabDefinition {
   id: LenserTabId
@@ -29,9 +31,10 @@ interface LenserTabsProps {
   activeTab: LenserTabId
   onChange: (tab: LenserTabId) => void
   tabs: LenserTabDefinition[]
+  rightSlot?: React.ReactNode
 }
 
-export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange, tabs }) => {
+export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange, tabs, rightSlot }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const activeButtonRef = useRef<HTMLButtonElement>(null)
   const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number }>({
@@ -84,6 +87,7 @@ export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange, tab
       />
 
       <HelpButton path="/explanation/agents/" label="About AI Agents" />
+      {rightSlot}
     </div>
   )
 }

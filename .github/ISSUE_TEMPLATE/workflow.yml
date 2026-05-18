@@ -1,0 +1,56 @@
+name: "🛠 Workflow Problem"
+description: Report a workflow builder, DAG execution, or node-runner issue. For battle/lens/agent bugs use their own templates.
+title: "[WORKFLOW][apps/web] "
+labels:
+  - p0-workflow
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Title format:** `[WORKFLOW][apps/web] Short description`
+  - type: textarea
+    id: scenario
+    attributes:
+      label: What you tried to run
+      description: Template name, custom workflow description, node type, etc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened vs what you expected
+    validations:
+      required: true
+
+  - type: input
+    id: run_id
+    attributes:
+      label: Run ID
+      description: From run history or `lf execution list` (if available).
+      placeholder: e.g. run_01abc…
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error output
+      description: Paste node_results error_message or worker output.
+      render: text
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Edition (community / cloud), Node version, pnpm version, Supabase CLI version.
+      placeholder: "community, Node 20.11, pnpm 9.1, Supabase CLI 1.150"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true

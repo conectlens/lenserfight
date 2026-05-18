@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { queryKeys } from '@lenserfight/data/cache'
+import { ArtifactLifecycleMenu } from '@lenserfight/features/artifact-lifecycle'
 import {
   agentsService,
   reactionService,
@@ -14,6 +15,8 @@ import {
   AgentStatusBadge,
   useRunUnified,
 } from '@lenserfight/features/agents'
+import { BadgeDisplay } from '@lenserfight/features/lenserboard'
+import { ExportButton } from '@lenserfight/features/exports'
 import { ThreadsListCard } from '@lenserfight/features/home'
 import { EmptyState } from '@lenserfight/ui/components'
 import { Dialog } from '@lenserfight/ui/overlays'
@@ -63,6 +66,7 @@ const AI_TAB_MAP: Record<string, LenserTabId> = {
   ab: 'ai_about',
   aw: 'ai_workflows',
   aac: 'ai_actions',
+  abd: 'ai_badges',
   // Legacy mappings for backward compatibility
   ao: 'ai_about',
   at: 'ai_about',
@@ -76,6 +80,7 @@ const AI_REVERSE_TAB_MAP: Partial<Record<LenserTabId, string>> = {
   ai_about: 'ab',
   ai_workflows: 'aw',
   ai_actions: 'aac',
+  ai_badges: 'abd',
 }
 
 const AI_TABS: LenserTabDefinition[] = [
@@ -83,6 +88,7 @@ const AI_TABS: LenserTabDefinition[] = [
   { id: 'ai_about', label: 'About' },
   { id: 'ai_workflows', label: 'Workflows' },
   { id: 'ai_actions', label: 'Activity' },
+  { id: 'ai_badges', label: 'Badges' },
 ]
 
 // ── Main component ───────────────────────────────────────────────────────────
@@ -175,11 +181,38 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
         onControlRoom={() => switchToProfile(viewedProfile)}
         agentLenserId={agentProfile?.id}
       />
+      {isOwner && agentProfile?.id && (
+        <div className="flex justify-end px-4 md:px-0 mt-2">
+          <ArtifactLifecycleMenu
+            type="agent"
+            id={agentProfile.id}
+            extraInvalidateKeys={[
+              queryKeys.agents.detail(agentProfile.id),
+              queryKeys.agents.detailByProfile(viewedProfile.id),
+            ]}
+          />
+        </div>
+      )}
 
 
       <div className="mt-8 px-4 md:px-0">
 
-        <LenserTabs activeTab={activeTab} onChange={handleTabChange} tabs={AI_TABS} />
+        <LenserTabs
+          activeTab={activeTab}
+          onChange={handleTabChange}
+          tabs={AI_TABS}
+          rightSlot={
+            <div className="ml-auto">
+              <ExportButton
+                kind="agent"
+                slug={viewedProfile.handle}
+                title={viewedProfile.display_name}
+                isOwner={isOwner}
+                fetchPayload={async () => agentProfile ?? viewedProfile}
+              />
+            </div>
+          }
+        />
 
 
         <LenserTabContent activeTab={activeTab}>
@@ -250,6 +283,10 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
               </div>
 
             </div>
+          )}
+
+          {activeTab === 'ai_badges' && (
+            <BadgeDisplay lenserId={viewedProfile.id} detailed />
           )}
 
         </div>

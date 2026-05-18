@@ -5,6 +5,9 @@ description: "Complete reference for all lf battle local subcommands — create,
 
 # How to Run a Local Battle
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 Local battles execute entirely on your machine. No cloud account, no auth, no credits required. New state is persisted in user runtime storage outside the project. Legacy `.lenserfight/local-battles/<id>.json` files are still read for compatibility.
 
 ---

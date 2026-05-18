@@ -1,41 +1,65 @@
 import { googleLyriaAdapter } from '../google-lyria'
 import { mockFetch, resetFetchMock } from '../testing'
 
-const OPERATIONS_URL = /aiplatform\.googleapis\.com.*operations/
-const PREDICT_URL = /aiplatform\.googleapis\.com.*predictLongRunning/
+const AI_STUDIO_PREDICT_URL = /generativelanguage\.googleapis\.com.*predictLongRunning/
+const VERTEX_PREDICT_URL = /aiplatform\.googleapis\.com.*predictLongRunning/
+const POLL_URL = /(generativelanguage|aiplatform)\.googleapis\.com.*operations/
 
-describe('googleLyriaAdapter', () => {
+const AI_STUDIO_KEY = 'AIzaSyAabcdefghijklmnopqrstuvwxyz012345'
+const VERTEX_TOKEN = 'ya29.fake-oauth'
+
+describe('googleLyriaAdapter — AI Studio path (default)', () => {
   let spy: jest.SpyInstance
+  afterEach(() => { if (spy) resetFetchMock(spy) })
 
-  afterEach(() => {
-    if (spy) resetFetchMock(spy)
-  })
-
-  it('generate returns pending', async () => {
+  it('routes to AI Studio when no project is set', async () => {
     spy = mockFetch([
-      {
-        url: PREDICT_URL,
-        response: { name: 'projects/p/operations/lyria-op-1' },
-      },
+      { url: AI_STUDIO_PREDICT_URL, response: { name: 'operations/lyria-1' } },
     ])
-
-    const result = await googleLyriaAdapter.generate('tok', 'lyria-2', 'calm music', {
-      project: 'p',
-      region: 'us-central1',
-    })
+    const result = await googleLyriaAdapter.generate(AI_STUDIO_KEY, 'lyria-2', 'lo-fi', {})
     expect(result.status).toBe('pending')
+    if (result.status === 'pending') {
+      expect(result.providerTaskId).toContain('ai-studio|')
+    }
   })
 
-  it('pollTask decodes base64 audioContent into data URI', async () => {
-    const fakeB64 = Buffer.from('FAKE_MP3_BYTES').toString('base64')
+  it('does not require project on AI Studio path', async () => {
     spy = mockFetch([
-      {
-        url: OPERATIONS_URL,
-        response: { done: true, response: { audioContent: fakeB64 } },
-      },
+      { url: AI_STUDIO_PREDICT_URL, response: { name: 'operations/lyria-1' } },
     ])
+    await expect(
+      googleLyriaAdapter.generate(AI_STUDIO_KEY, 'lyria-2', 'x', {}),
+    ).resolves.toMatchObject({ status: 'pending' })
+  })
+})
 
-    const result = await googleLyriaAdapter.pollTask!('tok', 'projects/p/operations/lyria-op-1')
+describe('googleLyriaAdapter — Vertex path (opt-in)', () => {
+  let spy: jest.SpyInstance
+  afterEach(() => { if (spy) resetFetchMock(spy) })
+
+  it('routes to Vertex when project is set', async () => {
+    spy = mockFetch([
+      { url: VERTEX_PREDICT_URL, response: { name: 'projects/p/operations/lyria-2' } },
+    ])
+    const result = await googleLyriaAdapter.generate(VERTEX_TOKEN, 'lyria-2', 'jazz', {
+      project: 'p', region: 'us-central1',
+    })
+    if (result.status === 'pending') {
+      expect(result.providerTaskId.startsWith('vertex:us-central1|')).toBe(true)
+    }
+  })
+})
+
+describe('googleLyriaAdapter — pollTask', () => {
+  let spy: jest.SpyInstance
+  afterEach(() => { if (spy) resetFetchMock(spy) })
+
+  it('decodes base64 audioContent into data URI', async () => {
+    const fakeB64 = Buffer.from('FAKE_MP3').toString('base64')
+    spy = mockFetch([
+      { url: POLL_URL, response: { done: true, response: { audioContent: fakeB64 } } },
+    ])
+    const result = await googleLyriaAdapter.pollTask!(AI_STUDIO_KEY, 'ai-studio|operations/lyria-1')
     expect(result.status).toBe('completed')
     if (result.status === 'completed') {
       expect(result.urls[0]).toMatch(/^data:audio\/mpeg;base64,/)

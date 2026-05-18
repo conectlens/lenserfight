@@ -1,4 +1,5 @@
 import type { WorkflowScheduleRecord } from '@lenserfight/types'
+import { ExperimentalBadge } from '@lenserfight/ui/components'
 import { CalendarClock, Clock, Pause, Play, Plus, Trash2 } from 'lucide-react'
 import React, { forwardRef, useImperativeHandle, useState } from 'react'
 import { useDeleteWorkflowSchedule, useUpsertWorkflowSchedule, useWorkflowSchedules } from '../hooks/useWorkflowSchedules'
@@ -65,6 +66,7 @@ export const WorkflowCronPanel = forwardRef<WorkflowCronPanelRef, WorkflowCronPa
           <div className="flex items-center gap-1.5 text-xs font-semibold text-greyscale-700 dark:text-greyscale-200 uppercase tracking-wide">
             <CalendarClock size={13} />
             CRON Schedules
+            <ExperimentalBadge mode="inline" title="Experimental" />
           </div>
           {isOwner && !showForm && (
             <button
@@ -76,6 +78,11 @@ export const WorkflowCronPanel = forwardRef<WorkflowCronPanelRef, WorkflowCronPa
             </button>
           )}
         </div>
+
+        <ExperimentalBadge
+          title="CRON scheduling"
+          description="Cron-driven workflow runs are wired up but I haven't fully tested edge cases (skipped windows, overlapping runs, timezone drift). Start with a low-frequency schedule and watch the first few fires."
+        />
 
         {/* Add form */}
         {isOwner && showForm && (

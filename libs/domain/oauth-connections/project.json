@@ -1,0 +1,21 @@
+{
+  "name": "oauth-connections",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/oauth-connections/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:oauth-connections",
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../../coverage/libs/domain/oauth-connections"
+      }
+    }
+  }
+}

@@ -59,7 +59,7 @@ export function Tooltip({
         id={id}
         role="tooltip"
         style={{ transitionDelay: `${delayMs}ms` }}
-        className={`pointer-events-none absolute z-50 rounded-lg px-3 py-2 text-xs font-medium text-greyscale-800 bg-white border border-surface-border shadow-lg dark:text-greyscale-100 dark:bg-greyscale-900 opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${pos.container} ${contentClassName}`}
+        className={`pointer-events-none absolute z-50 w-max rounded-lg px-3 py-2 text-xs font-medium text-greyscale-800 bg-white border border-surface-border shadow-lg dark:text-greyscale-100 dark:bg-greyscale-900 opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${pos.container} ${contentClassName}`}
       >
         {content}
         <span className={`absolute h-0 w-0 ${pos.arrow}`} />

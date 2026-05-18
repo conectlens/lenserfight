@@ -181,7 +181,14 @@ export function simulate(
   const nodeById = new Map(nodes.map((n) => [n.id, n]))
   for (const wave of waves) {
     for (const nodeId of wave) {
-      const node = nodeById.get(nodeId)!
+      const node = nodeById.get(nodeId)
+      if (!node) {
+        // This node ID exists in an edge but not in the nodes list.
+        // Skip it to avoid crashing the simulator. Structural validation
+        // will have already flagged this as an issue.
+        continue
+      }
+
       try {
         resolveRenderedInputs(
           {

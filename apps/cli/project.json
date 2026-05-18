@@ -76,7 +76,7 @@
       "executor": "@nx/js:prune-lockfile",
       "outputs": [
         "{workspaceRoot}/dist/apps/cli/package.json",
-        "{workspaceRoot}/dist/apps/cli/package-lock.json"
+        "{workspaceRoot}/dist/apps/cli/pnpm-lock.yaml"
       ],
       "options": {
         "buildTarget": "build"
@@ -122,9 +122,18 @@
         }
       }
     },
-    "chmod": {
+    "strip-package-manager": {
       "dependsOn": [
         "build"
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node -e \"const fs=require('fs'),p='dist/apps/cli/package.json',j=JSON.parse(fs.readFileSync(p,'utf8'));delete j.packageManager;fs.writeFileSync(p,JSON.stringify(j,null,2)+'\\n');\""
+      }
+    },
+    "chmod": {
+      "dependsOn": [
+        "strip-package-manager"
       ],
       "executor": "nx:run-commands",
       "options": {

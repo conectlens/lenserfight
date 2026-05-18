@@ -44,10 +44,14 @@ export const useFundingSource = (
   const {
     localKeys,
     isLoading: isLoadingLocalKeys,
+    availability: localKeyAvailability,
     addKey: addLocalKey,
     removeKey: removeLocalKey,
     updateKey: updateLocalKey,
     resolveKey: resolveLocalKey,
+    pairGateway,
+    unpairGateway,
+    refresh: refreshLocalKeys,
   } = useLocalKeyStore()
 
   // All user cloud BYOK keys
@@ -105,10 +109,14 @@ export const useFundingSource = (
     availableKeys,
     localKeys,
     isLoadingLocalKeys,
+    localKeyAvailability,
     addLocalKey,
     removeLocalKey,
     updateLocalKey,
     resolveLocalKey,
+    pairGateway,
+    unpairGateway,
+    refreshLocalKeys,
     walletBalance,
     canUseBYOK,
     isReady,

@@ -4,7 +4,7 @@
 -- provider + model + prompt hash + pass/fail + raw output.
 --
 -- Append-only — UPDATE / DELETE are blocked by a structural trigger so the
--- ledger is research-grade (mirrors benchmark.invalidations pattern).
+-- ledger is research-grade (append-only invalidation-style semantics).
 --
 -- RLS:
 --   - service_role: full INSERT/SELECT (the harness writes here)

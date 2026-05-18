@@ -1,0 +1,27 @@
+name: "📚 Docs Fix"
+description: Report a documentation error or propose a correction.
+title: "[DOCS][apps/docs] "
+labels:
+  - docs
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page or file
+      description: Link to the docs page or the repo file path.
+      placeholder: "https://docs.lenserfight.com/... or docs/en/tutorials/..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or missing?
+    validations:
+      required: true
+
+  - type: textarea
+    id: fix
+    attributes:
+      label: Proposed fix
+      description: Leave blank if you're only reporting the problem.

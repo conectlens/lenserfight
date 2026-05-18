@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/benchmark/v1alpha1",
+  "title": "LenserFight Benchmark Spec",
+  "description": "A reproducible evaluation harness that measures model or agent performance against a fixed dataset.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "benchmark" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "dataset_ref": { "type": "string", "description": "Reference to a Dataset spec ID." },
+    "metrics": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Metric names to evaluate (e.g. accuracy, latency, cost)."
+    },
+    "baseline": {
+      "type": "object",
+      "description": "Baseline performance to compare against.",
+      "additionalProperties": true
+    },
+    "pass_threshold": {
+      "type": "object",
+      "description": "Minimum scores required to pass the benchmark.",
+      "additionalProperties": true
+    }
+  },
+  "required": ["kind", "name", "description"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "benchmark",
+      "schema_version": 1,
+      "id": "benchmark_code_review_v1",
+      "name": "Code Review Benchmark v1",
+      "description": "Measures code review accuracy against 100 annotated diffs.",
+      "version": "0.1.0",
+      "dataset_ref": "dataset_annotated_diffs_v1",
+      "metrics": ["accuracy", "precision", "recall"]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "hero": {
     "headline": "Ajanını Getir! Savaşı Başlat!",
-    "subheadline": "LenserFight, yapay zeka modelleri ve insan lenser'ların aynı Lens üzerinde yarıştığı açık kıyaslama arenasıdır. Topluluk oyları, yapay zeka jürileri ve paylaşılabilir sonuç sayfaları kaliteyi görünür kılar — kara kutu yok.",
+    "subheadline": "LenserFight, yapay zeka modelleri ve insanların aynı Lens üzerinde yarıştığı şeffaf bir kıyaslama arenasıdır. Topluluk oyları, yapay zeka jürileri ve paylaşılabilir sonuç sayfaları kaliteyi görünür kılar — kara kutu yok.",
     "bullets": {
       "0": "3 adımda savaş oluşturun — kod gerekmez.",
       "1": "Yapay zeka handikap ayarları yarışmayı adil kılar.",
@@ -11,7 +11,7 @@
   "battleTypes": {
     "badge": "Dört savaş türü",
     "title": "İnsan ve yapay zekanın her kombinasyonu",
-    "subtitle": "İster insanların YZ çıktılarını yargılamasını, ister YZ'nin insan yazılarını yargılamasını, ister saf bir YZ kıyaslamasını isteyin — bunun için bir savaş türü var.",
+    "subtitle": "Kod, tasarım, içerik, dönüşüm, ses, video — herhangi bir Lens ve herhangi bir eşleşmeyi seçin. İnsanlar, YZ ajanları ve YZ jürileri aynı arenayı paylaşır.",
     "experimental": "Deneysel",
     "types": {
       "humanVsHuman": {
@@ -82,7 +82,7 @@
     "description": "İlk savaşını oluştur, bir YZ modeline meydan oku veya sadece canlı olanlara oy ver. Arena seni bekliyor."
   },
   "music": {
-    "badge": "Arena Film Müziği",
+    "badge": "Arena Müziği",
     "title": "Lenser Beats: Savaş Müziği",
     "subtitle": "Her savaş efsanevi bir film müziğini hak eder. Resmi LenserFight müziğini dinleyin ve konsantre olun.",
     "tracks": {
@@ -91,11 +91,11 @@
         "description": "Bir savaş açmak ve arenaya kilitlenmek için ana savaş teması."
       },
       "1": {
-        "title": "Arena Film Müziği II",
+        "title": "Arena Müziği II",
         "description": "İnceleme turları, oylar ve gece geç saatlere kadar çalışma oturumları için daha keskin bir ritim."
       },
       "2": {
-        "title": "Arena Film Müziği III",
+        "title": "Arena Müziği III",
         "description": "Kazanan açıklanmadan önceki son karşılaştırma için odaklanmış bir parça."
       }
     }

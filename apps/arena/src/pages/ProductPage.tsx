@@ -1,9 +1,4 @@
 import { Badge, Button, Card } from '@lenserfight/ui/components'
-import {
-  ArenaTrendingBattlesWidget,
-  SpectatorFeedWidget,
-} from '@lenserfight/features/battles'
-import { ArenaTrendingLensesWidget } from '@lenserfight/features/home'
 import { motion } from 'framer-motion'
 import {
   Activity,
@@ -20,9 +15,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
+import { PlatformPillars } from '../components/PlatformPillars'
 import { chainabitContactUrl } from '../utils/chainabitUrls'
 
-const RUN_APP_URL = import.meta.env.ARENA_URL ?? 'https://moon.lenserfight.com'
+const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
 
 const spring = { type: 'spring', stiffness: 260, damping: 22 } as const
 const viewport = { once: true, margin: '-60px' } as const
@@ -43,15 +39,6 @@ const stagger = {
 }
 
 type BadgeColor = 'yellow' | 'purple' | 'blue' | 'green'
-
-interface Primitive {
-  icon: React.ElementType
-  name: string
-  badgeColor: BadgeColor
-  title: string
-  description: string
-  capabilities: string[]
-}
 
 const PRIMITIVE_DEFS = [
   { icon: User, key: 'lenser', badgeColor: 'yellow' as BadgeColor, capCount: 3 },
@@ -121,19 +108,19 @@ export const ProductPage: React.FC = () => {
               const name = t(`product:primitives.items.${key}.name`)
               const title = t(`product:primitives.items.${key}.title`)
               return (
-              <motion.div key={key} variants={fadeUp}>
-                <Card className="h-full space-y-3 border-t-4 border-t-primary-yellow-500/40 p-4 transition-colors hover:border-t-primary-yellow-500">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
-                    <Icon size={18} />
-                  </div>
-                  <div className="space-y-1">
-                    <Badge color={badgeColor} variant="outline" size="sm">
-                      {name}
-                    </Badge>
-                    <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{title}</p>
-                  </div>
-                </Card>
-              </motion.div>
+                <motion.div key={key} variants={fadeUp}>
+                  <Card className="h-full space-y-3 border-t-4 border-t-primary-yellow-500/40 p-4 transition-colors hover:border-t-primary-yellow-500">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
+                      <Icon size={18} />
+                    </div>
+                    <div className="space-y-1">
+                      <Badge color={badgeColor} variant="outline" size="sm">
+                        {name}
+                      </Badge>
+                      <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{title}</p>
+                    </div>
+                  </Card>
+                </motion.div>
               )
             })}
           </motion.div>
@@ -165,90 +152,72 @@ export const ProductPage: React.FC = () => {
             const description = t(`product:primitives.items.${key}.description`)
             const capabilities = Array.from({ length: capCount }, (_, i) => t(`product:primitives.items.${key}.capabilities.${i}`))
             return (
-            <motion.div key={key} variants={fadeUp} className="flex flex-col">
-              <Card className="flex flex-1 flex-col space-y-4 border-t-4 border-t-primary-yellow-500/40 p-6 transition-colors hover:border-t-primary-yellow-500">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
-                  <Icon size={22} />
-                </div>
-                <div className="space-y-2">
-                  <Badge color={badgeColor} variant="outline" size="sm">
-                    {name}
-                  </Badge>
-                  <h3 className="text-lg font-bold text-greyscale-900 dark:text-greyscale-50">{title}</h3>
-                </div>
-                <p className="flex-1 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
-                <ul className="space-y-1.5">
-                  {capabilities.map((cap) => (
-                    <li
-                      key={cap}
-                      className="flex items-center gap-2 text-xs text-greyscale-600 dark:text-greyscale-400"
-                    >
-                      <CheckCircle size={12} className="shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400" />
-                      {cap}
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </motion.div>
+              <motion.div key={key} variants={fadeUp} className="flex flex-col">
+                <Card className="flex flex-1 flex-col space-y-4 border-t-4 border-t-primary-yellow-500/40 p-6 transition-colors hover:border-t-primary-yellow-500">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
+                    <Icon size={22} />
+                  </div>
+                  <div className="space-y-2">
+                    <Badge color={badgeColor} variant="outline" size="sm">
+                      {name}
+                    </Badge>
+                    <h3 className="text-lg font-bold text-greyscale-900 dark:text-greyscale-50">{title}</h3>
+                  </div>
+                  <p className="flex-1 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
+                  <ul className="space-y-1.5">
+                    {capabilities.map((cap) => (
+                      <li
+                        key={cap}
+                        className="flex items-center gap-2 text-xs text-greyscale-600 dark:text-greyscale-400"
+                      >
+                        <CheckCircle size={12} className="shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400" />
+                        {cap}
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              </motion.div>
             )
           })}
         </motion.div>
       </section>
 
-      {/* ── LIVE ARENA DATA — real cards ──────────────────────────────── */}
+      {/* ── BEYOND THE FOUR PRIMITIVES — every platform pillar ─────────── */}
+      <PlatformPillars
+        className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-24"
+        i18nNamespace="product"
+        i18nPrefix="pillars"
+        variant="compact"
+        utm={{ source: 'lenserfight', medium: 'arena_product' }}
+      />
+
+      {/* ── SEE IT LIVE — pointer to /demo ─────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-24">
-        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="red" variant="outline">{t('product:liveData.badge')}</Badge>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            {t('product:liveData.title')}
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            {t('product:liveData.subtitle')}
-          </p>
-        </motion.div>
-
         <motion.div
-          className="mt-8 grid gap-5 lg:grid-cols-2"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
           viewport={viewport}
-          transition={{ ...spring, delay: 0.1 }}
         >
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-status-red" aria-hidden="true" />
-              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                {t('product:liveData.liveBattles')}
+          <Card className="flex flex-col items-start gap-5 p-8 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-status-red" aria-hidden="true" />
+                <Badge color="red" variant="outline">{t('product:liveData.badge')}</Badge>
+              </div>
+              <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+                {t('product:liveData.title')}
+              </h2>
+              <p className="max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+                {t('product:liveData.subtitle')}
               </p>
             </div>
-            <SpectatorFeedWidget getBattleHref={(slug) => `${RUN_APP_URL}/battles/${slug}`} />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Activity size={12} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
-              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-                {t('product:liveData.trendingBattles')}
-              </p>
-            </div>
-            <ArenaTrendingBattlesWidget baseUrl={RUN_APP_URL} />
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="mt-5"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport}
-          transition={{ ...spring, delay: 0.2 }}
-        >
-          <div className="mb-3 flex items-center gap-2">
-            <Aperture size={12} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
-            <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
-              {t('product:liveData.trendingLenses')}
-            </p>
-          </div>
-          <ArenaTrendingLensesWidget baseUrl={RUN_APP_URL} />
+            <Link to="/demo" className="shrink-0">
+              <Button variant="primary" size="lg">
+                {t('common:cta.seeDemo')} <ArrowRight size={16} />
+              </Button>
+            </Link>
+          </Card>
         </motion.div>
       </section>
 

@@ -5,6 +5,9 @@ description: "Phase V battle primitives: parent-linked rematches, the replay tim
 
 # Rematches, Replays, and Series
 
+<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+
+
 Phase V (Battles v2) introduces three new primitives on top of the existing battle lifecycle:
 
 - **Rematches** — a finalized battle can be cloned into a new draft that carries a `parent_battle_id` pointer back to its source. Owners trigger this manually; series trigger it automatically.

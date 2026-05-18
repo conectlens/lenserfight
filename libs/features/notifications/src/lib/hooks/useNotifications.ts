@@ -6,6 +6,7 @@ import type { NotificationRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 
 const QUERY_KEY = ['notifications']
+const UNREAD_COUNT_QUERY_KEY = ['notifications', 'unread-count']
 
 export function useNotifications(limit = 20) {
   const { user } = useAuth()
@@ -19,7 +20,10 @@ export function useNotifications(limit = 20) {
   })
 
   const notifications = data ?? []
-  const unreadCount = notifications[0]?.unread_count ?? 0
+  // Derive from the loaded list so the badge always matches what the user sees
+  // in the Unread tab. The DB-returned unread_count counts rows beyond LIMIT
+  // and can drift from the rendered list after optimistic updates.
+  const unreadCount = notifications.reduce((acc, n) => acc + (n.read_at ? 0 : 1), 0)
 
   // Realtime subscription — listen for INSERT on our own notifications
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
@@ -38,17 +42,14 @@ export function useNotifications(limit = 20) {
           filter: `lenser_id=eq.${user.id}`,
         },
         (payload) => {
-          // Prepend the new notification to the cached list
+          // Prepend the new notification to the cached list, deduped by id.
           qc.setQueryData<NotificationRecord[]>(QUERY_KEY, (prev) => {
             const incoming = payload.new as NotificationRecord
-            // unread_count on the incoming row may be stale; increment ours
-            const prevUnread = prev?.[0]?.unread_count ?? 0
-            const enriched: NotificationRecord = {
-              ...incoming,
-              unread_count: prevUnread + 1,
-            }
-            return [enriched, ...(prev ?? []).map((n) => ({ ...n, unread_count: prevUnread + 1 }))]
+            const existing = prev ?? []
+            if (existing.some((n) => n.id === incoming.id)) return existing
+            return [incoming, ...existing]
           })
+          qc.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY_KEY })
         }
       )
       .subscribe()
@@ -61,17 +62,13 @@ export function useNotifications(limit = 20) {
     async (ids: string[]) => {
       if (ids.length === 0) return
       await notificationsRepository.markRead(ids)
+      const readAt = new Date().toISOString()
       qc.setQueryData<NotificationRecord[]>(QUERY_KEY, (prev) =>
         (prev ?? []).map((n) =>
-          ids.includes(n.id) ? { ...n, read_at: new Date().toISOString() } : n
+          ids.includes(n.id) && !n.read_at ? { ...n, read_at: readAt } : n
         )
       )
-      // Recalculate unread_count
-      qc.setQueryData<NotificationRecord[]>(QUERY_KEY, (prev) => {
-        if (!prev) return prev
-        const newUnread = prev.filter((n) => !n.read_at).length
-        return prev.map((n) => ({ ...n, unread_count: newUnread }))
-      })
+      qc.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY_KEY })
     },
     [qc]
   )

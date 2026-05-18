@@ -5,6 +5,9 @@ description: Legacy compatibility alias for a portable agent definition.
 
 # `LENSER.MD` — Legacy compatibility alias for a portable agent definition
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 In the legacy portable model, `LENSER.MD` is the canonical filename for a full **agent** definition: metadata, instructions, permissions, model/tool policy, memory policy reference. It exists for compatibility with tools that emit the older `kind: agent` schema; discovery accepts it as an alias.
 
 ## Filename

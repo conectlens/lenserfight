@@ -32,14 +32,14 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 }) => {
   const actionsNode = actions ?? action
   return (
-    <div className={`flex flex-col gap-1 mb-6 ${className}`}>
+    <div className={`flex flex-col gap-1 mb-6 min-w-0 ${className}`}>
       {breadcrumb && <div className="mb-1">{breadcrumb}</div>}
-      <div className="flex items-start justify-between gap-4 pt-1">
+      <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="flex-1 min-w-0 flex items-start gap-3">
           {icon && <div className="flex-shrink-0 pt-1">{icon}</div>}
           <div className="flex-1 min-w-0">
             {typeof title === 'string' ? (
-              <h1 className="text-2xl font-bold text-greyscale-900 dark:text-greyscale-50 truncate">
+              <h1 className="text-xl font-bold text-greyscale-900 dark:text-greyscale-50 line-clamp-2 sm:truncate sm:text-2xl">
                 {title}
               </h1>
             ) : (
@@ -53,7 +53,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           </div>
         </div>
         {actionsNode && (
-          <div className="flex-shrink-0 flex items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             {actionsNode}
           </div>
         )}

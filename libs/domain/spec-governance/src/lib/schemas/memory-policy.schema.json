@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/memory-policy/v1alpha1",
+  "title": "LenserFight Memory Policy Spec",
+  "description": "Defines what a lenser may store, read, and retain in its workspace memory.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "memory_policy" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "readable": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Memory scopes the lenser can read."
+        },
+        "writable": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Memory scopes the lenser can write to."
+        }
+      },
+      "additionalProperties": true
+    },
+    "retention": {
+      "type": "object",
+      "properties": {
+        "short_term_days": { "type": "integer", "minimum": 1 },
+        "long_term_days": { "type": "integer", "minimum": 1 },
+        "max_entries": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true,
+      "description": "How long memory entries are retained."
+    },
+    "promotion_rules": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": true },
+      "description": "Rules for promoting short-term memory to long-term."
+    },
+    "redaction_rules": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": true },
+      "description": "Rules for redacting sensitive content from memory."
+    },
+    "reset_rules": {
+      "type": "object",
+      "description": "Conditions under which memory is reset.",
+      "additionalProperties": true
+    }
+  },
+  "required": ["kind", "name"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "memory_policy",
+      "schema_version": 1,
+      "id": "memory_policy_workspace_default",
+      "name": "Workspace Default Memory",
+      "description": "Default memory retention policy for workspace lensers.",
+      "version": "0.1.0",
+      "scope": { "readable": ["workspace"] },
+      "retention": { "short_term_days": 14 }
+    }
+  ]
+}

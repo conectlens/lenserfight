@@ -6,6 +6,7 @@
 -- apps/platform-api/src/worker/main.ts (platform, ai, execution, lenses RPCs),
 -- supabase/functions/test-provider/index.ts (ai.keys, vault.decrypted_secrets),
 -- apps/cli/src/commands/battle.ts (battles.battles UPDATE, battle_execution_jobs SELECT).
+-- supabase/functions/trigger-execution/index.ts (fn_worker_start_media_execution).
 --
 -- Note: fn_worker_render_template (lenses.fn_render_template) is in migration 03.
 -- Note: fn_worker_decrypt_api_key wraps ai.fn_decrypt_api_key for BYOK resolution
@@ -355,31 +356,90 @@ COMMENT ON FUNCTION public.fn_worker_persist_execution_artifacts(uuid, uuid, uui
   'Delegates to execution.fn_persist_execution_artifacts.';
 
 -- ─── 12. fn_worker_get_ai_key_secret ─────────────────────────────────────────
--- Resolve and decrypt an AI key from ai.keys + vault.decrypted_secrets
--- (supabase/functions/test-provider/index.ts).
--- Replaces: two-step .schema('ai').from('keys') + .schema('vault').from('decrypted_secrets').
+-- Resolve and decrypt an AI key from ai.keys + vault.decrypted_secrets, with
+-- mandatory ownership enforcement.
+--
+-- Security history: prior to 2026-05-16 this function accepted only p_ai_key_id
+-- and performed no ownership check. A service_role caller (e.g. an edge function
+-- using a client-supplied UUID) could therefore decrypt ANY user's stored key —
+-- a cross-tenant IDOR. The current version requires the worker to pass the
+-- authenticated user's auth.uid() so the function can verify the key belongs
+-- to that user before touching the vault.
+--
+-- Worker contract: callers MUST pass auth.uid() of the authenticated request.
+-- Passing NULL or a wrong UUID will fail the ownership check.
 
-CREATE OR REPLACE FUNCTION public.fn_worker_get_ai_key_secret(p_ai_key_id uuid)
+DROP FUNCTION IF EXISTS public.fn_worker_get_ai_key_secret(uuid);
+
+CREATE OR REPLACE FUNCTION public.fn_worker_get_ai_key_secret(
+  p_ai_key_id uuid,
+  p_user_id   uuid
+)
 RETURNS text
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path TO 'public', 'ai', 'vault'
+SET search_path TO 'public', 'ai', 'vault', 'lensers'
 AS $$
-  SELECT vs.decrypted_secret
-  FROM ai.keys k
-  JOIN vault.decrypted_secrets vs ON vs.id = k.encrypted_key_id
-  WHERE k.id = p_ai_key_id
+DECLARE
+  v_lenser_id    uuid;
+  v_encrypted_id uuid;
+  v_decrypted    text;
+BEGIN
+  IF p_ai_key_id IS NULL OR p_user_id IS NULL THEN
+    RAISE EXCEPTION 'p_ai_key_id and p_user_id are required';
+  END IF;
+
+  -- Resolve the human profile for the authenticated user; ai.keys are owned
+  -- by the human profile (not an agent workspace profile).
+  SELECT p.id INTO v_lenser_id
+  FROM lensers.profiles p
+  WHERE p.user_id = p_user_id
+    AND p.type = 'human'
   LIMIT 1;
+
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'Key owner profile not found';
+  END IF;
+
+  -- Ownership check: key must belong to caller AND be active.
+  SELECT k.encrypted_key_id INTO v_encrypted_id
+  FROM ai.keys k
+  WHERE k.id = p_ai_key_id
+    AND k.lenser_id = v_lenser_id
+    AND k.is_active = true
+  LIMIT 1;
+
+  IF v_encrypted_id IS NULL THEN
+    -- Generic message: do not disclose whether the key exists for another user.
+    RAISE EXCEPTION 'Key not found, revoked, or not owned by caller';
+  END IF;
+
+  SELECT decrypted_secret INTO v_decrypted
+  FROM vault.decrypted_secrets
+  WHERE id = v_encrypted_id;
+
+  IF v_decrypted IS NULL THEN
+    RAISE EXCEPTION 'Failed to decrypt key from vault';
+  END IF;
+
+  RETURN v_decrypted;
+END;
 $$;
 
-ALTER FUNCTION public.fn_worker_get_ai_key_secret(uuid) OWNER TO postgres;
-REVOKE ALL ON FUNCTION public.fn_worker_get_ai_key_secret(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.fn_worker_get_ai_key_secret(uuid) TO service_role;
+ALTER FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) OWNER TO postgres;
+-- Supabase sets default privileges granting EXECUTE on public schema functions
+-- to anon and authenticated. We explicitly revoke them to ensure only
+-- service_role workers can touch this vault accessor.
+REVOKE ALL ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) FROM anon;
+REVOKE ALL ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) TO service_role;
 
-COMMENT ON FUNCTION public.fn_worker_get_ai_key_secret(uuid) IS
-  'Worker-only: resolve and decrypt an API key from ai.keys via vault.decrypted_secrets. '
-  'Single round-trip replacing the two-step lookup in test-provider edge function.';
+COMMENT ON FUNCTION public.fn_worker_get_ai_key_secret(uuid, uuid) IS
+  'Worker-only: resolve and decrypt a BYOK API key from ai.keys via vault.decrypted_secrets. '
+  'Requires p_user_id (the authenticated caller''s auth.uid()) and verifies '
+  'the key belongs to that user. Patched 2026-05-16 to close cross-user IDOR.';
 
 -- ─── EDGE FUNCTION WORKER RPCs ───────────────────────────────────────────────
 
@@ -465,3 +525,67 @@ GRANT EXECUTE ON FUNCTION public.fn_worker_update_vote_risk_score(uuid, numeric,
 
 COMMENT ON FUNCTION public.fn_worker_update_vote_risk_score(uuid, numeric, text[], text) IS
   'Worker-only: update risk_score, risk_factors, and review_status on a vote_risk_scores row.';
+
+-- ─── fn_worker_start_media_execution ──────────────────────────────────────────
+-- Public SECURITY DEFINER wrapper for execution.fn_start_execution, called by
+-- the trigger-execution edge function.
+--
+-- Accepts p_user_id (auth.users.id) instead of p_lenser_id so the edge function
+-- never needs to touch lensers.* or execution.* schemas directly through
+-- PostgREST. The lenser resolution and workspace lookup happen here, inside the
+-- DB, where the private schemas are safely accessible.
+--
+-- Callable only by service_role (the edge function's service client).
+
+CREATE OR REPLACE FUNCTION public.fn_worker_start_media_execution(
+  p_user_id        uuid,
+  p_origin_type    text,
+  p_funding_source text,
+  p_lens_id        uuid    DEFAULT NULL,
+  p_byok_key_ref_id uuid   DEFAULT NULL,
+  p_input_snapshot jsonb   DEFAULT '{}'
+) RETURNS TABLE(request_id uuid, run_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'lensers', 'execution', 'tenancy'
+AS $$
+DECLARE
+  v_lenser_id uuid;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RAISE EXCEPTION 'p_user_id is required';
+  END IF;
+
+  -- Resolve the human profile for this auth user.
+  SELECT id INTO v_lenser_id
+  FROM lensers.profiles
+  WHERE user_id = p_user_id
+    AND type    = 'human'
+  LIMIT 1;
+
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'No human lenser profile found for user';
+  END IF;
+
+  RETURN QUERY
+    SELECT r.request_id, r.run_id
+    FROM execution.fn_start_execution(
+      p_lenser_id       => v_lenser_id,
+      p_origin_type     => p_origin_type,
+      p_funding_source  => p_funding_source,
+      p_model_id        => NULL,
+      p_lens_id         => p_lens_id,
+      p_byok_key_ref_id => p_byok_key_ref_id,
+      p_input_snapshot  => p_input_snapshot
+    ) r;
+END;
+$$;
+
+ALTER FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) FROM anon;
+REVOKE ALL ON FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) TO service_role;
+
+COMMENT ON FUNCTION public.fn_worker_start_media_execution(uuid, text, text, uuid, uuid, jsonb) IS
+  'Edge-function gateway: resolves auth user → lenser profile, then delegates to execution.fn_start_execution. Accepts p_user_id so the edge function never touches private schemas through PostgREST. Callable only by service_role.';

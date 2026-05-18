@@ -5,6 +5,9 @@ description: Portable, reusable capability with activation rules and a step-by-s
 
 # `SKILL.md` — Portable reusable capability
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 A **SKILL** is a packaged, reusable method a LENSER can invoke — closer to a runbook than to a single prompt. It declares activation rules (keywords, file patterns, signals), a workflow, and anti-patterns.
 
 ## Filename
@@ -66,5 +69,5 @@ Step-by-step instructions the lenser should follow.
 ## Related
 
 - [Markdown Object Formats overview](../markdown-objects)
-- [ConnectLens Agent Skills Ruleset](../connectlens-agent-skills)
+- [ConectLens Agent Skills Ruleset](../ConectLens-agent-skills)
 - [Native `LENSER.MD`](./lenser-md-native)

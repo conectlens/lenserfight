@@ -1,4 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
+import { Button, Card } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import { useQuery } from '@tanstack/react-query'
 import { ClipboardList, Search } from 'lucide-react'
@@ -17,7 +19,7 @@ const STATUSES = ['', 'queued', 'running', 'blocked', 'completed', 'failed', 'ca
 
 const STATUS_COLORS: Record<string, string> = {
   queued: 'border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400',
-  running: 'border-amber-200 text-amber-700 dark:border-amber-500/30 dark:text-amber-300',
+  running: 'border-primary-yellow-200 text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300',
   blocked: 'border-orange-200 text-orange-700 dark:border-orange-500/30 dark:text-orange-300',
   completed: 'border-green-200 text-green-700 dark:border-green-500/30 dark:text-green-300',
   failed: 'border-red-200 text-red-700 dark:border-red-500/30 dark:text-red-400',
@@ -60,19 +62,20 @@ export const RunsSection: React.FC = () => {
     <>
       <SectionPage
         eyebrow="Runs"
+        docsPath="/how-to/agents/workspace/runs"
+        docsTip="Unified queue of every workflow execution (manual, scheduled, webhook). Click a row to open the Run Detail drawer with the full timeline, inputs, outputs, and tool calls."
         title="Team and workflow run history"
         description="Each manual run, CRON dispatch, or human-approved execution lands here. Filter by status to focus on blockers and failures."
         toolbar={
-          <select
+          <SelectField
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-          >
-            <option value="">All statuses</option>
-            {STATUSES.filter(Boolean).map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+            onChange={setStatusFilter}
+            options={[
+              { value: '', label: 'All statuses' },
+              ...STATUSES.filter(Boolean).map((status) => ({ value: status, label: status })),
+            ]}
+            className="w-44"
+          />
         }
       >
         {filtered.length === 0 ? (
@@ -84,7 +87,7 @@ export const RunsSection: React.FC = () => {
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {filtered.map((run) => (
-              <div key={run.id} className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <Card key={run.id} className="!p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-mono text-sm font-semibold text-gray-900 dark:text-white">
@@ -102,16 +105,18 @@ export const RunsSection: React.FC = () => {
                       {run.started_at ? formatDateTime(run.started_at) : 'Not started'}
                     </p>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setInspectRun(run)}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+                    className="shrink-0"
                   >
                     <Search size={12} />
                     Inspect
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
@@ -156,6 +161,8 @@ const HumanFleetRuns: React.FC<{
     <>
       <SectionPage
         eyebrow="Runs"
+        docsPath="/how-to/agents/workspace/runs"
+        docsTip="Run history aggregated across every agent you own. Filter by agent or status to focus on blockers."
         title="Fleet run history"
         description="Run history aggregated across every agent you own. Filter by agent or status."
         toolbar={
@@ -166,16 +173,15 @@ const HumanFleetRuns: React.FC<{
               placeholder="agent id (uuid)"
               className="w-44 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             />
-            <select
+            <SelectField
               value={statusFilter}
-              onChange={(e) => onStatusChange(e.target.value)}
-              className="rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            >
-              <option value="">All statuses</option>
-              {STATUSES.filter(Boolean).map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+              onChange={onStatusChange}
+              options={[
+                { value: '', label: 'All statuses' },
+                ...STATUSES.filter(Boolean).map((status) => ({ value: status, label: status })),
+              ]}
+              className="w-44"
+            />
           </div>
         }
       >
@@ -188,7 +194,7 @@ const HumanFleetRuns: React.FC<{
             description="Try clearing filters or run a workflow on one of your agents."
           />
         ) : (
-          <div className="overflow-x-auto rounded-[24px] border border-gray-200 dark:border-gray-800">
+          <Card className="overflow-x-auto !p-0">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
@@ -215,8 +221,10 @@ const HumanFleetRuns: React.FC<{
                       {formatDateTime(row.started_at)}
                     </td>
                     <td className="px-4 py-3">
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="sm"
                         onClick={() =>
                           setInspectFleetTarget({
                             run: {
@@ -238,17 +246,16 @@ const HumanFleetRuns: React.FC<{
                             aiLenserId: row.ai_lenser_id,
                           })
                         }
-                        className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-600 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-400"
                       >
                         <Search size={11} />
                         Inspect
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </Card>
         )}
       </SectionPage>
 

@@ -6,11 +6,25 @@ outline: deep
 
 # Workflow Engine Architecture
 
+::: info Current Implementation Status
+The workflow engine supports **Lens-type nodes** via the execution provider registry (OpenAI, Anthropic, Google, Mistral, Ollama, Fal.ai). DAG validation (cycle detection, binding completeness, wave calculation) is fully implemented. Multi-node orchestration with inter-node data flow is available for Lens-to-Lens chains. Non-Lens node types (Logic, Data, Storage, Communication, etc.) are defined in the UI catalog but do not yet have runtime execution implementations.
+:::
+
 ## DAG Execution Model
 
 Every workflow is a directed acyclic graph (DAG). Nodes represent discrete units of work; edges encode execution order and data dependencies. `WorkflowExecutionService` (`libs/infra/execution/src/lib/workflow-execution.service.ts`) is the central orchestrator — it resolves the traversal order, fans out to execution providers, and aggregates status.
 
 Edges carry optional `condition` predicates. When a condition evaluates to `false`, the downstream node transitions to `skipped` rather than `pending`.
+
+## Data flow and `source_output_key`
+
+Bindings merge upstream `output_data` / envelope fields into the target lens template labels. `source_output_key` supports **dotted paths** into structured outputs (for example `data.summary` on a research node). Resolution is shared with the prompt resolver via `resolveMappedOutputValue` in `libs/infra/execution/src/lib/output-path.ts`.
+
+When a rendered label value looks like an **image URL**, the engine attaches it as a vision `ExecutionInput.attachments` entry so text providers that support multimodal messages can consume upstream image nodes without ad-hoc string hacks.
+
+## Per-node providers (mixed DAGs)
+
+`WorkflowExecutionContext.resolveExecutionProvider` selects an `IExecutionProvider` **per node** (for example Claude for research, Fal for `fal-ai/...` image models). The browser hook caches providers by model key; the scheduled worker resolves from `workflow_nodes.config.model_id` with the same mechanism. If the hook is omitted, the service falls back to the single provider passed to `new WorkflowExecutionService(provider)`.
 
 ## Node Status State Machine
 
@@ -78,7 +92,7 @@ Steps 1–4 are guard clauses that leave no partial state. A schedule either ful
 
 ## Worker Loop
 
-`apps/platform-api/src/worker/scheduled-workflow-worker.ts` follows a claim → execute → complete cycle:
+`apps/worker/src/worker/scheduled-workflow-worker.ts` follows a claim → execute → complete cycle:
 
 1. **Claim** — calls `fn_claim_scheduled_workflow_run`; receives an exclusive run ID or `null` if nothing is ready.
 2. **Execute** — calls `WorkflowExecutionService.execute()` with the claimed run's context and node graph.

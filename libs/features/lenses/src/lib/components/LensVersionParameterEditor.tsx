@@ -1,6 +1,7 @@
 import React from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { CreateVersionParamInput, ToolRecord } from '@lenserfight/types'
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -90,30 +91,26 @@ export const LensVersionParameterEditor: React.FC<LensVersionParameterEditorProp
               />
 
               {/* Tool selector */}
-              <select
+              <SelectField
                 value={param.toolId}
-                onChange={(e) => handleToolChange(index, e.target.value)}
-                className={`${inputClass} flex-1`}
-              >
-                {categories.map((cat) => (
-                  <optgroup key={cat} label={CATEGORY_LABELS[cat] ?? cat}>
-                    {toolsByCategory[cat].map((tool) => (
-                      <option key={tool.id} value={tool.id}>
-                        {tool.label ?? tool.key}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+                onChange={(value) => handleToolChange(index, value)}
+                options={categories.flatMap((category) =>
+                  toolsByCategory[category].map((tool) => ({
+                    value: tool.id,
+                    label: `${CATEGORY_LABELS[category] ?? category}: ${tool.label ?? tool.key}`,
+                  }))
+                )}
+                className="flex-1"
+              />
 
               {/* Remove */}
-              <button
+              <Button
                 type="button"
                 onClick={() => handleRemove(index)}
                 className="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
               >
                 <Trash2 size={14} />
-              </button>
+              </Button>
             </div>
           ))}
         </div>

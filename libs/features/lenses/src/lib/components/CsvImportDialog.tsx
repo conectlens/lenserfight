@@ -9,7 +9,6 @@ interface CsvImportDialogProps {
   open: boolean
   onClose: () => void
   versionParams?: LensVersionParam[]
-  legacyParams: LensParam[]
   onApply: (values: Record<string, unknown>) => void
   currentValues?: Record<string, unknown>
 }
@@ -24,7 +23,6 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   open,
   onClose,
   versionParams = [],
-  legacyParams,
   onApply,
   currentValues,
 }) => {
@@ -36,18 +34,15 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
 
   // Build typed CSV template from actual params
   const templateCsv = useMemo(
-    () => buildCsvTemplate(versionParams, legacyParams),
-    [versionParams, legacyParams],
+    () => buildCsvTemplate(versionParams),
+    [versionParams],
   )
 
   // Pre-populate with current values when dialog opens
   useEffect(() => {
     if (!open) return
     if (!currentValues) return
-    const allParamKeys = [
-      ...versionParams.map((p) => p.label),
-      ...legacyParams.map((p) => p.name),
-    ]
+    const allParamKeys = versionParams.map((p) => p.label)
     const matchedKeys = allParamKeys.filter((k) => currentValues[k] !== undefined && currentValues[k] !== '')
     if (matchedKeys.length > 0) {
       const headerRow = matchedKeys.join(',')
@@ -63,10 +58,7 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pre-compute which header columns match a param
-  const allParamKeys = [
-    ...versionParams.map((p) => p.label),
-    ...legacyParams.map((p) => p.name),
-  ]
+  const allParamKeys = versionParams.map((p) => p.label)
 
   const isHeaderMatched = (header: string): boolean => {
     const h = header.trim().toLowerCase()
@@ -94,7 +86,7 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   const handleApply = () => {
     if (!parsedCsv || parsedCsv.rows.length === 0) return
     const row = parsedCsv.rows[selectedRowIndex] ?? []
-    const { values, errors } = coerceCsvRow(parsedCsv.headers, row, versionParams, legacyParams)
+    const { values, errors } = coerceCsvRow(parsedCsv.headers, row, versionParams)
     if (Object.keys(errors).length > 0) {
       setRowErrors(errors)
       return

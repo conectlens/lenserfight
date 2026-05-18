@@ -1,5 +1,6 @@
 import { Button } from '@lenserfight/ui/components'
 import { DialogHeaderContext, DialogFooterContext, ModalFooter } from '@lenserfight/ui/overlays'
+import { X } from 'lucide-react'
 import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 
 export interface WizardStepConfig {
@@ -23,6 +24,7 @@ interface StepWizardProps {
   onBack: () => void
   onComplete: () => void
   onCancel?: () => void
+  onClose?: () => void
   canProceed: boolean
   isNextLoading?: boolean
   isCompleting?: boolean
@@ -39,6 +41,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   onBack,
   onComplete,
   onCancel,
+  onClose,
   canProceed,
   isNextLoading = false,
   isCompleting = false,
@@ -70,17 +73,35 @@ export const StepWizard: React.FC<StepWizardProps> = ({
 
   // Hoist header to Dialog context
   const { setHeader, clearHeader } = useContext(DialogHeaderContext)
+
+  const headerActionNode = useMemo(() => {
+    if (currentConfig?.action) return currentConfig.action
+    if (onClose) {
+      return (
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1.5 rounded-lg text-greyscale-400 hover:text-greyscale-900 hover:bg-greyscale-100 dark:hover:text-greyscale-50 dark:hover:bg-greyscale-800 transition-colors"
+          aria-label="Close"
+        >
+          <X size={20} />
+        </button>
+      )
+    }
+    return undefined
+  }, [currentConfig?.action, onClose])
+
   useEffect(() => {
     if (setHeader && currentConfig) {
       setHeader({
         title: currentConfig.title,
         description: currentConfig.description,
         icon: currentConfig.icon,
-        action: currentConfig.action,
+        action: headerActionNode,
       })
     }
     return () => clearHeader?.()
-  }, [currentConfig, setHeader, clearHeader])
+  }, [currentConfig, setHeader, clearHeader, headerActionNode])
 
   // Keyboard shortcut (Ctrl/Meta + Enter)
   useEffect(() => {

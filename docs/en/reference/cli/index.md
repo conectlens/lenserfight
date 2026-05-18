@@ -213,6 +213,10 @@ See [Automation CLI](automation.md).
 | Command | Description |
 |---------|-------------|
 | `lf battle <subcommand>` | Create, join, and manage battles (see [Battle Commands](battle.md)) |
+| `lf battle formats` | List task sources with allowed contender structures and judging modes |
+| `lf battle challenge-types` | List supported human game/challenge types |
+| `lf battle validate` | Validate a battle configuration (V1 legacy or V2 concept-separated) |
+| `lf battle explain-invalid` | Explain why a task-source / contender / judging combination fails |
 | `lf battle-moderation list/override` | Inspect and override moderation decisions on owned battles ([reference](battle-moderation.md)) |
 
 ### Schedule, approvals & memory

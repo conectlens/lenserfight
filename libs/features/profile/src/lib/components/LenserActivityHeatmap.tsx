@@ -1,5 +1,5 @@
 import { LenserActivityPoint } from '@lenserfight/types'
-import { Card } from '@lenserfight/ui/components'
+import { Card, HelpButton } from '@lenserfight/ui/components'
 import React from 'react'
 
 
@@ -37,8 +37,11 @@ export const LenserActivityHeatmap: React.FC<LenserActivityHeatmapProps> = ({ da
 
   return (
     <Card className="p-6 mb-8 overflow-hidden">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Lenser Activity</h3>
+      <div className="flex justify-between items-center mb-6 gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Lenser Activity</h3>
+          <HelpButton path="/explanation/lensers/lenser-activity" label="How this works" />
+        </div>
         <div className="text-sm text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1 flex items-center gap-2">
           {currentYear} <span className="text-xs">▼</span>
         </div>

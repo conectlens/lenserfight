@@ -21,7 +21,7 @@ const QuotaItem: React.FC<{
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
         <span className="flex items-center gap-1">{icon}{label}</span>
-        <span className={isNearLimit ? 'text-amber-600 dark:text-amber-400 font-medium' : ''}>
+        <span className={isNearLimit ? 'text-primary-yellow-600 dark:text-primary-yellow-400 font-medium' : ''}>
           {used}/{max}
         </span>
       </div>

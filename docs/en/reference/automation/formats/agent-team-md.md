@@ -5,6 +5,9 @@ description: Portable team definition with members, purpose, and collaboration r
 
 # `AGENT_TEAM.md` — Portable team definition
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 A portable, strictly-typed team of agents (the legacy counterpart to native `TEAM.MD`). Use this when exchanging team definitions between systems or storing them with `kind: agent_team` semantics.
 
 ## Filename

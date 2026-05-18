@@ -1,3 +1,4 @@
+import { Button } from '@lenserfight/ui/components'
 import { Dialog } from '@lenserfight/ui/overlays'
 import type { ApprovalDecision, ApprovalRequestView } from '@lenserfight/types'
 import React, { useEffect, useMemo, useState } from 'react'
@@ -116,7 +117,7 @@ export const ApprovalDecisionDialog: React.FC<ApprovalDecisionDialogProps> = ({
             onChange={(event) => setReason(event.target.value)}
             rows={3}
             placeholder="Why are you making this decision?"
-            className="mt-2 w-full rounded-2xl border border-gray-200 bg-white p-3 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            className="mt-2 w-full rounded-2xl border border-gray-200 bg-white p-3 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
           />
         </label>
 
@@ -138,7 +139,7 @@ export const ApprovalDecisionDialog: React.FC<ApprovalDecisionDialogProps> = ({
               }}
               rows={8}
               placeholder='{ "max_tokens": 2048 }'
-              className="mt-2 w-full rounded-2xl border border-gray-200 bg-white p-3 font-mono text-xs text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-amber-100"
+              className="mt-2 w-full rounded-2xl border border-gray-200 bg-white p-3 font-mono text-xs text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-primary-yellow-100"
             />
             {parseError && (
               <p className="mt-2 text-sm text-red-600 dark:text-red-400">{parseError}</p>
@@ -147,25 +148,23 @@ export const ApprovalDecisionDialog: React.FC<ApprovalDecisionDialogProps> = ({
         )}
 
         <div className="flex items-center justify-end gap-3 pt-2">
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={decision === 'rejected' ? 'danger' : 'primary'}
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className={`rounded-2xl px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-50 ${decision === 'rejected'
-                ? 'bg-red-600 hover:bg-red-500'
-                : 'bg-amber-600 hover:bg-amber-500'
-              }`}
+            isLoading={isSubmitting}
           >
             {isSubmitting ? 'Submitting…' : meta.cta}
-          </button>
+          </Button>
         </div>
       </div>
     </Dialog>

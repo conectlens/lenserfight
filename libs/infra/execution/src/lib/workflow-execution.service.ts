@@ -1,6 +1,9 @@
-import { validateInputs, validateOutput } from './contract-validator'
-import { detectCycle as validatorDetectCycle, PlaceholderUnboundError } from './validator'
 import { shouldHaltScheduling, type BudgetSnapshot } from './budget-reconciler'
+import { validateInputs, validateOutput } from './contract-validator'
+import { inferAttachmentsFromRendered } from './execution-attachments'
+import { resolveMappedOutputValue } from './output-path'
+import { getNodeRunner } from './runners/node-runner.registry'
+import { detectCycle as validatorDetectCycle, PlaceholderUnboundError } from './validator'
 
 import type {
   ExecutionInput,
@@ -13,6 +16,9 @@ import type {
   PartialOutputSink,
   WorkflowNodeType,
 } from './execution.types'
+import type { PinnedOutputStore } from './pinned-output'
+import type { ConnectorOperationExecutor } from './connector-runtime.types'
+import type { NodeRunnerContext } from './runners/node-runner.interface'
 import type {
   LensInputContract,
   LensOutputContract,
@@ -102,6 +108,8 @@ export interface WorkflowNodeConfig {
   delegationPolicy?: DelegationPolicy
   /** AP: output modality for this node — checked against agents.policies.allowed_output_modalities. */
   nodeType?: WorkflowNodeType
+  /** Per-node AIModel.key override; falls back to run-level `defaultModelKey`. */
+  modelId?: string
 }
 
 /**
@@ -137,7 +145,7 @@ export function assertDelegationAllowed(
 
 export interface WorkflowNode {
   id: string
-  lensId: string
+  lensId: string | null
   versionId?: string | null
   /** [[label]] param names present in the lens template — resolved from incoming edges */
   paramLabels?: string[]
@@ -169,6 +177,10 @@ export interface NodeResult {
   envelope?: NodeOutputEnvelope
   error?: string
   attempts?: number
+  /** Label→value map after edge merge (for audit / replay). */
+  resolvedInputSnapshot?: Record<string, unknown>
+  /** Provider + model used for this node. */
+  providerRoute?: Record<string, unknown>
   /**
    * Populated when `status` is `awaiting_dependency` | `queued` | `retrying`.
    * Mirrors `WaitingReason` so the run-state projection knows why the node is
@@ -246,10 +258,20 @@ export interface WorkflowExecutionContext {
   parentRunId?: string | null
   /** Root-level inputs for nodes with no incoming edges */
   rootInputs: Record<string, unknown>
+  /**
+   * Default model key for `IExecutionProvider.execute` when a node has no
+   * `config.modelId`.
+   */
+  defaultModelKey?: string
   /** Optional abort signal for cancellation-aware execution */
   signal?: AbortSignal
   /** Resolves a lens version's template body by lensId + versionId */
   resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string>
+  /**
+   * When set, returns the provider to use for this node (mixed text + media DAGs).
+   * If omitted, the service was constructed with a single global provider.
+   */
+  resolveExecutionProvider?(node: WorkflowNode): IExecutionProvider | Promise<IExecutionProvider>
   /** Optional contract resolver — when provided, engine validates inputs/outputs per node. */
   resolveVersionContracts?(
     versionId?: string | null,
@@ -316,6 +338,25 @@ export interface WorkflowExecutionContext {
    * thundering-herd; higher values maximise throughput on large fan-out graphs.
    */
   maxWaveConcurrency?: number
+  /**
+   * Optional connector credential resolver. When provided, runners can resolve
+   * connector credentials for credential-backed parameters. In browser context
+   * this should always return null (credentials never leave server).
+   */
+  resolveConnector?: (slug: string, scopes?: string[]) => Promise<string | null>
+  /**
+   * Server-side connector operation executor. Browser/dry-run callers should
+   * omit this so side-effect nodes return explicit mocked/unavailable outputs.
+   */
+  executeConnectorOperation?: ConnectorOperationExecutor
+  /**
+   * Pinned output store for development/dry-run. When a node has a pinned
+   * output AND `isDevExecution` is true, the engine short-circuits execution
+   * and uses the pinned data.
+   */
+  pinnedOutputs?: PinnedOutputStore
+  /** When true, enables dev-mode behaviors: pinned data, side-effect mocking. */
+  isDevExecution?: boolean
 }
 
 export interface MemoryFlushSink {
@@ -623,24 +664,30 @@ export class WorkflowExecutionService {
           const moderationPolicy = node.config?.moderation ?? DEFAULT_MODERATION
 
           // Resolve template + contracts up-front (not retried on transient failures).
+          // Utility nodes (null lensId) skip template resolution — they are
+          // dispatched via the node runner registry below.
           let template: string
-          try {
-            template = await ctx.resolveLensTemplate(node.lensId, node.versionId)
-          } catch (err) {
-            const result: NodeResult = {
-              nodeId,
-              status: 'failed',
-              error: `template_resolution_failed: ${errorMessage(err)}`,
+          if (!node.lensId) {
+            template = ''
+          } else {
+            try {
+              template = await ctx.resolveLensTemplate(node.lensId, node.versionId)
+            } catch (err) {
+              const result: NodeResult = {
+                nodeId,
+                status: 'failed',
+                error: `template_resolution_failed: ${errorMessage(err)}`,
+              }
+              results.set(nodeId, result)
+              await ctx.onNodeStatusChange(nodeId, result)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'node_failed',
+                metadata: { errorCode: 'template_resolution_failed' },
+              })
+              return
             }
-            results.set(nodeId, result)
-            await ctx.onNodeStatusChange(nodeId, result)
-            await emit(ctx, {
-              runId: ctx.runId,
-              nodeId,
-              name: 'node_failed',
-              metadata: { errorCode: 'template_resolution_failed' },
-            })
-            return
           }
 
           let contracts: { input: LensInputContract | null; output: LensOutputContract | null } = {
@@ -785,7 +832,97 @@ export class WorkflowExecutionService {
             }
           }
 
+          // ── Pinned output short-circuit (dev/dry-run only) ─────────��────
+          if (ctx.isDevExecution && ctx.pinnedOutputs?.get(nodeId)) {
+            const pinned = ctx.pinnedOutputs.get(nodeId)!
+            const envelope = toEnvelope(pinned.output, contracts.output)
+            const outputData = { ...envelopeToOutputData(envelope), ...(pinned.output.data ?? {}) }
+            const result: NodeResult = { nodeId, status: 'completed', envelope, outputData, attempts: 0 }
+            results.set(nodeId, result)
+            await ctx.onNodeStatusChange(nodeId, result)
+            await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_completed', metadata: { pinned: true } })
+            return
+          }
+
+          // ── CN: Node Runner dispatch — utility nodes bypass the provider pipeline ──
+          const runnerNodeType = node.config?.nodeType
+          const nodeRunner = runnerNodeType ? getNodeRunner(runnerNodeType) : undefined
+          if (nodeRunner) {
+            const upstreamOutputs = new Map<string, ExecutionResult>()
+            for (const [nId, res] of results.entries()) {
+              if (res.envelope) {
+                upstreamOutputs.set(nId, {
+                  mediaType: (res.envelope.kind ?? 'text') as ExecutionResult['mediaType'],
+                  text: res.envelope.output,
+                  url: res.envelope.media?.url,
+                  data: res.outputData,
+                  durationMs: typeof res.envelope.metadata?.['durationMs'] === 'number'
+                    ? res.envelope.metadata['durationMs']
+                    : undefined,
+                })
+              }
+            }
+            const runnerCtx: NodeRunnerContext = {
+              nodeId,
+              upstreamOutputs,
+              resolvedParams: { ...renderedInputs },
+              nodeConfig: (node.config as Record<string, unknown>) ?? {},
+              signal: ctx.signal,
+              resolvedPrompt,
+              outputContract: contracts.output,
+              executeProvider: async (input) => {
+                const provider = ctx.resolveExecutionProvider
+                  ? await ctx.resolveExecutionProvider(node)
+                  : this.provider
+                const modelKey = (
+                  node.config?.modelId?.trim() ||
+                  ctx.defaultModelKey ||
+                  ''
+                ).trim()
+                return provider.execute(modelKey, input, ctx.signal)
+              },
+              resolveConnector: ctx.resolveConnector ?? undefined,
+              executeConnectorOperation: ctx.executeConnectorOperation ?? undefined,
+            }
+            try {
+              const runnerResult = await nodeRunner.execute(runnerCtx)
+              // Apply variable mutations to the root inputs for downstream
+              if (runnerResult.variableMutations && ctx.rootInputs) {
+                Object.assign(ctx.rootInputs, runnerResult.variableMutations)
+              }
+              const envelope = toEnvelope(runnerResult.output, contracts.output)
+              const outputData = { ...envelopeToOutputData(envelope), ...(runnerResult.output.data ?? {}) }
+              const result: NodeResult = { nodeId, status: 'completed', envelope, outputData, attempts: 1, resolvedInputSnapshot: renderedInputs }
+              results.set(nodeId, result)
+              await ctx.onNodeStatusChange(nodeId, result)
+              await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_completed', metadata: { durationMs: runnerResult.output.durationMs } })
+            } catch (err) {
+              const errMsg = err instanceof Error ? err.message : String(err)
+              const result: NodeResult = { nodeId, status: 'failed', error: errMsg }
+              results.set(nodeId, result)
+              await ctx.onNodeStatusChange(nodeId, result)
+              await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_failed', metadata: { error: errMsg } })
+            }
+            return
+          }
+
           // ── Provider call with retry + timeout ──────────────────────
+          const nodeProvider = ctx.resolveExecutionProvider
+            ? await ctx.resolveExecutionProvider(node)
+            : this.provider
+          const rawCfg = node.config as Record<string, unknown> | undefined
+          const modelKey = (
+            node.config?.modelId?.trim() ||
+            (typeof rawCfg?.['model_id'] === 'string' ? rawCfg['model_id'].trim() : '') ||
+            ctx.defaultModelKey ||
+            ''
+          ).trim()
+          const attachments = inferAttachmentsFromRendered(renderedInputs)
+          const execInputBase: ExecutionInput = {
+            prompt: resolvedPrompt,
+            ...(attachments.length > 0 ? { attachments } : {}),
+          }
+
           let envelope: NodeOutputEnvelope | null = null
           let providerError: { cause: RetryCause; err: unknown } | null = null
           let attempt = 0
@@ -796,9 +933,9 @@ export class WorkflowExecutionService {
 
             try {
               const execResult = await runWithTimeout(
-                this.provider,
-                node.lensId,
-                { prompt: resolvedPrompt },
+                nodeProvider,
+                modelKey || node.lensId || nodeId,
+                execInputBase,
                 timeoutMs,
                 ctx.signal,
                 ctx.onPartialOutput ? (partial) => ctx.onPartialOutput?.(nodeId, partial) : undefined,
@@ -859,6 +996,9 @@ export class WorkflowExecutionService {
             return
           }
 
+          const routeMeta = { providerId: nodeProvider.id, modelKey: modelKey || node.lensId || nodeId }
+          const inputSnapshot = { ...renderedInputs }
+
           if (providerError) {
             const cause = providerError.cause
             // Timeouts are persisted with the real `timed_out` status (Phase 1
@@ -869,6 +1009,8 @@ export class WorkflowExecutionService {
               status: terminalStatus,
               error: errorMessage(providerError.err),
               attempts: attempt,
+              resolvedInputSnapshot: inputSnapshot,
+              providerRoute: routeMeta,
             }
             results.set(nodeId, failed)
             await ctx.onNodeStatusChange(nodeId, failed)
@@ -943,6 +1085,8 @@ export class WorkflowExecutionService {
             envelope: envelope!,
             outputData,
             attempts: attempt,
+            resolvedInputSnapshot: inputSnapshot,
+            providerRoute: routeMeta,
           }
           results.set(nodeId, result)
           await ctx.onNodeStatusChange(nodeId, result)
@@ -1259,7 +1403,14 @@ function resolveRenderedInputs(
       const source = results.get(edge.sourceNodeId)
       if (!source) continue
       if (source.status !== 'completed') continue
-      const value = source.outputData?.[edge.sourceOutputKey] ?? source.envelope?.output ?? ''
+      const value = resolveMappedOutputValue(
+        {
+          status: source.status,
+          outputData: source.outputData,
+          envelope: source.envelope,
+        },
+        edge.sourceOutputKey,
+      )
       values.push({
         sourceNodeId: edge.sourceNodeId,
         value,
@@ -1313,7 +1464,14 @@ function isEdgeConditionSatisfied(edge: WorkflowEdge, results: Map<string, NodeR
   if (!edge.condition) return true
   const source = results.get(edge.sourceNodeId)
   if (!source || source.status !== 'completed') return false
-  const sourceValue = source.outputData?.[edge.sourceOutputKey] ?? source.envelope?.output ?? null
+  const sourceValue = resolveMappedOutputValue(
+    {
+      status: source.status,
+      outputData: source.outputData,
+      envelope: source.envelope,
+    },
+    edge.sourceOutputKey,
+  )
   switch (edge.condition.type) {
     case 'present':
       return sourceValue !== null && sourceValue !== undefined && sourceValue !== ''

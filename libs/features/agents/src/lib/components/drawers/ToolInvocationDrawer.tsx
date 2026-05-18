@@ -3,6 +3,7 @@ import { toolsService } from '@lenserfight/data/repositories'
 import { Badge, Button } from '@lenserfight/ui/components'
 import { TextArea } from '@lenserfight/ui/forms'
 import { AlertDialog, Drawer } from '@lenserfight/ui/overlays'
+import { DrawerDocsLink } from './DrawerDocsLink'
 import type {
   ToolInvocationApprovalStatus,
   ToolInvocationRecord,
@@ -59,14 +60,14 @@ const JsonBlock: React.FC<{ label: string; value: unknown }> = ({ label, value }
   const preview = text.length > 120 ? `${text.slice(0, 120)}…` : text
   return (
     <div className="mt-2">
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
       >
         {label} {expanded ? '▲' : '▼'}
-      </button>
-      <pre className="overflow-x-auto rounded-[12px] border border-gray-100 bg-gray-50 p-2 font-mono text-[11px] text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
+      </Button>
+      <pre className="overflow-x-auto rounded-xl border border-gray-100 bg-gray-50 p-2 font-mono text-[11px] text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
         {expanded ? text : preview}
       </pre>
     </div>
@@ -117,7 +118,19 @@ export const ToolInvocationDrawer: React.FC<ToolInvocationDrawerProps> = ({
 
   if (!invocation) {
     return (
-      <Drawer open={open} onClose={onClose} side="right" width="w-[600px]" title="Tool invocation">
+      <Drawer
+        open={open}
+        onClose={onClose}
+        side="right"
+        width="w-[600px]"
+        title="Tool invocation"
+        headerExtra={
+          <DrawerDocsLink
+            path="/how-to/agents/workspace/drawers/tool-invocation"
+            tip="Forensic view of one tool call — args, result, egress class, and approval chain. Approve or reject pending invocations here; the agent unblocks or fails accordingly."
+          />
+        }
+      >
         {null}
       </Drawer>
     )
@@ -136,6 +149,12 @@ export const ToolInvocationDrawer: React.FC<ToolInvocationDrawerProps> = ({
       side="right"
       width="w-[640px]"
       title={invocation.tool_name ?? invocation.tool_key ?? 'Tool invocation'}
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/tool-invocation"
+          tip="Forensic view of one tool call — args, result, egress class, and approval chain. Approve or reject pending invocations here; the agent unblocks or fails accordingly."
+        />
+      }
     >
       <div className="space-y-5">
         <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
@@ -191,13 +210,13 @@ export const ToolInvocationDrawer: React.FC<ToolInvocationDrawerProps> = ({
           <JsonBlock label="Input" value={invocation.input} />
           {invocation.output !== null && <JsonBlock label="Output" value={invocation.output} />}
           {invocation.error && (
-            <p className="mt-3 rounded-[12px] border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+            <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
               <AlertTriangle size={12} className="mr-1 inline" />
               {invocation.error}
             </p>
           )}
           {invocation.approval_reason && (
-            <p className="mt-3 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+            <p className="mt-3 rounded-xl border border-primary-yellow-200 bg-primary-yellow-50 px-3 py-2 text-xs text-primary-yellow-800 dark:border-primary-yellow-500/30 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-200">
               Reason: {invocation.approval_reason}
             </p>
           )}

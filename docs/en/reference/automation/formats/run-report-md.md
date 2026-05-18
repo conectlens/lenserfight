@@ -5,6 +5,9 @@ description: Portable execution report capturing summary, inputs, and results of
 
 # `RUN_REPORT.md` — Portable execution report
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 A **RUN_REPORT** captures the outcome of a single execution: of a workflow, a battle, or an evaluation. It is the artifact that `lenserfight workflow run`, `lenserfight battle run`, and `lenserfight evaluate` emit into the user runtime workspace (not `.lenserfight/`).
 
 ## Filename

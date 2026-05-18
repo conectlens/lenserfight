@@ -1,3 +1,4 @@
+import { Button } from '@lenserfight/ui/components'
 import { ShieldOff } from 'lucide-react'
 import React from 'react'
 
@@ -22,14 +23,16 @@ export const KillSwitchBanner: React.FC<KillSwitchBannerProps> = ({
           Kill switch is active. New runs are blocked.
         </p>
       </div>
-      <button
+      <Button
         type="button"
+        variant="danger"
+        size="sm"
         onClick={onResume}
         disabled={isPending}
-        className="rounded-xl border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-700 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800"
+        isLoading={isPending}
       >
         {isPending ? 'Resuming…' : 'Resume'}
-      </button>
+      </Button>
     </div>
   )
 }

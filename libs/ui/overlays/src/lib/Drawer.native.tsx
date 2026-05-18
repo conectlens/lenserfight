@@ -17,6 +17,7 @@ export interface DrawerProps {
   /** Drawer width in pixels. Default: 280 */
   width?:              number
   children:            React.ReactNode
+  footer?:              React.ReactNode
   dismissOnBackdrop?:  boolean
 }
 
@@ -32,6 +33,7 @@ export const Drawer: React.FC<DrawerProps> = ({
   side    = 'left',
   width   = 280,
   children,
+  footer,
   dismissOnBackdrop = true,
 }) => {
   const { surface, elevation } = useNativeTheme()
@@ -89,6 +91,7 @@ export const Drawer: React.FC<DrawerProps> = ({
           accessibilityViewIsModal
         >
           {children}
+          {footer && <View>{footer}</View>}
         </Animated.View>
       </View>
     </Modal>

@@ -6,6 +6,8 @@ interface ModalProps {
   onClose?: () => void
   title?: string
   children: React.ReactNode
+  /** Optional footer rendered below the scrollable body (e.g. action buttons). */
+  footer?: React.ReactNode
   canClose?: boolean
   panelClassName?: string
   contentClassName?: string
@@ -25,6 +27,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
+  footer,
   canClose = true,
   panelClassName = '',
   contentClassName = '',
@@ -98,6 +101,11 @@ export const Modal: React.FC<ModalProps> = ({
         <div className={['p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 w-full dark:text-gray-300', contentClassName].join(' ')}>
           {children}
         </div>
+        {footer ? (
+          <div className="flex-shrink-0 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 sm:px-6 py-3">
+            {footer}
+          </div>
+        ) : null}
       </div>
     </div>,
     document.body

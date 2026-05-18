@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/team/v1alpha1",
+  "title": "LenserFight Team Spec",
+  "description": "A coordinated group of lensers with shared tools, responsibilities, and collaboration rules.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "team" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "purpose": { "type": "string", "description": "High-level team purpose." },
+    "team_lead_lenser": { "type": "string", "description": "Spec ID of the team lead lenser." },
+    "team_lead_agent": { "type": "string", "description": "Spec ID of the team lead agent." },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "lenser_id": { "type": "string" },
+          "agent_id": { "type": "string" },
+          "role": { "type": "string" }
+        },
+        "additionalProperties": true
+      },
+      "description": "Team member roster with roles."
+    },
+    "shared_tools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tool IDs available to all team members."
+    },
+    "shared_memory_policy_ref": { "type": "string", "description": "Shared memory policy spec ID." },
+    "colens_ownership": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "CoLens spec IDs this team owns."
+    },
+    "workflow_ownership": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Workflow spec IDs this team owns."
+    }
+  },
+  "required": ["kind", "name", "description"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "team",
+      "schema_version": 1,
+      "id": "team_frontend_review",
+      "name": "Frontend Review Team",
+      "description": "A team of lensers coordinating frontend code review workflows.",
+      "version": "0.1.0",
+      "visibility": "workspace",
+      "status": "active"
+    }
+  ]
+}

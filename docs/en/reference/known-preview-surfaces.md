@@ -26,7 +26,7 @@ This page lists every feature in LenserFight that is **not available by default*
 | Notification bell and badge | **Stable** | Supabase | — |
 | Wallet balance badge | **Stable** | Supabase + Chainabit | — |
 | Social graph (follow / unfollow) | **Stable** | Supabase | — |
-| CRON scheduling | **Preview** | `FEATURE_CRON_SCHEDULING=true` + Supabase | Set flag to `false`; run `SELECT cron.unschedule('dispatch-scheduled-workflows')` in psql |
+| CRON scheduling | **Preview** | Supabase `pg_cron` configured for workflow dispatch + Supabase | Set flag to `false`; run `SELECT cron.unschedule('dispatch-scheduled-workflows')` in psql |
 | Approval gates | **Preview** | Supabase (`agents.*` schema) | Remove schedule or set `approval_policy->>'requiresApproval'` to `true` |
 | Approval auto-timeout | **Stable** | `app.approval_timeout_hours` Postgres GUC (default 24h); `expire-stale-approvals` pg_cron job | `SELECT cron.unschedule('expire-stale-approvals')` |
 | Approval pending webhook | **Preview** | `app.approval_webhook_url` Postgres GUC + `pg_net` extension | `ALTER DATABASE postgres SET app.approval_webhook_url = ''` |
@@ -37,12 +37,12 @@ This page lists every feature in LenserFight that is **not available by default*
 | Tool invocation logs | **Preview** | Supabase (`platform.tool_invocation_logs`) | Disable by not running the Phase 2 migration |
 | Tool invocation approvals | **Preview** | Supabase (`agents.*` schema, Phase 2 migration) | Do not run Phase 2 migration; approval gates will be absent |
 | Platform autonomy kill switch | **Preview** | `platform.system_flags.autonomy_dispatch_enabled` | `UPDATE platform.system_flags SET value = 'false' WHERE key = 'autonomy_dispatch_enabled'` |
-| Chainabit execution bridge | **Preview** | `FEATURE_CHAINABIT_EXECUTION=true` + `CHAINABIT_API_URL` | Set flag to `false` |
+| Chainabit execution bridge | **Preview** | `CHAINABIT_EXECUTION_ENABLED` on workers + `CHAINABIT_API_URL` | Set `CHAINABIT_EXECUTION_ENABLED=false` on workers and redeploy |
 | Local battles (CLI) | **Preview** | No flag required — `lf battle local` commands work without cloud infra | `n/a` |
-| Cloud battles arena | **Preview** | `FEATURE_PUBLIC_BATTLES=true` + hosted Supabase + `app.webhook_signing_secret` GUC + `webhook-outbox-dispatcher` cron healthy. Limited beta surface; see [Cloud Battles runbook](/en/explanation/battles/limited-beta-status). | Set `FEATURE_PUBLIC_BATTLES=false`; `SELECT cron.unschedule('webhook-outbox-dispatcher')`; local battles continue to work |
-| Battle moderation admin console | **Preview** | `FEATURES.PUBLIC_BATTLES=true` + admin-or-creator gating on the route. Lets the creator or platform admin override an automated moderation flag without a redeploy. | Set `FEATURES.PUBLIC_BATTLES=false`; the route returns 404 |
-| Battle BYOK streaming | **Preview** | `FEATURE_PUBLIC_BATTLES=true` + BYOK key ref + hosted Supabase | Set flag to `false` |
-| ELO leaderboard | **Preview** | `FEATURE_PUBLIC_BATTLES=true` + Supabase | Set flag to `false` |
+| Cloud battles arena | **Preview** | operator-approved cloud battles + hosted Supabase + `app.webhook_signing_secret` GUC + `webhook-outbox-dispatcher` cron healthy. Limited beta surface; see [Cloud Battles runbook](/en/explanation/battles/limited-beta-status). | Set cloud battles disabled in routing; `SELECT cron.unschedule('webhook-outbox-dispatcher')`; local battles continue to work |
+| Battle moderation admin console | **Preview** | Cloud battles deployment + admin-or-creator gating on the route. Lets the creator or platform admin override an automated moderation flag without a redeploy. | Block or unmount the moderation admin route in deployment |
+| Battle BYOK streaming | **Preview** | operator-approved cloud battles + BYOK key ref + hosted Supabase | Disable BYOK keys / cloud battle routing in deployment |
+| ELO leaderboard | **Preview** | operator-approved cloud battles + Supabase | Stop cloud battle ingestion (same rollback as arena) |
 | Connector marketplace | **Not yet implemented** | — | — |
 | Billing and credits | **Not yet implemented** | — | — |
 | Benchmark suite | **Not yet implemented** | — | — |
@@ -57,7 +57,7 @@ This page lists every feature in LenserFight that is **not available by default*
 SELECT cron.unschedule('dispatch-scheduled-workflows');
 
 -- Step 2: Disable the UI (set this in your .env)
--- FEATURE_CRON_SCHEDULING=false
+-- (workflow dispatch cron disabled in deployment)
 
 -- Step 3: Re-enable later (expression must match original migration)
 SELECT cron.schedule(

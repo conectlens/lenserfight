@@ -1,3 +1,4 @@
+import { Button } from '@lenserfight/ui/components'
 import { AlertTriangle } from 'lucide-react'
 import React from 'react'
 
@@ -55,13 +56,15 @@ export class SectionErrorBoundary extends React.Component<
           <div className="flex-1">
             <p className="font-semibold">{this.props.sectionName} failed to render</p>
             <p className="mt-1">{this.state.error.message}</p>
-            <button
+            <Button
               type="button"
+              variant="danger"
+              size="sm"
+              className="mt-3"
               onClick={this.handleReset}
-              className="mt-3 rounded-2xl border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-500/40 dark:bg-gray-900 dark:text-red-200 dark:hover:bg-red-500/10"
             >
               Retry
-            </button>
+            </Button>
           </div>
         </div>
       </div>

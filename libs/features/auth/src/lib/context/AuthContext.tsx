@@ -12,7 +12,8 @@ interface RegisterOptions {
 }
 
 interface AuthContextType extends AuthState {
-  login: (email: string, pass: string, captchaToken?: string) => Promise<void>
+  /** Accepts an email address OR a profile handle (with or without a leading @). */
+  login: (identifier: string, pass: string, captchaToken?: string) => Promise<void>
   register: (
     email: string,
     pass: string,
@@ -21,11 +22,15 @@ interface AuthContextType extends AuthState {
   ) => Promise<void>
   logout: () => Promise<void>
   requestPasswordReset: (email: string, captchaToken?: string) => Promise<void>
-  resetPassword: (password: string, token?: string) => Promise<void>
+  resetPassword: (password: string) => Promise<void>
   signInWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>
   resendSignupConfirmation: (email: string) => Promise<void>
+  sendMagicLink: (email: string, captchaToken?: string) => Promise<void>
   /** Redirect to the external auth app login page, preserving the current page as return_url. */
   redirectToLogin: (delayMs?: number) => void
+  /** True when the current session was established via a password-reset email link.
+   *  Gate the reset-password form on this flag to prevent unauthorized access. */
+  isRecoverySession: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -40,6 +45,8 @@ if (import.meta.hot) {
 // sessionStorage-backed guard: survives React Strict Mode and HMR (unlike module-level booleans
 // which reset on every hot-reload in dev). Key is scoped by user ID so switching accounts works.
 const _deletionCheckKey = (userId: string) => `acdr_${userId}`
+
+const isEmailLike = (s: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)
 
 const getErrorMessage = (err: unknown): string => {
   if (err instanceof Error) return err.message
@@ -68,6 +75,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     error: null,
   })
 
+  /** True while the current session was established by a PASSWORD_RECOVERY email link. */
+  const [isRecoverySession, setIsRecoverySession] = useState(false)
+
   const loginTransitionInFlight = useRef(false)
   // Track whether the user was previously authenticated so we only clear caches
   // on actual sign-out transitions (not null → null for anonymous users).
@@ -90,7 +100,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // 1. Subscribe before initAuth to avoid missing events that fire synchronously
     //    during subscription setup (Supabase fires INITIAL_SESSION immediately).
-    const unsubscribe = authService.onAuthStateChange((user) => {
+    const unsubscribe = authService.onAuthStateChange((user, event) => {
+      // Track PASSWORD_RECOVERY sessions — the reset-password page gates on this.
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoverySession(true)
+      } else if (event === 'USER_UPDATED') {
+        // Password has been updated — clear the recovery flag.
+        setIsRecoverySession(false)
+      }
       // Skip early INITIAL_SESSION fires — initAuth owns the first state write.
       // After that, apply any subsequent changes (token refresh, sign-out, etc.)
       if (!_initDone) return
@@ -136,6 +153,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
           return
         }
+        // Transient network failure (offline, DNS hiccup, service worker intercept) — treat as
+        // unauthenticated rather than propagating an error that blocks the whole app.
+        if (
+          err?.name === 'AuthRetryableFetchError' ||
+          err?.name === 'TypeError' ||
+          err?.message?.includes('NetworkError') ||
+          err?.message?.includes('Failed to fetch') ||
+          err?.message?.includes('Load failed')
+        ) {
+          setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
+          return
+        }
         console.error('Auth initialization error:', err)
         // User deleted in DB but JWT still valid → force clean logout
         if (
@@ -168,10 +197,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [restoreLenserAccountIfNeeded])
 
-  const login = useCallback(async (email: string, pass: string, captchaToken?: string) => {
+  const login = useCallback(async (identifier: string, pass: string, captchaToken?: string) => {
     setState((s) => ({ ...s, error: null }))
     loginTransitionInFlight.current = true
     try {
+      // Resolve handle → email when the identifier is not an email address.
+      // The email is used only as the Supabase auth credential and is never
+      // surfaced to the user. Return a generic error if the handle is unknown
+      // to prevent account-existence enumeration.
+      let email = identifier.trim()
+      if (!isEmailLike(email)) {
+        const handle = email.startsWith('@') ? email.slice(1) : email
+        const resolved = await authService.resolveHandleToEmail(handle)
+        if (!resolved) {
+          throw new Error('Invalid login credentials')
+        }
+        email = resolved
+      }
       const user = await authService.login(email, pass, captchaToken)
       if (!sessionStorage.getItem(_deletionCheckKey(user.id))) {
         const restored = await restoreLenserAccountIfNeeded()
@@ -249,8 +291,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await authService.requestPasswordReset(email, captchaToken)
   }, [])
 
-  const resetPassword = useCallback(async (password: string, token?: string) => {
-    await authService.resetPassword(password, token)
+  const resetPassword = useCallback(async (password: string) => {
+    await authService.resetPassword(password)
+    setIsRecoverySession(false)
   }, [])
 
   const signInWithOAuth = useCallback(async (provider: 'google' | 'github' | 'azure') => {
@@ -267,6 +310,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await authService.resendSignupConfirmation(email)
   }, [])
 
+  const sendMagicLink = useCallback(async (email: string, captchaToken?: string) => {
+    try {
+      await authService.sendMagicLink(email, captchaToken)
+    } catch (err: unknown) {
+      const message = getErrorMessage(err)
+      setState((s) => ({ ...s, error: message }))
+      throw err
+    }
+  }, [])
+
   const redirectToLogin = useCallback((delayMs = 0) => {
     const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
     const target = `${AUTH_BASE_URL}/login?return_url=${returnUrl}`
@@ -281,6 +334,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         ...state,
+        isRecoverySession,
         login,
         register,
         logout,
@@ -288,6 +342,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetPassword,
         signInWithOAuth,
         resendSignupConfirmation,
+        sendMagicLink,
         redirectToLogin,
       }}
     >

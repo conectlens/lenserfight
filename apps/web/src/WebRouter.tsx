@@ -6,7 +6,7 @@ import { ChainabitWalletGate } from '@lenserfight/features/store'
 import { GlobalErrorRenderer } from '@lenserfight/shared/error'
 import { UIProvider } from '@lenserfight/ui/providers'
 import { ModalRoute } from '@lenserfight/ui/routing'
-import { ARENA_BASE_URL, AUTH_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
+import { ARENA_BASE_URL, AUTH_BASE_URL } from '@lenserfight/utils/env'
 import React, { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
@@ -91,14 +91,6 @@ const LazyAgentRouteShell = lazy(() =>
     default: module.AgentRouteShell,
   }))
 )
-const LazyBenchmarkSuitesPage = lazy(() =>
-  import('@lenserfight/features/benchmark').then((module) => ({ default: module.BenchmarkSuitesPage }))
-)
-const LazyBenchmarkSuiteDetailPage = lazy(() =>
-  import('@lenserfight/features/benchmark').then((module) => ({
-    default: module.BenchmarkSuiteDetailPage,
-  }))
-)
 const LazyBattleTemplatesPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.BattleTemplatesPage }))
 )
@@ -138,6 +130,9 @@ const LazyBattleLenserboardPage = lazy(() =>
 )
 const LazyNotificationsPage = lazy(() =>
   import('@lenserfight/features/notifications').then((module) => ({ default: module.NotificationsPage }))
+)
+const LazyWaitingListPage = lazy(() =>
+  import('@lenserfight/features/waiting-list').then((module) => ({ default: module.WaitingListPage }))
 )
 const LazyAutomationsPage = lazy(() =>
   import('@lenserfight/features/automation').then((module) => ({ default: module.AutomationsPage }))
@@ -204,6 +199,9 @@ const LazyJoinBattlePage = lazy(() =>
 const LazyChatPage = lazy(() =>
   import('@lenserfight/features/chat').then((module) => ({ default: module.ChatPage }))
 )
+const LazyConnectorsPage = lazy(() =>
+  import('@lenserfight/features/connectors').then((module) => ({ default: module.ConnectorsPage }))
+)
 
 
 const DashboardFrame: React.FC<{ children: React.ReactNode; fullscreen?: boolean }> = ({
@@ -240,11 +238,7 @@ const WorkflowBuilderPageRoute: React.FC = () => {
     <LazyWorkflowBuilderPage
       workflowId={id!}
       runId={runId}
-      onBattleClick={
-        FEATURES.PUBLIC_BATTLES
-          ? (workflowId) => navigate(`/battles/create?workflow_id=${workflowId}`)
-          : undefined
-      }
+      onBattleClick={(workflowId) => navigate(`/battles/create?workflow_id=${workflowId}`)}
     />
   )
 }
@@ -360,13 +354,7 @@ export const WebRouter: React.FC = () => {
         <Route path="/auth" element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/login`} />} />
         <Route
           path="/welcome"
-          element={
-            FEATURES.PUBLIC_BATTLES ? (
-              <AuthExternalRedirect to={`${ARENA_BASE_URL}/get-started`} />
-            ) : (
-              <Navigate to="/workflows" replace />
-            )
-          }
+          element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/get-started`} />}
         />
 
         <Route
@@ -375,11 +363,9 @@ export const WebRouter: React.FC = () => {
             <DashboardFrame>
               <LazyHomePage
                 spectatorSlot={
-                  FEATURES.PUBLIC_BATTLES ? (
-                    <Suspense fallback={null}>
-                      <LazySpectatorFeedWidget />
-                    </Suspense>
-                  ) : null
+                  <Suspense fallback={null}>
+                    <LazySpectatorFeedWidget />
+                  </Suspense>
                 }
               />
             </DashboardFrame>
@@ -398,18 +384,12 @@ export const WebRouter: React.FC = () => {
         <Route
           path="/lenserboard"
           element={
-            FEATURES.PUBLIC_BATTLES ? (
-              <DashboardFrame>
-                <LazyLenserBoardPage />
-              </DashboardFrame>
-            ) : (
-              <Navigate to="/" replace />
-            )
+            <DashboardFrame>
+              <LazyLenserBoardPage />
+            </DashboardFrame>
           }
         />
 
-        {FEATURES.PUBLIC_BATTLES && (
-          <>
             <Route
               path="/battles"
               element={
@@ -521,8 +501,6 @@ export const WebRouter: React.FC = () => {
                 </DashboardFrame>
               }
             />
-          </>
-        )}
 
         <Route
           path="/lensers"
@@ -538,6 +516,15 @@ export const WebRouter: React.FC = () => {
           element={
             <DashboardFrame>
               <LazyChatPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/connectors"
+          element={
+            <DashboardFrame>
+              <LazyConnectorsPage />
             </DashboardFrame>
           }
         />
@@ -763,6 +750,15 @@ export const WebRouter: React.FC = () => {
         />
 
         <Route
+          path="/waiting-list"
+          element={
+            <DashboardFrame>
+              <LazyWaitingListPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
           path="/automations"
           element={
             <DashboardFrame>
@@ -873,27 +869,6 @@ export const WebRouter: React.FC = () => {
         <Route path="/agents" element={<Navigate to="/lensers?type=ai" replace />} />
         <Route path="/agents/:id" element={<LazyAgentProfileRedirect />} />
         <Route path="/agents/:agentId/workspace" element={<LazyAgentWorkspacePage />} />
-
-        {SURFACE.showBenchmarkSuite && (
-          <Route
-            path="/benchmark"
-            element={
-              <DashboardFrame>
-                <LazyBenchmarkSuitesPage />
-              </DashboardFrame>
-            }
-          />
-        )}
-        {SURFACE.showBenchmarkSuite && (
-          <Route
-            path="/benchmark/:id"
-            element={
-              <DashboardFrame>
-                <LazyBenchmarkSuiteDetailPage />
-              </DashboardFrame>
-            }
-          />
-        )}
 
         <Route path="/onboarding" element={<OnboardingModal />} />
 

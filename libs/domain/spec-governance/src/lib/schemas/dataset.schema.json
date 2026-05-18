@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lenserfight.dev/schemas/dataset/v1alpha1",
+  "title": "LenserFight Dataset Spec",
+  "description": "A reusable set of test cases, prompts, or ground-truth pairs used for evaluation and benchmarking.",
+  "type": "object",
+  "allOf": [{ "$ref": "common.schema.json#/$defs/baseSpec" }],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "type": "string", "const": "dataset" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/specId" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "version": { "$ref": "common.schema.json#/$defs/semver" },
+    "visibility": { "$ref": "common.schema.json#/$defs/visibility" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
+    "owner": { "$ref": "common.schema.json#/$defs/owner" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "format": {
+      "type": "string",
+      "enum": ["jsonl", "csv", "yaml", "markdown", "json"],
+      "description": "Data format of the dataset."
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["inline", "file", "url", "supabase"] },
+        "path": { "type": "string" },
+        "url": { "type": "string" }
+      },
+      "additionalProperties": true,
+      "description": "Where the dataset content is stored."
+    },
+    "record_count": { "type": "integer", "minimum": 0, "description": "Number of records in the dataset." },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "type": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "required": ["name"],
+        "additionalProperties": true
+      },
+      "description": "Schema of fields/columns in the dataset."
+    }
+  },
+  "required": ["kind", "name", "description"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "apiVersion": "lenserfight.dev/v1alpha1",
+      "kind": "dataset",
+      "schema_version": 1,
+      "id": "dataset_research_cases_v1",
+      "name": "Research Quality Cases v1",
+      "description": "50 research prompts with ground-truth quality assessments.",
+      "version": "0.1.0",
+      "format": "jsonl",
+      "record_count": 50
+    }
+  ]
+}

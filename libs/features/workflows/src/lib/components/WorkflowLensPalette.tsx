@@ -1,19 +1,51 @@
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { LENS_KIND_ORDER, LENS_KIND_REGISTRY, resolveLensKindFromTagSlugs } from '@lenserfight/features/lens-kinds'
+import {
+  WORKFLOW_NODE_CATEGORIES,
+  getWorkflowNodeCategoryLabel,
+  getWorkflowNodesByCategory,
+  searchWorkflowNodeCatalog,
+} from '@lenserfight/infra/execution'
 import { Button } from '@lenserfight/ui/components'
 import { SearchBar } from '@lenserfight/ui/forms'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react'
+import {
+  AlertTriangle,
+  BookOpen,
+  BrainCircuit,
+  Braces,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Code2,
+  FileText,
+  Globe,
+  GripVertical,
+  Link,
+  MessageSquare,
+  Repeat,
+  Scale,
+  Search,
+  Send,
+  Split,
+  Variable,
+  Workflow,
+} from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 
+import type { WorkflowNodeCatalogEntry } from '@lenserfight/infra/execution'
 import type { LensKind, LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
+
+import { WorkflowNodeDocsButton } from './WorkflowNodeDocsButton'
 
 export interface DraggedLensData {
   lens_id: string
   title: string
   visibility?: 'public' | 'private' | 'unlisted'
   lenser_id?: string
+  node_type?: string
 }
 
 interface WorkflowLensPaletteProps {
@@ -93,6 +125,14 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
   const displayLenses: LensViewModel[] = kindFilter
     ? rawLenses.filter((l) => resolveLensKindFromTagSlugs(l.tags?.map((t) => t.slug) ?? []) === kindFilter)
     : rawLenses
+  const utilitySearch = rawSearch.trim()
+  const utilityCategories = WORKFLOW_NODE_CATEGORIES.filter((category) => category !== 'lens')
+  const utilityNodesByCategory = utilityCategories.map((category) => {
+    const categoryNodes = utilitySearch
+      ? searchWorkflowNodeCatalog(utilitySearch).filter((node) => node.category === category)
+      : getWorkflowNodesByCategory(category)
+    return { category, nodes: categoryNodes }
+  }).filter((group) => group.nodes.length > 0)
 
   const activeQuery = isSearching ? null : effectiveTab === 'mine' ? personalQuery : popularQuery
   const isLoading = isSearching ? loadingSearch : activeQuery?.isLoading ?? false
@@ -183,11 +223,10 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
                 variant="ghost"
                 size="sm"
                 onClick={() => setTab(t)}
-                className={`flex-1 !rounded-lg !px-2 !py-1 !text-xs !font-semibold ${
-                  effectiveTab === t
+                className={`flex-1 !rounded-lg !px-2 !py-1 !text-xs !font-semibold ${effectiveTab === t
                     ? '!bg-primary-yellow-500/15 !text-primary-yellow-600 hover:!bg-primary-yellow-500/15'
                     : '!text-greyscale-500 hover:!text-greyscale-900 dark:hover:!text-greyscale-50 !bg-transparent'
-                }`}
+                  }`}
               >
                 {t === 'mine' ? 'My Lenses' : 'Popular'}
               </Button>
@@ -200,11 +239,10 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
           <button
             type="button"
             onClick={() => setKindFilter(null)}
-            className={`text-[10px] rounded-full px-2 py-0.5 font-semibold transition-colors ${
-              kindFilter === null
+            className={`text-[10px] rounded-full px-2 py-0.5 font-semibold transition-colors ${kindFilter === null
                 ? 'bg-primary-yellow-500/15 text-primary-yellow-600'
                 : 'bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-50'
-            }`}
+              }`}
           >
             All
           </button>
@@ -214,11 +252,10 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
               type="button"
               onClick={() => setKindFilter(kindFilter === k ? null : k)}
               title={LENS_KIND_REGISTRY[k].description}
-              className={`text-[10px] rounded-full px-2 py-0.5 font-semibold transition-colors ${
-                kindFilter === k
+              className={`text-[10px] rounded-full px-2 py-0.5 font-semibold transition-colors ${kindFilter === k
                   ? 'bg-primary-yellow-500/15 text-primary-yellow-600'
                   : 'bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-50'
-              }`}
+                }`}
             >
               {LENS_KIND_REGISTRY[k].label}
             </button>
@@ -226,58 +263,164 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
         </div>
       </div>
 
-      {/* Lens list */}
-      <div
-        className="flex-1 overflow-y-auto px-2 pb-3 space-y-1"
-        onScroll={() => setAllowAutoFetchNextPage(true)}
-      >
-        {isLoading &&
-          Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-10 rounded-xl bg-surface-raised animate-pulse" />
-          ))}
+      {/* ── Split layout: Lenses (top half) + Utility Nodes (bottom half) ── */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Top half: Lens list — scrollable */}
+        <div
+          className="flex-1 min-h-0 overflow-y-auto px-2 pb-2 space-y-1"
+          onScroll={() => setAllowAutoFetchNextPage(true)}
+        >
+          {isLoading &&
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-10 rounded-xl bg-surface-raised animate-pulse" />
+            ))}
 
-        {!isLoading && displayLenses.length === 0 && (
-          <p className="py-8 text-center text-xs text-greyscale-400">
-            {isSearching ? 'No lenses found.' : 'No lenses available.'}
-          </p>
-        )}
+          {!isLoading && displayLenses.length === 0 && (
+            <p className="py-4 text-center text-xs text-greyscale-400">
+              {isSearching ? 'No lenses found.' : 'No lenses available.'}
+            </p>
+          )}
 
-        {!isLoading &&
-          displayLenses.map((lens) => (
-            <div
-              key={lens.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, lens)}
-              title={`Drag to add "${lens.title}"`}
-              className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-2.5 py-2 cursor-grab active:cursor-grabbing select-none hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5 transition-colors group"
-            >
-              <GripVertical
-                size={12}
-                className="flex-shrink-0 text-greyscale-300 group-hover:text-greyscale-400 transition-colors"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="truncate text-xs font-medium text-greyscale-800 dark:text-greyscale-100 leading-tight">
-                  {lens.title}
-                </p>
-                {lens.visibility !== 'public' && (
-                  <p className="text-[10px] text-greyscale-400 capitalize mt-0.5">{lens.visibility}</p>
-                )}
+          {!isLoading &&
+            displayLenses.map((lens) => (
+              <div
+                key={lens.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, lens)}
+                title={`Drag to add "${lens.title}"`}
+                className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-2.5 py-2 cursor-grab active:cursor-grabbing select-none hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5 transition-colors group"
+              >
+                <GripVertical
+                  size={12}
+                  className="flex-shrink-0 text-greyscale-300 group-hover:text-greyscale-400 transition-colors"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-xs font-medium text-greyscale-800 dark:text-greyscale-100 leading-tight">
+                    {lens.title}
+                  </p>
+                  {lens.visibility !== 'public' && (
+                    <p className="text-[10px] text-greyscale-400 capitalize mt-0.5">{lens.visibility}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+
+          {/* Sentinel for infinite scroll */}
+          {!isSearching && (
+            <div ref={sentinelRef} className="h-4" />
+          )}
+
+          {/* Loading more indicator */}
+          {activeQuery?.isFetchingNextPage && (
+            <div className="flex justify-center py-2">
+              <div className="h-4 w-4 rounded-full border-2 border-primary-yellow-500 border-t-transparent animate-spin" />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom half: Utility Nodes — scrollable */}
+        <div className="flex-1 min-h-0 overflow-y-auto border-t border-surface-border px-3 py-2 space-y-1.5">
+          {utilityNodesByCategory.map(({ category, nodes: catalogNodes }) => (
+            <div key={category} className="space-y-1.5">
+              {category === 'trigger' ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    Triggers / Inputs
+                  </span>
+                  <span className="text-[9px] rounded-full bg-emerald-100 px-1.5 py-0.5 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 font-medium">
+                    Start here
+                  </span>
+                </div>
+              ) : (
+                <span className="block text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">
+                  {getWorkflowNodeCategoryLabel(category)} ({catalogNodes.length})
+                </span>
+              )}
+              <div className="space-y-1">
+                {catalogNodes.map((node) => (
+                  <UtilityNodeItem key={node.type} node={node} onDragStart={onDragStart} />
+                ))}
               </div>
             </div>
           ))}
-
-        {/* Sentinel for infinite scroll */}
-        {!isSearching && (
-          <div ref={sentinelRef} className="h-4" />
-        )}
-
-        {/* Loading more indicator */}
-        {activeQuery?.isFetchingNextPage && (
-          <div className="flex justify-center py-2">
-            <div className="h-4 w-4 rounded-full border-2 border-primary-yellow-500 border-t-transparent animate-spin" />
-          </div>
-        )}
+        </div>
       </div>
     </aside>
   )
+}
+
+function UtilityNodeItem({ node, onDragStart }: { node: WorkflowNodeCatalogEntry; onDragStart: (data: DraggedLensData) => void }) {
+  const handleDrag = (e: React.DragEvent) => {
+    const data: DraggedLensData & { node_type: string } = {
+      lens_id: `__utility_${node.type}`,
+      title: node.displayName,
+      node_type: node.type,
+    }
+    e.dataTransfer.setData('application/lenserfight-lens', JSON.stringify(data))
+    e.dataTransfer.effectAllowed = 'copy'
+    onDragStart(data)
+  }
+
+  return (
+    <div
+      draggable
+      onDragStart={handleDrag}
+      title={`Drag to add ${node.displayName} node`}
+      className="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-raised px-2 py-1.5 cursor-grab active:cursor-grabbing select-none hover:border-violet-400/40 hover:bg-violet-500/5 transition-colors group"
+    >
+      <span className={`flex-shrink-0 ${node.color}`}>{renderNodeIcon(node.iconKey)}</span>
+      <span className="flex-1 text-[11px] font-medium text-greyscale-700 dark:text-greyscale-200 truncate">
+        {node.displayName}
+      </span>
+      <WorkflowNodeDocsButton nodeType={node.type} size="sm" tooltipPosition="left" />
+    </div>
+  )
+}
+
+function renderNodeIcon(iconKey: string): React.ReactNode {
+  switch (iconKey) {
+    case 'AlertTriangle':
+      return <AlertTriangle size={11} />
+    case 'BookOpen':
+      return <BookOpen size={11} />
+    case 'Brain':
+    case 'BrainCircuit':
+      return <BrainCircuit size={11} />
+    case 'Braces':
+      return <Braces size={11} />
+    case 'CalendarClock':
+      return <Calendar size={11} />
+    case 'Clock':
+      return <Clock size={11} />
+    case 'Code2':
+      return <Code2 size={11} />
+    case 'FileText':
+      return <FileText size={11} />
+    case 'Globe':
+    case 'Webhook':
+      return <Globe size={11} />
+    case 'Link':
+      return <Link size={11} />
+    case 'MessageSquare':
+    case 'MessagesSquare':
+      return <MessageSquare size={11} />
+    case 'Repeat':
+      return <Repeat size={11} />
+    case 'Scale':
+      return <Scale size={11} />
+    case 'Search':
+      return <Search size={11} />
+    case 'Send':
+    case 'Mail':
+      return <Send size={11} />
+    case 'GitBranch':
+    case 'Split':
+      return <Split size={11} />
+    case 'Variable':
+      return <Variable size={11} />
+    case 'Workflow':
+      return <Workflow size={11} />
+    default:
+      return <Workflow size={11} />
+  }
 }

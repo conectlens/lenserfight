@@ -1,10 +1,10 @@
 import { LensKindPicker, LENS_KIND_REGISTRY, resolveLensKindFromTagSlugs } from '@lenserfight/features/lens-kinds'
 import { CreateVersionParamInput, LensKind, VisibilityEnum } from '@lenserfight/types'
 import { FormError } from '@lenserfight/ui/components'
-import { SelectField, LensContentEditor, type LensContentEditorHandle } from '@lenserfight/ui/forms'
+import { SelectField, LensContentEditor, type LensContentEditorHandle, InputField } from '@lenserfight/ui/forms'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { useFormValidation, isRequired, minLength } from '@lenserfight/utils/validation'
-import { Globe, Lock } from 'lucide-react'
+import { Globe, Lock, Info } from 'lucide-react'
 import React, { useMemo, useRef, useCallback, useEffect } from 'react'
 
 import { useTools } from '../hooks/useTools'
@@ -72,8 +72,8 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
     return () => clearTimeout(t)
   }, [form.content])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault()
     if (validate(formValues)) onSubmit()
   }
 
@@ -93,48 +93,89 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
     [form.setContent, clearError]
   )
 
-  const selectedKind = useMemo<LensKind | null>(() => resolveLensKindFromTagSlugs(form.tags), [form.tags])
+  const selectedKinds = useMemo<LensKind[]>(() => {
+    return form.tags.filter((t) => LENS_KIND_REGISTRY[t as LensKind]) as LensKind[]
+  }, [form.tags])
 
-  const handleKindChange = useCallback(
-    (kind: LensKind) => {
+  const handleKindsChange = useCallback(
+    (kinds: LensKind[]) => {
       const withoutKind = form.tags.filter((t) => !LENS_KIND_REGISTRY[t as LensKind])
-      form.setTags([...withoutKind, kind])
+      form.setTags([...withoutKind, ...kinds])
     },
     [form.tags, form.setTags]
   )
 
   return (
-    <Dialog open={isOpen} onClose={onClose} title={isEditMode ? 'Edit Lens' : 'Create Lens'} maxWidth="max-w-full">
-      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-        <LensKindPicker value={selectedKind} onChange={handleKindChange} />
-
-        <div className="space-y-2">
-          <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Title
-          </label>
-          <input
-            type="text"
-            value={form.title}
-            onChange={handleTitleChange}
-            placeholder="e.g. 'Midjourney Photorealistic Portrait'"
-            className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all font-medium ${errors.title ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}
-          />
-          <FormError message={errors.title} />
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title={isEditMode ? 'Edit Lens' : 'Create New Lens'}
+      description={isEditMode ? 'Update your lens configuration and content.' : 'Lenses are modular AI instructions that can be reused across workflows.'}
+      maxWidth="max-w-4xl"
+      footer={
+        <ModalFooter
+          leftButton={{
+            label: 'Discard',
+            onClick: onClose,
+            disabled: isSubmitting,
+            variant: 'secondary'
+          }}
+          primaryButton={{
+            label: isEditMode ? 'Update Lens' : 'Create Lens',
+            onClick: () => handleSubmit(),
+            isLoading: isSubmitting,
+            className: 'min-w-[120px]'
+          }}
+        />
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+        {/* Section 1: Identity */}
+        <div className="space-y-8">
+          <div className="space-y-2">
+            <InputField
+              label="Lens Title"
+              value={form.title}
+              onChange={handleTitleChange}
+              placeholder="e.g. 'Midjourney Photorealistic Portrait'"
+              error={errors.title}
+              autoFocus
+            />
+          </div>
+          <div className="space-y-2">
+            <LensKindPicker value={selectedKinds} onChange={handleKindsChange} variant="carousel" />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Lens
-            </label>
+        {/* Section 2: Editor */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <label className="text-[13px] font-semibold text-greyscale-500 dark:text-greyscale-400">
+                Lens Instructions
+              </label>
+              <div className="group relative">
+                <Info className="h-3.5 w-3.5 text-greyscale-400 cursor-help" />
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-greyscale-900 text-white text-[11px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl">
+                  Use markdown and [[variable]] syntax to create dynamic parameters.
+                </div>
+              </div>
+            </div>
             {lensId && (
               <LensVersionHistoryButton
                 lensId={lensId}
-                onRestore={(content) => { form.setContent(content); clearError('content') }}
+                onRestore={(content) => {
+                  form.setContent(content)
+                  clearError('content')
+                }}
               />
             )}
           </div>
-          <div className={`rounded-xl border overflow-hidden ${errors.content ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}>
+          
+          <div className={`
+            rounded-2xl border transition-all duration-200 overflow-hidden
+            ${errors.content ? 'border-red-500 shadow-sm shadow-red-500/10' : 'border-surface-border bg-surface-sunken'}
+          `}>
             <LensContentEditor
               ref={editorRef}
               value={form.content}
@@ -148,37 +189,45 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
           <FormError message={errors.content} />
         </div>
 
-        <ParameterPanel
-          versionParams={form.versionParams}
-          onChange={form.setVersionParams}
-          tools={tools}
-        />
+        {/* Section 3: Parameters */}
+        <div className="bg-surface-sunken/50 rounded-2xl p-6 border border-surface-border/50">
+          <h3 className="text-xs font-bold text-greyscale-400 uppercase tracking-widest mb-4 px-1">
+            Parameters & Variables
+          </h3>
+          {form.versionParams.length === 0 ? (
+            <div className="text-center py-6 text-sm text-greyscale-500 dark:text-greyscale-400">
+              No parameters detected. Type <code className="bg-greyscale-200 dark:bg-greyscale-800 text-greyscale-900 dark:text-greyscale-50 px-1.5 py-0.5 rounded font-mono text-xs">[[parameter_name]]</code> in the instructions above to add a dynamic variable.
+            </div>
+          ) : (
+            <ParameterPanel
+              versionParams={form.versionParams}
+              onChange={form.setVersionParams}
+              tools={tools}
+            />
+          )}
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Section 4: Metadata */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
           <LensTagInput tags={form.tags} onChange={form.setTags} />
 
-          <div className="space-y-2">
-            <SelectField
-              label="Visibility"
-              value={form.visibility}
-              onChange={(val) => form.setVisibility(val as VisibilityEnum)}
-              options={VISIBILITY_OPTIONS}
-              className="w-full"
-            />
-          </div>
+          <SelectField
+            label="Visibility"
+            value={form.visibility}
+            onChange={(val) => form.setVisibility(val as VisibilityEnum)}
+            options={VISIBILITY_OPTIONS}
+          />
         </div>
 
         {error && (
-          <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/30 p-3 rounded-lg">
-            {error}
+          <div className="flex items-start gap-3 text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-900/50">
+            <div className="mt-0.5">⚠️</div>
+            <p className="leading-relaxed">{error}</p>
           </div>
         )}
-
-        <ModalFooter
-          leftButton={{ label: 'Cancel', onClick: onClose, disabled: isSubmitting, variant: 'secondary' }}
-          primaryButton={{ label: isEditMode ? 'Update Lens' : 'Save Lens', type: 'submit', isLoading: isSubmitting, className: 'px-6' }}
-        />
       </form>
     </Dialog>
   )
 }
+
+

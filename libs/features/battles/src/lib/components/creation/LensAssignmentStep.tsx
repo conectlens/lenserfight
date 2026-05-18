@@ -201,8 +201,6 @@ function SlotLensPicker({ slot, slotLabel, contenderId, battleId, onAssigned }: 
             values={paramValues}
             errors={paramErrors}
             onChange={handleParamChange}
-            onImportJson={() => undefined}
-            onImportCsv={() => undefined}
           />
         </div>
       )}

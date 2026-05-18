@@ -125,10 +125,13 @@ export type LensVersionParamType =
   | 'decimal'
   | 'boolean'
   | 'select'
+  | 'multiselect'
+  | 'array'
   | 'url'
   | 'date'
   | 'datetime'
   | 'file'
+  | 'connector'
 
 /** Mirrors lenses.tools */
 export interface ToolRecord {

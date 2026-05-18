@@ -89,14 +89,14 @@ fi
 log_ok "Database seeded"
 
 # ---------------------------------------------------------------------------
-# 5. Start platform-api in background (ECHO_PROVIDER=1)
+# 5. Start worker in background (ECHO_PROVIDER=1)
 # ---------------------------------------------------------------------------
 echo ""
-echo "Starting platform-api (echo mode)..."
-ECHO_PROVIDER=1 pnpm nx serve platform-api &
+echo "Starting worker (echo mode)..."
+ECHO_PROVIDER=1 pnpm nx serve worker &
 PLATFORM_PID=$!
-echo "$PLATFORM_PID" > /tmp/lf-platform-api.pid
-log_ok "platform-api started (PID ${PLATFORM_PID})"
+echo "$PLATFORM_PID" > /tmp/lf-worker.pid
+log_ok "worker started (PID ${PLATFORM_PID})"
 
 # ---------------------------------------------------------------------------
 # 6. Print URL table
@@ -106,11 +106,11 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  Service             URL"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Web app             http://localhost:3000"
-echo "  Platform API        http://localhost:3001"
 echo "  Supabase Studio     http://localhost:54323"
 echo "  Supabase API        http://localhost:54321"
 echo "  Supabase MailHog    http://localhost:54324"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  (worker runs in background, no HTTP port)"
 echo ""
 log_ok "Dev stack is running. Open http://localhost:3000 in your browser."
 echo ""

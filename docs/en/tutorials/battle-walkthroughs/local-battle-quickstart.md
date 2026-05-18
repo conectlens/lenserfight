@@ -1,269 +1,195 @@
 ---
 title: "Local Battles — Concept & Quickstart"
-description: "Understand what a local battle is, how offline AI comparison works, and run your first local battle in 5 minutes using your own API keys."
+description: "Understand offline AI model comparison, run zero-cost battles on your GPU using Ollama/vLLM, and record side-by-side battles for your community showcase."
 ---
 
 # Local Battles — Concept & Quickstart
 
-> New to battles entirely? Read [Your First Battle](/en/tutorials/battle-walkthroughs/your-first-battle) first — it explains what a battle is and why it exists.
+> New to battles entirely? Read [Your First Battle](/en/tutorials/battle-walkthroughs/your-first-battle) first — it explains the foundational battle lifecycle and judge heuristics.
 
 **Time:** ~5 minutes  
-**Level:** Beginner  
+**Level:** Beginner to Intermediate  
+**Target Audience:** Local developers, GPU hobbyists, inference engineers, and AI content creators.  
 **Prerequisites:** `lf` CLI installed, plus one of:
-- `ANTHROPIC_API_KEY` set in your shell, **or**
-- `OPENAI_API_KEY` set, **or**
-- [Ollama](https://ollama.com) running locally with a pulled model (fully offline)
+*   [Ollama](https://ollama.com) running locally with a pulled model (fully offline)
+*   **vLLM** or **llama.cpp** serving an OpenAI-compatible endpoint locally
+*   `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` set in your shell (for cloud comparison)
 
 ---
 
 ## What is a Local Battle?
 
-A **local battle** is a self-contained AI competition that runs entirely on your machine. There is no platform account required, no cloud calls to LenserFight, and no credits consumed.
+A **local battle** is a self-contained AI shootout that runs entirely on your own machine. There is no platform account required, no cloud dependencies, and zero costs incurred.
 
-You pick two AI models (or two instances of the same model), give them the same task, and the CLI runs both in parallel, captures their outputs, and — by default — immediately asks an AI judge to pick the winner.
+You pit two AI models (or two instances of the same model with different configurations/prompts) side-by-side, give them a standardized task, stream their token generation in parallel, and automatically call an AI judge to score the results against a strict Rubric.
 
-The entire state lives in a single JSON file under your user runtime directory (`~/.lenserfight/local-battles/<id>.json`). You can run it, inspect it, override the verdict, and optionally push the result to the cloud later.
+The entire battle state lives in a portable JSON file under your runtime directory (`~/.lenserfight/local-battles/<id>.json`). You can inspect it, override the judge’s verdict, reuse it as a local benchmark, or push the shell to the cloud arena to let the community vote!
 
 ---
 
-## Why use Local Battles instead of cloud battles?
+## Why Local Battles are a Game Changer
 
-Local battles solve a different problem than cloud battles. Use local when you want:
+Local battles bridge the gap between high-level prompt engineering, low-level inference hacking, and creative social content:
 
-| Goal | Why local works |
+| Goal | Why Local Battles Rock |
 |---|---|
-| Compare two models fast | No setup, no auth, runs in under a minute |
-| Stay private | Outputs never leave your machine unless you push |
-| No internet | Ollama works fully offline; no API key needed |
-| Benchmark in CI | Run `lf battle local run` in a GitHub Actions job automatically |
-| Zero-friction verdict | The AI judge fires automatically after execution — no manual voting step |
-| Explore providers | Try Ollama, Mistral, OpenAI, Anthropic side by side without creating cloud resources |
-
-Use [cloud battles](/en/tutorials/battle-walkthroughs/your-first-battle) when you want community visibility, ELO rankings, web arena streaming, or a persistent audit trail.
+| **Zero Platform Costs** | Run thousands of matches using local models offline without spending credits. |
+| **GPU Optimization** | Stress-test your hardware rig (token/sec, VRAM usage) under parallel agent load. |
+| **Complete Privacy** | Submissions and outputs never leave your machine unless you choose to push. |
+| **Automated CI Benchmarking** | Run `lf battle local run` in GitHub Actions or pre-commit hooks to gate prompt regressions. |
+| **Creator Content Goldmine** | Terminal side-by-side token streaming is highly visual. It's the perfect showcase for YouTube, TikTok, or Twitter/X! |
 
 ---
 
-## How does a local battle work?
+## How a Local Battle Works Offline
 
-A local battle has its own simplified state machine:
-
-```
-draft → ready → executed → voted
-```
-
-| State | Meaning |
-|---|---|
-| `draft` | Battle created, no contenders assigned yet |
-| `ready` | Both Slot A and Slot B have been configured with a model |
-| `executed` | Both models have been called; outputs are saved |
-| `voted` | A winner has been recorded (AI judge or human override) |
-
-When you run `lf battle local run`, the CLI:
-
-1. Reads both contender configs from the local JSON file
-2. Calls each model's API in parallel (or sequentially for Ollama)
-3. Streams the outputs to your terminal, color-coded by slot
-4. Saves both full outputs to the JSON file
-5. Automatically calls the AI judge (unless `--no-judge` is set)
-6. Records the verdict and rationale
-
-The AI judge is invoked the same way as contenders — it calls the configured model with the task, both outputs, and an internal evaluation prompt. The judge's verdict is marked `source=ai`. If you disagree, your manual vote is marked `source=human` and takes precedence.
-
----
-
-## Architecture of a local battle
-
-```
+```text
 lf battle local run
       │
-      ├── Slot A: provider API call (your key) → tokens stream to terminal
-      ├── Slot B: provider API call (your key) → tokens stream to terminal
+      ├── Slot A (Ollama / vLLM / Key) ─► Parallel Offline API Execution ─► Tokens stream live
+      ├── Slot B (Ollama / vLLM / Key) ─► Parallel Offline API Execution ─► Tokens stream live
       │
       ▼
   local-battles/<id>.json
-      ├── contender_a: { provider, model, output, tokens }
-      ├── contender_b: { provider, model, output, tokens }
-      └── verdict:    { winner, rationale, source }
+      ├── contender_a: { provider, model, output, tokens_per_sec }
+      ├── contender_b: { provider, model, output, tokens_per_sec }
+      └── verdict:    { winner, rubric_breakdown, rationale, source }
             │
-            ▼ (optional)
-  lf battle local push --slug "..."
+            ▼ (Optional)
+  lf battle local push --slug "ollama-shootout"
             │
             ▼
-  LenserFight Cloud — battle created in draft status
-  (outputs stay local; only battle metadata is pushed)
+  LenserFight Cloud Arena — Live matchmaking shell ready for public votes!
 ```
 
 ---
 
-## Step 1 — Create a local battle
+## Step 1 — Initialize Your Local Battle
+
+Create a new battle draft and specify the competitive prompt task:
 
 ```bash
 lf battle local init \
-  --name "Haiku Duel" \
-  --task "Write a haiku about TypeScript"
+  --name "Haiku Shootout: Ollama vs. Cloud" \
+  --task "Explain quantum physics to an 8-year-old using a strict 3-line haiku."
 ```
 
-Expected output:
-```
+Expected Output:
+```text
 ✔ Local battle created.
 ID:   a1b2c3d4-...
-Name: Haiku Duel
+Name: Haiku Shootout: Ollama vs. Cloud
 
 Next steps:
-  lf battle local add-contender A --provider anthropic --model claude-haiku-4-5
-  lf battle local add-contender B --provider ollama    --model llama3
-  lf battle local run a1b2c3d
+  lf battle local add-contender A --provider ollama    --model llama3.2
+  lf battle local add-contender B --provider anthropic --model claude-haiku-4-5
+  lf battle local run a1b2c3d4-...
 ```
 
-The battle is now `draft`. No network calls have been made.
+The battle draft is saved entirely on your filesystem. No API calls or network requests have occurred.
 
 ---
 
-## Step 2 — Add Contender A
+## Step 2 — Configure Contender A (Your Local Model)
 
-Contender A will use Anthropic's Claude Haiku:
+Configure Slot A to use your local **Ollama** server running `llama3.2`:
 
 ```bash
 lf battle local add-contender A \
+  --provider ollama \
+  --model llama3.2
+```
+
+> **💡 GPU Tip:** If you run **vLLM** or **llama.cpp** locally, configure it as an OpenAI-compatible provider:
+> ```bash
+> lf battle local add-contender A \
+>   --provider openai \
+>   --model custom-local-model \
+>   --config '{"baseUrl":"http://localhost:8000/v1"}'
+> ```
+
+---
+
+## Step 3 — Configure Contender B (The Challenger)
+
+For Slot B, let's use a cloud model to run a benchmark, or connect another local model to test different weights (e.g. `gemma2`):
+
+```bash
+lf battle local add-contender B \
   --provider anthropic \
   --model claude-haiku-4-5
 ```
 
-The CLI reads `ANTHROPIC_API_KEY` from your environment. To use a different variable name, pass `--key-var MY_CLAUDE_KEY`.
+The CLI will fetch `ANTHROPIC_API_KEY` from your environment.
 
 ---
 
-## Step 3 — Add Contender B
+## Step 4 — Run the Battle (and Get Ready to Record!)
 
-Using Ollama (no API key, fully offline):
-
-```bash
-lf battle local add-contender B \
-  --provider ollama \
-  --model llama3
-```
-
-Or use a second cloud provider:
-
-```bash
-lf battle local add-contender B \
-  --provider openai \
-  --model gpt-4o-mini
-```
-
-After both contenders are added, the battle transitions to `ready`.
-
----
-
-## Step 4 — Run the battle
+Now, execute the match. This is where the magic happens. 
 
 ```bash
 lf battle local run
 ```
 
-Both contenders execute simultaneously. Output is color-coded by slot and streams live:
+### 🤝 Documenting and Sharing Your Shootout
 
-```
-[A] types — strict, verbose,
-[B] curly braces hug the world —
-[A] yet bugs still appear.
-[B] async waits, promises break,
-[A] types — strict, verbose,
-[B] but types never lie.
-```
+Executing local battles directly from the CLI produces highly visual, parallel terminal streams that are excellent for demonstrating model comparisons:
 
-When both finish, the AI judge evaluates automatically:
-
-```
-✔ Execution complete in 4312ms.
-Tokens — A: 38  B: 41
-
-AI judge evaluating… (~600 input + ~100 output tokens via ANTHROPIC_API_KEY)
-✔ Winner: Contender A
-  Rationale: More evocative imagery with correct 5-7-5 structure.
-  Judge: anthropic/claude-haiku-4-5 (38 tokens)
-
-Override: lf battle local vote --slot A|B|draw
-```
-
-The battle is now in `voted` state. You already have a result — no further steps required.
+*   **Capture the Execution**: You can record your terminal while executing the battle. Watching model outputs stream in real-time is a great way to demonstrate comparative token latency.
+*   **Observe Compute Latency**: If you are running complex local configurations, note your hardware behavior, VRAM allocation, and token-generation speed (tokens/sec) during parallel model execution.
+*   **Share with other developers**: If you post your comparison results or walkthroughs on developer channels (such as YouTube, Twitter/X, or LinkedIn), feel free to use the hashtag **`#LenserFight`** so the community can discover your work.
 
 ---
 
-## Step 5 — Override the verdict (optional)
+## Step 5 — Inspect the AI Judge's Verdict
 
-The AI judge runs automatically. If you disagree with its reasoning, override it:
+Once execution completes, the CLI automatically calls an AI judge to evaluate both outputs against the task constraints and records the verdict:
+
+```text
+✔ Execution complete in 3140ms.
+Tokens — A: 38  B: 42
+
+AI judge evaluating… (utilizing local prompt rubric analysis)
+✔ Winner: Contender B (anthropic/claude-haiku-4-5)
+  Rationale: Contender B explained the complex quantum concept (superposition) much more accurately for an 8-year-old audience, whereas Contender A focused solely on movement.
+  Judge: anthropic/claude-haiku-4-5
+
+Override the verdict: lf battle local vote --slot A|B|draw
+```
+
+---
+
+## Step 6 — Override the Verdict (Human Priority)
+
+As the lab operator, you have absolute authority. If you disagree with the AI judge's reasoning, override the score:
 
 ```bash
 lf battle local vote \
-  --slot B \
-  --rationale "Preferred the imagery in B"
+  --slot A \
+  --rationale "Preferred the simple vocabulary used by Ollama."
 ```
 
-Human votes override the AI judge and are marked `source=human`. Run `lf battle local status` to see the full breakdown:
+If you check the battle diagnostics (`lf battle local status`), your vote will override the judge and be marked `source=human`.
 
-```
-  Human votes — A: 1  B: 0  Draw: 0
-  AI judge    — A: 0  B: 1  Draw: 0
-  Winner: A (human vote authoritative)
-```
+---
 
-To skip the AI judge entirely and always decide manually:
+## Step 7 — Push to LenserFight Cloud (Optional Showcase)
+
+Ready to let the world vote or show off your local model shootout to friends?
 
 ```bash
-lf battle local run --no-judge
+lf battle local push --slug "ollama-quantum-duel"
 ```
 
-Multiple teammates can vote with `lf battle local vote --id <id>`.
+This registers the battle metadata on the public LenserFight cloud arena. Your private credentials and raw endpoint configurations remain safely local on your laptop, but the competitive shootout shell goes live for public spectators!
 
 ---
 
-## Step 6 — View the result
+## What to Try Next
 
-```bash
-lf battle local status
-```
+*   **Compare Inference Engines**: Run vLLM vs. llama.cpp offline to benchmark execution latency and hardware usage.
+*   **Stress-Test Agent Teams**: Build a DAG workflow of multiple local models cooperating, then battle them against a single cloud model.
+*   **Document Unexpected Outputs**: If a local model produces loop errors, hallucinations, or unexpected judge verdicts under temperature pressure, you can share these runs under GitHub Discussions to help others analyze prompt edge-cases.
+*   **Submit a Showcase Link**: If you have published a detailed benchmark tutorial or video guide, you can propose adding your link to our community showcase table by opening a Pull Request.
 
-Expected output:
-```
-  Name:   Haiku Duel
-  ID:     a1b2c3d4-...
-  Status: voted
-  Task:   Write a haiku about TypeScript
-
-  Contender A: anthropic/claude-haiku-4-5
-  Contender B: ollama/llama3
-
-  Votes — A: 1  B: 0  Draw: 0
-  Winner: A
-```
-
----
-
-## Publish to LenserFight Cloud (optional)
-
-If you want to share results publicly or get community votes:
-
-```bash
-lf battle local push --slug "haiku-duel-2026"
-```
-
-This creates a cloud battle in `draft` state with your title and task. The contender **outputs are not uploaded** — only the battle shell is created. Use `lf battle open <id>` to continue on the cloud.
-
----
-
-## What to try next
-
-- **Different models** — Replace `ollama/llama3` with `openai/gpt-4o` or `google/gemini-2.0-flash`
-- **List all local battles** — `lf battle local list`
-- **PRIVATE_BATTLE.md** — Define participants in a markdown file and execute with `lf battle run PRIVATE_BATTLE.md --execute`
-- **Cloud battles with your keys** — `lf battle exec <cloud-id> --byok` to execute a cloud battle with your local API keys ([BYOK tutorial](/en/tutorials/battle-walkthroughs/byok-cloud-battle))
-- **Run in CI** — Add `lf battle local run --no-judge` to a GitHub Actions job to auto-benchmark pull requests
-
----
-
-## See also
-
-- [Local vs. cloud battles (explanation)](/en/explanation/battles/local-vs-cloud-battles) — when to use each mode
-- [Your first battle (cloud)](/en/tutorials/battle-walkthroughs/your-first-battle) — the cloud-hosted equivalent
-- [How to run a local battle](/en/how-to/battles/run-local-battle) — complete flag reference for every `lf battle local` subcommand

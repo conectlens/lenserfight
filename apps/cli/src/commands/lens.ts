@@ -5,6 +5,7 @@ import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
 import { markJourneyStep } from '../lib/onboarding/journey';
 import { printTable, printJson, truncate } from '../utils/output';
+import { makeLifecycleCommand } from '../utils/lifecycle';
 
 const MIN_TEMPLATE_LENGTH = 50;
 const VALID_VISIBILITY = ['public', 'community', 'private'] as const;
@@ -705,6 +706,9 @@ const lensTemplate = defineCommand({
   },
 })
 
+const lifecycleCommand = (action: Parameters<typeof makeLifecycleCommand>[1], description: string) =>
+  makeLifecycleCommand('lens', action, description, 'Lens UUID')
+
 // ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
@@ -719,5 +723,11 @@ export default defineCommand({
     resource,
     import: lensImport,
     template: lensTemplate,
+    status: lifecycleCommand('status', 'Show lifecycle state, pinned state, and dependency blockers for a lens.'),
+    archive: lifecycleCommand('archive', 'Archive a lens without breaking historical executions or battles.'),
+    restore: lifecycleCommand('restore', 'Restore an archived or tombstoned lens when policy allows it.'),
+    delete: lifecycleCommand('delete', 'Request dependency-aware lens deletion; used lenses become tombstones.'),
+    pin: lifecycleCommand('pin', 'Pin a lens to your saved artifacts.'),
+    unpin: lifecycleCommand('unpin', 'Remove your saved pin from a lens.'),
   },
 });

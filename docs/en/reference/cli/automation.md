@@ -46,13 +46,9 @@ Workflow schedules trigger autonomous agent runs on a CRON expression. The `lf s
 | `lf schedule history <id>` | Show the most recent dispatch summary |
 | `lf schedule health` | Detect schedules that missed their dispatch window (exits 1 if any MISSED) |
 
-### Feature flag
+### Self-hosted prerequisites
 
-| Env var | Default (OSS) | Default (Cloud) | Purpose |
-|---------|--------------|-----------------|---------|
-| `FEATURE_CRON_SCHEDULING` | `false` | `true` | Enables the Schedules workspace section and CRON dispatch UI |
-
-Set `FEATURE_CRON_SCHEDULING=true` in your `.env` or `.env.local` to enable CRON scheduling on self-hosted instances. Requires `pg_cron` to be enabled in your Supabase project.
+CRON scheduling requires `pg_cron` enabled in your Supabase project and the `dispatch-scheduled-workflows` job scheduled (see migrations). The web app Schedules UI is available whenever the database supports schedule RPCs.
 
 ### Health detection algorithm
 

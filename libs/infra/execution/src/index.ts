@@ -1,4 +1,4 @@
-export type { IExecutionProvider, ExecutionInput, ExecutionResult, MediaType } from './lib/execution.types'
+export type { IExecutionProvider, ExecutionInput, ExecutionResult, MediaType, WorkflowNodeType } from './lib/execution.types'
 export type {
   IStreamingExecutionProvider,
   StreamChunk,
@@ -7,12 +7,50 @@ export type {
   ModerationPhase,
   ModerationDecision,
 } from './lib/execution.types'
-export { validateInputs, validateOutput } from './lib/contract-validator'
+export { validateInputs, validateOutput, validateSpecFrontmatter } from './lib/contract-validator'
 export {
   validateWorkflow,
   detectCycle,
   PlaceholderUnboundError,
+  TRIGGER_NODE_TYPES,
 } from './lib/validator'
+export { validateBrowserExecutionPlan } from './lib/execution-plan-validator'
+export type { ExecutionPlanIssue, ExecutionPlanModel, ExecutionPlanNodeShape } from './lib/execution-plan-validator'
+export { resolveMappedOutputValue } from './lib/output-path'
+export {
+  WORKFLOW_NODE_CATALOG,
+  WORKFLOW_NODE_CATEGORIES,
+  areWorkflowNodesCompatible,
+  buildWorkflowNodeCardMetadata,
+  getWorkflowNodeCatalogEntry,
+  getWorkflowNodeCategoryColor,
+  getWorkflowNodeCategoryCounts,
+  getWorkflowNodeCategoryIcon,
+  getWorkflowNodeCategoryLabel,
+  getWorkflowNodeCompatibilityWarning,
+  getWorkflowNodesByCategory,
+  isWorkflowUtilityNodeType,
+  normalizeWorkflowNodeConfigForExecution,
+  searchWorkflowNodeCatalog,
+  validateWorkflowNodeCatalog,
+} from './lib/catalog'
+export type {
+  ExecutableWorkflowNodeConfig,
+  WorkflowCatalogNodeType,
+  WorkflowExecutionEnvironment,
+  WorkflowFundingMode,
+  WorkflowNodeCatalogEntry,
+  WorkflowNodeCategory,
+  WorkflowNodeConfigExample,
+  WorkflowNodeConfigField,
+  WorkflowNodeConfigKind,
+  WorkflowNodeErrorBehavior,
+  WorkflowNodeIOType,
+  WorkflowNodeN8nMapping,
+  WorkflowNodeRetryBehavior,
+  WorkflowNodeSchemaField,
+  SideEffectPolicy,
+} from './lib/catalog'
 export type {
   ValidationIssue,
   ValidationCode,
@@ -21,6 +59,36 @@ export type {
   ValidationEdgeShape,
   ValidateWorkflowOptions,
 } from './lib/validator'
+
+// ── Connector credential resolution ──────────────────────────────────────
+export { nullConnectorResolver, createServerConnectorResolver } from './lib/connector-credential-resolver'
+export type { ConnectorCredentialResolver } from './lib/connector-credential-resolver'
+export {
+  createOAuthConnectionResolver,
+  nullOAuthConnectionResolver,
+} from './lib/oauth-connection-resolver'
+export type { OAuthResolverServiceClient } from './lib/oauth-connection-resolver'
+export { createCompositeConnectorResolver } from './lib/composite-connector-resolver'
+export {
+  ConnectorRuntime,
+  createConnectorOperationExecutor,
+  createDefaultConnectorAdapters,
+} from './lib/connector-runtime'
+export type {
+  ConnectorOperationAdapter,
+  ConnectorOperationExecutor,
+  ConnectorOperationRequest,
+  ConnectorResolvedCredential,
+} from './lib/connector-runtime.types'
+export {
+  validateCustomHttpUrl,
+  sanitizeCustomHttpHeaders,
+  maskSensitiveFields,
+} from './lib/custom-http-safety'
+
+// ── Pinned output (dev/dry-run) ──────────────────────────────────────────
+export { createPinnedOutputStore } from './lib/pinned-output'
+export type { PinnedOutput, PinnedOutputStore } from './lib/pinned-output'
 
 // ── Phase 3 kernel seams ──────────────────────────────────────────────────
 export { Scheduler } from './lib/scheduler'
@@ -57,6 +125,7 @@ export type {
   WorkflowRunReplayStatus,
   NodeReplayStatus,
 } from './lib/replay'
+export { EchoProvider, echoProvider } from './lib/providers/echo.provider'
 export { FalAIProvider } from './lib/providers/fal-ai.provider'
 export { GeminiProvider } from './lib/providers/gemini.provider'
 export { OpenAIProvider } from './lib/providers/openai.provider'
@@ -105,3 +174,19 @@ export type {
   DelegationDispatchInput,
   DelegationDispatchResult,
 } from './lib/delegation-handler'
+
+// ── CN: Node Runner system (GRASP Polymorphism) ──────────────────────────
+export type { INodeRunner, NodeRunnerContext, NodeRunnerResult } from './lib/runners'
+export { registerNodeRunner, getNodeRunner, hasNodeRunner, clearNodeRunners, registeredNodeTypes } from './lib/runners'
+export { registerDefaultNodeRunners } from './lib/runners'
+export { SetVariablesRunner, JsonTransformRunner, SwitchRunner, WaitDelayRunner, ErrorCatchRunner, LoopMapRunner, CodeNodeRunner, SubWorkflowRunner } from './lib/runners'
+export type { SwitchCase, SwitchOperator } from './lib/runners'
+
+// ── CO: AI Primitive Node Runners ────────────────────────────────────────
+export { PromptTemplateRunner, OutputParserRunner, EmbeddingRunner, RagRetrievalRunner, JudgeEvaluatorRunner, MemoryReadRunner, MemoryWriteRunner, ChainRunner } from './lib/runners'
+
+// ── CP: Storage & I/O Node Runners ──────────────────────────────────────
+export { SupabaseQueryRunner, isRpcAllowed, KVStoreReadRunner, KVStoreWriteRunner, FileReaderRunner, FileWriterRunner, WebhookTriggerRunner, WebhookSenderRunner, ScheduleTriggerRunner } from './lib/runners'
+
+// ── CQ: Communication & Integration Node Runners ────────────────────────
+export { EmailSendRunner, SlackNotifyRunner, DiscordNotifyRunner, GitHubReadRunner, RssFeedRunner, NotionReadRunner, GoogleSheetsReadRunner, GoogleSheetsWriteRunner } from './lib/runners'

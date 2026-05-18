@@ -1,3 +1,4 @@
+import { ArtifactLifecycleStatusBadge } from '@lenserfight/features/artifact-lifecycle'
 import { Card } from '@lenserfight/ui/components'
 import { formatCount } from '@lenserfight/utils/number'
 import { motion } from 'framer-motion'
@@ -34,9 +35,11 @@ export interface LiveBattleCardProps {
   contenderAType?: ContenderType | null
   contenderBName?: string | null
   contenderBType?: ContenderType | null
+  archivedAt?: string | null
+  deletedAt?: string | null
 }
 
-const MotionLink = motion(Link)
+const MotionLink = motion.create(Link)
 
 export function LiveBattleCard({
   slug,
@@ -48,6 +51,8 @@ export function LiveBattleCard({
   contenderAType,
   contenderBName,
   contenderBType,
+  archivedAt,
+  deletedAt,
 }: LiveBattleCardProps) {
   const countdown = useCountdown(votingClosesAt, 'Closes in')
   const hasContenders = !!(contenderAName || contenderBName)
@@ -64,11 +69,14 @@ export function LiveBattleCard({
 
         {/* Badge row */}
         <div className="flex items-center justify-between gap-2">
-          {battleType && (
-            <span className="text-[11px] font-semibold text-greyscale-500 dark:text-greyscale-400 bg-surface-raised px-2 py-0.5 rounded-full flex-shrink-0">
-              {BATTLE_TYPE_LABELS[battleType]}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 flex-shrink-0 min-w-0">
+            {battleType && (
+              <span className="text-[11px] font-semibold text-greyscale-500 dark:text-greyscale-400 bg-surface-raised px-2 py-0.5 rounded-full flex-shrink-0">
+                {BATTLE_TYPE_LABELS[battleType]}
+              </span>
+            )}
+            <ArtifactLifecycleStatusBadge archivedAt={archivedAt} deletedAt={deletedAt} pinned={false} />
+          </div>
           <span
             className="flex items-center gap-1.5 ml-auto flex-shrink-0 text-[11px] font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full"
             aria-label="Live battle — voting in progress"

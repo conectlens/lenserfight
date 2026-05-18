@@ -1,13 +1,44 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { executionService, walletService, walletApiClient } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { LensExecutionHistoryItem, LensParam, ExecuteResponse, StreamState, StreamUsage, FundingSource, GenerativeMediaParams, TriggerExecutionResponse } from '@lenserfight/types'
-import { renderLens } from '@lenserfight/utils/text'
-import { useToast } from '@lenserfight/shared/error'
-import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
+import { executionService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
-import { streamLocalProvider } from '../utils/localProviderStream'
+import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
+import { useToast } from '@lenserfight/shared/error'
+import { LensExecutionHistoryItem, LensParam, StreamState, StreamUsage, FundingSource, GenerativeMediaParams } from '@lenserfight/types'
+import { renderLens } from '@lenserfight/utils/text'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect, useCallback, useRef } from 'react'
+
+import { ProviderError } from '@lenserfight/providers'
+import type { StreamingErrorEnvelope } from '@lenserfight/ui/components'
+
+import { FundingAdapterError, selectFundingAdapter, type MediaModality } from '../adapters'
+
+/**
+ * Lift any error (`ProviderError`, `FundingAdapterError`, plain `Error`, or
+ * string) into the structured envelope that `StreamingOutput` renders. This is
+ * the single seam between the execution layer and the UI; downstream
+ * components no longer regex-match free-form error strings.
+ */
+function toStreamingEnvelope(err: unknown): StreamingErrorEnvelope {
+  if (err instanceof ProviderError) {
+    // `StreamingOutput` renders `traceId` in its own small line; pass the raw
+    // provider message here so the body stays clean (no duplicated ref id).
+    return { code: err.code, message: err.message, traceId: err.traceId }
+  }
+  if (err instanceof FundingAdapterError) {
+    const code =
+      err.kind === 'misconfigured'
+        ? 'invalid_request'
+        : err.kind === 'unsupported'
+          ? 'unsupported_model'
+          : 'server_error'
+    return { code, message: err.message }
+  }
+  if (err instanceof Error) {
+    return { message: err.message }
+  }
+  return { message: typeof err === 'string' ? err : 'An unexpected error occurred.' }
+}
 
 const PAGE_SIZE = 20
 
@@ -46,22 +77,34 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
   const [allHistory, setAllHistory] = useState<LensExecutionHistoryItem[]>([])
   const [hasMoreHistory, setHasMoreHistory] = useState(true)
 
-  // Latest sync execution result
-  const [latestResult, setLatestResult] = useState<ExecuteResponse | null>(null)
-
   // Streaming state
   const [streamState, setStreamState] = useState<StreamState>('idle')
   const [streamOutput, setStreamOutput] = useState('')
   const [streamRunId, setStreamRunId] = useState<string | null>(null)
   const [streamUsage, setStreamUsage] = useState<StreamUsage | null>(null)
   const [streamCredits, setStreamCredits] = useState<number | null>(null)
-  const [streamError, setStreamError] = useState<string | null>(null)
+  const [streamError, setStreamError] = useState<StreamingErrorEnvelope | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const streamOutputRef = useRef('')
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Async media run state (image / video / audio / music generation)
   const [asyncMediaRunId, setAsyncMediaRunId] = useState<string | null>(null)
+
+  // Transient client-side media artifact (Local BYOK only — no server run record).
+  // The browser called the provider directly and got URL(s) back. We keep them
+  // in memory so the artifact viewer can render them inline without polling.
+  const [localMediaArtifact, setLocalMediaArtifact] = useState<{
+    runId: string
+    provider: string
+    model: string
+    modality: MediaModality
+    urls: string[]
+    mimeType: string
+    width?: number
+    height?: number
+    durationSeconds?: number
+  } | null>(null)
 
   // Clean up poll interval on unmount
   useEffect(() => {
@@ -131,99 +174,146 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
     setSelectedModelKey('')
   }, [])
 
-  // --- Sync execution mutation via platform /execute ---
-  const {
-    mutate: triggerExecution,
-    isPending: isTriggeringExecution,
-    error: triggerError,
-  } = useMutation({
-    mutationFn: ({ providerKey, modelKey, lensContent, inputSnapshot, params }: TriggerLabExecutionDTO) => {
-      const resolvedContent = renderLens(lensContent, inputSnapshot, params ?? [])
-      return walletService.execute({
-        provider: providerKey,
-        model: modelKey,
-        messages: [{ role: 'user', content: resolvedContent }],
-      })
-    },
-    onSuccess: (result) => {
-      setLatestResult(result)
-      // Refresh history — platform backend may write a run record
-      queryClient.invalidateQueries({ queryKey: queryKeys.executions.history(lensId) })
-      setHistoryOffset(0)
-    },
-    onError: (err) => toastError(err),
-  })
-
-  // --- Streaming execution ---
+  // --- Streaming execution (adapter-driven) ---
+  //
+  // Each funding source has a FundingAdapter that exposes `streamText` and
+  // `executeMedia`. The dispatcher below is transport-agnostic: it asks the
+  // adapter to do the right thing and renders the result. See `../adapters/`.
   const triggerStream = useCallback(
     (dto: TriggerLabExecutionDTO) => {
       if (!isAuthenticated) {
-        setStreamError('401: Unauthenticated')
+        setStreamError({ code: 'auth_failed', message: 'Please sign in again to continue.' })
         setStreamState('error')
         redirectToLogin(2000)
         return
       }
-      // ── Async media path (image / video / audio / music) ────────────────────
+
+      const fundingSource: FundingSource = dto.fundingSource ?? 'platform_credit'
+
+      let adapter
+      try {
+        adapter = selectFundingAdapter(fundingSource, {
+          local: options.resolveLocalKey
+            ? { resolveLocalKey: options.resolveLocalKey, localKeyId: dto.byokLocalKeyId ?? null }
+            : undefined,
+          cloud: { keyRefId: dto.byokKeyRefId ?? null },
+          chainabit: {},
+        })
+      } catch (err) {
+        setStreamError(toStreamingEnvelope(err))
+        setStreamState('error')
+        toastError(err)
+        return
+      }
+
+      // ── Media path (image / video / audio / music) ──────────────────────────
       if (dto.output_modality) {
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+        abortRef.current?.abort()
+        const mediaController = new AbortController()
+        abortRef.current = mediaController
         setStreamState('loading')
         setStreamError(null)
         setStreamOutput('')
         setStreamRunId(null)
         setAsyncMediaRunId(null)
+        setLocalMediaArtifact(null)
+
+        const prompt = renderLens(dto.lensContent, dto.inputSnapshot, dto.params ?? [])
         const mediaIsActive = { value: true }
 
-        executionService.triggerExecution({
-          lens_id: lensId,
-          model_id: dto.modelKey,
-          input_snapshot: dto.inputSnapshot,
-          funding_source: dto.fundingSource ?? 'platform_credit',
-          origin_type: 'lens_preview',
-          byok_key_ref_id: dto.byokKeyRefId,
-          generative_media_params: {
-            output_modality: dto.output_modality,
-            ...dto.generative_media_params,
+        adapter
+          .executeMedia(
+            {
+              lensId,
+              provider: dto.providerKey,
+              model: dto.modelKey,
+              modality: dto.output_modality,
+              prompt,
+              inputSnapshot: { ...dto.inputSnapshot, prompt },
+              generativeMediaParams: dto.generative_media_params,
+              byokKeyRefId: dto.byokKeyRefId,
+            },
+            mediaController.signal,
+          )
+          .then((result) => {
+            if (!mediaIsActive.value) return
+
+            if (!result.isAsync) {
+              // Local adapter — provider replied synchronously with media URL(s).
+              setLocalMediaArtifact({
+                runId: result.runId,
+                provider: dto.providerKey,
+                model: dto.modelKey,
+                modality: dto.output_modality as MediaModality,
+                urls: result.mediaUrls ?? [],
+                mimeType: result.mimeType ?? 'application/octet-stream',
+                width: result.width,
+                height: result.height,
+                durationSeconds: result.durationSeconds,
+              })
+              setStreamRunId(result.runId)
+              setStreamState('idle')
+              return
+            }
+
+            // Async (cloud/chainabit): poll until the server finalizes the run.
+            setAsyncMediaRunId(result.runId)
+            setStreamRunId(result.runId)
+            setStreamState('streaming')
+
+            pollIntervalRef.current = setInterval(() => {
+              executionService
+                .getRunById(result.runId)
+                .then((run) => {
+                  if (!mediaIsActive.value || !run) return
+                  if (run.status === 'succeeded') {
+                    clearInterval(pollIntervalRef.current!)
+                    pollIntervalRef.current = null
+                    setAsyncMediaRunId(null)
+                    setStreamState('idle')
+                    setSelectedRunId(result.runId)
+                    queryClient.invalidateQueries({ queryKey: queryKeys.executions.history(lensId) })
+                    setHistoryOffset(0)
+                  } else if (['failed', 'timed_out', 'cancelled', 'canceled'].includes(run.status)) {
+                    clearInterval(pollIntervalRef.current!)
+                    pollIntervalRef.current = null
+                    setAsyncMediaRunId(null)
+                    const msg = `Media generation ${run.status}`
+                    setStreamError({ code: 'server_error', message: msg })
+                    setStreamState('error')
+                    toastError(new Error(msg))
+                  }
+                })
+                .catch(() => {
+                  /* transient poll error — keep retrying */
+                })
+            }, 3000)
+          })
+          .catch((err: unknown) => {
+            if (!mediaIsActive.value) return
+            if ((err as Error).name === 'AbortError') {
+              setStreamState('idle')
+              return
+            }
+            setStreamError(toStreamingEnvelope(err))
+            setStreamState('error')
+            toastError(err)
+          })
+
+        // Override abortRef with a richer cleanup that also tears down polling.
+        abortRef.current = {
+          abort: () => {
+            mediaIsActive.value = false
+            mediaController.abort()
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current)
+              pollIntervalRef.current = null
+            }
+            setAsyncMediaRunId(null)
           },
-        }).then((resp: TriggerExecutionResponse) => {
-          if (!mediaIsActive.value) return
-          const runId = resp.execution_run_id
-          setAsyncMediaRunId(runId)
-          setStreamRunId(runId)
-          setStreamState('streaming')
-
-          pollIntervalRef.current = setInterval(() => {
-            executionService.getRunById(runId).then((run) => {
-              if (!mediaIsActive.value || !run) return
-              if (run.status === 'succeeded') {
-                clearInterval(pollIntervalRef.current!)
-                pollIntervalRef.current = null
-                setAsyncMediaRunId(null)
-                // Reset to idle so LabArtifactViewer switches to the RunArtifacts view
-                // (setting 'complete' would keep StreamingOutput on screen with empty text)
-                setStreamState('idle')
-                setSelectedRunId(runId)
-                queryClient.invalidateQueries({ queryKey: queryKeys.executions.history(lensId) })
-                setHistoryOffset(0)
-              } else if (['failed', 'timed_out', 'cancelled', 'canceled'].includes(run.status)) {
-                clearInterval(pollIntervalRef.current!)
-                pollIntervalRef.current = null
-                setAsyncMediaRunId(null)
-                const msg = `Media generation ${run.status}`
-                setStreamError(msg)
-                setStreamState('error')
-                toastError(new Error(msg))
-              }
-            }).catch(() => { /* transient poll error — keep retrying */ })
-          }, 3000)
-        }).catch((err: unknown) => {
-          if (!mediaIsActive.value) return
-          setStreamError((err as Error).message)
-          setStreamState('error')
-          toastError(err)
-        })
-
-        // Return a cleanup that cancels the poll but does not abort a streaming request
-        return void (abortRef.current = { abort: () => { mediaIsActive.value = false; if (pollIntervalRef.current) { clearInterval(pollIntervalRef.current); pollIntervalRef.current = null } setAsyncMediaRunId(null) } } as AbortController)
+        } as AbortController
+        return
       }
 
       // ── Streaming text path ──────────────────────────────────────────────────
@@ -238,16 +328,9 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
       setStreamUsage(null)
       setStreamCredits(null)
       setStreamError(null)
+      setLocalMediaArtifact(null)
 
       const resolvedContent = renderLens(dto.lensContent, dto.inputSnapshot, dto.params ?? [])
-
-      if (dto.fundingSource === 'user_byok_cloud' && !dto.byokKeyRefId) {
-        const message = 'Cloud BYOK requires a selected API key.'
-        setStreamError(message)
-        setStreamState('error')
-        toastError(new Error(message))
-        return
-      }
 
       const callbacks = {
         onStart: (runId: string) => {
@@ -257,7 +340,6 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
         },
         onToken: (content: string) => {
           if (!isActive()) return
-          // Collapse runs of 10+ spaces (e.g. Gemini table-padding) to a single space
           const cleaned = content.replace(/ {10,}/g, ' ')
           streamOutputRef.current += cleaned
           setStreamOutput((prev) => prev + cleaned)
@@ -269,7 +351,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
           setStreamState('complete')
 
           // Persist local BYOK executions to the database so they survive page refresh
-          if (dto.fundingSource === 'user_byok_local' && streamOutputRef.current) {
+          if (fundingSource === 'user_byok_local' && streamOutputRef.current) {
             executionService
               .persistLocalExecution({
                 lensId,
@@ -283,7 +365,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
                 if (isActive()) setStreamRunId(runId)
               })
               .catch(() => {
-                // Best-effort — stream output is already visible to user
+                // Best-effort — stream output is already visible to the user
               })
           }
 
@@ -292,56 +374,35 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
         },
         onError: (message: string) => {
           if (!isActive()) return
-          setStreamError(message)
+          setStreamError({ message })
           setStreamState('error')
           toastError(new Error(message))
         },
       }
 
-      const streamPromise =
-        dto.fundingSource === 'user_byok_local' && dto.byokLocalKeyId && options.resolveLocalKey
-          ? options.resolveLocalKey(dto.byokLocalKeyId).then((decryptedKey) =>
-              streamLocalProvider({
-                provider: dto.providerKey,
-                model: dto.modelKey,
-                messages: [{ role: 'user', content: resolvedContent }],
-                decryptedKey,
-                signal: controller.signal,
-                callbacks,
-              }),
-            )
-          : dto.fundingSource === 'user_byok_cloud' && dto.byokKeyRefId
-            ? walletApiClient.streamWithByok(
-                {
-                  key_ref_id: dto.byokKeyRefId,
-                  provider: dto.providerKey,
-                  model: dto.modelKey,
-                  messages: [{ role: 'user', content: resolvedContent }],
-                },
-                controller.signal,
-                callbacks,
-              )
-            : walletApiClient.streamWithWallet(
-                {
-                  provider: dto.providerKey,
-                  model: dto.modelKey,
-                  messages: [{ role: 'user', content: resolvedContent }],
-                },
-                controller.signal,
-                callbacks,
-              )
-
-      streamPromise.catch((err: unknown) => {
+      adapter
+        .streamText(
+          {
+            lensId,
+            provider: dto.providerKey,
+            model: dto.modelKey,
+            messages: [{ role: 'user', content: resolvedContent }],
+          },
+          controller.signal,
+          callbacks,
+        )
+        .catch((err: unknown) => {
           if (!isActive()) return
           if ((err as Error).name === 'AbortError') {
             setStreamState('idle')
           } else {
-            setStreamError((err as Error).message)
+            setStreamError(toStreamingEnvelope(err))
             setStreamState('error')
             toastError(err)
           }
         })
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [lensId, queryClient, toastError, isAuthenticated, redirectToLogin],
   )
 
@@ -355,6 +416,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
       pollIntervalRef.current = null
     }
     setAsyncMediaRunId(null)
+    setLocalMediaArtifact(null)
     setStreamState('idle')
   }, [])
 
@@ -380,10 +442,8 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
     selectedModelKey,
     setSelectedModelKey,
     handleProviderChange,
-    latestResult,
-    triggerExecution,
-    isTriggeringExecution,
-    triggerError,
+    latestResult: null,
+    isTriggeringExecution: false,
     streamState,
     streamOutput,
     streamRunId,
@@ -393,6 +453,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
     triggerStream,
     stopStream,
     asyncMediaRunId,
+    localMediaArtifact,
     selectedRunId,
     setSelectedRunId,
     comparisonRunIds,

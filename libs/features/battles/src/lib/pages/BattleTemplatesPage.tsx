@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { battlesRepository } from '@lenserfight/data/repositories'
 import type { BattleTemplateRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
-import { Button, EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
+import { Button, EmptyState, ExperimentalBadge, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { Plus } from 'lucide-react'
 
 import { BattleTemplateCard } from '../components/BattleTemplateCard'
@@ -43,7 +43,7 @@ export function BattleTemplatesPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PageHeader
-          title="Battle Templates"
+          title={<span className="inline-flex items-center gap-2">Battle Templates <ExperimentalBadge mode="inline" title="Experimental" /></span>}
           description="Start from a community-tested template, or use one as the seed for a new battle."
         />
         {isAuthenticated && (
@@ -53,6 +53,12 @@ export function BattleTemplatesPage() {
           </Button>
         )}
       </div>
+
+      <ExperimentalBadge
+        title="Battle templates"
+        description="Templates work but I'm still ironing out edge cases. Try them, fork them, and tell me what feels rough — that's how this becomes solid."
+        className="mt-3"
+      />
 
       <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Category filter">
         {CATEGORY_OPTIONS.map((opt) => {

@@ -3,11 +3,11 @@ import { useSearchParams } from 'react-router-dom'
 import { Swords, Trophy } from 'lucide-react'
 
 import { PageMeta } from '@lenserfight/ui/layout'
+import { seoService } from '@lenserfight/data/repositories'
 import { useLenser } from '@lenserfight/features/profile'
 import { useLeaderboard as useActivityLeaderboard } from '@lenserfight/features/home'
 import { LeaderboardTimeframe, LeaderboardScope, FollowPeriod } from '@lenserfight/types'
 import { useError, normalizeError } from '@lenserfight/shared/error'
-import { FEATURES } from '@lenserfight/utils/env'
 import { LenserBoardFilters } from '../components/LenserBoardFilters'
 import { LenserBoardHeader } from '../components/LenserBoardHeader'
 import { LenserBoardList } from '../components/LenserBoardList'
@@ -27,6 +27,7 @@ type BoardType = 'xp' | 'season' | 'activity' | 'elo'
 
 export const LenserBoardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
+  const lenserboardMeta = seoService.getLenserboardMeta()
   const { lenser } = useLenser()
   const { setError } = useError()
   const [scope, setScope] = useState<LeaderboardScope>('global')
@@ -64,14 +65,15 @@ export const LenserBoardPage: React.FC = () => {
     { key: 'xp', label: 'XP Ranking' },
     { key: 'season', label: 'Season' },
     { key: 'activity', label: 'Activity Score' },
-    ...(FEATURES.AGENTS ? [{ key: 'elo' as BoardType, label: 'ELO Rating' }] : []),
+    { key: 'elo' as BoardType, label: 'ELO Rating' },
   ]
 
   return (
     <div className="">
       <PageMeta
-        title="Leaderboard · LenserFight"
-        description="Top AI and human lensers ranked by XP, ELO, and battle performance."
+        title={lenserboardMeta.title}
+        description={lenserboardMeta.description}
+        jsonLd={lenserboardMeta.jsonLd}
       />
 
       <LenserBoardHeader />
@@ -152,7 +154,7 @@ export const LenserBoardPage: React.FC = () => {
             </div>
           )}
         </>
-      ) : board === 'elo' && FEATURES.AGENTS ? (
+      ) : board === 'elo' ? (
         <>
           {eloLoading ? (
             <div className="space-y-3">

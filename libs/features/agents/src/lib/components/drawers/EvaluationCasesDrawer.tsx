@@ -4,11 +4,14 @@ import {
   type CreateEvaluationCaseInput,
 } from '@lenserfight/data/repositories'
 import type { EvaluationCaseRecord, EvaluationRecord } from '@lenserfight/types'
+import { Button, Tooltip } from '@lenserfight/ui/components'
 import { AlertDialog, Drawer } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2 } from 'lucide-react'
+import { HelpCircle, Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
+
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface Props {
   open: boolean
@@ -25,7 +28,7 @@ const CaseRow: React.FC<{
   const expectedSummary = caseRecord.expected ? JSON.stringify(caseRecord.expected) : null
 
   return (
-    <div className="rounded-[16px] border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="truncate font-mono text-xs text-gray-700 dark:text-gray-300">
@@ -43,21 +46,21 @@ const CaseRow: React.FC<{
             {(caseRecord.tags ?? []).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-amber-200 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300"
+                className="rounded-full border border-primary-yellow-200 px-2 py-0.5 text-[11px] font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300"
               >
                 {tag}
               </span>
             ))}
           </div>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onDelete}
           aria-label="Delete case"
           className="mt-0.5 shrink-0 rounded-xl border border-gray-200 p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:hover:bg-red-500/10 dark:hover:text-red-400"
         >
           <Trash2 size={13} />
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -154,6 +157,12 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
       side="right"
       width="w-[560px]"
       title="Test cases"
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/evaluation-cases"
+          tip="Manage the case list for this evaluation suite. Each case is one input + one optional expected output with a weight. Higher-weight cases have more impact on the final score."
+        />
+      }
     >
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -164,14 +173,15 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
             )}
           </p>
           {!addingCase && (
-            <button
+            <Button
               type="button"
+              variant="dark"
+              size="sm"
               onClick={() => setAddingCase(true)}
-              className="inline-flex items-center gap-1.5 rounded-2xl bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
             >
-              <Plus size={13} />
+              <Plus size={13} className="mr-1.5 inline" />
               Add case
-            </button>
+            </Button>
           )}
         </div>
 
@@ -180,12 +190,12 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-16 animate-pulse rounded-[16px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
+                className="h-16 animate-pulse rounded-xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
               />
             ))}
           </div>
         ) : caseList.length === 0 && !addingCase ? (
-          <p className="rounded-[16px] border border-gray-100 bg-gray-50 px-4 py-6 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-700">
+          <p className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-6 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-700">
             No test cases yet. Add cases to define expected behavior.
           </p>
         ) : (
@@ -201,11 +211,15 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
         )}
 
         {addingCase && (
-          <div className="space-y-3 rounded-[20px] border border-amber-200/70 bg-amber-50/50 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
+          <div className="space-y-3 rounded-2xl border border-primary-yellow-200/70 bg-primary-yellow-50/50 p-4 dark:border-primary-yellow-500/20 dark:bg-primary-yellow-500/5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-yellow-700 dark:text-primary-yellow-300">
               New case
             </p>
-            <Field label="Input (JSON)">
+
+            <FieldLabel
+              label="Input (JSON)"
+              tooltip="The test input passed to the workflow or agent. Must be a valid JSON object matching the target's expected input shape."
+            >
               <textarea
                 rows={4}
                 value={inputJson}
@@ -213,8 +227,12 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
                 placeholder="{}"
                 className={`${inputClass} resize-none font-mono text-xs`}
               />
-            </Field>
-            <Field label="Expected (JSON, optional)">
+            </FieldLabel>
+
+            <FieldLabel
+              label="Expected (JSON, optional)"
+              tooltip="The expected output shape. Leave empty to grade only on the rubric score without asserting structure."
+            >
               <textarea
                 rows={3}
                 value={expectedJson}
@@ -222,9 +240,13 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
                 placeholder="{}"
                 className={`${inputClass} resize-none font-mono text-xs`}
               />
-            </Field>
+            </FieldLabel>
+
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Weight">
+              <FieldLabel
+                label="Weight"
+                tooltip="Relative contribution of this case to the overall evaluation score. Higher weight means more impact on the final grade."
+              >
                 <input
                   type="number"
                   value={weight}
@@ -233,40 +255,48 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
                   step="0.1"
                   className={inputClass}
                 />
-              </Field>
-              <Field label="Tags (comma-separated)">
+              </FieldLabel>
+
+              <FieldLabel
+                label="Tags (comma-separated)"
+                tooltip="Labels for filtering and grouping cases. Standard tags: 'smoke', 'regression', 'edge-case'."
+              >
                 <input
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                   placeholder="smoke, edge-case"
                   className={inputClass}
                 />
-              </Field>
+              </FieldLabel>
             </div>
+
             {addError && (
               <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
                 {addError}
               </p>
             )}
             <div className="flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   setAddingCase(false)
                   setAddError(null)
                 }}
-                className="rounded-2xl border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="dark"
+                size="sm"
                 onClick={handleAddCase}
                 disabled={submitting}
-                className="rounded-2xl bg-gray-900 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+                isLoading={submitting}
               >
                 {submitting ? 'Adding…' : 'Add'}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -289,13 +319,28 @@ export const EvaluationCasesDrawer: React.FC<Props> = ({
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )

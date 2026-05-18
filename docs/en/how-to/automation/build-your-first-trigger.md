@@ -106,6 +106,18 @@ Within ~60 seconds you should see a row with `status=dispatched`. The webhook ou
 
 **`status=failed` with HTTP 4xx from your endpoint.** Inspect the outbox row directly: `SELECT last_error, attempt_count FROM audit.webhook_outbox WHERE id = '<outbox_id>';` The outbox retries with exponential backoff and dead-letters after the configured max attempts.
 
+
+## Code-backed workflow
+
+Source of truth: libs/features/automation/src/lib/pages/AutomationsPage.tsx, RuleCard.tsx, and the automation hooks. The UI lists trigger rules, shows dispatch target summaries, toggles active state, and deletes rules.
+
+1. Create the rule from the CLI or backend flow described below.
+2. Open Automations to confirm the rule event, target type, status, and recent success rate.
+3. Toggle the rule off when testing downstream systems or pausing noisy dispatch.
+4. Delete only when the trigger should not be restored; delete is confirmed through a dialog.
+
+Verification: after an event fires, the dispatch summary should update and the target workflow, webhook, or notification should show evidence in its own logs.
+
 ## Related
 
 - [Event bus architecture](/en/explanation/automation/event-bus-architecture)

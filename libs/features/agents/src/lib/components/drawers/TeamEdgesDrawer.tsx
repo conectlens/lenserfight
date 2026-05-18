@@ -1,8 +1,12 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import { Button, Tooltip } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { Drawer } from '@lenserfight/ui/overlays'
-import type { AgentTeamEdgeRecord, AgentTeamEdgeType, AgentTeamMemberRecord } from '@lenserfight/types'
-import { Trash2 } from 'lucide-react'
+import { HelpCircle, Trash2 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
+
+import type { AgentTeamEdgeRecord, AgentTeamEdgeType, AgentTeamMemberRecord } from '@lenserfight/types'
+import { DrawerDocsLink } from './DrawerDocsLink'
 
 interface TeamEdgesDrawerProps {
   open: boolean
@@ -47,6 +51,7 @@ export const TeamEdgesDrawer: React.FC<TeamEdgesDrawerProps> = ({
   }, [open, members])
 
   const memberLabel = (m: AgentTeamMemberRecord) => `${m.role} (lane ${m.lane})`
+  const memberOptions = members.map((m) => ({ value: m.id, label: memberLabel(m) }))
 
   const handleAdd = async () => {
     if (!sourceMemberId || !targetMemberId) {
@@ -89,7 +94,19 @@ export const TeamEdgesDrawer: React.FC<TeamEdgesDrawerProps> = ({
   }
 
   return (
-    <Drawer open={open} onClose={onClose} side="right" width="w-[560px]" title="Delegation edges">
+    <Drawer
+      open={open}
+      onClose={onClose}
+      side="right"
+      width="w-[560px]"
+      title="Delegation edges"
+      headerExtra={
+        <DrawerDocsLink
+          path="/how-to/agents/workspace/drawers/team-edges"
+          tip="Wire handoff edges between team members. An edge says 'after member A finishes, pass output to member B'. Blocking edges halt the run until the target step completes."
+        />
+      }
+    >
       <div className="space-y-6">
         <section>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
@@ -97,69 +114,74 @@ export const TeamEdgesDrawer: React.FC<TeamEdgesDrawerProps> = ({
           </p>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Source member">
-                <select
+              <FieldLabel
+                label="Source member"
+                tooltip="The member that initiates the handoff. After this member's step completes, execution follows this edge."
+              >
+                <SelectField
                   value={sourceMemberId}
-                  onChange={(e) => setSourceMemberId(e.target.value)}
-                  className={inputClass}
-                >
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>{memberLabel(m)}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Target member">
-                <select
+                  onChange={setSourceMemberId}
+                  options={memberOptions}
+                />
+              </FieldLabel>
+
+              <FieldLabel
+                label="Target member"
+                tooltip="The member that receives the handoff. Becomes the active executor for the next step."
+              >
+                <SelectField
                   value={targetMemberId}
-                  onChange={(e) => setTargetMemberId(e.target.value)}
-                  className={inputClass}
-                >
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>{memberLabel(m)}</option>
-                  ))}
-                </select>
-              </Field>
+                  onChange={setTargetMemberId}
+                  options={memberOptions}
+                />
+              </FieldLabel>
             </div>
+
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Edge type">
-                <select
+              <FieldLabel
+                label="Edge type"
+                tooltip="'delegates' — source hands off ownership; 'reviews' — source checks target's output; 'reports_to' — source sends status up; 'shares_context' — copies memory; 'handoff' — sequential execution transfer."
+              >
+                <SelectField
                   value={edgeType}
-                  onChange={(e) => setEdgeType(e.target.value as AgentTeamEdgeType)}
-                  className={inputClass}
-                >
-                  {EDGE_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Blocking">
+                  onChange={(value) => setEdgeType(value as AgentTeamEdgeType)}
+                  options={EDGE_TYPES.map((type) => ({ value: type, label: type }))}
+                />
+              </FieldLabel>
+
+              <FieldLabel
+                label="Blocking"
+                tooltip="When checked, the run halts at this edge until the target member's step completes. Use for synchronous sequential pipelines."
+              >
                 <div className="flex h-[42px] items-center">
                   <input
                     type="checkbox"
                     checked={isBlocking}
                     onChange={(e) => setIsBlocking(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 accent-amber-500"
+                    className="h-4 w-4 rounded border-gray-300 accent-primary-yellow-500"
                   />
                   <span className="ml-2 text-sm text-gray-600 dark:text-gray-300">
                     Block run until edge completes
                   </span>
                 </div>
-              </Field>
+              </FieldLabel>
             </div>
+
             {error && (
               <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
                 {error}
               </p>
             )}
+
             <div className="flex justify-end">
-              <button
+              <Button
                 type="button"
                 onClick={handleAdd}
                 disabled={submitting || members.length < 2}
-                className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+                isLoading={submitting}
               >
                 {submitting ? 'Adding…' : 'Add edge'}
-              </button>
+              </Button>
             </div>
           </div>
         </section>
@@ -186,7 +208,7 @@ export const TeamEdgesDrawer: React.FC<TeamEdgesDrawerProps> = ({
                       <span className="font-semibold text-gray-900 dark:text-white truncate">
                         {tgt ? memberLabel(tgt) : edge.target_member_id.slice(0, 8)}
                       </span>
-                      <span className="rounded-full border border-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                      <span className="rounded-full border border-primary-yellow-200 px-2 py-0.5 text-xs font-semibold text-primary-yellow-700 dark:border-primary-yellow-500/30 dark:text-primary-yellow-300">
                         {edge.edge_type}
                       </span>
                       {edge.is_blocking && (
@@ -195,7 +217,7 @@ export const TeamEdgesDrawer: React.FC<TeamEdgesDrawerProps> = ({
                         </span>
                       )}
                     </div>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => handleDelete(edge.id)}
                       disabled={deletingId === edge.id}
@@ -203,7 +225,7 @@ export const TeamEdgesDrawer: React.FC<TeamEdgesDrawerProps> = ({
                       className="ml-3 flex-shrink-0 rounded-xl p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-40 dark:hover:bg-red-500/10 dark:hover:text-red-400"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </Button>
                   </div>
                 )
               })}
@@ -212,27 +234,39 @@ export const TeamEdgesDrawer: React.FC<TeamEdgesDrawerProps> = ({
         )}
 
         <div className="flex justify-end">
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={onClose}
-            className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
           >
             Close
-          </button>
+          </Button>
         </div>
       </div>
     </Drawer>
   )
 }
 
-const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
-
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+const FieldLabel: React.FC<{
+  label: string
+  tooltip?: string
+  children: React.ReactNode
+}> = ({ label, tooltip, children }) => (
+  <div className="block">
+    <div className="mb-1 flex items-center gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      {tooltip && (
+        <Tooltip content={tooltip} position="top" contentClassName="max-w-xs whitespace-normal text-left">
+          <HelpCircle
+            size={12}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label={`${label} — help`}
+          />
+        </Tooltip>
+      )}
+    </div>
     {children}
-  </label>
+  </div>
 )

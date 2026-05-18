@@ -1,10 +1,9 @@
-import { Turnstile } from '@marsidev/react-turnstile'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { Check, AlertCircle, ExternalLink } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import {
-  isMock,
   isLocal,
   ENABLE_CAPTCHA,
   CAPTCHA_SITE_KEY,
@@ -12,8 +11,6 @@ import {
   loadDevSeedCredentials,
 } from '@lenserfight/utils/env'
 import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
-
-const isDevMode = isLocal || isMock
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
@@ -32,10 +29,10 @@ export const RegisterPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     displayName: '',
-    email: isDevMode ? `newuser_${Date.now()}@lenserfight.local` : '',
+    email: isLocal ? `newuser_${Date.now()}@lenserfight.local` : '',
     password: '',
     preferredLanguage: 'en',
-    agreeTerms: isDevMode,
+    agreeTerms: isLocal,
   })
 
   useEffect(() => {
@@ -54,6 +51,7 @@ export const RegisterPage: React.FC = () => {
   }, [])
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   const passwordValidator = (value: any) => {
     if (!value) return 'Password is required'
@@ -149,8 +147,12 @@ export const RegisterPage: React.FC = () => {
       } else {
         setApiError(normalized)
       }
+      if (ENABLE_CAPTCHA) {
+        setCaptchaToken(null)
+        turnstileRef.current?.reset()
+      }
+    } finally {
       setLoading(false)
-      if (ENABLE_CAPTCHA) setCaptchaToken(null)
     }
   }
 
@@ -163,11 +165,6 @@ export const RegisterPage: React.FC = () => {
     setApiError(null)
     try {
       await signInWithOAuth(provider)
-      // OAuth redirects usually happen externally, but if mock:
-      if (isMock) {
-        setIsSuccess(true)
-        setTimeout(() => navigate('/welcome'), 1500)
-      }
     } catch (err: unknown) {
       setApiError(normalizeError(err))
       setOauthLoading(false)
@@ -285,7 +282,7 @@ export const RegisterPage: React.FC = () => {
 
           {ENABLE_CAPTCHA && (
             <div className="flex justify-center mt-4">
-              <Turnstile siteKey={CAPTCHA_SITE_KEY} onSuccess={setCaptchaToken} />
+              <Turnstile ref={turnstileRef} siteKey={CAPTCHA_SITE_KEY} onSuccess={setCaptchaToken} />
             </div>
           )}
 

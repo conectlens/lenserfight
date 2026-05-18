@@ -8,11 +8,13 @@ import { Pencil, X } from 'lucide-react'
 import React, { useState, useEffect, useMemo } from 'react'
 
 import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
-import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
-import type { AIProvider, AIProviderModel, LensParam } from '@lenserfight/types'
+import type { WorkflowEdgeRecord, WorkflowNodeRecord, WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
+import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
 import { CsvImportDialog } from '../../../../lenses/src/lib/components/CsvImportDialog'
 import { JsonImportDialog } from '../../../../lenses/src/lib/components/JsonImportDialog'
+import { WorkflowUpstreamOutputPanel } from './upstream/WorkflowUpstreamOutputPanel'
+import { useUpstreamNodeOutputs } from '../hooks/useUpstreamNodeOutputs'
 
 interface WorkflowNodeConfigPanelProps {
   nodeId: string
@@ -23,6 +25,8 @@ interface WorkflowNodeConfigPanelProps {
   currentConfig: WorkflowNodeConfig
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
+  /** Latest execution results for upstream output inspection panel */
+  nodeResults?: WorkflowNodeResultRecord[]
   onSave: (nodeId: string, config: WorkflowNodeConfig) => void
   onClose: () => void
   onEditLens?: (lensId: string) => void
@@ -37,6 +41,7 @@ export function WorkflowNodeConfigPanel({
   currentConfig,
   nodes,
   edges,
+  nodeResults = [],
   onSave,
   onClose,
   onEditLens,
@@ -79,6 +84,9 @@ export function WorkflowNodeConfigPanel({
     setSelectedProviderKey('')
   }, [nodeId, currentConfig.model_id, currentConfig.param_overrides])
 
+  const upstreamOutputs = useUpstreamNodeOutputs({ nodeId, edges, nodes, nodeResults })
+  const hasRun = nodeResults.length > 0
+
   // Incoming edge mappings for this node (which params are auto-wired from previous nodes)
   const incomingEdges = edges.filter((e) => e.target_node_id === nodeId)
   const autoWiredParams = new Set(incomingEdges.map((e) => e.target_param_label))
@@ -95,7 +103,6 @@ export function WorkflowNodeConfigPanel({
     () => versionParams.filter((p) => !autoWiredParams.has(p.label)),
     [versionParams, autoWiredParams],
   )
-  const legacyParams: LensParam[] = []
 
   // Derive providers/models from flat useAIModels list
   const providers: AIProvider[] = useMemo(() => {
@@ -195,9 +202,12 @@ export function WorkflowNodeConfigPanel({
           selectedLocalKeyId={nodeFunding.selectedLocalKeyId}
           onLocalKeyIdChange={nodeFunding.setSelectedLocalKeyId}
           availableLocalKeys={nodeFunding.localKeys}
+          localKeyAvailability={nodeFunding.localKeyAvailability}
           onAddLocalKey={nodeFunding.addLocalKey}
           onRemoveLocalKey={nodeFunding.removeLocalKey}
           onUpdateLocalKey={nodeFunding.updateLocalKey}
+          onPairGateway={nodeFunding.pairGateway}
+          onRefreshLocalKeys={nodeFunding.refreshLocalKeys}
           walletBalance={nodeFunding.walletBalance}
           canUseBYOK={nodeFunding.canUseBYOK}
           chainabitState={chainabit.state}
@@ -213,12 +223,11 @@ export function WorkflowNodeConfigPanel({
           onModelChange={setSelectedModelKey}
         />
 
+        <WorkflowUpstreamOutputPanel upstreamOutputs={upstreamOutputs} hasRun={hasRun} />
+
         {/* Parameters from lens version */}
         {versionParams.length > 0 && (
           <div className="space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">
-              Parameters
-            </p>
             {/* Auto-wired params display */}
             {incomingEdges.map((edge) => {
               const paramLabel = edge.target_param_label
@@ -288,7 +297,6 @@ export function WorkflowNodeConfigPanel({
         open={jsonImportOpen}
         onClose={() => setJsonImportOpen(false)}
         versionParams={editableParams}
-        legacyParams={legacyParams}
         onApply={(patch) =>
           setParamOverrides((prev) => ({
             ...prev,
@@ -302,7 +310,6 @@ export function WorkflowNodeConfigPanel({
         open={csvImportOpen}
         onClose={() => setCsvImportOpen(false)}
         versionParams={editableParams}
-        legacyParams={legacyParams}
         onApply={(patch) =>
           setParamOverrides((prev) => ({
             ...prev,

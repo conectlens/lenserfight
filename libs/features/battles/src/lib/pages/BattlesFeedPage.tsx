@@ -1,4 +1,4 @@
-import { Button, EmptyState, HelpButton, InfiniteScrollSentinel, PageHeader, SEOHead } from '@lenserfight/ui/components'
+import { Button, EmptyState, ExperimentalBadge, HelpButton, InfiniteScrollSentinel, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import React from 'react'
 import { useNavigate, Outlet, useSearchParams } from 'react-router-dom'
@@ -28,16 +28,16 @@ const TYPE_OPTIONS: { value: BattleType | 'all'; label: string }[] = [
 ]
 
 const CONTENT_TYPE_OPTIONS = [
-  { value: 'all',       label: 'All media' },
-  { value: 'text',      label: 'Text' },
-  { value: 'code',      label: 'Code' },
-  { value: 'image',     label: 'Image' },
-  { value: 'drawing',   label: 'Drawing' },
-  { value: 'video',     label: 'Video' },
-  { value: 'audio',     label: 'Audio' },
-  { value: 'avatar',    label: 'Avatar' },
-  { value: 'workflow',  label: 'Workflow' },
-  { value: 'poem',      label: 'Poem' },
+  { value: 'all', label: 'All media' },
+  { value: 'text', label: 'Text' },
+  { value: 'code', label: 'Code' },
+  { value: 'image', label: 'Image' },
+  { value: 'drawing', label: 'Drawing' },
+  { value: 'video', label: 'Video' },
+  { value: 'audio', label: 'Audio' },
+  { value: 'avatar', label: 'Avatar' },
+  { value: 'workflow', label: 'Workflow' },
+  { value: 'poem', label: 'Poem' },
   { value: 'image_edit', label: 'Image Edit' },
 ]
 
@@ -85,7 +85,7 @@ export function BattlesFeedPage() {
     <div className="">
       <SEOHead type="battles-list" />
       <PageHeader
-        title="Battles"
+        title={<span className="inline-flex items-center gap-2">Battles <ExperimentalBadge mode="inline" title="Experimental" /></span>}
         description="Create a task, compare human and AI outputs, vote on criteria, and reveal a winner."
         action={
           <>
@@ -101,48 +101,21 @@ export function BattlesFeedPage() {
           </>
         }
       />
-      <section className="my-5 rounded-2xl border border-surface-border bg-white p-4 shadow-sm dark:bg-gray-800">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
-              Battle flow
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-greyscale-800 dark:text-greyscale-100">
-              {['Input task', 'Generate or submit', 'Compare outputs', 'Vote', 'Result'].map((step, index) => (
-                <React.Fragment key={step}>
-                  <span className="rounded-full bg-surface-raised px-3 py-1">{step}</span>
-                  {index < 4 && <ArrowRight size={14} className="text-greyscale-300" />}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs font-semibold">
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <Swords size={13} /> Human vs AI
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <ImageIcon size={13} /> Image
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <Video size={13} /> Video
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1 text-greyscale-600 dark:text-greyscale-300">
-              <Vote size={13} /> Community voting
-            </span>
-          </div>
-        </div>
-      </section>
+      <ExperimentalBadge
+        title="Battles"
+        description="Battles work end-to-end, but matchmaking, voting and result flows haven't been fully tested. Please try them and report anything that feels wrong — I'd rather hear it from you than miss it."
+        className="mb-4"
+      />
       <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         <div className="flex flex-wrap items-center gap-3">
           {/* Live quick-filter chip */}
           <button
             type="button"
             onClick={() => setParam('status', statusFilter === 'voting' ? 'all' : 'voting', 'all')}
-            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
-              statusFilter === 'voting'
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${statusFilter === 'voting'
                 ? 'bg-primary-yellow-500/10 border-primary-yellow-500/40 text-primary-yellow-600'
                 : 'bg-surface-raised border-surface-border text-greyscale-500 hover:border-greyscale-400'
-            }`}
+              }`}
           >
             <Zap size={12} />
             Live

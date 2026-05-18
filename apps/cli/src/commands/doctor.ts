@@ -16,6 +16,10 @@ import { byokKeyResolver } from '@lenserfight/providers'
 import { formatCheck, printJson, printSuccess, printWarn, printError } from '../utils/output'
 import { isAuthenticated, getUserInfo } from '../utils/auth'
 import { callRpc } from '../utils/api'
+import { CHECK_ID_TO_CODE, type OnboardingErrorCode } from '../lib/onboarding/errors'
+import { checkForUpdate } from '@lenserfight/utils/update-check'
+import { readCliVersion } from '../lib/version'
+import { getQuote, formatQuote } from '../i18n'
 
 type DoctorCheckId = 'core' | 'api' | 'byok' | 'ollama' | 'auth' | 'journey'
 
@@ -45,9 +49,10 @@ export default defineCommand({
     const requestedCheck = (args.check as DoctorCheckId | undefined) ?? 'core'
     let hasError = false
 
-    const results: Array<{ id: string; status: 'pass' | 'warn' | 'fail'; detail: string }> = []
+    const results: Array<{ id: string; status: 'pass' | 'warn' | 'fail'; detail: string; code?: OnboardingErrorCode }> = []
     const push = (id: string, status: 'pass' | 'warn' | 'fail', detail: string) => {
-      results.push({ id, status, detail })
+      const code = status !== 'pass' ? CHECK_ID_TO_CODE[id] : undefined
+      results.push({ id, status, detail, ...(code ? { code } : {}) })
       if (status === 'fail') hasError = true
     }
 
@@ -137,6 +142,22 @@ export default defineCommand({
       }
     }
 
+    // ── CLI version freshness ─────────────────────────────────────────────
+    if (requestedCheck === 'core') {
+      const updateResult = await checkForUpdate(readCliVersion())
+      if (updateResult === null) {
+        push('cli_version', 'warn', 'Could not check for updates (offline or skipped).')
+      } else if (updateResult.hasUpdate) {
+        push(
+          'cli_version',
+          'warn',
+          `Update available: v${updateResult.current} → v${updateResult.latest}. Run \`lf update\`.`,
+        )
+      } else {
+        push('cli_version', 'pass', `v${updateResult.current} (up to date)`)
+      }
+    }
+
     // ── Output ────────────────────────────────────────────────────────────
     if (args.json) {
       printJson({ mode, status: hasError ? 'failed' : 'passed', checks: results })
@@ -158,6 +179,7 @@ export default defineCommand({
       byok_google: 'run: lf byok setup --provider google --agent <agent-id>',
       byok_mistral: 'run: lf byok setup --provider mistral --agent <agent-id>',
       journey_state: 'apply migrations: pnpm supabase:db:reset',
+      cli_version: 'run: lf update',
     }
 
     for (const result of results) {
@@ -173,9 +195,13 @@ export default defineCommand({
 
     if (hasError) {
       printError('Some checks failed.')
+      const hint = formatQuote(getQuote('doctor.warning'))
+      if (hint) printWarn(`  ${hint}`)
       process.exitCode = 1
     } else {
       printSuccess('All requested checks passed.')
+      const hint = formatQuote(getQuote('doctor.success'))
+      if (hint) printSuccess(`  ${hint}`)
     }
   },
 })

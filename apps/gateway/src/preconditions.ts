@@ -48,16 +48,29 @@ export async function evaluatePreconditions(
 ): Promise<PreconditionResult[]> {
   const env = ctx.env ?? process.env
   const results: PreconditionResult[] = []
+  const keysOnly = ctx.config.keysOnly === true
 
   // bind safety check
-  if (ctx.config.bind === '0.0.0.0') {
+  // In keys-only mode every `/keys/*` request is authenticated with a bearer
+  // token + origin allow-list, so binding to non-loopback (e.g. a Tailscale
+  // or LAN interface) is acceptable when the operator explicitly opted in.
+  // In full-coordination mode we keep the original v1 refusal — the signed
+  // sync surface has weaker per-request gating.
+  if (ctx.config.bind === '0.0.0.0' && !keysOnly) {
     results.push({
       id: 'bind_safe',
       ok: false,
-      message: 'Bind 0.0.0.0 is forbidden in v1. Use 127.0.0.1 or --tailscale.',
+      message: 'Bind 0.0.0.0 is forbidden in v1. Use 127.0.0.1 or --tailscale (or pass --keys-only for the local-keys-only surface).',
     })
   } else {
-    results.push({ id: 'bind_safe', ok: true, message: `bind=${ctx.config.bind}` })
+    results.push({
+      id: 'bind_safe',
+      ok: true,
+      message:
+        ctx.config.bind === '0.0.0.0'
+          ? `bind=0.0.0.0 (keys-only — exposed to every interface; protected by bearer + origin allow-list)`
+          : `bind=${ctx.config.bind}`,
+    })
   }
 
   // service_role guard
@@ -85,35 +98,40 @@ export async function evaluatePreconditions(
     message: keychain ? 'keychain reachable' : 'keychain unavailable',
   })
 
-  const identity = await probes.checkIdentityPresent()
-  results.push({
-    id: 'identity_present',
-    ok: identity,
-    message: identity
-      ? 'Ed25519 keypair present'
-      : 'no Ed25519 keypair — run `lf-gateway-init` first',
-  })
+  // Signed-coordination preconditions — only meaningful for the full daemon.
+  // Skip them in keys-only mode so users can pair Local Keys without first
+  // setting up an Ed25519 identity, Supabase session, or owner Lenser.
+  if (!keysOnly) {
+    const identity = await probes.checkIdentityPresent()
+    results.push({
+      id: 'identity_present',
+      ok: identity,
+      message: identity
+        ? 'Ed25519 keypair present'
+        : 'no Ed25519 keypair — run `lf-gateway-init` first',
+    })
 
-  const session = await probes.checkSessionPresent()
-  results.push({
-    id: 'session_present',
-    ok: session,
-    message: session ? 'Supabase session present' : 'no Supabase session',
-  })
+    const session = await probes.checkSessionPresent()
+    results.push({
+      id: 'session_present',
+      ok: session,
+      message: session ? 'Supabase session present' : 'no Supabase session',
+    })
 
-  const lenser = await probes.checkLenserActive()
-  results.push({
-    id: 'lenser_active',
-    ok: lenser,
-    message: lenser ? 'owner Lenser active' : 'owner Lenser is paused or missing',
-  })
+    const lenser = await probes.checkLenserActive()
+    results.push({
+      id: 'lenser_active',
+      ok: lenser,
+      message: lenser ? 'owner Lenser active' : 'owner Lenser is paused or missing',
+    })
 
-  const kill = await probes.checkKillSwitch()
-  results.push({
-    id: 'kill_switch',
-    ok: !kill,
-    message: kill ? 'global_kill_switch=true' : 'global_kill_switch=false',
-  })
+    const kill = await probes.checkKillSwitch()
+    results.push({
+      id: 'kill_switch',
+      ok: !kill,
+      message: kill ? 'global_kill_switch=true' : 'global_kill_switch=false',
+    })
+  }
 
   // Tailscale bind consent — only when --tailscale was requested.
   if (ctx.config.tailscale) {

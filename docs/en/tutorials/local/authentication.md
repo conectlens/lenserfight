@@ -250,7 +250,7 @@ After `pnpm supabase:db:reset`, log in with seed accounts:
 
 ### Bypassing auth in development
 
-Set `MOCK=true` in `.env.local` to skip real auth calls in development.
+Set local auth testing setup in `.env.local` to skip real auth calls in development.
 
 ### Inspecting tokens
 

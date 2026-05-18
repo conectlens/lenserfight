@@ -58,7 +58,6 @@ describe('useCreateWorkflow', () => {
     })
 
     expect(mockCreateWorkflow).toHaveBeenCalledWith({
-      lenser_id: 'lenser-123',
       title: 'Workflow title',
       description: 'A workflow',
       visibility: 'private',

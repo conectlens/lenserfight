@@ -5,6 +5,9 @@ description: Portable evaluation suite with rubric, dataset, metrics, and judgin
 
 # `EVALUATION.md` — Portable eval suite
 
+<ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
+
+
 An **EVALUATION** declares a reusable quality benchmark: a dataset of cases, a rubric, metrics with pass thresholds, and a judging policy (rubric scoring, judge lenser, or human review). Used by battles and by CI gates.
 
 ## Filename

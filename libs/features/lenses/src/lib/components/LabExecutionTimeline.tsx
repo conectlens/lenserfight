@@ -1,7 +1,7 @@
 import React, { useCallback, useRef } from 'react'
 import { CheckCircle, XCircle, Clock, Loader2, Zap, RotateCcw } from 'lucide-react'
 import { LensExecutionHistoryItem, ExecutionRunStatus } from '@lenserfight/types'
-import { VersionBadge, ModelProviderBadge } from '@lenserfight/ui/components'
+import { VersionBadge, ModelProviderBadge, Button } from '@lenserfight/ui/components'
 
 interface LabExecutionTimelineProps {
   history: LensExecutionHistoryItem[]
@@ -185,7 +185,7 @@ export const LabExecutionTimeline: React.FC<LabExecutionTimelineProps> = ({
 
                 {/* Restore & Run (owner only) */}
                 {isOwner && onRestoreVersion && item.versionId && (
-                  <button
+                  <Button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation()
@@ -195,12 +195,12 @@ export const LabExecutionTimeline: React.FC<LabExecutionTimelineProps> = ({
                     className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     <RotateCcw size={13} />
-                  </button>
+                  </Button>
                 )}
 
                 {/* Comparison toggle */}
                 {item.runId && status === 'succeeded' && (
-                  <button
+                  <Button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation()
@@ -217,7 +217,7 @@ export const LabExecutionTimeline: React.FC<LabExecutionTimelineProps> = ({
                     `}
                   >
                     {comparisonRunIds.indexOf(item.runId) + 1 || ''}
-                  </button>
+                  </Button>
                 )}
               </div>
             )

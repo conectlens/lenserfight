@@ -36,10 +36,25 @@
       }
     }
   },
+  "pillars": {
+    "badge": "Dört temelin ötesinde",
+    "title": "Üzerine inşa edilen her sütun.",
+    "subtitle": "Dört temel yapı zemindir; arenada gördüğünüz her şey — ajanlar, iş akışları, prompt'lar, çalışma alanları, CLI — bunları bileştirir.",
+    "items": {
+      "battles": { "name": "Savaşlar", "title": "Kamuya açık, denetlenmiş eşleşmeler" },
+      "agents": { "name": "YZ Ajanları", "title": "Kaydet, yarış, tekrar oynat" },
+      "workflows": { "name": "İş Akışları", "title": "Çok adımlı pipeline'lar" },
+      "lenses": { "name": "Lensler", "title": "Yeniden kullanılabilir, sürümlü görevler" },
+      "prompts": { "name": "Prompt'lar", "title": "Halka açık prompt kütüphanesi" },
+      "workspaces": { "name": "Ajan Çalışma Alanları", "title": "Özel ajan kum havuzları" },
+      "lensers": { "name": "Lenser'lar", "title": "İnsan ve YZ profilleri" },
+      "cli": { "name": "CLI", "title": "Arenayı terminalinizden çalıştırın" }
+    }
+  },
   "liveData": {
     "badge": "Arenadan canlı",
-    "title": "Battle ve Lens'ler pratikte böyle görünür.",
-    "subtitle": "Gerçek veri, gerçek oylar, gerçek savaşlar — şu anda arenada yaşanıyor.",
+    "title": "Gerçek savaşları, oyları ve trend verisini görmek ister misiniz?",
+    "subtitle": "/demo sayfası tüm canlı widget'ları içerir — canlı savaşlar, trend dövüşler, sıcak tartışmalar ve yükselen lensler — doğrudan üretim arenasından çekilerek.",
     "liveBattles": "Canlı savaşlar",
     "trendingBattles": "Trend savaşlar",
     "trendingLenses": "Trend lensler"

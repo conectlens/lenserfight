@@ -14,6 +14,8 @@ export const CostSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Cost"
+      docsPath="/how-to/agents/workspace/cost"
+      docsTip="Current month spend per provider + model, plus quota counters. Exceeding a monthly cap blocks new runs and emits a notification."
       title="Spend and quota monitoring"
       description="Daily quota counters, recent spend windows, and peak day. Useful for catching runaway loops, scheduled job cost overruns, or unexpected upstream pricing changes."
     >

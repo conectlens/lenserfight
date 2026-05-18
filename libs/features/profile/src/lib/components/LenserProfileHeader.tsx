@@ -1,9 +1,9 @@
 
-import { agentsService, socialLinksService } from '@lenserfight/data/repositories'
-import { Lenser, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
+import { queryKeys } from '@lenserfight/data/cache'
+import { agentsService, socialLinksService, xpService } from '@lenserfight/data/repositories'
+import { Lenser, LenserBadge, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
 import { XPSummary } from '@lenserfight/types'
 import { Avatar, Badge, Button, HelpButton } from '@lenserfight/ui/components'
-import { FEATURES } from '@lenserfight/utils/env'
 import { formatCount } from '@lenserfight/utils/number'
 import {
   Camera,
@@ -23,6 +23,7 @@ import {
   Bot,
   LayoutDashboard,
 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import React, { useState, useEffect } from 'react'
 
 import { useLenser } from '../context/LenserContext'
@@ -69,6 +70,20 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
 
   const [networkType, setNetworkType] = useState<'followers' | 'following' | null>(null)
+
+  const FOUNDING_TYPES = new Set([
+    'founding_10', 'founding_100', 'founding_1000',
+    'prestige_first_10', 'prestige_first_100', 'prestige_first_1000',
+  ])
+
+  const { data: allBadges = [] } = useQuery<LenserBadge[]>({
+    queryKey: queryKeys.xp.badges(lenser.id),
+    queryFn: () => xpService.getBadges(lenser.id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!lenser.id,
+  })
+
+  const foundingBadges = allBadges.filter((b) => FOUNDING_TYPES.has(b.type.toLowerCase()))
 
   useEffect(() => {
     const fetchLinks = async () => {
@@ -130,43 +145,51 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
 
   const StatsBlock = ({ mobile = false }) => (
     <div
-      className={`flex items-center gap-3 text-sm ${mobile ? 'justify-center text-gray-600 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}
+      className={`flex items-center text-sm ${mobile ? 'justify-center gap-3 text-gray-600 dark:text-gray-400' : 'justify-between w-full text-gray-500 dark:text-gray-400'}`}
     >
-      <div
-        className="flex items-center gap-1 transition-colors group/stats cursor-pointer hover:text-primary-700 dark:hover:text-primary-400"
-        onClick={() => setNetworkType('followers')}
-      >
-        <span className="font-bold text-gray-900 dark:text-gray-100 group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400">
-          {formatCount(followersCount)}
-        </span>
-        <span className="text-gray-500 dark:text-gray-400">Followers</span>
-      </div>
-      <span className="text-gray-300 dark:text-gray-600">•</span>
-      <div
-        className="flex items-center gap-1 transition-colors group/stats cursor-pointer hover:text-primary-700 dark:hover:text-primary-400"
-        onClick={() => setNetworkType('following')}
-      >
-        <span className="font-bold text-gray-900 dark:text-gray-100 group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400">
-          {formatCount(followingCount)}
-        </span>
-        <span className="text-gray-500 dark:text-gray-400">Following</span>
+      <div className="flex items-center gap-3">
+        <div
+          className="flex items-center gap-1 transition-colors group/stats cursor-pointer hover:text-primary-700 dark:hover:text-primary-400"
+          onClick={() => setNetworkType('followers')}
+        >
+          <span className="font-bold text-gray-900 dark:text-gray-100 group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400">
+            {formatCount(followersCount)}
+          </span>
+          <span className="text-gray-500 dark:text-gray-400">Followers</span>
+        </div>
+        <span className="text-gray-300 dark:text-gray-600">•</span>
+        <div
+          className="flex items-center gap-1 transition-colors group/stats cursor-pointer hover:text-primary-700 dark:hover:text-primary-400"
+          onClick={() => setNetworkType('following')}
+        >
+          <span className="font-bold text-gray-900 dark:text-gray-100 group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400">
+            {formatCount(followingCount)}
+          </span>
+          <span className="text-gray-500 dark:text-gray-400">Following</span>
+        </div>
+
+        {xpSummary && (
+          <>
+            <span className="text-gray-300 dark:text-gray-600">•</span>
+            <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-semibold">
+              <Zap size={14} className="fill-current" />
+              <span>{formatCount(xpSummary.totalXp)} XP</span>
+            </div>
+          </>
+        )}
+
+        {!mobile && (
+          <>
+            <span className="text-gray-300 dark:text-gray-600">•</span>
+            <span className="text-gray-500 dark:text-gray-400 font-medium">@{lenser.handle}</span>
+          </>
+        )}
       </div>
 
-      {xpSummary && (
-        <>
-          <span className="text-gray-300 dark:text-gray-600">•</span>
-          <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-semibold">
-            <Zap size={14} className="fill-current" />
-            <span>{formatCount(xpSummary.totalXp)} XP</span>
-          </div>
-        </>
-      )}
-
-      {!mobile && (
-        <>
-          <span className="text-gray-300 dark:text-gray-600">•</span>
-          <span className="text-gray-500 dark:text-gray-400 font-medium">@{lenser.handle}</span>
-        </>
+      {!mobile && lenser.type !== 'ai' && (
+        <div className="flex-shrink-0">
+          <HelpButton path="/explanation/lensers/human-lensers" label="About Lensers" />
+        </div>
       )}
     </div>
   )
@@ -209,10 +232,10 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
           />
         ) : lenser.type === 'ai' && !lenser.banner_url ? (
           <div className="w-full h-full bg-gradient-to-br from-indigo-950 via-gray-900 to-yellow-950/40 dark:from-gray-950 dark:via-indigo-950 dark:to-gray-900 flex items-end justify-center gap-4 px-6 pb-0 overflow-hidden">
-            <img src="https://cdn.lenserfight.com/brand/lensers/LOLA_DNA.png" alt="LOLA" className="h-24 md:h-44 object-contain hover:scale-105 transition-transform duration-300" />
-            <img src="https://cdn.lenserfight.com/brand/lensers/LENSE_DNA.png" alt="LENSE" className="h-24 md:h-44 object-contain hover:scale-105 transition-transform duration-300" />
-            <img src="https://cdn.lenserfight.com/brand/lensers/LENSA_DNA.png" alt="LENSA" className="h-24 md:h-44 object-contain opacity-75 -rotate-3 hover:rotate-0 hover:opacity-100 transition-all duration-300" />
-            <img src="https://cdn.lenserfight.com/brand/lensers/LENSO_DNA.png" alt="LENSO" className="h-24 md:h-44 object-contain opacity-75 rotate-3 hover:rotate-0 hover:opacity-100 transition-all duration-300" />
+            <img src="https://cdn.lenserfight.com/brand/lensers/AI/LOLA.png" alt="LOLA" className="h-24 md:h-44 object-contain hover:scale-105 transition-transform duration-300" />
+            <img src="https://cdn.lenserfight.com/brand/lensers/AI/LENSE.png" alt="LENSE" className="h-24 md:h-44 object-contain hover:scale-105 transition-transform duration-300" />
+            <img src="https://cdn.lenserfight.com/brand/lensers/AI/LENSA.png" alt="LENSA" className="h-24 md:h-44 object-contain opacity-75 -rotate-3 hover:rotate-0 hover:opacity-100 transition-all duration-300" />
+            <img src="https://cdn.lenserfight.com/brand/lensers/AI/CHAO.png" alt="CHAO" className="h-24 md:h-44 object-contain opacity-75 rotate-3 hover:rotate-0 hover:opacity-100 transition-all duration-300" />
           </div>
         ) : (
           <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
@@ -336,7 +359,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
             {/* Content */}
             <div className="flex-1 pt-1 min-w-0 w-full flex flex-col items-center md:items-start text-center md:text-left">
               {/* Desktop: Stats Row Top */}
-              <div className="hidden md:block mb-1">
+              <div className="hidden md:block mb-1 w-full">
                 <StatsBlock />
               </div>
 
@@ -378,7 +401,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
 
                 {isOwner ? (
                   <div className="hidden md:flex items-center gap-2 mt-2 md:mt-0">
-                    {FEATURES.AGENTS && onManageAgents && (
+                    {onManageAgents && (
                       <Button
                         variant="secondary"
                         onClick={onManageAgents}
@@ -419,9 +442,6 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                         Control Room
                       </Button>
                     )}
-                    {lenser.type !== 'ai' && (
-                      <HelpButton path="/explanation/lensers/human-lensers" label="About Lensers" />
-                    )}
                   </div>
                 ) : (
                   <div className="hidden md:flex items-center gap-2 mt-2 md:mt-0">
@@ -430,9 +450,6 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                       handle={lenser.handle}
                       relationshipState={relationshipState ?? null}
                     />
-                    {lenser.type !== 'ai' && (
-                      <HelpButton path="/explanation/lensers/human-lensers" label="About Lensers" />
-                    )}
                   </div>
                 )}
               </div>
@@ -455,6 +472,21 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                   <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 leading-relaxed max-w-3xl whitespace-pre-wrap">
                     {lenser.bio}
                   </p>
+                )}
+
+                {foundingBadges.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 mt-1">
+                    {foundingBadges.map((badge) => (
+                      <span
+                        key={badge.id}
+                        title={badge.description ?? badge.label}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700"
+                      >
+                        {badge.icon && <span className="text-sm leading-none">{badge.icon}</span>}
+                        {badge.label}
+                      </span>
+                    ))}
+                  </div>
                 )}
 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-2">

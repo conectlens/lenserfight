@@ -2,6 +2,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import { useAICatalogModels } from '@lenserfight/features/generations'
 import type { AIModelCatalogEntry, AgentModelProfileRecord } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Cpu, Pencil, Star, Trash2 } from 'lucide-react'
@@ -72,11 +73,13 @@ export const ModelsSection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Models"
+      docsPath="/how-to/agents/workspace/models"
+      docsTip="Model profiles pin a provider, model id, and decoding defaults. Exactly one profile is the default; promoting another demotes the previous."
       title="Model catalog"
       description="Review every available model, sorted by current list price, then bind the ones that should be available to this AI lenser. Models without pricing remain visible but sort after priced entries."
     >
       {isSingleProviderMode && effectiveProvider && (
-        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+        <div className="flex items-start gap-3 rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50/70 px-4 py-3 text-sm text-primary-yellow-800 dark:border-primary-yellow-500/20 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-200">
           <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
           <span>
             Single-provider mode active: <span className="font-semibold">{effectiveProvider}</span>. Only models from this provider can be added. Remove all bindings first to switch providers.
@@ -115,7 +118,7 @@ export const ModelsSection: React.FC = () => {
             description="The catalog RPC returned no active models. Check the provider and pricing seed state before relying on this page."
           />
         ) : (
-          <div className="overflow-x-auto rounded-[24px] border border-gray-200 dark:border-gray-800">
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
@@ -153,14 +156,15 @@ export const ModelsSection: React.FC = () => {
                             Locked
                           </span>
                         ) : (
-                          <button
+                          <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={() => bootstrap && create.mutate(model)}
                             disabled={!bootstrap || create.isPending}
-                            className="rounded-2xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
                           >
                             Bind model
-                          </button>
+                          </Button>
                         )}
                       </td>
                     )}
@@ -183,7 +187,7 @@ export const ModelsSection: React.FC = () => {
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
             Bound model profiles
           </p>
-          <div className="overflow-x-auto rounded-[24px] border border-gray-200 dark:border-gray-800">
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
@@ -214,7 +218,7 @@ export const ModelsSection: React.FC = () => {
                       {modelProfile.is_default && (
                         <Star
                           size={14}
-                          className="text-amber-500"
+                          className="text-primary-yellow-500"
                           aria-label="Default model"
                         />
                       )}
@@ -222,15 +226,15 @@ export const ModelsSection: React.FC = () => {
                     {isOwner && (
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <button
+                          <Button
                             type="button"
                             onClick={() => setEditTarget(modelProfile)}
                             aria-label="Edit model profile"
                             className="rounded-xl p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                           >
                             <Pencil size={13} />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
                             onClick={() =>
                               setConfirmState({
@@ -243,7 +247,7 @@ export const ModelsSection: React.FC = () => {
                             className="rounded-xl p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
                           >
                             <Trash2 size={13} />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     )}
@@ -335,7 +339,7 @@ function formatModelPricing(model: AIModelCatalogEntry): string {
 }
 
 const CenteredLoader: React.FC<{ label: string }> = ({ label }) => (
-  <div className="flex min-h-[280px] items-center justify-center rounded-[24px] border border-gray-200 bg-white text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+  <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-gray-200 bg-white text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
     {label}
   </div>
 )

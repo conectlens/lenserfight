@@ -1,0 +1,81 @@
+name: "🗂 Local Config Issue"
+description: Report a problem with the ~/.lenserfight/* local developer configuration tree.
+title: "[LOCAL-CONFIG] "
+labels:
+  - area:local-config
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Title format:** `[LOCAL-CONFIG] Short description`
+        Use this template for issues with the `~/.lenserfight/` local config directory — config files, credentials, gateway daemon config, local overrides, or the portable config tree.
+        For CLI command failures, use the [🖥 CLI Issue](cli) template. For Supabase local setup failures, use the [🐛 Bug Report](bug) template with area "install / setup".
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected config area
+      description: Which part of `~/.lenserfight/*` is affected?
+      options:
+        - Config file (config.json / config.toml)
+        - Credentials / API keys
+        - Gateway daemon config
+        - Profiles / multi-account
+        - Local overrides
+        - Portable tree sync / import / export
+        - Directory structure / permissions
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong?
+      description: Describe the problem. Avoid pasting raw credential values.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `lf config set ...`
+        2. Restart gateway
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output or error
+      render: text
+
+  - type: input
+    id: cli_version
+    attributes:
+      label: CLI version
+      description: Run `lf --version`.
+      placeholder: e.g. 0.4.1
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node version, pnpm version.
+      placeholder: "macOS 14.4, Node 20.11, pnpm 9.1"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I have not included raw credentials or API keys in this issue
+          required: true
+        - label: I searched existing issues and this is not a duplicate
+          required: true

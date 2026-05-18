@@ -170,7 +170,7 @@ Error states: `unauthenticated` (run `lf auth login`), `unavailable` (API unreac
 ## Related
 
 - [lf status](/en/reference/cli/status)
-- [lf doctor](/en/reference/cli/index)
+- [lf doctor](/en/reference/cli/doctor)
 - [Developer Onboarding](/en/tutorials/getting-started/developer-onboarding)
 - [lf auth](/en/reference/cli/auth)
 

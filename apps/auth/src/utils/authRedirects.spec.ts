@@ -9,7 +9,7 @@ describe('auth redirects', () => {
 
   it('routes new users into onboarding', () => {
     expect(getAuthGateRedirectUrl({ kind: 'new' }, 'http://localhost:3000/')).toBe(
-      '/onboarding?return_url=http%3A%2F%2Flocalhost%3A3000%2F'
+      'http://localhost:3000/onboarding?return_url=http%3A%2F%2Flocalhost%3A3000%2F'
     )
   })
 
@@ -19,7 +19,7 @@ describe('auth redirects', () => {
         { kind: 'onboarding', status: 'active', onboardingStep: 1 },
         'http://localhost:3000/'
       )
-    ).toBe('/onboarding?return_url=http%3A%2F%2Flocalhost%3A3000%2F')
+    ).toBe('http://localhost:3000/onboarding?return_url=http%3A%2F%2Flocalhost%3A3000%2F')
   })
 
   it('routes deleted users to the terminal page', () => {

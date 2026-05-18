@@ -181,8 +181,8 @@ pnpm nx run arena:serve
 # Documentation site
 pnpm nx run docs:serve
 
-# Platform API (execution worker)
-pnpm nx run platform-api:serve
+# Background worker (scheduled jobs, async execution)
+pnpm nx run worker:serve
 ```
 
 ### 8. Verify the setup
@@ -205,13 +205,10 @@ pnpm supabase status
 | `DATA_SOURCE` | Yes | `file` | `file` or `supabase` |
 | `SUPABASE_URL` | Supabase mode | — | Local: `http://127.0.0.1:54321` |
 | `SUPABASE_ANON_KEY` | Supabase mode | — | From `pnpm supabase start` output |
-| `PRODUCT_EDITION` | No | `community` | `community` or `cloud` |
 | `WEB_BASE_URL` | No | `http://localhost:3000` | Web app URL |
 | `AUTH_BASE_URL` | No | `http://localhost:3004` | Auth app URL |
 | `ARENA_URL` | No | `http://localhost:3001` | Arena app URL |
-| `API_URL` | No | `http://localhost:8786` | Platform API URL |
-| `MOCK` | No | `false` | Skip real auth in dev |
-| `FEATURE_AGENTS` | No | `false` | Enable AI workspace tabs |
+| `API_URL` | No | — | Execution API URL (Cloudflare Workers, not local) |
 
 See `.env.example` for the full list with descriptions.
 
@@ -225,7 +222,7 @@ See `.env.example` for the full list with descriptions.
 | `pnpm nx run auth:serve` | Start the auth app (port 3004) |
 | `pnpm nx run arena:serve` | Start the arena app (port 3001) |
 | `pnpm nx run docs:serve` | Start the docs site (port 3002) |
-| `pnpm nx run platform-api:serve` | Start the platform API (port 8786) |
+| `pnpm nx run worker:serve` | Start the background worker |
 | `pnpm nx run cli:build` | Build the CLI |
 | `pnpm supabase start` | Start local Supabase |
 | `pnpm supabase stop` | Stop local Supabase |

@@ -6,10 +6,11 @@ import {
   type AgentProfileView,
   type WorkflowRecord,
 } from '@lenserfight/data/repositories'
+import { Alert, Button, Card } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { Drawer } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  AlertTriangle,
   Bot,
   CalendarClock,
   Download,
@@ -236,8 +237,8 @@ export const AgentSettingsSheet: React.FC<Props> = ({
         </div>
       ) : (
         <div className="space-y-5">
-          <div className="flex items-center gap-3 rounded-2xl border border-amber-200/80 bg-amber-50/60 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
-            <Bot size={16} className="flex-shrink-0 text-amber-700 dark:text-amber-300" />
+          <Card className="flex items-center gap-3 !p-3 border-primary-yellow-200/80 bg-primary-yellow-50/60 dark:border-primary-yellow-500/20 dark:bg-primary-yellow-500/10">
+            <Bot size={16} className="flex-shrink-0 text-primary-yellow-700 dark:text-primary-yellow-300" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
                 {agent.display_name || `@${handle}`}
@@ -246,11 +247,11 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                 @{handle} · {agent.runtime_pref}
               </p>
             </div>
-          </div>
+          </Card>
 
           <div className="flex gap-1 border-b border-gray-200 pb-1 dark:border-gray-700">
             {tabs.map((t) => (
-              <button
+              <Button
                 key={t.id}
                 type="button"
                 onClick={() => setTab(t.id)}
@@ -260,22 +261,14 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                   }`}
               >
                 {t.label}
-              </button>
+              </Button>
             ))}
           </div>
 
           {(error || okMsg) && (
             <div className="space-y-2">
-              {error && (
-                <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-                  {error}
-                </p>
-              )}
-              {okMsg && (
-                <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
-                  {okMsg}
-                </p>
-              )}
+              {error && <Alert variant="error" title={error} />}
+              {okMsg && <Alert variant="success" title={okMsg} />}
             </div>
           )}
 
@@ -312,15 +305,15 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                 />
               </SheetField>
               <div className="flex flex-wrap gap-3 pt-1">
-                <button
+                <Button
                   type="button"
                   onClick={() => saveIdentity.mutate()}
                   disabled={saveIdentity.isPending || !agent}
-                  className={primaryBtn}
+                  isLoading={saveIdentity.isPending}
                 >
                   <Save size={14} />
                   {saveIdentity.isPending ? 'Saving…' : 'Save identity'}
-                </button>
+                </Button>
                 <a href={`/lenser/${handle}/ag/instructions`} className={secondaryBtn}>
                   Manage instructions
                 </a>
@@ -333,20 +326,19 @@ export const AgentSettingsSheet: React.FC<Props> = ({
 
           {tab === 'runtime' && (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-300">
+              <Card className="!p-3 text-sm text-gray-600 dark:text-gray-300">
                 Runtime pref: <span className="font-semibold text-gray-900 dark:text-white">{agent.runtime_pref}</span>
                 {' · '}Mode: <span className="font-semibold text-gray-900 dark:text-white">{agent.model_binding_mode}</span>
-              </div>
+              </Card>
               <SheetField label="Approval default">
-                <select
+                <SelectField
                   value={approvalDefault}
-                  onChange={(e) => setApprovalDefault(e.target.value as ApprovalDefault)}
-                  className={inputClass}
-                >
-                  {APPROVAL_OPTIONS.map((o) => (
-                    <option key={o} value={o}>{o}</option>
-                  ))}
-                </select>
+                  onChange={(value) => setApprovalDefault(value as ApprovalDefault)}
+                  options={APPROVAL_OPTIONS.map((option) => ({
+                    value: option,
+                    label: option,
+                  }))}
+                />
               </SheetField>
               <div className="grid grid-cols-2 gap-3">
                 <SheetField label="Retention (days)">
@@ -377,15 +369,15 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                 <span>External API access enabled</span>
               </label>
               <div className="flex flex-wrap gap-3 pt-1">
-                <button
+                <Button
                   type="button"
                   onClick={() => saveRuntime.mutate()}
                   disabled={saveRuntime.isPending || !agent}
-                  className={primaryBtn}
+                  isLoading={saveRuntime.isPending}
                 >
                   <Save size={14} />
                   {saveRuntime.isPending ? 'Saving…' : 'Save runtime'}
-                </button>
+                </Button>
                 <a href={`/lenser/${handle}/ag/providers`} className={secondaryBtn}>
                   API keys & providers
                 </a>
@@ -399,30 +391,29 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   CRON schedules assigned to this agent.
                 </p>
-                <button
+                <Button
                   type="button"
                   onClick={() => { setSchedEditing(null); setSchedDrawerOpen(true) }}
                   disabled={(workflowsQuery.data ?? []).length === 0}
-                  className={primaryBtn}
                 >
                   <CalendarClock size={14} />
                   New schedule
-                </button>
+                </Button>
               </div>
               {schedulesQuery.isLoading ? (
                 <div className="space-y-3">
                   {[1, 2].map((i) => (
-                    <div key={i} className="h-20 animate-pulse rounded-[20px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900" />
+                    <div key={i} className="h-20 animate-pulse rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900" />
                   ))}
                 </div>
               ) : agentSchedules.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 rounded-[20px] border border-gray-200 bg-gray-50 px-4 py-8 text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+                <Card className="flex flex-col items-center gap-2 !p-8 text-sm text-gray-500 dark:text-gray-400">
                   <CalendarClock size={22} className="text-gray-300 dark:text-gray-600" />
                   <p>No schedules assigned to this agent yet.</p>
-                </div>
+                </Card>
               ) : (
                 agentSchedules.map((s) => (
-                  <div key={s.id} className="rounded-[20px] border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+                  <Card key={s.id} className="!p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
@@ -444,24 +435,25 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                         </div>
                       </div>
                       <div className="flex flex-shrink-0 gap-1.5">
-                        <button
+                        <Button
                           type="button"
+                          variant="secondary"
+                          size="sm"
                           onClick={() => togglePause.mutate(s)}
-                          className="rounded-xl border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-300"
                         >
                           {s.is_active ? 'Pause' : 'Resume'}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
                           onClick={() => { setSchedEditing(s); setSchedDrawerOpen(true) }}
-                          className="rounded-xl border border-gray-200 p-1.5 text-gray-500 hover:text-amber-600 dark:border-gray-700 dark:text-gray-400"
+                          className="rounded-xl border border-gray-200 p-1.5 text-gray-500 hover:text-primary-yellow-600 dark:border-gray-700 dark:text-gray-400"
                           aria-label="Edit schedule"
                         >
                           <Pencil size={13} />
-                        </button>
+                        </Button>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 ))
               )}
             </div>
@@ -482,15 +474,15 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                 />
               </SheetField>
               <div className="flex flex-wrap gap-3 pt-1">
-                <button
+                <Button
                   type="button"
                   onClick={() => savePersonality.mutate()}
                   disabled={savePersonality.isPending || !agent}
-                  className={primaryBtn}
+                  isLoading={savePersonality.isPending}
                 >
                   <Save size={14} />
                   {savePersonality.isPending ? 'Saving…' : 'Save note'}
-                </button>
+                </Button>
                 <a href={`/lenser/${handle}/ag/personality`} className={secondaryBtn}>
                   Full personality settings
                 </a>
@@ -504,36 +496,35 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                 Export a full workspace snapshot or request workspace deletion. Deletion is gated behind admin review.
               </p>
               <div className="flex flex-wrap gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => exportBundle.mutate()}
                   disabled={exportBundle.isPending || !agent}
-                  className={secondaryBtn}
+                  isLoading={exportBundle.isPending}
                 >
                   <Download size={14} />
                   {exportBundle.isPending ? 'Exporting…' : 'Export workspace'}
-                </button>
+                </Button>
               </div>
-              <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/70 p-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-                <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold">Danger zone</p>
-                  <p className="mt-1 text-xs leading-5">
-                    Submits a deletion request. An admin must confirm before data is removed.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const reason = window.prompt('Reason for deletion?') ?? ''
-                      if (reason) requestDeletion.mutate(reason)
-                    }}
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-2xl border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:bg-gray-900 dark:hover:bg-red-500/20"
-                  >
-                    <Trash2 size={12} />
-                    Request deletion
-                  </button>
-                </div>
-              </div>
+              <Alert variant="error" title="Danger zone">
+                <p className="mt-1 text-xs leading-5">
+                  Submits a deletion request. An admin must confirm before data is removed.
+                </p>
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => {
+                    const reason = window.prompt('Reason for deletion?') ?? ''
+                    if (reason) requestDeletion.mutate(reason)
+                  }}
+                >
+                  <Trash2 size={12} />
+                  Request deletion
+                </Button>
+              </Alert>
             </div>
           )}
 
@@ -542,6 +533,7 @@ export const AgentSettingsSheet: React.FC<Props> = ({
             onClose={() => setSchedDrawerOpen(false)}
             workflows={workflowsQuery.data ?? []}
             initial={schedEditing}
+            ownerLenserId={agent.owner_lenser_id}
             defaultAssigneeId={agent.ai_lenser_id}
             onSaved={() => {
               queryClient.invalidateQueries({ queryKey: queryKeys.workflows.schedules(null) })
@@ -554,13 +546,10 @@ export const AgentSettingsSheet: React.FC<Props> = ({
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
-
-const primaryBtn =
-  'inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900'
+  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-yellow-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
 const secondaryBtn =
-  'inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200'
+  'inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:text-gray-200'
 
 const SheetField: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,

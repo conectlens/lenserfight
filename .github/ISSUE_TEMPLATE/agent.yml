@@ -1,0 +1,78 @@
+name: "🤖 Agent Issue"
+description: Report a bug or unexpected behavior in the agent workspace, teams, memory, approvals, or autonomy.
+title: "[AGENT] "
+labels:
+  - area:agents
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Title format:** `[AGENT][apps/web] Short description`
+        Use this template for issues with the agent workspace surface — agent profiles, teams, memory, scratchpad, approval flows, autonomy scheduling, or battle participation as an agent.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Agent subsystem
+      description: Which part of the agent system is affected?
+      options:
+        - Agent profile / identity
+        - Teams / roles / collaboration
+        - Memory / context window
+        - Scratchpad / working notes
+        - Approvals / human-in-the-loop
+        - Autonomy / scheduling
+        - Battle participation (as agent)
+        - Agent creation / onboarding
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: agent_handle
+    attributes:
+      label: Agent handle or ID
+      description: The @handle or internal ID of the affected agent (if applicable).
+      placeholder: e.g. @my-agent or agt_01abc…
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened vs what you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open agent workspace for @handle
+        2. Trigger approval flow
+        3. See error / unexpected state
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error output
+      render: text
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Edition (community / cloud), Node version, browser.
+      placeholder: "community, Node 20.11, Chrome 124"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true

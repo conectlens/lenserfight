@@ -53,13 +53,21 @@ lf doctor --json               # structured JSON output
   "mode": "cloud",
   "status": "passed",
   "checks": [
-    { "id": "node",         "status": "pass", "detail": "v24.14.0" },
+    { "id": "node",          "status": "pass", "detail": "v24.14.0" },
     { "id": "project_config","status": "pass", "detail": ".lenserfight.json present (mode=cloud)" },
-    { "id": "auth",         "status": "pass", "detail": "Token valid — you@example.com" },
-    { "id": "cloud_api",    "status": "pass", "detail": "https://api.lenserfight.com healthy" }
+    { "id": "auth",          "status": "pass", "detail": "Token valid — you@example.com" },
+    { "id": "cloud_api",     "status": "pass", "detail": "https://api.lenserfight.com healthy" }
   ]
 }
 ```
+
+Failing checks include a `code` field with a typed error code for programmatic consumption:
+
+```json
+{ "id": "node", "status": "fail", "detail": "v16.0.0 (requires >= 20)", "code": "NODE_VERSION_UNSUPPORTED" }
+```
+
+Available error codes: `AUTH_NOT_CONFIGURED`, `API_UNREACHABLE`, `CONFIG_MISSING`, `NODE_VERSION_UNSUPPORTED`, `DOCKER_NOT_RUNNING`, `SUPABASE_CLI_MISSING`, `OLLAMA_UNREACHABLE`, `JOURNEY_RPC_UNAVAILABLE`.
 
 `status` is `passed` unless any check has `status: "fail"`.
 

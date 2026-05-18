@@ -1,6 +1,7 @@
 import { openDB, type IDBPDatabase } from 'idb'
 import type { StorageAdapterPort, StorageListItem } from './storage.types'
 import { browserLogger } from '@lenserfight/utils/logger'
+import { generateUUID } from '@lenserfight/utils/text'
 
 interface StoredObject {
   compositeKey: string
@@ -39,7 +40,7 @@ export class LocalFileStorageAdapter implements StorageAdapterPort {
     objectKey: string
   ): Promise<{ signedUrl: string; token: string }> {
     const startedAt = Date.now()
-    const token = crypto.randomUUID()
+    const token = generateUUID()
     const db = await getDb()
 
     const entry: StoredObject = {
