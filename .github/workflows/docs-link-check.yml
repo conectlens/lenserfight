@@ -29,7 +29,7 @@ jobs:
         #   gh api repos/tj-actions/changed-files/git/refs/tags/v44 | jq -r .object.sha
         # Replace `@v44` with `@<40-char-sha>  # v44`
         # Tracked: https://github.com/conectlens/lenserfight/issues — label: supply-chain
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v47
         with:
           files: docs/**/*.md
 
