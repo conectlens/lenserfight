@@ -1,6 +1,6 @@
 ---
 title: lf init
-description: Initialize .lenserfight.json. Keys are never stored here — use env vars or ~/.lenserfight/config.json.
+description: Initialize .lenserfight.json. Keys are never stored here — use env vars or ~/.lenserfight/lenserfight.json.
 ---
 
 # `lf init`
@@ -19,7 +19,7 @@ lf init --mode cloud --url https://your-project.supabase.co
 | File | Scope | Contains | Safe to commit? |
 |---|---|---|---|
 | `.lenserfight.json` | Project | mode, Supabase URL, ports | Yes |
-| `~/.lenserfight/config.json` | Device | auth tokens, dev tokens, onboarding state | **No** — gitignored by default |
+| `~/.lenserfight/lenserfight.json` | Device | auth tokens, dev tokens, onboarding state | **No** — gitignored by default |
 
 `lf init` writes to `.lenserfight.json`. Secrets are never stored in the project config — they live in environment variables or the device config.
 
@@ -37,7 +37,7 @@ Output:
 
 ```
 ✔ Created .lenserfight.json (mode: local)
-✔ Created ~/.lenserfight/config.json (tokens stored here after login)
+✔ Created ~/.lenserfight/lenserfight.json (tokens stored here after login)
 ℹ Anon key : local Supabase defaults (auto)
 ℹ URL      : http://127.0.0.1:54321
 ```
@@ -94,7 +94,7 @@ If `.lenserfight.json` already exists, `lf init` warns before overwriting:
 
 # `lf init`
 
-Initialize .lenserfight.json. Keys are never stored here — use env vars or ~/.lenserfight/config.json.
+Initialize .lenserfight.json. Keys are never stored here — use env vars or ~/.lenserfight/lenserfight.json.
 
 | Flag | Type | Required | Description |
 |---|---|---|---|
