@@ -103,7 +103,7 @@ export const WebRouter: React.FC = () => {
         <Route path="/s/:shortId" element={<LazyShortLinkRedirect />} />
 
         {/* Auth redirects */}
-        <AuthRoutes />
+        {AuthRoutes()}
 
         {/* Home */}
         <Route
@@ -274,11 +274,11 @@ export const WebRouter: React.FC = () => {
         />
 
         {/* Feature route groups */}
-        <BattleRoutes />
-        <ProfileRoutes />
-        <WorkflowRoutes />
-        <AccountRoutes />
-        <AdminRoutes />
+        {BattleRoutes()}
+        {ProfileRoutes()}
+        {WorkflowRoutes()}
+        {AccountRoutes()}
+        {AdminRoutes()}
 
         {/* Onboarding & error */}
         <Route path="/onboarding" element={<OnboardingModal />} />

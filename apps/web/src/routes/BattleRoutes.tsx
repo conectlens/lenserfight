@@ -78,7 +78,8 @@ const CreateTemplateRoute: React.FC = () => {
   )
 }
 
-export const BattleRoutes: React.FC = () => (
+export function BattleRoutes(): React.ReactElement {
+  return (
   <>
     <Route
       path="/battles"
@@ -173,4 +174,5 @@ export const BattleRoutes: React.FC = () => (
     />
     <Route path="/tournaments/:slug" element={<LazyTournamentPage />} />
   </>
-)
+  )
+}
