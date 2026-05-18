@@ -291,7 +291,7 @@ BEGIN
       '(5) Personality — 3 primary traits and 2 secondary traits; '
       '(6) Visual Signature — the one feature that makes this character instantly recognizable; '
       '(7) Symbolism — what 2 design elements represent; '
-      '(8) Differentiation — one paragraph on how this differs from LENSO (Autonomous), LENSA (Creative), LENSE (Strategic), and LOLA (Social). '
+      '(8) Differentiation — one paragraph on how this differs from CHAO (Builder), LAHİT, LAPSEKİ, LENSA (Creative), LENSE (Strategic), LOLA (Social), and LUPEM. '
       'Be specific and actionable. The brief will be handed to a 3D designer.',
       'published', now()
     );
@@ -478,7 +478,7 @@ BEGIN
 
     INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, ordinal) VALUES
       (WF2_T1, WF2_P1, WF2, 'Enter brand name',      'What brand or product is this logo for?',                                          'text', 1),
-      (WF2_T2, WF2_P1, WF2, 'Pick Lenser character', 'Which Lenser character should feature? (LENSO, LENSA, LENSE, LOLA, or leave blank)',  'text', 2),
+      (WF2_T2, WF2_P1, WF2, 'Pick Lenser character', 'Which Lenser character should feature? (CHAO, LAHİT, LAPSEKİ, LENSA, LENSE, LOLA, LUPEM, or leave blank)',  'text', 2),
       (WF2_T3, WF2_P2, WF2, 'Check color palette',   'Are the hex values in the brief derived from #ffde59 and #213f74? Confirm or adjust.','text', 1),
       (WF2_T4, WF2_P2, WF2, 'Review typography',     'Does the font style match the character''s personality (e.g. sharp for LENSE)?',      'text', 2),
       (WF2_T5, WF2_P3, WF2, 'Approve and export',    'Sign off on the brief and hand it to a designer with the file format requirements.',   'text', 1);
@@ -513,7 +513,7 @@ BEGIN
       (WF3_P2, WF3, 'Polish',      'Refine and validate the animation spec.',     2);
 
     INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, ordinal) VALUES
-      (WF3_T1, WF3_P1, WF3, 'Pick character',    'Which Lenser? (LENSO, LENSA, LENSE, LOLA, or proposed name)',                         'text', 1),
+      (WF3_T1, WF3_P1, WF3, 'Pick character',    'Which Lenser? (CHAO, LAHİT, LAPSEKİ, LENSA, LENSE, LOLA, LUPEM, or proposed name)',   'text', 1),
       (WF3_T2, WF3_P1, WF3, 'Describe action',   'What emotion or action should the animation show? (e.g. celebrating a win, thinking)', 'text', 2),
       (WF3_T3, WF3_P2, WF3, 'Review frame count','Are 6–12 frames sufficient for the action? Adjust the storyboard if needed.',          'text', 1),
       (WF3_T4, WF3_P2, WF3, 'Confirm tech spec', 'Verify canvas size, loop behavior, and export format. Approve for animator handoff.',  'text', 2);
