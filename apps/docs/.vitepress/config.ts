@@ -722,10 +722,28 @@ export default defineConfig({
       mkdirSync(dirname(bareHtmlPath), { recursive: true })
       writeFileSync(
         bareHtmlPath,
-        `<!DOCTYPE html><html><head><meta charset="utf-8">` +
+        `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">` +
         `<meta http-equiv="refresh" content="0;url=${targetUrl}">` +
-        `<link rel="canonical" href="${targetUrl}"></head>` +
-        `<body><a href="${targetUrl}">Redirecting…</a></body></html>`,
+        `<link rel="canonical" href="${targetUrl}">` +
+        `<title>LenserFight Docs</title>` +
+        `<style>` +
+        `*,::before,::after{box-sizing:border-box;margin:0;padding:0}` +
+        `html,body{height:100%;background:#0a0f1e;color:#f5f5f5;font-family:system-ui,sans-serif}` +
+        `body{display:flex;align-items:center;justify-content:center}` +
+        `.ring{position:absolute;border-radius:50%;border:3px solid transparent}` +
+        `.r1{width:64px;height:64px;border-top-color:#f0c040;animation:spin 1.4s linear infinite}` +
+        `.r2{width:52px;height:52px;border-top-color:rgba(240,192,64,.4);animation:spin .9s linear infinite reverse}` +
+        `.r3{width:40px;height:40px;background:rgba(240,192,64,.08);border:none;animation:pulse 1.8s ease-in-out infinite}` +
+        `.dot{width:8px;height:8px;border-radius:50%;background:#f0c040;animation:pulse 1s ease-in-out infinite}` +
+        `.wrap{position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center}` +
+        `@keyframes spin{to{transform:rotate(360deg)}}` +
+        `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}` +
+        `</style></head>` +
+        `<body><div class="wrap">` +
+        `<div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="dot"></div>` +
+        `</div>` +
+        `<script>window.location.replace(${JSON.stringify(targetUrl)})<\/script>` +
+        `</body></html>`,
       )
     }
     function mirrorEnSection(enSectionDir: string, bareSectionDir: string, urlBase: string) {
