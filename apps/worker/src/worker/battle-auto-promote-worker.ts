@@ -9,32 +9,22 @@ const POLL_INTERVAL_MS = parseInt(
 export async function runBattleAutoPromoteCycle(): Promise<number> {
   const svc = createServiceSupabaseClient()
 
-  const { data: battleIds, error: listErr } = await svc
-    .from('battles')
-    .select('id')
-    .eq('status', 'draft')
-    .eq('auto_promote', true)
+  // fn_worker_run_auto_promote_cycle encapsulates the draft-battle query and
+  // the per-battle fn_battles_auto_promote call in a single service-role RPC.
+  //
+  // Why not svc.from('battles')?
+  // The battles table lives in the battles schema which is NOT exposed via
+  // PostgREST (locked down by migration 20270801000001). Direct .from()
+  // queries hit public.battles which does not exist and silently return zero
+  // rows, causing this worker to never promote any battles.
+  const { data, error } = await svc.rpc('fn_worker_run_auto_promote_cycle')
 
-  if (listErr) {
-    nodeLogger.error('battle-auto-promote: list draft battles failed', { message: listErr.message })
+  if (error) {
+    nodeLogger.error('battle-auto-promote: cycle RPC failed', { message: error.message })
     return 0
   }
 
-  let promoted = 0
-  for (const row of battleIds ?? []) {
-    const { data, error } = await svc.rpc('fn_battles_auto_promote', {
-      p_battle_id: row.id,
-    })
-
-    if (error) {
-      nodeLogger.warn('battle-auto-promote: promote failed', { battleId: row.id, message: error.message })
-    } else if (data === true) {
-      promoted++
-      nodeLogger.info('battle-auto-promote: promoted', { battleId: row.id })
-    }
-  }
-
-  return promoted
+  return (data as number | null) ?? 0
 }
 
 export function startBattleAutoPromoteWorker(): () => void {
