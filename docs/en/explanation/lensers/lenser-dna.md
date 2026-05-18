@@ -8,21 +8,24 @@ description: The Lenser DNA system defines the visual, physical, and personality
 The **Lenser DNA** is the single source of truth for every Lenser character. It lives at [`docs/public/brand/lensers/lenser.json`](https://github.com/conectlens/lenserfight/blob/main/docs/public/brand/lensers/lenser.json) and defines:
 
 - The **base blueprint** shared by all Lensers (dimensions, materials, rig points, visual constraints)
-- The four **official characters** with their individual overrides (LENSO, LENSA, LENSE, LOLA)
+- The official **AI Lenser family** (CHAO, LAHİT, LAPSEKİ, LENSA, LENSE, LOLA, LUPEM) and **Human Lenser family** (CHAOO, LAYLA, LEPSOYUBANANA, LOTUSTO, LUKAH, LUKAS, LUPPA) with their individual overrides
 - The **naming convention** and **community process** for proposing new characters
 
 There is no hierarchy among characters. No character is "core" or more important than another. `lenser.json` is the core — the characters are equal expressions of it.
 
-## The four official Lensers
+## The official AI Lenser family
 
 Each character has a distinct emotional role and specialization, like champions in a game. They share the same body but differ in personality, symbolism, and visual overrides.
 
 | Character | Role | Core Color | Personality |
 |-----------|------|-----------|-------------|
-| **LENSO** | Autonomous AI Lenser | `#00C896` teal-green | methodical, persistent, adaptive, self-directed |
+| **CHAO** | Builder & Architect AI Lenser | `#06B6D4` electric teal | inventive, systematic, relentless, chain-builder |
+| **LAHİT** | AI Lenser | — | — |
+| **LAPSEKİ** | AI Lenser | — | — |
 | **LENSA** | Creative AI Lenser | `#FF63B8` pink | empathetic, curious, resilient, creative |
 | **LENSE** | Strategic AI Lenser | `#2DA8FF` blue | strong-willed, protective, strategic, analytical |
 | **LOLA** | Social AI Lenser | `#FF9500` orange | warm, communicative, community-minded, inclusive |
+| **LUPEM** | AI Lenser | — | — |
 
 The `core_color` is the only fully character-specific color. Everything else derives from the shared `base` in `lenser.json`.
 
@@ -86,17 +89,35 @@ All designs must respect the following non-negotiable rules derived from `base`:
 
 ## CDN asset pattern
 
-Official character assets follow this URL pattern:
+Official character assets follow these URL patterns, based on type:
 
+**AI Lensers:**
 ```
-https://cdn.lenserfight.com/brand/lensers/{NAME}_DNA.png
+https://cdn.lenserfight.com/brand/lensers/AI/{NAME}.png
 ```
 
 Examples:
-- `LENSO_DNA.png`
-- `LENSA_DNA.png`
-- `LENSE_DNA.png`
-- `LOLA_DNA.png`
+- `AI/CHAO.png`
+- `AI/LENSA.png`
+- `AI/LENSE.png`
+- `AI/LOLA.png`
+- `AI/LAHİT.png`
+- `AI/LAPSEKİ.png`
+- `AI/LUPEM.png`
+
+**Human Lensers:**
+```
+https://cdn.lenserfight.com/brand/lensers/HUMAN/{NAME}.png
+```
+
+Examples:
+- `HUMAN/CHAOO.png`
+- `HUMAN/LAYLA.png`
+- `HUMAN/LEPSOYUBANANA.png`
+- `HUMAN/LOTUSTO.png`
+- `HUMAN/LUKAH.png`
+- `HUMAN/LUKAS.png`
+- `HUMAN/LUPPA.png`
 
 Non-official (community-proposed) characters do not receive CDN assets until approved.
 
