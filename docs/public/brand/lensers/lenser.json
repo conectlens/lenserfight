@@ -1,0 +1,154 @@
+{
+  "version": "1.0.0",
+  "schema": "lenser-dna/v1",
+  "description": "Canonical Lenser DNA registry. All characters inherit from base. Submit a PR to propose a new character.",
+  "naming_rule": "Lenser names must start with L or C (e.g. Lara, Lami, Lensi, Chao, Cleo). Max 8 characters.",
+  "visual_rule": "Every Lenser must have exactly one central eye-lens. No additional eyes or optical elements anywhere on the head or body.",
+  "community_process": {
+    "submit": "Open a PR to docs/public/brand/lensers/ with a new <Name>.json variant file",
+    "vote": "The community votes using the 'Lenser Character Design Vote' battle template",
+    "rubric": "DNA Compliance · Visual Consistency · Emotional Role Clarity · Brand Alignment · Naming Convention",
+    "approval": "Majority community vote + maintainer sign-off required for official status",
+    "assets": "Approved AI characters receive CDN assets at cdn.lenserfight.com/brand/lensers/AI/{NAME}.png — Human characters at cdn.lenserfight.com/brand/lensers/HUMAN/{NAME}.png"
+  },
+  "base": {
+    "character_name": "Lenser",
+    "type": "3D stylized robotic mascot",
+    "core_identity": "Single large central lens-eye symbolizing intelligence, emotion, and light",
+    "dimensions": {
+      "height_cm": 60,
+      "head_body_ratio": "1.3:1",
+      "head_diameter_cm": 28,
+      "shoulder_width_cm": 22
+    },
+    "materials": {
+      "primary": "matte polymer",
+      "secondary": "brushed aluminum",
+      "joints": "soft silicone",
+      "lens": "multi-element glass with iris coating and micro-dust speckles",
+      "emitter": "translucent polycarbonate for chest core and antenna tip"
+    },
+    "colors": {
+      "primary_body": "#ffde59",
+      "secondary_body": "#213f74",
+      "accents": ["#FFFFFF", "#2C66C7"],
+      "note": "Variant core_color is defined per character and must not conflict with primary_body."
+    },
+    "head": {
+      "shell": {
+        "shape": "perfect sphere with shallow front bezel",
+        "panel_lines": "two subtle service seams at 10 and 2 o'clock"
+      },
+      "lens_eye": {
+        "appearance": "stacked camera optics with visible aperture blades and ring reflections",
+        "ring_layers": 4,
+        "glow_color": "deep blue gradient",
+        "blink_method": "quick iris stop-down to f/8 then reopen"
+      },
+      "ears_cylindrical": {
+        "count": 2,
+        "placement": "mid-head, 90° from lens axis",
+        "size_cm": { "length": 5, "diameter": 3.2 },
+        "mount": "aluminum stub + rubber gasket",
+        "detail": "rear vent slit and tiny status LED facing back"
+      },
+      "antenna": {
+        "stem": "thin graphite rod, 4 mm diameter, 5 cm height",
+        "base": "flush magnetic socket with dark rubber skirt",
+        "tip": "variant_defined",
+        "tip_behavior": "idle 5% glow, ramps to 40% on emphasis",
+        "position": "top-center"
+      }
+    },
+    "torso": {
+      "shell": "rounded barrel with soft abdominal groove",
+      "shoulder_caps": "segmented plates overlapping cape collar",
+      "abdomen": "elastic silicone ring for breathing motion"
+    },
+    "arms": {
+      "segments": 3,
+      "hand": "three fingers + thumb, rounded pads",
+      "default_pose": "hands joined over chest core"
+    },
+    "legs": {
+      "thigh_covers": "short convex shells",
+      "knee": "ball joint with rubber boot",
+      "feet": "oval soles with non-slip ring"
+    },
+    "chest_core": {
+      "design": "circular glowing element inspired by Iron Man's arc reactor",
+      "core_color": "variant_defined",
+      "behavior": "soft pulse 60–80 BPM, syncs with lens bloom on emotion"
+    },
+    "clothing": {
+      "cape": {
+        "color_outer": "#213f74",
+        "color_inner": "#2e4f89",
+        "style": "short cape with high collar and soft hem"
+      },
+      "bodysuit": {
+        "color": "#FFFFFF",
+        "accent_lines": "#ffde59"
+      }
+    },
+    "pose": {
+      "neutral": "hands joined near chest core",
+      "expression": "calm and focused"
+    },
+    "symbolism": {
+      "lens_eye": "perception and truth",
+      "core": "connection and consciousness",
+      "yellow_body": "creativity and light"
+    },
+    "views": {
+      "front": "Lens centered, cylindrical ears visible symmetrically, antenna vertical, cape collar flares left/right, core centered.",
+      "right": "Right ear shows full cylinder and rear vent; cape overlaps to back; lens rim depth visible; arm seams and elbow boot visible.",
+      "left": "Mirror of right; left hip seam and power-port hatch indicated by subtle seam.",
+      "back": "Cape forms teardrop; antenna base socket visible; two oval maintenance panels; heel soles show traction ring; ear LEDs visible.",
+      "top": "Perfect circular head with antenna at dead center; ears align on a straight lateral axis; cape collar forms shallow crescent."
+    },
+    "rig_points": {
+      "head": "head_ctrl at sphere center",
+      "lens": "iris_ctrl for aperture, focus_ctrl for depth bloom",
+      "antenna": "antenna_fk at base, tip_light intensity channel",
+      "ears": "ear_R_fk and ear_L_fk for subtle tilt",
+      "hands": "hand_L/R_ik",
+      "cape": "cloth_sim with 3 pin constraints at collar"
+    },
+    "human_overrides": {
+      "description": "Fields that differ when the Lenser represents a human profile. All other base fields remain identical — including the cape, chest core, and ears.",
+      "eyes": {
+        "count": 2,
+        "style": "humanoid oval pupils with colored iris and dark pupil",
+        "left_position": "x=83, y=93 in 200×200 frame",
+        "right_position": "x=117, y=93 in 200×200 frame",
+        "eyebrows": "present — subtle arched stroke above each eye"
+      },
+      "nose": {
+        "present": true,
+        "style": "two small rounded nostrils, center face"
+      },
+      "ears": {
+        "style": "soft oval — same placement as AI cylindrical but rounded, no vent slit, no LED",
+        "note": "The ear position and size is inherited from base; only the shape changes"
+      },
+      "body_color": {
+        "type": "skin_tone_palette",
+        "options": ["#FDDBB4", "#F4C48B", "#D4956A", "#C27B4A", "#8B4A2E", "#4A2615"],
+        "note": "Replaces the AI #ffde59 yellow. The chest core color is still character-defined."
+      },
+      "antenna": {
+        "present": false,
+        "note": "Humans do not have an antenna. The base antenna fields do not apply."
+      },
+      "lens_eye": {
+        "present": false,
+        "note": "The single lens-eye is replaced by two humanoid eyes. The camera optics visual_rule does not apply to human variants."
+      },
+      "chest_core": {
+        "present": true,
+        "symbolism": "The shared heart — the single element connecting every Human Lenser to every AI Lenser. Same design, same behavior, same meaning."
+      }
+    }
+  }
+}

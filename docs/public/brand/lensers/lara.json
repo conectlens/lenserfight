@@ -1,0 +1,53 @@
+{
+  "schema": "lenser-dna/v1",
+  "inherits_from": "lenser.json#base",
+  "id": "LARA",
+  "status": "official",
+  "role": "Discovery & Pioneer Lenser",
+  "asset": "cdn.lenserfight.com/brand/lensers/AI/LARA.png",
+  "body_modifications": {
+    "height_cm": 61,
+    "body_shape": "athletic and dynamic; slight forward-lean in neutral stance; shoulders angled as if already mid-step",
+    "antenna_tip": "directional compass needle — one end glowing amber against the silver body; the only warm accent; always oriented forward in the direction of gaze",
+    "lens_frame": "wide-field aperture with broader depth-of-field rings — Lara sees further than any other Lenser"
+  },
+  "clothing": {
+    "cape": {
+      "color_outer": "#374151",
+      "color_inner": "#6b7280",
+      "style": "asymmetric explorer cut — longer on right side, shorter on left; no clasp; edge left free to billow; subtle topographic contour hem stitch"
+    },
+    "bodysuit": {
+      "color": "#e5e7eb",
+      "accent_lines": "#d1d5db",
+      "addition": "faint map-grid contour lines across torso and upper arms — etched silver-on-silver terrain texture; as if Lara carries the map of everywhere she has been"
+    }
+  },
+  "chest_core_override": { "core_color": "#9ca3af" },
+  "colors_note": "Lara is silver-gray throughout — body #e5e7eb, cape #374151/#6b7280, core #9ca3af. The only warmth is the amber compass needle tip glow.",
+  "facial_expression": {
+    "style": "wide-open aperture with iris tilted slightly upward — the look of someone who just spotted the horizon",
+    "emotional_focus": "curiosity, boldness, forward momentum, the joy of the unknown"
+  },
+  "personality_shift": {
+    "primary_traits": ["curious", "bold", "first-mover"],
+    "secondary_traits": ["decisive", "energizing", "cartographer"]
+  },
+  "symbolism_extension": {
+    "compass_tip": "always pointing into the unknown — Lara is the first to step into uncharted AI territory and the one who makes it feel safe to follow",
+    "map_grid_body": "every journey is recorded; Lara's knowledge is not abstract — it is traced, charted, and shared",
+    "asymmetric_cape": "moves fast and doesn't wait for symmetry; action before perfection, course-correct in motion",
+    "wide_aperture": "a broader field of view means Lara catches what others miss at the edges",
+    "silver_body": "the neutral, unbiased observer — Lara reflects the terrain around her rather than imposing her own color on it",
+    "amber_needle_contrast": "the single amber compass point is the only warmth — it stands out precisely because everything else is silver; the destination burns brighter against the gray"
+  },
+  "views_delta": {
+    "front": "core glows muted silver-gray; compass needle amber tip is the dominant warm accent; wide aperture rings prominently visible; forward-lean stance clear",
+    "right": "asymmetric cape shows the full silver-gray value range from dark outer to lighter inner; dynamic tilt visible",
+    "top": "compass needle amber glow visibly points ahead; map-grid silver contour lines trace outward from shoulders"
+  },
+  "rig_overrides": {
+    "antenna_tip": "lara_compass_fk — two-axis sway; snaps back to forward-pointing after any motion; drifts slightly when idle as if scanning",
+    "cape": "cloth_sim with 2 pin constraints only — loose and billowing; left side swings freely; most dynamic of all Lenser capes"
+  }
+}

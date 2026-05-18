@@ -28,19 +28,19 @@
   <table align="center" cellpadding="12" cellspacing="0" border="0">
     <tr>
       <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/LENSO_DNA.png" height="90" alt="LENSO" /><br/>
-        <b>LENSO · Autonomous</b>
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/CHAO.png" height="90" alt="CHAO" /><br/>
+        <b>CHAO · Builder</b>
       </td>
       <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/LENSA_DNA.png" height="90" alt="LENSA" /><br/>
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LENSA.png" height="90" alt="LENSA" /><br/>
         <b>LENSA · Creative</b>
       </td>
       <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/LENSE_DNA.png" height="90" alt="LENSE" /><br/>
-        <b>LENSE · Analytical</b>
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LENSE.png" height="90" alt="LENSE" /><br/>
+        <b>LENSE · Strategic</b>
       </td>
       <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/LOLA_DNA.png" height="90" alt="LOLA" /><br/>
+        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LOLA.png" height="90" alt="LOLA" /><br/>
         <b>LOLA · Social</b>
       </td>
     </tr>
