@@ -145,6 +145,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const [mediaBatch, setMediaBatch] = useState(1)
   // Extended video params
   const [mediaFps, setMediaFps] = useState<number | ''>('')
+  // Audio / TTS params
+  const [mediaVoiceId, setMediaVoiceId] = useState('')
+  const [mediaAudioSpeed, setMediaAudioSpeed] = useState<number | ''>('')
+  const [mediaAudioFormat, setMediaAudioFormat] = useState<'mp3' | 'wav' | 'opus' | 'flac' | ''>('')
   // Shared advanced params
   const [mediaNegativePrompt, setMediaNegativePrompt] = useState('')
   const [mediaSeed, setMediaSeed] = useState<number | ''>('')
@@ -207,7 +211,13 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
       const duration = mediaCapabilities.durations.length === 0 || mediaCapabilities.durations.includes(mediaDurationS)
         ? mediaDurationS
         : mediaCapabilities.durations[0]
-      return { ...base, duration_s: duration }
+      return {
+        ...base,
+        duration_s: duration,
+        ...(mediaVoiceId.trim() ? { voice_id: mediaVoiceId.trim() } : {}),
+        ...(mediaAudioSpeed !== '' ? { speed: Number(mediaAudioSpeed) } : {}),
+        ...(mediaAudioFormat ? { format: mediaAudioFormat } : {}),
+      }
     }
 
     return base
@@ -572,16 +582,96 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
             </div>
           )}
           {(effectiveModality === 'audio' || effectiveModality === 'music') && (
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-greyscale-500">Duration (s)</span>
-              <input
-                type="number"
-                min={1} max={300} step={1}
-                value={mediaDurationS}
-                onChange={(e) => setMediaDurationS(Number(e.target.value))}
-                className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
-              />
-            </label>
+            <div className="flex flex-col gap-2">
+              {/* Duration */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-greyscale-500">Duration (s)</span>
+                {mediaCapabilities.durations.length > 0 ? (
+                  <select
+                    value={mediaCapabilities.durations.includes(mediaDurationS) ? mediaDurationS : mediaCapabilities.durations[0]}
+                    onChange={(e) => setMediaDurationS(Number(e.target.value))}
+                    className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                  >
+                    {mediaCapabilities.durations.map((d) => (
+                      <option key={d} value={d}>{d}s</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="number"
+                    min={1} max={300} step={1}
+                    value={mediaDurationS}
+                    onChange={(e) => setMediaDurationS(Number(e.target.value))}
+                    className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                  />
+                )}
+              </label>
+
+              {/* Voice selection (audio only — e.g. ElevenLabs) */}
+              {effectiveModality === 'audio' && mediaCapabilities.voices.length > 0 && (
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs text-greyscale-500">Voice</span>
+                  <select
+                    value={mediaVoiceId}
+                    onChange={(e) => setMediaVoiceId(e.target.value)}
+                    className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                  >
+                    <option value="">Provider default</option>
+                    {mediaCapabilities.voices.map((v) => (
+                      <option key={v.id} value={v.id}>{v.label}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
+              {/* Custom voice ID input when no preset list is available */}
+              {effectiveModality === 'audio' && mediaCapabilities.voices.length === 0 && (
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs text-greyscale-500">Voice ID <span className="text-greyscale-400">(optional)</span></span>
+                  <input
+                    type="text"
+                    placeholder="Provider voice identifier"
+                    value={mediaVoiceId}
+                    onChange={(e) => setMediaVoiceId(e.target.value)}
+                    className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50 placeholder:text-greyscale-400"
+                  />
+                </label>
+              )}
+
+              {/* Speed (TTS) */}
+              {effectiveModality === 'audio' && mediaCapabilities.supportsAudioSpeed && (
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs text-greyscale-500">
+                    Speed <span className="text-greyscale-400">(0.5 – 2.0, optional)</span>
+                  </span>
+                  <input
+                    type="number"
+                    min={0.5} max={2.0} step={0.1}
+                    placeholder="1.0"
+                    value={mediaAudioSpeed}
+                    onChange={(e) => setMediaAudioSpeed(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50 placeholder:text-greyscale-400"
+                  />
+                </label>
+              )}
+
+              {/* Output format */}
+              {mediaCapabilities.audioFormats.length > 0 && (
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs text-greyscale-500">Format</span>
+                  <select
+                    value={mediaAudioFormat}
+                    onChange={(e) => setMediaAudioFormat(e.target.value as typeof mediaAudioFormat)}
+                    className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                  >
+                    <option value="">Provider default</option>
+                    {mediaCapabilities.audioFormats.map((f) => (
+                      <option key={f} value={f}>{f.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
           )}
 
           </div>{/* end top fixed section */}
