@@ -10,9 +10,13 @@ import {
   User,
   UserMetadata,
 } from '@lenserfight/types'
+import type { AuthChangeEvent } from '@supabase/supabase-js'
 import { supabase } from '@lenserfight/data/supabase'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL } from '@lenserfight/utils/env'
+
+/** Auth event types surfaced to callers of {@link AuthRepositoryPort.onAuthStateChange}. */
+export type { AuthChangeEvent }
 
 // --- Port (Interface) ---
 export interface AuthRepositoryPort {
@@ -31,7 +35,9 @@ export interface AuthRepositoryPort {
   signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void>
   resendSignupConfirmation(email: string): Promise<void>
   sendMagicLink(email: string, captchaToken?: string): Promise<void>
-  onAuthStateChange(callback: AuthStateChangeCallback): () => void
+  onAuthStateChange(
+    callback: (user: User | null, event: AuthChangeEvent) => void
+  ): () => void
   requestDeviceApproval(dto?: DeviceApprovalRequestDTO): Promise<DeviceApprovalRequestResultDTO>
   approveDeviceRequest(dto: ApproveDeviceRequestDTO): Promise<ApproveDeviceRequestResultDTO>
   exchangeDeviceApproval(dto: ExchangeDeviceApprovalDTO): Promise<DeveloperTokenExchangeResultDTO>
@@ -94,8 +100,10 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     if (error) throw error
   }
 
-  async resetPassword(password: string, token?: string): Promise<void> {
-    const { error } = await supabase.auth.updateUser({ password: password })
+  async resetPassword(password: string): Promise<void> {
+    // updateUser operates on the current active session (established by Supabase
+    // when the user clicked the reset-password email link — PASSWORD_RECOVERY event).
+    const { error } = await supabase.auth.updateUser({ password })
     if (error) throw error
   }
 
@@ -132,12 +140,14 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     if (error) throw error
   }
 
-  onAuthStateChange(callback: AuthStateChangeCallback): () => void {
+  onAuthStateChange(
+    callback: (user: User | null, event: AuthChangeEvent) => void
+  ): () => void {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       const user = session?.user as unknown as User
-      callback(user || null)
+      callback(user || null, event)
     })
     return () => subscription.unsubscribe()
   }

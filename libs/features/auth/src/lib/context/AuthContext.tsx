@@ -22,12 +22,15 @@ interface AuthContextType extends AuthState {
   ) => Promise<void>
   logout: () => Promise<void>
   requestPasswordReset: (email: string, captchaToken?: string) => Promise<void>
-  resetPassword: (password: string, token?: string) => Promise<void>
+  resetPassword: (password: string) => Promise<void>
   signInWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>
   resendSignupConfirmation: (email: string) => Promise<void>
   sendMagicLink: (email: string, captchaToken?: string) => Promise<void>
   /** Redirect to the external auth app login page, preserving the current page as return_url. */
   redirectToLogin: (delayMs?: number) => void
+  /** True when the current session was established via a password-reset email link.
+   *  Gate the reset-password form on this flag to prevent unauthorized access. */
+  isRecoverySession: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -72,6 +75,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     error: null,
   })
 
+  /** True while the current session was established by a PASSWORD_RECOVERY email link. */
+  const [isRecoverySession, setIsRecoverySession] = useState(false)
+
   const loginTransitionInFlight = useRef(false)
   // Track whether the user was previously authenticated so we only clear caches
   // on actual sign-out transitions (not null → null for anonymous users).
@@ -94,7 +100,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // 1. Subscribe before initAuth to avoid missing events that fire synchronously
     //    during subscription setup (Supabase fires INITIAL_SESSION immediately).
-    const unsubscribe = authService.onAuthStateChange((user) => {
+    const unsubscribe = authService.onAuthStateChange((user, event) => {
+      // Track PASSWORD_RECOVERY sessions — the reset-password page gates on this.
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoverySession(true)
+      } else if (event === 'USER_UPDATED') {
+        // Password has been updated — clear the recovery flag.
+        setIsRecoverySession(false)
+      }
       // Skip early INITIAL_SESSION fires — initAuth owns the first state write.
       // After that, apply any subsequent changes (token refresh, sign-out, etc.)
       if (!_initDone) return
@@ -278,8 +291,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await authService.requestPasswordReset(email, captchaToken)
   }, [])
 
-  const resetPassword = useCallback(async (password: string, token?: string) => {
-    await authService.resetPassword(password, token)
+  const resetPassword = useCallback(async (password: string) => {
+    await authService.resetPassword(password)
+    setIsRecoverySession(false)
   }, [])
 
   const signInWithOAuth = useCallback(async (provider: 'google' | 'github' | 'azure') => {
@@ -320,6 +334,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         ...state,
+        isRecoverySession,
         login,
         register,
         logout,

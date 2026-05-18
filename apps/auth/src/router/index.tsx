@@ -35,6 +35,13 @@ export const AuthRouter: React.FC = () => {
         <Route path="/account-recovery" element={<AccountRecoveryPage />} />
         <Route path="/account-unavailable" element={<AccountUnavailablePage />} />
         <Route path="/device-approval" element={<DeviceApprovalPage />} />
+        {/*
+         * /reset-password is intentionally excluded from GatewayGuard.
+         * When a user clicks a password-reset email link, Supabase establishes a
+         * PASSWORD_RECOVERY session making isAuthenticated=true. The guard would
+         * otherwise redirect the user away before they could set their new password.
+         */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route
           path="/*"
           element={
@@ -44,7 +51,6 @@ export const AuthRouter: React.FC = () => {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/magic-link" element={<MagicLinkPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
               </Routes>
