@@ -1,9 +1,15 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-const { mockRpc } = vi.hoisted(() => ({ mockRpc: vi.fn() }))
+const { mockRpc, mockGetSession } = vi.hoisted(() => ({
+  mockRpc: vi.fn(),
+  mockGetSession: vi.fn(),
+}))
 
 vi.mock('@lenserfight/data/supabase', () => ({
-  supabase: { rpc: mockRpc },
+  supabase: {
+    rpc: mockRpc,
+    auth: { getSession: mockGetSession },
+  },
 }))
 
 import { SupabasePreferencesRepository } from './preferencesRepository'
@@ -15,6 +21,8 @@ describe('SupabasePreferencesRepository', () => {
     repo = new SupabasePreferencesRepository()
     vi.clearAllMocks()
     mockRpc.mockResolvedValue({ data: null, error: null })
+    // Default: authenticated session present
+    mockGetSession.mockResolvedValue({ data: { session: { access_token: 'test-jwt' } } })
   })
 
   // ---------------------------------------------------------------------------
@@ -42,6 +50,12 @@ describe('SupabasePreferencesRepository', () => {
     it('returns null on network exception (silently swallowed)', async () => {
       mockRpc.mockRejectedValue(new Error('NetworkError'))
       expect(await repo.getPreferences()).toBeNull()
+    })
+
+    it('returns null without calling RPC when no session exists', async () => {
+      mockGetSession.mockResolvedValue({ data: { session: null } })
+      expect(await repo.getPreferences()).toBeNull()
+      expect(mockRpc).not.toHaveBeenCalled()
     })
   })
 
@@ -71,6 +85,12 @@ describe('SupabasePreferencesRepository', () => {
     it('suppresses NetworkError exceptions silently', async () => {
       mockRpc.mockRejectedValue(new Error('NetworkError: connection refused'))
       await expect(repo.updatePreferences({ theme: 'dark' })).resolves.toBeUndefined()
+    })
+
+    it('skips RPC when no session exists', async () => {
+      mockGetSession.mockResolvedValue({ data: { session: null } })
+      await repo.updatePreferences({ theme: 'dark' })
+      expect(mockRpc).not.toHaveBeenCalled()
     })
   })
 
