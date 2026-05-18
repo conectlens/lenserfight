@@ -52,7 +52,7 @@ export const useFundingSource = (
     pairGateway,
     unpairGateway,
     refresh: refreshLocalKeys,
-  } = useLocalKeyStore()
+  } = useLocalKeyStore(fundingSource === 'user_byok_local')
 
   // All user cloud BYOK keys
   const availableKeys = useMemo(() => allKeys, [allKeys])
