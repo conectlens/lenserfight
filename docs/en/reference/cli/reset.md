@@ -18,7 +18,7 @@ Reset all local settings and the local database. Requires typed confirmation or 
 
 **What is deleted:**
 - `.lenserfight.json` — project config
-- `~/.lenserfight/config.json` — auth tokens and API keys
+- `~/.lenserfight/lenserfight.json` — auth tokens and API keys
 - Local Supabase database (via `supabase db reset`) — unless `--skip-db`
 
 Re-initialise after a reset with `lf init`.

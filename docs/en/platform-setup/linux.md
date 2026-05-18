@@ -11,10 +11,10 @@ Covers Debian/Ubuntu, Fedora, Arch, and any XDG-compliant distribution. For Pard
 
 | Layer | Path |
 |-------|------|
-| Project config | `.lenserfight/config.json` (inside your project root) |
+| Project config | `.lenserfight/lenserfight.json` (inside your project root) |
 | Device config | `$XDG_CONFIG_HOME/lenserfight/config.json` |
 | Default device | `~/.config/lenserfight/config.json` (when `XDG_CONFIG_HOME` is unset) |
-| Legacy device | `~/.lenserfight/config.json` (read fallback, written if file already exists) |
+| Legacy device | `~/.lenserfight/lenserfight.json` (read fallback, written if file already exists) |
 
 The CLI respects the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/). If you use a custom `XDG_CONFIG_HOME`, the device config follows it automatically.
 
@@ -69,7 +69,7 @@ pnpm lf --version
 pnpm lenserfight init
 ```
 
-Creates `.lenserfight/config.json` with local-mode defaults.
+Creates `.lenserfight/lenserfight.json` with local-mode defaults.
 
 ## Environment variables
 

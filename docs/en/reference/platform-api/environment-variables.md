@@ -71,7 +71,7 @@ See [Storage Adapters](/en/reference/platform-api/storage-adapters) for the full
 | Variable | Used by | Description |
 |----------|---------|-------------|
 | `LENSERFIGHT_API_KEY` | CLI, scripts | API key used in place of a session token. Set to a developer or service token. Recommended for CI and AI agent integrations. |
-| `LENSERFIGHT_DEVELOPER_TOKEN` | CLI | Override the developer token stored in `~/.lenserfight/config.json` |
+| `LENSERFIGHT_DEVELOPER_TOKEN` | CLI | Override the developer token stored in `~/.lenserfight/lenserfight.json` |
 | `LENSERFIGHT_DEVELOPER_TOKEN_EXPIRES_AT` | CLI | Override the stored developer token expiry (ISO 8601 string) |
 
 Token precedence in the CLI: `LENSERFIGHT_API_KEY` → explicit developer-token automation path → stored session → stored developer token.
@@ -107,7 +107,7 @@ The web app no longer reads generic `FEATURE_*` toggles for core product surface
 
 ## Behaviour rules
 
-- The CLI reads from the process environment, then `.env.local`, then `.env`, then `~/.lenserfight/config.json`.
+- The CLI reads from the process environment, then `.env.local`, then `.env`, then `~/.lenserfight/lenserfight.json`.
 - Never commit `SUPABASE_SERVICE_ROLE_KEY` or any token values to source control.
 
 ---

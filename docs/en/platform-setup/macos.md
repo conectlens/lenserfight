@@ -9,9 +9,9 @@ description: Install and configure LenserFight CLI on macOS — Application Supp
 
 | Layer | Path |
 |-------|------|
-| Project config | `.lenserfight/config.json` (inside your project root) |
+| Project config | `.lenserfight/lenserfight.json` (inside your project root) |
 | Device config | `~/Library/Application Support/lenserfight/config.json` |
-| Legacy device | `~/.lenserfight/config.json` (read fallback, written if file already exists) |
+| Legacy device | `~/.lenserfight/lenserfight.json` (read fallback, written if file already exists) |
 
 `~/Library/Application Support/lenserfight/` follows macOS conventions for per-user application data. This directory is not backed up by Time Machine by default unless you opt in.
 
@@ -68,7 +68,7 @@ pnpm lf --version
 pnpm lenserfight init
 ```
 
-Creates `.lenserfight/config.json` with local-mode defaults.
+Creates `.lenserfight/lenserfight.json` with local-mode defaults.
 
 ## Environment variables (zsh)
 

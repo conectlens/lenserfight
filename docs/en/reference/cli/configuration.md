@@ -2,7 +2,7 @@
 
 The CLI uses a **two-layer config model** to keep secrets out of your repository.
 
-## Project config — `.lenserfight/config.json`
+## Project config — `.lenserfight/lenserfight.json`
 
 Stores non-secret settings for this project. Safe to commit. Created by `lenserfight init`.
 
@@ -28,7 +28,7 @@ your-project/
 
 ### Legacy flat-file format
 
-Projects created before v0.2 used `.lenserfight.json` at the project root. The CLI still reads this file as a fallback but always writes to `.lenserfight/config.json`. Running `lenserfight init` on an existing project migrates to the directory format automatically.
+Projects created before v0.2 used `.lenserfight.json` at the project root. The CLI still reads this file as a fallback but always writes to `.lenserfight/lenserfight.json`. Running `lenserfight init` on an existing project migrates to the directory format automatically.
 
 ---
 
@@ -42,7 +42,7 @@ Stores secrets and auth tokens globally per machine. Created by `lenserfight aut
 | macOS | `~/Library/Application Support/lenserfight/config.json` |
 | Linux | `$XDG_CONFIG_HOME/lenserfight/config.json` (default: `~/.config/lenserfight/`) |
 | Pardus | same as Linux (XDG-compliant) |
-| Legacy (all) | `~/.lenserfight/config.json` *(read fallback; written if the file already exists)* |
+| Legacy (all) | `~/.lenserfight/lenserfight.json` *(read fallback; written if the file already exists)* |
 
 | Field | Description |
 |-------|-------------|
@@ -69,7 +69,7 @@ Each time a project config is saved, the CLI writes a `workspaces` entry to the 
     "/home/user/projects/my-project": {
       "mode": "local",
       "lastSeenAt": "2026-05-09T12:00:00.000Z",
-      "configPath": "/home/user/projects/my-project/.lenserfight/config.json"
+      "configPath": "/home/user/projects/my-project/.lenserfight/lenserfight.json"
     }
   }
 }
@@ -87,7 +87,7 @@ The CLI resolves each field independently. First non-empty value wins:
 | 2 | `.env.local` in project root |
 | 3 | `.env` in project root |
 | 4 | Device config at OS-aware path |
-| 5 | Legacy `~/.lenserfight/config.json` |
+| 5 | Legacy `~/.lenserfight/lenserfight.json` |
 | 6 | Well-known local Supabase defaults *(local mode only)* |
 
 ### Key resolution table
@@ -116,7 +116,7 @@ Connect to LenserFight Cloud:
 lf connect
 ```
 
-This opens a browser for authentication, saves your cloud token to the device config, and writes `cloudApiUrl` and `cloudId` to `.lenserfight/config.json`.
+This opens a browser for authentication, saves your cloud token to the device config, and writes `cloudApiUrl` and `cloudId` to `.lenserfight/lenserfight.json`.
 
 Or manually:
 
@@ -147,7 +147,7 @@ lenserfight init --mode cloud --url https://your-project.supabase.co
 # Legacy local battle state — private runtime data
 .lenserfight/local-battles/
 
-# .lenserfight/config.json is safe to commit (no secrets)
+# .lenserfight/lenserfight.json is safe to commit (no secrets)
 ```
 
 ---
