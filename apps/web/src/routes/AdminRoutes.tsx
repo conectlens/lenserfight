@@ -28,7 +28,8 @@ const AdminFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </DashboardFrame>
 )
 
-export const AdminRoutes: React.FC = () => (
+export function AdminRoutes(): React.ReactElement {
+  return (
   <>
     <Route path="/admin" element={<AdminFrame><LazyAdminDashboardPage /></AdminFrame>} />
     <Route
@@ -48,4 +49,5 @@ export const AdminRoutes: React.FC = () => (
       element={<AdminFrame><LazyVoteAnomaliesPage /></AdminFrame>}
     />
   </>
-)
+  )
+}

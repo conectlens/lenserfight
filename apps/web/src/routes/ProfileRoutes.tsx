@@ -65,7 +65,8 @@ const LenserAgentSectionRedirect: React.FC<{ section: string }> = ({ section }) 
   return <Navigate to={`/lenser/${handle}/ag/${section}`} replace />
 }
 
-export const ProfileRoutes: React.FC = () => (
+export function ProfileRoutes(): React.ReactElement {
+  return (
   <>
     <Route
       path="/lensers"
@@ -163,4 +164,5 @@ export const ProfileRoutes: React.FC = () => (
     <Route path="/agents/:id" element={<LazyAgentProfileRedirect />} />
     <Route path="/agents/:agentId/workspace" element={<LazyAgentWorkspacePage />} />
   </>
-)
+  )
+}
