@@ -16,7 +16,7 @@ import { VersionParamFields } from '@lenserfight/features/lenses'
 import type { LensVersionParam } from '@lenserfight/types'
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, GitBranch, Info } from 'lucide-react'
-import React from 'react'
+import React, { useEffect } from 'react'
 
 export interface WorkflowInputStepProps {
   /** ID of the selected workflow. */
@@ -25,12 +25,15 @@ export interface WorkflowInputStepProps {
   values: Record<string, unknown>
   /** Called when any input value changes. */
   onChange: (values: Record<string, unknown>) => void
+  /** Called whenever the validity of required inputs changes. */
+  onValidityChange?: (valid: boolean) => void
 }
 
 export const WorkflowInputStep: React.FC<WorkflowInputStepProps> = ({
   workflowId,
   values,
   onChange,
+  onValidityChange,
 }) => {
   // Fetch bootstrap to resolve nodes + edges
   const { data: bootstrap, isLoading: isLoadingBootstrap } = useQuery({
@@ -79,6 +82,14 @@ export const WorkflowInputStep: React.FC<WorkflowInputStepProps> = ({
     const v = values[p.label]
     return v !== undefined && v !== null && v !== ''
   })
+
+  // Bubble validity up so the wizard can gate the Next button
+  useEffect(() => {
+    if (!onValidityChange) return
+    // While loading or no required params: unblock the wizard
+    onValidityChange(isLoading || requiredParams.length === 0 ? true : filledRequired)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filledRequired, isLoading, requiredParams.length])
 
   const handleParamChange = (name: string, value: unknown) => {
     onChange({ ...values, [name]: value })
