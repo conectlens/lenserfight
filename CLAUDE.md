@@ -52,23 +52,53 @@
 
 ## Skill routing
 Use the matching skill when work is specialized:
+
+### Architecture & repo
 - repo shape or dependency drift → `repo-architecture-auditor`
 - Nx tags/import direction/cycles → `repo-architecture-auditor`
+- query/rendering/perf patterns, overfetching, pagination → `repo-performance-guard`
 - new feature placement across layers → `feature-slice-designer`
+- code responsibility, coupling, cohesion, refactor direction → `grasp-ooad-review`
+
+### Frontend & UI
 - Vite bundle/runtime performance → `vite-performance-engineer`
 - Tailwind, UX, accessibility, visual consistency → `tailwind-ui-ux-reviewer`
+- shared UI contracts (libs/ui, tokens, platform entrypoints) → `ui-contract-guard`
+- i18n strings, locale coverage, hreflang SEO → `apps-language-rules`
+- adding or porting a new language/locale → `language-integrator`
+
+### Mobile (apps/mobile)
+- screen design, iOS/Android specifics, design system → `mobile-app-designer`
+- new mobile feature implementation → `mobile-app-integrator`
+- mobile product decisions and roadmap → `mobile-app-product-owner`
+- mobile performance, security, permissions, render cost → `mobile-app-reviewer`
+- mobile locale resolution, language settings → `mobile-language-checker`
+- canonical mobile design rules → `mobile-ruleset`
+
+### Testing & review
 - test scope and layering → `unit-test-planner`
+- writing unit/integration tests → `unit-tester`
+- deep correctness, race conditions, security bugs → `deep-code-reviewer`
+- security (RLS, Edge Functions, React client, CLI auth) → `security-reviewer`
+
+### Contracts & data
 - contract/DTO/domain mismatch → `contract-dto-consistency-reviewer`
+- RPC/PostgREST API contracts and response types → `api-contract-reviewer`
 - repository/cache/data access review → `repository-pattern-reviewer`
+
+### Supabase & database
 - Supabase schema design → `supabase-schema-reviewer`
+- general Postgres schema, integrity, migration safety → `database-schema-reviewer`
 - RLS, grants, exposed schemas, definer risk → `supabase-rls-security-reviewer`
 - indexes, triggers, write amplification → `supabase-index-trigger-reviewer`
 - RPC/functions and API exposure → `supabase-api-rpc-reviewer`
 - migration blast radius and rollout → `migration-risk-reviewer`
+
+### Delivery & ops
+- staging and committing changes → `smart-commit`
 - public/internal docs and README quality → `docs-publication-manager`
 - product decisions, scope cuts, acceptance → `product-owner-decider`
 - release gate review → `release-readiness-reviewer`
-- release notes/changelog generation → `changelog-release-writer`
 
 ## Team routing
 Use team playbooks only for broad, cross-layer work:
