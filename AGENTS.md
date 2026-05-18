@@ -47,21 +47,52 @@ Use these roles intentionally:
 ## Preferred skill activation
 
 When the task clearly matches a project skill, activate the relevant skill from `.agents/skills`, especially for:
-- release-readiness-reviewer
-- migration-risk-reviewer
-- repo-architecture-auditor
-- supabase-schema-reviewer
-- supabase-rls-security-reviewer
-- supabase-api-rpc-reviewer
-- supabase-index-trigger-reviewer
-- unit-test-planner
-- tailwind-ui-ux-reviewer
-- vite-performance-engineer
-- product-owner-decider
-- docs-publication-manager
-- feature-slice-designer
-- contract-dto-consistency-reviewer
-- repository-pattern-reviewer
+
+### Architecture & repo
+- `repo-architecture-auditor` — repo shape, Nx tags, import cycles, dependency drift
+- `repo-performance-guard` — overfetching, pagination, query/rendering perf patterns
+- `feature-slice-designer` — new feature placement across layers
+- `grasp-ooad-review` — code responsibility, coupling, cohesion, refactor direction
+
+### Frontend & UI
+- `vite-performance-engineer` — Vite bundle/runtime performance
+- `tailwind-ui-ux-reviewer` — Tailwind, UX, accessibility, visual consistency
+- `ui-contract-guard` — shared UI contracts, tokens, platform entrypoints
+- `apps-language-rules` — i18n strings, locale coverage, hreflang SEO
+- `language-integrator` — adding or porting a new language/locale
+
+### Mobile (apps/mobile)
+- `mobile-app-designer` — screen design, iOS/Android specifics, design system
+- `mobile-app-integrator` — new mobile feature implementation
+- `mobile-app-product-owner` — mobile product decisions and roadmap
+- `mobile-app-reviewer` — mobile performance, security, permissions, render cost
+- `mobile-language-checker` — mobile locale resolution, language settings
+- `mobile-ruleset` — canonical mobile design rules
+
+### Testing & review
+- `unit-test-planner` — test scope and layering decisions
+- `unit-tester` — writing unit/integration tests
+- `deep-code-reviewer` — correctness bugs, race conditions, type-safety, security
+- `security-reviewer` — security across RLS, Edge Functions, React client, CLI auth
+
+### Contracts & data
+- `contract-dto-consistency-reviewer` — contract/DTO/domain mismatch
+- `api-contract-reviewer` — RPC/PostgREST API contracts and response types
+- `repository-pattern-reviewer` — repository/cache/data access review
+
+### Supabase & database
+- `supabase-schema-reviewer` — Supabase schema design
+- `database-schema-reviewer` — general Postgres schema, integrity, migration safety
+- `supabase-rls-security-reviewer` — RLS, grants, exposed schemas, definer risk
+- `supabase-index-trigger-reviewer` — indexes, triggers, write amplification
+- `supabase-api-rpc-reviewer` — RPC/functions and API exposure
+- `migration-risk-reviewer` — migration blast radius and rollout
+
+### Delivery & ops
+- `smart-commit` — staging and committing changes
+- `docs-publication-manager` — public/internal docs and README quality
+- `product-owner-decider` — product decisions, scope cuts, acceptance
+- `release-readiness-reviewer` — release gate review
 
 ## Delivery expectations
 
