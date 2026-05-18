@@ -40,25 +40,6 @@ export const DOCS_BASE_URL = readPublicBaseUrl('DOCS_BASE_URL', 'https://docs.le
 /** Chainabit web app origin — used for deep-links to wallet top-up and partner attribution. Override with `CHAINABIT_APP_URL`. */
 export const CHAINABIT_APP_URL = readPublicBaseUrl('CHAINABIT_APP_URL', 'https://app.chainabit.com')
 
-/** Chainabit API v1 base URL — all endpoints live under /api/v1/. Override with CHAINABIT_API_URL. */
-export const CHAINABIT_OAUTH_URL = readPublicBaseUrl('CHAINABIT_API_URL', 'https://api.chainabit.com') + '/api/v1'
-
-/**
- * Chainabit OAuth public client ID.
- * Not a secret — Chainabit uses PKCE (no client_secret for public clients).
- * Set CHAINABIT_OAUTH_CLIENT_ID in your .env file.
- */
-export const CHAINABIT_OAUTH_CLIENT_ID: string = (import.meta.env['CHAINABIT_OAUTH_CLIENT_ID'] as string) ?? ''
-
-/**
- * Full URL of LenserFight's platform API OAuth callback.
- * Must match the redirect_uri registered on the Chainabit OAuth client.
- * e.g. https://api.lenserfight.com/v1/partners/chainabit/oauth/callback
- */
-export const CHAINABIT_OAUTH_CALLBACK_URL: string = (import.meta.env['CHAINABIT_OAUTH_REDIRECT_URI'] as string) ?? ''
-
-/** Default local API origin — not the worker, which has no HTTP surface. */
-const DEV_API_BASE_URL = 'http://localhost:8786'
 
 /**
  * LenserFight API base URL (no trailing slash).

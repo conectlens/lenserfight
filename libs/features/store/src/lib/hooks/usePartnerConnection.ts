@@ -1,67 +1,93 @@
 import { useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { partnerProvisioningRepository } from '@lenserfight/data/repositories'
+import { connectorApiClient } from '@lenserfight/infra/partner-provisioning'
 import { useAuth } from '@lenserfight/features/auth'
-import type { PartnerAiModel, PartnerConnectionState } from '@lenserfight/types'
+import type { ChainabitAiModel, ProviderConnectionState } from '@lenserfight/types'
 
-export interface UsePartnerConnectionResult {
-  state: PartnerConnectionState
+// ---------------------------------------------------------------------------
+// Types
+
+export interface UseChainabitCapabilitiesResult {
+  /** Current connection state derived from the wallet query. */
+  state: ProviderConnectionState
+  /** Credit balance from Chainabit's own wallet. null while loading or disconnected. */
   credits: number | null
-  models: PartnerAiModel[] | null
+  /** Available AI models. null until the wallet query confirms connectivity. */
+  models: ChainabitAiModel[] | null
+  /** Re-initiates the OAuth linkIdentity flow to (re)connect Chainabit. */
   reconnect: () => Promise<void>
+  /** Invalidates cached wallet + models queries. */
   invalidate: () => Promise<void>
 }
 
-function isNotProvisioned(err: unknown): boolean {
-  if (err && typeof err === 'object') {
-    return (err as Record<string, unknown>)['error'] === 'not_provisioned'
-  }
-  return false
-}
+// Back-compat alias: callers using the old result type continue to work.
+export type UsePartnerConnectionResult = UseChainabitCapabilitiesResult
 
-function classifyError(err: unknown): 'no_account' | 'invalid_connection' | 'provider_error' {
-  if (isNotProvisioned(err)) return 'no_account'
+// ---------------------------------------------------------------------------
+// Error classification
+
+function classifyError(err: unknown): ProviderConnectionState {
   if (err && typeof err === 'object') {
     const code = (err as Record<string, unknown>)['error'] as string | undefined
-    if (code === 'unauthorized' || code === 'unauthenticated') return 'invalid_connection'
-    if (code === 'provider_error') return 'provider_error'
+    if (code === 'not_connected') return 'not_connected'
+    if (code === 'token_expired') return 'token_expired'
+    if (code === 'insufficient_scope') return 'insufficient_scope'
+    if (code === 'unauthorized' || code === 'unauthenticated') return 'token_expired'
   }
   if (err instanceof Error) {
     const msg = err.message
-    if (msg.includes('401') || msg.toLowerCase().includes('unauthenticated')) return 'invalid_connection'
+    if (msg.includes('not_connected') || msg.toLowerCase().includes('no chainabit')) return 'not_connected'
+    if (msg.includes('401')) return 'token_expired'
   }
-  return 'no_account'
+  return 'provider_error'
 }
 
-export function usePartnerConnection(partnerName: string): UsePartnerConnectionResult {
+// ---------------------------------------------------------------------------
+
+/**
+ * Provides Chainabit capability state for the current user.
+ *
+ * Reads wallet balance from the chainabit-wallet Edge Function, which resolves
+ * the OAuth token from auth.identities server-side.  No provisioning, no stored
+ * developer tokens.
+ *
+ * State machine:
+ *   loading           → wallet query in flight
+ *   connected         → balance ≥ 1
+ *   no_credits        → balance === 0 (connected, wallet empty)
+ *   not_connected     → user has no Chainabit OAuth identity linked
+ *   token_expired     → OAuth token expired — reconnect needed
+ *   insufficient_scope → connected but missing required scopes
+ *   provider_error    → Chainabit API failure
+ */
+export function useChainabitCapabilities(): UseChainabitCapabilitiesResult {
   const { isAuthenticated } = useAuth()
   const queryClient = useQueryClient()
 
   const balanceQuery = useQuery({
-    queryKey: ['partner', partnerName, 'balance'],
-    queryFn: () => partnerProvisioningRepository.getBalance(partnerName),
-    // Only fire for authenticated users; unconnected users are gated via state, not repeated calls.
+    queryKey: ['chainabit', 'wallet'],
+    queryFn: () => connectorApiClient.getBalance(),
     enabled: isAuthenticated,
     staleTime: 1000 * 60 * 2,
     gcTime: 1000 * 60 * 5,
     retry: false,
-    // Prevents re-fetching on every component mount (error state has no dataUpdatedAt,
-    // so the query is always "stale" and would re-fire on every route change without this).
+    // Suppress re-fetches in error state — the query has no dataUpdatedAt and
+    // would be considered stale on every mount/focus change, generating noise.
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })
 
-  const state: PartnerConnectionState = (() => {
+  const state: ProviderConnectionState = (() => {
     if (balanceQuery.isLoading) return 'loading'
     if (balanceQuery.error) return classifyError(balanceQuery.error)
-    if (!balanceQuery.data) return 'no_account'
+    if (!balanceQuery.data) return 'not_connected'
     return balanceQuery.data.credits > 0 ? 'connected' : 'no_credits'
   })()
 
   const modelsQuery = useQuery({
-    queryKey: ['partner', partnerName, 'models'],
-    queryFn: () => partnerProvisioningRepository.getAiModels(partnerName),
+    queryKey: ['chainabit', 'models'],
+    queryFn: () => connectorApiClient.getAiModels(),
     enabled: state === 'connected' || state === 'no_credits',
     staleTime: 1000 * 60 * 10,
     retry: false,
@@ -70,12 +96,12 @@ export function usePartnerConnection(partnerName: string): UsePartnerConnectionR
   })
 
   const reconnect = useCallback(async () => {
-    await partnerProvisioningRepository.startOAuthConnect(window.location.href)
+    await connectorApiClient.connect(window.location.href)
   }, [])
 
   const invalidate = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ['partner', partnerName] })
-  }, [queryClient, partnerName])
+    await queryClient.invalidateQueries({ queryKey: ['chainabit'] })
+  }, [queryClient])
 
   return {
     state,
@@ -84,4 +110,9 @@ export function usePartnerConnection(partnerName: string): UsePartnerConnectionR
     reconnect,
     invalidate,
   }
+}
+
+/** @deprecated Use useChainabitCapabilities(). partnerName argument is ignored. */
+export function usePartnerConnection(_partnerName: string): UseChainabitCapabilitiesResult {
+  return useChainabitCapabilities()
 }

@@ -1,20 +1,12 @@
-export interface PartnerProvision {
-  externalId: string
-  accountId: string
-  token: string | null
-  tokenScopes: string[]
-  starterCredits: number
-  isNew: boolean
-}
+// Capability-driven connector types.
+// Replaces the provisioning-centric IPartnerProvider / PartnerProvision model.
+// Chainabit is an OAuth capability connector, not a provisioned partner account.
 
-export interface PartnerBalance {
+export interface ProviderBalance {
   credits: number
-  accountId: string
+  subscriptionCredits: number
+  purchasedCredits: number
   currency: string
-}
-
-export interface PartnerTokenRefreshResult {
-  token: string
 }
 
 export interface ChainabitAiModel {
@@ -27,17 +19,19 @@ export interface ChainabitAiModel {
   costPer1kTokens?: number
 }
 
-export interface IPartnerProvider {
-  readonly name: string
-  readonly displayName: string
-  provision(user: { id: string; email: string; displayName: string }): Promise<PartnerProvision>
-  getBalance(externalId: string): Promise<PartnerBalance>
-  refreshToken(externalId: string): Promise<PartnerTokenRefreshResult>
-  sendClaimEmail(externalId: string): Promise<void>
-  /** Uses the developer token (wallet:read scope) to fetch balance from the provider's own wallet API. */
-  getBalanceWithToken?(developerToken: string): Promise<PartnerBalance>
-  /** Uses the developer token (execution:run scope) to fetch available AI models. */
-  getAiModels?(developerToken: string): Promise<ChainabitAiModel[]>
-  /** Revokes the developer token via the provider's OAuth revoke endpoint. */
-  revokeToken?(developerToken: string): Promise<void>
-}
+/** Connection state for a capability connector (replaces PartnerConnectionState). */
+export type ProviderConnectionState =
+  | 'loading'
+  | 'connected'
+  | 'no_credits'
+  | 'not_connected'
+  | 'token_expired'
+  | 'insufficient_scope'
+  | 'provider_error'
+
+// ---------------------------------------------------------------------------
+// Back-compat aliases — keep existing consumers compiling during migration.
+// @deprecated: use ProviderBalance
+export type PartnerBalance = ProviderBalance
+// @deprecated: use ProviderConnectionState
+export type PartnerConnectionState = ProviderConnectionState
