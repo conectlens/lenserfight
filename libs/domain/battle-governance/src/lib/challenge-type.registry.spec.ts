@@ -203,9 +203,9 @@ describe('challenge-type.registry', () => {
       }
     })
 
-    it('total registry size is 12 (9 original + 3 benchmark)', () => {
-      expect(Object.keys(CHALLENGE_TYPE_REGISTRY)).toHaveLength(12)
-      expect(CHALLENGE_TYPE_ORDER).toHaveLength(12)
+    it('total registry size is 13 (10 original + 3 benchmark)', () => {
+      expect(Object.keys(CHALLENGE_TYPE_REGISTRY)).toHaveLength(13)
+      expect(CHALLENGE_TYPE_ORDER).toHaveLength(13)
     })
   })
 })
