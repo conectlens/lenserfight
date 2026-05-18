@@ -21,7 +21,6 @@ Canonical site (browse online): [https://docs.lenserfight.com](https://docs.lens
 - Security reporting: [docs.lenserfight.com/how-to/contributors/security](https://docs.lenserfight.com/how-to/contributors/security) — `docs/en/how-to/contributors/security.md`
 - Translations & i18n: [docs.lenserfight.com/how-to/contributors/i18n-guide](https://docs.lenserfight.com/how-to/contributors/i18n-guide) — `docs/en/how-to/contributors/i18n-guide.md`
 - Adding a new language: [docs.lenserfight.com/how-to/contributors/adding-a-language](https://docs.lenserfight.com/how-to/contributors/adding-a-language) — `docs/en/how-to/contributors/adding-a-language.md`
-- Brand / trademark: [BRAND.md](BRAND.md) in the repo root
 
 ## Maintainer triage labels
 
