@@ -4,7 +4,7 @@ import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { HelpButton } from '@lenserfight/ui/components'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { CHAINABIT_APP_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
-import { HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil, Loader2 } from 'lucide-react'
+import { HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil, Loader2, FlaskConical } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -578,21 +578,23 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
               onClick={handleChainabitClick}
               disabled={chainabitIsDisabled}
               className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isCloud && chainabitActive
-                  ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
-                  : chainabitIsDisabled
-                    ? 'border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed'
-                    : chainabitNeedsAction
-                      ? 'border-gray-200 dark:border-gray-600 opacity-60 hover:border-orange-300 hover:opacity-100'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
+                ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
+                : chainabitIsDisabled
+                  ? 'border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed'
+                  : chainabitNeedsAction
+                    ? 'border-gray-200 dark:border-gray-600 opacity-60 hover:border-orange-300 hover:opacity-100'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
                 }`}
             >
               <ChainabitLogo size={16} />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1">
                   Chainabit
-                  <span className="inline-flex items-center px-1 py-px rounded text-[8px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-wide leading-none">
-                    Experimental
-                  </span>
+                  <Tooltip text="This feature is in active development and subject to change.">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-amber-200/50 dark:border-amber-700/50 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/40 dark:to-amber-900/20 text-[9px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wide leading-none cursor-help hover:from-amber-100 hover:to-amber-200 dark:hover:from-amber-800/50 dark:hover:to-amber-800/30 transition-all shadow-sm">
+                      <FlaskConical size={10} strokeWidth={2.5} />
+                    </span>
+                  </Tooltip>
                   <a
                     href={`${fundingDocsUrl}#chainabit-credits`}
                     target="_blank"
