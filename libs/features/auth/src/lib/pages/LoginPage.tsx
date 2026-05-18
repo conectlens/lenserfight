@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { ENABLE_CAPTCHA, CAPTCHA_SITE_KEY, loadDevSeedCredentials } from '@lenserfight/utils/env'
-import { partnerApiClient } from '@lenserfight/infra/partner-provisioning'
 
 import { useAuth } from '@lenserfight/features/auth'
 import { rememberMeStorage } from '@lenserfight/data/supabase'
@@ -92,8 +91,15 @@ export const LoginPage: React.FC = () => {
     }
   }
 
-  const handleChainabit = () => {
-    return partnerApiClient.startOAuthLogin(window.location.origin)
+  const handleChainabit = async () => {
+    setOauthLoading(true)
+    setApiError(null)
+    try {
+      await signInWithOAuth('custom:chainabit')
+    } catch (err: unknown) {
+      setApiError(normalizeError(err))
+      setOauthLoading(false)
+    }
   }
 
   const handleOAuth = async (provider: 'google' | 'github') => {

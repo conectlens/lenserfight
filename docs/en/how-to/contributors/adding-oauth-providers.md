@@ -21,9 +21,10 @@ This is distinct from **platform API connectors** (`connectors.connectors`), whi
 | DB schema | `supabase/migrations/20280101000000_user_oauth_connections.sql` | `public.user_oauth_connections` table |
 | DB RPCs | `supabase/migrations/20280101000001_user_oauth_connections_rpcs.sql` | List, upsert, revoke, resolve, refresh RPCs |
 | Domain types | `libs/domain/oauth-connections` | Provider/capability contracts, ref parser |
-| Resolver | `libs/infra/execution/src/lib/oauth-connection-resolver.ts` | Server-side token resolution |
+| Resolver | `libs/infra/execution/src/lib/oauth-connection-resolver.ts` | Server-side token resolution + inline token refresh |
 | Composite | `libs/infra/execution/src/lib/composite-connector-resolver.ts` | Routes OAuth refs vs. platform slugs |
-| Edge Function | `supabase/functions/oauth-google-callback/` | Exchanges authorization code for tokens |
+| Connect hook | `libs/features/settings/src/lib/hooks/useOAuthConnections.ts` | Calls `supabase.auth.signInWithOAuth` (standard flow) |
+| Callback page | `libs/features/settings/src/lib/pages/GoogleConnectionCallbackPage.tsx` | Extracts `provider_token` from Supabase session, stores via `fn_oauth_connect_google` RPC |
 | Settings UI | `libs/features/settings/src/lib/components/OAuthConnectionsSection.tsx` | Connect/revoke UI |
 
 ---
@@ -147,11 +148,11 @@ const VALID_CAPABILITIES = new Set<OAuthCapability>([..., 'slack_send'])
 
 Add a migration extending `uoc_provider_check` and `uoc_capability_check`.
 
-### 6. Add a callback Edge Function
+### 6. Add a callback page
 
-Copy `supabase/functions/oauth-google-callback/` as a template, adapting the token exchange URL, required env vars, and callback redirect.
+Copy `libs/features/settings/src/lib/pages/GoogleConnectionCallbackPage.tsx` as a template. The page extracts `provider_token` and `provider_refresh_token` from the Supabase session after `signInWithOAuth` redirects back, then stores them via a SECURITY DEFINER RPC (equivalent to `fn_oauth_connect_google`).
 
-Register the Edge Function in Supabase settings.
+For token refresh, extend `triggerTokenRefresh()` in `libs/infra/execution/src/lib/oauth-connection-resolver.ts` to handle the new provider's token endpoint alongside the existing Google case.
 
 ### 7. Add a connector ref field to relevant workflow nodes
 
@@ -180,14 +181,14 @@ When adding a new provider, add assertions to `supabase/tests/96_user_oauth_conn
 
 - Provider name accepted by `uoc_provider_check`
 - Capability name accepted by `uoc_capability_check`
-- New callback Edge Function exists (manual check — pgTAP doesn't cover Edge Functions)
+- New callback page and RPC wrapper exist for the provider
 
 ---
 
 ## Token security requirements
 
 - Access and refresh tokens are stored **exclusively in Supabase Vault** (`vault.secrets`). Never store them in table columns.
-- `fn_oauth_upsert_connection` is `service_role`-only — only callable from Edge Functions.
+- `fn_oauth_upsert_connection` is `service_role`-only — callable from the execution resolver (token refresh) and from `fn_oauth_connect_google` (initial connect).
 - `fn_oauth_resolve_connection` is `service_role`-only — only callable from execution workers.
 - `nullOAuthConnectionResolver` must be used in browser/dry-run context (always returns null).
 - Tokens must never appear in execution `output_data`, logs, or frontend state.

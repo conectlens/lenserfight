@@ -105,7 +105,7 @@ export class FileAuthRepository implements AuthRepositoryPort {
     // No-op in file mode.
   }
 
-  async signInWithOAuth(_provider: 'google' | 'github' | 'azure'): Promise<void> {
+  async signInWithOAuth(_provider: 'google' | 'github' | 'azure' | 'custom:chainabit'): Promise<void> {
     // Auto-log in as the local user instead of redirecting to OAuth.
     saveSession(FILE_MODE_USER)
   }
