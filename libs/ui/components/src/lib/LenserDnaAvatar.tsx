@@ -368,7 +368,7 @@ export function createLenserDnaAvatarUri(cfg: LenserDnaAvatarConfig): string {
 }
 
 export const LENSER_DNA_CHARACTERS = [
-  { id: 'LENSO', coreColor: '#00C896', antennaTip: 'orbit'     as AntennaTip, smileStyle: 'neutral' as SmileStyle },
+  { id: 'CHAO',  coreColor: '#06B6D4', antennaTip: 'orbit'     as AntennaTip, smileStyle: 'sharp'   as SmileStyle },
   { id: 'LENSA', coreColor: '#FF63B8', antennaTip: 'heart'     as AntennaTip, smileStyle: 'curved'  as SmileStyle },
   { id: 'LENSE', coreColor: '#2DA8FF', antennaTip: 'ring'      as AntennaTip, smileStyle: 'sharp'   as SmileStyle },
   { id: 'LOLA',  coreColor: '#FF9500', antennaTip: 'broadcast' as AntennaTip, smileStyle: 'wide'    as SmileStyle },
