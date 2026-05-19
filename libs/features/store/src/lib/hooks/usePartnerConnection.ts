@@ -28,7 +28,12 @@ export type UsePartnerConnectionResult = UseChainabitCapabilitiesResult
 
 function classifyError(err: unknown): ProviderConnectionState {
   if (err && typeof err === 'object') {
-    const code = (err as Record<string, unknown>)['error'] as string | undefined
+    // Edge Function throws the raw envelope body: { error: { code, message } }
+    const errorField = (err as Record<string, unknown>)['error']
+    const code =
+      errorField && typeof errorField === 'object'
+        ? ((errorField as Record<string, unknown>)['code'] as string | undefined)
+        : (errorField as string | undefined)
     if (code === 'not_connected') return 'not_connected'
     if (code === 'token_expired') return 'token_expired'
     if (code === 'insufficient_scope') return 'insufficient_scope'
