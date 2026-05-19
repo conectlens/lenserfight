@@ -13624,10 +13624,11 @@ COMMENT ON FUNCTION "public"."fn_get_thread_by_id_private"("p_thread_id" "uuid")
 
 CREATE OR REPLACE FUNCTION "public"."fn_get_thread_replies_page"("p_thread_id" "uuid", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "thread_id" "uuid", "parent_reply_id" "uuid", "lenser_id" "uuid", "content" "text", "content_html" "text", "reaction_totals" "jsonb", "created_at" timestamp with time zone, "author_profile" "jsonb")
     LANGUAGE "sql" STABLE
+    SECURITY DEFINER
     SET "search_path" TO 'public', 'content', 'lensers', 'auth'
     AS $$
   WITH RECURSIVE root_page AS (
-    -- Select only top-level (root) replies for this page, respecting RLS via SECURITY INVOKER
+    -- Select only top-level (root) replies for this page
     SELECT r.id
     FROM content.thread_replies r
     WHERE r.thread_id     = p_thread_id
@@ -13670,7 +13671,7 @@ $$;
 ALTER FUNCTION "public"."fn_get_thread_replies_page"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."fn_get_thread_replies_page"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) IS 'Paginated thread replies. Paginates by root reply count (LIMIT/OFFSET on root-level entries), then recursively fetches all descendants of the selected roots. Hard cap: 50 root replies per call. Uses SECURITY INVOKER so RLS is enforced.';
+COMMENT ON FUNCTION "public"."fn_get_thread_replies_page"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) IS 'Paginated thread replies. Paginates by root reply count (LIMIT/OFFSET on root-level entries), then recursively fetches all descendants of the selected roots. Hard cap: 50 root replies per call. Uses SECURITY DEFINER so anon can read public threads without a direct grant on lensers.profiles.';
 
 
 
