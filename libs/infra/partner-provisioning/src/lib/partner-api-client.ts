@@ -23,8 +23,8 @@ export function isChainabitConnected(): boolean {
   if (!session?.user) return false
   const meta = session.user.app_metadata ?? {}
   return (
-    meta.provider === 'keycloak' ||
-    (Array.isArray(meta.providers) && meta.providers.includes('keycloak'))
+    meta.provider === 'custom_chainabit' ||
+    (Array.isArray(meta.providers) && meta.providers.includes('custom_chainabit'))
   )
 }
 
@@ -59,7 +59,7 @@ export const connectorApiClient = {
   async connect(returnUrl: string = window.location.href): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.auth as any).linkIdentity({
-      provider: 'keycloak',
+      provider: 'custom_chainabit',
       options: {
         redirectTo: `${AUTH_BASE_URL}/callback?return_url=${encodeURIComponent(returnUrl)}`,
       },
@@ -75,7 +75,7 @@ export const connectorApiClient = {
    */
   async disconnect(): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser()
-    const identity = user?.identities?.find((i) => i.provider === 'keycloak')
+    const identity = user?.identities?.find((i) => i.provider === 'custom_chainabit')
     if (!identity) return
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.auth as any).unlinkIdentity(identity)
