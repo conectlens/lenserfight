@@ -30,6 +30,8 @@ import { WorkflowProgressView } from '../components/WorkflowProgressView'
 import { WorkflowRootInputsPanel } from '../components/WorkflowRootInputsPanel'
 import { WorkflowRunHistoryPanel } from '../components/WorkflowRunHistoryPanel'
 import { WorkflowRunRecoveryBanner } from '../components/WorkflowRunRecoveryBanner'
+import { ExecutionControlBanner } from '../components/ExecutionControlBanner'
+import { useExecutionControl } from '../hooks/useExecutionControl'
 import { validateDryRunPlan } from '../execution/workflowDryRun'
 import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { useWorkflow } from '../hooks/useWorkflow'
@@ -105,6 +107,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
   const { startRun, stopRun, retryRun, isPending: starting, isRetrying, runId, nodeResults, isRunning } = useWorkflowRun(workflowId, {
     skipSse: funding.fundingSource === 'user_byok_local',
   })
+  const { isSystemLocked, isQueueFrozen, isStopping, status: execCtrlStatus } = useExecutionControl()
   const resolveLocalKeyRef = useRef<((id: string) => Promise<string>) | undefined>(undefined)
   resolveLocalKeyRef.current = funding.resolveLocalKey
   const stableResolveLocalKey = useCallback(
@@ -744,7 +747,8 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                     size="sm"
                     onClick={() => { setShowRunPanel(true); setShowDryRunPanel(false); setSelectedNodeConfig(null) }}
                     isLoading={starting}
-                    disabled={nodes.length === 0}
+                    disabled={nodes.length === 0 || isSystemLocked}
+                    title={isSystemLocked ? 'Platform is locked — contact a platform admin to resume' : undefined}
                     className="h-9 gap-1.5 rounded-xl px-4 bg-primary-yellow-500 hover:bg-primary-yellow-600 text-black shadow-md shadow-primary-yellow-500/20"
                   >
                     <Play size={12} className="fill-current" /> Run
@@ -787,6 +791,13 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
 
         {/* Canvas or Phases editor — fills remaining space */}
         <div className="relative flex-1 overflow-hidden">
+          {/* Global execution control banner — shown when the system is locked or queue is frozen */}
+          <ExecutionControlBanner
+            isSystemLocked={isSystemLocked}
+            isQueueFrozen={isQueueFrozen}
+            isStopping={isStopping}
+            frozenReason={execCtrlStatus?.frozen_reason}
+          />
           {/* No-trigger warning banner — non-blocking, shown while editing */}
           {!hasTriggerNode && nodes.length > 0 && isOwner && (
             <div className="flex items-center gap-2 border-b border-amber-400/30 bg-amber-50/80 px-4 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
@@ -1000,6 +1011,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                       runStatus={liveRunState?.status ?? null}
                       onOpenFullscreen={() => navigate(`/workflows/${workflowId}/history/executions/${runId}`)}
                       onConfigureNode={handleConfigNode}
+                      isSystemLocked={isSystemLocked}
                     />
                   )}
                 </>
