@@ -19,7 +19,7 @@ async function resolveTagId(slug: string): Promise<{ id: string; name: string } 
 // ---------------------------------------------------------------------------
 async function resolveSelfId(): Promise<string | null> {
   const self = await callRpc<Record<string, unknown>>(
-    'fn_lensers_get_authenticated_profile',
+    'fn_lensers_get_active_profile',
     {},
     { requireAuth: true }
   );
