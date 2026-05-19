@@ -1306,7 +1306,7 @@ function WorkflowBuilderCanvasInner({
         return {
           id: n.id,
           lensId: data.lens_id ?? '',
-          kind: 'text' as const,
+          kind: getNodeTypeForFlowNode(n) ?? 'text',
           paramLabels: incomingLabels,
         }
       }),
