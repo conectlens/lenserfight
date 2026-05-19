@@ -57,8 +57,17 @@ export class SupabaseSocialLinksRepository implements SocialLinksRepositoryPort 
 
     if (error) throw error
 
+    // Deduplicate by platform+url before mapping (guards against duplicate DB rows)
+    const seen = new Set<string>()
+    const unique = (data || []).filter((l: any) => {
+      const key = `${l.platform}::${l.url}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+
     // Map to a safe SocialLink shape (no real ids or lenser_id)
-    return (data || []).map((l: any, i: number) => ({
+    return unique.map((l: any, i: number) => ({
       id: `public-link-${i}`,
       lenser_id: 'public',
       platform: l.platform as SocialPlatform,
