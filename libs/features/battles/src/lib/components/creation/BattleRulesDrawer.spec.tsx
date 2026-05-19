@@ -19,8 +19,21 @@ vi.mock('@lenserfight/data/repositories', () => ({
 // ── Stub heavy UI deps ─────────────────────────────────────────────────────────
 
 vi.mock('@lenserfight/ui/overlays', () => ({
-  Drawer: ({ open, children, title }: { open: boolean; children: React.ReactNode; title: string }) =>
-    open ? <div data-testid="drawer"><p>{title}</p>{children}</div> : null,
+  Drawer: ({
+    open,
+    children,
+    title,
+  }: {
+    open: boolean
+    children: React.ReactNode
+    title: string
+  }) =>
+    open ? (
+      <div data-testid="drawer">
+        <p>{title}</p>
+        {children}
+      </div>
+    ) : null,
 }))
 
 vi.mock('@lenserfight/ui/components', () => ({
@@ -28,7 +41,9 @@ vi.mock('@lenserfight/ui/components', () => ({
 }))
 
 vi.mock('../display/BattleStatusBadge', () => ({
-  BattleStatusBadge: ({ status }: { status: string }) => <span data-testid="status-badge">{status}</span>,
+  BattleStatusBadge: ({ status }: { status: string }) => (
+    <span data-testid="status-badge">{status}</span>
+  ),
 }))
 
 import { BattleRulesDrawer } from './BattleRulesDrawer'
@@ -38,12 +53,17 @@ import type { LensContextDetail } from '../../types/battle-layout.types'
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeQueryClient() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
 }
 
 function renderDrawer(
   battleOverrides: Partial<Battle> = {},
-  props: Partial<{ contenders: Contender[]; lensDetails: Record<string, LensContextDetail | null> }> = {}
+  props: Partial<{
+    contenders: Contender[]
+    lensDetails: Record<string, LensContextDetail | null>
+  }> = {}
 ) {
   const qc = makeQueryClient()
   const battle: Battle = {
@@ -125,11 +145,27 @@ describe('BattleRulesDrawer', () => {
     it('hides drawer when open=false', () => {
       const qc = makeQueryClient()
       const battle: Battle = {
-        id: 'b-2', slug: 's', title: 'T', task_prompt: 'P', status: 'open',
-        total_vote_count: 0, published_at: null, voting_opens_at: null, voting_closes_at: null,
-        battle_type: 'ai_vs_ai', voter_eligibility: 'open', handicap_config: {},
-        creator_lenser_id: null, forum_thread_id: null, workflow_id: null, lens_id: null,
-        execution_starts_at: null, auto_publish: true, voting_duration_hours: 24, vote_velocity: 0, og_image_url: null,
+        id: 'b-2',
+        slug: 's',
+        title: 'T',
+        task_prompt: 'P',
+        status: 'open',
+        total_vote_count: 0,
+        published_at: null,
+        voting_opens_at: null,
+        voting_closes_at: null,
+        battle_type: 'ai_vs_ai',
+        voter_eligibility: 'open',
+        handicap_config: {},
+        creator_lenser_id: null,
+        forum_thread_id: null,
+        workflow_id: null,
+        lens_id: null,
+        execution_starts_at: null,
+        auto_publish: true,
+        voting_duration_hours: 24,
+        vote_velocity: 0,
+        og_image_url: null,
       }
       render(
         <QueryClientProvider client={qc}>
@@ -232,10 +268,36 @@ describe('BattleRulesDrawer', () => {
 
     it('renders workflow nodes in ordinal order', async () => {
       mockGetBootstrap.mockResolvedValue({
-        workflow: { id: 'wf-1', title: 'Pipeline', lenser_id: 'u-1', visibility: 'public', battle_count: 0, created_at: '', updated_at: '' },
+        workflow: {
+          id: 'wf-1',
+          title: 'Pipeline',
+          lenser_id: 'u-1',
+          visibility: 'public',
+          battle_count: 0,
+          created_at: '',
+          updated_at: '',
+        },
         nodes: [
-          { id: 'n-2', workflow_id: 'wf-1', lens_id: null, ordinal: 2, position_x: 0, position_y: 0, label: 'Second Step', created_at: '' },
-          { id: 'n-1', workflow_id: 'wf-1', lens_id: null, ordinal: 1, position_x: 0, position_y: 0, label: 'First Step', created_at: '' },
+          {
+            id: 'n-2',
+            workflow_id: 'wf-1',
+            lens_id: null,
+            ordinal: 2,
+            position_x: 0,
+            position_y: 0,
+            label: 'Second Step',
+            created_at: '',
+          },
+          {
+            id: 'n-1',
+            workflow_id: 'wf-1',
+            lens_id: null,
+            ordinal: 1,
+            position_x: 0,
+            position_y: 0,
+            label: 'First Step',
+            created_at: '',
+          },
         ],
         edges: [],
       })
@@ -253,12 +315,24 @@ describe('BattleRulesDrawer', () => {
 
     it('shows workflow link with correct href', async () => {
       mockGetBootstrap.mockResolvedValue({
-        workflow: { id: 'wf-42', title: 'My Workflow', lenser_id: 'u-1', visibility: 'public', battle_count: 0, created_at: '', updated_at: '' },
+        workflow: {
+          id: 'wf-42',
+          title: 'My Workflow',
+          lenser_id: 'u-1',
+          visibility: 'public',
+          battle_count: 0,
+          created_at: '',
+          updated_at: '',
+        },
         nodes: [],
         edges: [],
       })
 
-      renderDrawer({ task_source: 'workflow', battle_type: 'workflow_battle', workflow_id: 'wf-42' })
+      renderDrawer({
+        task_source: 'workflow',
+        battle_type: 'workflow_battle',
+        workflow_id: 'wf-42',
+      })
 
       await waitFor(() => expect(screen.queryByText('View Workflow')).not.toBeNull())
       const link = screen.getByRole('link', { name: /view workflow/i })
@@ -267,7 +341,11 @@ describe('BattleRulesDrawer', () => {
 
     it('falls back to badge when bootstrap returns null', async () => {
       mockGetBootstrap.mockResolvedValue(null)
-      renderDrawer({ task_source: 'workflow', battle_type: 'workflow_battle', workflow_id: 'wf-missing' })
+      renderDrawer({
+        task_source: 'workflow',
+        battle_type: 'workflow_battle',
+        workflow_id: 'wf-missing',
+      })
       await waitFor(() => expect(screen.queryByText(/Workflow linked/i)).not.toBeNull())
     })
   })
@@ -275,8 +353,22 @@ describe('BattleRulesDrawer', () => {
   describe('lens section', () => {
     it('shows per-contender lens details', () => {
       const contenders: Contender[] = [
-        { id: 'c-1', battle_id: 'b-1', slot: 'A', contender_type: 'ai_agent', display_name: 'ModelA', contender_ref_id: null },
-        { id: 'c-2', battle_id: 'b-1', slot: 'B', contender_type: 'ai_agent', display_name: 'ModelB', contender_ref_id: null },
+        {
+          id: 'c-1',
+          battle_id: 'b-1',
+          slot: 'A',
+          contender_type: 'ai_agent',
+          display_name: 'ModelA',
+          contender_ref_id: null,
+        },
+        {
+          id: 'c-2',
+          battle_id: 'b-1',
+          slot: 'B',
+          contender_type: 'ai_agent',
+          display_name: 'ModelB',
+          contender_ref_id: null,
+        },
       ]
       const lensDetails: Record<string, LensContextDetail | null> = {
         'c-1': { lensTitle: 'Summarizer', versionNumber: 3, paramCount: 2 },
@@ -431,5 +523,4 @@ describe('BattleRulesDrawer', () => {
       expect(screen.queryByText(/Voting opens/i)).toBeNull()
     })
   })
-
 })

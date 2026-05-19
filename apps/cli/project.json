@@ -3,23 +3,16 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/cli/src",
   "projectType": "application",
-  "tags": [
-    "scope:public",
-    "license:oss"
-  ],
+  "tags": ["scope:public", "license:oss"],
   "targets": {
     "build": {
       "executor": "@nx/esbuild:esbuild",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
         "platform": "node",
         "outputPath": "dist/apps/cli",
-        "format": [
-          "cjs"
-        ],
+        "format": ["cjs"],
         "bundle": true,
         "main": "apps/cli/src/main.ts",
         "tsConfig": "apps/cli/tsconfig.app.json",
@@ -69,9 +62,7 @@
       }
     },
     "prune-lockfile": {
-      "dependsOn": [
-        "build"
-      ],
+      "dependsOn": ["build"],
       "cache": true,
       "executor": "@nx/js:prune-lockfile",
       "outputs": [
@@ -83,32 +74,23 @@
       }
     },
     "copy-workspace-modules": {
-      "dependsOn": [
-        "build"
-      ],
+      "dependsOn": ["build"],
       "cache": true,
-      "outputs": [
-        "{workspaceRoot}/dist/apps/cli/workspace_modules"
-      ],
+      "outputs": ["{workspaceRoot}/dist/apps/cli/workspace_modules"],
       "executor": "@nx/js:copy-workspace-modules",
       "options": {
         "buildTarget": "build"
       }
     },
     "prune": {
-      "dependsOn": [
-        "prune-lockfile",
-        "copy-workspace-modules"
-      ],
+      "dependsOn": ["prune-lockfile", "copy-workspace-modules"],
       "executor": "nx:noop"
     },
     "serve": {
       "continuous": true,
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
-      "dependsOn": [
-        "build"
-      ],
+      "dependsOn": ["build"],
       "options": {
         "buildTarget": "cli:build",
         "runBuildTargetDependencies": false
@@ -123,53 +105,39 @@
       }
     },
     "strip-package-manager": {
-      "dependsOn": [
-        "build"
-      ],
+      "dependsOn": ["build"],
       "executor": "nx:run-commands",
       "options": {
         "command": "node -e \"const fs=require('fs'),p='dist/apps/cli/package.json',j=JSON.parse(fs.readFileSync(p,'utf8'));delete j.packageManager;fs.writeFileSync(p,JSON.stringify(j,null,2)+'\\n');\""
       }
     },
     "chmod": {
-      "dependsOn": [
-        "strip-package-manager"
-      ],
+      "dependsOn": ["strip-package-manager"],
       "executor": "nx:run-commands",
       "options": {
         "command": "chmod 755 dist/apps/cli/main.js"
       }
     },
     "link": {
-      "dependsOn": [
-        "chmod"
-      ],
+      "dependsOn": ["chmod"],
       "executor": "nx:run-commands",
       "options": {
         "command": "cd dist/apps/cli && npm link --force"
       }
     },
     "validate-package": {
-      "dependsOn": [
-        "chmod"
-      ],
+      "dependsOn": ["chmod"],
       "cache": true,
-      "outputs": [
-        "{workspaceRoot}/dist/apps/cli/package-validation.json"
-      ],
+      "outputs": ["{workspaceRoot}/dist/apps/cli/package-validation.json"],
       "executor": "nx:run-commands",
       "options": {
         "command": "node tools/cli-release/validate-package.mjs --package-dir dist/apps/cli"
       }
     },
     "smoke-install": {
-      "dependsOn": [
-        "validate-package"
-      ],
+      "dependsOn": ["validate-package"],
       "cache": false,
-      "outputs": [
-        "{workspaceRoot}/dist/apps/cli/package-smoke.json"
-      ],
+      "outputs": ["{workspaceRoot}/dist/apps/cli/package-smoke.json"],
       "executor": "nx:run-commands",
       "options": {
         "command": "node tools/cli-release/smoke-install.mjs --package-dir dist/apps/cli"

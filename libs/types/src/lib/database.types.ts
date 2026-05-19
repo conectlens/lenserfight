@@ -1,16 +1,10 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: '14.5'
   }
   graphql_public: {
     Tables: {
@@ -75,18 +69,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "notification_aggregates_notification_id_fkey"
-            columns: ["notification_id"]
+            foreignKeyName: 'notification_aggregates_notification_id_fkey'
+            columns: ['notification_id']
             isOneToOne: false
-            referencedRelation: "notifications"
-            referencedColumns: ["id"]
+            referencedRelation: 'notifications'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "notification_aggregates_recipient_id_fkey"
-            columns: ["recipient_id"]
+            foreignKeyName: 'notification_aggregates_recipient_id_fkey'
+            columns: ['recipient_id']
             isOneToOne: false
-            referencedRelation: "vw_auth_lenser"
-            referencedColumns: ["lenser_id"]
+            referencedRelation: 'vw_auth_lenser'
+            referencedColumns: ['lenser_id']
           },
         ]
       }
@@ -114,11 +108,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "notification_preferences_lenser_id_fkey"
-            columns: ["lenser_id"]
+            foreignKeyName: 'notification_preferences_lenser_id_fkey'
+            columns: ['lenser_id']
             isOneToOne: false
-            referencedRelation: "vw_auth_lenser"
-            referencedColumns: ["lenser_id"]
+            referencedRelation: 'vw_auth_lenser'
+            referencedColumns: ['lenser_id']
           },
         ]
       }
@@ -158,11 +152,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "notifications_lenser_id_fkey"
-            columns: ["lenser_id"]
+            foreignKeyName: 'notifications_lenser_id_fkey'
+            columns: ['lenser_id']
             isOneToOne: false
-            referencedRelation: "vw_auth_lenser"
-            referencedColumns: ["lenser_id"]
+            referencedRelation: 'vw_auth_lenser'
+            referencedColumns: ['lenser_id']
           },
         ]
       }
@@ -226,11 +220,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "user_oauth_connections_lenser_fk"
-            columns: ["lenser_id"]
+            foreignKeyName: 'user_oauth_connections_lenser_fk'
+            columns: ['lenser_id']
             isOneToOne: false
-            referencedRelation: "vw_auth_lenser"
-            referencedColumns: ["lenser_id"]
+            referencedRelation: 'vw_auth_lenser'
+            referencedColumns: ['lenser_id']
           },
         ]
       }
@@ -264,11 +258,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "workflow_integration_credentials_lenser_id_fkey"
-            columns: ["lenser_id"]
+            foreignKeyName: 'workflow_integration_credentials_lenser_id_fkey'
+            columns: ['lenser_id']
             isOneToOne: false
-            referencedRelation: "vw_auth_lenser"
-            referencedColumns: ["lenser_id"]
+            referencedRelation: 'vw_auth_lenser'
+            referencedColumns: ['lenser_id']
           },
         ]
       }
@@ -302,11 +296,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "workflow_kv_store_workflow_id_fkey"
-            columns: ["workflow_id"]
+            foreignKeyName: 'workflow_kv_store_workflow_id_fkey'
+            columns: ['workflow_id']
             isOneToOne: false
-            referencedRelation: "vw_workflows"
-            referencedColumns: ["id"]
+            referencedRelation: 'vw_workflows'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -334,11 +328,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "workflow_webhook_triggers_workflow_id_fkey"
-            columns: ["workflow_id"]
+            foreignKeyName: 'workflow_webhook_triggers_workflow_id_fkey'
+            columns: ['workflow_id']
             isOneToOne: false
-            referencedRelation: "vw_workflows"
-            referencedColumns: ["id"]
+            referencedRelation: 'vw_workflows'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -524,14 +518,14 @@ export type Database = {
           published_at: string | null
           slug: string | null
           status:
-            | "draft"
-            | "open"
-            | "executing"
-            | "voting"
-            | "scoring"
-            | "closed"
-            | "published"
-            | "archived"
+            | 'draft'
+            | 'open'
+            | 'executing'
+            | 'voting'
+            | 'scoring'
+            | 'closed'
+            | 'published'
+            | 'archived'
             | null
           submission_count: number | null
           title: string | null
@@ -561,14 +555,14 @@ export type Database = {
           id: string | null
           slug: string | null
           status:
-            | "draft"
-            | "open"
-            | "executing"
-            | "voting"
-            | "scoring"
-            | "closed"
-            | "published"
-            | "archived"
+            | 'draft'
+            | 'open'
+            | 'executing'
+            | 'voting'
+            | 'scoring'
+            | 'closed'
+            | 'published'
+            | 'archived'
             | null
           title: string | null
           total_vote_count: number | null
@@ -581,7 +575,7 @@ export type Database = {
           id: string | null
           name: string | null
           slug: string | null
-          visibility: "public" | "private" | "hidden" | null
+          visibility: 'public' | 'private' | 'hidden' | null
         }
         Relationships: []
       }
@@ -615,7 +609,7 @@ export type Database = {
           thumbnail_url: string | null
           title: string | null
           view_count: number | null
-          visibility: "public" | "community" | "private" | null
+          visibility: 'public' | 'community' | 'private' | null
         }
         Relationships: []
       }
@@ -626,9 +620,9 @@ export type Database = {
           id: string | null
           message: string | null
           page: string | null
-          product_tag: "bug" | "feature" | "ui_ux" | "general" | "other" | null
+          product_tag: 'bug' | 'feature' | 'ui_ux' | 'general' | 'other' | null
           start_date: string | null
-          status: "pending" | "in_progress" | "resolved" | "closed" | null
+          status: 'pending' | 'in_progress' | 'resolved' | 'closed' | null
           user_id: string | null
         }
         Insert: {
@@ -637,9 +631,9 @@ export type Database = {
           id?: string | null
           message?: string | null
           page?: string | null
-          product_tag?: "bug" | "feature" | "ui_ux" | "general" | "other" | null
+          product_tag?: 'bug' | 'feature' | 'ui_ux' | 'general' | 'other' | null
           start_date?: string | null
-          status?: "pending" | "in_progress" | "resolved" | "closed" | null
+          status?: 'pending' | 'in_progress' | 'resolved' | 'closed' | null
           user_id?: string | null
         }
         Update: {
@@ -648,9 +642,9 @@ export type Database = {
           id?: string | null
           message?: string | null
           page?: string | null
-          product_tag?: "bug" | "feature" | "ui_ux" | "general" | "other" | null
+          product_tag?: 'bug' | 'feature' | 'ui_ux' | 'general' | 'other' | null
           start_date?: string | null
-          status?: "pending" | "in_progress" | "resolved" | "closed" | null
+          status?: 'pending' | 'in_progress' | 'resolved' | 'closed' | null
           user_id?: string | null
         }
         Relationships: []
@@ -661,27 +655,27 @@ export type Database = {
           end_date: string | null
           message: string | null
           page: string | null
-          product_tag: "bug" | "feature" | "ui_ux" | "general" | "other" | null
+          product_tag: 'bug' | 'feature' | 'ui_ux' | 'general' | 'other' | null
           start_date: string | null
-          status: "pending" | "in_progress" | "resolved" | "closed" | null
+          status: 'pending' | 'in_progress' | 'resolved' | 'closed' | null
         }
         Insert: {
           created_at?: string | null
           end_date?: string | null
           message?: string | null
           page?: string | null
-          product_tag?: "bug" | "feature" | "ui_ux" | "general" | "other" | null
+          product_tag?: 'bug' | 'feature' | 'ui_ux' | 'general' | 'other' | null
           start_date?: string | null
-          status?: "pending" | "in_progress" | "resolved" | "closed" | null
+          status?: 'pending' | 'in_progress' | 'resolved' | 'closed' | null
         }
         Update: {
           created_at?: string | null
           end_date?: string | null
           message?: string | null
           page?: string | null
-          product_tag?: "bug" | "feature" | "ui_ux" | "general" | "other" | null
+          product_tag?: 'bug' | 'feature' | 'ui_ux' | 'general' | 'other' | null
           start_date?: string | null
-          status?: "pending" | "in_progress" | "resolved" | "closed" | null
+          status?: 'pending' | 'in_progress' | 'resolved' | 'closed' | null
         }
         Relationships: []
       }
@@ -732,13 +726,7 @@ export type Database = {
           lenser_id: string | null
           max_xp: number | null
           min_xp: number | null
-          status:
-            | "active"
-            | "suspended"
-            | "deactivated"
-            | "pending_deletion"
-            | "deleted"
-            | null
+          status: 'active' | 'suspended' | 'deactivated' | 'pending_deletion' | 'deleted' | null
           thread_count: number | null
           total_xp: number | null
         }
@@ -751,17 +739,17 @@ export type Database = {
           id: string | null
           label: string | null
           platform:
-            | "Behance"
-            | "Dribbble"
-            | "GitHub"
-            | "Instagram"
-            | "LinkedIn"
-            | "Twitch"
-            | "Website"
-            | "X"
-            | "Twitter"
-            | "Youtube"
-            | "Facebook"
+            | 'Behance'
+            | 'Dribbble'
+            | 'GitHub'
+            | 'Instagram'
+            | 'LinkedIn'
+            | 'Twitch'
+            | 'Website'
+            | 'X'
+            | 'Twitter'
+            | 'Youtube'
+            | 'Facebook'
             | null
           url: string | null
         }
@@ -772,17 +760,17 @@ export type Database = {
           handle: string | null
           label: string | null
           platform:
-            | "Behance"
-            | "Dribbble"
-            | "GitHub"
-            | "Instagram"
-            | "LinkedIn"
-            | "Twitch"
-            | "Website"
-            | "X"
-            | "Twitter"
-            | "Youtube"
-            | "Facebook"
+            | 'Behance'
+            | 'Dribbble'
+            | 'GitHub'
+            | 'Instagram'
+            | 'LinkedIn'
+            | 'Twitch'
+            | 'Website'
+            | 'X'
+            | 'Twitter'
+            | 'Youtube'
+            | 'Facebook'
             | null
           url: string | null
         }
@@ -803,7 +791,7 @@ export type Database = {
           saved_count: number | null
           tags: Json | null
           title: string | null
-          visibility: "public" | "community" | "private" | null
+          visibility: 'public' | 'community' | 'private' | null
         }
         Relationships: []
       }
@@ -955,8 +943,8 @@ export type Database = {
         Args: { p_battle_id?: string; p_limit?: number; p_status?: string }
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "vote_anomalies"
+          from: '*'
+          to: 'vote_anomalies'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -980,8 +968,8 @@ export type Database = {
         Args: { p_series_id: string }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "series"
+          from: '*'
+          to: 'series'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1149,7 +1137,7 @@ export type Database = {
           media: Json
           original_chat_url: string
           output_type: string
-          visibility: "public" | "community" | "private"
+          visibility: 'public' | 'community' | 'private'
         }[]
       }
       fn_analytics_product_feedback_list_user_paginated: {
@@ -1181,8 +1169,8 @@ export type Database = {
         Args: { p_short_id: string }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "shared_links"
+          from: '*'
+          to: 'shared_links'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1200,8 +1188,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "shared_links"
+          from: '*'
+          to: 'shared_links'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1210,8 +1198,8 @@ export type Database = {
         Args: { p_short_id: string }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "shared_links"
+          from: '*'
+          to: 'shared_links'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1331,8 +1319,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "tool_assignments"
+          from: '*'
+          to: 'tool_assignments'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1508,8 +1496,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "templates"
+          from: '*'
+          to: 'templates'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1546,8 +1534,8 @@ export type Database = {
         Args: { p_template_id: string }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "templates"
+          from: '*'
+          to: 'templates'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1659,8 +1647,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "submissions"
+          from: '*'
+          to: 'submissions'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1685,8 +1673,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "templates"
+          from: '*'
+          to: 'templates'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1696,7 +1684,7 @@ export type Database = {
             Args: {
               p_battle_id: string
               p_rationale?: string
-              p_vote: "contender_a" | "contender_b" | "draw"
+              p_vote: 'contender_a' | 'contender_b' | 'draw'
             }
             Returns: undefined
           }
@@ -1705,7 +1693,7 @@ export type Database = {
               p_battle_id: string
               p_contender_id?: string
               p_rationale?: string
-              p_vote: "contender_a" | "contender_b" | "draw"
+              p_vote: 'contender_a' | 'contender_b' | 'draw'
             }
             Returns: undefined
           }
@@ -1790,8 +1778,8 @@ export type Database = {
         Args: never
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "byok_keys"
+          from: '*'
+          to: 'byok_keys'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -1842,8 +1830,8 @@ export type Database = {
         Args: { p_submission_id: string }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "media_quality_results"
+          from: '*'
+          to: 'media_quality_results'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1912,8 +1900,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "scratchpad_runs"
+          from: '*'
+          to: 'scratchpad_runs'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1979,7 +1967,7 @@ export type Database = {
           p_content: string
           p_tag_ids?: string[]
           p_title: string
-          p_visibility: "public" | "community" | "private"
+          p_visibility: 'public' | 'community' | 'private'
         }
         Returns: string
       }
@@ -2039,7 +2027,7 @@ export type Database = {
           saved_count: number
           tags: Json
           title: string
-          visibility: "public" | "community" | "private"
+          visibility: 'public' | 'community' | 'private'
         }[]
       }
       fn_content_get_personal_lenses: {
@@ -2087,7 +2075,7 @@ export type Database = {
           saved_count: number
           tags: Json
           title: string
-          visibility: "public" | "community" | "private"
+          visibility: 'public' | 'community' | 'private'
         }[]
       }
       fn_content_get_threads_by_tag: {
@@ -2109,7 +2097,7 @@ export type Database = {
           tags: Json
           title: string
           view_count: number
-          visibility: "public" | "community" | "private"
+          visibility: 'public' | 'community' | 'private'
         }[]
       }
       fn_content_get_trending_lenses: {
@@ -2145,14 +2133,14 @@ export type Database = {
         Returns: {
           created_at: string
           id: string
-          reaction: "like" | "dislike" | "saved" | "copy" | "love" | "clap"
+          reaction: 'like' | 'dislike' | 'saved' | 'copy' | 'love' | 'clap'
           target_id: string
           user_id: string
         }[]
       }
       fn_content_reactions_toggle: {
         Args: {
-          p_reaction: "like" | "dislike" | "saved" | "copy" | "love" | "clap"
+          p_reaction: 'like' | 'dislike' | 'saved' | 'copy' | 'love' | 'clap'
           p_target_id: string
           p_target_type: string
         }
@@ -2173,7 +2161,7 @@ export type Database = {
           id: string
           name: string
           slug: string
-          visibility: "public" | "private" | "hidden"
+          visibility: 'public' | 'private' | 'hidden'
         }[]
       }
       fn_content_unfollow_tag: { Args: { p_tag_id: string }; Returns: Json }
@@ -2217,7 +2205,7 @@ export type Database = {
           estimated_usd: number
           pricing_snapshot_id: string
           taken_at: string
-          unit_type: "tokens" | "image" | "video_second" | "audio_second"
+          unit_type: 'tokens' | 'image' | 'video_second' | 'audio_second'
         }[]
       }
       fn_cost_release: {
@@ -2319,8 +2307,8 @@ export type Database = {
         Args: { p_round_count?: number; p_template_id: string; p_title: string }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "series"
+          from: '*'
+          to: 'series'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -2404,8 +2392,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "scratchpad_runs"
+          from: '*'
+          to: 'scratchpad_runs'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -2451,8 +2439,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "tournaments"
+          from: '*'
+          to: 'tournaments'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -2687,8 +2675,8 @@ export type Database = {
         Args: { p_device_id: string; p_limit?: number }
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "gateway_commands"
+          from: '*'
+          to: 'gateway_commands'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -3020,8 +3008,8 @@ export type Database = {
         Args: { p_slug: string }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "v_battle_full"
+          from: '*'
+          to: 'v_battle_full'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -3348,8 +3336,8 @@ export type Database = {
         Args: { p_limit?: number; p_offset?: number; p_order_by?: string }
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "v_leaderboard"
+          from: '*'
+          to: 'v_leaderboard'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -3439,8 +3427,8 @@ export type Database = {
         Args: { p_handle: string }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "v_lenser_profile_full"
+          from: '*'
+          to: 'v_lenser_profile_full'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -3523,8 +3511,8 @@ export type Database = {
         Args: { p_battle_id?: string; p_limit?: number }
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "model_test_runs"
+          from: '*'
+          to: 'model_test_runs'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -3604,7 +3592,7 @@ export type Database = {
           saved_count: number
           tags: Json
           title: string
-          visibility: "public" | "community" | "private"
+          visibility: 'public' | 'community' | 'private'
         }[]
       }
       fn_get_my_vote: {
@@ -3674,8 +3662,8 @@ export type Database = {
         Args: { p_ai_lenser_id: string }
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "provider_configs"
+          from: '*'
+          to: 'provider_configs'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -4125,8 +4113,8 @@ export type Database = {
         }
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "v_human_fleet_logs"
+          from: '*'
+          to: 'v_human_fleet_logs'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -4142,8 +4130,8 @@ export type Database = {
         }
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "v_human_fleet_runs"
+          from: '*'
+          to: 'v_human_fleet_runs'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -4251,8 +4239,8 @@ export type Database = {
         Args: never
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "profiles"
+          from: '*'
+          to: 'profiles'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -4344,7 +4332,7 @@ export type Database = {
           engagement: Json
           handle: string
           id: string
-          type: "human" | "ai"
+          type: 'human' | 'ai'
         }[]
       }
       fn_lensers_request_deletion: { Args: never; Returns: undefined }
@@ -4368,8 +4356,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "versions"
+          from: '*'
+          to: 'versions'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -4378,8 +4366,8 @@ export type Database = {
         Args: { p_lens_id: string }
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "versions"
+          from: '*'
+          to: 'versions'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -4761,8 +4749,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "model_test_runs"
+          from: '*'
+          to: 'model_test_runs'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -4773,7 +4761,7 @@ export type Database = {
           p_path: string
           p_referrer: string
           p_target_id: string
-          p_target_type: Database["public"]["Enums"]["page_view_target_enum"]
+          p_target_type: Database['public']['Enums']['page_view_target_enum']
           p_user_agent: string
         }
         Returns: undefined
@@ -4922,8 +4910,8 @@ export type Database = {
         Args: { p_memory_profile_id: string; p_run_id: string }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "memory_profiles"
+          from: '*'
+          to: 'memory_profiles'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -4945,8 +4933,8 @@ export type Database = {
         }
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "memories"
+          from: '*'
+          to: 'memories'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -5021,8 +5009,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "tools_registry"
+          from: '*'
+          to: 'tools_registry'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -5031,8 +5019,8 @@ export type Database = {
         Args: { p_lenser_id?: string; p_tournament_id: string }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "tournament_contenders"
+          from: '*'
+          to: 'tournament_contenders'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -5070,8 +5058,8 @@ export type Database = {
         Args: { p_ai_lenser_id: string; p_reason?: string }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "workspace_settings"
+          from: '*'
+          to: 'workspace_settings'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -5245,7 +5233,7 @@ export type Database = {
           display_name: string
           handle: string
           id: string
-          type: "human" | "ai"
+          type: 'human' | 'ai'
         }[]
       }
       fn_search_memory_entries: {
@@ -5342,7 +5330,7 @@ export type Database = {
               p_battle_id: string
               p_is_draw?: boolean
               p_rationale?: string
-              p_vote_value: "contender_a" | "contender_b" | "draw"
+              p_vote_value: 'contender_a' | 'contender_b' | 'draw'
               p_voted_contender_id: string
             }
             Returns: Json
@@ -5630,8 +5618,8 @@ export type Database = {
         Args: { p_ai_lenser_id: string; p_patch: Json }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "workspace_settings"
+          from: '*'
+          to: 'workspace_settings'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -5646,8 +5634,8 @@ export type Database = {
             }
             Returns: unknown[]
             SetofOptions: {
-              from: "*"
-              to: "lens_bindings"
+              from: '*'
+              to: 'lens_bindings'
               isOneToOne: false
               isSetofReturn: true
             }
@@ -5662,8 +5650,8 @@ export type Database = {
             }
             Returns: unknown[]
             SetofOptions: {
-              from: "*"
-              to: "lens_bindings"
+              from: '*'
+              to: 'lens_bindings'
               isOneToOne: false
               isSetofReturn: true
             }
@@ -5676,8 +5664,8 @@ export type Database = {
         }
         Returns: unknown[]
         SetofOptions: {
-          from: "*"
-          to: "model_bindings"
+          from: '*'
+          to: 'model_bindings'
           isOneToOne: false
           isSetofReturn: true
         }
@@ -5745,8 +5733,8 @@ export type Database = {
         }
         Returns: unknown
         SetofOptions: {
-          from: "*"
-          to: "provider_configs"
+          from: '*'
+          to: 'provider_configs'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -6297,13 +6285,7 @@ export type Database = {
       }
     }
     Enums: {
-      page_view_target_enum:
-        | "thread"
-        | "thread_reply"
-        | "lens"
-        | "profile"
-        | "page"
-        | "battle"
+      page_view_target_enum: 'thread' | 'thread_reply' | 'lens' | 'profile' | 'page' | 'battle'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -6311,33 +6293,31 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -6346,23 +6326,23 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -6371,23 +6351,23 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -6396,36 +6376,36 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
+    | keyof DefaultSchema['Enums']
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
+    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
+    | keyof DefaultSchema['CompositeTypes']
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
+    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
@@ -6434,14 +6414,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      page_view_target_enum: [
-        "thread",
-        "thread_reply",
-        "lens",
-        "profile",
-        "page",
-        "battle",
-      ],
+      page_view_target_enum: ['thread', 'thread_reply', 'lens', 'profile', 'page', 'battle'],
     },
   },
 } as const

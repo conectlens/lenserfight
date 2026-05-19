@@ -72,9 +72,7 @@ export function ManageBattlePanel({ battle, onMutated }: ManageBattlePanelProps)
           Close Voting
         </Button>
       )}
-      {anyError && (
-        <p className="text-xs text-status-red">{(anyError as Error).message}</p>
-      )}
+      {anyError && <p className="text-xs text-status-red">{(anyError as Error).message}</p>}
     </div>
   )
 }

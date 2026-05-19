@@ -247,7 +247,9 @@ export class SupabaseXPRepository implements XPRepositoryPort {
       },
     }))
 
-    const userEntry = currentUserId ? list.find((e) => e.lenserId === currentUserId) ?? null : null
+    const userEntry = currentUserId
+      ? (list.find((e) => e.lenserId === currentUserId) ?? null)
+      : null
 
     return { list, userEntry }
   }

@@ -1,5 +1,12 @@
 import { LocalKeysGatewayClient } from '@lenserfight/data/local-keys-browser'
-import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
+import {
+  FundingSource,
+  UserApiKey,
+  WalletBalance,
+  BYOK_PROVIDER_LABELS,
+  AIProvider,
+  AIProviderModel,
+} from '@lenserfight/types'
 import { HelpButton } from '@lenserfight/ui/components'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { Dialog } from '@lenserfight/ui/overlays'
@@ -94,11 +101,15 @@ const PROVIDER_OPTIONS = Object.entries(BYOK_PROVIDER_LABELS).map(([value, label
  * generic Error shape only exposes `message`, so check both.
  */
 function mapGatewayError(err: unknown, op: 'save' | 'update'): string {
-  const fallback = op === 'save' ? 'Failed to save key. Please try again.' : 'Failed to update key. Please try again.'
+  const fallback =
+    op === 'save'
+      ? 'Failed to save key. Please try again.'
+      : 'Failed to update key. Please try again.'
   if (!(err instanceof Error)) return fallback
   const code =
     (err as Error & { code?: string }).code ??
-    (err.message.match(/^(gateway_[a-z_]+|[a-z_]+)/)?.[1] ?? '')
+    err.message.match(/^(gateway_[a-z_]+|[a-z_]+)/)?.[1] ??
+    ''
   switch (code) {
     case 'gateway_not_paired':
       return 'Gateway not paired. Run `lf gateway pair --web` and paste the token.'
@@ -199,8 +210,17 @@ function AddLocalKeyForm({
 
       {isOllama && (
         <p className="text-[10px] text-gray-400">
-          Ollama runs locally — no key needed for local models. For cloud models (e.g. <code>:cloud</code>), enter your Ollama API key from{' '}
-          <a href="https://ollama.com" target="_blank" rel="noopener noreferrer" className="underline">ollama.com</a>.
+          Ollama runs locally — no key needed for local models. For cloud models (e.g.{' '}
+          <code>:cloud</code>), enter your Ollama API key from{' '}
+          <a
+            href="https://ollama.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            ollama.com
+          </a>
+          .
         </p>
       )}
 
@@ -225,7 +245,8 @@ function AddLocalKeyForm({
       </div>
 
       <p className="text-[10px] text-gray-400">
-        Sent to the loopback gateway, encrypted at rest on your machine. Never sent to LenserFight servers.
+        Sent to the loopback gateway, encrypted at rest on your machine. Never sent to LenserFight
+        servers.
       </p>
     </div>
   )
@@ -246,7 +267,8 @@ function EditLocalKeyModal({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const providerLabel = BYOK_PROVIDER_LABELS[keyMeta.provider as keyof typeof BYOK_PROVIDER_LABELS] ?? keyMeta.provider
+  const providerLabel =
+    BYOK_PROVIDER_LABELS[keyMeta.provider as keyof typeof BYOK_PROVIDER_LABELS] ?? keyMeta.provider
   const isOllama = keyMeta.provider === 'ollama'
 
   const handleSave = async () => {
@@ -276,7 +298,9 @@ function EditLocalKeyModal({
     >
       <div className="flex flex-col gap-3 p-1">
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Label</label>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            Label
+          </label>
           <input
             type="text"
             value={label}
@@ -312,7 +336,10 @@ function EditLocalKeyModal({
 
         {error && <p className="text-xs text-red-500">{error}</p>}
 
-        <p className="text-[10px] text-gray-400">Sent to the loopback gateway, encrypted at rest on your machine. Never sent to LenserFight servers.</p>
+        <p className="text-[10px] text-gray-400">
+          Sent to the loopback gateway, encrypted at rest on your machine. Never sent to LenserFight
+          servers.
+        </p>
 
         <div className="flex gap-2 pt-1">
           <button
@@ -365,12 +392,13 @@ function GatewayUnreachablePanel({
       </div>
       <ol className="text-[10px] text-gray-600 dark:text-gray-400 list-decimal pl-4 space-y-0.5">
         <li>
-          Run <code className="text-primary-600 dark:text-primary-400">lf gateway serve</code>{' '}
-          in a terminal and leave it running.
+          Run <code className="text-primary-600 dark:text-primary-400">lf gateway serve</code> in a
+          terminal and leave it running.
         </li>
         <li>
-          Then run <code className="text-primary-600 dark:text-primary-400">lf gateway pair --web</code>{' '}
-          and copy the token it prints.
+          Then run{' '}
+          <code className="text-primary-600 dark:text-primary-400">lf gateway pair --web</code> and
+          copy the token it prints.
         </li>
         <li>Come back to this page and paste the token into the field that appears.</li>
       </ol>
@@ -465,11 +493,13 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   // or gateway not yet started (click → see "start the gateway" hint).
   // Only refuse the click when the origin has been forbidden — there is
   // truly nothing the user can do from this UI in that case.
-  const localByokDisabled =
-    !canUseBYOK || localKeyAvailability === 'gateway_forbidden'
+  const localByokDisabled = !canUseBYOK || localKeyAvailability === 'gateway_forbidden'
 
   const chainabitActive = chainabitState === 'connected'
-  const chainabitNeedsAction = chainabitState === 'not_connected' || chainabitState === 'token_expired' || chainabitState === 'insufficient_scope'
+  const chainabitNeedsAction =
+    chainabitState === 'not_connected' ||
+    chainabitState === 'token_expired' ||
+    chainabitState === 'insufficient_scope'
   const chainabitIsDisabled =
     chainabitState === 'loading' ||
     chainabitState === 'no_credits' ||
@@ -525,7 +555,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
     ? (availableKeys.find((k) => k.id === selectedKeyRefId)?.providerKey ?? '')
     : isByokLocal
       ? (availableLocalKeys.find((k) => k.id === selectedLocalKeyId)?.provider ?? '')
-      : selectedProviderKey ?? ''
+      : (selectedProviderKey ?? '')
 
   const isOllamaLocal = isByokLocal && effectiveProviderKey === 'ollama'
 
@@ -545,8 +575,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   // this browser via Web Crypto). They have different storage models and trust
   // boundaries, so we render them side-by-side rather than nesting Cloud / Local
   // BYOK under a shared "My Keys" parent.
-  const visibleSourceCount =
-    (caps.isChainabitConfigured ? 1 : 0) + 1 /* LF Cloud */ + 1 /* Local */
+  const visibleSourceCount = (caps.isChainabitConfigured ? 1 : 0) + 1 /* LF Cloud */ + 1 /* Local */
   const sourceGridCols = visibleSourceCount === 3 ? 'grid-cols-3' : 'grid-cols-2'
 
   return (
@@ -577,14 +606,15 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
               type="button"
               onClick={handleChainabitClick}
               disabled={chainabitIsDisabled}
-              className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isCloud && chainabitActive
-                ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
-                : chainabitIsDisabled
-                  ? 'border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed'
-                  : chainabitNeedsAction
-                    ? 'border-gray-200 dark:border-gray-600 opacity-60 hover:border-orange-300 hover:opacity-100'
-                    : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
-                }`}
+              className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
+                isCloud && chainabitActive
+                  ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
+                  : chainabitIsDisabled
+                    ? 'border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed'
+                    : chainabitNeedsAction
+                      ? 'border-gray-200 dark:border-gray-600 opacity-60 hover:border-orange-300 hover:opacity-100'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
+              }`}
             >
               <ChainabitLogo size={16} />
               <div className="min-w-0 flex-1">
@@ -603,7 +633,10 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
                 </p>
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 tabular-nums flex items-center gap-1">
                   {chainabitState === 'loading' ? (
-                    <><Loader2 size={10} className="animate-spin" />Checking…</>
+                    <>
+                      <Loader2 size={10} className="animate-spin" />
+                      Checking…
+                    </>
                   ) : chainabitState === 'provider_error' ? (
                     'Unavailable'
                   ) : chainabitActive && walletBalance != null ? (
@@ -626,12 +659,16 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
             type="button"
             onClick={() => onFundingSourceChange('user_byok_cloud')}
             disabled={cloudByokDisabled}
-            className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isByokCloud
-              ? 'border-primary bg-primary/5 ring-1 ring-primary'
-              : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-              } ${cloudByokDisabled ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
+            className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
+              isByokCloud
+                ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+            } ${cloudByokDisabled ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
           >
-            <Globe size={16} className={isByokCloud ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
+            <Globe
+              size={16}
+              className={isByokCloud ? 'text-gray-900 dark:text-white' : 'text-gray-400'}
+            />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1">
                 LF Cloud Keys
@@ -643,7 +680,9 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
                   onClick={(e) => e.stopPropagation()}
                   title="How LF Cloud Keys work"
                 >
-                  <span className="text-[9px] leading-none border border-current rounded-full px-1">?</span>
+                  <span className="text-[9px] leading-none border border-current rounded-full px-1">
+                    ?
+                  </span>
                 </a>
               </p>
               <p className="text-[10px] text-gray-500 dark:text-gray-400">
@@ -655,23 +694,31 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           </button>
         </Tooltip>
 
-        <Tooltip text={caps.canUseLocalByok
-          ? 'BYOK API keys stored encrypted at rest on your machine (~/.lenserfight/keys/), accessed via the LenserFight Gateway loopback daemon. Plaintext never leaves your computer.'
-          : localKeyAvailability === 'gateway_unreachable'
-            ? 'Start the LenserFight Gateway: run `lf gateway serve` in a terminal.'
-            : localKeyAvailability === 'gateway_not_paired'
-              ? 'Pair the gateway: run `lf gateway pair --web` and paste the token below.'
-              : 'Gateway refused the request (origin blocked).'}>
+        <Tooltip
+          text={
+            caps.canUseLocalByok
+              ? 'BYOK API keys stored encrypted at rest on your machine (~/.lenserfight/keys/), accessed via the LenserFight Gateway loopback daemon. Plaintext never leaves your computer.'
+              : localKeyAvailability === 'gateway_unreachable'
+                ? 'Start the LenserFight Gateway: run `lf gateway serve` in a terminal.'
+                : localKeyAvailability === 'gateway_not_paired'
+                  ? 'Pair the gateway: run `lf gateway pair --web` and paste the token below.'
+                  : 'Gateway refused the request (origin blocked).'
+          }
+        >
           <button
             type="button"
             onClick={() => onFundingSourceChange('user_byok_local')}
             disabled={localByokDisabled}
-            className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isByokLocal
-              ? 'border-primary bg-primary/5 ring-1 ring-primary'
-              : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-              } ${localByokDisabled ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
+            className={`w-full flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
+              isByokLocal
+                ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+            } ${localByokDisabled ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
           >
-            <HardDrive size={16} className={isByokLocal ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
+            <HardDrive
+              size={16}
+              className={isByokLocal ? 'text-gray-900 dark:text-white' : 'text-gray-400'}
+            />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1">
                 Local Keys
@@ -683,7 +730,9 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
                   onClick={(e) => e.stopPropagation()}
                   title="How Local Keys work"
                 >
-                  <span className="text-[9px] leading-none border border-current rounded-full px-1">?</span>
+                  <span className="text-[9px] leading-none border border-current rounded-full px-1">
+                    ?
+                  </span>
                 </a>
               </p>
               <p className="text-[10px] text-gray-500 dark:text-gray-400">
@@ -772,7 +821,9 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
               <code className="text-primary-600 dark:text-primary-400">lf gateway pair --web</code>
             </li>
             <li>Copy the token printed on the next line</li>
-            <li>Paste it into the field below and click <strong>Pair gateway</strong></li>
+            <li>
+              Paste it into the field below and click <strong>Pair gateway</strong>
+            </li>
           </ol>
           <input
             type="text"
@@ -819,7 +870,8 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
             )}
           </div>
           <p className="text-[10px] text-gray-400 dark:text-gray-500">
-            The token is held in this browser tab only (sessionStorage). Close the tab and you'll need to pair again.
+            The token is held in this browser tab only (sessionStorage). Close the tab and you'll
+            need to pair again.
           </p>
         </div>
       )}
@@ -832,28 +884,32 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       {/* Gateway forbids this origin */}
       {isByokLocal && localKeyAvailability === 'gateway_forbidden' && (
         <p className="text-xs text-red-500">
-          The gateway refused this origin (<code>{typeof window !== 'undefined' ? window.location.origin : ''}</code>).{' '}
-          Add it to the allow-list with{' '}
-          <code>LF_GATEWAY_EXTRA_ORIGINS</code> or open the web app from a permitted URL.
+          The gateway refused this origin (
+          <code>{typeof window !== 'undefined' ? window.location.origin : ''}</code>). Add it to the
+          allow-list with <code>LF_GATEWAY_EXTRA_ORIGINS</code> or open the web app from a permitted
+          URL.
         </p>
       )}
 
       {/* Add-a-key hint: the gateway is paired but no keys are stored yet. */}
-      {caps.canUseLocalByok && isByokLocal && availableLocalKeys.length === 0 && !showAddLocalKey && (
-        <div className="flex flex-col gap-1.5">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            No local keys yet. Add one with the CLI: <code>lf keys add --provider openai</code>.
-          </p>
-          <button
-            type="button"
-            onClick={() => setShowAddLocalKey(true)}
-            className="flex items-center gap-1.5 text-xs text-primary-600 dark:text-primary-400 hover:underline self-start"
-          >
-            <Plus size={12} />
-            Add from the browser instead
-          </button>
-        </div>
-      )}
+      {caps.canUseLocalByok &&
+        isByokLocal &&
+        availableLocalKeys.length === 0 &&
+        !showAddLocalKey && (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              No local keys yet. Add one with the CLI: <code>lf keys add --provider openai</code>.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowAddLocalKey(true)}
+              className="flex items-center gap-1.5 text-xs text-primary-600 dark:text-primary-400 hover:underline self-start"
+            >
+              <Plus size={12} />
+              Add from the browser instead
+            </button>
+          </div>
+        )}
 
       {/* Row 4: Inline add local key form — still available as a fallback for users
           who'd rather paste a key into the browser. The plaintext is sent to the
@@ -870,17 +926,17 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       )}
 
       {caps.canUseLocalByok && isByokLocal && showAddLocalKey && (
-        <AddLocalKeyForm
-          onAdd={onAddLocalKey}
-          onCancel={() => setShowAddLocalKey(false)}
-        />
+        <AddLocalKeyForm onAdd={onAddLocalKey} onCancel={() => setShowAddLocalKey(false)} />
       )}
 
       {/* Cloud BYOK — no keys hint */}
       {isByokCloud && availableKeys.length === 0 && (
         <p className="text-xs text-gray-400 dark:text-gray-500">
           No cloud API keys.{' '}
-          <Link to="/settings/api-keys" className="text-primary-600 dark:text-primary-400 hover:underline">
+          <Link
+            to="/settings/api-keys"
+            className="text-primary-600 dark:text-primary-400 hover:underline"
+          >
             Add one in Settings
           </Link>
         </p>
@@ -890,12 +946,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       {isCloud && chainabitState === 'no_credits' && (
         <p className="text-xs text-amber-600 dark:text-amber-400">
           No credits remaining.{' '}
-          <a
-            href={topUpUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:underline"
-          >
+          <a href={topUpUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
             Add credits on Chainabit
           </a>
         </p>
@@ -912,7 +963,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           isLoadingModels={isLoadingModels ?? false}
           selectedProviderKey={selectedProviderKey ?? ''}
           selectedModelKey={selectedModelKey ?? ''}
-          onProviderChange={onProviderChange ?? (() => { })}
+          onProviderChange={onProviderChange ?? (() => {})}
           onModelChange={onModelChange}
           onProviderDropdownOpen={onProviderDropdownOpen}
           isOllamaLocal={isOllamaLocal}

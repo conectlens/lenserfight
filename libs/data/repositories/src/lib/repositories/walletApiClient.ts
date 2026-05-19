@@ -10,11 +10,13 @@ import {
 import type { ApiResponseEnvelope } from '@lenserfight/api/contracts'
 import { apiFetch, unwrapEnvelope } from '../apiFetch'
 
-const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
+const SUPABASE_URL =
+  (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 async function getAuthHeader(): Promise<Record<string, string>> {
-  const token = getCachedAccessToken() ?? (await supabase.auth.getSession()).data.session?.access_token
+  const token =
+    getCachedAccessToken() ?? (await supabase.auth.getSession()).data.session?.access_token
   if (!token) {
     throw new Error('401: Unauthenticated')
   }
@@ -26,7 +28,7 @@ async function getAuthHeader(): Promise<Record<string, string>> {
 async function consumeExecuteStream(
   response: Response,
   signal: AbortSignal,
-  callbacks: StreamCallbacks,
+  callbacks: StreamCallbacks
 ): Promise<void> {
   const reader = response.body!.getReader()
   const decoder = new TextDecoder()
@@ -63,7 +65,7 @@ async function consumeExecuteStream(
         if (eventType === 'end') {
           callbacks.onEnd(
             evt['usage'] as { input_tokens: number; output_tokens: number },
-            evt['credits_charged'] as number,
+            evt['credits_charged'] as number
           )
         }
         if (eventType === 'error') {
@@ -101,12 +103,12 @@ export const walletApiClient = {
 
   async getTransactions(
     page = 1,
-    limit = 20,
+    limit = 20
   ): Promise<{ transactions: WalletTransaction[]; total: number; hasNextPage: boolean }> {
     const authHeader = await getAuthHeader()
     const res = await apiFetch(
       `${EDGE_BASE}/chainabit-wallet/transactions?page=${page}&limit=${limit}`,
-      { headers: { ...authHeader } },
+      { headers: { ...authHeader } }
     )
     const envelope = (await res.json()) as ApiResponseEnvelope<WalletTransaction[]>
     if (envelope.error) throw envelope.error
@@ -129,7 +131,7 @@ export const walletApiClient = {
   async streamWithWallet(
     req: ExecuteRequest,
     signal: AbortSignal,
-    callbacks: StreamCallbacks,
+    callbacks: StreamCallbacks
   ): Promise<void> {
     const authHeader = await getAuthHeader()
     let response: Response
@@ -153,8 +155,13 @@ export const walletApiClient = {
       })
     } catch (err: unknown) {
       if ((err as Error).name === 'AbortError') return
-      const envelope = err as { error?: { code?: string; message?: string }; code?: string; message?: string }
-      const message = envelope?.error?.message ?? envelope?.message ?? 'An unexpected error occurred.'
+      const envelope = err as {
+        error?: { code?: string; message?: string }
+        code?: string
+        message?: string
+      }
+      const message =
+        envelope?.error?.message ?? envelope?.message ?? 'An unexpected error occurred.'
       const code = envelope?.error?.code ?? envelope?.code ?? 'internal_error'
       callbacks.onError(message, code)
       return
@@ -167,7 +174,7 @@ export const walletApiClient = {
   async streamWithByok(
     req: ExecuteByokRequest,
     signal: AbortSignal,
-    callbacks: StreamCallbacks,
+    callbacks: StreamCallbacks
   ): Promise<void> {
     if (!req.key_ref_id) {
       callbacks.onError('Cloud BYOK requires a selected key.', 'byok_key_required')
@@ -196,8 +203,13 @@ export const walletApiClient = {
       })
     } catch (err: unknown) {
       if ((err as Error).name === 'AbortError') return
-      const envelope = err as { error?: { code?: string; message?: string }; code?: string; message?: string }
-      const message = envelope?.error?.message ?? envelope?.message ?? 'An unexpected error occurred.'
+      const envelope = err as {
+        error?: { code?: string; message?: string }
+        code?: string
+        message?: string
+      }
+      const message =
+        envelope?.error?.message ?? envelope?.message ?? 'An unexpected error occurred.'
       const code = envelope?.error?.code ?? envelope?.code ?? 'internal_error'
       callbacks.onError(message, code)
       return

@@ -122,7 +122,7 @@ module.exports = {
       name: 'lf-worker',
       script: 'dist/apps/worker/main.js',
       interpreter: 'node',
-      instances: 1,          // increase to scale; each instance claims separate jobs
+      instances: 1, // increase to scale; each instance claims separate jobs
       exec_mode: 'fork',
       env_production: {
         ENV_MODE: 'production',
@@ -253,18 +253,18 @@ services:
     env_file: .env.production
     environment:
       BATTLE_WORKER_ID: worker-0
-      PLATFORM_API_BATTLE_WORKER_ENABLED: "true"
-      PLATFORM_API_SCHEDULED_WORKFLOW_WORKER_ENABLED: "true"
-      PLATFORM_API_TEAM_RUN_WORKER_ENABLED: "true"
+      PLATFORM_API_BATTLE_WORKER_ENABLED: 'true'
+      PLATFORM_API_SCHEDULED_WORKFLOW_WORKER_ENABLED: 'true'
+      PLATFORM_API_TEAM_RUN_WORKER_ENABLED: 'true'
 ```
 
 **Scaling with Docker Compose:**
 
 ```yaml
-  worker:
-    # ...same as above...
-    deploy:
-      replicas: 3
+worker:
+  # ...same as above...
+  deploy:
+    replicas: 3
 ```
 
 Each replica must have a unique `BATTLE_WORKER_ID`. With Compose you can inject it via an entrypoint script or an orchestrator.
@@ -310,6 +310,7 @@ app = "lf-worker"
 ```
 
 Set secrets separately:
+
 ```sh
 fly secrets set SUPABASE_URL=https://... SUPABASE_SERVICE_ROLE_KEY=eyJ... OPENAI_API_KEY=sk-...
 fly deploy
@@ -356,11 +357,11 @@ order by last_seen_at desc;
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| Lens runs stay `queued` forever | Worker not running | Start the worker, check logs |
-| `Failed to decrypt BYOK key` | Service-role key missing or wrong | Verify `SUPABASE_SERVICE_ROLE_KEY` |
-| `provider_status_checker_missing` | AI provider key not set | Set the matching `*_API_KEY` env var |
-| Battle jobs go to DLQ immediately | `BATTLE_WORKER_MAX_RETRIES=0` or bad provider key | Check retries and API key |
-| Worker exits with code 1 on startup | Supabase URL unreachable | Verify `SUPABASE_URL` and network access |
-| High CPU / tight polling | `PLATFORM_API_WORKER_INTERVAL_MS` too low | Raise to 5000+ when queue is usually empty |
+| Symptom                             | Likely cause                                      | Fix                                        |
+| ----------------------------------- | ------------------------------------------------- | ------------------------------------------ |
+| Lens runs stay `queued` forever     | Worker not running                                | Start the worker, check logs               |
+| `Failed to decrypt BYOK key`        | Service-role key missing or wrong                 | Verify `SUPABASE_SERVICE_ROLE_KEY`         |
+| `provider_status_checker_missing`   | AI provider key not set                           | Set the matching `*_API_KEY` env var       |
+| Battle jobs go to DLQ immediately   | `BATTLE_WORKER_MAX_RETRIES=0` or bad provider key | Check retries and API key                  |
+| Worker exits with code 1 on startup | Supabase URL unreachable                          | Verify `SUPABASE_URL` and network access   |
+| High CPU / tight polling            | `PLATFORM_API_WORKER_INTERVAL_MS` too low         | Raise to 5000+ when queue is usually empty |

@@ -68,7 +68,8 @@ export function ContenderInviteStep({
       )}
       {isLenserBattle && battleType !== 'human_vs_ai' && battleType !== 'ai_vs_ai' && (
         <div className="rounded-2xl border border-primary-yellow-500/20 bg-primary-yellow-500/5 px-4 py-3 text-sm text-greyscale-700 dark:text-greyscale-300">
-          You can invite human or AI lensers. AI lensers will use their own memories, instructions, and rules — not a raw model.
+          You can invite human or AI lensers. AI lensers will use their own memories, instructions,
+          and rules — not a raw model.
         </div>
       )}
       <LenserSearchPicker

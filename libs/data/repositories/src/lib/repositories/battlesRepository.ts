@@ -375,22 +375,45 @@ export interface ChatCursor {
 export interface BattlesRepositoryPort {
   getBattleById(id: string): Promise<BattleRecord | null>
   getBattleBySlug(slug: string): Promise<BattleRecord | null>
-  getBattlesFeed(filter?: string, limit?: number, battleType?: BattleType, cursor?: string, sortBy?: 'newest' | 'most_votes' | 'trending'): Promise<BattleRecord[]>
+  getBattlesFeed(
+    filter?: string,
+    limit?: number,
+    battleType?: BattleType,
+    cursor?: string,
+    sortBy?: 'newest' | 'most_votes' | 'trending'
+  ): Promise<BattleRecord[]>
   getBattlesFeedItems(options?: BattlesFeedOptions): Promise<BattleFeedItemRecord[]>
   getContenders(battleId: string): Promise<ContenderRecord[]>
   getSubmissions(battleId: string): Promise<SubmissionRecord[]>
   getVoteAggregates(battleId: string): Promise<VoteAggregateRecord[]>
   getScorecards(battleId: string): Promise<ScorecardRecord[]>
   getRubricCriteria(criterionIds: string[]): Promise<RubricCriterionRecord[]>
-  submitVote(input: SubmitVoteInput): Promise<{ vote_id: string; status: string; battle_id: string }>
+  submitVote(
+    input: SubmitVoteInput
+  ): Promise<{ vote_id: string; status: string; battle_id: string }>
   createBattle(input: CreateBattleInput): Promise<BattleRecord>
   getAIHandicapPolicy(battleId: string): Promise<AIHandicapPolicyRecord | null>
   checkVoterEligibility(battleId: string, lenserId: string): Promise<boolean>
-  getGlobalMessages(battleId: string, limit?: number, cursor?: ChatCursor): Promise<GlobalMessageRecord[]>
-  postGlobalMessage(battleId: string, senderId: string, senderHandle: string, senderRole: string, body: string): Promise<GlobalMessageRecord>
+  getGlobalMessages(
+    battleId: string,
+    limit?: number,
+    cursor?: ChatCursor
+  ): Promise<GlobalMessageRecord[]>
+  postGlobalMessage(
+    battleId: string,
+    senderId: string,
+    senderHandle: string,
+    senderRole: string,
+    body: string
+  ): Promise<GlobalMessageRecord>
   inviteContender(input: InviteContenderInput): Promise<ContenderRecord>
   /** Caller should invoke contentModerationService.validate(contentText) before calling this. */
-  submitContenderEntry(battleId: string, contenderId: string, contentText: string, validate?: (text: string) => Promise<void>): Promise<SubmissionRecord>
+  submitContenderEntry(
+    battleId: string,
+    contenderId: string,
+    contentText: string,
+    validate?: (text: string) => Promise<void>
+  ): Promise<SubmissionRecord>
   linkForumThread(battleId: string, forumThreadId: string): Promise<void>
   assignLensToContender(input: AssignLensInput): Promise<ContenderLensAssignmentRecord>
   getLensAssignment(contenderId: string): Promise<ContenderLensAssignmentRecord | null>
@@ -402,7 +425,11 @@ export interface BattlesRepositoryPort {
   getBattleExecutionJobs(battleId: string): Promise<BattleExecutionJobRecord[]>
   getTrendingBattles(options?: TrendingBattlesOptions): Promise<TrendingBattleRecord[]>
   getAiJudgeVerdicts(battleId: string): Promise<AiJudgeVerdictRecord[]>
-  getDLQEntries(opts?: { battleId?: string; unresolvedOnly?: boolean; limit?: number }): Promise<DLQEntryRecord[]>
+  getDLQEntries(opts?: {
+    battleId?: string
+    unresolvedOnly?: boolean
+    limit?: number
+  }): Promise<DLQEntryRecord[]>
   retryDLQEntry(deadLetterId: string): Promise<void>
   getPublicExecutionJobs(battleId: string): Promise<PublicExecutionJobRecord[]>
   listBattleTemplates(): Promise<BattleTemplateRecord[]>
@@ -437,11 +464,18 @@ export interface BattlesRepositoryPort {
   checkMediaQuality(submissionId: string): Promise<MediaQualityResultRecord>
   // Phase BM: vote hardening
   getMyVoteFull(battleId: string): Promise<MyVoteRecord | null>
-  changeVote(battleId: string, newContenderId: string): Promise<{ vote_id: string; updated_at: string }>
+  changeVote(
+    battleId: string,
+    newContenderId: string
+  ): Promise<{ vote_id: string; updated_at: string }>
   // Phase BN: structured template prompts
   renderTemplatePrompt(templateId: string, variables: Record<string, string>): Promise<string>
   // Phase BP: browse API
-  browseBattles(filters: BrowseFilters, cursor?: BrowseCursor, limit?: number): Promise<BrowseBattleRecord[]>
+  browseBattles(
+    filters: BrowseFilters,
+    cursor?: BrowseCursor,
+    limit?: number
+  ): Promise<BrowseBattleRecord[]>
   // Phase BX: retention CTA
   nextRecommendation(battleId: string): Promise<NextRecommendation | null>
 }
@@ -545,7 +579,13 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return (row ?? null) as BattleRecord | null
   }
 
-  async getBattlesFeed(filter?: string, limit = 20, battleType?: BattleType, cursor?: string, sortBy: 'newest' | 'most_votes' | 'trending' = 'newest'): Promise<BattleRecord[]> {
+  async getBattlesFeed(
+    filter?: string,
+    limit = 20,
+    battleType?: BattleType,
+    cursor?: string,
+    sortBy: 'newest' | 'most_votes' | 'trending' = 'newest'
+  ): Promise<BattleRecord[]> {
     const { data, error } = await supabase.rpc('fn_get_battles_feed', {
       p_status: filter && filter !== 'all' ? filter : null,
       p_battle_type: battleType ?? null,
@@ -604,7 +644,9 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return (row ?? null) as { vote_value: string } | null
   }
 
-  async submitVote(input: SubmitVoteInput): Promise<{ vote_id: string; status: string; battle_id: string }> {
+  async submitVote(
+    input: SubmitVoteInput
+  ): Promise<{ vote_id: string; status: string; battle_id: string }> {
     const { data, error } = await supabase.rpc('fn_submit_vote', {
       p_battle_id: input.battle_id,
       p_voted_contender_id: input.voted_contender_id,
@@ -725,7 +767,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return row as BattleRecord
   }
 
-  async getBattleComments(battleId: string, limit = 50, cursor?: ChatCursor): Promise<BattleCommentRecord[]> {
+  async getBattleComments(
+    battleId: string,
+    limit = 50,
+    cursor?: ChatCursor
+  ): Promise<BattleCommentRecord[]> {
     // Cross-schema join (battles.comments → lensers.profiles) is done server-side via
     // fn_get_battle_comments to avoid PostgREST schema-cache poisoning (PGRST200).
     // RPC returns DESC (newest first from cursor); we reverse to chronological order.
@@ -739,7 +785,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return ((data ?? []) as BattleCommentRecord[]).reverse()
   }
 
-  async postComment(battleId: string, lenserId: string, body: string): Promise<BattleCommentRecord> {
+  async postComment(
+    battleId: string,
+    lenserId: string,
+    body: string
+  ): Promise<BattleCommentRecord> {
     const { data, error } = await supabase.rpc('fn_post_battle_comment', {
       p_battle_id: battleId,
       p_lenser_id: lenserId,
@@ -750,7 +800,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return row as BattleCommentRecord
   }
 
-  async getGlobalMessages(battleId: string, limit = 50, cursor?: ChatCursor): Promise<GlobalMessageRecord[]> {
+  async getGlobalMessages(
+    battleId: string,
+    limit = 50,
+    cursor?: ChatCursor
+  ): Promise<GlobalMessageRecord[]> {
     // RPC returns DESC (newest first from cursor); we reverse to chronological order.
     const { data, error } = await supabase.rpc('fn_get_global_messages', {
       p_battle_id: battleId,
@@ -806,7 +860,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     contenderId: string,
     contentText: string,
     // TODO: caller should invoke contentModerationService.validate before calling this.
-    validate?: (text: string) => Promise<void>,
+    validate?: (text: string) => Promise<void>
   ): Promise<SubmissionRecord> {
     if (validate) await validate(contentText)
     const { data, error } = await supabase.rpc('fn_battles_submit', {
@@ -835,10 +889,10 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
 
   async assignLensToContender(input: AssignLensInput): Promise<ContenderLensAssignmentRecord> {
     const { data, error } = await supabase.rpc('fn_assign_lens_to_contender', {
-      p_contender_id:   input.contender_id,
-      p_battle_id:      input.battle_id,
-      p_lens_id:        input.lens_id,
-      p_version_id:     input.version_id ?? null,
+      p_contender_id: input.contender_id,
+      p_battle_id: input.battle_id,
+      p_lens_id: input.lens_id,
+      p_version_id: input.version_id ?? null,
       p_input_snapshot: input.input_snapshot ?? {},
     })
     if (error) this.handleError(error)
@@ -891,7 +945,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
 
   async getTrendingBattles(options?: TrendingBattlesOptions): Promise<TrendingBattleRecord[]> {
     const { data, error } = await supabase.rpc('fn_get_trending_battles', {
-      p_limit:  options?.limit ?? 20,
+      p_limit: options?.limit ?? 20,
       p_cursor: options?.cursor ?? null,
     })
     if (error) this.handleError(error)
@@ -906,7 +960,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return (data ?? []) as AiJudgeVerdictRecord[]
   }
 
-  async getDLQEntries(opts?: { battleId?: string; unresolvedOnly?: boolean; limit?: number }): Promise<DLQEntryRecord[]> {
+  async getDLQEntries(opts?: {
+    battleId?: string
+    unresolvedOnly?: boolean
+    limit?: number
+  }): Promise<DLQEntryRecord[]> {
     const { data, error } = await supabase.rpc('fn_get_battle_dlq_entries', {
       p_battle_id: opts?.battleId ?? null,
       p_unresolved_only: opts?.unresolvedOnly ?? false,
@@ -977,7 +1035,10 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return data as BattleTemplateRecord
   }
 
-  async updateTemplate(id: string, input: Partial<CreateTemplateInput>): Promise<BattleTemplateRecord> {
+  async updateTemplate(
+    id: string,
+    input: Partial<CreateTemplateInput>
+  ): Promise<BattleTemplateRecord> {
     const { data, error } = await supabase.rpc('fn_battles_update_template', {
       p_template_id: id,
       p_title: input.title ?? null,
@@ -1032,13 +1093,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   ): Promise<{ publicUrl: string; mimeType: string; outputModality: SubmissionOutputModality }> {
     const path = `${battleId}/${contenderId}/${Date.now()}-${file.name.replace(/[^\w.\-]+/g, '_')}`
     onProgress?.(0)
-    const { error: uploadError } = await supabase.storage
-      .from('battles-media')
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-      })
+    const { error: uploadError } = await supabase.storage.from('battles-media').upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type,
+    })
     if (uploadError) throw uploadError
     onProgress?.(80)
 
@@ -1063,7 +1122,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   // Phase BH — battle series
-  async createSeries(templateId: string, title: string, roundCount = 3): Promise<BattleSeriesRecord> {
+  async createSeries(
+    templateId: string,
+    title: string,
+    roundCount = 3
+  ): Promise<BattleSeriesRecord> {
     const { data, error } = await supabase.rpc('fn_create_battle_series', {
       p_template_id: templateId,
       p_title: title,
@@ -1092,15 +1155,15 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   // Phase BJ — model conformance ---------------------------------------------
   async logModelTestRun(input: LogModelTestRunInput): Promise<ModelTestRunRecord> {
     const { data, error } = await supabase.rpc('fn_log_model_test_run', {
-      p_battle_id:      input.battleId ?? null,
-      p_template_id:    input.templateId ?? null,
+      p_battle_id: input.battleId ?? null,
+      p_template_id: input.templateId ?? null,
       p_model_provider: input.modelProvider,
-      p_model_id:       input.modelId,
-      p_prompt_hash:    input.promptHash,
-      p_passed:         input.passed,
-      p_duration_ms:    input.durationMs ?? null,
-      p_raw_output:     input.rawOutput ?? null,
-      p_violations:     input.violations ?? [],
+      p_model_id: input.modelId,
+      p_prompt_hash: input.promptHash,
+      p_passed: input.passed,
+      p_duration_ms: input.durationMs ?? null,
+      p_raw_output: input.rawOutput ?? null,
+      p_violations: input.violations ?? [],
     })
     if (error) this.handleError(error)
     return data as ModelTestRunRecord
@@ -1109,7 +1172,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   async getModelTestRuns(battleId: string, limit = 50): Promise<ModelTestRunRecord[]> {
     const { data, error } = await supabase.rpc('fn_get_model_test_runs', {
       p_battle_id: battleId,
-      p_limit:     limit,
+      p_limit: limit,
     })
     if (error) this.handleError(error)
     return (data ?? []) as ModelTestRunRecord[]
@@ -1134,9 +1197,12 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return (row ?? null) as MyVoteRecord | null
   }
 
-  async changeVote(battleId: string, newContenderId: string): Promise<{ vote_id: string; updated_at: string }> {
+  async changeVote(
+    battleId: string,
+    newContenderId: string
+  ): Promise<{ vote_id: string; updated_at: string }> {
     const { data, error } = await supabase.rpc('fn_battles_change_vote', {
-      p_battle_id:        battleId,
+      p_battle_id: battleId,
       p_new_contender_id: newContenderId,
     })
     if (error) this.handleError(error)
@@ -1144,10 +1210,13 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   // Phase BN — structured template prompts -----------------------------------
-  async renderTemplatePrompt(templateId: string, variables: Record<string, string>): Promise<string> {
+  async renderTemplatePrompt(
+    templateId: string,
+    variables: Record<string, string>
+  ): Promise<string> {
     const { data, error } = await supabase.rpc('fn_battles_render_prompt', {
       p_template_id: templateId,
-      p_variables:   variables,
+      p_variables: variables,
     })
     if (error) this.handleError(error)
     return (data ?? '') as string
@@ -1157,15 +1226,15 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   async browseBattles(
     filters: BrowseFilters,
     cursor?: BrowseCursor,
-    limit = 20,
+    limit = 20
   ): Promise<BrowseBattleRecord[]> {
     const { data, error } = await supabase.rpc('fn_browse_battles', {
-      p_category:      filters.category ?? null,
-      p_status:        filters.status ?? null,
-      p_q:             filters.q ?? null,
+      p_category: filters.category ?? null,
+      p_status: filters.status ?? null,
+      p_q: filters.q ?? null,
       p_after_created: cursor?.created_at ?? null,
-      p_after_id:      cursor?.id ?? null,
-      p_limit:         Math.min(Math.max(limit, 1), 100),
+      p_after_id: cursor?.id ?? null,
+      p_limit: Math.min(Math.max(limit, 1), 100),
     })
     if (error) this.handleError(error)
     return (data ?? []) as BrowseBattleRecord[]

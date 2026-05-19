@@ -103,7 +103,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
             state: streamB.snapshot.state,
             tokens: streamB.snapshot.usage?.output_tokens ?? 0,
           },
-        },
+        }
       )
 
       // Save stream recordings for replay
@@ -116,7 +116,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
           streamA.events,
           lastEvent?.t ?? 0,
           streamA.events.filter((e) => e.k === 't').length,
-          streamA.snapshot.output,
+          streamA.snapshot.output
         )
       }
       if (contenderB && streamB.events.length > 0) {
@@ -128,7 +128,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
           streamB.events,
           lastEvent?.t ?? 0,
           streamB.events.filter((e) => e.k === 't').length,
-          streamB.snapshot.output,
+          streamB.snapshot.output
         )
       }
 
@@ -184,10 +184,16 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
 
       const missingA = paramsA
         .filter((p) => p.tool?.required)
-        .filter((p) => { const v = (assignA.input_snapshot ?? {})[p.label]; return v === undefined || v === null || v === '' })
+        .filter((p) => {
+          const v = (assignA.input_snapshot ?? {})[p.label]
+          return v === undefined || v === null || v === ''
+        })
       const missingB = paramsB
         .filter((p) => p.tool?.required)
-        .filter((p) => { const v = (assignB.input_snapshot ?? {})[p.label]; return v === undefined || v === null || v === '' })
+        .filter((p) => {
+          const v = (assignB.input_snapshot ?? {})[p.label]
+          return v === undefined || v === null || v === ''
+        })
 
       if (missingA.length > 0 || missingB.length > 0) {
         const names = [
@@ -200,12 +206,12 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
       const renderedContentA = renderLensWithSnapshot(
         versionA.templateBody,
         assignA.input_snapshot ?? {},
-        paramsA,
+        paramsA
       )
       const renderedContentB = renderLensWithSnapshot(
         versionB.templateBody,
         assignB.input_snapshot ?? {},
-        paramsB,
+        paramsB
       )
 
       // 4. Transition battle to executing
@@ -213,7 +219,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
       await battleExecutionRepository.insertBattleEvent(
         battle.id,
         'execution_started',
-        currentUserId,
+        currentUserId
       )
 
       // 5. Build execution configs
@@ -246,12 +252,11 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
       await Promise.all([streamA.start(execConfigA), streamB.start(execConfigB)])
     } catch (err) {
       setPhase('failed')
-      await battleExecutionRepository.insertBattleEvent(
-        battle.id,
-        'execution_failed',
-        currentUserId,
-        { error: (err as Error).message },
-      ).catch(() => {})
+      await battleExecutionRepository
+        .insertBattleEvent(battle.id, 'execution_failed', currentUserId, {
+          error: (err as Error).message,
+        })
+        .catch(() => {})
     }
   }, [battle, contenderA, contenderB, currentUserId, lensAssignments, streamA, streamB])
 
@@ -264,9 +269,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
         .insertBattleEvent(battle.id, 'execution_aborted', currentUserId)
         .catch(() => {})
       // Revert to open status
-      battleExecutionRepository
-        .transitionBattleStatus(battle.id, 'open')
-        .catch(() => {})
+      battleExecutionRepository.transitionBattleStatus(battle.id, 'open').catch(() => {})
     }
   }, [battle, currentUserId, streamA, streamB])
 

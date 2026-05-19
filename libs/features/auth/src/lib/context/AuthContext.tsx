@@ -1,5 +1,9 @@
 import { queryClient, queryKeys } from '@lenserfight/data/cache'
-import { authService, lenserService, partnerProvisioningRepository } from '@lenserfight/data/repositories'
+import {
+  authService,
+  lenserService,
+  partnerProvisioningRepository,
+} from '@lenserfight/data/repositories'
 import { AuthState, UserMetadata } from '@lenserfight/types'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL, getEnvMetadata } from '@lenserfight/utils/env'
@@ -50,7 +54,9 @@ const getInitialAuthUser = (): Promise<AuthState['user']> => {
 }
 
 if (import.meta.hot) {
-  import.meta.hot.accept(() => { _initialAuthUserPromise = null })
+  import.meta.hot.accept(() => {
+    _initialAuthUserPromise = null
+  })
 }
 
 // sessionStorage-backed guard: survives React Strict Mode and HMR (unlike module-level booleans
@@ -217,52 +223,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [restoreLenserAccountIfNeeded])
 
-  const login = useCallback(async (identifier: string, pass: string, captchaToken?: string) => {
-    setState((s) => ({ ...s, error: null }))
-    loginTransitionInFlight.current = true
-    try {
-      // Resolve handle → email when the identifier is not an email address.
-      // The email is used only as the Supabase auth credential and is never
-      // surfaced to the user. Return a generic error if the handle is unknown
-      // to prevent account-existence enumeration.
-      let email = identifier.trim()
-      if (!isEmailLike(email)) {
-        const handle = email.startsWith('@') ? email.slice(1) : email
-        const resolved = await authService.resolveHandleToEmail(handle)
-        if (!resolved) {
-          throw new Error('Invalid login credentials')
+  const login = useCallback(
+    async (identifier: string, pass: string, captchaToken?: string) => {
+      setState((s) => ({ ...s, error: null }))
+      loginTransitionInFlight.current = true
+      try {
+        // Resolve handle → email when the identifier is not an email address.
+        // The email is used only as the Supabase auth credential and is never
+        // surfaced to the user. Return a generic error if the handle is unknown
+        // to prevent account-existence enumeration.
+        let email = identifier.trim()
+        if (!isEmailLike(email)) {
+          const handle = email.startsWith('@') ? email.slice(1) : email
+          const resolved = await authService.resolveHandleToEmail(handle)
+          if (!resolved) {
+            throw new Error('Invalid login credentials')
+          }
+          email = resolved
         }
-        email = resolved
-      }
-      const user = await authService.login(email, pass, captchaToken)
-      if (!sessionStorage.getItem(_deletionCheckKey(user.id))) {
-        const restored = await restoreLenserAccountIfNeeded()
-        if (restored) {
-          sessionStorage.setItem(_deletionCheckKey(user.id), '1')
+        const user = await authService.login(email, pass, captchaToken)
+        if (!sessionStorage.getItem(_deletionCheckKey(user.id))) {
+          const restored = await restoreLenserAccountIfNeeded()
+          if (restored) {
+            sessionStorage.setItem(_deletionCheckKey(user.id), '1')
+          }
         }
-      }
-      wasAuthenticated.current = true
-      setState({ user, isAuthenticated: true, isLoading: false, error: null })
+        wasAuthenticated.current = true
+        setState({ user, isAuthenticated: true, isLoading: false, error: null })
 
-      // Update environment metadata in the background — do not block the login flow
-      getEnvMetadata().then((env) => {
-        const metadata: Partial<UserMetadata> = {
-          detected_language: env.detected_language,
-          timezone: env.timezone,
-          country: env.country,
-        }
-        authService.updateMetadata(metadata).catch((e) =>
-          console.warn('Failed to update user metadata on login', e)
-        )
-      })
-    } catch (err: unknown) {
-      const message = getErrorMessage(err)
-      setState((s) => ({ ...s, isLoading: false, error: message }))
-      throw err
-    } finally {
-      loginTransitionInFlight.current = false
-    }
-  }, [restoreLenserAccountIfNeeded])
+        // Update environment metadata in the background — do not block the login flow
+        getEnvMetadata().then((env) => {
+          const metadata: Partial<UserMetadata> = {
+            detected_language: env.detected_language,
+            timezone: env.timezone,
+            country: env.country,
+          }
+          authService
+            .updateMetadata(metadata)
+            .catch((e) => console.warn('Failed to update user metadata on login', e))
+        })
+      } catch (err: unknown) {
+        const message = getErrorMessage(err)
+        setState((s) => ({ ...s, isLoading: false, error: message }))
+        throw err
+      } finally {
+        loginTransitionInFlight.current = false
+      }
+    },
+    [restoreLenserAccountIfNeeded]
+  )
 
   const register = useCallback(
     async (email: string, pass: string, options?: RegisterOptions, captchaToken?: string) => {
@@ -316,15 +325,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsRecoverySession(false)
   }, [])
 
-  const signInWithOAuth = useCallback(async (provider: 'google' | 'github' | 'azure' | 'custom:chainabit') => {
-    try {
-      await authService.signInWithOAuth(provider)
-    } catch (err: unknown) {
-      const message = getErrorMessage(err)
-      setState((s) => ({ ...s, error: message }))
-      throw err
-    }
-  }, [])
+  const signInWithOAuth = useCallback(
+    async (provider: 'google' | 'github' | 'azure' | 'custom:chainabit') => {
+      try {
+        await authService.signInWithOAuth(provider)
+      } catch (err: unknown) {
+        const message = getErrorMessage(err)
+        setState((s) => ({ ...s, error: message }))
+        throw err
+      }
+    },
+    []
+  )
 
   const resendSignupConfirmation = useCallback(async (email: string) => {
     await authService.resendSignupConfirmation(email)
@@ -344,7 +356,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
     const target = `${AUTH_BASE_URL}/login?return_url=${returnUrl}`
     if (delayMs > 0) {
-      setTimeout(() => { window.location.href = target }, delayMs)
+      setTimeout(() => {
+        window.location.href = target
+      }, delayMs)
     } else {
       window.location.href = target
     }

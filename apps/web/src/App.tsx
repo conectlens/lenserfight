@@ -1,4 +1,3 @@
-
 import { queryClient } from '@lenserfight/data/cache'
 import { AuthProvider, SessionBoundary } from '@lenserfight/features/auth'
 import { LenserProvider } from '@lenserfight/features/profile'
@@ -23,7 +22,6 @@ import { WebRouter } from './WebRouter'
 const LazyAgentManageWizard = lazy(() =>
   import('@lenserfight/features/agents').then((module) => ({ default: module.AgentManageWizard }))
 )
-
 
 function NotificationToastBootstrap() {
   useNotificationToast()

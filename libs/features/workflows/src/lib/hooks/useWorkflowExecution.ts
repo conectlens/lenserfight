@@ -1,4 +1,9 @@
-import { apiKeysService, lensesService, walletApiClient, workflowsService } from '@lenserfight/data/repositories'
+import {
+  apiKeysService,
+  lensesService,
+  walletApiClient,
+  workflowsService,
+} from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
 import {
   EchoProvider,
@@ -15,14 +20,15 @@ import { mapEngineEventToSse, WorkflowEventType } from '@lenserfight/types'
 import { generateUUID } from '@lenserfight/utils/text'
 import { useCallback, useRef } from 'react'
 
-import {
-  SIDE_EFFECT_NODE_TYPES,
-  createDryRunMockRunner,
-} from '../execution/workflowDryRun'
+import { SIDE_EFFECT_NODE_TYPES, createDryRunMockRunner } from '../execution/workflowDryRun'
 
 import { persistNodeMediaArtifact } from '../execution/persistNodeMedia'
 
-import type { WorkflowNodeRecord, WorkflowEdgeRecord, WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
+import type {
+  WorkflowNodeRecord,
+  WorkflowEdgeRecord,
+  WorkflowNodeResultRecord,
+} from '@lenserfight/data/repositories'
 import type {
   IExecutionProvider,
   WorkflowNode,
@@ -79,7 +85,7 @@ function createTextExecutionProvider(
   provider: Exclude<Provider, 'fal'>,
   modelKey: string,
   apiKey: string,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): IExecutionProvider {
   return {
     id: provider,
@@ -92,7 +98,7 @@ function createTextExecutionProvider(
         modelKey,
         buildTextProviderMessages(input),
         provider === 'anthropic' ? { maxTokens: 4096 } : undefined,
-        signal,
+        signal
       )
       return {
         mediaType: 'text',
@@ -117,14 +123,18 @@ function createTextExecutionProvider(
 function createRegisteredProviderAdapter(
   providerId: string,
   modelKey: string,
-  apiKey: string,
+  apiKey: string
 ): IExecutionProvider {
   const base = getExecutionProvider(providerId)
   return {
     id: base.id,
     supportedMediaTypes: base.supportedMediaTypes,
     execute(_lensId: string, input: ExecutionInput, signal?: AbortSignal) {
-      return base.execute(modelKey, { ...input, params: { ...(input.params ?? {}), apiKey } }, signal)
+      return base.execute(
+        modelKey,
+        { ...input, params: { ...(input.params ?? {}), apiKey } },
+        signal
+      )
     },
   }
 }
@@ -208,10 +218,7 @@ export function useWorkflowExecution({
       const deltaIndexByNode = new Map<string, number>()
 
       try {
-        const appendRunEventSafe = async (
-          type: string,
-          payload: Record<string, unknown> = {},
-        ) => {
+        const appendRunEventSafe = async (type: string, payload: Record<string, unknown> = {}) => {
           try {
             await workflowsService.appendRunEvent(runId, type, { runId, ...payload })
           } catch {
@@ -239,7 +246,7 @@ export function useWorkflowExecution({
             }
             if (selectedKey.providerKey !== prov) {
               throw new Error(
-                `Selected cloud key is for ${selectedKey.providerDisplayName}, but this node needs ${prov}.`,
+                `Selected cloud key is for ${selectedKey.providerDisplayName}, but this node needs ${prov}.`
               )
             }
             return walletApiClient.resolveCloudByokKey(selectedKeyRefId)
@@ -257,7 +264,11 @@ export function useWorkflowExecution({
           let pn: string
           if (m) {
             pn = m.provider
-          } else if (fundingSource === 'user_byok_local' && selectedLocalKeyId && localKeys?.length) {
+          } else if (
+            fundingSource === 'user_byok_local' &&
+            selectedLocalKeyId &&
+            localKeys?.length
+          ) {
             const localKey = localKeys.find((k) => k.id === selectedLocalKeyId)
             if (!localKey) throw new Error(`Model not found: ${modelKey}`)
             pn = localKey.provider
@@ -267,14 +278,20 @@ export function useWorkflowExecution({
 
           const isText = TEXT_PROVIDERS.has(pn)
           const isLocalMedia = LOCAL_MEDIA_PROVIDERS.has(pn)
-          const allowMedia = fundingSource === 'user_byok_local' || fundingSource === 'platform_credit'
+          const allowMedia =
+            fundingSource === 'user_byok_local' || fundingSource === 'platform_credit'
           if (!isText && !(isLocalMedia && allowMedia)) {
             throw new Error(`Browser-side execution is not supported for provider: ${pn}`)
           }
 
           const apiKey = await resolveWorkflowApiKey(pn)
           const inst: IExecutionProvider = isText
-            ? createTextExecutionProvider(pn as Exclude<Provider, 'fal'>, modelKey, apiKey, controller.signal)
+            ? createTextExecutionProvider(
+                pn as Exclude<Provider, 'fal'>,
+                modelKey,
+                apiKey,
+                controller.signal
+              )
             : createRegisteredProviderAdapter(pn, modelKey, apiKey)
           providerByModelKey.set(modelKey, inst)
           return inst
@@ -332,7 +349,9 @@ export function useWorkflowExecution({
           async resolveVersionContracts(versionId?: string | null) {
             if (!versionId) return { input: null, output: null }
             try {
-              const { data } = await supabase.rpc('fn_get_version_contracts', { p_version_id: versionId })
+              const { data } = await supabase.rpc('fn_get_version_contracts', {
+                p_version_id: versionId,
+              })
               const row = Array.isArray(data) ? data[0] : data
               if (!row) return { input: null, output: null }
               return {
@@ -350,7 +369,11 @@ export function useWorkflowExecution({
             // Failures here are non-fatal: we still persist the node result
             // with the transient URL so the UI can show a best-effort preview.
             let outputData = result.outputData as Record<string, unknown> | undefined
-            if (result.resolvedInputSnapshot && result.status !== 'streaming' && result.status !== 'running') {
+            if (
+              result.resolvedInputSnapshot &&
+              result.status !== 'streaming' &&
+              result.status !== 'running'
+            ) {
               outputData = {
                 ...(outputData ?? {}),
                 _wf: {
@@ -400,7 +423,7 @@ export function useWorkflowExecution({
               {
                 retryCount: result.attempts ?? null,
                 waitingReason: result.waitingReason ?? null,
-              },
+              }
             )
           },
           async onPartialOutput(nodeId, partial) {
@@ -503,7 +526,18 @@ export function useWorkflowExecution({
         if (abortRef.current === controller) abortRef.current = null
       }
     },
-    [nodes, edges, models, fundingSource, selectedKeyRefId, selectedLocalKeyId, resolveLocalKey, localKeys, enableModeration, workspaceId],
+    [
+      nodes,
+      edges,
+      models,
+      fundingSource,
+      selectedKeyRefId,
+      selectedLocalKeyId,
+      resolveLocalKey,
+      localKeys,
+      enableModeration,
+      workspaceId,
+    ]
   )
 
   // ── Dry Run ─────────────────────────────────────────────────────────────────
@@ -527,7 +561,7 @@ export function useWorkflowExecution({
     async (
       globalModelId: string,
       rootInputs: Record<string, unknown> = {},
-      onNodeResult: (nodeId: string, record: WorkflowNodeResultRecord) => void,
+      onNodeResult: (nodeId: string, record: WorkflowNodeResultRecord) => void
     ): Promise<{ status: 'completed' | 'failed' | 'cancelled' }> => {
       if (isExecutingRef.current) throw new Error('A run is already in progress.')
       isExecutingRef.current = true
@@ -544,7 +578,9 @@ export function useWorkflowExecution({
 
         for (const nodeType of SIDE_EFFECT_NODE_TYPES) {
           originals.set(nodeType, getNodeRunner(nodeType as Parameters<typeof getNodeRunner>[0]))
-          registerNodeRunner(createDryRunMockRunner(nodeType) as Parameters<typeof registerNodeRunner>[0])
+          registerNodeRunner(
+            createDryRunMockRunner(nodeType) as Parameters<typeof registerNodeRunner>[0]
+          )
         }
 
         const echoProvider = new EchoProvider()
@@ -598,9 +634,10 @@ export function useWorkflowExecution({
               status: result.status,
               output_data: (result.outputData ?? null) as Record<string, unknown> | null,
               error_message: result.error ?? null,
-              started_at: result.status === 'running' || result.status === 'streaming'
-                ? new Date().toISOString()
-                : null,
+              started_at:
+                result.status === 'running' || result.status === 'streaming'
+                  ? new Date().toISOString()
+                  : null,
               completed_at:
                 result.status === 'completed' ||
                 result.status === 'failed' ||
@@ -630,7 +667,7 @@ export function useWorkflowExecution({
         if (dryRunAbortRef.current === controller) dryRunAbortRef.current = null
       }
     },
-    [nodes, edges],
+    [nodes, edges]
   )
 
   return { execute, stopExecution, executeDryRun, stopDryRun }
@@ -661,7 +698,9 @@ function resultStatusToRunEvent(status: 'completed' | 'failed' | 'cancelled'): W
   }
 }
 
-function readNodeConfig(raw: Record<string, unknown> | null | undefined): WorkflowNodeConfig | undefined {
+function readNodeConfig(
+  raw: Record<string, unknown> | null | undefined
+): WorkflowNodeConfig | undefined {
   return normalizeWorkflowNodeConfigForExecution(raw)
 }
 

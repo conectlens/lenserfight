@@ -66,7 +66,10 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
   const { currentPhase, isResult } = useBattleStateMachine(battle?.status)
   const submitVote = useSubmitVote(battle?.id)
   const { myVote } = useMyVote(battle?.id, currentUserId)
-  const { data: executionJobs = [] } = useExecutionJobs(battle?.id, battle?.status as import('../../types/battle.types').BattleStatus | undefined)
+  const { data: executionJobs = [] } = useExecutionJobs(
+    battle?.id,
+    battle?.status as import('../../types/battle.types').BattleStatus | undefined
+  )
   const { data: scorecardData } = useBattleScorecard(battle?.id)
 
   // Real-time battle state sync
@@ -87,19 +90,22 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
   }
 
   const totalVotes = aggregates.reduce((sum, a) => sum + (a.raw_vote_count ?? 0), 0)
-  const isOwner = !!(battle?.creator_lenser_id && lenser?.id && battle.creator_lenser_id === lenser.id)
+  const isOwner = !!(
+    battle?.creator_lenser_id &&
+    lenser?.id &&
+    battle.creator_lenser_id === lenser.id
+  )
 
   // Arena soundtrack — reads initial preference from lenser.preferences or localStorage
-  const music = useArenaMusic(
-    { isAuthenticated },
-    lenser?.preferences?.autoplay_music,
-  )
+  const music = useArenaMusic({ isAuthenticated }, lenser?.preferences?.autoplay_music)
 
   // Derive fighter slot from contender list — zero extra fetches
   const myContenderSlot: 'A' | 'B' | null =
-    contenderA?.contender_ref_id === currentUserId ? 'A'
-    : contenderB?.contender_ref_id === currentUserId ? 'B'
-    : null
+    contenderA?.contender_ref_id === currentUserId
+      ? 'A'
+      : contenderB?.contender_ref_id === currentUserId
+        ? 'B'
+        : null
 
   // Fetch lens titles for display — share the global 'lens-core' cache
   const { data: lensCoreA } = useQuery({
@@ -117,18 +123,26 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
 
   // Fetch version detail for param count — reuse the same cache key as LensDetailPage
   const { data: versionDetailA } = useQuery({
-    queryKey: ['lens-version-detail', lensAssignmentA?.version_id ?? `latest-${lensAssignmentA?.lens_id}`],
+    queryKey: [
+      'lens-version-detail',
+      lensAssignmentA?.version_id ?? `latest-${lensAssignmentA?.lens_id}`,
+    ],
     queryFn: async () => {
-      if (lensAssignmentA!.version_id) return lensesService.getVersionById(lensAssignmentA!.version_id)
+      if (lensAssignmentA!.version_id)
+        return lensesService.getVersionById(lensAssignmentA!.version_id)
       return lensesService.getLatestPublishedVersion(lensAssignmentA!.lens_id)
     },
     enabled: !!lensAssignmentA?.lens_id,
     staleTime: 300_000,
   })
   const { data: versionDetailB } = useQuery({
-    queryKey: ['lens-version-detail', lensAssignmentB?.version_id ?? `latest-${lensAssignmentB?.lens_id}`],
+    queryKey: [
+      'lens-version-detail',
+      lensAssignmentB?.version_id ?? `latest-${lensAssignmentB?.lens_id}`,
+    ],
     queryFn: async () => {
-      if (lensAssignmentB!.version_id) return lensesService.getVersionById(lensAssignmentB!.version_id)
+      if (lensAssignmentB!.version_id)
+        return lensesService.getVersionById(lensAssignmentB!.version_id)
       return lensesService.getLatestPublishedVersion(lensAssignmentB!.lens_id)
     },
     enabled: !!lensAssignmentB?.lens_id,
@@ -136,20 +150,28 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
   })
 
   const lensDetails: Record<string, LensContextDetail | null> = {
-    ...(contenderA?.id && lensAssignmentA ? {
-      [contenderA.id]: lensCoreA ? {
-        lensTitle: lensCoreA.title,
-        versionNumber: versionDetailA?.versionNumber ?? null,
-        paramCount: (versionDetailA?.parameters?.length ?? 0),
-      } : null,
-    } : {}),
-    ...(contenderB?.id && lensAssignmentB ? {
-      [contenderB.id]: lensCoreB ? {
-        lensTitle: lensCoreB.title,
-        versionNumber: versionDetailB?.versionNumber ?? null,
-        paramCount: (versionDetailB?.parameters?.length ?? 0),
-      } : null,
-    } : {}),
+    ...(contenderA?.id && lensAssignmentA
+      ? {
+          [contenderA.id]: lensCoreA
+            ? {
+                lensTitle: lensCoreA.title,
+                versionNumber: versionDetailA?.versionNumber ?? null,
+                paramCount: versionDetailA?.parameters?.length ?? 0,
+              }
+            : null,
+        }
+      : {}),
+    ...(contenderB?.id && lensAssignmentB
+      ? {
+          [contenderB.id]: lensCoreB
+            ? {
+                lensTitle: lensCoreB.title,
+                versionNumber: versionDetailB?.versionNumber ?? null,
+                paramCount: versionDetailB?.parameters?.length ?? 0,
+              }
+            : null,
+        }
+      : {}),
   }
 
   const renderer = getRenderer((battle?.content_type ?? 'text') as BattleContentType)
@@ -157,9 +179,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
   const handleVote = async (value: VoteValue, rationale: string) => {
     if (!currentUserId || !contenderA || !contenderB) return
     const votedContenderId =
-      value === 'contender_a' ? contenderA.id :
-      value === 'contender_b' ? contenderB.id :
-      null
+      value === 'contender_a' ? contenderA.id : value === 'contender_b' ? contenderB.id : null
     await submitVote.mutateAsync({
       battle_id: battle!.id,
       voter_lenser_id: currentUserId,
@@ -180,9 +200,18 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
           {[0, 1].map((i) => (
             <div key={i} className="p-6 space-y-4">
               <div className="h-6 bg-surface-interactive rounded w-2/3 animate-pulse" />
-              <div className="h-4 bg-surface-interactive rounded w-full animate-pulse" style={{ animationDelay: '0.1s' }} />
-              <div className="h-4 bg-surface-interactive rounded w-5/6 animate-pulse" style={{ animationDelay: '0.15s' }} />
-              <div className="h-4 bg-surface-interactive rounded w-3/4 animate-pulse" style={{ animationDelay: '0.2s' }} />
+              <div
+                className="h-4 bg-surface-interactive rounded w-full animate-pulse"
+                style={{ animationDelay: '0.1s' }}
+              />
+              <div
+                className="h-4 bg-surface-interactive rounded w-5/6 animate-pulse"
+                style={{ animationDelay: '0.15s' }}
+              />
+              <div
+                className="h-4 bg-surface-interactive rounded w-3/4 animate-pulse"
+                style={{ animationDelay: '0.2s' }}
+              />
             </div>
           ))}
         </div>
@@ -198,7 +227,9 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
           <p className="text-sm font-semibold text-greyscale-300">
             {battleError?.message ?? 'Battle not found.'}
           </p>
-          <a href="/battles" className="text-xs text-primary hover:underline">← Back to battles</a>
+          <a href="/battles" className="text-xs text-primary hover:underline">
+            ← Back to battles
+          </a>
         </div>
       </div>
     )
@@ -211,7 +242,9 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
         battle={battle}
         contenderA={contenderA}
         contenderB={contenderB}
-        lensAssignments={[lensAssignmentA, lensAssignmentB].filter(Boolean) as ContenderLensAssignmentRecord[]}
+        lensAssignments={
+          [lensAssignmentA, lensAssignmentB].filter(Boolean) as ContenderLensAssignmentRecord[]
+        }
         currentUserId={currentUserId}
       />
     )
@@ -268,9 +301,11 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
 
           {/* Desktop chat rail */}
           <div className="hidden md:flex flex-shrink-0">
-            <Suspense fallback={
-              <div className="w-72 border-l border-surface-border bg-surface-sunken animate-pulse" />
-            }>
+            <Suspense
+              fallback={
+                <div className="w-72 border-l border-surface-border bg-surface-sunken animate-pulse" />
+              }
+            >
               <LenserChatRail
                 battleId={battle.id}
                 currentUserId={currentUserId}
@@ -291,7 +326,12 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
         aria-label="Open Lenser Chat"
       >
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+          />
         </svg>
         Chat
       </button>
@@ -333,10 +373,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
         width="w-80"
         title="Manage Battle"
       >
-        <ManageBattlePanel
-          battle={battle}
-          onMutated={() => setManageOpen(false)}
-        />
+        <ManageBattlePanel battle={battle} onMutated={() => setManageOpen(false)} />
       </Drawer>
 
       {/* Webhooks drawer */}

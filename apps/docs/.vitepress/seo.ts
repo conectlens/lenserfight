@@ -31,7 +31,17 @@ export const SITE_DESCRIPTION =
 
 /** Ordered list of supported locales — drives hreflang, OG alternates, llms.txt links. */
 export const KNOWN_LOCALES = [
-  'en', 'tr', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ru', 'pt', 'it',
+  'en',
+  'tr',
+  'es',
+  'fr',
+  'de',
+  'zh',
+  'ja',
+  'ko',
+  'ru',
+  'pt',
+  'it',
 ] as const
 export type Locale = (typeof KNOWN_LOCALES)[number]
 
@@ -53,9 +63,7 @@ const LOCALE_TO_OG: Record<string, string> = {
 // ── VitePress head tag type ────────────────────────────────────────────────────
 
 /** Matches VitePress HeadConfig: [tag, attrs] or [tag, attrs, innerHTML] */
-export type HeadTag =
-  | [string, Record<string, string>]
-  | [string, Record<string, string>, string]
+export type HeadTag = [string, Record<string, string>] | [string, Record<string, string>, string]
 
 // ── Text utilities ─────────────────────────────────────────────────────────────
 
@@ -71,7 +79,7 @@ export function stripMarkdown(value: string): string {
       .replace(/`([^`]+)`/g, '$1')
       .replace(/!\[[^\]]*]\([^)]+\)/g, ' ')
       .replace(/\[([^\]]+)]\([^)]+\)/g, '$1')
-      .replace(/[#>*_~|-]/g, ' '),
+      .replace(/[#>*_~|-]/g, ' ')
   )
 }
 
@@ -86,9 +94,7 @@ export function truncateDescription(value: string, max = 158): string {
 export function titleFromPath(relativePath: string): string {
   const withoutExt = relativePath.replace(/\.md$/, '').replace(/(^|\/)index$/, '$1overview')
   const last = withoutExt.split('/').filter(Boolean).pop() ?? 'docs'
-  return last
-    .replace(/[-_]+/g, ' ')
-    .replace(/\b\w/g, (ch) => ch.toUpperCase())
+  return last.replace(/[-_]+/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())
 }
 
 export function sectionFromPath(relativePath: string): string {
@@ -128,14 +134,14 @@ export function buildPageDescription(
   relativePath: string,
   title: string,
   docsDir: string,
-  frontmatterDescription?: string,
+  frontmatterDescription?: string
 ): string {
   if (frontmatterDescription) return truncateDescription(frontmatterDescription)
   const excerpt = readPageExcerpt(relativePath, docsDir)
   if (excerpt) return truncateDescription(excerpt)
   const section = sectionFromPath(relativePath).toLowerCase()
   return truncateDescription(
-    `${title} in the LenserFight ${section}: practical guidance for AI lenses, Lensers, agents, workflows, battles, providers, and developer automation.`,
+    `${title} in the LenserFight ${section}: practical guidance for AI lenses, Lensers, agents, workflows, battles, providers, and developer automation.`
   )
 }
 
@@ -211,10 +217,7 @@ export function buildOrganizationJsonLd(): string {
     ...organizationShape(),
     description:
       'LenserFight is an open-source AI battle platform for building, evaluating, and competing with AI lenses, agents, and workflows.',
-    sameAs: [
-      'https://github.com/conectlens/lenserfight',
-      'https://twitter.com/lenserfight',
-    ],
+    sameAs: ['https://github.com/conectlens/lenserfight', 'https://twitter.com/lenserfight'],
   })
 }
 
@@ -247,11 +250,7 @@ export function buildSoftwareAppJsonLd(): string {
 }
 
 /** Per-page TechArticle or HowTo schema. */
-export function buildDocsJsonLd(
-  relativePath: string,
-  title: string,
-  description: string,
-): object {
+export function buildDocsJsonLd(relativePath: string, title: string, description: string): object {
   return {
     '@context': 'https://schema.org',
     '@type': schemaTypeForPage(relativePath),
@@ -278,11 +277,7 @@ export function buildDocsJsonLd(
 /** BreadcrumbList schema derived from the page path. */
 export function buildBreadcrumbJsonLd(relativePath: string): string {
   const locale = localeFromPath(relativePath)
-  const parts = relativePath
-    .replace(/\.md$/, '')
-    .split('/')
-    .filter(Boolean)
-    .slice(1) // drop locale segment
+  const parts = relativePath.replace(/\.md$/, '').split('/').filter(Boolean).slice(1) // drop locale segment
 
   const items: Array<{ '@type': string; position: number; name: string; item?: string }> = [
     { '@type': 'ListItem', position: 1, name: SITE_TITLE, item: `${DOCS_HOST}/${locale}/` },
@@ -310,9 +305,7 @@ export function buildBreadcrumbJsonLd(relativePath: string): string {
 }
 
 /** FAQPage schema — opt-in via `faq:` array in page frontmatter. */
-export function buildFaqJsonLd(
-  faqs: Array<{ question: string; answer: string }>,
-): string {
+export function buildFaqJsonLd(faqs: Array<{ question: string; answer: string }>): string {
   return JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -341,7 +334,7 @@ export function buildPageHeadTags(
   relativePath: string,
   title: string,
   description: string,
-  frontmatter: Record<string, unknown> = {},
+  frontmatter: Record<string, unknown> = {}
 ): HeadTag[] {
   const canonical = canonicalForPage(relativePath)
   const locale = localeFromPath(relativePath)

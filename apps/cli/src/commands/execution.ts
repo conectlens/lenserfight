@@ -128,13 +128,10 @@ const executionList = defineCommand({
       if (args.workflow) query.workflow_id = `eq.${args.workflow}`
       if (args.status) query.status = `eq.${args.status}`
 
-      const rows = await callRest<WorkflowRunRow[]>(
-        'lenses',
-        'workflow_runs',
-        'GET',
-        undefined,
-        { requireAuth: true, query }
-      )
+      const rows = await callRest<WorkflowRunRow[]>('lenses', 'workflow_runs', 'GET', undefined, {
+        requireAuth: true,
+        query,
+      })
 
       if (!rows || rows.length === 0) {
         consola.info('No runs found.')
@@ -274,9 +271,7 @@ const executionProvenance = defineCommand({
       )
 
       const filtered =
-        args.direction === 'all'
-          ? edges
-          : edges?.filter((e) => e.direction === args.direction)
+        args.direction === 'all' ? edges : edges?.filter((e) => e.direction === args.direction)
 
       if (!filtered || filtered.length === 0) {
         consola.info('No provenance edges for %s.', args.run)
@@ -363,11 +358,7 @@ const executionEvents = defineCommand({
 
       printTable(
         ['#', 'When', 'Type'],
-        rows.map((e) => [
-          String(e.event_id),
-          new Date(e.timestamp).toLocaleString(),
-          e.type,
-        ])
+        rows.map((e) => [String(e.event_id), new Date(e.timestamp).toLocaleString(), e.type])
       )
     } catch (err) {
       handleError(err)
@@ -382,7 +373,8 @@ const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled', 'timed_ou
 const executionWait = defineCommand({
   meta: {
     name: 'wait',
-    description: 'Poll a workflow run until it reaches a terminal status, then print the final node results.',
+    description:
+      'Poll a workflow run until it reaches a terminal status, then print the final node results.',
   },
   args: {
     run: {
@@ -397,7 +389,8 @@ const executionWait = defineCommand({
     },
     any: {
       type: 'boolean',
-      description: 'When set with --workflow, wait for any run of that workflow to reach terminal state',
+      description:
+        'When set with --workflow, wait for any run of that workflow to reach terminal state',
       default: false,
     },
     timeout: {
@@ -437,15 +430,17 @@ const executionWait = defineCommand({
                 status: 'in.(completed,failed,cancelled,timed_out)',
                 order: 'created_at.desc',
                 limit: 1,
-                select: 'id,workflow_id,status,active_node_id,created_at,started_at,completed_at,parent_run_id',
+                select:
+                  'id,workflow_id,status,active_node_id,created_at,started_at,completed_at,parent_run_id',
               },
-            },
+            }
           )
           const terminal = rows?.[0]
           if (terminal) {
             const ok = terminal.status === 'completed'
             if (args.json) printJson(terminal)
-            else if (ok) consola.success('Run %s for workflow %s succeeded.', terminal.id, args.workflow)
+            else if (ok)
+              consola.success('Run %s for workflow %s succeeded.', terminal.id, args.workflow)
             else consola.warn('Run %s ended with status: %s', terminal.id, terminal.status)
             process.exitCode = ok ? 0 : 1
             return
@@ -454,7 +449,7 @@ const executionWait = defineCommand({
             consola.error(
               'Timed out waiting for any run of workflow %s (limit %ds).',
               args.workflow,
-              Math.floor(timeoutMs / 1_000),
+              Math.floor(timeoutMs / 1_000)
             )
             process.exitCode = 1
             return
@@ -481,7 +476,7 @@ const executionWait = defineCommand({
         const state = await callRpc<WorkflowRunStateProjection | null>(
           'fn_get_workflow_run_state',
           { p_run_id: args.run },
-          { requireAuth: true },
+          { requireAuth: true }
         )
 
         if (!state) {
@@ -497,7 +492,7 @@ const executionWait = defineCommand({
             state.pending_count,
             state.in_flight_count,
             state.executed_count,
-            state.failed_count,
+            state.failed_count
           )
         }
 
@@ -517,7 +512,7 @@ const executionWait = defineCommand({
                   truncate(n.node_label ?? '—', 24),
                   n.status,
                   n.duration_ms != null ? String(n.duration_ms) : '—',
-                ]),
+                ])
               )
             }
           }
@@ -528,7 +523,7 @@ const executionWait = defineCommand({
           consola.error(
             'Timed out waiting for run %s (limit %ds).',
             args.run,
-            Math.floor(timeoutMs / 1_000),
+            Math.floor(timeoutMs / 1_000)
           )
           process.exitCode = 1
           return
@@ -567,12 +562,10 @@ const executionCancel = defineCommand({
       forceFlag: '--force',
       hasForce: args.force,
       description: `Cancel workflow run ${args.run}. Any in-flight work will be interrupted.`,
-      affectedResources: [
-        { type: 'execution', name: args.run, scope: 'remote' },
-      ],
+      affectedResources: [{ type: 'execution', name: args.run, scope: 'remote' }],
       rollbackAvailable: true,
       notes: ['Failed or cancelled runs can be retried with: lf execution retry <run>'],
-    });
+    })
     try {
       await callRpc(
         'fn_update_workflow_run_status',
@@ -606,16 +599,10 @@ const executionRetry = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<WorkflowRunRow[]>(
-        'lenses',
-        'workflow_runs',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.run}`, select: 'id,status' },
-        }
-      )
+      const rows = await callRest<WorkflowRunRow[]>('lenses', 'workflow_runs', 'GET', undefined, {
+        requireAuth: true,
+        query: { id: `eq.${args.run}`, select: 'id,status' },
+      })
       const existing = rows?.[0]
       if (!existing) {
         consola.error('Run %s not found.', args.run)
@@ -649,22 +636,23 @@ const executionRetry = defineCommand({
 
 interface ExecutionControlStatus {
   system_kill_switch_active: boolean
-  queue_frozen:              boolean
-  frozen_reason:             string | null
-  active_run_count:          number
-  queued_run_count:          number
-  active_battle_job_count:   number
-  queued_battle_job_count:   number
-  active_worker_count:       number
-  stale_worker_count:        number
-  dlq_workflow_count:        number
-  dlq_battle_count:          number
+  queue_frozen: boolean
+  frozen_reason: string | null
+  active_run_count: number
+  queued_run_count: number
+  active_battle_job_count: number
+  queued_battle_job_count: number
+  active_worker_count: number
+  stale_worker_count: number
+  dlq_workflow_count: number
+  dlq_battle_count: number
 }
 
 const executionStatus = defineCommand({
   meta: {
-    name:        'status',
-    description: 'Show global execution health dashboard (active runs, queued jobs, worker health).',
+    name: 'status',
+    description:
+      'Show global execution health dashboard (active runs, queued jobs, worker health).',
   },
   args: {
     json: { type: 'boolean', description: 'Output as JSON', default: false },
@@ -685,18 +673,19 @@ const executionStatus = defineCommand({
       printTable(
         ['Metric', 'Value'],
         [
-          ['System Kill Switch',  status.system_kill_switch_active ? 'ACTIVE' : 'inactive'],
-          ['Queue Frozen',        status.queue_frozen
-            ? `FROZEN — ${status.frozen_reason ?? 'no reason'}`
-            : 'running'],
-          ['Active Runs',         String(status.active_run_count)],
-          ['Queued Runs',         String(status.queued_run_count)],
-          ['Active Battle Jobs',  String(status.active_battle_job_count)],
-          ['Queued Battle Jobs',  String(status.queued_battle_job_count)],
-          ['Active Workers',      String(status.active_worker_count)],
-          ['Stale Workers',       String(status.stale_worker_count)],
-          ['Workflow DLQ',        String(status.dlq_workflow_count)],
-          ['Battle DLQ',          String(status.dlq_battle_count)],
+          ['System Kill Switch', status.system_kill_switch_active ? 'ACTIVE' : 'inactive'],
+          [
+            'Queue Frozen',
+            status.queue_frozen ? `FROZEN — ${status.frozen_reason ?? 'no reason'}` : 'running',
+          ],
+          ['Active Runs', String(status.active_run_count)],
+          ['Queued Runs', String(status.queued_run_count)],
+          ['Active Battle Jobs', String(status.active_battle_job_count)],
+          ['Queued Battle Jobs', String(status.queued_battle_job_count)],
+          ['Active Workers', String(status.active_worker_count)],
+          ['Stale Workers', String(status.stale_worker_count)],
+          ['Workflow DLQ', String(status.dlq_workflow_count)],
+          ['Battle DLQ', String(status.dlq_battle_count)],
         ]
       )
 
@@ -704,7 +693,10 @@ const executionStatus = defineCommand({
         consola.warn('System is LOCKED. Contact a platform admin to resume.')
       }
       if (status.stale_worker_count > 0) {
-        consola.warn('%d stale worker(s) detected (no heartbeat in > 2 min).', status.stale_worker_count)
+        consola.warn(
+          '%d stale worker(s) detected (no heartbeat in > 2 min).',
+          status.stale_worker_count
+        )
       }
     } catch (err) {
       handleError(err)

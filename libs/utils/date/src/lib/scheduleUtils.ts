@@ -57,7 +57,7 @@ export function localTimezone(): string {
 export function serializeScheduleDateTime(
   dateStr: string,
   hour: number,
-  minute: number,
+  minute: number
 ): string | null {
   if (!dateStr || !Number.isFinite(hour) || !Number.isFinite(minute)) return null
 
@@ -81,7 +81,7 @@ export function serializeScheduleDateTime(
 export function formatSchedulePreview(
   dateStr: string,
   hour: number,
-  minute: number,
+  minute: number
 ): string | null {
   const iso = serializeScheduleDateTime(dateStr, hour, minute)
   if (!iso) return null

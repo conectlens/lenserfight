@@ -10,10 +10,7 @@ import type { LocalKeyMeta } from '@lenserfight/types'
 
 const LS_FUNDING_KEY = 'lf-workflow-funding-source'
 
-export const useFundingSource = (
-  selectedProviderKey: string,
-  outputModality: string = 'text',
-) => {
+export const useFundingSource = (selectedProviderKey: string, outputModality: string = 'text') => {
   const { isAuthenticated } = useAuth()
   const [fundingSource, setFundingSourceState] = useState<FundingSource>(() => {
     if (typeof window === 'undefined') return 'platform_credit'

@@ -10,7 +10,6 @@
  */
 import { executionService, walletApiClient } from '@lenserfight/data/repositories'
 
-
 import { streamLocalProvider } from '../utils/localProviderStream'
 
 import {
@@ -37,7 +36,7 @@ export function createCloudByokAdapter(ctx: CloudByokAdapterCtx): FundingAdapter
       throw new FundingAdapterError(
         'Cloud BYOK requires a selected API key. Add one in Settings → API keys.',
         'user_byok_cloud',
-        'misconfigured',
+        'misconfigured'
       )
     }
     return ctx.keyRefId
@@ -46,7 +45,11 @@ export function createCloudByokAdapter(ctx: CloudByokAdapterCtx): FundingAdapter
   return {
     source: 'user_byok_cloud',
 
-    async streamText(req: TextStreamRequest, signal: AbortSignal, callbacks: StreamCallbacks): Promise<void> {
+    async streamText(
+      req: TextStreamRequest,
+      signal: AbortSignal,
+      callbacks: StreamCallbacks
+    ): Promise<void> {
       const keyRefId = requireKey()
 
       // Decrypt the cloud vault key server-side and stream directly to the provider.

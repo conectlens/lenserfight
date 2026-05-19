@@ -24,18 +24,21 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-const props = withDefaults(defineProps<{
-  size?: number
-  showWordmark?: boolean
-  showBeta?: boolean
-  imageUrl?: string
-  title?: string
-  link?: string
-}>(), {
-  size: 48,
-  showWordmark: true,
-  showBeta: false,
-})
+const props = withDefaults(
+  defineProps<{
+    size?: number
+    showWordmark?: boolean
+    showBeta?: boolean
+    imageUrl?: string
+    title?: string
+    link?: string
+  }>(),
+  {
+    size: 48,
+    showWordmark: true,
+    showBeta: false,
+  }
+)
 
 const isDark = ref(false)
 
@@ -67,7 +70,9 @@ const computedSrc = computed(() => {
 }
 
 .docs-logo--link {
-  transition: opacity 0.2s, transform 0.2s;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
 }
 
 .docs-logo--link:hover {

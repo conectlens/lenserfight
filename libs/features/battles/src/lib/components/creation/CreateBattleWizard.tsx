@@ -1,7 +1,19 @@
-import { Button, HelpButton, SegmentedControl, StepWizard, Tooltip } from '@lenserfight/ui/components'
+import {
+  Button,
+  HelpButton,
+  SegmentedControl,
+  StepWizard,
+  Tooltip,
+} from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Input, TextArea } from '@lenserfight/ui/forms'
-import { battlesService, battlesRepository, workflowsService, lensesService, battleExecutionRepository } from '@lenserfight/data/repositories'
+import {
+  battlesService,
+  battlesRepository,
+  workflowsService,
+  lensesService,
+  battleExecutionRepository,
+} from '@lenserfight/data/repositories'
 import type { BattleTemplateRecord, WorkflowRecord } from '@lenserfight/data/repositories'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
 import { useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
@@ -68,7 +80,9 @@ import { useInviteContender } from '../../hooks/mutations/useInviteContender'
 const CONFIG_HELP_CONTENT = (
   <div className="space-y-3 p-1 text-left leading-relaxed">
     <div>
-      <strong className="text-primary-yellow-600 dark:text-primary-yellow-400">Voter eligibility</strong>
+      <strong className="text-primary-yellow-600 dark:text-primary-yellow-400">
+        Voter eligibility
+      </strong>
       <p className="mt-0.5 text-greyscale-600 dark:text-greyscale-300">
         Controls who can vote on the battle outcome.
       </p>
@@ -80,23 +94,25 @@ const CONFIG_HELP_CONTENT = (
       </p>
     </div>
     <div>
-      <strong className="text-primary-yellow-600 dark:text-primary-yellow-400">AI execution (battle owner pays)</strong>
+      <strong className="text-primary-yellow-600 dark:text-primary-yellow-400">
+        AI execution (battle owner pays)
+      </strong>
       <p className="mt-0.5 text-greyscale-600 dark:text-greyscale-300">
-        Sets which model and funding source runs AI contenders. The battle creator pays — invited AI lensers do not spend personal credits.
+        Sets which model and funding source runs AI contenders. The battle creator pays — invited AI
+        lensers do not spend personal credits.
       </p>
     </div>
   </div>
 )
 
-const stepAction = (path: string, label: string) => (
-  <HelpButton path={path} label={label} />
-)
+const stepAction = (path: string, label: string) => <HelpButton path={path} label={label} />
 
 const BASE_WIZARD_STEPS: WizardStepConfig[] = [
   {
     label: 'Task',
     title: 'Choose task source',
-    description: 'Select the foundation for your battle — a lens prompt, a workflow pipeline, or a human challenge.',
+    description:
+      'Select the foundation for your battle — a lens prompt, a workflow pipeline, or a human challenge.',
     action: stepAction('/tutorials/battle-walkthroughs/your-first-battle', 'Your first battle'),
   },
   {
@@ -108,7 +124,8 @@ const BASE_WIZARD_STEPS: WizardStepConfig[] = [
   {
     label: 'Inputs',
     title: 'Shared inputs',
-    description: 'Set fair input values that every contender receives. Ensures an apples-to-apples comparison.',
+    description:
+      'Set fair input values that every contender receives. Ensures an apples-to-apples comparison.',
     action: stepAction('/tutorials/battle-walkthroughs/lens-battle-params', 'Lens parameters'),
   },
   {
@@ -132,13 +149,15 @@ const BASE_WIZARD_STEPS: WizardStepConfig[] = [
   {
     label: 'Judging',
     title: 'How is the winner decided?',
-    description: 'Choose the judging method — community vote, AI judge, rubric, or automatic scoring.',
+    description:
+      'Choose the judging method — community vote, AI judge, rubric, or automatic scoring.',
     action: stepAction('/how-to/battles/voting', 'Judging modes'),
   },
   {
     label: 'Config',
     title: 'Battle configuration',
-    description: 'Set voter eligibility, AI handicap, and the model that runs AI contenders. The battle creator configures and pays for AI execution.',
+    description:
+      'Set voter eligibility, AI handicap, and the model that runs AI contenders. The battle creator configures and pays for AI execution.',
     action: (
       <div className="flex items-center gap-1.5">
         <Tooltip
@@ -167,13 +186,15 @@ const BASE_WIZARD_STEPS: WizardStepConfig[] = [
   {
     label: 'Invite',
     title: 'Invite contenders',
-    description: 'Add up to two contenders by their lenser handle or display name. In AI vs AI battles, invited AI lensers compete as named identities — they run under your execution config and do not spend personal credits.',
+    description:
+      'Add up to two contenders by their lenser handle or display name. In AI vs AI battles, invited AI lensers compete as named identities — they run under your execution config and do not spend personal credits.',
     action: stepAction('/how-to/battles/join-and-submit', 'Joining a battle'),
   },
   {
     label: 'Lenses',
     title: 'Contender lenses',
-    description: 'Optionally give each contender their own lens — a personal style or approach layered on top of the shared task. Not needed when both sides share the same task lens.',
+    description:
+      'Optionally give each contender their own lens — a personal style or approach layered on top of the shared task. Not needed when both sides share the same task lens.',
     action: stepAction('/tutorials/walkthroughs/create-a-lens', 'About lenses'),
   },
   {
@@ -192,7 +213,12 @@ const DEFAULT_HANDICAP: AIHandicapConfig = {
   allowed_model_tier: null,
 }
 
-const AI_BATTLE_TYPES: BattleType[] = ['ai_vs_ai', 'human_vs_ai', 'human_vs_human_ai_votes', 'lenser_battle']
+const AI_BATTLE_TYPES: BattleType[] = [
+  'ai_vs_ai',
+  'human_vs_ai',
+  'human_vs_human_ai_votes',
+  'lenser_battle',
+]
 const AUTO_EXEC_TYPES: BattleType[] = ['ai_vs_ai', 'workflow_battle']
 
 // URLSearchParams.set coerces non-strings via String(), so writing `undefined`
@@ -206,7 +232,11 @@ const readSearchParam = (params: URLSearchParams, key: string): string | null =>
 
 const slideVariants = {
   enter: (dir: number) => ({ opacity: 0, x: dir > 0 ? 32 : -32 }),
-  center: { opacity: 1, x: 0, transition: { duration: 0.25, ease: [0, 0, 0.2, 1] as [number, number, number, number] } },
+  center: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.25, ease: [0, 0, 0.2, 1] as [number, number, number, number] },
+  },
   exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -32 : 32, transition: { duration: 0.18 } }),
 }
 
@@ -236,9 +266,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     readSearchParam(searchParams, 'workflow_id') ? 'workflow' : null
   )
   // Legacy alias — derived from taskSource for backward compat with unchanged sub-components
-  const battleFormat: BattleFormat | null = taskSource === 'challenge' ? null : taskSource as BattleFormat | null
+  const battleFormat: BattleFormat | null =
+    taskSource === 'challenge' ? null : (taskSource as BattleFormat | null)
   const setBattleFormat = (f: BattleFormat | 'workflow' | 'lens' | 'lenser_battle' | null) => {
-    if (f === 'lenser_battle') { setTaskSource('lens'); return }
+    if (f === 'lenser_battle') {
+      setTaskSource('lens')
+      return
+    }
     setTaskSource(f as TaskSource | null)
   }
 
@@ -258,7 +292,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // Lenser Battle policy
   const [lenserBattlePolicy, setLenserBattlePolicy] = useState<LenserBattlePolicy>(
-    DEFAULT_LENSER_BATTLE_POLICY,
+    DEFAULT_LENSER_BATTLE_POLICY
   )
 
   // Steps 3–5 — battle config
@@ -290,7 +324,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [selectedModelKey, setSelectedModelKey] = useState('')
   const { data: battleProviders = [], isLoading: isLoadingProviders } = useAIProviders()
   const { data: battleProviderModels = [], isLoading: isLoadingModels } = useAIModelsByProvider(
-    selectedProviderKey || null,
+    selectedProviderKey || null
   )
   const battleFunding = useFundingSource(selectedProviderKey)
   const chainabit = useChainabitConnection()
@@ -348,8 +382,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       taskSource,
       contenderStructure,
       judgingMode,
-      lenserPolicy: lenserBattlePolicy.memory_mode !== DEFAULT_LENSER_BATTLE_POLICY.memory_mode
-        ? lenserBattlePolicy : undefined,
+      lenserPolicy:
+        lenserBattlePolicy.memory_mode !== DEFAULT_LENSER_BATTLE_POLICY.memory_mode
+          ? lenserBattlePolicy
+          : undefined,
     })
     setBattleType(legacyType)
   }, [taskSource, contenderStructure, judgingMode]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -359,9 +395,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // timezone explicitly and we can disable already-passed hours/minutes
   // dynamically without relying on browser datetime-local behaviour.
   const [scheduleEnabled, setScheduleEnabled] = useState(false)
-  const [scheduleDate, setScheduleDate] = useState('')   // YYYY-MM-DD local
-  const [scheduleHour, setScheduleHour] = useState<number | ''>('')  // 0–23
-  const [scheduleMinute, setScheduleMinute] = useState<number | ''>('')  // 0–59
+  const [scheduleDate, setScheduleDate] = useState('') // YYYY-MM-DD local
+  const [scheduleHour, setScheduleHour] = useState<number | ''>('') // 0–23
+  const [scheduleMinute, setScheduleMinute] = useState<number | ''>('') // 0–59
 
   // Derived: serialized ISO UTC string (null when incomplete or past)
   const executionStartsAt =
@@ -422,7 +458,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     void (async () => {
       try {
         const all = await battlesRepository.listPublicBattleTemplates(undefined, 100)
-        const tpl: BattleTemplateRecord | undefined = all.find((t) => t.id === preselectedTemplateId)
+        const tpl: BattleTemplateRecord | undefined = all.find(
+          (t) => t.id === preselectedTemplateId
+        )
         if (!tpl || cancelled) return
         if (!title) setTitle(tpl.title)
         if (!description) setDescription(tpl.task_prompt)
@@ -432,7 +470,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         console.error('Failed to prefill template', e)
       }
     })()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [preselectedTemplateId]) // eslint-disable-line
 
   // ── Fetch existing battle for editing ─────────────────────────────────────
@@ -445,7 +485,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           const battle = await battlesService.getBattleById(battleIdFromUrl)
           if (battle && battle.status === 'draft') {
             setTitle(battle.title)
-            setDescription(battle.task_prompt.startsWith('Workflow battle: ') || battle.task_prompt.startsWith('Lens battle: ') ? '' : battle.task_prompt)
+            setDescription(
+              battle.task_prompt.startsWith('Workflow battle: ') ||
+                battle.task_prompt.startsWith('Lens battle: ')
+                ? ''
+                : battle.task_prompt
+            )
             setBattleType(battle.battle_type)
             setVoterEligibility(battle.voter_eligibility)
             if (battle.handicap_config) {
@@ -463,7 +508,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             setCreatedBattleId(battle.id)
             setCreatedBattleSlug(battle.slug)
             // Skip format/source/type steps if we already have them
-            if (step === 0 && (battle.workflow_id || battle.lens_id || battle.battle_type === 'lenser_battle')) {
+            if (
+              step === 0 &&
+              (battle.workflow_id || battle.lens_id || battle.battle_type === 'lenser_battle')
+            ) {
               goToStep(3)
             }
           }
@@ -537,7 +585,6 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // ── Navigation ───────────────────────────────────────────────────────────
 
-
   // ── Validation ───────────────────────────────────────────────────────────
 
   const showsHandicap = contenderStructure === 'ai_vs_ai' || contenderStructure === 'human_vs_ai'
@@ -600,28 +647,31 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // Step 7 (Config) needs an execution context when AI contenders are managed
   // by the platform. Challenge tasks with human-only contenders don't need it.
-  const aiExecutionRequired = contenderStructure === 'ai_vs_ai' || contenderStructure === 'human_vs_ai'
+  const aiExecutionRequired =
+    contenderStructure === 'ai_vs_ai' || contenderStructure === 'human_vs_ai'
   const aiExecutionValid = !aiExecutionRequired || (!!selectedProviderKey && !!selectedModelKey)
 
   // Output modality required by the selected lens (from its declared output_contract.kind).
   // Used to filter the model list in Step 7 and for pre-flight validation at creation.
-  const requiredOutputModality: string | null = taskSource === 'lens'
-    ? (myLenses.find((l) => l.id === selectedLensId)?.outputKind ?? null)
-    : null
+  const requiredOutputModality: string | null =
+    taskSource === 'lens'
+      ? (myLenses.find((l) => l.id === selectedLensId)?.outputKind ?? null)
+      : null
 
   // Filter models to those that support the required output modality.
   // If a model has no declared output_modalities (legacy), it's included (safe default).
   const filteredProviderModels = requiredOutputModality
     ? battleProviderModels.filter(
-        (m) => !m.outputModalities?.length || m.outputModalities.includes(requiredOutputModality),
+        (m) => !m.outputModalities?.length || m.outputModalities.includes(requiredOutputModality)
       )
     : battleProviderModels
 
-  const sourceValid = taskSource === 'challenge'
-    ? true
-    : taskSource === 'workflow'
-      ? !!selectedWorkflowId
-      : !!selectedLensId
+  const sourceValid =
+    taskSource === 'challenge'
+      ? true
+      : taskSource === 'workflow'
+        ? !!selectedWorkflowId
+        : !!selectedLensId
 
   const inputsStepValid = inputsStepValidity
 
@@ -629,9 +679,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // Question text is the source of truth — typed directly or filled from AI generation.
   // AI-generated questions that were locked also satisfy the requirement.
   const challengeNeedsGenerator = !!challengeType && challengeTypeRequiresGenerator(challengeType)
-  const challengeStepValid = taskSource !== 'challenge' || (
-    !!challengeType && (!!questionText.trim() || challengeLocked)
-  )
+  const challengeStepValid =
+    taskSource !== 'challenge' || (!!challengeType && (!!questionText.trim() || challengeLocked))
 
   const canProceed = (() => {
     if (step === 0) return taskSource !== null
@@ -649,17 +698,17 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   })()
 
   const stepValidity: boolean[] = [
-    taskSource !== null,                        // 0: Task Source
-    sourceValid,                                // 1: Source
-    inputsStepValid,                            // 2: Inputs (lens only)
-    title.trim().length >= 3,                   // 3: Basics
-    true,                                       // 4: Contenders — always valid
-    challengeStepValid,                         // 5: Challenge Type
-    true,                                       // 6: Judging — always valid
-    aiExecutionValid,                            // 7: Config
-    true,                                       // 8: Schedule — always skippable
-    true,                                       // 9: Invite — always skippable
-    true,                                       // 10: Lenses — always skippable
+    taskSource !== null, // 0: Task Source
+    sourceValid, // 1: Source
+    inputsStepValid, // 2: Inputs (lens only)
+    title.trim().length >= 3, // 3: Basics
+    true, // 4: Contenders — always valid
+    challengeStepValid, // 5: Challenge Type
+    true, // 6: Judging — always valid
+    aiExecutionValid, // 7: Config
+    true, // 8: Schedule — always skippable
+    true, // 9: Invite — always skippable
+    true, // 10: Lenses — always skippable
     automationReady && !!computedActiveBattleId, // 11: Finish/Automation
   ]
 
@@ -677,7 +726,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         !selectedModel.outputModalities.includes(requiredOutputModality)
       ) {
         setError(
-          `The selected model does not support "${requiredOutputModality}" output, which is required by the chosen lens. Select a compatible model in the Config step.`,
+          `The selected model does not support "${requiredOutputModality}" output, which is required by the chosen lens. Select a compatible model in the Config step.`
         )
         return
       }
@@ -692,25 +741,32 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             taskSource,
             contenderStructure,
             judgingMode,
-            lenserPolicy: lenserBattlePolicy.memory_mode !== DEFAULT_LENSER_BATTLE_POLICY.memory_mode
-              ? lenserBattlePolicy : undefined,
+            lenserPolicy:
+              lenserBattlePolicy.memory_mode !== DEFAULT_LENSER_BATTLE_POLICY.memory_mode
+                ? lenserBattlePolicy
+                : undefined,
           })
         : battleType
 
       // Final compatibility gate — if the legacy format is available, validate.
-      if (battleFormat && !isCompatibleCombination(battleFormat as BattleFormat | null, resolvedBattleType)) {
+      if (
+        battleFormat &&
+        !isCompatibleCombination(battleFormat as BattleFormat | null, resolvedBattleType)
+      ) {
         // For V2 model this is a soft warning since the mapper handles the mapping
         console.warn(
           `Legacy compatibility note: "${resolvedBattleType}" mapped from V2 model ` +
-          `(${taskSource}/${contenderStructure}/${judgingMode}) for format "${battleFormat}".`
+            `(${taskSource}/${contenderStructure}/${judgingMode}) for format "${battleFormat}".`
         )
       }
 
-      const resolvedPrompt = description.trim() || (taskSource === 'workflow'
-        ? `Workflow battle: ${selectedWorkflowTitle || selectedWorkflowId}`
-        : taskSource === 'challenge'
-          ? `Challenge battle: ${challengeType || 'unspecified'}`
-          : `Lens battle: ${selectedLensTitle || selectedLensId}`)
+      const resolvedPrompt =
+        description.trim() ||
+        (taskSource === 'workflow'
+          ? `Workflow battle: ${selectedWorkflowTitle || selectedWorkflowId}`
+          : taskSource === 'challenge'
+            ? `Challenge battle: ${challengeType || 'unspecified'}`
+            : `Lens battle: ${selectedLensTitle || selectedLensId}`)
 
       const battleInput = {
         title: title.trim(),
@@ -718,7 +774,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         battle_type: resolvedBattleType,
         voter_eligibility: voterEligibility,
         handicap: AI_BATTLE_TYPES.includes(resolvedBattleType) ? handicap : undefined,
-        ...(taskSource === 'workflow' && selectedWorkflowId ? { workflow_id: selectedWorkflowId } : {}),
+        ...(taskSource === 'workflow' && selectedWorkflowId
+          ? { workflow_id: selectedWorkflowId }
+          : {}),
         ...(taskSource === 'lens' && selectedLensId ? { lens_id: selectedLensId } : {}),
         // Store shared Lens parameter values for fairness
         ...(taskSource === 'lens' && Object.keys(sharedParamValues).length > 0
@@ -757,7 +815,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           contender_id: null,
           provider_key: selectedProviderKey,
           model_key: selectedModelKey,
-          funding_source: battleFunding.fundingSource as 'user_byok_cloud' | 'user_byok_local' | 'platform_credit' | 'sponsored',
+          funding_source: battleFunding.fundingSource as
+            | 'user_byok_cloud'
+            | 'user_byok_local'
+            | 'platform_credit'
+            | 'sponsored',
           byok_key_ref_id: battleFunding.selectedKeyRefId || undefined,
           max_tokens: 4096,
           temperature: 0.7,
@@ -765,7 +827,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       }
 
       // Persist and lock generated challenge for challenge battles (only when AI generation was used)
-      if (taskSource === 'challenge' && challengeLocked && questionText.trim() && generatorLensId && generatorModelId) {
+      if (
+        taskSource === 'challenge' &&
+        challengeLocked &&
+        questionText.trim() &&
+        generatorLensId &&
+        generatorModelId
+      ) {
         try {
           const { challengeGenerationService } = await import('@lenserfight/data/repositories')
           const result = await challengeGenerationService.generate({
@@ -817,7 +885,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       // No battle to attach contenders to — surface the cause rather than
       // silently skipping ahead, which previously looked like a successful
       // invite to the user.
-      setInviteError('Cannot invite contenders: battle has not been created yet. Go back and complete the configuration step.')
+      setInviteError(
+        'Cannot invite contenders: battle has not been created yet. Go back and complete the configuration step.'
+      )
       return
     }
     setInviting(true)
@@ -912,7 +982,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         setError(
           scheduleDate && (scheduleHour !== '' || scheduleMinute !== '')
             ? 'The selected date and time is in the past. Please choose a future time.'
-            : 'Please select a date and time for execution.',
+            : 'Please select a date and time for execution.'
         )
         return
       }
@@ -924,10 +994,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       setError(null)
       try {
         await battlesService.scheduleBattle({
-          battle_id:             activeBattleId,
-          execution_starts_at:   executionStartsAt,
+          battle_id: activeBattleId,
+          execution_starts_at: executionStartsAt,
           voting_duration_hours: votingDurationHours,
-          auto_publish:          autoPublish,
+          auto_publish: autoPublish,
         })
       } catch (e) {
         setError(normalizeError(e).message)
@@ -951,24 +1021,26 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // ── Render ────────────────────────────────────────────────────────────────
 
   // Skip button config per step
-  const skipButton = step === 8
-    ? { label: 'Skip for now', onClick: () => go(9) }
-    : step === 9
-      ? { label: 'Skip for now', onClick: () => go(10) }
-      : step === 10
-        ? { label: 'Skip for now', onClick: () => go(11) }
-        : step === 11
-          ? { label: 'Skip for now', onClick: handleFinish }
-          : undefined
+  const skipButton =
+    step === 8
+      ? { label: 'Skip for now', onClick: () => go(9) }
+      : step === 9
+        ? { label: 'Skip for now', onClick: () => go(10) }
+        : step === 10
+          ? { label: 'Skip for now', onClick: () => go(11) }
+          : step === 11
+            ? { label: 'Skip for now', onClick: handleFinish }
+            : undefined
 
   // Next / complete handler varies by step
-  const handleNext = step === 7
-    ? handleCreateBattle
-    : step === 8
-      ? handleScheduleAndNext
-      : step === 9
-        ? handleInvite
-        : () => go(step + 1)
+  const handleNext =
+    step === 7
+      ? handleCreateBattle
+      : step === 8
+        ? handleScheduleAndNext
+        : step === 9
+          ? handleInvite
+          : () => go(step + 1)
 
   const handleComplete = handleFinish
 
@@ -988,11 +1060,19 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         onComplete={handleComplete}
         onCancel={onClose}
         canProceed={canProceed}
-        isCompleting={(step === 7 || step === 8) ? submitting : step === 9 ? inviting : false}
-        isNextLoading={(step === 7 || step === 8) ? submitting : step === 9 ? inviting : false}
+        isCompleting={step === 7 || step === 8 ? submitting : step === 9 ? inviting : false}
+        isNextLoading={step === 7 || step === 8 ? submitting : step === 9 ? inviting : false}
         completeLabel="Go to Battle"
         completeIcon={<Swords size={15} className="mr-1.5" />}
-        nextLabel={step === 7 ? (isEditMode ? 'Update Battle' : 'Create Battle') : step === 9 ? 'Invite' : 'Next'}
+        nextLabel={
+          step === 7
+            ? isEditMode
+              ? 'Update Battle'
+              : 'Create Battle'
+            : step === 9
+              ? 'Invite'
+              : 'Next'
+        }
         skipButton={skipButton}
         stepValidity={stepValidity}
         onStepClick={go}
@@ -1006,116 +1086,142 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             animate="center"
             exit="exit"
           >
-
             {/* ── Step 0: Task Source chooser ─────────────────────────── */}
-            {step === 0 && (
-              <TaskSourceSelector
-                value={taskSource}
-                onChange={setTaskSource}
-              />
-            )}
+            {step === 0 && <TaskSourceSelector value={taskSource} onChange={setTaskSource} />}
 
             {/* ── Step 1: Workflow picker ───────────────────────────── */}
-            {step === 1 && taskSource === 'workflow' && (() => {
-              const isLoading = workflowScope === 'mine' ? loadingWorkflows : loadingPopularWorkflows
-              const list = workflowScope === 'mine' ? (workflows as WorkflowRecord[]) : popularWorkflows
-              return (
-                <div className="space-y-3">
-                  <SegmentedControl
-                    options={[
-                      { value: 'mine', label: 'My Workflows' },
-                      { value: 'popular', label: 'Popular' },
-                    ]}
-                    value={workflowScope}
-                    onChange={(v) => { setWorkflowScope(v as 'mine' | 'popular'); setSelectedWorkflowId(null) }}
-                    size="sm"
-                  />
-                  <div className="space-y-2">
-                    {isLoading && Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="h-14 rounded-2xl bg-surface-raised animate-pulse" />
-                    ))}
-                    {!isLoading && list.length === 0 && (
-                      <p className="py-8 text-center text-sm text-greyscale-400">
-                        {workflowScope === 'mine'
-                          ? 'No workflows found. Create one first from the Workflows section.'
-                          : 'No popular workflows yet. Check back later.'}
-                      </p>
-                    )}
-                    {!isLoading && list.map((wf) => (
-                      <Button
-                        key={wf.id}
-                        type="button"
-                        variant="ghost"
-                        onClick={() => { setSelectedWorkflowId(wf.id); setSelectedWorkflowTitle(wf.title) }}
-                        className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
-                          selectedWorkflowId === wf.id
-                            ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
-                            : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
-                        }`}
-                      >
-                        <GitBranch
-                          size={16}
-                          className={selectedWorkflowId === wf.id ? 'text-primary-yellow-600 flex-shrink-0' : 'text-greyscale-400 flex-shrink-0'}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
-                            {wf.title}
-                          </p>
-                          {wf.description && (
-                            <p className="truncate text-xs text-greyscale-400">{wf.description}</p>
-                          )}
-                        </div>
-                      </Button>
-                    ))}
+            {step === 1 &&
+              taskSource === 'workflow' &&
+              (() => {
+                const isLoading =
+                  workflowScope === 'mine' ? loadingWorkflows : loadingPopularWorkflows
+                const list =
+                  workflowScope === 'mine' ? (workflows as WorkflowRecord[]) : popularWorkflows
+                return (
+                  <div className="space-y-3">
+                    <SegmentedControl
+                      options={[
+                        { value: 'mine', label: 'My Workflows' },
+                        { value: 'popular', label: 'Popular' },
+                      ]}
+                      value={workflowScope}
+                      onChange={(v) => {
+                        setWorkflowScope(v as 'mine' | 'popular')
+                        setSelectedWorkflowId(null)
+                      }}
+                      size="sm"
+                    />
+                    <div className="space-y-2">
+                      {isLoading &&
+                        Array.from({ length: 4 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="h-14 rounded-2xl bg-surface-raised animate-pulse"
+                          />
+                        ))}
+                      {!isLoading && list.length === 0 && (
+                        <p className="py-8 text-center text-sm text-greyscale-400">
+                          {workflowScope === 'mine'
+                            ? 'No workflows found. Create one first from the Workflows section.'
+                            : 'No popular workflows yet. Check back later.'}
+                        </p>
+                      )}
+                      {!isLoading &&
+                        list.map((wf) => (
+                          <Button
+                            key={wf.id}
+                            type="button"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedWorkflowId(wf.id)
+                              setSelectedWorkflowTitle(wf.title)
+                            }}
+                            className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
+                              selectedWorkflowId === wf.id
+                                ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
+                                : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
+                            }`}
+                          >
+                            <GitBranch
+                              size={16}
+                              className={
+                                selectedWorkflowId === wf.id
+                                  ? 'text-primary-yellow-600 flex-shrink-0'
+                                  : 'text-greyscale-400 flex-shrink-0'
+                              }
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                                {wf.title}
+                              </p>
+                              {wf.description && (
+                                <p className="truncate text-xs text-greyscale-400">
+                                  {wf.description}
+                                </p>
+                              )}
+                            </div>
+                          </Button>
+                        ))}
+                    </div>
                   </div>
-                </div>
-              )
-            })()}
+                )
+              })()}
 
             {/* ── Step 1: Lens picker ───────────────────────────────── */}
             {step === 1 && taskSource === 'lens' && (
               <div className="space-y-2">
-                {loadingLenses && Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-14 rounded-2xl bg-surface-raised animate-pulse" />
-                ))}
+                {loadingLenses &&
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-14 rounded-2xl bg-surface-raised animate-pulse" />
+                  ))}
                 {!loadingLenses && myLenses.length === 0 && (
                   <p className="py-8 text-center text-sm text-greyscale-400">
                     No lenses found. Create a lens first.
                   </p>
                 )}
-                {!loadingLenses && myLenses.map((lens) => (
-                  <Button
-                    key={lens.id}
-                    type="button"
-                    variant="ghost"
-                    onClick={() => { setSelectedLensId(lens.id); setSelectedLensTitle(lens.title) }}
-                    className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
-                      selectedLensId === lens.id
-                        ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
-                        : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
-                    }`}
-                  >
-                    <Layers
-                      size={16}
-                      className={selectedLensId === lens.id ? 'text-primary-yellow-600 flex-shrink-0' : 'text-greyscale-400 flex-shrink-0'}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
-                        {lens.title}
-                      </p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {lens.visibility !== 'public' && (
-                          <span className="text-xs text-greyscale-400 capitalize">{lens.visibility}</span>
-                        )}
-                        {lens.outputKind && (
-                          <span className="rounded border border-surface-border bg-surface-base px-1.5 py-0.5 font-mono text-[10px] capitalize text-greyscale-500 dark:text-greyscale-400">
-                            {lens.outputKind}
-                          </span>
-                        )}
+                {!loadingLenses &&
+                  myLenses.map((lens) => (
+                    <Button
+                      key={lens.id}
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedLensId(lens.id)
+                        setSelectedLensTitle(lens.title)
+                      }}
+                      className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
+                        selectedLensId === lens.id
+                          ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
+                          : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
+                      }`}
+                    >
+                      <Layers
+                        size={16}
+                        className={
+                          selectedLensId === lens.id
+                            ? 'text-primary-yellow-600 flex-shrink-0'
+                            : 'text-greyscale-400 flex-shrink-0'
+                        }
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                          {lens.title}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {lens.visibility !== 'public' && (
+                            <span className="text-xs text-greyscale-400 capitalize">
+                              {lens.visibility}
+                            </span>
+                          )}
+                          {lens.outputKind && (
+                            <span className="rounded border border-surface-border bg-surface-base px-1.5 py-0.5 font-mono text-[10px] capitalize text-greyscale-500 dark:text-greyscale-400">
+                              {lens.outputKind}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </Button>
-                ))}
+                    </Button>
+                  ))}
               </div>
             )}
 
@@ -1225,7 +1331,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                     isLocked={challengeLocked}
                     generationError={generationError}
                     onGenerationErrorChange={setGenerationError}
-                    availableLenses={myLenses.map((l) => ({ id: l.id, title: l.title, slug: l.id }))}
+                    availableLenses={myLenses.map((l) => ({
+                      id: l.id,
+                      title: l.title,
+                      slug: l.id,
+                    }))}
                     onGeneratorModelChange={setGeneratorModelId}
                   />
                 )}
@@ -1259,7 +1369,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       position="right"
                       contentClassName="whitespace-normal w-56 text-[11px]"
                     >
-                      <Info size={13} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
+                      <Info
+                        size={13}
+                        className="text-greyscale-400 hover:text-greyscale-600 cursor-default"
+                      />
                     </Tooltip>
                   </div>
                   <div className="space-y-6">
@@ -1287,14 +1400,20 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                         position="right"
                         contentClassName="whitespace-normal w-60 text-[11px]"
                       >
-                        <Info size={13} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
+                        <Info
+                          size={13}
+                          className="text-greyscale-400 hover:text-greyscale-600 cursor-default"
+                        />
                       </Tooltip>
                     </div>
                     <div className="mb-4 flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-xs text-greyscale-500 dark:text-greyscale-400">
                       <Info size={13} className="flex-shrink-0 text-primary-yellow-500" />
                       <span>
-                        <strong className="text-greyscale-700 dark:text-greyscale-200">Battle creator pays.</strong>{' '}
-                        AI contenders run under this config. Invited AI lensers act as named identities — they do not spend personal credits.
+                        <strong className="text-greyscale-700 dark:text-greyscale-200">
+                          Battle creator pays.
+                        </strong>{' '}
+                        AI contenders run under this config. Invited AI lensers act as named
+                        identities — they do not spend personal credits.
                       </span>
                     </div>
                     {requiredOutputModality && (
@@ -1332,7 +1451,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       providerModels={filteredProviderModels}
                       isLoadingModels={isLoadingModels}
                       selectedProviderKey={selectedProviderKey}
-                      onProviderChange={(key) => { setSelectedProviderKey(key); setSelectedModelKey('') }}
+                      onProviderChange={(key) => {
+                        setSelectedProviderKey(key)
+                        setSelectedModelKey('')
+                      }}
                       selectedModelKey={selectedModelKey}
                       onModelChange={setSelectedModelKey}
                     />
@@ -1350,7 +1472,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       position="bottom"
                       contentClassName="whitespace-normal w-72 text-[11px]"
                     >
-                      <Info size={13} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
+                      <Info
+                        size={13}
+                        className="text-greyscale-400 hover:text-greyscale-600 cursor-default"
+                      />
                     </Tooltip>
                     {stepAction('/tutorials/battle-walkthroughs/lenser-battle', 'Lenser battles')}
                   </div>
@@ -1402,7 +1527,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                           }
                         }}
                         className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-                          scheduleEnabled ? 'bg-primary-yellow-500' : 'bg-greyscale-200 dark:bg-greyscale-700'
+                          scheduleEnabled
+                            ? 'bg-primary-yellow-500'
+                            : 'bg-greyscale-200 dark:bg-greyscale-700'
                         }`}
                       >
                         <span
@@ -1413,155 +1540,176 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       </button>
                     </div>
 
-                    {scheduleEnabled && (() => {
-                      const tz = localTimezone()
-                      const blockedHours = pastHoursForDate(scheduleDate)
-                      const blockedMinutes = pastMinutesForDateHour(
-                        scheduleDate,
-                        scheduleHour !== '' ? (scheduleHour as number) : -1,
-                      )
-                      const preview = scheduleDate && scheduleHour !== '' && scheduleMinute !== ''
-                        ? formatSchedulePreview(scheduleDate, scheduleHour as number, scheduleMinute as number)
-                        : null
-                      const isPastSelection = preview === null &&
-                        scheduleDate !== '' && scheduleHour !== '' && scheduleMinute !== ''
+                    {scheduleEnabled &&
+                      (() => {
+                        const tz = localTimezone()
+                        const blockedHours = pastHoursForDate(scheduleDate)
+                        const blockedMinutes = pastMinutesForDateHour(
+                          scheduleDate,
+                          scheduleHour !== '' ? (scheduleHour as number) : -1
+                        )
+                        const preview =
+                          scheduleDate && scheduleHour !== '' && scheduleMinute !== ''
+                            ? formatSchedulePreview(
+                                scheduleDate,
+                                scheduleHour as number,
+                                scheduleMinute as number
+                              )
+                            : null
+                        const isPastSelection =
+                          preview === null &&
+                          scheduleDate !== '' &&
+                          scheduleHour !== '' &&
+                          scheduleMinute !== ''
 
-                      return (
-                        <div className="space-y-4 rounded-2xl border border-surface-border p-4">
-                          {/* Timezone badge */}
-                          <div className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-xs text-greyscale-500 dark:text-greyscale-400">
-                            <Info size={13} className="flex-shrink-0 text-primary-yellow-500" />
-                            Times are in your local timezone:{' '}
-                            <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">{tz}</span>
-                          </div>
-
-                          {/* Date picker */}
-                          <div>
-                            <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                              Date
-                            </label>
-                            <input
-                              type="date"
-                              value={scheduleDate}
-                              min={minScheduleDateLocal()}
-                              onChange={(e) => {
-                                setScheduleDate(e.target.value)
-                                // Reset hour/minute when date changes — previously valid
-                                // picks may now be in the past for the new date.
-                                setScheduleHour('')
-                                setScheduleMinute('')
-                              }}
-                              className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
-                            />
-                          </div>
-
-                          {/* Hour + Minute selectors */}
-                          {scheduleDate && (
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                                  Hour
-                                </label>
-                                <select
-                                  value={scheduleHour}
-                                  onChange={(e) => {
-                                    setScheduleHour(e.target.value === '' ? '' : Number(e.target.value))
-                                    setScheduleMinute('')
-                                  }}
-                                  className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
-                                >
-                                  <option value="">— hour —</option>
-                                  {Array.from({ length: 24 }, (_, h) => (
-                                    <option key={h} value={h} disabled={blockedHours.has(h)}>
-                                      {String(h).padStart(2, '0')}:xx
-                                      {blockedHours.has(h) ? ' (past)' : ''}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                                  Minute
-                                </label>
-                                <select
-                                  value={scheduleMinute}
-                                  onChange={(e) => setScheduleMinute(e.target.value === '' ? '' : Number(e.target.value))}
-                                  disabled={scheduleHour === ''}
-                                  className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none disabled:opacity-50"
-                                >
-                                  <option value="">— minute —</option>
-                                  {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
-                                    <option key={m} value={m} disabled={blockedMinutes.has(m)}>
-                                      :{String(m).padStart(2, '0')}
-                                      {blockedMinutes.has(m) ? ' (past)' : ''}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Execution preview */}
-                          {preview && (
-                            <div className="flex items-center gap-2 rounded-xl border border-primary-yellow-500/20 bg-primary-yellow-500/5 px-3 py-2 text-xs text-greyscale-700 dark:text-greyscale-300">
+                        return (
+                          <div className="space-y-4 rounded-2xl border border-surface-border p-4">
+                            {/* Timezone badge */}
+                            <div className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-xs text-greyscale-500 dark:text-greyscale-400">
                               <Info size={13} className="flex-shrink-0 text-primary-yellow-500" />
-                              Execution scheduled for: <span className="font-semibold">{preview}</span>
+                              Times are in your local timezone:{' '}
+                              <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">
+                                {tz}
+                              </span>
                             </div>
-                          )}
-                          {isPastSelection && (
-                            <p className="text-xs text-status-red">
-                              The selected time is in the past. Please pick a future date and time.
-                            </p>
-                          )}
 
-                          {/* Voting window */}
-                          <div>
-                            <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                              Voting window
-                            </label>
-                            <select
-                              value={votingDurationHours}
-                              onChange={(e) => setVotingDurationHours(Number(e.target.value))}
-                              className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
-                            >
-                              {[1, 6, 12, 24, 48, 72].map((h) => (
-                                <option key={h} value={h}>
-                                  {h === 1 ? '1 hour' : `${h} hours`}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Auto-publish toggle */}
-                          <div className="flex items-center justify-between gap-4">
+                            {/* Date picker */}
                             <div>
-                              <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
-                                Auto-publish results
-                              </p>
-                              <p className="text-xs text-greyscale-400 mt-0.5">
-                                Results publish automatically after voting closes.
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={autoPublish}
-                              onClick={() => setAutoPublish((v) => !v)}
-                              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-                                autoPublish ? 'bg-primary-yellow-500' : 'bg-greyscale-200 dark:bg-greyscale-700'
-                              }`}
-                            >
-                              <span
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
-                                  autoPublish ? 'translate-x-5' : 'translate-x-0'
-                                }`}
+                              <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                                Date
+                              </label>
+                              <input
+                                type="date"
+                                value={scheduleDate}
+                                min={minScheduleDateLocal()}
+                                onChange={(e) => {
+                                  setScheduleDate(e.target.value)
+                                  // Reset hour/minute when date changes — previously valid
+                                  // picks may now be in the past for the new date.
+                                  setScheduleHour('')
+                                  setScheduleMinute('')
+                                }}
+                                className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
                               />
-                            </button>
+                            </div>
+
+                            {/* Hour + Minute selectors */}
+                            {scheduleDate && (
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                                    Hour
+                                  </label>
+                                  <select
+                                    value={scheduleHour}
+                                    onChange={(e) => {
+                                      setScheduleHour(
+                                        e.target.value === '' ? '' : Number(e.target.value)
+                                      )
+                                      setScheduleMinute('')
+                                    }}
+                                    className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
+                                  >
+                                    <option value="">— hour —</option>
+                                    {Array.from({ length: 24 }, (_, h) => (
+                                      <option key={h} value={h} disabled={blockedHours.has(h)}>
+                                        {String(h).padStart(2, '0')}:xx
+                                        {blockedHours.has(h) ? ' (past)' : ''}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                                    Minute
+                                  </label>
+                                  <select
+                                    value={scheduleMinute}
+                                    onChange={(e) =>
+                                      setScheduleMinute(
+                                        e.target.value === '' ? '' : Number(e.target.value)
+                                      )
+                                    }
+                                    disabled={scheduleHour === ''}
+                                    className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none disabled:opacity-50"
+                                  >
+                                    <option value="">— minute —</option>
+                                    {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+                                      <option key={m} value={m} disabled={blockedMinutes.has(m)}>
+                                        :{String(m).padStart(2, '0')}
+                                        {blockedMinutes.has(m) ? ' (past)' : ''}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Execution preview */}
+                            {preview && (
+                              <div className="flex items-center gap-2 rounded-xl border border-primary-yellow-500/20 bg-primary-yellow-500/5 px-3 py-2 text-xs text-greyscale-700 dark:text-greyscale-300">
+                                <Info size={13} className="flex-shrink-0 text-primary-yellow-500" />
+                                Execution scheduled for:{' '}
+                                <span className="font-semibold">{preview}</span>
+                              </div>
+                            )}
+                            {isPastSelection && (
+                              <p className="text-xs text-status-red">
+                                The selected time is in the past. Please pick a future date and
+                                time.
+                              </p>
+                            )}
+
+                            {/* Voting window */}
+                            <div>
+                              <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                                Voting window
+                              </label>
+                              <select
+                                value={votingDurationHours}
+                                onChange={(e) => setVotingDurationHours(Number(e.target.value))}
+                                className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
+                              >
+                                {[1, 6, 12, 24, 48, 72].map((h) => (
+                                  <option key={h} value={h}>
+                                    {h === 1 ? '1 hour' : `${h} hours`}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Auto-publish toggle */}
+                            <div className="flex items-center justify-between gap-4">
+                              <div>
+                                <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                                  Auto-publish results
+                                </p>
+                                <p className="text-xs text-greyscale-400 mt-0.5">
+                                  Results publish automatically after voting closes.
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={autoPublish}
+                                onClick={() => setAutoPublish((v) => !v)}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                                  autoPublish
+                                    ? 'bg-primary-yellow-500'
+                                    : 'bg-greyscale-200 dark:bg-greyscale-700'
+                                }`}
+                              >
+                                <span
+                                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                                    autoPublish ? 'translate-x-5' : 'translate-x-0'
+                                  }`}
+                                />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })()}
+                        )
+                      })()}
                   </>
                 ) : (
                   <p className="py-6 text-center text-sm text-greyscale-400">
@@ -1578,7 +1726,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   <div className="flex items-start gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2.5 text-xs text-greyscale-500 dark:text-greyscale-400">
                     <Info size={13} className="mt-0.5 flex-shrink-0 text-primary-yellow-500" />
                     <span>
-                      AI lensers you invite compete as <strong className="text-greyscale-700 dark:text-greyscale-200">named identities</strong>. Their execution runs under the model and funding you configured — they do not spend personal credits.
+                      AI lensers you invite compete as{' '}
+                      <strong className="text-greyscale-700 dark:text-greyscale-200">
+                        named identities
+                      </strong>
+                      . Their execution runs under the model and funding you configured — they do
+                      not spend personal credits.
                     </span>
                   </div>
                 )}
@@ -1630,7 +1783,6 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                 Complete the previous steps to configure automation settings.
               </p>
             )}
-
           </motion.div>
         </AnimatePresence>
       </StepWizard>

@@ -2,20 +2,20 @@ jest.mock('citty', () => ({ defineCommand: (opts: unknown) => opts }))
 jest.mock('consola', () => ({
   __esModule: true,
   default: {
-    error:   jest.fn(),
-    warn:    jest.fn(),
-    info:    jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
     success: jest.fn(),
-    log:     jest.fn(),
+    log: jest.fn(),
   },
 }))
 jest.mock('../utils/api', () => ({
-  callRpc:     jest.fn(),
+  callRpc: jest.fn(),
   handleError: jest.fn(),
 }))
 jest.mock('../utils/output', () => ({
   printTable: jest.fn(),
-  printJson:  jest.fn(),
+  printJson: jest.fn(),
 }))
 jest.mock('../lib/safety', () => ({
   assertSafe: jest.fn(),
@@ -26,27 +26,27 @@ import { callRpc, handleError } from '../utils/api'
 import { printTable, printJson } from '../utils/output'
 import { assertSafe } from '../lib/safety'
 
-const mockCallRpc    = callRpc    as jest.MockedFunction<typeof callRpc>
+const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
 const mockHandleError = handleError as jest.MockedFunction<typeof handleError>
-const mockPrintTable  = printTable  as jest.MockedFunction<typeof printTable>
-const mockPrintJson   = printJson   as jest.MockedFunction<typeof printJson>
-const mockAssertSafe  = assertSafe  as jest.MockedFunction<typeof assertSafe>
+const mockPrintTable = printTable as jest.MockedFunction<typeof printTable>
+const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
+const mockAssertSafe = assertSafe as jest.MockedFunction<typeof assertSafe>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCmd = { run?: (ctx: any) => Promise<void>; subCommands?: Record<string, any> }
 
 const HEALTHY_STATUS = {
   system_kill_switch_active: false,
-  queue_frozen:              false,
-  frozen_reason:             null,
-  active_run_count:          0,
-  queued_run_count:          0,
-  active_battle_job_count:   0,
-  queued_battle_job_count:   0,
-  active_worker_count:       2,
-  stale_worker_count:        0,
-  dlq_workflow_count:        0,
-  dlq_battle_count:          0,
+  queue_frozen: false,
+  frozen_reason: null,
+  active_run_count: 0,
+  queued_run_count: 0,
+  active_battle_job_count: 0,
+  queued_battle_job_count: 0,
+  active_worker_count: 2,
+  stale_worker_count: 0,
+  dlq_workflow_count: 0,
+  dlq_battle_count: 0,
 }
 
 beforeEach(() => {
@@ -75,7 +75,7 @@ describe('platform status', () => {
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_get_execution_status',
       {},
-      expect.objectContaining({ requireAuth: true }),
+      expect.objectContaining({ requireAuth: true })
     )
     expect(mockPrintTable).toHaveBeenCalledWith(
       ['Metric', 'Value'],
@@ -83,7 +83,7 @@ describe('platform status', () => {
         ['System Kill Switch', 'inactive'],
         ['Active Runs', '0'],
         ['Stale Workers', '0'],
-      ]),
+      ])
     )
     expect(consola.warn).not.toHaveBeenCalled()
   })
@@ -96,10 +96,7 @@ describe('platform status', () => {
     const cmd = await getSubCmd('status')
     await cmd.run?.({ args: { json: false } })
 
-    expect(consola.warn).toHaveBeenCalledWith(
-      expect.stringContaining('LOCKED'),
-      expect.anything(),
-    )
+    expect(consola.warn).toHaveBeenCalledWith(expect.stringContaining('LOCKED'), expect.anything())
   })
 
   it('warns when stale workers are detected', async () => {
@@ -109,7 +106,7 @@ describe('platform status', () => {
 
     expect(consola.warn).toHaveBeenCalledWith(
       expect.stringContaining('stale worker'),
-      expect.anything(),
+      expect.anything()
     )
   })
 
@@ -137,21 +134,25 @@ describe('platform status', () => {
 
 describe('platform emergency-stop', () => {
   it('calls assertSafe with CRITICAL risk and typed phrase', async () => {
-    mockCallRpc.mockResolvedValueOnce({ switch_id: 'sw-1', cancelled_runs: 0, cancelled_jobs: 0 } as never)
+    mockCallRpc.mockResolvedValueOnce({
+      switch_id: 'sw-1',
+      cancelled_runs: 0,
+      cancelled_jobs: 0,
+    } as never)
     const cmd = await getSubCmd('emergency-stop')
     await cmd.run?.({ args: { reason: 'runaway scheduler', force: false } })
 
     expect(mockAssertSafe).toHaveBeenCalledWith(
-      expect.objectContaining({ risk: 'CRITICAL', typedPhrase: 'PLATFORM DOWN' }),
+      expect.objectContaining({ risk: 'CRITICAL', typedPhrase: 'PLATFORM DOWN' })
     )
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_emergency_stop',
       { p_reason: 'runaway scheduler', p_force_mode: false },
-      expect.objectContaining({ requireAuth: true }),
+      expect.objectContaining({ requireAuth: true })
     )
     expect(consola.warn).toHaveBeenCalledWith(
       expect.stringContaining('ACTIVATED'),
-      expect.anything(),
+      expect.anything()
     )
   })
 
@@ -170,23 +171,23 @@ describe('platform emergency-stop', () => {
 
 describe('platform kill-all', () => {
   it('calls assertSafe with KILL ALL RUNS typed phrase and force_mode=true', async () => {
-    mockCallRpc.mockResolvedValueOnce({ switch_id: 'sw-2', cancelled_runs: 5, cancelled_jobs: 2 } as never)
+    mockCallRpc.mockResolvedValueOnce({
+      switch_id: 'sw-2',
+      cancelled_runs: 5,
+      cancelled_jobs: 2,
+    } as never)
     const cmd = await getSubCmd('kill-all')
     await cmd.run?.({ args: { reason: 'queue flood', force: true } })
 
     expect(mockAssertSafe).toHaveBeenCalledWith(
-      expect.objectContaining({ risk: 'CRITICAL', typedPhrase: 'KILL ALL RUNS' }),
+      expect.objectContaining({ risk: 'CRITICAL', typedPhrase: 'KILL ALL RUNS' })
     )
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_emergency_stop',
       { p_reason: 'queue flood', p_force_mode: true },
-      expect.objectContaining({ requireAuth: true }),
+      expect.objectContaining({ requireAuth: true })
     )
-    expect(consola.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Cancelled'),
-      5,
-      2,
-    )
+    expect(consola.warn).toHaveBeenCalledWith(expect.stringContaining('Cancelled'), 5, 2)
   })
 
   it('calls handleError on API failure', async () => {
@@ -211,7 +212,7 @@ describe('platform resume', () => {
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_kill_switch_lift',
       { p_switch_id: 'sw-abc' },
-      expect.objectContaining({ requireAuth: true }),
+      expect.objectContaining({ requireAuth: true })
     )
     expect(consola.success).toHaveBeenCalled()
   })
@@ -243,13 +244,11 @@ describe('platform queue-freeze', () => {
     const cmd = await getSubCmd('queue-freeze')
     await cmd.run?.({ args: { reason: 'deploy window', force: true } })
 
-    expect(mockAssertSafe).toHaveBeenCalledWith(
-      expect.objectContaining({ risk: 'HIGH' }),
-    )
+    expect(mockAssertSafe).toHaveBeenCalledWith(expect.objectContaining({ risk: 'HIGH' }))
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_queue_freeze',
       { p_reason: 'deploy window' },
-      expect.objectContaining({ requireAuth: true }),
+      expect.objectContaining({ requireAuth: true })
     )
     expect(consola.warn).toHaveBeenCalled()
   })
@@ -276,7 +275,7 @@ describe('platform queue-unfreeze', () => {
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_queue_unfreeze',
       {},
-      expect.objectContaining({ requireAuth: true }),
+      expect.objectContaining({ requireAuth: true })
     )
     expect(mockAssertSafe).not.toHaveBeenCalled()
     expect(consola.success).toHaveBeenCalled()
@@ -305,7 +304,7 @@ describe('platform scheduler-disable', () => {
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_queue_freeze',
       { p_reason: 'maintenance' },
-      expect.objectContaining({ requireAuth: true }),
+      expect.objectContaining({ requireAuth: true })
     )
   })
 })
@@ -319,7 +318,7 @@ describe('platform scheduler-enable', () => {
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_queue_unfreeze',
       {},
-      expect.objectContaining({ requireAuth: true }),
+      expect.objectContaining({ requireAuth: true })
     )
     expect(mockAssertSafe).not.toHaveBeenCalled()
     expect(consola.success).toHaveBeenCalled()

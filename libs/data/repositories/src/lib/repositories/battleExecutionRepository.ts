@@ -71,7 +71,7 @@ export const battleExecutionRepository = {
 
   async getExecutionConfig(
     battleId: string,
-    contenderId?: string | null,
+    contenderId?: string | null
   ): Promise<ExecutionConfigRecord | null> {
     const { data, error } = await supabase.rpc('fn_get_battle_execution_config', {
       p_battle_id: battleId,
@@ -82,9 +82,7 @@ export const battleExecutionRepository = {
     return (row ?? null) as ExecutionConfigRecord | null
   },
 
-  async upsertExecutionConfig(
-    input: UpsertExecutionConfigInput,
-  ): Promise<ExecutionConfigRecord> {
+  async upsertExecutionConfig(input: UpsertExecutionConfigInput): Promise<ExecutionConfigRecord> {
     const { data, error } = await supabase.rpc('fn_upsert_battle_execution_config', {
       p_battle_id: input.battle_id,
       p_contender_id: input.contender_id ?? null,
@@ -107,7 +105,7 @@ export const battleExecutionRepository = {
     battleId: string,
     contenderId: string,
     runId: string,
-    ordinal: number,
+    ordinal: number
   ): Promise<ContenderRunRecord> {
     const { data, error } = await supabase
       .from('contender_runs')
@@ -124,17 +122,10 @@ export const battleExecutionRepository = {
     return data as ContenderRunRecord
   },
 
-  async updateContenderRunStatus(
-    id: string,
-    status: string,
-    creditCost?: number,
-  ): Promise<void> {
+  async updateContenderRunStatus(id: string, status: string, creditCost?: number): Promise<void> {
     const update: Record<string, unknown> = { status }
     if (creditCost != null) update.credit_cost = creditCost
-    const { error } = await supabase
-      .from('contender_runs')
-      .update(update)
-      .eq('id', id)
+    const { error } = await supabase.from('contender_runs').update(update).eq('id', id)
     if (error) throw error
   },
 
@@ -144,7 +135,7 @@ export const battleExecutionRepository = {
     battleId: string,
     eventType: string,
     actorId?: string | null,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<void> {
     const { error } = await supabase.from('events').insert({
       battle_id: battleId,
@@ -157,10 +148,7 @@ export const battleExecutionRepository = {
 
   // --- Battle Status Transition ---
 
-  async transitionBattleStatus(
-    battleId: string,
-    newStatus: BattleStatus,
-  ): Promise<void> {
+  async transitionBattleStatus(battleId: string, newStatus: BattleStatus): Promise<void> {
     const { error } = await supabase
       .from('battles')
       .update({ status: newStatus })
@@ -173,7 +161,7 @@ export const battleExecutionRepository = {
   async createSubmission(
     battleId: string,
     contenderId: string,
-    status: string = 'pending',
+    status: string = 'pending'
   ): Promise<{ id: string }> {
     const { data, error } = await supabase
       .from('submissions')
@@ -191,14 +179,11 @@ export const battleExecutionRepository = {
   async updateSubmissionText(
     submissionId: string,
     contentText: string,
-    status?: string,
+    status?: string
   ): Promise<void> {
     const update: Record<string, unknown> = { content_text: contentText }
     if (status) update.status = status
-    const { error } = await supabase
-      .from('submissions')
-      .update(update)
-      .eq('id', submissionId)
+    const { error } = await supabase.from('submissions').update(update).eq('id', submissionId)
     if (error) throw error
   },
 
@@ -206,19 +191,17 @@ export const battleExecutionRepository = {
     battleId: string,
     contenderId: string,
     contentText: string,
-    runId?: string,
+    runId?: string
   ): Promise<void> {
-    const { error } = await supabase
-      .from('submissions')
-      .upsert(
-        {
-          battle_id: battleId,
-          contender_id: contenderId,
-          content_text: contentText,
-          status: 'submitted',
-        },
-        { onConflict: 'battle_id,contender_id' },
-      )
+    const { error } = await supabase.from('submissions').upsert(
+      {
+        battle_id: battleId,
+        contender_id: contenderId,
+        content_text: contentText,
+        status: 'submitted',
+      },
+      { onConflict: 'battle_id,contender_id' }
+    )
     if (error) throw error
   },
 
@@ -232,29 +215,25 @@ export const battleExecutionRepository = {
     totalDurationMs: number,
     totalTokens: number,
     finalOutput: string,
-    contentType: string = 'text',
+    contentType: string = 'text'
   ): Promise<void> {
-    const { error } = await supabase
-      .from('stream_recordings')
-      .upsert(
-        {
-          battle_id: battleId,
-          contender_id: contenderId,
-          slot,
-          events,
-          total_duration_ms: totalDurationMs,
-          total_tokens: totalTokens,
-          final_output: finalOutput,
-          content_type: contentType,
-        },
-        { onConflict: 'battle_id,contender_id' },
-      )
+    const { error } = await supabase.from('stream_recordings').upsert(
+      {
+        battle_id: battleId,
+        contender_id: contenderId,
+        slot,
+        events,
+        total_duration_ms: totalDurationMs,
+        total_tokens: totalTokens,
+        final_output: finalOutput,
+        content_type: contentType,
+      },
+      { onConflict: 'battle_id,contender_id' }
+    )
     if (error) throw error
   },
 
-  async getStreamRecordings(
-    battleId: string,
-  ): Promise<StreamRecordingRecord[]> {
+  async getStreamRecordings(battleId: string): Promise<StreamRecordingRecord[]> {
     const { data, error } = await supabase
       .from('stream_recordings')
       .select('*')

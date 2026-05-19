@@ -1,13 +1,25 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { AuthorProfile } from '@lenserfight/types'
-import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO, ThreadFeedItem, PersonalFeedItem } from '@lenserfight/types'
+import {
+  ThreadRecord,
+  TagRecord,
+  ThreadReplyRecord,
+  CreateThreadDTO,
+  ThreadFeedItem,
+  PersonalFeedItem,
+} from '@lenserfight/types'
 import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
 
 // --- Port (Interface) ---
 export interface ThreadsRepositoryPort {
   createThread(dto: CreateThreadDTO): Promise<ThreadRecord>
   getAllThreads(offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadRecord[]>>
-  getThreadsByTag(tagSlug: string, sort?: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadRecord[]>>
+  getThreadsByTag(
+    tagSlug: string,
+    sort?: string,
+    offset?: number,
+    limit?: number
+  ): Promise<ApiResponseEnvelope<ThreadRecord[]>>
   getThreadById(id: string, viewerLenserId?: string): Promise<ThreadRecord | null>
   getByLenser(
     handle: string,
@@ -16,12 +28,26 @@ export interface ThreadsRepositoryPort {
     includePrivate?: boolean
   ): Promise<ThreadRecord[]>
   getThreadTags(threadId: string): Promise<TagRecord[]>
-  getThreadReplies(threadId: string, viewerLenserId?: string, limit?: number, offset?: number, visibility?: string): Promise<ThreadReplyRecord[]>
+  getThreadReplies(
+    threadId: string,
+    viewerLenserId?: string,
+    limit?: number,
+    offset?: number,
+    visibility?: string
+  ): Promise<ThreadReplyRecord[]>
   getReplyById(replyId: string): Promise<ThreadReplyRecord | null>
   getTrendingTags(limit: number): Promise<TagRecord[]>
-  getTrendingThreads(lang?: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
+  getTrendingThreads(
+    lang?: string,
+    offset?: number,
+    limit?: number
+  ): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
   getPersonalFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<PersonalFeedItem[]>>
-  getFollowingFeed(lenserId: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
+  getFollowingFeed(
+    lenserId: string,
+    offset?: number,
+    limit?: number
+  ): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
   createReply(
     threadId: string,
     lenserId: string,
@@ -32,7 +58,6 @@ export interface ThreadsRepositoryPort {
   deleteThread(id: string): Promise<void>
 }
 
-
 // --- Mock Implementation ---
 
 // --- Supabase Implementation (Optimized for Views + RPC) ---
@@ -40,7 +65,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   // All permission issues are normalized to a single message for the UI.
   private handleError(error: unknown) {
     const normalizedError = error as { code?: string; message?: string }
-    if (normalizedError?.code === '42501' || normalizedError?.message?.includes('permission denied')) {
+    if (
+      normalizedError?.code === '42501' ||
+      normalizedError?.message?.includes('permission denied')
+    ) {
       throw new Error(
         'This thread or its associated data is private, hidden, or you do not have permission to access it.'
       )
@@ -72,7 +100,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return this.mapProfileToAuthor(profile as Partial<AuthorProfile>, profile.id)
   }
 
-  private mapProfileToAuthor(profile: Partial<AuthorProfile> | null | undefined, fallbackId: string): AuthorProfile {
+  private mapProfileToAuthor(
+    profile: Partial<AuthorProfile> | null | undefined,
+    fallbackId: string
+  ): AuthorProfile {
     return {
       id: profile?.id || fallbackId,
       handle: profile?.handle || 'unknown',
@@ -108,12 +139,13 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       if (error || !data?.[0]) return []
       return [data[0] as Partial<AuthorProfile>]
     })
-    return new Map(
-      profiles.map((p) => [p.id!, this.mapProfileToAuthor(p, p.id!)])
-    )
+    return new Map(profiles.map((p) => [p.id!, this.mapProfileToAuthor(p, p.id!)]))
   }
 
-  private async getTagsForEntity(entityType: 'thread' | 'lens', entityId: string): Promise<TagRecord[]> {
+  private async getTagsForEntity(
+    entityType: 'thread' | 'lens',
+    entityId: string
+  ): Promise<TagRecord[]> {
     const { data: tagMapRows, error: tagMapError } = await supabase.rpc('fn_get_entity_tag_ids', {
       p_entity_type: entityType,
       p_entity_id: entityId,
@@ -132,9 +164,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     if (tagsError) this.handleError(tagsError)
 
     type TagRow = { id: string; slug: string; name: string }
-    const tagById = new Map<string, TagRow>(
-      ((tags ?? []) as TagRow[]).map((tag) => [tag.id, tag])
-    )
+    const tagById = new Map<string, TagRow>(((tags ?? []) as TagRow[]).map((tag) => [tag.id, tag]))
     const resolved: TagRow[] = []
     for (const id of tagIds) {
       const tag = tagById.get(id)
@@ -230,15 +260,19 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return Promise.all(baseThreads.map((thread) => this.buildOwnerThreadRecord(thread)))
   }
 
-  private async getReplyReactionTotals(replyIds: string[]): Promise<Map<string, Record<string, number>>> {
+  private async getReplyReactionTotals(
+    replyIds: string[]
+  ): Promise<Map<string, Record<string, number>>> {
     if (replyIds.length === 0) return new Map()
 
     const results = await Promise.all(
       replyIds.map((id) =>
-        supabase.rpc('fn_get_entity_reaction_counts', {
-          p_entity_type: 'thread_reply',
-          p_entity_id: id,
-        }).then(({ data, error }) => ({ id, data, error }))
+        supabase
+          .rpc('fn_get_entity_reaction_counts', {
+            p_entity_type: 'thread_reply',
+            p_entity_id: id,
+          })
+          .then(({ data, error }) => ({ id, data, error }))
       )
     )
 
@@ -318,14 +352,19 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return paginatedResponse(
       (data ?? []) as unknown as ThreadRecord[],
       { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
-      { durationMs: Date.now() - start },
+      { durationMs: Date.now() - start }
     )
   }
 
   /**
    * List threads by tag slug using JSONB containment on view's tags column.
    */
-  async getThreadsByTag(tagSlug: string, sort = 'newest', offset = 0, limit = 20): Promise<ApiResponseEnvelope<ThreadRecord[]>> {
+  async getThreadsByTag(
+    tagSlug: string,
+    sort = 'newest',
+    offset = 0,
+    limit = 20
+  ): Promise<ApiResponseEnvelope<ThreadRecord[]>> {
     const start = Date.now()
     const { data, error } = await supabase.rpc('fn_content_get_threads_by_tag', {
       p_tag_slug: tagSlug,
@@ -338,7 +377,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return paginatedResponse(
       (data ?? []) as unknown as ThreadRecord[],
       { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
-      { durationMs: Date.now() - start },
+      { durationMs: Date.now() - start }
     )
   }
 
@@ -352,7 +391,9 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     // Fast path: 1 query covers public published threads (the common case)
     const { data: publicRow } = await supabase
       .from('vw_content_threads_public')
-      .select('id, lenser_id, title, content, author_profile, reaction_totals, reply_count, view_count, created_at, thumbnail_url, lens_data, visibility, tags')
+      .select(
+        'id, lenser_id, title, content, author_profile, reaction_totals, reply_count, view_count, created_at, thumbnail_url, lens_data, visibility, tags'
+      )
       .eq('id', id)
       .maybeSingle()
 
@@ -421,7 +462,9 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       const filtered = ((baseThreads ?? []) as any[]).filter(
         (t: any) => t.author_lenser_id === profile.id
       )
-      return this.hydrateThreadRecords(filtered.slice(offset, offset + limit) as unknown as ThreadRecord[])
+      return this.hydrateThreadRecords(
+        filtered.slice(offset, offset + limit) as unknown as ThreadRecord[]
+      )
     }
 
     const { data, error } = await supabase
@@ -454,7 +497,13 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Get replies for a thread from the public replies view.
    * Soft-deleted replies should be handled at view-level (e.g. content = "[deleted]").
    */
-  async getThreadReplies(threadId: string, viewerLenserId?: string, limit = 20, offset = 0, visibility?: string): Promise<ThreadReplyRecord[]> {
+  async getThreadReplies(
+    threadId: string,
+    viewerLenserId?: string,
+    limit = 20,
+    offset = 0,
+    visibility?: string
+  ): Promise<ThreadReplyRecord[]> {
     // Resolve visibility — skip getThreadById when the caller already has it
     let resolvedVisibility = visibility
     if (!resolvedVisibility) {
@@ -464,12 +513,11 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     }
 
     if (resolvedVisibility === 'public') {
-      const { data, error } = await supabase
-        .rpc('fn_get_thread_replies_page', {
-          p_thread_id: threadId,
-          p_limit: limit,
-          p_offset: offset,
-        })
+      const { data, error } = await supabase.rpc('fn_get_thread_replies_page', {
+        p_thread_id: threadId,
+        p_limit: limit,
+        p_offset: offset,
+      })
 
       if (error) this.handleError(error)
       return (data ?? []) as ThreadReplyRecord[]
@@ -492,7 +540,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
     return replyRows.map((reply) => ({
       ...reply,
-      author_profile: profileMap.get(reply.lenser_id) ?? this.mapProfileToAuthor(null, reply.lenser_id),
+      author_profile:
+        profileMap.get(reply.lenser_id) ?? this.mapProfileToAuthor(null, reply.lenser_id),
       reaction_totals: reactionTotals.get(reply.id) ?? {},
     }))
   }
@@ -562,7 +611,11 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Trending threads via hot score RPC with optional language boost.
    * RPC does not return a row count; hasNextPage uses data.length >= limit heuristic.
    */
-  async getTrendingThreads(lang?: string, offset = 0, limit = 20): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> {
+  async getTrendingThreads(
+    lang?: string,
+    offset = 0,
+    limit = 20
+  ): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> {
     const start = Date.now()
     const { data, error } = await supabase.rpc('fn_content_get_trending_threads', {
       p_lang: lang ?? null,
@@ -592,7 +645,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         createdAt: row.created_at as string,
         userHasReacted: false,
         visibility: 'public' as const,
-        status: ((row.status as string) ?? 'published') as import('@lenserfight/types').ContentStatus,
+        status: ((row.status as string) ??
+          'published') as import('@lenserfight/types').ContentStatus,
         hotScore: row.hot_score as number,
         primaryLanguage: (row.primary_language as string) ?? undefined,
       }
@@ -600,7 +654,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return paginatedResponse(
       items,
       { limit, offset, hasNextPage: rows.length >= limit },
-      { durationMs: Date.now() - start },
+      { durationMs: Date.now() - start }
     )
   }
 
@@ -638,7 +692,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         createdAt: row.created_at as string,
         userHasReacted: false,
         visibility: 'public' as const,
-        status: ((row.status as string) ?? 'published') as import('@lenserfight/types').ContentStatus,
+        status: ((row.status as string) ??
+          'published') as import('@lenserfight/types').ContentStatus,
         hotScore: row.hot_score as number,
         primaryLanguage: (row.primary_language as string) ?? undefined,
         personalScore: (row.personal_score as number) ?? 0,
@@ -647,11 +702,15 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return paginatedResponse(
       items,
       { limit, offset, hasNextPage: rows.length >= limit },
-      { durationMs: Date.now() - start },
+      { durationMs: Date.now() - start }
     )
   }
 
-  async getFollowingFeed(lenserId: string, offset = 0, limit = 20): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> {
+  async getFollowingFeed(
+    lenserId: string,
+    offset = 0,
+    limit = 20
+  ): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> {
     const start = Date.now()
     const { data, error } = await supabase.rpc('fn_content_get_following_threads', {
       p_lenser_id: lenserId,
@@ -681,7 +740,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         createdAt: row.created_at as string,
         userHasReacted: false,
         visibility: 'public' as const,
-        status: ((row.status as string) ?? 'published') as import('@lenserfight/types').ContentStatus,
+        status: ((row.status as string) ??
+          'published') as import('@lenserfight/types').ContentStatus,
         hotScore: row.hot_score as number,
         primaryLanguage: (row.primary_language as string) ?? undefined,
       }
@@ -690,7 +750,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return paginatedResponse(
       items,
       { limit, offset, hasNextPage: rows.length >= limit },
-      { durationMs: Date.now() - start },
+      { durationMs: Date.now() - start }
     )
   }
 

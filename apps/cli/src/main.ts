@@ -1,29 +1,29 @@
-import { defineCommand, runMain } from 'citty';
-import consola from 'consola';
-import { setExecContext, getExecContext } from './lib/exec-context';
-import { readCliVersion } from './lib/version';
+import { defineCommand, runMain } from 'citty'
+import consola from 'consola'
+import { setExecContext, getExecContext } from './lib/exec-context'
+import { readCliVersion } from './lib/version'
 
 // Parse --local and --debug before citty takes over so they activate even
 // when placed after the subcommand name (e.g. `lf cmd --local`).
 function parseGlobalFlagsEarly(): void {
-  const argv = process.argv.slice(2);
-  if (argv.includes('--local')) process.env['LF_LOCAL'] = '1';
-  if (argv.includes('--debug')) process.env['LF_DEBUG'] = '1';
+  const argv = process.argv.slice(2)
+  if (argv.includes('--local')) process.env['LF_LOCAL'] = '1'
+  if (argv.includes('--debug')) process.env['LF_DEBUG'] = '1'
 }
-parseGlobalFlagsEarly();
+parseGlobalFlagsEarly()
 
 // Deprecated aliases — warn and delegate to the canonical `lenser` command.
 const runnerDeprecatedCommand = () =>
   import('./commands/lenser').then((m) => {
-    consola.warn("'runner' is deprecated. Use 'lenser' instead.");
-    return m.default;
-  });
+    consola.warn("'runner' is deprecated. Use 'lenser' instead.")
+    return m.default
+  })
 
 const agentDeprecatedCommand = () =>
   import('./commands/lenser').then((m) => {
-    consola.warn("'agent' is deprecated. Use 'lenser' instead.");
-    return m.default;
-  });
+    consola.warn("'agent' is deprecated. Use 'lenser' instead.")
+    return m.default
+  })
 
 // Default action: `lf` with no subcommand opens the interactive TUI dashboard.
 // citty parses --help before run() fires, so `lf --help` still prints help.
@@ -38,8 +38,7 @@ const main = defineCommand({
   meta: {
     name: 'lenserfight',
     version: readCliVersion(),
-    description:
-      'LenserFight CLI — manage lenses, battles, agents, workflows, and local dev.',
+    description: 'LenserFight CLI — manage lenses, battles, agents, workflows, and local dev.',
   },
   args: {
     local: {
@@ -55,17 +54,17 @@ const main = defineCommand({
   },
   async run(ctx) {
     // Also set env vars from citty-parsed root args (handles `lf --local cmd`)
-    if (ctx.args.local) process.env['LF_LOCAL'] = '1';
-    if (ctx.args.debug) process.env['LF_DEBUG'] = '1';
+    if (ctx.args.local) process.env['LF_LOCAL'] = '1'
+    if (ctx.args.debug) process.env['LF_DEBUG'] = '1'
 
-    const isLocal = process.env['LF_LOCAL'] === '1';
-    const isDebug = process.env['LF_DEBUG'] === '1';
-    setExecContext({ isLocal, isDebug });
+    const isLocal = process.env['LF_LOCAL'] === '1'
+    const isDebug = process.env['LF_DEBUG'] === '1'
+    setExecContext({ isLocal, isDebug })
 
-    if (isDebug) consola.level = 4;
-    if (isLocal) process.stderr.write('local mode active\n');
+    if (isDebug) consola.level = 4
+    if (isLocal) process.stderr.write('local mode active\n')
 
-    await defaultRun(ctx);
+    await defaultRun(ctx)
   },
   subCommands: {
     init: () => import('./commands/init').then((m) => m.default),
@@ -138,41 +137,42 @@ const main = defineCommand({
     env: () => import('./commands/env').then((m) => m.default),
     docs: () => import('./commands/docs').then((m) => m.default),
   },
-});
+})
 
-runMain(main);
+runMain(main)
 
 // Background update-check: runs after the command completes, never blocks.
 // Prints a one-line hint to stderr so it never pollutes stdout/JSON output.
 process.on('exit', () => {
-  const { isDebug, commandStartMs } = getExecContext();
-  if (isDebug) process.stderr.write(`done in ${Date.now() - commandStartMs}ms\n`);
-});
+  const { isDebug, commandStartMs } = getExecContext()
+  if (isDebug) process.stderr.write(`done in ${Date.now() - commandStartMs}ms\n`)
+})
 
 // Fire-and-forget: scheduled after event loop yields so it never delays startup.
 setImmediate(() => {
   // Skip the hint when the user is already running `lf update`
-  const subcommand = process.argv[2];
-  if (subcommand === 'update') return;
+  const subcommand = process.argv[2]
+  if (subcommand === 'update') return
 
-  import('@lenserfight/utils/update-check').then(({ checkForUpdate, isNewer }) => {
-    const current = readCliVersion();
-    checkForUpdate(current)
-      .then((result) => {
-        if (result?.hasUpdate && isNewer(result.current, result.latest)) {
-          process.stderr.write(
-            `\n  ╭─────────────────────────────────────────────────────╮\n` +
-            `  │  Update available: v${result.current} → v${result.latest.padEnd(Math.max(0, result.current.length))}  │\n` +
-            `  │  Run \`lf update\` for upgrade instructions.           │\n` +
-            `  ╰─────────────────────────────────────────────────────╯\n\n`,
-          );
-        }
-      })
-      .catch(() => {
-        // fire-and-forget — never surface update-check errors
-      });
-  }).catch(() => {
-    // module load failure is non-fatal
-  });
-});
-
+  import('@lenserfight/utils/update-check')
+    .then(({ checkForUpdate, isNewer }) => {
+      const current = readCliVersion()
+      checkForUpdate(current)
+        .then((result) => {
+          if (result?.hasUpdate && isNewer(result.current, result.latest)) {
+            process.stderr.write(
+              `\n  ╭─────────────────────────────────────────────────────╮\n` +
+                `  │  Update available: v${result.current} → v${result.latest.padEnd(Math.max(0, result.current.length))}  │\n` +
+                `  │  Run \`lf update\` for upgrade instructions.           │\n` +
+                `  ╰─────────────────────────────────────────────────────╯\n\n`
+            )
+          }
+        })
+        .catch(() => {
+          // fire-and-forget — never surface update-check errors
+        })
+    })
+    .catch(() => {
+      // module load failure is non-fatal
+    })
+})

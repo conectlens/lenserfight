@@ -6,10 +6,7 @@ import { analyticsService } from '@lenserfight/infra/analytics'
 import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService } from '@lenserfight/data/repositories'
 import { tagService } from '@lenserfight/data/repositories'
-import {
-  LensDetailViewModel,
-  LensViewModel,
-} from '@lenserfight/types'
+import { LensDetailViewModel, LensViewModel } from '@lenserfight/types'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
 import { isValidUUID } from '@lenserfight/utils/validation'
 
@@ -98,9 +95,7 @@ export const useLensDetailController = (
   }, [lens, lensId, lenser?.id, user?.id])
 
   // Actions
-  const updateLocalLens = (
-    updater: (prev: LensDetailViewModel) => LensDetailViewModel
-  ) => {
+  const updateLocalLens = (updater: (prev: LensDetailViewModel) => LensDetailViewModel) => {
     queryClient.setQueryData<LensDetailViewModel | null>(['lens-core', lensId], (old) => {
       if (!old) return old
       return updater(old)

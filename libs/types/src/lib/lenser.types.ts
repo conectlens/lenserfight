@@ -81,7 +81,7 @@ export interface Lenser {
   preferred_language?: string
   /** Structured preferences row from lensers.preferences (1:1 with profile). */
   preferences?: LenserPreferences
-  onboarding_step?: number         // 0=not started, 1=handle created, 2=complete
+  onboarding_step?: number // 0=not started, 1=handle created, 2=complete
   onboarding_completed_at?: string | null
   status?: LenserAccountStatus
   created_at: string
@@ -209,9 +209,18 @@ export interface LeaderboardLenser extends TrendingLenser {
 
 export type FollowPeriod = 'weekly' | 'monthly' | 'all_time'
 
-export type ProfileAccessLevel = 'FULL_PROFILE' | 'RESTRICTED_PROFILE' | 'OWNER_RECOVERY_PROFILE' | 'UNAVAILABLE_PROFILE'
+export type ProfileAccessLevel =
+  | 'FULL_PROFILE'
+  | 'RESTRICTED_PROFILE'
+  | 'OWNER_RECOVERY_PROFILE'
+  | 'UNAVAILABLE_PROFILE'
 export type RelationshipStatus = 'pending' | 'accepted' | 'rejected' | 'blocked' | 'removed' | null
-export type LenserAccountStatus = 'active' | 'suspended' | 'deactivated' | 'pending_deletion' | 'deleted'
+export type LenserAccountStatus =
+  | 'active'
+  | 'suspended'
+  | 'deactivated'
+  | 'pending_deletion'
+  | 'deleted'
 
 export interface RelationshipState {
   viewer_to_subject: RelationshipStatus

@@ -11,7 +11,11 @@ import {
   INSTRUCTION_DISCLOSURE_LABELS,
   getChallengeType,
 } from '@lenserfight/domain/battle-governance'
-import type { TaskSource, ContenderStructure, JudgingMode } from '@lenserfight/domain/battle-governance'
+import type {
+  TaskSource,
+  ContenderStructure,
+  JudgingMode,
+} from '@lenserfight/domain/battle-governance'
 import {
   GitBranch,
   Layers,
@@ -82,7 +86,11 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 // ─── Row ─────────────────────────────────────────────────────────────────────
 
-function Row({ icon: Icon, label, value }: {
+function Row({
+  icon: Icon,
+  label,
+  value,
+}: {
   icon: React.ComponentType<{ size?: number; className?: string }>
   label: string
   value: React.ReactNode
@@ -92,7 +100,9 @@ function Row({ icon: Icon, label, value }: {
       <Icon size={13} className="mt-0.5 flex-shrink-0 text-greyscale-400" />
       <div className="min-w-0 flex-1">
         <span className="text-xs text-greyscale-400">{label}: </span>
-        <span className="text-xs font-medium text-greyscale-700 dark:text-greyscale-300">{value}</span>
+        <span className="text-xs font-medium text-greyscale-700 dark:text-greyscale-300">
+          {value}
+        </span>
       </div>
     </div>
   )
@@ -125,7 +135,10 @@ function WorkflowSection({ workflowId }: { workflowId: string }) {
           {/* Workflow card */}
           <div className="rounded-2xl border border-surface-border bg-surface-raised p-3 space-y-2">
             <div className="flex items-start gap-2.5">
-              <GitBranch size={14} className="mt-0.5 flex-shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400" />
+              <GitBranch
+                size={14}
+                className="mt-0.5 flex-shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400"
+              />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
                   {wf.title}
@@ -139,7 +152,9 @@ function WorkflowSection({ workflowId }: { workflowId: string }) {
             </div>
             <div className="flex items-center gap-3 text-xs text-greyscale-500 dark:text-greyscale-400">
               {typeof wf.node_count === 'number' && (
-                <span>{wf.node_count} node{wf.node_count !== 1 ? 's' : ''}</span>
+                <span>
+                  {wf.node_count} node{wf.node_count !== 1 ? 's' : ''}
+                </span>
               )}
               {wf.output_modalities && wf.output_modalities.length > 0 && (
                 <div className="flex items-center gap-1">
@@ -185,7 +200,9 @@ function WorkflowSection({ workflowId }: { workflowId: string }) {
                       {node.lens_id && (
                         <div className="mt-0.5 flex items-center gap-1">
                           <Layers size={10} className="flex-shrink-0 text-greyscale-400" />
-                          <span className="text-[10px] text-greyscale-400 font-mono truncate">{node.lens_id}</span>
+                          <span className="text-[10px] text-greyscale-400 font-mono truncate">
+                            {node.lens_id}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -219,7 +236,9 @@ function LensSection({
   lensDetails?: Record<string, LensContextDetail | null>
 }) {
   const sharedParams = battle.shared_input_snapshot
-    ? Object.entries(battle.shared_input_snapshot).filter(([, v]) => v !== undefined && v !== null && v !== '')
+    ? Object.entries(battle.shared_input_snapshot).filter(
+        ([, v]) => v !== undefined && v !== null && v !== ''
+      )
     : []
 
   return (
@@ -240,7 +259,9 @@ function LensSection({
                         {detail.lensTitle}
                       </span>
                       {detail.versionNumber != null && (
-                        <span className="text-[11px] text-greyscale-400">v{detail.versionNumber}</span>
+                        <span className="text-[11px] text-greyscale-400">
+                          v{detail.versionNumber}
+                        </span>
                       )}
                       {detail.paramCount > 0 && (
                         <Badge color="yellow" variant="outline">
@@ -310,7 +331,10 @@ function ChallengeSection({ challengeTypeId }: { challengeTypeId: string }) {
     <Section label="Challenge">
       <div className="rounded-2xl border border-surface-border bg-surface-raised p-3 space-y-3">
         <div className="flex items-start gap-2.5">
-          <Puzzle size={14} className="mt-0.5 flex-shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400" />
+          <Puzzle
+            size={14}
+            className="mt-0.5 flex-shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400"
+          />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
               {def.label}
@@ -367,10 +391,16 @@ function HandicapSection({ config }: { config: Battle['handicap_config'] }) {
     entries.push({ label: 'Response delay', value: `${config.injected_delay_ms as number}ms` })
   }
   if (config?.time_budget_ms) {
-    entries.push({ label: 'Time budget', value: `${Math.round((config.time_budget_ms as number) / 1000)}s` })
+    entries.push({
+      label: 'Time budget',
+      value: `${Math.round((config.time_budget_ms as number) / 1000)}s`,
+    })
   }
   if (config?.max_context_tokens) {
-    entries.push({ label: 'Context limit', value: `${(config.max_context_tokens as number).toLocaleString()} tokens` })
+    entries.push({
+      label: 'Context limit',
+      value: `${(config.max_context_tokens as number).toLocaleString()} tokens`,
+    })
   }
   if (config?.max_tokens_per_second) {
     entries.push({ label: 'Speed cap', value: `${config.max_tokens_per_second as number} tok/s` })
@@ -414,7 +444,11 @@ function LenserPolicySection({ policy }: { policy: Record<string, unknown> }) {
           <Row
             icon={Info}
             label="Instructions"
-            value={INSTRUCTION_DISCLOSURE_LABELS[disclosure as keyof typeof INSTRUCTION_DISCLOSURE_LABELS] ?? disclosure}
+            value={
+              INSTRUCTION_DISCLOSURE_LABELS[
+                disclosure as keyof typeof INSTRUCTION_DISCLOSURE_LABELS
+              ] ?? disclosure
+            }
           />
         )}
       </div>
@@ -431,9 +465,8 @@ function BattleRulesSection({ battle }: { battle: Battle }) {
   const hasV2 = !!(taskSource || contenderStructure || judgingMode)
 
   // Choose icons by task source
-  const TaskIcon = taskSource === 'workflow' ? GitBranch
-    : taskSource === 'challenge' ? Puzzle
-    : Layers
+  const TaskIcon =
+    taskSource === 'workflow' ? GitBranch : taskSource === 'challenge' ? Puzzle : Layers
 
   return (
     <Section label="Battle Format">
@@ -485,23 +518,25 @@ interface BattleRulesDrawerProps {
   contenders?: Contender[]
 }
 
-export function BattleRulesDrawer({ open, onClose, battle, lensDetails, contenders }: BattleRulesDrawerProps) {
+export function BattleRulesDrawer({
+  open,
+  onClose,
+  battle,
+  lensDetails,
+  contenders,
+}: BattleRulesDrawerProps) {
   const taskSource = battle.task_source as TaskSource | null | undefined
   const hasAIContenders =
-    battle.contender_structure === 'ai_vs_ai' || battle.contender_structure === 'human_vs_ai' ||
-    battle.battle_type === 'ai_vs_ai' || battle.battle_type === 'human_vs_ai' ||
-    battle.battle_type === 'workflow_battle' || battle.battle_type === 'lenser_battle'
+    battle.contender_structure === 'ai_vs_ai' ||
+    battle.contender_structure === 'human_vs_ai' ||
+    battle.battle_type === 'ai_vs_ai' ||
+    battle.battle_type === 'human_vs_ai' ||
+    battle.battle_type === 'workflow_battle' ||
+    battle.battle_type === 'lenser_battle'
 
   return (
-    <Drawer
-      open={open}
-      onClose={onClose}
-      side="right"
-      width="w-80 sm:w-96"
-      title="Battle Rules"
-    >
+    <Drawer open={open} onClose={onClose} side="right" width="w-80 sm:w-96" title="Battle Rules">
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-
         {/* Status */}
         <div className="flex items-center gap-2">
           <BattleStatusBadge status={battle.status} />
@@ -544,17 +579,17 @@ export function BattleRulesDrawer({ open, onClose, battle, lensDetails, contende
         {/* ── Type-specific sections ─────────────────────────────────────── */}
 
         {/* Workflow task */}
-        {(taskSource === 'workflow' || battle.battle_type === 'workflow_battle') && battle.workflow_id && (
-          <WorkflowSection workflowId={battle.workflow_id} />
-        )}
+        {(taskSource === 'workflow' || battle.battle_type === 'workflow_battle') &&
+          battle.workflow_id && <WorkflowSection workflowId={battle.workflow_id} />}
 
         {/* Lens task */}
-        {(taskSource === 'lens' || (!taskSource && battle.lens_id && battle.battle_type !== 'workflow_battle')) && (
+        {(taskSource === 'lens' ||
+          (!taskSource && battle.lens_id && battle.battle_type !== 'workflow_battle')) && (
           <LensSection battle={battle} contenders={contenders} lensDetails={lensDetails} />
         )}
 
         {/* Challenge task */}
-        {(taskSource === 'challenge') && battle.challenge_type && (
+        {taskSource === 'challenge' && battle.challenge_type && (
           <ChallengeSection challengeTypeId={battle.challenge_type} />
         )}
 
@@ -576,7 +611,9 @@ export function BattleRulesDrawer({ open, onClose, battle, lensDetails, contende
                             {detail.lensTitle}
                           </span>
                           {detail.versionNumber != null && (
-                            <span className="text-[11px] text-greyscale-400">v{detail.versionNumber}</span>
+                            <span className="text-[11px] text-greyscale-400">
+                              v{detail.versionNumber}
+                            </span>
                           )}
                           {detail.paramCount > 0 && (
                             <Badge color="yellow" variant="outline">
@@ -611,8 +648,6 @@ export function BattleRulesDrawer({ open, onClose, battle, lensDetails, contende
         {battle.lenser_battle_policy && Object.keys(battle.lenser_battle_policy).length > 0 && (
           <LenserPolicySection policy={battle.lenser_battle_policy} />
         )}
-
-
       </div>
     </Drawer>
   )

@@ -3,7 +3,11 @@
 // Anonymous-safe. Uses fn_browse_battles via the repository with
 // useInfiniteQuery for keyset pagination on (created_at DESC, id DESC).
 
-import { battlesRepository, seoService, type BrowseBattleRecord } from '@lenserfight/data/repositories'
+import {
+  battlesRepository,
+  seoService,
+  type BrowseBattleRecord,
+} from '@lenserfight/data/repositories'
 import { Button } from '@lenserfight/ui/components'
 import { Input } from '@lenserfight/ui/forms'
 import { PageMeta } from '@lenserfight/ui/layout'
@@ -21,15 +25,13 @@ export function BattlesDiscoveryPage() {
   const [category, setCategory] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
 
-  const { data, fetchNextPage, hasNextPage, isFetching, isLoading } = useInfiniteQuery<BrowseBattleRecord[]>({
+  const { data, fetchNextPage, hasNextPage, isFetching, isLoading } = useInfiniteQuery<
+    BrowseBattleRecord[]
+  >({
     queryKey: ['battles', 'browse', q, category, status],
     queryFn: ({ pageParam }) => {
       const cursor = pageParam as { created_at: string; id: string } | undefined
-      return battlesRepository.browseBattles(
-        { q: q || null, category, status },
-        cursor,
-        PAGE_SIZE,
-      )
+      return battlesRepository.browseBattles({ q: q || null, category, status }, cursor, PAGE_SIZE)
     },
     initialPageParam: undefined,
     getNextPageParam: (last) => {
@@ -69,7 +71,9 @@ export function BattlesDiscoveryPage() {
         >
           <option value="">All categories</option>
           {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
+            <option key={c} value={c}>
+              {c}
+            </option>
           ))}
         </select>
         <select
@@ -80,7 +84,9 @@ export function BattlesDiscoveryPage() {
         >
           <option value="">All statuses</option>
           {STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>
+              {s}
+            </option>
           ))}
         </select>
       </div>
@@ -111,7 +117,8 @@ export function BattlesDiscoveryPage() {
                   </span>
                 </div>
                 <p className="text-xs text-surface-text-muted">
-                  {b.category ?? 'uncategorised'} • {b.contender_count} contenders • {b.vote_count} votes
+                  {b.category ?? 'uncategorised'} • {b.contender_count} contenders • {b.vote_count}{' '}
+                  votes
                 </p>
               </Link>
             </li>

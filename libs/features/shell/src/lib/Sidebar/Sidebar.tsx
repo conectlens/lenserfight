@@ -95,9 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Auth-gating helpers for nav items that require a Lenser profile
   const isNavLocked = !hasLenser && !isLenserLoading
-  const navLockReason = !isAuthenticated
-    ? 'Sign in to access'
-    : 'Create a Lenser profile to access'
+  const navLockReason = !isAuthenticated ? 'Sign in to access' : 'Create a Lenser profile to access'
   const handleLockedNav = () => {
     if (!isAuthenticated) redirectToLogin()
     else redirectToOnboarding()
@@ -281,10 +279,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div key={section.id}>
                 {section.label && showLabels && (
                   <p
-                    className={`px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${workspaceMode === 'agent'
-                      ? 'text-amber-700 dark:text-amber-300'
-                      : 'text-gray-500 dark:text-gray-400'
-                      }`}
+                    className={`px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                      workspaceMode === 'agent'
+                        ? 'text-amber-700 dark:text-amber-300'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
                   >
                     {section.label}
                   </p>
@@ -297,7 +296,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={item.path ? () => handleNavigation(item.path!) : undefined}
                       icon={item.icon}
                       label={item.label}
-                      isActive={item.path ? isRouteActive(location.pathname, item.activePath ?? item.path, item.exact) : false}
+                      isActive={
+                        item.path
+                          ? isRouteActive(
+                              location.pathname,
+                              item.activePath ?? item.path,
+                              item.exact
+                            )
+                          : false
+                      }
                       collapsed={!showLabels}
                       locked={item.locked}
                       lockReason={item.locked ? navLockReason : undefined}
@@ -312,7 +319,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </nav>
 
-        <div className={`flex-shrink-0 px-3 pb-3 pt-2 mt-auto space-y-3 ${workspaceMode === 'agent' ? 'bg-[#fff8ef] dark:bg-[#0f0d0a]' : 'bg-gray-50 dark:bg-gray-800'}`}>
+        <div
+          className={`flex-shrink-0 px-3 pb-3 pt-2 mt-auto space-y-3 ${workspaceMode === 'agent' ? 'bg-[#fff8ef] dark:bg-[#0f0d0a]' : 'bg-gray-50 dark:bg-gray-800'}`}
+        >
           {/* Feedback Button */}
           <div
             className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-3 duration-500 delay-75'}`}
@@ -339,7 +348,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="relative">
             {/* Loading skeleton */}
             {isLenserLoading && (
-              <div className={`flex items-center p-2 rounded-xl ${!showLabels ? 'justify-center' : ''}`}>
+              <div
+                className={`flex items-center p-2 rounded-xl ${!showLabels ? 'justify-center' : ''}`}
+              >
                 <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse flex-shrink-0" />
                 {showLabels && (
                   <div className="ml-3 flex-1 space-y-1.5">
@@ -351,8 +362,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             {/* Be Lenser / Sign In CTA — shown when loaded but no lenser profile */}
-            {!isLenserLoading && !hasLenser && (
-              isAuthenticated ? (
+            {!isLenserLoading &&
+              !hasLenser &&
+              (isAuthenticated ? (
                 <button
                   onClick={onOpenProfileSetup}
                   className={`
@@ -376,8 +388,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <User size={18} />
                   {showLabels && <span>Sign In</span>}
                 </button>
-              )
-            )}
+              ))}
 
             {/* Profile row — shown only when loaded and profile exists */}
             {!isLenserLoading && hasLenser && (
@@ -387,10 +398,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   ${!showLabels ? 'justify-center' : ''}
               `}
               >
-                <div
-                  className="relative flex-shrink-0"
-                  onClick={handleProfileClick}
-                >
+                <div className="relative flex-shrink-0" onClick={handleProfileClick}>
                   <div className="relative">
                     <Avatar src={displayProfile?.avatar_url} size="sm" className="!w-9 !h-9" />
                     {/* Level Badge — always from the human profile (Lenser type has current_level) */}
@@ -404,10 +412,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 {showLabels && (
-                  <div
-                    className="ml-3 flex-1 overflow-hidden"
-                    onClick={handleProfileClick}
-                  >
+                  <div className="ml-3 flex-1 overflow-hidden" onClick={handleProfileClick}>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                       {displayProfile?.display_name || 'Guest'}
                     </p>
@@ -443,85 +448,95 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <ChevronsUpDown size={14} />
                     </button>
 
-                    {isSwitcherOpen && switcherPos && createPortal(
-                      <div
-                        ref={switcherRef}
-                        role="listbox"
-                        aria-label="Workspace switcher"
-                        style={{
-                          position: 'fixed',
-                          top: switcherPos.top - 8,
-                          left: switcherPos.left,
-                          transform: 'translateY(-100%)',
-                          zIndex: 9999,
-                        }}
-                        className="w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 overflow-hidden"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                          Switch workspace
-                        </p>
-                        {workspaces.map((profile) => {
-                          const isThisOneSwitching = switchingToId === profile.id
-                          return (
-                            <button
-                              key={profile.id}
-                              role="option"
-                              aria-selected={profile.is_active}
-                              aria-busy={isThisOneSwitching}
-                              disabled={isSwitching}
-                              className={`w-full text-left flex items-center gap-2.5 px-3 py-2 transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${profile.type === 'ai'
-                                ? profile.is_active
-                                  ? 'bg-yellow-50 dark:bg-yellow-900/20'
-                                  : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
-                                : profile.is_active
-                                  ? 'bg-gray-50 dark:bg-gray-700/50'
-                                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                    {isSwitcherOpen &&
+                      switcherPos &&
+                      createPortal(
+                        <div
+                          ref={switcherRef}
+                          role="listbox"
+                          aria-label="Workspace switcher"
+                          style={{
+                            position: 'fixed',
+                            top: switcherPos.top - 8,
+                            left: switcherPos.left,
+                            transform: 'translateY(-100%)',
+                            zIndex: 9999,
+                          }}
+                          className="w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 overflow-hidden"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                            Switch workspace
+                          </p>
+                          {workspaces.map((profile) => {
+                            const isThisOneSwitching = switchingToId === profile.id
+                            return (
+                              <button
+                                key={profile.id}
+                                role="option"
+                                aria-selected={profile.is_active}
+                                aria-busy={isThisOneSwitching}
+                                disabled={isSwitching}
+                                className={`w-full text-left flex items-center gap-2.5 px-3 py-2 transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                                  profile.type === 'ai'
+                                    ? profile.is_active
+                                      ? 'bg-yellow-50 dark:bg-yellow-900/20'
+                                      : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+                                    : profile.is_active
+                                      ? 'bg-gray-50 dark:bg-gray-700/50'
+                                      : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
                                 }`}
-                              onClick={async () => {
-                                // Idempotency: skip if already the active workspace
-                                if (profile.is_active || isSwitching) return
-                                setIsSwitcherOpen(false)
-                                setSwitchingToId(profile.id)
-                                try {
-                                  await switchToProfile(profile)
-                                } finally {
-                                  setSwitchingToId(null)
-                                }
-                              }}
-                            >
-                              <div className="relative flex-shrink-0">
-                                <Avatar src={profile.avatar_url} size="sm" className="!w-6 !h-6" />
+                                onClick={async () => {
+                                  // Idempotency: skip if already the active workspace
+                                  if (profile.is_active || isSwitching) return
+                                  setIsSwitcherOpen(false)
+                                  setSwitchingToId(profile.id)
+                                  try {
+                                    await switchToProfile(profile)
+                                  } finally {
+                                    setSwitchingToId(null)
+                                  }
+                                }}
+                              >
+                                <div className="relative flex-shrink-0">
+                                  <Avatar
+                                    src={profile.avatar_url}
+                                    size="sm"
+                                    className="!w-6 !h-6"
+                                  />
+                                  {profile.type === 'ai' && (
+                                    <span className="absolute -bottom-1 -right-1 flex items-center justify-center w-3 h-3 rounded-full bg-primary border border-white dark:border-gray-800">
+                                      <Bot size={7} className="text-gray-900" />
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
+                                    {profile.display_name}
+                                  </p>
+                                  <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
+                                    @{profile.handle}
+                                  </p>
+                                </div>
                                 {profile.type === 'ai' && (
-                                  <span className="absolute -bottom-1 -right-1 flex items-center justify-center w-3 h-3 rounded-full bg-primary border border-white dark:border-gray-800">
-                                    <Bot size={7} className="text-gray-900" />
+                                  <span className="text-[9px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400 flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/40 px-1.5 py-0.5 rounded-full">
+                                    AI
                                   </span>
                                 )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
-                                  {profile.display_name}
-                                </p>
-                                <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
-                                  @{profile.handle}
-                                </p>
-                              </div>
-                              {profile.type === 'ai' && (
-                                <span className="text-[9px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400 flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/40 px-1.5 py-0.5 rounded-full">
-                                  AI
-                                </span>
-                              )}
-                              {isThisOneSwitching ? (
-                                <Loader2 size={13} className="text-primary flex-shrink-0 animate-spin" />
-                              ) : profile.is_active ? (
-                                <Check size={13} className="text-primary flex-shrink-0" />
-                              ) : null}
-                            </button>
-                          )
-                        })}
-                      </div>,
-                      document.body
-                    )}
+                                {isThisOneSwitching ? (
+                                  <Loader2
+                                    size={13}
+                                    className="text-primary flex-shrink-0 animate-spin"
+                                  />
+                                ) : profile.is_active ? (
+                                  <Check size={13} className="text-primary flex-shrink-0" />
+                                ) : null}
+                              </button>
+                            )
+                          })}
+                        </div>,
+                        document.body
+                      )}
                   </div>
                 )}
 
@@ -535,7 +550,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={(e) => {
                         e.stopPropagation()
                         const rect = buttonRef.current?.getBoundingClientRect()
-                        if (rect) setDropdownPos({ top: rect.top, right: window.innerWidth - rect.right })
+                        if (rect)
+                          setDropdownPos({ top: rect.top, right: window.innerWidth - rect.right })
                         setIsDropdownOpen(!isDropdownOpen)
                       }}
                       className={`p-1.5 rounded-lg transition-colors relative ${isDropdownOpen ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'}`}
@@ -546,156 +562,167 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       )}
                     </button>
 
-                    {isDropdownOpen && dropdownPos && createPortal(
-                      <div
-                        ref={dropdownRef}
-                        role="menu"
-                        style={{
-                          position: 'fixed',
-                          top: dropdownPos.top - 8,
-                          right: dropdownPos.right,
-                          transform: 'translateY(-100%)',
-                          zIndex: 9999,
-                        }}
-                        className="w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 overflow-hidden"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="px-4 py-3 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                            Account
-                          </p>
-                        </div>
-                        <div className="p-1">
-                          <button
-                            role="menuitem"
-                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                            onClick={() => {
-                              setIsDropdownOpen(false)
-                              handleProfileClick()
-                            }}
-                          >
-                            <User size={16} className="text-gray-400" />
-                            My Profile
-                          </button>
-
-                          {hasLenser && !isAIWorkspace && (
+                    {isDropdownOpen &&
+                      dropdownPos &&
+                      createPortal(
+                        <div
+                          ref={dropdownRef}
+                          role="menu"
+                          style={{
+                            position: 'fixed',
+                            top: dropdownPos.top - 8,
+                            right: dropdownPos.right,
+                            transform: 'translateY(-100%)',
+                            zIndex: 9999,
+                          }}
+                          className="w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 overflow-hidden"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="px-4 py-3 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                              Account
+                            </p>
+                          </div>
+                          <div className="p-1">
                             <button
                               role="menuitem"
                               className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                               onClick={() => {
                                 setIsDropdownOpen(false)
-                                navigate('/lensers?type=my_agents')
+                                handleProfileClick()
                               }}
                             >
-                              <Bot size={16} className="text-gray-400" />
-                              My Agents
+                              <User size={16} className="text-gray-400" />
+                              My Profile
                             </button>
-                          )}
 
-                          {isAIWorkspace && activeWorkspace && (
-                            <button
-                              role="menuitem"
-                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                              onClick={() => {
-                                setIsDropdownOpen(false)
-                                navigate(`/lenser/${activeWorkspace.handle}/ag/overview`)
-                              }}
-                            >
-                              <Bot size={16} className="text-amber-500" />
-                              Control Room
-                            </button>
-                          )}
-
-                          <button
-                            role="menuitem"
-                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                            onClick={() => {
-                              setIsDropdownOpen(false)
-                              navigate('/notifications')
-                            }}
-                          >
-                            <div className="relative flex-shrink-0">
-                              <Bell
-                                size={16}
-                                className={unreadCount > 0 ? 'text-primary-yellow-500' : 'text-gray-400'}
-                              />
-                              {unreadCount > 0 && (
-                                <>
-                                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary-yellow-500 rounded-full animate-pulse" />
-                                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary-yellow-500 rounded-full opacity-60 animate-ping" />
-                                </>
-                              )}
-                            </div>
-                            <span className="flex-1">Notifications</span>
-                            {unreadCount > 0 && (
-                              <span className="bg-primary-yellow-500 text-black text-[10px] font-bold px-1.5 rounded-full h-4 flex items-center justify-center leading-none">
-                                {unreadCount > 99 ? '99+' : unreadCount}
-                              </span>
+                            {hasLenser && !isAIWorkspace && (
+                              <button
+                                role="menuitem"
+                                className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                                onClick={() => {
+                                  setIsDropdownOpen(false)
+                                  navigate('/lensers?type=my_agents')
+                                }}
+                              >
+                                <Bot size={16} className="text-gray-400" />
+                                My Agents
+                              </button>
                             )}
-                          </button>
 
-                          <button
-                            role="menuitem"
-                            onClick={() => {
-                              const nameToShow = THEME_NAMES[nextTheme]
-                              setTheme(nextTheme)
-                              setShownThemeName(nameToShow)
-                              if (themeNameTimerRef.current) clearTimeout(themeNameTimerRef.current)
-                              themeNameTimerRef.current = setTimeout(() => setShownThemeName(null), 2000)
-                            }}
-                            title={THEME_LABELS[themeMode]}
-                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                          >
-                            {THEME_ICONS[themeMode]}
-                            <span key={shownThemeName ?? 'theme'} className="animate-in fade-in duration-300">
-                              {shownThemeName ?? 'Theme'}
-                            </span>
-                          </button>
+                            {isAIWorkspace && activeWorkspace && (
+                              <button
+                                role="menuitem"
+                                className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                                onClick={() => {
+                                  setIsDropdownOpen(false)
+                                  navigate(`/lenser/${activeWorkspace.handle}/ag/overview`)
+                                }}
+                              >
+                                <Bot size={16} className="text-amber-500" />
+                                Control Room
+                              </button>
+                            )}
 
-                          {isAIWorkspace && activeWorkspace ? (
                             <button
                               role="menuitem"
                               className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                               onClick={() => {
                                 setIsDropdownOpen(false)
-                                setAgentSettingsOpen(true)
+                                navigate('/notifications')
                               }}
                             >
-                              <Bot size={16} className="text-amber-500" />
-                              Agent Settings
+                              <div className="relative flex-shrink-0">
+                                <Bell
+                                  size={16}
+                                  className={
+                                    unreadCount > 0 ? 'text-primary-yellow-500' : 'text-gray-400'
+                                  }
+                                />
+                                {unreadCount > 0 && (
+                                  <>
+                                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary-yellow-500 rounded-full animate-pulse" />
+                                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary-yellow-500 rounded-full opacity-60 animate-ping" />
+                                  </>
+                                )}
+                              </div>
+                              <span className="flex-1">Notifications</span>
+                              {unreadCount > 0 && (
+                                <span className="bg-primary-yellow-500 text-black text-[10px] font-bold px-1.5 rounded-full h-4 flex items-center justify-center leading-none">
+                                  {unreadCount > 99 ? '99+' : unreadCount}
+                                </span>
+                              )}
                             </button>
-                          ) : (
+
                             <button
                               role="menuitem"
-                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                               onClick={() => {
-                                setIsDropdownOpen(false)
-                                navigate('/settings/account')
+                                const nameToShow = THEME_NAMES[nextTheme]
+                                setTheme(nextTheme)
+                                setShownThemeName(nameToShow)
+                                if (themeNameTimerRef.current)
+                                  clearTimeout(themeNameTimerRef.current)
+                                themeNameTimerRef.current = setTimeout(
+                                  () => setShownThemeName(null),
+                                  2000
+                                )
                               }}
+                              title={THEME_LABELS[themeMode]}
+                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                             >
-                              <Settings size={16} className="text-gray-400" />
-                              Settings
+                              {THEME_ICONS[themeMode]}
+                              <span
+                                key={shownThemeName ?? 'theme'}
+                                className="animate-in fade-in duration-300"
+                              >
+                                {shownThemeName ?? 'Theme'}
+                              </span>
                             </button>
-                          )}
-                        </div>
-                        <div className="h-px bg-gray-100 dark:bg-gray-700 my-0"></div>
-                        <div className="p-1">
-                          <button
-                            role="menuitem"
-                            onClick={async () => {
-                              setIsDropdownOpen(false)
-                              await logout()
-                              navigate('/auth/login')
-                            }}
-                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"
-                          >
-                            <LogOut size={16} />
-                            Logout
-                          </button>
-                        </div>
-                      </div>,
-                      document.body
-                    )}
+
+                            {isAIWorkspace && activeWorkspace ? (
+                              <button
+                                role="menuitem"
+                                className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                                onClick={() => {
+                                  setIsDropdownOpen(false)
+                                  setAgentSettingsOpen(true)
+                                }}
+                              >
+                                <Bot size={16} className="text-amber-500" />
+                                Agent Settings
+                              </button>
+                            ) : (
+                              <button
+                                role="menuitem"
+                                className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                                onClick={() => {
+                                  setIsDropdownOpen(false)
+                                  navigate('/settings/account')
+                                }}
+                              >
+                                <Settings size={16} className="text-gray-400" />
+                                Settings
+                              </button>
+                            )}
+                          </div>
+                          <div className="h-px bg-gray-100 dark:bg-gray-700 my-0"></div>
+                          <div className="p-1">
+                            <button
+                              role="menuitem"
+                              onClick={async () => {
+                                setIsDropdownOpen(false)
+                                await logout()
+                                navigate('/auth/login')
+                              }}
+                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"
+                            >
+                              <LogOut size={16} />
+                              Logout
+                            </button>
+                          </div>
+                        </div>,
+                        document.body
+                      )}
                   </div>
                 )}
               </div>

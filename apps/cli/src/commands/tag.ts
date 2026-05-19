@@ -1,7 +1,7 @@
-import { defineCommand } from 'citty';
-import consola from 'consola';
-import { callRpc, handleError } from '../utils/api';
-import { printTable, printJson, truncate } from '../utils/output';
+import { defineCommand } from 'citty'
+import consola from 'consola'
+import { callRpc, handleError } from '../utils/api'
+import { printTable, printJson, truncate } from '../utils/output'
 
 // ---------------------------------------------------------------------------
 // Shared helper — resolves a tag UUID from its slug.
@@ -10,8 +10,8 @@ async function resolveTagId(slug: string): Promise<{ id: string; name: string } 
   const tags = await callRpc<Array<{ id: string; name: string; slug: string }>>(
     'fn_content_tags_get_by_slug',
     { p_slug: slug }
-  );
-  return tags?.[0] ?? null;
+  )
+  return tags?.[0] ?? null
 }
 
 // ---------------------------------------------------------------------------
@@ -22,8 +22,8 @@ async function resolveSelfId(): Promise<string | null> {
     'fn_lensers_get_active_profile',
     {},
     { requireAuth: true }
-  );
-  return (self?.id as string) ?? null;
+  )
+  return (self?.id as string) ?? null
 }
 
 // ---------------------------------------------------------------------------
@@ -43,23 +43,19 @@ const follow = defineCommand({
   },
   async run({ args }) {
     try {
-      const tag = await resolveTagId(args.slug);
+      const tag = await resolveTagId(args.slug)
       if (!tag) {
-        consola.error('Tag not found: %s', args.slug);
-        process.exitCode = 1;
-        return;
+        consola.error('Tag not found: %s', args.slug)
+        process.exitCode = 1
+        return
       }
-      await callRpc(
-        'fn_content_follow_tag',
-        { p_tag_id: tag.id },
-        { requireAuth: true }
-      );
-      consola.success('Now following tag: %s (%s)', tag.name, args.slug);
+      await callRpc('fn_content_follow_tag', { p_tag_id: tag.id }, { requireAuth: true })
+      consola.success('Now following tag: %s (%s)', tag.name, args.slug)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // tag unfollow <slug>
@@ -78,23 +74,19 @@ const unfollow = defineCommand({
   },
   async run({ args }) {
     try {
-      const tag = await resolveTagId(args.slug);
+      const tag = await resolveTagId(args.slug)
       if (!tag) {
-        consola.error('Tag not found: %s', args.slug);
-        process.exitCode = 1;
-        return;
+        consola.error('Tag not found: %s', args.slug)
+        process.exitCode = 1
+        return
       }
-      await callRpc(
-        'fn_content_unfollow_tag',
-        { p_tag_id: tag.id },
-        { requireAuth: true }
-      );
-      consola.success('Unfollowed tag: %s (%s)', tag.name, args.slug);
+      await callRpc('fn_content_unfollow_tag', { p_tag_id: tag.id }, { requireAuth: true })
+      consola.success('Unfollowed tag: %s (%s)', tag.name, args.slug)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // tag followed  [--json]
@@ -113,25 +105,25 @@ const followed = defineCommand({
   },
   async run({ args }) {
     try {
-      const selfId = await resolveSelfId();
+      const selfId = await resolveSelfId()
       if (!selfId) {
-        consola.warn('No lenser profile found. Run `auth login` first.');
-        return;
+        consola.warn('No lenser profile found. Run `auth login` first.')
+        return
       }
 
       const results = await callRpc<Array<Record<string, unknown>>>(
         'fn_content_get_followed_tags',
         { p_lenser_id: selfId },
         { requireAuth: true }
-      );
+      )
 
       if (!results?.length) {
-        consola.info('You are not following any tags yet.');
-        return;
+        consola.info('You are not following any tags yet.')
+        return
       }
       if (args.json) {
-        printJson(results);
-        return;
+        printJson(results)
+        return
       }
       printTable(
         ['Tag ID', 'Slug', 'Name', 'Followed At'],
@@ -141,12 +133,12 @@ const followed = defineCommand({
           truncate(String(r.name || '-'), 28),
           String(r.followed_at || '-').substring(0, 10),
         ])
-      );
+      )
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // Root: lenserfight tag
@@ -161,4 +153,4 @@ export default defineCommand({
     unfollow,
     followed,
   },
-});
+})

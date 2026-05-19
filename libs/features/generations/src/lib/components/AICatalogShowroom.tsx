@@ -56,15 +56,21 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
     return Array.from(all).sort()
   }, [models])
 
-  const providerOptions = useMemo(() => [
-    { value: 'all', label: 'All providers', icon: Layers },
-    ...providers.map((p) => ({ value: p.key, label: p.display_name, icon: Box }))
-  ], [providers])
+  const providerOptions = useMemo(
+    () => [
+      { value: 'all', label: 'All providers', icon: Layers },
+      ...providers.map((p) => ({ value: p.key, label: p.display_name, icon: Box })),
+    ],
+    [providers]
+  )
 
-  const capabilityOptions = useMemo(() => [
-    { value: 'all', label: 'All capabilities', icon: Sparkles },
-    ...capabilities.map((c) => ({ value: c, label: c }))
-  ], [capabilities])
+  const capabilityOptions = useMemo(
+    () => [
+      { value: 'all', label: 'All capabilities', icon: Sparkles },
+      ...capabilities.map((c) => ({ value: c, label: c })),
+    ],
+    [capabilities]
+  )
 
   const filteredModels = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -84,7 +90,8 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
   }, [models, search])
 
   const selectedModels = useMemo(
-    () => filteredModels.filter((model) => selectedKeys.includes(`${model.provider_key}/${model.key}`)),
+    () =>
+      filteredModels.filter((model) => selectedKeys.includes(`${model.provider_key}/${model.key}`)),
     [filteredModels, selectedKeys]
   )
 
@@ -93,9 +100,7 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
     filteredModels[0] ??
     null
 
-  const shellClass = embedded
-    ? 'space-y-8'
-    : 'p-1'
+  const shellClass = embedded ? 'space-y-8' : 'p-1'
 
   return (
     <div className={shellClass}>
@@ -119,8 +124,16 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
               <MetricCard
                 className="!bg-transparent !shadow-none !p-0 gap-8"
                 stats={[
-                  { label: 'Providers', value: String(providers.length), icon: <Layers size={14} /> },
-                  { label: 'Models', value: String(filteredModels.length), icon: <Box size={14} /> },
+                  {
+                    label: 'Providers',
+                    value: String(providers.length),
+                    icon: <Layers size={14} />,
+                  },
+                  {
+                    label: 'Models',
+                    value: String(filteredModels.length),
+                    icon: <Box size={14} />,
+                  },
                 ]}
               />
             </>
@@ -131,14 +144,18 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
       {embedded && (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-8">
           <div>
-            <Text variant="caption" className="uppercase tracking-[0.22em] text-primary-yellow-600 dark:text-primary-yellow-400 font-bold">
+            <Text
+              variant="caption"
+              className="uppercase tracking-[0.22em] text-primary-yellow-600 dark:text-primary-yellow-400 font-bold"
+            >
               Catalog
             </Text>
             <Heading level={1} className="mt-2 text-greyscale-900 dark:text-white">
               {title}
             </Heading>
             <Text variant="body-m" color="muted" className="mt-2 max-w-3xl">
-              Compare providers, inspect model capabilities, and decide which runtime belongs in a workflow or an agent team.
+              Compare providers, inspect model capabilities, and decide which runtime belongs in a
+              workflow or an agent team.
             </Text>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -159,7 +176,10 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
       )}
 
       <Stack gap="gap-6">
-        <Surface variant="inset" className="p-4 rounded-[24px] grid gap-4 lg:grid-cols-[1.5fr_1fr_1fr] items-center">
+        <Surface
+          variant="inset"
+          className="p-4 rounded-[24px] grid gap-4 lg:grid-cols-[1.5fr_1fr_1fr] items-center"
+        >
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -184,8 +204,14 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
         {(focus === 'all' || focus === 'providers') && (
           <section className="space-y-4">
             <div className="flex items-center justify-between px-2">
-              <Heading level={2} size="h3" color="default">Providers</Heading>
-              <Text variant="caption" color="muted" className="uppercase tracking-widest font-semibold">
+              <Heading level={2} size="h3" color="default">
+                Providers
+              </Heading>
+              <Text
+                variant="caption"
+                color="muted"
+                className="uppercase tracking-widest font-semibold"
+              >
                 {providersLoading ? 'Loading' : `${providers.length} listed`}
               </Text>
             </div>
@@ -196,31 +222,51 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                     key={provider.key}
                     variant="raised"
                     className="rounded-[28px] p-6 flex flex-col h-full hover:shadow-neu-3 transition-all duration-300 cursor-pointer"
-                    onClick={() => focus === 'providers' ? navigate(`/ai/catalog/models`) : setProviderFilter(provider.key)}
+                    onClick={() =>
+                      focus === 'providers'
+                        ? navigate(`/ai/catalog/models`)
+                        : setProviderFilter(provider.key)
+                    }
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <Text variant="caption" color="muted" className="uppercase tracking-widest font-bold">
+                        <Text
+                          variant="caption"
+                          color="muted"
+                          className="uppercase tracking-widest font-bold"
+                        >
                           {provider.key}
                         </Text>
-                        <Heading level={3} size="h3" className="mt-1 text-greyscale-900 dark:text-white">
+                        <Heading
+                          level={3}
+                          size="h3"
+                          className="mt-1 text-greyscale-900 dark:text-white"
+                        >
                           {provider.display_name}
                         </Heading>
                       </div>
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <HelpButton path={`/reference/ai-providers/${provider.key}`} label="Docs" />
-                        <Badge color={supportTone(provider.support_level ?? 'catalog_only')} variant="outline">
+                        <Badge
+                          color={supportTone(provider.support_level ?? 'catalog_only')}
+                          variant="outline"
+                        >
                           {provider.support_level ?? 'catalog'}
                         </Badge>
                       </div>
                     </div>
                     {provider.is_active === false && (
                       <div className="mt-4">
-                        <Badge color="red" variant="solid">Inactive</Badge>
+                        <Badge color="red" variant="solid">
+                          Inactive
+                        </Badge>
                       </div>
                     )}
                     <Text variant="body-m" color="muted" className="mt-4 flex-grow leading-relaxed">
-                      {String((provider.metadata?.summary as string | undefined) ?? 'Provider metadata is available in the catalog for routing, auth, and capability inspection.')}
+                      {String(
+                        (provider.metadata?.summary as string | undefined) ??
+                          'Provider metadata is available in the catalog for routing, auth, and capability inspection.'
+                      )}
                     </Text>
                   </Surface>
                 )
@@ -233,8 +279,14 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
           <section className="grid gap-8 xl:grid-cols-[1.4fr_0.9fr]">
             <div className="space-y-4">
               <div className="flex items-center justify-between px-2">
-                <Heading level={2} size="h3">Models</Heading>
-                <Text variant="caption" color="muted" className="uppercase tracking-widest font-semibold">
+                <Heading level={2} size="h3">
+                  Models
+                </Heading>
+                <Text
+                  variant="caption"
+                  color="muted"
+                  className="uppercase tracking-widest font-semibold"
+                >
                   {modelsLoading ? 'Loading' : `${filteredModels.length} visible`}
                 </Text>
               </div>
@@ -257,21 +309,36 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <Text variant="caption" color="muted" className="uppercase tracking-widest font-bold">
+                          <Text
+                            variant="caption"
+                            color="muted"
+                            className="uppercase tracking-widest font-bold"
+                          >
                             {model.provider_name}
                           </Text>
-                          <Heading level={3} size="h3" className="mt-1 text-greyscale-900 group-hover:text-primary-yellow-600 dark:text-white dark:group-hover:text-primary-yellow-400 transition-colors">
+                          <Heading
+                            level={3}
+                            size="h3"
+                            className="mt-1 text-greyscale-900 group-hover:text-primary-yellow-600 dark:text-white dark:group-hover:text-primary-yellow-400 transition-colors"
+                          >
                             {model.name}
                           </Heading>
                         </div>
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className="flex items-center gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <HelpButton path="/reference/ai-models" label="Docs" />
                           <Badge color={supportTone(model.support_level)} variant="outline">
                             {model.support_level}
                           </Badge>
                         </div>
                       </div>
-                      <Text variant="body-m" color="muted" className="mt-3 line-clamp-3 leading-relaxed">
+                      <Text
+                        variant="body-m"
+                        color="muted"
+                        className="mt-3 line-clamp-3 leading-relaxed"
+                      >
                         {model.user_summary || model.description}
                       </Text>
                       <div className="mt-4 flex flex-wrap gap-2">
@@ -282,7 +349,12 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                         ))}
                       </div>
                       <div className="mt-5 flex items-center gap-2 text-xs font-medium text-greyscale-500 dark:text-greyscale-400">
-                        <span className="flex items-center gap-1"><Layers size={12} /> {model.context_window_tokens ? `${(model.context_window_tokens / 1000).toFixed(0)}k` : 'n/a'}</span>
+                        <span className="flex items-center gap-1">
+                          <Layers size={12} />{' '}
+                          {model.context_window_tokens
+                            ? `${(model.context_window_tokens / 1000).toFixed(0)}k`
+                            : 'n/a'}
+                        </span>
                         <span>•</span>
                         <span>{model.supports_streaming ? 'Streaming' : 'Static'}</span>
                         <span>•</span>
@@ -311,7 +383,10 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                             variant="dark"
                             size="sm"
                             className="flex-1"
-                            onClick={(e) => { e.stopPropagation(); onModelSelect(model) }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onModelSelect(model)
+                            }}
                           >
                             Use in agent
                           </Button>
@@ -328,13 +403,18 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                 <div className="flex items-center justify-between mb-4">
                   <Badge color="yellow" variant="outline" className="gap-1.5 py-1 px-3">
                     <Info size={14} />
-                    <span className="uppercase tracking-widest text-[10px] font-black">Model Details</span>
+                    <span className="uppercase tracking-widest text-[10px] font-black">
+                      Model Details
+                    </span>
                   </Badge>
                   <div className="flex items-center gap-2">
                     <HelpButton path="/reference/ai-models" label="Docs" />
                     {activeModel && (
                       <Link to={`/ai/catalog/${activeModel.provider_key}/${activeModel.key}`}>
-                        <Text variant="caption" className="text-primary-yellow-600 hover:underline font-bold">
+                        <Text
+                          variant="caption"
+                          className="text-primary-yellow-600 hover:underline font-bold"
+                        >
                           Full Specs
                         </Text>
                       </Link>
@@ -355,7 +435,11 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                       {activeModel.user_summary || activeModel.description}
                     </Text>
                     <div className="p-4 rounded-2xl bg-surface-sunken/50 border border-surface-border">
-                      <Heading level={4} size="h3" className="text-sm font-bold uppercase tracking-wider text-greyscale-800 dark:text-greyscale-200">
+                      <Heading
+                        level={4}
+                        size="h3"
+                        className="text-sm font-bold uppercase tracking-wider text-greyscale-800 dark:text-greyscale-200"
+                      >
                         Developer notes
                       </Heading>
                       <Text variant="body-m" color="muted" className="mt-2 text-sm leading-relaxed">
@@ -363,7 +447,11 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                       </Text>
                     </div>
                     <div>
-                      <Heading level={4} size="h3" className="text-sm font-bold uppercase tracking-wider text-greyscale-800 dark:text-greyscale-200">
+                      <Heading
+                        level={4}
+                        size="h3"
+                        className="text-sm font-bold uppercase tracking-wider text-greyscale-800 dark:text-greyscale-200"
+                      >
                         Recommended use cases
                       </Heading>
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -381,7 +469,6 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                   </Text>
                 )}
               </Surface>
-
             </Stack>
           </section>
         )}
@@ -412,11 +499,21 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
             })}
           </div>
           <div className="w-px h-5 bg-surface-border shrink-0" />
-          <Button variant="primary" size="sm" className="shrink-0 gap-1.5" onClick={() => setCompareOpen(true)}>
+          <Button
+            variant="primary"
+            size="sm"
+            className="shrink-0 gap-1.5"
+            onClick={() => setCompareOpen(true)}
+          >
             <Layers size={14} />
             Compare {selectedModels.length}/3
           </Button>
-          <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setSelectedKeys([])}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="shrink-0"
+            onClick={() => setSelectedKeys([])}
+          >
             Clear
           </Button>
         </div>
@@ -445,7 +542,11 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
               {selectedModels.map((model) => {
                 const key = `${model.provider_key}/${model.key}`
                 return (
-                  <Surface key={key} variant="inset" className="rounded-2xl p-4 text-center relative">
+                  <Surface
+                    key={key}
+                    variant="inset"
+                    className="rounded-2xl p-4 text-center relative"
+                  >
                     <button
                       type="button"
                       aria-label={`Remove ${model.name}`}
@@ -454,10 +555,18 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                     >
                       <X size={14} />
                     </button>
-                    <Text variant="caption" color="muted" className="uppercase tracking-widest font-bold block">
+                    <Text
+                      variant="caption"
+                      color="muted"
+                      className="uppercase tracking-widest font-bold block"
+                    >
                       {model.provider_name}
                     </Text>
-                    <Heading level={3} size="h3" className="mt-1 text-greyscale-900 dark:text-white">
+                    <Heading
+                      level={3}
+                      size="h3"
+                      className="mt-1 text-greyscale-900 dark:text-white"
+                    >
                       {model.name}
                     </Heading>
                     <div className="mt-2 flex justify-center">
@@ -477,14 +586,20 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                   label: 'Context Window',
                   render: (m: AIModelCatalogEntry) => (
                     <Text variant="caption" className="font-mono font-bold tabular-nums">
-                      {m.context_window_tokens ? `${(m.context_window_tokens / 1000).toFixed(0)}k` : 'n/a'}
+                      {m.context_window_tokens
+                        ? `${(m.context_window_tokens / 1000).toFixed(0)}k`
+                        : 'n/a'}
                     </Text>
                   ),
                 },
                 {
                   label: 'Status',
                   render: (m: AIModelCatalogEntry) => (
-                    <Badge color={m.status === 'active' ? 'green' : 'yellow'} variant="solid" size="sm">
+                    <Badge
+                      color={m.status === 'active' ? 'green' : 'yellow'}
+                      variant="solid"
+                      size="sm"
+                    >
                       {m.status}
                     </Badge>
                   ),
@@ -492,30 +607,38 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                 {
                   label: 'Streaming',
                   render: (m: AIModelCatalogEntry) =>
-                    m.supports_streaming
-                      ? <CheckCircle2 size={18} className="text-status-green" />
-                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                    m.supports_streaming ? (
+                      <CheckCircle2 size={18} className="text-status-green" />
+                    ) : (
+                      <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />
+                    ),
                 },
                 {
                   label: 'Tool Use',
                   render: (m: AIModelCatalogEntry) =>
-                    m.supports_tools
-                      ? <CheckCircle2 size={18} className="text-status-green" />
-                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                    m.supports_tools ? (
+                      <CheckCircle2 size={18} className="text-status-green" />
+                    ) : (
+                      <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />
+                    ),
                 },
                 {
                   label: 'Vision',
                   render: (m: AIModelCatalogEntry) =>
-                    m.supports_vision
-                      ? <CheckCircle2 size={18} className="text-status-green" />
-                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                    m.supports_vision ? (
+                      <CheckCircle2 size={18} className="text-status-green" />
+                    ) : (
+                      <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />
+                    ),
                 },
                 {
                   label: 'JSON Schema',
                   render: (m: AIModelCatalogEntry) =>
-                    m.supports_json_schema
-                      ? <CheckCircle2 size={18} className="text-status-green" />
-                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                    m.supports_json_schema ? (
+                      <CheckCircle2 size={18} className="text-status-green" />
+                    ) : (
+                      <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />
+                    ),
                 },
               ] as { label: string; render: (m: AIModelCatalogEntry) => React.ReactNode }[]
             ).map(({ label, render }) => (
@@ -524,7 +647,11 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                 className="grid gap-3 items-center border-t border-surface-border"
                 style={{ gridTemplateColumns: `180px repeat(${selectedModels.length}, 1fr)` }}
               >
-                <Text variant="caption" color="muted" className="py-4 font-bold uppercase tracking-widest text-[10px]">
+                <Text
+                  variant="caption"
+                  color="muted"
+                  className="py-4 font-bold uppercase tracking-widest text-[10px]"
+                >
                   {label}
                 </Text>
                 {selectedModels.map((model) => (

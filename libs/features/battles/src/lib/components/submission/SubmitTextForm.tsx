@@ -28,7 +28,9 @@ export const SubmitTextForm: React.FC<SubmitTextFormProps> = ({ battleId, conten
     return (
       <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
         <span className="text-2xl">✅</span>
-        <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Submission received</p>
+        <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+          Submission received
+        </p>
         <p className="text-xs text-greyscale-500">Waiting for the other contender…</p>
       </div>
     )
@@ -36,7 +38,9 @@ export const SubmitTextForm: React.FC<SubmitTextFormProps> = ({ battleId, conten
 
   return (
     <div className="space-y-3 p-1">
-      <p className="text-xs font-semibold uppercase tracking-wider text-greyscale-500">Your submission</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-greyscale-500">
+        Your submission
+      </p>
       <TextArea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -49,7 +53,6 @@ export const SubmitTextForm: React.FC<SubmitTextFormProps> = ({ battleId, conten
           {isValid ? `${text.trim().length} chars` : `${remaining} more chars needed`}
         </span>
         <Button
-
           size="sm"
           onClick={handleSubmit}
           disabled={!isValid || submitEntry.isPending}

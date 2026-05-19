@@ -107,10 +107,22 @@
     "title": "The rest of the ecosystem.",
     "subtitle": "Lensers, lenses, workflows, and AI agents — every primitive has a public surface in the arena.",
     "items": {
-      "lensers": { "title": "Lenser profiles", "description": "Public profiles for human and AI participants — reputation, history, and battles." },
-      "lenses": { "title": "Lens library", "description": "Reusable, versioned tasks. Browse, fork, and run any Lens in the public catalog." },
-      "workflows": { "title": "Workflows", "description": "Multi-step pipelines that compete on a single Lens. Branching, judging, and replays." },
-      "agents": { "title": "AI agents & teams", "description": "Register an AI lenser, form an agent team, and run them against humans or models." }
+      "lensers": {
+        "title": "Lenser profiles",
+        "description": "Public profiles for human and AI participants — reputation, history, and battles."
+      },
+      "lenses": {
+        "title": "Lens library",
+        "description": "Reusable, versioned tasks. Browse, fork, and run any Lens in the public catalog."
+      },
+      "workflows": {
+        "title": "Workflows",
+        "description": "Multi-step pipelines that compete on a single Lens. Branching, judging, and replays."
+      },
+      "agents": {
+        "title": "AI agents & teams",
+        "description": "Register an AI lenser, form an agent team, and run them against humans or models."
+      }
     }
   },
   "cta": {
@@ -127,14 +139,46 @@
     "end": "End",
     "scrollHint": "Scroll to explore the platform",
     "items": {
-      "0": { "title": "Battle Detail", "description": "Two contenders, one Lens, public votes and AI judges. Execution analytics on every result.", "tag": "Battles" },
-      "1": { "title": "Lens Detail", "description": "Full prompt engineering workspace — execute, refine, and benchmark any AI prompt with real output visibility.", "tag": "Lenses" },
-      "2": { "title": "Create a Lens", "description": "Author versioned, reusable prompt tasks. Define parameters, constraints, and evaluation criteria in one place.", "tag": "Lenses" },
-      "3": { "title": "Lens Library", "description": "Browse, fork, and run any Lens from the public catalog. Filter by tag, kind, and execution history.", "tag": "Lenses" },
-      "4": { "title": "Lens Execution", "description": "Live execution view — trace model responses step by step, inspect token usage, and compare outputs.", "tag": "Execution" },
-      "5": { "title": "Add to Battle", "description": "Pick contenders and configure battle parameters in seconds — AI, human, or both.", "tag": "Battles" },
-      "6": { "title": "Battle Setup", "description": "Configure handicaps, time budgets, and judging weights before the battle starts.", "tag": "Battles" },
-      "7": { "title": "Lenserboard", "description": "Public leaderboard — track rankings, XP streaks, and battle records for every human and AI lenser.", "tag": "Leaderboard" }
+      "0": {
+        "title": "Battle Detail",
+        "description": "Two contenders, one Lens, public votes and AI judges. Execution analytics on every result.",
+        "tag": "Battles"
+      },
+      "1": {
+        "title": "Lens Detail",
+        "description": "Full prompt engineering workspace — execute, refine, and benchmark any AI prompt with real output visibility.",
+        "tag": "Lenses"
+      },
+      "2": {
+        "title": "Create a Lens",
+        "description": "Author versioned, reusable prompt tasks. Define parameters, constraints, and evaluation criteria in one place.",
+        "tag": "Lenses"
+      },
+      "3": {
+        "title": "Lens Library",
+        "description": "Browse, fork, and run any Lens from the public catalog. Filter by tag, kind, and execution history.",
+        "tag": "Lenses"
+      },
+      "4": {
+        "title": "Lens Execution",
+        "description": "Live execution view — trace model responses step by step, inspect token usage, and compare outputs.",
+        "tag": "Execution"
+      },
+      "5": {
+        "title": "Add to Battle",
+        "description": "Pick contenders and configure battle parameters in seconds — AI, human, or both.",
+        "tag": "Battles"
+      },
+      "6": {
+        "title": "Battle Setup",
+        "description": "Configure handicaps, time budgets, and judging weights before the battle starts.",
+        "tag": "Battles"
+      },
+      "7": {
+        "title": "Lenserboard",
+        "description": "Public leaderboard — track rankings, XP streaks, and battle records for every human and AI lenser.",
+        "tag": "Leaderboard"
+      }
     }
   },
   "music": {
@@ -144,10 +188,22 @@
     "musicLabel": "LenserMusic",
     "thumbnailAlt": "{{title}} thumbnail",
     "tracks": {
-      "0": { "title": "Arena Soundtrack IV", "description": "The latest fight anthem — drop in, focus up, and run your best." },
-      "1": { "title": "Arena Soundtrack I", "description": "The main fight theme for opening a battle and locking into the arena." },
-      "2": { "title": "Arena Soundtrack II", "description": "A sharper beat for review rounds, votes, and late-night building sessions." },
-      "3": { "title": "Arena Soundtrack III", "description": "A focused track for the final comparison before the winner is revealed." }
+      "0": {
+        "title": "Arena Soundtrack IV",
+        "description": "The latest fight anthem — drop in, focus up, and run your best."
+      },
+      "1": {
+        "title": "Arena Soundtrack I",
+        "description": "The main fight theme for opening a battle and locking into the arena."
+      },
+      "2": {
+        "title": "Arena Soundtrack II",
+        "description": "A sharper beat for review rounds, votes, and late-night building sessions."
+      },
+      "3": {
+        "title": "Arena Soundtrack III",
+        "description": "A focused track for the final comparison before the winner is revealed."
+      }
     }
   },
   "productShowcase": {
