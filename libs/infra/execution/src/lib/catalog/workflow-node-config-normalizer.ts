@@ -37,6 +37,11 @@ export function normalizeWorkflowNodeConfigForExecution(
 
   const overrides = raw['param_overrides']
   if (overrides && typeof overrides === 'object' && !Array.isArray(overrides)) {
+    // Preserve the original param_overrides object so resolveRenderedInputs can
+    // apply it to the template binding map (WorkflowNodeConfig.param_overrides).
+    normalized['param_overrides'] = overrides
+    // Also flatten individual keys into top-level config so utility node runners
+    // can access them directly via nodeConfig.fieldName.
     for (const [rawKey, value] of Object.entries(overrides as Record<string, unknown>)) {
       const key = rawKey.startsWith('__') ? rawKey.slice(2) : rawKey
       if (!key || key in normalized) continue
