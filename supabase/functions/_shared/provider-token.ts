@@ -2,9 +2,9 @@
 //
 // Resolves a user's Chainabit OAuth access token from auth.identities.
 //
-// Supabase Custom OAuth Provider (keycloak slot) stores the access_token,
+// Supabase Custom OAuth Provider (custom_chainabit) stores the access_token,
 // refresh_token, expires_at, and scope in auth.identities when the user
-// connects via supabase.auth.linkIdentity({ provider: 'keycloak' }).
+// connects via supabase.auth.linkIdentity({ provider: 'custom_chainabit' }).
 //
 // Token refresh is handled by Supabase itself: when the client calls
 // supabase.auth.refreshSession(), Supabase refreshes the provider token using
@@ -50,11 +50,11 @@ export class CapabilityDeniedError extends Error {
 /**
  * Resolves the Chainabit OAuth access token for a user from auth.identities.
  *
- * Reads the keycloak-slot identity stored by Supabase Custom OAuth Provider.
+ * Reads the custom_chainabit identity stored by Supabase Custom OAuth Provider.
  * Does not attempt token refresh — Supabase handles that automatically via
  * its own session refresh cycle.
  *
- * @throws ProviderNotConnectedError  when no keycloak identity or access_token is found
+ * @throws ProviderNotConnectedError  when no custom_chainabit identity or access_token is found
  */
 export async function resolveChainabitToken(
   userId: string,
@@ -65,7 +65,7 @@ export async function resolveChainabitToken(
     throw new Error('Failed to look up user identity')
   }
 
-  const identity = (data.user.identities ?? []).find((i) => i.provider === 'keycloak')
+  const identity = (data.user.identities ?? []).find((i) => i.provider === 'custom_chainabit')
   if (!identity) {
     throw new ProviderNotConnectedError()
   }
