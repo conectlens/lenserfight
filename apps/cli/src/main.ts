@@ -122,6 +122,7 @@ const main = defineCommand({
     'kill-switch': () => import('./commands/kill-switch').then((m) => m.default),
     'dark-launch': () => import('./commands/dark-launch').then((m) => m.default),
     budget: () => import('./commands/budget').then((m) => m.default),
+    platform: () => import('./commands/platform').then((m) => m.default),
     policy: () => import('./commands/policy').then((m) => m.default),
     completion: () => import('./commands/completion').then((m) => m.default),
     profile: () => import('./commands/profile').then((m) => m.default),
@@ -175,8 +176,3 @@ setImmediate(() => {
   });
 });
 
-// TODO(Y5): `lf platform` subcommand and remote-control RPCs.
-// Blocked on the Supabase migration that adds the platform-control RPCs
-// (provisional names: platform.fn_*). When the migration ships, register a
-// `platform: () => import('./commands/platform').then((m) => m.default)` entry
-// above alongside the alphabetical placement and remove this TODO.

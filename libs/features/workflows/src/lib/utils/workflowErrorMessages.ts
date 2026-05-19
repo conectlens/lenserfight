@@ -16,7 +16,7 @@ const ERROR_COPY: Record<string, string> = {
   output_contract_violation:
     'Output failed contract validation.',
   placeholder_unbound:
-    'A required template variable was not provided.',
+    'A template variable is unbound — set a static value in the node config or wire it from an upstream output.',
   moderation_blocked:
     'Content was blocked by the moderation policy.',
   template_resolution_failed:

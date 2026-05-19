@@ -310,6 +310,16 @@ export function classifyError(error: unknown): TaxonomyEntry {
     return entry('battle', error)
   }
 
+  // PostgREST schema-exposure errors (e.g. "Invalid schema: agents") — must
+  // come BEFORE the generic 'schema' check which would swallow these.
+  if (
+    c2 === 'PGRST106' ||
+    m.includes('invalid schema') ||
+    m.includes('no schema named')
+  ) {
+    return entry('config', error)
+  }
+
   // Schema / validation
   if (
     c2 === 'SCHEMA_INVALID' ||

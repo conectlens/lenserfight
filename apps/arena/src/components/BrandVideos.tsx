@@ -1,40 +1,24 @@
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 
-import { MediaShowcase, type MediaShowcaseItem } from './MediaShowcase'
+import { MediaShowcaseTour, type MediaShowcaseTourSlide } from './MediaShowcase'
 
-const CDN = 'https://cdn.lenserfight.com/brand/gifs'
+const CDN_L = 'https://cdn.lenserfight.com/product/lenses'
+const CDN_B = 'https://cdn.lenserfight.com/product/battles'
+const CDN_P = 'https://cdn.lenserfight.com/product/pages'
 
-const BRAND_VIDEO_SOURCES = [
-  `${CDN}/lf-animation-1.gif`,
-  `${CDN}/lf-animation-2.gif`,
-  `${CDN}/lf-animation-3.gif`,
-  `${CDN}/lf-animation-4.gif`,
-] as const
+const SLIDES: ReadonlyArray<MediaShowcaseTourSlide> = [
+  { images: { light: `${CDN_B}/battle-detail-light-1.png`,         dark: `${CDN_B}/battle-detail-dark-1.png`,  fallbackLabel: 'Battle Detail Preview Unavailable' } },
+  { images: { light: `${CDN_L}/lens-detail-light-1.png`,           dark: `${CDN_L}/lens-detail-dark-1.png`,    fallbackLabel: 'Lens Detail Preview Unavailable' } },
+  { images: { light: `${CDN_L}/lens-create-light-1.png`,           dark: `${CDN_L}/lens-create-dark-1.png`,   fallbackLabel: 'Lens Create Preview Unavailable' } },
+  { images: { light: `${CDN_L}/lens-list-light-1.png`,             dark: `${CDN_L}/lens-list-dark-1.png`,     fallbackLabel: 'Lens List Preview Unavailable' } },
+  { images: { light: `${CDN_L}/lens-1-detail-executed-light-1.png`, dark: `${CDN_L}/lens-list-dark-1.png`,   fallbackLabel: 'Lens Execution Preview Unavailable' } },
+  { images: { light: `${CDN_B}/battle-add-light-1.png`,            dark: `${CDN_B}/battle-detail-dark-1.png`, fallbackLabel: 'Battle Create Preview Unavailable' } },
+  { images: { light: `${CDN_B}/battle-create-light-1.png`,         dark: `${CDN_B}/battle-detail-dark-1.png`, fallbackLabel: 'Battle Setup Preview Unavailable' } },
+  { images: { light: `${CDN_P}/lenserboard-light-1.png`,           dark: `${CDN_P}/lenserboard-dark-1.png`,   fallbackLabel: 'Lenserboard Preview Unavailable' } },
+]
 
-export const BrandVideos: React.FC = () => {
-  const { t } = useTranslation('home')
-
-  const items: MediaShowcaseItem[] = BRAND_VIDEO_SOURCES.map((src, i) => ({
-    src,
-    kind: 'gif',
-    title: t(`brandVideos.items.${i}.title`),
-    description: t(`brandVideos.items.${i}.description`),
-    tag: t(`brandVideos.items.${i}.tag`),
-  }))
-
-  return (
-    <MediaShowcase
-      items={items}
-      labels={{
-        headerTag: t('brandVideos.tag'),
-        headerTitle: t('brandVideos.title'),
-        chapter: t('brandVideos.chapter'),
-        end: t('brandVideos.end'),
-        scrollHint: t('brandVideos.scrollHint'),
-      }}
-    />
-  )
-}
+export const BrandVideos: React.FC = () => (
+  <MediaShowcaseTour slides={SLIDES} i18nNamespace="demo" i18nPrefix="brandTour" />
+)
 
 export default BrandVideos

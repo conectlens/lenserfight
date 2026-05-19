@@ -19,7 +19,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders, handleCors, errResponse, jsonResponse } from '../_shared/cors.ts'
 import { buildOpenAIImageBody } from '../_shared/providers/openai-image-profiles.ts'
-import { detectProvider as detectProviderFromRegistry, resolveWireModel } from '../_shared/providers/model-registry.ts'
+import { detectProvider as detectProviderFromRegistry, resolveWireModel, lookupModel } from '../_shared/providers/model-registry.ts'
 import {
   resolveChainabitToken,
   ProviderNotConnectedError,
@@ -482,7 +482,24 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   const { model_id: modelKey, input_snapshot, funding_source, byok_key_ref_id, generative_media_params } = body
-  const modality = generative_media_params?.output_modality ?? 'image'
+
+  // Fail fast when a text model is accidentally routed here.
+  // trigger-execution handles image/video/audio/music only.
+  // Text generation belongs in execute-stream.
+  const modelDescriptor = lookupModel(modelKey)
+  if (modelDescriptor?.kind === 'text') {
+    return errResponse(
+      'unsupported_model',
+      `Model "${modelKey}" is a text model. Use execute-stream for text generation. trigger-execution handles image, video, audio, and music models only.`,
+      422,
+      req,
+    )
+  }
+
+  // Use the registry kind as the fallback modality so unknown models don't
+  // silently default to 'image' and hit an incompatible provider endpoint.
+  const registryKind = modelDescriptor?.kind
+  const modality = generative_media_params?.output_modality ?? registryKind ?? 'image'
 
   // Prompt resolution order:
   //   1. generative_media_params.prompt  — explicit override from the caller

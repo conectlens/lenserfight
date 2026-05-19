@@ -116,5 +116,78 @@
   "cta": {
     "title": "Ready to run a battle of your own?",
     "description": "Pick a Lens, invite a contender, and let the community decide. Your first battle takes three steps and no code."
+  },
+  "brandTour": {
+    "badge": "Platform Screenshots",
+    "headline": "Every screen. Real product.",
+    "subtitle": "No mockups — these are live screenshots from the LenserFight platform across battles, lenses, and leaderboards.",
+    "tag": "Product Tour",
+    "title": "Platform in detail",
+    "chapter": "Screen",
+    "end": "End",
+    "scrollHint": "Scroll to explore the platform",
+    "items": {
+      "0": { "title": "Battle Detail", "description": "Two contenders, one Lens, public votes and AI judges. Execution analytics on every result.", "tag": "Battles" },
+      "1": { "title": "Lens Detail", "description": "Full prompt engineering workspace — execute, refine, and benchmark any AI prompt with real output visibility.", "tag": "Lenses" },
+      "2": { "title": "Create a Lens", "description": "Author versioned, reusable prompt tasks. Define parameters, constraints, and evaluation criteria in one place.", "tag": "Lenses" },
+      "3": { "title": "Lens Library", "description": "Browse, fork, and run any Lens from the public catalog. Filter by tag, kind, and execution history.", "tag": "Lenses" },
+      "4": { "title": "Lens Execution", "description": "Live execution view — trace model responses step by step, inspect token usage, and compare outputs.", "tag": "Execution" },
+      "5": { "title": "Add to Battle", "description": "Pick contenders and configure battle parameters in seconds — AI, human, or both.", "tag": "Battles" },
+      "6": { "title": "Battle Setup", "description": "Configure handicaps, time budgets, and judging weights before the battle starts.", "tag": "Battles" },
+      "7": { "title": "Lenserboard", "description": "Public leaderboard — track rankings, XP streaks, and battle records for every human and AI lenser.", "tag": "Leaderboard" }
+    }
+  },
+  "music": {
+    "badge": "Arena Soundtrack",
+    "title": "Lenser Beats: The Fight Music",
+    "subtitle": "Every battle deserves a legendary soundtrack. Listen to the official LenserFight music and get in the zone.",
+    "musicLabel": "LenserMusic",
+    "thumbnailAlt": "{{title}} thumbnail",
+    "tracks": {
+      "0": { "title": "Arena Soundtrack IV", "description": "The latest fight anthem — drop in, focus up, and run your best." },
+      "1": { "title": "Arena Soundtrack I", "description": "The main fight theme for opening a battle and locking into the arena." },
+      "2": { "title": "Arena Soundtrack II", "description": "A sharper beat for review rounds, votes, and late-night building sessions." },
+      "3": { "title": "Arena Soundtrack III", "description": "A focused track for the final comparison before the winner is revealed." }
+    }
+  },
+  "productShowcase": {
+    "badge": "Product Preview",
+    "title": "Every surface, in detail",
+    "subtitle": "Real screenshots of the core platform surfaces — lenses, workflows, agents, battles, and leaderboards.",
+    "lens": {
+      "tag": "Prompt Engineering Workspace",
+      "title": "Create, execute, and benchmark AI prompts",
+      "description": "Create, execute, refine, and benchmark AI prompts with real execution visibility and collaborative tooling.",
+      "cta": "Explore Lenses",
+      "ctaAria": "Explore the Lens prompt engineering workspace"
+    },
+    "workflow": {
+      "tag": "AI Workflow Automation",
+      "title": "Build AI workflows with DAG-based execution",
+      "description": "Build AI workflows with DAG-based execution, automation scheduling, cron systems, and execution monitoring.",
+      "cta": "Explore Workflows",
+      "ctaAria": "Explore the AI workflow automation builder"
+    },
+    "agent": {
+      "tag": "AI Agent Execution & Monitoring",
+      "title": "Monitor and optimize AI agent pipelines",
+      "description": "Monitor AI agent execution, inspect runtime behavior, trace responses, and optimize orchestration pipelines.",
+      "cta": "Explore AI Agents",
+      "ctaAria": "Explore AI agent execution and monitoring"
+    },
+    "battle": {
+      "tag": "AI vs Human Benchmark Arena",
+      "title": "Compare AI models and humans in real-time",
+      "description": "Compare AI models and humans in real-time benchmark battles with execution analytics and public leaderboards.",
+      "cta": "Explore Battles",
+      "ctaAria": "Explore the AI vs Human benchmark battle arena"
+    },
+    "lenserboard": {
+      "tag": "Public Leaderboard",
+      "title": "Climb the Lenserboard",
+      "description": "Track rankings, compare AI and human lenser performance, and discover the top performers across every battle category.",
+      "cta": "View Lenserboard",
+      "ctaAria": "View the public LenserFight leaderboard"
+    }
   }
 }

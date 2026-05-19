@@ -18,6 +18,7 @@ import { getRenderer } from '../../renderers'
 import { BattleLiveArena } from './BattleLiveArena'
 import { ArenaTopBar } from './ArenaTopBar'
 import { BattleRulesDrawer } from '../creation/BattleRulesDrawer'
+import { ManageBattlePanel } from '../creation/ManageBattlePanel'
 import { BattleWebhookSubscriptions } from '../BattleWebhookSubscriptions'
 import { BattleSEOHead } from '../display/BattleSEOHead'
 import { resolveBattleLayout } from './layouts/BattleLayoutResolver'
@@ -27,6 +28,8 @@ import type { BattleContentType } from '../../types/battle-renderer.types'
 import type { BattleLayoutContext, LensContextDetail } from '../../types/battle-layout.types'
 
 import { Drawer } from '@lenserfight/ui/overlays'
+import { useArenaMusic } from '../../hooks/utils/useArenaMusic'
+import { ArenaMusicPlayer } from './ArenaMusicPlayer'
 
 const LenserChatRail = lazy(() =>
   import('../chat/LenserChatRail').then((m) => ({ default: m.LenserChatRail }))
@@ -53,6 +56,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
   const currentUserId = lenser?.id
   const [chatOpen, setChatOpen] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [manageOpen, setManageOpen] = useState(false)
   const [webhooksOpen, setWebhooksOpen] = useState(false)
 
   // --- Data fetching ---
@@ -84,6 +88,12 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
 
   const totalVotes = aggregates.reduce((sum, a) => sum + (a.raw_vote_count ?? 0), 0)
   const isOwner = !!(battle?.creator_lenser_id && lenser?.id && battle.creator_lenser_id === lenser.id)
+
+  // Arena soundtrack — reads initial preference from lenser.preferences or localStorage
+  const music = useArenaMusic(
+    { isAuthenticated },
+    lenser?.preferences?.autoplay_music,
+  )
 
   // Derive fighter slot from contender list — zero extra fetches
   const myContenderSlot: 'A' | 'B' | null =
@@ -241,9 +251,12 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
           slug={slug}
           currentPhase={currentPhase}
           onRulesOpen={() => setRulesOpen(true)}
+          onManageOpen={() => setManageOpen(true)}
           onWebhooksOpen={() => setWebhooksOpen(true)}
           isOwner={isOwner}
           myContenderSlot={myContenderSlot}
+          isMusicEnabled={music.isEnabled}
+          onToggleMusic={music.toggleEnabled}
         />
 
         {/* Main content area + optional desktop chat rail */}
@@ -308,10 +321,23 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
         open={rulesOpen}
         onClose={() => setRulesOpen(false)}
         battle={battle}
-        isOwner={isOwner}
         lensDetails={lensDetails}
         contenders={contenders}
       />
+
+      {/* Manage drawer — owner only */}
+      <Drawer
+        open={manageOpen}
+        onClose={() => setManageOpen(false)}
+        side="right"
+        width="w-80"
+        title="Manage Battle"
+      >
+        <ManageBattlePanel
+          battle={battle}
+          onMutated={() => setManageOpen(false)}
+        />
+      </Drawer>
 
       {/* Webhooks drawer */}
       <Drawer
@@ -325,6 +351,9 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
           <BattleWebhookSubscriptions battleId={battle.id} />
         </div>
       </Drawer>
+
+      {/* Arena soundtrack player (floating, bottom-left) */}
+      <ArenaMusicPlayer music={music} />
     </div>
   )
 }

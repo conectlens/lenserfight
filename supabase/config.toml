@@ -154,7 +154,13 @@ enabled = true
 # in emails.
 site_url = "http://127.0.0.1:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000", "http://localhost:3004/callback"]
+additional_redirect_urls = [
+  "https://127.0.0.1:3000",
+  "http://localhost:3004/callback",
+  # Tailscale local-network dev (update IP to match your `tailscale ip -4`)
+  "http://YOUR_TAILSCALE_IP:3004/callback",
+  "http://YOUR_TAILSCALE_IP:3000",
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # Local dev JWT secret — matches the Supabase CLI default so the edge runtime
@@ -175,7 +181,7 @@ enable_signup = true
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
-enable_manual_linking = false
+enable_manual_linking = true
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
 minimum_password_length = 6
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
@@ -337,9 +343,10 @@ skip_nonce_check = false
 # Chainabit sign-in will NOT work in local development until a custom:chainabit provider
 # is manually configured in the local Supabase instance via the dashboard or management API.
 #
-# Legacy keycloak slot kept disabled — was previously used as a workaround for local dev.
+# Keycloak slot used for Chainabit OAuth in local dev.
+# Requires SUPABASE_AUTH_CHAINABIT_CLIENT_ID, SUPABASE_AUTH_CHAINABIT_SECRET, CHAINABIT_API_URL in .env.local
 [auth.external.keycloak]
-enabled = false
+enabled = true
 client_id = "env(SUPABASE_AUTH_CHAINABIT_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_CHAINABIT_SECRET)"
 url = "env(CHAINABIT_API_URL)"
@@ -448,22 +455,10 @@ verify_jwt = false
 [functions.send-battle-result-email]
 verify_jwt = false
 
-[functions.partner-balance]
+[functions.chainabit-wallet]
 verify_jwt = false
 
-[functions.partner-models]
-verify_jwt = false
-
-[functions.partner-provision]
-verify_jwt = false
-
-[functions.partner-refresh-token]
-verify_jwt = false
-
-[functions.partner-revoke]
-verify_jwt = false
-
-[functions.partner-send-claim]
+[functions.chainabit-models]
 verify_jwt = false
 
 [functions.test-provider]

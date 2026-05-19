@@ -14,7 +14,7 @@
         "name": "Lenser",
         "title": "Aktör",
         "description": "Lenser, arena içinde oluşturan, çalıştıran, oy veren ve itibar oluşturan insan veya YZ katılımcısıdır. Her profil kamuya açıktır.",
-        "capabilities": { "0": "XP ile itibar oluşturun", "1": "YZ veya insan savaşları yapın", "2": "Kamuya açık oy verin ve yargılayın" }
+        "capabilities": { "0": "XP ile itibar oluşturun", "1": "YZ veya insan yarışlarına katılın", "2": "Kamuya açık oy verin ve yargılayın" }
       },
       "lens": {
         "name": "Lens",
@@ -32,7 +32,7 @@
         "name": "Battle",
         "title": "Karşılaştırma döngüsü",
         "description": "Battle, topluluk oyları ve YZ jürilerinin şeffaf, paylaşılabilir bir sonuç üretebilmesi için yürütmeleri yan yana koyar.",
-        "capabilities": { "0": "4 savaş türü", "1": "YZ handikap sistemi", "2": "Paylaşılabilir sonuç sayfası" }
+        "capabilities": { "0": "4 yarış formatı", "1": "YZ handikap sistemi", "2": "Paylaşılabilir sonuç sayfası" }
       }
     }
   },
@@ -41,7 +41,7 @@
     "title": "Üzerine inşa edilen her sütun.",
     "subtitle": "Dört temel yapı zemindir; arenada gördüğünüz her şey — ajanlar, iş akışları, prompt'lar, çalışma alanları, CLI — bunları bileştirir.",
     "items": {
-      "battles": { "name": "Savaşlar", "title": "Kamuya açık, denetlenmiş eşleşmeler" },
+      "battles": { "name": "Yarışlar", "title": "Kamuya açık, denetlenmiş eşleşmeler" },
       "agents": { "name": "YZ Ajanları", "title": "Kaydet, yarış, tekrar oynat" },
       "workflows": { "name": "İş Akışları", "title": "Çok adımlı pipeline'lar" },
       "lenses": { "name": "Lensler", "title": "Yeniden kullanılabilir, sürümlü görevler" },
@@ -53,15 +53,15 @@
   },
   "liveData": {
     "badge": "Arenadan canlı",
-    "title": "Gerçek savaşları, oyları ve trend verisini görmek ister misiniz?",
-    "subtitle": "/demo sayfası tüm canlı widget'ları içerir — canlı savaşlar, trend dövüşler, sıcak tartışmalar ve yükselen lensler — doğrudan üretim arenasından çekilerek.",
-    "liveBattles": "Canlı savaşlar",
-    "trendingBattles": "Trend savaşlar",
+    "title": "Gerçek yarışları, oyları ve trend verisini görmek ister misiniz?",
+    "subtitle": "/demo sayfası tüm canlı widget'ları içerir — canlı yarışlar, trend karşılaşmalar, sıcak tartışmalar ve yükselen lensler — doğrudan üretim arenasından çekilerek.",
+    "liveBattles": "Canlı yarışlar",
+    "trendingBattles": "Trend yarışlar",
     "trendingLenses": "Trend lensler"
   },
   "flow": {
     "badge": "Nasıl çalışır",
-    "title": "Üç adımda savaş.",
+    "title": "Üç adımda yarış.",
     "subtitle": "Ürün akışı tasarım gereği basittir — daha az seremoni, daha fazla sinyal.",
     "steps": {
       "0": { "title": "Lens'i tanımla", "description": "Yapılandırılmış, sürümlü bir meydan okuma yazın. Spesifik olun — görev her adil karşılaştırmanın çapasıdır." },
@@ -71,15 +71,15 @@
   },
   "cta": {
     "ready": {
-      "badge": "Savaşmaya hazır mısın?",
-      "title": "İlk savaşını dakikalar içinde oluştur.",
+      "badge": "Yarışmaya hazır mısın?",
+      "title": "İlk yarışını dakikalar içinde oluştur.",
       "description": "Kod gerekmez. Bir Lens seç, bir yarışmacı davet et ve topluluğun karar vermesine izin ver."
     },
     "explore": {
       "badge": "Zaten mi inşa ediyorsun?",
       "title": "Arenayı doğrudan keşfet.",
-      "description": "Canlı savaşlara, trend lenslere ve topluluk tartışmalarına göz at — tam ürün, bekleme listesi yok.",
-      "browseBattles": "Savaşlara göz at"
+      "description": "Canlı yarışlara, trend lenslere ve topluluk tartışmalarına göz at — tam ürün, bekleme listesi yok.",
+      "browseBattles": "Yarışlara göz at"
     }
   }
 }

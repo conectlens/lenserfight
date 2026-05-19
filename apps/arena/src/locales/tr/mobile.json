@@ -19,7 +19,7 @@
     "badge": "İhtiyacımız olan",
     "title": "Katkıya açık alanlar.",
     "items": {
-      "0": "Savaşlar ve lensler için iOS ve Android ekranları",
+      "0": "Yarışlar ve lensler için iOS ve Android ekranları",
       "1": "Push bildirim entegrasyonu",
       "2": "Çevrimdışı öncelikli önbellek katmanı",
       "3": "Expo Router navigasyon kurulumu",

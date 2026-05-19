@@ -3,7 +3,6 @@ import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Input, TextArea } from '@lenserfight/ui/forms'
 import { battlesService, battlesRepository, workflowsService, lensesService, battleExecutionRepository } from '@lenserfight/data/repositories'
 import type { BattleTemplateRecord, WorkflowRecord } from '@lenserfight/data/repositories'
-import { useAuth } from '@lenserfight/features/auth'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
 import { useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { useLenser } from '@lenserfight/features/profile'
@@ -11,9 +10,17 @@ import { useChainabitConnection } from '@lenserfight/features/store'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { normalizeError } from '@lenserfight/shared/error'
 import { isValidUUID } from '@lenserfight/utils/validation'
+import {
+  formatSchedulePreview,
+  localTimezone,
+  minScheduleDateLocal,
+  pastHoursForDate,
+  pastMinutesForDateHour,
+  serializeScheduleDateTime,
+} from '@lenserfight/utils/date'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitBranch, HelpCircle, Info, Layers, Swords, Trophy } from 'lucide-react'
+import { GitBranch, HelpCircle, Info, Layers, Swords } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -33,9 +40,7 @@ import { ChallengeTypeSelector } from './ChallengeTypeSelector'
 import { JudgingModeSelector } from './JudgingModeSelector'
 import {
   type BattleFormat,
-  FORMAT_LABEL,
   getDefaultBattleTypeForFormat,
-  getTypeStepCopy,
   isBattleTypeAllowedForFormat,
   isCompatibleCombination,
 } from './battleCompatibility'
@@ -49,7 +54,6 @@ import {
   getRecommendedContender,
   isJudgingAllowedForContender,
   getRecommendedJudging,
-  hasHumanContenders,
   resolveToLegacyBattleType,
   challengeTypeRequiresGenerator,
 } from '@lenserfight/domain/battle-governance'
@@ -76,9 +80,9 @@ const CONFIG_HELP_CONTENT = (
       </p>
     </div>
     <div>
-      <strong className="text-primary-yellow-600 dark:text-primary-yellow-400">Execution context</strong>
+      <strong className="text-primary-yellow-600 dark:text-primary-yellow-400">AI execution (battle owner pays)</strong>
       <p className="mt-0.5 text-greyscale-600 dark:text-greyscale-300">
-        Sets which AI provider, model, and funding source runs this battle.
+        Sets which model and funding source runs AI contenders. The battle creator pays — invited AI lensers do not spend personal credits.
       </p>
     </div>
   </div>
@@ -134,7 +138,7 @@ const BASE_WIZARD_STEPS: WizardStepConfig[] = [
   {
     label: 'Config',
     title: 'Battle configuration',
-    description: 'Set voter eligibility, AI handicap, and execution context.',
+    description: 'Set voter eligibility, AI handicap, and the model that runs AI contenders. The battle creator configures and pays for AI execution.',
     action: (
       <div className="flex items-center gap-1.5">
         <Tooltip
@@ -163,13 +167,13 @@ const BASE_WIZARD_STEPS: WizardStepConfig[] = [
   {
     label: 'Invite',
     title: 'Invite contenders',
-    description: 'Add up to two contenders by their lenser handle or display name. You can skip and invite later.',
+    description: 'Add up to two contenders by their lenser handle or display name. In AI vs AI battles, invited AI lensers compete as named identities — they run under your execution config and do not spend personal credits.',
     action: stepAction('/how-to/battles/join-and-submit', 'Joining a battle'),
   },
   {
     label: 'Lenses',
-    title: 'Assign Lenses',
-    description: 'Lenses define how each contender approaches the prompt. Optional — assign later from the battle page.',
+    title: 'Contender lenses',
+    description: 'Optionally give each contender their own lens — a personal style or approach layered on top of the shared task. Not needed when both sides share the same task lens.',
     action: stepAction('/tutorials/walkthroughs/create-a-lens', 'About lenses'),
   },
   {
@@ -190,48 +194,6 @@ const DEFAULT_HANDICAP: AIHandicapConfig = {
 
 const AI_BATTLE_TYPES: BattleType[] = ['ai_vs_ai', 'human_vs_ai', 'human_vs_human_ai_votes', 'lenser_battle']
 const AUTO_EXEC_TYPES: BattleType[] = ['ai_vs_ai', 'workflow_battle']
-
-// Step 0 format cards — declarative so visual hierarchy lives in data, not
-// triplicated JSX. `tier` drives the Recommended / Experimental badge surface.
-interface FormatCardConfig {
-  value: BattleFormat
-  title: string
-  subtitle: string
-  Icon: React.ComponentType<{ size?: number; className?: string }>
-  helpLabel: string
-  docsPath: string
-  tier: 'flagship' | 'standard' | 'experimental'
-}
-
-const FORMAT_CARDS: FormatCardConfig[] = [
-  {
-    value: 'workflow',
-    title: 'Workflow Battle',
-    subtitle: 'Multi-step lens workflow — ideal for structured model comparisons',
-    Icon: GitBranch,
-    helpLabel: 'About Workflow Battles',
-    docsPath: '/tutorials/battle-walkthroughs/workflow-battle',
-    tier: 'flagship',
-  },
-  {
-    value: 'lens',
-    title: 'Lens Battle',
-    subtitle: 'Use a single prompt lens',
-    Icon: Layers,
-    helpLabel: 'About Lens Battles',
-    docsPath: '/tutorials/battle-walkthroughs/lens-battle',
-    tier: 'standard',
-  },
-  {
-    value: 'lenser_battle',
-    title: 'Lenser Battle',
-    subtitle: 'Named lensers compete with their own setup',
-    Icon: Trophy,
-    helpLabel: 'About Lenser Battles',
-    docsPath: '/tutorials/battle-walkthroughs/lenser-battle',
-    tier: 'experimental',
-  },
-]
 
 // URLSearchParams.set coerces non-strings via String(), so writing `undefined`
 // produces the literal "undefined" — which then reads back as a truthy value
@@ -258,7 +220,6 @@ export interface CreateBattleWizardProps {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSuccess, onClose }) => {
-  const { user } = useAuth()
   const { lenser } = useLenser()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -317,20 +278,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [generatorDifficulty, setGeneratorDifficulty] = useState('medium')
   const [generatorLanguage, setGeneratorLanguage] = useState('en')
   const [generationStatus, setGenerationStatus] = useState<GeneratedChallengeStatus | null>(null)
-  const [questionPreview, setQuestionPreview] = useState<string | null>(null)
+  // Unified question text: typed directly OR filled from AI generation
+  const [questionText, setQuestionText] = useState('')
   const [challengeLocked, setChallengeLocked] = useState(false)
   const [generationError, setGenerationError] = useState<string | null>(null)
-  const [generatedChallengeId, setGeneratedChallengeId] = useState<string | null>(null)
   const [voterEligibility, setVoterEligibility] = useState<VoterEligibility>('open')
   const [handicap, setHandicap] = useState<AIHandicapConfig>(DEFAULT_HANDICAP)
-  // Non-blocking note shown when a Format change auto-cleared an incompatible
-  // Battle Type selection. Reframes the change as "updated for compatibility",
-  // not "we removed your choice".
-  const [compatibilityNote, setCompatibilityNote] = useState<{
-    previous: BattleType
-    next: BattleType
-    formatLabel: string
-  } | null>(null)
 
   // Execution context (funding source + model selection for AI battles)
   const [selectedProviderKey, setSelectedProviderKey] = useState('')
@@ -369,11 +322,6 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     if (!battleFormat) return
     if (isBattleTypeAllowedForFormat(battleFormat, battleType)) return
     const recommended = getDefaultBattleTypeForFormat(battleFormat)
-    setCompatibilityNote({
-      previous: battleType,
-      next: recommended,
-      formatLabel: FORMAT_LABEL[battleFormat],
-    })
     setBattleType(recommended)
   }, [battleFormat]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -406,9 +354,21 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     setBattleType(legacyType)
   }, [taskSource, contenderStructure, judgingMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Step 6 — scheduling (optional, only for ai_vs_ai / workflow_battle)
+  // Step 8 — scheduling (optional, only for ai_vs_ai / workflow_battle)
+  // Date and time are kept as separate fields so the user sees their local
+  // timezone explicitly and we can disable already-passed hours/minutes
+  // dynamically without relying on browser datetime-local behaviour.
   const [scheduleEnabled, setScheduleEnabled] = useState(false)
-  const [executionStartsAt, setExecutionStartsAt] = useState('')
+  const [scheduleDate, setScheduleDate] = useState('')   // YYYY-MM-DD local
+  const [scheduleHour, setScheduleHour] = useState<number | ''>('')  // 0–23
+  const [scheduleMinute, setScheduleMinute] = useState<number | ''>('')  // 0–59
+
+  // Derived: serialized ISO UTC string (null when incomplete or past)
+  const executionStartsAt =
+    scheduleDate !== '' && scheduleHour !== '' && scheduleMinute !== ''
+      ? serializeScheduleDateTime(scheduleDate, scheduleHour as number, scheduleMinute as number)
+      : null
+
   const [votingDurationHours, setVotingDurationHours] = useState(24)
   const [autoPublish, setAutoPublish] = useState(true)
 
@@ -577,18 +537,6 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // ── Navigation ───────────────────────────────────────────────────────────
 
-  const handleBattleTypeChange = (type: BattleType) => {
-    // Defense-in-depth: matrix lives in the type selector, but reject any
-    // disallowed value here too in case a future caller bypasses the UI.
-    if (!isBattleTypeAllowedForFormat(battleFormat, type)) return
-    setBattleType(type)
-    setCompatibilityNote(null)
-    if (type === 'human_vs_human_ai_votes') {
-      setVoterEligibility('ai_only')
-    } else if (voterEligibility === 'ai_only') {
-      setVoterEligibility('open')
-    }
-  }
 
   // ── Validation ───────────────────────────────────────────────────────────
 
@@ -633,6 +581,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       target = isForward ? 5 : 3
     }
 
+    // ── Challenge task: skip Contender Lenses (10) — no lens-based execution ─
+    if (taskSource === 'challenge' && target === 10) {
+      target = isForward ? 11 : 9
+    }
+
     setDirection(isForward ? 1 : -1)
     goToStep(target)
   }
@@ -673,10 +626,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const inputsStepValid = inputsStepValidity
 
   // Challenge type is required when task source is challenge.
-  // If the challenge type requires a generator, the challenge must also be locked.
+  // Question text is the source of truth — typed directly or filled from AI generation.
+  // AI-generated questions that were locked also satisfy the requirement.
   const challengeNeedsGenerator = !!challengeType && challengeTypeRequiresGenerator(challengeType)
   const challengeStepValid = taskSource !== 'challenge' || (
-    !!challengeType && (!challengeNeedsGenerator || challengeLocked)
+    !!challengeType && (!!questionText.trim() || challengeLocked)
   )
 
   const canProceed = (() => {
@@ -810,8 +764,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         })
       }
 
-      // Persist and lock generated challenge for challenge battles
-      if (taskSource === 'challenge' && challengeNeedsGenerator && questionPreview && generatorLensId && generatorModelId) {
+      // Persist and lock generated challenge for challenge battles (only when AI generation was used)
+      if (taskSource === 'challenge' && challengeLocked && questionText.trim() && generatorLensId && generatorModelId) {
         try {
           const { challengeGenerationService } = await import('@lenserfight/data/repositories')
           const result = await challengeGenerationService.generate({
@@ -876,7 +830,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
       // ── Slot A ────────────────────────────────────────────────────────────
       if (slotA) {
-        if (existingA && existingA.contender_ref_id === slotA.id) {
+        const isDirectA = (slotA as typeof slotA & { directInvite?: boolean }).directInvite === true
+        if (!isDirectA && existingA && existingA.contender_ref_id === slotA.id) {
           // Already invited — use existing record, skip insert
           setContenderAId(existingA.id)
           setContenderAName(existingA.display_name)
@@ -888,9 +843,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           const result = await invite.mutateAsync({
             battle_id: activeBattleId,
             slot: 'A',
-            contender_ref_id: slotA.id,
-            display_name: slotA.display_name,
             contender_type: slotA.type === 'ai' ? 'ai_agent' : 'human',
+            ...(isDirectA
+              ? { handle: slotA.handle }
+              : { contender_ref_id: slotA.id, display_name: slotA.display_name }),
           })
           setContenderAId(result.id)
           setContenderAName(result.display_name)
@@ -904,7 +860,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
       // ── Slot B ────────────────────────────────────────────────────────────
       if (slotB) {
-        if (existingB && existingB.contender_ref_id === slotB.id) {
+        const isDirectB = (slotB as typeof slotB & { directInvite?: boolean }).directInvite === true
+        if (!isDirectB && existingB && existingB.contender_ref_id === slotB.id) {
           setContenderBId(existingB.id)
           setContenderBName(existingB.display_name)
         } else {
@@ -914,9 +871,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           const result = await invite.mutateAsync({
             battle_id: activeBattleId,
             slot: 'B',
-            contender_ref_id: slotB.id,
-            display_name: slotB.display_name,
             contender_type: slotB.type === 'ai' ? 'ai_agent' : 'human',
+            ...(isDirectB
+              ? { handle: slotB.handle }
+              : { contender_ref_id: slotB.id, display_name: slotB.display_name }),
           })
           setContenderBId(result.id)
           setContenderBName(result.display_name)
@@ -932,6 +890,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       const msg = (e as any)?.message ?? ''
       if (msg.includes('contenders_battle_ref_unique') || msg.includes('duplicate key')) {
         setInviteError('This lenser has already been invited to this battle.')
+      } else if (msg.includes('lenser_type_mismatch')) {
+        const detail = msg.replace('lenser_type_mismatch: ', '')
+        setInviteError(detail || 'This lenser type does not match the battle mode.')
+      } else if (msg.includes('lenser_not_found')) {
+        setInviteError('Lenser not found. Check the handle and try again.')
       } else {
         setInviteError('Failed to invite contender. Please try again.')
       }
@@ -943,7 +906,20 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // ── Schedule submission (step 6 → 7) ─────────────────────────────────────
 
   const handleScheduleAndNext = async () => {
-    if (scheduleEnabled && executionStartsAt && activeBattleId && AUTO_EXEC_TYPES.includes(battleType)) {
+    if (scheduleEnabled && AUTO_EXEC_TYPES.includes(battleType)) {
+      // Guard: reject incomplete or past schedule before any network call
+      if (!executionStartsAt) {
+        setError(
+          scheduleDate && (scheduleHour !== '' || scheduleMinute !== '')
+            ? 'The selected date and time is in the past. Please choose a future time.'
+            : 'Please select a date and time for execution.',
+        )
+        return
+      }
+      if (!activeBattleId) {
+        setError('Cannot schedule: battle has not been created yet.')
+        return
+      }
       setSubmitting(true)
       setError(null)
       try {
@@ -1213,91 +1189,44 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               />
             )}
 
-            {/* ── Step 5: Challenge Type + Generator (V2, human contenders only) ─── */}
+            {/* ── Step 5: Challenge Type + Question (V2, human contenders only) ─── */}
             {step === 5 && (
               <div className="space-y-6">
                 <ChallengeTypeSelector
                   value={challengeType}
                   onChange={(ct) => {
                     setChallengeType(ct)
-                    // Reset generator state on challenge type change
+                    // Reset question/generation state on challenge type change
                     setGenerationStatus(null)
-                    setQuestionPreview(null)
+                    setQuestionText('')
                     setChallengeLocked(false)
                     setGenerationError(null)
-                    setGeneratedChallengeId(null)
                   }}
                   contenderStructure={contenderStructure}
                 />
-                {/* Show generator step when challenge type requires it */}
-                {challengeType && challengeNeedsGenerator && (
+                {/* Question input + optional AI generator (shown for all challenge types) */}
+                {challengeType && (
                   <ChallengeGeneratorStep
                     challengeType={challengeType}
+                    questionText={questionText}
+                    onQuestionTextChange={setQuestionText}
                     generatorLensId={generatorLensId}
                     onGeneratorLensChange={setGeneratorLensId}
-                    generatorModelId={generatorModelId}
-                    onGeneratorModelChange={setGeneratorModelId}
                     difficulty={generatorDifficulty}
                     onDifficultyChange={setGeneratorDifficulty}
                     language={generatorLanguage}
                     onLanguageChange={setGeneratorLanguage}
                     generationStatus={generationStatus}
-                    questionPreview={questionPreview}
-                    onGenerate={async () => {
-                      if (!generatorLensId || !generatorModelId || !challengeType) return
-                      setGenerationStatus('generating')
-                      setGenerationError(null)
-                      try {
-                        // Preview generation — triggers execution and shows result.
-                        // The challenge is persisted + locked when the battle is created.
-                        const { executionService } = await import('@lenserfight/data/repositories')
-                        const execResult = await executionService.triggerExecution({
-                          lens_id: generatorLensId,
-                          model_id: generatorModelId,
-                          input_snapshot: {
-                            challenge_type: challengeType,
-                            difficulty: generatorDifficulty,
-                            language: generatorLanguage,
-                          },
-                          funding_source: 'platform_credit',
-                          origin_type: 'battle',
-                        })
-                        const execRunId = execResult?.execution_run_id
-                        if (!execRunId) throw new Error('No run ID returned')
-                        // Poll for result
-                        let run = await executionService.pollRunStatus(execRunId)
-                        let attempts = 0
-                        while (run.status !== 'succeeded' && run.status !== 'failed' && attempts < 30) {
-                          await new Promise((r) => setTimeout(r, 2000))
-                          run = await executionService.pollRunStatus(execRunId)
-                          attempts++
-                        }
-                        if (run.status === 'failed') throw new Error('Generation failed')
-                        // Fetch primary artifact for the response text
-                        const artifacts = await executionService.getArtifacts(execRunId)
-                        const primary = artifacts.find((a) => a.isPrimaryOutput)
-                        const text = primary?.contentText ?? ''
-                        let questionText = text
-                        try {
-                          const parsed = JSON.parse(text)
-                          questionText = parsed.question ?? parsed.question_text ?? parsed.prompt ?? text
-                        } catch { /* plain text */ }
-                        setGenerationStatus('ready')
-                        setQuestionPreview(questionText.trim())
-                      } catch (err) {
-                        setGenerationStatus('failed')
-                        setGenerationError(normalizeError(err).message)
-                      }
-                    }}
+                    onGenerationStatusChange={setGenerationStatus}
                     onLock={() => {
-                      // Wizard-level lock — actual persistence happens at battle creation
                       setChallengeLocked(true)
                       setGenerationStatus('locked')
                     }}
                     isLocked={challengeLocked}
                     generationError={generationError}
-                    availableLenses={[]}
-                    availableModels={battleProviderModels.map((m) => ({ id: m.key, label: m.name }))}
+                    onGenerationErrorChange={setGenerationError}
+                    availableLenses={myLenses.map((l) => ({ id: l.id, title: l.title, slug: l.id }))}
+                    onGeneratorModelChange={setGeneratorModelId}
                   />
                 )}
               </div>
@@ -1349,17 +1278,24 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                 {/* Execution context — required for AI contenders */}
                 {(contenderStructure === 'ai_vs_ai' || contenderStructure === 'human_vs_ai') && (
                   <div className="border-t border-surface-border pt-6">
-                    <div className="mb-4 flex items-center gap-1.5">
+                    <div className="mb-3 flex items-center gap-1.5">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-greyscale-400">
-                        Execution Context
+                        AI Execution
                       </h4>
                       <Tooltip
-                        content="Sets which AI provider, model, and funding source runs this battle. Use BYOK to bring your own API key."
+                        content="Sets which model and funding source runs AI contenders. The battle creator pays — invited AI lensers do not spend personal credits."
                         position="right"
                         contentClassName="whitespace-normal w-60 text-[11px]"
                       >
                         <Info size={13} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
                       </Tooltip>
+                    </div>
+                    <div className="mb-4 flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-xs text-greyscale-500 dark:text-greyscale-400">
+                      <Info size={13} className="flex-shrink-0 text-primary-yellow-500" />
+                      <span>
+                        <strong className="text-greyscale-700 dark:text-greyscale-200">Battle creator pays.</strong>{' '}
+                        AI contenders run under this config. Invited AI lensers act as named identities — they do not spend personal credits.
+                      </span>
                     </div>
                     {requiredOutputModality && (
                       <div className="mb-3 flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-xs text-greyscale-500 dark:text-greyscale-400">
@@ -1405,8 +1341,18 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
                 {/* Lenser policy — overlay for any battle when AI lensers participate */}
                 <div className="border-t border-surface-border pt-6 space-y-4">
-                  <div className="rounded-2xl border border-primary-yellow-500/20 bg-primary-yellow-500/5 px-4 py-3 text-sm text-greyscale-700 dark:text-greyscale-300">
-                    AI lensers use their own model binding, funding source, and memory. Configure the policy below to control fairness.
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-greyscale-400">
+                      Lenser Policy
+                    </h4>
+                    <Tooltip
+                      content="AI lensers bring their own model binding, funding source, and memory. These settings control how much of that personal setup carries into the battle, ensuring a fair and auditable competition."
+                      position="bottom"
+                      contentClassName="whitespace-normal w-72 text-[11px]"
+                    >
+                      <Info size={13} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
+                    </Tooltip>
+                    {stepAction('/tutorials/battle-walkthroughs/lenser-battle', 'Lenser battles')}
                   </div>
                   <LenserBattlePolicyPanel
                     value={lenserBattlePolicy}
@@ -1427,20 +1373,34 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               <div className="space-y-5">
                 {AUTO_EXEC_TYPES.includes(battleType) ? (
                   <>
+                    {/* Toggle row — copy is conditional on enabled state so it
+                        always reflects the current action, not a future promise */}
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
-                          Automatic execution
+                          Schedule automatic execution
                         </p>
                         <p className="text-xs text-greyscale-400 mt-0.5">
-                          AI contenders run server-side at the scheduled time — no manual trigger needed.
+                          {scheduleEnabled
+                            ? 'AI contenders run server-side at the time you pick below.'
+                            : 'Enable to pick when AI contenders run automatically.'}
                         </p>
                       </div>
                       <button
                         type="button"
                         role="switch"
                         aria-checked={scheduleEnabled}
-                        onClick={() => setScheduleEnabled((v) => !v)}
+                        onClick={() => {
+                          setScheduleEnabled((v) => !v)
+                          // Clear picks when disabling so stale state doesn't
+                          // persist if the user toggles back.
+                          if (scheduleEnabled) {
+                            setScheduleDate('')
+                            setScheduleHour('')
+                            setScheduleMinute('')
+                            setError(null)
+                          }
+                        }}
                         className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
                           scheduleEnabled ? 'bg-primary-yellow-500' : 'bg-greyscale-200 dark:bg-greyscale-700'
                         }`}
@@ -1453,74 +1413,155 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       </button>
                     </div>
 
-                    {scheduleEnabled && (
-                      <div className="space-y-4 rounded-2xl border border-surface-border p-4">
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                            Execution start time
-                          </label>
-                          <input
-                            type="datetime-local"
-                            value={executionStartsAt}
-                            onChange={(e) => setExecutionStartsAt(e.target.value)}
-                            // datetime-local interprets the value in the browser's
-                            // local timezone. toISOString() returns UTC, which
-                            // would be off by the user's tz offset and could let
-                            // them pick a past time. Compute "now + 1m" in local
-                            // time instead.
-                            min={(() => {
-                              const d = new Date(Date.now() + 60_000)
-                              const pad = (n: number) => String(n).padStart(2, '0')
-                              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-                            })()}
-                            className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
-                          />
-                        </div>
+                    {scheduleEnabled && (() => {
+                      const tz = localTimezone()
+                      const blockedHours = pastHoursForDate(scheduleDate)
+                      const blockedMinutes = pastMinutesForDateHour(
+                        scheduleDate,
+                        scheduleHour !== '' ? (scheduleHour as number) : -1,
+                      )
+                      const preview = scheduleDate && scheduleHour !== '' && scheduleMinute !== ''
+                        ? formatSchedulePreview(scheduleDate, scheduleHour as number, scheduleMinute as number)
+                        : null
+                      const isPastSelection = preview === null &&
+                        scheduleDate !== '' && scheduleHour !== '' && scheduleMinute !== ''
 
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                            Voting window
-                          </label>
-                          <select
-                            value={votingDurationHours}
-                            onChange={(e) => setVotingDurationHours(Number(e.target.value))}
-                            className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
-                          >
-                            {[1, 6, 12, 24, 48, 72].map((h) => (
-                              <option key={h} value={h}>
-                                {h === 1 ? '1 hour' : `${h} hours`}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
-                              Auto-publish results
-                            </p>
-                            <p className="text-xs text-greyscale-400 mt-0.5">
-                              Results publish automatically after voting closes.
-                            </p>
+                      return (
+                        <div className="space-y-4 rounded-2xl border border-surface-border p-4">
+                          {/* Timezone badge */}
+                          <div className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-xs text-greyscale-500 dark:text-greyscale-400">
+                            <Info size={13} className="flex-shrink-0 text-primary-yellow-500" />
+                            Times are in your local timezone:{' '}
+                            <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">{tz}</span>
                           </div>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={autoPublish}
-                            onClick={() => setAutoPublish((v) => !v)}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-                              autoPublish ? 'bg-primary-yellow-500' : 'bg-greyscale-200 dark:bg-greyscale-700'
-                            }`}
-                          >
-                            <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
-                                autoPublish ? 'translate-x-5' : 'translate-x-0'
-                              }`}
+
+                          {/* Date picker */}
+                          <div>
+                            <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                              Date
+                            </label>
+                            <input
+                              type="date"
+                              value={scheduleDate}
+                              min={minScheduleDateLocal()}
+                              onChange={(e) => {
+                                setScheduleDate(e.target.value)
+                                // Reset hour/minute when date changes — previously valid
+                                // picks may now be in the past for the new date.
+                                setScheduleHour('')
+                                setScheduleMinute('')
+                              }}
+                              className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
                             />
-                          </button>
+                          </div>
+
+                          {/* Hour + Minute selectors */}
+                          {scheduleDate && (
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                                  Hour
+                                </label>
+                                <select
+                                  value={scheduleHour}
+                                  onChange={(e) => {
+                                    setScheduleHour(e.target.value === '' ? '' : Number(e.target.value))
+                                    setScheduleMinute('')
+                                  }}
+                                  className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
+                                >
+                                  <option value="">— hour —</option>
+                                  {Array.from({ length: 24 }, (_, h) => (
+                                    <option key={h} value={h} disabled={blockedHours.has(h)}>
+                                      {String(h).padStart(2, '0')}:xx
+                                      {blockedHours.has(h) ? ' (past)' : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                                  Minute
+                                </label>
+                                <select
+                                  value={scheduleMinute}
+                                  onChange={(e) => setScheduleMinute(e.target.value === '' ? '' : Number(e.target.value))}
+                                  disabled={scheduleHour === ''}
+                                  className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none disabled:opacity-50"
+                                >
+                                  <option value="">— minute —</option>
+                                  {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+                                    <option key={m} value={m} disabled={blockedMinutes.has(m)}>
+                                      :{String(m).padStart(2, '0')}
+                                      {blockedMinutes.has(m) ? ' (past)' : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Execution preview */}
+                          {preview && (
+                            <div className="flex items-center gap-2 rounded-xl border border-primary-yellow-500/20 bg-primary-yellow-500/5 px-3 py-2 text-xs text-greyscale-700 dark:text-greyscale-300">
+                              <Info size={13} className="flex-shrink-0 text-primary-yellow-500" />
+                              Execution scheduled for: <span className="font-semibold">{preview}</span>
+                            </div>
+                          )}
+                          {isPastSelection && (
+                            <p className="text-xs text-status-red">
+                              The selected time is in the past. Please pick a future date and time.
+                            </p>
+                          )}
+
+                          {/* Voting window */}
+                          <div>
+                            <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                              Voting window
+                            </label>
+                            <select
+                              value={votingDurationHours}
+                              onChange={(e) => setVotingDurationHours(Number(e.target.value))}
+                              className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
+                            >
+                              {[1, 6, 12, 24, 48, 72].map((h) => (
+                                <option key={h} value={h}>
+                                  {h === 1 ? '1 hour' : `${h} hours`}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Auto-publish toggle */}
+                          <div className="flex items-center justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                                Auto-publish results
+                              </p>
+                              <p className="text-xs text-greyscale-400 mt-0.5">
+                                Results publish automatically after voting closes.
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={autoPublish}
+                              onClick={() => setAutoPublish((v) => !v)}
+                              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                                autoPublish ? 'bg-primary-yellow-500' : 'bg-greyscale-200 dark:bg-greyscale-700'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                                  autoPublish ? 'translate-x-5' : 'translate-x-0'
+                                }`}
+                              />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )
+                    })()}
                   </>
                 ) : (
                   <p className="py-6 text-center text-sm text-greyscale-400">
@@ -1532,25 +1573,45 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
             {/* ── Step 9: Invite contenders ─────────────────────────── */}
             {step === 9 && (
-              <ContenderInviteStep
-                slotA={slotA}
-                slotB={slotB}
-                onChangeSlotA={setSlotA}
-                onChangeSlotB={setSlotB}
-                error={inviteError}
-                battleType={battleType}
-              />
+              <div className="space-y-4">
+                {battleType === 'ai_vs_ai' && (
+                  <div className="flex items-start gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2.5 text-xs text-greyscale-500 dark:text-greyscale-400">
+                    <Info size={13} className="mt-0.5 flex-shrink-0 text-primary-yellow-500" />
+                    <span>
+                      AI lensers you invite compete as <strong className="text-greyscale-700 dark:text-greyscale-200">named identities</strong>. Their execution runs under the model and funding you configured — they do not spend personal credits.
+                    </span>
+                  </div>
+                )}
+                <ContenderInviteStep
+                  slotA={slotA}
+                  slotB={slotB}
+                  onChangeSlotA={setSlotA}
+                  onChangeSlotB={setSlotB}
+                  error={inviteError}
+                  battleType={battleType}
+                />
+              </div>
             )}
 
-            {/* ── Step 10: Assign Lenses ────────────────────────────── */}
+            {/* ── Step 10: Contender Lenses ─────────────────────────── */}
             {step === 10 && activeBattleId && (
-              <LensAssignmentStep
-                battleId={activeBattleId}
-                contenderAId={contenderAId}
-                contenderAName={contenderAName}
-                contenderBId={contenderBId}
-                contenderBName={contenderBName}
-              />
+              <div className="space-y-4">
+                <div className="flex items-start gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2.5 text-xs text-greyscale-500 dark:text-greyscale-400">
+                  <Info size={13} className="mt-0.5 flex-shrink-0 text-primary-yellow-500" />
+                  <span>
+                    {taskSource === 'workflow'
+                      ? 'Both contenders run the shared workflow. A per-contender lens can add a personal style or output transform — optional.'
+                      : 'Both contenders share the task lens you selected. Assigning a lens here gives each contender a personal approach layered on top. Skip if both sides should execute the shared task directly.'}
+                  </span>
+                </div>
+                <LensAssignmentStep
+                  battleId={activeBattleId}
+                  contenderAId={contenderAId}
+                  contenderAName={contenderAName}
+                  contenderBId={contenderBId}
+                  contenderBName={contenderBName}
+                />
+              </div>
             )}
 
             {/* ── Step 11: Automation (owner-only, requires battle to exist) ── */}

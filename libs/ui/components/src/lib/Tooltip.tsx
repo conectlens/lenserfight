@@ -9,6 +9,7 @@ export interface TooltipProps {
   delayMs?: number
   className?: string
   contentClassName?: string
+  zIndex?: number | string
 }
 
 const positionClasses: Record<
@@ -48,6 +49,7 @@ export function Tooltip({
   delayMs = 300,
   className = '',
   contentClassName = 'whitespace-nowrap',
+  zIndex,
 }: TooltipProps) {
   const id = useId()
   const pos = positionClasses[position]
@@ -58,7 +60,7 @@ export function Tooltip({
       <span
         id={id}
         role="tooltip"
-        style={{ transitionDelay: `${delayMs}ms` }}
+        style={{ transitionDelay: `${delayMs}ms`, zIndex }}
         className={`pointer-events-none absolute z-50 w-max rounded-lg px-3 py-2 text-xs font-medium text-greyscale-800 bg-white border border-surface-border shadow-lg dark:text-greyscale-100 dark:bg-greyscale-900 opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${pos.container} ${contentClassName}`}
       >
         {content}

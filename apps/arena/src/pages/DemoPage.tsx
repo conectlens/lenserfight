@@ -6,12 +6,15 @@ import {
   ArenaHotThreadsWidget,
   ArenaTrendingLensesWidget,
 } from '@lenserfight/features/home'
-import { Badge, Button, Card } from '@lenserfight/ui/components'
+import { AiLenserFamily, HumanLenserFamily, Badge, Button, Card } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
 import {
   Activity,
   ArrowRight,
   ExternalLink,
+  Music,
+  PlayCircle,
+  Youtube,
 } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -20,9 +23,28 @@ import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 import { PlatformPillars } from '../components/PlatformPillars'
 import { chainabitContactUrl } from '../utils/chainabitUrls'
 
+const BrandVideos = React.lazy(() => import('../components/BrandVideos'))
 const DemoCinematicShowcase = React.lazy(() => import('../components/DemoCinematicShowcase'))
+const ProductShowcase = React.lazy(() => import('../components/ProductShowcase'))
 
 const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
+
+const SOUNDTRACKS = [
+  { videoId: 's-NegE5sK9o', href: 'https://youtu.be/s-NegE5sK9o' },
+  { videoId: 'kine5GjALC0', href: 'https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0' },
+  { videoId: 'yN_44HCS1tE', href: 'https://www.youtube.com/watch?v=yN_44HCS1tE' },
+  { videoId: 'FM1z-M3DD24', href: 'https://www.youtube.com/watch?v=FM1z-M3DD24' },
+] as const
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 20, scale: 0.97 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 280, damping: 22 } },
+}
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.09 } },
+}
 
 const spring = { type: 'spring', stiffness: 260, damping: 22 } as const
 const viewport = { once: true, margin: '-60px' } as const
@@ -121,6 +143,38 @@ export const DemoPage: React.FC = () => {
         </React.Suspense>
       </section>
 
+      {/* ── BRAND TOUR — real product screenshots, theme-aware ───────────── */}
+      <section className="w-full pb-16 lg:pb-20">
+        <motion.div
+          className="mx-auto mb-10 max-w-6xl space-y-2 px-4 sm:px-6 lg:px-8"
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          <Badge color="yellow" variant="outline">{t('demo:brandTour.badge')}</Badge>
+          <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            {t('demo:brandTour.headline')}
+          </h2>
+          <p className="max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            {t('demo:brandTour.subtitle')}
+          </p>
+        </motion.div>
+        <React.Suspense fallback={<div className="mx-auto h-[400px] max-w-6xl animate-pulse rounded-[2.5rem] bg-surface-raised" />}>
+          <BrandVideos />
+        </React.Suspense>
+      </section>
+
+      {/* ── PRODUCT SHOWCASE — theme-aware marketing screenshots ────────── */}
+      <React.Suspense fallback={<div className="h-[600px] animate-pulse bg-surface-raised" />}>
+        <ProductShowcase
+          i18nNamespace="demo"
+          appBaseUrl={RUN_APP_URL}
+          sectionHeadingLevel="h2"
+          className="pb-16 lg:pb-20"
+        />
+      </React.Suspense>
+
       {/* ── EVERY PILLAR — agents, workflows, prompts, workspaces, CLI… ─ */}
       <PlatformPillars
         className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20"
@@ -155,6 +209,83 @@ export const DemoPage: React.FC = () => {
           <ArenaHotThreadsWidget baseUrl={RUN_APP_URL} />
           <ArenaTrendingLensesWidget baseUrl={RUN_APP_URL} />
         </div>
+      </section>
+
+      {/* ── Lenser Families ─────────────────────────────────────────────── */}
+      <AiLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20" centered />
+      <HumanLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20" centered />
+
+      {/* ── Arena Soundtrack ─────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8">
+        <motion.div
+          className="mb-10 space-y-2 text-center"
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          <Badge color="yellow" variant="outline">
+            <Music size={12} className="mr-1" /> {t('demo:music.badge')}
+          </Badge>
+          <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            {t('demo:music.title')}
+          </h2>
+          <p className="mx-auto max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            {t('demo:music.subtitle')}
+          </p>
+        </motion.div>
+
+        <motion.div
+          className="grid gap-5 md:grid-cols-2 lg:grid-cols-4"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          {SOUNDTRACKS.map(({ videoId, href }, i) => {
+            const title = t(`demo:music.tracks.${i}.title`)
+            const description = t(`demo:music.tracks.${i}.description`)
+            return (
+              <motion.a
+                key={videoId}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                variants={cardVariant}
+                whileHover={{ y: -4 }}
+                className="group overflow-hidden rounded-2xl border border-surface-border bg-surface-raised shadow-xl transition-colors hover:border-primary-yellow-500/70 focus:outline-none focus:ring-4 focus:ring-primary-yellow-500/25"
+              >
+                <div className="relative aspect-video overflow-hidden bg-greyscale-900">
+                  <img
+                    src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                    alt={t('demo:music.thumbnailAlt', { title })}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-greyscale-950/70 via-transparent to-transparent" />
+                  <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-greyscale-950/80 px-3 py-1 text-xs font-bold text-greyscale-0 ring-1 ring-white/10">
+                    <Youtube size={14} className="text-status-red" />
+                    {t('demo:music.musicLabel')}
+                  </div>
+                  <div className="absolute bottom-4 right-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-yellow-500 text-greyscale-900 shadow-lg shadow-primary-yellow-500/20 transition-transform group-hover:scale-105">
+                    <PlayCircle size={24} />
+                  </div>
+                </div>
+                <div className="space-y-3 p-5">
+                  <h3 className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+                    {title}
+                  </h3>
+                  <p className="text-sm leading-6 text-greyscale-600 dark:text-greyscale-400">
+                    {description}
+                  </p>
+                  <span className="inline-flex items-center gap-2 text-sm font-bold text-greyscale-900 dark:text-greyscale-0">
+                    {t('common:cta.playOnYoutube')} <ArrowRight size={14} />
+                  </span>
+                </div>
+              </motion.a>
+            )
+          })}
+        </motion.div>
       </section>
 
       {/* ── CTA ────────────────────────────────────────────────────────── */}
