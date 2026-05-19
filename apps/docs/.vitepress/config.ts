@@ -11,6 +11,25 @@ import {
 } from 'fs'
 import { dirname, join, resolve } from 'path'
 import { fileURLToPath } from 'url'
+import {
+  DOCS_HOST,
+  WEB_BASE_URL,
+  OG_BANNER,
+  SITE_TITLE,
+  SITE_DESCRIPTION,
+  buildWebSiteJsonLd,
+  buildOrganizationJsonLd,
+  buildSoftwareAppJsonLd,
+  buildPageHeadTags,
+  buildPageDescription,
+  canonicalForPage,
+  titleFromPath,
+  sectionFromPath,
+  localeFromPath,
+  generateRobotsTxt,
+  generateLlmsTxt,
+  generateChangelogRss,
+} from './seo'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const docsDir = resolve(__dirname, '../../docs')
@@ -159,148 +178,6 @@ function rawMarkdownPlugin() {
   }
 }
 
-const DOCS_HOST = 'https://docs.lenserfight.com'
-const WEB_BASE_URL = process.env.WEB_BASE_URL || 'https://lenserfight.com'
-const OG_BANNER = `${DOCS_HOST}/og-banner.png`
-
-const SITE_DESCRIPTION =
-  'Technical documentation for LenserFight: AI lenses, Lensers, agents, workflows, battles, providers, CLI, and open-source contribution guides.'
-
-const SITE_JSON_LD = JSON.stringify({
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: 'LenserFight Docs',
-  url: DOCS_HOST,
-  description: SITE_DESCRIPTION,
-  publisher: {
-    '@type': 'Organization',
-    name: 'LenserFight',
-    url: WEB_BASE_URL,
-    logo: {
-      '@type': 'ImageObject',
-      url: 'https://cdn.lenserfight.com/brand/lenserfight-logo.png',
-    },
-  },
-  inLanguage: ['en', 'tr', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ru', 'pt', 'it'],
-})
-
-function compactText(value: string): string {
-  return value.replace(/\s+/g, ' ').trim()
-}
-
-function stripMarkdown(value: string): string {
-  return compactText(
-    value
-      .replace(/^---[\s\S]*?---/, '')
-      .replace(/```[\s\S]*?```/g, ' ')
-      .replace(/`([^`]+)`/g, '$1')
-      .replace(/!\[[^\]]*]\([^)]+\)/g, ' ')
-      .replace(/\[([^\]]+)]\([^)]+\)/g, '$1')
-      .replace(/[#>*_~|-]/g, ' '),
-  )
-}
-
-function truncateDescription(value: string, max = 158): string {
-  const clean = compactText(value)
-  if (clean.length <= max) return clean
-  return `${clean.slice(0, max - 1).trimEnd()}…`
-}
-
-function titleFromPath(relativePath: string): string {
-  const withoutExt = relativePath.replace(/\.md$/, '').replace(/(^|\/)index$/, '$1overview')
-  const last = withoutExt.split('/').filter(Boolean).pop() ?? 'docs'
-  return last
-    .replace(/[-_]+/g, ' ')
-    .replace(/\b\w/g, (match) => match.toUpperCase())
-}
-
-function sectionFromPath(relativePath: string): string {
-  if (relativePath.includes('/tutorials/')) return 'Tutorial'
-  if (relativePath.includes('/how-to/')) return 'How-to Guide'
-  if (relativePath.includes('/reference/')) return 'Reference'
-  if (relativePath.includes('/explanation/')) return 'Explanation'
-  if (relativePath.includes('/providers/')) return 'Provider Reference'
-  if (relativePath.includes('/platform-setup/')) return 'Platform Setup'
-  return 'Documentation'
-}
-
-function localeFromPath(relativePath: string): string {
-  return relativePath.split('/')[0] || 'en'
-}
-
-function cleanDocsPath(relativePath: string): string {
-  const withoutExt = relativePath.replace(/\.md$/, '')
-  if (withoutExt.endsWith('/index')) return `/${withoutExt.replace(/\/index$/, '/')}`
-  return `/${withoutExt}`
-}
-
-function canonicalForPage(relativePath: string): string {
-  const path = cleanDocsPath(relativePath)
-  return `${DOCS_HOST}${path === '/index' ? '/' : path}`
-}
-
-function readPageExcerpt(relativePath: string): string {
-  const file = resolve(docsDir, relativePath)
-  if (!existsSync(file)) return ''
-  return stripMarkdown(readFileSync(file, 'utf-8')).slice(0, 260)
-}
-
-function buildPageDescription(relativePath: string, title: string, frontmatterDescription?: string): string {
-  if (frontmatterDescription) return truncateDescription(frontmatterDescription)
-  const excerpt = readPageExcerpt(relativePath)
-  if (excerpt) return truncateDescription(excerpt)
-  const section = sectionFromPath(relativePath).toLowerCase()
-  return truncateDescription(
-    `${title} in the LenserFight ${section}: practical guidance for AI lenses, Lensers, agents, workflows, battles, providers, and developer automation.`,
-  )
-}
-
-function schemaTypeForPage(relativePath: string): string {
-  if (relativePath.includes('/reference/')) return 'TechArticle'
-  if (relativePath.includes('/tutorials/') || relativePath.includes('/how-to/')) return 'HowTo'
-  return 'TechArticle'
-}
-
-function buildDocsJsonLd(relativePath: string, title: string, description: string) {
-  const canonical = canonicalForPage(relativePath)
-  return {
-    '@context': 'https://schema.org',
-    '@type': schemaTypeForPage(relativePath),
-    headline: title,
-    name: title,
-    description,
-    url: canonical,
-    inLanguage: localeFromPath(relativePath),
-    image: OG_BANNER,
-    author: {
-      '@type': 'Organization',
-      name: 'LenserFight',
-      url: WEB_BASE_URL,
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'LenserFight',
-      url: WEB_BASE_URL,
-      logo: {
-        '@type': 'ImageObject',
-        url: 'https://cdn.lenserfight.com/brand/lenserfight-logo.png',
-      },
-    },
-    isPartOf: {
-      '@type': 'WebSite',
-      name: 'LenserFight Docs',
-      url: DOCS_HOST,
-    },
-    about: [
-      'AI lenses',
-      'LenserFight workflows',
-      'AI agents',
-      'AI battles',
-      'developer AI tools',
-      'open-source contribution',
-    ],
-  }
-}
 
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
 
@@ -518,40 +395,61 @@ export default defineConfig({
     /ConectLens-agent-skills$/,
   ],
 
-  title: 'LenserFight Docs',
-  titleTemplate: ':title | LenserFight Docs',
+  title: SITE_TITLE,
+  titleTemplate: `:title | ${SITE_TITLE}`,
   description: SITE_DESCRIPTION,
+
+  lastUpdated: true,
 
   sitemap: {
     hostname: DOCS_HOST,
+    transformItems(items) {
+      return items.map((item) => {
+        const url = item.url ?? ''
+        let priority = 0.7
+        let changefreq: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never' =
+          'weekly'
+
+        if (url === '' || url === '/en/' || url.match(/^\/en\/?$/)) {
+          priority = 1.0
+          changefreq = 'daily'
+        } else if (url.includes('/tutorials/getting-started/')) {
+          priority = 0.95
+        } else if (url.includes('/tutorials/')) {
+          priority = 0.85
+        } else if (url.includes('/reference/')) {
+          priority = 0.85
+          changefreq = 'monthly'
+        } else if (url.includes('/how-to/')) {
+          priority = 0.8
+        } else if (url.includes('/explanation/')) {
+          priority = 0.7
+          changefreq = 'monthly'
+        } else if (url.includes('/changelog')) {
+          priority = 0.9
+          changefreq = 'daily'
+        }
+
+        return { ...item, priority, changefreq }
+      })
+    },
   },
 
   transformPageData(pageData) {
     const relativePath = pageData.relativePath
     const inferredTitle = titleFromPath(relativePath)
     const section = sectionFromPath(relativePath)
-    const frontmatter = pageData.frontmatter as Record<string, string | undefined>
-    const rawTitle = frontmatter.title || pageData.title || inferredTitle
+    const frontmatter = pageData.frontmatter as Record<string, unknown>
+    const rawTitle = (frontmatter['title'] as string | undefined) || pageData.title || inferredTitle
     const title = rawTitle.includes('LenserFight') ? rawTitle : `${rawTitle} | ${section}`
-    const description = buildPageDescription(relativePath, rawTitle, frontmatter.description)
+    const description = buildPageDescription(relativePath, rawTitle, docsDir, frontmatter['description'] as string | undefined)
 
     pageData.title = title
     pageData.description = description
-    pageData.frontmatter.description = description
-    pageData.frontmatter.head ??= []
-    pageData.frontmatter.head.push(
-      ['link', { rel: 'canonical', href: canonicalForPage(relativePath) }],
-      ['meta', { name: 'robots', content: 'index,follow,max-image-preview:large' }],
-      ['meta', { property: 'og:title', content: `${title} | LenserFight Docs` }],
-      ['meta', { property: 'og:description', content: description }],
-      ['meta', { property: 'og:url', content: canonicalForPage(relativePath) }],
-      ['meta', { name: 'twitter:title', content: `${title} | LenserFight Docs` }],
-      ['meta', { name: 'twitter:description', content: description }],
-      [
-        'script',
-        { type: 'application/ld+json' },
-        JSON.stringify(buildDocsJsonLd(relativePath, title, description)),
-      ],
+    pageData.frontmatter['description'] = description
+    pageData.frontmatter['head'] ??= []
+    ;(pageData.frontmatter['head'] as unknown[]).push(
+      ...buildPageHeadTags(relativePath, title, description, frontmatter),
     )
   },
 
@@ -678,7 +576,9 @@ export default defineConfig({
     ['meta', { name: 'twitter:site', content: '@lenserfight' }],
     ['meta', { name: 'twitter:image', content: OG_BANNER }],
     // ── Structured data (JSON-LD) ────────────────────────────────────────────
-    ['script', { type: 'application/ld+json' }, SITE_JSON_LD],
+    ['script', { type: 'application/ld+json' }, buildWebSiteJsonLd()],
+    ['script', { type: 'application/ld+json' }, buildOrganizationJsonLd()],
+    ['script', { type: 'application/ld+json' }, buildSoftwareAppJsonLd()],
     // ── hreflang (for Googlebot multilingual discovery) ─────────────────────
     ['link', { rel: 'alternate', hreflang: 'en', href: `${DOCS_HOST}/en/` }],
     ['link', { rel: 'alternate', hreflang: 'tr', href: `${DOCS_HOST}/tr/` }],
@@ -692,6 +592,8 @@ export default defineConfig({
     ['link', { rel: 'alternate', hreflang: 'pt', href: `${DOCS_HOST}/pt/` }],
     ['link', { rel: 'alternate', hreflang: 'it', href: `${DOCS_HOST}/it/` }],
     ['link', { rel: 'alternate', hreflang: 'x-default', href: DOCS_HOST }],
+    // ── Feed autodiscovery ──────────────────────────────────────────────────
+    ['link', { rel: 'alternate', type: 'application/rss+xml', title: `${SITE_TITLE} Changelog`, href: `${DOCS_HOST}/feed.xml` }],
     // ── GA4 (production only — injected at build time via env) ─────────────────
     ...(process.env['NODE_ENV'] === 'production' && process.env['GA_MEASUREMENT_ID']
       ? ([
@@ -710,6 +612,7 @@ export default defineConfig({
    * 1. Copy every .md source file from srcDir into outDir (raw markdown for CopyPageButton).
    * 2. Generate bare-path redirect HTML files: /tutorials/foo → /en/tutorials/foo, etc.
    *    This ensures old links and HelpButton paths without a locale prefix still resolve.
+   * 3. Generate robots.txt, llms.txt, and feed.xml for SEO/GEO discoverability.
    */
   buildEnd: async (siteConfig) => {
     function copyMd(src: string, dest: string) {
@@ -780,6 +683,15 @@ export default defineConfig({
         `/en/${section}`,
       )
     }
+
+    // robots.txt
+    writeFileSync(join(outDir, 'robots.txt'), generateRobotsTxt(), 'utf-8')
+
+    // llms.txt — AI-readable site manifest (https://llmstxt.org/)
+    writeFileSync(join(outDir, 'llms.txt'), generateLlmsTxt(), 'utf-8')
+
+    // feed.xml — RSS for changelog
+    writeFileSync(join(outDir, 'feed.xml'), generateChangelogRss(new Date()), 'utf-8')
   },
 
   markdown: {
@@ -1549,12 +1461,6 @@ export default defineConfig({
   },
 
   themeConfig: {
-    logo: {
-      light: 'https://cdn.lenserfight.com/brand/favicons/original/ms-icon-150x150.png',
-      dark: 'https://cdn.lenserfight.com/brand/favicons/white/ms-icon-150x150.png',
-      alt: 'LenserFight',
-    },
-
     search: {
       provider: 'local',
     },

@@ -98,6 +98,7 @@ export default {
   ...DefaultTheme,
   Layout() {
     return h(DefaultTheme.Layout, null, {
+      'nav-bar-title': () => h(DocsLogo, { showBeta: true, size: 32 }),
       'doc-before': () => h('div', { class: 'lf-page-actions' }, [
         h(CopyPageButton),
         h(EditPageButton),
