@@ -264,7 +264,3 @@ export const battleExecutionRepository = {
     return (data ?? []) as StreamRecordingRecord[]
   },
 }
-
-// Back-compat alias so existing imports of `battleExecutionService` keep working
-// without a broad find-and-replace. Remove once all call sites are updated.
-export const battleExecutionService = battleExecutionRepository

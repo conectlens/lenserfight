@@ -30,7 +30,7 @@ vi.mock('@lenserfight/data/repositories', () => ({
     getPopular: vi.fn().mockResolvedValue({ data: [] }),
   },
   lensesService: { getPersonalFeed: mockGetPersonalFeed },
-  battleExecutionService: { upsertExecutionConfig: vi.fn() },
+  battleExecutionRepository: { upsertExecutionConfig: vi.fn() },
   // Theme controller transitively imports this from the data barrel; a stub is
   // enough since the wizard doesn't read theme prefs.
   SupabasePreferencesRepository: class {

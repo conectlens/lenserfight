@@ -10,7 +10,7 @@
  * Additionally records StreamEvent[] for post-execution replay.
  */
 import { useCallback, useRef, useState } from 'react'
-import { walletApiClient, battleExecutionService } from '@lenserfight/data/repositories'
+import { walletApiClient, battleExecutionRepository } from '@lenserfight/data/repositories'
 import { streamLocalProvider } from '@lenserfight/features/lenses'
 import type { StreamCallbacks } from '@lenserfight/types'
 
@@ -51,7 +51,7 @@ export function useBattleStream(options: UseBattleStreamOptions = {}): UseBattle
     const now = Date.now()
     if (!submissionId || now - lastFlushRef.current < FLUSH_INTERVAL_MS) return
     lastFlushRef.current = now
-    battleExecutionService
+    battleExecutionRepository
       .updateSubmissionText(submissionId, text, 'streaming')
       .catch(() => {}) // best-effort
   }, [])
@@ -85,7 +85,7 @@ export function useBattleStream(options: UseBattleStreamOptions = {}): UseBattle
       // Create pending submission
       let submissionId: string | null = null
       try {
-        const sub = await battleExecutionService.createSubmission(
+        const sub = await battleExecutionRepository.createSubmission(
           config.lensId, // We'll pass battle_id from the orchestrator
           config.contenderId,
           'streaming',
@@ -131,7 +131,7 @@ export function useBattleStream(options: UseBattleStreamOptions = {}): UseBattle
           }))
           // Final flush
           if (submissionId) {
-            battleExecutionService
+            battleExecutionRepository
               .updateSubmissionText(submissionId, outputRef.current, 'submitted')
               .catch(() => {})
           }
