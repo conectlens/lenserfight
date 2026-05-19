@@ -51,12 +51,14 @@ export const GeneralTab: React.FC = () => {
   const currentContentVisibility = preferences?.content_visibility ?? 'public'
   const currentEmailDigest = preferences?.email_digest ?? true
   const currentHideActions = preferences?.hide_actions ?? false
+  const currentAutplayMusic = preferences?.autoplay_music ?? lenser?.preferences?.autoplay_music ?? true
 
   const [language, setLanguage] = useState(currentLanguage)
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(currentTheme)
   const [contentVisibility, setContentVisibility] = useState<'public' | 'community' | 'private'>(currentContentVisibility)
   const [emailDigest, setEmailDigest] = useState(currentEmailDigest)
   const [hideActions, setHideActions] = useState(currentHideActions)
+  const [autoplayMusic, setAutoplayMusic] = useState(currentAutplayMusic)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -66,8 +68,10 @@ export const GeneralTab: React.FC = () => {
       setContentVisibility(preferences.content_visibility)
       setEmailDigest(preferences.email_digest)
       setHideActions(preferences.hide_actions)
+      setAutoplayMusic(preferences.autoplay_music ?? true)
     } else if (lenser) {
       setLanguage(lenser.preferences?.language ?? lenser.preferred_language ?? 'en')
+      setAutoplayMusic(lenser.preferences?.autoplay_music ?? true)
     }
   }, [preferences, lenser])
 
@@ -76,7 +80,8 @@ export const GeneralTab: React.FC = () => {
     theme !== currentTheme ||
     contentVisibility !== currentContentVisibility ||
     emailDigest !== currentEmailDigest ||
-    hideActions !== currentHideActions
+    hideActions !== currentHideActions ||
+    autoplayMusic !== currentAutplayMusic
 
   const handleReset = () => {
     setLanguage(currentLanguage)
@@ -84,11 +89,14 @@ export const GeneralTab: React.FC = () => {
     setContentVisibility(currentContentVisibility)
     setEmailDigest(currentEmailDigest)
     setHideActions(currentHideActions)
+    setAutoplayMusic(currentAutplayMusic)
   }
 
   const applyAndPersistLocally = async () => {
-    const prefs = { language, theme, content_visibility: contentVisibility, email_digest: emailDigest, hide_actions: hideActions }
+    const prefs = { language, theme, content_visibility: contentVisibility, email_digest: emailDigest, hide_actions: hideActions, autoplay_music: autoplayMusic }
     localStorage.setItem(LOCAL_PREFS_KEY, JSON.stringify(prefs))
+    // Sync arena music localStorage key so the player picks it up immediately
+    localStorage.setItem('lenserfight:arena_music_enabled', String(autoplayMusic))
     if (language !== currentLanguage) {
       await i18n.changeLanguage(language)
       document.documentElement.lang = language
@@ -108,7 +116,10 @@ export const GeneralTab: React.FC = () => {
         content_visibility: contentVisibility,
         email_digest: emailDigest,
         hide_actions: hideActions,
+        autoplay_music: autoplayMusic,
       })
+      // Sync arena music localStorage key so the player picks it up immediately
+      localStorage.setItem('lenserfight:arena_music_enabled', String(autoplayMusic))
       if (language !== currentLanguage) {
         await i18n.changeLanguage(language)
         document.documentElement.lang = language
@@ -247,6 +258,30 @@ export const GeneralTab: React.FC = () => {
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
                   hideActions ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Arena soundtrack</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                Autoplay LenserFight music on Battle Detail pages. You can mute at any time using the volume button in the arena header.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoplayMusic}
+              onClick={() => setAutoplayMusic((v) => !v)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                autoplayMusic ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                  autoplayMusic ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
             </button>
