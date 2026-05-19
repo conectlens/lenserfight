@@ -206,14 +206,12 @@ export const walletApiClient = {
     await consumeExecuteStream(response, signal, callbacks)
   },
 
-  // ── Local dev BYOK bypass ────────────────────────────────────────────────────
+  // ── Cloud BYOK key resolver ──────────────────────────────────────────────────
   // Resolves a cloud vault key to plaintext by calling fn_get_my_key_secret via
-  // the authenticated Supabase client. Only valid in local development — every
-  // call site MUST be wrapped in `if (import.meta.env.DEV)`.
-  async resolveByokKeyForLocalDev(keyRefId: string): Promise<string> {
-    if (!import.meta.env.DEV) {
-      throw new Error('resolveByokKeyForLocalDev is only available in local development.')
-    }
+  // the authenticated Supabase client. Works in both local and cloud Supabase —
+  // the function is secured by ownership check (lenser_id = caller) and vault
+  // decryption is server-side only.
+  async resolveCloudByokKey(keyRefId: string): Promise<string> {
     const { data, error } = await supabase.rpc('fn_get_my_key_secret', { p_key_id: keyRefId })
     if (error) throw new Error(error.message)
     if (!data) throw new Error('Key not found or vault decryption failed.')

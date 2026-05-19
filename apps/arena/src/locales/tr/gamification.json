@@ -11,12 +11,12 @@
   },
   "stats": {
     "votesCast": "Verilen oylar",
-    "battlesWon": "Kazanılan savaşlar",
+    "battlesWon": "Kazanılan yarışlar",
     "lensesCreated": "Oluşturulan lensler",
     "streak": "Seri"
   },
   "badges": {
-    "earnBadges": "Savaşlarda yarışarak rozetler kazanın.",
+    "earnBadges": "Yarışlara katılarak rozetler kazanın.",
     "signInBadges": "Rozetlerinizi görmek için giriş yapın."
   },
   "leaderboard": {

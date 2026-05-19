@@ -106,11 +106,12 @@ Or create one fresh:
 lf battle create \
   --title "Summarize This Article" \
   --slug "article-summary-2026" \
-  --task "Summarize the following article in exactly 3 bullet points: [paste article here]" \
-  --type ai-vs-ai
+  --task "Summarize the following article in exactly 3 bullet points: [paste article here]"
 
 lf battle open <id>
 ```
+
+> **Tip:** For full V2 config (task source, contender structure, judging mode) use the web wizard at `/battles/create`. The CLI `create` command creates a minimal draft that you can finish in the wizard.
 
 ---
 

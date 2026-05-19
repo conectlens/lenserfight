@@ -7,6 +7,14 @@ import React, { useRef, useState } from 'react'
 
 export type { LenserSearchResult }
 
+// Handle format: 4–24 lowercase alphanumeric + dots/underscores
+const HANDLE_RE = /^[a-z0-9._]{4,24}$/
+
+function isValidHandle(raw: string): boolean {
+  const stripped = raw.startsWith('@') ? raw.slice(1) : raw
+  return HANDLE_RE.test(stripped.toLowerCase())
+}
+
 interface LenserSearchPickerProps {
   slot: 'A' | 'B'
   slotLabel?: string
@@ -14,6 +22,8 @@ interface LenserSearchPickerProps {
   onChange: (lenser: LenserSearchResult | null) => void
   placeholder?: string
   filterType?: 'human' | 'ai' | 'all'
+  /** Short label shown next to the slot badge, e.g. "AI lensers only" */
+  filterHint?: string | null
 }
 
 const SLOT_COLORS = {
@@ -44,6 +54,7 @@ export function LenserSearchPicker({
   onChange,
   placeholder = 'Search by name or @handle…',
   filterType = 'all',
+  filterHint,
 }: LenserSearchPickerProps) {
   const [inputValue, setInputValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -63,8 +74,30 @@ export function LenserSearchPicker({
     ? rawResults
     : rawResults.filter((l) => (l.type ?? 'human') === filterType)
 
+  // Whether the current input looks like a direct @handle invite
+  const trimmed = inputValue.trim()
+  const strippedHandle = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed
+  const showDirectInvite =
+    !value &&
+    queryForFetch.length >= 3 &&
+    isValidHandle(strippedHandle) &&
+    !isFetching &&
+    results.every((r) => r.handle.toLowerCase() !== strippedHandle.toLowerCase())
+
   const handleSelect = (lenser: LenserSearchResult) => {
     onChange(lenser)
+    setInputValue('')
+  }
+
+  const handleDirectInvite = () => {
+    onChange({
+      id: '',
+      handle: strippedHandle.toLowerCase(),
+      display_name: '@' + strippedHandle.toLowerCase(),
+      avatar_url: null,
+      type: filterType !== 'all' ? (filterType === 'ai' ? 'ai' : 'human') : undefined,
+      directInvite: true,
+    } as LenserSearchResult & { directInvite: true })
     setInputValue('')
   }
 
@@ -75,10 +108,11 @@ export function LenserSearchPicker({
   }
 
   const slotBadgeClass = SLOT_COLORS[slot]
+  const isDirectInviteValue = value && (value as LenserSearchResult & { directInvite?: boolean }).directInvite
 
   return (
     <div className="space-y-2">
-      {/* Slot label */}
+      {/* Slot label + optional filter hint */}
       <div className="flex items-center gap-2">
         <span
           className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-black ${slotBadgeClass}`}
@@ -90,24 +124,37 @@ export function LenserSearchPicker({
             {slotLabel}
           </p>
         )}
+        {filterHint && (
+          <span className="ml-auto text-[11px] text-greyscale-400">{filterHint}</span>
+        )}
       </div>
 
       {/* Selected chip or search input */}
       {value ? (
         <div className="flex items-center gap-2 rounded-2xl border border-primary-yellow-500/40 bg-primary-yellow-500/5 px-3 py-2">
-          <LenserIcon type={value.type} size={14} />
+          {isDirectInviteValue
+            ? <User size={14} className="text-greyscale-400 flex-shrink-0" />
+            : <LenserIcon type={value.type} size={14} />
+          }
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50 truncate">
-                {value.display_name}
+                {isDirectInviteValue ? `@${value.handle}` : value.display_name}
               </p>
-              {value.type === 'ai' && (
+              {value.type === 'ai' && !isDirectInviteValue && (
                 <span className="flex-shrink-0 rounded px-1 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-300">
                   AI
                 </span>
               )}
+              {isDirectInviteValue && (
+                <span className="flex-shrink-0 rounded px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-greyscale-200/60 text-greyscale-500 dark:bg-greyscale-700/40 dark:text-greyscale-400">
+                  Direct
+                </span>
+              )}
             </div>
-            <p className="text-xs text-greyscale-400 truncate">@{value.handle}</p>
+            {!isDirectInviteValue && (
+              <p className="text-xs text-greyscale-400 truncate">@{value.handle}</p>
+            )}
           </div>
           <button
             type="button"
@@ -124,6 +171,12 @@ export function LenserSearchPicker({
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && showDirectInvite) {
+              e.preventDefault()
+              handleDirectInvite()
+            }
+          }}
           placeholder={placeholder}
           className="w-full rounded-2xl border border-surface-border bg-surface-base px-4 py-2.5 text-sm text-greyscale-900 dark:text-greyscale-50 placeholder:text-greyscale-400 focus:outline-none focus:ring-2 focus:ring-primary-yellow-500/50 focus:border-primary-yellow-500 transition-colors"
           autoComplete="off"
@@ -136,7 +189,7 @@ export function LenserSearchPicker({
       )}
 
       {/* Dropdown results */}
-      {!value && results.length > 0 && (
+      {!value && (results.length > 0 || showDirectInvite) && (
         <ul className="rounded-2xl border border-surface-border bg-surface-base divide-y divide-surface-border overflow-hidden">
           {results.map((lenser) => (
             <li key={lenser.id}>
@@ -165,11 +218,31 @@ export function LenserSearchPicker({
               </Button>
             </li>
           ))}
+          {showDirectInvite && (
+            <li>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                fullWidth
+                onClick={handleDirectInvite}
+                className="!justify-start !gap-3 !px-3 !py-2.5 !rounded-none !font-normal"
+              >
+                <User size={14} className="text-greyscale-400 flex-shrink-0" />
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-sm font-medium text-greyscale-900 dark:text-greyscale-50">
+                    Invite @{strippedHandle.toLowerCase()}
+                  </p>
+                  <p className="text-xs text-greyscale-400">Direct invite by handle</p>
+                </div>
+              </Button>
+            </li>
+          )}
         </ul>
       )}
 
       {/* No results */}
-      {!value && isFetching === false && queryForFetch.length >= 3 && results.length === 0 && (
+      {!value && isFetching === false && queryForFetch.length >= 3 && results.length === 0 && !showDirectInvite && (
         <p className="text-xs text-greyscale-400 py-1">No lensers found for "{inputValue}".</p>
       )}
     </div>

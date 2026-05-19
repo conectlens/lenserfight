@@ -146,7 +146,7 @@
       ],
       "executor": "nx:run-commands",
       "options": {
-        "command": "cd dist/apps/cli && npm link"
+        "command": "cd dist/apps/cli && npm link --force"
       }
     },
     "validate-package": {

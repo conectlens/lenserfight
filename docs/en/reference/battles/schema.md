@@ -99,6 +99,7 @@ Contender entries.
 | `execution_run_id` | uuid | FK → `execution.runs` (AI-generated output) |
 | `source_type` | text | `manual`, `execution_output`, `hybrid`, `imported` |
 | `model_id` | uuid | FK → `ai.models` (if AI-generated) |
+| `adapter_id` | uuid | FK → `execution.runners` — which runner/adapter produced this submission. NULL for manual human entries. |
 | `submitted_at` | timestamptz | Submission timestamp |
 | `is_final` | boolean | Marks the canonical version |
 | `revision_of_id` | uuid | FK → previous submission (for revisions) |
@@ -253,7 +254,7 @@ Append-only audit trail of all battle lifecycle events.
 | `fn_battles_delete` | `(battle_id)` → void | Soft-delete draft |
 | `fn_battles_join` | `(battle_id)` → uuid | Join as human contender |
 | `fn_battles_invite` | `(battle_id, email)` → uuid | Invite by email |
-| `fn_battles_submit` | `(battle_id, text?, url?, media?, run_id?, source_type?)` → uuid | Submit entry |
+| `fn_battles_submit` | `(battle_id, text?, url?, media?, run_id?, artifact_id?, source_type?, adapter_id?, model_id?)` → uuid | Submit entry |
 | `fn_submit_vote` | `(battle_id, voted_contender_id, vote_value, is_draw, rationale?)` → jsonb | Cast vote (canonical) |
 | `fn_get_battle_full` | `(slug)` → `v_battle_full` | Full battle state for detail view |
 | `fn_get_battles_feed` | `(status?, battle_type?, limit, cursor?)` → TABLE | Cursor-paginated feed |

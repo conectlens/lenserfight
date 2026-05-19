@@ -242,12 +242,7 @@ export function useWorkflowExecution({
                 `Selected cloud key is for ${selectedKey.providerDisplayName}, but this node needs ${prov}.`,
               )
             }
-            if (import.meta.env.DEV) {
-              return walletApiClient.resolveByokKeyForLocalDev(selectedKeyRefId)
-            }
-            throw new Error(
-              'Cloud BYOK workflow execution must run on the platform executor. Use platform credit or a local key for browser execution.',
-            )
+            return walletApiClient.resolveCloudByokKey(selectedKeyRefId)
           }
           return byokKeyResolver.resolve(prov)
         }

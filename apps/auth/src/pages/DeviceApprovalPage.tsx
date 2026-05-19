@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@lenserfight/features/auth'
 import { authService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
+import { Button } from '@lenserfight/ui/components'
 import { DEFAULT_RETURN_URL, replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateReturnUrl'
 
 const LOGIN_REDIRECT_DELAY_MS = 800
@@ -168,17 +169,15 @@ export const DeviceApprovalPage: React.FC = () => {
             </div>
           ) : null}
 
-          <button
+          <Button
             type="submit"
-            disabled={isSubmitting}
-            className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-deep-lens-navy-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-deep-lens-navy-500/20 transition hover:bg-deep-lens-navy-600 disabled:cursor-not-allowed disabled:opacity-70"
+            size="lg"
+            isLoading={isSubmitting}
+            fullWidth
+            className="mt-6"
           >
-            {isSubmitting
-              ? 'Approving...'
-              : isLoginMode
-              ? 'Approve login'
-              : 'Approve device'}
-          </button>
+            {isLoginMode ? 'Approve login' : 'Approve device'}
+          </Button>
 
           <p className="mt-4 text-xs leading-5 text-gray-500">
             This page only approves the request. It never reveals your existing

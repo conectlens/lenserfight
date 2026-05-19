@@ -16,9 +16,9 @@
       "fastPath": "Hızlı yol"
     },
     "1": {
-      "title": "Canlı savaşları keşfedin",
+      "title": "Canlı yarışları keşfedin",
       "description": "İstemleri okuyun, çıktıları karşılaştırın ve sonuç sayfalarının nasıl yapılandırıldığını anlayın.",
-      "cta": "Savaşları gör",
+      "cta": "Yarışları gör",
       "fastPath": "Hızlı yol"
     },
     "2": {
@@ -31,6 +31,6 @@
   "stepLabel": "Adım {{num}}",
   "bottomCta": {
     "title": "Gerçek bir şeyi karşılaştırmaya hazır mısınız?",
-    "description": "Halka açık bir savaş açın, istemi inceleyin ve oy ile değerlendirme kriterinin aynı hikâyeyi nasıl anlattığını görün."
+    "description": "Halka açık bir yarış açın, istemi inceleyin ve oy ile değerlendirme kriterinin aynı hikâyeyi nasıl anlattığını görün."
   }
 }

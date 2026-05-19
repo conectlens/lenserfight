@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, BookOpen, Pencil, Settings, Timer } from 'lucide-react'
+import { ArrowLeft, BookOpen, Settings, Shield, Timer, Volume2, VolumeX } from 'lucide-react'
 import { HelpButton } from '@lenserfight/ui/components'
 import { ExportButton } from '@lenserfight/features/exports'
 import type { Battle, BattleType, BattleUIPhase } from '../../types/battle.types'
@@ -37,9 +37,14 @@ interface ArenaTopBarProps {
   currentPhase: BattleUIPhase
   spectatorCount?: number
   onRulesOpen?: () => void
+  onManageOpen?: () => void
   onWebhooksOpen?: () => void
   isOwner?: boolean
   myContenderSlot?: 'A' | 'B' | null
+  /** Whether the arena music is currently enabled (not muted). */
+  isMusicEnabled?: boolean
+  /** Callback to toggle music on/off. */
+  onToggleMusic?: () => void
 }
 
 export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
@@ -48,9 +53,12 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
   currentPhase,
   spectatorCount,
   onRulesOpen,
+  onManageOpen,
   onWebhooksOpen,
   isOwner,
   myContenderSlot,
+  isMusicEnabled,
+  onToggleMusic,
 }) => {
   const { label, color } = PHASE_LABELS[currentPhase]
 
@@ -110,16 +118,17 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
         </span>
       )}
 
-      {/* Edit button — owner only, editable statuses */}
-      {isOwner && (battle.status === 'draft' || battle.status === 'open') && (
-        <Link
-          to={`/battles/create?battleId=${battle.id}&step=2`}
+      {/* Manage button — owner only, actionable statuses */}
+      {isOwner && onManageOpen && (battle.status === 'draft' || battle.status === 'open' || battle.status === 'voting') && (
+        <button
+          type="button"
+          onClick={onManageOpen}
           className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100 transition-colors px-2 py-1 rounded-lg hover:bg-surface-raised"
-          aria-label="Edit battle"
+          aria-label="Manage battle"
         >
-          <Pencil size={13} />
-          <span className="hidden sm:inline">Edit</span>
-        </Link>
+          <Shield size={13} />
+          <span className="hidden sm:inline">Manage</span>
+        </button>
       )}
 
       {/* Rules button */}
@@ -157,6 +166,20 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
         >
           <Settings size={13} />
           <span className="hidden sm:inline">Webhooks</span>
+        </button>
+      )}
+
+      {/* Music toggle — always shown when handler provided */}
+      {onToggleMusic !== undefined && (
+        <button
+          type="button"
+          onClick={onToggleMusic}
+          aria-label={isMusicEnabled ? 'Mute arena music' : 'Unmute arena music'}
+          title={isMusicEnabled ? 'Mute arena music' : 'Unmute arena music'}
+          className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100 transition-colors px-2 py-1 rounded-lg hover:bg-surface-raised"
+        >
+          {isMusicEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+          <span className="hidden sm:inline">{isMusicEnabled ? 'Mute' : 'Unmute'}</span>
         </button>
       )}
 

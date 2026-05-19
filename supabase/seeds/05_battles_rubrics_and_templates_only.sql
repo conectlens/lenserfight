@@ -3,49 +3,14 @@
 -- =============================================================================
 -- Extracted from 05_battles.sql for the production seed manifest.
 -- NOTHING in this file creates battles, contenders, submissions, votes,
--- scorecards, vote_aggregates, or events.
+-- scorecards, vote_aggregates, events, or AI lenser profiles.
 --
 -- Includes:
---   rubrics:          Code Quality, Creative Writing, Workflow Evaluation
---   rubric_criteria:  all criteria for the three rubrics above
---   templates:        Code Challenge, Creative Writing
---   agent_adapters:   GPT-4o Default, Claude Sonnet HTTP, Local Ollama
---   ai_lenser stubs:  minimal profile rows required by contender_entity_map FK
---                     (completed by 07_ai_lensers.sql via ON CONFLICT DO UPDATE)
+--   rubrics:         Code Quality, Creative Writing, Workflow Evaluation
+--   rubric_criteria: all criteria for the three rubrics above
+--   templates:       Code Challenge, Creative Writing
+--   agent_adapters:  GPT-4o Default, Claude Sonnet HTTP, Local Ollama
 -- =============================================================================
-
--- ---------------------------------------------------------------------------
--- AI lenser stub profiles (FK prerequisite for contender_entity_map trigger)
--- ---------------------------------------------------------------------------
-DO $$
-DECLARE
-  v_gpt4o_id  uuid;
-  v_claude_id uuid;
-  v_gemini_id uuid;
-BEGIN
-  SELECT id INTO v_gpt4o_id  FROM ai.models WHERE key = 'gpt-4o';
-  SELECT id INTO v_claude_id FROM ai.models WHERE key = 'claude-sonnet-4-6';
-  SELECT id INTO v_gemini_id FROM ai.models WHERE key = 'gemini-2.5-flash';
-
-  IF v_gpt4o_id IS NULL OR v_claude_id IS NULL OR v_gemini_id IS NULL THEN
-    RAISE EXCEPTION 'AI model seed missing — ensure 04b_ai_models.sql ran first';
-  END IF;
-
-  INSERT INTO lensers.profiles (id, handle, display_name, type, status, visibility, onboarding_step)
-  VALUES
-    (v_gpt4o_id,  'ai_gpt_4o',            'GPT-4o',            'ai', 'active', 'public', 2),
-    (v_claude_id, 'ai_claude_sonnet_4_6', 'Claude Sonnet 4.6', 'ai', 'active', 'public', 2),
-    (v_gemini_id, 'ai_gemini_2_5_flash',  'Gemini 2.5 Flash',  'ai', 'active', 'public', 2)
-  ON CONFLICT (id) DO NOTHING;
-
-  INSERT INTO agents.ai_lensers (id, profile_id)
-  VALUES
-    ('c3000000-0000-0000-0000-000000000001', v_gpt4o_id),
-    ('c3000000-0000-0000-0000-000000000002', v_claude_id),
-    ('c3000000-0000-0000-0000-000000000003', v_gemini_id)
-  ON CONFLICT DO NOTHING;
-END $$;
-
 
 -- ---------------------------------------------------------------------------
 -- Rubric: Code Quality

@@ -99,6 +99,13 @@ export interface BattleRecord {
   vote_velocity: number
   og_image_url: string | null
   content_type: string | null
+  // V2 concept-separation fields (Phase CS)
+  task_source?: string | null
+  contender_structure?: string | null
+  judging_mode?: string | null
+  challenge_type?: string | null
+  shared_input_snapshot?: Record<string, unknown> | null
+  lenser_battle_policy?: Record<string, unknown> | null
 }
 
 export interface TrendingBattleRecord {
@@ -191,9 +198,13 @@ export interface ContenderRecord {
 export interface InviteContenderInput {
   battle_id: string
   slot: 'A' | 'B'
-  contender_ref_id: string
-  display_name: string
   contender_type: ContenderType
+  /** UUID of the lenser profile. Mutually exclusive with handle. */
+  contender_ref_id?: string
+  /** @handle or plain handle — resolved server-side. Mutually exclusive with contender_ref_id. */
+  handle?: string
+  /** Falls back to the profile's display_name when omitted and handle is used. */
+  display_name?: string
 }
 
 export type SubmissionOutputModality = 'text' | 'image' | 'video' | 'audio'
@@ -663,6 +674,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       p_lens_id: input.lens_id ?? null,
       p_shared_input_snapshot: input.shared_input_snapshot ?? null,
       p_lenser_battle_policy: input.lenser_battle_policy ?? null,
+      // V2 concept-separation axes
+      p_task_source: input.task_source ?? null,
+      p_contender_structure: input.contender_structure ?? null,
+      p_judging_mode: input.judging_mode ?? null,
+      p_challenge_type: input.challenge_type ?? null,
     })
     if (error) this.handleError(error)
     const row = Array.isArray(data) ? data[0] : data
@@ -776,8 +792,9 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       p_battle_id: input.battle_id,
       p_slot: input.slot,
       p_contender_type: input.contender_type,
-      p_contender_ref_id: input.contender_ref_id,
-      p_display_name: input.display_name,
+      p_contender_ref_id: input.contender_ref_id ?? null,
+      p_display_name: input.display_name ?? null,
+      p_handle: input.handle ?? null,
     })
     if (error) this.handleError(error)
     const row = Array.isArray(data) ? data[0] : data

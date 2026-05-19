@@ -1,4 +1,4 @@
-import { Badge, HelpButton, StreamingOutput, Tooltip } from '@lenserfight/ui/components'
+import { Badge, Button, HelpButton, StreamingOutput, Tooltip } from '@lenserfight/ui/components'
 import { getErrorCopy } from '../utils/workflowErrorMessages'
 import {
   isActiveNodeStatus,
@@ -10,11 +10,15 @@ import { motion } from 'framer-motion'
 import {
   AlertTriangle,
   ArrowDownToLine,
+  Settings2,
   ArrowUpFromLine,
   CheckCircle,
   ChevronDown,
+  ChevronRight,
+  Copy,
   GitBranch,
   Hourglass,
+  Maximize2,
   PauseCircle,
   ShieldAlert,
   Sparkles,
@@ -30,6 +34,8 @@ import {
   STATUS_COLORS,
   STATUS_LABELS,
 } from '../execution/workflowNodeExecutionStatus'
+import { adaptExecutionOutput } from '../execution/executionOutputAdapter'
+import { computeDagOrder } from '../utils/workflowDagTraversal'
 
 import type {
   WorkflowNodeRecord,
@@ -66,6 +72,22 @@ interface WorkflowProgressViewProps {
   runCompletedAt?: string | null
   /** Run status; controls the run-strip badge colour and label. */
   runStatus?: string | null
+  /**
+   * When provided, a fullscreen icon is shown in the timeline header.
+   * Clicking it calls this callback — the parent supplies the navigate action.
+   */
+  onOpenFullscreen?: () => void
+  /**
+   * When provided, a "Configure node" button is shown on blocked/errored cards.
+   * Called with the node id and its lens_id (or '__utility' for utility nodes).
+   */
+  onConfigureNode?: (nodeId: string, lensId: string) => void
+  /**
+   * When true, non-terminal in-progress node indicators are replaced with a
+   * "Halted — Emergency Lock Active" state. Purely cosmetic — does not change
+   * the underlying run status.
+   */
+  isSystemLocked?: boolean
 }
 
 type NodeStatus = WorkflowNodeResultRecord['status']
@@ -79,7 +101,6 @@ const WAITING_REASON_LABELS: Record<string, string> = {
   external_callback: 'Awaiting external callback',
   queued: 'Queued for next wave',
 }
-
 
 function badgeColorFor(status: NodeStatus): 'green' | 'red' | 'blue' | 'yellow' | 'gray' {
   switch (status) {
@@ -121,32 +142,103 @@ function runBadgeColor(status: string | null | undefined): 'green' | 'red' | 'bl
   }
 }
 
-/** Detects media type from output_data and renders the appropriate element. */
-function OutputRenderer({ data }: { data: Record<string, unknown> }) {
-  const [expanded, setExpanded] = useState(false)
-  const mediaType = data['mediaType'] as string | undefined
-  const url = data['url'] as string | undefined
-  const text = (data['output'] ?? data['text']) as string | undefined
-  const mimeType = data['mimeType'] as string | undefined
+// ── Execution output renderer (strategy-based via adaptExecutionOutput) ───────
 
-  if ((mediaType === 'image' || mimeType?.startsWith('image/')) && url) {
+const MAX_TEXT_CHARS = 1200
+const MAX_JSON_CHARS = 600
+
+/** Copy text to clipboard with a brief visual confirmation. */
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title="Copy to clipboard"
+      aria-label="Copy to clipboard"
+      className="flex items-center gap-1 rounded-md border border-surface-border px-1.5 py-0.5 text-[10px] font-medium text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200 hover:bg-surface-raised transition-colors"
+    >
+      <Copy size={9} />
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  )
+}
+
+/** Collapsible section wrapper used for Metadata, Raw JSON, etc. */
+function CollapsibleSection({
+  label,
+  defaultOpen = false,
+  children,
+  action,
+}: {
+  label: string
+  defaultOpen?: boolean
+  children: React.ReactNode
+  action?: React.ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="rounded-xl border border-surface-border/60 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-greyscale-500 hover:bg-surface-raised/60 transition-colors"
+      >
+        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+        <span className="flex-1 text-left">{label}</span>
+        {action && <span onClick={(e) => e.stopPropagation()}>{action}</span>}
+      </button>
+      {open && <div className="border-t border-surface-border/60">{children}</div>}
+    </div>
+  )
+}
+
+/**
+ * Rich execution output renderer.
+ * Uses the ExecutionOutputViewModel from adaptExecutionOutput — never touches
+ * raw payload shapes directly, keeping this component closed to backend changes.
+ */
+function ExecutionOutputRenderer({ data }: { data: Record<string, unknown> }) {
+  const vm = useMemo(() => adaptExecutionOutput(data), [data])
+  const [textExpanded, setTextExpanded] = useState(false)
+  const rawJson = useMemo(() => JSON.stringify(vm.rawPayload, null, 2), [vm.rawPayload])
+
+  // ── Image ──────────────────────────────────────────────────────────────────
+  if (vm.type === 'image' && vm.url) {
     return (
       <div className="mt-3 space-y-2">
         <img
-          src={url}
+          src={vm.url}
           alt="Node output"
           className="w-full rounded-xl border border-surface-border object-contain max-h-64"
           loading="lazy"
         />
+        <div className="flex items-center justify-end">
+          <a
+            href={vm.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-greyscale-400 hover:text-greyscale-600 underline"
+          >
+            Open full size
+          </a>
+        </div>
       </div>
     )
   }
 
-  if ((mediaType === 'video' || mimeType?.startsWith('video/')) && url) {
+  // ── Video ──────────────────────────────────────────────────────────────────
+  if (vm.type === 'video' && vm.url) {
     return (
       <div className="mt-3">
         <video
-          src={url}
+          src={vm.url}
           controls
           className="w-full rounded-xl border border-surface-border max-h-64"
           preload="metadata"
@@ -155,54 +247,118 @@ function OutputRenderer({ data }: { data: Record<string, unknown> }) {
     )
   }
 
-  if ((mediaType === 'audio' || mimeType?.startsWith('audio/')) && url) {
+  // ── Audio ──────────────────────────────────────────────────────────────────
+  if (vm.type === 'audio' && vm.url) {
     return (
       <div className="mt-3">
-        <audio src={url} controls className="w-full" preload="metadata" />
+        <audio src={vm.url} controls className="w-full" preload="metadata" />
       </div>
     )
   }
 
-  if (text && typeof text === 'string') {
-    const isLong = text.length > 200
-    const displayText = expanded || !isLong ? text : text.slice(0, 200) + '…'
-
+  // ── LLM response ──────────────────────────────────────────────────────────
+  if ((vm.type === 'llm_response' || vm.type === 'text' || vm.type === 'markdown') && vm.text) {
+    const isLong = vm.text.length > MAX_TEXT_CHARS
+    const displayText = textExpanded || !isLong ? vm.text : vm.text.slice(0, MAX_TEXT_CHARS) + '…'
     return (
-      <div className="mt-3 space-y-1">
-        <div className="rounded-xl bg-surface-base p-3 text-xs text-greyscale-600 dark:text-greyscale-400 font-mono whitespace-pre-wrap break-words leading-relaxed">
+      <div className="mt-3 space-y-2">
+        {/* Summary pill */}
+        <p className="text-[10px] text-greyscale-400 font-medium">{vm.summary}</p>
+
+        {/* Text body */}
+        <div className="rounded-xl bg-surface-base p-3 text-xs text-greyscale-700 dark:text-greyscale-300 font-mono whitespace-pre-wrap break-words leading-relaxed">
           {displayText}
         </div>
         {isLong && (
           <button
             type="button"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={() => setTextExpanded((v) => !v)}
             className="flex items-center gap-1 text-[10px] font-medium text-greyscale-400 hover:text-greyscale-600 transition-colors"
           >
-            <ChevronDown size={10} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
-            {expanded ? 'Collapse' : 'Show full output'}
+            <ChevronDown size={10} className={`transition-transform ${textExpanded ? 'rotate-180' : ''}`} />
+            {textExpanded ? 'Collapse' : `Show all ${vm.text.length.toLocaleString()} chars`}
           </button>
         )}
+
+        {/* LLM metadata — model, tokens, provider */}
+        {vm.metadata && Object.keys(vm.metadata).length > 0 && (
+          <CollapsibleSection label="Metadata">
+            <div className="flex flex-wrap gap-2 px-3 py-2">
+              {Object.entries(vm.metadata).map(([k, v]) => (
+                <span
+                  key={k}
+                  className="inline-flex items-center gap-1 rounded-full bg-surface-raised border border-surface-border px-2 py-0.5 text-[10px] text-greyscale-600 dark:text-greyscale-400"
+                >
+                  <span className="font-semibold text-greyscale-500">{k}:</span>
+                  {String(v)}
+                </span>
+              ))}
+            </div>
+          </CollapsibleSection>
+        )}
+
+        {/* Raw JSON — always available for advanced users */}
+        <CollapsibleSection
+          label="Raw JSON"
+          action={<CopyButton text={rawJson} />}
+        >
+          <div className="p-3 text-[10px] font-mono text-greyscale-600 dark:text-greyscale-400 whitespace-pre-wrap break-words leading-relaxed max-h-48 overflow-y-auto">
+            {rawJson.length > MAX_JSON_CHARS ? rawJson.slice(0, MAX_JSON_CHARS) + '\n…' : rawJson}
+          </div>
+        </CollapsibleSection>
       </div>
     )
   }
 
-  const json = JSON.stringify(data, null, 2)
-  const isLong = json.length > 200
-  const displayJson = expanded || !isLong ? json : json.slice(0, 200) + '…'
+  // ── Array / table ─────────────────────────────────────────────────────────
+  if (vm.type === 'array' || vm.type === 'table') {
+    const items = (vm.rawPayload['items'] ?? vm.rawPayload['rows'] ?? vm.rawPayload['results']) as unknown[]
+    return (
+      <div className="mt-3 space-y-2">
+        <p className="text-[10px] text-greyscale-400 font-medium">{vm.summary}</p>
+        <CollapsibleSection label="Items" defaultOpen={items.length <= 5}>
+          <div className="divide-y divide-surface-border/60 max-h-56 overflow-y-auto">
+            {items.slice(0, 50).map((item, i) => (
+              <div key={i} className="px-3 py-1.5 text-[11px] font-mono text-greyscale-700 dark:text-greyscale-300 truncate">
+                {typeof item === 'object' ? JSON.stringify(item) : String(item)}
+              </div>
+            ))}
+            {items.length > 50 && (
+              <div className="px-3 py-1.5 text-[10px] text-greyscale-400">
+                …and {items.length - 50} more items
+              </div>
+            )}
+          </div>
+        </CollapsibleSection>
+        <CollapsibleSection label="Raw JSON" action={<CopyButton text={rawJson} />}>
+          <div className="p-3 text-[10px] font-mono text-greyscale-600 dark:text-greyscale-400 whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
+            {rawJson.length > MAX_JSON_CHARS ? rawJson.slice(0, MAX_JSON_CHARS) + '\n…' : rawJson}
+          </div>
+        </CollapsibleSection>
+      </div>
+    )
+  }
 
+  // ── Generic JSON (catch-all) ───────────────────────────────────────────────
+  const isLongJson = rawJson.length > MAX_JSON_CHARS
+  const displayJson = textExpanded || !isLongJson ? rawJson : rawJson.slice(0, MAX_JSON_CHARS) + '…'
   return (
-    <div className="mt-3 space-y-1">
-      <div className="rounded-xl bg-surface-base p-3 text-xs text-greyscale-600 dark:text-greyscale-400 font-mono whitespace-pre-wrap break-words leading-relaxed">
+    <div className="mt-3 space-y-2">
+      <p className="text-[10px] text-greyscale-400 font-medium">{vm.summary}</p>
+      <div className="flex items-center justify-end">
+        <CopyButton text={rawJson} />
+      </div>
+      <div className="rounded-xl bg-surface-base p-3 text-xs text-greyscale-600 dark:text-greyscale-400 font-mono whitespace-pre-wrap break-words leading-relaxed max-h-64 overflow-y-auto">
         {displayJson}
       </div>
-      {isLong && (
+      {isLongJson && (
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => setTextExpanded((v) => !v)}
           className="flex items-center gap-1 text-[10px] font-medium text-greyscale-400 hover:text-greyscale-600 transition-colors"
         >
-          <ChevronDown size={10} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
-          {expanded ? 'Collapse' : 'Show full output'}
+          <ChevronDown size={10} className={`transition-transform ${textExpanded ? 'rotate-180' : ''}`} />
+          {textExpanded ? 'Collapse' : 'Show full output'}
         </button>
       )}
     </div>
@@ -423,6 +579,7 @@ function ProvenanceColumn({
 
 export function WorkflowProgressView({
   nodes,
+  edges,
   nodeResults,
   terminalNodeId,
   onPostToThread,
@@ -432,13 +589,18 @@ export function WorkflowProgressView({
   runStartedAt,
   runCompletedAt,
   runStatus,
+  onOpenFullscreen,
+  onConfigureNode,
+  isSystemLocked = false,
 }: WorkflowProgressViewProps) {
   const resultIndex = useMemo(() => new Map(nodeResults.map((r) => [r.node_id, r])), [nodeResults])
   const getResult = (nodeId: string) => resultIndex.get(nodeId)
 
+  // DAG-aware ordering: starts from trigger/root nodes and follows the actual
+  // execution graph instead of relying on the DB insertion ordinal.
   const orderedNodes = useMemo(
-    () => nodes.slice().sort((a, b) => a.ordinal - b.ordinal),
-    [nodes],
+    () => computeDagOrder(nodes, edges),
+    [nodes, edges],
   )
 
   const nodeLabelById = useMemo(() => {
@@ -482,7 +644,6 @@ export function WorkflowProgressView({
 
   const provenanceEdges = provenance ?? []
 
-  // Derive run status / timestamps from nodeResults when callers don't pass them.
   const fallbackRunStatus = useMemo<string>(() => {
     if (counts.active > 0) return 'running'
     if (counts.failed > 0 && counts.waiting === 0 && counts.active === 0) return 'failed'
@@ -526,12 +687,27 @@ export function WorkflowProgressView({
       />
 
       <div className="flex items-center gap-2 text-[10px] font-semibold text-greyscale-500 uppercase tracking-wide">
-        <Tooltip content="Each card shows one workflow node — its live status, output, and any errors." position="right">
+        <Tooltip content="Each card shows one workflow node — its live status, output, and any errors. Ordered by DAG execution flow." position="right">
           <span className="inline-flex items-center gap-1.5 cursor-default">
             <Workflow size={11} /> Execution timeline
           </span>
         </Tooltip>
         <HelpButton path="/tutorials/getting-started/local-file-storage" label="How workflows run" className="normal-case tracking-normal ml-1" />
+
+        {/* Fullscreen deep-link — only rendered when a run is active/selected */}
+        {onOpenFullscreen && (
+          <Tooltip content="Open full execution view" position="top">
+            <button
+              type="button"
+              onClick={onOpenFullscreen}
+              aria-label="Open execution details in full view"
+              className="inline-flex items-center justify-center rounded-md border border-surface-border p-1 text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200 hover:bg-surface-raised transition-colors normal-case tracking-normal"
+            >
+              <Maximize2 size={10} />
+            </button>
+          </Tooltip>
+        )}
+
         <button
           type="button"
           onClick={() => setShowProvenance((v) => !v)}
@@ -631,14 +807,28 @@ export function WorkflowProgressView({
                 </div>
               )}
 
-              {(status === 'pending' || (isWaiting && !waitingLabel)) && <PendingSkeleton />}
+              {(status === 'pending' || (isWaiting && !waitingLabel)) && (
+                isSystemLocked ? (
+                  <div className="mt-3 flex items-center gap-2 rounded-xl border border-status-red/30 bg-status-red/5 p-2 text-xs font-medium text-status-red">
+                    <ShieldAlert size={12} /> Halted — Emergency Lock Active
+                  </div>
+                ) : (
+                  <PendingSkeleton />
+                )
+              )}
 
               {(status === 'running' || status === 'streaming' || status === 'retrying') && (
                 <div className="mt-3">
-                  <StreamingOutput
-                    state="streaming"
-                    output={((result?.output_data as Record<string, unknown> | null | undefined)?.['output'] ?? (result?.output_data as Record<string, unknown> | null | undefined)?.['text'] ?? '') as string}
-                  />
+                  {isSystemLocked ? (
+                    <div className="flex items-center gap-2 rounded-xl border border-status-red/30 bg-status-red/5 p-2 text-xs font-medium text-status-red">
+                      <ShieldAlert size={12} /> Halted — Emergency Lock Active
+                    </div>
+                  ) : (
+                    <StreamingOutput
+                      state="streaming"
+                      output={((result?.output_data as Record<string, unknown> | null | undefined)?.['output'] ?? (result?.output_data as Record<string, unknown> | null | undefined)?.['text'] ?? '') as string}
+                    />
+                  )}
                 </div>
               )}
 
@@ -662,17 +852,32 @@ export function WorkflowProgressView({
                 <div className="mt-3 flex items-center gap-2 rounded-xl border border-status-red/30 bg-status-red/5 p-3 text-xs font-medium text-status-red">
                   <AlertTriangle size={12} />
                   <span className="flex-1">{getErrorCopy(result?.error_message) || 'Blocked — unresolved placeholder or missing dependency'}</span>
+                  {onConfigureNode && (node.lens_id || node.id) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onConfigureNode(node.id, node.lens_id ?? '__utility')
+                      }}
+                      className="shrink-0 flex items-center gap-1 !h-6 !px-2 !rounded-lg !text-[10px] font-semibold border border-status-red/40 text-status-red hover:border-status-red hover:bg-status-red/10"
+                    >
+                      <Settings2 size={10} />
+                      Configure node
+                    </Button>
+                  )}
                   {result?.error_message === 'placeholder_unbound' && (
                     <Tooltip
                       content={
                         <span className="max-w-[220px] block">
-                          A <code className="font-mono">{'[[variable]]'}</code> in this node&apos;s template has no value. Check that the upstream node produces the expected output key and the binding is correct.
+                          A <code className="font-mono">{'[[variable]]'}</code> in this node&apos;s template has no value. Set a static value in the node config, wire it from an upstream node&apos;s output, or supply it as a workflow input.
                         </span>
                       }
                       position="left"
                       contentClassName=""
                     >
-                      <HelpButton path="/tutorials/getting-started/local-file-storage" label="Fix this" className="shrink-0 border-status-red/40 text-status-red hover:border-status-red hover:text-status-red" />
+                      <HelpButton path="/tutorials/walkthroughs/create-a-workflow" label="Fix this" className="shrink-0 border-status-red/40 text-status-red hover:border-status-red hover:text-status-red" />
                     </Tooltip>
                   )}
                 </div>
@@ -685,7 +890,7 @@ export function WorkflowProgressView({
 
               {result?.output_data && status === 'completed' && (
                 <>
-                  <OutputRenderer data={result.output_data as Record<string, unknown>} />
+                  <ExecutionOutputRenderer data={result.output_data as Record<string, unknown>} />
                   <WorkflowOutputActions
                     outputData={result.output_data as Record<string, unknown>}
                     nodeLabel={node.label || `Node ${node.ordinal + 1}`}

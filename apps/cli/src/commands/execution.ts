@@ -643,6 +643,75 @@ const executionRetry = defineCommand({
   },
 })
 
+// ─── execution status ──────────────────────────────────────────────────────
+// Global execution health dashboard. Available to all authenticated users
+// (not admin-only) so operators can check system state without elevated access.
+
+interface ExecutionControlStatus {
+  system_kill_switch_active: boolean
+  queue_frozen:              boolean
+  frozen_reason:             string | null
+  active_run_count:          number
+  queued_run_count:          number
+  active_battle_job_count:   number
+  queued_battle_job_count:   number
+  active_worker_count:       number
+  stale_worker_count:        number
+  dlq_workflow_count:        number
+  dlq_battle_count:          number
+}
+
+const executionStatus = defineCommand({
+  meta: {
+    name:        'status',
+    description: 'Show global execution health dashboard (active runs, queued jobs, worker health).',
+  },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const status = await callRpc<ExecutionControlStatus>(
+        'fn_get_execution_status',
+        {},
+        { requireAuth: true }
+      )
+
+      if (args.json) {
+        printJson(status)
+        return
+      }
+
+      printTable(
+        ['Metric', 'Value'],
+        [
+          ['System Kill Switch',  status.system_kill_switch_active ? 'ACTIVE' : 'inactive'],
+          ['Queue Frozen',        status.queue_frozen
+            ? `FROZEN — ${status.frozen_reason ?? 'no reason'}`
+            : 'running'],
+          ['Active Runs',         String(status.active_run_count)],
+          ['Queued Runs',         String(status.queued_run_count)],
+          ['Active Battle Jobs',  String(status.active_battle_job_count)],
+          ['Queued Battle Jobs',  String(status.queued_battle_job_count)],
+          ['Active Workers',      String(status.active_worker_count)],
+          ['Stale Workers',       String(status.stale_worker_count)],
+          ['Workflow DLQ',        String(status.dlq_workflow_count)],
+          ['Battle DLQ',          String(status.dlq_battle_count)],
+        ]
+      )
+
+      if (status.system_kill_switch_active) {
+        consola.warn('System is LOCKED. Contact a platform admin to resume.')
+      }
+      if (status.stale_worker_count > 0) {
+        consola.warn('%d stale worker(s) detected (no heartbeat in > 2 min).', status.stale_worker_count)
+      }
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 // ─── parent ────────────────────────────────────────────────────────────────
 
 export default defineCommand({
@@ -651,6 +720,7 @@ export default defineCommand({
     description: 'Inspect ConnectedLenses workflow run executions.',
   },
   subCommands: {
+    status: executionStatus,
     list: executionList,
     inspect: executionInspect,
     wait: executionWait,

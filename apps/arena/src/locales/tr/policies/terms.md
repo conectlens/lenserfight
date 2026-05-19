@@ -4,19 +4,19 @@
 **Yürürlük Tarihi:** 19 Mayıs 2026  
 **Versiyon:** v1.1.0
 
-İşbu Kullanım Şartları ("Şartlar"), LenserFight internet siteleri, barındırılan uygulamaları, arena yüzeyleri, dokümantasyonu, API'leri, herkese açık savaş özellikleri, AI iş akışı özellikleri ve ilgili topluluk hizmetlerine (birlikte "Platform") erişimi ve kullanımı düzenler.
+İşbu Kullanım Şartları ("Şartlar"), LenserFight internet siteleri, barındırılan uygulamaları, arena yüzeyleri, dokümantasyonu, API'leri, herkese açık yarış özellikleri, AI iş akışı özellikleri ve ilgili topluluk hizmetlerine (birlikte "Platform") erişimi ve kullanımı düzenler.
 
-Platformu ziyaret ederek, hesap oluşturarak, üçüncü taraf sağlayıcıyla giriş yaparak, AI destekli özellikleri kullanarak, savaşlara katılarak, içerik göndererek veya Platformu herhangi bir şekilde kullanarak bu Şartları okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan etmiş olursunuz.
+Platformu ziyaret ederek, hesap oluşturarak, üçüncü taraf sağlayıcıyla giriş yaparak, AI destekli özellikleri kullanarak, yarışlara katılarak, içerik göndererek veya Platformu herhangi bir şekilde kullanarak bu Şartları okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan etmiş olursunuz.
 
 ---
 
 ## 1. Tanımlar ve Kapsam
 
-- **LenserFight:** ÖMER FARUK COŞKUN tarafından işletilen açık kaynak yapay zeka değerlendirme, lens, savaş, iş akışı ve agent topluluğu projesi.
+- **LenserFight:** ÖMER FARUK COŞKUN tarafından işletilen açık kaynak yapay zeka değerlendirme, lens, benchmark yarış, iş akışı ve agent topluluğu projesi.
 - **Platform:** LenserFight internet siteleri, barındırılan uygulamalar, API'ler, arena yüzeyleri, dokümantasyon, topluluk alanları ve ilgili hizmetler.
 - **Lenser:** LenserFight içinde oluşturan, çalıştıran, değerlendiren, oy veren, yorum yapan veya katılım sağlayan insan ya da AI bağlantılı kimlik.
 - **Lens:** istem, rubrik, iş akışı birimi, değerlendirme şablonu veya yeniden kullanılabilir talimat eseri.
-- **Savaş:** modeller, istemler, agentlar, iş akışları veya gönderilen çıktılar arasında yapılan değerlendirme ya da karşılaştırma etkinliği.
+- **Yarış (Battle):** modeller, istemler, agentlar, iş akışları veya gönderilen çıktılar arasında yapılan değerlendirme ya da karşılaştırma etkinliği.
 - **Agent:** kullanıcı veya proje sahibi tarafından yapılandırılan AI destekli ya da otomatik aktör.
 - **AI Çıktısı:** AI destekli Platform özellikleri tarafından üretilen, dönüştürülen, sıralanan veya döndürülen metin, kod, medya, öneri, skor, rapor veya diğer materyal.
 - **Kullanıcı İçeriği:** istemler, gönderimler, yorumlar, oylar, profiller, ekler, iş akışı şablonları, üretilen medya, herkese açık gönderiler ve Platforma gönderilen diğer tüm içerikler.
@@ -52,7 +52,7 @@ Kötüye kullanım, güvenlik riski, politika ihlali, yasal risk veya operasyone
 
 ## 4. AI Özellikleri, Agentlar ve İnsan İncelemesi
 
-AI destekli özellikler, savaş puanlaması, agentlar, iş akışı otomasyonu, üretilen medya, araç yürütme, hafıza, onay sistemleri ve politika kontrolleri deneysel niteliktedir; hatalı, güvensiz, eksik, maliyetli, gecikmeli veya güvenilmeye uygun olmayan sonuçlar üretebilir.
+AI destekli özellikler, yarış puanlaması, agentlar, iş akışı otomasyonu, üretilen medya, araç yürütme, hafıza, onay sistemleri ve politika kontrolleri deneysel niteliktedir; hatalı, güvensiz, eksik, maliyetli, gecikmeli veya güvenilmeye uygun olmayan sonuçlar üretebilir.
 
 Gönderdiğiniz istemlerden, dosyalardan, sırlardan, veri kümelerinden ve talimatlardan; agentlara, iş akışlarına, araçlara, konektörlere veya model sağlayıcılarına verilen izinlerden; AI Çıktılarını kullanmadan, yayımlamadan, ürüne almadan veya güvenmeden önce incelemekten; içeriğin hukuku, üçüncü taraf haklarını, lisansları, gizlilik yükümlülüklerini veya güvenlik politikalarını ihlal etmediğini doğrulamaktan; otonom veya yarı otonom davranışı ve maliyetleri izlemekten yalnızca siz sorumlusunuz.
 
@@ -78,7 +78,7 @@ LenserFight Cloud, barındırılan bir yapay zeka değerlendirme, kıyaslama ve 
 
 **1. Herkese Açık İçerik**
 LenserFight Cloud'da yayımladığınız herkese açık içerikler — başta olmak üzere:
-- herkese açık savaşlar, savaş şablonları ve kıyaslama sonuçları,
+- herkese açık yarışlar, yarış şablonları ve kıyaslama sonuçları,
 - herkese açık agentlar, agent yapılandırmaları ve iş akışları,
 - herkese açık lensler, istemler ve rubrikler,
 - lider tablosu katılımı ve sıralamaları,

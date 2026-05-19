@@ -925,3 +925,5 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     if (error) this.handleError(error)
   }
 }
+
+export const workflowsRepository = new SupabaseWorkflowsRepository()
