@@ -11,6 +11,14 @@ import { useChainabitConnection } from '@lenserfight/features/store'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { normalizeError } from '@lenserfight/shared/error'
 import { isValidUUID } from '@lenserfight/utils/validation'
+import {
+  formatSchedulePreview,
+  localTimezone,
+  minScheduleDateLocal,
+  pastHoursForDate,
+  pastMinutesForDateHour,
+  serializeScheduleDateTime,
+} from '@lenserfight/utils/date'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GitBranch, HelpCircle, Info, Layers, Swords, Trophy } from 'lucide-react'
@@ -406,9 +414,21 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     setBattleType(legacyType)
   }, [taskSource, contenderStructure, judgingMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Step 6 — scheduling (optional, only for ai_vs_ai / workflow_battle)
+  // Step 8 — scheduling (optional, only for ai_vs_ai / workflow_battle)
+  // Date and time are kept as separate fields so the user sees their local
+  // timezone explicitly and we can disable already-passed hours/minutes
+  // dynamically without relying on browser datetime-local behaviour.
   const [scheduleEnabled, setScheduleEnabled] = useState(false)
-  const [executionStartsAt, setExecutionStartsAt] = useState('')
+  const [scheduleDate, setScheduleDate] = useState('')   // YYYY-MM-DD local
+  const [scheduleHour, setScheduleHour] = useState<number | ''>('')  // 0–23
+  const [scheduleMinute, setScheduleMinute] = useState<number | ''>('')  // 0–59
+
+  // Derived: serialized ISO UTC string (null when incomplete or past)
+  const executionStartsAt =
+    scheduleDate !== '' && scheduleHour !== '' && scheduleMinute !== ''
+      ? serializeScheduleDateTime(scheduleDate, scheduleHour as number, scheduleMinute as number)
+      : null
+
   const [votingDurationHours, setVotingDurationHours] = useState(24)
   const [autoPublish, setAutoPublish] = useState(true)
 
@@ -943,7 +963,20 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // ── Schedule submission (step 6 → 7) ─────────────────────────────────────
 
   const handleScheduleAndNext = async () => {
-    if (scheduleEnabled && executionStartsAt && activeBattleId && AUTO_EXEC_TYPES.includes(battleType)) {
+    if (scheduleEnabled && AUTO_EXEC_TYPES.includes(battleType)) {
+      // Guard: reject incomplete or past schedule before any network call
+      if (!executionStartsAt) {
+        setError(
+          scheduleDate && (scheduleHour !== '' || scheduleMinute !== '')
+            ? 'The selected date and time is in the past. Please choose a future time.'
+            : 'Please select a date and time for execution.',
+        )
+        return
+      }
+      if (!activeBattleId) {
+        setError('Cannot schedule: battle has not been created yet.')
+        return
+      }
       setSubmitting(true)
       setError(null)
       try {
@@ -1427,20 +1460,34 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               <div className="space-y-5">
                 {AUTO_EXEC_TYPES.includes(battleType) ? (
                   <>
+                    {/* Toggle row — copy is conditional on enabled state so it
+                        always reflects the current action, not a future promise */}
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
-                          Automatic execution
+                          Schedule automatic execution
                         </p>
                         <p className="text-xs text-greyscale-400 mt-0.5">
-                          AI contenders run server-side at the scheduled time — no manual trigger needed.
+                          {scheduleEnabled
+                            ? 'AI contenders run server-side at the time you pick below.'
+                            : 'Enable to pick when AI contenders run automatically.'}
                         </p>
                       </div>
                       <button
                         type="button"
                         role="switch"
                         aria-checked={scheduleEnabled}
-                        onClick={() => setScheduleEnabled((v) => !v)}
+                        onClick={() => {
+                          setScheduleEnabled((v) => !v)
+                          // Clear picks when disabling so stale state doesn't
+                          // persist if the user toggles back.
+                          if (scheduleEnabled) {
+                            setScheduleDate('')
+                            setScheduleHour('')
+                            setScheduleMinute('')
+                            setError(null)
+                          }
+                        }}
                         className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
                           scheduleEnabled ? 'bg-primary-yellow-500' : 'bg-greyscale-200 dark:bg-greyscale-700'
                         }`}
@@ -1453,74 +1500,155 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       </button>
                     </div>
 
-                    {scheduleEnabled && (
-                      <div className="space-y-4 rounded-2xl border border-surface-border p-4">
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                            Execution start time
-                          </label>
-                          <input
-                            type="datetime-local"
-                            value={executionStartsAt}
-                            onChange={(e) => setExecutionStartsAt(e.target.value)}
-                            // datetime-local interprets the value in the browser's
-                            // local timezone. toISOString() returns UTC, which
-                            // would be off by the user's tz offset and could let
-                            // them pick a past time. Compute "now + 1m" in local
-                            // time instead.
-                            min={(() => {
-                              const d = new Date(Date.now() + 60_000)
-                              const pad = (n: number) => String(n).padStart(2, '0')
-                              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-                            })()}
-                            className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
-                          />
-                        </div>
+                    {scheduleEnabled && (() => {
+                      const tz = localTimezone()
+                      const blockedHours = pastHoursForDate(scheduleDate)
+                      const blockedMinutes = pastMinutesForDateHour(
+                        scheduleDate,
+                        scheduleHour !== '' ? (scheduleHour as number) : -1,
+                      )
+                      const preview = scheduleDate && scheduleHour !== '' && scheduleMinute !== ''
+                        ? formatSchedulePreview(scheduleDate, scheduleHour as number, scheduleMinute as number)
+                        : null
+                      const isPastSelection = preview === null &&
+                        scheduleDate !== '' && scheduleHour !== '' && scheduleMinute !== ''
 
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                            Voting window
-                          </label>
-                          <select
-                            value={votingDurationHours}
-                            onChange={(e) => setVotingDurationHours(Number(e.target.value))}
-                            className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
-                          >
-                            {[1, 6, 12, 24, 48, 72].map((h) => (
-                              <option key={h} value={h}>
-                                {h === 1 ? '1 hour' : `${h} hours`}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
-                              Auto-publish results
-                            </p>
-                            <p className="text-xs text-greyscale-400 mt-0.5">
-                              Results publish automatically after voting closes.
-                            </p>
+                      return (
+                        <div className="space-y-4 rounded-2xl border border-surface-border p-4">
+                          {/* Timezone badge */}
+                          <div className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-xs text-greyscale-500 dark:text-greyscale-400">
+                            <Info size={13} className="flex-shrink-0 text-primary-yellow-500" />
+                            Times are in your local timezone:{' '}
+                            <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">{tz}</span>
                           </div>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={autoPublish}
-                            onClick={() => setAutoPublish((v) => !v)}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-                              autoPublish ? 'bg-primary-yellow-500' : 'bg-greyscale-200 dark:bg-greyscale-700'
-                            }`}
-                          >
-                            <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
-                                autoPublish ? 'translate-x-5' : 'translate-x-0'
-                              }`}
+
+                          {/* Date picker */}
+                          <div>
+                            <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                              Date
+                            </label>
+                            <input
+                              type="date"
+                              value={scheduleDate}
+                              min={minScheduleDateLocal()}
+                              onChange={(e) => {
+                                setScheduleDate(e.target.value)
+                                // Reset hour/minute when date changes — previously valid
+                                // picks may now be in the past for the new date.
+                                setScheduleHour('')
+                                setScheduleMinute('')
+                              }}
+                              className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
                             />
-                          </button>
+                          </div>
+
+                          {/* Hour + Minute selectors */}
+                          {scheduleDate && (
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                                  Hour
+                                </label>
+                                <select
+                                  value={scheduleHour}
+                                  onChange={(e) => {
+                                    setScheduleHour(e.target.value === '' ? '' : Number(e.target.value))
+                                    setScheduleMinute('')
+                                  }}
+                                  className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
+                                >
+                                  <option value="">— hour —</option>
+                                  {Array.from({ length: 24 }, (_, h) => (
+                                    <option key={h} value={h} disabled={blockedHours.has(h)}>
+                                      {String(h).padStart(2, '0')}:xx
+                                      {blockedHours.has(h) ? ' (past)' : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                                  Minute
+                                </label>
+                                <select
+                                  value={scheduleMinute}
+                                  onChange={(e) => setScheduleMinute(e.target.value === '' ? '' : Number(e.target.value))}
+                                  disabled={scheduleHour === ''}
+                                  className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none disabled:opacity-50"
+                                >
+                                  <option value="">— minute —</option>
+                                  {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+                                    <option key={m} value={m} disabled={blockedMinutes.has(m)}>
+                                      :{String(m).padStart(2, '0')}
+                                      {blockedMinutes.has(m) ? ' (past)' : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Execution preview */}
+                          {preview && (
+                            <div className="flex items-center gap-2 rounded-xl border border-primary-yellow-500/20 bg-primary-yellow-500/5 px-3 py-2 text-xs text-greyscale-700 dark:text-greyscale-300">
+                              <Info size={13} className="flex-shrink-0 text-primary-yellow-500" />
+                              Execution scheduled for: <span className="font-semibold">{preview}</span>
+                            </div>
+                          )}
+                          {isPastSelection && (
+                            <p className="text-xs text-status-red">
+                              The selected time is in the past. Please pick a future date and time.
+                            </p>
+                          )}
+
+                          {/* Voting window */}
+                          <div>
+                            <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                              Voting window
+                            </label>
+                            <select
+                              value={votingDurationHours}
+                              onChange={(e) => setVotingDurationHours(Number(e.target.value))}
+                              className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
+                            >
+                              {[1, 6, 12, 24, 48, 72].map((h) => (
+                                <option key={h} value={h}>
+                                  {h === 1 ? '1 hour' : `${h} hours`}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Auto-publish toggle */}
+                          <div className="flex items-center justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                                Auto-publish results
+                              </p>
+                              <p className="text-xs text-greyscale-400 mt-0.5">
+                                Results publish automatically after voting closes.
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={autoPublish}
+                              onClick={() => setAutoPublish((v) => !v)}
+                              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                                autoPublish ? 'bg-primary-yellow-500' : 'bg-greyscale-200 dark:bg-greyscale-700'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                                  autoPublish ? 'translate-x-5' : 'translate-x-0'
+                                }`}
+                              />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )
+                    })()}
                   </>
                 ) : (
                   <p className="py-6 text-center text-sm text-greyscale-400">
