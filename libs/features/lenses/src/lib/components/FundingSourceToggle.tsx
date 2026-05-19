@@ -1,7 +1,7 @@
 import { LocalKeysGatewayClient } from '@lenserfight/data/local-keys-browser'
 import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
-import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { HelpButton } from '@lenserfight/ui/components'
+import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { CHAINABIT_APP_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
 import { HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil, Loader2, FlaskConical } from 'lucide-react'
@@ -400,7 +400,6 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   availableLocalKeys,
   localKeyAvailability = 'available',
   onAddLocalKey,
-  onRemoveLocalKey: _onRemoveLocalKey,
   onUpdateLocalKey,
   onPairGateway,
   onRefreshLocalKeys,
@@ -591,20 +590,15 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1">
                   Chainabit
-                  <Tooltip text="This feature is in active development and subject to change.">
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-amber-200/50 dark:border-amber-700/50 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/40 dark:to-amber-900/20 text-[9px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wide leading-none cursor-help hover:from-amber-100 hover:to-amber-200 dark:hover:from-amber-800/50 dark:hover:to-amber-800/30 transition-all shadow-sm">
-                      <FlaskConical size={10} strokeWidth={2.5} />
-                    </span>
-                  </Tooltip>
                   <a
                     href={`${fundingDocsUrl}#chainabit-credits`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-primary-500 transition-colors"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-amber-200/50 dark:border-amber-700/50 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/40 dark:to-amber-900/20 text-[9px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wide leading-none cursor-pointer hover:from-amber-100 hover:to-amber-200 dark:hover:from-amber-800/50 dark:hover:to-amber-800/30 transition-all shadow-sm"
                     onClick={(e) => e.stopPropagation()}
-                    title="How Chainabit credits work"
+                    title="Experimental: This feature is in active development and subject to change. Click to learn how Chainabit credits work."
                   >
-                    <span className="text-[9px] leading-none border border-current rounded-full px-1">?</span>
+                    <FlaskConical size={10} strokeWidth={2.5} />
                   </a>
                 </p>
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 tabular-nums flex items-center gap-1">
