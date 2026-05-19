@@ -16,7 +16,9 @@ import { handleCors, errResponse, jsonResponse } from '../_shared/cors.ts'
 import {
   resolveChainabitToken,
   ProviderNotConnectedError,
+  CapabilityDeniedError,
 } from '../_shared/provider-token.ts'
+import { requireCapabilities, CAPABILITIES } from '../_shared/capability-validator.ts'
 
 declare const Deno: { env: { get(key: string): string | undefined } }
 
@@ -40,14 +42,20 @@ serve(async (req: Request): Promise<Response> => {
   const { data: { user }, error: authError } = await userClient.auth.getUser()
   if (authError || !user) return errResponse('unauthenticated', 'Invalid or expired token', 401, req)
 
-  // Resolve Chainabit OAuth token.  execution:run or any valid scope suffices
-  // for the model catalog — no specific scope check needed here.
+  // Resolve Chainabit OAuth token and assert profile:read scope.
+  // The model catalog endpoint is authenticated — a connected identity without
+  // profile:read would hit a Chainabit 401/403 with an opaque error; we surface
+  // it early with a clear insufficient_scope response instead.
   let token: { accessToken: string; scopes: string[] }
   try {
     token = await resolveChainabitToken(user.id, adminClient)
+    requireCapabilities(token.scopes, CAPABILITIES.PROFILE_READ)
   } catch (err) {
     if (err instanceof ProviderNotConnectedError) {
       return errResponse('not_connected', err.message, 403, req)
+    }
+    if (err instanceof CapabilityDeniedError) {
+      return errResponse('insufficient_scope', err.message, 403, req)
     }
     console.error('[chainabit-models] token resolution failed:', err)
     return errResponse('token_resolution_failed', 'Failed to resolve Chainabit token', 500, req)

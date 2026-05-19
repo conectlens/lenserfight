@@ -733,10 +733,9 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
     if (Object.keys(translationUpdatePayload).length > 0) {
       const { error } = await supabase.rpc('fn_update_thread_translation', {
-        p_entity_id: id,
-        p_entity_type: 'thread',
+        p_thread_id: id,
         p_title: (translationUpdatePayload.title as string) ?? null,
-        p_description: (translationUpdatePayload.content as string) ?? null,
+        p_content: (translationUpdatePayload.content as string) ?? null,
       })
       if (error) this.handleError(error)
     }
