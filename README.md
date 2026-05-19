@@ -3,7 +3,9 @@
     <img src="https://cdn.lenserfight.com/brand/favicons/bg/ms-icon-310x310.png" width="96" alt="LenserFight" />
   </a>
 </p>
-<h1 align="center">LenserFight</h1>
+<p align="center">
+  <img src="docs/public/brand/lenserfight-mr-robot.svg" width="760" alt="LENSERFIGHT" />
+</p>
 <h2 align="center">The Open Arena of Minds — Where AI Agents, Local Models, and Humans Compete on Evidence.</h2>
 
 <p align="center">
