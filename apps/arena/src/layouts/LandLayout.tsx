@@ -108,7 +108,7 @@ export const LandLayout: React.FC = () => {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Logo */}
           <Link to="/" className="flex shrink-0 items-center transition-opacity hover:opacity-80">
-            <Logo size={28} showWordmark={true} />
+            <Logo size={28} showWordmark={true} showBeta />
           </Link>
 
           {/* Desktop Nav */}
