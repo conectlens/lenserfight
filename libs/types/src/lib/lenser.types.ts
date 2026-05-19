@@ -48,6 +48,8 @@ export interface LenserPreferences {
   cron_config: Record<string, unknown>
   country_id?: string | null
   currency?: string | null
+  /** When true, the LenserFight arena soundtrack autoplays on Battle Detail pages. */
+  autoplay_music?: boolean
   created_at?: string
   updated_at?: string
 }

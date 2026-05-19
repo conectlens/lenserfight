@@ -28,6 +28,8 @@ import type { BattleContentType } from '../../types/battle-renderer.types'
 import type { BattleLayoutContext, LensContextDetail } from '../../types/battle-layout.types'
 
 import { Drawer } from '@lenserfight/ui/overlays'
+import { useArenaMusic } from '../../hooks/utils/useArenaMusic'
+import { ArenaMusicPlayer } from './ArenaMusicPlayer'
 
 const LenserChatRail = lazy(() =>
   import('../chat/LenserChatRail').then((m) => ({ default: m.LenserChatRail }))
@@ -86,6 +88,12 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
 
   const totalVotes = aggregates.reduce((sum, a) => sum + (a.raw_vote_count ?? 0), 0)
   const isOwner = !!(battle?.creator_lenser_id && lenser?.id && battle.creator_lenser_id === lenser.id)
+
+  // Arena soundtrack — reads initial preference from lenser.preferences or localStorage
+  const music = useArenaMusic(
+    { isAuthenticated },
+    lenser?.preferences?.autoplay_music,
+  )
 
   // Derive fighter slot from contender list — zero extra fetches
   const myContenderSlot: 'A' | 'B' | null =
@@ -247,6 +255,8 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
           onWebhooksOpen={() => setWebhooksOpen(true)}
           isOwner={isOwner}
           myContenderSlot={myContenderSlot}
+          isMusicEnabled={music.isEnabled}
+          onToggleMusic={music.toggleEnabled}
         />
 
         {/* Main content area + optional desktop chat rail */}
@@ -341,6 +351,9 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
           <BattleWebhookSubscriptions battleId={battle.id} />
         </div>
       </Drawer>
+
+      {/* Arena soundtrack player (floating, bottom-left) */}
+      <ArenaMusicPlayer music={music} />
     </div>
   )
 }
