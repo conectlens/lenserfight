@@ -71,9 +71,6 @@ seeds/17_xp_ruleset.sql
 seeds/02_auth_users.sql
 seeds/03_lenser_profiles.sql
 
-# ── [7] AI lenser profiles (one per AI model — derived from catalog above)
-seeds/07_ai_lensers.sql
-
 # ── [8] Reserved workspaces for the three platform accounts
 #    media.objects is NOT seeded — real users have empty libraries on day 0
 #    and the reserved trio should too. The dev/test fixtures in
@@ -122,7 +119,6 @@ seeds/51_lenser_character_battles.sql
 seeds/40_lens_chain_templates.sql
 seeds/41_developer_lens_templates.sql
 seeds/42_production_workflow_templates.sql
-seeds/43_ai_agent_lens_bindings.sql
 seeds/44_community_profiles.sql
 seeds/45_creator_business_lens_templates.sql
 seeds/47_chainabit_productivity_templates.sql
@@ -191,6 +187,16 @@ seeds/40_benchmark.sql
 # seeds/52_battle_e2e_seed.sql  — e2e test fixtures (e2e_alice, e2e_bob,
 #                                  e2e_voter1, e2e_voter2) and an open battle.
 #                                  Applied only by scripts/e2e-battle.sh.
+#
+# seeds/07_ai_lensers.sql       — Creates lensers.profiles rows (type='ai') for
+#                                  every model in the AI catalog. Excluded so no
+#                                  AI account occupies a slot on day 0. Real users
+#                                  and operators add AI agents themselves.
+#
+# seeds/43_ai_agent_lens_bindings.sql — Binds the three demo AI lensers
+#                                        (GPT-4o / Claude / Gemini) to developer
+#                                        and chain-template lenses. Excluded
+#                                        because 07_ai_lensers.sql is excluded.
 #
 # seeds/60_dev_quickstart.sql   — dev@local.test account + two qs-* battles
 #                                  with pre-cast votes. Dev-only.
