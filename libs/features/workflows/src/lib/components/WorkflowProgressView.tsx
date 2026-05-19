@@ -666,13 +666,13 @@ export function WorkflowProgressView({
                     <Tooltip
                       content={
                         <span className="max-w-[220px] block">
-                          A <code className="font-mono">{'[[variable]]'}</code> in this node&apos;s template has no value. Check that the upstream node produces the expected output key and the binding is correct.
+                          A <code className="font-mono">{'[[variable]]'}</code> in this node&apos;s template has no value. Set a static value in the node config, wire it from an upstream node&apos;s output, or supply it as a workflow input.
                         </span>
                       }
                       position="left"
                       contentClassName=""
                     >
-                      <HelpButton path="/tutorials/getting-started/local-file-storage" label="Fix this" className="shrink-0 border-status-red/40 text-status-red hover:border-status-red hover:text-status-red" />
+                      <HelpButton path="/tutorials/walkthroughs/create-a-workflow" label="Fix this" className="shrink-0 border-status-red/40 text-status-red hover:border-status-red hover:text-status-red" />
                     </Tooltip>
                   )}
                 </div>
