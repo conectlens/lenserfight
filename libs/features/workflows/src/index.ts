@@ -16,6 +16,7 @@ export * from './lib/hooks/useWorkflowRunEvents'
 export * from './lib/hooks/useWorkflowRunHistory'
 export * from './lib/hooks/useWorkflowPhases'
 export * from './lib/hooks/useWorkflowRunState'
+export * from './lib/hooks/useExecutionControl'
 
 // Execution helpers
 export * from './lib/execution/persistNodeMedia'
@@ -41,6 +42,7 @@ export * from './lib/components/MultimodalRunResult'
 // CD: Workflow automation v2 components
 export * from './lib/components/WorkflowTriggerEditor'
 export * from './lib/components/WorkflowRunChain'
+export * from './lib/components/ExecutionControlBanner'
 
 // Pages
 export * from './lib/pages/WorkflowsPage'
