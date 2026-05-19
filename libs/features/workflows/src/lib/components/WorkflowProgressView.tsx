@@ -82,6 +82,12 @@ interface WorkflowProgressViewProps {
    * Called with the node id and its lens_id (or '__utility' for utility nodes).
    */
   onConfigureNode?: (nodeId: string, lensId: string) => void
+  /**
+   * When true, non-terminal in-progress node indicators are replaced with a
+   * "Halted — Emergency Lock Active" state. Purely cosmetic — does not change
+   * the underlying run status.
+   */
+  isSystemLocked?: boolean
 }
 
 type NodeStatus = WorkflowNodeResultRecord['status']
@@ -585,6 +591,7 @@ export function WorkflowProgressView({
   runStatus,
   onOpenFullscreen,
   onConfigureNode,
+  isSystemLocked = false,
 }: WorkflowProgressViewProps) {
   const resultIndex = useMemo(() => new Map(nodeResults.map((r) => [r.node_id, r])), [nodeResults])
   const getResult = (nodeId: string) => resultIndex.get(nodeId)
@@ -800,14 +807,28 @@ export function WorkflowProgressView({
                 </div>
               )}
 
-              {(status === 'pending' || (isWaiting && !waitingLabel)) && <PendingSkeleton />}
+              {(status === 'pending' || (isWaiting && !waitingLabel)) && (
+                isSystemLocked ? (
+                  <div className="mt-3 flex items-center gap-2 rounded-xl border border-status-red/30 bg-status-red/5 p-2 text-xs font-medium text-status-red">
+                    <ShieldAlert size={12} /> Halted — Emergency Lock Active
+                  </div>
+                ) : (
+                  <PendingSkeleton />
+                )
+              )}
 
               {(status === 'running' || status === 'streaming' || status === 'retrying') && (
                 <div className="mt-3">
-                  <StreamingOutput
-                    state="streaming"
-                    output={((result?.output_data as Record<string, unknown> | null | undefined)?.['output'] ?? (result?.output_data as Record<string, unknown> | null | undefined)?.['text'] ?? '') as string}
-                  />
+                  {isSystemLocked ? (
+                    <div className="flex items-center gap-2 rounded-xl border border-status-red/30 bg-status-red/5 p-2 text-xs font-medium text-status-red">
+                      <ShieldAlert size={12} /> Halted — Emergency Lock Active
+                    </div>
+                  ) : (
+                    <StreamingOutput
+                      state="streaming"
+                      output={((result?.output_data as Record<string, unknown> | null | undefined)?.['output'] ?? (result?.output_data as Record<string, unknown> | null | undefined)?.['text'] ?? '') as string}
+                    />
+                  )}
                 </div>
               )}
 
