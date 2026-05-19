@@ -325,7 +325,7 @@ export const LensDetailPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['lens-author-list', lens.id] })
       // Refresh version data so post-edit params & version list are immediately current
       queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.latestPublished(lens.id) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.list(lens.id) })
     } else {
       navigate(`/lenses/${newId}`)
     }
