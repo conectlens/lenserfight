@@ -10,6 +10,12 @@ export type AnalyticsEventName =
   | 'cta_click'
   /** External link clicked (Docs, GitHub, Chainabit, etc.) */
   | 'external_link_click'
+  /** Marketing showcase card scrolled into view */
+  | 'marketing_image_impression'
+  /** Marketing showcase CTA button clicked */
+  | 'marketing_cta_click'
+  /** Marketing showcase image hovered */
+  | 'marketing_media_hover'
 
 export interface AnalyticsEvent {
   name: AnalyticsEventName
