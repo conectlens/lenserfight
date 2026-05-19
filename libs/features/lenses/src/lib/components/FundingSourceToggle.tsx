@@ -61,13 +61,13 @@ interface FundingSourceToggleProps {
 
 function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
   return (
-    <div className="relative group/tip">
+    <span className="relative group/tip">
       {children}
-      <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-52 rounded-lg bg-gray-900 dark:bg-gray-700 px-3 py-2 text-[11px] leading-snug text-white shadow-lg opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-52 rounded-lg bg-gray-900 dark:bg-gray-700 px-3 py-2 text-[11px] leading-snug text-white shadow-lg opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 block">
         {text}
         <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
-      </div>
-    </div>
+      </span>
+    </span>
   )
 }
 
@@ -470,7 +470,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
     !canUseBYOK || localKeyAvailability === 'gateway_forbidden'
 
   const chainabitActive = chainabitState === 'connected'
-  const chainabitNeedsAction = chainabitState === 'no_account' || chainabitState === 'invalid_connection'
+  const chainabitNeedsAction = chainabitState === 'no_account' || chainabitState === 'invalid_connection' || chainabitState === 'not_connected' || chainabitState === 'token_expired'
   const chainabitIsDisabled =
     chainabitState === 'loading' ||
     chainabitState === 'no_credits' ||
@@ -494,6 +494,8 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       chainabitState === 'no_credits' ||
       chainabitState === 'no_account' ||
       chainabitState === 'invalid_connection' ||
+      chainabitState === 'not_connected' ||
+      chainabitState === 'token_expired' ||
       chainabitState === 'provider_error'
 
     if (fundingSource === 'platform_credit' && chainabitDefinitelyUnavailable) {

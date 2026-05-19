@@ -18,9 +18,7 @@ export const ChainabitWalletGate: React.FC<{ children: React.ReactNode }> = ({ c
 
   const hasChainabitAccount =
     state === 'connected' ||
-    state === 'no_credits' ||
-    state === 'invalid_connection' ||
-    state === 'provider_error'
+    state === 'no_credits'
 
   if (!hasChainabitAccount) {
     return <>{children}</>
