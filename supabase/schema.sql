@@ -18196,7 +18196,7 @@ CREATE TABLE IF NOT EXISTS "analytics"."shared_links" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "short_id" "text" NOT NULL,
     "resource_type" "text" NOT NULL,
-    "resource_id" "uuid" NOT NULL,
+    "resource_id" "uuid",
     "slug" "text",
     "creator_lenser_id" "uuid",
     "channel" "text" DEFAULT 'in_app'::"text" NOT NULL,
