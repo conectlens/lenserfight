@@ -77,3 +77,56 @@ $$;
 
 COMMENT ON FUNCTION "public"."fn_get_battle"("p_battle_id" "uuid", "p_slug" "text") IS
   'Security wrapper: look up a battle by id or slug. Public battles are visible to everyone; drafts only to the creator. Returns NULL when not found or draft-and-not-creator. Now includes V2 fields: task_source, contender_structure, judging_mode, challenge_type, shared_input_snapshot, lenser_battle_policy.';
+
+-- ─── Patch fn_get_battle_by_slug alias to match updated fn_get_battle return type ───
+-- The alias was created in 20270802 with 25 columns. fn_get_battle now returns 31
+-- (+ 6 V2 fields). SELECT * causes 42P13 "too many columns" without this patch.
+
+DROP FUNCTION IF EXISTS "public"."fn_get_battle_by_slug"("text");
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle_by_slug"("p_slug" "text")
+RETURNS TABLE(
+  "id"                    "uuid",
+  "slug"                  "text",
+  "title"                 "text",
+  "task_prompt"           "text",
+  "status"                "text",
+  "total_vote_count"      integer,
+  "published_at"          timestamp with time zone,
+  "voting_opens_at"       timestamp with time zone,
+  "voting_closes_at"      timestamp with time zone,
+  "finalized_at"          timestamp with time zone,
+  "battle_type"           "text",
+  "voter_eligibility"     "text",
+  "handicap_config"       "jsonb",
+  "creator_lenser_id"     "uuid",
+  "forum_thread_id"       "text",
+  "workflow_id"           "uuid",
+  "lens_id"               "uuid",
+  "execution_starts_at"   timestamp with time zone,
+  "auto_publish"          boolean,
+  "voting_duration_hours" integer,
+  "vote_velocity"         numeric,
+  "og_image_url"          "text",
+  "winner_contender_id"   "uuid",
+  "parent_battle_id"      "uuid",
+  "deleted_at"            timestamp with time zone,
+  -- V2 fields (Phase CS)
+  "task_source"           "text",
+  "contender_structure"   "text",
+  "judging_mode"          "text",
+  "challenge_type"        "text",
+  "shared_input_snapshot" "jsonb",
+  "lenser_battle_policy"  "jsonb"
+)
+LANGUAGE "sql" STABLE SECURITY DEFINER
+SET "search_path" TO 'public', 'battles', 'lensers'
+AS $$
+  SELECT * FROM public.fn_get_battle(NULL::"uuid", p_slug);
+$$;
+
+ALTER FUNCTION "public"."fn_get_battle_by_slug"("text") OWNER TO postgres;
+GRANT EXECUTE ON FUNCTION "public"."fn_get_battle_by_slug"("text")
+  TO anon, authenticated, service_role;
+COMMENT ON FUNCTION "public"."fn_get_battle_by_slug"("text") IS
+  'Alias for fn_get_battle(p_slug). Return type kept in sync with fn_get_battle V2 (Phase CS V2 fields: task_source, contender_structure, judging_mode, challenge_type, shared_input_snapshot, lenser_battle_policy).';
