@@ -470,7 +470,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
     !canUseBYOK || localKeyAvailability === 'gateway_forbidden'
 
   const chainabitActive = chainabitState === 'connected'
-  const chainabitNeedsAction = chainabitState === 'no_account' || chainabitState === 'invalid_connection' || chainabitState === 'not_connected' || chainabitState === 'token_expired'
+  const chainabitNeedsAction = chainabitState === 'not_connected' || chainabitState === 'token_expired' || chainabitState === 'insufficient_scope'
   const chainabitIsDisabled =
     chainabitState === 'loading' ||
     chainabitState === 'no_credits' ||
@@ -492,10 +492,9 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   useEffect(() => {
     const chainabitDefinitelyUnavailable =
       chainabitState === 'no_credits' ||
-      chainabitState === 'no_account' ||
-      chainabitState === 'invalid_connection' ||
       chainabitState === 'not_connected' ||
       chainabitState === 'token_expired' ||
+      chainabitState === 'insufficient_scope' ||
       chainabitState === 'provider_error'
 
     if (fundingSource === 'platform_credit' && chainabitDefinitelyUnavailable) {

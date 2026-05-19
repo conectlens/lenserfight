@@ -1,12 +1,12 @@
 import React from 'react'
-import { ExternalLink, Loader2, PlugZap, Zap } from 'lucide-react'
+import { AlertCircle, ExternalLink, Loader2, PlugZap, Zap } from 'lucide-react'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
-import type { ChainabitAiModel, ChainabitConnectionState } from '@lenserfight/types'
+import type { ChainabitAiModel, PartnerConnectionState } from '@lenserfight/types'
 
 interface ChainabitModalProps {
   isOpen: boolean
   onClose: () => void
-  state: ChainabitConnectionState
+  state: PartnerConnectionState
   credits: number | null
   models: ChainabitAiModel[] | null
   onReconnect: () => Promise<void>
@@ -49,6 +49,12 @@ function ModelRow({ model }: { model: ChainabitAiModel }) {
   )
 }
 
+const isConnectState = (state: PartnerConnectionState) => state === 'not_connected'
+const isReconnectState = (state: PartnerConnectionState) =>
+  state === 'token_expired' || state === 'insufficient_scope'
+const isAccountConnected = (state: PartnerConnectionState) =>
+  state === 'connected' || state === 'no_credits'
+
 export const ChainabitModal: React.FC<ChainabitModalProps> = ({
   isOpen,
   onClose,
@@ -70,10 +76,80 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
   }
 
   const title =
-    state === 'no_account' ? 'Connect Chainabit' :
-      state === 'invalid_connection' ? 'Reconnect Chainabit' :
+    isConnectState(state) ? 'Connect Chainabit' :
+      isReconnectState(state) ? 'Reconnect Chainabit' :
         state === 'no_credits' ? 'No credits remaining' :
-          'Chainabit'
+          state === 'provider_error' ? 'Connection error' :
+            'Chainabit'
+
+  const footer = (() => {
+    if (state === 'loading') return undefined
+
+    if (isConnectState(state)) {
+      return (
+        <ModalFooter
+          border={false}
+          leftButton={{ label: 'Cancel', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
+          primaryButton={{
+            label: reconnecting ? 'Redirecting…' : 'Connect Chainabit',
+            onClick: handleReconnect,
+            isLoading: reconnecting,
+            className: 'flex-1',
+          }}
+        />
+      )
+    }
+
+    if (isReconnectState(state)) {
+      return (
+        <ModalFooter
+          border={false}
+          leftButton={{ label: 'Cancel', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
+          primaryButton={{
+            label: reconnecting ? 'Redirecting…' : 'Reconnect',
+            onClick: handleReconnect,
+            isLoading: reconnecting,
+            className: 'flex-1',
+          }}
+        />
+      )
+    }
+
+    if (state === 'no_credits') {
+      return (
+        <ModalFooter
+          border={false}
+          leftButton={{ label: 'Close', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
+          primaryButton={{
+            label: 'Top up on Chainabit',
+            onClick: () => window.open(topUpUrl, '_blank', 'noopener,noreferrer'),
+            className: 'flex-1',
+          }}
+        />
+      )
+    }
+
+    if (state === 'connected') {
+      return (
+        <ModalFooter
+          border={false}
+          leftButton={{ label: 'Close', onClick: onClose, variant: 'secondary' }}
+          primaryButton={{
+            label: 'Top up',
+            onClick: () => window.open(topUpUrl, '_blank', 'noopener,noreferrer'),
+          }}
+        />
+      )
+    }
+
+    // provider_error or any unknown state — just close
+    return (
+      <ModalFooter
+        border={false}
+        primaryButton={{ label: 'Close', onClick: onClose, variant: 'secondary' }}
+      />
+    )
+  })()
 
   return (
     <Dialog
@@ -82,40 +158,7 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
       title={title}
       icon={<ChainabitLogo />}
       maxWidth="max-w-md"
-      footer={
-        state === 'loading' ? undefined :
-          state === 'no_account' || state === 'invalid_connection' ? (
-            <ModalFooter
-              border={false}
-              leftButton={{ label: 'Cancel', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
-              primaryButton={{
-                label: reconnecting ? 'Redirecting…' : (state === 'invalid_connection' ? 'Reconnect' : 'Connect Chainabit'),
-                onClick: handleReconnect,
-                isLoading: reconnecting,
-                className: 'flex-1',
-              }}
-            />
-          ) : state === 'no_credits' ? (
-            <ModalFooter
-              border={false}
-              leftButton={{ label: 'Close', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
-              primaryButton={{
-                label: 'Top up on Chainabit',
-                onClick: () => window.open(topUpUrl, '_blank', 'noopener,noreferrer'),
-                className: 'flex-1',
-              }}
-            />
-          ) : (
-            <ModalFooter
-              border={false}
-              leftButton={{ label: 'Close', onClick: onClose, variant: 'secondary' }}
-              primaryButton={{
-                label: 'Top up',
-                onClick: () => window.open(topUpUrl, '_blank', 'noopener,noreferrer'),
-              }}
-            />
-          )
-      }
+      footer={footer}
     >
       <div className="flex mb-3">
         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-wide">
@@ -129,7 +172,7 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
         </div>
       )}
 
-      {state === 'no_account' && (
+      {isConnectState(state) && (
         <div className="text-center py-4 space-y-3">
           <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
             Connect your Chainabit account to run AI battles using your Chainabit wallet credits.
@@ -140,7 +183,7 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
         </div>
       )}
 
-      {state === 'invalid_connection' && (
+      {isReconnectState(state) && (
         <div className="text-center py-4 space-y-3">
           <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
             Your Chainabit connection has expired or been revoked. Reconnect to restore access.
@@ -148,28 +191,52 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
         </div>
       )}
 
-      {state === 'no_credits' && (
+      {state === 'provider_error' && (
         <div className="text-center py-4 space-y-3">
-          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-50 dark:bg-orange-900/20 mx-auto">
-            <Zap size={22} className="text-orange-500" />
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/20 mx-auto">
+            <AlertCircle size={22} className="text-red-500" />
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            Your Chainabit wallet has no credits. Top up to continue running AI battles.
+            Could not reach Chainabit. Please try again later.
           </p>
         </div>
       )}
 
-      {state === 'connected' && (
+      {isAccountConnected(state) && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+          <div className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
+            state === 'no_credits'
+              ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+              : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+          }`}>
             <div className="flex items-center gap-2">
-              <PlugZap size={14} className="text-green-600 dark:text-green-400" />
-              <span className="text-xs font-medium text-green-800 dark:text-green-300">Connected</span>
+              {state === 'no_credits' ? (
+                <Zap size={14} className="text-orange-500" />
+              ) : (
+                <PlugZap size={14} className="text-green-600 dark:text-green-400" />
+              )}
+              <span className={`text-xs font-medium ${
+                state === 'no_credits'
+                  ? 'text-orange-800 dark:text-orange-300'
+                  : 'text-green-800 dark:text-green-300'
+              }`}>
+                {state === 'no_credits' ? 'No credits' : 'Connected'}
+              </span>
             </div>
-            <span className="text-sm font-bold text-green-900 dark:text-green-200 tabular-nums">
-              {credits?.toLocaleString() ?? '—'} cr
+            <span className={`text-sm font-bold tabular-nums ${
+              state === 'no_credits'
+                ? 'text-orange-900 dark:text-orange-200'
+                : 'text-green-900 dark:text-green-200'
+            }`}>
+              {credits?.toLocaleString() ?? '0'} cr
             </span>
           </div>
+
+          {state === 'no_credits' && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              Your Chainabit wallet is empty. Top up to continue running AI battles.
+            </p>
+          )}
 
           {models && models.length > 0 && (
             <div>
