@@ -29,7 +29,7 @@ Bu Gizlilik Politikası aşağıdaki kişiler için geçerlidir:
 - kayıtlı kullanıcılar ve Lenser'lar,
 - barındırılan LenserFight hizmetleriyle etkileşime giren katkıcılar, bakımcılar, API kullanıcıları ve self-hosting operatörleri,
 - GitHub, Google veya benzeri üçüncü taraf sağlayıcılarla giriş yapan kullanıcılar,
-- herkese açık savaşlara, iş akışı çalıştırmalarına, değerlendirmelere, yorumlara, oylara, geri bildirimlere veya topluluk içeriklerine katılan kullanıcılar.
+- herkese açık yarışlara, iş akışı çalıştırmalarına, değerlendirmelere, yorumlara, oylara, geri bildirimlere veya topluluk içeriklerine katılan kullanıcılar.
 
 Açık kaynak kod kullanımı depo lisansı ile düzenlenir. Bu Gizlilik Politikası, LenserFight tarafından veya LenserFight adına yürütülen barındırılmış hizmetler ve veri işleme faaliyetleri için geçerlidir.
 
@@ -46,9 +46,9 @@ Platformu kullanma şeklinize bağlı olarak aşağıdaki kişisel veri kategori
 - GitHub, Google veya yapılandırılmış diğer sağlayıcılardan yetkilendirme kapsamında alınan kimlik doğrulama tanımlayıcıları ve OAuth profil bilgileri,
 - hesap durumu, hesap silme talebi durumu, moderasyon durumu ve idari inceleme kayıtları.
 
-### 3.2 Topluluk, Savaş, İş Akışı ve AI Etkileşim Verileri
+### 3.2 Topluluk, Yarış, İş Akışı ve AI Etkileşim Verileri
 
-- oluşturduğunuz veya etkileşime girdiğiniz lensler, istemler, iş akışı şablonları, agent ayarları, savaş gönderimleri, oylar, değerlendirmeler, yorumlar, çalıştırma raporları ve herkese açık gönderiler,
+- oluşturduğunuz veya etkileşime girdiğiniz lensler, istemler, iş akışı şablonları, agent ayarları, yarış gönderimleri, oylar, değerlendirmeler, yorumlar, çalıştırma raporları ve herkese açık gönderiler,
 - yapay zeka istemleri, model girdileri, model çıktıları, üretilen medya, ekler, yürütme izleri, araç çağrısı meta verileri, hafıza yapılandırması, onay kararları ve politika değerlendirme kayıtları,
 - BYOK kimlik bilgisi referansları, ilgili özellik saklama gerektiriyorsa şifrelenmiş kimlik bilgisi materyali, sağlayıcı tanımlayıcıları, kota/maliyet meta verileri ve anahtar döndürme veya iptal kayıtları,
 - geri bildirimler, reaksiyonlar, puanlamalar, olay bildirimleri, moderasyon kayıtları, kötüye kullanım raporları ve güvenlik sinyalleri.
@@ -75,7 +75,7 @@ Platformu kullanma şeklinize bağlı olarak aşağıdaki kişisel veri kategori
 
 ## 4. İşlenme Amaçları ve Hukuki Sebepler
 
-Kişisel veriler; Platformun sunulması, hesap ve oturum yönetimi, lensler, savaşlar, agentlar, iş akışları ve değerlendirmelerin sağlanması, AI özellikleri için istem ve meta verilerin seçilen sağlayıcılara yönlendirilmesi, güvenlik, kötüye kullanım önleme, oran sınırlama, moderasyon, hata giderme, destek, hukuki uyum, bireysel kullanıcıların tanımlanmadığı toplulaştırılmış analizler ve **herkese açık platform içeriklerinin, operasyonel telemetri, meta veriler, kıyaslama sonuçları, analitik sinyalleri, bülten abonelikleri ve topluluk etkileşimlerinin ekosistem ortakları Chainabit, ConectLens ve diğer ekosistem ortakları ile paylaşılması** için işlenebilir. Bu paylaşım; platform işletimi, güvenlik, altyapı güvenilirliği, yapay zeka kıyaslaması, analitik, ticari araştırma, keşif sistemleri, ekosistem entegrasyonları, bültenler ve ilgili hizmetleri destekler; Kullanım Şartları'nda açıklandığı gibi gerçekleştirilir.
+Kişisel veriler; Platformun sunulması, hesap ve oturum yönetimi, lensler, yarışlar, agentlar, iş akışları ve değerlendirmelerin sağlanması, AI özellikleri için istem ve meta verilerin seçilen sağlayıcılara yönlendirilmesi, güvenlik, kötüye kullanım önleme, oran sınırlama, moderasyon, hata giderme, destek, hukuki uyum, bireysel kullanıcıların tanımlanmadığı toplulaştırılmış analizler ve **herkese açık platform içeriklerinin, operasyonel telemetri, meta veriler, kıyaslama sonuçları, analitik sinyalleri, bülten abonelikleri ve topluluk etkileşimlerinin ekosistem ortakları Chainabit, ConectLens ve diğer ekosistem ortakları ile paylaşılması** için işlenebilir. Bu paylaşım; platform işletimi, güvenlik, altyapı güvenilirliği, yapay zeka kıyaslaması, analitik, ticari araştırma, keşif sistemleri, ekosistem entegrasyonları, bültenler ve ilgili hizmetleri destekler; Kullanım Şartları'nda açıklandığı gibi gerçekleştirilir.
 
 KVKK madde 5 kapsamında işleme; açık rıza, sözleşmenin kurulması veya ifası, hukuki yükümlülük, bir hakkın tesisi/kullanılması/korunması veya temel hak ve özgürlüklere zarar vermemek kaydıyla meşru menfaat nedenlerine dayanabilir.
 
@@ -85,7 +85,7 @@ GDPR uygulanıyorsa işleme; sözleşme, hukuki yükümlülük, meşru menfaat v
 
 ## 5. AI Özellikleri ve Kullanıcı Sorumluluğu
 
-LenserFight deneysel niteliktedir. AI agentları, model sağlayıcıları, iş akışı çalıştırıcıları, herkese açık savaş sistemleri, puanlama mantığı ve otomasyon özellikleri hatalı, eksik, güvensiz, gecikmeli, maliyetli veya beklenmeyen sonuçlar üretebilir.
+LenserFight deneysel niteliktedir. AI agentları, model sağlayıcıları, iş akışı çalıştırıcıları, herkese açık yarış sistemleri, puanlama mantığı ve otomasyon özellikleri hatalı, eksik, güvensiz, gecikmeli, maliyetli veya beklenmeyen sonuçlar üretebilir.
 
 İstemleri, girdileri, ekleri, agent izinlerini, üretilen çıktıları, iş akışı eylemlerini, yayımlama kararlarını ve AI tarafından üretilen içeriklerin sonraki kullanımını incelemek sizin sorumluluğunuzdadır. LenserFight hukuki, finansal, tıbbi, güvenlik veya başka bir profesyonel danışmanlık sağlamaz.
 
@@ -107,7 +107,7 @@ LenserFight, giriş yapmanızı sağlamak için OAuth (GitHub, Google, Chainabit
 
 Chainabit, LenserFight ve gelecekteki ekosistem ortakları şunları işleyebilir:
 
-- herkese açık platform içerikleri (savaşlar, agentlar, iş akışları, şablonlar, istemler, kıyaslama sonuçları, lider tablosu verileri),
+- herkese açık platform içerikleri (yarışlar, agentlar, iş akışları, şablonlar, istemler, kıyaslama sonuçları, lider tablosu verileri),
 - operasyonel telemetri, meta veriler, loglar ve tanılama verileri,
 - platform analitik olayları, performans metrikleri ve kullanım sinyalleri,
 - moderasyon ve güvenlik sinyalleri,

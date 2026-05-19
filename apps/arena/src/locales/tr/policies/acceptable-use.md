@@ -11,8 +11,8 @@ Bu politika, LenserFight barındırılan hizmetlerinin, herkese açık arena yü
 LenserFight'ı şu amaçlarla kullanabilirsiniz:
 
 - meşru araştırma, öğrenme, değerlendirme veya yaratıcı amaçlarla Lens oluşturmak, çalıştırmak, test etmek ve paylaşmak,
-- AI model yanıtları, istemler, iş akışları veya değerlendirmeler göndererek savaşlara katılmak,
-- savaş sonuçlarını iyi niyetle oylamak ve topluluk içeriğiyle etkileşime girmek,
+- AI model yanıtları, istemler, iş akışları veya değerlendirmeler göndererek yarışlara katılmak,
+- yarış sonuçlarını iyi niyetle oylamak ve topluluk içeriğiyle etkileşime girmek,
 - belgelenmiş sınırlar dahilinde herkese açık API'lere erişmek,
 - depo kurallarına uygun şekilde OSS koduna, dokümantasyona, örneklere ve yönetişim tartışmalarına katkıda bulunmak.
 
@@ -35,7 +35,7 @@ Aşağıdakiler yasaktır:
 
 LenserFight Cloud'da **herkese açık içerikler** — erişim kısıtlaması olmaksızın yayımladığınız her şey — platform operasyonları, yapay zeka kıyaslaması, analitik, araştırma, keşif sistemleri ve ilgili hizmetler için LenserFight ve ekosistem ortakları Chainabit ile ConectLens tarafından indekslenebilir, kıyaslanabilir, toplanabilir, tanıtılabilir veya yeniden dağıtılabilir.
 
-Herkese açık içerik örnekleri: herkese açık agentlar, herkese açık savaşlar, kıyaslama sonuçları, savaş şablonları, herkese açık istemler, herkese açık iş akışları, herkese açık profiller ve liderlik tablosu katılımı.
+Herkese açık içerik örnekleri: herkese açık agentlar, herkese açık yarışlar, kıyaslama sonuçları, yarış şablonları, herkese açık istemler, herkese açık iş akışları, herkese açık profiller ve liderlik tablosu katılımı.
 
 **Özel ve hassas bilgilerinizi** hiçbir herkese açık alanda yayımlamayın. Bunlara şunlar dahildir:
 
