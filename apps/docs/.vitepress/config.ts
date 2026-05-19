@@ -704,10 +704,9 @@ export default defineConfig({
 
   // ── i18n Locales ────────────────────────────────────────────────────────────
   locales: {
-    en: {
+    root: {
       label: 'English',
       lang: 'en',
-      link: '/en/',
     },
     tr: {
       label: 'Türkçe ✏️',

@@ -5,15 +5,13 @@ import { ErrorProvider, GlobalErrorRenderer, ErrorClearer } from '@lenserfight/s
 import {
   LocaleGuard,
   NotFoundRedirect,
-  detectLocale,
 } from '@lenserfight/shared/i18n-routing'
-import { Loader } from '@lenserfight/ui/feedback'
 import { ScrollToTop } from '@lenserfight/ui/layout'
 import { ThemeProvider } from '@lenserfight/ui/theme'
 import { QueryClientProvider } from '@tanstack/react-query'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { HelmetProvider } from 'react-helmet-async'
-import { Routes, Route, Navigate, BrowserRouter, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom'
 
 import { LandLayout } from './layouts/LandLayout'
 import { PolicyLayoutWrapper } from './layouts/PolicyLayoutWrapper'
@@ -32,20 +30,6 @@ import { MobileComingSoonPage } from './pages/MobileComingSoonPage'
 import { BattleShowcasePage } from './pages/BattleShowcasePage'
 import { RouteSEO } from './seo/RouteSEO'
 
-function RootRedirect() {
-  const location = useLocation()
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    const locale = detectLocale()
-    const path = location.pathname === '/' ? '' : location.pathname
-    const target = `/${locale}${path}${location.search ?? ''}${location.hash ?? ''}`
-    navigate(target, { replace: true })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  return <Loader variant="overlay" />
-}
 
 const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
 const ARENA_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
@@ -129,8 +113,10 @@ const App: React.FC = () => {
                         <Route path="*" element={<NotFoundRedirect />} />
                       </Route>
 
-                      {/* Bare paths — show branded loader, then redirect to /<detected>/<path> */}
-                      <Route path="*" element={<RootRedirect />} />
+                      {/* Root — render English home directly, no redirect */}
+                      <Route path="/" element={<LandLayout />}>
+                        <Route index element={<LandHomePage />} />
+                      </Route>
                     </Routes>
                   </GlobalErrorRenderer>
                 </AnalyticsProvider>
