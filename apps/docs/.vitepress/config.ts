@@ -595,7 +595,7 @@ export default defineConfig({
     // ── Feed autodiscovery ──────────────────────────────────────────────────
     ['link', { rel: 'alternate', type: 'application/rss+xml', title: `${SITE_TITLE} Changelog`, href: `${DOCS_HOST}/feed.xml` }],
     // ── GA4 (production only — injected at build time via env) ─────────────────
-    ...(process.env['NODE_ENV'] === 'production' && process.env['GA_MEASUREMENT_ID']
+    ...(process.env['ENV_MODE'] === 'production' && process.env['GA_MEASUREMENT_ID']
       ? ([
           ['script', { async: '', src: `https://www.googletagmanager.com/gtag/js?id=${process.env['GA_MEASUREMENT_ID']}` }],
           [
