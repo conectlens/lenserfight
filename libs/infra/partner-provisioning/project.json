@@ -8,5 +8,13 @@
     "scope:public",
     "license:oss"
   ],
-  "targets": {}
+  "targets": {
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../../coverage/libs/infra/partner-provisioning"
+      }
+    }
+  }
 }
