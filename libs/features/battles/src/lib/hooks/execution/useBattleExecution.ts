@@ -8,7 +8,7 @@
  *  4. abort      — stop both streams, log cancellation
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { lensesService, battleExecutionService } from '@lenserfight/data/repositories'
+import { lensesService, battleExecutionRepository } from '@lenserfight/data/repositories'
 import { renderLensWithSnapshot } from '@lenserfight/utils/text'
 
 import type {
@@ -90,7 +90,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
     setPhase('finalizing')
     try {
       // Log events
-      await battleExecutionService.insertBattleEvent(
+      await battleExecutionRepository.insertBattleEvent(
         battle.id,
         'execution_completed',
         currentUserId,
@@ -109,7 +109,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
       // Save stream recordings for replay
       if (contenderA && streamA.events.length > 0) {
         const lastEvent = streamA.events[streamA.events.length - 1]
-        await battleExecutionService.saveStreamRecording(
+        await battleExecutionRepository.saveStreamRecording(
           battle.id,
           contenderA.id,
           'A',
@@ -121,7 +121,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
       }
       if (contenderB && streamB.events.length > 0) {
         const lastEvent = streamB.events[streamB.events.length - 1]
-        await battleExecutionService.saveStreamRecording(
+        await battleExecutionRepository.saveStreamRecording(
           battle.id,
           contenderB.id,
           'B',
@@ -133,7 +133,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
       }
 
       // Transition battle to voting
-      await battleExecutionService.transitionBattleStatus(battle.id, 'voting')
+      await battleExecutionRepository.transitionBattleStatus(battle.id, 'voting')
       setPhase('complete')
     } catch {
       setPhase('failed')
@@ -148,8 +148,8 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
     try {
       // 1. Fetch execution configs
       const [configA, configB] = await Promise.all([
-        battleExecutionService.getExecutionConfig(battle.id, contenderA.id),
-        battleExecutionService.getExecutionConfig(battle.id, contenderB.id),
+        battleExecutionRepository.getExecutionConfig(battle.id, contenderA.id),
+        battleExecutionRepository.getExecutionConfig(battle.id, contenderB.id),
       ])
 
       if (!configA || !configB) {
@@ -209,8 +209,8 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
       )
 
       // 4. Transition battle to executing
-      await battleExecutionService.transitionBattleStatus(battle.id, 'executing')
-      await battleExecutionService.insertBattleEvent(
+      await battleExecutionRepository.transitionBattleStatus(battle.id, 'executing')
+      await battleExecutionRepository.insertBattleEvent(
         battle.id,
         'execution_started',
         currentUserId,
@@ -246,7 +246,7 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
       await Promise.all([streamA.start(execConfigA), streamB.start(execConfigB)])
     } catch (err) {
       setPhase('failed')
-      await battleExecutionService.insertBattleEvent(
+      await battleExecutionRepository.insertBattleEvent(
         battle.id,
         'execution_failed',
         currentUserId,
@@ -260,11 +260,11 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
     streamB.abort()
     setPhase('failed')
     if (battle && currentUserId) {
-      battleExecutionService
+      battleExecutionRepository
         .insertBattleEvent(battle.id, 'execution_aborted', currentUserId)
         .catch(() => {})
       // Revert to open status
-      battleExecutionService
+      battleExecutionRepository
         .transitionBattleStatus(battle.id, 'open')
         .catch(() => {})
     }
