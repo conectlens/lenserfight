@@ -125,9 +125,10 @@ seeds/47_chainabit_productivity_templates.sql
 seeds/48_workflow_templates.sql
 seeds/50_lenser_design_workflows.sql
 
-# ── [14] XP season definitions (S1–S9 slugs and date ranges only — no XP credited)
-#    Seasons need to exist so the cron that marks is_active can run correctly
-#    on first boot and so the UI can display the current season name.
+# ── [14] XP season — current season only (S9, is_active=true)
+#    Only the active season is seeded. Past seasons S1–S8 are excluded:
+#    there is no historical XP to display for them and seeding empty past
+#    seasons creates misleading leaderboard periods with zero activity.
 #    48_xp_season_v2_metadata.sql is EXCLUDED because it backdates badges based
 #    on synthetic xp.totals rows that do not exist in this manifest.
 seeds/30_scale_xp_seasons_only.sql
