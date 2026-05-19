@@ -159,45 +159,26 @@ If you used Local Keys before this version, the old IndexedDB database (`lenserf
 
 ---
 
-## Cloud BYOK in local development
+## Cloud BYOK key decryption
 
-Cloud BYOK keys are stored in Supabase Vault and decrypted server-side at execution time. In local development the execute-stream edge function is not available, so there is a dev-only escape hatch: `fn_get_my_key_secret`, a Postgres RPC that decrypts a caller-owned vault key and returns the plaintext to the browser.
+Cloud BYOK keys are stored in Supabase Vault and decrypted server-side via `fn_get_my_key_secret`, a Postgres RPC that returns the plaintext to the authenticated browser client. The function works in both local and cloud Supabase environments.
 
-### Why it is disabled by default
+### Security model
 
-The function exposes raw API key material over PostgREST. Shipping it enabled would mean any accidental connection to a non-local Supabase (staging, prod) would allow any authenticated user to extract other users' secrets. To prevent this:
+Access is controlled by two server-side guards enforced inside the function:
 
-- **Server-side gate:** The function raises `42501 insufficient_privilege` unless the Postgres GUC `app.allow_dev_byok_resolver` is explicitly set to `'true'` on the database. This GUC is never set in staging or production.
-- **Client-side gate:** `walletApiClient.resolveByokKeyForLocalDev()` throws immediately if `import.meta.env.DEV` is false, so the call is tree-shaken out of production builds entirely.
+- **Ownership check:** `lenser_id` must match the authenticated caller — you can only decrypt your own keys.
+- **Active-only:** revoked or inactive keys (`is_active = false`) are rejected before any vault lookup.
 
-Both gates must pass. The server-side gate is the authoritative security boundary.
-
-### Enabling it locally
-
-Run once after `pnpm supabase start` (or after any `db reset`):
-
-```bash
-pnpm supabase:enable-byok-resolver
-# or directly:
-bash scripts/enable-byok-dev-resolver.sh
-```
-
-The script connects to the running Supabase container as `supabase_admin` (the only role that can set database-level GUCs) and runs:
-
-```sql
-ALTER DATABASE postgres SET "app.allow_dev_byok_resolver" = 'true';
-SELECT pg_reload_conf();
-```
-
-The setting persists until the DB is dropped — you do not need to re-run it between server restarts, only after `supabase stop --no-backup` or `pnpm supabase db reset`.
+The function is granted only to the `authenticated` role — anonymous callers cannot reach it.
 
 ### Error reference
 
 | Error | Code | Cause | Fix |
 |---|---|---|---|
-| `fn_get_my_key_secret is disabled in this environment` | `42501` | GUC not set | Run `pnpm supabase:enable-byok-resolver` |
 | `Key not found, revoked, or not owned by caller` | `P0001` | Wrong `key_id` or key revoked | Check `ai.keys` table for an active key owned by the current user |
 | `Failed to decrypt key from vault` | `P0001` | Vault entry missing | Re-add the key via Settings → BYOK |
+| `Unauthenticated: no lenser profile found` | `P0001` | No authenticated lenser session | Sign in before calling the function |
 
 ---
 

@@ -116,8 +116,8 @@ const create = defineCommand({
       consola.info('Status: %s', battle['status'])
       consola.info('')
       consola.info('Next steps:')
-      consola.info('  lf battle open %s         — open for entries', battle['id'])
-      consola.info('  lf battle invite %s --email <email>', battle['id'])
+      consola.info('  lf battle open %s              — open for entries', battle['id'])
+      consola.info('  lf invite create --battle %s   — create an invite link', battle['id'])
       consola.info('  lf battle view %s', battle['id'])
     } catch (err) {
       handleError(err)

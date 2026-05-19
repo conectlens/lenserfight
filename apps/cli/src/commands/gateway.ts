@@ -382,7 +382,7 @@ const doctor = defineCommand({
         } else if (check === 'identity') {
           const secret = await keychain.getSecret({ service: KEYCHAIN_SERVICE, account: KEYCHAIN_ACCOUNT });
           if (!secret) {
-            results.push({ id: 'identity', status: 'fail', message: 'no Ed25519 key — run `lf-gateway-init`' });
+            results.push({ id: 'identity', status: 'fail', message: 'no Ed25519 key — run `lf gateway identity rotate`' });
           } else {
             results.push({ id: 'identity', status: 'pass', message: 'Ed25519 key present in keychain' });
           }
@@ -482,7 +482,7 @@ const identity = defineCommand({
             return;
           }
           if (!present) {
-            consola.warn('No Ed25519 keypair present. Run `lf gateway init` to generate one.');
+            consola.warn('No Ed25519 keypair present. Run `lf gateway identity rotate` to generate one.');
             return;
           }
           consola.success('Identity present');
@@ -507,6 +507,19 @@ const identity = defineCommand({
         }
       },
     }),
+    init: defineCommand({
+      meta: { name: 'init', description: 'Generate an Ed25519 keypair for this device (alias for `identity rotate`).' },
+      async run() {
+        try {
+          const { publicKey, privateKey } = generateEd25519Keypair();
+          await keychain.setSecret({ service: KEYCHAIN_SERVICE, account: KEYCHAIN_ACCOUNT, secret: privateKey });
+          consola.success('Ed25519 keypair generated.');
+          consola.info('Register the public key with the cloud: %s', publicKey);
+        } catch (err) {
+          handleError(err);
+        }
+      },
+    }),
     'export-public': defineCommand({
       meta: { name: 'export-public', description: 'Print the device public key (safe to share).' },
       args: { json: { type: 'boolean', default: false, description: 'Output JSON' } },
@@ -514,7 +527,7 @@ const identity = defineCommand({
         try {
           const identityFile = path.join(homedir(), '.lenserfight', 'gateway', 'identity.json');
           if (!existsSync(identityFile)) {
-            consola.warn('identity.json not found. Run `lf-gateway-init`.');
+            consola.warn('identity.json not found. Run `lf gateway identity rotate`.');
             process.exit(1);
           }
           const meta = JSON.parse(readFileSync(identityFile, 'utf-8'));

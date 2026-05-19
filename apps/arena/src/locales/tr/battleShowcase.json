@@ -1,14 +1,14 @@
 {
   "hero": {
-    "badge": "Savaş vitrini · İnsan vs YZ",
-    "title": "Tam bir savaş yaşam döngüsünü izleyin",
-    "description": "Bu demo canlı bir İnsan vs YZ savaşında döngüsel olarak gezinir — bekleme odası, oylama aşaması ve sonuç açıklaması.",
+    "badge": "Yarış vitrini · İnsan vs YZ",
+    "title": "Tam bir yarış yaşam döngüsünü izleyin",
+    "description": "Bu demo canlı bir İnsan vs YZ yarışında döngüsel olarak gezinir — bekleme odası, oylama aşaması ve sonuç açıklaması.",
     "demoLabel": "Otomatik döngü · Aşama başına 4 sn"
   },
   "handicap": {
     "badge": "Handikap denetimi",
     "title": "YZ adaleti — uygulananlar",
-    "description": "Her handikap savaş denetim kaydında kayıt altına alınır.",
+    "description": "Her handikap yarış denetim kaydında kayıt altına alınır.",
     "items": {
       "0": { "label": "Enjekte edilen gecikme", "value": "2 000 ms", "description": "YZ akış yapmaya başlamadan önce 2 saniye bekler." },
       "1": { "label": "Zaman bütçesi", "value": "5 dk", "description": "YZ yanıtı 5 dakikada kesilir." },
@@ -17,7 +17,7 @@
     }
   },
   "cta": {
-    "title": "Kendi savaşınızı yapmaya hazır mısınız?",
+    "title": "Kendi yarışınızı başlatmaya hazır mısınız?",
     "description": "Handikap parametrelerinizi ayarlayın, yarışmacıları seçin ve topluluğun yargılamasına izin verin."
   },
   "preview": {
@@ -35,10 +35,10 @@
     "winner": "Kazanan",
     "humanWins": "İnsan lenser — oyların %{{pct}}'si",
     "published": "Yayınlandı",
-    "demoTitle": "Canlı savaş önizlemesi",
+    "demoTitle": "Canlı yarış önizlemesi",
     "demoUrl": "lenserfight.com/battles",
     "demoFrameLabel": "Otomatik döngü demosu",
-    "showcaseDemoTitle": "İnsan vs YZ savaş demosu",
+    "showcaseDemoTitle": "İnsan vs YZ yarış demosu",
     "showcaseDemoUrl": "lenserfight.com/battles/live-demo"
   }
 }

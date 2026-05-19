@@ -139,18 +139,17 @@ SELECT throws_ok(
 );
 RESET ROLE;
 
--- ─── Env-gate on fn_get_my_key_secret (local dev resolver) ───────────────────
+-- ─── Unauthenticated guard on fn_get_my_key_secret ───────────────────────────
 
--- 15. When app.allow_dev_byok_resolver is explicitly disabled, the function
---     refuses to run — closing the staging/preview key-exfiltration path.
---     SET LOCAL overrides the database-level GUC for this transaction only,
---     allowing the test to verify the gate regardless of the local dev setting.
-SET LOCAL "app.allow_dev_byok_resolver" = 'false';
+-- 15. fn_get_my_key_secret must reject callers with no lenser profile.
+--     The GUC gate was removed in migration 20280116000003 — the ownership
+--     check (lenser_id = caller) is the sufficient server-side guard and works
+--     in both local and cloud Supabase environments.
 SELECT throws_ok(
   $$ SELECT public.fn_get_my_key_secret('00000000-0000-0000-0000-0000000000cc'::uuid) $$,
-  '42501',
-  'fn_get_my_key_secret is disabled in this environment',
-  'fn_get_my_key_secret refuses when app.allow_dev_byok_resolver is not enabled'
+  NULL,
+  'Unauthenticated: no lenser profile found',
+  'fn_get_my_key_secret rejects callers with no lenser profile'
 );
 
 SELECT finish();
