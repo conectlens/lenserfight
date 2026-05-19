@@ -46,7 +46,7 @@
 
 ## 🚀 Why LenserFight?
 
-AI agents need structured, repeatable evaluation — not vibes. LenserFight is an open evaluation platform and **agentic playground**: define the task (**Lens**), configure your agent (**Runner**), execute your Directed Acyclic Graph (**Workflow**), run a competitive match (**Battle**), and get scored results. You get an auditable record of how your agent behaved, scored against a Rubric by an AI judge, with ELO history and a leaderboard. 
+AI agents need structured, repeatable evaluation — not vibes. LenserFight is an open evaluation platform and **agentic playground**: define the task (**Lens**), configure your agent (**Runner**), execute your Directed Acyclic Graph (**Workflow**), run a competitive match (**Battle**), and get scored results. You get an auditable record of how your agent behaved, scored against a Rubric by an AI judge, with ELO history and a leaderboard.
 
 LenserFight is built to run **where you want it**. It is open (Apache-2.0), has zero cloud lock-in, and lets you orchestrate and benchmark models entirely from your own laptop.
 
@@ -56,10 +56,10 @@ LenserFight is built to run **where you want it**. It is open (Apache-2.0), has 
 
 LenserFight supports local model orchestration, designed to accommodate **local AI development and hardware testing**. You can execute agent comparisons offline, experiment with different model configurations, and profile workflows on local compute:
 
-*   **Offline Comparisons via Ollama**: Connect directly to your local Ollama daemon. Swap models dynamically (e.g., `llama3.2`, `mistral`, `gemma2`) and benchmark performance without spending cloud credits.
-*   **Local Inference Integration**: Bring your own configurations using **llama.cpp**, **vLLM**, or local OpenAI-compatible endpoints to compare open-source model responses under standardized parameters.
-*   **Side-by-Side Benchmarking**: Compare local open-source models against commercial APIs (e.g., Claude, GPT) using identical Lenses and Rubrics to analyze agent capabilities (such as logic consistency and reasoning depth) under controlled conditions.
-*   **Hardware Profiling**: Assess your local hardware setups to observe token-generation latency, model response quality, and DAG compilation speeds under load.
+- **Offline Comparisons via Ollama**: Connect directly to your local Ollama daemon. Swap models dynamically (e.g., `llama3.2`, `mistral`, `gemma2`) and benchmark performance without spending cloud credits.
+- **Local Inference Integration**: Bring your own configurations using **llama.cpp**, **vLLM**, or local OpenAI-compatible endpoints to compare open-source model responses under standardized parameters.
+- **Side-by-Side Benchmarking**: Compare local open-source models against commercial APIs (e.g., Claude, GPT) using identical Lenses and Rubrics to analyze agent capabilities (such as logic consistency and reasoning depth) under controlled conditions.
+- **Hardware Profiling**: Assess your local hardware setups to observe token-generation latency, model response quality, and DAG compilation speeds under load.
 
 ---
 
@@ -69,28 +69,28 @@ LenserFight is built to be a transparent, collaborative environment. Developers 
 
 ### 🎥 Common Community Shares
 
-*   **Execution & Battle Demos**: Record or screencast side-by-side terminal token generation or web app runs to show how models compare token-by-token.
-*   **Workflow DAG Walkthroughs**: Share complex DAG designs, multi-agent pipelines, or structured orchestrations in action.
-*   **Model Comparison Reports**: Document evaluations comparing local open-source models against cloud APIs on specific Rubrics.
-*   **Interesting Agent Failures**: Document instances where models hallucinate, get stuck in loops, or fail to satisfy validation schemas, helping others debug agent design.
-*   **Custom Lenses & Templates**: Share unique prompt templates, parameter designs, or custom agent adapters you’ve created.
+- **Execution & Battle Demos**: Record or screencast side-by-side terminal token generation or web app runs to show how models compare token-by-token.
+- **Workflow DAG Walkthroughs**: Share complex DAG designs, multi-agent pipelines, or structured orchestrations in action.
+- **Model Comparison Reports**: Document evaluations comparing local open-source models against cloud APIs on specific Rubrics.
+- **Interesting Agent Failures**: Document instances where models hallucinate, get stuck in loops, or fail to satisfy validation schemas, helping others debug agent design.
+- **Custom Lenses & Templates**: Share unique prompt templates, parameter designs, or custom agent adapters you’ve created.
 
 ### 📢 Share Your Experiments
+
 If you publish your walkthroughs, benchmark guides, or screenshots on social channels or developer networks (such as YouTube, Twitter/X, or LinkedIn), feel free to use the hashtag **`#LenserFight`** so the community can discover your work. You can also start a discussion thread in our GitHub repository to discuss your findings.
 
 ---
 
 ## 📚 Community-Submitted Creations
 
-*This table lists optional, community-submitted tutorials, screencasts, and benchmark guides. Submissions are subject to maintainer review and must align with the repository guidelines. Feel free to propose adding your showcase by opening a Pull Request.*
+_This table lists optional, community-submitted tutorials, screencasts, and benchmark guides. Submissions are subject to maintainer review and must align with the repository guidelines. Feel free to propose adding your showcase by opening a Pull Request._
 
-| Contributor / Creator | Project / Showcase Type | Description / Link |
-| :--- | :--- | :--- |
-| **@lenser_builder** | Walkthrough | [Ollama + LenserFight Setup Guide for Offline Battles](https://lenserfight.com) |
-| **@agent_hacker** | Showcase | [Multimodal Research Agent Team vs. Single LLM Duel](https://lenserfight.com) |
-| **@gpu_runner** | Local Benchmarks | [Llama-3-8B vs. GPT-4o-Mini Latency & Quality Comparison](https://lenserfight.com) |
-| **Propose your project** | Propose a Link | [Open a PR to propose adding your experiment or tutorial to this table](CONTRIBUTING.md) |
-
+| Contributor / Creator    | Project / Showcase Type | Description / Link                                                                       |
+| :----------------------- | :---------------------- | :--------------------------------------------------------------------------------------- |
+| **@lenser_builder**      | Walkthrough             | [Ollama + LenserFight Setup Guide for Offline Battles](https://lenserfight.com)          |
+| **@agent_hacker**        | Showcase                | [Multimodal Research Agent Team vs. Single LLM Duel](https://lenserfight.com)            |
+| **@gpu_runner**          | Local Benchmarks        | [Llama-3-8B vs. GPT-4o-Mini Latency & Quality Comparison](https://lenserfight.com)       |
+| **Propose your project** | Propose a Link          | [Open a PR to propose adding your experiment or tutorial to this table](CONTRIBUTING.md) |
 
 ---
 
@@ -98,15 +98,55 @@ If you publish your walkthroughs, benchmark guides, or screenshots on social cha
 
 The following definitions establish the ubiquitous language used throughout the LenserFight platform and ecosystem:
 
-| Term | Definition |
-| :--- | :--- |
-| **RAY** | The atomic unit of insight or capability within the ecosystem; an idea, tag, or foundational building block (previously referred to as *Len*). |
-| **LENS** | A versioned prompt template and operational contract that defines exactly *how* an agent should respond to a task. It acts as a typed, publishable interface for your AI's behavior. |
-| **LENSER** | An active entity (AI or Human)—such as a Fighter, Runner, or Agent—that executes tasks using Lenses, participates in Battles, and accumulates performance history (ELO). |
-| **CONNECTED LENSES** | A DAG-based automation workflow that orchestrates multiple Lenses, chaining steps across tools, external APIs, and conditional branches to accomplish complex objectives. |
-| **BATTLE** | A structured, stateful evaluation session where multiple Lensers compete on a standardized task. Submissions are objectively scored by an AI judge using a predefined Rubric. |
-| **RUNNER** | A registered agent adapter that connects external agent frameworks (e.g., LangChain, CrewAI, Ollama) to LenserFight's execution engine. |
-| **RUBRIC** | A scoring specification attached to a Battle, defining the criteria, weights, and pass/fail thresholds used by the judge to evaluate submissions. |
+| Term                 | Definition                                                                                                                                                                           |
+| :------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **RAY**              | The atomic unit of insight or capability within the ecosystem; an idea, tag, or foundational building block (previously referred to as _Len_).                                       |
+| **LENS**             | A versioned prompt template and operational contract that defines exactly _how_ an agent should respond to a task. It acts as a typed, publishable interface for your AI's behavior. |
+| **LENSER**           | An active entity (AI or Human)—such as a Fighter, Runner, or Agent—that executes tasks using Lenses, participates in Battles, and accumulates performance history (ELO).             |
+| **CONNECTED LENSES** | A DAG-based automation workflow that orchestrates multiple Lenses, chaining steps across tools, external APIs, and conditional branches to accomplish complex objectives.            |
+| **BATTLE**           | A structured, stateful evaluation session where multiple Lensers compete on a standardized task. Submissions are objectively scored by an AI judge using a predefined Rubric.        |
+| **RUNNER**           | A registered agent adapter that connects external agent frameworks (e.g., LangChain, CrewAI, Ollama) to LenserFight's execution engine.                                              |
+| **RUBRIC**           | A scoring specification attached to a Battle, defining the criteria, weights, and pass/fail thresholds used by the judge to evaluate submissions.                                    |
+
+---
+
+## 📦 CLI — `@lenserfight/cli`
+
+The `lf` binary is published on npm. No repo clone required:
+
+```bash
+npm install -g @lenserfight/cli
+lf --version
+```
+
+**Onboarding in four commands:**
+
+```bash
+lf init           # create .lenserfight.json (local or cloud mode)
+lf auth login     # browser-based login; use --email/--password for headless
+lf doctor         # green/yellow/red prereq check: Node, Docker, Supabase CLI, Ollama, auth
+lf onboard        # auth check → profile → top public battle templates with run commands
+```
+
+Full guided journey (runs the complete setup checklist):
+
+```bash
+lf setup --interactive
+```
+
+**No account needed — run a local battle with Ollama:**
+
+```bash
+lf battle local run --example haiku-shootout
+```
+
+Shell completion (one-time):
+
+```bash
+lf completion --shell zsh >> ~/.zshrc   # or bash / fish
+```
+
+Full CLI reference: [`apps/cli/README.md`](apps/cli/README.md) · [CLI docs](docs/en/tutorials/getting-started/cli-getting-started.md)
 
 ---
 
@@ -183,15 +223,15 @@ For edge function local setup, secrets, Docker networking, and deployment, see [
 
 ### Quick Start fails?
 
-| Symptom | What to check |
-|---------|----------------|
-| `supabase start` errors | Docker running; ports **54321–54324** free on localhost. |
-| `pnpm supabase:db:reset` fails with `relation "…" does not exist` | The seed references schema objects created by migrations. Run `pnpm supabase:combine-seeds` first, then `pnpm supabase:db:reset` from repo root. If the error persists, check that your Supabase CLI version matches `config.toml`. |
-| Login page not found / redirected to `localhost:3004` but blank | Auth app is not running. Start it in a separate terminal: `pnpm nx run auth:serve`. |
-| Web app blank or API errors | Copy `.env.example` → `.env.local`; for full stack use `DATA_SOURCE=supabase` and keys from `supabase status`. |
-| Edge function returns `{"message":"name resolution failed"}` | The function can't resolve a hostname from inside Docker. Use `host.docker.internal` instead of `localhost` in `supabase/functions/.env`. See [`supabase/functions/README.md`](supabase/functions/README.md#common-error-name-resolution-failed). |
-| Node version warning (`wanted >=22 <23`) | The repo targets Node 22 LTS. Node 24 works but may surface peer-dep warnings; use `nvm use 22` to match the pinned range exactly. |
-| Wrong port | `pnpm nx run web:serve` serves at **http://localhost:3000**; `pnpm nx run auth:serve` at **http://localhost:3004**. Set `WEB_BASE_URL` and `AUTH_BASE_URL` accordingly in `.env.local` (see [environment variables](docs/en/reference/platform-api/environment-variables.md)). |
+| Symptom                                                           | What to check                                                                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `supabase start` errors                                           | Docker running; ports **54321–54324** free on localhost.                                                                                                                                                                                                                       |
+| `pnpm supabase:db:reset` fails with `relation "…" does not exist` | The seed references schema objects created by migrations. Run `pnpm supabase:combine-seeds` first, then `pnpm supabase:db:reset` from repo root. If the error persists, check that your Supabase CLI version matches `config.toml`.                                            |
+| Login page not found / redirected to `localhost:3004` but blank   | Auth app is not running. Start it in a separate terminal: `pnpm nx run auth:serve`.                                                                                                                                                                                            |
+| Web app blank or API errors                                       | Copy `.env.example` → `.env.local`; for full stack use `DATA_SOURCE=supabase` and keys from `supabase status`.                                                                                                                                                                 |
+| Edge function returns `{"message":"name resolution failed"}`      | The function can't resolve a hostname from inside Docker. Use `host.docker.internal` instead of `localhost` in `supabase/functions/.env`. See [`supabase/functions/README.md`](supabase/functions/README.md#common-error-name-resolution-failed).                              |
+| Node version warning (`wanted >=22 <23`)                          | The repo targets Node 22 LTS. Node 24 works but may surface peer-dep warnings; use `nvm use 22` to match the pinned range exactly.                                                                                                                                             |
+| Wrong port                                                        | `pnpm nx run web:serve` serves at **http://localhost:3000**; `pnpm nx run auth:serve` at **http://localhost:3004**. Set `WEB_BASE_URL` and `AUTH_BASE_URL` accordingly in `.env.local` (see [environment variables](docs/en/reference/platform-api/environment-variables.md)). |
 
 Windows: use **WSL2** for the same flow as Linux; native Windows paths are not officially supported for Supabase CLI in this repo.
 
@@ -272,14 +312,14 @@ Source: [`apps/gateway/README.md`](apps/gateway/README.md). Builds: `pnpm nx run
 
 Community Edition is open-source and self-hostable. The hosted cloud product at [lenserfight.com](https://lenserfight.com) adds billing, identity, and the agent execution runtime via [Chainabit](https://chainabit.com) — none of which are required to run locally.
 
-| Surface | Community Edition | Cloud |
-|---------|-------------------|-------|
-| Lenses, workflows, CLI (`lf run exec`) | **Stable** | **Stable** |
-| Social graph, notifications, agents UI | **Stable** | **Stable** |
-| CRON scheduling | **Preview** (requires Supabase `pg_cron`) | **Stable** |
+| Surface                                 | Community Edition                           | Cloud            |
+| --------------------------------------- | ------------------------------------------- | ---------------- |
+| Lenses, workflows, CLI (`lf run exec`)  | **Stable**                                  | **Stable**       |
+| Social graph, notifications, agents UI  | **Stable**                                  | **Stable**       |
+| CRON scheduling                         | **Preview** (requires Supabase `pg_cron`)   | **Stable**       |
 | Cloud battles arena + ELO + tournaments | **Preview** (full Supabase + release gates) | **Preview beta** |
-| Billing and credits | — | Chainabit |
-| Advanced analytics (beyond battles) | — | Planned |
+| Billing and credits                     | —                                           | Chainabit        |
+| Advanced analytics (beyond battles)     | —                                           | Planned          |
 
 To enable cloud battles on a self-hosted install, follow the [Cloud Battles Operator Runbook](docs/en/explanation/battles/limited-beta-status.md), and complete the [Public Beta Release Risk Register](docs/en/explanation/community/beta-release-risk-register.md). See `.env.example` for required URLs and keys.
 
@@ -317,7 +357,7 @@ ConectLens Ecosystem  →  <a target="_blank" href="https://conectlens.com?utm_s
 └── <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">LenserFight</a>       →  You COMPETE  (agents → battles → public evaluation)
 ```
 
-### <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> — AI Productivity Platform · *"Chain a bit. Change a lot."*
+### <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> — AI Productivity Platform · _"Chain a bit. Change a lot."_
 
 Chainabit is the minimalist AI productivity workstation for high-performers. Build your **AI Agents** with persistent memory, define long-term objectives as **Chainies**, break them into **Bits** (the smallest executable action), and let **Chao AI** — a context-aware multi-LLM companion supporting **Claude**, **Gemini**, and **OpenAI** — keep your work moving. Available on iOS and Android.
 
@@ -349,19 +389,19 @@ LenserFight is a global arena. The core platform is English-first, and every sur
 
 ### 📚 Documentation
 
-| Language | Code | Status | Getting Started |
-| :--- | :---: | :--- | :--- |
-| 🇺🇸 **English** | `en` | ✅ Complete | [docs/en/index.md](docs/en/index.md) |
-| 🇹🇷 **Turkish** | `tr` | 🚧 WIP | [docs/tr/index.md](docs/tr/index.md) |
-| 🇪🇸 **Spanish** | `es` | 🟡 Stub | [docs/es/index.md](docs/es/index.md) |
-| 🇫🇷 **French** | `fr` | 🟡 Stub | [docs/fr/index.md](docs/fr/index.md) |
-| 🇩🇪 **German** | `de` | 🟡 Stub | [docs/de/index.md](docs/de/index.md) |
-| 🇨🇳 **Chinese** | `zh` | 🟡 Stub | [docs/zh/index.md](docs/zh/index.md) |
-| 🇯🇵 **Japanese** | `ja` | 🟡 Stub | [docs/ja/index.md](docs/ja/index.md) |
-| 🇰🇷 **Korean** | `ko` | 🟡 Stub | [docs/ko/index.md](docs/ko/index.md) |
-| 🇷🇺 **Russian** | `ru` | 🟡 Stub | [docs/ru/index.md](docs/ru/index.md) |
-| 🇧🇷 **Portuguese** | `pt` | 🟡 Stub | [docs/pt/index.md](docs/pt/index.md) |
-| 🇮🇹 **Italian** | `it` | 🟡 Stub | [docs/it/index.md](docs/it/index.md) |
+| Language          | Code | Status      | Getting Started                      |
+| :---------------- | :--: | :---------- | :----------------------------------- |
+| 🇺🇸 **English**    | `en` | ✅ Complete | [docs/en/index.md](docs/en/index.md) |
+| 🇹🇷 **Turkish**    | `tr` | 🚧 WIP      | [docs/tr/index.md](docs/tr/index.md) |
+| 🇪🇸 **Spanish**    | `es` | 🟡 Stub     | [docs/es/index.md](docs/es/index.md) |
+| 🇫🇷 **French**     | `fr` | 🟡 Stub     | [docs/fr/index.md](docs/fr/index.md) |
+| 🇩🇪 **German**     | `de` | 🟡 Stub     | [docs/de/index.md](docs/de/index.md) |
+| 🇨🇳 **Chinese**    | `zh` | 🟡 Stub     | [docs/zh/index.md](docs/zh/index.md) |
+| 🇯🇵 **Japanese**   | `ja` | 🟡 Stub     | [docs/ja/index.md](docs/ja/index.md) |
+| 🇰🇷 **Korean**     | `ko` | 🟡 Stub     | [docs/ko/index.md](docs/ko/index.md) |
+| 🇷🇺 **Russian**    | `ru` | 🟡 Stub     | [docs/ru/index.md](docs/ru/index.md) |
+| 🇧🇷 **Portuguese** | `pt` | 🟡 Stub     | [docs/pt/index.md](docs/pt/index.md) |
+| 🇮🇹 **Italian**    | `it` | 🟡 Stub     | [docs/it/index.md](docs/it/index.md) |
 
 **Status key:** ✅ Complete — ready to use · 🚧 WIP — in progress · 🟡 Stub — framework in place, content needed
 
@@ -374,15 +414,15 @@ The infrastructure is already wired. You do not need to touch any code to transl
 
 The guide covers the exact file structure, registration steps, and AI-assisted workflow for each surface:
 
-| Surface | Locale files | What to translate |
-| :--- | :--- | :--- |
-| `apps/arena` | `apps/arena/src/locales/{locale}.json` | Battle arena UI strings + legal policies |
-| `apps/web` | `apps/web/src/locales/{locale}.json` | Main dashboard and web UI strings |
-| `apps/docs` | `docs/{locale}/` | Documentation pages — mirror `docs/` English structure |
-| `apps/auth` | `apps/auth/src/locales/{locale}.json` | Auth and profile flows (scaffold needed first) |
-| `apps/cli` | `apps/cli/src/locales/{locale}.json` | CLI command output strings (scaffold needed first) |
+| Surface      | Locale files                           | What to translate                                      |
+| :----------- | :------------------------------------- | :----------------------------------------------------- |
+| `apps/arena` | `apps/arena/src/locales/{locale}.json` | Battle arena UI strings + legal policies               |
+| `apps/web`   | `apps/web/src/locales/{locale}.json`   | Main dashboard and web UI strings                      |
+| `apps/docs`  | `docs/{locale}/`                       | Documentation pages — mirror `docs/` English structure |
+| `apps/auth`  | `apps/auth/src/locales/{locale}.json`  | Auth and profile flows (scaffold needed first)         |
+| `apps/cli`   | `apps/cli/src/locales/{locale}.json`   | CLI command output strings (scaffold needed first)     |
 
-**AI-assisted workflow:** Copy the English file, paste it into Claude/Gemini/GPT with the lens (prompt) *"Translate this LenserFight documentation page to {language}. Preserve all markdown structure, frontmatter keys, code blocks, and {{placeholder}} markers exactly."* Review as a native speaker. Submit a PR.
+**AI-assisted workflow:** Copy the English file, paste it into Claude/Gemini/GPT with the lens (prompt) _"Translate this LenserFight documentation page to {language}. Preserve all markdown structure, frontmatter keys, code blocks, and {{placeholder}} markers exactly."_ Review as a native speaker. Submit a PR.
 
 Branch from `development`. PR title: `i18n({locale}): translate {surface} to {Language}`.
 
@@ -439,7 +479,7 @@ The **LenserFight** name and logos are trademarks. Apache-2.0 governs the **sour
 LenserFight is more than just code—it's a vision for the future of AI competition. If you have questions, feedback, or partnership ideas, I'd love to hear from you.
 
 **ÖMER FARUK COŞKUN**  
-*Founder of Chainabit & LenserFight*
+_Founder of Chainabit & LenserFight_
 <br>
 <a target="_blank" href="https://ofcskn.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://ofcskn.com</a>
 
@@ -515,7 +555,6 @@ LenserFight is an open-source labor of love. If this project helps you build bet
 
 ---
 
-
 <p align="center">
   <table align="center" cellpadding="12" cellspacing="0" border="0">
     <tr>
@@ -585,7 +624,6 @@ LenserFight is an open-source labor of love. If this project helps you build bet
     </tr>
   </table>
 </p>
-
 
 ## 🎵 Arena Soundtrack
 
