@@ -65,19 +65,19 @@ BEGIN
   END IF;
 
   RETURN QUERY
-  UPDATE battles.battles
+  UPDATE battles.battles AS b
   SET
     execution_starts_at   = p_execution_starts_at,
     voting_duration_hours = COALESCE(p_voting_duration_hours, 24),
     auto_publish          = COALESCE(p_auto_publish, true)
-  WHERE id = p_battle_id
-    AND creator_lenser_id = v_lenser_id
+  WHERE b.id = p_battle_id
+    AND b.creator_lenser_id = v_lenser_id
   RETURNING
-    id, slug, title, task_prompt, status, total_vote_count, published_at,
-    voting_opens_at, voting_closes_at, battle_type, voter_eligibility, handicap_config,
-    creator_lenser_id, forum_thread_id, workflow_id, lens_id,
-    execution_starts_at, auto_publish, voting_duration_hours, vote_velocity, og_image_url,
-    winner_contender_id, parent_battle_id, deleted_at;
+    b.id, b.slug, b.title, b.task_prompt, b.status, b.total_vote_count, b.published_at,
+    b.voting_opens_at, b.voting_closes_at, b.battle_type, b.voter_eligibility, b.handicap_config,
+    b.creator_lenser_id, b.forum_thread_id, b.workflow_id, b.lens_id,
+    b.execution_starts_at, b.auto_publish, b.voting_duration_hours, b.vote_velocity, b.og_image_url,
+    b.winner_contender_id, b.parent_battle_id, b.deleted_at;
 END;
 $$;
 
