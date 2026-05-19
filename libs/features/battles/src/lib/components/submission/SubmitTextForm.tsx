@@ -43,7 +43,6 @@ export const SubmitTextForm: React.FC<SubmitTextFormProps> = ({ battleId, conten
         placeholder="Write your response to the battle prompt…"
         minRows={8}
         autoResize={false}
-        className="!bg-greyscale-900 !border-greyscale-700 !text-greyscale-50 placeholder:!text-greyscale-600 focus:!border-greyscale-500"
       />
       <div className="flex items-center justify-between gap-3">
         <span className={`text-xs ${isValid ? 'text-greyscale-500' : 'text-greyscale-600'}`}>

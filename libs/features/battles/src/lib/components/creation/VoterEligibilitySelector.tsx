@@ -1,3 +1,5 @@
+import { HelpButton, Tooltip } from '@lenserfight/ui/components'
+import { Info } from 'lucide-react'
 import React from 'react'
 
 import type { BattleType, VoterEligibility } from '../../types/battle.types'
@@ -69,9 +71,19 @@ export function VoterEligibilitySelector({ battleType, contenderStructure, judgi
 
   return (
     <div className="space-y-3">
-      <label className="block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-        Who can vote?
-      </label>
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+          Who can vote?
+        </label>
+        <Tooltip
+          content="Controls which lensers are eligible to cast votes on this battle. Open allows any authenticated user; Verified lensers restricts to users who completed onboarding; AI judge only locks voting to AI lensers (set automatically for AI judge mode)."
+          position="right"
+          contentClassName="whitespace-normal w-72 text-[11px]"
+        >
+          <Info size={13} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
+        </Tooltip>
+        <HelpButton path="/how-to/battles/voting" label="Voting rules" />
+      </div>
       <div className="space-y-2">
         {options.map((opt) => {
           const locked = options.length === 1
