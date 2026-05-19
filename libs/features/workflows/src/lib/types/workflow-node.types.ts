@@ -151,6 +151,12 @@ export interface WorkflowNodeData {
   executionStatus?: WorkflowNodeResultRecord['status'] | null
   /** Warning message — populated from output_data._dryRunWarning for mocked side-effect nodes. */
   executionWarning?: string | null
+  /**
+   * True when the "Configure Node" drawer is open for this specific node.
+   * Drives a distinct visual state on the canvas so the user always knows
+   * which node is being configured, independent of React Flow's selection.
+   */
+  isConfiguring?: boolean | null
   [key: string]: unknown
 }
 
