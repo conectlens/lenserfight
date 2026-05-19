@@ -27,6 +27,7 @@
     "supabase:combine-seeds": "bash supabase/combine-seeds.sh",
     "supabase:db:reset": "bash supabase/combine-seeds.sh && supabase db reset --local --yes",
     "supabase:db:reset:debug": "bash supabase/combine-seeds.sh && supabase db reset --local --yes --debug",
+    "supabase:db:reset:linked": "bash supabase/combine-seeds.sh && bash supabase/scripts/reset-linked.sh",
     "supabase:seed:demo": "bash scripts/seed-demo.sh",
     "supabase:local:recover": "bash scripts/supabase-local-recover.sh",
     "supabase:enable-byok-resolver": "bash scripts/enable-byok-dev-resolver.sh",
