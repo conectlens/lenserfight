@@ -110,6 +110,8 @@ export interface WorkflowNodeConfig {
   nodeType?: WorkflowNodeType
   /** Per-node AIModel.key override; falls back to run-level `defaultModelKey`. */
   modelId?: string
+  /** Static values for lens template params not wired via edges. Applied after edge resolution. */
+  param_overrides?: Record<string, string>
 }
 
 /**
@@ -1438,6 +1440,37 @@ function resolveRenderedInputs(
     rendered[label] = applyMerge(strategy, values)
   }
 
+  // Apply param_overrides — static (or upstream-ref) values set in the node
+  // config for lens params that are not wired via edges.  Applied after edge
+  // resolution so that explicit config values win over auto-wired defaults.
+  const paramOverrides = node.config?.param_overrides
+  if (paramOverrides) {
+    for (const [rawKey, value] of Object.entries(paramOverrides)) {
+      const key = rawKey.startsWith('__') ? rawKey.slice(2) : rawKey
+      if (!key) continue
+      if (typeof value === 'string') {
+        PARAM_OVERRIDE_UPSTREAM_REF_RE.lastIndex = 0
+        if (PARAM_OVERRIDE_UPSTREAM_REF_RE.test(value)) {
+          PARAM_OVERRIDE_UPSTREAM_REF_RE.lastIndex = 0
+          rendered[key] = value.replace(PARAM_OVERRIDE_UPSTREAM_REF_RE, (_match, nodeId: string, fieldPath: string) => {
+            const source = results.get(nodeId)
+            if (!source || source.status !== 'completed') return ''
+            const resolved = resolveMappedOutputValue(
+              { status: source.status, outputData: source.outputData, envelope: source.envelope },
+              fieldPath,
+            )
+            if (resolved === null || resolved === undefined) return ''
+            return typeof resolved === 'string' ? resolved : JSON.stringify(resolved)
+          })
+        } else {
+          rendered[key] = value
+        }
+      } else {
+        rendered[key] = value
+      }
+    }
+  }
+
   return rendered
 }
 
@@ -1511,6 +1544,13 @@ function replaceTokenVariants(prompt: string, rawKey: string, value: unknown): s
  * resolved OR for the corresponding contract field to be marked optional.
  */
 const UNRESOLVED_PLACEHOLDER_RE = /(?:\[\[\s*([a-z0-9_ \-]+?)\s*\]\])|(?:\{\{\s*([a-z0-9_ \-]+?)\s*\}\})|(?:\[\s+([a-z0-9_ \-]+?)\s+\])/i
+
+/**
+ * `[[nodeId.fieldPath]]` references inside `param_overrides` values — these
+ * are runtime expressions that must be resolved against upstream results before
+ * template substitution, distinct from `[[label]]` template placeholders.
+ */
+const PARAM_OVERRIDE_UPSTREAM_REF_RE = /\[\[([a-zA-Z0-9_-]+)\.([a-zA-Z0-9_.[\]]+)\]\]/g
 
 function renderPrompt(
   template: string,
