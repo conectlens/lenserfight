@@ -1,5 +1,5 @@
 import React from 'react'
-import { AlertCircle, ExternalLink, Loader2, PlugZap, Zap } from 'lucide-react'
+import { AlertCircle, ExternalLink, Loader2, LogOut, PlugZap, Zap } from 'lucide-react'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import type { ChainabitAiModel, PartnerConnectionState } from '@lenserfight/types'
 
@@ -10,7 +10,21 @@ interface ChainabitModalProps {
   credits: number | null
   models: ChainabitAiModel[] | null
   onReconnect: () => Promise<void>
+  onSignOut?: () => void
   topUpUrl: string
+}
+
+type ConnectErrorKind = 'session_expired' | 'generic'
+
+function classifyConnectError(err: unknown): ConnectErrorKind {
+  if (err && typeof err === 'object') {
+    const code = (err as Record<string, unknown>)['code']
+    if (code === 'user_not_found') return 'session_expired'
+  }
+  if (err instanceof Error && err.message.toLowerCase().includes('user from sub claim')) {
+    return 'session_expired'
+  }
+  return 'generic'
 }
 
 function ChainabitLogo() {
@@ -62,14 +76,19 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
   credits,
   models,
   onReconnect,
+  onSignOut,
   topUpUrl,
 }) => {
   const [reconnecting, setReconnecting] = React.useState(false)
+  const [connectError, setConnectError] = React.useState<ConnectErrorKind | null>(null)
 
   const handleReconnect = async () => {
+    setConnectError(null)
     setReconnecting(true)
     try {
       await onReconnect()
+    } catch (err) {
+      setConnectError(classifyConnectError(err))
     } finally {
       setReconnecting(false)
     }
@@ -154,12 +173,44 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
   return (
     <Dialog
       open={isOpen}
-      onClose={onClose}
+      onClose={() => { setConnectError(null); onClose() }}
       title={title}
       icon={<ChainabitLogo />}
       maxWidth="max-w-md"
       footer={footer}
     >
+      {connectError === 'session_expired' && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-3 py-3">
+          <LogOut size={16} className="mt-0.5 shrink-0 text-red-500" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-red-800 dark:text-red-300">Session expired</p>
+            <p className="mt-0.5 text-xs text-red-700 dark:text-red-400">
+              Your session is no longer valid. Sign out and sign in again to reconnect Chainabit.
+            </p>
+            {onSignOut && (
+              <button
+                onClick={onSignOut}
+                className="mt-2 text-xs font-medium text-red-700 dark:text-red-300 underline underline-offset-2 hover:text-red-900 dark:hover:text-red-100"
+              >
+                Sign out now
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {connectError === 'generic' && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-3 py-3">
+          <AlertCircle size={16} className="mt-0.5 shrink-0 text-red-500" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-red-800 dark:text-red-300">Connection failed</p>
+            <p className="mt-0.5 text-xs text-red-700 dark:text-red-400">
+              Could not initiate the Chainabit OAuth flow. Please try again or contact support if the issue persists.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex mb-3">
         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-wide">
           Experimental
