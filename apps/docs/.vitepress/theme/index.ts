@@ -60,7 +60,7 @@ function redirectUnprefixedPath(): void {
 
 const POSTHOG_TOKEN = import.meta.env['PUBLIC_POSTHOG_PROJECT_TOKEN'] as string | undefined
 const POSTHOG_HOST = (import.meta.env['PUBLIC_POSTHOG_HOST'] as string | undefined) ?? 'https://us.i.posthog.com'
-const isProd = process.env.ENV_MODE === 'production'
+const isProd = import.meta.env['ENV_MODE'] === 'production'
 
 // Initialize analytics once — GA4 always, PostHog only in production
 globalAnalyticsController.registerProvider(new GA4Provider())
@@ -119,9 +119,6 @@ export default {
     ctx.app.component('AiLenserFamily', AiLenserFamily)
     ctx.app.component('ExperimentalBadge', ExperimentalBadge)
 
-    // Redirect any path without a locale prefix to the cookie's locale (or /en)
-    redirectUnprefixedPath()
-
     // Mirror the active locale into the shared cookie on initial load.
     if (typeof window !== 'undefined') {
       const firstSegment = window.location.pathname.replace(/^\//, '').split('/')[0]
@@ -131,8 +128,10 @@ export default {
     ctx.router.onBeforeRouteChange = (to) => {
       if (typeof window === 'undefined') return
       const segments = to.replace(/^\//, '').split('/')
+      // Root path '/' is the English home — don't redirect
+      if (segments[0] === '') return
       if (!KNOWN_LOCALES.has(segments[0])) {
-        const rest = to === '/' ? '' : to
+        const rest = to
         window.location.replace(`/en${rest}`)
         return false
       }

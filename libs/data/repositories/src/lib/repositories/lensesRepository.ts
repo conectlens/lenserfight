@@ -544,7 +544,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   async createLens(input: CreateLensDTO): Promise<LensRecord> {
     // Resolve the content language from the authenticated user's profile.
     let languageCode = 'en'
-    const { data: profileData } = await supabase.rpc('fn_lensers_get_authenticated_profile', {})
+    const { data: profileData } = await supabase.rpc('fn_lensers_get_active_profile')
     const lang = (profileData as Record<string, unknown> | null)?.['language'] as string | undefined
     if (lang) {
       languageCode = lang
