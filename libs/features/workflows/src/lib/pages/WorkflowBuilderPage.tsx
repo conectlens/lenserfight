@@ -14,7 +14,7 @@ import { Badge, Button } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, Bookmark, CalendarClock, ChevronDown, FlaskConical, GitBranch, GitFork, History, Layers, Lock, Pencil, Play, Square, ThumbsUp, X, Zap } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Bookmark, CalendarClock, ChevronDown, FlaskConical, GitBranch, GitFork, History, Layers, Lock, Maximize2, Pencil, Play, Square, ThumbsUp, X, Zap } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -826,8 +826,8 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                 onConfigNode={handleConfigNode}
                 onEditLens={handleEditLens}
                 onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
-
                 nodeResults={activeNodeResults}
+                configuringNodeId={selectedNodeConfig?.nodeId ?? null}
               />
             </>
           )}
@@ -998,6 +998,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                       runStartedAt={liveRunState?.started_at ?? null}
                       runCompletedAt={liveRunState?.completed_at ?? null}
                       runStatus={liveRunState?.status ?? null}
+                      onOpenFullscreen={() => navigate(`/workflows/${workflowId}/history/executions/${runId}`)}
                     />
                   )}
                 </>
@@ -1021,6 +1022,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                       runStartedAt={historyRunState?.started_at ?? null}
                       runCompletedAt={historyRunState?.completed_at ?? null}
                       runStatus={historyRunState?.status ?? null}
+                      onOpenFullscreen={() => navigate(`/workflows/${workflowId}/history/executions/${selectedHistoryRunId}`)}
                     />
                   )}
                 </>

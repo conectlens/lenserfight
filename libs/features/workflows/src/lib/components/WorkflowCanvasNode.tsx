@@ -184,7 +184,7 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
   const {
     label, ordinal, isPersisted, lens_id, lensVisibility, isLensOwner,
     onRemove, onDuplicate, onConfigNode, onEditLens, config,
-    executionStatus, executionWarning,
+    executionStatus, executionWarning, isConfiguring,
   } = nodeData
 
   const categoryMeta = getNodeCategoryMeta(config?.node_type ?? config?.nodeType)
@@ -195,22 +195,31 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
 
   const isUtilityNode = !!categoryMeta
 
-  // Execution ring layers outside the category/visibility border via ring-*.
-  // When selected, the selection ring takes visual priority.
-  const executionRing = selected ? '' : getNodeExecutionRingClassName(executionStatus ?? null)
+  // Visual priority: ReactFlow selection > configuring > execution ring > category border.
+  // Execution ring layers outside the border via ring-* so both are visible simultaneously.
+  const executionRing = selected || isConfiguring ? '' : getNodeExecutionRingClassName(executionStatus ?? null)
 
   // Show badge for any non-null, non-pending status.
   const showBadge = !!executionStatus && executionStatus !== 'pending'
 
+  // Configuring border/bg — indigo to distinguish from yellow (selection/running) and
+  // green/red (terminal statuses). Kept subtle so it does not fight the category accent.
+  const configuringClasses = isConfiguring && !selected
+    ? 'border-indigo-400/70 bg-indigo-500/5 ring-2 ring-indigo-400/30'
+    : ''
+
   return (
     <div
       onDoubleClick={() => { if (onConfigNode && (lens_id || isUtilityNode)) onConfigNode(id, lens_id ?? '__utility') }}
-      aria-label={`${label}${executionStatus ? `, status: ${executionStatus}` : ''}`}
+      aria-label={`${label}${executionStatus ? `, status: ${executionStatus}` : ''}${isConfiguring ? ', configuring' : ''}`}
       data-execution-status={executionStatus ?? undefined}
+      data-configuring={isConfiguring ? 'true' : undefined}
       className={`relative flex items-center gap-2 min-w-[160px] max-w-[240px] rounded-2xl border px-3 py-2.5 shadow-neu-1 transition-colors ${
         selected
           ? 'border-primary-yellow-500 bg-primary-yellow-500/10 ring-2 ring-primary-yellow-500/30'
-          : visibilityBorder
+          : isConfiguring
+            ? configuringClasses
+            : visibilityBorder
       } ${executionRing} ${!isPersisted ? 'opacity-60' : ''}`}
     >
       {/* Target handle — left */}
@@ -263,6 +272,17 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
 
       {/* Execution status badge — top-right corner */}
       {showBadge && <WorkflowNodeExecutionBadge status={executionStatus!} />}
+
+      {/* Configuring indicator — top-right corner (only when drawer is open and no execution badge) */}
+      {isConfiguring && !selected && !showBadge && (
+        <span
+          aria-label="Node is being configured"
+          className="pointer-events-none absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center"
+        >
+          <span className="absolute inline-flex h-full w-full rounded-full bg-indigo-400/60 animate-ping" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-500" />
+        </span>
+      )}
 
       {/* Dry-run side-effect warning — bottom-center */}
       {executionWarning && (
