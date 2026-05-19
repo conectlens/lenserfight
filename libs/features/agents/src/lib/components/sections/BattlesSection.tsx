@@ -42,6 +42,7 @@ function useBattleSubscriptions(agentId: string | null | undefined) {
       return (data ?? []) as BattleSubscription[]
     },
     refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   })
 }
 

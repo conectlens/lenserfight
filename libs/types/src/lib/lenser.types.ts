@@ -224,6 +224,8 @@ export interface ProfileAccessPayload {
   access_reason: string
   relationship_state: RelationshipState | null
   profile: LenserProfileDTO | null
+  completion_score?: number | null
+  activity_timeline?: LenserActivityPoint[] | null
 }
 
 export interface LenserFollowStatus {

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useMemo, useState } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 
 import { useAuth } from '@lenserfight/features/auth'
 import { analyticsService } from '@lenserfight/infra/analytics'
@@ -26,7 +26,6 @@ export const useLensDetailController = (
   const { user, isLoading: isAuthLoading } = useAuth()
   const queryClient = useQueryClient()
   const loggedLensViews = useRef(new Set<string>())
-  const [loadSecondaryLists, setLoadSecondaryLists] = useState(false)
 
   const {
     data: lens,
@@ -62,24 +61,17 @@ export const useLensDetailController = (
     },
   })
 
-  useEffect(() => {
-    if (!lens || !includeRelated) return
-    // Keep detail on critical path and defer related collections.
-    const id = window.setTimeout(() => setLoadSecondaryLists(true), 0)
-    return () => window.clearTimeout(id)
-  }, [lens, includeRelated])
-
   const { data: relatedLenses = [] } = useQuery<LensViewModel[]>({
     queryKey: ['lens-related', lensId],
     queryFn: () => lensesService.getRelatedLenses(lensId!),
-    enabled: !!lensId && !!lens && includeRelated && loadSecondaryLists,
+    enabled: !!lensId && !!lens && includeRelated,
     staleTime: 1000 * 60 * 5,
   })
 
   const { data: authorLensesRaw = [] } = useQuery<LensViewModel[]>({
     queryKey: ['lens-author-list', lensId, lens?.author?.handle, lenser?.id],
     queryFn: () => lensesService.getAuthorLenses(lens!.author.handle, 0, 10, lenser?.id),
-    enabled: !!lensId && !!lens?.author?.handle && includeRelated && loadSecondaryLists,
+    enabled: !!lensId && !!lens?.author?.handle && includeRelated,
     staleTime: 1000 * 60 * 5,
   })
 
