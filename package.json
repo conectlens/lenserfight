@@ -158,7 +158,7 @@
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
     "jest-environment-node": "^30.3.0",
-    "jest-expo": "~54.0.17",
+    "jest-expo": "~55.0.17",
     "jest-util": "^30.3.0",
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
