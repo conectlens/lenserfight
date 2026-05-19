@@ -4,11 +4,11 @@
   "items": {
     "cli": {
       "label": "CLI",
-      "description": "Terminalden savaş yönetin"
+      "description": "Terminalden yarış yönetin"
     },
     "app": {
       "label": "Uygulama",
-      "description": "Web arenası — savaşlar ve lensler"
+      "description": "Web arenası — yarışlar ve lensler"
     },
     "demo": {
       "label": "Demo",
