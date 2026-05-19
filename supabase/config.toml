@@ -448,22 +448,10 @@ verify_jwt = false
 [functions.send-battle-result-email]
 verify_jwt = false
 
-[functions.partner-balance]
+[functions.chainabit-wallet]
 verify_jwt = false
 
-[functions.partner-models]
-verify_jwt = false
-
-[functions.partner-provision]
-verify_jwt = false
-
-[functions.partner-refresh-token]
-verify_jwt = false
-
-[functions.partner-revoke]
-verify_jwt = false
-
-[functions.partner-send-claim]
+[functions.chainabit-models]
 verify_jwt = false
 
 [functions.test-provider]
