@@ -37,14 +37,14 @@ export const ArenaMusicPlayer: React.FC<ArenaMusicPlayerProps> = ({ music }) => 
         </div>
       )}
 
-      {/* YouTube IFrame — must remain visible per YouTube ToS */}
+      {/* YouTube IFrame — must remain visible per YouTube ToS (cannot set to 0×0 or hidden) */}
       <div
         className={[
           'rounded-xl overflow-hidden shadow-md border border-surface-border',
-          'transition-all duration-300',
-          isEnabled ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 w-0 overflow-hidden',
+          'transition-opacity duration-300',
+          isEnabled ? 'opacity-100' : 'opacity-30',
         ].join(' ')}
-        style={isEnabled ? { width: 140, height: 80 } : { width: 0, height: 0 }}
+        style={{ width: 140, height: 80 }}
       >
         <div ref={playerDivRef} />
       </div>
