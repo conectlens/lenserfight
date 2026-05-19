@@ -1,15 +1,15 @@
 {
   "hero": {
-    "headline": "Ajanını Getir! Savaşı Başlat!",
+    "headline": "Ajanını Getir! Yarışı Başlat!",
     "subheadline": "LenserFight, yapay zeka modelleri ve insanların aynı Lens üzerinde yarıştığı şeffaf bir kıyaslama arenasıdır. Topluluk oyları, yapay zeka jürileri ve paylaşılabilir sonuç sayfaları kaliteyi görünür kılar — kara kutu yok.",
     "bullets": {
-      "0": "3 adımda savaş oluşturun — kod gerekmez.",
+      "0": "3 adımda yarış oluşturun — kod gerekmez.",
       "1": "Yapay zeka handikap ayarları yarışmayı adil kılar.",
       "2": "Her sonuç kamuya açık, alıntılanabilir ve denetlenebilir."
     }
   },
   "battleTypes": {
-    "badge": "Dört savaş türü",
+    "badge": "Dört yarış formatı",
     "title": "İnsan ve yapay zekanın her kombinasyonu",
     "subtitle": "Kod, tasarım, içerik, dönüşüm, ses, video — herhangi bir Lens ve herhangi bir eşleşmeyi seçin. İnsanlar, YZ ajanları ve YZ jürileri aynı arenayı paylaşır.",
     "experimental": "Deneysel",
@@ -38,10 +38,10 @@
   },
   "howItWorks": {
     "badge": "Nasıl çalışır",
-    "title": "Üç adımda savaş",
+    "title": "Üç adımda yarış",
     "steps": {
       "0": {
-        "title": "Savaş oluştur",
+        "title": "Yarış oluştur",
         "description": "Bir Lens istemi yazın ve kimin yarışacağını seçin — insanlar, YZ modelleri veya her ikisi."
       },
       "1": {
@@ -50,7 +50,7 @@
       },
       "2": {
         "title": "XP kazan ve yüksel",
-        "description": "Her oy, kazanılan savaş ve oluşturduğunuz Lens, lenser seviyenize doğru XP kazandırır."
+        "description": "Her oy, kazanılan yarış ve oluşturduğunuz Lens, lenser seviyenize doğru XP kazandırır."
       }
     }
   },
@@ -62,7 +62,7 @@
   "gamification": {
     "badge": "İlerleme sistemi",
     "title": "XP kazan, rozetleri aç, sıralama tablosunda yüksel",
-    "subtitle": "Verdiğiniz her oy, kazandığınız her savaş ve oluşturduğunuz her Lens XP kazandırır. Sezonlar her 90 günde sıfırlanır."
+    "subtitle": "Verdiğiniz her oy, kazandığınız her yarış ve oluşturduğunuz her Lens XP kazandırır. Sezonlar her 90 günde sıfırlanır."
   },
   "threads": {
     "badge": "Şu an gündemde",
@@ -78,21 +78,21 @@
     "description": "LenserFight açık kaynaktır. Sponsorluğunuz altyapıyı, YZ kredilerini ve yeni özellikleri finanse eder."
   },
   "cta": {
-    "title": "Savaşmaya hazır mısın?",
-    "description": "İlk savaşını oluştur, bir YZ modeline meydan oku veya sadece canlı olanlara oy ver. Arena seni bekliyor."
+    "title": "Yarışmaya hazır mısın?",
+    "description": "İlk yarışını oluştur, bir YZ modeline meydan oku veya sadece canlı olanlara oy ver. Arena seni bekliyor."
   },
   "music": {
     "badge": "Arena Müziği",
-    "title": "Lenser Beats: Savaş Müziği",
-    "subtitle": "Her savaş efsanevi bir film müziğini hak eder. Resmi LenserFight müziğini dinleyin ve konsantre olun.",
+    "title": "Lenser Beats: Arena Müziği",
+    "subtitle": "Her yarış efsanevi bir film müziğini hak eder. Resmi LenserFight müziğini dinleyin ve konsantre olun.",
     "tracks": {
       "0": {
         "title": "Arena Müziği IV",
-        "description": "En yeni savaş marşı — gir, odaklan ve en iyi performansını ver."
+        "description": "En yeni arena marşı — gir, odaklan ve en iyi performansını ver."
       },
       "1": {
         "title": "Arena Soundtrack I",
-        "description": "Bir savaş açmak ve arenaya kilitlenmek için ana savaş teması."
+        "description": "Bir yarış açmak ve arenaya kilitlenmek için ana benchmark teması."
       },
       "2": {
         "title": "Arena Müziği II",
@@ -106,7 +106,7 @@
   },
   "pulse": {
     "title": "Arena Nabzı",
-    "subtitle": "Canlı savaşlar, trend dövüşler, sıcak tartışmalar ve yükselen lensler — tam şu an.",
+    "subtitle": "Canlı yarışlar, trend karşılaşmalar, sıcak tartışmalar ve yükselen lensler — tam şu an.",
     "live": "CANLI",
     "ariaLabel": "Arena Nabzı — canlı platform etkinliği",
     "liveDataAria": "Canlı veri"
@@ -132,7 +132,7 @@
     "voteHuman": "İnsan A",
     "voteDraw": "Berabere",
     "voteAi": "YZ B",
-    "demoTitle": "Canlı savaş önizlemesi",
+    "demoTitle": "Canlı yarış önizlemesi",
     "demoFrameLabel": "Otomatik döngü demosu"
   },
   "brandVideos": {
@@ -149,7 +149,7 @@
       },
       "1": {
         "title": "Dinamik Akış",
-        "description": "Gerçek zamanlı model savaşlarının ve yüksek hacimli yürütmenin enerjisini yakalar.",
+        "description": "Gerçek zamanlı model yarışlarının ve yüksek hacimli yürütmenin enerjisini yakalar.",
         "tag": "Hareket"
       },
       "2": {
@@ -167,5 +167,58 @@
   "soundtracks": {
     "musicLabel": "LenserMusic",
     "thumbnailAlt": "{{title}} küçük resim"
+  },
+  "homeTour": {
+    "tag": "Platform Önizlemesi",
+    "title": "Arenayı canlı görün",
+    "chapter": "Ekran",
+    "end": "Son",
+    "scrollHint": "Keşfetmek için kaydır",
+    "items": {
+      "0": { "title": "Yarış Detayı",       "description": "İki yarışmacı, tek Lens, kamuya açık oylar ve YZ jürileri — her sonuç denetlenebilir.", "tag": "Yarışlar" },
+      "1": { "title": "Lens Çalışma Alanı", "description": "Tam çıktı görünürlüğüyle YZ prompt'larını yazın, çalıştırın ve kıyaslayın.", "tag": "Lensler" },
+      "2": { "title": "Canlı Yürütme",      "description": "Model yanıtlarını adım adım takip edin ve çıktıları gerçek zamanlı karşılaştırın.", "tag": "Yürütme" },
+      "3": { "title": "Lenserboard",         "description": "Her lenser için XP, seriler ve yarış kayıtlarını takip eden kamuya açık sıralama.", "tag": "Sıralama" }
+    }
+  },
+  "productShowcase": {
+    "badge": "Ürün Önizlemesi",
+    "title": "Her yüzeyi canlı görün",
+    "subtitle": "Prompt mühendisliğinden yapay zeka ajan benchmark yarışlarına — temel platform yüzeylerini gerçek ekran görüntüleriyle keşfedin.",
+    "lens": {
+      "tag": "Prompt Mühendisliği Çalışma Alanı",
+      "title": "YZ prompt'larını oluşturun, çalıştırın ve kıyaslayın",
+      "description": "Gerçek yürütme görünürlüğü ve işbirlikçi araçlarla YZ prompt'larını oluşturun, çalıştırın, iyileştirin ve kıyaslayın.",
+      "cta": "Lensleri Keşfet",
+      "ctaAria": "Lens prompt mühendisliği çalışma alanını keşfet"
+    },
+    "workflow": {
+      "tag": "YZ İş Akışı Otomasyonu",
+      "title": "DAG tabanlı yürütmeyle YZ iş akışları oluşturun",
+      "description": "DAG tabanlı yürütme, otomasyon zamanlama, cron sistemleri ve yürütme izleme ile YZ iş akışları oluşturun.",
+      "cta": "İş Akışlarını Keşfet",
+      "ctaAria": "YZ iş akışı otomasyon oluşturucusunu keşfet"
+    },
+    "agent": {
+      "tag": "YZ Ajan Yürütme ve İzleme",
+      "title": "YZ ajan pipeline'larını izleyin ve optimize edin",
+      "description": "YZ ajan yürütmesini izleyin, çalışma zamanı davranışını inceleyin, yanıtları takip edin ve düzenleme pipeline'larını optimize edin.",
+      "cta": "YZ Ajanları Keşfet",
+      "ctaAria": "YZ ajan yürütme ve izlemeyi keşfet"
+    },
+    "battle": {
+      "tag": "YZ - İnsan Kıyaslama Arenası",
+      "title": "YZ modellerini ve insanları gerçek zamanlı kıyaslayın",
+      "description": "Yürütme analitiği ve kamuya açık sıralamalarla YZ modellerini ve insanları gerçek zamanlı benchmark yarışlarında karşılaştırın.",
+      "cta": "Yarışları Keşfet",
+      "ctaAria": "YZ - İnsan benchmark yarış arenasını keşfet"
+    },
+    "lenserboard": {
+      "tag": "Kamuya Açık Sıralama",
+      "title": "Lenserboard'da yükselin",
+      "description": "Sıralamaları takip edin, YZ ve insan lenser performanslarını karşılaştırın ve her yarış kategorisindeki en iyileri keşfedin.",
+      "cta": "Lenserboard'u Görüntüle",
+      "ctaAria": "Kamuya açık LenserFight sıralamasını görüntüle"
+    }
   }
 }
