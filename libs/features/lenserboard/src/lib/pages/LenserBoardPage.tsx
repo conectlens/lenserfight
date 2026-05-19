@@ -34,9 +34,7 @@ export const LenserBoardPage: React.FC = () => {
   const [timeframe, setTimeframe] = useState<LeaderboardTimeframe>('all_time')
   const boardParam = searchParams.get('board') as BoardType | null
   const [board, setBoard] = useState<BoardType>(
-    boardParam === 'activity' || boardParam === 'elo' || boardParam === 'season'
-      ? boardParam
-      : 'xp'
+    boardParam === 'activity' || boardParam === 'elo' || boardParam === 'season' ? boardParam : 'xp'
   )
   const [activityPeriod, setActivityPeriod] = useState<FollowPeriod>('all_time')
 
@@ -45,11 +43,20 @@ export const LenserBoardPage: React.FC = () => {
     setSearchParams(b === 'xp' ? {} : { board: b })
   }
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error: xpError } =
-    useLenserBoard(timeframe, scope)
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    error: xpError,
+  } = useLenserBoard(timeframe, scope)
 
-  const { data: activityData, isLoading: activityLoading, error: activityError } =
-    useActivityLeaderboard(activityPeriod, 20)
+  const {
+    data: activityData,
+    isLoading: activityLoading,
+    error: activityError,
+  } = useActivityLeaderboard(activityPeriod, 20)
 
   const { data: eloData, isLoading: eloLoading } = useLenserBoardElo(50)
 
@@ -59,11 +66,7 @@ export const LenserBoardPage: React.FC = () => {
   }, [xpError, activityError, setError])
 
   const lenserBoardList = data
-    ? [
-        ...new Map(
-          data.pages.flatMap((page) => page.list).map((e) => [e.lenserId, e])
-        ).values(),
-      ]
+    ? [...new Map(data.pages.flatMap((page) => page.list).map((e) => [e.lenserId, e])).values()]
     : []
   const userEntry = data?.pages[0]?.userEntry
 
@@ -84,7 +87,6 @@ export const LenserBoardPage: React.FC = () => {
 
       <LenserBoardHeader />
 
-
       {/* Board type toggle */}
       <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-2 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1 w-fit overflow-x-auto">
@@ -92,10 +94,11 @@ export const LenserBoardPage: React.FC = () => {
             <button
               key={key}
               onClick={() => handleBoardChange(key)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${board === key
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
+                board === key
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
             >
               {label}
             </button>
@@ -132,10 +135,11 @@ export const LenserBoardPage: React.FC = () => {
               <button
                 key={p}
                 onClick={() => setActivityPeriod(p)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${activityPeriod === p
-                  ? 'bg-primary text-black'
-                  : 'bg-gray-100 dark:bg-gray-800 text-black dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+                  activityPeriod === p
+                    ? 'bg-primary text-black'
+                    : 'bg-gray-100 dark:bg-gray-800 text-black dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
               >
                 {ACTIVITY_PERIOD_LABELS[p]}
               </button>
@@ -145,7 +149,10 @@ export const LenserBoardPage: React.FC = () => {
           {activityLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-14 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+                <div
+                  key={i}
+                  className="h-14 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"
+                />
               ))}
             </div>
           ) : !activityData?.length ? (
@@ -165,7 +172,10 @@ export const LenserBoardPage: React.FC = () => {
           {eloLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-14 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+                <div
+                  key={i}
+                  className="h-14 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"
+                />
               ))}
             </div>
           ) : !eloData?.length ? (

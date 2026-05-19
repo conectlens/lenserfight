@@ -92,7 +92,10 @@ const ytReadyCallbacks: Array<() => void> = []
 
 function loadYouTubeAPI(): Promise<void> {
   return new Promise((resolve) => {
-    if (ytApiLoaded) { resolve(); return }
+    if (ytApiLoaded) {
+      resolve()
+      return
+    }
     ytReadyCallbacks.push(resolve)
     if (ytApiLoading) return
     ytApiLoading = true
@@ -120,7 +123,7 @@ function loadYouTubeAPI(): Promise<void> {
  */
 export function useArenaMusic(
   options: UseArenaMusicOptions,
-  initialPreference?: boolean,
+  initialPreference?: boolean
 ): UseArenaMusicReturn {
   const { isAuthenticated } = options
 
@@ -149,12 +152,12 @@ export function useArenaMusic(
     (enabled: boolean) => {
       writeLocalMusicEnabled(enabled)
       if (isAuthenticated) {
-        preferencesService
-          .updatePreferences({ autoplay_music: enabled })
-          .catch(() => { /* fire-and-forget — localStorage already updated */ })
+        preferencesService.updatePreferences({ autoplay_music: enabled }).catch(() => {
+          /* fire-and-forget — localStorage already updated */
+        })
       }
     },
-    [isAuthenticated],
+    [isAuthenticated]
   )
 
   const toggleEnabled = useCallback(() => {
@@ -232,7 +235,11 @@ export function useArenaMusic(
 
     return () => {
       destroyed = true
-      try { playerRef.current?.destroy() } catch { /* ignore */ }
+      try {
+        playerRef.current?.destroy()
+      } catch {
+        /* ignore */
+      }
       playerRef.current = null
       setPlayerReady(false)
     }

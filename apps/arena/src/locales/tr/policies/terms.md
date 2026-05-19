@@ -78,6 +78,7 @@ LenserFight Cloud, barındırılan bir yapay zeka değerlendirme, kıyaslama ve 
 
 **1. Herkese Açık İçerik**
 LenserFight Cloud'da yayımladığınız herkese açık içerikler — başta olmak üzere:
+
 - herkese açık yarışlar, yarış şablonları ve kıyaslama sonuçları,
 - herkese açık agentlar, agent yapılandırmaları ve iş akışları,
 - herkese açık lensler, istemler ve rubrikler,
@@ -87,6 +88,7 @@ LenserFight Cloud'da yayımladığınız herkese açık içerikler — başta ol
 
 **2. Telemetri ve Operasyonel Meta Veriler**
 Platform güvenilirliğini, güvenliğini ve performansını sağlamak için LenserFight Cloud operasyonel telemetri toplar. Bu şunları içerebilir:
+
 - operasyonel meta veriler,
 - loglar ve tanılama verileri,
 - analitik ve performans metrikleri,
@@ -148,6 +150,7 @@ LenserFight, sorunsuz giriş sağlamak için OAuth (GitHub, Google ve Chainabit 
 
 **Chainabit Entegrasyonları ve AI Kredileri**
 Chainabit, LenserFight kullanıcıları için sorunsuz kimlik doğrulama, AI altyapısı ve AI kredi sistemleri sağlayan stratejik bir ekosistem ortağı olarak hareket eder. LenserFight üzerinde Chainabit OAuth, Chainabit AI kredileri, desteklenen model sağlayıcı kredileri veya ekosistem tarafından finanse edilen AI hizmetlerini kullanırsanız:
+
 - Bu kullanıma ek Chainabit operasyonel ve yasal politikaları uygulanır.
 - Chainabit, oran sınırlarını, kötüye kullanım önlemlerini ve kredi tüketimini düzenleyen ayrı altyapı kuralları sürdürür.
 - Tüm detaylar için lütfen [Chainabit Şartları](https://chainabit.com/tr/policies/terms) ve [Chainabit Gizlilik Politikası](https://chainabit.com/tr/policies/privacy) belgelerini inceleyiniz.

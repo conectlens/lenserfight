@@ -3,9 +3,9 @@ import React from 'react'
 
 export interface ExecutionControlBannerProps {
   isSystemLocked: boolean
-  isQueueFrozen:  boolean
-  isStopping:     boolean
-  frozenReason?:  string | null
+  isQueueFrozen: boolean
+  isStopping: boolean
+  frozenReason?: string | null
 }
 
 /**
@@ -35,9 +35,7 @@ export const ExecutionControlBanner: React.FC<ExecutionControlBannerProps> = ({
             ? 'System Halting — draining active runs…'
             : 'System Halted — Emergency Lock Active'}
         </span>
-        <span className="ml-auto text-greyscale-400">
-          Contact a platform admin to resume.
-        </span>
+        <span className="ml-auto text-greyscale-400">Contact a platform admin to resume.</span>
       </div>
     )
   }
@@ -47,12 +45,8 @@ export const ExecutionControlBanner: React.FC<ExecutionControlBannerProps> = ({
       <div className="flex items-center gap-2 border-b border-amber-400/30 bg-amber-50/80 px-4 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
         <PauseCircle size={13} className="flex-shrink-0" />
         <span className="font-semibold">Queue Frozen</span>
-        {frozenReason && (
-          <span className="text-greyscale-500">— {frozenReason}</span>
-        )}
-        <span className="ml-auto text-greyscale-400">
-          New scheduled runs will not dispatch.
-        </span>
+        {frozenReason && <span className="text-greyscale-500">— {frozenReason}</span>}
+        <span className="ml-auto text-greyscale-400">New scheduled runs will not dispatch.</span>
       </div>
     )
   }

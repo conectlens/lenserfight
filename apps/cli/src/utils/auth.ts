@@ -1,6 +1,6 @@
-import { exec } from 'node:child_process';
-import { loadUserConfig, saveUserConfig, resolveConfig } from '../config/project-config';
-import { callRpc } from './api';
+import { exec } from 'node:child_process'
+import { loadUserConfig, saveUserConfig, resolveConfig } from '../config/project-config'
+import { callRpc } from './api'
 import type {
   ApproveDeviceRequestDTO,
   ApproveDeviceRequestResultDTO,
@@ -12,31 +12,31 @@ import type {
   DeveloperTokenGrantDTO,
   DeveloperTokenSummaryDTO,
   ExchangeDeviceApprovalDTO,
-} from '@lenserfight/types';
+} from '@lenserfight/types'
 
 export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: string;
+  accessToken: string
+  refreshToken: string
+  expiresAt: string
 }
 
 export interface DeveloperTokenConfig {
-  developerTokenId?: string;
-  developerToken?: string;
-  developerTokenExpiresAt?: string;
+  developerTokenId?: string
+  developerToken?: string
+  developerTokenExpiresAt?: string
 }
 
 export function isAuthenticated(): boolean {
-  const user = loadUserConfig();
-  if (!user.authToken) return false;
+  const user = loadUserConfig()
+  if (!user.authToken) return false
   if (user.authExpiresAt) {
-    if (new Date(user.authExpiresAt) < new Date()) return false;
+    if (new Date(user.authExpiresAt) < new Date()) return false
   }
-  return true;
+  return true
 }
 
 export function getAuthToken(): string | undefined {
-  return loadUserConfig().authToken;
+  return loadUserConfig().authToken
 }
 
 export function saveAuthTokens(tokens: AuthTokens): void {
@@ -44,7 +44,7 @@ export function saveAuthTokens(tokens: AuthTokens): void {
     authToken: tokens.accessToken,
     authRefreshToken: tokens.refreshToken,
     authExpiresAt: tokens.expiresAt,
-  });
+  })
 }
 
 export function clearAuthTokens(): void {
@@ -52,29 +52,29 @@ export function clearAuthTokens(): void {
     authToken: undefined,
     authRefreshToken: undefined,
     authExpiresAt: undefined,
-  });
+  })
 }
 
 export function getDeveloperToken(): string | undefined {
-  return loadUserConfig().developerToken;
+  return loadUserConfig().developerToken
 }
 
 export function getDeveloperTokenMetadata(): DeveloperTokenConfig {
-  const user = loadUserConfig();
+  const user = loadUserConfig()
   return {
     developerTokenId: user.developerTokenId,
     developerToken: user.developerToken,
     developerTokenExpiresAt: user.developerTokenExpiresAt,
-  };
+  }
 }
 
 export function isDeveloperTokenActive(): boolean {
-  const user = loadUserConfig();
-  if (!user.developerToken) return false;
+  const user = loadUserConfig()
+  if (!user.developerToken) return false
   if (user.developerTokenExpiresAt && new Date(user.developerTokenExpiresAt) < new Date()) {
-    return false;
+    return false
   }
-  return true;
+  return true
 }
 
 export function saveDeveloperToken(token: DeveloperTokenGrantDTO): void {
@@ -82,7 +82,7 @@ export function saveDeveloperToken(token: DeveloperTokenGrantDTO): void {
     developerTokenId: token.tokenId,
     developerToken: token.token,
     developerTokenExpiresAt: token.expiresAt,
-  });
+  })
 }
 
 export function clearDeveloperToken(): void {
@@ -90,7 +90,7 @@ export function clearDeveloperToken(): void {
     developerTokenId: undefined,
     developerToken: undefined,
     developerTokenExpiresAt: undefined,
-  });
+  })
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -102,11 +102,11 @@ async function resolveHandleToEmail(handle: string): Promise<string | null> {
     const result = await callRpc<string | null>(
       'fn_resolve_handle_to_email',
       { p_handle: handle },
-      { noAuth: true },
-    );
-    return result ?? null;
+      { noAuth: true }
+    )
+    return result ?? null
   } catch {
-    return null;
+    return null
   }
 }
 
@@ -114,115 +114,102 @@ async function resolveHandleToEmail(handle: string): Promise<string | null> {
  *  Detects the identifier type and resolves handle → email when needed. */
 export async function loginWithIdentifier(
   identifier: string,
-  password: string,
-): Promise<AuthTokens> {
-  const trimmed = identifier.trim();
-  if (EMAIL_RE.test(trimmed)) {
-    return loginWithEmail(trimmed, password);
-  }
-  const handle = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed;
-  const email = await resolveHandleToEmail(handle);
-  if (!email) {
-    throw new Error('Invalid login credentials');
-  }
-  return loginWithEmail(email, password);
-}
-
-export async function loginWithEmail(
-  email: string,
   password: string
 ): Promise<AuthTokens> {
-  const config = resolveConfig();
+  const trimmed = identifier.trim()
+  if (EMAIL_RE.test(trimmed)) {
+    return loginWithEmail(trimmed, password)
+  }
+  const handle = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed
+  const email = await resolveHandleToEmail(handle)
+  if (!email) {
+    throw new Error('Invalid login credentials')
+  }
+  return loginWithEmail(email, password)
+}
+
+export async function loginWithEmail(email: string, password: string): Promise<AuthTokens> {
+  const config = resolveConfig()
 
   if (config.mode !== 'local') {
     throw new Error(
       'Direct credential login is blocked in cloud/production mode by bot protection.\n' +
-      'Run `lf auth login` (no credentials) to sign in via browser instead.'
-    );
+        'Run `lf auth login` (no credentials) to sign in via browser instead.'
+    )
   }
 
   if (!config.supabaseUrl || !config.supabaseAnonKey) {
-    throw new Error(
-      'Supabase URL or anon key not found. Run `lenserfight init` first.'
-    );
+    throw new Error('Supabase URL or anon key not found. Run `lenserfight init` first.')
   }
 
-  const res = await fetch(
-    `${config.supabaseUrl}/auth/v1/token?grant_type=password`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: config.supabaseAnonKey,
-      },
-      body: JSON.stringify({ email, password }),
-    }
-  );
+  const res = await fetch(`${config.supabaseUrl}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: config.supabaseAnonKey,
+    },
+    body: JSON.stringify({ email, password }),
+  })
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error_description: res.statusText }));
-    throw new Error(
-      err.error_description || err.msg || err.message || 'Login failed'
-    );
+    const err = await res.json().catch(() => ({ error_description: res.statusText }))
+    throw new Error(err.error_description || err.msg || err.message || 'Login failed')
   }
 
-  const data = await res.json();
+  const data = await res.json()
 
   const tokens: AuthTokens = {
     accessToken: data.access_token,
     refreshToken: data.refresh_token,
     expiresAt: new Date(Date.now() + data.expires_in * 1000).toISOString(),
-  };
+  }
 
-  saveAuthTokens(tokens);
-  return tokens;
+  saveAuthTokens(tokens)
+  return tokens
 }
 
 export async function refreshAuthToken(): Promise<AuthTokens> {
-  const user = loadUserConfig();
+  const user = loadUserConfig()
 
   if (!user.authRefreshToken) {
-    throw new Error('No refresh token stored. Run `lenserfight auth login` first.');
+    throw new Error('No refresh token stored. Run `lenserfight auth login` first.')
   }
 
-  const config = resolveConfig();
+  const config = resolveConfig()
 
   if (!config.supabaseUrl || !config.supabaseAnonKey) {
-    throw new Error('Supabase URL or anon key not found. Run `lenserfight init` first.');
+    throw new Error('Supabase URL or anon key not found. Run `lenserfight init` first.')
   }
 
-  const res = await fetch(
-    `${config.supabaseUrl}/auth/v1/token?grant_type=refresh_token`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: config.supabaseAnonKey,
-      },
-      body: JSON.stringify({ refresh_token: user.authRefreshToken }),
-    }
-  );
+  const res = await fetch(`${config.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: config.supabaseAnonKey,
+    },
+    body: JSON.stringify({ refresh_token: user.authRefreshToken }),
+  })
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error_description: res.statusText }));
-    throw new Error(err.error_description || err.msg || err.message || 'Token refresh failed');
+    const err = await res.json().catch(() => ({ error_description: res.statusText }))
+    throw new Error(err.error_description || err.msg || err.message || 'Token refresh failed')
   }
 
-  const data = await res.json();
+  const data = await res.json()
 
   const tokens: AuthTokens = {
     accessToken: data.access_token,
     refreshToken: data.refresh_token,
     expiresAt: new Date(Date.now() + data.expires_in * 1000).toISOString(),
-  };
+  }
 
-  saveAuthTokens(tokens);
-  return tokens;
+  saveAuthTokens(tokens)
+  return tokens
 }
 
 export function buildAuthAppUrl(pathname = '/'): string {
-  const base = resolveConfig().authBaseUrl ?? 'https://auth.lenserfight.com';
-  return new URL(pathname, base).toString();
+  const base = resolveConfig().authBaseUrl ?? 'https://auth.lenserfight.com'
+  return new URL(pathname, base).toString()
 }
 
 export async function requestDeviceApproval(
@@ -236,7 +223,7 @@ export async function requestDeviceApproval(
       p_token_ttl_hours: dto.tokenTtlHours ?? null,
     },
     { requireAuth: true }
-  );
+  )
 
   return result
 }
@@ -244,9 +231,13 @@ export async function requestDeviceApproval(
 export async function approveDeviceRequest(
   dto: ApproveDeviceRequestDTO
 ): Promise<ApproveDeviceRequestResultDTO> {
-  return callRpc<ApproveDeviceRequestResultDTO>('fn_auth_approve_device_request', {
-    p_user_code: dto.userCode,
-  }, { requireAuth: true })
+  return callRpc<ApproveDeviceRequestResultDTO>(
+    'fn_auth_approve_device_request',
+    {
+      p_user_code: dto.userCode,
+    },
+    { requireAuth: true }
+  )
 }
 
 export async function exchangeDeviceApproval(
@@ -263,9 +254,13 @@ export async function exchangeDeviceApproval(
 }
 
 export async function listDeveloperTokens(): Promise<DeveloperTokenSummaryDTO[]> {
-  return callRpc<DeveloperTokenSummaryDTO[]>('fn_auth_list_developer_tokens', {}, {
-    requireAuth: true,
-  })
+  return callRpc<DeveloperTokenSummaryDTO[]>(
+    'fn_auth_list_developer_tokens',
+    {},
+    {
+      requireAuth: true,
+    }
+  )
 }
 
 export async function revokeDeveloperToken(tokenId: string): Promise<void> {
@@ -309,9 +304,9 @@ export async function waitForDeveloperToken(
 }
 
 export interface RegisterResult {
-  id: string;
-  email: string;
-  handle: string;
+  id: string
+  email: string
+  handle: string
 }
 
 export async function registerUser(
@@ -319,20 +314,18 @@ export async function registerUser(
   password: string,
   displayName?: string
 ): Promise<RegisterResult> {
-  const config = resolveConfig();
+  const config = resolveConfig()
 
   if (!config.supabaseUrl) {
-    throw new Error('Supabase URL not found. Run `lenserfight init` first.');
+    throw new Error('Supabase URL not found. Run `lenserfight init` first.')
   }
 
-  let userId: string;
-  let userEmail: string;
+  let userId: string
+  let userEmail: string
 
   if (config.mode === 'local') {
     if (!config.supabaseServiceRoleKey) {
-      throw new Error(
-        'Service role key not found. Local register requires the service role key.'
-      );
+      throw new Error('Service role key not found. Local register requires the service role key.')
     }
 
     const res = await fetch(`${config.supabaseUrl}/auth/v1/admin/users`, {
@@ -348,42 +341,39 @@ export async function registerUser(
         email_confirm: true,
         user_metadata: displayName ? { display_name: displayName } : {},
       }),
-    });
+    })
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: res.statusText }));
-      throw new Error(
-        err.msg || err.message || err.error_description || 'Registration failed'
-      );
+      const err = await res.json().catch(() => ({ message: res.statusText }))
+      throw new Error(err.msg || err.message || err.error_description || 'Registration failed')
     }
 
-    const data = await res.json();
-    userId = data.id;
-    userEmail = data.email;
+    const data = await res.json()
+    userId = data.id
+    userEmail = data.email
   } else {
     throw new Error(
       'Account registration via CLI is not supported in cloud/production mode.\n' +
-      'Please register at https://auth.lenserfight.com/register'
-    );
+        'Please register at https://auth.lenserfight.com/register'
+    )
   }
 
-  const handle = generateHandle(displayName ?? email);
-  await createLenserProfile(userId, handle, displayName ?? '', config);
+  const handle = generateHandle(displayName ?? email)
+  await createLenserProfile(userId, handle, displayName ?? '', config)
 
-  return { id: userId, email: userEmail, handle };
+  return { id: userId, email: userEmail, handle }
 }
 
 function generateHandle(source: string): string {
-  const base = source.includes('@') ? source.split('@')[0] : source;
+  const base = source.includes('@') ? source.split('@')[0] : source
   const slug = base
     .toLowerCase()
     .replace(/[^a-z0-9._]/g, '_')
-    .replace(/^[^a-z0-9]+/, '');
-  const suffix = Math.floor(Math.random() * 900 + 100);
-  const trimmed = slug.slice(0, 20);
-  const candidate =
-    trimmed.length >= 1 ? `${trimmed}_${suffix}` : `user_${suffix}`;
-  return candidate.slice(0, 24);
+    .replace(/^[^a-z0-9]+/, '')
+  const suffix = Math.floor(Math.random() * 900 + 100)
+  const trimmed = slug.slice(0, 20)
+  const candidate = trimmed.length >= 1 ? `${trimmed}_${suffix}` : `user_${suffix}`
+  return candidate.slice(0, 24)
 }
 
 async function createLenserProfile(
@@ -392,12 +382,12 @@ async function createLenserProfile(
   displayName: string,
   config: import('../config/project-config').LenserfightConfig
 ): Promise<void> {
-  const key = config.supabaseServiceRoleKey ?? config.supabaseAnonKey;
+  const key = config.supabaseServiceRoleKey ?? config.supabaseAnonKey
   const authHeader = config.supabaseServiceRoleKey
     ? `Bearer ${config.supabaseServiceRoleKey}`
     : config.authToken
-    ? `Bearer ${config.authToken}`
-    : `Bearer ${config.supabaseAnonKey}`;
+      ? `Bearer ${config.authToken}`
+      : `Bearer ${config.supabaseAnonKey}`
 
   const doInsert = async (h: string) =>
     fetch(`${config.supabaseUrl}/rest/v1/lensers.profiles`, {
@@ -413,52 +403,46 @@ async function createLenserProfile(
         handle: h,
         display_name: displayName || h,
       }),
-    });
+    })
 
-  let res = await doInsert(handle);
+  let res = await doInsert(handle)
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }));
-    const msg: string = err.message || err.details || '';
-    if (
-      res.status === 409 ||
-      msg.includes('duplicate') ||
-      msg.includes('unique')
-    ) {
-      const retryHandle = generateHandle(
-        handle + Math.random().toString(36).slice(2, 5)
-      );
-      res = await doInsert(retryHandle);
+    const err = await res.json().catch(() => ({ message: res.statusText }))
+    const msg: string = err.message || err.details || ''
+    if (res.status === 409 || msg.includes('duplicate') || msg.includes('unique')) {
+      const retryHandle = generateHandle(handle + Math.random().toString(36).slice(2, 5))
+      res = await doInsert(retryHandle)
       if (!res.ok) {
         throw new Error(
           `Auth user created (id: ${userId}) but profile creation failed. ` +
             `Create the profile manually via the Supabase dashboard.`
-        );
+        )
       }
-      return;
+      return
     }
     throw new Error(
       `Auth user created (id: ${userId}) but profile creation failed: ${msg || res.statusText}`
-    );
+    )
   }
 }
 
 export async function getUserInfo(): Promise<Record<string, unknown> | null> {
-  const config = resolveConfig();
-  const token = config.authToken;
+  const config = resolveConfig()
+  const token = config.authToken
 
-  if (!token) return null;
+  if (!token) return null
 
   const res = await fetch(`${config.supabaseUrl}/auth/v1/user`, {
     headers: {
       apikey: config.supabaseAnonKey,
       Authorization: `Bearer ${token}`,
     },
-  });
+  })
 
-  if (!res.ok) return null;
+  if (!res.ok) return null
 
-  return res.json();
+  return res.json()
 }
 
 // ---------------------------------------------------------------------------
@@ -470,9 +454,9 @@ export function openBrowser(url: string): void {
     process.platform === 'win32'
       ? `start "" "${url}"`
       : process.platform === 'darwin'
-      ? `open "${url}"`
-      : `xdg-open "${url}"`;
-  exec(cmd); // non-fatal — user always has the URL printed to the terminal
+        ? `open "${url}"`
+        : `xdg-open "${url}"`
+  exec(cmd) // non-fatal — user always has the URL printed to the terminal
 }
 
 export async function requestDeviceLogin(): Promise<DeviceLoginRequestResultDTO> {
@@ -480,51 +464,51 @@ export async function requestDeviceLogin(): Promise<DeviceLoginRequestResultDTO>
     'fn_auth_request_device_login',
     { p_request_ttl_minutes: 10 },
     { noAuth: true } // anon — never attach a stale/expired token
-  );
+  )
 }
 
 export async function exchangeDeviceLogin(dto: {
-  requestId: string;
-  requestSecret: string;
+  requestId: string
+  requestSecret: string
 }): Promise<DeviceLoginExchangeResultDTO> {
   return callRpc<DeviceLoginExchangeResultDTO>(
     'fn_auth_exchange_device_login',
     { p_request_id: dto.requestId, p_request_secret: dto.requestSecret },
     { noAuth: true } // anon — never attach a stale/expired token
-  );
+  )
 }
 
 export async function waitForSessionLogin(
   request: DeviceLoginRequestResultDTO,
   onStatus?: (status: DeviceLoginExchangeResultDTO) => void
 ): Promise<AuthTokens> {
-  const pollMs = Math.max(request.pollIntervalSeconds, 3) * 1000;
-  const deadline = new Date(request.expiresAt).getTime();
+  const pollMs = Math.max(request.pollIntervalSeconds, 3) * 1000
+  const deadline = new Date(request.expiresAt).getTime()
 
   while (Date.now() <= deadline) {
     const status = await exchangeDeviceLogin({
       requestId: request.requestId,
       requestSecret: request.requestSecret,
-    });
+    })
 
-    onStatus?.(status);
+    onStatus?.(status)
 
     if (status.status === 'approved' && status.accessToken && status.refreshToken) {
       const tokens: AuthTokens = {
         accessToken: status.accessToken,
         refreshToken: status.refreshToken,
         expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-      };
-      saveAuthTokens(tokens);
-      return tokens;
+      }
+      saveAuthTokens(tokens)
+      return tokens
     }
 
     if (status.status === 'expired' || status.status === 'invalid') {
-      throw new Error('Login request expired or became invalid.');
+      throw new Error('Login request expired or became invalid.')
     }
 
-    await new Promise((resolve) => setTimeout(resolve, pollMs));
+    await new Promise((resolve) => setTimeout(resolve, pollMs))
   }
 
-  throw new Error('Login request expired before browser approval.');
+  throw new Error('Login request expired before browser approval.')
 }

@@ -1,10 +1,26 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { executionService, mediaRepository } from '@lenserfight/data/repositories'
-import { ExecutionArtifact, ExecuteResponse, StreamState, StreamUsage, ArtifactVisibility } from '@lenserfight/types'
+import {
+  ExecutionArtifact,
+  ExecuteResponse,
+  StreamState,
+  StreamUsage,
+  ArtifactVisibility,
+} from '@lenserfight/types'
 import { StreamingOutput, type StreamingErrorEnvelope } from '@lenserfight/ui/components'
 import { MediaViewer } from '@lenserfight/ui/data-display'
 import { useQuery } from '@tanstack/react-query'
-import { Copy, Check, LayoutPanelLeft, Coins, Loader2, Eye, EyeOff, Users, Archive } from 'lucide-react'
+import {
+  Copy,
+  Check,
+  LayoutPanelLeft,
+  Coins,
+  Loader2,
+  Eye,
+  EyeOff,
+  Users,
+  Archive,
+} from 'lucide-react'
 import React, { useState } from 'react'
 
 import { useArtifactVisibility } from '../hooks/useArtifactVisibility'
@@ -63,7 +79,12 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
   )
 }
 
-const VISIBILITY_OPTIONS: { value: ArtifactVisibility; icon: React.ElementType; label: string; color: string }[] = [
+const VISIBILITY_OPTIONS: {
+  value: ArtifactVisibility
+  icon: React.ElementType
+  label: string
+  color: string
+}[] = [
   { value: 'private', icon: EyeOff, label: 'Private', color: 'text-greyscale-500' },
   { value: 'public', icon: Eye, label: 'Public', color: 'text-status-green' },
   { value: 'contender_only', icon: Users, label: 'Community', color: 'text-status-blue' },
@@ -124,7 +145,10 @@ function VisibilityToggle({
 
 function AudioWaveLoader() {
   return (
-    <div className="flex items-center justify-center gap-[3px] h-16 px-4 bg-surface-raised rounded-xl" aria-label="Loading audio…">
+    <div
+      className="flex items-center justify-center gap-[3px] h-16 px-4 bg-surface-raised rounded-xl"
+      aria-label="Loading audio…"
+    >
       {Array.from({ length: 20 }).map((_, i) => (
         <span
           key={i}
@@ -146,7 +170,15 @@ function AudioWaveLoader() {
   )
 }
 
-function MediaArtifactBlock({ artifact, isOwner, runId }: { artifact: ExecutionArtifact; isOwner?: boolean; runId: string }) {
+function MediaArtifactBlock({
+  artifact,
+  isOwner,
+  runId,
+}: {
+  artifact: ExecutionArtifact
+  isOwner?: boolean
+  runId: string
+}) {
   // Resolve signed read URL when mediaObjectId is present
   const { data: signedUrl, isLoading } = useQuery({
     queryKey: ['media-signed-url', artifact.mediaObjectId],
@@ -157,10 +189,14 @@ function MediaArtifactBlock({ artifact, isOwner, runId }: { artifact: ExecutionA
 
   const mediaTypeFromKind = (): 'image' | 'video' | 'audio' | 'document' | 'text' | 'unknown' => {
     switch (artifact.artifactKind) {
-      case 'image': return 'image'
-      case 'audio': return 'audio'
-      case 'video': return 'video'
-      default: return 'unknown'
+      case 'image':
+        return 'image'
+      case 'audio':
+        return 'audio'
+      case 'video':
+        return 'video'
+      default:
+        return 'unknown'
     }
   }
 
@@ -182,7 +218,9 @@ function MediaArtifactBlock({ artifact, isOwner, runId }: { artifact: ExecutionA
 
   return (
     <div className="overflow-hidden rounded-2xl border border-surface-border">
-      {isLoading ? renderLoader() : (
+      {isLoading ? (
+        renderLoader()
+      ) : (
         <MediaViewer
           mediaType={kind}
           url={signedUrl ?? null}
@@ -202,11 +240,11 @@ function MediaArtifactBlock({ artifact, isOwner, runId }: { artifact: ExecutionA
   )
 }
 
-const ArtifactBlock: React.FC<{ artifact: ExecutionArtifact; isOwner?: boolean; runId: string }> = ({
-  artifact,
-  isOwner,
-  runId,
-}) => {
+const ArtifactBlock: React.FC<{
+  artifact: ExecutionArtifact
+  isOwner?: boolean
+  runId: string
+}> = ({ artifact, isOwner, runId }) => {
   // Non-owners see only non-private artifacts
   if (!isOwner && artifact.visibility === 'private') return null
 
@@ -283,18 +321,25 @@ const LocalMediaArtifactView: React.FC<{ artifact: LocalMediaArtifact }> = ({ ar
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <LayoutPanelLeft size={16} className="text-gray-400" />
-          <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 capitalize">{modality}</span>
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 capitalize">
+            {modality}
+          </span>
           <span className="text-[10px] uppercase tracking-wide text-greyscale-400">Local BYOK</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
           <span>{provider}</span>
           <span>·</span>
-          <span className="truncate max-w-[160px]" title={model}>{model}</span>
+          <span className="truncate max-w-[160px]" title={model}>
+            {model}
+          </span>
         </div>
       </div>
       <div className="flex flex-col gap-3">
         {urls.map((url, i) => (
-          <div key={`${url}-${i}`} className="rounded-2xl overflow-hidden border border-surface-border bg-surface-raised">
+          <div
+            key={`${url}-${i}`}
+            className="rounded-2xl overflow-hidden border border-surface-border bg-surface-raised"
+          >
             {modality === 'image' ? (
               <img
                 src={url}
@@ -310,7 +355,9 @@ const LocalMediaArtifactView: React.FC<{ artifact: LocalMediaArtifact }> = ({ ar
               <div className="flex flex-col gap-2 p-4">
                 <audio src={url} controls className="w-full" />
                 {durationSeconds != null && (
-                  <span className="text-[11px] text-greyscale-400">{durationSeconds.toFixed(1)}s</span>
+                  <span className="text-[11px] text-greyscale-400">
+                    {durationSeconds.toFixed(1)}s
+                  </span>
                 )}
               </div>
             )}
@@ -318,7 +365,8 @@ const LocalMediaArtifactView: React.FC<{ artifact: LocalMediaArtifact }> = ({ ar
         ))}
       </div>
       <p className="text-[10px] text-greyscale-400">
-        Generated directly by your browser using your local BYOK key. The result is not stored on LenserFight servers; download or save it locally before navigating away. ({mimeType})
+        Generated directly by your browser using your local BYOK key. The result is not stored on
+        LenserFight servers; download or save it locally before navigating away. ({mimeType})
       </p>
     </div>
   )
@@ -354,7 +402,7 @@ const RunArtifacts: React.FC<{ runId: string; showAll: boolean; isOwner?: boolea
 
   // Never show artifacts from non-succeeded runs
   const runStatus = run?.status
-  if (runStatus && FAILED_STATUSES.includes(runStatus as typeof FAILED_STATUSES[number])) {
+  if (runStatus && FAILED_STATUSES.includes(runStatus as (typeof FAILED_STATUSES)[number])) {
     return (
       <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
         Output not available for {runStatus} runs.
@@ -366,7 +414,9 @@ const RunArtifacts: React.FC<{ runId: string; showAll: boolean; isOwner?: boolea
 
   if (displayed.length === 0) {
     return (
-      <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">No output artifacts.</p>
+      <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
+        No output artifacts.
+      </p>
     )
   }
 
@@ -412,7 +462,11 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
 
   // Local BYOK media — render the provider's URLs directly. No DB run to query
   // for; takes priority over selectedRunId until the user picks another run.
-  if (localMediaArtifact && !isComparing && (!selectedRunId || selectedRunId === localMediaArtifact.runId)) {
+  if (
+    localMediaArtifact &&
+    !isComparing &&
+    (!selectedRunId || selectedRunId === localMediaArtifact.runId)
+  ) {
     return <LocalMediaArtifactView artifact={localMediaArtifact} />
   }
 
@@ -429,7 +483,9 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
               <Coins size={12} />
               <span>{latestResult.credits_charged} cr</span>
               <span>·</span>
-              <span>{latestResult.usage.input_tokens + latestResult.usage.output_tokens} tokens</span>
+              <span>
+                {latestResult.usage.input_tokens + latestResult.usage.output_tokens} tokens
+              </span>
             </div>
           </div>
           <div className="relative">

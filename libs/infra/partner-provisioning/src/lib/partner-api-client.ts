@@ -4,7 +4,8 @@ import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 import type { ChainabitAiModel, ProviderBalance } from './partner-provider.interface'
 
 // All connector calls go through Supabase Edge Functions.
-const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
+const SUPABASE_URL =
+  (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 async function getAuthHeader(): Promise<Record<string, string>> {
@@ -12,7 +13,8 @@ async function getAuthHeader(): Promise<Record<string, string>> {
   // getSession() fallback reads from local storage only — no server round-trip.
   // If the token was revoked server-side, the Edge Function will return 401;
   // callers should detect that and trigger supabase.auth.signOut().
-  const token = getCachedAccessToken() ?? (await supabase.auth.getSession()).data.session?.access_token
+  const token =
+    getCachedAccessToken() ?? (await supabase.auth.getSession()).data.session?.access_token
   if (!token) throw new Error('401: Unauthenticated')
   return { Authorization: `Bearer ${token}` }
 }
@@ -76,14 +78,19 @@ export const connectorApiClient = {
       window.location.href = data.url
       return
     }
-    throw new Error('Chainabit OAuth flow did not return a redirect URL — the identity may already be linked')
+    throw new Error(
+      'Chainabit OAuth flow did not return a redirect URL — the identity may already be linked'
+    )
   },
 
   /**
    * Unlinks the Chainabit identity from the current user's account.
    */
   async disconnect(): Promise<void> {
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
     if (userError || !user) throw userError ?? new Error('Unauthenticated')
     const identity = user.identities?.find((i) => i.provider === 'custom:chainabit')
     if (!identity) return

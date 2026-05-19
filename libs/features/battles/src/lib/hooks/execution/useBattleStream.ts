@@ -34,9 +34,7 @@ export interface UseBattleStreamReturn {
 }
 
 export function useBattleStream(options: UseBattleStreamOptions = {}): UseBattleStreamReturn {
-  const [snapshot, setSnapshot] = useState<ContenderStreamSnapshot>(
-    createEmptySnapshot('', 'A'),
-  )
+  const [snapshot, setSnapshot] = useState<ContenderStreamSnapshot>(createEmptySnapshot('', 'A'))
   const abortRef = useRef<AbortController | null>(null)
   const eventsRef = useRef<StreamEvent[]>([])
   const outputRef = useRef('')
@@ -51,9 +49,7 @@ export function useBattleStream(options: UseBattleStreamOptions = {}): UseBattle
     const now = Date.now()
     if (!submissionId || now - lastFlushRef.current < FLUSH_INTERVAL_MS) return
     lastFlushRef.current = now
-    battleExecutionRepository
-      .updateSubmissionText(submissionId, text, 'streaming')
-      .catch(() => {}) // best-effort
+    battleExecutionRepository.updateSubmissionText(submissionId, text, 'streaming').catch(() => {}) // best-effort
   }, [])
 
   const abort = useCallback(() => {
@@ -88,7 +84,7 @@ export function useBattleStream(options: UseBattleStreamOptions = {}): UseBattle
         const sub = await battleExecutionRepository.createSubmission(
           config.lensId, // We'll pass battle_id from the orchestrator
           config.contenderId,
-          'streaming',
+          'streaming'
         )
         submissionId = sub.id
         if (!isActive()) return
@@ -191,7 +187,7 @@ export function useBattleStream(options: UseBattleStreamOptions = {}): UseBattle
               messages,
             },
             controller.signal,
-            callbacks,
+            callbacks
           )
         }
       } catch (err: unknown) {
@@ -208,7 +204,7 @@ export function useBattleStream(options: UseBattleStreamOptions = {}): UseBattle
         }
       }
     },
-    [abort, flushToDb, options],
+    [abort, flushToDb, options]
   )
 
   return {

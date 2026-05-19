@@ -1,6 +1,10 @@
 import { useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { connectorApiClient, isChainabitConnected, type ProviderConnectionState } from '@lenserfight/infra/partner-provisioning'
+import {
+  connectorApiClient,
+  isChainabitConnected,
+  type ProviderConnectionState,
+} from '@lenserfight/infra/partner-provisioning'
 import { useAuth } from '@lenserfight/features/auth'
 import type { ChainabitAiModel } from '@lenserfight/types'
 
@@ -41,7 +45,8 @@ function classifyError(err: unknown): ProviderConnectionState {
   }
   if (err instanceof Error) {
     const msg = err.message
-    if (msg.includes('not_connected') || msg.toLowerCase().includes('no chainabit')) return 'not_connected'
+    if (msg.includes('not_connected') || msg.toLowerCase().includes('no chainabit'))
+      return 'not_connected'
     if (msg.includes('401')) return 'token_expired'
   }
   return 'provider_error'

@@ -7,7 +7,7 @@ import type { WorkflowNodeConfigField } from './workflow-node-catalog'
 export type ExecutableWorkflowNodeConfig = WorkflowNodeConfig & Record<string, unknown>
 
 export function normalizeWorkflowNodeConfigForExecution(
-  raw: Record<string, unknown> | null | undefined,
+  raw: Record<string, unknown> | null | undefined
 ): ExecutableWorkflowNodeConfig | undefined {
   if (!raw) return undefined
 
@@ -54,7 +54,7 @@ export function normalizeWorkflowNodeConfigForExecution(
 
 function copyKnownExecutionPolicy(
   raw: Record<string, unknown>,
-  target: ExecutableWorkflowNodeConfig,
+  target: ExecutableWorkflowNodeConfig
 ): void {
   if (raw['retry'] && typeof raw['retry'] === 'object') {
     target.retry = raw['retry'] as WorkflowNodeConfig['retry']
@@ -80,7 +80,7 @@ function copyKnownExecutionPolicy(
 function normalizeConfigValue(
   key: string,
   value: unknown,
-  fields: WorkflowNodeConfigField[],
+  fields: WorkflowNodeConfigField[]
 ): unknown {
   const descriptor = fields.find((field) => field.key === key)
   if (!descriptor) return parseLooseValue(value)
@@ -110,7 +110,10 @@ function parseLooseValue(value: unknown): unknown {
   if (trimmed === 'true') return true
   if (trimmed === 'false') return false
   if (/^-?\d+(\.\d+)?$/.test(trimmed)) return Number(trimmed)
-  if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+  if (
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+    (trimmed.startsWith('[') && trimmed.endsWith(']'))
+  ) {
     return parseJsonValue(trimmed)
   }
   return value

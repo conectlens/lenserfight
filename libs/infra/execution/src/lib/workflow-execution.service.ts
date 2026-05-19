@@ -19,11 +19,7 @@ import type {
 import type { PinnedOutputStore } from './pinned-output'
 import type { ConnectorOperationExecutor } from './connector-runtime.types'
 import type { NodeRunnerContext } from './runners/node-runner.interface'
-import type {
-  LensInputContract,
-  LensOutputContract,
-  NodeOutputEnvelope,
-} from '@lenserfight/types'
+import type { LensInputContract, LensOutputContract, NodeOutputEnvelope } from '@lenserfight/types'
 
 // ── Public types ──────────────────────────────────────────────────────────
 
@@ -134,14 +130,10 @@ export function resolveDelegationPolicy(
  * The future delegation runtime is expected to call this at the moment a
  * delegation action is encountered, before any side-effects.
  */
-export function assertDelegationAllowed(
-  nodeConfig: WorkflowNodeConfig | undefined
-): void {
+export function assertDelegationAllowed(nodeConfig: WorkflowNodeConfig | undefined): void {
   const policy = resolveDelegationPolicy(nodeConfig)
   if (policy === 'forbidden') {
-    throw new Error(
-      'Delegation is forbidden by node configuration (delegationPolicy=forbidden).'
-    )
+    throw new Error('Delegation is forbidden by node configuration (delegationPolicy=forbidden).')
   }
 }
 
@@ -276,7 +268,7 @@ export interface WorkflowExecutionContext {
   resolveExecutionProvider?(node: WorkflowNode): IExecutionProvider | Promise<IExecutionProvider>
   /** Optional contract resolver — when provided, engine validates inputs/outputs per node. */
   resolveVersionContracts?(
-    versionId?: string | null,
+    versionId?: string | null
   ): Promise<{ input: LensInputContract | null; output: LensOutputContract | null }>
   /** Called when a node changes status — used by the CF Worker to write workflow_node_results */
   onNodeStatusChange(nodeId: string, result: NodeResult): Promise<void>
@@ -441,7 +433,7 @@ export class WorkflowExecutionService {
    */
   static detectCycle(
     nodes: { id: string }[],
-    edges: { sourceNodeId: string; targetNodeId: string }[],
+    edges: { sourceNodeId: string; targetNodeId: string }[]
   ): string[] | null {
     return validatorDetectCycle(nodes, edges)
   }
@@ -451,7 +443,7 @@ export class WorkflowExecutionService {
   async executeWorkflow(
     nodes: WorkflowNode[],
     edges: WorkflowEdge[],
-    ctx: WorkflowExecutionContext,
+    ctx: WorkflowExecutionContext
   ): Promise<WorkflowRunResult> {
     const isAborted = () => ctx.signal?.aborted ?? false
     const nodeMap = new Map(nodes.map((n) => [n.id, n]))
@@ -488,7 +480,7 @@ export class WorkflowExecutionService {
           results.set(node.id, cancelled)
           await ctx.onNodeStatusChange(node.id, cancelled)
           await emit(ctx, { runId: ctx.runId, nodeId: node.id, name: 'node_cancelled' })
-        }),
+        })
       )
     }
 
@@ -529,12 +521,10 @@ export class WorkflowExecutionService {
             metadata: { waitingReason: 'dependency' },
           })
         }
-      }),
+      })
     )
 
-    const notifyMemoryRunCompleted = async (
-      status: 'completed' | 'failed' | 'cancelled',
-    ) => {
+    const notifyMemoryRunCompleted = async (status: 'completed' | 'failed' | 'cancelled') => {
       if (!ctx.memory?.onRunCompleted) return
       try {
         await ctx.memory.onRunCompleted(status)
@@ -576,540 +566,584 @@ export class WorkflowExecutionService {
       }
 
       await Promise.all(
-        wave.map((nodeId) => throttle(async () => {
-          const node = nodeMap.get(nodeId)
-          if (!node) return
+        wave.map((nodeId) =>
+          throttle(async () => {
+            const node = nodeMap.get(nodeId)
+            if (!node) return
 
-          if (isAborted()) {
-            const cancelled: NodeResult = { nodeId, status: 'cancelled' }
-            results.set(nodeId, cancelled)
-            await ctx.onNodeStatusChange(nodeId, cancelled)
-            await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_cancelled' })
-            return
-          }
+            if (isAborted()) {
+              const cancelled: NodeResult = { nodeId, status: 'cancelled' }
+              results.set(nodeId, cancelled)
+              await ctx.onNodeStatusChange(nodeId, cancelled)
+              await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_cancelled' })
+              return
+            }
 
-          // ── Parent-failure gate ─────────────────────────────────────
-          const parentStatuses = collectParentStatuses(node, edges, results)
-          const onFailure = node.config?.onParentFailure ?? DEFAULT_ON_PARENT_FAILURE
-          if (parentStatuses.hasNonSuccessful) {
-            if (onFailure === 'skip') {
-              const skipped: NodeResult = { nodeId, status: 'skipped' }
-              results.set(nodeId, skipped)
-              await ctx.onNodeStatusChange(nodeId, skipped)
+            // ── Parent-failure gate ─────────────────────────────────────
+            const parentStatuses = collectParentStatuses(node, edges, results)
+            const onFailure = node.config?.onParentFailure ?? DEFAULT_ON_PARENT_FAILURE
+            if (parentStatuses.hasNonSuccessful) {
+              if (onFailure === 'skip') {
+                const skipped: NodeResult = { nodeId, status: 'skipped' }
+                results.set(nodeId, skipped)
+                await ctx.onNodeStatusChange(nodeId, skipped)
+                await emit(ctx, {
+                  runId: ctx.runId,
+                  nodeId,
+                  name: 'node_skipped',
+                  metadata: { reason: 'parent_not_successful' },
+                })
+                return
+              }
+              if (onFailure === 'propagate') {
+                const failed: NodeResult = { nodeId, status: 'failed', error: 'upstream_failure' }
+                results.set(nodeId, failed)
+                await ctx.onNodeStatusChange(nodeId, failed)
+                await emit(ctx, {
+                  runId: ctx.runId,
+                  nodeId,
+                  name: 'node_failed',
+                  metadata: { errorCode: 'upstream_failure' },
+                })
+                return
+              }
+              // substitute_default falls through and renders with empty values.
+            }
+
+            await ctx.onNodeStatusChange(nodeId, { nodeId, status: 'running' })
+            await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_started' })
+
+            // AP: modality guard — block non-text nodes when agent policy disallows the modality
+            const nodeType = node.config?.nodeType
+            if (
+              ctx.modalityGuard &&
+              nodeType &&
+              nodeType !== 'text' &&
+              nodeType !== 'condition' &&
+              nodeType !== 'merge' &&
+              nodeType !== 'delegate'
+            ) {
+              try {
+                await ctx.modalityGuard(nodeId, nodeType)
+              } catch (err) {
+                const errMsg = err instanceof Error ? err.message : String(err)
+                const isModalityBlocked = errMsg.includes('modality_not_allowed')
+                const blocked: NodeResult = {
+                  nodeId,
+                  status: 'blocked',
+                  error: isModalityBlocked
+                    ? 'modality_not_allowed'
+                    : `modality_guard_error: ${errMsg}`,
+                  outputData: { modality: nodeType },
+                }
+                results.set(nodeId, blocked)
+                await ctx.onNodeStatusChange(nodeId, blocked)
+                await emit(ctx, {
+                  runId: ctx.runId,
+                  nodeId,
+                  name: 'node_blocked',
+                  metadata: { errorCode: 'modality_not_allowed', modality: nodeType },
+                })
+                return
+              }
+            }
+
+            const attempts = Math.max(1, node.config?.retry?.attempts ?? DEFAULT_RETRY.attempts)
+            const retryCfg: Required<RetryConfig> = {
+              attempts,
+              backoffMs: node.config?.retry?.backoffMs ?? DEFAULT_RETRY.backoffMs,
+              maxBackoffMs: node.config?.retry?.maxBackoffMs ?? DEFAULT_RETRY.maxBackoffMs,
+              retryOn: node.config?.retry?.retryOn ?? DEFAULT_RETRY.retryOn,
+            }
+            const timeoutMs = node.config?.timeoutMs ?? DEFAULT_TIMEOUT_MS
+            const moderationPolicy = node.config?.moderation ?? DEFAULT_MODERATION
+
+            // Resolve template + contracts up-front (not retried on transient failures).
+            // Utility nodes (null lensId) skip template resolution — they are
+            // dispatched via the node runner registry below.
+            let template: string
+            if (!node.lensId) {
+              template = ''
+            } else {
+              try {
+                template = await ctx.resolveLensTemplate(node.lensId, node.versionId)
+              } catch (err) {
+                const result: NodeResult = {
+                  nodeId,
+                  status: 'failed',
+                  error: `template_resolution_failed: ${errorMessage(err)}`,
+                }
+                results.set(nodeId, result)
+                await ctx.onNodeStatusChange(nodeId, result)
+                await emit(ctx, {
+                  runId: ctx.runId,
+                  nodeId,
+                  name: 'node_failed',
+                  metadata: { errorCode: 'template_resolution_failed' },
+                })
+                return
+              }
+            }
+
+            let contracts: { input: LensInputContract | null; output: LensOutputContract | null } =
+              {
+                input: null,
+                output: null,
+              }
+            if (ctx.resolveVersionContracts && node.versionId) {
+              try {
+                contracts = await ctx.resolveVersionContracts(node.versionId)
+              } catch {
+                contracts = { input: null, output: null }
+              }
+            }
+
+            const provenanceHandoffs: ProvenanceHandoff[] = []
+            const renderedInputs = resolveRenderedInputs(
+              node,
+              edges,
+              results,
+              ctx.rootInputs,
+              (handoff) => provenanceHandoffs.push(handoff),
+              ctx.runId
+            )
+
+            // Z10: context size guard — reject inputs that exceed the byte
+            // ceiling before they reach the provider. This prevents a long chain
+            // from accumulating MB-scale context that would inflate token costs.
+            const contextSize = JSON.stringify(renderedInputs).length
+            if (contextSize > MAX_CONTEXT_BYTES) {
+              const ctxTooBig: NodeResult = {
+                nodeId,
+                status: 'failed',
+                error: 'context_too_large',
+              }
+              results.set(nodeId, ctxTooBig)
+              await ctx.onNodeStatusChange(nodeId, ctxTooBig)
               await emit(ctx, {
                 runId: ctx.runId,
                 nodeId,
-                name: 'node_skipped',
-                metadata: { reason: 'parent_not_successful' },
+                name: 'node_failed',
+                metadata: { errorCode: 'context_too_large', sizeBytes: contextSize },
               })
               return
             }
-            if (onFailure === 'propagate') {
-              const failed: NodeResult = { nodeId, status: 'failed', error: 'upstream_failure' }
+
+            // Field-level provenance: emit one record per edge whose value was
+            // actually used by this node. Best-effort — provenance writes must
+            // never break execution.
+            if (ctx.onProvenance) {
+              await Promise.all(
+                provenanceHandoffs.map(async (h) => {
+                  try {
+                    await ctx.onProvenance!(h)
+                    await emit(ctx, {
+                      runId: ctx.runId,
+                      nodeId: h.targetNodeId,
+                      name: 'node_provenance',
+                      metadata: {
+                        sourceRunId: h.sourceRunId,
+                        sourceNodeId: h.sourceNodeId,
+                        sourceOutputPath: h.sourceOutputPath,
+                        targetInputPath: h.targetInputPath,
+                      },
+                    })
+                  } catch {
+                    // observability is best-effort
+                  }
+                })
+              )
+            }
+
+            // Prompt rendering is strict about unresolved placeholders (§6.2).
+            // A PlaceholderUnboundError surfaces as a `node.blocked` failure
+            // with a structured errorCode so the UI can highlight which label
+            // is missing on the graph.
+            let resolvedPrompt: string
+            try {
+              resolvedPrompt = renderPrompt(template, renderedInputs, contracts.input)
+            } catch (err) {
+              if (err instanceof PlaceholderUnboundError) {
+                // `blocked` is the canonical terminal status for unresolved
+                // placeholders so the inspector renders the matching badge and
+                // the run-state projection counts it under `failed_count`.
+                const blocked: NodeResult = {
+                  nodeId,
+                  status: 'blocked',
+                  error: 'placeholder_unbound',
+                  outputData: { placeholder: err.label },
+                }
+                results.set(nodeId, blocked)
+                await ctx.onNodeStatusChange(nodeId, blocked)
+                await emit(ctx, {
+                  runId: ctx.runId,
+                  nodeId,
+                  name: 'node_blocked',
+                  metadata: { errorCode: 'placeholder_unbound', label: err.label },
+                })
+                return
+              }
+              throw err
+            }
+
+            // ── Input contract validation ───────────────────────────────
+            const inputCheck = validateInputs(renderedInputs, contracts.input)
+            if (!inputCheck.ok) {
+              const result: NodeResult = {
+                nodeId,
+                status: 'failed',
+                error: 'input_contract_violation',
+                outputData: { contractErrors: inputCheck.errors },
+              }
+              results.set(nodeId, result)
+              await ctx.onNodeStatusChange(nodeId, result)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'contract_violated',
+                metadata: { phase: 'input', errors: inputCheck.errors },
+              })
+              return
+            }
+
+            // ── Input moderation ────────────────────────────────────────
+            if (ctx.moderation && (moderationPolicy === 'input' || moderationPolicy === 'both')) {
+              const decision = await safeCheck(ctx.moderation, 'input', resolvedPrompt, nodeId)
+              if (!decision.allowed) {
+                const result: NodeResult = {
+                  nodeId,
+                  status: 'failed',
+                  error: 'moderation_blocked',
+                  outputData: { moderation: decision },
+                }
+                results.set(nodeId, result)
+                await ctx.onNodeStatusChange(nodeId, result)
+                await emit(ctx, {
+                  runId: ctx.runId,
+                  nodeId,
+                  name: 'moderation_flagged',
+                  metadata: { phase: 'input', decision },
+                })
+                return
+              }
+            }
+
+            // ── Pinned output short-circuit (dev/dry-run only) ─────────��────
+            if (ctx.isDevExecution && ctx.pinnedOutputs?.get(nodeId)) {
+              const pinned = ctx.pinnedOutputs.get(nodeId)!
+              const envelope = toEnvelope(pinned.output, contracts.output)
+              const outputData = {
+                ...envelopeToOutputData(envelope),
+                ...(pinned.output.data ?? {}),
+              }
+              const result: NodeResult = {
+                nodeId,
+                status: 'completed',
+                envelope,
+                outputData,
+                attempts: 0,
+              }
+              results.set(nodeId, result)
+              await ctx.onNodeStatusChange(nodeId, result)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'node_completed',
+                metadata: { pinned: true },
+              })
+              return
+            }
+
+            // ── CN: Node Runner dispatch — utility nodes bypass the provider pipeline ──
+            const runnerNodeType = node.config?.nodeType
+            const nodeRunner = runnerNodeType ? getNodeRunner(runnerNodeType) : undefined
+            if (nodeRunner) {
+              const upstreamOutputs = new Map<string, ExecutionResult>()
+              for (const [nId, res] of results.entries()) {
+                if (res.envelope) {
+                  upstreamOutputs.set(nId, {
+                    mediaType: (res.envelope.kind ?? 'text') as ExecutionResult['mediaType'],
+                    text: res.envelope.output,
+                    url: res.envelope.media?.url,
+                    data: res.outputData,
+                    durationMs:
+                      typeof res.envelope.metadata?.['durationMs'] === 'number'
+                        ? res.envelope.metadata['durationMs']
+                        : undefined,
+                  })
+                }
+              }
+              const runnerCtx: NodeRunnerContext = {
+                nodeId,
+                upstreamOutputs,
+                resolvedParams: { ...renderedInputs },
+                nodeConfig: (node.config as Record<string, unknown>) ?? {},
+                signal: ctx.signal,
+                resolvedPrompt,
+                outputContract: contracts.output,
+                executeProvider: async (input) => {
+                  const provider = ctx.resolveExecutionProvider
+                    ? await ctx.resolveExecutionProvider(node)
+                    : this.provider
+                  const modelKey = (
+                    node.config?.modelId?.trim() ||
+                    ctx.defaultModelKey ||
+                    ''
+                  ).trim()
+                  return provider.execute(modelKey, input, ctx.signal)
+                },
+                resolveConnector: ctx.resolveConnector ?? undefined,
+                executeConnectorOperation: ctx.executeConnectorOperation ?? undefined,
+              }
+              try {
+                const runnerResult = await nodeRunner.execute(runnerCtx)
+                // Apply variable mutations to the root inputs for downstream
+                if (runnerResult.variableMutations && ctx.rootInputs) {
+                  Object.assign(ctx.rootInputs, runnerResult.variableMutations)
+                }
+                const envelope = toEnvelope(runnerResult.output, contracts.output)
+                const outputData = {
+                  ...envelopeToOutputData(envelope),
+                  ...(runnerResult.output.data ?? {}),
+                }
+                const result: NodeResult = {
+                  nodeId,
+                  status: 'completed',
+                  envelope,
+                  outputData,
+                  attempts: 1,
+                  resolvedInputSnapshot: renderedInputs,
+                }
+                results.set(nodeId, result)
+                await ctx.onNodeStatusChange(nodeId, result)
+                await emit(ctx, {
+                  runId: ctx.runId,
+                  nodeId,
+                  name: 'node_completed',
+                  metadata: { durationMs: runnerResult.output.durationMs },
+                })
+              } catch (err) {
+                const errMsg = err instanceof Error ? err.message : String(err)
+                const result: NodeResult = { nodeId, status: 'failed', error: errMsg }
+                results.set(nodeId, result)
+                await ctx.onNodeStatusChange(nodeId, result)
+                await emit(ctx, {
+                  runId: ctx.runId,
+                  nodeId,
+                  name: 'node_failed',
+                  metadata: { error: errMsg },
+                })
+              }
+              return
+            }
+
+            // ── Provider call with retry + timeout ──────────────────────
+            const nodeProvider = ctx.resolveExecutionProvider
+              ? await ctx.resolveExecutionProvider(node)
+              : this.provider
+            const rawCfg = node.config as Record<string, unknown> | undefined
+            const modelKey = (
+              node.config?.modelId?.trim() ||
+              (typeof rawCfg?.['model_id'] === 'string' ? rawCfg['model_id'].trim() : '') ||
+              ctx.defaultModelKey ||
+              ''
+            ).trim()
+            const attachments = inferAttachmentsFromRendered(renderedInputs)
+            const execInputBase: ExecutionInput = {
+              prompt: resolvedPrompt,
+              ...(attachments.length > 0 ? { attachments } : {}),
+            }
+
+            let envelope: NodeOutputEnvelope | null = null
+            let providerError: { cause: RetryCause; err: unknown } | null = null
+            let attempt = 0
+
+            while (attempt < retryCfg.attempts) {
+              attempt++
+              if (isAborted()) break
+
+              try {
+                const execResult = await runWithTimeout(
+                  nodeProvider,
+                  modelKey || node.lensId || nodeId,
+                  execInputBase,
+                  timeoutMs,
+                  ctx.signal,
+                  ctx.onPartialOutput
+                    ? (partial) => ctx.onPartialOutput?.(nodeId, partial)
+                    : undefined
+                )
+                envelope = toEnvelope(execResult, contracts.output)
+                providerError = null
+                break
+              } catch (err) {
+                if (isAbortError(err) || isAborted()) {
+                  providerError = { cause: 'provider_error', err }
+                  break
+                }
+                const cause: RetryCause = isTimeoutError(err)
+                  ? 'timeout'
+                  : isRateLimitError(err)
+                    ? 'rate_limit'
+                    : 'provider_error'
+                providerError = { cause, err }
+
+                const shouldRetry = attempt < retryCfg.attempts && retryCfg.retryOn.includes(cause)
+                if (!shouldRetry) break
+
+                const delay = computeBackoff(retryCfg.backoffMs, retryCfg.maxBackoffMs, attempt)
+                const waitingReason: WaitingReason =
+                  cause === 'rate_limit' ? 'rate_limit' : 'retry_backoff'
+
+                // Persist the waiting state so the inspector renders
+                // "Waiting · retry backoff" while the timer ticks.
+                const retrying: NodeResult = {
+                  nodeId,
+                  status: 'retrying',
+                  waitingReason,
+                  attempts: attempt,
+                }
+                results.set(nodeId, retrying)
+                await ctx.onNodeStatusChange(nodeId, retrying)
+                await emit(ctx, {
+                  runId: ctx.runId,
+                  nodeId,
+                  name: 'node_waiting',
+                  metadata: { waitingReason, attempt, cause, delayMs: delay },
+                })
+                await emit(ctx, {
+                  runId: ctx.runId,
+                  nodeId,
+                  name: 'node_retried',
+                  metadata: { attempt, cause, delayMs: delay },
+                })
+                await sleep(delay, ctx.signal)
+              }
+            }
+
+            if (isAbortError(providerError?.err) || isAborted()) {
+              const cancelled: NodeResult = { nodeId, status: 'cancelled' }
+              results.set(nodeId, cancelled)
+              await ctx.onNodeStatusChange(nodeId, cancelled)
+              await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_cancelled' })
+              return
+            }
+
+            const routeMeta = {
+              providerId: nodeProvider.id,
+              modelKey: modelKey || node.lensId || nodeId,
+            }
+            const inputSnapshot = { ...renderedInputs }
+
+            if (providerError) {
+              const cause = providerError.cause
+              // Timeouts are persisted with the real `timed_out` status (Phase 1
+              // aligns the DB constraint). All other causes remain `failed`.
+              const terminalStatus: NodeStatus = cause === 'timeout' ? 'timed_out' : 'failed'
+              const failed: NodeResult = {
+                nodeId,
+                status: terminalStatus,
+                error: errorMessage(providerError.err),
+                attempts: attempt,
+                resolvedInputSnapshot: inputSnapshot,
+                providerRoute: routeMeta,
+              }
               results.set(nodeId, failed)
               await ctx.onNodeStatusChange(nodeId, failed)
               await emit(ctx, {
                 runId: ctx.runId,
                 nodeId,
-                name: 'node_failed',
-                metadata: { errorCode: 'upstream_failure' },
+                name: cause === 'timeout' ? 'timed_out' : 'node_failed',
+                metadata: { errorCode: cause, attempts: attempt },
               })
               return
             }
-            // substitute_default falls through and renders with empty values.
-          }
 
-          await ctx.onNodeStatusChange(nodeId, { nodeId, status: 'running' })
-          await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_started' })
-
-          // AP: modality guard — block non-text nodes when agent policy disallows the modality
-          const nodeType = node.config?.nodeType
-          if (
-            ctx.modalityGuard &&
-            nodeType &&
-            nodeType !== 'text' &&
-            nodeType !== 'condition' &&
-            nodeType !== 'merge' &&
-            nodeType !== 'delegate'
-          ) {
-            try {
-              await ctx.modalityGuard(nodeId, nodeType)
-            } catch (err) {
-              const errMsg = err instanceof Error ? err.message : String(err)
-              const isModalityBlocked = errMsg.includes('modality_not_allowed')
-              const blocked: NodeResult = {
-                nodeId,
-                status: 'blocked',
-                error: isModalityBlocked ? 'modality_not_allowed' : `modality_guard_error: ${errMsg}`,
-                outputData: { modality: nodeType },
-              }
-              results.set(nodeId, blocked)
-              await ctx.onNodeStatusChange(nodeId, blocked)
-              await emit(ctx, {
-                runId: ctx.runId,
-                nodeId,
-                name: 'node_blocked',
-                metadata: { errorCode: 'modality_not_allowed', modality: nodeType },
-              })
-              return
-            }
-          }
-
-          const attempts = Math.max(1, node.config?.retry?.attempts ?? DEFAULT_RETRY.attempts)
-          const retryCfg: Required<RetryConfig> = {
-            attempts,
-            backoffMs: node.config?.retry?.backoffMs ?? DEFAULT_RETRY.backoffMs,
-            maxBackoffMs: node.config?.retry?.maxBackoffMs ?? DEFAULT_RETRY.maxBackoffMs,
-            retryOn: node.config?.retry?.retryOn ?? DEFAULT_RETRY.retryOn,
-          }
-          const timeoutMs = node.config?.timeoutMs ?? DEFAULT_TIMEOUT_MS
-          const moderationPolicy = node.config?.moderation ?? DEFAULT_MODERATION
-
-          // Resolve template + contracts up-front (not retried on transient failures).
-          // Utility nodes (null lensId) skip template resolution — they are
-          // dispatched via the node runner registry below.
-          let template: string
-          if (!node.lensId) {
-            template = ''
-          } else {
-            try {
-              template = await ctx.resolveLensTemplate(node.lensId, node.versionId)
-            } catch (err) {
-              const result: NodeResult = {
-                nodeId,
-                status: 'failed',
-                error: `template_resolution_failed: ${errorMessage(err)}`,
-              }
-              results.set(nodeId, result)
-              await ctx.onNodeStatusChange(nodeId, result)
-              await emit(ctx, {
-                runId: ctx.runId,
-                nodeId,
-                name: 'node_failed',
-                metadata: { errorCode: 'template_resolution_failed' },
-              })
-              return
-            }
-          }
-
-          let contracts: { input: LensInputContract | null; output: LensOutputContract | null } = {
-            input: null,
-            output: null,
-          }
-          if (ctx.resolveVersionContracts && node.versionId) {
-            try {
-              contracts = await ctx.resolveVersionContracts(node.versionId)
-            } catch {
-              contracts = { input: null, output: null }
-            }
-          }
-
-          const provenanceHandoffs: ProvenanceHandoff[] = []
-          const renderedInputs = resolveRenderedInputs(
-            node,
-            edges,
-            results,
-            ctx.rootInputs,
-            (handoff) => provenanceHandoffs.push(handoff),
-            ctx.runId,
-          )
-
-          // Z10: context size guard — reject inputs that exceed the byte
-          // ceiling before they reach the provider. This prevents a long chain
-          // from accumulating MB-scale context that would inflate token costs.
-          const contextSize = JSON.stringify(renderedInputs).length
-          if (contextSize > MAX_CONTEXT_BYTES) {
-            const ctxTooBig: NodeResult = {
-              nodeId,
-              status: 'failed',
-              error: 'context_too_large',
-            }
-            results.set(nodeId, ctxTooBig)
-            await ctx.onNodeStatusChange(nodeId, ctxTooBig)
-            await emit(ctx, {
-              runId: ctx.runId,
-              nodeId,
-              name: 'node_failed',
-              metadata: { errorCode: 'context_too_large', sizeBytes: contextSize },
-            })
-            return
-          }
-
-          // Field-level provenance: emit one record per edge whose value was
-          // actually used by this node. Best-effort — provenance writes must
-          // never break execution.
-          if (ctx.onProvenance) {
-            await Promise.all(
-              provenanceHandoffs.map(async (h) => {
-                try {
-                  await ctx.onProvenance!(h)
-                  await emit(ctx, {
-                    runId: ctx.runId,
-                    nodeId: h.targetNodeId,
-                    name: 'node_provenance',
-                    metadata: {
-                      sourceRunId: h.sourceRunId,
-                      sourceNodeId: h.sourceNodeId,
-                      sourceOutputPath: h.sourceOutputPath,
-                      targetInputPath: h.targetInputPath,
-                    },
-                  })
-                } catch {
-                  // observability is best-effort
+            // ── Output moderation ───────────────────────────────────────
+            if (
+              envelope &&
+              ctx.moderation &&
+              (moderationPolicy === 'output' || moderationPolicy === 'both')
+            ) {
+              const decision = await safeCheck(ctx.moderation, 'output', envelope.output, nodeId)
+              if (!decision.allowed) {
+                const result: NodeResult = {
+                  nodeId,
+                  status: 'failed',
+                  error: 'moderation_blocked',
+                  outputData: { moderation: decision },
                 }
-              }),
-            )
-          }
-
-          // Prompt rendering is strict about unresolved placeholders (§6.2).
-          // A PlaceholderUnboundError surfaces as a `node.blocked` failure
-          // with a structured errorCode so the UI can highlight which label
-          // is missing on the graph.
-          let resolvedPrompt: string
-          try {
-            resolvedPrompt = renderPrompt(template, renderedInputs, contracts.input)
-          } catch (err) {
-            if (err instanceof PlaceholderUnboundError) {
-              // `blocked` is the canonical terminal status for unresolved
-              // placeholders so the inspector renders the matching badge and
-              // the run-state projection counts it under `failed_count`.
-              const blocked: NodeResult = {
-                nodeId,
-                status: 'blocked',
-                error: 'placeholder_unbound',
-                outputData: { placeholder: err.label },
+                results.set(nodeId, result)
+                await ctx.onNodeStatusChange(nodeId, result)
+                await emit(ctx, {
+                  runId: ctx.runId,
+                  nodeId,
+                  name: 'moderation_flagged',
+                  metadata: { phase: 'output', decision },
+                })
+                return
               }
-              results.set(nodeId, blocked)
-              await ctx.onNodeStatusChange(nodeId, blocked)
-              await emit(ctx, {
-                runId: ctx.runId,
-                nodeId,
-                name: 'node_blocked',
-                metadata: { errorCode: 'placeholder_unbound', label: err.label },
-              })
-              return
             }
-            throw err
-          }
 
-          // ── Input contract validation ───────────────────────────────
-          const inputCheck = validateInputs(renderedInputs, contracts.input)
-          if (!inputCheck.ok) {
-            const result: NodeResult = {
-              nodeId,
-              status: 'failed',
-              error: 'input_contract_violation',
-              outputData: { contractErrors: inputCheck.errors },
-            }
-            results.set(nodeId, result)
-            await ctx.onNodeStatusChange(nodeId, result)
-            await emit(ctx, {
-              runId: ctx.runId,
-              nodeId,
-              name: 'contract_violated',
-              metadata: { phase: 'input', errors: inputCheck.errors },
-            })
-            return
-          }
-
-          // ── Input moderation ────────────────────────────────────────
-          if (ctx.moderation && (moderationPolicy === 'input' || moderationPolicy === 'both')) {
-            const decision = await safeCheck(ctx.moderation, 'input', resolvedPrompt, nodeId)
-            if (!decision.allowed) {
+            // ── Output contract validation ──────────────────────────────
+            const outputCheck = validateOutput(envelope, contracts.output)
+            if (!outputCheck.ok) {
+              // Output contract violations graduate to `invalidated` — a
+              // distinct terminal state that makes envelope-level failures
+              // (as opposed to provider exceptions) trivially greppable in
+              // the observability views.
               const result: NodeResult = {
                 nodeId,
-                status: 'failed',
-                error: 'moderation_blocked',
-                outputData: { moderation: decision },
-              }
-              results.set(nodeId, result)
-              await ctx.onNodeStatusChange(nodeId, result)
-              await emit(ctx, {
-                runId: ctx.runId,
-                nodeId,
-                name: 'moderation_flagged',
-                metadata: { phase: 'input', decision },
-              })
-              return
-            }
-          }
-
-          // ── Pinned output short-circuit (dev/dry-run only) ─────────��────
-          if (ctx.isDevExecution && ctx.pinnedOutputs?.get(nodeId)) {
-            const pinned = ctx.pinnedOutputs.get(nodeId)!
-            const envelope = toEnvelope(pinned.output, contracts.output)
-            const outputData = { ...envelopeToOutputData(envelope), ...(pinned.output.data ?? {}) }
-            const result: NodeResult = { nodeId, status: 'completed', envelope, outputData, attempts: 0 }
-            results.set(nodeId, result)
-            await ctx.onNodeStatusChange(nodeId, result)
-            await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_completed', metadata: { pinned: true } })
-            return
-          }
-
-          // ── CN: Node Runner dispatch — utility nodes bypass the provider pipeline ──
-          const runnerNodeType = node.config?.nodeType
-          const nodeRunner = runnerNodeType ? getNodeRunner(runnerNodeType) : undefined
-          if (nodeRunner) {
-            const upstreamOutputs = new Map<string, ExecutionResult>()
-            for (const [nId, res] of results.entries()) {
-              if (res.envelope) {
-                upstreamOutputs.set(nId, {
-                  mediaType: (res.envelope.kind ?? 'text') as ExecutionResult['mediaType'],
-                  text: res.envelope.output,
-                  url: res.envelope.media?.url,
-                  data: res.outputData,
-                  durationMs: typeof res.envelope.metadata?.['durationMs'] === 'number'
-                    ? res.envelope.metadata['durationMs']
-                    : undefined,
-                })
-              }
-            }
-            const runnerCtx: NodeRunnerContext = {
-              nodeId,
-              upstreamOutputs,
-              resolvedParams: { ...renderedInputs },
-              nodeConfig: (node.config as Record<string, unknown>) ?? {},
-              signal: ctx.signal,
-              resolvedPrompt,
-              outputContract: contracts.output,
-              executeProvider: async (input) => {
-                const provider = ctx.resolveExecutionProvider
-                  ? await ctx.resolveExecutionProvider(node)
-                  : this.provider
-                const modelKey = (
-                  node.config?.modelId?.trim() ||
-                  ctx.defaultModelKey ||
-                  ''
-                ).trim()
-                return provider.execute(modelKey, input, ctx.signal)
-              },
-              resolveConnector: ctx.resolveConnector ?? undefined,
-              executeConnectorOperation: ctx.executeConnectorOperation ?? undefined,
-            }
-            try {
-              const runnerResult = await nodeRunner.execute(runnerCtx)
-              // Apply variable mutations to the root inputs for downstream
-              if (runnerResult.variableMutations && ctx.rootInputs) {
-                Object.assign(ctx.rootInputs, runnerResult.variableMutations)
-              }
-              const envelope = toEnvelope(runnerResult.output, contracts.output)
-              const outputData = { ...envelopeToOutputData(envelope), ...(runnerResult.output.data ?? {}) }
-              const result: NodeResult = { nodeId, status: 'completed', envelope, outputData, attempts: 1, resolvedInputSnapshot: renderedInputs }
-              results.set(nodeId, result)
-              await ctx.onNodeStatusChange(nodeId, result)
-              await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_completed', metadata: { durationMs: runnerResult.output.durationMs } })
-            } catch (err) {
-              const errMsg = err instanceof Error ? err.message : String(err)
-              const result: NodeResult = { nodeId, status: 'failed', error: errMsg }
-              results.set(nodeId, result)
-              await ctx.onNodeStatusChange(nodeId, result)
-              await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_failed', metadata: { error: errMsg } })
-            }
-            return
-          }
-
-          // ── Provider call with retry + timeout ──────────────────────
-          const nodeProvider = ctx.resolveExecutionProvider
-            ? await ctx.resolveExecutionProvider(node)
-            : this.provider
-          const rawCfg = node.config as Record<string, unknown> | undefined
-          const modelKey = (
-            node.config?.modelId?.trim() ||
-            (typeof rawCfg?.['model_id'] === 'string' ? rawCfg['model_id'].trim() : '') ||
-            ctx.defaultModelKey ||
-            ''
-          ).trim()
-          const attachments = inferAttachmentsFromRendered(renderedInputs)
-          const execInputBase: ExecutionInput = {
-            prompt: resolvedPrompt,
-            ...(attachments.length > 0 ? { attachments } : {}),
-          }
-
-          let envelope: NodeOutputEnvelope | null = null
-          let providerError: { cause: RetryCause; err: unknown } | null = null
-          let attempt = 0
-
-          while (attempt < retryCfg.attempts) {
-            attempt++
-            if (isAborted()) break
-
-            try {
-              const execResult = await runWithTimeout(
-                nodeProvider,
-                modelKey || node.lensId || nodeId,
-                execInputBase,
-                timeoutMs,
-                ctx.signal,
-                ctx.onPartialOutput ? (partial) => ctx.onPartialOutput?.(nodeId, partial) : undefined,
-              )
-              envelope = toEnvelope(execResult, contracts.output)
-              providerError = null
-              break
-            } catch (err) {
-              if (isAbortError(err) || isAborted()) {
-                providerError = { cause: 'provider_error', err }
-                break
-              }
-              const cause: RetryCause = isTimeoutError(err)
-                ? 'timeout'
-                : isRateLimitError(err)
-                  ? 'rate_limit'
-                  : 'provider_error'
-              providerError = { cause, err }
-
-              const shouldRetry = attempt < retryCfg.attempts && retryCfg.retryOn.includes(cause)
-              if (!shouldRetry) break
-
-              const delay = computeBackoff(retryCfg.backoffMs, retryCfg.maxBackoffMs, attempt)
-              const waitingReason: WaitingReason =
-                cause === 'rate_limit' ? 'rate_limit' : 'retry_backoff'
-
-              // Persist the waiting state so the inspector renders
-              // "Waiting · retry backoff" while the timer ticks.
-              const retrying: NodeResult = {
-                nodeId,
-                status: 'retrying',
-                waitingReason,
+                status: 'invalidated',
+                error: 'output_contract_violation',
+                outputData: {
+                  contractErrors: outputCheck.errors,
+                  envelope,
+                },
                 attempts: attempt,
               }
-              results.set(nodeId, retrying)
-              await ctx.onNodeStatusChange(nodeId, retrying)
+              results.set(nodeId, result)
+              await ctx.onNodeStatusChange(nodeId, result)
               await emit(ctx, {
                 runId: ctx.runId,
                 nodeId,
-                name: 'node_waiting',
-                metadata: { waitingReason, attempt, cause, delayMs: delay },
+                name: 'contract_violated',
+                metadata: { phase: 'output', errors: outputCheck.errors },
               })
-              await emit(ctx, {
-                runId: ctx.runId,
-                nodeId,
-                name: 'node_retried',
-                metadata: { attempt, cause, delayMs: delay },
-              })
-              await sleep(delay, ctx.signal)
+              return
             }
-          }
 
-          if (isAbortError(providerError?.err) || isAborted()) {
-            const cancelled: NodeResult = { nodeId, status: 'cancelled' }
-            results.set(nodeId, cancelled)
-            await ctx.onNodeStatusChange(nodeId, cancelled)
-            await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_cancelled' })
-            return
-          }
-
-          const routeMeta = { providerId: nodeProvider.id, modelKey: modelKey || node.lensId || nodeId }
-          const inputSnapshot = { ...renderedInputs }
-
-          if (providerError) {
-            const cause = providerError.cause
-            // Timeouts are persisted with the real `timed_out` status (Phase 1
-            // aligns the DB constraint). All other causes remain `failed`.
-            const terminalStatus: NodeStatus = cause === 'timeout' ? 'timed_out' : 'failed'
-            const failed: NodeResult = {
+            // ── Success ─────────────────────────────────────────────────
+            const outputData: Record<string, unknown> = envelopeToOutputData(envelope!)
+            const result: NodeResult = {
               nodeId,
-              status: terminalStatus,
-              error: errorMessage(providerError.err),
+              status: 'completed',
+              envelope: envelope!,
+              outputData,
               attempts: attempt,
               resolvedInputSnapshot: inputSnapshot,
               providerRoute: routeMeta,
             }
-            results.set(nodeId, failed)
-            await ctx.onNodeStatusChange(nodeId, failed)
-            await emit(ctx, {
-              runId: ctx.runId,
-              nodeId,
-              name: cause === 'timeout' ? 'timed_out' : 'node_failed',
-              metadata: { errorCode: cause, attempts: attempt },
-            })
-            return
-          }
-
-          // ── Output moderation ───────────────────────────────────────
-          if (
-            envelope &&
-            ctx.moderation &&
-            (moderationPolicy === 'output' || moderationPolicy === 'both')
-          ) {
-            const decision = await safeCheck(ctx.moderation, 'output', envelope.output, nodeId)
-            if (!decision.allowed) {
-              const result: NodeResult = {
-                nodeId,
-                status: 'failed',
-                error: 'moderation_blocked',
-                outputData: { moderation: decision },
-              }
-              results.set(nodeId, result)
-              await ctx.onNodeStatusChange(nodeId, result)
-              await emit(ctx, {
-                runId: ctx.runId,
-                nodeId,
-                name: 'moderation_flagged',
-                metadata: { phase: 'output', decision },
-              })
-              return
-            }
-          }
-
-          // ── Output contract validation ──────────────────────────────
-          const outputCheck = validateOutput(envelope, contracts.output)
-          if (!outputCheck.ok) {
-            // Output contract violations graduate to `invalidated` — a
-            // distinct terminal state that makes envelope-level failures
-            // (as opposed to provider exceptions) trivially greppable in
-            // the observability views.
-            const result: NodeResult = {
-              nodeId,
-              status: 'invalidated',
-              error: 'output_contract_violation',
-              outputData: {
-                contractErrors: outputCheck.errors,
-                envelope,
-              },
-              attempts: attempt,
-            }
             results.set(nodeId, result)
             await ctx.onNodeStatusChange(nodeId, result)
             await emit(ctx, {
               runId: ctx.runId,
               nodeId,
-              name: 'contract_violated',
-              metadata: { phase: 'output', errors: outputCheck.errors },
+              name: 'node_completed',
+              metadata: { attempts: attempt },
             })
-            return
-          }
 
-          // ── Success ─────────────────────────────────────────────────
-          const outputData: Record<string, unknown> = envelopeToOutputData(envelope!)
-          const result: NodeResult = {
-            nodeId,
-            status: 'completed',
-            envelope: envelope!,
-            outputData,
-            attempts: attempt,
-            resolvedInputSnapshot: inputSnapshot,
-            providerRoute: routeMeta,
-          }
-          results.set(nodeId, result)
-          await ctx.onNodeStatusChange(nodeId, result)
-          await emit(ctx, {
-            runId: ctx.runId,
-            nodeId,
-            name: 'node_completed',
-            metadata: { attempts: attempt },
-          })
-
-          // Phase N2 — notify the memory sink so it can checkpoint-flush.
-          if (ctx.memory?.onNodeCompleted) {
-            const policy: MemoryWritePolicy =
-              node.config?.memoryWritePolicy ?? 'on_success'
-            try {
-              await ctx.memory.onNodeCompleted(nodeId, policy)
-            } catch {
-              // Memory flush is observational; never block the run.
+            // Phase N2 — notify the memory sink so it can checkpoint-flush.
+            if (ctx.memory?.onNodeCompleted) {
+              const policy: MemoryWritePolicy = node.config?.memoryWritePolicy ?? 'on_success'
+              try {
+                await ctx.memory.onNodeCompleted(nodeId, policy)
+              } catch {
+                // Memory flush is observational; never block the run.
+              }
             }
-          }
-        })),
+          })
+        )
       )
 
       if (isAborted()) {
@@ -1149,10 +1183,12 @@ function makeSemaphore(limit: number): <T>(fn: () => Promise<T>) => Promise<T> {
     return new Promise<T>((resolve, reject) => {
       const run = () => {
         active++
-        fn().then(resolve, reject).finally(() => {
-          active--
-          queue.shift()?.()
-        })
+        fn()
+          .then(resolve, reject)
+          .finally(() => {
+            active--
+            queue.shift()?.()
+          })
       }
       if (active < limit) {
         run()
@@ -1225,7 +1261,7 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
           clearTimeout(timer)
           reject(new DOMException('aborted', 'AbortError'))
         },
-        { once: true },
+        { once: true }
       )
     }
   })
@@ -1237,13 +1273,16 @@ async function runWithTimeout(
   input: ExecutionInput,
   timeoutMs: number,
   parentSignal: AbortSignal | undefined,
-  onPartial: ((partial: { text: string }) => void | Promise<void>) | undefined,
+  onPartial: ((partial: { text: string }) => void | Promise<void>) | undefined
 ): Promise<ExecutionResult> {
   // Prefer streaming if the provider supports it and we have a partial sink.
   const streaming = provider as IStreamingExecutionProvider
   if (onPartial && typeof streaming.stream === 'function') {
     const controller = createLinkedController(parentSignal)
-    const timeoutId = setTimeout(() => controller.abort(new DOMException('timeout', 'AbortError')), timeoutMs)
+    const timeoutId = setTimeout(
+      () => controller.abort(new DOMException('timeout', 'AbortError')),
+      timeoutMs
+    )
     try {
       let aggregated = ''
       let media: { url: string; mime?: string } | null = null
@@ -1273,7 +1312,10 @@ async function runWithTimeout(
   }
 
   const controller = createLinkedController(parentSignal)
-  const timeoutId = setTimeout(() => controller.abort(new DOMException('timeout', 'AbortError')), timeoutMs)
+  const timeoutId = setTimeout(
+    () => controller.abort(new DOMException('timeout', 'AbortError')),
+    timeoutMs
+  )
   try {
     return await provider.execute(modelId, input, controller.signal)
   } finally {
@@ -1287,11 +1329,9 @@ function createLinkedController(parentSignal?: AbortSignal): AbortController {
     if (parentSignal.aborted) {
       controller.abort(parentSignal.reason)
     } else {
-      parentSignal.addEventListener(
-        'abort',
-        () => controller.abort(parentSignal.reason),
-        { once: true },
-      )
+      parentSignal.addEventListener('abort', () => controller.abort(parentSignal.reason), {
+        once: true,
+      })
     }
   }
   return controller
@@ -1307,14 +1347,18 @@ function guessMediaType(mime?: string): 'text' | 'image' | 'video' | 'audio' {
 
 function toEnvelope(
   execResult: ExecutionResult,
-  outputContract: LensOutputContract | null,
+  outputContract: LensOutputContract | null
 ): NodeOutputEnvelope {
-  const kind = outputContract?.kind ?? (execResult.mediaType === 'image'
-    ? 'image'
-    : execResult.mediaType === 'video'
-      ? 'video'
-      : 'text')
-  const artifactKind = outputContract?.artifactKind ?? (execResult.mediaType === 'audio' ? 'audio' : execResult.mediaType)
+  const kind =
+    outputContract?.kind ??
+    (execResult.mediaType === 'image'
+      ? 'image'
+      : execResult.mediaType === 'video'
+        ? 'video'
+        : 'text')
+  const artifactKind =
+    outputContract?.artifactKind ??
+    (execResult.mediaType === 'audio' ? 'audio' : execResult.mediaType)
 
   const output = execResult.text ?? execResult.url ?? ''
   const media = execResult.url
@@ -1385,7 +1429,7 @@ function resolveRenderedInputs(
   results: Map<string, NodeResult>,
   rootInputs: Record<string, unknown>,
   onProvenance?: (handoff: ProvenanceHandoff) => void,
-  runId: string = '',
+  runId: string = ''
 ): Record<string, unknown> {
   const incoming = edges.filter((e) => e.targetNodeId === node.id)
   const grouped = new Map<string, WorkflowEdge[]>()
@@ -1411,7 +1455,7 @@ function resolveRenderedInputs(
           outputData: source.outputData,
           envelope: source.envelope,
         },
-        edge.sourceOutputKey,
+        edge.sourceOutputKey
       )
       values.push({
         sourceNodeId: edge.sourceNodeId,
@@ -1452,16 +1496,19 @@ function resolveRenderedInputs(
         PARAM_OVERRIDE_UPSTREAM_REF_RE.lastIndex = 0
         if (PARAM_OVERRIDE_UPSTREAM_REF_RE.test(value)) {
           PARAM_OVERRIDE_UPSTREAM_REF_RE.lastIndex = 0
-          rendered[key] = value.replace(PARAM_OVERRIDE_UPSTREAM_REF_RE, (_match, nodeId: string, fieldPath: string) => {
-            const source = results.get(nodeId)
-            if (!source || source.status !== 'completed') return ''
-            const resolved = resolveMappedOutputValue(
-              { status: source.status, outputData: source.outputData, envelope: source.envelope },
-              fieldPath,
-            )
-            if (resolved === null || resolved === undefined) return ''
-            return typeof resolved === 'string' ? resolved : JSON.stringify(resolved)
-          })
+          rendered[key] = value.replace(
+            PARAM_OVERRIDE_UPSTREAM_REF_RE,
+            (_match, nodeId: string, fieldPath: string) => {
+              const source = results.get(nodeId)
+              if (!source || source.status !== 'completed') return ''
+              const resolved = resolveMappedOutputValue(
+                { status: source.status, outputData: source.outputData, envelope: source.envelope },
+                fieldPath
+              )
+              if (resolved === null || resolved === undefined) return ''
+              return typeof resolved === 'string' ? resolved : JSON.stringify(resolved)
+            }
+          )
         } else {
           rendered[key] = value
         }
@@ -1476,7 +1523,7 @@ function resolveRenderedInputs(
 
 function applyMerge(
   strategy: MergeStrategy,
-  values: { sourceNodeId: string; value: unknown }[],
+  values: { sourceNodeId: string; value: unknown }[]
 ): unknown {
   switch (strategy) {
     case 'last_write_wins':
@@ -1503,7 +1550,7 @@ function isEdgeConditionSatisfied(edge: WorkflowEdge, results: Map<string, NodeR
       outputData: source.outputData,
       envelope: source.envelope,
     },
-    edge.sourceOutputKey,
+    edge.sourceOutputKey
   )
   switch (edge.condition.type) {
     case 'present':
@@ -1543,7 +1590,8 @@ function replaceTokenVariants(prompt: string, rawKey: string, value: unknown): s
  * `{{label}}` case-insensitively. The engine expects every placeholder to be
  * resolved OR for the corresponding contract field to be marked optional.
  */
-const UNRESOLVED_PLACEHOLDER_RE = /(?:\[\[\s*([a-z0-9_ \-]+?)\s*\]\])|(?:\{\{\s*([a-z0-9_ \-]+?)\s*\}\})|(?:\[\s+([a-z0-9_ \-]+?)\s+\])/i
+const UNRESOLVED_PLACEHOLDER_RE =
+  /(?:\[\[\s*([a-z0-9_ \-]+?)\s*\]\])|(?:\{\{\s*([a-z0-9_ \-]+?)\s*\}\})|(?:\[\s+([a-z0-9_ \-]+?)\s+\])/i
 
 /**
  * `[[nodeId.fieldPath]]` references inside `param_overrides` values — these
@@ -1555,7 +1603,7 @@ const PARAM_OVERRIDE_UPSTREAM_REF_RE = /\[\[([a-zA-Z0-9_-]+)\.([a-zA-Z0-9_.[\]]+
 function renderPrompt(
   template: string,
   rendered: Record<string, unknown>,
-  inputContract?: LensInputContract | null,
+  inputContract?: LensInputContract | null
 ): string {
   let prompt = template
   for (const [key, value] of Object.entries(rendered)) {
@@ -1590,7 +1638,7 @@ function isLabelOptional(contract: LensInputContract | null | undefined, label: 
 function collectParentStatuses(
   node: WorkflowNode,
   edges: WorkflowEdge[],
-  results: Map<string, NodeResult>,
+  results: Map<string, NodeResult>
 ): { hasNonSuccessful: boolean } {
   const parents = edges.filter((e) => e.targetNodeId === node.id).map((e) => e.sourceNodeId)
   if (parents.length === 0) return { hasNonSuccessful: false }
@@ -1606,12 +1654,16 @@ async function safeCheck(
   gateway: ModerationGateway,
   phase: ModerationPhase,
   text: string,
-  nodeId: string,
+  nodeId: string
 ): Promise<ModerationDecision> {
   try {
     return await gateway.check(phase, text, nodeId)
   } catch (err) {
-    return { allowed: true, policy: 'error', reason: `moderation_check_failed: ${errorMessage(err)}` }
+    return {
+      allowed: true,
+      policy: 'error',
+      reason: `moderation_check_failed: ${errorMessage(err)}`,
+    }
   }
 }
 
@@ -1627,7 +1679,7 @@ async function emit(ctx: WorkflowExecutionContext, event: EngineEvent): Promise<
 function finish(
   runId: string,
   results: Map<string, NodeResult>,
-  override?: 'cancelled',
+  override?: 'cancelled'
 ): WorkflowRunResult {
   const allResults = Array.from(results.values())
   if (override === 'cancelled') {
@@ -1644,7 +1696,7 @@ function finish(
       r.status === 'failed' ||
       r.status === 'timed_out' ||
       r.status === 'blocked' ||
-      r.status === 'invalidated',
+      r.status === 'invalidated'
   )
   return { runId, status: failed ? 'failed' : 'completed', nodeResults: allResults }
 }

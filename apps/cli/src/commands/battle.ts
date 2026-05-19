@@ -802,7 +802,10 @@ async function resolveBattleId(idOrSlug: string): Promise<string> {
     p_slug: idOrSlug,
   })
   const row = Array.isArray(rows) ? rows[0] : (rows as unknown as { id: string } | null)
-  if (!row?.id) throw new Error(`No battle found for slug "${idOrSlug}". Use \`lf battle list\` to find valid IDs or slugs.`)
+  if (!row?.id)
+    throw new Error(
+      `No battle found for slug "${idOrSlug}". Use \`lf battle list\` to find valid IDs or slugs.`
+    )
   return row.id
 }
 
@@ -1301,7 +1304,9 @@ const newFromTemplate = defineCommand({
       if (UUID_RE.test(ref)) {
         templateId = ref
       } else {
-        const templates = await callRpc<Array<{ id: string; title?: string; description?: string | null }>>(
+        const templates = await callRpc<
+          Array<{ id: string; title?: string; description?: string | null }>
+        >(
           'fn_list_public_battle_templates',
           { p_category: null, p_limit: 100 },
           { requireAuth: false }
@@ -1330,7 +1335,10 @@ const newFromTemplate = defineCommand({
 
       let slug = (args.slug || '').trim() || slugify(title)
       if (!slug) {
-        const answer = await consola.prompt('Battle slug:', { type: 'text', initial: slugify(title) })
+        const answer = await consola.prompt('Battle slug:', {
+          type: 'text',
+          initial: slugify(title),
+        })
         slug = String(answer ?? '').trim()
       }
 
@@ -1392,9 +1400,14 @@ const templateCreate = defineCommand({
         },
         { requireAuth: true }
       )
-      if (args.json) { printJson(result); return }
+      if (args.json) {
+        printJson(result)
+        return
+      }
       consola.success('Template created: %s', result?.['id'])
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -1438,9 +1451,14 @@ const templateUpdate = defineCommand({
         },
         { requireAuth: true }
       )
-      if (args.json) { printJson(result); return }
+      if (args.json) {
+        printJson(result)
+        return
+      }
       consola.success('Template updated: %s', result?.['id'])
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -1471,7 +1489,9 @@ const templateDelete = defineCommand({
         { requireAuth: true }
       )
       consola.success('Template deleted: %s', args.id)
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -1506,9 +1526,14 @@ const seriesCreate = defineCommand({
         },
         { requireAuth: true }
       )
-      if (args.json) { printJson(result); return }
+      if (args.json) {
+        printJson(result)
+        return
+      }
       consola.success('Series created: %s', result?.['id'])
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -1529,11 +1554,14 @@ const seriesView = defineCommand({
         consola.info('Series not found.')
         return
       }
-      if (args.json) { printJson(rows); return }
+      if (args.json) {
+        printJson(rows)
+        return
+      }
       const head = rows[0]
       consola.box(
         `Series: ${head['title']}\n` +
-        `Status: ${head['status']}  Round: ${head['current_round']} / ${head['round_count']}`
+          `Status: ${head['status']}  Round: ${head['current_round']} / ${head['round_count']}`
       )
       printTable(
         ['Round', 'Battle', 'Status', 'Winner'],
@@ -1544,7 +1572,9 @@ const seriesView = defineCommand({
           r['winner_contender_id'] ? (r['winner_contender_id'] as string).substring(0, 8) : '—',
         ])
       )
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -1564,7 +1594,10 @@ const seriesAdvance = defineCommand({
         { p_series_id: args.id },
         { requireAuth: true }
       )
-      if (args.json) { printJson(result); return }
+      if (args.json) {
+        printJson(result)
+        return
+      }
       consola.success(
         'Series %s — round %s / %s — status %s',
         args.id,
@@ -1572,7 +1605,9 @@ const seriesAdvance = defineCommand({
         String(result?.['round_count']),
         String(result?.['status'])
       )
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -1648,8 +1683,7 @@ const submitMedia = defineCommand({
 
       const mime = inferMimeFromExt(filePath)
       const modality =
-        (String(args.modality).trim() as 'image' | 'video' | 'audio') ||
-        inferModalityFromMime(mime)
+        (String(args.modality).trim() as 'image' | 'video' | 'audio') || inferModalityFromMime(mime)
       if (!modality || !['image', 'video', 'audio'].includes(modality)) {
         consola.error(
           'Could not infer modality (image|video|audio) for %s. Use --modality.',
@@ -1879,7 +1913,10 @@ const retract = defineCommand({
   async run({ args }) {
     try {
       await callRpc('fn_battles_retract', { p_battle_id: args.id }, { requireAuth: true })
-      consola.success('Battle %s retracted and archived. Existing votes, submissions, and logs remain auditable.', args.id)
+      consola.success(
+        'Battle %s retracted and archived. Existing votes, submissions, and logs remain auditable.',
+        args.id
+      )
     } catch (err) {
       handleError(err)
     }
@@ -2661,7 +2698,7 @@ const localPush = defineCommand({
         'Note: pushing to cloud does not enable cloud battle execution or public arena access.'
       )
       consola.warn(
-        'Cloud battles are Private Alpha — not publicly available without operator approval.',
+        'Cloud battles are Private Alpha — not publicly available without operator approval.'
       )
       consola.info('Continue: lf battle open %s', battle['id'])
     } catch (err) {
@@ -3039,13 +3076,15 @@ const exec = defineCommand({
         }
 
         const adapter = _getStreamAdapter(provider)
-        const { url: baseUrl, body, headers } = adapter.buildStreamRequest(model, messages, {
+        const {
+          url: baseUrl,
+          body,
+          headers,
+        } = adapter.buildStreamRequest(model, messages, {
           maxTokens: 4096,
         })
         const authHeaders = args.byok ? adapter.authHeader(apiKey) : {}
-        const url = adapter.buildStreamUrl
-          ? adapter.buildStreamUrl(model, apiKey)
-          : baseUrl
+        const url = adapter.buildStreamUrl ? adapter.buildStreamUrl(model, apiKey) : baseUrl
 
         consola.start('[%s] Streaming %s/%s…', slot, provider, model)
 
@@ -3335,10 +3374,10 @@ const schedule = defineCommand({
       const client = await createSupabaseClient()
 
       const { error } = await client.rpc('fn_update_battle_execution_settings', {
-        p_battle_id:             args.id,
-        p_execution_starts_at:   startsAt.toISOString(),
+        p_battle_id: args.id,
+        p_execution_starts_at: startsAt.toISOString(),
         p_voting_duration_hours: parseInt(args['voting-duration-hours'], 10),
-        p_auto_publish:          !args['no-auto-publish'],
+        p_auto_publish: !args['no-auto-publish'],
       })
 
       if (error) throw error
@@ -3701,11 +3740,11 @@ const testModel = defineCommand({
       'Run a conformance check against an AI model and log the result to model_test_runs.',
   },
   args: {
-    'battle-id':   { type: 'string', description: 'Battle UUID (owner-only)' },
+    'battle-id': { type: 'string', description: 'Battle UUID (owner-only)' },
     'template-id': { type: 'string', description: 'Template UUID (owner-only)' },
-    provider:      { type: 'string', description: 'Model provider', required: true },
-    model:         { type: 'string', description: 'Model id',       required: true },
-    prompt:        { type: 'string', description: 'Prompt text',    required: true },
+    provider: { type: 'string', description: 'Model provider', required: true },
+    model: { type: 'string', description: 'Model id', required: true },
+    prompt: { type: 'string', description: 'Prompt text', required: true },
     'expected-schema': {
       type: 'string',
       description: 'Path to a JSON file listing required top-level keys: ["title","body"]',
@@ -3723,7 +3762,8 @@ const testModel = defineCommand({
   async run({ args }) {
     try {
       const { readFileSync } = await import('node:fs')
-      const { runModelConformanceTest, jsonShapeAssertion } = await import('@lenserfight/utils/text')
+      const { runModelConformanceTest, jsonShapeAssertion } =
+        await import('@lenserfight/utils/text')
 
       if (!args['battle-id'] && !args['template-id']) {
         consola.error('Either --battle-id or --template-id must be provided.')
@@ -3745,11 +3785,15 @@ const testModel = defineCommand({
         if (args['mock-output']) {
           const text = readFileSync(args['mock-output'], 'utf8')
           let raw: unknown = text
-          try { raw = JSON.parse(text) } catch { /* leave as text */ }
+          try {
+            raw = JSON.parse(text)
+          } catch {
+            /* leave as text */
+          }
           return { raw, text }
         }
         throw new Error(
-          'live provider invocation not yet wired into the CLI — pass --mock-output for now',
+          'live provider invocation not yet wired into the CLI — pass --mock-output for now'
         )
       }
 
@@ -3758,21 +3802,21 @@ const testModel = defineCommand({
         args.model,
         args.prompt,
         requiredKeys.length > 0 ? jsonShapeAssertion(requiredKeys) : () => true,
-        runner,
+        runner
       )
 
       const logged = await callRpc<Record<string, unknown>>(
         'fn_log_model_test_run',
         {
-          p_battle_id:      args['battle-id'] || null,
-          p_template_id:    args['template-id'] || null,
+          p_battle_id: args['battle-id'] || null,
+          p_template_id: args['template-id'] || null,
           p_model_provider: args.provider,
-          p_model_id:       args.model,
-          p_prompt_hash:    result.promptHash,
-          p_passed:         result.passed,
-          p_duration_ms:    result.durationMs,
-          p_raw_output:     result.raw,
-          p_violations:     result.violations,
+          p_model_id: args.model,
+          p_prompt_hash: result.promptHash,
+          p_passed: result.passed,
+          p_duration_ms: result.durationMs,
+          p_raw_output: result.raw,
+          p_violations: result.violations,
         },
         { requireAuth: true }
       )
@@ -3785,11 +3829,11 @@ const testModel = defineCommand({
       printTable(
         ['Metric', 'Value'],
         [
-          ['Passed',      String(result.passed)],
-          ['Duration',    `${result.durationMs} ms`],
+          ['Passed', String(result.passed)],
+          ['Duration', `${result.durationMs} ms`],
           ['Prompt hash', truncate(result.promptHash, 24)],
-          ['Violations',  result.violations.join(', ') || '—'],
-          ['Run id',      String(logged?.['id'] ?? '—')],
+          ['Violations', result.violations.join(', ') || '—'],
+          ['Run id', String(logged?.['id'] ?? '—')],
         ]
       )
     } catch (err) {
@@ -3817,17 +3861,22 @@ const checkMedia = defineCommand({
         { p_submission_id: args['submission-id'] },
         { requireAuth: true }
       )
-      if (args.json) { printJson(result); return }
+      if (args.json) {
+        printJson(result)
+        return
+      }
       const violations = (result?.['violations'] as string[] | undefined) ?? []
       printTable(
         ['Field', 'Value'],
         [
           ['Submission', String(result?.['submission_id'] ?? args['submission-id'])],
-          ['Passed',     String(result?.['passed'] ?? false)],
+          ['Passed', String(result?.['passed'] ?? false)],
           ['Violations', violations.join(', ') || '—'],
         ]
       )
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -3848,15 +3897,23 @@ const myVote = defineCommand({
         { requireAuth: true }
       )
       const row = Array.isArray(rows) ? rows[0] : rows
-      if (args.json) { printJson(row ?? null); return }
-      if (!row) { consola.info('no vote cast'); return }
+      if (args.json) {
+        printJson(row ?? null)
+        return
+      }
+      if (!row) {
+        consola.info('no vote cast')
+        return
+      }
       consola.info(
         'voted for %s (value=%s, updated %s)',
         String(row['contender_id'] ?? '—'),
         String(row['vote_value'] ?? '—'),
-        String(row['updated_at'] ?? '—'),
+        String(row['updated_at'] ?? '—')
       )
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -3866,8 +3923,8 @@ const changeVote = defineCommand({
     description: 'Change your vote on an open battle (transactional swap).',
   },
   args: {
-    'battle-id':     { type: 'string', description: 'Battle UUID',     required: true },
-    'contender-id':  { type: 'string', description: 'New contender UUID', required: true },
+    'battle-id': { type: 'string', description: 'Battle UUID', required: true },
+    'contender-id': { type: 'string', description: 'New contender UUID', required: true },
     json: { type: 'boolean', description: 'Output JSON', default: false },
   },
   async run({ args }) {
@@ -3875,14 +3932,19 @@ const changeVote = defineCommand({
       const result = await callRpc<Record<string, unknown>>(
         'fn_battles_change_vote',
         {
-          p_battle_id:        args['battle-id'],
+          p_battle_id: args['battle-id'],
           p_new_contender_id: args['contender-id'],
         },
         { requireAuth: true }
       )
-      if (args.json) { printJson(result); return }
+      if (args.json) {
+        printJson(result)
+        return
+      }
       consola.success('Vote updated for battle %s.', args['battle-id'])
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -3897,7 +3959,7 @@ const renderPrompt = defineCommand({
   },
   args: {
     template: { type: 'string', description: 'Template UUID or slug', required: true },
-    vars:     {
+    vars: {
       type: 'string',
       description: 'JSON object of variables, e.g. \'{"topic":"LLMs"}\'',
       default: '{}',
@@ -3918,13 +3980,18 @@ const renderPrompt = defineCommand({
         'fn_battles_render_prompt',
         {
           p_template_id: args.template,
-          p_variables:   vars,
+          p_variables: vars,
         },
         { requireAuth: true }
       )
-      if (args.json) { printJson({ rendered }); return }
+      if (args.json) {
+        printJson({ rendered })
+        return
+      }
       process.stdout.write(`${rendered ?? ''}\n`)
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -3938,9 +4005,9 @@ const browse = defineCommand({
   },
   args: {
     category: { type: 'string', description: 'Filter by category', default: '' },
-    status:   { type: 'string', description: 'Filter by status',   default: '' },
-    q:        { type: 'string', description: 'Full-text query',    default: '' },
-    limit:    { type: 'string', description: 'Max rows (1..100)',  default: '20' },
+    status: { type: 'string', description: 'Filter by status', default: '' },
+    q: { type: 'string', description: 'Full-text query', default: '' },
+    limit: { type: 'string', description: 'Max rows (1..100)', default: '20' },
     json: { type: 'boolean', description: 'Output JSON', default: false },
   },
   async run({ args }) {
@@ -3949,16 +4016,22 @@ const browse = defineCommand({
         'fn_browse_battles',
         {
           p_category: args.category || null,
-          p_status:   args.status   || null,
-          p_q:        args.q        || null,
+          p_status: args.status || null,
+          p_q: args.q || null,
           p_after_created: null,
-          p_after_id:      null,
-          p_limit:    Math.min(Math.max(Number(args.limit) || 20, 1), 100),
+          p_after_id: null,
+          p_limit: Math.min(Math.max(Number(args.limit) || 20, 1), 100),
         },
         { noAuth: true }
       )
-      if (args.json) { printJson(rows ?? []); return }
-      if (!rows?.length) { consola.info('No battles found.'); return }
+      if (args.json) {
+        printJson(rows ?? [])
+        return
+      }
+      if (!rows?.length) {
+        consola.info('No battles found.')
+        return
+      }
       printTable(
         ['Slug', 'Title', 'Status', 'Category', 'Votes'],
         rows.map((r) => [
@@ -3969,7 +4042,9 @@ const browse = defineCommand({
           String(r['vote_count'] ?? 0),
         ])
       )
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -3984,11 +4059,11 @@ const devCycle = defineCommand({
       'Requires SUPABASE_SERVICE_ROLE_KEY and a local supabase URL.',
   },
   args: {
-    template:    { type: 'string', description: 'Template slug or UUID', default: 'e2e-default' },
-    contenders:  { type: 'string', description: 'Contender count',       default: '2' },
-    'submit-text':{ type: 'string', description: 'Submission body text', default: '' },
-    'vote-for':  { type: 'string', description: 'Contender to vote for (slot or id)', default: 'A' },
-    'dry-run':   { type: 'boolean', description: 'Print steps but execute none', default: false },
+    template: { type: 'string', description: 'Template slug or UUID', default: 'e2e-default' },
+    contenders: { type: 'string', description: 'Contender count', default: '2' },
+    'submit-text': { type: 'string', description: 'Submission body text', default: '' },
+    'vote-for': { type: 'string', description: 'Contender to vote for (slot or id)', default: 'A' },
+    'dry-run': { type: 'boolean', description: 'Print steps but execute none', default: false },
     json: { type: 'boolean', description: 'Output JSON', default: false },
   },
   async run({ args }) {
@@ -3997,7 +4072,7 @@ const devCycle = defineCommand({
     if (!isLocal) {
       consola.warn(
         'refusing to drive dev-cycle against non-local Supabase (SUPABASE_URL="%s").',
-        url || '<unset>',
+        url || '<unset>'
       )
       consola.warn('start `supabase start` and export SUPABASE_URL=http://127.0.0.1:54321 first.')
       if (!args['dry-run']) {
@@ -4013,7 +4088,10 @@ const devCycle = defineCommand({
       `cast cross-votes targeting "${args['vote-for']}"`,
     ]
     if (args['dry-run']) {
-      consola.box('dev-cycle (dry-run) — no RPCs executed:\n' + steps.map((s, i) => `  ${i + 1}. ${s}`).join('\n'))
+      consola.box(
+        'dev-cycle (dry-run) — no RPCs executed:\n' +
+          steps.map((s, i) => `  ${i + 1}. ${s}`).join('\n')
+      )
       return
     }
 
@@ -4027,9 +4105,14 @@ const devCycle = defineCommand({
         process.exitCode = r.status ?? 1
         return
       }
-      if (args.json) { printJson({ ok: true, steps }); return }
+      if (args.json) {
+        printJson({ ok: true, steps })
+        return
+      }
       consola.success('dev-cycle complete (delegated to scripts/e2e-battle.sh).')
-    } catch (err) { handleError(err) }
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -4261,11 +4344,14 @@ const webhookAdd = defineCommand({
   },
   async run({ args }) {
     try {
-      const eventTypes = args.events.split(',').map((e: string) => e.trim()).filter(Boolean)
+      const eventTypes = args.events
+        .split(',')
+        .map((e: string) => e.trim())
+        .filter(Boolean)
       const subId = await callRpc<string>(
         'fn_battles_subscribe_webhook',
         {
-          p_battle_id:   args.id,
+          p_battle_id: args.id,
           p_webhook_url: args.url,
           p_event_types: eventTypes,
         },
@@ -4290,7 +4376,8 @@ const webhook = defineCommand({
 const formats = defineCommand({
   meta: {
     name: 'formats',
-    description: 'List supported battle task sources and their allowed contender structures and judging modes.',
+    description:
+      'List supported battle task sources and their allowed contender structures and judging modes.',
   },
   args: {
     json: {
@@ -4419,7 +4506,8 @@ const challengeTypes = defineCommand({
 const explainInvalid = defineCommand({
   meta: {
     name: 'explain-invalid',
-    description: 'Explain why a task source / contender structure / judging mode combination is invalid.',
+    description:
+      'Explain why a task source / contender structure / judging mode combination is invalid.',
   },
   args: {
     'task-source': {
@@ -4491,8 +4579,7 @@ const explainInvalid = defineCommand({
 const validateBattle = defineCommand({
   meta: {
     name: 'validate',
-    description:
-      'Validate a battle creation configuration against governance rules.',
+    description: 'Validate a battle creation configuration against governance rules.',
   },
   args: {
     // V2 flags (preferred)
@@ -4554,7 +4641,9 @@ const validateBattle = defineCommand({
     if (useV2) {
       // ── V2 validation ──
       if (!args['task-source'] || !args['contender-structure'] || !args['judging-mode']) {
-        consola.error('V2 validation requires all three: --task-source, --contender-structure, --judging-mode')
+        consola.error(
+          'V2 validation requires all three: --task-source, --contender-structure, --judging-mode'
+        )
         process.exitCode = 1
         return
       }
@@ -4580,7 +4669,8 @@ const validateBattle = defineCommand({
         consola.info('  Task source:          %s', args['task-source'])
         consola.info('  Contender structure:  %s', args['contender-structure'])
         consola.info('  Judging mode:         %s', args['judging-mode'])
-        if (args['challenge-type']) consola.info('  Challenge type:       %s', args['challenge-type'])
+        if (args['challenge-type'])
+          consola.info('  Challenge type:       %s', args['challenge-type'])
         if (args['content-type']) consola.info('  Content type:         %s', args['content-type'])
         return
       }
@@ -4592,7 +4682,9 @@ const validateBattle = defineCommand({
 
     // ── Legacy V1 validation ──
     if (!args.format || !args.type) {
-      consola.error('Legacy validation requires --format and --type (or use V2 flags: --task-source, --contender-structure, --judging-mode)')
+      consola.error(
+        'Legacy validation requires --format and --type (or use V2 flags: --task-source, --contender-structure, --judging-mode)'
+      )
       process.exitCode = 1
       return
     }
@@ -4610,7 +4702,8 @@ const validateBattle = defineCommand({
     if (format === 'lenser_battle' && (args['memory-mode'] || args['instruction-disclosure'])) {
       input.lenserBattlePolicy = {
         memory_mode: (args['memory-mode'] || 'personality') as MemoryMode,
-        instruction_disclosure: (args['instruction-disclosure'] || 'visible_after_close') as InstructionDisclosure,
+        instruction_disclosure: (args['instruction-disclosure'] ||
+          'visible_after_close') as InstructionDisclosure,
         model_binding_override: false,
       }
     }
@@ -4696,8 +4789,14 @@ export default defineCommand({
     'close-voting': closeVoting,
     close: closeBattle,
     archive,
-    restore: battleLifecycleCommand('restore', 'Restore an archived or tombstoned battle when policy allows it.'),
-    lifecycle: battleLifecycleCommand('status', 'Show remote lifecycle state, pinned state, snapshots, and delete blockers.'),
+    restore: battleLifecycleCommand(
+      'restore',
+      'Restore an archived or tombstoned battle when policy allows it.'
+    ),
+    lifecycle: battleLifecycleCommand(
+      'status',
+      'Show remote lifecycle state, pinned state, snapshots, and delete blockers.'
+    ),
     pin: battleLifecycleCommand('pin', 'Pin a battle to your saved artifacts.'),
     unpin: battleLifecycleCommand('unpin', 'Remove your saved pin from a battle.'),
     retract,

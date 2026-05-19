@@ -69,7 +69,7 @@ export interface MarketingMediaCardProps {
  */
 export function resolveMarketingImageByTheme(
   source: MarketingImageSource,
-  theme: MarketingTheme,
+  theme: MarketingTheme
 ): string {
   return theme === 'dark' ? source.dark : source.light
 }
@@ -198,7 +198,7 @@ export const MarketingMediaCard: React.FC<MarketingMediaCardProps> = ({
           trackEvent({ name: 'marketing_image_impression', properties: { cardId: id } })
         }
       },
-      { threshold: 0.4 },
+      { threshold: 0.4 }
     )
 
     observer.observe(el)
@@ -270,9 +270,7 @@ export const MarketingMediaCard: React.FC<MarketingMediaCardProps> = ({
       className={[
         'grid gap-8 lg:gap-12',
         'animate-fadeIn',
-        imagePosition === 'right'
-          ? 'lg:grid-cols-[1fr_1.1fr]'
-          : 'lg:grid-cols-[1.1fr_1fr]',
+        imagePosition === 'right' ? 'lg:grid-cols-[1fr_1.1fr]' : 'lg:grid-cols-[1.1fr_1fr]',
       ].join(' ')}
     >
       {imagePosition === 'right' ? (

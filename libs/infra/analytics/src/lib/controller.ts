@@ -1,31 +1,43 @@
-import { AnalyticsEvent, AnalyticsProvider } from './types';
+import { AnalyticsEvent, AnalyticsProvider } from './types'
 
 export class AnalyticsController {
-  private providers: AnalyticsProvider[] = [];
+  private providers: AnalyticsProvider[] = []
 
   registerProvider(provider: AnalyticsProvider) {
-    this.providers.push(provider);
+    this.providers.push(provider)
   }
 
   /** No-op outside production or SSR — centralized gate for all providers. */
   init() {
-    if (import.meta.env['ENV_MODE'] !== 'production' || typeof window === 'undefined') return;
+    if (import.meta.env['ENV_MODE'] !== 'production' || typeof window === 'undefined') return
     for (const p of this.providers) {
-      try { p.init() } catch { /* providers must fail silently */ }
+      try {
+        p.init()
+      } catch {
+        /* providers must fail silently */
+      }
     }
   }
 
   trackPageView(path: string) {
     for (const p of this.providers) {
-      try { p.trackPageView(path) } catch { /* fail silently */ }
+      try {
+        p.trackPageView(path)
+      } catch {
+        /* fail silently */
+      }
     }
   }
 
   trackEvent(event: AnalyticsEvent) {
     for (const p of this.providers) {
-      try { p.trackEvent(event) } catch { /* fail silently */ }
+      try {
+        p.trackEvent(event)
+      } catch {
+        /* fail silently */
+      }
     }
   }
 }
 
-export const globalAnalyticsController = new AnalyticsController();
+export const globalAnalyticsController = new AnalyticsController()

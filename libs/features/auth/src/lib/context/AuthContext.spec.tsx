@@ -82,7 +82,7 @@ describe('AuthProvider', () => {
     authMocks.getCurrentUser.mockReturnValue(
       new Promise<null>((resolve) => {
         resolveAuth = resolve
-      }),
+      })
     )
 
     render(
@@ -92,7 +92,7 @@ describe('AuthProvider', () => {
             <div>App content</div>
           </SessionBoundary>
         </AuthProvider>
-      </React.StrictMode>,
+      </React.StrictMode>
     )
 
     expect(screen.getByText('Loading...')).toBeTruthy()

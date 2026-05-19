@@ -9,7 +9,19 @@ import { themeInitPlugin } from '../../libs/ui/theme/src/lib/viteThemePlugin'
 export default defineConfig(() => ({
   root: import.meta.dirname,
   envDir: import.meta.dirname,
-  envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'CAPTCHA_', 'AUTH_', 'WEB_', 'ARENA_', 'CHAINABIT_APP_URL', 'PRODUCT_', 'FEATURE_CHAINABIT_', 'DATA_SOURCE', 'ENV_MODE'],
+  envPrefix: [
+    'SUPABASE_URL',
+    'SUPABASE_PUBLISHABLE_KEY',
+    'CAPTCHA_',
+    'AUTH_',
+    'WEB_',
+    'ARENA_',
+    'CHAINABIT_APP_URL',
+    'PRODUCT_',
+    'FEATURE_CHAINABIT_',
+    'DATA_SOURCE',
+    'ENV_MODE',
+  ],
   cacheDir: '../../node_modules/.vite/apps/auth',
   server: {
     port: 3004,
@@ -19,7 +31,13 @@ export default defineConfig(() => ({
     port: 3004,
     host: '0.0.0.0',
   },
-  plugins: [react(), tailwindcss(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md']), themeInitPlugin()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    nxViteTsPaths(),
+    nxCopyAssetsPlugin(['*.md']),
+    themeInitPlugin(),
+  ],
   // Uncomment this if you are using workers.
   // worker: {
   //   plugins: () => [ nxViteTsPaths() ],

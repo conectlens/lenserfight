@@ -1,11 +1,20 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService, workflowsService, seoService } from '@lenserfight/data/repositories'
 import type { WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
-import { validateBrowserExecutionPlan, validateWorkflow, TRIGGER_NODE_TYPES } from '@lenserfight/infra/execution'
+import {
+  validateBrowserExecutionPlan,
+  validateWorkflow,
+  TRIGGER_NODE_TYPES,
+} from '@lenserfight/infra/execution'
 import { ArtifactLifecycleMenu } from '@lenserfight/features/artifact-lifecycle'
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
-import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
+import {
+  useCreateLens,
+  CreateLensModal,
+  useFundingSource,
+  FundingSourceToggle,
+} from '@lenserfight/features/lenses'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { useLenser } from '@lenserfight/features/profile'
 import { useShareContext } from '@lenserfight/features/share'
@@ -14,7 +23,26 @@ import { Badge, Button } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, Bookmark, CalendarClock, ChevronDown, FlaskConical, GitBranch, GitFork, History, Layers, Lock, Maximize2, Pencil, Play, Square, ThumbsUp, X, Zap } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Bookmark,
+  CalendarClock,
+  ChevronDown,
+  FlaskConical,
+  GitBranch,
+  GitFork,
+  History,
+  Layers,
+  Lock,
+  Maximize2,
+  Pencil,
+  Play,
+  Square,
+  ThumbsUp,
+  X,
+  Zap,
+} from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -39,10 +67,7 @@ import { useWorkflowExecution } from '../hooks/useWorkflowExecution'
 import { useWorkflowReaction } from '../hooks/useWorkflowReaction'
 import { useWorkflowRun } from '../hooks/useWorkflowRun'
 import { useWorkflowRunHistory } from '../hooks/useWorkflowRunHistory'
-import {
-  useWorkflowRunProvenance,
-  useWorkflowRunState,
-} from '../hooks/useWorkflowRunState'
+import { useWorkflowRunProvenance, useWorkflowRunState } from '../hooks/useWorkflowRunState'
 
 import type { WorkflowNodeConfig } from '../components/WorkflowCanvasNode'
 import type { AIProvider, AIProviderModel } from '@lenserfight/types'
@@ -60,7 +85,12 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
   const { user } = useAuth()
   const { lenser } = useLenser()
   const { setShareConfig } = useShareContext()
-  const { workflow, nodes: bootstrapNodes, edges: bootstrapEdges, isLoading } = useWorkflow(workflowId)
+  const {
+    workflow,
+    nodes: bootstrapNodes,
+    edges: bootstrapEdges,
+    isLoading,
+  } = useWorkflow(workflowId)
 
   // Live node/edge state: the canvas writes its saves back to these cache keys
   // via queryClient.setQueryData. Subscribing here ensures execution and the
@@ -104,10 +134,24 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
   const funding = useFundingSource(selectedProviderKey)
   const chainabit = useChainabitConnection()
 
-  const { startRun, stopRun, retryRun, isPending: starting, isRetrying, runId, nodeResults, isRunning } = useWorkflowRun(workflowId, {
+  const {
+    startRun,
+    stopRun,
+    retryRun,
+    isPending: starting,
+    isRetrying,
+    runId,
+    nodeResults,
+    isRunning,
+  } = useWorkflowRun(workflowId, {
     skipSse: funding.fundingSource === 'user_byok_local',
   })
-  const { isSystemLocked, isQueueFrozen, isStopping, status: execCtrlStatus } = useExecutionControl()
+  const {
+    isSystemLocked,
+    isQueueFrozen,
+    isStopping,
+    status: execCtrlStatus,
+  } = useExecutionControl()
   const resolveLocalKeyRef = useRef<((id: string) => Promise<string>) | undefined>(undefined)
   resolveLocalKeyRef.current = funding.resolveLocalKey
   const stableResolveLocalKey = useCallback(
@@ -115,10 +159,15 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
       resolveLocalKeyRef.current
         ? resolveLocalKeyRef.current(keyId)
         : Promise.reject(new Error('Local key resolver not ready')),
-    [],
+    []
   )
 
-  const { execute: executeWorkflow, stopExecution, executeDryRun, stopDryRun } = useWorkflowExecution({
+  const {
+    execute: executeWorkflow,
+    stopExecution,
+    executeDryRun,
+    stopDryRun,
+  } = useWorkflowExecution({
     nodes,
     edges,
     models,
@@ -138,7 +187,12 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
   const [nodeConfigs, setNodeConfigs] = useState<Record<string, WorkflowNodeConfig>>({})
 
   // Selected node for the config panel
-  const [selectedNodeConfig, setSelectedNodeConfig] = useState<{ nodeId: string; lensId: string; versionId: string | null; nodeLabel: string } | null>(null)
+  const [selectedNodeConfig, setSelectedNodeConfig] = useState<{
+    nodeId: string
+    lensId: string
+    versionId: string | null
+    nodeLabel: string
+  } | null>(null)
 
   // ── Run history ─────────────────────────────────────────────────────────────
   // Defer the run-history fetch until the user opens the run panel. This keeps
@@ -193,7 +247,9 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
     const targetSet = new Set(edges.map((e) => e.target_node_id))
     const rootNodes = nodes.filter((n) => !targetSet.has(n.id))
     return rootNodes.some((n) => {
-      const nodeType = (n.config as Record<string, unknown> | null)?.['node_type'] as string | undefined
+      const nodeType = (n.config as Record<string, unknown> | null)?.['node_type'] as
+        | string
+        | undefined
       return TRIGGER_NODE_TYPES.has(nodeType ?? '')
     })
   }, [nodes, edges])
@@ -204,7 +260,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
       const body = encodeURIComponent(`**${nodeLabel}**\n\n${text}`)
       navigate(`/threads/compose?body=${body}`)
     },
-    [navigate],
+    [navigate]
   )
 
   const handleEditClose = useCallback(() => {
@@ -215,19 +271,25 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
         next.delete('step')
         return next
       },
-      { replace: true },
+      { replace: true }
     )
   }, [setSearchParams])
 
   const isOwner = !!lenser && lenser.id === workflow?.lenser_id
   const { mutate: forkWorkflow, isPending: isForking } = useForkWorkflow()
-  const { liked, saved, likeCount, toggleLike, toggleSave, isPending: reactionPending } =
-    useWorkflowReaction(
-      workflowId,
-      workflow?.reaction_totals as Record<string, number> | null | undefined,
-      workflow?.viewer_reactions as Record<string, boolean> | null | undefined,
-      isLoading,
-    )
+  const {
+    liked,
+    saved,
+    likeCount,
+    toggleLike,
+    toggleSave,
+    isPending: reactionPending,
+  } = useWorkflowReaction(
+    workflowId,
+    workflow?.reaction_totals as Record<string, number> | null | undefined,
+    workflow?.viewer_reactions as Record<string, boolean> | null | undefined,
+    isLoading
+  )
 
   // ── Lens edit modal (via useCreateLens in edit mode) ────────────────────────
   const lensModal = useCreateLens()
@@ -299,19 +361,22 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
       (old: typeof nodes | undefined) =>
         (old ?? nodes).map((candidate) =>
           candidate.id === nodeId ? { ...candidate, config } : candidate
-        ),
+        )
     )
 
-    workflowsService.upsertNodes(workflowId, [{
-      id: node.id,
-      lens_id: node.lens_id,
-      version_id: node.version_id ?? null,
-      label: node.label ?? undefined,
-      ordinal: node.ordinal,
-      position_x: node.position_x,
-      position_y: node.position_y,
-      config: config as Record<string, unknown>,
-    }])
+    workflowsService
+      .upsertNodes(workflowId, [
+        {
+          id: node.id,
+          lens_id: node.lens_id,
+          version_id: node.version_id ?? null,
+          label: node.label ?? undefined,
+          ordinal: node.ordinal,
+          position_x: node.position_x,
+          position_y: node.position_y,
+          config: config as Record<string, unknown>,
+        },
+      ])
       .then((savedNodes) => {
         if (savedNodes.length === 0) return
         queryClient.setQueryData(
@@ -320,7 +385,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
             const byId = new Map((old ?? nodes).map((candidate) => [candidate.id, candidate]))
             for (const savedNode of savedNodes) byId.set(savedNode.id, savedNode)
             return Array.from(byId.values()).sort((a, b) => a.ordinal - b.ordinal)
-          },
+          }
         )
       })
       .catch(() => {
@@ -331,15 +396,25 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
   const selectedCurrentConfig = useMemo(() => {
     if (!selectedNodeConfig) return {}
     const persisted = nodes.find((node) => node.id === selectedNodeConfig.nodeId)?.config
-    return nodeConfigs[selectedNodeConfig.nodeId] ?? (persisted as WorkflowNodeConfig | null | undefined) ?? {}
+    return (
+      nodeConfigs[selectedNodeConfig.nodeId] ??
+      (persisted as WorkflowNodeConfig | null | undefined) ??
+      {}
+    )
   }, [nodeConfigs, nodes, selectedNodeConfig])
 
   // ── Providers/Models derived from flat useAIModels list ─────────────────────
   const providers: AIProvider[] = useMemo(() => {
     const seen = new Set<string>()
     return models
-      .filter((m) => m.is_active && !!m.key && !seen.has(m.provider) && (seen.add(m.provider), true))
-      .map((m) => ({ key: m.provider, display_name: m.providerDisplayName ?? m.provider, id: m.provider_id ?? '' }))
+      .filter(
+        (m) => m.is_active && !!m.key && !seen.has(m.provider) && (seen.add(m.provider), true)
+      )
+      .map((m) => ({
+        key: m.provider,
+        display_name: m.providerDisplayName ?? m.provider,
+        id: m.provider_id ?? '',
+      }))
   }, [models])
 
   const effectiveProviderKey = useMemo(() => {
@@ -378,8 +453,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
   }
 
   /** Cloud BYOK vault keys are not available in the browser build outside dev — no worker claims manual runs today. */
-  const cloudByokNeedsExecutor =
-    funding.fundingSource === 'user_byok_cloud' && !import.meta.env.DEV
+  const cloudByokNeedsExecutor = funding.fundingSource === 'user_byok_cloud' && !import.meta.env.DEV
   const canExecute = !!selectedModelKey && funding.isReady && !cloudByokNeedsExecutor
 
   useEffect(() => {
@@ -424,7 +498,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
             | null
             | undefined,
         })),
-        { requireTriggerNode: true },
+        { requireTriggerNode: true }
       )
       if (!struct.ok) {
         toast.error(struct.errors[0]?.message ?? 'Workflow validation failed')
@@ -436,10 +510,13 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
       nodes.map((n) => ({ id: n.id, config: n.config ?? null })),
       selectedModelKey,
       models.map((m) => ({ key: m.key, provider: m.provider })),
-      funding.fundingSource,
+      funding.fundingSource
     )
     if (!plan.ok) {
-      toast.error(plan.errors[0]?.message ?? 'This workflow cannot run with the current funding and model selection.')
+      toast.error(
+        plan.errors[0]?.message ??
+          'This workflow cannot run with the current funding and model selection.'
+      )
       return
     }
 
@@ -476,19 +553,15 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
     setIsDryRunning(true)
 
     try {
-      await executeDryRun(
-        selectedModelKey,
-        rootInputs,
-        (nodeId, record) => {
-          setDryRunNodeResults((prev) => {
-            const idx = prev.findIndex((r) => r.node_id === nodeId)
-            if (idx === -1) return [...prev, record]
-            const next = [...prev]
-            next[idx] = record
-            return next
-          })
-        },
-      )
+      await executeDryRun(selectedModelKey, rootInputs, (nodeId, record) => {
+        setDryRunNodeResults((prev) => {
+          const idx = prev.findIndex((r) => r.node_id === nodeId)
+          if (idx === -1) return [...prev, record]
+          const next = [...prev]
+          next[idx] = record
+          return next
+        })
+      })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       if (!msg.includes('aborted') && !msg.includes('already in progress')) {
@@ -504,9 +577,19 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
     setIsDryRunning(false)
     setDryRunNodeResults((prev) =>
       prev.map((r) => {
-        const terminal = ['completed', 'failed', 'cancelled', 'skipped', 'timed_out', 'blocked', 'invalidated'].includes(r.status)
-        return terminal ? r : { ...r, status: 'cancelled' as const, error_message: 'Dry run cancelled' }
-      }),
+        const terminal = [
+          'completed',
+          'failed',
+          'cancelled',
+          'skipped',
+          'timed_out',
+          'blocked',
+          'invalidated',
+        ].includes(r.status)
+        return terminal
+          ? r
+          : { ...r, status: 'cancelled' as const, error_message: 'Dry run cancelled' }
+      })
     )
   }
 
@@ -525,7 +608,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
       handleExecuteClick(data)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [handleExecuteClick],
+    [handleExecuteClick]
   )
 
   // ── Loading / error states ─────────────────────────────────────────────────
@@ -570,14 +653,21 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
 
           <div className="flex items-center gap-2 min-w-0">
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-surface-raised border border-surface-border shadow-sm">
-              <GitBranch size={16} className="text-primary-yellow-600 dark:text-primary-yellow-500" />
+              <GitBranch
+                size={16}
+                className="text-primary-yellow-600 dark:text-primary-yellow-500"
+              />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h1 className="truncate text-sm font-bold text-greyscale-900 dark:text-greyscale-50">
                   {workflow.title}
                 </h1>
-                <Badge color="blue" variant="outline" className="flex-shrink-0 text-[10px] h-4 px-1.5 font-bold">
+                <Badge
+                  color="blue"
+                  variant="outline"
+                  className="flex-shrink-0 text-[10px] h-4 px-1.5 font-bold"
+                >
                   {nodes.length}
                 </Badge>
               </div>
@@ -596,20 +686,22 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
             <button
               type="button"
               onClick={() => setBuilderMode('canvas')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${builderMode === 'canvas'
-                ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
-                : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-                }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                builderMode === 'canvas'
+                  ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
+                  : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+              }`}
             >
               <GitBranch size={12} /> Canvas
             </button>
             <button
               type="button"
               onClick={() => setBuilderMode('phases')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${builderMode === 'phases'
-                ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
-                : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-                }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                builderMode === 'phases'
+                  ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
+                  : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+              }`}
             >
               <Layers size={12} /> Phases
             </button>
@@ -627,7 +719,10 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                 className="flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-raised px-2 py-1 transition-colors hover:bg-surface-base group"
                 title={`Forked from ${workflow.parent_workflow_title}`}
               >
-                <GitFork size={10} className="text-greyscale-400 group-hover:text-primary-yellow-600" />
+                <GitFork
+                  size={10}
+                  className="text-greyscale-400 group-hover:text-primary-yellow-600"
+                />
                 <span className="max-w-[100px] truncate text-[10px] font-medium text-greyscale-500">
                   {workflow.parent_workflow_title}
                 </span>
@@ -641,10 +736,11 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                   size="sm"
                   onClick={toggleLike}
                   disabled={reactionPending}
-                  className={`!h-8 w-auto rounded-xl px-2.5 transition-colors ${liked
-                    ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-700'
-                    : 'text-greyscale-400'
-                    }`}
+                  className={`!h-8 w-auto rounded-xl px-2.5 transition-colors ${
+                    liked
+                      ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-700'
+                      : 'text-greyscale-400'
+                  }`}
                 >
                   <ThumbsUp size={14} className={liked ? 'fill-current' : ''} />
                   {likeCount > 0 && <span className="text-xs ml-1">{likeCount}</span>}
@@ -655,10 +751,11 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                   size="sm"
                   onClick={toggleSave}
                   disabled={reactionPending}
-                  className={`!h-8 w-auto rounded-xl px-2.5 transition-colors ${saved
-                    ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-700'
-                    : 'text-greyscale-400'
-                    }`}
+                  className={`!h-8 w-auto rounded-xl px-2.5 transition-colors ${
+                    saved
+                      ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-700'
+                      : 'text-greyscale-400'
+                  }`}
                 >
                   <Bookmark size={14} className={saved ? 'fill-current' : ''} />
                 </Button>
@@ -711,7 +808,10 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
             )}
 
             {workflow.visibility === 'private' && (
-              <div className="flex h-8 w-8 items-center justify-center text-greyscale-400" title="Private workflow">
+              <div
+                className="flex h-8 w-8 items-center justify-center text-greyscale-400"
+                title="Private workflow"
+              >
                 <Lock size={16} />
               </div>
             )}
@@ -745,10 +845,18 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                   {/* Run button */}
                   <Button
                     size="sm"
-                    onClick={() => { setShowRunPanel(true); setShowDryRunPanel(false); setSelectedNodeConfig(null) }}
+                    onClick={() => {
+                      setShowRunPanel(true)
+                      setShowDryRunPanel(false)
+                      setSelectedNodeConfig(null)
+                    }}
                     isLoading={starting}
                     disabled={nodes.length === 0 || isSystemLocked}
-                    title={isSystemLocked ? 'Platform is locked — contact a platform admin to resume' : undefined}
+                    title={
+                      isSystemLocked
+                        ? 'Platform is locked — contact a platform admin to resume'
+                        : undefined
+                    }
                     className="h-9 gap-1.5 rounded-xl px-4 bg-primary-yellow-500 hover:bg-primary-yellow-600 text-black shadow-md shadow-primary-yellow-500/20"
                   >
                     <Play size={12} className="fill-current" /> Run
@@ -770,7 +878,10 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                   }}
                   className="h-9 w-auto rounded-xl border border-surface-border bg-surface-raised px-2 text-greyscale-600"
                 >
-                  <ChevronDown size={16} className={`transition-transform duration-200 ${(showRunPanel || showDryRunPanel) ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform duration-200 ${showRunPanel || showDryRunPanel ? 'rotate-180' : ''}`}
+                  />
                 </Button>
               )}
             </div>
@@ -803,13 +914,12 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
             <div className="flex items-center gap-2 border-b border-amber-400/30 bg-amber-50/80 px-4 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
               <AlertTriangle size={13} className="flex-shrink-0" />
               <span>
-                No trigger node — add a{' '}
-                <span className="font-semibold">Manual Trigger</span>,{' '}
+                No trigger node — add a <span className="font-semibold">Manual Trigger</span>,{' '}
                 <span className="font-semibold">Webhook Trigger</span>,{' '}
                 <span className="font-semibold">Schedule Trigger</span>,{' '}
                 <span className="font-semibold">Event Trigger</span>, or{' '}
-                <span className="font-semibold">Form Input Trigger</span>{' '}
-                to define how this workflow starts.
+                <span className="font-semibold">Form Input Trigger</span> to define how this
+                workflow starts.
               </span>
               <button
                 type="button"
@@ -871,20 +981,22 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                 <button
                   type="button"
                   onClick={() => setRunPanelTab('run')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${runPanelTab === 'run'
-                    ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
-                    : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-                    }`}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    runPanelTab === 'run'
+                      ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
+                      : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                  }`}
                 >
                   Current Run
                 </button>
                 <button
                   type="button"
                   onClick={() => setRunPanelTab('history')}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${runPanelTab === 'history'
-                    ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
-                    : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-                    }`}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    runPanelTab === 'history'
+                      ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
+                      : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                  }`}
                 >
                   <History size={11} />
                   History
@@ -897,10 +1009,11 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                 <button
                   type="button"
                   onClick={() => setRunPanelTab('schedule')}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${runPanelTab === 'schedule'
-                    ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
-                    : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-                    }`}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    runPanelTab === 'schedule'
+                      ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
+                      : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                  }`}
                 >
                   <CalendarClock size={11} />
                   Schedule
@@ -965,7 +1078,8 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                     nodeConfigOverrides={nodeConfigs}
                   />
                   {/* Recovery banner — shown when the run terminated with failure */}
-                  {runId && !isRunning &&
+                  {runId &&
+                    !isRunning &&
                     (liveRunState?.status === 'failed' || liveRunState?.status === 'timed_out') && (
                       <WorkflowRunRecoveryBanner
                         runStatus={liveRunState!.status}
@@ -981,7 +1095,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                         }
                         isRetrying={isRetrying}
                         onRetry={() => {
-                          retryRun(runId).catch(() => { })
+                          retryRun(runId).catch(() => {})
                           setRunPanelTab('run')
                           setShowRunPanel(true)
                         }}
@@ -1009,7 +1123,9 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                       runStartedAt={liveRunState?.started_at ?? null}
                       runCompletedAt={liveRunState?.completed_at ?? null}
                       runStatus={liveRunState?.status ?? null}
-                      onOpenFullscreen={() => navigate(`/workflows/${workflowId}/history/executions/${runId}`)}
+                      onOpenFullscreen={() =>
+                        navigate(`/workflows/${workflowId}/history/executions/${runId}`)
+                      }
                       onConfigureNode={handleConfigNode}
                       isSystemLocked={isSystemLocked}
                     />
@@ -1035,7 +1151,11 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                       runStartedAt={historyRunState?.started_at ?? null}
                       runCompletedAt={historyRunState?.completed_at ?? null}
                       runStatus={historyRunState?.status ?? null}
-                      onOpenFullscreen={() => navigate(`/workflows/${workflowId}/history/executions/${selectedHistoryRunId}`)}
+                      onOpenFullscreen={() =>
+                        navigate(
+                          `/workflows/${workflowId}/history/executions/${selectedHistoryRunId}`
+                        )
+                      }
                     />
                   )}
                 </>
@@ -1083,7 +1203,9 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                 activeNodeId={null}
                 runStartedAt={null}
                 runCompletedAt={null}
-                runStatus={isDryRunning ? 'running' : dryRunNodeResults.length > 0 ? 'completed' : null}
+                runStatus={
+                  isDryRunning ? 'running' : dryRunNodeResults.length > 0 ? 'completed' : null
+                }
                 onConfigureNode={handleConfigNode}
               />
             </div>
@@ -1093,11 +1215,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
 
       {/* ── Workflow edit modal (wizard in edit mode) ────────────────────────── */}
       {isEditModalOpen && (
-        <Dialog
-          open={isEditModalOpen}
-          onClose={handleEditClose}
-          maxWidth="max-w-2xl"
-        >
+        <Dialog open={isEditModalOpen} onClose={handleEditClose} maxWidth="max-w-2xl">
           <CreateWorkflowWizard
             editMode
             initialWorkflow={{

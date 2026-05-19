@@ -1,7 +1,9 @@
 function readPublicBaseUrl(envKey: string, fallback: string): string {
   const raw = import.meta.env[envKey] as string | undefined
   const s =
-    typeof raw === 'string' && raw.trim() !== '' ? raw.trim().replace(/\/$/, '') : fallback.replace(/\/$/, '')
+    typeof raw === 'string' && raw.trim() !== ''
+      ? raw.trim().replace(/\/$/, '')
+      : fallback.replace(/\/$/, '')
   return s
 }
 
@@ -25,7 +27,7 @@ const DEV_AUTH_BASE_URL = 'http://localhost:3004'
  */
 export const AUTH_BASE_URL = readPublicBaseUrl(
   'AUTH_BASE_URL',
-  import.meta.env.DEV ? DEV_AUTH_BASE_URL : 'https://auth.lenserfight.com',
+  import.meta.env.DEV ? DEV_AUTH_BASE_URL : 'https://auth.lenserfight.com'
 )
 
 /** Main / arena app origin for battles, get-started, etc. Override with `ARENA_URL`. */
@@ -40,7 +42,6 @@ export const DOCS_BASE_URL = readPublicBaseUrl('DOCS_BASE_URL', 'https://docs.le
 /** Chainabit web app origin — used for deep-links to wallet top-up and partner attribution. Override with `CHAINABIT_APP_URL`. */
 export const CHAINABIT_APP_URL = readPublicBaseUrl('CHAINABIT_APP_URL', 'https://app.chainabit.com')
 
-
 /**
  * LenserFight API base URL (no trailing slash).
  * In development, defaults to the local dev URL above. To proxy through a
@@ -48,10 +49,9 @@ export const CHAINABIT_APP_URL = readPublicBaseUrl('CHAINABIT_APP_URL', 'https:/
  * `.env.local`. Production resolves to `https://api.lenserfight.com` unless
  * `API_URL` is provided.
  */
-export const API_BASE_URL = stripSupabaseRestPath(readPublicBaseUrl(
-  'API_URL',
-  'https://api.lenserfight.com',
-))
+export const API_BASE_URL = stripSupabaseRestPath(
+  readPublicBaseUrl('API_URL', 'https://api.lenserfight.com')
+)
 
 /**
  * Chainabit direct API base URL (no trailing slash, no version prefix).
@@ -113,5 +113,7 @@ export const ENABLE_CAPTCHA = isProd
 
 // Analytics
 export const GA_MEASUREMENT_ID = import.meta.env.GA_MEASUREMENT_ID || ''
-export const PUBLIC_POSTHOG_PROJECT_TOKEN = (import.meta.env['PUBLIC_POSTHOG_PROJECT_TOKEN'] as string | undefined) ?? ''
-export const PUBLIC_POSTHOG_HOST = (import.meta.env['PUBLIC_POSTHOG_HOST'] as string | undefined) ?? 'https://us.i.posthog.com'
+export const PUBLIC_POSTHOG_PROJECT_TOKEN =
+  (import.meta.env['PUBLIC_POSTHOG_PROJECT_TOKEN'] as string | undefined) ?? ''
+export const PUBLIC_POSTHOG_HOST =
+  (import.meta.env['PUBLIC_POSTHOG_HOST'] as string | undefined) ?? 'https://us.i.posthog.com'

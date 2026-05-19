@@ -3,11 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/infra/partner-provisioning/src",
   "projectType": "library",
-  "tags": [
-    "layer:infra",
-    "scope:public",
-    "license:oss"
-  ],
+  "tags": ["layer:infra", "scope:public", "license:oss"],
   "targets": {
     "test": {
       "executor": "@nx/vite:test",

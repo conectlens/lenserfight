@@ -28,17 +28,46 @@ import { AlertTriangle, Info, Pencil, X, Zap } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import { createWorkflowCanvasPaste, encodeWorkflowCanvasClipboard, parseWorkflowCanvasClipboard, serializeWorkflowCanvasSelection } from '../canvas/clipboard/workflow-canvas-clipboard'
-import { createWorkflowCanvasCommandRegistry, getWorkflowCanvasCommand, isWorkflowCanvasCommandEnabled } from '../canvas/commands/workflow-canvas-commands'
+import {
+  createWorkflowCanvasPaste,
+  encodeWorkflowCanvasClipboard,
+  parseWorkflowCanvasClipboard,
+  serializeWorkflowCanvasSelection,
+} from '../canvas/clipboard/workflow-canvas-clipboard'
+import {
+  createWorkflowCanvasCommandRegistry,
+  getWorkflowCanvasCommand,
+  isWorkflowCanvasCommandEnabled,
+} from '../canvas/commands/workflow-canvas-commands'
 import { WorkflowCanvasCommandPalette } from '../canvas/components/WorkflowCanvasCommandPalette'
-import { WorkflowCanvasContextMenu, type WorkflowCanvasContextMenuTarget } from '../canvas/components/WorkflowCanvasContextMenu'
+import {
+  WorkflowCanvasContextMenu,
+  type WorkflowCanvasContextMenuTarget,
+} from '../canvas/components/WorkflowCanvasContextMenu'
 import { WorkflowCanvasEmptyState } from '../canvas/components/WorkflowCanvasEmptyState'
 import { WorkflowCanvasSelectionBar } from '../canvas/components/WorkflowCanvasSelectionBar'
 import { WorkflowCanvasShortcutHelp } from '../canvas/components/WorkflowCanvasShortcutHelp'
 import { WorkflowCanvasToolbar } from '../canvas/components/WorkflowCanvasToolbar'
-import { createWorkflowCanvasHistory, pushWorkflowCanvasHistory, redoWorkflowCanvasHistory, undoWorkflowCanvasHistory, type WorkflowCanvasGraphSnapshot, type WorkflowCanvasHistoryState } from '../canvas/history/workflow-canvas-history'
-import { matchesWorkflowCanvasShortcut, shouldSuppressWorkflowCanvasShortcut } from '../canvas/keyboard/workflow-canvas-shortcuts'
-import { EMPTY_WORKFLOW_CANVAS_SELECTION, applyWorkflowSelectionToGraph, getWorkflowSelectionFromGraph, hasWorkflowCanvasSelection, selectAllWorkflowItems, type WorkflowCanvasSelection } from '../canvas/selection/workflow-canvas-selection'
+import {
+  createWorkflowCanvasHistory,
+  pushWorkflowCanvasHistory,
+  redoWorkflowCanvasHistory,
+  undoWorkflowCanvasHistory,
+  type WorkflowCanvasGraphSnapshot,
+  type WorkflowCanvasHistoryState,
+} from '../canvas/history/workflow-canvas-history'
+import {
+  matchesWorkflowCanvasShortcut,
+  shouldSuppressWorkflowCanvasShortcut,
+} from '../canvas/keyboard/workflow-canvas-shortcuts'
+import {
+  EMPTY_WORKFLOW_CANVAS_SELECTION,
+  applyWorkflowSelectionToGraph,
+  getWorkflowSelectionFromGraph,
+  hasWorkflowCanvasSelection,
+  selectAllWorkflowItems,
+  type WorkflowCanvasSelection,
+} from '../canvas/selection/workflow-canvas-selection'
 import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
 import { useWorkflowSimulation } from '../hooks/useWorkflowSimulation'
 
@@ -74,15 +103,18 @@ const edgeTypes: EdgeTypes = { workflowEdge: WorkflowCanvasEdge }
 
 // ─── Record → Flow node/edge converters ──────────────────────────────────────
 
-function readConfigNodeType(config: WorkflowNodeConfig | Record<string, unknown> | null | undefined): string | undefined {
-  const raw = (config as Record<string, unknown> | null | undefined)?.['node_type'] ??
+function readConfigNodeType(
+  config: WorkflowNodeConfig | Record<string, unknown> | null | undefined
+): string | undefined {
+  const raw =
+    (config as Record<string, unknown> | null | undefined)?.['node_type'] ??
     (config as Record<string, unknown> | null | undefined)?.['nodeType']
   return typeof raw === 'string' && raw.trim() ? raw.trim() : undefined
 }
 
 function getNodeTypeForRecord(
   record: WorkflowNodeRecord,
-  nodeConfigOverrides?: Record<string, WorkflowNodeConfig>,
+  nodeConfigOverrides?: Record<string, WorkflowNodeConfig>
 ): string | undefined {
   const cfg = nodeConfigOverrides?.[record.id] ?? record.config
   const configNodeType = readConfigNodeType(cfg)
@@ -105,13 +137,17 @@ function toFlowNode(
   onConfigNode?: (nodeId: string, lensId: string) => void,
   onEditLens?: (lensId: string) => void,
   currentUserId?: string,
-  nodeConfigOverrides?: Record<string, WorkflowNodeConfig>,
+  nodeConfigOverrides?: Record<string, WorkflowNodeConfig>
 ): Node<WorkflowNodeData> {
-  const isLensOwner = !!currentUserId && !!record.lens_lenser_id && currentUserId === record.lens_lenser_id
+  const isLensOwner =
+    !!currentUserId && !!record.lens_lenser_id && currentUserId === record.lens_lenser_id
   // Reconstruct __utility_ lens_id for utility nodes stored with null lens_id
   const cfgOverride = nodeConfigOverrides?.[record.id] ?? record.config
   const nodeType = readConfigNodeType(cfgOverride)
-  const isUtilityNode = isWorkflowUtilityNodeType(nodeType) || !record.lens_id || record.lens_id === '00000000-0000-0000-0000-000000000000'
+  const isUtilityNode =
+    isWorkflowUtilityNodeType(nodeType) ||
+    !record.lens_id ||
+    record.lens_id === '00000000-0000-0000-0000-000000000000'
   const uiLensId = isUtilityNode && nodeType ? `__utility_${nodeType}` : (record.lens_id ?? '')
   return {
     id: record.id,
@@ -136,17 +172,25 @@ function toFlowNode(
 
 // ─── Tree layout helper ───────────────────────────────────────────────────────
 
-function computeTreeLayout<T extends Record<string, unknown>>(nodes: Node<T>[], edges: Edge[]): Node<T>[] {
+function computeTreeLayout<T extends Record<string, unknown>>(
+  nodes: Node<T>[],
+  edges: Edge[]
+): Node<T>[] {
   const inDegree = new Map<string, number>()
   const adjList = new Map<string, string[]>()
-  nodes.forEach((n) => { inDegree.set(n.id, 0); adjList.set(n.id, []) })
+  nodes.forEach((n) => {
+    inDegree.set(n.id, 0)
+    adjList.set(n.id, [])
+  })
   edges.forEach((e) => {
     inDegree.set(e.target, (inDegree.get(e.target) ?? 0) + 1)
     adjList.get(e.source)?.push(e.target)
   })
   const levels = new Map<string, number>()
   const queue: string[] = []
-  nodes.forEach((n) => { if ((inDegree.get(n.id) ?? 0) === 0) queue.push(n.id) })
+  nodes.forEach((n) => {
+    if ((inDegree.get(n.id) ?? 0) === 0) queue.push(n.id)
+  })
   queue.forEach((id) => levels.set(id, 0))
   let qi = 0
   while (qi < queue.length) {
@@ -172,7 +216,7 @@ function toFlowEdge(
   record: WorkflowEdgeRecord,
   onRemove: (id: string) => void,
   nodeRecords: WorkflowNodeRecord[],
-  nodeConfigOverrides?: Record<string, WorkflowNodeConfig>,
+  nodeConfigOverrides?: Record<string, WorkflowNodeConfig>
 ): Edge {
   const sourceRecord = nodeRecords.find((node) => node.id === record.source_node_id)
   const targetRecord = nodeRecords.find((node) => node.id === record.target_node_id)
@@ -183,8 +227,12 @@ function toFlowEdge(
     type: 'workflowEdge',
     data: {
       sourceOutputKey: record.source_output_key,
-      sourceNodeType: sourceRecord ? getNodeTypeForRecord(sourceRecord, nodeConfigOverrides) : undefined,
-      targetNodeType: targetRecord ? getNodeTypeForRecord(targetRecord, nodeConfigOverrides) : undefined,
+      sourceNodeType: sourceRecord
+        ? getNodeTypeForRecord(sourceRecord, nodeConfigOverrides)
+        : undefined,
+      targetNodeType: targetRecord
+        ? getNodeTypeForRecord(targetRecord, nodeConfigOverrides)
+        : undefined,
       onRemove,
     },
   }
@@ -245,8 +293,6 @@ export function WorkflowBuilderCanvas(props: WorkflowBuilderCanvasProps) {
   )
 }
 
-
-
 // ─── Inner component — can call useReactFlow ──────────────────────────────────
 
 function WorkflowBuilderCanvasInner({
@@ -283,9 +329,11 @@ function WorkflowBuilderCanvasInner({
     removeEdge: (_edgeId: string) => undefined as void,
     duplicateNode: (_nodeId: string) => undefined as void,
   })
-  const [selection, setSelectionState] = useState<WorkflowCanvasSelection>(EMPTY_WORKFLOW_CANVAS_SELECTION)
-  const [historyState, setHistoryState] = useState<WorkflowCanvasHistoryState<WorkflowNodeData>>(() =>
-    createWorkflowCanvasHistory<WorkflowNodeData>(),
+  const [selection, setSelectionState] = useState<WorkflowCanvasSelection>(
+    EMPTY_WORKFLOW_CANVAS_SELECTION
+  )
+  const [historyState, setHistoryState] = useState<WorkflowCanvasHistoryState<WorkflowNodeData>>(
+    () => createWorkflowCanvasHistory<WorkflowNodeData>()
   )
   const historyRef = useRef(historyState)
   const [hasClipboard, setHasClipboard] = useState(false)
@@ -312,7 +360,17 @@ function WorkflowBuilderCanvasInner({
 
   // ── Flow state ────────────────────────────────────────────────────────────
   const [flowNodes, setNodes, onNodesChange] = useNodesState(
-    nodeRecords.map((n) => toFlowNode(n, handleRemoveNode, handleDuplicateNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides))
+    nodeRecords.map((n) =>
+      toFlowNode(
+        n,
+        handleRemoveNode,
+        handleDuplicateNode,
+        onConfigNode,
+        onEditLens,
+        currentUserId,
+        nodeConfigOverrides
+      )
+    )
   )
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(
     edgeRecords.map((e) => toFlowEdge(e, handleRemoveEdge, nodeRecords, nodeConfigOverrides))
@@ -323,22 +381,40 @@ function WorkflowBuilderCanvasInner({
   const onEditLensRef = useRef(onEditLens)
   const currentUserIdRef = useRef(currentUserId)
   const nodeConfigOverridesRef = useRef(nodeConfigOverrides)
-  useEffect(() => { onConfigNodeRef.current = onConfigNode }, [onConfigNode])
-  useEffect(() => { onEditLensRef.current = onEditLens }, [onEditLens])
-  useEffect(() => { currentUserIdRef.current = currentUserId }, [currentUserId])
-  useEffect(() => { nodeConfigOverridesRef.current = nodeConfigOverrides }, [nodeConfigOverrides])
+  useEffect(() => {
+    onConfigNodeRef.current = onConfigNode
+  }, [onConfigNode])
+  useEffect(() => {
+    onEditLensRef.current = onEditLens
+  }, [onEditLens])
+  useEffect(() => {
+    currentUserIdRef.current = currentUserId
+  }, [currentUserId])
+  useEffect(() => {
+    nodeConfigOverridesRef.current = nodeConfigOverrides
+  }, [nodeConfigOverrides])
 
   const buildFlowNodes = useCallback(
     (records: WorkflowNodeRecord[]) =>
       records.map((n) =>
-        toFlowNode(n, handleRemoveNode, handleDuplicateNode, onConfigNodeRef.current, onEditLensRef.current, currentUserIdRef.current, nodeConfigOverridesRef.current)
+        toFlowNode(
+          n,
+          handleRemoveNode,
+          handleDuplicateNode,
+          onConfigNodeRef.current,
+          onEditLensRef.current,
+          currentUserIdRef.current,
+          nodeConfigOverridesRef.current
+        )
       ),
     [handleRemoveNode, handleDuplicateNode]
   )
 
   const buildFlowEdges = useCallback(
     (records: WorkflowEdgeRecord[], nodesForEdges: WorkflowNodeRecord[] = nodeRecords) =>
-      records.map((e) => toFlowEdge(e, handleRemoveEdge, nodesForEdges, nodeConfigOverridesRef.current)),
+      records.map((e) =>
+        toFlowEdge(e, handleRemoveEdge, nodesForEdges, nodeConfigOverridesRef.current)
+      ),
     [handleRemoveEdge, nodeRecords]
   )
 
@@ -348,8 +424,12 @@ function WorkflowBuilderCanvasInner({
   const edgeRecordsFingerprintRef = useRef<string>('')
 
   useEffect(() => {
-    const nodeFp = JSON.stringify(nodeRecords.map((n) => n.id + n.ordinal + n.position_x + n.position_y))
-    const edgeFp = JSON.stringify(edgeRecords.map((e) => e.id + e.source_node_id + e.target_node_id))
+    const nodeFp = JSON.stringify(
+      nodeRecords.map((n) => n.id + n.ordinal + n.position_x + n.position_y)
+    )
+    const edgeFp = JSON.stringify(
+      edgeRecords.map((e) => e.id + e.source_node_id + e.target_node_id)
+    )
 
     const nodeChanged = nodeFp !== nodeRecordsFingerprintRef.current
     const edgeChanged = edgeFp !== edgeRecordsFingerprintRef.current
@@ -381,23 +461,31 @@ function WorkflowBuilderCanvasInner({
   // Sync config overrides into existing nodes without re-seeding positions
   useEffect(() => {
     if (!nodeConfigOverrides) return
-    setNodes((nds) => nds.map((n) => {
-      const override = nodeConfigOverrides[n.id]
-      if (!override) return n
-      return { ...n, data: { ...n.data, config: override } }
-    }))
-    setEdges((eds) => eds.map((edge) => {
-      const sourceRecord = nodeRecords.find((node) => node.id === edge.source)
-      const targetRecord = nodeRecords.find((node) => node.id === edge.target)
-      return {
-        ...edge,
-        data: {
-          ...(edge.data ?? {}),
-          sourceNodeType: sourceRecord ? getNodeTypeForRecord(sourceRecord, nodeConfigOverrides) : undefined,
-          targetNodeType: targetRecord ? getNodeTypeForRecord(targetRecord, nodeConfigOverrides) : undefined,
-        },
-      }
-    }))
+    setNodes((nds) =>
+      nds.map((n) => {
+        const override = nodeConfigOverrides[n.id]
+        if (!override) return n
+        return { ...n, data: { ...n.data, config: override } }
+      })
+    )
+    setEdges((eds) =>
+      eds.map((edge) => {
+        const sourceRecord = nodeRecords.find((node) => node.id === edge.source)
+        const targetRecord = nodeRecords.find((node) => node.id === edge.target)
+        return {
+          ...edge,
+          data: {
+            ...(edge.data ?? {}),
+            sourceNodeType: sourceRecord
+              ? getNodeTypeForRecord(sourceRecord, nodeConfigOverrides)
+              : undefined,
+            targetNodeType: targetRecord
+              ? getNodeTypeForRecord(targetRecord, nodeConfigOverrides)
+              : undefined,
+          },
+        }
+      })
+    )
   }, [nodeConfigOverrides, nodeRecords, setEdges, setNodes])
 
   // Sync execution status from live run / dry-run into canvas nodes.
@@ -407,398 +495,529 @@ function WorkflowBuilderCanvasInner({
   useEffect(() => {
     if (!nodeResults || nodeResults.length === 0) {
       setNodes((nds) => {
-        const anyHasStatus = nds.some((n) => (n.data as Record<string, unknown>)['executionStatus'] != null)
+        const anyHasStatus = nds.some(
+          (n) => (n.data as Record<string, unknown>)['executionStatus'] != null
+        )
         if (!anyHasStatus) return nds
         return nds.map((n) => {
-          if ((n.data as Record<string, unknown>)['executionStatus'] == null &&
-              (n.data as Record<string, unknown>)['executionWarning'] == null) return n
+          if (
+            (n.data as Record<string, unknown>)['executionStatus'] == null &&
+            (n.data as Record<string, unknown>)['executionWarning'] == null
+          )
+            return n
           return { ...n, data: { ...n.data, executionStatus: null, executionWarning: null } }
         })
       })
       return
     }
     const resultIndex = new Map(nodeResults.map((r) => [r.node_id, r]))
-    setNodes((nds) => nds.map((n) => {
-      const result = resultIndex.get(n.id)
-      const status = result?.status ?? null
-      const warning = (result?.output_data as Record<string, unknown> | null | undefined)?.['_dryRunWarning'] as string | null | undefined ?? null
-      const currentData = n.data as Record<string, unknown>
-      if (currentData['executionStatus'] === status && currentData['executionWarning'] === warning) return n
-      return { ...n, data: { ...n.data, executionStatus: status, executionWarning: warning } }
-    }))
+    setNodes((nds) =>
+      nds.map((n) => {
+        const result = resultIndex.get(n.id)
+        const status = result?.status ?? null
+        const warning =
+          ((result?.output_data as Record<string, unknown> | null | undefined)?.[
+            '_dryRunWarning'
+          ] as string | null | undefined) ?? null
+        const currentData = n.data as Record<string, unknown>
+        if (
+          currentData['executionStatus'] === status &&
+          currentData['executionWarning'] === warning
+        )
+          return n
+        return { ...n, data: { ...n.data, executionStatus: status, executionWarning: warning } }
+      })
+    )
   }, [nodeResults, setNodes])
 
   // Sync configuring state into canvas nodes. Follows the same ephemeral-data
   // pattern as executionStatus — never written to DB, never triggers a save.
   useEffect(() => {
-    setNodes((nds) => nds.map((n) => {
-      const shouldBeConfiguring = n.id === configuringNodeId
-      const currently = !!(n.data as Record<string, unknown>)['isConfiguring']
-      if (shouldBeConfiguring === currently) return n
-      return { ...n, data: { ...n.data, isConfiguring: shouldBeConfiguring || null } }
-    }))
+    setNodes((nds) =>
+      nds.map((n) => {
+        const shouldBeConfiguring = n.id === configuringNodeId
+        const currently = !!(n.data as Record<string, unknown>)['isConfiguring']
+        if (shouldBeConfiguring === currently) return n
+        return { ...n, data: { ...n.data, isConfiguring: shouldBeConfiguring || null } }
+      })
+    )
   }, [configuringNodeId, setNodes])
 
   // ── Sync refs with latest state ───────────────────────────────────────────
-  useEffect(() => { flowNodesRef.current = flowNodes }, [flowNodes])
-  useEffect(() => { flowEdgesRef.current = flowEdges }, [flowEdges])
+  useEffect(() => {
+    flowNodesRef.current = flowNodes
+  }, [flowNodes])
+  useEffect(() => {
+    flowEdgesRef.current = flowEdges
+  }, [flowEdges])
 
   useEffect(() => {
     const nodeMap = new Map<string, string>()
     for (const record of nodeRecords) {
-      nodeMap.set(record.id, nodeFingerprint({
-        id: record.id,
-        lens_id: record.lens_id,
-        version_id: record.version_id ?? null,
-        label: record.label ?? undefined,
-        ordinal: record.ordinal,
-        position_x: record.position_x,
-        position_y: record.position_y,
-        config: record.config ?? null,
-      }))
+      nodeMap.set(
+        record.id,
+        nodeFingerprint({
+          id: record.id,
+          lens_id: record.lens_id,
+          version_id: record.version_id ?? null,
+          label: record.label ?? undefined,
+          ordinal: record.ordinal,
+          position_x: record.position_x,
+          position_y: record.position_y,
+          config: record.config ?? null,
+        })
+      )
     }
     lastSavedNodeFingerprintRef.current = nodeMap
 
     const edgeMap = new Map<string, string>()
     for (const record of edgeRecords) {
-      edgeMap.set(record.id, edgeFingerprint({
-        id: record.id,
-        source_node_id: record.source_node_id,
-        target_node_id: record.target_node_id,
-        source_output_key: record.source_output_key,
-        target_param_label: record.target_param_label,
-      }))
+      edgeMap.set(
+        record.id,
+        edgeFingerprint({
+          id: record.id,
+          source_node_id: record.source_node_id,
+          target_node_id: record.target_node_id,
+          source_output_key: record.source_output_key,
+          target_param_label: record.target_param_label,
+        })
+      )
     }
     lastSavedEdgeFingerprintRef.current = edgeMap
   }, [nodeRecords, edgeRecords])
 
   // ── Cleanup pending save on unmount ───────────────────────────────────────
   useEffect(() => {
-    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    }
   }, [])
 
   // ── Debounced save ────────────────────────────────────────────────────────
   // NOTE: saveWorkflow is called in the timeout callback body, NOT inside a
   // React state updater. State updaters are double-invoked in StrictMode,
   // which would cause duplicate POST requests. Reading state via refs is safe.
-  const scheduleSave = useCallback((options?: { persistNodes?: boolean; persistEdges?: boolean; forceAll?: boolean; immediate?: boolean }) => {
-    if (readOnly) return
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(() => {
-      const persistNodes = options?.persistNodes ?? true
-      const persistEdges = options?.persistEdges ?? true
-      const nds = flowNodesRef.current
-      const eds = flowEdgesRef.current
-      const upsertNodes: UpsertNodeInput[] = nds.map((n, i) => {
-        const d = n.data as WorkflowNodeData & { lens_id?: string }
-        const cfg = d.config && Object.keys(d.config).length > 0 ? d.config : undefined
-        // Utility nodes use __utility_ prefix in the UI — persist as null lens_id (column is nullable)
-        const rawLensId = d.lens_id ?? n.id
-        const persistLensId = rawLensId.startsWith('__utility_') ? null : rawLensId
-        return {
-          id: n.id.startsWith('tmp-') ? undefined : n.id,
-          lens_id: persistLensId,
-          version_id: null,
-          label: d.label,
-          ordinal: d.ordinal ?? i,
-          position_x: n.position.x,
-          position_y: n.position.y,
-          config: (cfg as Record<string, unknown> | undefined) ?? null,
-        }
-      })
-      const upsertEdges: UpsertEdgeInput[] = eds
-        .map((e) => ({
-          id: e.id.startsWith('tmp-edge-') ? undefined : e.id,
-          source_node_id: e.source,
-          target_node_id: e.target,
-          source_output_key:
-            (e.data as { sourceOutputKey?: string })?.sourceOutputKey ?? 'output',
-          target_param_label: e.targetHandle ?? 'input',
-        }))
-
-      const hasTemporaryNode = upsertNodes.some((n) => !n.id)
-      const hasTemporaryEdge = upsertEdges.some((e) => !e.id)
-      const useFullReplace = hasTemporaryNode || hasTemporaryEdge
-
-      const changedNodes = options?.forceAll || useFullReplace
-        ? upsertNodes
-        : upsertNodes.filter((node) => {
-            if (!node.id) return true
-            const previous = lastSavedNodeFingerprintRef.current.get(node.id)
-            return previous !== nodeFingerprint(node)
+  const scheduleSave = useCallback(
+    (options?: {
+      persistNodes?: boolean
+      persistEdges?: boolean
+      forceAll?: boolean
+      immediate?: boolean
+    }) => {
+      if (readOnly) return
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = setTimeout(
+        () => {
+          const persistNodes = options?.persistNodes ?? true
+          const persistEdges = options?.persistEdges ?? true
+          const nds = flowNodesRef.current
+          const eds = flowEdgesRef.current
+          const upsertNodes: UpsertNodeInput[] = nds.map((n, i) => {
+            const d = n.data as WorkflowNodeData & { lens_id?: string }
+            const cfg = d.config && Object.keys(d.config).length > 0 ? d.config : undefined
+            // Utility nodes use __utility_ prefix in the UI — persist as null lens_id (column is nullable)
+            const rawLensId = d.lens_id ?? n.id
+            const persistLensId = rawLensId.startsWith('__utility_') ? null : rawLensId
+            return {
+              id: n.id.startsWith('tmp-') ? undefined : n.id,
+              lens_id: persistLensId,
+              version_id: null,
+              label: d.label,
+              ordinal: d.ordinal ?? i,
+              position_x: n.position.x,
+              position_y: n.position.y,
+              config: (cfg as Record<string, unknown> | undefined) ?? null,
+            }
           })
+          const upsertEdges: UpsertEdgeInput[] = eds.map((e) => ({
+            id: e.id.startsWith('tmp-edge-') ? undefined : e.id,
+            source_node_id: e.source,
+            target_node_id: e.target,
+            source_output_key:
+              (e.data as { sourceOutputKey?: string })?.sourceOutputKey ?? 'output',
+            target_param_label: e.targetHandle ?? 'input',
+          }))
 
-      const changedEdges = options?.forceAll || useFullReplace
-        ? upsertEdges
-        : upsertEdges.filter((edge) => {
-            if (!edge.id) return true
-            const previous = lastSavedEdgeFingerprintRef.current.get(edge.id)
-            return previous !== edgeFingerprint(edge)
+          const hasTemporaryNode = upsertNodes.some((n) => !n.id)
+          const hasTemporaryEdge = upsertEdges.some((e) => !e.id)
+          const useFullReplace = hasTemporaryNode || hasTemporaryEdge
+
+          const changedNodes =
+            options?.forceAll || useFullReplace
+              ? upsertNodes
+              : upsertNodes.filter((node) => {
+                  if (!node.id) return true
+                  const previous = lastSavedNodeFingerprintRef.current.get(node.id)
+                  return previous !== nodeFingerprint(node)
+                })
+
+          const changedEdges =
+            options?.forceAll || useFullReplace
+              ? upsertEdges
+              : upsertEdges.filter((edge) => {
+                  if (!edge.id) return true
+                  const previous = lastSavedEdgeFingerprintRef.current.get(edge.id)
+                  return previous !== edgeFingerprint(edge)
+                })
+
+          const shouldPersistNodes = persistNodes && changedNodes.length > 0
+          const shouldPersistEdges = persistEdges && changedEdges.length > 0
+          if (!shouldPersistNodes && !shouldPersistEdges) return
+
+          saveWorkflow({
+            workflowId,
+            nodes: upsertNodes,
+            edges: upsertEdges,
+            nodeDelta: useFullReplace ? undefined : changedNodes,
+            edgeDelta: useFullReplace ? undefined : changedEdges,
+            mergeMode: useFullReplace ? 'replace' : 'merge',
+            persistNodes: shouldPersistNodes,
+            persistEdges: shouldPersistEdges,
           })
+            .then(({ nodes: savedNodes, edges: savedEdges }) => {
+              if (useFullReplace) {
+                if (savedNodes.length > 0) {
+                  const nextNodeMap = new Map<string, string>()
+                  for (const record of savedNodes) {
+                    nextNodeMap.set(
+                      record.id,
+                      nodeFingerprint({
+                        id: record.id,
+                        lens_id: record.lens_id,
+                        version_id: record.version_id ?? null,
+                        label: record.label ?? undefined,
+                        ordinal: record.ordinal,
+                        position_x: record.position_x,
+                        position_y: record.position_y,
+                        config: record.config ?? null,
+                      })
+                    )
+                  }
+                  lastSavedNodeFingerprintRef.current = nextNodeMap
+                  // Sync live-nodes cache so the page's execution hook sees current state
+                  queryClient.setQueryData(queryKeys.workflows.nodes(workflowId), savedNodes)
+                  setNodes(
+                    savedNodes.map((record) =>
+                      toFlowNode(
+                        record,
+                        handleRemoveNode,
+                        handleDuplicateNode,
+                        onConfigNodeRef.current,
+                        onEditLensRef.current,
+                        currentUserIdRef.current,
+                        nodeConfigOverridesRef.current
+                      )
+                    )
+                  )
+                }
 
-      const shouldPersistNodes = persistNodes && changedNodes.length > 0
-      const shouldPersistEdges = persistEdges && changedEdges.length > 0
-      if (!shouldPersistNodes && !shouldPersistEdges) return
-
-      saveWorkflow({
-        workflowId,
-        nodes: upsertNodes,
-        edges: upsertEdges,
-        nodeDelta: useFullReplace ? undefined : changedNodes,
-        edgeDelta: useFullReplace ? undefined : changedEdges,
-        mergeMode: useFullReplace ? 'replace' : 'merge',
-        persistNodes: shouldPersistNodes,
-        persistEdges: shouldPersistEdges,
-      })
-        .then(({ nodes: savedNodes, edges: savedEdges }) => {
-          if (useFullReplace) {
-            if (savedNodes.length > 0) {
-              const nextNodeMap = new Map<string, string>()
-              for (const record of savedNodes) {
-                nextNodeMap.set(record.id, nodeFingerprint({
-                  id: record.id,
-                  lens_id: record.lens_id,
-                  version_id: record.version_id ?? null,
-                  label: record.label ?? undefined,
-                  ordinal: record.ordinal,
-                  position_x: record.position_x,
-                  position_y: record.position_y,
-                  config: record.config ?? null,
-                }))
+                if (savedEdges.length > 0) {
+                  const nextEdgeMap = new Map<string, string>()
+                  for (const record of savedEdges) {
+                    nextEdgeMap.set(
+                      record.id,
+                      edgeFingerprint({
+                        id: record.id,
+                        source_node_id: record.source_node_id,
+                        target_node_id: record.target_node_id,
+                        source_output_key: record.source_output_key,
+                        target_param_label: record.target_param_label,
+                      })
+                    )
+                  }
+                  lastSavedEdgeFingerprintRef.current = nextEdgeMap
+                  // Sync live-edges cache so the page's execution hook sees current state
+                  queryClient.setQueryData(queryKeys.workflows.edges(workflowId), savedEdges)
+                  setEdges(
+                    savedEdges.map((record) =>
+                      toFlowEdge(
+                        record,
+                        handleRemoveEdge,
+                        savedNodes,
+                        nodeConfigOverridesRef.current
+                      )
+                    )
+                  )
+                }
+                return
               }
-              lastSavedNodeFingerprintRef.current = nextNodeMap
-              // Sync live-nodes cache so the page's execution hook sees current state
-              queryClient.setQueryData(queryKeys.workflows.nodes(workflowId), savedNodes)
-              setNodes(
-                savedNodes.map((record) =>
-                  toFlowNode(record, handleRemoveNode, handleDuplicateNode, onConfigNodeRef.current, onEditLensRef.current, currentUserIdRef.current, nodeConfigOverridesRef.current)
+
+              if (savedNodes.length > 0) {
+                const nextNodeMap = new Map(lastSavedNodeFingerprintRef.current)
+                for (const record of savedNodes) {
+                  nextNodeMap.set(
+                    record.id,
+                    nodeFingerprint({
+                      id: record.id,
+                      lens_id: record.lens_id,
+                      version_id: record.version_id ?? null,
+                      label: record.label ?? undefined,
+                      ordinal: record.ordinal,
+                      position_x: record.position_x,
+                      position_y: record.position_y,
+                      config: record.config ?? null,
+                    })
+                  )
+                }
+                lastSavedNodeFingerprintRef.current = nextNodeMap
+                // Sync live-nodes cache so the page's execution hook sees current state
+                queryClient.setQueryData(
+                  queryKeys.workflows.nodes(workflowId),
+                  (old: WorkflowNodeRecord[] | undefined) => {
+                    const byId = new Map((old ?? []).map((n) => [n.id, n]))
+                    for (const record of savedNodes) byId.set(record.id, record)
+                    return Array.from(byId.values()).sort((a, b) => a.ordinal - b.ordinal)
+                  }
                 )
-              )
-            }
-
-            if (savedEdges.length > 0) {
-              const nextEdgeMap = new Map<string, string>()
-              for (const record of savedEdges) {
-                nextEdgeMap.set(record.id, edgeFingerprint({
-                  id: record.id,
-                  source_node_id: record.source_node_id,
-                  target_node_id: record.target_node_id,
-                  source_output_key: record.source_output_key,
-                  target_param_label: record.target_param_label,
-                }))
+                setNodes((prev) => {
+                  const byId = new Map(prev.map((n) => [n.id, n]))
+                  for (const record of savedNodes) {
+                    byId.set(
+                      record.id,
+                      toFlowNode(
+                        record,
+                        handleRemoveNode,
+                        handleDuplicateNode,
+                        onConfigNodeRef.current,
+                        onEditLensRef.current,
+                        currentUserIdRef.current,
+                        nodeConfigOverridesRef.current
+                      )
+                    )
+                  }
+                  return Array.from(byId.values())
+                })
               }
-              lastSavedEdgeFingerprintRef.current = nextEdgeMap
-              // Sync live-edges cache so the page's execution hook sees current state
-              queryClient.setQueryData(queryKeys.workflows.edges(workflowId), savedEdges)
-              setEdges(savedEdges.map((record) => toFlowEdge(record, handleRemoveEdge, savedNodes, nodeConfigOverridesRef.current)))
-            }
-            return
-          }
 
-          if (savedNodes.length > 0) {
-            const nextNodeMap = new Map(lastSavedNodeFingerprintRef.current)
-            for (const record of savedNodes) {
-              nextNodeMap.set(record.id, nodeFingerprint({
-                id: record.id,
-                lens_id: record.lens_id,
-                version_id: record.version_id ?? null,
-                label: record.label ?? undefined,
-                ordinal: record.ordinal,
-                position_x: record.position_x,
-                position_y: record.position_y,
-                config: record.config ?? null,
-              }))
-            }
-            lastSavedNodeFingerprintRef.current = nextNodeMap
-            // Sync live-nodes cache so the page's execution hook sees current state
-            queryClient.setQueryData(
-              queryKeys.workflows.nodes(workflowId),
-              (old: WorkflowNodeRecord[] | undefined) => {
-                const byId = new Map((old ?? []).map((n) => [n.id, n]))
-                for (const record of savedNodes) byId.set(record.id, record)
-                return Array.from(byId.values()).sort((a, b) => a.ordinal - b.ordinal)
-              },
-            )
-            setNodes((prev) => {
-              const byId = new Map(prev.map((n) => [n.id, n]))
-              for (const record of savedNodes) {
-                byId.set(record.id, toFlowNode(record, handleRemoveNode, handleDuplicateNode, onConfigNodeRef.current, onEditLensRef.current, currentUserIdRef.current, nodeConfigOverridesRef.current))
+              if (savedEdges.length > 0) {
+                const nextEdgeMap = new Map(lastSavedEdgeFingerprintRef.current)
+                for (const record of savedEdges) {
+                  nextEdgeMap.set(
+                    record.id,
+                    edgeFingerprint({
+                      id: record.id,
+                      source_node_id: record.source_node_id,
+                      target_node_id: record.target_node_id,
+                      source_output_key: record.source_output_key,
+                      target_param_label: record.target_param_label,
+                    })
+                  )
+                }
+                lastSavedEdgeFingerprintRef.current = nextEdgeMap
+                // Sync live-edges cache so the page's execution hook sees current state
+                queryClient.setQueryData(
+                  queryKeys.workflows.edges(workflowId),
+                  (old: WorkflowEdgeRecord[] | undefined) => {
+                    const byId = new Map((old ?? []).map((e) => [e.id, e]))
+                    for (const record of savedEdges) byId.set(record.id, record)
+                    return Array.from(byId.values())
+                  }
+                )
+                setEdges((prev) => {
+                  const byId = new Map(prev.map((e) => [e.id, e]))
+                  for (const record of savedEdges) {
+                    byId.set(
+                      record.id,
+                      toFlowEdge(
+                        record,
+                        handleRemoveEdge,
+                        nodeRecords,
+                        nodeConfigOverridesRef.current
+                      )
+                    )
+                  }
+                  return Array.from(byId.values())
+                })
               }
-              return Array.from(byId.values())
             })
-          }
-
-          if (savedEdges.length > 0) {
-            const nextEdgeMap = new Map(lastSavedEdgeFingerprintRef.current)
-            for (const record of savedEdges) {
-              nextEdgeMap.set(record.id, edgeFingerprint({
-                id: record.id,
-                source_node_id: record.source_node_id,
-                target_node_id: record.target_node_id,
-                source_output_key: record.source_output_key,
-                target_param_label: record.target_param_label,
-              }))
-            }
-            lastSavedEdgeFingerprintRef.current = nextEdgeMap
-            // Sync live-edges cache so the page's execution hook sees current state
-            queryClient.setQueryData(
-              queryKeys.workflows.edges(workflowId),
-              (old: WorkflowEdgeRecord[] | undefined) => {
-                const byId = new Map((old ?? []).map((e) => [e.id, e]))
-                for (const record of savedEdges) byId.set(record.id, record)
-                return Array.from(byId.values())
-              },
-            )
-            setEdges((prev) => {
-              const byId = new Map(prev.map((e) => [e.id, e]))
-              for (const record of savedEdges) {
-                byId.set(record.id, toFlowEdge(record, handleRemoveEdge, nodeRecords, nodeConfigOverridesRef.current))
-              }
-              return Array.from(byId.values())
-            })
-          }
-        })
-        .catch(() => null)
-    }, options?.immediate ? 0 : 1500)
-  }, [readOnly, workflowId, saveWorkflow, handleRemoveNode, handleDuplicateNode, handleRemoveEdge, nodeRecords, setNodes, setEdges])
+            .catch(() => null)
+        },
+        options?.immediate ? 0 : 1500
+      )
+    },
+    [
+      readOnly,
+      workflowId,
+      saveWorkflow,
+      handleRemoveNode,
+      handleDuplicateNode,
+      handleRemoveEdge,
+      nodeRecords,
+      setNodes,
+      setEdges,
+    ]
+  )
 
   const setSelection = useCallback((nextSelection: WorkflowCanvasSelection) => {
     selectionRef.current = nextSelection
     setSelectionState(nextSelection)
   }, [])
 
-  const makeSnapshot = useCallback((): WorkflowCanvasGraphSnapshot<WorkflowNodeData> => ({
-    nodes: flowNodesRef.current,
-    edges: flowEdgesRef.current,
-    selection: selectionRef.current,
-  }), [])
+  const makeSnapshot = useCallback(
+    (): WorkflowCanvasGraphSnapshot<WorkflowNodeData> => ({
+      nodes: flowNodesRef.current,
+      edges: flowEdgesRef.current,
+      selection: selectionRef.current,
+    }),
+    []
+  )
 
-  const applySnapshot = useCallback((snapshot: WorkflowCanvasGraphSnapshot<WorkflowNodeData>) => {
-    const selected = applyWorkflowSelectionToGraph(snapshot.nodes, snapshot.edges, snapshot.selection)
-    flowNodesRef.current = selected.nodes
-    flowEdgesRef.current = selected.edges
-    setNodes(selected.nodes)
-    setEdges(selected.edges)
-    setSelection(snapshot.selection)
-  }, [setEdges, setNodes, setSelection])
-
-  const persistGraphTransition = useCallback((
-    before: WorkflowCanvasGraphSnapshot<WorkflowNodeData>,
-    after: WorkflowCanvasGraphSnapshot<WorkflowNodeData>,
-  ) => {
-    if (readOnly) return
-
-    const nextNodeIds = new Set(after.nodes.map((node) => node.id))
-    const nextEdgeIds = new Set(after.edges.map((edge) => edge.id))
-    const removedNodeIds = before.nodes
-      .map((node) => node.id)
-      .filter((id) => !nextNodeIds.has(id))
-    const removedEdgeIds = before.edges
-      .map((edge) => edge.id)
-      .filter((id) => !nextEdgeIds.has(id))
-
-    for (const edgeId of removedEdgeIds) {
-      lastSavedEdgeFingerprintRef.current.delete(edgeId)
-      if (!edgeId.startsWith('tmp-edge-')) {
-        workflowsService.deleteEdge(edgeId).catch(() => null)
-      }
-    }
-    for (const nodeId of removedNodeIds) {
-      lastSavedNodeFingerprintRef.current.delete(nodeId)
-      if (!nodeId.startsWith('tmp-')) {
-        workflowsService.deleteNode(nodeId).catch(() => null)
-      }
-    }
-
-    if (removedNodeIds.length > 0) {
-      queryClient.setQueryData(
-        queryKeys.workflows.nodes(workflowId),
-        (old: WorkflowNodeRecord[] | undefined) => (old ?? []).filter((node) => !removedNodeIds.includes(node.id)),
+  const applySnapshot = useCallback(
+    (snapshot: WorkflowCanvasGraphSnapshot<WorkflowNodeData>) => {
+      const selected = applyWorkflowSelectionToGraph(
+        snapshot.nodes,
+        snapshot.edges,
+        snapshot.selection
       )
-    }
-    if (removedEdgeIds.length > 0) {
-      queryClient.setQueryData(
-        queryKeys.workflows.edges(workflowId),
-        (old: WorkflowEdgeRecord[] | undefined) => (old ?? []).filter((edge) => !removedEdgeIds.includes(edge.id)),
+      flowNodesRef.current = selected.nodes
+      flowEdgesRef.current = selected.edges
+      setNodes(selected.nodes)
+      setEdges(selected.edges)
+      setSelection(snapshot.selection)
+    },
+    [setEdges, setNodes, setSelection]
+  )
+
+  const persistGraphTransition = useCallback(
+    (
+      before: WorkflowCanvasGraphSnapshot<WorkflowNodeData>,
+      after: WorkflowCanvasGraphSnapshot<WorkflowNodeData>
+    ) => {
+      if (readOnly) return
+
+      const nextNodeIds = new Set(after.nodes.map((node) => node.id))
+      const nextEdgeIds = new Set(after.edges.map((edge) => edge.id))
+      const removedNodeIds = before.nodes
+        .map((node) => node.id)
+        .filter((id) => !nextNodeIds.has(id))
+      const removedEdgeIds = before.edges
+        .map((edge) => edge.id)
+        .filter((id) => !nextEdgeIds.has(id))
+
+      for (const edgeId of removedEdgeIds) {
+        lastSavedEdgeFingerprintRef.current.delete(edgeId)
+        if (!edgeId.startsWith('tmp-edge-')) {
+          workflowsService.deleteEdge(edgeId).catch(() => null)
+        }
+      }
+      for (const nodeId of removedNodeIds) {
+        lastSavedNodeFingerprintRef.current.delete(nodeId)
+        if (!nodeId.startsWith('tmp-')) {
+          workflowsService.deleteNode(nodeId).catch(() => null)
+        }
+      }
+
+      if (removedNodeIds.length > 0) {
+        queryClient.setQueryData(
+          queryKeys.workflows.nodes(workflowId),
+          (old: WorkflowNodeRecord[] | undefined) =>
+            (old ?? []).filter((node) => !removedNodeIds.includes(node.id))
+        )
+      }
+      if (removedEdgeIds.length > 0) {
+        queryClient.setQueryData(
+          queryKeys.workflows.edges(workflowId),
+          (old: WorkflowEdgeRecord[] | undefined) =>
+            (old ?? []).filter((edge) => !removedEdgeIds.includes(edge.id))
+        )
+      }
+
+      scheduleSave({ forceAll: true })
+    },
+    [queryClient, readOnly, scheduleSave, workflowId]
+  )
+
+  const commitGraphSnapshot = useCallback(
+    (
+      label: string,
+      before: WorkflowCanvasGraphSnapshot<WorkflowNodeData>,
+      after: WorkflowCanvasGraphSnapshot<WorkflowNodeData>
+    ) => {
+      applySnapshot(after)
+      setHistoryState((current) => {
+        const next = pushWorkflowCanvasHistory(current, { label, before, after })
+        historyRef.current = next
+        return next
+      })
+      persistGraphTransition(before, after)
+    },
+    [applySnapshot, persistGraphTransition]
+  )
+
+  const setGraphWithoutHistory = useCallback(
+    (
+      nextNodes: Node<WorkflowNodeData>[],
+      nextEdges: Edge[],
+      nextSelection: WorkflowCanvasSelection
+    ) => {
+      applySnapshot({ nodes: nextNodes, edges: nextEdges, selection: nextSelection })
+    },
+    [applySnapshot]
+  )
+
+  const deleteGraphItems = useCallback(
+    (label: string, targetSelection: WorkflowCanvasSelection = selectionRef.current) => {
+      if (readOnly || !hasWorkflowCanvasSelection(targetSelection)) return
+      const before = makeSnapshot()
+      const nodeIds = new Set(targetSelection.nodeIds)
+      const edgeIds = new Set(targetSelection.edgeIds)
+      const nextNodes = before.nodes.filter((node) => !nodeIds.has(node.id))
+      const nextEdges = before.edges.filter(
+        (edge) => !edgeIds.has(edge.id) && !nodeIds.has(edge.source) && !nodeIds.has(edge.target)
       )
-    }
+      commitGraphSnapshot(label, before, {
+        nodes: nextNodes,
+        edges: nextEdges,
+        selection: EMPTY_WORKFLOW_CANVAS_SELECTION,
+      })
+    },
+    [commitGraphSnapshot, makeSnapshot, readOnly]
+  )
 
-    scheduleSave({ forceAll: true })
-  }, [queryClient, readOnly, scheduleSave, workflowId])
+  const hydratePastedNodeData = useCallback(
+    (data: Record<string, unknown>): WorkflowNodeData => {
+      const lensId = typeof data.lens_id === 'string' ? data.lens_id : undefined
+      const lensLenserId = typeof data.lensLenserId === 'string' ? data.lensLenserId : undefined
+      return {
+        ...(data as WorkflowNodeData),
+        isPersisted: false,
+        lens_id: lensId,
+        isLensOwner: !!currentUserIdRef.current && currentUserIdRef.current === lensLenserId,
+        onRemove: handleRemoveNode,
+        onDuplicate: handleDuplicateNode,
+        onConfigNode: onConfigNodeRef.current,
+        onEditLens:
+          lensLenserId && currentUserIdRef.current === lensLenserId
+            ? onEditLensRef.current
+            : undefined,
+      }
+    },
+    [handleDuplicateNode, handleRemoveNode]
+  )
 
-  const commitGraphSnapshot = useCallback((
-    label: string,
-    before: WorkflowCanvasGraphSnapshot<WorkflowNodeData>,
-    after: WorkflowCanvasGraphSnapshot<WorkflowNodeData>,
-  ) => {
-    applySnapshot(after)
-    setHistoryState((current) => {
-      const next = pushWorkflowCanvasHistory(current, { label, before, after })
-      historyRef.current = next
-      return next
-    })
-    persistGraphTransition(before, after)
-  }, [applySnapshot, persistGraphTransition])
+  const hydratePastedEdgeData = useCallback(
+    (data: Record<string, unknown> | undefined) => ({
+      ...(data ?? {}),
+      onRemove: handleRemoveEdge,
+    }),
+    [handleRemoveEdge]
+  )
 
-  const setGraphWithoutHistory = useCallback((
-    nextNodes: Node<WorkflowNodeData>[],
-    nextEdges: Edge[],
-    nextSelection: WorkflowCanvasSelection,
-  ) => {
-    applySnapshot({ nodes: nextNodes, edges: nextEdges, selection: nextSelection })
-  }, [applySnapshot])
-
-  const deleteGraphItems = useCallback((
-    label: string,
-    targetSelection: WorkflowCanvasSelection = selectionRef.current,
-  ) => {
-    if (readOnly || !hasWorkflowCanvasSelection(targetSelection)) return
-    const before = makeSnapshot()
-    const nodeIds = new Set(targetSelection.nodeIds)
-    const edgeIds = new Set(targetSelection.edgeIds)
-    const nextNodes = before.nodes.filter((node) => !nodeIds.has(node.id))
-    const nextEdges = before.edges.filter((edge) =>
-      !edgeIds.has(edge.id) && !nodeIds.has(edge.source) && !nodeIds.has(edge.target)
-    )
-    commitGraphSnapshot(label, before, {
-      nodes: nextNodes,
-      edges: nextEdges,
-      selection: EMPTY_WORKFLOW_CANVAS_SELECTION,
-    })
-  }, [commitGraphSnapshot, makeSnapshot, readOnly])
-
-  const hydratePastedNodeData = useCallback((data: Record<string, unknown>): WorkflowNodeData => {
-    const lensId = typeof data.lens_id === 'string' ? data.lens_id : undefined
-    const lensLenserId = typeof data.lensLenserId === 'string' ? data.lensLenserId : undefined
-    return {
-      ...(data as WorkflowNodeData),
-      isPersisted: false,
-      lens_id: lensId,
-      isLensOwner: !!currentUserIdRef.current && currentUserIdRef.current === lensLenserId,
-      onRemove: handleRemoveNode,
-      onDuplicate: handleDuplicateNode,
-      onConfigNode: onConfigNodeRef.current,
-      onEditLens: lensLenserId && currentUserIdRef.current === lensLenserId ? onEditLensRef.current : undefined,
-    }
-  }, [handleDuplicateNode, handleRemoveNode])
-
-  const hydratePastedEdgeData = useCallback((data: Record<string, unknown> | undefined) => ({
-    ...(data ?? {}),
-    onRemove: handleRemoveEdge,
-  }), [handleRemoveEdge])
-
-  const writeClipboardPayload = useCallback(async (payload: ReturnType<typeof serializeWorkflowCanvasSelection>) => {
-    if (!payload) return false
-    const encoded = encodeWorkflowCanvasClipboard(payload)
-    fallbackClipboardRef.current = encoded
-    setHasClipboard(true)
-    try {
-      if (typeof navigator !== 'undefined') await navigator.clipboard?.writeText(encoded)
-    } catch {
-      // Browser clipboard can fail outside secure contexts; the in-memory payload still works.
-    }
-    return true
-  }, [])
+  const writeClipboardPayload = useCallback(
+    async (payload: ReturnType<typeof serializeWorkflowCanvasSelection>) => {
+      if (!payload) return false
+      const encoded = encodeWorkflowCanvasClipboard(payload)
+      fallbackClipboardRef.current = encoded
+      setHasClipboard(true)
+      try {
+        if (typeof navigator !== 'undefined') await navigator.clipboard?.writeText(encoded)
+      } catch {
+        // Browser clipboard can fail outside secure contexts; the in-memory payload still works.
+      }
+      return true
+    },
+    []
+  )
 
   const readClipboardPayload = useCallback(async () => {
     let raw: string | null = null
@@ -808,11 +1027,20 @@ function WorkflowBuilderCanvasInner({
       raw = null
     }
     const parsed = raw ? parseWorkflowCanvasClipboard(raw) : null
-    return parsed ?? (fallbackClipboardRef.current ? parseWorkflowCanvasClipboard(fallbackClipboardRef.current) : null)
+    return (
+      parsed ??
+      (fallbackClipboardRef.current
+        ? parseWorkflowCanvasClipboard(fallbackClipboardRef.current)
+        : null)
+    )
   }, [])
 
   const copySelection = useCallback(async () => {
-    const payload = serializeWorkflowCanvasSelection(flowNodesRef.current, flowEdgesRef.current, selectionRef.current)
+    const payload = serializeWorkflowCanvasSelection(
+      flowNodesRef.current,
+      flowEdgesRef.current,
+      selectionRef.current
+    )
     if (!payload) {
       toast.error('Select at least one node to copy.')
       return
@@ -821,54 +1049,67 @@ function WorkflowBuilderCanvasInner({
     if (ok) toast.success('Selection copied.')
   }, [writeClipboardPayload])
 
-  const pastePayload = useCallback(async (payload: Awaited<ReturnType<typeof readClipboardPayload>>, label = 'Paste selection') => {
-    if (!payload || readOnly) {
-      toast.error('Workflow clipboard is empty or invalid.')
-      return
-    }
-    pasteOffsetRef.current += 1
-    const before = makeSnapshot()
-    const paste = createWorkflowCanvasPaste(payload, before.nodes, {
-      origin: lastCanvasPositionRef.current ?? undefined,
-      offsetIndex: pasteOffsetRef.current,
-      hydrateNodeData: hydratePastedNodeData,
-      hydrateEdgeData: hydratePastedEdgeData,
-    })
-    const ordinalOffset = before.nodes.length
-    const pastedNodes = paste.nodes.map((node, index) => ({
-      ...node,
-      data: {
-        ...node.data,
-        ordinal: ordinalOffset + index,
-        onRemove: handleRemoveNode,
-        onDuplicate: handleDuplicateNode,
-        onConfigNode: onConfigNodeRef.current,
-        onEditLens: node.data.onEditLens,
-      },
-    }))
-    commitGraphSnapshot(label, before, {
-      nodes: [...before.nodes.map((node) => ({ ...node, selected: false })), ...pastedNodes],
-      edges: [...before.edges.map((edge) => ({ ...edge, selected: false })), ...paste.edges],
-      selection: paste.selection,
-    })
-  }, [
-    commitGraphSnapshot,
-    handleDuplicateNode,
-    handleRemoveNode,
-    hydratePastedEdgeData,
-    hydratePastedNodeData,
-    makeSnapshot,
-    readOnly,
-  ])
+  const pastePayload = useCallback(
+    async (
+      payload: Awaited<ReturnType<typeof readClipboardPayload>>,
+      label = 'Paste selection'
+    ) => {
+      if (!payload || readOnly) {
+        toast.error('Workflow clipboard is empty or invalid.')
+        return
+      }
+      pasteOffsetRef.current += 1
+      const before = makeSnapshot()
+      const paste = createWorkflowCanvasPaste(payload, before.nodes, {
+        origin: lastCanvasPositionRef.current ?? undefined,
+        offsetIndex: pasteOffsetRef.current,
+        hydrateNodeData: hydratePastedNodeData,
+        hydrateEdgeData: hydratePastedEdgeData,
+      })
+      const ordinalOffset = before.nodes.length
+      const pastedNodes = paste.nodes.map((node, index) => ({
+        ...node,
+        data: {
+          ...node.data,
+          ordinal: ordinalOffset + index,
+          onRemove: handleRemoveNode,
+          onDuplicate: handleDuplicateNode,
+          onConfigNode: onConfigNodeRef.current,
+          onEditLens: node.data.onEditLens,
+        },
+      }))
+      commitGraphSnapshot(label, before, {
+        nodes: [...before.nodes.map((node) => ({ ...node, selected: false })), ...pastedNodes],
+        edges: [...before.edges.map((edge) => ({ ...edge, selected: false })), ...paste.edges],
+        selection: paste.selection,
+      })
+    },
+    [
+      commitGraphSnapshot,
+      handleDuplicateNode,
+      handleRemoveNode,
+      hydratePastedEdgeData,
+      hydratePastedNodeData,
+      makeSnapshot,
+      readOnly,
+    ]
+  )
 
-  const duplicateSelection = useCallback(async (targetSelection = selectionRef.current) => {
-    const payload = serializeWorkflowCanvasSelection(flowNodesRef.current, flowEdgesRef.current, targetSelection)
-    if (!payload) {
-      toast.error('Select at least one node to duplicate.')
-      return
-    }
-    await pastePayload(payload, 'Duplicate selection')
-  }, [pastePayload])
+  const duplicateSelection = useCallback(
+    async (targetSelection = selectionRef.current) => {
+      const payload = serializeWorkflowCanvasSelection(
+        flowNodesRef.current,
+        flowEdgesRef.current,
+        targetSelection
+      )
+      if (!payload) {
+        toast.error('Select at least one node to duplicate.')
+        return
+      }
+      await pastePayload(payload, 'Duplicate selection')
+    },
+    [pastePayload]
+  )
 
   const configureSelectedNode = useCallback(() => {
     const nodeId = selectionRef.current.nodeIds[0]
@@ -888,7 +1129,9 @@ function WorkflowBuilderCanvasInner({
     if (!nextLabel?.trim()) return
     commitGraphSnapshot('Rename node', before, {
       nodes: before.nodes.map((candidate) =>
-        candidate.id === nodeId ? { ...candidate, data: { ...candidate.data, label: nextLabel.trim() } } : candidate
+        candidate.id === nodeId
+          ? { ...candidate, data: { ...candidate.data, label: nextLabel.trim() } }
+          : candidate
       ),
       edges: before.edges,
       selection: before.selection,
@@ -947,7 +1190,7 @@ function WorkflowBuilderCanvasInner({
     const source = data?.sourceNodeType ? getWorkflowNodeCatalogEntry(data.sourceNodeType) : null
     const target = data?.targetNodeType ? getWorkflowNodeCatalogEntry(data.targetNodeType) : null
     toast.info(
-      `${source?.displayName ?? 'Source'} outputs ${source?.producesOutputType ?? 'any'} → ${target?.displayName ?? 'target'} accepts ${(target?.acceptsInputTypes ?? ['any']).join(', ')}`,
+      `${source?.displayName ?? 'Source'} outputs ${source?.producesOutputType ?? 'any'} → ${target?.displayName ?? 'target'} accepts ${(target?.acceptsInputTypes ?? ['any']).join(', ')}`
     )
   }, [selectedEdge])
 
@@ -982,125 +1225,167 @@ function WorkflowBuilderCanvasInner({
     persistGraphTransition(before, result.snapshot)
   }, [applySnapshot, makeSnapshot, persistGraphTransition])
 
-  const commandState = useMemo(() => ({
-    readOnly,
-    hasNodes: flowNodes.length > 0,
-    hasSelection: hasWorkflowCanvasSelection(selection),
-    hasSelectedNode: selection.nodeIds.length > 0,
-    hasSingleSelectedNode: selection.nodeIds.length === 1,
-    hasSelectedEdge: selection.edgeIds.length > 0,
-    canPaste: hasClipboard,
-    canUndo: historyState.past.length > 0,
-    canRedo: historyState.future.length > 0,
-    canRunNode: false,
-  }), [flowNodes.length, hasClipboard, historyState.future.length, historyState.past.length, readOnly, selection])
+  const commandState = useMemo(
+    () => ({
+      readOnly,
+      hasNodes: flowNodes.length > 0,
+      hasSelection: hasWorkflowCanvasSelection(selection),
+      hasSelectedNode: selection.nodeIds.length > 0,
+      hasSingleSelectedNode: selection.nodeIds.length === 1,
+      hasSelectedEdge: selection.edgeIds.length > 0,
+      canPaste: hasClipboard,
+      canUndo: historyState.past.length > 0,
+      canRedo: historyState.future.length > 0,
+      canRunNode: false,
+    }),
+    [
+      flowNodes.length,
+      hasClipboard,
+      historyState.future.length,
+      historyState.past.length,
+      readOnly,
+      selection,
+    ]
+  )
 
-  const commands = useMemo(() => createWorkflowCanvasCommandRegistry({
-    selectAll: () => {
-      const next = selectAllWorkflowItems(flowNodesRef.current, flowEdgesRef.current)
-      setGraphWithoutHistory(flowNodesRef.current, flowEdgesRef.current, next)
-    },
-    clearSelection: () => {
-      setContextMenu(null)
-      setCommandPaletteOpen(false)
-      setShortcutHelpOpen(false)
-      setGraphWithoutHistory(flowNodesRef.current, flowEdgesRef.current, EMPTY_WORKFLOW_CANVAS_SELECTION)
-    },
-    deleteSelection: () => deleteGraphItems('Delete selection'),
-    copy: copySelection,
-    cut: async () => {
-      const payload = serializeWorkflowCanvasSelection(flowNodesRef.current, flowEdgesRef.current, selectionRef.current)
-      if (await writeClipboardPayload(payload)) deleteGraphItems('Cut selection')
-    },
-    paste: async () => pastePayload(await readClipboardPayload()),
-    duplicate: () => duplicateSelection(),
-    undo: undoCanvas,
-    redo: redoCanvas,
-    save: () => {
-      scheduleSave({ forceAll: true, immediate: true })
-      toast.success('Workflow save queued.')
-    },
-    openCommandPalette: () => setCommandPaletteOpen(true),
-    openShortcutHelp: () => setShortcutHelpOpen(true),
-    zoomIn: () => { void zoomIn({ duration: 150 }) },
-    zoomOut: () => { void zoomOut({ duration: 150 }) },
-    resetZoom: () => { void setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 150 }) },
-    fitView: () => { void fitView({ padding: 0.25, duration: 200 }) },
-    autoLayout: autoLayoutSelectionOrGraph,
-    configureNode: configureSelectedNode,
-    renameNode: renameSelectedNode,
-    toggleNodeDisabled: toggleSelectedNodesDisabled,
-    viewNodeDocs: viewSelectedNodeDocs,
-    addConnectedNode: () => toast.info('Add a connected node by dragging from the node sidebar, then connect from the source handle.'),
-    runNode: () => toast.info('Node test runs are not enabled for this node yet.'),
-    deleteEdge: () => deleteGraphItems('Delete edge', { nodeIds: [], edgeIds: selectionRef.current.edgeIds }),
-    inspectEdgeCompatibility: inspectSelectedEdgeCompatibility,
-    viewEdgeContract: viewSelectedEdgeContract,
-    addNode: () => {
-      const rect = canvasContainerRef.current?.getBoundingClientRect()
-      const cx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
-      const cy = rect ? rect.top + rect.height / 2 : window.innerHeight / 2
-      const pos = screenToFlowPosition({ x: cx, y: cy })
-      const nextOrdinal = flowNodes.length
-      const newNode: Node<WorkflowNodeData> = {
-        id: `tmp-${Date.now()}`,
-        type: 'workflowNode',
-        position: pos,
-        data: {
-          label: 'Manual Trigger',
-          ordinal: nextOrdinal,
-          isPersisted: false,
-          lens_id: '__utility_manual_trigger',
-          config: { node_type: 'manual_trigger', nodeType: 'manual_trigger' } as WorkflowNodeConfig,
-          onRemove: handleRemoveNode,
-          onDuplicate: handleDuplicateNode,
-          onConfigNode,
-        } as WorkflowNodeData,
-      }
-      const before = makeSnapshot()
-      commitGraphSnapshot('Add node', before, {
-        nodes: [...before.nodes.map((n) => ({ ...n, selected: false })), newNode],
-        edges: before.edges.map((e) => ({ ...e, selected: false })),
-        selection: { nodeIds: [newNode.id], edgeIds: [] },
-      })
-    },
-    createNote: () => toast.info('Canvas notes are not part of the workflow schema yet.'),
-    createGroup: () => toast.info('Canvas groups are not part of the workflow schema yet.'),
-    changeEdgeMode: () => toast.info('Edge modes are not part of the workflow schema yet.'),
-  }, commandState), [
-    autoLayoutSelectionOrGraph,
-    commandState,
-    commitGraphSnapshot,
-    configureSelectedNode,
-    copySelection,
-    deleteGraphItems,
-    duplicateSelection,
-    fitView,
-    flowNodes,
-    handleDuplicateNode,
-    handleRemoveNode,
-    inspectSelectedEdgeCompatibility,
-    makeSnapshot,
-    onConfigNode,
-    pastePayload,
-    readClipboardPayload,
-    redoCanvas,
-    renameSelectedNode,
-    scheduleSave,
-    screenToFlowPosition,
-    setGraphWithoutHistory,
-    toggleSelectedNodesDisabled,
-    undoCanvas,
-    viewSelectedEdgeContract,
-    viewSelectedNodeDocs,
-    writeClipboardPayload,
-    zoomIn,
-    zoomOut,
-    setViewport,
-  ])
+  const commands = useMemo(
+    () =>
+      createWorkflowCanvasCommandRegistry(
+        {
+          selectAll: () => {
+            const next = selectAllWorkflowItems(flowNodesRef.current, flowEdgesRef.current)
+            setGraphWithoutHistory(flowNodesRef.current, flowEdgesRef.current, next)
+          },
+          clearSelection: () => {
+            setContextMenu(null)
+            setCommandPaletteOpen(false)
+            setShortcutHelpOpen(false)
+            setGraphWithoutHistory(
+              flowNodesRef.current,
+              flowEdgesRef.current,
+              EMPTY_WORKFLOW_CANVAS_SELECTION
+            )
+          },
+          deleteSelection: () => deleteGraphItems('Delete selection'),
+          copy: copySelection,
+          cut: async () => {
+            const payload = serializeWorkflowCanvasSelection(
+              flowNodesRef.current,
+              flowEdgesRef.current,
+              selectionRef.current
+            )
+            if (await writeClipboardPayload(payload)) deleteGraphItems('Cut selection')
+          },
+          paste: async () => pastePayload(await readClipboardPayload()),
+          duplicate: () => duplicateSelection(),
+          undo: undoCanvas,
+          redo: redoCanvas,
+          save: () => {
+            scheduleSave({ forceAll: true, immediate: true })
+            toast.success('Workflow save queued.')
+          },
+          openCommandPalette: () => setCommandPaletteOpen(true),
+          openShortcutHelp: () => setShortcutHelpOpen(true),
+          zoomIn: () => {
+            void zoomIn({ duration: 150 })
+          },
+          zoomOut: () => {
+            void zoomOut({ duration: 150 })
+          },
+          resetZoom: () => {
+            void setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 150 })
+          },
+          fitView: () => {
+            void fitView({ padding: 0.25, duration: 200 })
+          },
+          autoLayout: autoLayoutSelectionOrGraph,
+          configureNode: configureSelectedNode,
+          renameNode: renameSelectedNode,
+          toggleNodeDisabled: toggleSelectedNodesDisabled,
+          viewNodeDocs: viewSelectedNodeDocs,
+          addConnectedNode: () =>
+            toast.info(
+              'Add a connected node by dragging from the node sidebar, then connect from the source handle.'
+            ),
+          runNode: () => toast.info('Node test runs are not enabled for this node yet.'),
+          deleteEdge: () =>
+            deleteGraphItems('Delete edge', { nodeIds: [], edgeIds: selectionRef.current.edgeIds }),
+          inspectEdgeCompatibility: inspectSelectedEdgeCompatibility,
+          viewEdgeContract: viewSelectedEdgeContract,
+          addNode: () => {
+            const rect = canvasContainerRef.current?.getBoundingClientRect()
+            const cx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
+            const cy = rect ? rect.top + rect.height / 2 : window.innerHeight / 2
+            const pos = screenToFlowPosition({ x: cx, y: cy })
+            const nextOrdinal = flowNodes.length
+            const newNode: Node<WorkflowNodeData> = {
+              id: `tmp-${Date.now()}`,
+              type: 'workflowNode',
+              position: pos,
+              data: {
+                label: 'Manual Trigger',
+                ordinal: nextOrdinal,
+                isPersisted: false,
+                lens_id: '__utility_manual_trigger',
+                config: {
+                  node_type: 'manual_trigger',
+                  nodeType: 'manual_trigger',
+                } as WorkflowNodeConfig,
+                onRemove: handleRemoveNode,
+                onDuplicate: handleDuplicateNode,
+                onConfigNode,
+              } as WorkflowNodeData,
+            }
+            const before = makeSnapshot()
+            commitGraphSnapshot('Add node', before, {
+              nodes: [...before.nodes.map((n) => ({ ...n, selected: false })), newNode],
+              edges: before.edges.map((e) => ({ ...e, selected: false })),
+              selection: { nodeIds: [newNode.id], edgeIds: [] },
+            })
+          },
+          createNote: () => toast.info('Canvas notes are not part of the workflow schema yet.'),
+          createGroup: () => toast.info('Canvas groups are not part of the workflow schema yet.'),
+          changeEdgeMode: () => toast.info('Edge modes are not part of the workflow schema yet.'),
+        },
+        commandState
+      ),
+    [
+      autoLayoutSelectionOrGraph,
+      commandState,
+      commitGraphSnapshot,
+      configureSelectedNode,
+      copySelection,
+      deleteGraphItems,
+      duplicateSelection,
+      fitView,
+      flowNodes,
+      handleDuplicateNode,
+      handleRemoveNode,
+      inspectSelectedEdgeCompatibility,
+      makeSnapshot,
+      onConfigNode,
+      pastePayload,
+      readClipboardPayload,
+      redoCanvas,
+      renameSelectedNode,
+      scheduleSave,
+      screenToFlowPosition,
+      setGraphWithoutHistory,
+      toggleSelectedNodesDisabled,
+      undoCanvas,
+      viewSelectedEdgeContract,
+      viewSelectedNodeDocs,
+      writeClipboardPayload,
+      zoomIn,
+      zoomOut,
+      setViewport,
+    ]
+  )
 
   const commandsRef = useRef(commands)
-  useEffect(() => { commandsRef.current = commands }, [commands])
+  useEffect(() => {
+    commandsRef.current = commands
+  }, [commands])
 
   useEffect(() => {
     actionRef.current.removeNode = (nodeId: string) => {
@@ -1117,8 +1402,9 @@ function WorkflowBuilderCanvasInner({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (shouldSuppressWorkflowCanvasShortcut(event.target) && event.key !== 'Escape') return
-      const command = commandsRef.current.find((candidate) =>
-        candidate.shortcut && matchesWorkflowCanvasShortcut(event, candidate.shortcut)
+      const command = commandsRef.current.find(
+        (candidate) =>
+          candidate.shortcut && matchesWorkflowCanvasShortcut(event, candidate.shortcut)
       )
       if (!command || !isWorkflowCanvasCommandEnabled(command)) return
       event.preventDefault()
@@ -1197,7 +1483,7 @@ function WorkflowBuilderCanvasInner({
       // and set it in config so the execution layer knows the runner type.
       const isUtility = lensData.lens_id?.startsWith('__utility_')
       const nodeTypeFromDrag = isUtility
-        ? lensData.node_type ?? lensData.lens_id?.replace('__utility_', '')
+        ? (lensData.node_type ?? lensData.lens_id?.replace('__utility_', ''))
         : undefined
       const newNode: Node<WorkflowNodeData> = {
         id: `tmp-${Date.now()}`,
@@ -1211,11 +1497,14 @@ function WorkflowBuilderCanvasInner({
           lensVisibility: lensData.visibility,
           lensLenserId: lensData.lenser_id,
           isLensOwner: !!currentUserId && currentUserId === lensData.lenser_id,
-          config: nodeTypeFromDrag ? { node_type: nodeTypeFromDrag, nodeType: nodeTypeFromDrag } as WorkflowNodeConfig : {},
+          config: nodeTypeFromDrag
+            ? ({ node_type: nodeTypeFromDrag, nodeType: nodeTypeFromDrag } as WorkflowNodeConfig)
+            : {},
           onRemove: handleRemoveNode,
           onDuplicate: handleDuplicateNode,
           onConfigNode,
-          onEditLens: (!!currentUserId && currentUserId === lensData.lenser_id) ? onEditLens : undefined,
+          onEditLens:
+            !!currentUserId && currentUserId === lensData.lenser_id ? onEditLens : undefined,
         } as WorkflowNodeData & { lens_id: string },
       }
       const before = makeSnapshot()
@@ -1260,9 +1549,12 @@ function WorkflowBuilderCanvasInner({
     commitGraphSnapshot('Move selection', before, makeSnapshot())
   }, [commitGraphSnapshot, makeSnapshot, readOnly])
 
-  const onSelectionChange = useCallback((params: OnSelectionChangeParams<Node<WorkflowNodeData>, Edge>) => {
-    setSelection(getWorkflowSelectionFromGraph(params.nodes, params.edges))
-  }, [setSelection])
+  const onSelectionChange = useCallback(
+    (params: OnSelectionChangeParams<Node<WorkflowNodeData>, Edge>) => {
+      setSelection(getWorkflowSelectionFromGraph(params.nodes, params.edges))
+    },
+    [setSelection]
+  )
 
   const resolveMenuPoint = useCallback((event: MouseEvent | React.MouseEvent) => {
     const bounds = canvasContainerRef.current?.getBoundingClientRect()
@@ -1271,36 +1563,57 @@ function WorkflowBuilderCanvasInner({
       : { x: event.clientX, y: event.clientY }
   }, [])
 
-  const onPaneContextMenu = useCallback((event: MouseEvent | React.MouseEvent) => {
-    event.preventDefault()
-    lastCanvasPositionRef.current = screenToFlowPosition({ x: event.clientX, y: event.clientY })
-    const point = resolveMenuPoint(event)
-    setContextMenu({ ...point, target: 'canvas' })
-  }, [resolveMenuPoint, screenToFlowPosition])
+  const onPaneContextMenu = useCallback(
+    (event: MouseEvent | React.MouseEvent) => {
+      event.preventDefault()
+      lastCanvasPositionRef.current = screenToFlowPosition({ x: event.clientX, y: event.clientY })
+      const point = resolveMenuPoint(event)
+      setContextMenu({ ...point, target: 'canvas' })
+    },
+    [resolveMenuPoint, screenToFlowPosition]
+  )
 
-  const onNodeContextMenu: NodeMouseHandler<Node<WorkflowNodeData>> = useCallback((event, node) => {
-    event.preventDefault()
-    if (!node.selected) {
-      setGraphWithoutHistory(flowNodesRef.current, flowEdgesRef.current, { nodeIds: [node.id], edgeIds: [] })
-    }
-    const point = resolveMenuPoint(event)
-    setContextMenu({ ...point, target: selectionRef.current.nodeIds.length > 1 ? 'selection' : 'node' })
-  }, [resolveMenuPoint, setGraphWithoutHistory])
+  const onNodeContextMenu: NodeMouseHandler<Node<WorkflowNodeData>> = useCallback(
+    (event, node) => {
+      event.preventDefault()
+      if (!node.selected) {
+        setGraphWithoutHistory(flowNodesRef.current, flowEdgesRef.current, {
+          nodeIds: [node.id],
+          edgeIds: [],
+        })
+      }
+      const point = resolveMenuPoint(event)
+      setContextMenu({
+        ...point,
+        target: selectionRef.current.nodeIds.length > 1 ? 'selection' : 'node',
+      })
+    },
+    [resolveMenuPoint, setGraphWithoutHistory]
+  )
 
-  const onEdgeContextMenu: EdgeMouseHandler<Edge> = useCallback((event, edge) => {
-    event.preventDefault()
-    if (!edge.selected) {
-      setGraphWithoutHistory(flowNodesRef.current, flowEdgesRef.current, { nodeIds: [], edgeIds: [edge.id] })
-    }
-    const point = resolveMenuPoint(event)
-    setContextMenu({ ...point, target: 'edge' })
-  }, [resolveMenuPoint, setGraphWithoutHistory])
+  const onEdgeContextMenu: EdgeMouseHandler<Edge> = useCallback(
+    (event, edge) => {
+      event.preventDefault()
+      if (!edge.selected) {
+        setGraphWithoutHistory(flowNodesRef.current, flowEdgesRef.current, {
+          nodeIds: [],
+          edgeIds: [edge.id],
+        })
+      }
+      const point = resolveMenuPoint(event)
+      setContextMenu({ ...point, target: 'edge' })
+    },
+    [resolveMenuPoint, setGraphWithoutHistory]
+  )
 
-  const onSelectionContextMenu = useCallback((event: MouseEvent | React.MouseEvent) => {
-    event.preventDefault()
-    const point = resolveMenuPoint(event)
-    setContextMenu({ ...point, target: 'selection' })
-  }, [resolveMenuPoint])
+  const onSelectionContextMenu = useCallback(
+    (event: MouseEvent | React.MouseEvent) => {
+      event.preventDefault()
+      const point = resolveMenuPoint(event)
+      setContextMenu({ ...point, target: 'selection' })
+    },
+    [resolveMenuPoint]
+  )
 
   const onPaneClick = useCallback(() => {
     setContextMenu(null)
@@ -1328,25 +1641,22 @@ function WorkflowBuilderCanvasInner({
           paramLabels: incomingLabels,
         }
       }),
-    [flowNodes, flowEdges],
+    [flowNodes, flowEdges]
   )
 
-  const simEdges = useMemo(
-    () => {
-      const nodeIds = new Set(flowNodes.map((n) => n.id))
-      return flowEdges
-        .filter((e) => nodeIds.has(e.source) && nodeIds.has(e.target))
-        .map((e) => ({
-          id: e.id,
-          sourceNodeId: e.source,
-          targetNodeId: e.target,
-          sourceOutputKey:
-            (e.data as { sourceOutputKey?: string } | undefined)?.sourceOutputKey ?? 'output',
-          targetParamLabel: e.targetHandle ?? 'input',
-        }))
-    },
-    [flowNodes, flowEdges],
-  )
+  const simEdges = useMemo(() => {
+    const nodeIds = new Set(flowNodes.map((n) => n.id))
+    return flowEdges
+      .filter((e) => nodeIds.has(e.source) && nodeIds.has(e.target))
+      .map((e) => ({
+        id: e.id,
+        sourceNodeId: e.source,
+        targetNodeId: e.target,
+        sourceOutputKey:
+          (e.data as { sourceOutputKey?: string } | undefined)?.sourceOutputKey ?? 'output',
+        targetParamLabel: e.targetHandle ?? 'input',
+      }))
+  }, [flowNodes, flowEdges])
 
   const simulationReport = useWorkflowSimulation({
     nodes: simNodes,
@@ -1398,118 +1708,124 @@ function WorkflowBuilderCanvasInner({
         proOptions={{ hideAttribution: true }}
         connectionLineStyle={{
           stroke: 'var(--cl-workflow-edge)',
-          strokeWidth: 2
+          strokeWidth: 2,
         }}
         className="[--xy-edge-stroke:var(--cl-workflow-edge)] [--xy-edge-stroke-selected:var(--cl-yellow-700)] dark:[--xy-edge-stroke-selected:var(--cl-yellow-500)]"
       >
-      {!readOnly && (
-        <Panel position="top-center">
-          <WorkflowCanvasToolbar commands={commands} />
-        </Panel>
-      )}
-      {!readOnly && hasWorkflowCanvasSelection(selection) && (
-        <Panel position="bottom-center">
-          <WorkflowCanvasSelectionBar selection={selection} commands={commands} />
-        </Panel>
-      )}
-      {onEdit && !readOnly && (
-        <Panel position="top-left">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onEdit}
-              title="Edit workflow settings"
-              className="flex items-center gap-1.5 rounded-xl border border-surface-border bg-surface-base px-2.5 py-1.5 text-xs font-medium text-greyscale-500 shadow-sm transition-colors hover:text-greyscale-900 hover:bg-surface-raised dark:hover:text-greyscale-100"
-            >
-              <Pencil size={12} />
-              Edit
-            </button>
-            <HelpButton path="/tutorials/walkthroughs/create-a-workflow" label="Builder Guide" />
-          </div>
-        </Panel>
-      )}
-      {showDiagnostics && diagnosticsOpen && (
-        <Panel position="top-right">
-          <div className="flex w-80 flex-col rounded-2xl border border-surface-border bg-surface-base shadow-lg">
-            <div className="flex items-center gap-2 border-b border-surface-border px-3 py-2">
-              <AlertTriangle size={14} className={errorCount > 0 ? 'text-status-red' : 'text-primary-yellow-600'} />
-              <span className="flex-1 text-xs font-semibold text-greyscale-800 dark:text-greyscale-100">
-                Simulation diagnostics
-              </span>
+        {!readOnly && (
+          <Panel position="top-center">
+            <WorkflowCanvasToolbar commands={commands} />
+          </Panel>
+        )}
+        {!readOnly && hasWorkflowCanvasSelection(selection) && (
+          <Panel position="bottom-center">
+            <WorkflowCanvasSelectionBar selection={selection} commands={commands} />
+          </Panel>
+        )}
+        {onEdit && !readOnly && (
+          <Panel position="top-left">
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setDiagnosticsOpen(false)}
-                className="rounded-md p-0.5 text-greyscale-400 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-100"
-                title="Hide"
-                type="button"
+                onClick={onEdit}
+                title="Edit workflow settings"
+                className="flex items-center gap-1.5 rounded-xl border border-surface-border bg-surface-base px-2.5 py-1.5 text-xs font-medium text-greyscale-500 shadow-sm transition-colors hover:text-greyscale-900 hover:bg-surface-raised dark:hover:text-greyscale-100"
               >
-                <X size={12} />
+                <Pencil size={12} />
+                Edit
               </button>
+              <HelpButton path="/tutorials/walkthroughs/create-a-workflow" label="Builder Guide" />
             </div>
-            <div className="max-h-60 overflow-y-auto px-3 py-2 text-[11px] leading-relaxed">
-              {simulationReport.diagnostics.map((d, i) => (
-                <div
-                  key={`${d.code}-${d.nodeId ?? d.edgeId ?? i}`}
-                  className={`mb-1.5 flex items-start gap-1.5 ${d.severity === 'error' ? 'text-status-red' : 'text-primary-yellow-700 dark:text-primary-yellow-400'}`}
+          </Panel>
+        )}
+        {showDiagnostics && diagnosticsOpen && (
+          <Panel position="top-right">
+            <div className="flex w-80 flex-col rounded-2xl border border-surface-border bg-surface-base shadow-lg">
+              <div className="flex items-center gap-2 border-b border-surface-border px-3 py-2">
+                <AlertTriangle
+                  size={14}
+                  className={errorCount > 0 ? 'text-status-red' : 'text-primary-yellow-600'}
+                />
+                <span className="flex-1 text-xs font-semibold text-greyscale-800 dark:text-greyscale-100">
+                  Simulation diagnostics
+                </span>
+                <button
+                  onClick={() => setDiagnosticsOpen(false)}
+                  className="rounded-md p-0.5 text-greyscale-400 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-100"
+                  title="Hide"
+                  type="button"
                 >
-                  {d.severity === 'error' ? (
-                    <AlertTriangle size={11} className="mt-0.5 flex-shrink-0" />
-                  ) : (
-                    <Info size={11} className="mt-0.5 flex-shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <span className="font-mono">{d.code}</span>
-                    <span className="ml-1 text-greyscale-600 dark:text-greyscale-300">
-                      {d.message}
-                    </span>
-                    {d.code === 'no_trigger_node' && !readOnly && (
-                      <button
-                        type="button"
-                        onClick={() => getWorkflowCanvasCommand(commands, 'canvas.addNode')?.run()}
-                        className="mt-1 inline-flex items-center gap-1 rounded-md border border-amber-400/50 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 hover:bg-amber-200 dark:bg-amber-800/30 dark:text-amber-300 dark:border-amber-500/30"
-                      >
-                        <Zap size={9} />
-                        Add Trigger
-                      </button>
+                  <X size={12} />
+                </button>
+              </div>
+              <div className="max-h-60 overflow-y-auto px-3 py-2 text-[11px] leading-relaxed">
+                {simulationReport.diagnostics.map((d, i) => (
+                  <div
+                    key={`${d.code}-${d.nodeId ?? d.edgeId ?? i}`}
+                    className={`mb-1.5 flex items-start gap-1.5 ${d.severity === 'error' ? 'text-status-red' : 'text-primary-yellow-700 dark:text-primary-yellow-400'}`}
+                  >
+                    {d.severity === 'error' ? (
+                      <AlertTriangle size={11} className="mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <Info size={11} className="mt-0.5 flex-shrink-0" />
                     )}
+                    <div className="min-w-0">
+                      <span className="font-mono">{d.code}</span>
+                      <span className="ml-1 text-greyscale-600 dark:text-greyscale-300">
+                        {d.message}
+                      </span>
+                      {d.code === 'no_trigger_node' && !readOnly && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            getWorkflowCanvasCommand(commands, 'canvas.addNode')?.run()
+                          }
+                          className="mt-1 inline-flex items-center gap-1 rounded-md border border-amber-400/50 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 hover:bg-amber-200 dark:bg-amber-800/30 dark:text-amber-300 dark:border-amber-500/30"
+                        >
+                          <Zap size={9} />
+                          Add Trigger
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div className="border-t border-surface-border px-3 py-1.5 text-[10px] text-greyscale-400">
+                {errorCount} error{errorCount === 1 ? '' : 's'} · {warnCount} warning
+                {warnCount === 1 ? '' : 's'} · {simulationReport.waves.length} wave
+                {simulationReport.waves.length === 1 ? '' : 's'}
+              </div>
             </div>
-            <div className="border-t border-surface-border px-3 py-1.5 text-[10px] text-greyscale-400">
-              {errorCount} error{errorCount === 1 ? '' : 's'} · {warnCount} warning{warnCount === 1 ? '' : 's'} · {simulationReport.waves.length} wave{simulationReport.waves.length === 1 ? '' : 's'}
-            </div>
-          </div>
-        </Panel>
-      )}
-      {showDiagnostics && !diagnosticsOpen && (
-        <Panel position="top-right">
-          <button
-            onClick={() => setDiagnosticsOpen(true)}
-            className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium shadow-sm transition-colors ${errorCount > 0 ? 'border-status-red/40 bg-status-red/10 text-status-red' : 'border-primary-yellow-500/40 bg-primary-yellow-500/10 text-primary-yellow-700'}`}
-            type="button"
-            title="Show simulation diagnostics"
-          >
-            <AlertTriangle size={12} />
-            {errorCount > 0 ? `${errorCount} error${errorCount === 1 ? '' : 's'}` : `${warnCount} warning${warnCount === 1 ? '' : 's'}`}
-          </button>
-        </Panel>
-      )}
-      <Background
-        variant={BackgroundVariant.Dots}
-        gap={20}
-        size={1}
-        color="var(--cl-grey-300)"
-        style={{ opacity: 0.6 }}
-      />
-      <Controls
-        position="bottom-left"
-        showInteractive={false}
-      />
-      <MiniMap
-        position="bottom-right"
-        nodeColor="var(--cl-surface-raised)"
-        maskColor="color-mix(in srgb, black 8%, transparent)"
-        className="!rounded-2xl !border !border-surface-border !overflow-hidden"
-      />
+          </Panel>
+        )}
+        {showDiagnostics && !diagnosticsOpen && (
+          <Panel position="top-right">
+            <button
+              onClick={() => setDiagnosticsOpen(true)}
+              className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium shadow-sm transition-colors ${errorCount > 0 ? 'border-status-red/40 bg-status-red/10 text-status-red' : 'border-primary-yellow-500/40 bg-primary-yellow-500/10 text-primary-yellow-700'}`}
+              type="button"
+              title="Show simulation diagnostics"
+            >
+              <AlertTriangle size={12} />
+              {errorCount > 0
+                ? `${errorCount} error${errorCount === 1 ? '' : 's'}`
+                : `${warnCount} warning${warnCount === 1 ? '' : 's'}`}
+            </button>
+          </Panel>
+        )}
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={20}
+          size={1}
+          color="var(--cl-grey-300)"
+          style={{ opacity: 0.6 }}
+        />
+        <Controls position="bottom-left" showInteractive={false} />
+        <MiniMap
+          position="bottom-right"
+          nodeColor="var(--cl-surface-raised)"
+          maskColor="color-mix(in srgb, black 8%, transparent)"
+          className="!rounded-2xl !border !border-surface-border !overflow-hidden"
+        />
       </ReactFlow>
       {!readOnly && flowNodes.length === 0 && (
         <WorkflowCanvasEmptyState

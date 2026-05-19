@@ -73,10 +73,7 @@ export function WorkflowExecutionDetailPage() {
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
         <AlertTriangle size={32} className="text-greyscale-300" />
         <p className="text-sm font-medium text-greyscale-500">Workflow not found</p>
-        <Link
-          to="/workflows"
-          className="text-xs text-primary-yellow-600 hover:underline"
-        >
+        <Link to="/workflows" className="text-xs text-primary-yellow-600 hover:underline">
           Back to workflows
         </Link>
       </div>

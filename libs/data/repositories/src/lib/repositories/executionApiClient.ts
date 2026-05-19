@@ -1,7 +1,8 @@
 import { supabase, getCachedAccessToken } from '@lenserfight/data/supabase'
 import { TriggerExecutionDTO, TriggerExecutionResponse } from '@lenserfight/types'
 
-const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
+const SUPABASE_URL =
+  (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 // --- Port ---
@@ -14,7 +15,8 @@ export interface ExecutionApiClientPort {
 
 export class HttpExecutionApiClient implements ExecutionApiClientPort {
   private async getAuthHeader(): Promise<Record<string, string>> {
-    const token = getCachedAccessToken() ?? (await supabase.auth.getSession()).data.session?.access_token
+    const token =
+      getCachedAccessToken() ?? (await supabase.auth.getSession()).data.session?.access_token
     if (!token) {
       throw new Error('Unauthenticated: cannot trigger execution without a valid session.')
     }

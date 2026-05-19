@@ -7,10 +7,10 @@ import type { Battle, BattleType, BattleUIPhase } from '../../types/battle.types
 import { useCountdown } from '../../hooks/utils/useCountdown'
 
 const PHASE_LABELS: Record<BattleUIPhase, { label: string; color: string }> = {
-  idle:    { label: 'Open', color: 'bg-status-green/10 text-status-green' },
+  idle: { label: 'Open', color: 'bg-status-green/10 text-status-green' },
   running: { label: 'Scoring', color: 'bg-status-yellow/10 text-status-yellow' },
-  voting:  { label: 'Voting', color: 'bg-primary-yellow-500/10 text-primary-yellow-600' },
-  result:  { label: 'Finished', color: 'bg-surface-overlay text-surface-text-muted' },
+  voting: { label: 'Voting', color: 'bg-primary-yellow-500/10 text-primary-yellow-600' },
+  result: { label: 'Finished', color: 'bg-surface-overlay text-surface-text-muted' },
 }
 
 const BATTLE_TYPE_SHORT: Record<BattleType, string> = {
@@ -23,12 +23,12 @@ const BATTLE_TYPE_SHORT: Record<BattleType, string> = {
 }
 
 const BATTLE_TYPE_DOC_PATH: Record<BattleType, string> = {
-  ai_vs_ai:                    '/tutorials/battle-walkthroughs/your-first-battle',
-  human_vs_human_ai_votes:     '/tutorials/battle-walkthroughs/your-first-battle',
-  human_vs_human_open_votes:   '/tutorials/battle-walkthroughs/your-first-battle',
-  human_vs_ai:                 '/tutorials/battle-walkthroughs/your-first-battle',
-  workflow_battle:             '/tutorials/battle-walkthroughs/your-first-battle',
-  lenser_battle:               '/tutorials/battle-walkthroughs/your-first-battle',
+  ai_vs_ai: '/tutorials/battle-walkthroughs/your-first-battle',
+  human_vs_human_ai_votes: '/tutorials/battle-walkthroughs/your-first-battle',
+  human_vs_human_open_votes: '/tutorials/battle-walkthroughs/your-first-battle',
+  human_vs_ai: '/tutorials/battle-walkthroughs/your-first-battle',
+  workflow_battle: '/tutorials/battle-walkthroughs/your-first-battle',
+  lenser_battle: '/tutorials/battle-walkthroughs/your-first-battle',
 }
 
 interface ArenaTopBarProps {
@@ -119,17 +119,19 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
       )}
 
       {/* Manage button — owner only, actionable statuses */}
-      {isOwner && onManageOpen && (battle.status === 'draft' || battle.status === 'open' || battle.status === 'voting') && (
-        <button
-          type="button"
-          onClick={onManageOpen}
-          className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100 transition-colors px-2 py-1 rounded-lg hover:bg-surface-raised"
-          aria-label="Manage battle"
-        >
-          <Shield size={13} />
-          <span className="hidden sm:inline">Manage</span>
-        </button>
-      )}
+      {isOwner &&
+        onManageOpen &&
+        (battle.status === 'draft' || battle.status === 'open' || battle.status === 'voting') && (
+          <button
+            type="button"
+            onClick={onManageOpen}
+            className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100 transition-colors px-2 py-1 rounded-lg hover:bg-surface-raised"
+            aria-label="Manage battle"
+          >
+            <Shield size={13} />
+            <span className="hidden sm:inline">Manage</span>
+          </button>
+        )}
 
       {/* Rules button */}
       {onRulesOpen && (
@@ -184,7 +186,10 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
       )}
 
       <HelpButton
-        path={BATTLE_TYPE_DOC_PATH[battle.battle_type] ?? '/tutorials/battle-walkthroughs/your-first-battle'}
+        path={
+          BATTLE_TYPE_DOC_PATH[battle.battle_type] ??
+          '/tutorials/battle-walkthroughs/your-first-battle'
+        }
         label="How to battle"
         className="hidden sm:inline-flex"
       />

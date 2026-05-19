@@ -77,13 +77,24 @@ export function ChallengeGeneratorStep({
   // ── Derive effective provider key from funding state ───────────────────────
   const effectiveProviderKey = useMemo(() => {
     if (genFunding.fundingSource === 'user_byok_cloud') {
-      return genFunding.availableKeys.find((k) => k.id === genFunding.selectedKeyRefId)?.providerKey ?? ''
+      return (
+        genFunding.availableKeys.find((k) => k.id === genFunding.selectedKeyRefId)?.providerKey ??
+        ''
+      )
     }
     if (genFunding.fundingSource === 'user_byok_local') {
-      return genFunding.localKeys.find((k) => k.id === genFunding.selectedLocalKeyId)?.provider ?? ''
+      return (
+        genFunding.localKeys.find((k) => k.id === genFunding.selectedLocalKeyId)?.provider ?? ''
+      )
     }
     return ''
-  }, [genFunding.fundingSource, genFunding.selectedKeyRefId, genFunding.selectedLocalKeyId, genFunding.availableKeys, genFunding.localKeys])
+  }, [
+    genFunding.fundingSource,
+    genFunding.selectedKeyRefId,
+    genFunding.selectedLocalKeyId,
+    genFunding.availableKeys,
+    genFunding.localKeys,
+  ])
 
   // ── Auto-select first available model for the derived provider ─────────────
   const { data: providerModels = [] } = useAIModelsByProvider(effectiveProviderKey || null)
@@ -106,7 +117,10 @@ export function ChallengeGeneratorStep({
   const requirements = useMemo(() => getGeneratorRequirements(challengeType), [challengeType])
   const difficultyLevels = requirements?.difficultyLevels ?? ['easy', 'medium', 'hard']
 
-  const difficultyOptions = difficultyLevels.map((d) => ({ value: d, label: d.charAt(0).toUpperCase() + d.slice(1) }))
+  const difficultyOptions = difficultyLevels.map((d) => ({
+    value: d,
+    label: d.charAt(0).toUpperCase() + d.slice(1),
+  }))
   const lensOptions = [
     { value: '', label: 'None (use platform default)' },
     ...availableLenses.map((l) => ({ value: l.id, label: l.title })),
@@ -130,7 +144,9 @@ export function ChallengeGeneratorStep({
   const handleGenerate = async () => {
     if (!canGenerate) return
     if (!activeModelKey) {
-      onGenerationErrorChange('No AI model available for the selected funding source. Try a different funding option.')
+      onGenerationErrorChange(
+        'No AI model available for the selected funding source. Try a different funding option.'
+      )
       return
     }
     onGenerationStatusChange('generating')
@@ -142,7 +158,11 @@ export function ChallengeGeneratorStep({
     // route through trigger-execution for lens-based execution.
     if (modelDescriptor?.kind === 'text' || !modelDescriptor) {
       try {
-        const provider = (detectProvider(activeModelKey) ?? 'openai') as 'openai' | 'anthropic' | 'google' | 'mistral'
+        const provider = (detectProvider(activeModelKey) ?? 'openai') as
+          | 'openai'
+          | 'anthropic'
+          | 'google'
+          | 'mistral'
         const wireModel = resolveWireModel(activeModelKey)
         const messages = [
           {
@@ -161,13 +181,20 @@ export function ChallengeGeneratorStep({
         await new Promise<void>((resolve, reject) => {
           const callbacks = {
             onStart: () => {},
-            onToken: (token: string) => { accumulated += token },
+            onToken: (token: string) => {
+              accumulated += token
+            },
             onEnd: () => {
               let result = accumulated.trim()
               try {
                 const parsed = JSON.parse(result) as Record<string, unknown>
-                result = (parsed['question'] ?? parsed['question_text'] ?? parsed['prompt'] ?? result) as string
-              } catch { /* plain text */ }
+                result = (parsed['question'] ??
+                  parsed['question_text'] ??
+                  parsed['prompt'] ??
+                  result) as string
+              } catch {
+                /* plain text */
+              }
               onQuestionTextChange(result.trim())
               onGenerationStatusChange('ready')
               resolve()
@@ -175,17 +202,23 @@ export function ChallengeGeneratorStep({
             onError: (msg: string) => reject(new Error(msg)),
           }
 
-          const streamPromise = genFunding.fundingSource === 'user_byok_cloud'
-            ? walletApiClient.streamWithByok(
-                { key_ref_id: genFunding.selectedKeyRefId ?? '', provider, model: wireModel, messages },
-                controller.signal,
-                callbacks,
-              )
-            : walletApiClient.streamWithWallet(
-                { provider, model: wireModel, messages },
-                controller.signal,
-                callbacks,
-              )
+          const streamPromise =
+            genFunding.fundingSource === 'user_byok_cloud'
+              ? walletApiClient.streamWithByok(
+                  {
+                    key_ref_id: genFunding.selectedKeyRefId ?? '',
+                    provider,
+                    model: wireModel,
+                    messages,
+                  },
+                  controller.signal,
+                  callbacks
+                )
+              : walletApiClient.streamWithWallet(
+                  { provider, model: wireModel, messages },
+                  controller.signal,
+                  callbacks
+                )
 
           streamPromise.then(resolve).catch(reject)
         })
@@ -229,7 +262,9 @@ export function ChallengeGeneratorStep({
       try {
         const parsed = JSON.parse(text)
         questionResult = parsed.question ?? parsed.question_text ?? parsed.prompt ?? text
-      } catch { /* plain text */ }
+      } catch {
+        /* plain text */
+      }
 
       onQuestionTextChange(questionResult.trim())
       onGenerationStatusChange('ready')
@@ -268,9 +303,7 @@ export function ChallengeGeneratorStep({
           disabled={isLocked}
         />
         {questionText.trim() && !isLocked && (
-          <p className="mt-1 text-right text-xs text-greyscale-400">
-            {questionText.length} chars
-          </p>
+          <p className="mt-1 text-right text-xs text-greyscale-400">{questionText.length} chars</p>
         )}
       </div>
 
@@ -420,7 +453,8 @@ export function ChallengeGeneratorStep({
       <div className="flex items-start gap-2 rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
         <AlertTriangle size={14} className="mt-0.5 shrink-0 text-blue-500" />
         <p className="text-xs text-blue-700 dark:text-blue-400">
-          Both contestants will see the exact same question and rules. Once locked, the question cannot be changed.
+          Both contestants will see the exact same question and rules. Once locked, the question
+          cannot be changed.
         </p>
       </div>
     </div>

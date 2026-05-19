@@ -5,7 +5,11 @@
  * to co-locate the runner config descriptor types used by the modular
  * config panel architecture.
  */
-import type { WorkflowNodeRecord, WorkflowEdgeRecord, WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
+import type {
+  WorkflowNodeRecord,
+  WorkflowEdgeRecord,
+  WorkflowNodeResultRecord,
+} from '@lenserfight/data/repositories'
 import type { FundingSource } from '@lenserfight/types'
 import type { OAuthCapability, OAuthProvider } from '@lenserfight/domain/oauth-connections'
 

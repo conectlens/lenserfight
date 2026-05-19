@@ -32,7 +32,14 @@ export default defineConfig(() => ({
     port: 3001,
     host: '0.0.0.0',
   },
-  plugins: [react(), tailwindcss(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md']), themeInitPlugin(), cookiebotPlugin()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    nxViteTsPaths(),
+    nxCopyAssetsPlugin(['*.md']),
+    themeInitPlugin(),
+    cookiebotPlugin(),
+  ],
   // Pre-bundle CJS deps with TDZ-prone init patterns — same reason as apps/web.
   optimizeDeps: {
     include: ['sonner', 'recharts'],

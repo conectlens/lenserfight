@@ -41,8 +41,7 @@ function writeLocaleCookie(code: string): void {
   const domain = getCookieDomain(window.location.hostname)
   const secure = window.location.protocol === 'https:' ? '; Secure' : ''
   const domainAttr = domain ? `; Domain=${domain}` : ''
-  document.cookie =
-    `${LOCALE_COOKIE_NAME}=${encodeURIComponent(code)}${domainAttr}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`
+  document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(code)}${domainAttr}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`
 }
 
 function redirectUnprefixedPath(): void {
@@ -59,7 +58,8 @@ function redirectUnprefixedPath(): void {
 }
 
 const POSTHOG_TOKEN = import.meta.env['PUBLIC_POSTHOG_PROJECT_TOKEN'] as string | undefined
-const POSTHOG_HOST = (import.meta.env['PUBLIC_POSTHOG_HOST'] as string | undefined) ?? 'https://us.i.posthog.com'
+const POSTHOG_HOST =
+  (import.meta.env['PUBLIC_POSTHOG_HOST'] as string | undefined) ?? 'https://us.i.posthog.com'
 const isProd = import.meta.env['ENV_MODE'] === 'production'
 
 // Initialize analytics once — GA4 always, PostHog only in production
@@ -79,7 +79,16 @@ if (typeof window !== 'undefined') {
         ip: false,
         person_profiles: 'never',
         sanitize_properties: (props) => {
-          const blocked = ['email', 'name', 'username', 'user_id', 'distinct_id', 'phone', '$email', '$name']
+          const blocked = [
+            'email',
+            'name',
+            'username',
+            'user_id',
+            'distinct_id',
+            'phone',
+            '$email',
+            '$name',
+          ]
           const clean: Record<string, unknown> = {}
           for (const [k, v] of Object.entries(props)) {
             if (!blocked.includes(k)) clean[k] = v
@@ -99,15 +108,9 @@ export default {
   Layout() {
     return h(DefaultTheme.Layout, null, {
       'nav-bar-title': () => h(DocsLogo, { showBeta: true, size: 32 }),
-      'doc-before': () => h('div', { class: 'lf-page-actions' }, [
-        h(CopyPageButton),
-        h(EditPageButton),
-      ]),
-      'layout-bottom': () => [
-        h(DocsFooter),
-        h(FeedbackButton),
-        h(WaitingListButton),
-      ],
+      'doc-before': () =>
+        h('div', { class: 'lf-page-actions' }, [h(CopyPageButton), h(EditPageButton)]),
+      'layout-bottom': () => [h(DocsFooter), h(FeedbackButton), h(WaitingListButton)],
       'not-found': () => h(NotFoundActions),
     })
   },
@@ -148,10 +151,13 @@ export default {
 
         const ph = (window as unknown as Record<string, unknown>).__posthogDocs
         if (ph && typeof (ph as Record<string, unknown>)['capture'] === 'function') {
-          ;(ph as { capture: (event: string, props: Record<string, unknown>) => void }).capture('$pageview', {
-            $current_url: to,
-            location: 'docs',
-          })
+          ;(ph as { capture: (event: string, props: Record<string, unknown>) => void }).capture(
+            '$pageview',
+            {
+              $current_url: to,
+              location: 'docs',
+            }
+          )
         }
       }
     }

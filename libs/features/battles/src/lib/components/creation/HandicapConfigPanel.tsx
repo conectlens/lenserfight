@@ -39,7 +39,10 @@ export function HandicapConfigPanel({ value, onChange }: HandicapConfigPanelProp
             position="right"
             contentClassName="whitespace-normal w-72 text-[11px]"
           >
-            <Info size={13} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
+            <Info
+              size={13}
+              className="text-greyscale-400 hover:text-greyscale-600 cursor-default"
+            />
           </Tooltip>
           <HelpButton path="/how-to/battles/ai-handicap" label="About AI handicap" />
         </div>
@@ -60,7 +63,10 @@ export function HandicapConfigPanel({ value, onChange }: HandicapConfigPanelProp
               position="right"
               contentClassName="whitespace-normal w-64 text-[11px]"
             >
-              <Info size={12} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
+              <Info
+                size={12}
+                className="text-greyscale-400 hover:text-greyscale-600 cursor-default"
+              />
             </Tooltip>
           </div>
           <span className="text-xs text-greyscale-500">{value.injected_delay_ms ?? 0} ms</span>
@@ -92,7 +98,10 @@ export function HandicapConfigPanel({ value, onChange }: HandicapConfigPanelProp
               position="right"
               contentClassName="whitespace-normal w-64 text-[11px]"
             >
-              <Info size={12} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
+              <Info
+                size={12}
+                className="text-greyscale-400 hover:text-greyscale-600 cursor-default"
+              />
             </Tooltip>
           </div>
           <span className="text-xs text-greyscale-500">
@@ -132,7 +141,10 @@ export function HandicapConfigPanel({ value, onChange }: HandicapConfigPanelProp
             position="right"
             contentClassName="whitespace-normal w-64 text-[11px]"
           >
-            <Info size={12} className="text-greyscale-400 hover:text-greyscale-600 cursor-default" />
+            <Info
+              size={12}
+              className="text-greyscale-400 hover:text-greyscale-600 cursor-default"
+            />
           </Tooltip>
         </div>
         <SelectField

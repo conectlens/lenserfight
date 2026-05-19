@@ -9,10 +9,22 @@
     "title": "Mobil projeyi yerelde kurun.",
     "subtitle": "Uygulama bir Nx monorepo içindeki Expo projesidir. Nx'i derinlemesine bilmenize gerek yok — sadece bu adımları izleyin.",
     "steps": {
-      "0": { "title": "Repo'yu fork'layın ve klonlayın", "description": "Mobil uygulama Nx monorepo içinde apps/mobile'da bulunur." },
-      "1": { "title": "Bağımlılıkları kurun", "description": "pnpm workspace'leri kullanır — tüm paketler kök dizine yükseltilir." },
-      "2": { "title": "Expo dev sunucusunu başlatın", "description": "Expo Go'yu açar. Telefonunuzla QR kodu tarayın veya simülatörde çalıştırın." },
-      "3": { "title": "Özelliğinizi bulun", "description": "Bileşenler, ekranlar ve navigasyon apps/mobile/src içindedir." }
+      "0": {
+        "title": "Repo'yu fork'layın ve klonlayın",
+        "description": "Mobil uygulama Nx monorepo içinde apps/mobile'da bulunur."
+      },
+      "1": {
+        "title": "Bağımlılıkları kurun",
+        "description": "pnpm workspace'leri kullanır — tüm paketler kök dizine yükseltilir."
+      },
+      "2": {
+        "title": "Expo dev sunucusunu başlatın",
+        "description": "Expo Go'yu açar. Telefonunuzla QR kodu tarayın veya simülatörde çalıştırın."
+      },
+      "3": {
+        "title": "Özelliğinizi bulun",
+        "description": "Bileşenler, ekranlar ve navigasyon apps/mobile/src içindedir."
+      }
     }
   },
   "needs": {

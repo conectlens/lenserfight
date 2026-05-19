@@ -13,20 +13,20 @@
 // ─── Error kinds ─────────────────────────────────────────────────────────────
 
 export type CliErrorKind =
-  | 'unauthorized'    // 401 / JWT invalid / not signed in
-  | 'forbidden'       // 403 / RLS denied / insufficient permissions
-  | 'not_found'       // 404 / resource does not exist
-  | 'rate_limited'    // 429 / quota / battle-rate-limit
-  | 'network'         // fetch TypeError / DNS failure / timeout
-  | 'gateway'         // local Trust Gateway unavailable / pairing failure
-  | 'provider'        // AI provider API failure (OpenAI, Anthropic, Ollama …)
-  | 'multimodal'      // modality mismatch / unsupported capability chain
-  | 'workflow'        // workflow node failure / DAG execution error
-  | 'battle'          // battle lifecycle failure (submit, vote, finalize …)
-  | 'schema'          // schema validation failure / invalid JSON / malformed input
-  | 'config'          // missing or invalid project / device config
-  | 'local_model'     // Ollama / local-model specific failure
-  | 'unknown'         // unclassified
+  | 'unauthorized' // 401 / JWT invalid / not signed in
+  | 'forbidden' // 403 / RLS denied / insufficient permissions
+  | 'not_found' // 404 / resource does not exist
+  | 'rate_limited' // 429 / quota / battle-rate-limit
+  | 'network' // fetch TypeError / DNS failure / timeout
+  | 'gateway' // local Trust Gateway unavailable / pairing failure
+  | 'provider' // AI provider API failure (OpenAI, Anthropic, Ollama …)
+  | 'multimodal' // modality mismatch / unsupported capability chain
+  | 'workflow' // workflow node failure / DAG execution error
+  | 'battle' // battle lifecycle failure (submit, vote, finalize …)
+  | 'schema' // schema validation failure / invalid JSON / malformed input
+  | 'config' // missing or invalid project / device config
+  | 'local_model' // Ollama / local-model specific failure
+  | 'unknown' // unclassified
 
 // ─── Taxonomy entry ───────────────────────────────────────────────────────────
 
@@ -122,7 +122,8 @@ const TAXONOMY: Record<CliErrorKind, Omit<TaxonomyEntry, 'kind'>> = {
   },
   workflow: {
     headline: 'WORKFLOW FAILURE',
-    detail: 'A workflow node failed during execution. Check the node and its upstream dependencies.',
+    detail:
+      'A workflow node failed during execution. Check the node and its upstream dependencies.',
     recoverable: true,
     component: 'workflow engine',
     docsKey: 'workflow-nodes',
@@ -204,7 +205,12 @@ export function classifyError(error: unknown): TaxonomyEntry {
   const s = status(error)
 
   // Rate limit
-  if (s === 429 || c2 === 'BATTLE_RATE_LIMIT' || m.includes('rate_limit') || m.includes('battle_rate_limit')) {
+  if (
+    s === 429 ||
+    c2 === 'BATTLE_RATE_LIMIT' ||
+    m.includes('rate_limit') ||
+    m.includes('battle_rate_limit')
+  ) {
     return entry('rate_limited', error)
   }
 
@@ -222,7 +228,12 @@ export function classifyError(error: unknown): TaxonomyEntry {
   }
 
   // Forbidden
-  if (s === 403 || m.includes('forbidden') || m.includes('permission denied') || m.includes('rls')) {
+  if (
+    s === 403 ||
+    m.includes('forbidden') ||
+    m.includes('permission denied') ||
+    m.includes('rls')
+  ) {
     return entry('forbidden', error)
   }
 
@@ -312,11 +323,7 @@ export function classifyError(error: unknown): TaxonomyEntry {
 
   // PostgREST schema-exposure errors (e.g. "Invalid schema: agents") — must
   // come BEFORE the generic 'schema' check which would swallow these.
-  if (
-    c2 === 'PGRST106' ||
-    m.includes('invalid schema') ||
-    m.includes('no schema named')
-  ) {
+  if (c2 === 'PGRST106' || m.includes('invalid schema') || m.includes('no schema named')) {
     return entry('config', error)
   }
 
@@ -338,7 +345,10 @@ export function classifyError(error: unknown): TaxonomyEntry {
   }
 
   // Network (last resort for TypeErrors — must come after specific checks)
-  if (error instanceof TypeError && (m.includes('fetch') || m.includes('network') || m.includes('enotfound'))) {
+  if (
+    error instanceof TypeError &&
+    (m.includes('fetch') || m.includes('network') || m.includes('enotfound'))
+  ) {
     return entry('network', error)
   }
 
@@ -361,9 +371,10 @@ function entry(kind: CliErrorKind, error: unknown): TaxonomyEntry {
     ...base,
     // Preserve the raw error message as a detail override when it's more informative
     // than the taxonomy default — but only for non-generic strings.
-    detail: rawDetail && rawDetail !== base.detail && !isGenericMessage(rawDetail)
-      ? rawDetail
-      : base.detail,
+    detail:
+      rawDetail && rawDetail !== base.detail && !isGenericMessage(rawDetail)
+        ? rawDetail
+        : base.detail,
   }
 }
 
@@ -373,9 +384,17 @@ function isGenericMessage(m: string): boolean {
   if (lower.length <= 8) return true
   // Common HTTP status texts and generic placeholders.
   const generics = [
-    'error', 'failed', 'failure', 'unknown error', 'internal server error',
-    'an error occurred', 'unauthorized', 'forbidden', 'not found',
-    'bad request', 'service unavailable',
+    'error',
+    'failed',
+    'failure',
+    'unknown error',
+    'internal server error',
+    'an error occurred',
+    'unauthorized',
+    'forbidden',
+    'not found',
+    'bad request',
+    'service unavailable',
   ]
   return generics.includes(lower)
 }
@@ -383,7 +402,10 @@ function isGenericMessage(m: string): boolean {
 // ─── Serialization ────────────────────────────────────────────────────────────
 
 /** Serialize a TaxonomyEntry to a plain object suitable for JSON output. */
-export function serializeTaxonomyEntry(entry: TaxonomyEntry, error: unknown): Record<string, unknown> {
+export function serializeTaxonomyEntry(
+  entry: TaxonomyEntry,
+  error: unknown
+): Record<string, unknown> {
   return {
     kind: entry.kind,
     headline: entry.headline,
@@ -392,10 +414,13 @@ export function serializeTaxonomyEntry(entry: TaxonomyEntry, error: unknown): Re
     component: entry.component,
     docsKey: entry.docsKey,
     inspectArea: entry.inspectArea,
-    raw: error instanceof Error ? {
-      name: error.name,
-      message: error.message,
-      ...(error.stack ? { stack: error.stack } : {}),
-    } : String(error),
+    raw:
+      error instanceof Error
+        ? {
+            name: error.name,
+            message: error.message,
+            ...(error.stack ? { stack: error.stack } : {}),
+          }
+        : String(error),
   }
 }

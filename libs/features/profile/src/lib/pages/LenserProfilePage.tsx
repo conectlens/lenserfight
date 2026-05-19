@@ -1,4 +1,3 @@
-
 import { queryKeys } from '@lenserfight/data/cache'
 import {
   agentsService,
@@ -27,7 +26,12 @@ import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserActivityHeatmap } from '../components/LenserActivityHeatmap'
 import { LenserProfileHeader } from '../components/LenserProfileHeader'
 import { LenserStatsRow } from '../components/LenserStatsRow'
-import { LenserTabContent, LenserTabs, type LenserTabDefinition, type LenserTabId } from '../components/LenserTabs'
+import {
+  LenserTabContent,
+  LenserTabs,
+  type LenserTabDefinition,
+  type LenserTabId,
+} from '../components/LenserTabs'
 import { OwnerRecoveryBanner } from '../components/OwnerRecoveryBanner'
 import { ProfileCompletionBanner } from '../components/ProfileCompletionBanner'
 import { RestrictedProfileShell } from '../components/RestrictedProfileShell'
@@ -128,14 +132,15 @@ export const LenserProfilePage: React.FC = () => {
   const { open: openModal } = useModalRouter()
   const { isOwnedWorkspace } = useLenserWorkspace()
 
-  const { data: accessPayload = null, isLoading: loadingProfile } = useQuery<ProfileAccessPayload | null>({
-    queryKey: [...queryKeys.lenser.profile(handle!), authUser?.id ?? 'anonymous'],
-    queryFn: async () => {
-      const result = await lenserService.getProfile(handle!)
-      return result ?? null
-    },
-    enabled: !!handle && !isAuthLoading,
-  })
+  const { data: accessPayload = null, isLoading: loadingProfile } =
+    useQuery<ProfileAccessPayload | null>({
+      queryKey: [...queryKeys.lenser.profile(handle!), authUser?.id ?? 'anonymous'],
+      queryFn: async () => {
+        const result = await lenserService.getProfile(handle!)
+        return result ?? null
+      },
+      enabled: !!handle && !isAuthLoading,
+    })
 
   const routeState = accessPayload?.route_state ?? null
   const viewedProfile = accessPayload?.profile ?? null
@@ -143,10 +148,7 @@ export const LenserProfilePage: React.FC = () => {
   const isOwner = !!viewedProfile && isOwnedWorkspace(viewedProfile.id)
   const completionScore = accessPayload?.completion_score ?? null
 
-  const tabs = useMemo(
-    () => buildProfileTabs(isOwner, viewedProfile),
-    [isOwner, viewedProfile]
-  )
+  const tabs = useMemo(() => buildProfileTabs(isOwner, viewedProfile), [isOwner, viewedProfile])
 
   const defaultTab: LenserTabId = 'threads'
   const routeTabId = routeTab ? TAB_MAP[routeTab] : undefined
@@ -213,9 +215,7 @@ export const LenserProfilePage: React.FC = () => {
 
   const contentVisibility = viewedProfile?.content_visibility ?? 'public'
   const canViewContent =
-    isOwner ||
-    contentVisibility === 'public' ||
-    (contentVisibility === 'community' && !!authUser)
+    isOwner || contentVisibility === 'public' || (contentVisibility === 'community' && !!authUser)
 
   useEffect(() => {
     if (!handle) return
@@ -261,13 +261,27 @@ export const LenserProfilePage: React.FC = () => {
 
       switch (targetTab) {
         case 'lenses':
-          newItems = await lensesService.getLenserLenses(viewedProfile.handle, offset, PAGE_SIZE, viewerId)
+          newItems = await lensesService.getLenserLenses(
+            viewedProfile.handle,
+            offset,
+            PAGE_SIZE,
+            viewerId
+          )
           break
         case 'threads':
-          newItems = await threadsService.getThreadsByLenser(viewedProfile.handle, viewerId, offset, PAGE_SIZE)
+          newItems = await threadsService.getThreadsByLenser(
+            viewedProfile.handle,
+            viewerId,
+            offset,
+            PAGE_SIZE
+          )
           break
         case 'actions':
-          newItems = await reactionService.getLenserActivityFeed(viewedProfile.handle, offset, PAGE_SIZE)
+          newItems = await reactionService.getLenserActivityFeed(
+            viewedProfile.handle,
+            offset,
+            PAGE_SIZE
+          )
           break
         case 'agents':
           if (pageNum === 0) {
@@ -410,7 +424,10 @@ export const LenserProfilePage: React.FC = () => {
       return (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((item) => (
-            <div key={item} className="h-64 rounded-xl bg-gray-200 animate-pulse dark:bg-gray-800" />
+            <div
+              key={item}
+              className="h-64 rounded-xl bg-gray-200 animate-pulse dark:bg-gray-800"
+            />
           ))}
         </div>
       )
@@ -420,7 +437,10 @@ export const LenserProfilePage: React.FC = () => {
       return (
         <div className="space-y-6">
           {[1, 2].map((item) => (
-            <div key={item} className="h-48 rounded-2xl bg-gray-200 animate-pulse dark:bg-gray-800" />
+            <div
+              key={item}
+              className="h-48 rounded-2xl bg-gray-200 animate-pulse dark:bg-gray-800"
+            />
           ))}
         </div>
       )
@@ -470,7 +490,9 @@ export const LenserProfilePage: React.FC = () => {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
-          <h2 className="mb-2 text-xl font-bold text-gray-500 dark:text-gray-400">Lenser not found</h2>
+          <h2 className="mb-2 text-xl font-bold text-gray-500 dark:text-gray-400">
+            Lenser not found
+          </h2>
           <Button onClick={() => navigate('/')} className="w-auto" variant="ghost">
             Return Home
           </Button>
@@ -541,152 +563,168 @@ export const LenserProfilePage: React.FC = () => {
         </div>
 
         <LenserTabContent activeTab={activeTab}>
-        <div className="min-h-[300px] px-4 md:px-0">
-          {activeStandardTab && !authUser && !isAuthLoading && (
-            <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                <LogIn className="h-6 w-6 text-gray-400 dark:text-gray-500" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Sign in to view this content</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Create an account or sign in to explore this profile.</p>
-              </div>
-              <Button onClick={() => navigate('/auth/login')} className="!w-auto flex items-center gap-2">
-                <LogIn size={16} /> Sign In
-              </Button>
-            </div>
-          )}
-
-          {activeStandardTab && authUser && activeStandardTab === 'actions' && (isOwner || !viewedProfile.hide_actions) && (
-            <>
-              {items.length > 0 ? (
-                <LenserActionsList actions={items as ActivityFeedItem[]} />
-              ) : (
-                !loadingTab && <EmptyState icon={Activity} title="No recent activity." />
-              )}
-            </>
-          )}
-
-          {authUser && activeStandardTab === 'lenses' && !canViewContent && (
-            <EmptyState icon={FolderOpen} title="This content is not public." />
-          )}
-
-          {authUser && activeStandardTab === 'lenses' && canViewContent && (
-            <>
-              {items.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-                  {items.map((prompt) => (
-                    <div key={prompt.id} className="h-full">
-                      <LensCard
-                        lens={prompt as LensViewModel}
-                        onClick={(id) => navigate(`/lenses/${id}`)}
-                        isOwner={isOwner}
-                        onEdit={handleEditPrompt}
-                        onDelete={() => setDeleteTarget({ id: prompt.id, type: 'prompt' })}
-                      />
-                    </div>
-                  ))}
+          <div className="min-h-[300px] px-4 md:px-0">
+            {activeStandardTab && !authUser && !isAuthLoading && (
+              <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                  <LogIn className="h-6 w-6 text-gray-400 dark:text-gray-500" />
                 </div>
-              ) : (
-                !loadingTab && (
-                  <EmptyState
-                    icon={FolderOpen}
-                    title="No prompts created yet."
-                    action={
-                      isOwner && (
-                        <Button onClick={() => openPromptModal()} className="!w-auto flex items-center gap-2">
-                          <Plus size={16} /> Create Lens
-                        </Button>
-                      )
-                    }
-                  />
-                )
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Sign in to view this content
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Create an account or sign in to explore this profile.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/auth/login')}
+                  className="!w-auto flex items-center gap-2"
+                >
+                  <LogIn size={16} /> Sign In
+                </Button>
+              </div>
+            )}
+
+            {activeStandardTab &&
+              authUser &&
+              activeStandardTab === 'actions' &&
+              (isOwner || !viewedProfile.hide_actions) && (
+                <>
+                  {items.length > 0 ? (
+                    <LenserActionsList actions={items as ActivityFeedItem[]} />
+                  ) : (
+                    !loadingTab && <EmptyState icon={Activity} title="No recent activity." />
+                  )}
+                </>
               )}
-            </>
-          )}
 
-          {authUser && activeStandardTab === 'threads' && !canViewContent && (
-            <EmptyState icon={MessageSquare} title="This content is not public." />
-          )}
+            {authUser && activeStandardTab === 'lenses' && !canViewContent && (
+              <EmptyState icon={FolderOpen} title="This content is not public." />
+            )}
 
-          {authUser && activeStandardTab === 'threads' && canViewContent && (
-            <>
-              {items.length > 0 ? (
-                <div className="space-y-6">
-                  {items.map((thread) => (
-                    <ThreadsListCard
-                      key={thread.id}
-                      thread={thread as ThreadFeedItem}
-                      onOpen={(id) => navigate(`/threads/${id}`)}
-                      isOwner={isOwner}
-                      onEdit={handleEditThread}
-                      onDelete={() => setDeleteTarget({ id: thread.id, type: 'thread' })}
+            {authUser && activeStandardTab === 'lenses' && canViewContent && (
+              <>
+                {items.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+                    {items.map((prompt) => (
+                      <div key={prompt.id} className="h-full">
+                        <LensCard
+                          lens={prompt as LensViewModel}
+                          onClick={(id) => navigate(`/lenses/${id}`)}
+                          isOwner={isOwner}
+                          onEdit={handleEditPrompt}
+                          onDelete={() => setDeleteTarget({ id: prompt.id, type: 'prompt' })}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  !loadingTab && (
+                    <EmptyState
+                      icon={FolderOpen}
+                      title="No prompts created yet."
+                      action={
+                        isOwner && (
+                          <Button
+                            onClick={() => openPromptModal()}
+                            className="!w-auto flex items-center gap-2"
+                          >
+                            <Plus size={16} /> Create Lens
+                          </Button>
+                        )
+                      }
                     />
-                  ))}
-                </div>
-              ) : (
-                !loadingTab && (
-                  <EmptyState
-                    icon={MessageSquare}
-                    title="No threads posted yet."
-                    action={
-                      isOwner && (
-                        <Button
-                          onClick={() => setIsThreadModalOpen(true)}
-                          className="!w-auto flex items-center gap-2"
-                        >
-                          <Plus size={16} /> Create Thread
-                        </Button>
-                      )
-                    }
-                  />
-                )
-              )}
-            </>
-          )}
+                  )
+                )}
+              </>
+            )}
 
-          {authUser && activeStandardTab === 'challenges' && (
-            <EmptyState icon={Trophy} title="No challenge history available." />
-          )}
+            {authUser && activeStandardTab === 'threads' && !canViewContent && (
+              <EmptyState icon={MessageSquare} title="This content is not public." />
+            )}
 
-          {authUser && activeStandardTab === 'badges' && (
-            <BadgeDisplay lenserId={viewedProfile.id} detailed />
-          )}
+            {authUser && activeStandardTab === 'threads' && canViewContent && (
+              <>
+                {items.length > 0 ? (
+                  <div className="space-y-6">
+                    {items.map((thread) => (
+                      <ThreadsListCard
+                        key={thread.id}
+                        thread={thread as ThreadFeedItem}
+                        onOpen={(id) => navigate(`/threads/${id}`)}
+                        isOwner={isOwner}
+                        onEdit={handleEditThread}
+                        onDelete={() => setDeleteTarget({ id: thread.id, type: 'thread' })}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  !loadingTab && (
+                    <EmptyState
+                      icon={MessageSquare}
+                      title="No threads posted yet."
+                      action={
+                        isOwner && (
+                          <Button
+                            onClick={() => setIsThreadModalOpen(true)}
+                            className="!w-auto flex items-center gap-2"
+                          >
+                            <Plus size={16} /> Create Thread
+                          </Button>
+                        )
+                      }
+                    />
+                  )
+                )}
+              </>
+            )}
 
-          {authUser && activeStandardTab === 'agents' && (
-            <>
-              {items.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {items.map((agent) => (
-                    <AgentCard key={agent.id} agent={agent} isOwner={isOwner} />
-                  ))}
-                </div>
-              ) : (
-                !loadingTab && (
-                  <EmptyState
-                    icon={Bot}
-                    title="No AI Agents yet."
-                    action={
-                      isOwner && (
-                        <Button onClick={() => openModal('create-agent')} className="!w-auto flex items-center gap-2">
-                          <Plus size={16} /> Create Agent
-                        </Button>
-                      )
-                    }
-                  />
-                )
-              )}
-            </>
-          )}
+            {authUser && activeStandardTab === 'challenges' && (
+              <EmptyState icon={Trophy} title="No challenge history available." />
+            )}
 
-          {authUser && loadingTab && (
-            <div className="mt-6">
-              <SkeletonLoader />
-            </div>
-          )}
+            {authUser && activeStandardTab === 'badges' && (
+              <BadgeDisplay lenserId={viewedProfile.id} detailed />
+            )}
 
-          {authUser && <div ref={lastElementRef} className="h-4" />}
-        </div>
+            {authUser && activeStandardTab === 'agents' && (
+              <>
+                {items.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {items.map((agent) => (
+                      <AgentCard key={agent.id} agent={agent} isOwner={isOwner} />
+                    ))}
+                  </div>
+                ) : (
+                  !loadingTab && (
+                    <EmptyState
+                      icon={Bot}
+                      title="No AI Agents yet."
+                      action={
+                        isOwner && (
+                          <Button
+                            onClick={() => openModal('create-agent')}
+                            className="!w-auto flex items-center gap-2"
+                          >
+                            <Plus size={16} /> Create Agent
+                          </Button>
+                        )
+                      }
+                    />
+                  )
+                )}
+              </>
+            )}
+
+            {authUser && loadingTab && (
+              <div className="mt-6">
+                <SkeletonLoader />
+              </div>
+            )}
+
+            {authUser && <div ref={lastElementRef} className="h-4" />}
+          </div>
         </LenserTabContent>
       </div>
 

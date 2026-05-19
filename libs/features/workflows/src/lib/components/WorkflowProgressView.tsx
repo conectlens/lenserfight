@@ -122,7 +122,9 @@ function badgeColorFor(status: NodeStatus): 'green' | 'red' | 'blue' | 'yellow' 
   }
 }
 
-function runBadgeColor(status: string | null | undefined): 'green' | 'red' | 'blue' | 'yellow' | 'gray' {
+function runBadgeColor(
+  status: string | null | undefined
+): 'green' | 'red' | 'blue' | 'yellow' | 'gray' {
   if (!status) return 'gray'
   switch (status) {
     case 'completed':
@@ -275,7 +277,10 @@ function ExecutionOutputRenderer({ data }: { data: Record<string, unknown> }) {
             onClick={() => setTextExpanded((v) => !v)}
             className="flex items-center gap-1 text-[10px] font-medium text-greyscale-400 hover:text-greyscale-600 transition-colors"
           >
-            <ChevronDown size={10} className={`transition-transform ${textExpanded ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              size={10}
+              className={`transition-transform ${textExpanded ? 'rotate-180' : ''}`}
+            />
             {textExpanded ? 'Collapse' : `Show all ${vm.text.length.toLocaleString()} chars`}
           </button>
         )}
@@ -298,10 +303,7 @@ function ExecutionOutputRenderer({ data }: { data: Record<string, unknown> }) {
         )}
 
         {/* Raw JSON — always available for advanced users */}
-        <CollapsibleSection
-          label="Raw JSON"
-          action={<CopyButton text={rawJson} />}
-        >
+        <CollapsibleSection label="Raw JSON" action={<CopyButton text={rawJson} />}>
           <div className="p-3 text-[10px] font-mono text-greyscale-600 dark:text-greyscale-400 whitespace-pre-wrap break-words leading-relaxed max-h-48 overflow-y-auto">
             {rawJson.length > MAX_JSON_CHARS ? rawJson.slice(0, MAX_JSON_CHARS) + '\n…' : rawJson}
           </div>
@@ -312,14 +314,19 @@ function ExecutionOutputRenderer({ data }: { data: Record<string, unknown> }) {
 
   // ── Array / table ─────────────────────────────────────────────────────────
   if (vm.type === 'array' || vm.type === 'table') {
-    const items = (vm.rawPayload['items'] ?? vm.rawPayload['rows'] ?? vm.rawPayload['results']) as unknown[]
+    const items = (vm.rawPayload['items'] ??
+      vm.rawPayload['rows'] ??
+      vm.rawPayload['results']) as unknown[]
     return (
       <div className="mt-3 space-y-2">
         <p className="text-[10px] text-greyscale-400 font-medium">{vm.summary}</p>
         <CollapsibleSection label="Items" defaultOpen={items.length <= 5}>
           <div className="divide-y divide-surface-border/60 max-h-56 overflow-y-auto">
             {items.slice(0, 50).map((item, i) => (
-              <div key={i} className="px-3 py-1.5 text-[11px] font-mono text-greyscale-700 dark:text-greyscale-300 truncate">
+              <div
+                key={i}
+                className="px-3 py-1.5 text-[11px] font-mono text-greyscale-700 dark:text-greyscale-300 truncate"
+              >
                 {typeof item === 'object' ? JSON.stringify(item) : String(item)}
               </div>
             ))}
@@ -357,7 +364,10 @@ function ExecutionOutputRenderer({ data }: { data: Record<string, unknown> }) {
           onClick={() => setTextExpanded((v) => !v)}
           className="flex items-center gap-1 text-[10px] font-medium text-greyscale-400 hover:text-greyscale-600 transition-colors"
         >
-          <ChevronDown size={10} className={`transition-transform ${textExpanded ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            size={10}
+            className={`transition-transform ${textExpanded ? 'rotate-180' : ''}`}
+          />
           {textExpanded ? 'Collapse' : 'Show full output'}
         </button>
       )}
@@ -426,7 +436,10 @@ function RunStrip({
   )
 }
 
-function useElapsed(startedAt: string | null | undefined, completedAt: string | null | undefined): string {
+function useElapsed(
+  startedAt: string | null | undefined,
+  completedAt: string | null | undefined
+): string {
   const [now, setNow] = React.useState(() => Date.now())
   React.useEffect(() => {
     if (completedAt) return
@@ -457,7 +470,7 @@ function ProvenancePanel({
 }) {
   const filtered = selectedNodeId
     ? edges.filter(
-        (e) => e.target_node_id === selectedNodeId || e.source_node_id === selectedNodeId,
+        (e) => e.target_node_id === selectedNodeId || e.source_node_id === selectedNodeId
       )
     : edges
   const upstream = filtered.filter((e) => e.direction === 'upstream')
@@ -534,8 +547,10 @@ function ProvenanceColumn({
           const otherPath = side === 'source' ? edge.source_output_path : edge.target_input_path
           const localPath = side === 'source' ? edge.target_input_path : edge.source_output_path
           const otherLabel = nodeLabelById.get(otherNodeId) ?? `Node ${otherNodeId.slice(0, 6)}…`
-          const otherWorkflowId = side === 'source' ? edge.source_workflow_id : edge.target_workflow_id
-          const localWorkflowId = side === 'source' ? edge.target_workflow_id : edge.source_workflow_id
+          const otherWorkflowId =
+            side === 'source' ? edge.source_workflow_id : edge.target_workflow_id
+          const localWorkflowId =
+            side === 'source' ? edge.target_workflow_id : edge.source_workflow_id
           const crossWorkflow = otherWorkflowId !== localWorkflowId
           return (
             <li
@@ -598,10 +613,7 @@ export function WorkflowProgressView({
 
   // DAG-aware ordering: starts from trigger/root nodes and follows the actual
   // execution graph instead of relying on the DB insertion ordinal.
-  const orderedNodes = useMemo(
-    () => computeDagOrder(nodes, edges),
-    [nodes, edges],
-  )
+  const orderedNodes = useMemo(() => computeDagOrder(nodes, edges), [nodes, edges])
 
   const nodeLabelById = useMemo(() => {
     const map = new Map<string, string>()
@@ -634,7 +646,7 @@ export function WorkflowProgressView({
   const derivedActiveNodeId = useMemo(() => {
     if (activeNodeId) return activeNodeId
     const active = orderedNodes.find((n) =>
-      isActiveNodeStatus(getResult(n.id)?.status ?? 'pending'),
+      isActiveNodeStatus(getResult(n.id)?.status ?? 'pending')
     )
     return active?.id ?? null
   }, [activeNodeId, orderedNodes, resultIndex])
@@ -652,8 +664,12 @@ export function WorkflowProgressView({
   }, [counts, orderedNodes.length])
   const effectiveStatus = runStatus ?? fallbackRunStatus
   const fallbackStarted = useMemo(
-    () => orderedNodes.map((n) => getResult(n.id)?.started_at).filter(Boolean).sort()[0] ?? null,
-    [orderedNodes, resultIndex],
+    () =>
+      orderedNodes
+        .map((n) => getResult(n.id)?.started_at)
+        .filter(Boolean)
+        .sort()[0] ?? null,
+    [orderedNodes, resultIndex]
   )
   const fallbackCompleted = useMemo(() => {
     if (counts.active > 0 || counts.waiting > 0) return null
@@ -687,12 +703,19 @@ export function WorkflowProgressView({
       />
 
       <div className="flex items-center gap-2 text-[10px] font-semibold text-greyscale-500 uppercase tracking-wide">
-        <Tooltip content="Each card shows one workflow node — its live status, output, and any errors. Ordered by DAG execution flow." position="right">
+        <Tooltip
+          content="Each card shows one workflow node — its live status, output, and any errors. Ordered by DAG execution flow."
+          position="right"
+        >
           <span className="inline-flex items-center gap-1.5 cursor-default">
             <Workflow size={11} /> Execution timeline
           </span>
         </Tooltip>
-        <HelpButton path="/tutorials/getting-started/local-file-storage" label="How workflows run" className="normal-case tracking-normal ml-1" />
+        <HelpButton
+          path="/tutorials/getting-started/local-file-storage"
+          label="How workflows run"
+          className="normal-case tracking-normal ml-1"
+        />
 
         {/* Fullscreen deep-link — only rendered when a run is active/selected */}
         {onOpenFullscreen && (
@@ -712,7 +735,9 @@ export function WorkflowProgressView({
           type="button"
           onClick={() => setShowProvenance((v) => !v)}
           className={`ml-auto inline-flex items-center gap-1 rounded-full border border-surface-border px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal transition-colors ${
-            showProvenance ? 'bg-primary-yellow-500/10 text-primary-yellow-600 border-primary-yellow-500/40' : 'text-greyscale-400 hover:text-greyscale-600'
+            showProvenance
+              ? 'bg-primary-yellow-500/10 text-primary-yellow-600 border-primary-yellow-500/40'
+              : 'text-greyscale-400 hover:text-greyscale-600'
           }`}
         >
           <GitBranch size={10} /> Lineage
@@ -757,7 +782,9 @@ export function WorkflowProgressView({
               transition={{ duration: 0.2 }}
               onClick={() => setSelectedNodeId(node.id === selectedNodeId ? null : node.id)}
               className={`relative cursor-pointer rounded-2xl border p-4 transition-all ${STATUS_COLORS[status]} ${
-                isActive ? 'ring-2 ring-primary-yellow-500/40 shadow-lg shadow-primary-yellow-500/10' : ''
+                isActive
+                  ? 'ring-2 ring-primary-yellow-500/40 shadow-lg shadow-primary-yellow-500/10'
+                  : ''
               } ${isTerminal && status === 'completed' ? 'ring-2 ring-primary-yellow-500/50 border-primary-yellow-500/40' : ''} ${
                 isSelected ? 'outline outline-2 outline-offset-2 outline-greyscale-400/30' : ''
               }`}
@@ -807,15 +834,14 @@ export function WorkflowProgressView({
                 </div>
               )}
 
-              {(status === 'pending' || (isWaiting && !waitingLabel)) && (
-                isSystemLocked ? (
+              {(status === 'pending' || (isWaiting && !waitingLabel)) &&
+                (isSystemLocked ? (
                   <div className="mt-3 flex items-center gap-2 rounded-xl border border-status-red/30 bg-status-red/5 p-2 text-xs font-medium text-status-red">
                     <ShieldAlert size={12} /> Halted — Emergency Lock Active
                   </div>
                 ) : (
                   <PendingSkeleton />
-                )
-              )}
+                ))}
 
               {(status === 'running' || status === 'streaming' || status === 'retrying') && (
                 <div className="mt-3">
@@ -826,7 +852,15 @@ export function WorkflowProgressView({
                   ) : (
                     <StreamingOutput
                       state="streaming"
-                      output={((result?.output_data as Record<string, unknown> | null | undefined)?.['output'] ?? (result?.output_data as Record<string, unknown> | null | undefined)?.['text'] ?? '') as string}
+                      output={
+                        ((result?.output_data as Record<string, unknown> | null | undefined)?.[
+                          'output'
+                        ] ??
+                          (result?.output_data as Record<string, unknown> | null | undefined)?.[
+                            'text'
+                          ] ??
+                          '') as string
+                      }
                     />
                   )}
                 </div>
@@ -851,7 +885,10 @@ export function WorkflowProgressView({
               {status === 'blocked' && (
                 <div className="mt-3 flex items-center gap-2 rounded-xl border border-status-red/30 bg-status-red/5 p-3 text-xs font-medium text-status-red">
                   <AlertTriangle size={12} />
-                  <span className="flex-1">{getErrorCopy(result?.error_message) || 'Blocked — unresolved placeholder or missing dependency'}</span>
+                  <span className="flex-1">
+                    {getErrorCopy(result?.error_message) ||
+                      'Blocked — unresolved placeholder or missing dependency'}
+                  </span>
                   {onConfigureNode && (node.lens_id || node.id) && (
                     <Button
                       type="button"
@@ -871,20 +908,27 @@ export function WorkflowProgressView({
                     <Tooltip
                       content={
                         <span className="max-w-[220px] block">
-                          A <code className="font-mono">{'[[variable]]'}</code> in this node&apos;s template has no value. Set a static value in the node config, wire it from an upstream node&apos;s output, or supply it as a workflow input.
+                          A <code className="font-mono">{'[[variable]]'}</code> in this node&apos;s
+                          template has no value. Set a static value in the node config, wire it from
+                          an upstream node&apos;s output, or supply it as a workflow input.
                         </span>
                       }
                       position="left"
                       contentClassName=""
                     >
-                      <HelpButton path="/tutorials/walkthroughs/create-a-workflow" label="Fix this" className="shrink-0 border-status-red/40 text-status-red hover:border-status-red hover:text-status-red" />
+                      <HelpButton
+                        path="/tutorials/walkthroughs/create-a-workflow"
+                        label="Fix this"
+                        className="shrink-0 border-status-red/40 text-status-red hover:border-status-red hover:text-status-red"
+                      />
                     </Tooltip>
                   )}
                 </div>
               )}
               {status === 'invalidated' && (
                 <div className="mt-3 flex items-center gap-2 rounded-xl border border-status-red/30 bg-status-red/5 p-3 text-xs font-medium text-status-red">
-                  <ShieldAlert size={12} /> {result?.error_message ?? 'Output failed contract validation'}
+                  <ShieldAlert size={12} />{' '}
+                  {result?.error_message ?? 'Output failed contract validation'}
                 </div>
               )}
 
@@ -894,7 +938,11 @@ export function WorkflowProgressView({
                   <WorkflowOutputActions
                     outputData={result.output_data as Record<string, unknown>}
                     nodeLabel={node.label || `Node ${node.ordinal + 1}`}
-                    onPostToThread={onPostToThread ? (text) => onPostToThread(text, node.label || `Node ${node.ordinal + 1}`) : undefined}
+                    onPostToThread={
+                      onPostToThread
+                        ? (text) => onPostToThread(text, node.label || `Node ${node.ordinal + 1}`)
+                        : undefined
+                    }
                     onRerunWithContext={onRerunWithContext}
                   />
                 </>

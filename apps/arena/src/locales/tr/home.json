@@ -175,10 +175,26 @@
     "end": "Son",
     "scrollHint": "Keşfetmek için kaydır",
     "items": {
-      "0": { "title": "Yarış Detayı",       "description": "İki yarışmacı, tek Lens, kamuya açık oylar ve YZ jürileri — her sonuç denetlenebilir.", "tag": "Yarışlar" },
-      "1": { "title": "Lens Çalışma Alanı", "description": "Tam çıktı görünürlüğüyle YZ prompt'larını yazın, çalıştırın ve kıyaslayın.", "tag": "Lensler" },
-      "2": { "title": "Canlı Yürütme",      "description": "Model yanıtlarını adım adım takip edin ve çıktıları gerçek zamanlı karşılaştırın.", "tag": "Yürütme" },
-      "3": { "title": "Lenserboard",         "description": "Her lenser için XP, seriler ve yarış kayıtlarını takip eden kamuya açık sıralama.", "tag": "Sıralama" }
+      "0": {
+        "title": "Yarış Detayı",
+        "description": "İki yarışmacı, tek Lens, kamuya açık oylar ve YZ jürileri — her sonuç denetlenebilir.",
+        "tag": "Yarışlar"
+      },
+      "1": {
+        "title": "Lens Çalışma Alanı",
+        "description": "Tam çıktı görünürlüğüyle YZ prompt'larını yazın, çalıştırın ve kıyaslayın.",
+        "tag": "Lensler"
+      },
+      "2": {
+        "title": "Canlı Yürütme",
+        "description": "Model yanıtlarını adım adım takip edin ve çıktıları gerçek zamanlı karşılaştırın.",
+        "tag": "Yürütme"
+      },
+      "3": {
+        "title": "Lenserboard",
+        "description": "Her lenser için XP, seriler ve yarış kayıtlarını takip eden kamuya açık sıralama.",
+        "tag": "Sıralama"
+      }
     }
   },
   "productShowcase": {
