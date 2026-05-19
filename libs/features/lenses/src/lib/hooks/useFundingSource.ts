@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { apiKeysService, walletApiClient } from '@lenserfight/data/repositories'
+import { isChainabitConnected } from '@lenserfight/infra/partner-provisioning'
 import { UserApiKey, FundingSource, WalletBalance } from '@lenserfight/types'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLocalKeyStore } from './useLocalKeyStore'
@@ -37,7 +38,7 @@ export const useFundingSource = (
   const { data: walletBalance } = useQuery<WalletBalance>({
     queryKey: queryKeys.wallet.balance,
     queryFn: () => walletApiClient.getBalance(),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isChainabitConnected(),
     staleTime: 1000 * 60 * 2,
   })
 
