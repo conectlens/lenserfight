@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { cookieStorage } from './cookieStorage'
 
 const shouldUsePlaceholderClient =
-  import.meta.env.DATA_SOURCE === 'file' || import.meta.env.DEV || process.env.NODE_ENV === 'test'
+  import.meta.env.DATA_SOURCE === 'file' || import.meta.env.DEV || process.env.ENV_MODE === 'test'
 
 // Keep file/test/dev imports non-throwing, but never let a production bundle
 // silently talk to the local Supabase placeholder.

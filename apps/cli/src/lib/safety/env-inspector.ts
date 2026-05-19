@@ -14,9 +14,9 @@ export function isCI(): boolean {
   )
 }
 
-/** True when LF_ENV or NODE_ENV signals a production target. */
+/** True when LF_ENV or ENV_MODE signals a production target. */
 export function isProduction(): boolean {
-  const env = (process.env['LF_ENV'] ?? process.env['NODE_ENV'] ?? '').toLowerCase()
+  const env = (process.env['LF_ENV'] ?? process.env['ENV_MODE'] ?? '').toLowerCase()
   return env === 'production' || env === 'prod'
 }
 
