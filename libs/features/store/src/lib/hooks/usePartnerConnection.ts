@@ -1,8 +1,8 @@
 import { useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { connectorApiClient } from '@lenserfight/infra/partner-provisioning'
+import { connectorApiClient, isChainabitConnected, type ProviderConnectionState } from '@lenserfight/infra/partner-provisioning'
 import { useAuth } from '@lenserfight/features/auth'
-import type { ChainabitAiModel, ProviderConnectionState } from '@lenserfight/types'
+import type { ChainabitAiModel } from '@lenserfight/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,13 +61,22 @@ function classifyError(err: unknown): ProviderConnectionState {
  *   provider_error    → Chainabit API failure
  */
 export function useChainabitCapabilities(): UseChainabitCapabilitiesResult {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const queryClient = useQueryClient()
+
+  // Only attempt the wallet fetch when the user has a Chainabit OAuth identity
+  // linked. Without the identity the Edge Function has nothing to resolve and
+  // will always 500 — wasting a round-trip and polluting the console.
+  //
+  // `user` is included as a reactive dependency: when auth settles (user
+  // transitions null → User), the component re-renders and `enabled` is
+  // re-evaluated so the query fires at the right time.
+  const hasChainabitIdentity = isAuthenticated && !!user && isChainabitConnected()
 
   const balanceQuery = useQuery({
     queryKey: ['chainabit', 'wallet'],
     queryFn: () => connectorApiClient.getBalance(),
-    enabled: isAuthenticated,
+    enabled: hasChainabitIdentity,
     staleTime: 1000 * 60 * 2,
     gcTime: 1000 * 60 * 5,
     retry: false,
@@ -79,6 +88,7 @@ export function useChainabitCapabilities(): UseChainabitCapabilitiesResult {
   })
 
   const state: ProviderConnectionState = (() => {
+    if (!hasChainabitIdentity) return 'not_connected'
     if (balanceQuery.isLoading) return 'loading'
     if (balanceQuery.error) return classifyError(balanceQuery.error)
     if (!balanceQuery.data) return 'not_connected'
