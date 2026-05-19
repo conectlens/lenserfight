@@ -27,6 +27,9 @@ seeds/08_ai_model_pricing.sql
 seeds/15_lens_tools.sql
 seeds/16_origin_types.sql
 
+# Canonical content tags — required by all lens/workflow template seeds (40_+)
+seeds/09_canonical_tags.sql
+
 # ── System policy / flag rows ──────────────────────────────────────────────
 seeds/17_xp_ruleset.sql
 seeds/18_identity_gov_namespaces.sql
