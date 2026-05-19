@@ -220,7 +220,7 @@ BEGIN
     SELECT c.id AS contender_id
       FROM battles.contenders c
      WHERE c.battle_id = p_battle_id
-       AND c.contender_type = 'ai_lenser'
+       AND c.contender_type IN ('ai_model', 'ai_agent')
   LOOP
     v_byok_result := public.fn_byok_validate_for_battle(p_battle_id, rec.contender_id);
     IF NOT (v_byok_result ->> 'valid')::BOOLEAN THEN
