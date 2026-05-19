@@ -211,7 +211,7 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
         </div>
       )}
 
-      <div className="flex mb-3">
+      <div className="flex justify-center mb-3">
         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-wide">
           Experimental
         </span>
