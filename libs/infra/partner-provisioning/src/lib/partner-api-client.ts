@@ -1,4 +1,4 @@
-import { supabase } from '@lenserfight/data/supabase'
+import { supabase, getCachedAccessToken, getCachedSession } from '@lenserfight/data/supabase'
 import { apiFetch, unwrapEnvelope } from '@lenserfight/data/repositories'
 import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 import type { ChainabitAiModel, ProviderBalance } from './partner-provider.interface'
@@ -8,18 +8,18 @@ const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 async function getAuthHeader(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession()
-  if (!data.session?.access_token) throw new Error('401: Unauthenticated')
-  return { Authorization: `Bearer ${data.session.access_token}` }
+  const token = getCachedAccessToken() ?? (await supabase.auth.getSession()).data.session?.access_token
+  if (!token) throw new Error('401: Unauthenticated')
+  return { Authorization: `Bearer ${token}` }
 }
 
 /**
  * Checks whether the current user has a Chainabit account linked via OAuth.
- * Reads the provider list from the in-memory Supabase session — no extra network call.
+ * Reads the provider list from the session cache — no network call, no
+ * undocumented internal access.
  */
 export function isChainabitConnected(): boolean {
-  // currentSession is a getter on SupabaseClient in supabase-js v2
-  const session = (supabase.auth as unknown as { currentSession: { user?: { app_metadata?: { provider?: string; providers?: string[] } } } | null }).currentSession
+  const session = getCachedSession()
   if (!session?.user) return false
   const meta = session.user.app_metadata ?? {}
   return (
@@ -90,6 +90,7 @@ export const partnerApiClient = {
   getBalance: (_partnerName: string) => connectorApiClient.getBalance(),
   getAiModels: (_partnerName: string) => connectorApiClient.getAiModels(),
   startOAuthConnect: (returnUrl: string) => connectorApiClient.connect(returnUrl),
+  revokeToken: (_partnerName: string) => connectorApiClient.disconnect(),
 }
 
 /** @deprecated No longer used — provisioning removed */

@@ -1,4 +1,4 @@
-import { supabase } from '@lenserfight/data/supabase'
+import { supabase, getCachedAccessToken } from '@lenserfight/data/supabase'
 import {
   ExecuteByokRequest,
   ExecuteRequest,
@@ -14,11 +14,11 @@ const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 async function getAuthHeader(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession()
-  if (!data.session?.access_token) {
+  const token = getCachedAccessToken() ?? (await supabase.auth.getSession()).data.session?.access_token
+  if (!token) {
     throw new Error('401: Unauthenticated')
   }
-  return { Authorization: `Bearer ${data.session.access_token}` }
+  return { Authorization: `Bearer ${token}` }
 }
 
 // Parses the SSE stream from execute-stream edge function and dispatches to callbacks.
@@ -86,13 +86,13 @@ export const walletApiClient = {
   async getBalance(): Promise<WalletBalance> {
     const authHeader = await getAuthHeader()
     try {
-      const res = await apiFetch(`${EDGE_BASE}/partner-balance`, {
+      const res = await apiFetch(`${EDGE_BASE}/chainabit-wallet`, {
         headers: { ...authHeader },
       })
       return unwrapEnvelope<WalletBalance>(res)
     } catch (err: unknown) {
       if (err instanceof TypeError || (err instanceof DOMException && err.name === 'AbortError')) {
-        console.warn('[wallet] partner-balance unreachable — returning zero balance')
+        console.warn('[wallet] chainabit-wallet unreachable — returning zero balance')
         return { balance: 0 }
       }
       throw err
@@ -105,7 +105,7 @@ export const walletApiClient = {
   ): Promise<{ transactions: WalletTransaction[]; total: number; hasNextPage: boolean }> {
     const authHeader = await getAuthHeader()
     const res = await apiFetch(
-      `${EDGE_BASE}/partner-balance/transactions?page=${page}&limit=${limit}`,
+      `${EDGE_BASE}/chainabit-wallet/transactions?page=${page}&limit=${limit}`,
       { headers: { ...authHeader } },
     )
     const envelope = (await res.json()) as ApiResponseEnvelope<WalletTransaction[]>
@@ -119,7 +119,7 @@ export const walletApiClient = {
 
   async getPricing(): Promise<{ models: WalletPricingModel[] }> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${EDGE_BASE}/partner-balance/pricing`, {
+    const res = await apiFetch(`${EDGE_BASE}/chainabit-wallet/pricing`, {
       headers: { ...authHeader },
     })
     return unwrapEnvelope<{ models: WalletPricingModel[] }>(res)

@@ -58,7 +58,13 @@ export const LenserBoardPage: React.FC = () => {
     if (err) setError(normalizeError(err))
   }, [xpError, activityError, setError])
 
-  const lenserBoardList = data?.pages.flatMap((page) => page.list) || []
+  const lenserBoardList = data
+    ? [
+        ...new Map(
+          data.pages.flatMap((page) => page.list).map((e) => [e.lenserId, e])
+        ).values(),
+      ]
+    : []
   const userEntry = data?.pages[0]?.userEntry
 
   const boardTabs: { key: BoardType; label: string }[] = [

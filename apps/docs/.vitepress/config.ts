@@ -692,6 +692,17 @@ export default defineConfig({
     ['link', { rel: 'alternate', hreflang: 'pt', href: `${DOCS_HOST}/pt/` }],
     ['link', { rel: 'alternate', hreflang: 'it', href: `${DOCS_HOST}/it/` }],
     ['link', { rel: 'alternate', hreflang: 'x-default', href: DOCS_HOST }],
+    // ── GA4 (production only — injected at build time via env) ─────────────────
+    ...(process.env['NODE_ENV'] === 'production' && process.env['GA_MEASUREMENT_ID']
+      ? ([
+          ['script', { async: '', src: `https://www.googletagmanager.com/gtag/js?id=${process.env['GA_MEASUREMENT_ID']}` }],
+          [
+            'script',
+            {},
+            `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${process.env['GA_MEASUREMENT_ID']}',{send_page_view:false});`,
+          ],
+        ] as [string, Record<string, string>, string?][])
+      : []),
   ],
 
   /**

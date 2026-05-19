@@ -20,7 +20,6 @@ import { ConfirmModal } from '@lenserfight/ui/modals'
 import { useModalRouter } from '@lenserfight/ui/routing'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Activity, Award, Bot, FolderOpen, LogIn, MessageSquare, Plus, Trophy } from 'lucide-react'
-import { supabase } from '@lenserfight/data/supabase'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useNavigate, useParams } from 'react-router-dom'
 
@@ -142,18 +141,7 @@ export const LenserProfilePage: React.FC = () => {
   const viewedProfile = accessPayload?.profile ?? null
   const relationshipState = accessPayload?.relationship_state ?? null
   const isOwner = !!viewedProfile && isOwnedWorkspace(viewedProfile.id)
-
-  const { data: completionScore = null } = useQuery<number | null>({
-    queryKey: ['profile-completion-score', viewedProfile?.id],
-    queryFn: async () => {
-      const { data } = await supabase.rpc('fn_profile_completion_score', {
-        p_lenser_id: viewedProfile!.id,
-      })
-      return typeof data === 'number' ? data : null
-    },
-    enabled: isOwner && !!viewedProfile?.id,
-    staleTime: 1000 * 60 * 5,
-  })
+  const completionScore = accessPayload?.completion_score ?? null
 
   const tabs = useMemo(
     () => buildProfileTabs(isOwner, viewedProfile),
@@ -166,11 +154,7 @@ export const LenserProfilePage: React.FC = () => {
     routeTabId && tabs.some((tab) => tab.id === routeTabId) ? routeTabId : defaultTab
   const activeStandardTab = isStandardTab(activeTab) ? activeTab : null
 
-  const { data: activity = [] } = useQuery<LenserActivityPoint[]>({
-    queryKey: queryKeys.lenser.activity(handle!),
-    queryFn: () => lenserService.getLenserActivity(handle!),
-    enabled: !!handle && !!viewedProfile,
-  })
+  const activity = accessPayload?.activity_timeline ?? []
 
   const stats = useMemo<LenserStats | null>(() => {
     if (!viewedProfile) return null

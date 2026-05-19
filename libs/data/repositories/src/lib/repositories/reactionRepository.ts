@@ -1,5 +1,5 @@
 import { ReactionRecord, TargetType, ReactionType, ReactionCount } from '@lenserfight/types'
-import { supabase } from '@lenserfight/data/supabase'
+import { supabase, getCachedSession } from '@lenserfight/data/supabase'
 import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
 
 export interface ReactionRepositoryPort {
@@ -59,9 +59,7 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     targetId: string,
     _lenserId: string
   ): Promise<ReactionRecord[]> {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = getCachedSession()?.user
     if (!user) return []
 
     const { data, error } = await supabase.rpc('fn_get_entity_reaction_status', {
@@ -127,9 +125,7 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
   ): Promise<ReactionRecord[]> {
     if (targetIds.length === 0) return []
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = getCachedSession()?.user
     if (!user) return []
 
     const results = await Promise.all(

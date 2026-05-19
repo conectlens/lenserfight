@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { queryClient, queryKeys } from '@lenserfight/data/cache'
 import { authService, lenserService, partnerProvisioningRepository } from '@lenserfight/data/repositories'
 import { AuthState, UserMetadata } from '@lenserfight/types'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL, getEnvMetadata } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 
 interface RegisterOptions {
   displayName?: string
@@ -35,11 +35,22 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Module-level flag: survives React Strict Mode's double-mount (each mount gets a fresh ref,
-// but the module is loaded once). Reset on HMR via import.meta.hot so dev reload works cleanly.
-let _initDone = false
+// Shared promise: survives React Strict Mode's double-mount without letting the
+// first throwaway mount starve the live provider of its initial auth result.
+let _initialAuthUserPromise: Promise<AuthState['user']> | null = null
+
+const getInitialAuthUser = (): Promise<AuthState['user']> => {
+  if (!_initialAuthUserPromise) {
+    _initialAuthUserPromise = authService.getCurrentUser().catch((err) => {
+      _initialAuthUserPromise = null
+      throw err
+    })
+  }
+  return _initialAuthUserPromise
+}
+
 if (import.meta.hot) {
-  import.meta.hot.accept(() => { _initDone = false })
+  import.meta.hot.accept(() => { _initialAuthUserPromise = null })
 }
 
 // sessionStorage-backed guard: survives React Strict Mode and HMR (unlike module-level booleans
@@ -98,6 +109,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   useEffect(() => {
+    let isDisposed = false
+    let initialAuthSettled = false
+
     // 1. Subscribe before initAuth to avoid missing events that fire synchronously
     //    during subscription setup (Supabase fires INITIAL_SESSION immediately).
     const unsubscribe = authService.onAuthStateChange((user, event) => {
@@ -108,9 +122,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Password has been updated — clear the recovery flag.
         setIsRecoverySession(false)
       }
-      // Skip early INITIAL_SESSION fires — initAuth owns the first state write.
-      // After that, apply any subsequent changes (token refresh, sign-out, etc.)
-      if (!_initDone) return
+      // Skip the early INITIAL_SESSION fire — initAuth owns the first state write.
+      // Other events may be meaningful even while the initial user request is in flight.
+      if (!initialAuthSettled && event === 'INITIAL_SESSION') return
+      if (isDisposed) return
       if (loginTransitionInFlight.current && user) return
       // Clear stale caches on actual sign-out (user was authenticated, now is not).
       // Skip for anonymous users (null → null) to avoid wiping in-flight public queries.
@@ -127,13 +142,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 2. Initial load from persisted session or network
     const initAuth = async () => {
-      if (_initDone) return
-      _initDone = true
       try {
-        const user = await authService.getCurrentUser()
+        const user = await getInitialAuthUser()
+        initialAuthSettled = true
+        if (isDisposed) return
         if (user) {
           if (!sessionStorage.getItem(_deletionCheckKey(user.id))) {
             const restored = await restoreLenserAccountIfNeeded()
+            if (isDisposed) return
             if (restored) {
               sessionStorage.setItem(_deletionCheckKey(user.id), '1')
             }
@@ -144,11 +160,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           wasAuthenticated.current = false
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const authError = err as { name?: string; message?: string; code?: string; status?: number }
+        initialAuthSettled = true
+        if (isDisposed) return
         // AuthSessionMissingError is expected when no session exists — not a real error
         if (
-          err?.name === 'AuthSessionMissingError' ||
-          err?.message?.includes('Auth session missing')
+          authError.name === 'AuthSessionMissingError' ||
+          authError.message?.includes('Auth session missing')
         ) {
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
           return
@@ -156,11 +175,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Transient network failure (offline, DNS hiccup, service worker intercept) — treat as
         // unauthenticated rather than propagating an error that blocks the whole app.
         if (
-          err?.name === 'AuthRetryableFetchError' ||
-          err?.name === 'TypeError' ||
-          err?.message?.includes('NetworkError') ||
-          err?.message?.includes('Failed to fetch') ||
-          err?.message?.includes('Load failed')
+          authError.name === 'AuthRetryableFetchError' ||
+          authError.name === 'TypeError' ||
+          authError.message?.includes('NetworkError') ||
+          authError.message?.includes('Failed to fetch') ||
+          authError.message?.includes('Load failed')
         ) {
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
           return
@@ -168,8 +187,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Auth initialization error:', err)
         // User deleted in DB but JWT still valid → force clean logout
         if (
-          err?.code === 'user_not_found' ||
-          err?.message?.includes('User from sub claim in JWT does not exist')
+          authError.code === 'user_not_found' ||
+          authError.message?.includes('User from sub claim in JWT does not exist')
         ) {
           console.warn('User not found in database, clearing session...')
           await authService.logout()
@@ -178,7 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return
         }
         // 403 Forbidden: token revoked, expired, or invalid → force clean logout
-        if (err?.status === 403) {
+        if (authError.status === 403) {
           console.warn('Auth token forbidden (403), forcing clean logout...')
           await authService.logout()
           clearAuthStorage()
@@ -193,6 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth()
 
     return () => {
+      isDisposed = true
       unsubscribe()
     }
   }, [restoreLenserAccountIfNeeded])
