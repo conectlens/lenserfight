@@ -187,6 +187,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           credits={credits}
           models={models}
           onReconnect={reconnect}
+          onSignOut={handleLogout}
           topUpUrl={topUpUrl}
         />
       )}
