@@ -22,15 +22,15 @@ Most integrations use both: the Community API to read lens and workflow definiti
 
 ---
 
-::: warning API URL is determined by NODE_ENV
+::: warning API URL is determined by ENV_MODE
 **The API base URL changes based on your environment:**
 
 | Environment | URL |
 |-------------|-----|
-| Production (`NODE_ENV=production`) | `https://api.lenserfight.com` |
-| Development (`NODE_ENV=development`) | `http://localhost:8786` |
+| Production (`ENV_MODE=production`) | `https://api.lenserfight.com` |
+| Development (`ENV_MODE=development`) | `http://localhost:8786` |
 
-Never hardcode the URL — always read it from the environment variable `API_URL` (frontend) or `NODE_ENV` (server-side).
+Never hardcode the URL — always read it from the environment variable `API_URL` (frontend) or `ENV_MODE` (server-side).
 :::
 
 ## Current HTTP surface
