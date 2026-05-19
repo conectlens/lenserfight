@@ -9,7 +9,7 @@ export class AnalyticsController {
 
   /** No-op outside production or SSR — centralized gate for all providers. */
   init() {
-    if (process.env.ENV_MODE !== 'production' || typeof window === 'undefined') return;
+    if (import.meta.env['ENV_MODE'] !== 'production' || typeof window === 'undefined') return;
     for (const p of this.providers) {
       try { p.init() } catch { /* providers must fail silently */ }
     }
