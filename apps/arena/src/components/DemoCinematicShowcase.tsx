@@ -1,67 +1,20 @@
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 
-import { MediaShowcase, type MediaShowcaseItem, type MediaKind } from './MediaShowcase'
+import { MediaShowcaseTour, type MediaShowcaseTourSlide } from './MediaShowcase'
 
-// NOTE: Temporary placeholder URLs. Replace with real demo media once recorded.
-// Each entry is one "chapter" of the platform tour — pillar-aligned so the order
-// matches the PlatformPillars grid further down /demo.
-interface DemoSlide {
-  readonly src: string
-  readonly kind: MediaKind
-  readonly posterSrc?: string
-}
+const CDN = 'https://cdn.lenserfight.com/product'
 
-const DEMO_MEDIA_SOURCES: ReadonlyArray<DemoSlide> = [
-  {
-    src: 'https://placehold.co/1920x1080/0c0c0c/ffd447/png?text=Battles',
-    kind: 'image',
-  },
-  {
-    src: 'https://placehold.co/1920x1080/0f1419/9f7cff/png?text=AI+Agents',
-    kind: 'image',
-  },
-  {
-    src: 'https://placehold.co/1920x1080/0a1424/4dabff/png?text=Workflows',
-    kind: 'image',
-  },
-  {
-    src: 'https://placehold.co/1920x1080/121212/47e09c/png?text=Prompts+%26+Lenses',
-    kind: 'image',
-  },
-  {
-    src: 'https://placehold.co/1920x1080/1a0a1a/ff66c4/png?text=Agent+Workspaces',
-    kind: 'image',
-  },
-  {
-    src: 'https://placehold.co/1920x1080/1a1300/ffd447/png?text=CLI+%26+Local+Lab',
-    kind: 'image',
-  },
-] as const
+const SLIDES: ReadonlyArray<MediaShowcaseTourSlide> = [
+  { images: { light: `${CDN}/battles/battle-detail-light-1.png`,          dark: `${CDN}/battles/battle-detail-dark-1.png`,  fallbackLabel: 'Battle Detail Preview Unavailable' } },
+  { images: { light: `${CDN}/lenses/lens-1-detail-executed-light-1.png`,  dark: `${CDN}/lenses/lens-list-dark-1.png`,       fallbackLabel: 'Agent Execution Preview Unavailable' } },
+  { images: { light: `${CDN}/lenses/lens-create-light-1.png`,             dark: `${CDN}/lenses/lens-create-dark-1.png`,     fallbackLabel: 'Workflow Detail Preview Unavailable' } },
+  { images: { light: `${CDN}/lenses/lens-detail-light-1.png`,             dark: `${CDN}/lenses/lens-detail-dark-1.png`,     fallbackLabel: 'Lens Detail Preview Unavailable' } },
+  { images: { light: `${CDN}/lenses/lens-list-light-1.png`,               dark: `${CDN}/lenses/lens-list-dark-1.png`,       fallbackLabel: 'Lens List Preview Unavailable' } },
+  { images: { light: `${CDN}/pages/lenserboard-light-1.png`,              dark: `${CDN}/pages/lenserboard-dark-1.png`,      fallbackLabel: 'Lenserboard Preview Unavailable' } },
+]
 
-export const DemoCinematicShowcase: React.FC = () => {
-  const { t } = useTranslation('demo')
-
-  const items: MediaShowcaseItem[] = DEMO_MEDIA_SOURCES.map((slide, i) => ({
-    ...slide,
-    title: t(`media.items.${i}.title`),
-    description: t(`media.items.${i}.description`),
-    tag: t(`media.items.${i}.tag`),
-  }))
-
-  return (
-    <MediaShowcase
-      items={items}
-      heightVh={520}
-      labels={{
-        headerTag: t('media.tag'),
-        headerTitle: t('media.title'),
-        chapter: t('media.chapter'),
-        end: t('media.end'),
-        scrollHint: t('media.scrollHint'),
-      }}
-    />
-  )
-}
+export const DemoCinematicShowcase: React.FC = () => (
+  <MediaShowcaseTour slides={SLIDES} i18nNamespace="demo" i18nPrefix="media" heightVh={520} />
+)
 
 export default DemoCinematicShowcase
