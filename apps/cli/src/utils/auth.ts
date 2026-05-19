@@ -134,6 +134,13 @@ export async function loginWithEmail(
 ): Promise<AuthTokens> {
   const config = resolveConfig();
 
+  if (config.mode !== 'local') {
+    throw new Error(
+      'Direct credential login is blocked in cloud/production mode by bot protection.\n' +
+      'Run `lf auth login` (no credentials) to sign in via browser instead.'
+    );
+  }
+
   if (!config.supabaseUrl || !config.supabaseAnonKey) {
     throw new Error(
       'Supabase URL or anon key not found. Run `lenserfight init` first.'
@@ -354,41 +361,10 @@ export async function registerUser(
     userId = data.id;
     userEmail = data.email;
   } else {
-    if (!config.supabaseAnonKey) {
-      throw new Error(
-        'Supabase anon key not found. Run `lenserfight init` first.'
-      );
-    }
-
-    const res = await fetch(`${config.supabaseUrl}/auth/v1/signup`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: config.supabaseAnonKey,
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        data: displayName ? { display_name: displayName } : {},
-      }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: res.statusText }));
-      throw new Error(
-        err.msg || err.message || err.error_description || 'Registration failed'
-      );
-    }
-
-    const data = await res.json();
-    userId = data.id ?? data.user?.id;
-    userEmail = data.email ?? data.user?.email ?? email;
-
-    if (!userId) {
-      throw new Error(
-        'Registration submitted. Check your email to confirm before logging in.'
-      );
-    }
+    throw new Error(
+      'Account registration via CLI is not supported in cloud/production mode.\n' +
+      'Please register at https://auth.lenserfight.com/register'
+    );
   }
 
   const handle = generateHandle(displayName ?? email);
