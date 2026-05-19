@@ -8,6 +8,10 @@ const SUPABASE_URL = (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 async function getAuthHeader(): Promise<Record<string, string>> {
+  // getCachedAccessToken() is a synchronous in-memory read (no I/O).
+  // getSession() fallback reads from local storage only — no server round-trip.
+  // If the token was revoked server-side, the Edge Function will return 401;
+  // callers should detect that and trigger supabase.auth.signOut().
   const token = getCachedAccessToken() ?? (await supabase.auth.getSession()).data.session?.access_token
   if (!token) throw new Error('401: Unauthenticated')
   return { Authorization: `Bearer ${token}` }
@@ -17,14 +21,17 @@ async function getAuthHeader(): Promise<Record<string, string>> {
  * Checks whether the current user has a Chainabit account linked via OAuth.
  * Reads the provider list from the session cache — no network call, no
  * undocumented internal access.
+ *
+ * TIMING NOTE: on the OAuth callback page, call `await waitForSessionReady()`
+ * before this function to avoid a false `false` before INITIAL_SESSION fires.
  */
 export function isChainabitConnected(): boolean {
   const session = getCachedSession()
   if (!session?.user) return false
   const meta = session.user.app_metadata ?? {}
   return (
-    meta.provider === 'custom_chainabit' ||
-    (Array.isArray(meta.providers) && meta.providers.includes('custom_chainabit'))
+    meta.provider === 'custom:chainabit' ||
+    (Array.isArray(meta.providers) && meta.providers.includes('custom:chainabit'))
   )
 }
 
@@ -59,7 +66,7 @@ export const connectorApiClient = {
   async connect(returnUrl: string = window.location.href): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.auth as any).linkIdentity({
-      provider: 'custom_chainabit',
+      provider: 'chainabit',
       options: {
         redirectTo: `${AUTH_BASE_URL}/callback?return_url=${encodeURIComponent(returnUrl)}`,
       },
@@ -67,15 +74,18 @@ export const connectorApiClient = {
     if (error) throw error
     if (data?.url) {
       window.location.href = data.url
+      return
     }
+    throw new Error('Chainabit OAuth flow did not return a redirect URL — the identity may already be linked')
   },
 
   /**
    * Unlinks the Chainabit identity from the current user's account.
    */
   async disconnect(): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser()
-    const identity = user?.identities?.find((i) => i.provider === 'custom_chainabit')
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) throw userError ?? new Error('Unauthenticated')
+    const identity = user.identities?.find((i) => i.provider === 'custom:chainabit')
     if (!identity) return
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.auth as any).unlinkIdentity(identity)
