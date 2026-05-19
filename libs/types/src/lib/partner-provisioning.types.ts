@@ -1,9 +1,10 @@
 export type PartnerConnectionState =
   | 'loading'
-  | 'no_account'
-  | 'invalid_connection'
-  | 'no_credits'
   | 'connected'
+  | 'no_credits'
+  | 'not_connected'
+  | 'token_expired'
+  | 'insufficient_scope'
   | 'provider_error'
 
 /** @deprecated Use PartnerConnectionState */
