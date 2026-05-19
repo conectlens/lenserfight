@@ -6,7 +6,7 @@
 
 Bu Çerez Politikası, LenserFight internet siteleri, barındırılan uygulamaları, dokümantasyonu, herkese açık arena yüzeyleri ve ilgili hizmetlerinde (birlikte "Platform") çerezlerin ve benzeri teknolojilerin nasıl kullanıldığını açıklar.
 
-Çerezler ve benzeri teknolojiler; Platformun güvenli çalışmasına, tercihlerin hatırlanmasına, oturumların yönetilmesine, performansın ölçülmesine, kötüye kullanımın önlenmesine ve deneysel AI, agent, savaş ve iş akışı özelliklerinin iyileştirilmesine yardımcı olur.
+Çerezler ve benzeri teknolojiler; Platformun güvenli çalışmasına, tercihlerin hatırlanmasına, oturumların yönetilmesine, performansın ölçülmesine, kötüye kullanımın önlenmesine ve deneysel AI, agent, yarış ve iş akışı özelliklerinin iyileştirilmesine yardımcı olur.
 
 ---
 
@@ -25,7 +25,7 @@ LenserFight çerezleri ve benzeri teknolojileri aşağıdaki amaçlarla kullanab
 - Platformu güvenli ve erişilebilir tutmak,
 - kimlik doğrulamayı ve kullanıcı oturumlarını yönetmek,
 - dil, tema, rıza ve arayüz tercihlerini hatırlamak,
-- herkese açık arena, dokümantasyon, savaş, iş akışı ve hesap özelliklerini desteklemek,
+- herkese açık arena, dokümantasyon, yarış, iş akışı ve hesap özelliklerini desteklemek,
 - kötü niyetli trafik, dolandırıcılık, kimlik bilgisi kötüye kullanımı, spam ve kaynak kötüye kullanımını tespit etmek,
 - ürün performansını, hata oranlarını ve toplulaştırılmış kullanımı ölçmek,
 - kullanıcıların LenserFight'ı nasıl keşfettiğini ve kullandığını anlamak,
