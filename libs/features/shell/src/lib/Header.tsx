@@ -1,6 +1,10 @@
 import { useAuth } from '@lenserfight/features/auth'
 import { useUnreadCount } from '@lenserfight/features/notifications'
-import { useLenser, useLenserWorkspace, useWorkspaceSwitchController } from '@lenserfight/features/profile'
+import {
+  useLenser,
+  useLenserWorkspace,
+  useWorkspaceSwitchController,
+} from '@lenserfight/features/profile'
 import { ShareModal, useShareContext } from '@lenserfight/features/share'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { ChainabitModal } from '@lenserfight/ui/modals'
@@ -44,7 +48,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   }
 
   const chainabitButtonClass = (() => {
-    if (chainabitState === 'not_connected' || chainabitState === 'token_expired' || chainabitState === 'insufficient_scope' || chainabitState === 'provider_error') {
+    if (
+      chainabitState === 'not_connected' ||
+      chainabitState === 'token_expired' ||
+      chainabitState === 'insufficient_scope' ||
+      chainabitState === 'provider_error'
+    ) {
       return 'flex items-center gap-1.5 text-xs font-medium text-red-500 dark:text-red-400 transition-colors hover:text-red-700 dark:hover:text-red-300'
     }
     if (chainabitState === 'no_credits') {
@@ -78,11 +87,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </button>
           )}
 
-          <LocaleLanguageSelect
-            className="mr-1"
-            value={locale}
-            onChange={setLocale}
-          />
+          <LocaleLanguageSelect className="mr-1" value={locale} onChange={setLocale} />
 
           <a
             href={githubUrl}
@@ -104,7 +109,13 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
               title="Sign in with Chainabit"
             >
-              <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={16} height={16} alt="" className="rounded shrink-0" />
+              <img
+                src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+                width={16}
+                height={16}
+                alt=""
+                className="rounded shrink-0"
+              />
               Sign in
             </button>
           )}
@@ -116,7 +127,13 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               title="Chainabit — AI execution wallet"
               aria-label="Chainabit connection"
             >
-              <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={20} height={20} alt="" className="rounded shrink-0" />
+              <img
+                src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+                width={20}
+                height={20}
+                alt=""
+                className="rounded shrink-0"
+              />
               {chainabitState === 'connected' && credits !== null && (
                 <span className="tabular-nums">{credits.toLocaleString()} cr</span>
               )}
@@ -134,7 +151,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </button>
           )}
 
-
           {isAgentOwner && humanWorkspace && (
             <Button
               variant="secondary"
@@ -143,8 +159,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               disabled={isSwitching}
               isLoading={isSwitching}
             >
-              {!isSwitching && <ChevronLeft size={11} className="-ml-0.5" />}
-              @{humanWorkspace.handle}
+              {!isSwitching && <ChevronLeft size={11} className="-ml-0.5" />}@
+              {humanWorkspace.handle}
             </Button>
           )}
 
@@ -153,7 +169,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               onClick={() => navigate('/notifications')}
               className="relative p-2 rounded-lg text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
               title="Notifications"
-              aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+              aria-label={
+                unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'
+              }
             >
               <Bell size={20} />
               {unreadCount > 0 && (
@@ -164,7 +182,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </button>
           )}
           {pageActions.length > 0 && <ActionMenu actions={pageActions} />}
-
         </div>
       </div>
 

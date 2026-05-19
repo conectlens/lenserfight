@@ -80,7 +80,10 @@ describe('connectorApiClient.connect', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('redirects to the URL returned by linkIdentity', async () => {
-    mockAuth.linkIdentity.mockResolvedValue({ data: { url: 'https://auth.chainabit.com/oauth' }, error: null })
+    mockAuth.linkIdentity.mockResolvedValue({
+      data: { url: 'https://auth.chainabit.com/oauth' },
+      error: null,
+    })
     const assignSpy = vi.fn()
     Object.defineProperty(window, 'location', { value: { href: '' }, writable: true })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -90,7 +93,10 @@ describe('connectorApiClient.connect', () => {
 
     expect(mockAuth.linkIdentity).toHaveBeenCalledWith({
       provider: 'chainabit',
-      options: { redirectTo: 'https://auth.lenserfight.com/callback?return_url=https%3A%2F%2Flenserfight.com%2Fsettings' },
+      options: {
+        redirectTo:
+          'https://auth.lenserfight.com/callback?return_url=https%3A%2F%2Flenserfight.com%2Fsettings',
+      },
     })
     expect(window.location.href).toBe('https://auth.chainabit.com/oauth')
   })
@@ -104,14 +110,14 @@ describe('connectorApiClient.connect', () => {
   it('throws when linkIdentity succeeds but returns no url', async () => {
     mockAuth.linkIdentity.mockResolvedValue({ data: {}, error: null })
     await expect(connectorApiClient.connect()).rejects.toThrow(
-      'Chainabit OAuth flow did not return a redirect URL',
+      'Chainabit OAuth flow did not return a redirect URL'
     )
   })
 
   it('throws when linkIdentity succeeds but data is null', async () => {
     mockAuth.linkIdentity.mockResolvedValue({ data: null, error: null })
     await expect(connectorApiClient.connect()).rejects.toThrow(
-      'Chainabit OAuth flow did not return a redirect URL',
+      'Chainabit OAuth flow did not return a redirect URL'
     )
   })
 })

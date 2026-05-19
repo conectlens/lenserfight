@@ -83,14 +83,20 @@ describe('SupabaseLensesRepository', () => {
     })
 
     it('throws permission denied message on 42501', async () => {
-      mockRpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'permission denied' } })
+      mockRpc.mockResolvedValue({
+        data: null,
+        error: { code: '42501', message: 'permission denied' },
+      })
       await expect(repo.getById(LENS_ID)).rejects.toThrow(
         'This lens or its associated data is private or hidden and cannot be accessed.'
       )
     })
 
     it('throws permission denied message when message includes "permission denied"', async () => {
-      mockRpc.mockResolvedValue({ data: null, error: { code: '500', message: 'permission denied for table' } })
+      mockRpc.mockResolvedValue({
+        data: null,
+        error: { code: '500', message: 'permission denied for table' },
+      })
       await expect(repo.getById(LENS_ID)).rejects.toThrow(
         'This lens or its associated data is private or hidden and cannot be accessed.'
       )
@@ -143,7 +149,10 @@ describe('SupabaseLensesRepository', () => {
       chainMethods.range.mockResolvedValue({ data: [], error: null })
       mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.search('test', 0, 10, LENSER_ID)
-      expect(mockRpc).toHaveBeenCalledWith('fn_list_my_private_lenses', { p_limit: 10, p_cursor: null })
+      expect(mockRpc).toHaveBeenCalledWith('fn_list_my_private_lenses', {
+        p_limit: 10,
+        p_cursor: null,
+      })
     })
 
     it('does not call fn_list_my_private_lenses when ownerId absent', async () => {
@@ -201,7 +210,10 @@ describe('SupabaseLensesRepository', () => {
     it('calls fn_content_get_popular_lenses for popular sort', async () => {
       mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.sort('popular', 0, 20)
-      expect(mockRpc).toHaveBeenCalledWith('fn_content_get_popular_lenses', { p_limit: 20, p_offset: 0 })
+      expect(mockRpc).toHaveBeenCalledWith('fn_content_get_popular_lenses', {
+        p_limit: 20,
+        p_offset: 0,
+      })
     })
   })
 
@@ -212,7 +224,10 @@ describe('SupabaseLensesRepository', () => {
     it('calls fn_content_get_popular_lenses with offset 0', async () => {
       mockRpc.mockResolvedValue({ data: [rawLens], error: null })
       const result = await repo.getTopLenses(5)
-      expect(mockRpc).toHaveBeenCalledWith('fn_content_get_popular_lenses', { p_limit: 5, p_offset: 0 })
+      expect(mockRpc).toHaveBeenCalledWith('fn_content_get_popular_lenses', {
+        p_limit: 5,
+        p_offset: 0,
+      })
       expect(result).toEqual([rawLens])
     })
 
@@ -239,15 +254,29 @@ describe('SupabaseLensesRepository', () => {
     it('passes lang when provided', async () => {
       mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.getTrendingLenses('en', 0, 10)
-      expect(mockRpc).toHaveBeenCalledWith('fn_content_get_trending_lenses', expect.objectContaining({ p_lang: 'en' }))
+      expect(mockRpc).toHaveBeenCalledWith(
+        'fn_content_get_trending_lenses',
+        expect.objectContaining({ p_lang: 'en' })
+      )
     })
 
     it('maps author_profile and reaction_totals to LensViewModel shape', async () => {
-      const raw = [{
-        id: LENS_ID, title: 'My Lens', description: null,
-        author_profile: { id: LENSER_ID, display_name: 'Alice', handle: 'alice', avatar_url: null },
-        reaction_totals: { copy: 5 }, tags: [], created_at: '2026-01-01T00:00:00Z',
-      }]
+      const raw = [
+        {
+          id: LENS_ID,
+          title: 'My Lens',
+          description: null,
+          author_profile: {
+            id: LENSER_ID,
+            display_name: 'Alice',
+            handle: 'alice',
+            avatar_url: null,
+          },
+          reaction_totals: { copy: 5 },
+          tags: [],
+          created_at: '2026-01-01T00:00:00Z',
+        },
+      ]
       mockRpc.mockResolvedValue({ data: raw, error: null })
       const result = await repo.getTrendingLenses()
       const [item] = result.data
@@ -263,15 +292,27 @@ describe('SupabaseLensesRepository', () => {
     it('calls fn_content_get_personal_lenses with default limit and offset', async () => {
       mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.getPersonalFeed()
-      expect(mockRpc).toHaveBeenCalledWith('fn_content_get_personal_lenses', { p_limit: 20, p_offset: 0 })
+      expect(mockRpc).toHaveBeenCalledWith('fn_content_get_personal_lenses', {
+        p_limit: 20,
+        p_offset: 0,
+      })
     })
 
     it('maps personalScore and primaryLanguage from row', async () => {
-      const raw = [{
-        id: LENS_ID, title: 'Test', description: null,
-        author_profile: {}, reaction_totals: {}, tags: [], created_at: '2026-01-01T00:00:00Z',
-        hot_score: 0.8, primary_language: 'en', personal_score: 0.9,
-      }]
+      const raw = [
+        {
+          id: LENS_ID,
+          title: 'Test',
+          description: null,
+          author_profile: {},
+          reaction_totals: {},
+          tags: [],
+          created_at: '2026-01-01T00:00:00Z',
+          hot_score: 0.8,
+          primary_language: 'en',
+          personal_score: 0.9,
+        },
+      ]
       mockRpc.mockResolvedValue({ data: raw, error: null })
       const result = await repo.getPersonalFeed()
       const [item] = result.data as any[]
@@ -320,7 +361,10 @@ describe('SupabaseLensesRepository', () => {
     it('calls fn_list_my_private_lenses when includePrivate=true', async () => {
       mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.getByLenser('alice', 0, 10, true)
-      expect(mockRpc).toHaveBeenCalledWith('fn_list_my_private_lenses', { p_limit: 10, p_cursor: null })
+      expect(mockRpc).toHaveBeenCalledWith('fn_list_my_private_lenses', {
+        p_limit: 10,
+        p_cursor: null,
+      })
     })
   })
 
@@ -339,7 +383,24 @@ describe('SupabaseLensesRepository', () => {
     })
 
     it('calls fn_get_lens_detail_bootstrap with valid UUID', async () => {
-      mockRpc.mockResolvedValue({ data: { id: LENS_ID, error: null, lenser_id: LENSER_ID, visibility: 'public', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', title: 'T', description: null, content: '', author_profile: {}, tags: [], reaction_totals: {}, latest_published_version: null }, error: null })
+      mockRpc.mockResolvedValue({
+        data: {
+          id: LENS_ID,
+          error: null,
+          lenser_id: LENSER_ID,
+          visibility: 'public',
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+          title: 'T',
+          description: null,
+          content: '',
+          author_profile: {},
+          tags: [],
+          reaction_totals: {},
+          latest_published_version: null,
+        },
+        error: null,
+      })
       await repo.getById(LENS_ID)
       expect(mockRpc).toHaveBeenCalledWith('fn_get_lens_detail_bootstrap', { p_lens_id: LENS_ID })
     })
@@ -356,9 +417,16 @@ describe('SupabaseLensesRepository', () => {
 
     it('maps author_profile from bootstrap data', async () => {
       const bootstrapData = {
-        id: LENS_ID, lenser_id: LENSER_ID, visibility: 'public',
-        created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
-        title: 'My Lens', description: null, content: '', tags: [], reaction_totals: {},
+        id: LENS_ID,
+        lenser_id: LENSER_ID,
+        visibility: 'public',
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+        title: 'My Lens',
+        description: null,
+        content: '',
+        tags: [],
+        reaction_totals: {},
         author_profile: { id: LENSER_ID, handle: 'alice', display_name: 'Alice', avatar_url: null },
         latest_published_version: null,
       }
@@ -373,7 +441,10 @@ describe('SupabaseLensesRepository', () => {
   // ---------------------------------------------------------------------------
   describe('getTags', () => {
     it('queries vw_lenses_public for tags by id', async () => {
-      chainMethods.maybeSingle.mockResolvedValue({ data: { tags: [{ id: 't-1', slug: 'python', name: 'Python' }] }, error: null })
+      chainMethods.maybeSingle.mockResolvedValue({
+        data: { tags: [{ id: 't-1', slug: 'python', name: 'Python' }] },
+        error: null,
+      })
       const result = await repo.getTags(LENS_ID)
       expect(mockFrom).toHaveBeenCalledWith('vw_lenses_public')
       expect(chainMethods.select).toHaveBeenCalledWith('tags')
@@ -442,7 +513,11 @@ describe('SupabaseLensesRepository', () => {
         .mockResolvedValueOnce({ data: null, error: null })
         .mockResolvedValueOnce({ data: LENS_ID, error: null })
       chainMethods.maybeSingle.mockResolvedValue({ data: null, error: null })
-      const result = await repo.createLens({ title: 'Private', content: 'body', visibility: 'private' })
+      const result = await repo.createLens({
+        title: 'Private',
+        content: 'body',
+        visibility: 'private',
+      })
       expect(result.id).toBe(LENS_ID)
       expect(result.visibility).toBe('private')
     })
@@ -456,7 +531,10 @@ describe('SupabaseLensesRepository', () => {
       mockRpc.mockResolvedValue({ error: null })
       chainMethods.maybeSingle.mockResolvedValue({ data: rawLens, error: null })
       await repo.updateLens(LENS_ID, { title: 'Updated' })
-      expect(mockRpc).toHaveBeenCalledWith('fn_update_lens', expect.objectContaining({ p_lens_id: LENS_ID, p_title: 'Updated' }))
+      expect(mockRpc).toHaveBeenCalledWith(
+        'fn_update_lens',
+        expect.objectContaining({ p_lens_id: LENS_ID, p_title: 'Updated' })
+      )
       expect(mockFrom).toHaveBeenCalledWith('vw_lenses_public')
     })
 
@@ -471,11 +549,14 @@ describe('SupabaseLensesRepository', () => {
       mockRpc.mockResolvedValue({ error: null })
       chainMethods.maybeSingle.mockResolvedValue({ data: rawLens, error: null })
       await repo.updateLens(LENS_ID, {})
-      expect(mockRpc).toHaveBeenCalledWith('fn_update_lens', expect.objectContaining({
-        p_template_body: null,
-        p_visibility: null,
-        p_title: null,
-      }))
+      expect(mockRpc).toHaveBeenCalledWith(
+        'fn_update_lens',
+        expect.objectContaining({
+          p_template_body: null,
+          p_visibility: null,
+          p_title: null,
+        })
+      )
     })
   })
 
@@ -501,7 +582,10 @@ describe('SupabaseLensesRepository', () => {
     it('calls fn_list_lens_versions with p_include_archived=false', async () => {
       mockRpc.mockResolvedValue({ data: [rawVersion], error: null })
       const result = await repo.getVersions(LENS_ID)
-      expect(mockRpc).toHaveBeenCalledWith('fn_list_lens_versions', { p_lens_id: LENS_ID, p_include_archived: false })
+      expect(mockRpc).toHaveBeenCalledWith('fn_list_lens_versions', {
+        p_lens_id: LENS_ID,
+        p_include_archived: false,
+      })
       expect(result[0].lensId).toBe(LENS_ID)
       expect(result[0].versionNumber).toBe(1)
       expect(result[0].templateBody).toBe('Hello {{name}}')
@@ -556,8 +640,14 @@ describe('SupabaseLensesRepository', () => {
         .mockResolvedValueOnce({ data: [rawVersion], error: null })
         .mockResolvedValueOnce({ data: [], error: null })
       const result = await repo.getVersionById(VERSION_ID)
-      expect(mockRpc.mock.calls[0]).toEqual(['fn_get_lens_version_detail', { p_version_id: VERSION_ID }])
-      expect(mockRpc.mock.calls[1]).toEqual(['fn_get_lens_version_parameters', { p_version_id: VERSION_ID }])
+      expect(mockRpc.mock.calls[0]).toEqual([
+        'fn_get_lens_version_detail',
+        { p_version_id: VERSION_ID },
+      ])
+      expect(mockRpc.mock.calls[1]).toEqual([
+        'fn_get_lens_version_parameters',
+        { p_version_id: VERSION_ID },
+      ])
       expect(result?.id).toBe(VERSION_ID)
     })
 
@@ -611,7 +701,10 @@ describe('SupabaseLensesRepository', () => {
     })
 
     it('calls fn_get_lens_detail_bootstrap', async () => {
-      mockRpc.mockResolvedValue({ data: { error: null, latest_published_version: null }, error: null })
+      mockRpc.mockResolvedValue({
+        data: { error: null, latest_published_version: null },
+        error: null,
+      })
       await repo.getLatestPublishedVersion(LENS_ID)
       expect(mockRpc).toHaveBeenCalledWith('fn_get_lens_detail_bootstrap', { p_lens_id: LENS_ID })
     })
@@ -668,7 +761,9 @@ describe('SupabaseLensesRepository', () => {
 
     it('rethrows errors', async () => {
       mockRpc.mockResolvedValue({ data: null, error: new Error('create version error') })
-      await expect(repo.createVersion({ lensId: LENS_ID, templateBody: 'body' })).rejects.toThrow('create version error')
+      await expect(repo.createVersion({ lensId: LENS_ID, templateBody: 'body' })).rejects.toThrow(
+        'create version error'
+      )
     })
   })
 
@@ -707,14 +802,20 @@ describe('SupabaseLensesRepository', () => {
     it('calls fn_clone_lens with p_source_lens_id', async () => {
       mockRpc.mockResolvedValue({ data: 'new-lens-id', error: null })
       const result = await repo.cloneLens(LENS_ID)
-      expect(mockRpc).toHaveBeenCalledWith('fn_clone_lens', { p_source_lens_id: LENS_ID, p_version_id: null })
+      expect(mockRpc).toHaveBeenCalledWith('fn_clone_lens', {
+        p_source_lens_id: LENS_ID,
+        p_version_id: null,
+      })
       expect(result).toBe('new-lens-id')
     })
 
     it('passes versionId when provided', async () => {
       mockRpc.mockResolvedValue({ data: 'new-lens-id', error: null })
       await repo.cloneLens(LENS_ID, VERSION_ID)
-      expect(mockRpc).toHaveBeenCalledWith('fn_clone_lens', { p_source_lens_id: LENS_ID, p_version_id: VERSION_ID })
+      expect(mockRpc).toHaveBeenCalledWith('fn_clone_lens', {
+        p_source_lens_id: LENS_ID,
+        p_version_id: VERSION_ID,
+      })
     })
 
     it('rethrows errors', async () => {
@@ -741,11 +842,23 @@ describe('SupabaseLensesRepository', () => {
 
     it('maps raw tool to ToolRecord shape', async () => {
       const rawTool = {
-        id: 'tool-1', key: 'text_input', label: 'Text', description: 'Enter text',
-        category: 'input', type: 'text', required: true,
-        min_length: 0, max_length: 500, placeholder: null, help_text: null,
-        validation_schema: null, options: null, sort_order: 0, is_system: false,
-        icon: null, color: null,
+        id: 'tool-1',
+        key: 'text_input',
+        label: 'Text',
+        description: 'Enter text',
+        category: 'input',
+        type: 'text',
+        required: true,
+        min_length: 0,
+        max_length: 500,
+        placeholder: null,
+        help_text: null,
+        validation_schema: null,
+        options: null,
+        sort_order: 0,
+        is_system: false,
+        icon: null,
+        color: null,
       }
       mockRpc.mockResolvedValue({ data: [rawTool], error: null })
       const [tool] = await repo.getTools()
@@ -794,10 +907,16 @@ describe('SupabaseLensesRepository', () => {
 
     it('respects limit parameter', async () => {
       const rows = Array.from({ length: 5 }, (_, i) => ({
-        lens_id: `l-${i}`, forked_from_lens_id: LENS_ID, forked_from_title: `T${i}`,
-        depth: i, forked_from_lenser_id: LENSER_ID, forked_from_lenser_name: 'A',
-        forked_from_lenser_handle: 'a', forked_from_lenser_avatar_url: null,
-        forked_from_version_id: null, forked_from_version_number: null,
+        lens_id: `l-${i}`,
+        forked_from_lens_id: LENS_ID,
+        forked_from_title: `T${i}`,
+        depth: i,
+        forked_from_lenser_id: LENSER_ID,
+        forked_from_lenser_name: 'A',
+        forked_from_lenser_handle: 'a',
+        forked_from_lenser_avatar_url: null,
+        forked_from_version_id: null,
+        forked_from_version_number: null,
       }))
       mockRpc.mockResolvedValue({ data: rows, error: null })
       const result = await repo.getForkTree(LENS_ID, 3)

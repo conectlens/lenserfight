@@ -4,7 +4,11 @@ import { useAuth } from '@lenserfight/features/auth'
 import { authService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
 import { Button } from '@lenserfight/ui/components'
-import { DEFAULT_RETURN_URL, replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateReturnUrl'
+import {
+  DEFAULT_RETURN_URL,
+  replaceLocationSafely,
+  sanitizeReturnUrl,
+} from '../utils/validateReturnUrl'
 
 const LOGIN_REDIRECT_DELAY_MS = 800
 const APPROVE_REDIRECT_DELAY_MS = 1500
@@ -32,10 +36,7 @@ export const DeviceApprovalPage: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const returnUrl = useMemo(
-    () => sanitizeReturnUrl(searchParams.get('return_url')),
-    [searchParams]
-  )
+  const returnUrl = useMemo(() => sanitizeReturnUrl(searchParams.get('return_url')), [searchParams])
 
   useEffect(() => {
     if (isLoading) return
@@ -169,19 +170,13 @@ export const DeviceApprovalPage: React.FC = () => {
             </div>
           ) : null}
 
-          <Button
-            type="submit"
-            size="lg"
-            isLoading={isSubmitting}
-            fullWidth
-            className="mt-6"
-          >
+          <Button type="submit" size="lg" isLoading={isSubmitting} fullWidth className="mt-6">
             {isLoginMode ? 'Approve login' : 'Approve device'}
           </Button>
 
           <p className="mt-4 text-xs leading-5 text-gray-500">
-            This page only approves the request. It never reveals your existing
-            Supabase session or password.
+            This page only approves the request. It never reveals your existing Supabase session or
+            password.
           </p>
         </form>
       </div>

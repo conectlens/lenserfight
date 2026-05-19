@@ -62,7 +62,7 @@ export const BattlesSection: React.FC = () => {
 
   const invalidate = useCallback(
     () => queryClient.invalidateQueries({ queryKey: ['agent-battle-subscriptions', agentId] }),
-    [queryClient, agentId],
+    [queryClient, agentId]
   )
 
   const unsubscribe = useMutation({
@@ -79,10 +79,7 @@ export const BattlesSection: React.FC = () => {
     onError: (e) => toast.error((e as Error).message),
   })
 
-  const handleDeactivate = useCallback(
-    (id: string) => unsubscribe.mutate(id),
-    [unsubscribe],
-  )
+  const handleDeactivate = useCallback((id: string) => unsubscribe.mutate(id), [unsubscribe])
 
   const { active, inactive } = useMemo(() => {
     const a: BattleSubscription[] = []
@@ -100,10 +97,7 @@ export const BattlesSection: React.FC = () => {
       description="Auto-enroll this agent into open battles matching the configured filters. Rate limits and kill switches protect against runaway joins."
       toolbar={
         canManage ? (
-          <Button
-            type="button"
-            onClick={openDrawer}
-          >
+          <Button type="button" onClick={openDrawer}>
             <Plus size={16} />
             New subscription
           </Button>
@@ -113,10 +107,7 @@ export const BattlesSection: React.FC = () => {
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 2 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-24 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800"
-            />
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
           ))}
         </div>
       ) : active.length === 0 && inactive.length === 0 ? (
@@ -127,11 +118,7 @@ export const BattlesSection: React.FC = () => {
         >
           {canManage && (
             <div className="mt-6 flex justify-center">
-              <Button
-                type="button"
-                variant="dark"
-                onClick={openDrawer}
-              >
+              <Button type="button" variant="dark" onClick={openDrawer}>
                 New subscription
               </Button>
             </div>
@@ -205,10 +192,11 @@ const SubscriptionCard = React.memo(function SubscriptionCard({
               {EXECUTION_MODE_LABELS[sub.execution_mode] ?? sub.execution_mode}
             </span>
             <span
-              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${sub.active
-                ? 'border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
-                : 'border-gray-200 text-gray-400 dark:border-gray-700 dark:text-gray-500'
-                }`}
+              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+                sub.active
+                  ? 'border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300'
+                  : 'border-gray-200 text-gray-400 dark:border-gray-700 dark:text-gray-500'
+              }`}
             >
               {sub.active ? 'Active' : 'Inactive'}
             </span>

@@ -280,8 +280,17 @@ export interface RecordRunProvenanceInput {
 
 export interface WorkflowsRepositoryPort {
   listByLenser(lenserId: string, limit?: number): Promise<WorkflowRecord[]>
-  listByLenserPaginated(lenserId: string, offset: number, limit: number, filter?: WorkflowsListFilter): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
-  getPopular(offset: number, limit: number, search?: string): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
+  listByLenserPaginated(
+    lenserId: string,
+    offset: number,
+    limit: number,
+    filter?: WorkflowsListFilter
+  ): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
+  getPopular(
+    offset: number,
+    limit: number,
+    search?: string
+  ): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
   listTemplates(limit?: number, offset?: number): Promise<TemplateWorkflowRecord[]>
   getById(id: string): Promise<WorkflowRecord | null>
   getBootstrap(workflowId: string): Promise<WorkflowBootstrapRecord | null>
@@ -294,7 +303,13 @@ export interface WorkflowsRepositoryPort {
   upsertEdges(workflowId: string, edges: UpsertEdgeInput[]): Promise<WorkflowEdgeRecord[]>
   deleteNode(nodeId: string): Promise<void>
   deleteEdge(edgeId: string): Promise<void>
-  startRun(workflowId: string, inputs?: Record<string, unknown>, globalModelId?: string, idempotencyKey?: string, versionId?: string | null): Promise<WorkflowRunRecord>
+  startRun(
+    workflowId: string,
+    inputs?: Record<string, unknown>,
+    globalModelId?: string,
+    idempotencyKey?: string,
+    versionId?: string | null
+  ): Promise<WorkflowRunRecord>
   getRun(runId: string): Promise<WorkflowRunRecord | null>
   getNodeResults(runId: string): Promise<WorkflowNodeResultRecord[]>
   updateNodeResult(
@@ -303,11 +318,19 @@ export interface WorkflowsRepositoryPort {
     status: string,
     outputData?: Record<string, unknown>,
     errorMessage?: string,
-    options?: UpdateNodeResultOptions,
+    options?: UpdateNodeResultOptions
   ): Promise<void>
   updateRunStatus(runId: string, status: string): Promise<void>
-  appendRunEvent(runId: string, type: string, payload?: Record<string, unknown>): Promise<WorkflowRunEventRecord | null>
-  listRunEvents(runId: string, afterEventId?: number, limit?: number): Promise<WorkflowRunEventRecord[]>
+  appendRunEvent(
+    runId: string,
+    type: string,
+    payload?: Record<string, unknown>
+  ): Promise<WorkflowRunEventRecord | null>
+  listRunEvents(
+    runId: string,
+    afterEventId?: number,
+    limit?: number
+  ): Promise<WorkflowRunEventRecord[]>
   /**
    * N8N-style canonical run projection. Returns the active node, waiting/
    * executed counts, ordered node results, and provenance edge counts in
@@ -335,12 +358,16 @@ export interface WorkflowsRepositoryPort {
   restoreVersion(versionId: string): Promise<void>
   listRuns(workflowId: string, limit?: number, offset?: number): Promise<WorkflowRunRecord[]>
   listPhases(workflowId: string): Promise<WorkflowPhaseRecord[]>
-  upsertPhase(phase: Partial<WorkflowPhaseRecord> & { workflow_id: string }): Promise<WorkflowPhaseRecord>
+  upsertPhase(
+    phase: Partial<WorkflowPhaseRecord> & { workflow_id: string }
+  ): Promise<WorkflowPhaseRecord>
   deletePhase(phaseId: string): Promise<void>
   reorderPhases(workflowId: string, orderedIds: string[]): Promise<void>
   listTasks(phaseId: string): Promise<WorkflowTaskRecord[]>
   listTasksByWorkflow(workflowId: string): Promise<WorkflowTaskRecord[]>
-  upsertTask(task: Partial<WorkflowTaskRecord> & { phase_id: string; workflow_id: string }): Promise<WorkflowTaskRecord>
+  upsertTask(
+    task: Partial<WorkflowTaskRecord> & { phase_id: string; workflow_id: string }
+  ): Promise<WorkflowTaskRecord>
   deleteTask(taskId: string): Promise<void>
   reorderTasks(phaseId: string, orderedIds: string[]): Promise<void>
 }
@@ -397,7 +424,9 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
   async listByLenser(lenserId: string, limit = 100): Promise<WorkflowRecord[]> {
     const { data, error } = await supabase
       .from('vw_workflows')
-      .select('id, lenser_id, title, description, visibility, battle_count, node_count, created_at, updated_at')
+      .select(
+        'id, lenser_id, title, description, visibility, battle_count, node_count, created_at, updated_at'
+      )
       .eq('lenser_id', lenserId)
       .order('updated_at', { ascending: false })
       .limit(limit)
@@ -412,14 +441,15 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     limit: number,
     filter: WorkflowsListFilter = {}
   ): Promise<ApiResponseEnvelope<WorkflowRecord[]>> {
-    const { data, error } = await this.timedRpc('fn_get_my_workflows', () => supabase.rpc('fn_get_my_workflows', {
-      p_lenser_id: lenserId,
-      p_offset: offset,
-      p_limit: limit,
-      p_visibility: filter.visibility ?? null,
-      p_sort: filter.sort ?? 'updated_at',
-      p_search: filter.search ?? null,
-    })
+    const { data, error } = await this.timedRpc('fn_get_my_workflows', () =>
+      supabase.rpc('fn_get_my_workflows', {
+        p_lenser_id: lenserId,
+        p_offset: offset,
+        p_limit: limit,
+        p_visibility: filter.visibility ?? null,
+        p_sort: filter.sort ?? 'updated_at',
+        p_search: filter.search ?? null,
+      })
     )
 
     if (error) this.handleError(error)
@@ -437,11 +467,12 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     limit: number,
     search?: string
   ): Promise<ApiResponseEnvelope<WorkflowRecord[]>> {
-    const { data, error } = await this.timedRpc('fn_workflows_get_popular', () => supabase.rpc('fn_workflows_get_popular', {
-      p_offset: offset,
-      p_limit: limit,
-      p_search: search ?? null,
-    })
+    const { data, error } = await this.timedRpc('fn_workflows_get_popular', () =>
+      supabase.rpc('fn_workflows_get_popular', {
+        p_offset: offset,
+        p_limit: limit,
+        p_search: search ?? null,
+      })
     )
 
     if (error) this.handleError(error)
@@ -473,9 +504,10 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
   }
 
   async getBootstrap(workflowId: string): Promise<WorkflowBootstrapRecord | null> {
-    const { data, error } = await this.timedRpc('fn_get_workflow_bootstrap', () => supabase.rpc('fn_get_workflow_bootstrap', {
-      p_workflow_id: workflowId,
-    })
+    const { data, error } = await this.timedRpc('fn_get_workflow_bootstrap', () =>
+      supabase.rpc('fn_get_workflow_bootstrap', {
+        p_workflow_id: workflowId,
+      })
     )
 
     if (error) this.handleError(error)
@@ -549,10 +581,11 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
   }
 
   async upsertNodes(workflowId: string, nodes: UpsertNodeInput[]): Promise<WorkflowNodeRecord[]> {
-    const { data, error } = await this.timedRpc('fn_upsert_workflow_nodes', () => supabase.rpc('fn_upsert_workflow_nodes', {
-      p_workflow_id: workflowId,
-      p_nodes: nodes,
-    })
+    const { data, error } = await this.timedRpc('fn_upsert_workflow_nodes', () =>
+      supabase.rpc('fn_upsert_workflow_nodes', {
+        p_workflow_id: workflowId,
+        p_nodes: nodes,
+      })
     )
 
     if (error) this.handleError(error)
@@ -590,7 +623,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     inputs: Record<string, unknown> = {},
     globalModelId?: string,
     idempotencyKey?: string,
-    versionId?: string | null,
+    versionId?: string | null
   ): Promise<WorkflowRunRecord> {
     const payload: Record<string, unknown> = {
       p_workflow_id: workflowId,
@@ -635,7 +668,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     status: string,
     outputData?: Record<string, unknown>,
     errorMessage?: string,
-    options?: UpdateNodeResultOptions,
+    options?: UpdateNodeResultOptions
   ): Promise<void> {
     const payload: Record<string, unknown> = {
       p_run_id: runId,
@@ -656,7 +689,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
   async getRunState(runId: string): Promise<WorkflowRunStateProjection | null> {
     const { data, error } = await this.timedRpc('fn_get_workflow_run_state', () =>
-      supabase.rpc('fn_get_workflow_run_state', { p_run_id: runId }),
+      supabase.rpc('fn_get_workflow_run_state', { p_run_id: runId })
     )
 
     if (error) this.handleError(error)
@@ -666,7 +699,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
   async getRunProvenance(runId: string): Promise<WorkflowRunProvenanceEdge[]> {
     const { data, error } = await this.timedRpc('fn_get_run_provenance', () =>
-      supabase.rpc('fn_get_run_provenance', { p_run_id: runId }),
+      supabase.rpc('fn_get_run_provenance', { p_run_id: runId })
     )
 
     if (error) this.handleError(error)
@@ -700,7 +733,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
   async appendRunEvent(
     runId: string,
     type: string,
-    payload: Record<string, unknown> = {},
+    payload: Record<string, unknown> = {}
   ): Promise<WorkflowRunEventRecord | null> {
     const { data, error } = await supabase.rpc('fn_append_workflow_run_event', {
       p_run_id: runId,
@@ -724,7 +757,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
   async listRunEvents(
     runId: string,
     afterEventId = 0,
-    limit = 200,
+    limit = 200
   ): Promise<WorkflowRunEventRecord[]> {
     const { data, error } = await supabase.rpc('fn_list_workflow_run_events', {
       p_run_id: runId,
@@ -737,7 +770,9 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
       event_id: Number(row.event_id),
       type: row.type,
       run_id: row.run_id,
-      timestamp: String((row as unknown as Record<string, unknown>)['occurred_at'] ?? row.timestamp ?? ''),
+      timestamp: String(
+        (row as unknown as Record<string, unknown>)['occurred_at'] ?? row.timestamp ?? ''
+      ),
       payload: (row.payload ?? {}) as Record<string, unknown>,
     }))
   }
@@ -850,7 +885,9 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     return (data ?? []) as WorkflowPhaseRecord[]
   }
 
-  async upsertPhase(phase: Partial<WorkflowPhaseRecord> & { workflow_id: string }): Promise<WorkflowPhaseRecord> {
+  async upsertPhase(
+    phase: Partial<WorkflowPhaseRecord> & { workflow_id: string }
+  ): Promise<WorkflowPhaseRecord> {
     const { data, error } = await supabase.rpc('fn_upsert_workflow_phase', {
       p_workflow_id: phase.workflow_id,
       p_title: phase.title ?? '',
@@ -895,7 +932,9 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     return (data ?? []) as WorkflowTaskRecord[]
   }
 
-  async upsertTask(task: Partial<WorkflowTaskRecord> & { phase_id: string; workflow_id: string }): Promise<WorkflowTaskRecord> {
+  async upsertTask(
+    task: Partial<WorkflowTaskRecord> & { phase_id: string; workflow_id: string }
+  ): Promise<WorkflowTaskRecord> {
     const { data, error } = await supabase.rpc('fn_upsert_workflow_task', {
       p_phase_id: task.phase_id,
       p_workflow_id: task.workflow_id,

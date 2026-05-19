@@ -15,7 +15,7 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
 
   async getPreferences(): Promise<LenserPreferences | null> {
     try {
-      if (!(this.hasSession())) return null
+      if (!this.hasSession()) return null
       const { data, error } = await supabase.rpc('fn_lensers_get_preferences')
       if (error) return null
       return data as LenserPreferences
@@ -26,17 +26,27 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
   }
 
   async updatePreferences(patch: Partial<LenserPreferences>): Promise<void> {
-    if (!(this.hasSession())) return
+    if (!this.hasSession()) return
     try {
       // Exclude read-only / identity fields before sending to RPC
-      const { id: _id, lenser_id: _lid, created_at: _ca, updated_at: _ua, ...fields } = patch as Record<string, unknown>
+      const {
+        id: _id,
+        lenser_id: _lid,
+        created_at: _ca,
+        updated_at: _ua,
+        ...fields
+      } = patch as Record<string, unknown>
 
       const { error } = await supabase.rpc('fn_lensers_update_preferences', { p_data: fields })
 
       if (error) throw error
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      if (msg.includes('NetworkError') || msg.includes('AbortError') || msg.includes('lock request is aborted')) {
+      if (
+        msg.includes('NetworkError') ||
+        msg.includes('AbortError') ||
+        msg.includes('lock request is aborted')
+      ) {
         // Transient: network down or Supabase lock stolen during session init — not actionable
         return
       }

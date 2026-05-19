@@ -20,7 +20,7 @@ import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/r
  */
 export function computeDagOrder(
   nodes: WorkflowNodeRecord[],
-  edges: WorkflowEdgeRecord[],
+  edges: WorkflowEdgeRecord[]
 ): WorkflowNodeRecord[] {
   if (nodes.length === 0) return []
   if (edges.length === 0) return nodes.slice().sort((a, b) => a.ordinal - b.ordinal)
@@ -41,9 +41,7 @@ export function computeDagOrder(
   const visited = new Set<string>()
 
   // Seed with root nodes (in-degree 0), stable by ordinal so trigger ordering is consistent.
-  let wave = nodes
-    .filter((n) => inDegree.get(n.id) === 0)
-    .sort((a, b) => a.ordinal - b.ordinal)
+  let wave = nodes.filter((n) => inDegree.get(n.id) === 0).sort((a, b) => a.ordinal - b.ordinal)
 
   while (wave.length > 0) {
     const nextWave: WorkflowNodeRecord[] = []
@@ -68,9 +66,7 @@ export function computeDagOrder(
   }
 
   // Append nodes not reached by BFS (disconnected subgraphs, cycles).
-  const unreached = nodes
-    .filter((n) => !visited.has(n.id))
-    .sort((a, b) => a.ordinal - b.ordinal)
+  const unreached = nodes.filter((n) => !visited.has(n.id)).sort((a, b) => a.ordinal - b.ordinal)
 
   return result.concat(unreached)
 }

@@ -42,9 +42,11 @@ function useDebouncedQuery(value: string, delay = 400) {
 }
 
 function LenserIcon({ type, size = 14 }: { type?: 'human' | 'ai'; size?: number }) {
-  return type === 'ai'
-    ? <Bot size={size} className="text-greyscale-400 flex-shrink-0" />
-    : <User size={size} className="text-greyscale-400 flex-shrink-0" />
+  return type === 'ai' ? (
+    <Bot size={size} className="text-greyscale-400 flex-shrink-0" />
+  ) : (
+    <User size={size} className="text-greyscale-400 flex-shrink-0" />
+  )
 }
 
 export function LenserSearchPicker({
@@ -70,9 +72,8 @@ export function LenserSearchPicker({
     staleTime: 10_000,
   })
 
-  const results = filterType === 'all'
-    ? rawResults
-    : rawResults.filter((l) => (l.type ?? 'human') === filterType)
+  const results =
+    filterType === 'all' ? rawResults : rawResults.filter((l) => (l.type ?? 'human') === filterType)
 
   // Whether the current input looks like a direct @handle invite
   const trimmed = inputValue.trim()
@@ -108,7 +109,8 @@ export function LenserSearchPicker({
   }
 
   const slotBadgeClass = SLOT_COLORS[slot]
-  const isDirectInviteValue = value && (value as LenserSearchResult & { directInvite?: boolean }).directInvite
+  const isDirectInviteValue =
+    value && (value as LenserSearchResult & { directInvite?: boolean }).directInvite
 
   return (
     <div className="space-y-2">
@@ -124,18 +126,17 @@ export function LenserSearchPicker({
             {slotLabel}
           </p>
         )}
-        {filterHint && (
-          <span className="ml-auto text-[11px] text-greyscale-400">{filterHint}</span>
-        )}
+        {filterHint && <span className="ml-auto text-[11px] text-greyscale-400">{filterHint}</span>}
       </div>
 
       {/* Selected chip or search input */}
       {value ? (
         <div className="flex items-center gap-2 rounded-2xl border border-primary-yellow-500/40 bg-primary-yellow-500/5 px-3 py-2">
-          {isDirectInviteValue
-            ? <User size={14} className="text-greyscale-400 flex-shrink-0" />
-            : <LenserIcon type={value.type} size={14} />
-          }
+          {isDirectInviteValue ? (
+            <User size={14} className="text-greyscale-400 flex-shrink-0" />
+          ) : (
+            <LenserIcon type={value.type} size={14} />
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50 truncate">
@@ -242,9 +243,13 @@ export function LenserSearchPicker({
       )}
 
       {/* No results */}
-      {!value && isFetching === false && queryForFetch.length >= 3 && results.length === 0 && !showDirectInvite && (
-        <p className="text-xs text-greyscale-400 py-1">No lensers found for "{inputValue}".</p>
-      )}
+      {!value &&
+        isFetching === false &&
+        queryForFetch.length >= 3 &&
+        results.length === 0 &&
+        !showDirectInvite && (
+          <p className="text-xs text-greyscale-400 py-1">No lensers found for "{inputValue}".</p>
+        )}
     </div>
   )
 }

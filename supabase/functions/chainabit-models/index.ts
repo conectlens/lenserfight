@@ -39,8 +39,12 @@ serve(async (req: Request): Promise<Response> => {
   })
   const adminClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
-  const { data: { user }, error: authError } = await userClient.auth.getUser()
-  if (authError || !user) return errResponse('unauthenticated', 'Invalid or expired token', 401, req)
+  const {
+    data: { user },
+    error: authError,
+  } = await userClient.auth.getUser()
+  if (authError || !user)
+    return errResponse('unauthenticated', 'Invalid or expired token', 401, req)
 
   // Resolve Chainabit OAuth token and assert profile:read scope.
   // The model catalog endpoint is authenticated — a connected identity without
@@ -61,8 +65,9 @@ serve(async (req: Request): Promise<Response> => {
     return errResponse('token_resolution_failed', 'Failed to resolve Chainabit token', 500, req)
   }
 
-  const chainabitUrl = (Deno.env.get('CHAINABIT_API_URL') ?? 'https://api.chainabit.com/api/v1')
-    .replace(/\/$/, '')
+  const chainabitUrl = (
+    Deno.env.get('CHAINABIT_API_URL') ?? 'https://api.chainabit.com/api/v1'
+  ).replace(/\/$/, '')
 
   const modelsRes = await fetch(`${chainabitUrl}/ai/models?isActive=true`, {
     headers: { Authorization: `Bearer ${token.accessToken}` },
@@ -70,7 +75,12 @@ serve(async (req: Request): Promise<Response> => {
 
   if (!modelsRes.ok) {
     if (modelsRes.status === 401) {
-      return errResponse('token_expired', 'Chainabit token expired — reconnect your account', 401, req)
+      return errResponse(
+        'token_expired',
+        'Chainabit token expired — reconnect your account',
+        401,
+        req
+      )
     }
     const text = await modelsRes.text()
     console.error(`[chainabit-models] /ai/models ${modelsRes.status}:`, text.slice(0, 300))

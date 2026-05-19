@@ -11,7 +11,11 @@ import { motion } from 'framer-motion'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { MarketingMediaCard, type MarketingImageSource, type MarketingCTA } from './MarketingShowcase'
+import {
+  MarketingMediaCard,
+  type MarketingImageSource,
+  type MarketingCTA,
+} from './MarketingShowcase'
 
 // ── CDN image catalogue ───────────────────────────────────────────────────────
 

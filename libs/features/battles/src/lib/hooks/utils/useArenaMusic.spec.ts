@@ -36,11 +36,18 @@ const mockPlayer = {
 }
 
 function installYTStub() {
-  const YTPlayerCtor = vi.fn().mockImplementation((_el: unknown, opts: { events: { onReady: (e: unknown) => void; onStateChange: (e: unknown) => void } }) => {
-    // Immediately call onReady so playerReady becomes true
-    opts.events.onReady({ target: mockPlayer })
-    return mockPlayer
-  })
+  const YTPlayerCtor = vi
+    .fn()
+    .mockImplementation(
+      (
+        _el: unknown,
+        opts: { events: { onReady: (e: unknown) => void; onStateChange: (e: unknown) => void } }
+      ) => {
+        // Immediately call onReady so playerReady becomes true
+        opts.events.onReady({ target: mockPlayer })
+        return mockPlayer
+      }
+    )
   vi.stubGlobal('YT', {
     Player: YTPlayerCtor,
     PlayerState: { ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3 },
@@ -51,9 +58,15 @@ function installYTStub() {
 const localStorageStore: Record<string, string> = {}
 vi.stubGlobal('localStorage', {
   getItem: (k: string) => localStorageStore[k] ?? null,
-  setItem: (k: string, v: string) => { localStorageStore[k] = v },
-  removeItem: (k: string) => { delete localStorageStore[k] },
-  clear: () => { Object.keys(localStorageStore).forEach((k) => delete localStorageStore[k]) },
+  setItem: (k: string, v: string) => {
+    localStorageStore[k] = v
+  },
+  removeItem: (k: string) => {
+    delete localStorageStore[k]
+  },
+  clear: () => {
+    Object.keys(localStorageStore).forEach((k) => delete localStorageStore[k])
+  },
 })
 
 // ---------------------------------------------------------------------------
@@ -91,67 +104,57 @@ describe('useArenaMusic', () => {
   })
 
   it('defaults isEnabled to true when no localStorage value exists', () => {
-    const { result } = renderHook(() =>
-      useArenaMusic({ isAuthenticated: false }),
-    )
+    const { result } = renderHook(() => useArenaMusic({ isAuthenticated: false }))
     expect(result.current.isEnabled).toBe(true)
   })
 
   it('reads isEnabled=false from localStorage for anonymous users', () => {
     localStorageStore['lenserfight:arena_music_enabled'] = 'false'
-    const { result } = renderHook(() =>
-      useArenaMusic({ isAuthenticated: false }),
-    )
+    const { result } = renderHook(() => useArenaMusic({ isAuthenticated: false }))
     expect(result.current.isEnabled).toBe(false)
   })
 
   it('prefers initialPreference prop over localStorage', () => {
     localStorageStore['lenserfight:arena_music_enabled'] = 'true'
-    const { result } = renderHook(() =>
-      useArenaMusic({ isAuthenticated: false }, false),
-    )
+    const { result } = renderHook(() => useArenaMusic({ isAuthenticated: false }, false))
     expect(result.current.isEnabled).toBe(false)
   })
 
   it('starts at track index 0', () => {
-    const { result } = renderHook(() =>
-      useArenaMusic({ isAuthenticated: false }),
-    )
+    const { result } = renderHook(() => useArenaMusic({ isAuthenticated: false }))
     expect(result.current.currentTrackIndex).toBe(0)
     expect(result.current.currentTrack).toEqual(ARENA_TRACKS[0])
   })
 
   it('toggleEnabled flips isEnabled and persists to localStorage for anon users', () => {
-    const { result } = renderHook(() =>
-      useArenaMusic({ isAuthenticated: false }),
-    )
-    act(() => { result.current.toggleEnabled() })
+    const { result } = renderHook(() => useArenaMusic({ isAuthenticated: false }))
+    act(() => {
+      result.current.toggleEnabled()
+    })
     expect(result.current.isEnabled).toBe(false)
     expect(localStorageStore['lenserfight:arena_music_enabled']).toBe('false')
   })
 
   it('toggleEnabled calls preferencesService for authenticated users', async () => {
-    const { result } = renderHook(() =>
-      useArenaMusic({ isAuthenticated: true }),
-    )
-    await act(async () => { result.current.toggleEnabled() })
+    const { result } = renderHook(() => useArenaMusic({ isAuthenticated: true }))
+    await act(async () => {
+      result.current.toggleEnabled()
+    })
     expect(preferencesService.updatePreferences).toHaveBeenCalledWith(
-      expect.objectContaining({ autoplay_music: false }),
+      expect.objectContaining({ autoplay_music: false })
     )
   })
 
   it('toggleEnabled does NOT call preferencesService for anonymous users', async () => {
-    const { result } = renderHook(() =>
-      useArenaMusic({ isAuthenticated: false }),
-    )
-    await act(async () => { result.current.toggleEnabled() })
+    const { result } = renderHook(() => useArenaMusic({ isAuthenticated: false }))
+    await act(async () => {
+      result.current.toggleEnabled()
+    })
     expect(preferencesService.updatePreferences).not.toHaveBeenCalled()
   })
 
   it('returns a playerDivRef object', () => {
-    const { result } = renderHook(() =>
-      useArenaMusic({ isAuthenticated: false }),
-    )
+    const { result } = renderHook(() => useArenaMusic({ isAuthenticated: false }))
     expect(result.current.playerDivRef).toBeDefined()
     expect(typeof result.current.playerDivRef).toBe('object')
   })

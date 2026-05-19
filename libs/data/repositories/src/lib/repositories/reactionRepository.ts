@@ -28,7 +28,11 @@ export interface ReactionRepositoryPort {
     lenserId: string
   ): Promise<ReactionRecord[]>
   countReactions(targetType: TargetType, targetId: string): Promise<ReactionCount[]>
-  getLenserHistory(handle: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ReactionRecord[]>>
+  getLenserHistory(
+    handle: string,
+    offset?: number,
+    limit?: number
+  ): Promise<ApiResponseEnvelope<ReactionRecord[]>>
 }
 
 export class SupabaseReactionRepository implements ReactionRepositoryPort {
@@ -158,16 +162,27 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     }))
   }
 
-  async getLenserHistory(handle: string, offset = 0, limit = 20): Promise<ApiResponseEnvelope<ReactionRecord[]>> {
+  async getLenserHistory(
+    handle: string,
+    offset = 0,
+    limit = 20
+  ): Promise<ApiResponseEnvelope<ReactionRecord[]>> {
     const start = Date.now()
 
-    const { data: profileData, error: profileError } = await supabase.rpc('fn_get_lenser_profile_brief', {
-      p_handle: handle,
-      p_lenser_id: null,
-    })
+    const { data: profileData, error: profileError } = await supabase.rpc(
+      'fn_get_lenser_profile_brief',
+      {
+        p_handle: handle,
+        p_lenser_id: null,
+      }
+    )
 
     if (profileError || !profileData?.[0]) {
-      return paginatedResponse([], { limit, offset, total: 0, hasNextPage: false }, { durationMs: Date.now() - start })
+      return paginatedResponse(
+        [],
+        { limit, offset, total: 0, hasNextPage: false },
+        { durationMs: Date.now() - start }
+      )
     }
 
     const profile = profileData[0]
@@ -187,7 +202,7 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     return paginatedResponse(
       page,
       { limit, offset, hasNextPage },
-      { durationMs: Date.now() - start },
+      { durationMs: Date.now() - start }
     )
   }
 }

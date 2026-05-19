@@ -7,7 +7,8 @@ const shouldUsePlaceholderClient =
 // Keep file/test/dev imports non-throwing, but never let a production bundle
 // silently talk to the local Supabase placeholder.
 const supabaseUrl =
-  import.meta.env.SUPABASE_URL || (shouldUsePlaceholderClient ? 'http://localhost:54321' : undefined)
+  import.meta.env.SUPABASE_URL ||
+  (shouldUsePlaceholderClient ? 'http://localhost:54321' : undefined)
 const supabaseKey =
   import.meta.env.SUPABASE_PUBLISHABLE_KEY ||
   (shouldUsePlaceholderClient ? 'placeholder-key-for-file-mode' : undefined)

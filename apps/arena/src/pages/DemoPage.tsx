@@ -1,21 +1,8 @@
-import {
-  ArenaTrendingBattlesWidget,
-  SpectatorFeedWidget,
-} from '@lenserfight/features/battles'
-import {
-  ArenaHotThreadsWidget,
-  ArenaTrendingLensesWidget,
-} from '@lenserfight/features/home'
+import { ArenaTrendingBattlesWidget, SpectatorFeedWidget } from '@lenserfight/features/battles'
+import { ArenaHotThreadsWidget, ArenaTrendingLensesWidget } from '@lenserfight/features/home'
 import { AiLenserFamily, HumanLenserFamily, Badge, Button, Card } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
-import {
-  Activity,
-  ArrowRight,
-  ExternalLink,
-  Music,
-  PlayCircle,
-  Youtube,
-} from 'lucide-react'
+import { Activity, ArrowRight, ExternalLink, Music, PlayCircle, Youtube } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
@@ -31,14 +18,22 @@ const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.co
 
 const SOUNDTRACKS = [
   { videoId: 's-NegE5sK9o', href: 'https://youtu.be/s-NegE5sK9o' },
-  { videoId: 'kine5GjALC0', href: 'https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0' },
+  {
+    videoId: 'kine5GjALC0',
+    href: 'https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0',
+  },
   { videoId: 'yN_44HCS1tE', href: 'https://www.youtube.com/watch?v=yN_44HCS1tE' },
   { videoId: 'FM1z-M3DD24', href: 'https://www.youtube.com/watch?v=FM1z-M3DD24' },
 ] as const
 
 const cardVariant = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 280, damping: 22 } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: 'spring', stiffness: 280, damping: 22 },
+  },
 }
 
 const staggerContainer = {
@@ -68,16 +63,16 @@ export const DemoPage: React.FC = () => {
 
       {/* ── HERO ───────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pt-16 pb-12 sm:px-6 lg:px-8 lg:pt-24 lg:pb-16">
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="visible"
-          className="space-y-6"
-        >
+        <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
           <motion.div variants={fadeUp} className="flex items-center gap-3">
-            <Badge color="yellow" variant="outline">{t('demo:hero.badge')}</Badge>
+            <Badge color="yellow" variant="outline">
+              {t('demo:hero.badge')}
+            </Badge>
             <span className="flex items-center gap-1.5 rounded-full bg-status-red/10 px-2.5 py-0.5 text-[11px] font-bold text-status-red">
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-status-red" aria-hidden="true" />
+              <span
+                className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-status-red"
+                aria-hidden="true"
+              />
               {t('common:badges.realData')}
             </span>
           </motion.div>
@@ -126,7 +121,9 @@ export const DemoPage: React.FC = () => {
           whileInView="visible"
           viewport={viewport}
         >
-          <Badge color="yellow" variant="outline">{t('demo:media.badge')}</Badge>
+          <Badge color="yellow" variant="outline">
+            {t('demo:media.badge')}
+          </Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
             {t('demo:media.headline')}
           </h2>
@@ -152,7 +149,9 @@ export const DemoPage: React.FC = () => {
           whileInView="visible"
           viewport={viewport}
         >
-          <Badge color="yellow" variant="outline">{t('demo:brandTour.badge')}</Badge>
+          <Badge color="yellow" variant="outline">
+            {t('demo:brandTour.badge')}
+          </Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
             {t('demo:brandTour.headline')}
           </h2>
@@ -160,7 +159,11 @@ export const DemoPage: React.FC = () => {
             {t('demo:brandTour.subtitle')}
           </p>
         </motion.div>
-        <React.Suspense fallback={<div className="mx-auto h-[400px] max-w-6xl animate-pulse rounded-[2.5rem] bg-surface-raised" />}>
+        <React.Suspense
+          fallback={
+            <div className="mx-auto h-[400px] max-w-6xl animate-pulse rounded-[2.5rem] bg-surface-raised" />
+          }
+        >
           <BrandVideos />
         </React.Suspense>
       </section>
@@ -192,7 +195,9 @@ export const DemoPage: React.FC = () => {
           viewport={viewport}
           className="mb-8 space-y-2"
         >
-          <Badge color="red" variant="outline">{t('demo:widgets.badge')}</Badge>
+          <Badge color="red" variant="outline">
+            {t('demo:widgets.badge')}
+          </Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
             {t('demo:widgets.title')}
           </h2>
@@ -202,9 +207,7 @@ export const DemoPage: React.FC = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <SpectatorFeedWidget
-            getBattleHref={(slug) => `${RUN_APP_URL}/battles/${slug}`}
-          />
+          <SpectatorFeedWidget getBattleHref={(slug) => `${RUN_APP_URL}/battles/${slug}`} />
           <ArenaTrendingBattlesWidget baseUrl={RUN_APP_URL} />
           <ArenaHotThreadsWidget baseUrl={RUN_APP_URL} />
           <ArenaTrendingLensesWidget baseUrl={RUN_APP_URL} />
@@ -213,7 +216,10 @@ export const DemoPage: React.FC = () => {
 
       {/* ── Lenser Families ─────────────────────────────────────────────── */}
       <AiLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20" centered />
-      <HumanLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20" centered />
+      <HumanLenserFamily
+        className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20"
+        centered
+      />
 
       {/* ── Arena Soundtrack ─────────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8">
@@ -319,11 +325,20 @@ export const DemoPage: React.FC = () => {
                   </Button>
                 </a>
                 <a
-                  href={chainabitContactUrl({ lang: i18n.language, utmMedium: 'arena_demo', utmCampaign: 'demo_contact' })}
+                  href={chainabitContactUrl({
+                    lang: i18n.language,
+                    utmMedium: 'arena_demo',
+                    utmCampaign: 'demo_contact',
+                  })}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Button variant="ghost" size="lg" fullWidth className="text-greyscale-600 dark:text-greyscale-300 hover:bg-black/5 dark:hover:bg-greyscale-800">
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    fullWidth
+                    className="text-greyscale-600 dark:text-greyscale-300 hover:bg-black/5 dark:hover:bg-greyscale-800"
+                  >
                     {t('common:cta.contactUs')} <ExternalLink size={14} />
                   </Button>
                 </a>

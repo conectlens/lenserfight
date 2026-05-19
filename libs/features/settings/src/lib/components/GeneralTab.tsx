@@ -39,23 +39,31 @@ export const GeneralTab: React.FC = () => {
       }
       const raw = localStorage.getItem(LOCAL_PREFS_KEY)
       if (raw) {
-        try { return JSON.parse(raw) as LenserPreferences } catch { /* ignore */ }
+        try {
+          return JSON.parse(raw) as LenserPreferences
+        } catch {
+          /* ignore */
+        }
       }
       return null
     },
     staleTime: 1000 * 60 * 5,
   })
 
-  const currentLanguage = preferences?.language ?? lenser?.preferences?.language ?? lenser?.preferred_language ?? 'en'
+  const currentLanguage =
+    preferences?.language ?? lenser?.preferences?.language ?? lenser?.preferred_language ?? 'en'
   const currentTheme = preferences?.theme ?? 'system'
   const currentContentVisibility = preferences?.content_visibility ?? 'public'
   const currentEmailDigest = preferences?.email_digest ?? true
   const currentHideActions = preferences?.hide_actions ?? false
-  const currentAutplayMusic = preferences?.autoplay_music ?? lenser?.preferences?.autoplay_music ?? true
+  const currentAutplayMusic =
+    preferences?.autoplay_music ?? lenser?.preferences?.autoplay_music ?? true
 
   const [language, setLanguage] = useState(currentLanguage)
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(currentTheme)
-  const [contentVisibility, setContentVisibility] = useState<'public' | 'community' | 'private'>(currentContentVisibility)
+  const [contentVisibility, setContentVisibility] = useState<'public' | 'community' | 'private'>(
+    currentContentVisibility
+  )
   const [emailDigest, setEmailDigest] = useState(currentEmailDigest)
   const [hideActions, setHideActions] = useState(currentHideActions)
   const [autoplayMusic, setAutoplayMusic] = useState(currentAutplayMusic)
@@ -93,7 +101,14 @@ export const GeneralTab: React.FC = () => {
   }
 
   const applyAndPersistLocally = async () => {
-    const prefs = { language, theme, content_visibility: contentVisibility, email_digest: emailDigest, hide_actions: hideActions, autoplay_music: autoplayMusic }
+    const prefs = {
+      language,
+      theme,
+      content_visibility: contentVisibility,
+      email_digest: emailDigest,
+      hide_actions: hideActions,
+      autoplay_music: autoplayMusic,
+    }
     localStorage.setItem(LOCAL_PREFS_KEY, JSON.stringify(prefs))
     // Sync arena music localStorage key so the player picks it up immediately
     localStorage.setItem('lenserfight:arena_music_enabled', String(autoplayMusic))
@@ -130,8 +145,7 @@ export const GeneralTab: React.FC = () => {
       await queryClient.invalidateQueries({ queryKey: ['preferences'] })
     } catch (e) {
       const isNoProfile =
-        (e as any)?.code === 'P0001' ||
-        (e as any)?.message?.includes('Profile not found')
+        (e as any)?.code === 'P0001' || (e as any)?.message?.includes('Profile not found')
       if (isNoProfile) {
         await applyAndPersistLocally()
       } else {
@@ -157,7 +171,8 @@ export const GeneralTab: React.FC = () => {
             Language
           </label>
           <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-            Prioritizes prompts, threads, and recommendations in your language. Also updates the interface language for this session.
+            Prioritizes prompts, threads, and recommendations in your language. Also updates the
+            interface language for this session.
           </p>
           <SearchSelectField
             value={language}
@@ -265,9 +280,12 @@ export const GeneralTab: React.FC = () => {
 
           <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700">
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Arena soundtrack</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Arena soundtrack
+              </p>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                Autoplay LenserFight music on Battle Detail pages. You can mute at any time using the volume button in the arena header.
+                Autoplay LenserFight music on Battle Detail pages. You can mute at any time using
+                the volume button in the arena header.
               </p>
             </div>
             <button

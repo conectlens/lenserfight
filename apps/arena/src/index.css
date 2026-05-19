@@ -99,51 +99,57 @@
   --color-dark-muted: #9ca3af;
 
   /* ── Semantic surfaces (resolve from tokens.css vars) ────── */
-  --color-surface-base:         var(--cl-surface-base);
-  --color-surface-raised:       var(--cl-surface-raised);
-  --color-surface-overlay:      var(--cl-surface-overlay);
-  --color-surface-sunken:       var(--cl-surface-sunken);
-  --color-surface-interactive:  var(--cl-surface-interactive);
-  --color-surface-border:       var(--cl-surface-border);
+  --color-surface-base: var(--cl-surface-base);
+  --color-surface-raised: var(--cl-surface-raised);
+  --color-surface-overlay: var(--cl-surface-overlay);
+  --color-surface-sunken: var(--cl-surface-sunken);
+  --color-surface-interactive: var(--cl-surface-interactive);
+  --color-surface-border: var(--cl-surface-border);
   --color-surface-border-subtle: var(--cl-surface-border-subtle);
 
   /* ── Neumorphic shadow utilities ────────────────────────── */
-  --shadow-neu-0:       var(--cl-elevation-0);
-  --shadow-neu-1:       var(--cl-elevation-1);
-  --shadow-neu-2:       var(--cl-elevation-2);
-  --shadow-neu-3:       var(--cl-elevation-3);
-  --shadow-neu-4:       var(--cl-elevation-4);
-  --shadow-neu-5:       var(--cl-elevation-5);
+  --shadow-neu-0: var(--cl-elevation-0);
+  --shadow-neu-1: var(--cl-elevation-1);
+  --shadow-neu-2: var(--cl-elevation-2);
+  --shadow-neu-3: var(--cl-elevation-3);
+  --shadow-neu-4: var(--cl-elevation-4);
+  --shadow-neu-5: var(--cl-elevation-5);
   --shadow-neu-inset-1: var(--cl-elevation-inset-1);
   --shadow-neu-inset-2: var(--cl-elevation-inset-2);
   --shadow-neu-inset-3: var(--cl-elevation-inset-3);
 
   /* ── Motion utilities ────────────────────────────────────── */
-  --duration-fast:    var(--cl-duration-fast);
-  --duration-normal:  var(--cl-duration-normal);
-  --duration-slow:    var(--cl-duration-slow);
-  --ease-standard:    var(--cl-ease-standard);
-  --ease-enter:       var(--cl-ease-enter);
-  --ease-exit:        var(--cl-ease-exit);
-  --ease-spring:      var(--cl-ease-spring);
+  --duration-fast: var(--cl-duration-fast);
+  --duration-normal: var(--cl-duration-normal);
+  --duration-slow: var(--cl-duration-slow);
+  --ease-standard: var(--cl-ease-standard);
+  --ease-enter: var(--cl-ease-enter);
+  --ease-exit: var(--cl-ease-exit);
+  --ease-spring: var(--cl-ease-spring);
 
   /* ── Z-Index stack ────────────────────────────────────────── */
-  --z-base:     0;
-  --z-raised:   10;
+  --z-base: 0;
+  --z-raised: 10;
   --z-dropdown: 100;
-  --z-sticky:   200;
-  --z-overlay:  300;
-  --z-modal:    400;
-  --z-toast:    500;
-  --z-tooltip:  600;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
 
   /* ── Marketing keyframe animations ──────────────────────── */
   --animate-fadeIn: fadeIn 0.6s ease-out forwards;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @layer base {

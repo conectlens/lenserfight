@@ -1,5 +1,10 @@
 import { lensesService, preferencesService } from '@lenserfight/data/repositories'
-import { ExportModal, useExportRunner, LocalDownloadTransport, CloudDownloadTransport } from '@lenserfight/features/exports'
+import {
+  ExportModal,
+  useExportRunner,
+  LocalDownloadTransport,
+  CloudDownloadTransport,
+} from '@lenserfight/features/exports'
 import { SupabaseExportsRepository } from '@lenserfight/data/exports'
 import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
@@ -18,7 +23,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { History, Lock, Loader2, Pencil, Trash2, Flag, ListVideo } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-
 
 import { CreateLensModal } from '../components/CreateLensModal'
 import { ExecutionHistoryDrawer } from '../components/ExecutionHistoryDrawer'
@@ -67,7 +71,7 @@ export const LensLabPage: React.FC = () => {
       resolveLocalKeyRef.current
         ? resolveLocalKeyRef.current(keyId)
         : Promise.reject(new Error('Local key resolver not ready')),
-    [],
+    []
   )
 
   const lab = useLabController(id ?? '', !!isAuthenticated, {
@@ -115,7 +119,6 @@ export const LensLabPage: React.FC = () => {
   const activeLensContent = activeVersion?.templateBody ?? lens?.content ?? ''
   const activeVersionParams = activeVersion?.parameters ?? undefined
 
-
   // Selected model input + output modalities
   const selectedModel = lab.providerModels.find((m) => m.key === lab.selectedModelKey)
   const selectedModelInputModalities = selectedModel?.inputModalities
@@ -145,7 +148,10 @@ export const LensLabPage: React.FC = () => {
 
   const normalizedLenserHandle = lenser?.handle?.trim().toLowerCase()
   const hasActiveLenserProfile =
-    !!lenser && hasLenser && normalizedLenserHandle !== 'anon' && normalizedLenserHandle !== 'anonymous'
+    !!lenser &&
+    hasLenser &&
+    normalizedLenserHandle !== 'anon' &&
+    normalizedLenserHandle !== 'anonymous'
 
   const ensureProfile = useCallback((): boolean => {
     if (!isAuthenticated) {
@@ -161,20 +167,26 @@ export const LensLabPage: React.FC = () => {
 
   const isOwner = !!(lenser && lens && lens.author.id === lenser.id)
 
-  const buildExportContext = useCallback(() => ({
-    userId: user?.id ?? null,
-    tenantId: null,
-    via: 'web' as const,
-    host: window.location.host,
-    isOwner,
-    isAuthenticated,
-  }), [user?.id, isOwner, isAuthenticated])
+  const buildExportContext = useCallback(
+    () => ({
+      userId: user?.id ?? null,
+      tenantId: null,
+      via: 'web' as const,
+      host: window.location.host,
+      isOwner,
+      isAuthenticated,
+    }),
+    [user?.id, isOwner, isAuthenticated]
+  )
 
-  const resolveExportTransport = useCallback((id: 'cloud-download' | 'local-download' | 'local-workspace') => {
-    if (id === 'local-download') return new LocalDownloadTransport()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return new CloudDownloadTransport(new SupabaseExportsRepository(supabase as any))
-  }, [])
+  const resolveExportTransport = useCallback(
+    (id: 'cloud-download' | 'local-download' | 'local-workspace') => {
+      if (id === 'local-download') return new LocalDownloadTransport()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return new CloudDownloadTransport(new SupabaseExportsRepository(supabase as any))
+    },
+    []
+  )
 
   const runExportInner = useExportRunner({
     kind: 'lens',
@@ -185,8 +197,13 @@ export const LensLabPage: React.FC = () => {
     resolveTransport: resolveExportTransport,
   })
   const runExport = useCallback(
-    async (input: { format: import('@lenserfight/domain/exports').ExportFormat; destination: import('@lenserfight/features/exports').TransportId }) => { await runExportInner(input) },
-    [runExportInner],
+    async (input: {
+      format: import('@lenserfight/domain/exports').ExportFormat
+      destination: import('@lenserfight/features/exports').TransportId
+    }) => {
+      await runExportInner(input)
+    },
+    [runExportInner]
   )
 
   const handleDeleteClick = useCallback((targetId: string) => {
@@ -216,7 +233,7 @@ export const LensLabPage: React.FC = () => {
         })
       }
     },
-    [ensureProfile, lens?.id, lenser, openCreateModal],
+    [ensureProfile, lens?.id, lenser, openCreateModal]
   )
 
   const pageActions = useMemo(() => {
@@ -281,7 +298,9 @@ export const LensLabPage: React.FC = () => {
 
   const handleCopy = async () => {
     if (!lens) return
-    await copyTextToClipboard(renderLensContentForCopy(activeLensContent, activeVersionParams ?? []))
+    await copyTextToClipboard(
+      renderLensContentForCopy(activeLensContent, activeVersionParams ?? [])
+    )
   }
 
   const handleSave = async () => {
@@ -406,34 +425,42 @@ export const LensLabPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                if (!ensureProfile()) return
-                drawerRouter.open('executions')
-              }}
-              title={hasActiveLenserProfile ? 'View execution history' : 'Sign in or register to view executions'}
-              className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50"
-            >
-              <ListVideo size={13} />
-              <span>Executions</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { setShowVersionPicker((v) => !v); setSelectedVersionId(null) }}
-              title={showVersionPicker ? 'Hide version history' : 'Show version history'}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all ${showVersionPicker
-                ? 'border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+              <button
+                type="button"
+                onClick={() => {
+                  if (!ensureProfile()) return
+                  drawerRouter.open('executions')
+                }}
+                title={
+                  hasActiveLenserProfile
+                    ? 'View execution history'
+                    : 'Sign in or register to view executions'
+                }
+                className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50"
+              >
+                <ListVideo size={13} />
+                <span>Executions</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowVersionPicker((v) => !v)
+                  setSelectedVersionId(null)
+                }}
+                title={showVersionPicker ? 'Hide version history' : 'Show version history'}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all ${
+                  showVersionPicker
+                    ? 'border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
-            >
-              <History size={13} />
-              <span>
-                {selectedVersionId
-                  ? `v${versions.find((v) => v.id === selectedVersionId)?.versionNumber ?? '?'} selected`
-                  : 'Version history'}
-              </span>
-            </button>
+              >
+                <History size={13} />
+                <span>
+                  {selectedVersionId
+                    ? `v${versions.find((v) => v.id === selectedVersionId)?.versionNumber ?? '?'} selected`
+                    : 'Version history'}
+                </span>
+              </button>
             </div>
           </div>
 
@@ -465,19 +492,21 @@ export const LensLabPage: React.FC = () => {
                         key={v.id}
                         type="button"
                         onClick={() => setSelectedVersionId(isSelected ? null : v.id)}
-                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${isSelected
-                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                          : 'hover:bg-gray-50 dark:hover:bg-gray-800/60 text-gray-700 dark:text-gray-300'
-                          }`}
+                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
+                          isSelected
+                            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/60 text-gray-700 dark:text-gray-300'
+                        }`}
                       >
                         <span className="font-mono font-bold text-xs w-8 shrink-0">
                           v{v.versionNumber}
                         </span>
                         <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${v.status === 'draft'
-                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                            : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                            }`}
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
+                            v.status === 'draft'
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                          }`}
                         >
                           {v.status}
                         </span>
@@ -516,7 +545,10 @@ export const LensLabPage: React.FC = () => {
         <div className="lg:col-span-5 flex flex-col gap-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:overflow-hidden">
           {lab.asyncMediaRunId && (
             <div className="flex items-center gap-3 rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50 px-4 py-3 text-sm dark:border-primary-yellow-800 dark:bg-primary-yellow-950">
-              <Loader2 size={16} className="animate-spin shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400" />
+              <Loader2
+                size={16}
+                className="animate-spin shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400"
+              />
               <span className="text-primary-yellow-800 dark:text-primary-yellow-200">
                 Generating media — this may take a minute…
               </span>
@@ -606,7 +638,6 @@ export const LensLabPage: React.FC = () => {
         lensId={isEditMode && lens ? lens.id : undefined}
       />
 
-
       <ConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -637,18 +668,20 @@ export const LensLabPage: React.FC = () => {
             </p>
             <SelectField
               value={reportReason}
-              onChange={(v) => setReportReason(v as 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other')}
-              options={(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => ({
+              onChange={(v) =>
+                setReportReason(
+                  v as 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
+                )
+              }
+              options={(
+                ['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const
+              ).map((r) => ({
                 value: r,
                 label: r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
               }))}
             />
             <div className="flex gap-3 justify-end pt-1">
-              <Button
-                variant="ghost"
-                onClick={() => setIsReportOpen(false)}
-                className="w-auto"
-              >
+              <Button variant="ghost" onClick={() => setIsReportOpen(false)} className="w-auto">
                 Cancel
               </Button>
               <Button

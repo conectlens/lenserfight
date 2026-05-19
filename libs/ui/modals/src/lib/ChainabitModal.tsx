@@ -94,12 +94,15 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
     }
   }
 
-  const title =
-    isConnectState(state) ? 'Connect Chainabit' :
-      isReconnectState(state) ? 'Reconnect Chainabit' :
-        state === 'no_credits' ? 'No credits remaining' :
-          state === 'provider_error' ? 'Connection error' :
-            'Chainabit'
+  const title = isConnectState(state)
+    ? 'Connect Chainabit'
+    : isReconnectState(state)
+      ? 'Reconnect Chainabit'
+      : state === 'no_credits'
+        ? 'No credits remaining'
+        : state === 'provider_error'
+          ? 'Connection error'
+          : 'Chainabit'
 
   const footer = (() => {
     if (state === 'loading') return undefined
@@ -108,7 +111,12 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
       return (
         <ModalFooter
           border={false}
-          leftButton={{ label: 'Cancel', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
+          leftButton={{
+            label: 'Cancel',
+            onClick: onClose,
+            variant: 'secondary',
+            className: 'flex-1',
+          }}
           primaryButton={{
             label: reconnecting ? 'Redirecting…' : 'Connect Chainabit',
             onClick: handleReconnect,
@@ -123,7 +131,12 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
       return (
         <ModalFooter
           border={false}
-          leftButton={{ label: 'Cancel', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
+          leftButton={{
+            label: 'Cancel',
+            onClick: onClose,
+            variant: 'secondary',
+            className: 'flex-1',
+          }}
           primaryButton={{
             label: reconnecting ? 'Redirecting…' : 'Reconnect',
             onClick: handleReconnect,
@@ -138,7 +151,12 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
       return (
         <ModalFooter
           border={false}
-          leftButton={{ label: 'Close', onClick: onClose, variant: 'secondary', className: 'flex-1' }}
+          leftButton={{
+            label: 'Close',
+            onClick: onClose,
+            variant: 'secondary',
+            className: 'flex-1',
+          }}
           primaryButton={{
             label: 'Top up on Chainabit',
             onClick: () => window.open(topUpUrl, '_blank', 'noopener,noreferrer'),
@@ -173,7 +191,10 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
   return (
     <Dialog
       open={isOpen}
-      onClose={() => { setConnectError(null); onClose() }}
+      onClose={() => {
+        setConnectError(null)
+        onClose()
+      }}
       title={title}
       icon={<ChainabitLogo />}
       maxWidth="max-w-md"
@@ -205,7 +226,8 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-red-800 dark:text-red-300">Connection failed</p>
             <p className="mt-0.5 text-xs text-red-700 dark:text-red-400">
-              Could not initiate the Chainabit OAuth flow. Please try again or contact support if the issue persists.
+              Could not initiate the Chainabit OAuth flow. Please try again or contact support if
+              the issue persists.
             </p>
           </div>
         </div>
@@ -255,30 +277,36 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
 
       {isAccountConnected(state) && (
         <div className="space-y-4">
-          <div className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
-            state === 'no_credits'
-              ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
-              : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-          }`}>
+          <div
+            className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
+              state === 'no_credits'
+                ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+            }`}
+          >
             <div className="flex items-center gap-2">
               {state === 'no_credits' ? (
                 <Zap size={14} className="text-orange-500" />
               ) : (
                 <PlugZap size={14} className="text-green-600 dark:text-green-400" />
               )}
-              <span className={`text-xs font-medium ${
-                state === 'no_credits'
-                  ? 'text-orange-800 dark:text-orange-300'
-                  : 'text-green-800 dark:text-green-300'
-              }`}>
+              <span
+                className={`text-xs font-medium ${
+                  state === 'no_credits'
+                    ? 'text-orange-800 dark:text-orange-300'
+                    : 'text-green-800 dark:text-green-300'
+                }`}
+              >
                 {state === 'no_credits' ? 'No credits' : 'Connected'}
               </span>
             </div>
-            <span className={`text-sm font-bold tabular-nums ${
-              state === 'no_credits'
-                ? 'text-orange-900 dark:text-orange-200'
-                : 'text-green-900 dark:text-green-200'
-            }`}>
+            <span
+              className={`text-sm font-bold tabular-nums ${
+                state === 'no_credits'
+                  ? 'text-orange-900 dark:text-orange-200'
+                  : 'text-green-900 dark:text-green-200'
+              }`}
+            >
               {credits?.toLocaleString() ?? '0'} cr
             </span>
           </div>

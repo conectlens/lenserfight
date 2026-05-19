@@ -26,7 +26,22 @@ vi.mock('@lenserfight/data/repositories', () => ({
   },
   workflowsService: {
     listByLenser: mockListWorkflows,
-    listByLenserPaginated: vi.fn().mockResolvedValue({ data: [{ id: 'wf-1', title: 'My Workflow', description: 'Test workflow', lenser_id: 'user-1', visibility: 'private', battle_count: 0, created_at: '', updated_at: '' }] }),
+    listByLenserPaginated: vi
+      .fn()
+      .mockResolvedValue({
+        data: [
+          {
+            id: 'wf-1',
+            title: 'My Workflow',
+            description: 'Test workflow',
+            lenser_id: 'user-1',
+            visibility: 'private',
+            battle_count: 0,
+            created_at: '',
+            updated_at: '',
+          },
+        ],
+      }),
     getPopular: vi.fn().mockResolvedValue({ data: [] }),
   },
   lensesService: { getPersonalFeed: mockGetPersonalFeed },
@@ -72,7 +87,11 @@ vi.mock('@lenserfight/features/profile', () => ({
 }))
 
 vi.mock('@lenserfight/features/store', () => ({
-  useChainabitConnection: () => ({ state: { status: 'disconnected' }, models: [], reconnect: vi.fn() }),
+  useChainabitConnection: () => ({
+    state: { status: 'disconnected' },
+    models: [],
+    reconnect: vi.fn(),
+  }),
 }))
 
 import { CreateBattleWizard } from './CreateBattleWizard'
@@ -80,7 +99,9 @@ import { CreateBattleWizard } from './CreateBattleWizard'
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeQueryClient() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
 }
 
 function renderWizard(url = '/battles/create') {
@@ -91,7 +112,10 @@ function renderWizard(url = '/battles/create') {
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={[url]}>
         <Routes>
-          <Route path="/battles/create" element={<CreateBattleWizard onSuccess={onSuccess} onClose={onClose} />} />
+          <Route
+            path="/battles/create"
+            element={<CreateBattleWizard onSuccess={onSuccess} onClose={onClose} />}
+          />
           <Route path="*" element={<div data-testid="navigated" />} />
         </Routes>
       </MemoryRouter>
@@ -107,7 +131,16 @@ describe('CreateBattleWizard', () => {
     vi.clearAllMocks()
     mockCreateBattle.mockResolvedValue({ id: 'battle-1', slug: 'test-battle' })
     mockListWorkflows.mockResolvedValue([
-      { id: 'wf-1', title: 'My Workflow', description: 'Test workflow', lenser_id: 'user-1', visibility: 'private', battle_count: 0, created_at: '', updated_at: '' },
+      {
+        id: 'wf-1',
+        title: 'My Workflow',
+        description: 'Test workflow',
+        lenser_id: 'user-1',
+        visibility: 'private',
+        battle_count: 0,
+        created_at: '',
+        updated_at: '',
+      },
     ])
     mockGetPersonalFeed.mockResolvedValue({
       data: [{ id: 'lens-1', title: 'My Lens', visibility: 'private' }],

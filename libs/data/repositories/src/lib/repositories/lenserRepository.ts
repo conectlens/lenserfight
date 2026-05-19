@@ -79,7 +79,11 @@ export interface LenserRepositoryPort {
   getLeaderboard(period: FollowPeriod, limit?: number): Promise<LeaderboardLenser[]>
 
   // Lensers discovery
-  listLensers(options: { type?: LenserType; limit?: number; offset?: number }): Promise<LenserListItem[]>
+  listLensers(options: {
+    type?: LenserType
+    limit?: number
+    offset?: number
+  }): Promise<LenserListItem[]>
 
   // Social graph: Profile access
   getProfile(handle: string): Promise<ProfileAccessPayload>
@@ -158,7 +162,11 @@ export const mapProfileToAuthProfileGate = (
     }
   }
 
-  return { kind: 'deleted', status: profile.status, deletionDeadlineAt: profile.deletion_deadline_at ?? null }
+  return {
+    kind: 'deleted',
+    status: profile.status,
+    deletionDeadlineAt: profile.deletion_deadline_at ?? null,
+  }
 }
 
 export class SupabaseLenserRepository implements LenserRepositoryPort {
@@ -168,7 +176,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     })
 
     if (error) throw error
-    if (!data) return null as any;
+    if (!data) return null as any
 
     return {
       id: data.id,
@@ -255,9 +263,11 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     if (data.banner_url !== undefined) updatePayload.banner_url = data.banner_url
     if (data.bio !== undefined) updatePayload.bio = data.bio
     if (data.headline !== undefined) updatePayload.headline = data.headline
-    if (data.preferred_language !== undefined) updatePayload.preferred_language = data.preferred_language
+    if (data.preferred_language !== undefined)
+      updatePayload.preferred_language = data.preferred_language
     if (data.onboarding_step !== undefined) updatePayload.onboarding_step = data.onboarding_step
-    if (data.onboarding_completed_at !== undefined) updatePayload.onboarding_completed_at = data.onboarding_completed_at
+    if (data.onboarding_completed_at !== undefined)
+      updatePayload.onboarding_completed_at = data.onboarding_completed_at
     if (data.visibility !== undefined) updatePayload.visibility = data.visibility
 
     const { data: updated, error } = await supabase.rpc('fn_lensers_update_profile', {
@@ -443,7 +453,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     return paginatedResponse(
       items,
       { limit, offset, hasNextPage: rows.length >= limit },
-      { durationMs: Date.now() - start },
+      { durationMs: Date.now() - start }
     )
   }
 
@@ -461,7 +471,10 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
 
   // ── Phase 4: Leaderboard ───────────────────────────────────────────────────
 
-  async getLeaderboard(period: FollowPeriod = 'all_time', limit = 20): Promise<LeaderboardLenser[]> {
+  async getLeaderboard(
+    period: FollowPeriod = 'all_time',
+    limit = 20
+  ): Promise<LeaderboardLenser[]> {
     const { data, error } = await supabase.rpc('fn_lensers_get_leaderboard', {
       p_period: period,
       p_limit: limit,
@@ -473,7 +486,11 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     }))
   }
 
-  async listLensers({ type, limit = 20, offset = 0 }: { type?: LenserType; limit?: number; offset?: number } = {}): Promise<LenserListItem[]> {
+  async listLensers({
+    type,
+    limit = 20,
+    offset = 0,
+  }: { type?: LenserType; limit?: number; offset?: number } = {}): Promise<LenserListItem[]> {
     const { data, error } = await supabase.rpc('fn_lensers_list', {
       p_type: type ?? null,
       p_limit: limit,

@@ -29,9 +29,7 @@ export interface ProviderTokenResult {
 export class ProviderNotConnectedError extends Error {
   readonly code = 'not_connected'
   constructor() {
-    super(
-      'No Chainabit account connected — connect your Chainabit account to use this capability',
-    )
+    super('No Chainabit account connected — connect your Chainabit account to use this capability')
     this.name = 'ProviderNotConnectedError'
   }
 }
@@ -55,8 +53,7 @@ export class CapabilityDeniedError extends Error {
   readonly code = 'insufficient_scope'
   constructor(required: string[], granted: string[]) {
     super(
-      `Required scopes [${required.join(', ')}] not granted. ` +
-        `Granted: [${granted.join(', ')}]`,
+      `Required scopes [${required.join(', ')}] not granted. ` + `Granted: [${granted.join(', ')}]`
     )
     this.name = 'CapabilityDeniedError'
   }
@@ -81,7 +78,7 @@ export class CapabilityDeniedError extends Error {
  */
 export async function resolveChainabitToken(
   userId: string,
-  adminClient: ReturnType<typeof createClient>,
+  adminClient: ReturnType<typeof createClient>
 ): Promise<ProviderTokenResult> {
   const { data, error } = await adminClient.auth.admin.getUserById(userId)
   if (error || !data?.user) {

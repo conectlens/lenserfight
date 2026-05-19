@@ -169,48 +169,63 @@ function renderNodeIcon(iconKey: string): React.ReactNode {
 
 /** Visibility-based border + background styles (overridden by selected state). */
 const VISIBILITY_BORDER: Record<string, string> = {
-  private:  'border-status-red/40 bg-status-red/5 dark:bg-status-red/10',
+  private: 'border-status-red/40 bg-status-red/5 dark:bg-status-red/10',
   unlisted: 'border-greyscale-400/40 bg-greyscale-100/40 dark:bg-greyscale-800/30',
-  public:   'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600',
+  public: 'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600',
 }
 
 const VISIBILITY_ICONS: Record<string, React.ReactNode> = {
-  private:  <Lock   size={9} className="text-status-red/70 flex-shrink-0" />,
+  private: <Lock size={9} className="text-status-red/70 flex-shrink-0" />,
   unlisted: <EyeOff size={9} className="text-greyscale-400 flex-shrink-0" />,
 }
 
 export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
   const nodeData = data as WorkflowNodeData
   const {
-    label, ordinal, isPersisted, lens_id, lensVisibility, isLensOwner,
-    onRemove, onDuplicate, onConfigNode, onEditLens, config,
-    executionStatus, executionWarning, isConfiguring,
+    label,
+    ordinal,
+    isPersisted,
+    lens_id,
+    lensVisibility,
+    isLensOwner,
+    onRemove,
+    onDuplicate,
+    onConfigNode,
+    onEditLens,
+    config,
+    executionStatus,
+    executionWarning,
+    isConfiguring,
   } = nodeData
 
   const categoryMeta = getNodeCategoryMeta(config?.node_type ?? config?.nodeType)
   const visibilityIcon = lensVisibility ? (VISIBILITY_ICONS[lensVisibility] ?? null) : null
   const visibilityBorder = categoryMeta
     ? categoryMeta.accent
-    : VISIBILITY_BORDER[lensVisibility ?? 'public'] ?? VISIBILITY_BORDER['public']
+    : (VISIBILITY_BORDER[lensVisibility ?? 'public'] ?? VISIBILITY_BORDER['public'])
 
   const isUtilityNode = !!categoryMeta
 
   // Visual priority: ReactFlow selection > configuring > execution ring > category border.
   // Execution ring layers outside the border via ring-* so both are visible simultaneously.
-  const executionRing = selected || isConfiguring ? '' : getNodeExecutionRingClassName(executionStatus ?? null)
+  const executionRing =
+    selected || isConfiguring ? '' : getNodeExecutionRingClassName(executionStatus ?? null)
 
   // Show badge for any non-null, non-pending status.
   const showBadge = !!executionStatus && executionStatus !== 'pending'
 
   // Configuring border/bg — indigo to distinguish from yellow (selection/running) and
   // green/red (terminal statuses). Kept subtle so it does not fight the category accent.
-  const configuringClasses = isConfiguring && !selected
-    ? 'border-indigo-400/70 bg-indigo-500/5 ring-2 ring-indigo-400/30'
-    : ''
+  const configuringClasses =
+    isConfiguring && !selected
+      ? 'border-indigo-400/70 bg-indigo-500/5 ring-2 ring-indigo-400/30'
+      : ''
 
   return (
     <div
-      onDoubleClick={() => { if (onConfigNode && (lens_id || isUtilityNode)) onConfigNode(id, lens_id ?? '__utility') }}
+      onDoubleClick={() => {
+        if (onConfigNode && (lens_id || isUtilityNode)) onConfigNode(id, lens_id ?? '__utility')
+      }}
       aria-label={`${label}${executionStatus ? `, status: ${executionStatus}` : ''}${isConfiguring ? ', configuring' : ''}`}
       data-execution-status={executionStatus ?? undefined}
       data-configuring={isConfiguring ? 'true' : undefined}
@@ -231,9 +246,11 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
 
       {/* Category icon or ordinal badge */}
       {categoryMeta ? (
-        <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${
-          CATEGORY_BADGE[categoryMeta.category]
-        } border border-surface-border transition-colors`}>
+        <span
+          className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${
+            CATEGORY_BADGE[categoryMeta.category]
+          } border border-surface-border transition-colors`}
+        >
           {categoryMeta.icon}
         </span>
       ) : (
@@ -259,7 +276,9 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
         nodeType={config?.node_type ?? config?.nodeType}
         onConfigure={() => onConfigNode?.(id, lens_id ?? '__utility')}
         onDuplicate={() => onDuplicate?.(id)}
-        onEditLens={() => { if (lens_id) onEditLens?.(lens_id) }}
+        onEditLens={() => {
+          if (lens_id) onEditLens?.(lens_id)
+        }}
         onDelete={() => onRemove?.(id)}
       />
 

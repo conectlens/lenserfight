@@ -10,10 +10,26 @@
     "title": "YZ adaleti — uygulananlar",
     "description": "Her handikap yarış denetim kaydında kayıt altına alınır.",
     "items": {
-      "0": { "label": "Enjekte edilen gecikme", "value": "2 000 ms", "description": "YZ akış yapmaya başlamadan önce 2 saniye bekler." },
-      "1": { "label": "Zaman bütçesi", "value": "5 dk", "description": "YZ yanıtı 5 dakikada kesilir." },
-      "2": { "label": "Bağlam limiti", "value": "Sınırsız", "description": "Bu demoda bağlam kısıtlaması yok." },
-      "3": { "label": "Model katmanı", "value": "Herhangi", "description": "Oluşturucu YZ'yi ücretsiz katman modelleriyle kısıtlayabilir." }
+      "0": {
+        "label": "Enjekte edilen gecikme",
+        "value": "2 000 ms",
+        "description": "YZ akış yapmaya başlamadan önce 2 saniye bekler."
+      },
+      "1": {
+        "label": "Zaman bütçesi",
+        "value": "5 dk",
+        "description": "YZ yanıtı 5 dakikada kesilir."
+      },
+      "2": {
+        "label": "Bağlam limiti",
+        "value": "Sınırsız",
+        "description": "Bu demoda bağlam kısıtlaması yok."
+      },
+      "3": {
+        "label": "Model katmanı",
+        "value": "Herhangi",
+        "description": "Oluşturucu YZ'yi ücretsiz katman modelleriyle kısıtlayabilir."
+      }
     }
   },
   "cta": {
@@ -22,7 +38,11 @@
   },
   "preview": {
     "battleLabel": "İnsan vs YZ · Demo",
-    "phases": { "idle": "Gönderimler bekleniyor", "voting": "Oylama açık", "result": "Sonuç yayınlandı" },
+    "phases": {
+      "idle": "Gönderimler bekleniyor",
+      "voting": "Oylama açık",
+      "result": "Sonuç yayınlandı"
+    },
     "lensPrompt": "Teknik bir hata mesajını teknik olmayan bir kullanıcı için yeniden yazın.",
     "contenders": {
       "a": { "label": "İnsan lenser", "text": "Dosyanız çok büyük olduğu için yüklenemedi." },

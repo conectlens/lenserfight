@@ -12,31 +12,24 @@ export interface TooltipProps {
   zIndex?: number | string
 }
 
-const positionClasses: Record<
-  TooltipPosition,
-  { container: string; arrow: string }
-> = {
+const positionClasses: Record<TooltipPosition, { container: string; arrow: string }> = {
   top: {
-    container:
-      'bottom-full left-1/2 mb-2.5 -translate-x-1/2',
+    container: 'bottom-full left-1/2 mb-2.5 -translate-x-1/2',
     arrow:
       'left-1/2 top-full -translate-x-1/2 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-white dark:border-t-greyscale-900',
   },
   bottom: {
-    container:
-      'top-full left-1/2 mt-2.5 -translate-x-1/2',
+    container: 'top-full left-1/2 mt-2.5 -translate-x-1/2',
     arrow:
       'left-1/2 bottom-full -translate-x-1/2 border-l-[5px] border-r-[5px] border-b-[5px] border-l-transparent border-r-transparent border-b-white dark:border-b-greyscale-900',
   },
   left: {
-    container:
-      'right-full top-1/2 mr-2.5 -translate-y-1/2',
+    container: 'right-full top-1/2 mr-2.5 -translate-y-1/2',
     arrow:
       'left-full top-1/2 -translate-y-1/2 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white dark:border-l-greyscale-900',
   },
   right: {
-    container:
-      'left-full top-1/2 ml-2.5 -translate-y-1/2',
+    container: 'left-full top-1/2 ml-2.5 -translate-y-1/2',
     arrow:
       'right-full top-1/2 -translate-y-1/2 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white dark:border-r-greyscale-900',
   },

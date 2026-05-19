@@ -1,6 +1,6 @@
 ---
-title: "BYOK Cloud Battles — Concept & Tutorial"
-description: "Understand what BYOK execution is, why it exists, how CLI tokens reach the web arena, and run a cloud battle with your own API keys."
+title: 'BYOK Cloud Battles — Concept & Tutorial'
+description: 'Understand what BYOK execution is, why it exists, how CLI tokens reach the web arena, and run a cloud battle with your own API keys.'
 ---
 
 # BYOK Cloud Battles — Concept & Tutorial
@@ -10,6 +10,7 @@ description: "Understand what BYOK execution is, why it exists, how CLI tokens r
 **Time:** ~10 minutes  
 **Level:** Intermediate  
 **Prerequisites:**
+
 - `lf auth login` completed
 - An API key for at least one provider (e.g. `ANTHROPIC_API_KEY`)
 - A battle in `open` status (or follow Step 1 to create one)
@@ -23,6 +24,7 @@ description: "Understand what BYOK execution is, why it exists, how CLI tokens r
 With `--byok`, your local machine calls the AI providers directly using your own API key. The platform never sees your key — only a UUID reference to an encrypted copy you choose to store in your profile (optional). You pay your provider's rates directly, and LenserFight charges zero credits.
 
 This gives you three things:
+
 - **Cost control** — you decide what you pay and to whom
 - **Model freedom** — use any model your provider offers, even ones not in the platform catalog
 - **Execution control** — your machine runs the battle; you can watch every token in real time
@@ -85,10 +87,10 @@ For most production community battles, letting the platform handle execution is 
 
 ## Credit comparison
 
-| Execution mode | LenserFight credits | Your provider account |
-|---|---|---|
-| `lf battle exec <id>` (default) | Charged | Not charged |
-| `lf battle exec <id> --byok` | **$0** | Charged at your provider's rates |
+| Execution mode                  | LenserFight credits | Your provider account            |
+| ------------------------------- | ------------------- | -------------------------------- |
+| `lf battle exec <id>` (default) | Charged             | Not charged                      |
+| `lf battle exec <id> --byok`    | **$0**              | Charged at your provider's rates |
 
 ---
 
@@ -182,6 +184,7 @@ Share the URL and let the community vote. Results finalize when voting closes.
 ## Advanced options
 
 **Override models per slot:**
+
 ```bash
 lf battle exec <id> --byok \
   --provider-a openai --model-a gpt-4o \
@@ -189,11 +192,13 @@ lf battle exec <id> --byok \
 ```
 
 **Run only one slot** (useful when the other slot is human):
+
 ```bash
 lf battle exec <id> --byok --slot A
 ```
 
 **Use a stored encrypted key** (instead of env var):
+
 ```bash
 lf battle exec <id> --byok --key-ref <byok-key-ref-id>
 ```
@@ -203,15 +208,19 @@ lf battle exec <id> --byok --key-ref <byok-key-ref-id>
 ## Troubleshooting
 
 **Key not found:**
+
 ```
 Error: No API key found for provider 'anthropic'. Set the ANTHROPIC_API_KEY environment variable.
 ```
+
 → Export the variable in your current shell: `export ANTHROPIC_API_KEY=sk-ant-...`
 
 **Battle not in open status:**
+
 ```
 Error: Battle must be in 'open' status to execute.
 ```
+
 → Run `lf battle open <id>` first, or check the current status with `lf battle view <id>`.
 
 **Web UI not showing tokens:**

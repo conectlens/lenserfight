@@ -67,12 +67,12 @@ Tercih teknolojileri dil, tema, arayüz durumu, kapatılmış bildirimler ve rı
 
 ## 4. Çerez Süresi
 
-| Tür | Amaç | Tipik Süre |
-|-----|------|------------|
-| Oturum | giriş, CSRF koruması, güvenlik durumu | tarayıcı oturumu bitene veya çıkış yapılana kadar |
-| Kalıcı tercih | dil, tema, rıza, arayüz durumu | 1 yıla kadar |
-| Analitik | toplulaştırılmış ürün ve dokümantasyon kullanımı | sağlayıcı ayarları ve rızaya bağlı olarak 13 aya kadar |
-| Güvenlik logları | kötüye kullanım önleme ve olay inceleme | Gizlilik Politikası'na göre saklanır |
+| Tür              | Amaç                                             | Tipik Süre                                             |
+| ---------------- | ------------------------------------------------ | ------------------------------------------------------ |
+| Oturum           | giriş, CSRF koruması, güvenlik durumu            | tarayıcı oturumu bitene veya çıkış yapılana kadar      |
+| Kalıcı tercih    | dil, tema, rıza, arayüz durumu                   | 1 yıla kadar                                           |
+| Analitik         | toplulaştırılmış ürün ve dokümantasyon kullanımı | sağlayıcı ayarları ve rızaya bağlı olarak 13 aya kadar |
+| Güvenlik logları | kötüye kullanım önleme ve olay inceleme          | Gizlilik Politikası'na göre saklanır                   |
 
 Belirli sağlayıcılar kendi politikaları kapsamında farklı saklama kuralları uygulayabilir.
 

@@ -97,16 +97,13 @@ export const MediaShowcase: React.FC<MediaShowcaseProps> = ({
 
   const resolvedItems = useMemo(
     () => items.map((item) => ({ ...item, kind: inferKind(item.src, item.kind) })),
-    [items],
+    [items]
   )
 
   return (
     <div
       ref={targetRef}
-      className={[
-        'relative ml-[calc(50%_-_50vw)] w-screen',
-        className,
-      ].filter(Boolean).join(' ')}
+      className={['relative ml-[calc(50%_-_50vw)] w-screen', className].filter(Boolean).join(' ')}
       style={{ height: `${heightVh}vh` }}
     >
       <div
@@ -117,19 +114,39 @@ export const MediaShowcase: React.FC<MediaShowcaseProps> = ({
         ].join(' ')}
       >
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className={['absolute -left-[10%] -top-[20%] h-[50%] w-[50%] rounded-full blur-[120px]', isLight ? 'bg-primary-yellow-500/8' : 'bg-primary-yellow-500/5'].join(' ')} />
-          <div className={['absolute -right-[10%] -bottom-[20%] h-[50%] w-[50%] rounded-full blur-[120px]', isLight ? 'bg-primary-yellow-500/8' : 'bg-primary-yellow-500/5'].join(' ')} />
+          <div
+            className={[
+              'absolute -left-[10%] -top-[20%] h-[50%] w-[50%] rounded-full blur-[120px]',
+              isLight ? 'bg-primary-yellow-500/8' : 'bg-primary-yellow-500/5',
+            ].join(' ')}
+          />
+          <div
+            className={[
+              'absolute -right-[10%] -bottom-[20%] h-[50%] w-[50%] rounded-full blur-[120px]',
+              isLight ? 'bg-primary-yellow-500/8' : 'bg-primary-yellow-500/5',
+            ].join(' ')}
+          />
         </div>
 
         <motion.div
           style={{ opacity }}
           className="absolute left-8 top-12 z-10 sm:left-16 lg:left-24"
         >
-          <div className={['mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em]', isLight ? 'text-primary-yellow-600/70' : 'text-primary-yellow-500/60'].join(' ')}>
+          <div
+            className={[
+              'mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em]',
+              isLight ? 'text-primary-yellow-600/70' : 'text-primary-yellow-500/60',
+            ].join(' ')}
+          >
             <Film size={14} />
             <span>{labels.headerTag}</span>
           </div>
-          <h2 className={['text-3xl font-black tracking-tighter sm:text-4xl', isLight ? 'text-greyscale-900' : 'text-white'].join(' ')}>
+          <h2
+            className={[
+              'text-3xl font-black tracking-tighter sm:text-4xl',
+              isLight ? 'text-greyscale-900' : 'text-white',
+            ].join(' ')}
+          >
             {labels.headerTitle}
           </h2>
         </motion.div>
@@ -152,19 +169,34 @@ export const MediaShowcase: React.FC<MediaShowcaseProps> = ({
           <div className="flex h-[62vh] w-[24vw] shrink-0 items-center justify-center opacity-20 sm:h-[65vh] lg:h-[70vh] lg:w-[20vw]">
             <div className="flex flex-col items-center gap-4">
               <div className="h-px w-24 bg-primary-yellow-500" />
-              <span className={['text-xs font-black uppercase tracking-[0.5em]', isLight ? 'text-primary-yellow-600' : 'text-primary-yellow-500'].join(' ')}>
+              <span
+                className={[
+                  'text-xs font-black uppercase tracking-[0.5em]',
+                  isLight ? 'text-primary-yellow-600' : 'text-primary-yellow-500',
+                ].join(' ')}
+              >
                 {labels.end}
               </span>
             </div>
           </div>
         </motion.div>
 
-        <div className={['absolute bottom-12 left-8 right-8 h-px sm:left-16 sm:right-16 lg:left-24 lg:right-24', isLight ? 'bg-greyscale-200' : 'bg-greyscale-800'].join(' ')}>
+        <div
+          className={[
+            'absolute bottom-12 left-8 right-8 h-px sm:left-16 sm:right-16 lg:left-24 lg:right-24',
+            isLight ? 'bg-greyscale-200' : 'bg-greyscale-800',
+          ].join(' ')}
+        >
           <motion.div
             className="h-full origin-left bg-primary-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]"
             style={{ scaleX: scrollYProgress }}
           />
-          <div className={['absolute left-0 top-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest', isLight ? 'text-greyscale-400' : 'text-greyscale-500'].join(' ')}>
+          <div
+            className={[
+              'absolute left-0 top-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest',
+              isLight ? 'text-greyscale-400' : 'text-greyscale-500',
+            ].join(' ')}
+          >
             <Sparkles size={12} className="text-primary-yellow-500" />
             <span>{labels.scrollHint}</span>
           </div>
@@ -181,7 +213,12 @@ interface MediaShowcaseCardProps {
   readonly isLight: boolean
 }
 
-const MediaShowcaseCard: React.FC<MediaShowcaseCardProps> = ({ index, item, chapterLabel, isLight }) => {
+const MediaShowcaseCard: React.FC<MediaShowcaseCardProps> = ({
+  index,
+  item,
+  chapterLabel,
+  isLight,
+}) => {
   return (
     <div
       className={[
@@ -236,10 +273,20 @@ const MediaShowcaseCard: React.FC<MediaShowcaseCardProps> = ({ index, item, chap
           </Badge>
 
           <div className="space-y-4">
-            <h3 className={['text-4xl font-black tracking-tighter sm:text-5xl lg:text-7xl', isLight ? 'text-greyscale-900' : 'text-white'].join(' ')}>
+            <h3
+              className={[
+                'text-4xl font-black tracking-tighter sm:text-5xl lg:text-7xl',
+                isLight ? 'text-greyscale-900' : 'text-white',
+              ].join(' ')}
+            >
               {item.title}
             </h3>
-            <p className={['max-w-lg text-lg leading-relaxed sm:text-xl', isLight ? 'text-greyscale-700/90' : 'text-greyscale-300/80'].join(' ')}>
+            <p
+              className={[
+                'max-w-lg text-lg leading-relaxed sm:text-xl',
+                isLight ? 'text-greyscale-700/90' : 'text-greyscale-300/80',
+              ].join(' ')}
+            >
               {item.description}
             </p>
           </div>

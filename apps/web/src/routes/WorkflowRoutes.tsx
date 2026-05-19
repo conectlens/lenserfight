@@ -8,19 +8,29 @@ const LazyWorkflowsPage = lazy(() =>
   import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowsPage }))
 )
 const LazyWorkflowBuilderPage = lazy(() =>
-  import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowBuilderPage }))
+  import('@lenserfight/features/workflows').then((module) => ({
+    default: module.WorkflowBuilderPage,
+  }))
 )
 const LazyWorkflowTemplateGalleryPage = lazy(() =>
-  import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowTemplateGalleryPage }))
+  import('@lenserfight/features/workflows').then((module) => ({
+    default: module.WorkflowTemplateGalleryPage,
+  }))
 )
 const LazyCreateWorkflowWizard = lazy(() =>
-  import('@lenserfight/features/workflows').then((module) => ({ default: module.CreateWorkflowWizard }))
+  import('@lenserfight/features/workflows').then((module) => ({
+    default: module.CreateWorkflowWizard,
+  }))
 )
 const LazyWorkflowRunMediaPage = lazy(() =>
-  import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowRunMediaPage }))
+  import('@lenserfight/features/workflows').then((module) => ({
+    default: module.WorkflowRunMediaPage,
+  }))
 )
 const LazyWorkflowExecutionDetailPage = lazy(() =>
-  import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowExecutionDetailPage }))
+  import('@lenserfight/features/workflows').then((module) => ({
+    default: module.WorkflowExecutionDetailPage,
+  }))
 )
 
 const WorkflowsPageRoute: React.FC = () => {
@@ -59,62 +69,62 @@ const CreateWorkflowModal: React.FC = () => {
 
 export function WorkflowRoutes(): React.ReactElement {
   return (
-  <>
-    <Route
-      path="/workflows"
-      element={
-        <DashboardFrame>
-          <WorkflowsPageRoute />
-        </DashboardFrame>
-      }
-    >
-      <Route path="manage" element={<CreateWorkflowModal />} />
-    </Route>
+    <>
+      <Route
+        path="/workflows"
+        element={
+          <DashboardFrame>
+            <WorkflowsPageRoute />
+          </DashboardFrame>
+        }
+      >
+        <Route path="manage" element={<CreateWorkflowModal />} />
+      </Route>
 
-    <Route
-      path="/workflows/templates"
-      element={
-        <DashboardFrame>
-          <LazyWorkflowTemplateGalleryPage />
-        </DashboardFrame>
-      }
-    />
+      <Route
+        path="/workflows/templates"
+        element={
+          <DashboardFrame>
+            <LazyWorkflowTemplateGalleryPage />
+          </DashboardFrame>
+        }
+      />
 
-    <Route
-      path="/workflows/:id"
-      element={
-        <DashboardFrame fullscreen>
-          <WorkflowBuilderPageRoute />
-        </DashboardFrame>
-      }
-    />
+      <Route
+        path="/workflows/:id"
+        element={
+          <DashboardFrame fullscreen>
+            <WorkflowBuilderPageRoute />
+          </DashboardFrame>
+        }
+      />
 
-    <Route
-      path="/workflows/:id/run/:runId"
-      element={
-        <DashboardFrame fullscreen>
-          <WorkflowBuilderPageRoute />
-        </DashboardFrame>
-      }
-    />
+      <Route
+        path="/workflows/:id/run/:runId"
+        element={
+          <DashboardFrame fullscreen>
+            <WorkflowBuilderPageRoute />
+          </DashboardFrame>
+        }
+      />
 
-    <Route
-      path="/workflows/:workflowId/run/:runId/media"
-      element={
-        <DashboardFrame>
-          <LazyWorkflowRunMediaPage />
-        </DashboardFrame>
-      }
-    />
+      <Route
+        path="/workflows/:workflowId/run/:runId/media"
+        element={
+          <DashboardFrame>
+            <LazyWorkflowRunMediaPage />
+          </DashboardFrame>
+        }
+      />
 
-    <Route
-      path="/workflows/:id/history/executions/:execution_id"
-      element={
-        <DashboardFrame fullscreen>
-          <LazyWorkflowExecutionDetailPage />
-        </DashboardFrame>
-      }
-    />
-  </>
+      <Route
+        path="/workflows/:id/history/executions/:execution_id"
+        element={
+          <DashboardFrame fullscreen>
+            <LazyWorkflowExecutionDetailPage />
+          </DashboardFrame>
+        }
+      />
+    </>
   )
 }

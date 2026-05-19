@@ -16,9 +16,7 @@ import { WalletProvider } from './WalletContext'
 export const ChainabitWalletGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { state } = useChainabitConnection()
 
-  const hasChainabitAccount =
-    state === 'connected' ||
-    state === 'no_credits'
+  const hasChainabitAccount = state === 'connected' || state === 'no_credits'
 
   if (!hasChainabitAccount) {
     return <>{children}</>

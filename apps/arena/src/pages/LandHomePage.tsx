@@ -54,7 +54,6 @@ const viewport = { once: true, margin: '-60px' }
 const HERO_BULLET_INDICES = [0, 1, 2] as const
 const HOW_IT_WORKS_ICONS = [Swords, MessagesSquare, Star] as const
 
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export const LandHomePage: React.FC = () => {
@@ -73,7 +72,6 @@ export const LandHomePage: React.FC = () => {
         className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:px-8 lg:py-24"
       >
         <motion.div className="space-y-6" style={{ y: heroY }}>
-
           <motion.div className="space-y-4" variants={fadeUp} initial="hidden" animate="visible">
             <h1 className="max-w-3xl text-5xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-6xl lg:text-7xl">
               {t('home:hero.headline')}
@@ -104,7 +102,12 @@ export const LandHomePage: React.FC = () => {
             })}
           </motion.ul>
 
-          <motion.div variants={fadeUp} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.2 }}
+          >
             <WaitlistForm />
           </motion.div>
 
@@ -125,19 +128,28 @@ export const LandHomePage: React.FC = () => {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ ...spring, delay: 0.12 }}
         >
-          <DesktopFrame title={t('home:preview.demoTitle')} url="lenserfight.com/battles" label={t('home:preview.demoFrameLabel')}>
+          <DesktopFrame
+            title={t('home:preview.demoTitle')}
+            url="lenserfight.com/battles"
+            label={t('home:preview.demoFrameLabel')}
+          >
             <HeroFightPreview />
           </DesktopFrame>
         </motion.div>
       </section>
 
-
-
-
       {/* ─── 2: Battle types ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
-        <motion.div className="mb-8 space-y-2" variants={fadeLeft} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="yellow" variant="outline">{t('home:battleTypes.badge')}</Badge>
+        <motion.div
+          className="mb-8 space-y-2"
+          variants={fadeLeft}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          <Badge color="yellow" variant="outline">
+            {t('home:battleTypes.badge')}
+          </Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
             {t('home:battleTypes.title')}
           </h2>
@@ -145,16 +157,31 @@ export const LandHomePage: React.FC = () => {
             {t('home:battleTypes.subtitle')}
           </p>
         </motion.div>
-        <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={viewport}>
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
           <BattleTypesShowcase />
         </motion.div>
       </section>
 
       {/* ─── 3: How it works ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
-        <motion.div className="mb-8 space-y-2" variants={fadeRight} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="green" variant="outline">{t('home:howItWorks.badge')}</Badge>
-          <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">{t('home:howItWorks.title')}</h2>
+        <motion.div
+          className="mb-8 space-y-2"
+          variants={fadeRight}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          <Badge color="green" variant="outline">
+            {t('home:howItWorks.badge')}
+          </Badge>
+          <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            {t('home:howItWorks.title')}
+          </h2>
         </motion.div>
         <motion.div
           className="relative grid gap-5 md:grid-cols-3"
@@ -175,10 +202,16 @@ export const LandHomePage: React.FC = () => {
                     <div className="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-yellow-500 text-greyscale-900">
                       <Icon size={18} />
                     </div>
-                    <span className="text-xs font-black tracking-widest text-greyscale-400">{step}</span>
+                    <span className="text-xs font-black tracking-widest text-greyscale-400">
+                      {step}
+                    </span>
                   </div>
-                  <h3 className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">{title}</h3>
-                  <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">{description}</p>
+                  <h3 className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">
+                    {title}
+                  </h3>
+                  <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
+                    {description}
+                  </p>
                 </Card>
               </motion.div>
             )
@@ -191,7 +224,6 @@ export const LandHomePage: React.FC = () => {
         <ArenaPulseSection />
       </section>
 
-
       {/* ─── 3.2: Platform Tour ─────────────────────────────────────── */}
       <section className="w-full pb-16 lg:pb-20">
         <motion.div
@@ -201,12 +233,18 @@ export const LandHomePage: React.FC = () => {
           whileInView="visible"
           viewport={viewport}
         >
-          <Badge color="yellow" variant="outline">{t('home:homeTour.tag')}</Badge>
+          <Badge color="yellow" variant="outline">
+            {t('home:homeTour.tag')}
+          </Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
             {t('home:homeTour.title')}
           </h2>
         </motion.div>
-        <React.Suspense fallback={<div className="mx-auto h-[400px] max-w-6xl animate-pulse rounded-[2.5rem] bg-surface-raised" />}>
+        <React.Suspense
+          fallback={
+            <div className="mx-auto h-[400px] max-w-6xl animate-pulse rounded-[2.5rem] bg-surface-raised" />
+          }
+        >
           <HomeTour />
         </React.Suspense>
       </section>
@@ -223,8 +261,16 @@ export const LandHomePage: React.FC = () => {
 
       {/* ─── 4: Gamification ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
-        <motion.div className="mb-8 space-y-2" variants={fadeLeft} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="yellow" variant="outline">{t('home:gamification.badge')}</Badge>
+        <motion.div
+          className="mb-8 space-y-2"
+          variants={fadeLeft}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          <Badge color="yellow" variant="outline">
+            {t('home:gamification.badge')}
+          </Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
             {t('home:gamification.title')}
           </h2>
@@ -257,7 +303,9 @@ export const LandHomePage: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Shield size={18} className="text-[var(--cl-yellow-500)]" />
-                <Badge color="yellow" variant="outline">{t('home:fairness.badge')}</Badge>
+                <Badge color="yellow" variant="outline">
+                  {t('home:fairness.badge')}
+                </Badge>
               </div>
               <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
                 {t('home:fairness.title')}
@@ -339,7 +387,10 @@ export const LandHomePage: React.FC = () => {
             <motion.a
               href={`${ARENA_APP_URL}/battles/create`}
               variants={cardVariant}
-              whileHover={{ scale: 1.05, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+              whileHover={{
+                scale: 1.05,
+                transition: { type: 'spring', stiffness: 400, damping: 20 },
+              }}
               whileTap={{ scale: 0.98 }}
               className="inline-flex items-center gap-2 rounded-full bg-primary-yellow-500 px-8 py-3.5 text-sm font-bold text-greyscale-900 shadow-lg shadow-primary-yellow-500/20 transition-all hover:bg-primary-yellow-400"
             >
@@ -348,7 +399,10 @@ export const LandHomePage: React.FC = () => {
             <motion.a
               href={`${ARENA_APP_URL}/battles`}
               variants={cardVariant}
-              whileHover={{ scale: 1.05, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+              whileHover={{
+                scale: 1.05,
+                transition: { type: 'spring', stiffness: 400, damping: 20 },
+              }}
               whileTap={{ scale: 0.98 }}
               className="inline-flex items-center gap-2 rounded-full border-2 border-greyscale-200 dark:border-greyscale-700 bg-transparent px-8 py-3 text-sm font-bold text-greyscale-700 dark:text-greyscale-300 transition-all hover:border-primary-yellow-500 hover:text-greyscale-950 dark:hover:border-greyscale-400 dark:hover:text-greyscale-0"
             >
@@ -357,7 +411,6 @@ export const LandHomePage: React.FC = () => {
           </motion.div>
         </motion.div>
       </section>
-
     </div>
   )
 }

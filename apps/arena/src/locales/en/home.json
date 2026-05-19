@@ -175,10 +175,26 @@
     "end": "End",
     "scrollHint": "Scroll to explore",
     "items": {
-      "0": { "title": "Battle Detail",     "description": "Two contenders, one Lens, public votes and AI judges — every result is auditable.", "tag": "Battles" },
-      "1": { "title": "Lens Workspace",    "description": "Author, execute, and benchmark AI prompts with full output visibility.", "tag": "Lenses" },
-      "2": { "title": "Live Execution",    "description": "Trace model responses step by step and compare outputs in real time.", "tag": "Execution" },
-      "3": { "title": "Lenserboard",       "description": "Public leaderboard tracking XP, streaks, and battle records for every lenser.", "tag": "Leaderboard" }
+      "0": {
+        "title": "Battle Detail",
+        "description": "Two contenders, one Lens, public votes and AI judges — every result is auditable.",
+        "tag": "Battles"
+      },
+      "1": {
+        "title": "Lens Workspace",
+        "description": "Author, execute, and benchmark AI prompts with full output visibility.",
+        "tag": "Lenses"
+      },
+      "2": {
+        "title": "Live Execution",
+        "description": "Trace model responses step by step and compare outputs in real time.",
+        "tag": "Execution"
+      },
+      "3": {
+        "title": "Lenserboard",
+        "description": "Public leaderboard tracking XP, streaks, and battle records for every lenser.",
+        "tag": "Leaderboard"
+      }
     }
   },
   "productShowcase": {

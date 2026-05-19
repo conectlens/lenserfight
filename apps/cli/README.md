@@ -23,18 +23,49 @@ Built on [citty](https://github.com/unjs/citty) and [consola](https://github.com
 
 ## Installation
 
+Install from npm — no repo clone required:
+
 ```bash
 npm install -g @lenserfight/cli
-lenserfight --version
+lf --version
+```
 
+Try it without installing:
+
+```bash
 npx @lenserfight/cli --help
-npx lf --version
+```
 
+Or install as a dev dependency in a project:
+
+```bash
 npm install --save-dev @lenserfight/cli
 ```
 
 The package supports global installs, `npx`/`npm exec`, local project installs,
 CI runners, and Docker-style Node environments. Node `>=22` is required.
+
+## Onboarding (after npm install)
+
+```bash
+lf init                  # create .lenserfight.json (local mode by default)
+lf auth login            # browser-based login (or --email/--password for headless)
+lf doctor                # validate Node, Docker, Supabase CLI, Ollama, auth
+lf onboard               # guided first-run: auth check → profile → first battle template
+lf setup --interactive   # full journey checklist with step-by-step prompts
+```
+
+**No account needed — offline battle with Ollama:**
+
+```bash
+lf battle local run --example haiku-shootout
+```
+
+Shell completion (one-time):
+
+```bash
+lf completion --shell zsh >> ~/.zshrc   # or bash / fish
+```
 
 ## Installation (for contributors)
 
@@ -51,14 +82,6 @@ Release packaging checks:
 pnpm nx run cli:validate-package
 pnpm nx run cli:smoke-install
 ```
-
-Shell completion (one-time setup):
-
-```bash
-lf completion --shell zsh >> ~/.zshrc
-```
-
-Supported shells: `zsh`, `bash`, `fish`.
 
 ---
 
@@ -84,16 +107,6 @@ lf init --mode cloud  # cloud mode
 ```
 
 ---
-
-## Getting Started
-
-```bash
-lf init                          # create .lenserfight.json (local mode)
-lf auth login                    # browser-based login
-lf doctor                        # validate Node, Docker, Supabase CLI, auth
-lf dev                           # start local Supabase + migrate + seed
-lf status                        # confirm everything is green
-```
 
 ---
 

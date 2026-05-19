@@ -26,7 +26,9 @@ export function stripLocale(pathname: string): string {
 
 export function withLocale(pathname: string, locale: LocaleCode): string {
   const stripped = stripLocale(pathname)
-  if (stripped === '/' || stripped === '') return `/${locale}`
+  if (stripped === '/' || stripped === '') {
+    return locale === DEFAULT_LOCALE ? '/' : `/${locale}`
+  }
   return `/${locale}${stripped}`
 }
 

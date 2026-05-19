@@ -21,11 +21,7 @@ import { useTranslation } from 'react-i18next'
 import { Outlet, useLocation } from 'react-router-dom'
 import { CHAINABIT_APP_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
 import { stripLocale } from '@lenserfight/utils/locale'
-import {
-  LanguageSwitcher,
-  LocaleLink as Link,
-  useLocale,
-} from '@lenserfight/shared/i18n-routing'
+import { LanguageSwitcher, LocaleLink as Link, useLocale } from '@lenserfight/shared/i18n-routing'
 import { LocaleLanguageSelect } from '@lenserfight/ui/forms'
 import { globalAnalyticsController } from '@lenserfight/infra/analytics'
 
@@ -36,7 +32,10 @@ function trackCta(label: string, location = 'arena_header') {
   globalAnalyticsController.trackEvent({ name: 'cta_click', properties: { label, location } })
 }
 function trackExternal(label: string, href: string, location = 'arena_header') {
-  globalAnalyticsController.trackEvent({ name: 'external_link_click', properties: { label, href, location } })
+  globalAnalyticsController.trackEvent({
+    name: 'external_link_click',
+    properties: { label, href, location },
+  })
 }
 
 import { chainabitContactUrl } from '../utils/chainabitUrls'
@@ -121,10 +120,11 @@ export const LandLayout: React.FC = () => {
               onMouseLeave={() => setProductOpen(false)}
             >
               <button
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${isProductActive
-                  ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-0'
-                  : 'text-greyscale-500 hover:bg-surface-raised hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0'
-                  }`}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isProductActive
+                    ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-0'
+                    : 'text-greyscale-500 hover:bg-surface-raised hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0'
+                }`}
                 aria-haspopup="true"
                 aria-expanded={productOpen}
               >
@@ -147,8 +147,9 @@ export const LandLayout: React.FC = () => {
                         <Link
                           key={to}
                           to={to}
-                          className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-raised ${isActive(to) ? 'bg-surface-raised' : ''
-                            }`}
+                          className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-raised ${
+                            isActive(to) ? 'bg-surface-raised' : ''
+                          }`}
                           onClick={() => setProductOpen(false)}
                         >
                           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
@@ -185,10 +186,11 @@ export const LandLayout: React.FC = () => {
               onMouseLeave={() => setStoryOpen(false)}
             >
               <button
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${isStoryActive
-                  ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-0'
-                  : 'text-greyscale-500 hover:bg-surface-raised hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0'
-                  }`}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isStoryActive
+                    ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-0'
+                    : 'text-greyscale-500 hover:bg-surface-raised hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0'
+                }`}
                 aria-haspopup="true"
                 aria-expanded={storyOpen}
               >
@@ -209,8 +211,9 @@ export const LandLayout: React.FC = () => {
                         <Link
                           key={to}
                           to={to}
-                          className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-raised ${isActive(to) ? 'bg-surface-raised' : ''
-                            }`}
+                          className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-raised ${
+                            isActive(to) ? 'bg-surface-raised' : ''
+                          }`}
                           onClick={() => setStoryOpen(false)}
                         >
                           <div className="min-w-0 flex-1">
@@ -283,13 +286,21 @@ export const LandLayout: React.FC = () => {
               onClick={() => trackExternal('Chainabit', CHAINABIT_APP_URL)}
               className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-80"
             >
-              <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={20} height={20} alt={t('common:labels.chainabit')} className="rounded" />
+              <img
+                src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+                width={20}
+                height={20}
+                alt={t('common:labels.chainabit')}
+                className="rounded"
+              />
             </a>
             <div className="mx-1 h-4 w-px bg-surface-border" />
             <ArenaHeaderLocaleSelect />
             <div className="mx-1 h-4 w-px bg-surface-border" />
             <Link to="/get-started" onClick={() => trackCta('Get Started', 'arena_header')}>
-              <Button variant="ghost" size="sm">{t('common:cta.getStarted')}</Button>
+              <Button variant="ghost" size="sm">
+                {t('common:cta.getStarted')}
+              </Button>
             </Link>
             <Link to="/battles" onClick={() => trackCta('Try Arena', 'arena_header')}>
               <Button variant="primary" size="sm">
@@ -335,7 +346,10 @@ export const LandLayout: React.FC = () => {
                       <Link
                         key={to}
                         to={to}
-                        onClick={() => { setMobileOpen(false); setMobileProductOpen(false) }}
+                        onClick={() => {
+                          setMobileOpen(false)
+                          setMobileProductOpen(false)
+                        }}
                         className="flex items-center gap-2 py-1.5 text-sm text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
                       >
                         <Icon size={14} className="shrink-0" />
@@ -372,7 +386,11 @@ export const LandLayout: React.FC = () => {
                       <Link
                         key={to}
                         to={to}
-                        onClick={() => { setMobileOpen(false); setMobileStoryOpen(false); trackNav(label, 'arena_header_mobile') }}
+                        onClick={() => {
+                          setMobileOpen(false)
+                          setMobileStoryOpen(false)
+                          trackNav(label, 'arena_header_mobile')
+                        }}
                         className="flex items-center py-1.5 text-sm text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
                       >
                         {label}
@@ -386,10 +404,14 @@ export const LandLayout: React.FC = () => {
               href={`${DOCS_BASE_URL}/tutorials/getting-started/overview?utm_source=lenserfight&utm_medium=arena_header_mobile&utm_campaign=arena_docs_link`}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => { setMobileOpen(false); trackExternal('Docs', DOCS_BASE_URL, 'arena_header_mobile') }}
+              onClick={() => {
+                setMobileOpen(false)
+                trackExternal('Docs', DOCS_BASE_URL, 'arena_header_mobile')
+              }}
               className="flex items-center gap-1.5 py-2 text-sm font-medium text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
             >
-              <BookOpen size={14} /> {t('common:labels.docs')} <ExternalLink size={11} aria-label={t('common:labels.externalLink')} />
+              <BookOpen size={14} /> {t('common:labels.docs')}{' '}
+              <ExternalLink size={11} aria-label={t('common:labels.externalLink')} />
             </a>
             <a
               href={chainabitContactUrl({
@@ -399,10 +421,14 @@ export const LandLayout: React.FC = () => {
               })}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => { setMobileOpen(false); trackExternal('Contact', contactUrl, 'arena_header_mobile') }}
+              onClick={() => {
+                setMobileOpen(false)
+                trackExternal('Contact', contactUrl, 'arena_header_mobile')
+              }}
               className="flex items-center gap-1.5 py-2 text-sm font-medium text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
             >
-              {t('common:labels.contact')} <ExternalLink size={11} aria-label={t('common:labels.externalLink')} />
+              {t('common:labels.contact')}{' '}
+              <ExternalLink size={11} aria-label={t('common:labels.externalLink')} />
             </a>
             <div className="flex items-center gap-3 py-1">
               <a
@@ -419,7 +445,10 @@ export const LandLayout: React.FC = () => {
                 href={`${GITHUB_SPONSORS_URL}?utm_source=lenserfight&utm_medium=arena_header_mobile&utm_campaign=sponsor_cta`}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => { setMobileOpen(false); trackCta('Sponsor', 'arena_header_mobile') }}
+                onClick={() => {
+                  setMobileOpen(false)
+                  trackCta('Sponsor', 'arena_header_mobile')
+                }}
                 className="flex h-8 items-center gap-1.5 rounded-full border border-surface-border bg-surface-raised px-2.5 text-xs font-semibold text-primary-yellow-500 transition-colors hover:border-primary-yellow-500"
               >
                 <Heart size={13} />
@@ -434,7 +463,13 @@ export const LandLayout: React.FC = () => {
                 onClick={() => trackExternal('Chainabit', CHAINABIT_APP_URL, 'arena_header_mobile')}
                 className="flex h-8 items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-2.5 text-xs font-semibold text-greyscale-700 dark:text-greyscale-300"
               >
-                <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width={18} height={18} alt="" className="rounded shrink-0" />
+                <img
+                  src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+                  width={18}
+                  height={18}
+                  alt=""
+                  className="rounded shrink-0"
+                />
                 {t('common:labels.chainabit')}
                 <ExternalLink size={11} aria-label={t('common:labels.externalLink')} />
               </a>
@@ -452,10 +487,24 @@ export const LandLayout: React.FC = () => {
               />
             </div>
             <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
-              <Link to="/get-started" onClick={() => { setMobileOpen(false); trackCta('Get Started', 'arena_header_mobile') }}>
-                <Button variant="secondary" size="md" fullWidth>{t('common:cta.getStarted')}</Button>
+              <Link
+                to="/get-started"
+                onClick={() => {
+                  setMobileOpen(false)
+                  trackCta('Get Started', 'arena_header_mobile')
+                }}
+              >
+                <Button variant="secondary" size="md" fullWidth>
+                  {t('common:cta.getStarted')}
+                </Button>
               </Link>
-              <Link to="/battles" onClick={() => { setMobileOpen(false); trackCta('Try Arena', 'arena_header_mobile') }}>
+              <Link
+                to="/battles"
+                onClick={() => {
+                  setMobileOpen(false)
+                  trackCta('Try Arena', 'arena_header_mobile')
+                }}
+              >
                 <Button variant="primary" size="md" fullWidth>
                   {t('common:cta.tryArena')} <ArrowRight size={14} />
                 </Button>
