@@ -1,5 +1,5 @@
 import { LenserPreferences } from '@lenserfight/types'
-import { supabase } from '@lenserfight/data/supabase'
+import { supabase, getCachedSession } from '@lenserfight/data/supabase'
 
 export interface PreferencesRepositoryPort {
   getPreferences(): Promise<LenserPreferences | null>
@@ -9,14 +9,13 @@ export interface PreferencesRepositoryPort {
 
 export class SupabasePreferencesRepository implements PreferencesRepositoryPort {
   /** Returns true only when the Supabase client holds a valid session JWT. */
-  private async hasSession(): Promise<boolean> {
-    const { data: { session } } = await supabase.auth.getSession()
-    return !!session
+  private hasSession(): boolean {
+    return !!getCachedSession()
   }
 
   async getPreferences(): Promise<LenserPreferences | null> {
     try {
-      if (!(await this.hasSession())) return null
+      if (!(this.hasSession())) return null
       const { data, error } = await supabase.rpc('fn_lensers_get_preferences')
       if (error) return null
       return data as LenserPreferences
@@ -27,7 +26,7 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
   }
 
   async updatePreferences(patch: Partial<LenserPreferences>): Promise<void> {
-    if (!(await this.hasSession())) return
+    if (!(this.hasSession())) return
     try {
       // Exclude read-only / identity fields before sending to RPC
       const { id: _id, lenser_id: _lid, created_at: _ca, updated_at: _ua, ...fields } = patch as Record<string, unknown>
