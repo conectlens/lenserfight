@@ -32102,16 +32102,21 @@ ALTER VIEW "public"."vw_workflows" OWNER TO "postgres";
 
 
 CREATE OR REPLACE VIEW "public"."vw_xp_leaderboard_global" AS
- WITH "ranked" AS (
-         SELECT "t"."app_id",
-            "t"."lenser_id",
-            "t"."total_xp",
-            "t"."current_level",
-            "rank"() OVER (PARTITION BY "t"."app_id" ORDER BY "t"."total_xp" DESC, "t"."lenser_id") AS "rank"
+ WITH "aggregated" AS (
+         SELECT "t"."lenser_id",
+            SUM("t"."total_xp") AS "total_xp",
+            MAX("t"."current_level") AS "current_level"
            FROM "xp"."totals" "t"
+          GROUP BY "t"."lenser_id"
+        ),
+ "ranked" AS (
+         SELECT "a"."lenser_id",
+            "a"."total_xp",
+            "a"."current_level",
+            "rank"() OVER (ORDER BY "a"."total_xp" DESC, "a"."lenser_id") AS "rank"
+           FROM "aggregated" "a"
         )
- SELECT "r"."app_id",
-    "r"."rank",
+ SELECT "r"."rank",
     "r"."lenser_id",
     "r"."total_xp",
     "r"."current_level",

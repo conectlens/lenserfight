@@ -999,6 +999,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                       runCompletedAt={liveRunState?.completed_at ?? null}
                       runStatus={liveRunState?.status ?? null}
                       onOpenFullscreen={() => navigate(`/workflows/${workflowId}/history/executions/${runId}`)}
+                      onConfigureNode={handleConfigNode}
                     />
                   )}
                 </>
@@ -1071,6 +1072,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                 runStartedAt={null}
                 runCompletedAt={null}
                 runStatus={isDryRunning ? 'running' : dryRunNodeResults.length > 0 ? 'completed' : null}
+                onConfigureNode={handleConfigNode}
               />
             </div>
           </aside>
