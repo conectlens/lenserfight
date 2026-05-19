@@ -1,4 +1,3 @@
-import { ShareProvider } from '@lenserfight/features/share'
 import { ChainabitWalletGate } from '@lenserfight/features/store'
 import { GlobalErrorRenderer } from '@lenserfight/shared/error'
 import { UIProvider } from '@lenserfight/ui/providers'
@@ -12,13 +11,11 @@ export const DashboardFrame: React.FC<{ children: React.ReactNode; fullscreen?: 
   children,
   fullscreen,
 }) => (
-  <ShareProvider>
-    <ChainabitWalletGate>
-      <UIProvider>
-        <LazyDashboardLayout fullscreen={fullscreen}>
-          <GlobalErrorRenderer>{children}</GlobalErrorRenderer>
-        </LazyDashboardLayout>
-      </UIProvider>
-    </ChainabitWalletGate>
-  </ShareProvider>
+  <ChainabitWalletGate>
+    <UIProvider>
+      <LazyDashboardLayout fullscreen={fullscreen}>
+        <GlobalErrorRenderer>{children}</GlobalErrorRenderer>
+      </LazyDashboardLayout>
+    </UIProvider>
+  </ChainabitWalletGate>
 )

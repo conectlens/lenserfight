@@ -42,6 +42,7 @@ interface LabArtifactViewerProps {
   localMediaArtifact?: LocalMediaArtifact | null
   isOwner?: boolean
   isAuthenticatedLenser?: boolean
+  onSignIn?: () => void
 }
 
 const CopyButton: React.FC<{ text: string }> = ({ text }) => {
@@ -391,6 +392,7 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
   localMediaArtifact,
   isOwner,
   isAuthenticatedLenser = false,
+  onSignIn,
 }) => {
   const [showAll, setShowAll] = useState(false)
   const isComparing = comparisonRunIds.length === 2
@@ -451,12 +453,13 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
           ) : (
             <>
               <span>Sign in or register to view execution output.</span>
-              <a
-                href="/sign-in"
+              <button
+                type="button"
+                onClick={onSignIn}
                 className="text-xs font-medium text-primary-yellow-600 hover:text-primary-yellow-700 transition-colors underline-offset-2 hover:underline"
               >
                 Sign in →
-              </a>
+              </button>
             </>
           )}
         </div>
