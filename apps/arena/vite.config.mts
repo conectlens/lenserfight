@@ -6,6 +6,19 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { themeInitPlugin } from '../../libs/ui/theme/src/lib/viteThemePlugin'
 
+const cookiebotPlugin = () => ({
+  name: 'inject-cookiebot',
+  transformIndexHtml: {
+    order: 'pre' as const,
+    handler(html: string, ctx: { command: string }) {
+      if (ctx.command !== 'build') return html
+      const tag =
+        '<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="d947453c-7a90-412f-9124-beaf73e5fbef" type="text/javascript"><\/script>'
+      return html.replace('</head>', `  ${tag}\n</head>`)
+    },
+  },
+})
+
 export default defineConfig(() => ({
   root: import.meta.dirname,
   envDir: import.meta.dirname,
@@ -19,7 +32,7 @@ export default defineConfig(() => ({
     port: 3001,
     host: '0.0.0.0',
   },
-  plugins: [react(), tailwindcss(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md']), themeInitPlugin()],
+  plugins: [react(), tailwindcss(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md']), themeInitPlugin(), cookiebotPlugin()],
   // Pre-bundle CJS deps with TDZ-prone init patterns — same reason as apps/web.
   optimizeDeps: {
     include: ['sonner', 'recharts'],

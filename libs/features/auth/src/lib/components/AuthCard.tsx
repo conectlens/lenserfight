@@ -19,7 +19,7 @@ p-4 md:p-6 relative transition-colors duration-200">
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-6">
             <div className="h-24 w-24 flex items-center justify-center bg-[var(--surface-card)] dark:bg-gray-800 rounded-3xl shadow-sm border border-[var(--border-default)] dark:border-gray-700 p-4 transition-colors">
-              <Logo size={64} showWordmark={false} />
+              <Logo size={64} showWordmark={false} showBeta />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-[var(--text-primary)] dark:text-white tracking-tight text-center">
