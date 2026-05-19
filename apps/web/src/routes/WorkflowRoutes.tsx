@@ -19,6 +19,9 @@ const LazyCreateWorkflowWizard = lazy(() =>
 const LazyWorkflowRunMediaPage = lazy(() =>
   import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowRunMediaPage }))
 )
+const LazyWorkflowExecutionDetailPage = lazy(() =>
+  import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowExecutionDetailPage }))
+)
 
 const WorkflowsPageRoute: React.FC = () => {
   const navigate = useNavigate()
@@ -100,6 +103,15 @@ export function WorkflowRoutes(): React.ReactElement {
       element={
         <DashboardFrame>
           <LazyWorkflowRunMediaPage />
+        </DashboardFrame>
+      }
+    />
+
+    <Route
+      path="/workflows/:id/history/executions/:execution_id"
+      element={
+        <DashboardFrame fullscreen>
+          <LazyWorkflowExecutionDetailPage />
         </DashboardFrame>
       }
     />

@@ -227,6 +227,12 @@ export interface WorkflowBuilderCanvasProps {
   onEdit?: () => void
   /** Live or dry-run node results to visualize on canvas nodes. */
   nodeResults?: WorkflowNodeResultRecord[]
+  /**
+   * The node id whose "Configure Node" drawer is currently open.
+   * When set, that canvas node shows an indigo configuring-state indicator
+   * so users always know which node is being edited, independent of RF selection.
+   */
+  configuringNodeId?: string | null
 }
 
 // ─── Public component — wraps inner in ReactFlowProvider ─────────────────────
@@ -254,6 +260,7 @@ function WorkflowBuilderCanvasInner({
   onEditLens,
   onEdit,
   nodeResults,
+  configuringNodeId,
 }: WorkflowBuilderCanvasProps) {
   const { screenToFlowPosition, fitView, zoomIn, zoomOut, setViewport } = useReactFlow()
   const { locale } = useLocale()
@@ -420,6 +427,17 @@ function WorkflowBuilderCanvasInner({
       return { ...n, data: { ...n.data, executionStatus: status, executionWarning: warning } }
     }))
   }, [nodeResults, setNodes])
+
+  // Sync configuring state into canvas nodes. Follows the same ephemeral-data
+  // pattern as executionStatus — never written to DB, never triggers a save.
+  useEffect(() => {
+    setNodes((nds) => nds.map((n) => {
+      const shouldBeConfiguring = n.id === configuringNodeId
+      const currently = !!(n.data as Record<string, unknown>)['isConfiguring']
+      if (shouldBeConfiguring === currently) return n
+      return { ...n, data: { ...n.data, isConfiguring: shouldBeConfiguring || null } }
+    }))
+  }, [configuringNodeId, setNodes])
 
   // ── Sync refs with latest state ───────────────────────────────────────────
   useEffect(() => { flowNodesRef.current = flowNodes }, [flowNodes])
