@@ -1,15 +1,12 @@
 /**
  * Cloud BYOK funding adapter.
  *
- * The user's API key lives encrypted in Supabase; the edge function resolves it
- * via Vault and proxies the request to the provider. The browser never holds
- * the plaintext key.
+ * The user's API key lives encrypted in Supabase Vault. fn_get_my_key_secret
+ * decrypts it server-side (ownership-checked) and the browser streams directly
+ * to the provider. Works in both local and cloud Supabase environments.
  *
- *  - Text   → walletApiClient.streamWithByok (SSE proxy)
+ *  - Text   → walletApiClient.resolveCloudByokKey → streamLocalProvider
  *  - Media  → executionService.triggerExecution (async — caller polls)
- *
- * In dev (`import.meta.env.DEV`), text streaming also has a local-resolver
- * fallback to skip the edge function; that branch is tree-shaken in prod.
  */
 import { executionService, walletApiClient } from '@lenserfight/data/repositories'
 
@@ -52,31 +49,18 @@ export function createCloudByokAdapter(ctx: CloudByokAdapterCtx): FundingAdapter
     async streamText(req: TextStreamRequest, signal: AbortSignal, callbacks: StreamCallbacks): Promise<void> {
       const keyRefId = requireKey()
 
-      if (import.meta.env.DEV) {
-        // Local dev convenience: decrypt server-side and stream directly to the
-        // provider from the browser. Tree-shaken in production builds.
-        const decryptedKey = await walletApiClient.resolveByokKeyForLocalDev(keyRefId)
-        await streamLocalProvider({
-          provider: req.provider,
-          model: req.model,
-          messages: req.messages as unknown as ProviderMessage[],
-          decryptedKey,
-          signal,
-          callbacks,
-        })
-        return
-      }
-
-      await walletApiClient.streamWithByok(
-        {
-          key_ref_id: keyRefId,
-          provider: req.provider,
-          model: req.model,
-          messages: req.messages,
-        },
+      // Decrypt the cloud vault key server-side and stream directly to the provider.
+      // fn_get_my_key_secret enforces ownership (lenser_id = caller) and works in
+      // both local and cloud Supabase environments.
+      const decryptedKey = await walletApiClient.resolveCloudByokKey(keyRefId)
+      await streamLocalProvider({
+        provider: req.provider,
+        model: req.model,
+        messages: req.messages as unknown as ProviderMessage[],
+        decryptedKey,
         signal,
         callbacks,
-      )
+      })
     },
 
     async executeMedia(req: MediaExecutionRequest): Promise<MediaExecutionResult> {
