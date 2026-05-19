@@ -270,7 +270,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title="Go Home"
           >
             <div className="flex items-center min-w-0 transition-transform group-hover:scale-105">
-              <Logo size={32} showWordmark={showLabels} />
+              <Logo size={32} showWordmark={showLabels} showBeta />
             </div>
           </div>
         </div>
