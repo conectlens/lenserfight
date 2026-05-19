@@ -24559,8 +24559,8 @@ BEGIN
   WHERE b.id = p_battle_id
     AND b.creator_lenser_id = v_lenser_id
   RETURNING
-    b.id, b.slug, b.title, b.task_prompt, b.status, b.total_vote_count, b.published_at,
-    b.voting_opens_at, b.voting_closes_at, b.battle_type, b.voter_eligibility, b.handicap_config,
+    b.id, b.slug, b.title, b.task_prompt, b.status::text, b.total_vote_count, b.published_at,
+    b.voting_opens_at, b.voting_closes_at, b.battle_type::text, b.voter_eligibility::text, b.handicap_config,
     b.creator_lenser_id, b.forum_thread_id, b.workflow_id, b.lens_id,
     b.execution_starts_at, b.auto_publish, b.voting_duration_hours, b.vote_velocity, b.og_image_url,
     b.winner_contender_id, b.parent_battle_id, b.deleted_at;
