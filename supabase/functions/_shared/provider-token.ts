@@ -2,9 +2,9 @@
 //
 // Resolves a user's Chainabit OAuth access token from auth.identities.
 //
-// Supabase Custom OAuth Provider (custom_chainabit) stores the access_token,
-// refresh_token, expires_at, and scope in auth.identities when the user
-// connects via supabase.auth.linkIdentity({ provider: 'custom_chainabit' }).
+// Supabase Custom OAuth Provider stores the access_token, refresh_token,
+// expires_at, and scope in auth.identities (provider = 'custom:chainabit')
+// when the user connects via supabase.auth.linkIdentity({ provider: 'chainabit' }).
 //
 // Token refresh is handled by Supabase itself: when the client calls
 // supabase.auth.refreshSession(), Supabase refreshes the provider token using
@@ -36,6 +36,21 @@ export class ProviderNotConnectedError extends Error {
   }
 }
 
+/**
+ * Thrown when the Chainabit access_token is present in identity_data but has
+ * been rejected by Chainabit's API with HTTP 401.  Edge Functions catch this
+ * and surface it to the client so it can call supabase.auth.refreshSession()
+ * and retry.  This is distinct from ProviderNotConnectedError (no identity /
+ * no token field at all).
+ */
+export class TokenExpiredError extends Error {
+  readonly code = 'token_expired'
+  constructor() {
+    super('Chainabit token expired — call supabase.auth.refreshSession() then retry')
+    this.name = 'TokenExpiredError'
+  }
+}
+
 export class CapabilityDeniedError extends Error {
   readonly code = 'insufficient_scope'
   constructor(required: string[], granted: string[]) {
@@ -50,11 +65,19 @@ export class CapabilityDeniedError extends Error {
 /**
  * Resolves the Chainabit OAuth access token for a user from auth.identities.
  *
- * Reads the custom_chainabit identity stored by Supabase Custom OAuth Provider.
+ * Reads the custom:chainabit identity stored by Supabase Custom OAuth Provider.
  * Does not attempt token refresh — Supabase handles that automatically via
  * its own session refresh cycle.
  *
- * @throws ProviderNotConnectedError  when no custom_chainabit identity or access_token is found
+ * EXPIRY: this function does NOT detect expired tokens.  An expired token will
+ * still have an access_token field in identity_data and will be returned here.
+ * Expiry is detected downstream when Chainabit's API returns HTTP 401; callers
+ * should catch that and throw TokenExpiredError (or map it to a 401 response)
+ * so the client can call supabase.auth.refreshSession() and retry.
+ *
+ * @throws ProviderNotConnectedError  when no custom:chainabit identity exists,
+ *                                    or the identity has no access_token field
+ *                                    (e.g. partial OAuth flow, Chainabit-side revocation)
  */
 export async function resolveChainabitToken(
   userId: string,
@@ -65,7 +88,7 @@ export async function resolveChainabitToken(
     throw new Error('Failed to look up user identity')
   }
 
-  const identity = (data.user.identities ?? []).find((i) => i.provider === 'custom_chainabit')
+  const identity = (data.user.identities ?? []).find((i) => i.provider === 'custom:chainabit')
   if (!identity) {
     throw new ProviderNotConnectedError()
   }
