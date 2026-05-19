@@ -397,7 +397,7 @@ describe('SupabaseLensesRepository', () => {
   // ---------------------------------------------------------------------------
   describe('createLens', () => {
     beforeEach(() => {
-      // First rpc call: fn_lensers_get_authenticated_profile
+      // First rpc call: fn_lensers_get_active_profile
       // Second rpc call: fn_create_lens
       mockRpc
         .mockResolvedValueOnce({ data: { language: 'tr' }, error: null })
@@ -405,9 +405,9 @@ describe('SupabaseLensesRepository', () => {
       chainMethods.maybeSingle.mockResolvedValue({ data: rawLens, error: null })
     })
 
-    it('calls fn_lensers_get_authenticated_profile then fn_create_lens', async () => {
+    it('calls fn_lensers_get_active_profile then fn_create_lens', async () => {
       await repo.createLens({ title: 'New', content: 'body', visibility: 'public' })
-      expect(mockRpc.mock.calls[0][0]).toBe('fn_lensers_get_authenticated_profile')
+      expect(mockRpc.mock.calls[0][0]).toBe('fn_lensers_get_active_profile')
       expect(mockRpc.mock.calls[1][0]).toBe('fn_create_lens')
     })
 
