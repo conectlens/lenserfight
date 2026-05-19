@@ -78,6 +78,13 @@ export interface Battle {
   vote_velocity: number
   og_image_url: string | null
   content_type?: string | null
+  // V2 concept-separation fields (Phase CS)
+  task_source?: string | null
+  contender_structure?: string | null
+  judging_mode?: string | null
+  challenge_type?: string | null
+  shared_input_snapshot?: Record<string, unknown> | null
+  lenser_battle_policy?: Record<string, unknown> | null
 }
 
 export interface BattleExecutionJob {
