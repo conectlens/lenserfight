@@ -18,6 +18,7 @@ import { getRenderer } from '../../renderers'
 import { BattleLiveArena } from './BattleLiveArena'
 import { ArenaTopBar } from './ArenaTopBar'
 import { BattleRulesDrawer } from '../creation/BattleRulesDrawer'
+import { ManageBattlePanel } from '../creation/ManageBattlePanel'
 import { BattleWebhookSubscriptions } from '../BattleWebhookSubscriptions'
 import { BattleSEOHead } from '../display/BattleSEOHead'
 import { resolveBattleLayout } from './layouts/BattleLayoutResolver'
@@ -53,6 +54,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
   const currentUserId = lenser?.id
   const [chatOpen, setChatOpen] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [manageOpen, setManageOpen] = useState(false)
   const [webhooksOpen, setWebhooksOpen] = useState(false)
 
   // --- Data fetching ---
@@ -241,6 +243,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
           slug={slug}
           currentPhase={currentPhase}
           onRulesOpen={() => setRulesOpen(true)}
+          onManageOpen={() => setManageOpen(true)}
           onWebhooksOpen={() => setWebhooksOpen(true)}
           isOwner={isOwner}
           myContenderSlot={myContenderSlot}
@@ -308,10 +311,23 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
         open={rulesOpen}
         onClose={() => setRulesOpen(false)}
         battle={battle}
-        isOwner={isOwner}
         lensDetails={lensDetails}
         contenders={contenders}
       />
+
+      {/* Manage drawer — owner only */}
+      <Drawer
+        open={manageOpen}
+        onClose={() => setManageOpen(false)}
+        side="right"
+        width="w-80"
+        title="Manage Battle"
+      >
+        <ManageBattlePanel
+          battle={battle}
+          onMutated={() => setManageOpen(false)}
+        />
+      </Drawer>
 
       {/* Webhooks drawer */}
       <Drawer
