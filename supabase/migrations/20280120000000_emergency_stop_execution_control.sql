@@ -19,6 +19,8 @@
 -- Separate from admin.kill_switches: this tracks the queue-freeze toggle without
 -- requiring a full kill-switch activation. One row, always id=1.
 
+CREATE SCHEMA IF NOT EXISTS admin;
+
 CREATE TABLE IF NOT EXISTS admin.execution_control (
   id            INT         PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   queue_frozen  BOOLEAN     NOT NULL DEFAULT false,

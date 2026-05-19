@@ -5,6 +5,8 @@
 -- fn_dispatch_scheduled_workflows_with_approval (from 20270301000000) to honour
 -- the autonomy_dispatch_enabled kill switch.
 
+CREATE SCHEMA IF NOT EXISTS platform;
+
 CREATE TABLE IF NOT EXISTS platform.system_flags (
   key        text        PRIMARY KEY,
   value      jsonb       NOT NULL,
