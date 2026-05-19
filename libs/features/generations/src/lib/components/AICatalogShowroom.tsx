@@ -10,7 +10,7 @@ import React, { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Sparkles, Search, Layers, Box, Info, CheckCircle2, XCircle, X } from 'lucide-react'
 
-import { useAICatalogModels, useAICatalogProviders, useCatalogProviderKeys } from '../hooks/useAICatalog'
+import { useAICatalogModels, useAICatalogProviders } from '../hooks/useAICatalog'
 
 type CatalogFocus = 'all' | 'providers' | 'models'
 
@@ -46,9 +46,9 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
     providerKey: providerFilter === 'all' ? undefined : providerFilter,
     capability: capabilityFilter === 'all' ? undefined : capabilityFilter,
   })
-  const { data: keys = [] } = useCatalogProviderKeys()
-
-  const configuredProviders = useMemo(() => new Set(keys.filter((key) => key.isActive).map((key) => key.providerKey)), [keys])
+  // NOTE: Previously fetched user API keys here (fn_get_my_api_keys) to show
+  // "Configured" badges. Removed — the catalog is a read-only browsing page
+  // and must not trigger user-specific RPC calls.
 
   const capabilities = useMemo(() => {
     const all = new Set<string>()
@@ -191,7 +191,6 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
             </div>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {providers.map((provider) => {
-                const configured = configuredProviders.has(provider.key)
                 return (
                   <Surface
                     key={provider.key}
@@ -215,14 +214,11 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                         </Badge>
                       </div>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Badge color={configured ? 'green' : 'gray'} variant="solid">
-                        {configured ? 'Configured' : 'Not configured'}
-                      </Badge>
-                      {provider.is_active === false && (
+                    {provider.is_active === false && (
+                      <div className="mt-4">
                         <Badge color="red" variant="solid">Inactive</Badge>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <Text variant="body-m" color="muted" className="mt-4 flex-grow leading-relaxed">
                       {String((provider.metadata?.summary as string | undefined) ?? 'Provider metadata is available in the catalog for routing, auth, and capability inspection.')}
                     </Text>
@@ -245,7 +241,6 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
               <div className="grid gap-6 md:grid-cols-2">
                 {filteredModels.map((model) => {
                   const compareKey = `${model.provider_key}/${model.key}`
-                  const configured = configuredProviders.has(model.provider_key)
                   const selected = selectedKeys.includes(compareKey)
                   const isActive = activeModelKey === compareKey
 
@@ -280,9 +275,6 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                         {model.user_summary || model.description}
                       </Text>
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <Badge color={configured ? 'green' : 'gray'} variant="solid" size="sm">
-                          {configured ? 'Key ready' : 'Key missing'}
-                        </Badge>
                         {model.capabilities.slice(0, 3).map((capability) => (
                           <Badge key={capability} color="gray" variant="outline" size="sm">
                             {capability}

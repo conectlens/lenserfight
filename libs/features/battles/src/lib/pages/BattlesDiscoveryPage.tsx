@@ -8,7 +8,7 @@ import { Button } from '@lenserfight/ui/components'
 import { Input } from '@lenserfight/ui/forms'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import React, { useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 const PAGE_SIZE = 20
@@ -22,7 +22,7 @@ export function BattlesDiscoveryPage() {
   const [status, setStatus] = useState<string | null>(null)
 
   const { data, fetchNextPage, hasNextPage, isFetching, isLoading } = useInfiniteQuery<BrowseBattleRecord[]>({
-    queryKey: ['battles', 'browse', { q, category, status }],
+    queryKey: ['battles', 'browse', q, category, status],
     queryFn: ({ pageParam }) => {
       const cursor = pageParam as { created_at: string; id: string } | undefined
       return battlesRepository.browseBattles(
@@ -40,7 +40,8 @@ export function BattlesDiscoveryPage() {
     staleTime: 30_000,
   })
 
-  const rows = data?.pages.flat() ?? []
+  const rows = useMemo(() => data?.pages.flat() ?? [], [data])
+  const handleLoadMore = useCallback(() => fetchNextPage(), [fetchNextPage])
   const battlesMeta = seoService.getBattlesListMeta()
 
   return (
@@ -123,7 +124,7 @@ export function BattlesDiscoveryPage() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => fetchNextPage()}
+            onClick={handleLoadMore}
             disabled={isFetching}
             isLoading={isFetching}
           >
