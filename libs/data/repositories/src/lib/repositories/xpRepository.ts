@@ -15,7 +15,7 @@ import {
   FeaturedChallenge,
   XP_RULE_LABELS,
 } from '@lenserfight/types'
-import { supabase } from '@lenserfight/data/supabase'
+import { supabase, getCachedSession } from '@lenserfight/data/supabase'
 
 export const XP_APP_IDS = {
   global: '00000000-0000-0000-0000-000000000000',
@@ -167,17 +167,14 @@ export class SupabaseXPRepository implements XPRepositoryPort {
       .range(offset, offset + limit - 1)
 
     if (scope !== 'season') {
-      query.eq('app_id', XP_APP_IDS.global)
+      query.eq('app_id', XP_APP_IDS.arena)
     }
 
     const { data, error } = await query
 
     if (error) throw error
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    const currentUserId = session?.user?.id
+    const currentUserId = getCachedSession()?.user?.id
 
     let userEntry: LeaderboardEntry | null = null
 
@@ -238,10 +235,7 @@ export class SupabaseXPRepository implements XPRepositoryPort {
 
     if (error) throw error
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    const currentUserId = session?.user?.id
+    const currentUserId = getCachedSession()?.user?.id
 
     const list: SeasonLeaderboardEntry[] = (data ?? []).map((row: any) => ({
       seasonId: row.season_id,

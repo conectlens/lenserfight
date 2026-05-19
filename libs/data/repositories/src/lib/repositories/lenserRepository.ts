@@ -20,7 +20,7 @@ import {
 } from '@lenserfight/types'
 import { LensRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
-import { supabase } from '@lenserfight/data/supabase'
+import { supabase, getCachedSession } from '@lenserfight/data/supabase'
 import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
 import type { HandleValidationResult } from '@lenserfight/domain/identity-governance'
 
@@ -216,10 +216,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
   }
 
   async getActiveLenser(): Promise<Lenser | null> {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    const user = session?.user
+    const user = getCachedSession()?.user
     if (!user) return null
 
     const { data, error } = await supabase.rpc('fn_lensers_get_active_profile')
@@ -231,10 +228,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
   }
 
   async getAuthenticatedProfileGate(): Promise<AuthProfileGate> {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    const user = session?.user
+    const user = getCachedSession()?.user
     if (!user) return { kind: 'new' }
 
     const { data, error } = await supabase.rpc('fn_get_auth_profile_gate')
