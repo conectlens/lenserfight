@@ -125,7 +125,7 @@ module.exports = {
       instances: 1,          // increase to scale; each instance claims separate jobs
       exec_mode: 'fork',
       env_production: {
-        NODE_ENV: 'production',
+        ENV_MODE: 'production',
         SUPABASE_URL: process.env.SUPABASE_URL,
         SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
         SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -174,7 +174,7 @@ ExecStart=/usr/bin/node dist/apps/worker/main.js
 Restart=always
 RestartSec=5
 
-Environment=NODE_ENV=production
+Environment=ENV_MODE=production
 Environment=SUPABASE_URL=https://<ref>.supabase.co
 Environment=SUPABASE_ANON_KEY=eyJ...
 Environment=SUPABASE_SERVICE_ROLE_KEY=eyJ...
@@ -302,7 +302,7 @@ app = "lf-worker"
   # No HTTP service — worker has no port
 
 [env]
-  NODE_ENV = "production"
+  ENV_MODE = "production"
   PLATFORM_API_BATTLE_WORKER_ENABLED = "true"
   PLATFORM_API_SCHEDULED_WORKFLOW_WORKER_ENABLED = "true"
   PLATFORM_API_TEAM_RUN_WORKER_ENABLED = "true"
