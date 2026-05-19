@@ -8,6 +8,7 @@
 --     20260423010000_ai_workspace_panel.sql).
 --   * webhook → INSERT a row into audit.webhook_outbox; the existing
 --     audit.fn_dispatch_webhook_outbox cron drains it (HMAC-signed delivery,
+
 --     exponential backoff, dead-lettering — defined in
 --     20270320000000_phase_p_webhook_outbox.sql).
 --   * notify → call public.fn_insert_notification (defined in
@@ -29,6 +30,8 @@
 --   The clauses are AND-ed; an empty filter ('{}'::jsonb) or NULL matches all.
 --   Path escaping: '~0' → '~', '~1' → '/' (RFC 6901). No array slice / wildcard
 --   support; producers should keep payloads shallow.
+
+CREATE SCHEMA IF NOT EXISTS automation;
 
 -- ─── 1. automation.trigger_rules ─────────────────────────────────────────────
 

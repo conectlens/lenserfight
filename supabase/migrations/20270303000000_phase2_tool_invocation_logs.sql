@@ -4,6 +4,8 @@
 -- the approval decision lifecycle. Used for audit trails, cost attribution,
 -- and the "awaiting approval" gate UI.
 
+CREATE SCHEMA IF NOT EXISTS platform;
+
 CREATE TABLE IF NOT EXISTS platform.tool_invocation_logs (
   id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   ai_lenser_id     uuid        NOT NULL REFERENCES agents.ai_lensers(id) ON DELETE CASCADE,
