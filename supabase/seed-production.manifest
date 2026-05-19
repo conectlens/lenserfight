@@ -58,6 +58,12 @@ seeds/08_ai_model_pricing.sql
 seeds/15_lens_tools.sql
 seeds/16_origin_types.sql
 
+# ── [4b] Canonical content tags — required by all lens/workflow template seeds
+#    Without these rows the 40_/41_/42_/45_/47_/48_/50_ seeds exit early
+#    (v_tag_template IS NULL → RETURN), leaving lenses.lenses empty and causing
+#    fk_wf_nodes_lens FK violations when workflow_nodes inserts try to reference them.
+seeds/09_canonical_tags.sql
+
 # ── [5] XP system: apps, levels, rules, difficulty multipliers, policy document
 #    (pure rule configuration — no XP is credited to any lenser)
 seeds/17_xp_ruleset.sql
