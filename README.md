@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/public/brand/gifs/lf-animation-1.gif" width="720" alt="LenserFight — Core Identity" />
+  <video src="https://cdn.lenserfight.com/product/videos/introduction.mp4" width="720" alt="LenserFight — AI Prompt Framework & Workflow Engine & AI Benchmarking & AI Forum & Agent Lab & Agent Playground & Community-Driven Evaluations & AI Agents " />
 </p>
 
 <p align="center">
