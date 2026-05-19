@@ -7337,7 +7337,7 @@ BEGIN
     SELECT c.id AS contender_id
       FROM battles.contenders c
      WHERE c.battle_id = p_battle_id
-       AND c.contender_type = 'ai_lenser'
+       AND c.contender_type IN ('ai_model', 'ai_agent')
   LOOP
     v_byok_result := public.fn_byok_validate_for_battle(p_battle_id, rec.contender_id);
     IF NOT (v_byok_result ->> 'valid')::BOOLEAN THEN
@@ -8758,6 +8758,7 @@ CREATE TABLE IF NOT EXISTS "battles"."submissions" (
     "artifact_id" "uuid",
     "source_type" "text" DEFAULT 'manual'::"text" NOT NULL,
     "model_id" "uuid",
+    "adapter_id" "uuid",
     "integrity_hash" "text",
     "is_final" boolean DEFAULT true NOT NULL,
     "revision_of_id" "uuid",
@@ -8792,6 +8793,10 @@ COMMENT ON COLUMN "battles"."submissions"."media_url" IS 'Phase AY: signed URL (
 
 
 COMMENT ON COLUMN "battles"."submissions"."output_modality" IS 'Phase AY: discriminator the UI uses to pick the right renderer.';
+
+
+
+COMMENT ON COLUMN "battles"."submissions"."adapter_id" IS 'Execution runner that produced this submission (execution.runners.id). NULL for manual human entries.';
 
 
 
@@ -15040,25 +15045,26 @@ COMMENT ON FUNCTION "public"."fn_get_batch_entity_reactions"("p_entity_type" "te
 
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_get_battle"("p_battle_id" "uuid" DEFAULT NULL::"uuid", "p_slug" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "task_prompt" "text", "status" "text", "total_vote_count" integer, "published_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "finalized_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "handicap_config" "jsonb", "creator_lenser_id" "uuid", "forum_thread_id" "text", "workflow_id" "uuid", "lens_id" "uuid", "execution_starts_at" timestamp with time zone, "auto_publish" boolean, "voting_duration_hours" integer, "vote_velocity" numeric, "og_image_url" "text", "winner_contender_id" "uuid", "parent_battle_id" "uuid", "deleted_at" timestamp with time zone)
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle"("p_battle_id" "uuid" DEFAULT NULL::"uuid", "p_slug" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "task_prompt" "text", "status" "text", "total_vote_count" integer, "published_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "finalized_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "handicap_config" "jsonb", "creator_lenser_id" "uuid", "forum_thread_id" "text", "workflow_id" "uuid", "lens_id" "uuid", "execution_starts_at" timestamp with time zone, "auto_publish" boolean, "voting_duration_hours" integer, "vote_velocity" numeric, "og_image_url" "text", "winner_contender_id" "uuid", "parent_battle_id" "uuid", "deleted_at" timestamp with time zone, "task_source" "text", "contender_structure" "text", "judging_mode" "text", "challenge_type" "text", "shared_input_snapshot" "jsonb", "lenser_battle_policy" "jsonb")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'battles', 'lensers'
     AS $$
   SELECT
     b.id, b.slug, b.title, b.task_prompt, b.status, b.total_vote_count,
     b.published_at, b.voting_opens_at, b.voting_closes_at, b.finalized_at,
-    b.battle_type, b.voter_eligibility, b.handicap_config, b.creator_lenser_id,
-    b.forum_thread_id, b.workflow_id, b.lens_id, b.execution_starts_at,
-    b.auto_publish, b.voting_duration_hours, b.vote_velocity, b.og_image_url,
-    b.winner_contender_id, b.parent_battle_id, b.deleted_at
+    b.battle_type::text, b.voter_eligibility::text, b.handicap_config,
+    b.creator_lenser_id, b.forum_thread_id, b.workflow_id, b.lens_id,
+    b.execution_starts_at, b.auto_publish, b.voting_duration_hours,
+    b.vote_velocity, b.og_image_url, b.winner_contender_id,
+    b.parent_battle_id, b.deleted_at,
+    b.task_source, b.contender_structure::text, b.judging_mode::text,
+    b.challenge_type, b.shared_input_snapshot, b.lenser_battle_policy
   FROM battles.battles b
   WHERE (p_battle_id IS NULL OR b.id   = p_battle_id)
     AND (p_slug      IS NULL OR b.slug = p_slug)
     AND b.deleted_at IS NULL
     AND (
-      -- Non-draft battles are public
       b.status <> 'draft'
-      -- Drafts are creator-only
       OR b.creator_lenser_id = lensers.get_auth_lenser_id()
     )
   LIMIT 1;
@@ -17450,18 +17456,6 @@ DECLARE
   v_encrypted_id uuid;
   v_decrypted    text;
 BEGIN
-  -- SECURITY GATE: this function decrypts plaintext API keys and returns them
-  -- over PostgREST to the browser. It MUST NOT run in production. The DB owner
-  -- must explicitly opt in by setting:
-  --   ALTER DATABASE postgres SET app.allow_dev_byok_resolver = 'true';
-  -- Anything else (missing, false, or wrong value) blocks the call. This is a
-  -- server-side guard — relying solely on `import.meta.env.DEV` on the client
-  -- is insufficient because any authenticated REST client can call this RPC.
-  IF coalesce(current_setting('app.allow_dev_byok_resolver', true), 'false') <> 'true' THEN
-    RAISE EXCEPTION 'fn_get_my_key_secret is disabled in this environment'
-      USING ERRCODE = 'insufficient_privilege';
-  END IF;
-
   v_lenser_id := lensers.get_auth_lenser_id();
   IF v_lenser_id IS NULL THEN
     RAISE EXCEPTION 'Unauthenticated: no lenser profile found';
@@ -17493,7 +17487,7 @@ $$;
 ALTER FUNCTION "public"."fn_get_my_key_secret"("p_key_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."fn_get_my_key_secret"("p_key_id" "uuid") IS 'Decrypts a caller-owned BYOK API key from Vault for local dev streaming bypass. SECURITY DEFINER — runs as postgres to read vault.decrypted_secrets. Ownership enforced: lenser_id must match the authenticated caller. Only active (non-revoked) keys are returned. Gated by GUC app.allow_dev_byok_resolver = ''true'' — disabled by default. Client calls MUST also be guarded by import.meta.env.DEV. Added in migration 20271226000000; server-side gate added 2026-05-16.';
+COMMENT ON FUNCTION "public"."fn_get_my_key_secret"("p_key_id" "uuid") IS 'Decrypts a caller-owned BYOK API key from Vault. SECURITY DEFINER — runs as postgres to read vault.decrypted_secrets. Ownership enforced: lenser_id must match the authenticated caller. Only active (non-revoked) keys are returned. Works in both local and cloud Supabase environments. GUC gate removed in migration 20280116000003 — ownership check is the sufficient guard.';
 
 
 
@@ -19119,34 +19113,114 @@ COMMENT ON FUNCTION "public"."fn_integrity_probe_moderation_webhook"("p_target_u
 
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "slot" "text", "contender_type" "text", "display_name" "text", "contender_ref_id" "uuid")
+CREATE OR REPLACE FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid" DEFAULT NULL, "p_display_name" "text" DEFAULT NULL, "p_handle" "text" DEFAULT NULL) RETURNS TABLE("id" "uuid", "battle_id" "uuid", "slot" "text", "contender_type" "text", "display_name" "text", "contender_ref_id" "uuid")
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'battles', 'lensers'
     AS $$
 DECLARE
   v_lenser_id uuid := lensers.get_auth_lenser_id();
+  v_battle    battles.battles;
+  v_profile   lensers.profiles;
+  v_ref_id    uuid;
+  v_display   text;
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM battles.battles
-    WHERE id = p_battle_id AND creator_lenser_id = v_lenser_id
-  ) THEN
+  -- Verify caller owns the battle
+  SELECT b.* INTO v_battle
+    FROM battles.battles b
+   WHERE b.id = p_battle_id;
+
+  IF NOT FOUND OR v_battle.creator_lenser_id <> v_lenser_id THEN
     RAISE EXCEPTION 'invite_contender_forbidden' USING ERRCODE = '42501';
   END IF;
 
+  -- Resolve contender: handle takes priority; fall back to ref_id
+  IF p_handle IS NOT NULL THEN
+    SELECT p.* INTO v_profile
+      FROM lensers.profiles p
+     WHERE lower(p.handle) = lower(ltrim(p_handle, '@'))
+       AND p.status = 'active'
+       AND p.deletion_requested_at IS NULL;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'lenser_not_found' USING ERRCODE = 'P0002';
+    END IF;
+
+    v_ref_id  := v_profile.id;
+    v_display := COALESCE(p_display_name, v_profile.display_name);
+
+  ELSIF p_contender_ref_id IS NOT NULL THEN
+    v_ref_id  := p_contender_ref_id;
+    v_display := p_display_name;
+
+    SELECT p.* INTO v_profile
+      FROM lensers.profiles p
+     WHERE p.id = p_contender_ref_id;
+
+  ELSE
+    RAISE EXCEPTION 'must provide p_contender_ref_id or p_handle' USING ERRCODE = '22023';
+  END IF;
+
+  -- Validate lenser type against battle mode
+  IF v_profile.id IS NOT NULL THEN
+    CASE v_battle.battle_type
+      WHEN 'ai_vs_ai' THEN
+        IF v_profile.type <> 'ai' THEN
+          RAISE EXCEPTION 'lenser_type_mismatch: this battle requires an AI lenser'
+            USING ERRCODE = '22000';
+        END IF;
+
+      WHEN 'human_vs_human_ai_votes', 'human_vs_human_open_votes' THEN
+        IF v_profile.type <> 'human' THEN
+          RAISE EXCEPTION 'lenser_type_mismatch: this battle requires a human lenser'
+            USING ERRCODE = '22000';
+        END IF;
+
+      WHEN 'human_vs_ai' THEN
+        IF p_slot = 'A' AND v_profile.type <> 'human' THEN
+          RAISE EXCEPTION 'lenser_type_mismatch: slot A in a human_vs_ai battle must be a human lenser'
+            USING ERRCODE = '22000';
+        ELSIF p_slot = 'B' AND v_profile.type <> 'ai' THEN
+          RAISE EXCEPTION 'lenser_type_mismatch: slot B in a human_vs_ai battle must be an AI lenser'
+            USING ERRCODE = '22000';
+        END IF;
+
+      ELSE
+        -- lenser_battle, workflow_battle: any lenser type is allowed
+        NULL;
+    END CASE;
+  END IF;
+
+  -- Insert via CTE to avoid the ambiguous "id" reference between the
+  -- RETURNS TABLE output column and the actual contenders.id table column.
   RETURN QUERY
-  INSERT INTO battles.contenders (
-    battle_id, slot, contender_type, contender_ref_id, display_name,
-    entry_mode, contender_status
-  ) VALUES (
-    p_battle_id, p_slot, p_contender_type, p_contender_ref_id, p_display_name,
-    'invited', 'pending'
+  WITH ins AS (
+    INSERT INTO battles.contenders (
+      battle_id, slot, contender_type, contender_ref_id, display_name,
+      entry_mode, contender_status
+    ) VALUES (
+      p_battle_id,
+      p_slot,
+      p_contender_type::battles.contender_type_enum,
+      v_ref_id,
+      v_display,
+      'invited',
+      'pending'
+    )
+    RETURNING *
   )
-  RETURNING id, battle_id, slot, contender_type, display_name, contender_ref_id;
+  SELECT
+    ins.id,
+    ins.battle_id,
+    ins.slot::text,
+    ins.contender_type::text,
+    ins.display_name,
+    ins.contender_ref_id
+  FROM ins;
 END;
 $$;
 
 
-ALTER FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text") OWNER TO "postgres";
+ALTER FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text", "p_handle" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_invoke_tool"("p_team_run_id" "uuid", "p_tool_id" "uuid", "p_ai_lenser_id" "uuid", "p_input" "jsonb", "p_agent_run_step_id" "uuid" DEFAULT NULL::"uuid") RETURNS "uuid"
@@ -24561,7 +24635,7 @@ BEGIN
   RETURNING
     b.id, b.slug, b.title, b.task_prompt, b.status::text, b.total_vote_count, b.published_at,
     b.voting_opens_at, b.voting_closes_at, b.battle_type::text, b.voter_eligibility::text, b.handicap_config,
-    b.creator_lenser_id, b.forum_thread_id, b.workflow_id, b.lens_id,
+    b.creator_lenser_id, b.forum_thread_id::text, b.workflow_id, b.lens_id,
     b.execution_starts_at, b.auto_publish, b.voting_duration_hours, b.vote_velocity, b.og_image_url,
     b.winner_contender_id, b.parent_battle_id, b.deleted_at;
 END;
@@ -25826,7 +25900,7 @@ COMMENT ON FUNCTION "public"."fn_update_agent_profile"("p_ai_lenser_id" "uuid", 
 
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text" DEFAULT NULL::"text", "p_task_prompt" "text" DEFAULT NULL::"text", "p_battle_type" "text" DEFAULT NULL::"text", "p_voter_eligibility" "text" DEFAULT NULL::"text", "p_handicap_config" "jsonb" DEFAULT NULL::"jsonb", "p_workflow_id" "uuid" DEFAULT NULL::"uuid", "p_lens_id" "uuid" DEFAULT NULL::"uuid", "p_forum_thread_id" "uuid" DEFAULT NULL::"uuid", "p_shared_input_snapshot" "jsonb" DEFAULT NULL::"jsonb", "p_lenser_battle_policy" "jsonb" DEFAULT NULL::"jsonb") RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "task_prompt" "text", "status" "text", "total_vote_count" integer, "published_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "handicap_config" "jsonb", "creator_lenser_id" "uuid", "forum_thread_id" "text", "workflow_id" "uuid", "lens_id" "uuid", "execution_starts_at" timestamp with time zone, "auto_publish" boolean, "voting_duration_hours" integer, "vote_velocity" numeric, "og_image_url" "text", "winner_contender_id" "uuid", "parent_battle_id" "uuid", "deleted_at" timestamp with time zone)
+CREATE OR REPLACE FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text" DEFAULT NULL::"text", "p_task_prompt" "text" DEFAULT NULL::"text", "p_battle_type" "text" DEFAULT NULL::"text", "p_voter_eligibility" "text" DEFAULT NULL::"text", "p_handicap_config" "jsonb" DEFAULT NULL::"jsonb", "p_workflow_id" "uuid" DEFAULT NULL::"uuid", "p_lens_id" "uuid" DEFAULT NULL::"uuid", "p_forum_thread_id" "uuid" DEFAULT NULL::"uuid", "p_shared_input_snapshot" "jsonb" DEFAULT NULL::"jsonb", "p_lenser_battle_policy" "jsonb" DEFAULT NULL::"jsonb", "p_task_source" "text" DEFAULT NULL::"text", "p_contender_structure" "text" DEFAULT NULL::"text", "p_judging_mode" "text" DEFAULT NULL::"text", "p_challenge_type" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "task_prompt" "text", "status" "text", "total_vote_count" integer, "published_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "handicap_config" "jsonb", "creator_lenser_id" "uuid", "forum_thread_id" "text", "workflow_id" "uuid", "lens_id" "uuid", "execution_starts_at" timestamp with time zone, "auto_publish" boolean, "voting_duration_hours" integer, "vote_velocity" numeric, "og_image_url" "text", "winner_contender_id" "uuid", "parent_battle_id" "uuid", "deleted_at" timestamp with time zone, "task_source" "text", "contender_structure" "text", "judging_mode" "text", "challenge_type" "text", "shared_input_snapshot" "jsonb", "lenser_battle_policy" "jsonb")
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'battles', 'lensers'
     AS $$
@@ -25849,7 +25923,11 @@ BEGIN
     lens_id               = COALESCE(p_lens_id,                                            b.lens_id),
     forum_thread_id       = COALESCE(p_forum_thread_id,                                    b.forum_thread_id),
     shared_input_snapshot = COALESCE(p_shared_input_snapshot,                              b.shared_input_snapshot),
-    lenser_battle_policy  = COALESCE(p_lenser_battle_policy,                               b.lenser_battle_policy)
+    lenser_battle_policy  = COALESCE(p_lenser_battle_policy,                               b.lenser_battle_policy),
+    task_source           = COALESCE(p_task_source,                                        b.task_source),
+    contender_structure   = COALESCE(p_contender_structure::battles.contender_structure_enum, b.contender_structure),
+    judging_mode          = COALESCE(p_judging_mode::battles.judging_mode_enum,            b.judging_mode),
+    challenge_type        = COALESCE(p_challenge_type,                                     b.challenge_type)
   WHERE b.id = p_battle_id
     AND b.creator_lenser_id = v_lenser_id
   RETURNING
@@ -25859,7 +25937,9 @@ BEGIN
     b.creator_lenser_id, b.forum_thread_id::text, b.workflow_id, b.lens_id,
     b.execution_starts_at, b.auto_publish, b.voting_duration_hours,
     b.vote_velocity, b.og_image_url, b.winner_contender_id,
-    b.parent_battle_id, b.deleted_at;
+    b.parent_battle_id, b.deleted_at,
+    b.task_source, b.contender_structure::text, b.judging_mode::text,
+    b.challenge_type, b.shared_input_snapshot, b.lenser_battle_policy;
 END;
 $$;
 
@@ -38749,9 +38829,9 @@ GRANT ALL ON FUNCTION "public"."fn_integrity_probe_moderation_webhook"("p_target
 
 
 
-GRANT ALL ON FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text") TO "service_role";
+GRANT ALL ON FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text", "p_handle" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text", "p_handle" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text", "p_handle" "text") TO "service_role";
 
 
 

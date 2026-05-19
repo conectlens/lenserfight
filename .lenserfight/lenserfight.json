@@ -1,0 +1,6 @@
+{
+  "mode": "local",
+  "supabaseUrl": "http://127.0.0.1:54321",
+  "dbPort": 54322,
+  "apiPort": 54321
+}
