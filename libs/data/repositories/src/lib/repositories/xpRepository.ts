@@ -166,10 +166,6 @@ export class SupabaseXPRepository implements XPRepositoryPort {
       .order('rank', { ascending: true })
       .range(offset, offset + limit - 1)
 
-    if (scope !== 'season') {
-      query.eq('app_id', XP_APP_IDS.arena)
-    }
-
     const { data, error } = await query
 
     if (error) throw error
