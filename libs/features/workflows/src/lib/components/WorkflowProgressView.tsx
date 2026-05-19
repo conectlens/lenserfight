@@ -1,4 +1,4 @@
-import { Badge, HelpButton, StreamingOutput, Tooltip } from '@lenserfight/ui/components'
+import { Badge, Button, HelpButton, StreamingOutput, Tooltip } from '@lenserfight/ui/components'
 import { getErrorCopy } from '../utils/workflowErrorMessages'
 import {
   isActiveNodeStatus,
@@ -10,6 +10,7 @@ import { motion } from 'framer-motion'
 import {
   AlertTriangle,
   ArrowDownToLine,
+  Settings2,
   ArrowUpFromLine,
   CheckCircle,
   ChevronDown,
@@ -76,6 +77,11 @@ interface WorkflowProgressViewProps {
    * Clicking it calls this callback — the parent supplies the navigate action.
    */
   onOpenFullscreen?: () => void
+  /**
+   * When provided, a "Configure node" button is shown on blocked/errored cards.
+   * Called with the node id and its lens_id (or '__utility' for utility nodes).
+   */
+  onConfigureNode?: (nodeId: string, lensId: string) => void
 }
 
 type NodeStatus = WorkflowNodeResultRecord['status']
@@ -578,6 +584,7 @@ export function WorkflowProgressView({
   runCompletedAt,
   runStatus,
   onOpenFullscreen,
+  onConfigureNode,
 }: WorkflowProgressViewProps) {
   const resultIndex = useMemo(() => new Map(nodeResults.map((r) => [r.node_id, r])), [nodeResults])
   const getResult = (nodeId: string) => resultIndex.get(nodeId)
@@ -824,6 +831,21 @@ export function WorkflowProgressView({
                 <div className="mt-3 flex items-center gap-2 rounded-xl border border-status-red/30 bg-status-red/5 p-3 text-xs font-medium text-status-red">
                   <AlertTriangle size={12} />
                   <span className="flex-1">{getErrorCopy(result?.error_message) || 'Blocked — unresolved placeholder or missing dependency'}</span>
+                  {onConfigureNode && (node.lens_id || node.id) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onConfigureNode(node.id, node.lens_id ?? '__utility')
+                      }}
+                      className="shrink-0 flex items-center gap-1 !h-6 !px-2 !rounded-lg !text-[10px] font-semibold border border-status-red/40 text-status-red hover:border-status-red hover:bg-status-red/10"
+                    >
+                      <Settings2 size={10} />
+                      Configure node
+                    </Button>
+                  )}
                   {result?.error_message === 'placeholder_unbound' && (
                     <Tooltip
                       content={
