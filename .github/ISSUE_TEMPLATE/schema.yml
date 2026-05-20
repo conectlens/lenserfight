@@ -46,8 +46,6 @@ body:
         - SELECT: authenticated users where lenser_id = auth.uid()
         - INSERT/UPDATE: only via SECURITY DEFINER RPC
         - service_role bypass: required for worker
-    validations:
-      required: true
 
   - type: textarea
     id: rollback
@@ -56,8 +54,6 @@ body:
       placeholder: |
         - DROP the new column (no data loss)
         - Reverse pg_cron schedule with SELECT cron.unschedule(...)
-    validations:
-      required: true
 
   - type: checkboxes
     id: checklist

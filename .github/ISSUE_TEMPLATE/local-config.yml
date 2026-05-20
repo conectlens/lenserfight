@@ -67,8 +67,6 @@ body:
       label: Environment
       description: OS, Node version, pnpm version.
       placeholder: "macOS 14.4, Node 20.11, pnpm 9.1"
-    validations:
-      required: true
 
   - type: checkboxes
     id: checklist

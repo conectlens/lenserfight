@@ -50,28 +50,10 @@ body:
     attributes:
       label: Alternatives considered
 
-  - type: textarea
-    id: acceptance
-    attributes:
-      label: Acceptance criteria
-      placeholder: |
-        - [ ] ...
-        - [ ] ...
-    validations:
-      required: true
-
-  - type: textarea
-    id: scope
-    attributes:
-      label: Scope notes
-      description: Mention if this touches migrations, CLI, SDK, docs, mobile, or other surfaces.
-
   - type: checkboxes
     id: checklist
     attributes:
       label: Before submitting
       options:
         - label: I searched existing issues and this is not already proposed
-          required: true
-        - label: I checked whether an existing workflow or feature already covers this
           required: true

@@ -73,8 +73,6 @@ body:
       label: Environment
       description: Edition (community / cloud), Node version, browser.
       placeholder: "community, Node 20.11, Chrome 124"
-    validations:
-      required: true
 
   - type: checkboxes
     id: checklist
