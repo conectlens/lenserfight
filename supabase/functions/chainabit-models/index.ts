@@ -8,7 +8,9 @@
 //
 // Required env vars:
 //   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
-//   CHAINABIT_API_URL (default: https://api.chainabit.com/api/v1)
+//   CHAINABIT_API_URL       (default: https://api.chainabit.com/api/v1)
+//   CHAINABIT_CLIENT_ID     (same value as SUPABASE_AUTH_CHAINABIT_CLIENT_ID)
+//   CHAINABIT_CLIENT_SECRET (same value as SUPABASE_AUTH_CHAINABIT_SECRET)
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -17,6 +19,8 @@ import {
   resolveChainabitToken,
   ProviderNotConnectedError,
   CapabilityDeniedError,
+  TokenExpiredError,
+  type ChainabitRefreshConfig,
 } from '../_shared/provider-token.ts'
 import { requireCapabilities, CAPABILITIES } from '../_shared/capability-validator.ts'
 
@@ -46,17 +50,31 @@ serve(async (req: Request): Promise<Response> => {
   if (authError || !user)
     return errResponse('unauthenticated', 'Invalid or expired token', 401, req)
 
+  const chainabitUrl = (
+    Deno.env.get('CHAINABIT_API_URL') ?? 'https://api.chainabit.com/api/v1'
+  ).replace(/\/$/, '')
+
+  const clientId     = Deno.env.get('CHAINABIT_CLIENT_ID')
+  const clientSecret = Deno.env.get('CHAINABIT_CLIENT_SECRET')
+  const refreshConfig: ChainabitRefreshConfig | undefined =
+    clientId && clientSecret
+      ? { apiUrl: chainabitUrl, clientId, clientSecret }
+      : undefined
+
   // Resolve Chainabit OAuth token and assert profile:read scope.
   // The model catalog endpoint is authenticated — a connected identity without
   // profile:read would hit a Chainabit 401/403 with an opaque error; we surface
   // it early with a clear insufficient_scope response instead.
   let token: { accessToken: string; scopes: string[] }
   try {
-    token = await resolveChainabitToken(user.id, adminClient)
+    token = await resolveChainabitToken(user.id, adminClient, refreshConfig)
     requireCapabilities(token.scopes, CAPABILITIES.PROFILE_READ)
   } catch (err) {
     if (err instanceof ProviderNotConnectedError) {
       return errResponse('not_connected', err.message, 403, req)
+    }
+    if (err instanceof TokenExpiredError) {
+      return errResponse('token_expired', err.message, 401, req)
     }
     if (err instanceof CapabilityDeniedError) {
       return errResponse('insufficient_scope', err.message, 403, req)
@@ -64,10 +82,6 @@ serve(async (req: Request): Promise<Response> => {
     console.error('[chainabit-models] token resolution failed:', err)
     return errResponse('token_resolution_failed', 'Failed to resolve Chainabit token', 500, req)
   }
-
-  const chainabitUrl = (
-    Deno.env.get('CHAINABIT_API_URL') ?? 'https://api.chainabit.com/api/v1'
-  ).replace(/\/$/, '')
 
   const modelsRes = await fetch(`${chainabitUrl}/ai/models?isActive=true`, {
     headers: { Authorization: `Bearer ${token.accessToken}` },

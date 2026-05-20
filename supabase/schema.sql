@@ -18862,6 +18862,60 @@ $$;
 ALTER FUNCTION "public"."fn_redact_memory_entry"("p_memory_id" "uuid", "p_reason" "text") OWNER TO "postgres";
 
 
+
+-- ── battles.fn_populate_contender_entity_map ─────────────────────────────────
+
+DROP FUNCTION IF EXISTS "battles"."fn_populate_contender_entity_map"();
+
+CREATE FUNCTION "battles"."fn_populate_contender_entity_map"()
+  RETURNS "trigger"
+  LANGUAGE "plpgsql" SECURITY DEFINER
+  SET "search_path" TO 'battles', 'agents'
+AS $$
+DECLARE
+  v_ai_lenser_id uuid;
+BEGIN
+  -- Resolve contender_ref_id for AI contender types.
+  -- Accepts EITHER agents.ai_lensers.id (direct agent UUID — backward-compat)
+  -- OR lensers.profiles.id (frontend convention via fn_invite_battle_contender).
+  -- A profile-based ref_id is resolved to the canonical agents.ai_lensers.id via fallback.
+  IF NEW.contender_type IN ('ai_model', 'ai_agent') THEN
+    -- Try direct match: caller already has the agent UUID
+    SELECT al.id INTO v_ai_lenser_id
+      FROM agents.ai_lensers al
+     WHERE al.id = NEW.contender_ref_id;
+
+    -- Fallback: caller supplied the lenser profile UUID
+    IF v_ai_lenser_id IS NULL THEN
+      SELECT al.id INTO v_ai_lenser_id
+        FROM agents.ai_lensers al
+       WHERE al.profile_id = NEW.contender_ref_id;
+    END IF;
+  END IF;
+
+  INSERT INTO battles.contender_entity_map (contender_id, profile_id, ai_lenser_id)
+  VALUES (
+    NEW.id,
+    CASE WHEN NEW.contender_type = 'human' THEN NEW.contender_ref_id ELSE NULL END,
+    v_ai_lenser_id   -- NULL for human; resolved agent UUID for AI types
+  )
+  ON CONFLICT (contender_id) DO NOTHING;
+
+  RETURN NEW;
+END;
+$$;
+
+COMMENT ON FUNCTION "battles"."fn_populate_contender_entity_map"() IS
+  'AFTER INSERT trigger on battles.contenders. Populates battles.contender_entity_map. '
+  'For AI contender types (ai_model, ai_agent): resolves contender_ref_id to the canonical '
+  'agents.ai_lensers.id, accepting either the agent UUID directly (backward-compat) or the '
+  'lenser profile UUID (frontend convention via fn_invite_battle_contender).';
+
+ALTER FUNCTION "battles"."fn_populate_contender_entity_map"() OWNER TO "postgres";
+
+GRANT ALL ON FUNCTION "battles"."fn_populate_contender_entity_map"() TO "service_role";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_redacted_agent_snapshot"("p_ai_lenser_id" "uuid") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'agents', 'lensers', 'lenses', 'extensions'
@@ -28779,13 +28833,11 @@ GRANT ALL ON FUNCTION "public"."fn_redact_memory_entry"("p_memory_id" "uuid", "p
 
 
 
-GRANT ALL ON FUNCTION "public"."fn_redacted_agent_snapshot"("p_ai_lenser_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_redacted_agent_snapshot"("p_ai_lenser_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_redacted_agent_snapshot"("p_ai_lenser_id" "uuid") TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."fn_redacted_agent_snapshot_hash"("p_ai_lenser_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_redacted_agent_snapshot_hash"("p_ai_lenser_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_redacted_agent_snapshot_hash"("p_ai_lenser_id" "uuid") TO "service_role";
 
