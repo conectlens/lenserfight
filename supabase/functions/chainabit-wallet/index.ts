@@ -18,6 +18,7 @@ import { handleCors, errResponse, jsonResponse } from '../_shared/cors.ts'
 import {
   resolveChainabitToken,
   ProviderNotConnectedError,
+  TokenExpiredError,
 } from '../_shared/provider-token.ts'
 import { requireCapabilities, CAPABILITIES } from '../_shared/capability-validator.ts'
 
@@ -52,6 +53,11 @@ serve(async (req: Request): Promise<Response> => {
   } catch (err) {
     if (err instanceof ProviderNotConnectedError) {
       return errResponse('not_connected', err.message, 403, req)
+    }
+    if (err instanceof TokenExpiredError) {
+      // Identity exists but access_token is absent — the client must unlink
+      // and re-link to obtain fresh tokens.
+      return errResponse('token_expired', err.message, 401, req)
     }
     console.error('[chainabit-wallet] token resolution failed:', err)
     return errResponse('token_resolution_failed', 'Failed to resolve Chainabit token', 500, req)

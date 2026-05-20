@@ -116,8 +116,22 @@ export function useChainabitCapabilities(): UseChainabitCapabilitiesResult {
   })
 
   const reconnect = useCallback(async () => {
+    // When the identity is already linked but tokens are missing/expired
+    // (token_expired or insufficient_scope), linkIdentity() would fail with
+    // identity_already_exists.  Unlink first so the re-link flow can store
+    // fresh tokens.  For not_connected there is no identity to remove.
+    if (state === 'token_expired' || state === 'insufficient_scope') {
+      try {
+        await connectorApiClient.disconnect()
+      } catch {
+        // Ignore — the identity may already be absent, or the user may only
+        // have one identity (unlinkIdentity rejects those), in which case
+        // connect() will error with identity_already_exists; the user will
+        // need to sign in again via Chainabit to force a token refresh.
+      }
+    }
     await connectorApiClient.connect(window.location.href)
-  }, [])
+  }, [state])
 
   const invalidate = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['chainabit'] })
