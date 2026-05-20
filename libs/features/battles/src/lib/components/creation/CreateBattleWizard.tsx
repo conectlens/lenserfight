@@ -754,7 +754,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         !isCompatibleCombination(battleFormat as BattleFormat | null, resolvedBattleType)
       ) {
         // For V2 model this is a soft warning since the mapper handles the mapping
-        console.warn(
+        console.debug(
           `Legacy compatibility note: "${resolvedBattleType}" mapped from V2 model ` +
             `(${taskSource}/${contenderStructure}/${judgingMode}) for format "${battleFormat}".`
         )
