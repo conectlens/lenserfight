@@ -68,7 +68,7 @@ export const connectorApiClient = {
   async connect(returnUrl: string = window.location.href): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.auth as any).linkIdentity({
-      provider: 'chainabit',
+      provider: 'custom:chainabit',
       options: {
         redirectTo: `${AUTH_BASE_URL}/callback?return_url=${encodeURIComponent(returnUrl)}`,
       },

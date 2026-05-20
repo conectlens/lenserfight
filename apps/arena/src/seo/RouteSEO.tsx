@@ -9,7 +9,7 @@ import {
 } from '@lenserfight/utils/locale'
 import { useLocale } from '@lenserfight/shared/i18n-routing'
 
-const ARENA_HOST = 'https://arena.lenserfight.com'
+const ARENA_HOST = 'https://lenserfight.com'
 const OG_IMAGE = `${ARENA_HOST}/og-banner.png`
 
 type SchemaType =

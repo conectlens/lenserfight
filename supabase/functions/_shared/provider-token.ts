@@ -4,7 +4,7 @@
 //
 // Supabase Custom OAuth Provider stores the access_token, refresh_token,
 // expires_at, and scope in auth.identities (provider = 'custom:chainabit')
-// when the user connects via supabase.auth.linkIdentity({ provider: 'chainabit' }).
+// when the user connects via supabase.auth.linkIdentity({ provider: 'custom:chainabit' }).
 //
 // Token refresh is handled by Supabase itself: when the client calls
 // supabase.auth.refreshSession(), Supabase refreshes the provider token using
