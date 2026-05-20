@@ -269,6 +269,8 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     if (data.onboarding_completed_at !== undefined)
       updatePayload.onboarding_completed_at = data.onboarding_completed_at
     if (data.visibility !== undefined) updatePayload.visibility = data.visibility
+    if (data.location !== undefined) updatePayload.location = data.location
+    if (data.website_url !== undefined) updatePayload.website_url = data.website_url
 
     const { data: updated, error } = await supabase.rpc('fn_lensers_update_profile', {
       p_data: updatePayload,

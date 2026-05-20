@@ -53,8 +53,6 @@ body:
     attributes:
       label: Environment
       placeholder: "macOS 14.4, Node 20.11, Chrome 124"
-    validations:
-      required: true
 
   - type: checkboxes
     id: checklist

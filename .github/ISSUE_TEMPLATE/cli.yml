@@ -40,13 +40,6 @@ body:
     validations:
       required: true
 
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected behavior
-    validations:
-      required: true
-
   - type: input
     id: cli_version
     attributes:
@@ -62,8 +55,6 @@ body:
       label: Environment
       description: OS, Node version, pnpm version.
       placeholder: "macOS 14.4, Node 20.11, pnpm 9.1"
-    validations:
-      required: true
 
   - type: checkboxes
     id: checklist

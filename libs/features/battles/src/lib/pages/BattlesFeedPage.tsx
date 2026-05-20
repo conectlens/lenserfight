@@ -1,10 +1,13 @@
 import { Button, EmptyState, ExperimentalBadge, HelpButton, InfiniteScrollSentinel, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
+import { battlesRepository } from '@lenserfight/data/repositories'
+import { useQuery } from '@tanstack/react-query'
 import React from 'react'
 import { useNavigate, Outlet, useSearchParams } from 'react-router-dom'
 import { PlusCircle, Zap } from 'lucide-react'
 
 import { BattleCard } from '../components/display/BattleCard'
+import { BattleTemplateCarousel } from '../components/BattleTemplateCarousel'
 import { useBattlesFeed } from '../hooks/query/useBattlesFeed'
 import type { BattlesFeedSortBy } from '../hooks/query/useBattlesFeed'
 
@@ -72,6 +75,12 @@ export function BattlesFeedPage() {
     sortBy,
     typeFilter
   )
+
+  const { data: templateData, isLoading: templatesLoading } = useQuery({
+    queryKey: ['public-battle-templates', null],
+    queryFn: () => battlesRepository.listPublicBattleTemplates(undefined, 12),
+    staleTime: 120_000,
+  })
 
   const battles = data?.pages.flat() ?? []
 
@@ -151,6 +160,11 @@ export function BattlesFeedPage() {
         </div>
       </div>
 
+      <BattleTemplateCarousel
+        templates={templateData ?? []}
+        isLoading={templatesLoading}
+      />
+
       {isLoading ? (
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -165,9 +179,6 @@ export function BattlesFeedPage() {
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Button variant="primary" size="sm" onClick={() => navigate('/battles/create')}>
                 Start your first battle →
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/battles/templates')}>
-                Browse templates
               </Button>
               <HelpButton path="/tutorials/battle-walkthroughs/your-first-battle" label="How it works" />
             </div>
