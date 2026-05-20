@@ -1,4 +1,4 @@
-import { ContactMessage, CreateContactDTO } from '@lenserfight/types'
+import { CreateContactDTO } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
 
 export interface ContactRepositoryPort {

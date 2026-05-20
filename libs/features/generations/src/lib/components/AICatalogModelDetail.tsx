@@ -4,7 +4,6 @@ import { MetricCard } from '@lenserfight/ui/data-display'
 import { Stack } from '@lenserfight/ui/layout'
 import { Heading, Surface, Text } from '@lenserfight/ui/primitives'
 import { 
-  Box, 
   ExternalLink, 
   Layers, 
   Sparkles, 

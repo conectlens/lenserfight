@@ -4,7 +4,7 @@ import { Button } from '@lenserfight/ui/components'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import type { AgentMemoryProfileRecord } from '@lenserfight/types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Brain, Clock, Layers, Pencil, Plus, RefreshCcw, Trash2 } from 'lucide-react'
+import { Brain, Clock, Layers, Pencil, RefreshCcw, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
 

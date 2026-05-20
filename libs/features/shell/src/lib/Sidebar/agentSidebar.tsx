@@ -1,4 +1,4 @@
-import { BluetoothConnected, BookOpen, ConciergeBell, CornerDownLeftIcon, MessageCircle } from 'lucide-react'
+import { BookOpen, CornerDownLeftIcon, MessageCircle } from 'lucide-react'
 import React from 'react'
 
 import { AGENT_NAV_ZONES, NAV_ITEMS, ZONE_LABELS } from '@lenserfight/features/agents'

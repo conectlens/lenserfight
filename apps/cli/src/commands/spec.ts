@@ -26,7 +26,6 @@ import {
   normalizeSpecKind,
   computeSpecDigest,
   planMigration,
-  applyMigration,
   migrateContents,
 } from '@lenserfight/domain/spec-governance'
 

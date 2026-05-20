@@ -30,14 +30,7 @@ import {
   Sparkles,
   GitBranch,
   Swords,
-  Vote,
-  ImageIcon,
-  Video,
-  UserCircle2,
-  Code2,
-  Languages,
   MessageSquare,
-  Library,
 } from 'lucide-react'
 import React, { useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'

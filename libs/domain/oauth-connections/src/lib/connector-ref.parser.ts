@@ -13,7 +13,7 @@
  * a matching connection exists in the database — that is the resolver's job.
  */
 
-import type { ConnectorRef, ConnectorRefParseResult, OAuthCapability, OAuthProvider } from './oauth-connection.types'
+import type { ConnectorRefParseResult, OAuthCapability, OAuthProvider } from './oauth-connection.types'
 import {
   getOAuthCapabilityDefinition,
   isRegisteredOAuthProvider,

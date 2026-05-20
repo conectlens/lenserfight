@@ -6,7 +6,7 @@ jest.mock('../../config/project-config', () => ({
 }))
 
 import { execSync } from 'node:child_process'
-import { detectNode, detectDocker, detectSupabaseCli, detectCloudApi, checkCommand } from './detect'
+import { detectNode, detectDocker, detectSupabaseCli, detectCloudApi } from './detect'
 
 const mockExecSync = execSync as jest.MockedFunction<typeof execSync>
 

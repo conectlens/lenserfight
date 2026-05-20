@@ -1,7 +1,6 @@
 import React from 'react'
 import type { PublicExecutionJobRecord } from '../../hooks/query/useExecutionJobs'
 import type { Contender } from '../../types/battle.types'
-import { ProviderBadge } from './ProviderBadge'
 
 interface ExecutionMetadataPanelProps {
   executionJobs: PublicExecutionJobRecord[]

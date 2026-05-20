@@ -1,7 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService, lenserService } from '@lenserfight/data/repositories'
 import type { AgentPermissionScope, AgentOwnershipDelegateRecord, ApprovalRequestView } from '@lenserfight/types'
-import { Alert, Button, Card } from '@lenserfight/ui/components'
+import { Button } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ClipboardCheck, ShieldCheck, ShieldPlus, Users, History, CheckCircle, XCircle, Edit3 } from 'lucide-react'

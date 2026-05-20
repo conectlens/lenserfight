@@ -18,7 +18,7 @@ import { Button, EmptyState, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { useModalRouter } from '@lenserfight/ui/routing'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Activity, Award, Bot, FolderOpen, LogIn, MessageSquare, Plus, Trophy } from 'lucide-react'
+import { Activity, Bot, FolderOpen, LogIn, MessageSquare, Plus, Trophy } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useNavigate, useParams } from 'react-router-dom'
 
@@ -44,7 +44,6 @@ import { AILenserProfilePage } from './AILenserProfilePage'
 import type {
   ActivityFeedItem,
   Lenser,
-  LenserActivityPoint,
   LenserProfileDTO,
   LenserStats,
   LensViewModel,

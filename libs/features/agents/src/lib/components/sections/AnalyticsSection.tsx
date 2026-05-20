@@ -1,6 +1,6 @@
 import { Card } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
-import { BarChart2, Coins } from 'lucide-react'
+import { BarChart2 } from 'lucide-react'
 import React, { useState } from 'react'
 import {
   Bar,

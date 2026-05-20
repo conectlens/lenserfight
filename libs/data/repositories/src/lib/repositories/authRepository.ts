@@ -1,7 +1,6 @@
 import {
   ApproveDeviceRequestDTO,
   ApproveDeviceRequestResultDTO,
-  AuthStateChangeCallback,
   DeviceApprovalRequestDTO,
   DeviceApprovalRequestResultDTO,
   DeveloperTokenExchangeResultDTO,

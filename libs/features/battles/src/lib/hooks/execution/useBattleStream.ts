@@ -15,7 +15,6 @@ import { streamLocalProvider } from '@lenserfight/features/lenses'
 import type { StreamCallbacks } from '@lenserfight/types'
 
 import type {
-  ContenderStreamState,
   ContenderStreamSnapshot,
   ContenderExecutionConfig,
   StreamEvent,

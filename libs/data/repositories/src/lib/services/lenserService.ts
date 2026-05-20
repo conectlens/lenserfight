@@ -11,7 +11,6 @@ import {
   SuggestedLenser,
   LeaderboardLenser,
   LenserFollowStatus,
-  FollowsNetworkUser,
   FollowPeriod,
   LenserType,
   LenserListItem,

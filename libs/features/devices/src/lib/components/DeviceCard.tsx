@@ -1,6 +1,6 @@
 import React from 'react'
 import { Monitor, Laptop, Server, Cloud, HelpCircle, Trash2 } from 'lucide-react'
-import { Card, Button, Badge } from '@lenserfight/ui/components'
+import { Card, Button } from '@lenserfight/ui/components'
 import { DeviceTrustIndicator } from '@lenserfight/ui/widgets'
 import type { DeviceRecord, DeviceTrustLevel, DeviceType } from '@lenserfight/types'
 import { timeAgo } from '@lenserfight/utils/date'

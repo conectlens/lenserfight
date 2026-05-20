@@ -2,8 +2,7 @@
  * StatusDot.native.tsx — Status indicator dot for React Native.
  */
 import React, { useEffect, useRef } from 'react'
-import { Animated, View, StyleSheet } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { Animated, StyleSheet } from 'react-native'
 
 export type StatusDotVariant = 'online' | 'offline' | 'away' | 'busy' | 'neutral'
 

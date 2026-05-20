@@ -7,7 +7,6 @@ import {
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
-  type Connection,
   type Edge,
   type EdgeMouseHandler,
   type Node,

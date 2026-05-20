@@ -17,7 +17,7 @@ import {
   Trash2,
   UserPlus,
 } from 'lucide-react'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 interface TeamContextualPanelProps {
