@@ -26,8 +26,11 @@ export function stripLocale(pathname: string): string {
 
 export function withLocale(pathname: string, locale: LocaleCode): string {
   const stripped = stripLocale(pathname)
+  if (locale === DEFAULT_LOCALE) {
+    return stripped === '' ? '/' : stripped
+  }
   if (stripped === '/' || stripped === '') {
-    return locale === DEFAULT_LOCALE ? '/' : `/${locale}`
+    return `/${locale}`
   }
   return `/${locale}${stripped}`
 }
