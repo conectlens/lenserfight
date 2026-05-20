@@ -51,6 +51,9 @@ function normalizeUnprefixed(pathname: string): string {
 
 function urlFor(locale: string, unprefixed: string): string {
   const tail = unprefixed === '/' ? '' : unprefixed
+  if (locale === DEFAULT_LOCALE) {
+    return `${ARENA_HOST}${tail}`
+  }
   return `${ARENA_HOST}/${locale}${tail}`
 }
 
