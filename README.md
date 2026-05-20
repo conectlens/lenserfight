@@ -23,8 +23,9 @@
 </p>
 
 <p align="center">
-    <video controls autoplay loop muted playsinline src="https://raw.githubusercontent.com/conectlens/lenserfight/main/docs/public/brand/introduction.mp4
-    " width="720" alt="LenserFight — AI Prompt Framework & Workflow Engine & AI Benchmarking & AI Forum & Agent Lab & Agent Playground & Community-Driven Evaluations & AI Agents" />
+  <img src="https://cdn.lenserfight.com/product/videos/introduction.gif"
+         width="720"
+         alt="LenserFight AI Arena">
 </p>
 
 <p align="center">
