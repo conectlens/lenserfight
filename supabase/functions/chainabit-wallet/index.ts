@@ -10,7 +10,9 @@
 //
 // Required env vars:
 //   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
-//   CHAINABIT_API_URL  (default: https://api.chainabit.com/api/v1)
+//   CHAINABIT_API_URL      (default: https://api.chainabit.com/api/v1)
+//   CHAINABIT_CLIENT_ID    (same value as SUPABASE_AUTH_CHAINABIT_CLIENT_ID)
+//   CHAINABIT_CLIENT_SECRET (same value as SUPABASE_AUTH_CHAINABIT_SECRET)
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -19,6 +21,7 @@ import {
   resolveChainabitToken,
   ProviderNotConnectedError,
   TokenExpiredError,
+  type ChainabitRefreshConfig,
 } from '../_shared/provider-token.ts'
 import { requireCapabilities, CAPABILITIES } from '../_shared/capability-validator.ts'
 
@@ -44,19 +47,31 @@ serve(async (req: Request): Promise<Response> => {
   const { data: { user }, error: authError } = await userClient.auth.getUser()
   if (authError || !user) return errResponse('unauthenticated', 'Invalid or expired token', 401, req)
 
-  // Resolve Chainabit OAuth token from auth.identities (keycloak slot).
-  // Supabase refreshes the provider token automatically on session refresh —
-  // no manual refresh needed here.
+  const chainabitUrl = (Deno.env.get('CHAINABIT_API_URL') ?? 'https://api.chainabit.com/api/v1')
+    .replace(/\/$/, '')
+
+  // Build server-side refresh config from edge function secrets.
+  // Set CHAINABIT_CLIENT_ID and CHAINABIT_CLIENT_SECRET in Supabase Dashboard →
+  // Edge Functions → Secrets (same values as SUPABASE_AUTH_CHAINABIT_CLIENT_ID
+  // and SUPABASE_AUTH_CHAINABIT_SECRET used by the Auth provider).
+  const clientId     = Deno.env.get('CHAINABIT_CLIENT_ID')
+  const clientSecret = Deno.env.get('CHAINABIT_CLIENT_SECRET')
+  const refreshConfig: ChainabitRefreshConfig | undefined =
+    clientId && clientSecret
+      ? { apiUrl: chainabitUrl, clientId, clientSecret }
+      : undefined
+
+  // Resolve Chainabit OAuth token from auth.identities.  If the stored
+  // access_token is expired, resolveChainabitToken performs a server-side
+  // refresh using the stored refresh_token and persists the new pair.
   let token: { accessToken: string; scopes: string[] }
   try {
-    token = await resolveChainabitToken(user.id, adminClient)
+    token = await resolveChainabitToken(user.id, adminClient, refreshConfig)
   } catch (err) {
     if (err instanceof ProviderNotConnectedError) {
       return errResponse('not_connected', err.message, 403, req)
     }
     if (err instanceof TokenExpiredError) {
-      // Identity exists but access_token is absent — the client must unlink
-      // and re-link to obtain fresh tokens.
       return errResponse('token_expired', err.message, 401, req)
     }
     console.error('[chainabit-wallet] token resolution failed:', err)
@@ -74,9 +89,6 @@ serve(async (req: Request): Promise<Response> => {
       req,
     )
   }
-
-  const chainabitUrl = (Deno.env.get('CHAINABIT_API_URL') ?? 'https://api.chainabit.com/api/v1')
-    .replace(/\/$/, '')
 
   const walletRes = await fetch(`${chainabitUrl}/wallet/me`, {
     headers: { Authorization: `Bearer ${token.accessToken}` },
