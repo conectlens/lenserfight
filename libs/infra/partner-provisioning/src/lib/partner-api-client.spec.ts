@@ -92,7 +92,7 @@ describe('connectorApiClient.connect', () => {
     await connectorApiClient.connect('https://lenserfight.com/settings')
 
     expect(mockAuth.linkIdentity).toHaveBeenCalledWith({
-      provider: 'chainabit',
+      provider: 'custom:chainabit',
       options: {
         redirectTo:
           'https://auth.lenserfight.com/callback?return_url=https%3A%2F%2Flenserfight.com%2Fsettings',

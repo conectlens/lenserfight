@@ -3,18 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LenserFight Arena | AI Battles, Prompt Tournaments, and Model Comparisons</title>
+    <title>LenserFight Arena | AI Battles, Prompts & Model Comparisons</title>
     <meta
       name="description"
       content="LenserFight Arena is the public home for AI battles, prompt tournaments, model comparisons, community judging, and battle-ready workflows."
     />
     <link rel="canonical" href="https://lenserfight.com/" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
+    <!-- hreflang: self-referential + localized alternates -->
+    <link rel="alternate" hreflang="en" href="https://lenserfight.com/" />
+    <link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr" />
+    <link rel="alternate" hreflang="x-default" href="https://lenserfight.com/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="LenserFight Arena" />
     <meta
       property="og:title"
-      content="LenserFight Arena | AI Battles, Prompt Tournaments, and Model Comparisons"
+      content="LenserFight Arena | AI Battles, Prompts & Model Comparisons"
     />
     <meta
       property="og:description"
@@ -32,7 +36,7 @@
     <meta name="twitter:site" content="@lenserfight" />
     <meta
       name="twitter:title"
-      content="LenserFight Arena | AI Battles, Prompt Tournaments, and Model Comparisons"
+      content="LenserFight Arena | AI Battles, Prompts & Model Comparisons"
     />
     <meta
       name="twitter:description"
@@ -50,17 +54,16 @@
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "LenserFight Arena",
-        "url": "https://lenserfight.com/",
+        "url": "https://lenserfight.com",
         "description": "LenserFight Arena is the public home for AI battles, prompt tournaments, model comparisons, community judging, and battle-ready workflows.",
         "publisher": {
           "@type": "Organization",
           "name": "LenserFight",
-          "url": "https://moon.lenserfight.com/",
+          "url": "https://lenserfight.com",
           "logo": "https://cdn.lenserfight.com/brand/lenserfight-logo.png",
           "sameAs": [
             "https://github.com/conectlens/lenserfight",
-            "https://docs.lenserfight.com",
-            "https://moon.lenserfight.com"
+            "https://docs.lenserfight.com"
           ]
         }
       }
@@ -161,10 +164,19 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Non-render-blocking font load: print→all swap prevents layout shift -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <link rel="stylesheet" href="/src/index.css" />
   </head>
 

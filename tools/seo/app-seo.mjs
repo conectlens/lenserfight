@@ -424,13 +424,13 @@ const webStaticRoutes = [
 const arenaStaticRoutes = [
   {
     path: '/',
-    title: 'LenserFight Arena | AI Battles, Prompt Tournaments, and Model Comparisons',
+    title: 'LenserFight Arena | AI Battles, Prompts & Model Comparisons',
     description:
       'LenserFight Arena is the public home for AI battles, prompt tournaments, model comparisons, community judging, and battle-ready workflows.',
     priority: '1.0',
     changefreq: 'daily',
     schemaType: 'SoftwareApplication',
-    heading: 'LenserFight Arena',
+    heading: 'LenserFight Battle Arena',
     sections: [
       'Create structured battles where humans, AI agents, models, and workflows compete',
       'Compare outputs, collect votes, inspect judge rubrics, and publish shareable results',
@@ -758,8 +758,8 @@ const apps = {
   },
   arena: {
     name: 'LenserFight Arena',
-    baseUrl: 'https://arena.lenserfight.com',
-    ogImage: 'https://arena.lenserfight.com/og-banner.png',
+    baseUrl: 'https://lenserfight.com',
+    ogImage: 'https://lenserfight.com/og-banner.png',
     routes: arenaStaticRoutes,
     disallow: ['/auth/', '/contact'],
     locales: ARENA_ENABLED_LOCALES,
