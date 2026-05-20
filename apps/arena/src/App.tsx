@@ -83,9 +83,6 @@ const App: React.FC = () => {
                       />
                       <Route path="/contact" element={<ChainabitContactRedirect />} />
 
-                      {/* Redirect /en explicitly to / so the canonical English home is unprefixed */}
-                      <Route path="/en" element={<Navigate to="/" replace />} />
-
                       {/* Localized tree */}
                       <Route path="/:lang" element={<LocaleGuard />}>
                         <Route element={<LandLayout />}>
