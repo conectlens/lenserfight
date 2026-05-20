@@ -21,7 +21,6 @@ jest.mock('../utils/output', () => ({
 
 import consola from 'consola'
 import { callRpc, callRest, handleError } from '../utils/api'
-import { printTable } from '../utils/output'
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
 const mockCallRest = callRest as jest.MockedFunction<typeof callRest>

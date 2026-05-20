@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react'
 import { Layers } from 'lucide-react'
 import type { BattleLayoutContext } from '../../../types/battle-layout.types'
 import { BattleResultsPanel } from '../../results/BattleResultsPanel'
-import { ProviderBadge } from '../../results/ProviderBadge'
 
 /**
  * Image/drawing/avatar battle layout.

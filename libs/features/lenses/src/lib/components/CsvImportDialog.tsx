@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { Clipboard, Check, Zap } from 'lucide-react'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { Button } from '@lenserfight/ui/components'
-import { LensVersionParam, LensParam } from '@lenserfight/types'
+import { LensVersionParam } from '@lenserfight/types'
 import { parseCsvText, coerceCsvRow, buildCsvTemplate, ParsedCsv } from '../hooks/useParamImport'
 
 interface CsvImportDialogProps {

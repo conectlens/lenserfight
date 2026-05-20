@@ -3,7 +3,6 @@ import type {
   GeneratedChallengeConfig,
   GeneratedChallengeRecord,
   GeneratedChallengeStatus,
-  ChallengeGeneratorOutput,
 } from '@lenserfight/domain/battle-governance'
 
 // ─── Types ──────────────────────────────────────────────────────────────────

@@ -102,7 +102,6 @@ import { printJson, printInfo, printSuccess, printWarn, printError } from '../ut
 import { configExists, loadUserConfig } from '../config/project-config'
 import {
   loadOnboardingSnapshot,
-  markOnboardingStarted,
   markOnboardingComplete,
   markOnboardingFailed,
   markOnboardingStep,

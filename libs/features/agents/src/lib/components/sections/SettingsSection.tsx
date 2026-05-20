@@ -3,7 +3,7 @@ import { agentWorkspaceService, agentsService } from '@lenserfight/data/reposito
 import { Button } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Download, Pause, Play, Save, ShieldOff, Trash2 } from 'lucide-react'
+import { AlertTriangle, Download, Pause, Save, ShieldOff, Trash2 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'

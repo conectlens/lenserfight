@@ -2,7 +2,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import type { AgentTeamRecord, AgentWorkflowAssignmentRecord } from '@lenserfight/types'
-import { Button, Card } from '@lenserfight/ui/components'
+import { Button } from '@lenserfight/ui/components'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GitBranch, Loader2, Play, Plus, Trash2 } from 'lucide-react'
@@ -15,7 +15,7 @@ import { useTeamRunDispatch } from '../../hooks/useTeamRunDispatch'
 import { WorkflowAssignmentDrawer } from '../drawers/WorkflowAssignmentDrawer'
 import { EmptyPanel } from '../EmptyPanel'
 
-import { ProfileCard, formatDateTime } from './_shared'
+import { formatDateTime } from './_shared'
 import { SectionPage } from './SectionPage'
 
 export const WorkflowsSection: React.FC = () => {

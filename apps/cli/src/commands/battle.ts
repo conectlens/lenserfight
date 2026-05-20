@@ -35,11 +35,9 @@ import {
   type TaskSource,
   CONTENDER_STRUCTURES,
   CONTENDER_STRUCTURE_LABEL,
-  CONTENDER_STRUCTURE_DESCRIPTION,
   type ContenderStructure,
   JUDGING_MODES,
   JUDGING_MODE_LABEL,
-  JUDGING_MODE_DESCRIPTION,
   type JudgingMode,
   getAllowedContendersForTaskSource,
   getAllowedJudgingForContender,
@@ -48,9 +46,7 @@ import {
   isExperimentalTaskSource,
   isExperimentalJudgingMode,
   listChallengeTypeDefinitions,
-  listAvailableChallengeTypes,
   listChallengeTypesForContender,
-  getChallengeType,
 } from '@lenserfight/domain/battle-governance'
 
 function defaultPrivateBattlePath(): string {

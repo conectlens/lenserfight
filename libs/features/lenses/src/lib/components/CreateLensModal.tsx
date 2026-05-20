@@ -1,4 +1,4 @@
-import { LensKindPicker, LENS_KIND_REGISTRY, resolveLensKindFromTagSlugs } from '@lenserfight/features/lens-kinds'
+import { LensKindPicker, LENS_KIND_REGISTRY } from '@lenserfight/features/lens-kinds'
 import { CreateVersionParamInput, LensKind, VisibilityEnum } from '@lenserfight/types'
 import { FormError } from '@lenserfight/ui/components'
 import { SelectField, LensContentEditor, type LensContentEditorHandle, InputField } from '@lenserfight/ui/forms'

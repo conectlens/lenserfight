@@ -10,11 +10,9 @@ import {
   useArtifactLifecycleStatus,
 } from '@lenserfight/features/artifact-lifecycle'
 import { useLenser } from '@lenserfight/features/profile'
-import { ExportButton } from '@lenserfight/features/exports'
 import { useShareContext } from '@lenserfight/features/share'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { useBattle } from '../hooks/query/useBattle'
-import { BattleWebhookSubscriptions } from '../components/BattleWebhookSubscriptions'
 import { ImmersiveArenaView } from '../components/arena/ImmersiveArenaView'
 
 export function BattleDetailPage() {

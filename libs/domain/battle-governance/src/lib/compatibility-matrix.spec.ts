@@ -1,7 +1,6 @@
 import {
   BATTLE_TYPES,
   type BattleFormat,
-  type BattleType,
 } from './battle.constants'
 import {
   FORMAT_LABEL,

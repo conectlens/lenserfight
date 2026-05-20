@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Swords, Trophy } from 'lucide-react'
+import { Swords } from 'lucide-react'
 
 import { PageMeta } from '@lenserfight/ui/layout'
 import { seoService } from '@lenserfight/data/repositories'

@@ -1,4 +1,4 @@
-import { LensParam, LensVersionParam } from '@lenserfight/types'
+import { LensVersionParam } from '@lenserfight/types'
 
 export interface ImportResult {
   values: Record<string, unknown>

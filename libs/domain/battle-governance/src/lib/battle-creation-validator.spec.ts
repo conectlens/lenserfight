@@ -1,7 +1,5 @@
 import { BattleCreationValidator, type BattleCreationInput } from './battle-creation-validator'
-import type { BattleContentType, BattleFormat, BattleType } from './battle.constants'
 import type { LenserBattlePolicy } from './lenser-battle-policy.types'
-import type { BattleCreationInputV2 } from './battle-creation-validator'
 
 describe('BattleCreationValidator', () => {
   const validator = new BattleCreationValidator()

@@ -24,7 +24,6 @@ jest.mock('../utils/lifecycle', () => ({
   runLifecycleAction: jest.fn(),
 }))
 
-import consola from 'consola'
 import { callRpc, callRest, handleError } from '../utils/api'
 import { printJson, printTable } from '../utils/output'
 
