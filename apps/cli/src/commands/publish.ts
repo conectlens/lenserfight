@@ -1,7 +1,6 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
-import { printJson } from '../utils/output';
 import { writeFileSync } from 'node:fs';
 
 // ---------------------------------------------------------------------------

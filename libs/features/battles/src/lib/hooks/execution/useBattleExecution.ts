@@ -15,7 +15,6 @@ import type {
   BattleExecutionPhase,
   BattleExecutionState,
   ContenderExecutionConfig,
-  ContenderStreamSnapshot,
 } from '../../types/battle-execution.types'
 import { createEmptySnapshot } from '../../types/battle-execution.types'
 import { useBattleStream } from './useBattleStream'

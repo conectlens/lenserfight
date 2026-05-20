@@ -2,7 +2,7 @@ import { Button, EmptyState, ExperimentalBadge, HelpButton, InfiniteScrollSentin
 import { SelectField } from '@lenserfight/ui/forms'
 import React from 'react'
 import { useNavigate, Outlet, useSearchParams } from 'react-router-dom'
-import { ArrowRight, ImageIcon, PlusCircle, Swords, Video, Vote, Zap } from 'lucide-react'
+import { PlusCircle, Zap } from 'lucide-react'
 
 import { BattleCard } from '../components/display/BattleCard'
 import { useBattlesFeed } from '../hooks/query/useBattlesFeed'

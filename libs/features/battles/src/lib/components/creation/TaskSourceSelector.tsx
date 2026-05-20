@@ -4,7 +4,6 @@ import {
   TASK_SOURCE_LABEL,
   TASK_SOURCE_DESCRIPTION,
   TASK_SOURCE_HELP_PATH,
-  isExperimentalTaskSource,
 } from '@lenserfight/domain/battle-governance'
 import { GitBranch, Layers, Gamepad2 } from 'lucide-react'
 import React from 'react'

@@ -4,7 +4,6 @@
  */
 import React from 'react'
 import { Play, Pause, RotateCcw } from 'lucide-react'
-import { Button } from '@lenserfight/ui/components'
 
 import type { ReplayState } from '../../hooks/utils/useReplayController'
 

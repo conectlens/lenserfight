@@ -3,7 +3,6 @@ import consola from 'consola';
 import { printJson, printTable } from '../utils/output';
 import {
   loginWithIdentifier,
-  loginWithEmail,
   clearAuthTokens,
   getUserInfo,
   isAuthenticated,

@@ -5,7 +5,7 @@
  * TabPanel hides with opacity+display trick to preserve scroll position.
  * Supports 'underline' and 'pills' variants matching the web API.
  */
-import React, { useState, useId } from 'react'
+import React, { useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import type { ViewStyle } from 'react-native'
 import { useNativeTheme } from '@lenserfight/ui/providers'

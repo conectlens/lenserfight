@@ -6,7 +6,7 @@ import type {
   ApprovalStatus,
 } from '@lenserfight/types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Card } from '@lenserfight/ui/components'
+import { Button } from '@lenserfight/ui/components'
 import { Check, Pencil, ShieldCheck, X } from 'lucide-react'
 import React, { useState } from 'react'
 import { ApprovalDecisionDialog } from '../ApprovalDecisionDialog'

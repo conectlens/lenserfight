@@ -7,7 +7,7 @@ import { useShareContext } from '@lenserfight/features/share'
 import { motion } from 'framer-motion'
 import { Trophy, Users, Zap, Play } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 
 import { TournamentBracket } from '../components/tournament/TournamentBracket'
 

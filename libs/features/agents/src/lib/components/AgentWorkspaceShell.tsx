@@ -1,7 +1,6 @@
 import { useLenserWorkspace, useWorkspaceSwitchController } from '@lenserfight/features/profile'
 import { Alert } from '@lenserfight/ui/components'
 import { useIsMutating } from '@tanstack/react-query'
-import { Bot } from 'lucide-react'
 import React from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
@@ -17,7 +16,6 @@ import {
   LEGACY_AGENT_SECTION_ALIASES,
   type AgentSection,
 } from './agentNavConfig'
-import { EmptyPanel } from './EmptyPanel'
 import { SectionErrorBoundary } from './SectionErrorBoundary'
 import {
   AgentTeamSection,

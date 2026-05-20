@@ -11,7 +11,7 @@ jest.mock('@lenserfight/utils/logger', () => ({
 }))
 
 import { createServiceSupabaseClient } from '../lib/supabase'
-import { WorkflowExecutionService, getExecutionProvider } from '@lenserfight/infra/execution'
+import { WorkflowExecutionService } from '@lenserfight/infra/execution'
 import { processNextScheduledWorkflow } from './scheduled-workflow-worker'
 
 const mockCreate = createServiceSupabaseClient as jest.MockedFunction<typeof createServiceSupabaseClient>

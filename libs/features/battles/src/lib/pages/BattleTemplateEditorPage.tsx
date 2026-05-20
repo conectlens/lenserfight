@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { BookOpen, Settings2, Trash2 } from 'lucide-react'
+import { BookOpen, Trash2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 
 import { battlesRepository } from '@lenserfight/data/repositories'

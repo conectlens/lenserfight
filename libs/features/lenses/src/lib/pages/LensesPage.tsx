@@ -4,7 +4,7 @@ import { Button, HelpButton, PageHeader, SEOHead } from '@lenserfight/ui/compone
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 import type { LensViewModel } from '@lenserfight/types'
-import { ArrowRight, Plus, Search, AlignLeft, ImageIcon, Video, Mic, Music, Swords, GitBranch } from 'lucide-react'
+import { Plus, Search, AlignLeft, ImageIcon, Video, Mic, Music } from 'lucide-react'
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 

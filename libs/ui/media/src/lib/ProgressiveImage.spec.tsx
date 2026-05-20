@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { ProgressiveImage } from './ProgressiveImage'

@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { queryKeys } from '@lenserfight/data/cache'
 import { xpService, XP_APP_IDS } from '@lenserfight/data/repositories'
 import { Avatar } from '@lenserfight/ui/components'
-import { XPSeasonV2, FeaturedChallenge } from '@lenserfight/types'
+import { FeaturedChallenge } from '@lenserfight/types'
 import { formatCount } from '@lenserfight/utils/number'
 
 const STATUS_STYLES: Record<string, string> = {

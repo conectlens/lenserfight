@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import React from 'react'
-import { DismissButton, ScoreRing, SegmentedProgressBar, TaskPill, XpBadge } from '../OnboardingShared'
+import { ScoreRing, SegmentedProgressBar, TaskPill, XpBadge } from '../OnboardingShared'
 import type { OnboardingTask } from '../onboardingTypes'
 
 interface OnboardingCompactInlineProps {

@@ -1,4 +1,4 @@
-import { Lock, Copy, Pencil, Trash2, ImageIcon, Video, Music, Mic, Play, Swords, GitBranch } from 'lucide-react'
+import { Lock, Copy, Pencil, Trash2, ImageIcon, Video, Music, Mic, Play } from 'lucide-react'
 import React, { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 

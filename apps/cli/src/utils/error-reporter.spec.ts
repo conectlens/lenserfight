@@ -11,7 +11,7 @@ jest.mock('../lib/exec-context', () => ({
 }))
 
 import { getExecContext } from '../lib/exec-context'
-import { reportCliError, handleCliError, exitWithError } from './error-reporter'
+import { reportCliError, handleCliError } from './error-reporter'
 
 const mockGetExecContext = getExecContext as jest.MockedFunction<typeof getExecContext>
 

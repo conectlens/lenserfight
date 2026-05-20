@@ -5,7 +5,7 @@
  * to receive incremental content_text updates during live execution.
  * Used by non-executor users watching the battle.
  */
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@lenserfight/data/supabase'
 
 import type { Contender } from '../../types/battle.types'

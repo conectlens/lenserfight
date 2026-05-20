@@ -11,7 +11,7 @@ import {
 } from '../utils/automation-objects'
 import { printJson, printTable, truncate } from '../utils/output'
 import { makeLifecycleCommand } from '../utils/lifecycle'
-import { A, c, sym } from '../utils/ansi'
+import { A, sym } from '../utils/ansi'
 
 // Node types that can execute in the current CLI context.
 // All other types require the full hosted DAG runner.

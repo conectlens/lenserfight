@@ -1,9 +1,8 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Layers } from 'lucide-react'
 import type { BattleLayoutContext } from '../../../types/battle-layout.types'
 import { BattleResultsPanel } from '../../results/BattleResultsPanel'
 import { ExecutionStatusBadge } from '../ExecutionStatusBadge'
-import { ProviderBadge } from '../../results/ProviderBadge'
 import { SubmitTextForm } from '../../submission/SubmitTextForm'
 
 /**

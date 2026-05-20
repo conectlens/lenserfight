@@ -6,7 +6,6 @@ import {
   listBenchmarkGamesForContender,
   isBenchmarkChallengeType,
 } from './benchmark-game.registry'
-import type { BenchmarkGameDefinition } from './benchmark-game.registry'
 import { CONTENDER_STRUCTURES } from './contender-structure.types'
 import { TASK_SOURCES } from './task-source.types'
 import { JUDGING_MODES } from './judging-mode.types'

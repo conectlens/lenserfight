@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
 import { FileText, Image, Music, Video, File, Upload, X } from 'lucide-react'
-import { Button, LinearProgress } from '@lenserfight/ui/components'
+import { LinearProgress } from '@lenserfight/ui/components'
 import { MediaAttachment } from '@lenserfight/types'
 
 interface ResourceAttachmentsPanelProps {

@@ -8,7 +8,6 @@ import {
   // eslint-disable-next-line deprecation/deprecation
   Github,
   Heart,
-  Lightbulb,
   Menu,
   Smartphone,
   Sparkles,

@@ -31,7 +31,6 @@ import {
   History,
   Loader2,
   Pencil,
-  Trash2,
   Flag,
   Play,
   ChevronDown,

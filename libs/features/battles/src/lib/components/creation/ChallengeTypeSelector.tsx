@@ -1,7 +1,6 @@
-import { Badge, HelpButton } from '@lenserfight/ui/components'
+import { Badge } from '@lenserfight/ui/components'
 import {
   type ContenderStructure,
-  type ChallengeTypeDefinition,
   listChallengeTypeDefinitions,
 } from '@lenserfight/domain/battle-governance'
 import { motion } from 'framer-motion'

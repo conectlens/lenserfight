@@ -1,6 +1,6 @@
 import type { RunIncidentRecord, RunReportRecord } from '@lenserfight/types'
 import { Button } from '@lenserfight/ui/components'
-import { AlertTriangle, BarChart3, CheckCircle2, ClipboardList, XCircle } from 'lucide-react'
+import { AlertTriangle, BarChart3, CheckCircle2, ClipboardList } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
