@@ -842,10 +842,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   async deleteReply(replyId: string): Promise<void> {
-    const { error } = await supabase.rpc('fn_create_thread_reply', {
-      p_thread_id: replyId,
-      p_content: '[deleted]',
-      p_parent_reply_id: null,
+    const { error } = await supabase.rpc('fn_delete_thread_reply', {
+      p_reply_id: replyId,
     })
 
     if (error) this.handleError(error)
