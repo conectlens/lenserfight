@@ -767,7 +767,10 @@ const apps = {
   },
 }
 
-function localePath(locale, unprefixed) {
+function localePath(locale, unprefixed, defaultLocale = ARENA_DEFAULT_LOCALE) {
+  if (locale === defaultLocale) {
+    return unprefixed === '' ? '/' : unprefixed
+  }
   if (unprefixed === '/' || unprefixed === '') return `/${locale}`
   return `/${locale}${unprefixed}`
 }
