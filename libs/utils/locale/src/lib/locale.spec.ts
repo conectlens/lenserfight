@@ -128,18 +128,25 @@ describe('stripLocale', () => {
 })
 
 describe('withLocale', () => {
-  it('prefixes bare paths', () => {
+  it('prefixes non-default locale paths', () => {
     expect(withLocale('/about', 'tr')).toBe('/tr/about')
-    expect(withLocale('/', 'en')).toBe('/en')
+    expect(withLocale('/', 'tr')).toBe('/tr')
+  })
+
+  it('returns unprefixed paths for the default locale', () => {
+    expect(withLocale('/', 'en')).toBe('/')
+    expect(withLocale('/about', 'en')).toBe('/about')
+    expect(withLocale('/policies/privacy', 'en')).toBe('/policies/privacy')
   })
 
   it('replaces existing locale prefix', () => {
     expect(withLocale('/en/about', 'tr')).toBe('/tr/about')
-    expect(withLocale('/tr/policies/privacy', 'en')).toBe('/en/policies/privacy')
+    expect(withLocale('/tr/policies/privacy', 'en')).toBe('/policies/privacy')
   })
 
   it('handles edge inputs', () => {
-    expect(withLocale('', 'en')).toBe('/en')
+    expect(withLocale('', 'en')).toBe('/')
+    expect(withLocale('', 'tr')).toBe('/tr')
     expect(withLocale('/en', 'tr')).toBe('/tr')
   })
 
@@ -151,6 +158,6 @@ describe('withLocale', () => {
 describe('localePath', () => {
   it('is an alias of withLocale that tolerates undefined locale', () => {
     expect(localePath('tr', '/about')).toBe('/tr/about')
-    expect(localePath('en', '')).toBe('/en')
+    expect(localePath('en', '')).toBe('/')
   })
 })
