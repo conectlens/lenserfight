@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const DEFAULT_DATE = '2026-05-12'
+const DEFAULT_DATE = new Date().toISOString().split('T')[0]
 
 // Locale registry — mirrors libs/utils/locale ENABLED_LOCALES. Keep in sync;
 // the util-locale parity spec catches DB drift, and `loadArenaSeoStrings`
@@ -60,7 +60,17 @@ const ORGANIZATION = {
   '@type': 'Organization',
   name: 'LenserFight',
   url: 'https://lenserfight.com',
-  logo: 'https://lenserfight.com/favicons/original/apple-icon.png',
+  logo: {
+    '@type': 'ImageObject',
+    url: 'https://cdn.lenserfight.com/brand/lenserfight-logo.png',
+    width: 512,
+    height: 512,
+  },
+  sameAs: [
+    'https://github.com/conectlens/lenserfight',
+    'https://docs.lenserfight.com',
+    'https://arena.lenserfight.com',
+  ],
 }
 
 const absoluteUrl = (baseUrl, path) => {
@@ -115,6 +125,33 @@ const collectionSchema = (itemListName, itemListElement) => ({
     url: item.url,
   })),
 })
+
+/**
+ * Build a BreadcrumbList schema for routes with 2+ path segments.
+ * Returns null for top-level routes (no breadcrumb needed).
+ */
+const buildBreadcrumbSchema = (app, routePath) => {
+  const segments = routePath.replace(/^\//, '').split('/').filter(Boolean)
+  if (segments.length < 2) return null
+  const crumbs = [{ name: 'Home', url: app.baseUrl }]
+  let accumulated = ''
+  for (const segment of segments) {
+    accumulated += `/${segment}`
+    const matchedRoute = app.routes.find((r) => r.path === accumulated)
+    const label = matchedRoute?.heading ?? titleCase(segment)
+    crumbs.push({ name: label, url: absoluteUrl(app.baseUrl, accumulated) })
+  }
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: crumb.url,
+    })),
+  }
+}
 
 const webStaticRoutes = [
   {
@@ -790,12 +827,16 @@ function withResolvedLinks(app, route) {
       }
       : {}),
   }
+  // Breadcrumb: built from unprefixedPath for localized routes, else route.path.
+  const pathForBreadcrumb = route.unprefixedPath ?? route.path
+  const breadcrumbSchema = buildBreadcrumbSchema(app, pathForBreadcrumb)
   return {
     ...route,
     canonicalUrl,
     ogImage: route.ogImage ?? app.ogImage,
     links,
     jsonLd: route.jsonLd ?? schema,
+    breadcrumbJsonLd: breadcrumbSchema,
   }
 }
 
@@ -848,15 +889,30 @@ const escapeHtml = (value) =>
 
 const escapeAttr = escapeHtml
 
+const OG_TYPE_MAP = {
+  ProfilePage: 'profile',
+  CollectionPage: 'website',
+  WebSite: 'website',
+  AboutPage: 'article',
+  FAQPage: 'article',
+  SoftwareApplication: 'website',
+}
+
 const renderHeadTags = (route, { noindex = false } = {}) => {
   const schema = JSON.stringify(route.jsonLd).replace(/</g, '\\u003c')
+  const breadcrumb = route.breadcrumbJsonLd
+    ? JSON.stringify(route.breadcrumbJsonLd).replace(/</g, '\\u003c')
+    : null
   const alternates = (route.alternates ?? [])
     .map(
       (alt) =>
         `<link rel="alternate" hreflang="${escapeAttr(alt.hrefLang)}" href="${escapeAttr(alt.href)}" />`,
     )
     .join('\n  ')
-  const ogLocale = route.locale ? route.locale.replace('-', '_') : null
+  const ogLocale = route.locale
+    ? route.locale.replace('-', '_') + (route.locale.length === 2 ? '_' + route.locale.toUpperCase() : '')
+    : 'en_US'
+  const ogType = OG_TYPE_MAP[route.schemaType] ?? 'article'
   return [
     `<title>${escapeHtml(route.title)}</title>`,
     `<meta name="description" content="${escapeAttr(truncate(route.description, 170))}" />`,
@@ -864,13 +920,13 @@ const renderHeadTags = (route, { noindex = false } = {}) => {
     `<meta name="robots" content="${noindex ? 'noindex,nofollow' : 'index,follow,max-image-preview:large'}" />`,
     `<meta property="og:title" content="${escapeAttr(route.title)}" />`,
     `<meta property="og:description" content="${escapeAttr(truncate(route.description, 200))}" />`,
-    `<meta property="og:type" content="${route.schemaType === 'ProfilePage' ? 'profile' : route.schemaType === 'CollectionPage' ? 'website' : 'article'}" />`,
+    `<meta property="og:type" content="${ogType}" />`,
     `<meta property="og:url" content="${escapeAttr(route.canonicalUrl)}" />`,
     `<meta property="og:image" content="${escapeAttr(route.ogImage)}" />`,
     `<meta property="og:image:width" content="1200" />`,
     `<meta property="og:image:height" content="630" />`,
     `<meta property="og:site_name" content="LenserFight" />`,
-    ogLocale ? `<meta property="og:locale" content="${escapeAttr(ogLocale)}" />` : null,
+    `<meta property="og:locale" content="${escapeAttr(ogLocale)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:site" content="@lenserfight" />`,
     `<meta name="twitter:title" content="${escapeAttr(route.title)}" />`,
@@ -878,6 +934,7 @@ const renderHeadTags = (route, { noindex = false } = {}) => {
     `<meta name="twitter:image" content="${escapeAttr(route.ogImage)}" />`,
     alternates || null,
     `<script type="application/ld+json">${schema}</script>`,
+    breadcrumb ? `<script type="application/ld+json">${breadcrumb}</script>` : null,
   ]
     .filter(Boolean)
     .join('\n  ')
