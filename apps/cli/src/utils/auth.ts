@@ -134,7 +134,7 @@ export async function loginWithEmail(email: string, password: string): Promise<A
   if (config.mode !== 'local') {
     throw new Error(
       'Direct credential login is blocked in cloud/production mode by bot protection.\n' +
-        'Run `lf auth login` (no credentials) to sign in via browser instead.'
+        'Run `lenserfight auth login` (no credentials) to sign in via browser instead.'
     )
   }
 

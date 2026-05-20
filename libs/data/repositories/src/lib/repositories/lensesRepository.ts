@@ -104,7 +104,12 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     throw error
   }
 
-  // Narrow column list for list queries — excludes heavy/unused columns.
+  // Narrow column list for list queries — excludes heavy/unused columns:
+  //   content           — full template body; only needed on the detail page
+  //   updated_at        — not shown in list cards
+  //   parent_lens_id    — fork metadata; resolved on demand in detail
+  //   forked_from_execution_id — fork metadata; not needed in feed
+  //   head_version_id   — version metadata; resolved on demand
   // Single-item reads (create, update, detail) still use '*' via direct .select('*').
   private readonly listLensSelect =
     'id, title, description, lenser_id, author_profile, tags, reaction_totals, visibility, created_at'
