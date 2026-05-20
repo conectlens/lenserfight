@@ -37,17 +37,40 @@ export function isChainabitConnected(): boolean {
   )
 }
 
+function extractErrorCode(err: unknown): string | undefined {
+  if (err && typeof err === 'object') {
+    const e = err as Record<string, unknown>
+    const ef = e['error']
+    if (ef && typeof ef === 'object') return (ef as Record<string, unknown>)['code'] as string
+    return e['code'] as string | undefined
+  }
+  return undefined
+}
+
 export const connectorApiClient = {
   /**
    * Fetches the user's Chainabit wallet balance.
    * Token is resolved server-side from auth.identities — not passed by the client.
+   *
+   * If the edge function returns `token_expired` (Chainabit API returned 401),
+   * attempts one session refresh so Supabase can write a fresh provider token
+   * into auth.identities, then retries.  If still expired, throws so the caller
+   * can surface the "Reconnect" UI.
    */
   async getBalance(): Promise<ProviderBalance> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${EDGE_BASE}/chainabit-wallet`, {
-      headers: { ...authHeader },
-    })
-    return unwrapEnvelope<ProviderBalance>(res)
+    try {
+      const res = await apiFetch(`${EDGE_BASE}/chainabit-wallet`, { headers: { ...authHeader } })
+      return unwrapEnvelope<ProviderBalance>(res)
+    } catch (err: unknown) {
+      if (extractErrorCode(err) === 'token_expired') {
+        await supabase.auth.refreshSession()
+        const retryHeader = await getAuthHeader()
+        const res = await apiFetch(`${EDGE_BASE}/chainabit-wallet`, { headers: { ...retryHeader } })
+        return unwrapEnvelope<ProviderBalance>(res)
+      }
+      throw err
+    }
   },
 
   /**

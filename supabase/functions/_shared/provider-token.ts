@@ -44,7 +44,7 @@ export class ProviderNotConnectedError extends Error {
 export class TokenExpiredError extends Error {
   readonly code = 'token_expired'
   constructor() {
-    super('Chainabit token expired — call supabase.auth.refreshSession() then retry')
+    super('Chainabit token expired — reconnect your Chainabit account to restore access')
     this.name = 'TokenExpiredError'
   }
 }

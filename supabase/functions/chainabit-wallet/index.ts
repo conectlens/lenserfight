@@ -55,8 +55,10 @@ serve(async (req: Request): Promise<Response> => {
       return errResponse('not_connected', err.message, 403, req)
     }
     if (err instanceof TokenExpiredError) {
-      // Identity exists but access_token is absent — the client must unlink
-      // and re-link to obtain fresh tokens.
+      // Identity exists but access_token is absent (OAuth flow stored the
+      // identity without tokens, or Supabase's refresh cycle cleared it).
+      // Client should call refreshSession() and retry; if still absent,
+      // show "Reconnect" so the user can unlink and re-link.
       return errResponse('token_expired', err.message, 401, req)
     }
     console.error('[chainabit-wallet] token resolution failed:', err)
