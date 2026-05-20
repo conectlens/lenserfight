@@ -95,7 +95,13 @@ export async function resolveChainabitToken(
   const scope = d['scope'] as string | undefined
 
   if (!accessToken) {
-    throw new ProviderNotConnectedError()
+    // Identity exists in auth.identities but access_token is absent — this
+    // happens when the original OAuth flow stored the identity record without
+    // tokens (e.g. Supabase custom-provider token exchange failed silently) or
+    // when Supabase's automatic refresh cycle cleared a stale token without
+    // writing a new one.  Surface as token_expired so the client shows
+    // "Reconnect" (not "Connect") and can unlink + re-link to fix the state.
+    throw new TokenExpiredError()
   }
 
   const scopes = scope ? scope.split(' ').filter(Boolean) : []

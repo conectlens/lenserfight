@@ -18,6 +18,23 @@ function resolveReturnUrl(): string {
 }
 
 /**
+ * Check whether the URL (hash or query string) carries an OAuth error code.
+ * Returns the error_code string if found, otherwise null.
+ */
+function parseOAuthError(search: string, hash: string): string | null {
+  for (const raw of [hash.substring(1), search.substring(1)]) {
+    try {
+      const p = new URLSearchParams(raw)
+      const code = p.get('error_code')
+      if (code) return code
+    } catch {
+      // ignore malformed
+    }
+  }
+  return null
+}
+
+/**
  * Parse implicit-grant tokens from a URL hash fragment.
  * Returns null if the required tokens are not present.
  */
@@ -89,6 +106,23 @@ export const OAuthCallbackPage: React.FC = () => {
     //    If it failed (e.g. cookie storage dropped the oversized value),
     //    fall back to an explicit setSession() from the captured hash.
     const resolveSession = async () => {
+      // identity_already_exists means the user's Chainabit account is already
+      // linked to their Supabase identity.  This is not a failure for the user
+      // — the identity IS connected.  Refresh the session so app_metadata
+      // (including the providers list) is up-to-date before we redirect back.
+      const oauthErrorCode = parseOAuthError(window.location.search, capturedHash.current)
+      if (oauthErrorCode === 'identity_already_exists') {
+        try {
+          const { data: refreshed } = await supabase.auth.refreshSession()
+          if (refreshed.session) {
+            redirect(refreshed.session)
+            return
+          }
+        } catch {
+          // refreshSession failed — fall through to getSession() below
+        }
+      }
+
       // getSession() internally awaits initializePromise, so this waits for
       // detectSessionInUrl to finish its attempt.
       const { data } = await supabase.auth.getSession()
