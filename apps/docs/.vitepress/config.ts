@@ -662,19 +662,20 @@ export default defineConfig({
    * 3. Generate robots.txt, llms.txt, and feed.xml for SEO/GEO discoverability.
    */
   buildEnd: async (siteConfig) => {
-    function copyMd(src: string, dest: string) {
+    const COPY_EXTENSIONS = ['.md', '.yaml', '.yml']
+    function copyStaticAssets(src: string, dest: string) {
       mkdirSync(dest, { recursive: true })
       for (const entry of readdirSync(src)) {
         const s = join(src, entry)
         const d = join(dest, entry)
         if (statSync(s).isDirectory()) {
-          copyMd(s, d)
-        } else if (entry.endsWith('.md')) {
+          copyStaticAssets(s, d)
+        } else if (COPY_EXTENSIONS.some((ext) => entry.endsWith(ext))) {
           copyFileSync(s, d)
         }
       }
     }
-    copyMd(siteConfig.srcDir, siteConfig.outDir)
+    copyStaticAssets(siteConfig.srcDir, siteConfig.outDir)
 
     // Generate /section/path/index.html → /en/section/path redirect shims
     // so bare (non-locale) URLs always land on the English version.
