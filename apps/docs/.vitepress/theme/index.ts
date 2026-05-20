@@ -72,6 +72,8 @@ if (typeof window !== 'undefined') {
     import('posthog-js').then(({ default: posthog }) => {
       posthog.init(POSTHOG_TOKEN, {
         api_host: POSTHOG_HOST,
+        // PostHog `defaults` pins the SDK to the feature-default snapshot from
+        // this date. Update when opting in to new PostHog behaviour changes.
         defaults: '2026-01-30',
         capture_pageview: false,
         capture_pageleave: true,

@@ -10,15 +10,21 @@ export default defineConfig(() => ({
   root: import.meta.dirname,
   envDir: import.meta.dirname,
   envPrefix: [
+    // Supabase connection
     'SUPABASE_URL',
     'SUPABASE_PUBLISHABLE_KEY',
+    // Security / bot protection
     'CAPTCHA_',
+    // Auth app runtime config
     'AUTH_',
+    // Cross-app redirect targets
     'WEB_',
     'ARENA_',
     'CHAINABIT_APP_URL',
+    // Product & feature flags
     'PRODUCT_',
     'FEATURE_CHAINABIT_',
+    // Environment / mode
     'DATA_SOURCE',
     'ENV_MODE',
   ],
