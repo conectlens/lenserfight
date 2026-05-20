@@ -4,9 +4,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   getAppSeo,
-  getAppBaseRoutes,
   injectSeoIntoHtml,
-  renderRedirectShim,
   renderRobots,
   renderSitemap,
   routeOutputPath,
@@ -39,32 +37,7 @@ for (const route of app.routes) {
   writeFileSync(outputPath, injectSeoIntoHtml(indexHtml, route), 'utf-8')
 }
 
-let shimCount = 0
-// 2. For localized apps: emit Tier-1 HTML shims at the bare-path locations so
-//    existing inbound links (eg. /about) serve a crawler-friendly redirect to
-//    the default-locale URL (/en/about) with canonical + noindex.
-if (app.locales) {
-  const base = getAppBaseRoutes(appName)
-  for (const baseRoute of base.routes) {
-    const shimPath = resolve(outDir, routeOutputPath(baseRoute.path))
-    const targetPath =
-      baseRoute.path === '/' ? `/${app.defaultLocale}` : `/${app.defaultLocale}${baseRoute.path}`
-    const canonicalUrl = `${app.baseUrl.replace(/\/+$/, '')}${targetPath}`
-    mkdirSync(dirname(shimPath), { recursive: true })
-    writeFileSync(
-      shimPath,
-      renderRedirectShim({ targetUrl: targetPath, canonicalUrl }),
-      'utf-8',
-    )
-    shimCount++
-  }
-}
-
 writeFileSync(resolve(outDir, 'sitemap.xml'), renderSitemap(appName), 'utf-8')
 writeFileSync(resolve(outDir, 'robots.txt'), renderRobots(appName), 'utf-8')
 
-console.log(
-  `Generated ${app.routes.length} SEO prerender pages for ${appName}${
-    shimCount ? ` + ${shimCount} bare-path redirect shims` : ''
-  }.`,
-)
+console.log(`Generated ${app.routes.length} SEO prerender pages for ${appName}.`)
