@@ -140,7 +140,6 @@ export const OAuthCallbackPage: React.FC = () => {
     const resolveSession = async () => {
       const isChainabitLink = isChainabitLinkCallback()
 
-
       // identity_already_exists means the user's Chainabit account is already
       // linked to their Supabase identity.  This is not a failure for the user
       // — the identity IS connected.  Refresh the session so app_metadata
