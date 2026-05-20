@@ -1,4 +1,4 @@
-import { Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
+import { Badge, Card } from '@lenserfight/ui/components'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, CheckCircle, Heart, MessagesSquare, Shield, Star, Swords } from 'lucide-react'
 import React, { useRef } from 'react'
@@ -8,7 +8,6 @@ import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 import { ArenaPulseSection } from '../components/ArenaPulseSection'
 import { BattleTypesShowcase } from '../components/BattleTypesShowcase'
 import { GamificationPreview } from '../components/GamificationPreview'
-import { HeroFightPreview } from '../components/HeroFightPreview'
 import { HotThreadsSection } from '../components/HotThreadsSection'
 import { WaitlistForm } from '../components/WaitlistForm'
 
@@ -124,17 +123,21 @@ export const LandHomePage: React.FC = () => {
         </motion.div>
 
         <motion.div
+          className="flex items-center justify-center"
           initial={{ opacity: 0, y: 32, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ ...spring, delay: 0.12 }}
         >
-          <DesktopFrame
-            title={t('home:preview.demoTitle')}
-            url="lenserfight.com/battles"
-            label={t('home:preview.demoFrameLabel')}
-          >
-            <HeroFightPreview />
-          </DesktopFrame>
+          <video 
+            src="https://cdn.lenserfight.com/product/videos/introduction.mp4" 
+            width="720" 
+            alt="LenserFight — AI Prompt Framework & Workflow Engine & AI Benchmarking & AI Forum & Agent Lab & Agent Playground & Community-Driven Evaluations & AI Agents " 
+            autoPlay 
+            muted 
+            loop 
+            playsInline 
+            className="rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-1 ring-black/10 dark:ring-white/10"
+          />
         </motion.div>
       </section>
 

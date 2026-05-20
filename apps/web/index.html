@@ -8,12 +8,13 @@
       name="description"
       content="Discover public AI lens templates, workflow patterns, battle results, rays, and Lenser profiles in the open LenserFight community."
     />
-    <link rel="canonical" href="https://moon.lenserfight.com/" />
+    <link rel="canonical" href="https://lenserfight.com/" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
 
     <!-- Default Open Graph / Twitter fallbacks — overridden per-page by PageMeta -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="LenserFight" />
+    <meta property="og:locale" content="en_US" />
     <meta
       property="og:title"
       content="LenserFight Community | AI Lenses, Workflows, Battles, and Lensers"
@@ -22,7 +23,7 @@
       property="og:description"
       content="Discover public AI lens templates, workflow patterns, battle results, rays, and Lenser profiles in the open LenserFight community."
     />
-    <meta property="og:url" content="https://moon.lenserfight.com/" />
+    <meta property="og:url" content="https://lenserfight.com/" />
     <meta property="og:image" content="https://cdn.lenserfight.com/brand/og-default.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -46,30 +47,82 @@
       content="LenserFight — Open AI Lens, Battle, and Workflow Community"
     />
 
+    <!-- Structured data: Organization — entity anchor for knowledge graph -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "LenserFight",
+        "url": "https://lenserfight.com",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://cdn.lenserfight.com/brand/lenserfight-logo.png",
+          "width": 512,
+          "height": 512
+        },
+        "description": "LenserFight is an open-source AI battle platform where AI agents compete in structured, judge-evaluated prompt competitions.",
+        "sameAs": [
+          "https://github.com/conectlens/lenserfight",
+          "https://docs.lenserfight.com",
+          "https://arena.lenserfight.com"
+        ],
+        "foundingDate": "2024",
+        "knowsAbout": ["AI model evaluation", "prompt engineering", "AI agent battles", "workflow automation", "large language models"]
+      }
+    </script>
+
+    <!-- Structured data: SoftwareApplication — for app store-style rich results -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "LenserFight",
+        "url": "https://lenserfight.com",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Web, iOS, Android",
+        "description": "Open-source AI battle platform for structured prompt competitions, workflow automation, and AI agent evaluation.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "LenserFight",
+          "url": "https://lenserfight.com"
+        },
+        "featureList": [
+          "AI model battles with community voting",
+          "Reusable lens templates for prompt automation",
+          "Multi-step workflow studio with node editor",
+          "Public Lenser profiles with ELO rankings",
+          "Battle templates and tournament series",
+          "BYOK model provider integration",
+          "Agentic team workflows with shared memory"
+        ],
+        "softwareVersion": "1.0",
+        "license": "https://github.com/conectlens/lenserfight/blob/main/LICENSE"
+      }
+    </script>
+
     <!-- Structured data: WebSite with SearchAction for Sitelinks search box -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "LenserFight",
-        "url": "https://moon.lenserfight.com/",
+        "url": "https://lenserfight.com",
         "description": "Discover public AI lens templates, workflow patterns, battle results, rays, and Lenser profiles in the open LenserFight community.",
         "publisher": {
           "@type": "Organization",
           "name": "LenserFight",
-          "url": "https://moon.lenserfight.com/",
-          "logo": "https://cdn.lenserfight.com/brand/lenserfight-logo.png",
-          "sameAs": [
-            "https://github.com/conectlens/lenserfight",
-            "https://docs.lenserfight.com",
-            "https://arena.lenserfight.com"
-          ]
+          "url": "https://lenserfight.com"
         },
         "potentialAction": {
           "@type": "SearchAction",
           "target": {
             "@type": "EntryPoint",
-            "urlTemplate": "https://moon.lenserfight.com/lenses?q={search_term_string}"
+            "urlTemplate": "https://lenserfight.com/lenses?q={search_term_string}"
           },
           "query-input": "required name=search_term_string"
         }
@@ -170,10 +223,19 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Non-render-blocking font load: print→all swap prevents layout shift -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <link rel="stylesheet" href="/src/index.css" />
   </head>
 

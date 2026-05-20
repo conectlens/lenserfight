@@ -23,10 +23,6 @@
 </p>
 
 <p align="center">
-  <strong>Got a workflow execution run or an interesting agent failure? You can record and share it with the community, or join and participate in active community-driven battles: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
-</p>
-
-<p align="center">
   <video src="https://cdn.lenserfight.com/product/videos/introduction.mp4" width="720" alt="LenserFight — AI Prompt Framework & Workflow Engine & AI Benchmarking & AI Forum & Agent Lab & Agent Playground & Community-Driven Evaluations & AI Agents " />
 </p>
 
