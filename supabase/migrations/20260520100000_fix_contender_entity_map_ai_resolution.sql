@@ -21,7 +21,7 @@
 
 -- ── Block A: Fix fn_populate_contender_entity_map ────────────────────────────
 
-DROP FUNCTION IF EXISTS "battles"."fn_populate_contender_entity_map"();
+DROP FUNCTION IF EXISTS "battles"."fn_populate_contender_entity_map"() CASCADE;
 
 CREATE FUNCTION "battles"."fn_populate_contender_entity_map"()
   RETURNS "trigger"
@@ -70,6 +70,11 @@ COMMENT ON FUNCTION "battles"."fn_populate_contender_entity_map"() IS
 ALTER FUNCTION "battles"."fn_populate_contender_entity_map"() OWNER TO "postgres";
 
 GRANT ALL ON FUNCTION "battles"."fn_populate_contender_entity_map"() TO "service_role";
+
+-- Re-create the trigger dropped by CASCADE above.
+CREATE OR REPLACE TRIGGER "trg_populate_contender_entity_map"
+  AFTER INSERT ON "battles"."contenders"
+  FOR EACH ROW EXECUTE FUNCTION "battles"."fn_populate_contender_entity_map"();
 
 
 -- ── Block B: Revoke anon grants on AI snapshot functions ─────────────────────
