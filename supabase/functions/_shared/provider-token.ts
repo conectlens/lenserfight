@@ -2,28 +2,41 @@
 //
 // Resolves a user's Chainabit OAuth access token from auth.identities.
 //
-// Supabase Custom OAuth Provider stores the access_token, refresh_token,
-// expires_at, and scope in auth.identities (provider = 'custom:chainabit')
-// when the user connects via supabase.auth.linkIdentity({ provider: 'custom:chainabit' }).
+// HOW TOKENS GET INTO identity_data
+// ----------------------------------
+// Supabase GoTrue stores the userinfo endpoint response as identity_data for
+// custom OAuth providers.  The Chainabit userinfo endpoint now returns
+// access_token and expires_at (in addition to the standard profile fields), so
+// GoTrue stores them in auth.identities.identity_data during linkIdentity().
 //
-// Token refresh is handled by Supabase itself: when the client calls
-// supabase.auth.refreshSession(), Supabase refreshes the provider token using
-// the stored refresh_token and writes the new pair back into auth.identities.
-// Edge Functions do not need to perform or store token refreshes manually.
+// The refresh_token is NOT returned by the userinfo endpoint (it is stored
+// server-side only).  Instead, the OAuth callback page calls
+// fn_store_my_chainabit_tokens() immediately after linkIdentity() to persist
+// the refresh_token from session.provider_refresh_token into identity_data.
 //
-// If the access_token is expired (Chainabit returns 401), Edge Functions
-// surface a `token_expired` error.  The client detects this, calls
-// supabase.auth.refreshSession(), then retries the Edge Function call.
+// TOKEN REFRESH
+// -------------
+// resolveChainabitToken checks expires_at.  If the access_token is expired (or
+// absent), it uses the stored refresh_token to obtain a new access_token from
+// Chainabit's token endpoint, persists the new pair via fn_upsert_chainabit_tokens,
+// and returns the fresh token.  Client-side session refresh is not required.
 //
 // Usage:
 //   import { resolveChainabitToken, ProviderNotConnectedError } from '../_shared/provider-token.ts'
-//   const { accessToken, scopes } = await resolveChainabitToken(user.id, adminClient)
+//   const { accessToken, scopes } = await resolveChainabitToken(userId, adminClient, refreshConfig)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 export interface ProviderTokenResult {
   accessToken: string
   scopes: string[]
+}
+
+/** Config required for server-side token refresh. */
+export interface ChainabitRefreshConfig {
+  apiUrl: string
+  clientId: string
+  clientSecret: string
 }
 
 export class ProviderNotConnectedError extends Error {
@@ -34,13 +47,6 @@ export class ProviderNotConnectedError extends Error {
   }
 }
 
-/**
- * Thrown when the Chainabit access_token is present in identity_data but has
- * been rejected by Chainabit's API with HTTP 401.  Edge Functions catch this
- * and surface it to the client so it can call supabase.auth.refreshSession()
- * and retry.  This is distinct from ProviderNotConnectedError (no identity /
- * no token field at all).
- */
 export class TokenExpiredError extends Error {
   readonly code = 'token_expired'
   constructor() {
@@ -59,26 +65,75 @@ export class CapabilityDeniedError extends Error {
   }
 }
 
+/** Returns true if the token expires within the next 60 seconds. */
+function isExpired(expiresAt: number | undefined): boolean {
+  if (!expiresAt) return false // no expiry info — treat as valid, let Chainabit reject if bad
+  return Date.now() / 1000 >= expiresAt - 60
+}
+
+/**
+ * Calls Chainabit's token refresh endpoint and returns the new token pair.
+ * Throws on network error or non-200 response.
+ */
+async function refreshAccessToken(
+  refreshToken: string,
+  config: ChainabitRefreshConfig
+): Promise<{ accessToken: string; refreshToken: string; expiresAt: number; scope: string }> {
+  const apiUrl = config.apiUrl.replace(/\/$/, '')
+  const body = new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+  })
+
+  const res = await fetch(`${apiUrl}/oauth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  })
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    console.error(`[provider-token] refresh failed ${res.status}:`, text.slice(0, 200))
+    throw new TokenExpiredError()
+  }
+
+  const data = (await res.json()) as {
+    access_token: string
+    refresh_token: string
+    expires_in: number
+    scope: string
+  }
+
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    expiresAt: Math.floor(Date.now() / 1000) + data.expires_in,
+    scope: data.scope ?? '',
+  }
+}
+
 /**
  * Resolves the Chainabit OAuth access token for a user from auth.identities.
  *
- * Reads the custom:chainabit identity stored by Supabase Custom OAuth Provider.
- * Does not attempt token refresh — Supabase handles that automatically via
- * its own session refresh cycle.
+ * 1. Reads access_token, refresh_token, expires_at, and scope from identity_data.
+ * 2. If access_token is present and not expired → returns it immediately.
+ * 3. If expired (or absent) and refresh_token is present → calls Chainabit's
+ *    token endpoint to refresh, persists the new pair via fn_upsert_chainabit_tokens,
+ *    and returns the fresh access_token.
+ * 4. If neither token is available → throws TokenExpiredError (user must re-link).
  *
- * EXPIRY: this function does NOT detect expired tokens.  An expired token will
- * still have an access_token field in identity_data and will be returned here.
- * Expiry is detected downstream when Chainabit's API returns HTTP 401; callers
- * should catch that and throw TokenExpiredError (or map it to a 401 response)
- * so the client can call supabase.auth.refreshSession() and retry.
+ * @param refreshConfig  Required env-var values for server-side refresh.
+ *                       Pass undefined to skip refresh (legacy callers).
  *
- * @throws ProviderNotConnectedError  when no custom:chainabit identity exists,
- *                                    or the identity has no access_token field
- *                                    (e.g. partial OAuth flow, Chainabit-side revocation)
+ * @throws ProviderNotConnectedError  no custom:chainabit identity for this user
+ * @throws TokenExpiredError          token absent/expired and refresh also failed
  */
 export async function resolveChainabitToken(
   userId: string,
-  adminClient: ReturnType<typeof createClient>
+  adminClient: ReturnType<typeof createClient>,
+  refreshConfig?: ChainabitRefreshConfig
 ): Promise<ProviderTokenResult> {
   const { data, error } = await adminClient.auth.admin.getUserById(userId)
   if (error || !data?.user) {
@@ -91,19 +146,39 @@ export async function resolveChainabitToken(
   }
 
   const d = (identity.identity_data ?? {}) as Record<string, unknown>
-  const accessToken = d['access_token'] as string | undefined
-  const scope = d['scope'] as string | undefined
+  const accessToken  = d['access_token']  as string | undefined
+  const refreshToken = d['refresh_token'] as string | undefined
+  const expiresAt    = d['expires_at']    as number | undefined
+  const scope        = d['scope']         as string | undefined
 
-  if (!accessToken) {
-    // Identity exists in auth.identities but access_token is absent — this
-    // happens when the original OAuth flow stored the identity record without
-    // tokens (e.g. Supabase custom-provider token exchange failed silently) or
-    // when Supabase's automatic refresh cycle cleared a stale token without
-    // writing a new one.  Surface as token_expired so the client shows
-    // "Reconnect" (not "Connect") and can unlink + re-link to fix the state.
-    throw new TokenExpiredError()
+  const tokenValid = !!accessToken && !isExpired(expiresAt)
+
+  if (tokenValid) {
+    const scopes = scope ? scope.split(' ').filter(Boolean) : []
+    return { accessToken: accessToken!, scopes }
   }
 
-  const scopes = scope ? scope.split(' ').filter(Boolean) : []
-  return { accessToken, scopes }
+  // Token absent or expired — attempt server-side refresh.
+  if (refreshToken && refreshConfig) {
+    let refreshed: Awaited<ReturnType<typeof refreshAccessToken>>
+    try {
+      refreshed = await refreshAccessToken(refreshToken, refreshConfig)
+    } catch {
+      throw new TokenExpiredError()
+    }
+
+    // Persist the new token pair so subsequent calls don't re-refresh.
+    await adminClient.rpc('fn_upsert_chainabit_tokens', {
+      p_user_id:       userId,
+      p_access_token:  refreshed.accessToken,
+      p_refresh_token: refreshed.refreshToken,
+      p_expires_at:    refreshed.expiresAt,
+    })
+
+    const scopes = refreshed.scope ? refreshed.scope.split(' ').filter(Boolean) : []
+    return { accessToken: refreshed.accessToken, scopes }
+  }
+
+  // No refresh_token stored (or no refresh config) — user must re-link.
+  throw new TokenExpiredError()
 }

@@ -93,7 +93,10 @@ export const connectorApiClient = {
     const { data, error } = await (supabase.auth as any).linkIdentity({
       provider: 'custom:chainabit',
       options: {
-        redirectTo: `${AUTH_BASE_URL}/callback?return_url=${encodeURIComponent(returnUrl)}`,
+        // provider=chainabit marker lets OAuthCallbackPage detect this flow and
+        // store session.provider_refresh_token into identity_data via
+        // fn_store_my_chainabit_tokens so server-side refresh works later.
+        redirectTo: `${AUTH_BASE_URL}/callback?provider=chainabit&return_url=${encodeURIComponent(returnUrl)}`,
       },
     })
     if (error) throw error
