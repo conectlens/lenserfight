@@ -77,7 +77,6 @@ CREATE OR REPLACE TRIGGER "trg_populate_contender_entity_map"
   FOR EACH ROW EXECUTE FUNCTION "battles"."fn_populate_contender_entity_map"();
 
 
-
 -- ── Block B: Revoke anon grants on AI snapshot functions ─────────────────────
 -- These functions expose AI agent internals (memory, model bindings, personality).
 -- Unauthenticated callers must not be able to enumerate or snapshot agent state.
