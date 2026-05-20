@@ -44,8 +44,6 @@ body:
       label: Environment
       description: Edition (community / cloud), Node version, pnpm version, Supabase CLI version.
       placeholder: "community, Node 20.11, pnpm 9.1, Supabase CLI 1.150"
-    validations:
-      required: true
 
   - type: checkboxes
     id: checklist

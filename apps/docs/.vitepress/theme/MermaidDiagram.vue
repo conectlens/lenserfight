@@ -4,16 +4,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
+import { useData } from 'vitepress'
 
 const props = defineProps<{ chart: string }>()
 
 const container = ref<HTMLElement | null>(null)
+const { isDark } = useData()
 let idCounter = 0
 
 async function render() {
   if (!container.value) return
   const { default: mermaid } = await import('mermaid')
-  mermaid.initialize({ startOnLoad: false, theme: 'neutral' })
+  mermaid.initialize({ startOnLoad: false, theme: isDark.value ? 'dark' : 'neutral' })
   const id = `mermaid-diagram-${++idCounter}`
   try {
     const { svg } = await mermaid.render(id, props.chart)
@@ -25,6 +27,7 @@ async function render() {
 
 onMounted(render)
 watch(() => props.chart, render)
+watch(isDark, render)
 </script>
 
 <style scoped>
