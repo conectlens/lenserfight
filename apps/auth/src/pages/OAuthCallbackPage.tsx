@@ -5,7 +5,39 @@ import { LoadingOverlay } from '@lenserfight/ui/components'
 import { getPostOAuthRedirectUrl } from '../utils/authRedirects'
 import { replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateReturnUrl'
 
+/**
+ * Persists Chainabit OAuth tokens into auth.identities.identity_data via
+ * fn_store_my_chainabit_tokens.
+ *
+ * Supabase GoTrue only stores the userinfo endpoint response in identity_data.
+ * The Chainabit userinfo endpoint does NOT return access_token or refresh_token.
+ * We capture both from the session immediately after linkIdentity() completes
+ * and persist them so edge functions can call the Chainabit API and perform
+ * server-side token refresh after the access_token expires.
+ *
+ * No-ops silently on any error — the user is still connected, they just won't
+ * benefit from automatic token refresh (they'll need to reconnect after 1 hour).
+ */
+async function storeChainabitTokens(accessToken: string | null | undefined, refreshToken: string | null | undefined): Promise<void> {
+  if (!accessToken && !refreshToken) return
+  try {
+    await supabase.rpc('fn_store_my_chainabit_tokens', {
+      p_access_token: accessToken ?? null,
+      // Chainabit tokens expire in 1 hour; record the absolute epoch second.
+      p_expires_at: accessToken ? Math.floor(Date.now() / 1000) + 3600 : null,
+      p_refresh_token: refreshToken ?? null,
+    })
+  } catch (err) {
+    console.warn('[OAuthCallback] failed to persist Chainabit tokens:', err)
+  }
+}
+
 const RETURN_URL_KEY = 'auth_return_url'
+
+/** True when the callback URL was initiated by connectorApiClient.connect(). */
+function isChainabitLinkCallback(): boolean {
+  return new URLSearchParams(window.location.search).get('provider') === 'chainabit'
+}
 
 // When arriving via a Chainabit magic-link redirect the sessionStorage key is
 // not set (the user never visited LoginPage in this tab). Fall back to the
@@ -106,6 +138,8 @@ export const OAuthCallbackPage: React.FC = () => {
     //    If it failed (e.g. cookie storage dropped the oversized value),
     //    fall back to an explicit setSession() from the captured hash.
     const resolveSession = async () => {
+      const isChainabitLink = isChainabitLinkCallback()
+
       // identity_already_exists means the user's Chainabit account is already
       // linked to their Supabase identity.  This is not a failure for the user
       // — the identity IS connected.  Refresh the session so app_metadata
@@ -127,6 +161,12 @@ export const OAuthCallbackPage: React.FC = () => {
       // detectSessionInUrl to finish its attempt.
       const { data } = await supabase.auth.getSession()
       if (data.session) {
+        // After linkIdentity() GoTrue includes provider_refresh_token in the
+        // session for the newly linked provider.  Persist it immediately so edge
+        // functions can perform server-side token refresh after expiry.
+        if (isChainabitLink) {
+          await storeChainabitTokens(data.session.provider_token, data.session.provider_refresh_token)
+        }
         redirect(data.session)
         return
       }
@@ -136,6 +176,9 @@ export const OAuthCallbackPage: React.FC = () => {
       if (tokens) {
         const { data: manualData, error } = await supabase.auth.setSession(tokens)
         if (!error && manualData.session) {
+          if (isChainabitLink) {
+            await storeChainabitTokens(manualData.session.provider_token, manualData.session.provider_refresh_token)
+          }
           redirect(manualData.session)
           return
         }
@@ -153,6 +196,9 @@ export const OAuthCallbackPage: React.FC = () => {
           await new Promise((r) => setTimeout(r, 600))
           const { data: retryData } = await supabase.auth.getSession()
           if (retryData.session) {
+            if (isChainabitLink) {
+              await storeChainabitTokens(retryData.session.provider_token, retryData.session.provider_refresh_token)
+            }
             redirect(retryData.session)
             return
           }
