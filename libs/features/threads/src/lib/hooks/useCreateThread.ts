@@ -2,9 +2,20 @@ import { useState } from 'react'
 
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
-import { threadsService } from '@lenserfight/data/repositories'
-import { Visibility } from '@lenserfight/types'
+import { mediaService, threadsService } from '@lenserfight/data/repositories'
+import type { UnifiedMediaType, Visibility } from '@lenserfight/types'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
+import type { PendingThreadMedia } from '../components/ThreadMediaPicker'
+
+function guessMediaType(mimeType: string): UnifiedMediaType {
+  if (mimeType.startsWith('image/')) return 'image'
+  if (mimeType.startsWith('audio/')) return 'audio'
+  if (mimeType.startsWith('video/')) return 'video'
+  if (mimeType === 'application/pdf') return 'document'
+  if (mimeType.startsWith('text/')) return 'text'
+  if (mimeType.includes('json')) return 'json'
+  return 'binary'
+}
 
 export const useCreateThread = () => {
   const { lenser } = useAuthenticatedLenser()
@@ -18,7 +29,8 @@ export const useCreateThread = () => {
     tags: string[],
     visibility: Visibility,
     onSuccess: (id: string) => void,
-    editId?: string | null
+    editId?: string | null,
+    pendingMedia?: PendingThreadMedia | null
   ) => {
     if (!lenser) {
       setError('You must have a Lenser profile to post.')
@@ -29,6 +41,42 @@ export const useCreateThread = () => {
     setError(null)
 
     try {
+      // ── Step 1: resolve media objectId (upload if needed) ─────────────────
+      let mediaObjectId: string | null = null
+
+      if (pendingMedia) {
+        if (pendingMedia.kind === 'file') {
+          const { file } = pendingMedia
+          const workspaceId = await mediaService.getPersonalWorkspaceId()
+          if (!workspaceId) throw new Error('Could not resolve workspace for media upload.')
+
+          const mediaType = guessMediaType(file.type)
+          const bucket = 'user-media'
+          const objectKey = `${lenser.id}/thread-media/${Date.now()}-${file.name}`
+          const session = await mediaService.startUpload(
+            { mediaType, mimeType: file.type, name: file.name },
+            workspaceId,
+            bucket,
+            objectKey
+          )
+
+          const uploadResponse = await fetch(session.signedUploadUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': file.type },
+            body: file,
+          })
+          if (!uploadResponse.ok) {
+            throw new Error(`Media upload failed (${uploadResponse.status}).`)
+          }
+
+          await mediaService.finalizeUpload(session.objectId, bucket, objectKey, file.size)
+          mediaObjectId = session.objectId
+        } else {
+          mediaObjectId = pendingMedia.mediaObject.id
+        }
+      }
+
+      // ── Step 2: create or update the thread ───────────────────────────────
       let resultId: string
       if (editId) {
         const updated = await threadsService.updateThread(
@@ -47,6 +95,13 @@ export const useCreateThread = () => {
         resultId = created.id
       }
 
+      // ── Step 3: bind media attachment (best-effort) ───────────────────────
+      if (mediaObjectId) {
+        await mediaService.bindAttachment(mediaObjectId, 'thread', resultId, 'media').catch(() => {
+          // Non-fatal: thread is created; attachment will be visible in media gallery.
+        })
+      }
+
       queryClient.invalidateQueries({ queryKey: queryKeys.threads.feed() })
       if (lenser?.id) {
         queryClient.invalidateQueries({ queryKey: queryKeys.threads.personal(lenser.id) })
@@ -55,7 +110,6 @@ export const useCreateThread = () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.threads.detail(editId) })
       }
 
-      // Mark as done before calling onSuccess
       setIsSubmitting(false)
       onSuccess(resultId)
     } catch (err: any) {
