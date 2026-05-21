@@ -43,6 +43,10 @@ export interface LenserPreferences {
   selected_api_key_id?: string | null
   wallet_mode: 'BYOK' | 'CLOUD'
   ai_data_usage: boolean
+  /** Profile-level default for AI generation funding routing. null = falls back to 'platform_credit'. */
+  default_ai_funding_source?: 'platform_credit' | 'user_byok_cloud' | 'user_byok_local' | null
+  /** Local BYOK key ID reference (IndexedDB key ID, never the secret itself). */
+  default_ai_local_key_id?: string | null
   hide_actions: boolean
   sidebar_collapsed?: boolean
   cron_config: Record<string, unknown>

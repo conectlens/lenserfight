@@ -64,6 +64,7 @@
       "@lenserfight/infra/storage": ["libs/infra/storage/src/index.ts"],
       "@lenserfight/infra/asset-cache": ["libs/infra/asset-cache/src/index.ts"],
       "@lenserfight/infra/simulation": ["libs/infra/simulation/src/index.ts"],
+      "@lenserfight/infra/ai-creation": ["libs/infra/ai-creation/src/index.ts"],
       "@lenserfight/infra/partner-provisioning": ["libs/infra/partner-provisioning/src/index.ts"],
       "@lenserfight/adapters/connector": ["libs/adapters/connector/src/index.ts"],
       "@lenserfight/sdk": ["libs/sdk/src/index.ts"],
