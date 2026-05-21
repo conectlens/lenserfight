@@ -112,7 +112,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
   const nodes = liveNodes ?? bootstrapNodes
   const edges = liveEdges ?? bootstrapEdges
   const { models, isLoading: modelsLoading } = useAIModels()
-  const [showRunPanel, setShowRunPanel] = useState(false)
+  const [showRunPanel, setShowRunPanel] = useState(() => searchParams.get('run') === '1')
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [runPanelTab, setRunPanelTab] = useState<'run' | 'history' | 'schedule'>('run')
   const [builderMode, setBuilderMode] = useState<'canvas' | 'phases'>('canvas')

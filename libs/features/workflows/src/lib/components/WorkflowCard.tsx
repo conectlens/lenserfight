@@ -12,9 +12,10 @@ interface WorkflowCardProps {
   compact?: boolean
   showReactions?: boolean
   onClick?: () => void
+  onRun?: (e: React.MouseEvent) => void
 }
 
-export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compact, onClick }: WorkflowCardProps) {
+export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compact, onClick, onRun }: WorkflowCardProps) {
   const nodeCount = nodeCountProp ?? workflow.node_count ?? nodes?.length ?? 0
   const likeCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.like ?? 0
   const savedCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.saved ?? 0
@@ -90,9 +91,19 @@ export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compac
           <span className="flex items-center gap-1 text-xs text-greyscale-400">
             <GitFork size={11} /> {forkCount}
           </span>
-          <span className="ml-auto inline-flex items-center gap-1 text-xs font-bold text-primary-700 dark:text-primary-yellow-400">
-            <Play size={11} /> Run workflow
-          </span>
+          {onRun ? (
+            <button
+              type="button"
+              onClick={onRun}
+              className="ml-auto inline-flex items-center gap-1 text-xs font-bold text-primary-700 dark:text-primary-yellow-400 hover:underline"
+            >
+              <Play size={11} /> Run workflow
+            </button>
+          ) : (
+            <span className="ml-auto inline-flex items-center gap-1 text-xs font-bold text-primary-700 dark:text-primary-yellow-400">
+              <Play size={11} /> Run workflow
+            </span>
+          )}
         </div>
       </Card>
     </div>
