@@ -1,6 +1,7 @@
 import { startMediaUpload } from '../repositories/mediaRepository'
 import { MediaObject, MediaAttachment, CreateMediaObjectDTO, UploadSession } from '@lenserfight/types'
 import { createMediaRepository } from '../factory'
+import { supabase } from '@lenserfight/data/supabase'
 
 
 const mediaRepo = createMediaRepository()
@@ -69,5 +70,16 @@ export const mediaService = {
     bindingKey: string,
   ): Promise<void> => {
     return mediaRepo.unbindAttachment(entityType, entityId, bindingKey)
+  },
+
+  /**
+   * Returns the personal workspace UUID for the currently authenticated lenser.
+   * Required when creating new media objects (fn_create_media_object requires a
+   * workspace_id FK into tenancy.workspaces).
+   */
+  getPersonalWorkspaceId: async (): Promise<string | null> => {
+    const { data, error } = await supabase.rpc('fn_get_my_workspace_id')
+    if (error) return null
+    return (data as string | null) ?? null
   },
 }
