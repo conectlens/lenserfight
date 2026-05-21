@@ -5,7 +5,7 @@ import { PageMeta } from '@lenserfight/ui/layout'
 import { SearchBar, SelectField } from '@lenserfight/ui/forms'
 import { ArrowRight, GitBranch, ImageIcon, Plus, Search, Sparkles, Video } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
-import { Link, Outlet, useSearchParams } from 'react-router-dom'
+import { Link, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { WorkflowCard } from '../components/WorkflowCard'
 import { WorkflowTemplateCarousel } from '../components/WorkflowTemplateCarousel'
@@ -36,6 +36,7 @@ interface WorkflowsPageProps {
 }
 
 export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
+  const navigate = useNavigate()
   const { lenser } = useLenser()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -179,7 +180,15 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
           {workflows.map((w) => (
             <div key={w.id} className="break-inside-avoid mb-3">
               <Link to={`/workflows/${w.id}`} className="block">
-                <WorkflowCard workflow={w} nodeCount={w.node_count} showReactions />
+                <WorkflowCard
+                  workflow={w}
+                  nodeCount={w.node_count}
+                  showReactions
+                  onRun={(e) => {
+                    e.preventDefault()
+                    navigate(`/workflows/${w.id}?run=1`)
+                  }}
+                />
               </Link>
             </div>
           ))}
