@@ -7,7 +7,7 @@ import {
   StreamUsage,
   ArtifactVisibility,
 } from '@lenserfight/types'
-import { StreamingOutput, type StreamingErrorEnvelope } from '@lenserfight/ui/components'
+import { DownloadButton, StreamingOutput, type StreamingErrorEnvelope } from '@lenserfight/ui/components'
 import { MediaViewer } from '@lenserfight/ui/data-display'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -26,6 +26,34 @@ import React, { useState } from 'react'
 import { useArtifactVisibility } from '../hooks/useArtifactVisibility'
 
 const FAILED_STATUSES = ['failed', 'canceled', 'timed_out'] as const
+
+/** Derive a file extension from an artifact kind for download filenames. */
+function extensionFromKind(kind: string): string {
+  switch (kind) {
+    case 'image': return 'png'
+    case 'video': return 'mp4'
+    case 'audio': return 'mp3'
+    default: return 'bin'
+  }
+}
+
+/** Derive a file extension from a MIME type (used for local BYOK artifacts). */
+function extensionFromMime(mimeType: string): string {
+  const map: Record<string, string> = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'video/mp4': 'mp4',
+    'video/webm': 'webm',
+    'audio/mpeg': 'mp3',
+    'audio/mp3': 'mp3',
+    'audio/wav': 'wav',
+    'audio/ogg': 'ogg',
+    'audio/flac': 'flac',
+  }
+  return map[mimeType] ?? 'bin'
+}
 
 /**
  * Transient media result returned by the Local BYOK adapter. The provider
@@ -216,6 +244,10 @@ function MediaArtifactBlock({
     )
   }
 
+  const downloadFilename = artifact.mediaObjectId
+    ? artifact.mediaObjectId.split('/').pop() ?? `output.${extensionFromKind(artifact.artifactKind)}`
+    : `output.${extensionFromKind(artifact.artifactKind)}`
+
   return (
     <div className="overflow-hidden rounded-2xl border border-surface-border">
       {isLoading ? (
@@ -227,13 +259,20 @@ function MediaArtifactBlock({
           name={artifact.mediaObjectId ?? undefined}
         />
       )}
-      {isOwner && (
-        <div className="flex items-center justify-end border-t border-surface-border bg-surface-raised px-3 py-1.5">
-          <VisibilityToggle
-            artifactId={artifact.id}
-            visibility={artifact.visibility as ArtifactVisibility}
-            runId={runId}
-          />
+      {!isLoading && (
+        <div className="flex items-center justify-between border-t border-surface-border bg-surface-raised px-3 py-1.5">
+          <div>
+            {signedUrl && (
+              <DownloadButton url={signedUrl} filename={downloadFilename} />
+            )}
+          </div>
+          {isOwner && (
+            <VisibilityToggle
+              artifactId={artifact.id}
+              visibility={artifact.visibility as ArtifactVisibility}
+              runId={runId}
+            />
+          )}
         </div>
       )}
     </div>
@@ -253,9 +292,14 @@ const ArtifactBlock: React.FC<{
       <div className="overflow-hidden rounded-2xl border border-surface-border">
         <div className="relative">
           <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+            <DownloadButton
+              content={artifact.contentText}
+              filename={`artifact-${artifact.id}.txt`}
+              mimeType="text/plain; charset=utf-8"
+            />
             <CopyButton text={artifact.contentText} />
           </div>
-          <pre className="whitespace-pre-wrap break-words bg-surface-raised p-4 pr-20 font-mono text-sm leading-relaxed text-greyscale-700 dark:text-greyscale-200">
+          <pre className="whitespace-pre-wrap break-words bg-surface-raised p-4 pr-28 font-mono text-sm leading-relaxed text-greyscale-700 dark:text-greyscale-200">
             {artifact.contentText}
           </pre>
         </div>
@@ -277,10 +321,15 @@ const ArtifactBlock: React.FC<{
     return (
       <div className="overflow-hidden rounded-2xl border border-surface-border">
         <div className="relative">
-          <div className="absolute top-2 right-2 z-10">
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+            <DownloadButton
+              content={pretty}
+              filename={`artifact-${artifact.id}.json`}
+              mimeType="application/json"
+            />
             <CopyButton text={pretty} />
           </div>
-          <pre className="whitespace-pre-wrap break-words bg-surface-raised p-4 pr-16 font-mono text-sm leading-relaxed text-greyscale-700 dark:text-greyscale-200">
+          <pre className="whitespace-pre-wrap break-words bg-surface-raised p-4 pr-28 font-mono text-sm leading-relaxed text-greyscale-700 dark:text-greyscale-200">
             {pretty}
           </pre>
         </div>
@@ -335,34 +384,41 @@ const LocalMediaArtifactView: React.FC<{ artifact: LocalMediaArtifact }> = ({ ar
         </div>
       </div>
       <div className="flex flex-col gap-3">
-        {urls.map((url, i) => (
-          <div
-            key={`${url}-${i}`}
-            className="rounded-2xl overflow-hidden border border-surface-border bg-surface-raised"
-          >
-            {modality === 'image' ? (
-              <img
-                src={url}
-                alt={`Generated ${modality} ${i + 1}`}
-                width={width}
-                height={height}
-                className="w-full h-auto"
-              />
-            ) : modality === 'video' ? (
-              <video src={url} controls className="w-full h-auto" />
-            ) : (
-              // audio / music
-              <div className="flex flex-col gap-2 p-4">
-                <audio src={url} controls className="w-full" />
-                {durationSeconds != null && (
-                  <span className="text-[11px] text-greyscale-400">
-                    {durationSeconds.toFixed(1)}s
-                  </span>
-                )}
+        {urls.map((url, i) => {
+          const ext = extensionFromMime(mimeType)
+          const filename = `${modality}-${i + 1}.${ext}`
+          return (
+            <div
+              key={`${url}-${i}`}
+              className="rounded-2xl overflow-hidden border border-surface-border bg-surface-raised"
+            >
+              {modality === 'image' ? (
+                <img
+                  src={url}
+                  alt={`Generated ${modality} ${i + 1}`}
+                  width={width}
+                  height={height}
+                  className="w-full h-auto"
+                />
+              ) : modality === 'video' ? (
+                <video src={url} controls className="w-full h-auto" />
+              ) : (
+                // audio / music
+                <div className="flex flex-col gap-2 p-4">
+                  <audio src={url} controls className="w-full" />
+                  {durationSeconds != null && (
+                    <span className="text-[11px] text-greyscale-400">
+                      {durationSeconds.toFixed(1)}s
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center justify-start border-t border-surface-border bg-surface-raised px-3 py-1.5">
+                <DownloadButton url={url} filename={filename} />
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          )
+        })}
       </div>
       <p className="text-[10px] text-greyscale-400">
         Generated directly by your browser using your local BYOK key. The result is not stored on

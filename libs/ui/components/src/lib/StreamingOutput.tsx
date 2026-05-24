@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Coins, Copy, LayoutPanelLeft, Loader2, FileCode, PlayCircle } from 'lucide-react'
 import React, { useEffect, useRef, useState, useMemo } from 'react'
 
+import { DownloadButton } from './DownloadButton'
 import { MarkdownRenderer } from './MarkdownRenderer'
 import { SegmentedControl } from './SegmentedControl'
 
@@ -219,12 +220,18 @@ export const StreamingOutput: React.FC<StreamingOutputProps> = ({
         <div className="relative group/content">
           <AnimatePresence mode="wait">
             {state === 'complete' && output && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
               >
-                <div className="absolute top-4 right-4 z-20">
+                <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+                  <DownloadButton
+                    content={output}
+                    filename={`output-${runId ? runId.slice(0, 8) : Date.now()}.md`}
+                    mimeType="text/markdown; charset=utf-8"
+                    className="px-3 py-1.5 rounded-lg bg-white/50 dark:bg-greyscale-800/50 backdrop-blur-sm border border-greyscale-200 dark:border-greyscale-700 hover:bg-white dark:hover:bg-greyscale-800 shadow-sm font-medium text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100"
+                  />
                   <CopyButton text={copyText} />
                 </div>
               </motion.div>
