@@ -82,8 +82,11 @@ function buildGeminiBody(
 
 // ─── Adapter ──────────────────────────────────────────────────────────────────
 
-export function buildUrl(model: string, apiKey: string): string {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+export function buildUrl(model: string, _apiKey: string): string {
+  // SECURITY: API key is sent via x-goog-api-key header (authHeader below),
+  // NOT as a query parameter. Query-string keys appear in access logs, browser
+  // history, and Referer headers — all of which are outside our control.
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 }
 
 export function transformRequest(
@@ -108,14 +111,15 @@ export function transformResponse(data: GeminiResponse): ProviderResponse {
   };
 }
 
-export function authHeader(_apiKey: string): Record<string, string> {
-  return {}; // Gemini: API key in query param via buildUrl
+export function authHeader(apiKey: string): Record<string, string> {
+  return { 'x-goog-api-key': apiKey };
 }
 
 // ─── Streaming ────────────────────────────────────────────────────────────────
 
-export function buildStreamUrl(model: string, apiKey: string): string {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
+export function buildStreamUrl(model: string, _apiKey: string): string {
+  // SECURITY: API key is sent via x-goog-api-key header (authHeader above).
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`;
 }
 
 export function buildStreamRequest(
