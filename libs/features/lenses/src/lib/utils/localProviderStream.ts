@@ -17,7 +17,7 @@
  *
  * Credits are always 0 for local execution — the platform does not bill for BYOK-local runs.
  */
-import { streamProvider, getStreamAdapter, OLLAMA_DEFAULT_BASE_URL } from '@lenserfight/providers'
+import { streamProvider, getStreamAdapter, OLLAMA_DEFAULT_BASE_URL, modelKind } from '@lenserfight/providers'
 import { generateUUID } from '@lenserfight/utils/text'
 import type { ProviderMessage } from '@lenserfight/providers'
 import type { StreamCallbacks } from '@lenserfight/types'
@@ -48,6 +48,19 @@ function buildCorsFriendlyError(provider: string, status: number, body: string):
 
 export async function streamLocalProvider(req: LocalStreamRequest): Promise<void> {
   const { provider, model, messages, decryptedKey, signal, callbacks } = req
+
+  // Guard: text streaming endpoints only accept text models. Image/video/audio
+  // models (dall-e-4, imagen-4, veo-3, …) must go through executeMedia, not
+  // streamText. Catching this here prevents a nonsensical 404 from the provider
+  // and gives the caller a clear, actionable error instead.
+  const kind = modelKind(model)
+  if (kind && kind !== 'text') {
+    callbacks.onError(
+      `Model "${model}" produces ${kind} output, not text. Use the media execution path instead of the text streaming path.`,
+      'unsupported_model',
+    )
+    return
+  }
 
   let rawStream: ReadableStream<Uint8Array>
   try {
