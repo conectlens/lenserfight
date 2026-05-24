@@ -1,4 +1,4 @@
-import { Globe, Lock, Copy, Check } from 'lucide-react'
+import { Globe, Lock } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -38,7 +38,6 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
   initialContent,
 }) => {
   const { createThread, isSubmitting, error } = useCreateThread()
-  const [lensInstructionsCopied, setLensInstructionsCopied] = useState(false)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [visibility, setVisibility] = useState<Visibility>('public')
@@ -242,72 +241,6 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     { value: 'private', label: 'Private', icon: Lock },
   ]
 
-  const LENS_CREATION_INSTRUCTIONS = `# How to Create a Lens on LenserFight
-
-A **Lens** is a reusable AI prompt template that others can run, fork, and build battles around.
-
-## Required fields
-
-| Field | Description |
-|-------|-------------|
-| **Title** | Short, descriptive name (e.g. "Blog Post Outliner") |
-| **Description** | One-sentence summary of what the Lens does |
-| **Template body** | The prompt text. Use \`[[Parameter Label]]\` tokens for dynamic inputs |
-| **Visibility** | \`public\` (discoverable), \`community\` (logged-in users only), or \`private\` |
-| **Tags** | Up to 5 tags to help users find your Lens |
-
-## Template body tips
-
-- Write your prompt as if speaking directly to the AI model.
-- Wrap dynamic inputs in double brackets: \`[[Topic]]\`, \`[[Tone]]\`, \`[[Word Count]]\`.
-- Each \`[[Label]]\` automatically becomes a typed parameter users fill in before running.
-- Keep the core instruction clear even when all parameters are at their defaults.
-
-## Parameter types you can declare
-
-\`text\` · \`textarea\` · \`number\` · \`boolean\` · \`select\` · \`multiselect\` · \`url\` · \`date\` · \`file\`
-
-## Example Lens
-
-**Title:** Blog Post Outliner
-**Description:** Generates a structured outline for any blog topic.
-**Template body:**
-\`\`\`
-You are an expert content strategist.
-
-Create a detailed blog post outline for the topic: [[Topic]]
-
-Tone: [[Tone]]
-Target word count: [[Word Count]]
-Audience: [[Target Audience]]
-
-Return the outline as a numbered list with H2 and H3 headings.
-\`\`\`
-
-**Tags:** writing, content, blogging, outlines
-**Visibility:** public
-
-## Publishing checklist
-
-- [ ] Title is unique and searchable
-- [ ] Description explains the outcome, not the mechanism
-- [ ] All \`[[tokens]]\` have clear, concise labels
-- [ ] Template works well with default / empty parameter values
-- [ ] At least one relevant tag added
-- [ ] Visibility set to \`public\` for maximum reach
-
-Paste this template into any AI provider (ChatGPT, Claude, Gemini, etc.), fill in the fields, and submit the output as your new Lens on LenserFight.`
-
-  const handleCopyLensInstructions = async () => {
-    try {
-      await navigator.clipboard.writeText(LENS_CREATION_INSTRUCTIONS)
-      setLensInstructionsCopied(true)
-      setTimeout(() => setLensInstructionsCopied(false), 2000)
-    } catch (e) {
-      console.error('Failed to copy lens instructions', e)
-    }
-  }
-
   return (
     <Dialog
       open={isOpen}
@@ -318,29 +251,9 @@ Paste this template into any AI provider (ChatGPT, Claude, Gemini, etc.), fill i
       <form onSubmit={handleSubmit} className="space-y-6" onKeyDown={handleKeyDown}>
         <div className="space-y-4">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-base font-semibold text-gray-900 dark:text-gray-100 block">
+            <label className="text-base font-semibold text-gray-900 dark:text-gray-100 block">
                 Content
               </label>
-              <button
-                type="button"
-                onClick={handleCopyLensInstructions}
-                title="Copy Lens creation instructions for AI providers"
-                className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded-lg hover:bg-primary/10"
-              >
-                {lensInstructionsCopied ? (
-                  <>
-                    <Check size={13} />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy size={13} />
-                    Lens Instructions
-                  </>
-                )}
-              </button>
-            </div>
 
             <input
               type="text"
