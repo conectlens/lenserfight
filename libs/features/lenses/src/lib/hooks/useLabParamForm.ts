@@ -1,18 +1,19 @@
 import { useMemo, useState } from 'react'
 import { LensParam, LensVersionParam, FundingSource, GenerativeMediaParams } from '@lenserfight/types'
-import { validateParamValues } from '@lenserfight/utils/text'
+import { extractParams, validateParamValues } from '@lenserfight/utils/text'
 import { sanitizeStringInput, validateParamValue } from './useAttachmentValidation'
 import { TriggerLabExecutionDTO } from './useLabController'
 import type { LocalKeyMeta } from '@lenserfight/types'
 
-// Detect variables from both {{legacy}} and [[modern]] template syntaxes
+// Detect variables from both {{legacy}} and [[modern]] template syntaxes.
+// [[modern]] detection delegates to the shared extractParams utility so spaces,
+// hyphens, and the optional-marker (!) are handled identically everywhere.
 export function extractVariables(content: string): string[] {
   const matches = new Set<string>()
   const re1 = /\{\{(\w+)\}\}/g
-  const re2 = /\[\[(\w+)\]\]/g
   let match: RegExpExecArray | null
   while ((match = re1.exec(content)) !== null) matches.add(match[1])
-  while ((match = re2.exec(content)) !== null) matches.add(match[1])
+  for (const p of extractParams(content)) matches.add(p.name)
   return Array.from(matches)
 }
 
@@ -58,7 +59,29 @@ export function useLabParamForm(
   }, [usingVersionParams, params, variables])
 
   const effectiveParams = useMemo<LensVersionParam[]>(() => {
-    if (usingVersionParams && versionParams) return versionParams
+    if (usingVersionParams && versionParams) {
+      // Content is the source of truth for which params exist.
+      // variables[] is already derived from content via the shared extractParams utility.
+      // For each content param, use the stored LensVersionParam schema when available;
+      // fall back to a plain text-type entry for params added after the lens was saved.
+      // If content has no detectable variables (e.g. [[:uuid]] body), keep stored params.
+      if (variables.length === 0) return versionParams
+      const vpByLabel = new Map(versionParams.map((p) => [p.label, p]))
+      return variables.map((name): LensVersionParam => {
+        const stored = vpByLabel.get(name)
+        if (stored) return stored
+        return {
+          id: name, versionId: '', label: name, toolId: name,
+          tool: {
+            id: name, key: name, label: name, description: null,
+            category: 'input', type: 'text', required: true,
+            minLength: 0, maxLength: 0, placeholder: null, helpText: null,
+            validationSchema: {}, options: null, sortOrder: 0,
+            isSystem: false, icon: null, color: null,
+          },
+        }
+      })
+    }
     return legacyParamSchemas.map((lp) => ({
       id: lp.name,
       versionId: '',
@@ -87,7 +110,7 @@ export function useLabParamForm(
         color: null,
       },
     }))
-  }, [usingVersionParams, versionParams, legacyParamSchemas])
+  }, [usingVersionParams, versionParams, variables, legacyParamSchemas])
 
   const [inputValues, setInputValues] = useState<Record<string, unknown>>({})
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
