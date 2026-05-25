@@ -4,6 +4,7 @@ import type {
   ProviderResponse,
   StreamChunk,
 } from './types'
+import { dataUriToBase64, isDataUri } from './mediaPartWire'
 
 // ─── Ollama Adapter ───────────────────────────────────────────────────────────
 // Ollama REST API: http://localhost:11434/api/chat
@@ -82,7 +83,14 @@ function toOllamaMessage(msg: ProviderMessage): OllamaMessage {
     role: msg.role,
     content: textParts || '.',
     ...(imageParts.length > 0
-      ? { images: imageParts.map((p) => p.url) } // Note: URLs; caller must base64-encode if needed
+      ? {
+          images: imageParts.map((p) => {
+            if (isDataUri(p.url)) {
+              return dataUriToBase64(p.url)?.base64 ?? p.url
+            }
+            return p.url
+          }),
+        }
       : {}),
   }
 }
