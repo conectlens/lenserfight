@@ -25,12 +25,26 @@ Translate the following text from [[Source Language]] to [[Target Language]]:
 | Multi-word (spaces allowed) | `[[word word]]` | `[[Visual Tone]]`, `[[Target Audience]]` |
 | Underscores / hyphens | `[[word_word]]` or `[[word-word]]` | `[[word_count]]`, `[[source-language]]` |
 | Optional parameter | `[[label!]]` | `[[Special Instructions!]]` |
+| Inline type hint | `[[label:type]]` | `[[Input PDF:file]]`, `[[Word Count:number]]` |
+| Type + optional | `[[label:type!]]` | `[[Notes:textarea!]]` |
 
-The first character must be a letter or digit. Leading/trailing spaces inside the brackets are ignored.
+The first character must be a letter or digit. Leading/trailing spaces inside the brackets are ignored. Labels must not contain `:` unless you intend a type hint (see below).
+
+### Inline type hints
+
+Append `:type` after the label (before optional `!`) to suggest a parameter type when the token is first detected. This is an **authoring hint** only — the canonical type is stored on the Lens version’s tool binding.
+
+```text
+Summarize this document: [[Source Document:file]]
+Target length: [[Word Count:integer]]
+Tone: [[Tone:text!]]
+```
+
+Supported `type` values match the table in [Parameter types](#parameter-types) (`text`, `file`, `number`, `boolean`, etc.). If the suffix is not a known type (for example `[[ratio:16]]`), the whole token is treated as the label `ratio:16`.
 
 ### Optional parameters
 
-Append `!` immediately before the closing `]]` to mark a parameter as optional. Users may leave optional parameters blank; the Lens still runs.
+Append `!` immediately before the closing `]]` (after an optional `:type`) to mark a parameter as optional. Users may leave optional parameters blank; the Lens still runs.
 
 ```text
 Write a [[Word Count]] word article about [[Topic]].
@@ -61,7 +75,8 @@ The `{{name}}` pattern is used by many popular template engines (Jinja2, Handleb
 | `url` | Validated URL string | Documentation link |
 | `date` | Date value | Deadline, publish date |
 | `datetime` | Date + time value | Scheduled run timestamp |
-| `file` | File attachment | PDF, image, CSV |
+| `file` | Single file attachment | PDF, image, CSV |
+| `files` | Multiple file attachments | Image gallery, several PDFs for multimodal models |
 
 ## Defining parameters
 
@@ -73,11 +88,54 @@ Parameters are defined in the Lens version editor. Each parameter has:
 - `default_value` — optional fallback
 - `help_text` — description shown in the tooltip when hovering the parameter chip
 - `options` — for `select` type, the list of choices
-- `validation_schema` — optional constraints: `min`/`max` (numeric), `urlScheme` (url), `allowedMimeTypes` (file)
+- `validation_schema` — optional constraints: `min`/`max` (numeric), `urlScheme` (url), `allowedMimeTypes` (file/files), `maxCount` / `maxFileBytes` / `maxTotalBytes` (files)
+
+### `files` type limits (platform defaults)
+
+| Limit | Default |
+|-------|---------|
+| Files per `files` parameter | 10 |
+| Files per lab run (all `files` params) | 20 |
+| Max size per file | 50 MiB |
+| Max total per `files` parameter | 100 MiB |
+| Max total per run | 200 MiB |
+| Max multimodal parts per message | 20 |
+
+Per-tool `validation_schema` may lower these caps. Allowed MIME types default to `image/*`, `application/pdf`, `audio/*`, and `video/*` unless `allowedMimeTypes` is set on the tool.
+
+Author with `[[Photos:files]]` or bind the **File Attachments** tool in the version editor.
 
 ## Parameter chips
 
 In the Lens viewer, each `[[parameter]]` token is rendered as a colored badge. Hovering the badge shows a tooltip with the parameter's type, label, help text, required status, and default value. Each parameter gets a unique color (deterministic by name) so multiple parameters in the same Lens are visually distinct.
+
+## Copying prompts with filled parameters
+
+On the Lens lab panel, **Copy with Parameters** substitutes filled values into the template:
+
+| Action | `file` parameter | `files` parameter | Use case |
+|--------|------------------|-------------------|----------|
+| **Copy with Parameters** (default) | One public `https://` URL or placeholder | JSON array of public URLs only, e.g. `["https://…","https://…"]` | Paste into external AI tools |
+| **Internal IDs** | One `media_object_id` UUID | JSON array of UUIDs | LenserFight execution / snapshot |
+
+Inside LenserFight, **local BYOK** runs send multiple attachments as separate multimodal parts (images may be inlined as base64 so providers never fetch `127.0.0.1`). Cloud/server runs emit one `attachment_binding` per file. Copy never includes `data:` URIs or localhost links for `files` params.
+
+### Local development and unreachable URLs
+
+Signed Supabase Storage URLs on localhost use `http://127.0.0.1:54321/...`. External AI services cannot open those links. LenserFight applies this order for **Copy with Parameters**:
+
+1. **`SUPABASE_PUBLIC_URL`** — tunnel (ngrok, Cloudflare Tunnel) pointing at your local Supabase API; signed URLs are rewritten to the public host.
+2. **`media-content` edge proxy** — when `MEDIA_CONTENT_PROXY_ENABLED` is on (default when `WEB_BASE_URL` is public), copy uses a short-lived token URL: `{SUPABASE_PUBLIC_URL or SUPABASE_URL}/functions/v1/media-content?object_id=...&token=...`.
+3. **Placeholder text** — if neither applies, file params copy as a note to upload the file manually (no dead localhost link).
+
+Example `.env.local` for tunneled copy:
+
+```bash
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_PUBLIC_URL=https://your-tunnel.example.com
+```
+
+See also: [Storage adapters](/en/reference/platform-api/storage-adapters.md).
 
 ## Related
 
