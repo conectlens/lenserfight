@@ -15,7 +15,7 @@ LenserFight decouples file and media storage from application logic through a `S
 |-----------|--------|----------|---------|
 | `supabase` | **Production** | Cloud deployments, multi-user, RLS-enforced media | Running Supabase instance |
 | `local` | **Dev / CLI** | No-cloud local development, CLI tooling, offline use | `~/.lenserfight/` directory |
-| `r2` | Stub (not implemented) | Cloudflare R2 object storage | Cloudflare account + R2 bucket |
+| `r2` | **Production** | Cloudflare R2 object storage (S3-compatible) | R2 account, bucket, API keys; optional `R2_PUBLIC_URL` CDN |
 
 ### Selecting an adapter
 
@@ -157,7 +157,7 @@ When `DATA_SOURCE=file`, the local adapter reads and writes from the user's home
 | Limitation | Detail |
 |-----------|--------|
 | **Browser local adapter is in-memory** | `LocalFileStorageAdapter` uses an in-memory `Map` in the browser — data is lost on page reload. File-system backing (`~/.lenserfight/`) applies to CLI use only. |
-| **R2 adapter is a stub** | `CloudflareR2StorageAdapter` throws "not yet implemented" — do not set `DATA_SOURCE=r2` in production. |
+| **R2 requires env** | Set `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, and optionally `R2_PUBLIC_URL` for CDN URLs. Use `setDefaultStorageAdapter('r2')` or wire via deployment config. |
 | **No auth in local mode** | The local adapter does not enforce RLS or access control. It is intended for single-developer local use only. |
 | **No multi-user in local mode** | `media.objects` workspace scoping is not enforced when running without Supabase. |
 
