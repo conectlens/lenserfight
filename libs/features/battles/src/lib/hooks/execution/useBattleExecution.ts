@@ -9,7 +9,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { lensesService, battleExecutionRepository } from '@lenserfight/data/repositories'
-import { renderLensWithSnapshot } from '@lenserfight/utils/text'
+import { renderTemplateWithSnapshot } from '@lenserfight/domain/lens-parameters'
 
 import type {
   BattleExecutionPhase,
@@ -202,12 +202,12 @@ export function useBattleExecution(options: UseBattleExecutionOptions): UseBattl
         throw new Error(`Missing required lens parameters: ${names.join(', ')}`)
       }
 
-      const renderedContentA = renderLensWithSnapshot(
+      const renderedContentA = renderTemplateWithSnapshot(
         versionA.templateBody,
         assignA.input_snapshot ?? {},
         paramsA
       )
-      const renderedContentB = renderLensWithSnapshot(
+      const renderedContentB = renderTemplateWithSnapshot(
         versionB.templateBody,
         assignB.input_snapshot ?? {},
         paramsB
