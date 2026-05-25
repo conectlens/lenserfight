@@ -34,17 +34,20 @@ Include docstring and type hints.
 
 ## Step 3: Add parameters (optional)
 
-If you want the Lens to be reusable with different inputs, add typed parameters using `[[parameter_name]]` syntax.
+If you want the Lens to be reusable with different inputs, add typed parameters using `[[Parameter Label]]` syntax. Multi-word labels with spaces are fully supported.
 
 Example:
 ```
-Explain [[concept]] to a [[audience]] in under [[word_limit]] words.
+Explain [[Concept]] to a [[Target Audience]] in under [[Word Limit]] words.
 Use concrete examples and avoid jargon.
+Additional constraints: [[Extra Notes!]]
 ```
 
-Parameters are defined in the **Parameters** panel — give each one a label, type, and optional help text.
+Parameters are automatically detected from `[[...]]` tokens and appear in the **Parameters** panel — give each one a type and optional help text.
 
-See [Lens Parameters](/en/explanation/lenses/lens-parameters) for all supported types.
+**Optional parameters:** append `!` before the closing `]]` (e.g. `[[Extra Notes!]]`) to allow the parameter to be left blank. The Lens still runs when optional fields are empty.
+
+See [Lens Parameters](/en/explanation/lenses/lens-parameters) for all supported types and the full syntax reference.
 
 ## Step 4: Add tags
 
@@ -72,7 +75,7 @@ Once published, your lens can be selected in the workflow builder or referenced 
 
 - Test it yourself first — generate a response and ask: "would I vote strongly for one answer over another?"
 - Avoid vague tasks ("be creative") — specific constraints produce more divergent, judgeable responses
-- Add `[[parameter]]` inputs to make the Lens reusable for many instances of the same task type
+- Add `[[Parameter Label]]` inputs to make the Lens reusable — multi-word labels like `[[Target Audience]]` are supported. Mark non-essential fields as optional with `[[Label!]]`.
 
 ## Alternative: Developer & CLI Management
 

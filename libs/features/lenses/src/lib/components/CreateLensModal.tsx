@@ -73,6 +73,15 @@ A **Lens** is a reusable AI prompt template that others can run, fork, and build
 - Each \`[[Label]]\` automatically becomes a typed parameter users fill in before running.
 - Keep the core instruction clear even when all parameters are at their defaults.
 
+## Parameter name rules
+
+- **Multi-word names are supported:** \`[[Visual Tone]]\`, \`[[Target Audience]]\`, \`[[Word Count]]\`
+- **Underscores and hyphens work too:** \`[[word_count]]\`, \`[[target-language]]\`
+- The first character must be a letter or digit — no leading spaces.
+- **Optional parameters:** append \`!\` to the label to mark a parameter as optional.
+  - \`[[Text on Wallpaper!]]\` — users may leave this blank; the Lens still runs.
+  - \`[[Things to Avoid!]]\` — same idea; blank is allowed.
+
 ## Parameter types you can declare
 
 \`text\` · \`textarea\` · \`number\` · \`boolean\` · \`select\` · \`multiselect\` · \`url\` · \`date\` · \`file\`
@@ -90,6 +99,7 @@ Create a detailed blog post outline for the topic: [[Topic]]
 Tone: [[Tone]]
 Target word count: [[Word Count]]
 Audience: [[Target Audience]]
+Special instructions: [[Special Instructions!]]
 
 Return the outline as a numbered list with H2 and H3 headings.
 \`\`\`
@@ -101,7 +111,8 @@ Return the outline as a numbered list with H2 and H3 headings.
 
 - [ ] Title is unique and searchable
 - [ ] Description explains the outcome, not the mechanism
-- [ ] All \`[[tokens]]\` have clear, concise labels
+- [ ] All \`[[tokens]]\` have clear, human-readable labels (spaces are allowed)
+- [ ] Optional parameters are marked with \`!\` (e.g. \`[[Special Instructions!]]\`)
 - [ ] Template works well with default / empty parameter values
 - [ ] At least one relevant tag added
 - [ ] Visibility set to \`public\` for maximum reach

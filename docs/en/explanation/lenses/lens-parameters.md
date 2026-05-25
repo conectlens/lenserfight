@@ -9,20 +9,42 @@ Parameters let a Lens accept typed inputs at run time, making it reusable across
 
 ## Syntax
 
-Use **double square brackets** in the Lens body: `\[\[parameter_name\]\]`
+Use **double square brackets** in the Lens body: `[[Parameter Label]]`
 
-Example:
 ```text
-Translate the following text from [[source_language]] to [[target_language]]:
+Translate the following text from [[Source Language]] to [[Target Language]]:
 
-[[text_to_translate]]
+[[Text to Translate]]
 ```
+
+### Allowed label characters
+
+| Feature | Syntax | Example |
+|---------|--------|---------|
+| Single word | `[[word]]` | `[[topic]]` |
+| Multi-word (spaces allowed) | `[[word word]]` | `[[Visual Tone]]`, `[[Target Audience]]` |
+| Underscores / hyphens | `[[word_word]]` or `[[word-word]]` | `[[word_count]]`, `[[source-language]]` |
+| Optional parameter | `[[label!]]` | `[[Special Instructions!]]` |
+
+The first character must be a letter or digit. Leading/trailing spaces inside the brackets are ignored.
+
+### Optional parameters
+
+Append `!` immediately before the closing `]]` to mark a parameter as optional. Users may leave optional parameters blank; the Lens still runs.
+
+```text
+Write a [[Word Count]] word article about [[Topic]].
+Tone: [[Tone!]]
+Things to avoid: [[Things to Avoid!]]
+```
+
+In the example above, `[[Tone!]]` and `[[Things to Avoid!]]` are optional — the Lens works even when left blank.
 
 ### Why square brackets instead of double curly braces?
 
 The `{{name}}` pattern is used by many popular template engines (Jinja2, Handlebars, Mustache, Go templates). When a Lens author pastes code or examples that contain `{{variable}}` syntax, those tokens would accidentally be detected as Lens parameters.
 
-`[[name]]` is rarely used as a template delimiter in the wild, making it unambiguous: any `[[word]]` in a Lens body is always an intentional parameter placeholder.
+`[[name]]` is rarely used as a template delimiter in the wild, making it unambiguous: any `[[label]]` in a Lens body is always an intentional parameter placeholder.
 
 ## Parameter types
 
@@ -44,10 +66,10 @@ The `{{name}}` pattern is used by many popular template engines (Jinja2, Handleb
 ## Defining parameters
 
 Parameters are defined in the Lens version editor. Each parameter has:
-- `key` — matches the `[[key]]` placeholder in the body
-- `label` — displayed in the UI (defaults to `key` if omitted)
+- `key` — matches the `[[label]]` placeholder in the body (lowercased, spaces preserved)
+- `label` — displayed in the UI
 - `type` — one of the types above
-- `required` — whether the field must be filled
+- `required` — whether the field must be filled (use `[[label!]]` syntax to mark optional at authoring time)
 - `default_value` — optional fallback
 - `help_text` — description shown in the tooltip when hovering the parameter chip
 - `options` — for `select` type, the list of choices
