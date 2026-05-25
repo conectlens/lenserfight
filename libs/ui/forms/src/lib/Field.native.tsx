@@ -6,8 +6,8 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { Text } from '@lenserfight/ui/primitives'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { Text } from '@lenserfight/ui/primitives/native'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
 
 // ── FieldLabel ───────────────────────────────────────────────────────────────
 

@@ -58,3 +58,6 @@ export type GatewayPairingStatus =
   | 'gateway_unreachable'
   | 'gateway_not_paired'
   | 'gateway_forbidden'
+  | 'pairing_connecting'
+  | 'pairing_expired'
+  | 'pairing_revoked'

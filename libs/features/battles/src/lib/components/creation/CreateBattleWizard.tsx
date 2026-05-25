@@ -1440,6 +1440,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       onRemoveLocalKey={battleFunding.removeLocalKey}
                       onUpdateLocalKey={battleFunding.updateLocalKey}
                       onPairGateway={battleFunding.pairGateway}
+                      onForgetGateway={battleFunding.forgetGateway}
                       onRefreshLocalKeys={battleFunding.refreshLocalKeys}
                       walletBalance={battleFunding.walletBalance}
                       canUseBYOK={battleFunding.canUseBYOK}

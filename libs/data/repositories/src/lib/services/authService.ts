@@ -48,7 +48,7 @@ export const authService = {
     return authRepo.resetPassword(password)
   },
 
-  signInWithOAuth: async (provider: 'google' | 'github' | 'azure' | 'custom:chainabit'): Promise<void> => {
+  signInWithOAuth: async (provider: 'google' | 'github' | 'apple' | 'azure' | 'custom:chainabit'): Promise<void> => {
     return authRepo.signInWithOAuth(provider)
   },
 

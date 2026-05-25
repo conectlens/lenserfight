@@ -13,7 +13,7 @@ import {
   Platform,
 } from 'react-native'
 import type { TextInputProps, ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {
   error?:           boolean

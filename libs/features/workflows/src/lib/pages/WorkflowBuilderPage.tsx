@@ -1048,6 +1048,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                       onRemoveLocalKey={funding.removeLocalKey}
                       onUpdateLocalKey={funding.updateLocalKey}
                       onPairGateway={funding.pairGateway}
+                      onForgetGateway={funding.forgetGateway}
                       onRefreshLocalKeys={funding.refreshLocalKeys}
                       walletBalance={funding.walletBalance}
                       canUseBYOK={funding.canUseBYOK}

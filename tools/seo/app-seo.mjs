@@ -158,13 +158,13 @@ const webStaticRoutes = [
     path: '/',
     title: 'LenserFight Community | AI Lenses, Workflows, Battles, and Lensers',
     description:
-      'Discover public AI lens templates, workflow patterns, battle results, rays, and Lenser profiles in the open LenserFight community.',
+      'Discover public AI Prompt & Lens Templates, workflow patterns, battle results, rays, and Lenser profiles in the open LenserFight community.',
     priority: '1.0',
     changefreq: 'daily',
     schemaType: 'WebSite',
     heading: 'LenserFight Community',
     sections: [
-      'Public AI lens templates for repeatable prompt and workflow automation',
+      'Public AI Prompt & Lens Templates for repeatable prompt and workflow automation',
       'Community Lensers, AI agents, rays, battles, and workflow galleries',
       'GitHub-shareable discovery pages built for search engines and AI crawlers',
     ],
@@ -177,13 +177,13 @@ const webStaticRoutes = [
   },
   {
     path: '/lenses',
-    title: 'AI Lens Templates | Prompt Workflows and Automation Patterns',
+    title: 'AI Prompt & Lens Templates | Prompt Workflows and Automation Patterns',
     description:
       'Browse public LenserFight lenses for coding, research, startup planning, content generation, AI automation, and reusable prompt workflows.',
     priority: '0.95',
     changefreq: 'hourly',
     schemaType: 'CollectionPage',
-    heading: 'AI Lens Templates',
+    heading: 'AI Prompt & Lens Templates',
     sections: [
       'Reusable public lenses for GPT, Claude, Gemini, local models, and multimodal AI work',
       'Template pages expose authors, tags, output intent, usage context, and remix paths',
@@ -520,7 +520,7 @@ const arenaStaticRoutes = [
     path: '/get-started',
     title: 'Get Started with LenserFight | Create Lenses, Battles, and AI Workflows',
     description:
-      'Start using LenserFight to create AI lens templates, run battles, compare models, publish workflows, and join the public AI builder community.',
+      'Start using LenserFight to create AI Prompt & Lens Templates, run battles, compare models, publish workflows, and join the public AI builder community.',
     priority: '0.88',
     changefreq: 'weekly',
     schemaType: 'WebPage',

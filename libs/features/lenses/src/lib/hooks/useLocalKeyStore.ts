@@ -1,4 +1,4 @@
-import { LocalKeysGatewayClient } from '@lenserfight/data/local-keys-browser'
+import { LocalKeysGatewayClient, GatewayPairingStore } from '@lenserfight/data/local-keys-browser'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { LocalKeyMeta } from '@lenserfight/types'
@@ -7,7 +7,12 @@ import type { LocalKeyMeta } from '@lenserfight/types'
  * Local BYOK keys now live in `~/.lenserfight/keys/` on the user's machine,
  * accessed over the loopback gateway daemon (`apps/gateway`). The browser
  * holds NO ciphertext, NO IV, and NO plaintext beyond a single in-flight
- * `resolveKey()` call. `lf keys add` is the only way to add a key.
+ * `resolveKey()` call.
+ *
+ * Pairing is durable: after the user pairs once, the credential is stored in
+ * IndexedDB with a 30-day rolling TTL and gateway-identity fingerprint. New
+ * tabs and page reloads attempt auto-reconnect from IndexedDB — no re-paste
+ * required unless the pairing expires, is revoked, or the gateway changes.
  */
 
 export type LocalKeyAvailabilityReason =
@@ -15,6 +20,20 @@ export type LocalKeyAvailabilityReason =
   | 'gateway_unreachable'
   | 'gateway_not_paired'
   | 'gateway_forbidden'
+  /** Auto-reconnect from IndexedDB is in progress. Transient (~100–300 ms). */
+  | 'pairing_connecting'
+  /**
+   * A stored pairing was found but the TTL has elapsed (30-day inactivity) or
+   * the gateway's identity fingerprint has changed (daemon reinstalled).
+   * Re-pairing is required.
+   */
+  | 'pairing_expired'
+  /**
+   * The gateway rejected the stored token (HTTP 401), typically because
+   * `lf gateway pair --rotate` was run. The stored credential has been
+   * deleted. Re-pairing is required.
+   */
+  | 'pairing_revoked'
 
 export interface UseLocalKeyStore {
   localKeys: LocalKeyMeta[]
@@ -27,22 +46,31 @@ export interface UseLocalKeyStore {
   updateKey: (id: string, rawKey: string, label: string) => Promise<void>
   /** Resolve plaintext for a single use. Caller must drop the reference immediately. */
   resolveKey: (id: string) => Promise<string>
-  /** Store the gateway pairing token (from `lf gateway pair`). */
+  /** Store the gateway pairing token (from `lf gateway pair`) and persist to IDB. */
   pairGateway: (token: string) => void
-  /** Clear the pairing token, returning the hook to the unpaired state. */
+  /** Clear the in-session token only (does not clear IndexedDB pairing). */
   unpairGateway: () => void
+  /**
+   * Clear the stored pairing entirely — both in-memory and IndexedDB.
+   * Called when the user clicks "Forget this gateway".
+   */
+  forgetGateway: () => Promise<void>
   /** Re-probe the gateway and refresh the key list. */
   refresh: () => Promise<void>
 }
 
 export function useLocalKeyStore(enabled = true): UseLocalKeyStore {
   const clientRef = useRef<LocalKeysGatewayClient | null>(null)
-  if (!clientRef.current) clientRef.current = new LocalKeysGatewayClient()
+  if (!clientRef.current) {
+    clientRef.current = new LocalKeysGatewayClient({
+      pairingStore: new GatewayPairingStore(),
+    })
+  }
   const client = clientRef.current
 
   const [localKeys, setLocalKeys] = useState<LocalKeyMeta[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [availability, setAvailability] = useState<LocalKeyAvailabilityReason>('gateway_unreachable')
+  const [availability, setAvailability] = useState<LocalKeyAvailabilityReason>('pairing_connecting')
 
   const refresh = useCallback(async () => {
     setIsLoading(true)
@@ -66,6 +94,7 @@ export function useLocalKeyStore(enabled = true): UseLocalKeyStore {
     } catch (err) {
       const code = (err as { code?: string }).code
       if (code === 'gateway_forbidden') setAvailability('gateway_forbidden')
+      else if (code === 'pairing_revoked') setAvailability('pairing_revoked')
       else if (code === 'gateway_not_paired') setAvailability('gateway_not_paired')
       else setAvailability('gateway_unreachable')
       setLocalKeys([])
@@ -74,10 +103,38 @@ export function useLocalKeyStore(enabled = true): UseLocalKeyStore {
     }
   }, [client])
 
+  // On mount: attempt to restore the pairing from IndexedDB before probing the
+  // gateway. This avoids the "gateway_not_paired" flash on every page load when
+  // the user is already paired.
+  //
+  // Intentionally NOT including `refresh` in deps — this effect must run only
+  // once per mount. Subsequent refreshes are triggered by pairGateway() and
+  // explicit refresh() calls.
   useEffect(() => {
     if (!enabled) return
-    void refresh()
-  }, [enabled, refresh])
+    let cancelled = false
+
+    async function init() {
+      setAvailability('pairing_connecting')
+      const reconnect = await client.reconnectFromStoredPairing()
+      if (cancelled) return
+
+      if (reconnect === 'expired') {
+        setAvailability('pairing_expired')
+        return
+      }
+      // 'loaded' or 'not_found' — run the full health + keys probe either way.
+      // healthCheck() will auto-reconnect again if _memToken is set (no-op),
+      // or surface the correct unreachable/not_paired state if it isn't.
+      await refresh()
+    }
+
+    void init()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled])
 
   const addKey = useCallback(
     async (provider: string, label: string, rawKey: string) => {
@@ -112,7 +169,15 @@ export function useLocalKeyStore(enabled = true): UseLocalKeyStore {
 
   const pairGateway = useCallback(
     (token: string) => {
-      client.setToken(token.trim())
+      const trimmed = token.trim()
+      // Minimum-viability check: non-empty, at least 16 printable ASCII chars,
+      // no whitespace. The gateway issues 256-bit random tokens so anything
+      // shorter or containing whitespace/control chars is not a valid token.
+      if (trimmed.length < 16 || !/^[\x21-\x7E]+$/.test(trimmed)) return
+      client.setToken(trimmed)
+      // Persist the credential to IndexedDB asynchronously. Fire-and-forget is
+      // acceptable — the in-memory token is already active for this session.
+      void client.persistPairing()
       void refresh()
     },
     [client, refresh]
@@ -120,6 +185,12 @@ export function useLocalKeyStore(enabled = true): UseLocalKeyStore {
 
   const unpairGateway = useCallback(() => {
     client.clearToken()
+    setAvailability('gateway_not_paired')
+    setLocalKeys([])
+  }, [client])
+
+  const forgetGateway = useCallback(async () => {
+    await client.forgetGateway()
     setAvailability('gateway_not_paired')
     setLocalKeys([])
   }, [client])
@@ -134,6 +205,7 @@ export function useLocalKeyStore(enabled = true): UseLocalKeyStore {
     resolveKey,
     pairGateway,
     unpairGateway,
+    forgetGateway,
     refresh,
   }
 }
