@@ -8,6 +8,16 @@ interface VersionParamFieldsProps {
   errors: Record<string, string>
   onChange: (name: string, value: unknown) => void
   onFileUpload?: (key: string, file: File) => Promise<string>
+  onFilesUpload?: (
+    param: LensVersionParam,
+    file: File,
+    currentIds: string[],
+  ) => Promise<string[]>
+  onFileRemove?: (
+    param: LensVersionParam,
+    objectId: string,
+    currentIds: string[],
+  ) => Promise<string[]>
   selectedModelInputModalities?: string[]
   /** When set, shows an “Import JSON” control that opens the parent’s JSON import flow. */
   onImportJson?: () => void
@@ -21,6 +31,8 @@ export const VersionParamFields: React.FC<VersionParamFieldsProps> = ({
   errors,
   onChange,
   onFileUpload,
+  onFilesUpload,
+  onFileRemove,
   selectedModelInputModalities,
   onImportJson,
   onImportCsv,
@@ -58,6 +70,8 @@ export const VersionParamFields: React.FC<VersionParamFieldsProps> = ({
           value={values[param.label]}
           onChange={(v) => onChange(param.label, v)}
           onFileUpload={onFileUpload}
+          onFilesUpload={onFilesUpload}
+          onFileRemove={onFileRemove}
           error={errors[param.label]}
           modelInputModalities={selectedModelInputModalities}
         />

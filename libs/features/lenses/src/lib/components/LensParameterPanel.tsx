@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { paramTokenBracket } from '@lenserfight/domain/lens-parameters'
 import { Trash2 } from 'lucide-react'
 import { ParamChip, SearchSelectField } from '@lenserfight/ui/forms'
 import { CreateVersionParamInput, ToolRecord } from '@lenserfight/types'
@@ -83,13 +84,18 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
               key={`${param.label}-${i}`}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700"
             >
-              {/* Label chip */}
-              <ParamChip
-                name={param.label}
-                type={selectedTool?.type}
-                required={param.optional ? false : (selectedTool?.required ?? true)}
-                size="xs"
-              />
+              {/* Label + template token */}
+              <div className="flex flex-col gap-0.5 shrink-0">
+                <ParamChip
+                  name={param.label}
+                  type={selectedTool?.type}
+                  required={param.optional ? false : (selectedTool?.required ?? true)}
+                  size="xs"
+                />
+                <span className="font-mono text-[10px] text-gray-400 dark:text-gray-500 leading-tight">
+                  {paramTokenBracket(param.label, !!param.optional, selectedTool?.type)}
+                </span>
+              </div>
 
               {/* Tool selector */}
               <div className="flex-1 min-w-0">

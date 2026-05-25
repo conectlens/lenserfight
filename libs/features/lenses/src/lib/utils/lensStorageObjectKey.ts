@@ -15,12 +15,14 @@ export function buildLensResourceObjectKey(
   authUserId: string,
   versionId: string,
   bindingKey: string,
-  fileName: string
+  fileName: string,
+  uniqueId?: string,
 ): string {
   const baseName = fileName.replace(/^.*[/\\]/, '')
   const dot = baseName.lastIndexOf('.')
   const ext = dot >= 0 ? baseName.slice(dot).toLowerCase() : ''
   const stem = dot >= 0 ? baseName.slice(0, dot) : baseName
-  const safeFile = `${sanitizeStoragePathSegment(stem)}${ext}`
+  const prefix = uniqueId ? `${sanitizeStoragePathSegment(uniqueId)}-` : ''
+  const safeFile = `${prefix}${sanitizeStoragePathSegment(stem)}${ext}`
   return `${authUserId}/${versionId}/${sanitizeStoragePathSegment(bindingKey)}/${safeFile}`
 }
