@@ -1,0 +1,13 @@
+{
+  "name": "domain-lens-parameters",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/lens-parameters/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:lens-parameters",
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {}
+}

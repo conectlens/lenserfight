@@ -36,6 +36,7 @@
       "@lenserfight/domain/oauth-connections": ["libs/domain/oauth-connections/src/index.ts"],
       "@lenserfight/domain/lenses": ["libs/domain/lenses/src/index.ts"],
       "@lenserfight/domain/lens-governance": ["libs/domain/lens-governance/src/index.ts"],
+      "@lenserfight/domain/lens-parameters": ["libs/domain/lens-parameters/src/index.ts"],
       "@lenserfight/domain/battle-governance": ["libs/domain/battle-governance/src/index.ts"],
       "@lenserfight/domain/identity-governance": ["libs/domain/identity-governance/src/index.ts"],
       "@lenserfight/domain/reactions": ["libs/domain/reactions/src/index.ts"],
