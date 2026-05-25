@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react'
+import {
+  buildInputSnapshot,
+  parseTemplateParams,
+  validateAllParamValues,
+} from '@lenserfight/domain/lens-parameters'
 import { LensParam, LensVersionParam, FundingSource, GenerativeMediaParams } from '@lenserfight/types'
 import { extractParams, validateParamValues } from '@lenserfight/utils/text'
-import { sanitizeStringInput, validateParamValue } from './useAttachmentValidation'
 import { TriggerLabExecutionDTO } from './useLabController'
 import type { LocalKeyMeta } from '@lenserfight/types'
 
@@ -19,12 +23,15 @@ export function extractVariables(content: string): string[] {
 
 /** Map from variable name → optional flag, derived from [[label!]] syntax. */
 function extractOptionalMap(content: string): Map<string, boolean> {
-  return new Map(extractParams(content).map((p) => [p.name, !!p.optional]))
+  return new Map(parseTemplateParams(content).map((p) => [p.label, p.optional]))
 }
 
 export interface SubmitDeps {
   onTriggerStream: (dto: TriggerLabExecutionDTO) => void
+  /** Hydrated version parameters for validate/coerce/render. */
   versionParams?: LensVersionParam[]
+  /** Active lens version id (for execution + file attachments). */
+  versionId?: string
   selectedProviderKey: string
   selectedModelKey: string
   isLocalByok: boolean
@@ -146,9 +153,6 @@ export function useLabParamForm(
     })
   }
 
-  const sanitize = (val: unknown): string =>
-    typeof val === 'string' ? sanitizeStringInput(val) : String(val ?? '')
-
   const handleSubmit = (e: React.FormEvent, deps: SubmitDeps) => {
     e.preventDefault()
 
@@ -161,25 +165,19 @@ export function useLabParamForm(
     let inputSnapshot: Record<string, unknown>
     const errors: Record<string, string> = {}
 
-    if (usingVersionParams && deps.versionParams) {
-      for (const p of deps.versionParams) {
-        const err = validateParamValue(inputValues[p.label], p, deps.selectedModelInputModalities)
-        if (err) errors[p.label] = err
-      }
-      if (Object.keys(errors).length > 0) {
-        setFieldErrors(errors)
+    const paramsForSubmit = deps.versionParams ?? effectiveParams
+
+    if (usingVersionParams && paramsForSubmit.length > 0) {
+      const validationErrors = validateAllParamValues(
+        inputValues,
+        paramsForSubmit,
+        deps.selectedModelInputModalities,
+      )
+      if (Object.keys(validationErrors).length > 0) {
+        setFieldErrors(validationErrors)
         return
       }
-      inputSnapshot = Object.fromEntries(
-        deps.versionParams.map((p) => {
-          const val = inputValues[p.label] ?? ''
-          const sanitized =
-            p.tool.type === 'text' || p.tool.type === 'textarea' || p.tool.type === 'url' || p.tool.type === 'json'
-              ? sanitize(val)
-              : val
-          return [p.label, sanitized]
-        }),
-      )
+      inputSnapshot = buildInputSnapshot(inputValues, paramsForSubmit)
     } else {
       const validationErrors = validateParamValues(inputValues as Record<string, string>, legacyParamSchemas)
       if (Object.keys(validationErrors).length > 0) {
@@ -189,9 +187,9 @@ export function useLabParamForm(
       inputSnapshot =
         legacyParamSchemas.length > 0
           ? Object.fromEntries(
-            legacyParamSchemas.map((p) => [p.name, sanitize(inputValues[p.name] ?? p.default ?? '')]),
+            legacyParamSchemas.map((p) => [p.name, String(inputValues[p.name] ?? p.default ?? '')]),
           )
-          : { freeform: sanitize(inputValues['freeform'] ?? '') }
+          : { freeform: String(inputValues['freeform'] ?? '') }
     }
 
     deps.onTriggerStream({
@@ -199,12 +197,14 @@ export function useLabParamForm(
       modelKey: deps.selectedModelKey,
       lensContent: deps.lensContent,
       inputSnapshot: inputSnapshot as Record<string, string>,
+      versionParams: usingVersionParams ? paramsForSubmit : undefined,
       params: usingVersionParams ? undefined : legacyParamSchemas,
       fundingSource: deps.fundingSource,
       byokKeyRefId: deps.fundingSource === 'user_byok_cloud' ? deps.selectedKeyRefId ?? undefined : undefined,
       byokLocalKeyId: deps.fundingSource === 'user_byok_local' ? deps.selectedLocalKeyId ?? undefined : undefined,
       output_modality: deps.output_modality,
       generative_media_params: deps.generative_media_params,
+      versionId: deps.versionId,
     })
   }
 

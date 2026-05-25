@@ -4,7 +4,9 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
 import { useToast } from '@lenserfight/shared/error'
 import { LensExecutionHistoryItem, LensParam, StreamState, StreamUsage, FundingSource, GenerativeMediaParams } from '@lenserfight/types'
-import { renderLens } from '@lenserfight/utils/text'
+import { buildFileAttachmentBindings } from '../utils/resolveLensFileParamsForExecution'
+import { buildLabStreamMessages } from '../utils/buildLabStreamMessages'
+import type { LensVersionParam } from '@lenserfight/types'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect, useCallback, useRef } from 'react'
 
@@ -47,6 +49,8 @@ export interface TriggerLabExecutionDTO {
   modelKey: string
   lensContent: string
   inputSnapshot: Record<string, any>
+  /** Hydrated version params — preferred for prompt substitution. */
+  versionParams?: LensVersionParam[]
   params?: LensParam[]
   fundingSource?: FundingSource
   byokKeyRefId?: string
@@ -56,6 +60,8 @@ export interface TriggerLabExecutionDTO {
   output_modality?: 'image' | 'video' | 'audio' | 'music'
   /** Provider-specific params for generative media (dimensions, duration, etc.). */
   generative_media_params?: GenerativeMediaParams
+  /** Pin execution to a specific lens version (URL-routed preview). */
+  versionId?: string
 }
 
 export interface LabControllerOptions {
@@ -223,28 +229,46 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
         setAsyncMediaRunId(null)
         setLocalMediaArtifact(null)
 
-        const prompt = renderLens(dto.lensContent, dto.inputSnapshot, dto.params ?? [])
         const mediaIsActive = { value: true }
+        const attachmentBindings =
+          dto.versionParams && dto.versionParams.length > 0
+            ? buildFileAttachmentBindings(dto.inputSnapshot, dto.versionParams)
+            : []
 
-        adapter
-          .executeMedia(
-            {
-              lensId,
-              provider: dto.providerKey,
-              model: dto.modelKey,
-              modality: dto.output_modality,
-              prompt,
-              inputSnapshot: { ...dto.inputSnapshot, prompt },
-              generativeMediaParams: dto.generative_media_params,
-              byokKeyRefId: dto.byokKeyRefId,
-            },
-            mediaController.signal,
-          )
+        buildLabStreamMessages({
+          lensContent: dto.lensContent,
+          inputSnapshot: dto.inputSnapshot,
+          versionParams: dto.versionParams,
+          params: dto.params,
+        })
+          .then((messages) => {
+            const first = messages[0]
+            const prompt =
+              first && typeof first.content === 'string'
+                ? first.content
+                : (first?.content?.find((p) => p.type === 'text') as { text: string } | undefined)
+                    ?.text ?? ''
+
+            return adapter.executeMedia(
+              {
+                lensId,
+                versionId: dto.versionId,
+                provider: dto.providerKey,
+                model: dto.modelKey,
+                modality: dto.output_modality,
+                prompt,
+                inputSnapshot: { ...dto.inputSnapshot, prompt },
+                attachmentBindings,
+                generativeMediaParams: dto.generative_media_params,
+                byokKeyRefId: dto.byokKeyRefId,
+              },
+              mediaController.signal,
+            )
+          })
           .then((result) => {
             if (!mediaIsActive.value) return
 
             if (!result.isAsync) {
-              // Local adapter — provider replied synchronously with media URL(s).
               setLocalMediaArtifact({
                 runId: result.runId,
                 provider: dto.providerKey,
@@ -261,7 +285,6 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
               return
             }
 
-            // Async (cloud/chainabit): poll until the server finalizes the run.
             setAsyncMediaRunId(result.runId)
             setStreamRunId(result.runId)
             setStreamState('streaming')
@@ -305,7 +328,6 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
             toastError(err)
           })
 
-        // Override abortRef with a richer cleanup that also tears down polling.
         abortRef.current = {
           abort: () => {
             mediaIsActive.value = false
@@ -333,8 +355,6 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
       setStreamCredits(null)
       setStreamError(null)
       setLocalMediaArtifact(null)
-
-      const resolvedContent = renderLens(dto.lensContent, dto.inputSnapshot, dto.params ?? [])
 
       const callbacks = {
         onStart: (runId: string) => {
@@ -384,16 +404,23 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
         },
       }
 
-      adapter
-        .streamText(
-          {
-            lensId,
-            provider: dto.providerKey,
-            model: dto.modelKey,
-            messages: [{ role: 'user', content: resolvedContent }],
-          },
-          controller.signal,
-          callbacks,
+      buildLabStreamMessages({
+        lensContent: dto.lensContent,
+        inputSnapshot: dto.inputSnapshot,
+        versionParams: dto.versionParams,
+        params: dto.params,
+      })
+        .then((messages) =>
+          adapter.streamText(
+            {
+              lensId,
+              provider: dto.providerKey,
+              model: dto.modelKey,
+              messages,
+            },
+            controller.signal,
+            callbacks,
+          ),
         )
         .catch((err: unknown) => {
           if (!isActive()) return

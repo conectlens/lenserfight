@@ -32,11 +32,13 @@ export interface TextStreamRequest {
 
 export interface MediaExecutionRequest {
   lensId: string
+  versionId?: string
   provider: string
   model: string
   modality: MediaModality
   prompt: string
   inputSnapshot: Record<string, unknown>
+  attachmentBindings?: { media_object_id: string; binding_key: string }[]
   generativeMediaParams?: GenerativeMediaParams
   /**
    * Optional cloud key reference (only honored by the cloud adapter — included

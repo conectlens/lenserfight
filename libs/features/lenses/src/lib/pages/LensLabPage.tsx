@@ -1,4 +1,6 @@
+import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService, preferencesService } from '@lenserfight/data/repositories'
+import type { LensVersion } from '@lenserfight/types'
 import {
   ExportModal,
   useExportRunner,
@@ -37,7 +39,10 @@ import { useForkLens } from '../hooks/useForkLens'
 import { useFundingSource } from '../hooks/useFundingSource'
 import { useLabController } from '../hooks/useLabController'
 import { useLensDetailController } from '../hooks/useLensDetailController'
-import { useLensVersions, useLensVersionDetail } from '../hooks/useLensVersions'
+import { LENS_VERSION_MAIN, lensDetailPath } from '../routing/lensVersionRoutes'
+import { useLensFileParamUpload } from '../hooks/useLensFileParamUpload'
+import { useLensVersionRoute } from '../hooks/useLensVersionRoute'
+import { useLensVersions } from '../hooks/useLensVersions'
 import { useVersionExecution } from '../hooks/useVersionExecution'
 
 function filterModelsByOutputKind(
@@ -115,21 +120,22 @@ export const LensLabPage: React.FC = () => {
 
   const { forkLens, isForking } = useForkLens(lens ?? null)
 
-  // Version restore/preview orchestration
+  // Version restore/preview orchestration (execution pin only; display follows URL)
   const versionExecution = useVersionExecution()
 
-  // Versioning — lazy, only loads when the picker is opened
+  const versionRoute = useLensVersionRoute(id, lens)
+  const { uploadFileParam } = useLensFileParamUpload(versionRoute.resolvedVersionId)
+
+  // Version list — lazy until picker opens (URL route resolves main without full list)
   const [showVersionPicker, setShowVersionPicker] = useState(false)
-  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null)
   const { versions, isLoading: isLoadingVersions } = useLensVersions(id ?? '', {
     enabled: showVersionPicker,
   })
-  const { data: selectedVersion } = useLensVersionDetail(selectedVersionId)
 
-  // Active version: prefer restore-pinned version, then manually selected, then base lens
-  const activeVersion = versionExecution.previewVersion ?? selectedVersion ?? null
-  const activeLensContent = activeVersion?.templateBody ?? lens?.content ?? ''
-  const activeVersionParams = activeVersion?.parameters ?? undefined
+  const displayVersion = versionRoute.activeVersion
+  const activeLensContent = displayVersion?.templateBody ?? ''
+  const activeVersionParams = displayVersion?.parameters
+  const isResolvingVersion = versionRoute.isResolvingVersion
 
   // Filter providerModels to only those compatible with the lens's declared output kind.
   // When lens.outputKind is null/undefined (legacy lenses), all models are shown.
@@ -354,7 +360,7 @@ export const LensLabPage: React.FC = () => {
     if (isEditMode && lens && newId === lens.id) {
       queryClient.invalidateQueries({ queryKey: ['lens-composite', lens.id] })
     } else {
-      navigate(`/lenses/${newId}`)
+      navigate(lensDetailPath(newId, 'main'))
     }
   }
 
@@ -462,10 +468,7 @@ export const LensLabPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setShowVersionPicker((v) => !v)
-                  setSelectedVersionId(null)
-                }}
+                onClick={() => setShowVersionPicker((v) => !v)}
                 title={showVersionPicker ? 'Hide version history' : 'Show version history'}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all ${
                   showVersionPicker
@@ -475,9 +478,13 @@ export const LensLabPage: React.FC = () => {
               >
                 <History size={13} />
                 <span>
-                  {selectedVersionId
-                    ? `v${versions.find((v) => v.id === selectedVersionId)?.versionNumber ?? '?'} selected`
-                    : 'Version history'}
+                  {versionRoute.isMainRoute
+                    ? 'main'
+                    : versionRoute.routeVersionNumber != null
+                      ? `v${versionRoute.routeVersionNumber}`
+                      : displayVersion
+                        ? `v${displayVersion.versionNumber}`
+                        : 'Version history'}
                 </span>
               </button>
             </div>
@@ -486,6 +493,7 @@ export const LensLabPage: React.FC = () => {
           <LensBodyViewer
             content={activeLensContent}
             versionParams={activeVersionParams}
+            isLoadingVersion={isResolvingVersion}
             onCopy={handleCopy}
             onFork={() => forkLens({})}
             canFork={hasActiveLenserProfile}
@@ -505,12 +513,16 @@ export const LensLabPage: React.FC = () => {
               ) : (
                 <div className="divide-y divide-gray-50 dark:divide-gray-800 max-h-48 overflow-y-auto">
                   {versions.map((v) => {
-                    const isSelected = v.id === selectedVersionId
+                    const isSelected = displayVersion?.id === v.id
                     return (
                       <button
                         key={v.id}
                         type="button"
-                        onClick={() => setSelectedVersionId(isSelected ? null : v.id)}
+                        onClick={() =>
+                          versionRoute.navigateToVersion(
+                            isSelected ? LENS_VERSION_MAIN : v.versionNumber
+                          )
+                        }
                         className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
                           isSelected
                             ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
@@ -589,6 +601,9 @@ export const LensLabPage: React.FC = () => {
             isStreaming={lab.streamState === 'loading' || lab.streamState === 'streaming'}
             onStop={lab.stopStream}
             versionParams={activeVersionParams}
+            versionId={versionRoute.resolvedVersionId ?? undefined}
+            isLoadingVersionParams={isResolvingVersion}
+            onFileParamUpload={uploadFileParam}
             selectedModelInputModalities={selectedModelInputModalities}
             selectedModelOutputModalities={selectedModelOutputModalities}
             lensOutputKind={lens?.outputKind}
@@ -641,7 +656,13 @@ export const LensLabPage: React.FC = () => {
             onToggleComparison={lab.toggleComparison}
             onLoadMore={lab.loadMoreHistory}
             isOwner={isOwner}
-            onRestoreVersion={versionExecution.restoreAndExecute}
+            onRestoreVersion={(versionId) => {
+              versionExecution.restoreAndExecute(versionId)
+              const cached = queryClient.getQueryData<LensVersion>(
+                queryKeys.lensVersions.detail(versionId)
+              )
+              if (cached && id) versionRoute.navigateToVersion(cached.versionNumber)
+            }}
             isAuthenticatedLenser={hasActiveLenserProfile}
           />
         </div>
