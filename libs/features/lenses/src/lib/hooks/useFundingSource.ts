@@ -49,6 +49,7 @@ export const useFundingSource = (selectedProviderKey: string, outputModality: st
     resolveKey: resolveLocalKey,
     pairGateway,
     unpairGateway,
+    forgetGateway,
     refresh: refreshLocalKeys,
   } = useLocalKeyStore(fundingSource === 'user_byok_local')
 
@@ -114,6 +115,7 @@ export const useFundingSource = (selectedProviderKey: string, outputModality: st
     resolveLocalKey,
     pairGateway,
     unpairGateway,
+    forgetGateway,
     refreshLocalKeys,
     walletBalance,
     canUseBYOK,

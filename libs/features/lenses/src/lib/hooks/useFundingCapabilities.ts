@@ -55,6 +55,12 @@ export function useFundingCapabilities({
       disabledReason = 'Start the LenserFight Gateway (`lf gateway serve`) to use Local Keys.'
     } else if (localKeyAvailability === 'gateway_not_paired') {
       disabledReason = 'Pair the LenserFight Gateway (`lf gateway pair --web`) to use Local Keys.'
+    } else if (localKeyAvailability === 'pairing_expired') {
+      disabledReason = 'Gateway pairing expired (30-day inactivity). Re-pair with `lf gateway pair --web`.'
+    } else if (localKeyAvailability === 'pairing_revoked') {
+      disabledReason = 'Gateway pairing was revoked (token rotated). Re-pair with `lf gateway pair --web`.'
+    } else if (localKeyAvailability === 'pairing_connecting') {
+      disabledReason = null // transient state — do not surface a disabled reason yet
     } else {
       disabledReason = 'No funding source available. Add an API key or connect Chainabit.'
     }
