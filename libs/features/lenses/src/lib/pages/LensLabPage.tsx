@@ -40,6 +40,18 @@ import { useLensDetailController } from '../hooks/useLensDetailController'
 import { useLensVersions, useLensVersionDetail } from '../hooks/useLensVersions'
 import { useVersionExecution } from '../hooks/useVersionExecution'
 
+function filterModelsByOutputKind(
+  models: ReturnType<typeof useLabController>['providerModels'],
+  lensOutputKind: 'text' | 'image' | 'video' | 'audio' | 'music' | null | undefined
+): ReturnType<typeof useLabController>['providerModels'] {
+  if (!lensOutputKind) return models
+  return models.filter((model) => {
+    const modalities = model.outputModalities
+    if (!modalities || modalities.length === 0) return lensOutputKind === 'text'
+    return modalities.includes(lensOutputKind)
+  })
+}
+
 export const LensLabPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -118,6 +130,13 @@ export const LensLabPage: React.FC = () => {
   const activeVersion = versionExecution.previewVersion ?? selectedVersion ?? null
   const activeLensContent = activeVersion?.templateBody ?? lens?.content ?? ''
   const activeVersionParams = activeVersion?.parameters ?? undefined
+
+  // Filter providerModels to only those compatible with the lens's declared output kind.
+  // When lens.outputKind is null/undefined (legacy lenses), all models are shown.
+  const filteredProviderModels = useMemo(
+    () => filterModelsByOutputKind(lab.providerModels, lens?.outputKind),
+    [lab.providerModels, lens?.outputKind]
+  )
 
   // Selected model input + output modalities
   const selectedModel = lab.providerModels.find((m) => m.key === lab.selectedModelKey)
@@ -558,7 +577,7 @@ export const LensLabPage: React.FC = () => {
             lensContent={activeLensContent}
             providers={lab.providers}
             isLoadingProviders={lab.isLoadingProviders}
-            providerModels={lab.providerModels}
+            providerModels={filteredProviderModels}
             isLoadingModels={lab.isLoadingModels}
             selectedProviderKey={lab.selectedProviderKey}
             selectedModelKey={lab.selectedModelKey}
@@ -572,6 +591,7 @@ export const LensLabPage: React.FC = () => {
             versionParams={activeVersionParams}
             selectedModelInputModalities={selectedModelInputModalities}
             selectedModelOutputModalities={selectedModelOutputModalities}
+            lensOutputKind={lens?.outputKind}
             fundingSource={funding.fundingSource}
             onFundingSourceChange={funding.setFundingSource}
             selectedKeyRefId={funding.selectedKeyRefId}

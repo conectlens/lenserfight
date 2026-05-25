@@ -178,6 +178,8 @@ export interface LensVersionParam {
 export type CreateVersionParamInput = {
   label: string
   toolId: string
+  /** When true the param was declared with [[label!]] syntax and is not required. */
+  optional?: boolean
 }
 
 /** Mirrors lenses.versions */

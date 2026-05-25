@@ -36,8 +36,6 @@ export const ArtifactLifecycleMenu: React.FC<ArtifactLifecycleMenuProps> = ({
 
   const isArchived = !!status?.archived_at
   const isPinned = !!status?.pinned
-  const blockingReasons = status?.dependency_summary?.blocking_reasons ?? []
-  const isDeleteBlocked = blockingReasons.length > 0
 
   // Battle-specific: only draft battles can be archived
   const isBattleArchiveBlocked = type === 'battle' && status?.state !== 'draft'
@@ -47,10 +45,6 @@ export const ArtifactLifecycleMenu: React.FC<ArtifactLifecycleMenuProps> = ({
     : isBattleArchiveBlocked
       ? 'Battles can only be archived before they start.'
       : null
-
-  const deleteDisabledReason = isDeleteBlocked
-    ? `Cannot delete: referenced by ${blockingReasons.join(', ')}. Archive instead.`
-    : null
 
   const actions = [
     ...(isArchived
@@ -81,14 +75,10 @@ export const ArtifactLifecycleMenu: React.FC<ArtifactLifecycleMenuProps> = ({
         pinMutation.mutate({ type, id, pinned: !isPinned, extraInvalidateKeys }),
     },
     {
-      label: deleteDisabledReason ? `Delete (blocked)` : 'Delete',
+      label: 'Delete',
       icon: <Trash2 size={14} />,
-      onClick: () => {
-        if (!deleteDisabledReason) {
-          setIsDeleteOpen(true)
-        }
-      },
-      variant: deleteDisabledReason ? ('default' as const) : ('danger' as const),
+      onClick: () => setIsDeleteOpen(true),
+      variant: 'danger' as const,
     },
   ]
 

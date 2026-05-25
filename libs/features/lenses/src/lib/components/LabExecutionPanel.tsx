@@ -43,6 +43,9 @@ interface LabExecutionPanelProps {
   selectedModelInputModalities?: string[]
   /** output_modalities from the selected AI model — drives the modality selector. */
   selectedModelOutputModalities?: string[]
+  /** Output kind declared on the lens's output_contract.kind — pre-selects the modality
+   *  and is used (in the parent) to filter which models are shown. */
+  lensOutputKind?: 'text' | 'image' | 'video' | 'audio' | 'music' | null
   /** Version id to pin execution to (from useVersionExecution). Passed to TriggerLabExecutionDTO. */
   /** True while version params are still loading (prevents freeform fallback flash). */
   isLoadingVersionParams?: boolean
@@ -101,6 +104,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   versionParams,
   selectedModelInputModalities,
   selectedModelOutputModalities,
+  lensOutputKind,
   isLoadingVersionParams,
   onFileParamUpload,
   fundingSource,
@@ -135,7 +139,9 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const availableOutputModalities = selectedModelOutputModalities ?? ['text']
   const nonTextModalities = availableOutputModalities.filter((m) => m !== 'text')
   const hasMediaModalities = nonTextModalities.length > 0
-  const [selectedModality, setSelectedModality] = useState<'text' | 'image' | 'video' | 'audio' | 'music'>('text')
+  const [selectedModality, setSelectedModality] = useState<'text' | 'image' | 'video' | 'audio' | 'music'>(
+    () => (lensOutputKind && lensOutputKind !== 'text') ? lensOutputKind : 'text'
+  )
   const effectiveModality = hasMediaModalities ? selectedModality : 'text'
 
   // Media generation params (only used when effectiveModality !== 'text')
