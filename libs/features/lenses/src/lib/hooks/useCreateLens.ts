@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
@@ -27,9 +27,8 @@ export const useCreateLens = () => {
 
   /**
    * Sync detected [[label]] tokens from content into versionParams.
-   * Preserves toolId for labels already present; new labels default to the
-   * system 'text' tool. No-ops if tools haven't loaded yet (textToolId
-   * undefined) — the debounce in CreateLensModal will retry on next change.
+   * Content is the single source of truth for which params exist; stored
+   * versionParams only contribute the toolId mapping for already-known labels.
    */
   const syncParamsFromContent = useCallback((rawContent: string) => {
     if (!textToolId) return
@@ -42,6 +41,14 @@ export const useCreateLens = () => {
       })
     })
   }, [textToolId])
+
+  // When the default tool ID first resolves (async tool fetch), re-sync params
+  // from the current content.  This covers the edit-modal open race where the
+  // debounce in CreateLensModal fires before tools have loaded and is silently
+  // skipped — leaving stale/incomplete params from the stored DB row on screen.
+  useEffect(() => {
+    if (textToolId && content) syncParamsFromContent(content)
+  }, [textToolId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const resetForm = useCallback(() => {
     setEditId(null)
