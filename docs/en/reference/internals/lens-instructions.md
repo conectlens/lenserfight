@@ -40,14 +40,21 @@ Key columns:
 
 | Column | Purpose |
 |--------|---------|
-| `template_body` | `[[label]]`-token body rendered by `fn_render_version_body`. |
+| `template_body` | `[[label]]`-token body rendered by `fn_render_version_body`. Labels may contain spaces and hyphens (e.g. `[[Visual Tone]]`). Append `!` to mark optional: `[[Style Notes!]]`. |
 | `input_contract` | Typed contract for inputs. Nullable for backward compat. |
 | `output_contract` | Typed contract for outputs. Required `kind` and `artifactKind` when present. |
 | `published_at` | Timestamp of first publication of this version. |
 
 ### Parameters
 
-`lenses.version_parameters` binds each `[[label]]` placeholder to a `lenses.tools` row. The `tool` column on the param resolves the rendering type (`text`, `textarea`, `json`, `number`, `select`, `url`, `date`, `file`, etc.) and validation rules. TypeScript shapes: [LensVersionParam](../../libs/types/src/lib/lenses.types.ts#L162), [ToolRecord](../../libs/types/src/lib/lenses.types.ts#L132).
+`lenses.version_parameters` binds each `[[label]]` placeholder to a `lenses.tools` row. The `tool` column on the param resolves the rendering type (`text`, `textarea`, `json`, `number`, `select`, `url`, `date`, `file`, etc.) and validation rules.
+
+**Label syntax** (parsed by `extractParams` in `libs/utils/text`):
+- Single or multi-word: `[[Topic]]`, `[[Visual Tone]]`, `[[Target Audience]]`
+- Underscores and hyphens: `[[word_count]]`, `[[source-language]]`
+- Optional marker: `[[label!]]` — trailing `!` is stripped from the stored label and signals the parameter is not required
+
+TypeScript shapes: [LensVersionParam](../../libs/types/src/lib/lenses.types.ts#L162), [ToolRecord](../../libs/types/src/lib/lenses.types.ts#L132).
 
 ## Contracts
 

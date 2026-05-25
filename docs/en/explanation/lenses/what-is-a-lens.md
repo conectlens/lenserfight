@@ -30,15 +30,16 @@ Write a concise, accurate definition of "entropy" for a first-year physics stude
 ```
 
 ### 2. Parameterized Lens
-A template with typed `[[parameter]]` inputs that are filled at evaluation time, making the Lens reusable across many variations of the same task.
+A template with typed `[[Parameter Label]]` inputs that are filled at evaluation time, making the Lens reusable across many variations of the same task. Multi-word labels with spaces are supported; append `!` to mark a parameter as optional.
 
 ```
-Translate the following text from [[source_language]] to [[target_language]]:
+Translate the following text from [[Source Language]] to [[Target Language]]:
 
-[[text_to_translate]]
+[[Text to Translate]]
+Style notes: [[Style Notes!]]
 ```
 
-Parameters are declared in the Lens editor. See [Lens Parameters](./lens-parameters) for supported types.
+Parameters are declared in the Lens editor. See [Lens Parameters](./lens-parameters) for supported types and the optional-parameter syntax.
 
 ### 3. Workflow Lens (Connected Lens)
 A Lens used as a **node** in a multi-lens workflow. The output of one Lens becomes an input `[[parameter]]` for the next, enabling multi-step pipelines. See [Connected Lens Workflows](./workflows).
