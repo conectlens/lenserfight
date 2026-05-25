@@ -26,8 +26,8 @@ describe('model-registry', () => {
       expect(resolveWireModel('sora-2.0')).toBe('sora-2')
     })
 
-    it('aliases imagen-4 → imagen-3.0-generate-002', () => {
-      expect(resolveWireModel('imagen-4')).toBe('imagen-3.0-generate-002')
+    it('aliases imagen-4 → imagen-4.0-generate-preview-06-06', () => {
+      expect(resolveWireModel('imagen-4')).toBe('imagen-4.0-generate-preview-06-06')
     })
 
     it('aliases gpt-5.4-pro to a currently-shipping gpt-4o', () => {
