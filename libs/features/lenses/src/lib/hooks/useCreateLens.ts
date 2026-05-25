@@ -38,7 +38,7 @@ export const useCreateLens = () => {
       const prevMap = new Map(prev.map((p) => [p.label, p]))
       return extracted.map((ep) => {
         const existing = prevMap.get(ep.name)
-        return existing ?? { label: ep.name, toolId: textToolId }
+        return existing ?? { label: ep.name, toolId: textToolId, ...(ep.optional ? { optional: true } : {}) }
       })
     })
   }, [textToolId])
