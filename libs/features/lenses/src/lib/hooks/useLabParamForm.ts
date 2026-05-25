@@ -17,6 +17,11 @@ export function extractVariables(content: string): string[] {
   return Array.from(matches)
 }
 
+/** Map from variable name → optional flag, derived from [[label!]] syntax. */
+function extractOptionalMap(content: string): Map<string, boolean> {
+  return new Map(extractParams(content).map((p) => [p.name, !!p.optional]))
+}
+
 export interface SubmitDeps {
   onTriggerStream: (dto: TriggerLabExecutionDTO) => void
   versionParams?: LensVersionParam[]
@@ -58,6 +63,8 @@ export function useLabParamForm(
     return variables.map((v) => ({ name: v, type: 'string' as const, required: true, placeholder: `Enter ${v}…` }))
   }, [usingVersionParams, params, variables])
 
+  const optionalMap = useMemo(() => extractOptionalMap(lensContent), [lensContent])
+
   const effectiveParams = useMemo<LensVersionParam[]>(() => {
     if (usingVersionParams && versionParams) {
       // Content is the source of truth for which params exist.
@@ -70,11 +77,13 @@ export function useLabParamForm(
       return variables.map((name): LensVersionParam => {
         const stored = vpByLabel.get(name)
         if (stored) return stored
+        const isOptional = optionalMap.get(name) ?? false
         return {
           id: name, versionId: '', label: name, toolId: name,
+          optional: isOptional,
           tool: {
             id: name, key: name, label: name, description: null,
-            category: 'input', type: 'text', required: true,
+            category: 'input', type: 'text', required: !isOptional,
             minLength: 0, maxLength: 0, placeholder: null, helpText: null,
             validationSchema: {}, options: null, sortOrder: 0,
             isSystem: false, icon: null, color: null,
@@ -110,7 +119,7 @@ export function useLabParamForm(
         color: null,
       },
     }))
-  }, [usingVersionParams, versionParams, variables, legacyParamSchemas])
+  }, [usingVersionParams, versionParams, variables, legacyParamSchemas, optionalMap])
 
   const [inputValues, setInputValues] = useState<Record<string, unknown>>({})
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})

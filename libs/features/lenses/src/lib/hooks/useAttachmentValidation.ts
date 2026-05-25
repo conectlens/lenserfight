@@ -60,7 +60,8 @@ export function validateParamValue(
   const max = tool.validationSchema?.max ?? null
   const name = param.label
 
-  if (tool.required && (value === null || value === undefined || value === '')) {
+  const isRequired = tool.required && !param.optional
+  if (isRequired && (value === null || value === undefined || value === '')) {
     return `${name} is required`
   }
 
