@@ -8,7 +8,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN;
 
-SELECT plan(9); -- AT: +2 for deleted objects excluded + fn_toggle_media_visibility non-owner raises
+SELECT plan(10); -- AT: +2 for deleted objects excluded + fn_toggle_media_visibility non-owner raises
 
 -- ── Fixture references (seeded Alice = b2000000-…-0001 / a1000000-…-0001)
 -- We insert one private media object owned by Alice as service_role, then
@@ -23,7 +23,16 @@ SELECT ok(
   'generated-media bucket exists and is private'
 );
 
--- ── Test 2: public-assets bucket is registered and public ──────────────────
+-- ── Test 2: lens-resources bucket exists (lens param file uploads) ─────────
+SELECT ok(
+  EXISTS(
+    SELECT 1 FROM storage.buckets
+    WHERE id = 'lens-resources' AND public = FALSE
+  ),
+  'lens-resources bucket exists and is private'
+);
+
+-- ── Test 3: public-assets bucket is registered and public ──────────────────
 SELECT ok(
   EXISTS(
     SELECT 1 FROM storage.buckets
