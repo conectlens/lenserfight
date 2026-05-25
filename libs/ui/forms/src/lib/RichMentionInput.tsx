@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { mentionService } from '@lenserfight/data/repositories'
+import { mentionService, LenserSearchResult } from '@lenserfight/data/repositories'
 import { LensViewModel, TagUsage } from '@lenserfight/types'
 
 interface RichMentionInputProps {
@@ -14,6 +14,7 @@ interface RichMentionInputProps {
 
 export interface RichMentionInputHandle {
   insertMention: (prompt: LensViewModel) => void
+  insertUserMention: (user: LenserSearchResult) => void
   insertTag: (tag: TagUsage) => void
   focus: () => void
 }
@@ -86,6 +87,9 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
             if (segment.content) {
               containerRef.current?.appendChild(document.createTextNode(segment.content))
             }
+          } else if (segment.type === 'mention' && segment.entityType === 'User' && segment.id) {
+            const chip = createUserChip(segment.id, segment.content || segment.id)
+            containerRef.current?.appendChild(chip)
           } else if (segment.type === 'mention' && segment.id) {
             const chip = createPromptChip(segment.id, segment.content || 'Unknown Prompt')
             containerRef.current?.appendChild(chip)
@@ -122,6 +126,16 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
         'inline-flex items-center px-1.5 py-0.5 rounded mx-1 bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300 font-medium text-sm select-none align-middle'
       chip.setAttribute('data-tag-id', id)
       chip.textContent = `#${label}`
+      return chip
+    }
+
+    const createUserChip = (id: string, handle: string): HTMLSpanElement => {
+      const chip = document.createElement('span')
+      chip.contentEditable = 'false'
+      chip.className =
+        'inline-flex items-center px-1.5 py-0.5 rounded mx-1 bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-300 font-medium text-sm select-none align-middle'
+      chip.setAttribute('data-user-mention-id', id)
+      chip.textContent = `@${handle}`
       return chip
     }
 
@@ -220,7 +234,10 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
           text += node.textContent
         } else if (node.nodeType === Node.ELEMENT_NODE) {
           const el = node as HTMLElement
-          if (el.hasAttribute('data-mention-id')) {
+          if (el.hasAttribute('data-user-mention-id')) {
+            const id = el.getAttribute('data-user-mention-id')
+            text += `@[User:${id}]`
+          } else if (el.hasAttribute('data-mention-id')) {
             const id = el.getAttribute('data-mention-id')
             text += `@[Prompt:${id}]`
           } else if (el.hasAttribute('data-tag-id')) {
@@ -285,6 +302,44 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
       containerRef.current.focus()
     }
 
+    const insertUserMention = (user: LenserSearchResult) => {
+      if (!containerRef.current) return
+
+      const selection = window.getSelection()
+      if (!selection) return
+      const range = selection.getRangeAt(0)
+
+      const textNode = range.startContainer
+      if (textNode.nodeType === Node.TEXT_NODE) {
+        const text = textNode.textContent || ''
+        const caretPos = range.startOffset
+        const lastAt = text.lastIndexOf('@', caretPos - 1)
+
+        if (lastAt !== -1) {
+          range.setStart(textNode, lastAt)
+          range.setEnd(textNode, caretPos)
+          range.deleteContents()
+        }
+      }
+
+      const chip = createUserChip(user.id, user.handle)
+      range.insertNode(chip)
+
+      const space = document.createTextNode('\u00A0')
+      range.setStartAfter(chip)
+      range.insertNode(space)
+
+      range.setStartAfter(space)
+      range.setEndAfter(space)
+      selection.removeAllRanges()
+      selection.addRange(range)
+
+      onMentionClose()
+      isTypingMention.current = false
+      serializeContent()
+      containerRef.current.focus()
+    }
+
     const insertTag = (tag: TagUsage) => {
       if (!containerRef.current) return
 
@@ -325,6 +380,7 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
 
     React.useImperativeHandle(ref, () => ({
       insertMention,
+      insertUserMention,
       insertTag,
       focus: () => containerRef.current?.focus(),
     }))
