@@ -1,32 +1,45 @@
 {
   "expo": {
-    "name": "Mobile",
-    "slug": "mobile",
+    "name": "LenserFight",
+    "slug": "lenserfight",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "icon": "./assets/mobile/apple-icon.png",
+    "scheme": "lenserfight",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lenserfight.app",
+      "buildNumber": "1",
+      "minimumOsVersion": "16.0"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/mobile/android-icon-192x192.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
-    },
-    "web": {
-      "bundler": "metro",
-      "favicon": "./assets/images/favicon.png"
+      "edgeToEdgeEnabled": true,
+      "package": "com.lenserfight.app",
+      "versionCode": 1,
+      "minSdkVersion": 26,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "lenserfight" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "plugins": [
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/mobile/android-icon-192x192.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"

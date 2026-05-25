@@ -4,9 +4,8 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
-import { Text } from '@lenserfight/ui/primitives'
-import { Pressable } from '@lenserfight/ui/primitives'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import { Pressable, Text } from '@lenserfight/ui/primitives/native'
 
 export type NoticeVariant = 'info' | 'success' | 'warning' | 'error' | 'neutral'
 

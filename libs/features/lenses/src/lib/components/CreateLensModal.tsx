@@ -5,7 +5,7 @@ import { Alert, FormError } from '@lenserfight/ui/components'
 import { SelectField, LensContentEditor, type LensContentEditorHandle, InputField, TextArea } from '@lenserfight/ui/forms'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { useFormValidation, isRequired, minLength } from '@lenserfight/utils/validation'
-import { Globe, Lock, Info, Sparkles } from 'lucide-react'
+import { Globe, Lock, Info, Sparkles, Copy, Check } from 'lucide-react'
 import React, { useMemo, useRef, useCallback, useEffect, useState } from 'react'
 
 import { useTools } from '../hooks/useTools'
@@ -52,6 +52,62 @@ const VISIBILITY_OPTIONS = [
   { value: 'private', label: 'Private', icon: Lock },
 ]
 
+const LENS_CREATION_INSTRUCTIONS = `# How to Create a Lens on LenserFight
+
+A **Lens** is a reusable AI prompt template that others can run, fork, and build battles around.
+
+## Required fields
+
+| Field | Description |
+|-------|-------------|
+| **Title** | Short, descriptive name (e.g. "Blog Post Outliner") |
+| **Description** | One-sentence summary of what the Lens does |
+| **Template body** | The prompt text. Use \`[[Parameter Label]]\` tokens for dynamic inputs |
+| **Visibility** | \`public\` (discoverable), \`community\` (logged-in users only), or \`private\` |
+| **Tags** | Up to 5 tags to help users find your Lens |
+
+## Template body tips
+
+- Write your prompt as if speaking directly to the AI model.
+- Wrap dynamic inputs in double brackets: \`[[Topic]]\`, \`[[Tone]]\`, \`[[Word Count]]\`.
+- Each \`[[Label]]\` automatically becomes a typed parameter users fill in before running.
+- Keep the core instruction clear even when all parameters are at their defaults.
+
+## Parameter types you can declare
+
+\`text\` · \`textarea\` · \`number\` · \`boolean\` · \`select\` · \`multiselect\` · \`url\` · \`date\` · \`file\`
+
+## Example Lens
+
+**Title:** Blog Post Outliner
+**Description:** Generates a structured outline for any blog topic.
+**Template body:**
+\`\`\`
+You are an expert content strategist.
+
+Create a detailed blog post outline for the topic: [[Topic]]
+
+Tone: [[Tone]]
+Target word count: [[Word Count]]
+Audience: [[Target Audience]]
+
+Return the outline as a numbered list with H2 and H3 headings.
+\`\`\`
+
+**Tags:** writing, content, blogging, outlines
+**Visibility:** public
+
+## Publishing checklist
+
+- [ ] Title is unique and searchable
+- [ ] Description explains the outcome, not the mechanism
+- [ ] All \`[[tokens]]\` have clear, concise labels
+- [ ] Template works well with default / empty parameter values
+- [ ] At least one relevant tag added
+- [ ] Visibility set to \`public\` for maximum reach
+
+Paste this template into any AI provider (ChatGPT, Claude, Gemini, etc.), fill in the fields, and submit the output as your new Lens on LenserFight.`
+
 export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   isOpen,
   onClose,
@@ -66,6 +122,41 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
 }) => {
   const editorRef = useRef<LensContentEditorHandle>(null)
   const { tools } = useTools(undefined, isOpen)
+  const [lensInstructionsCopied, setLensInstructionsCopied] = useState(false)
+
+  // ── AI generation state ──────────────────────────────────────────────────
+  const [aiPrompt, setAiPrompt] = useState('')
+  const aiContext = useMemo(
+    () => ({ userTagSlugs: form.tags.filter((t) => !LENS_KIND_REGISTRY[t as LensKind]) }),
+    [form.tags],
+  )
+  const { generate, isGenerating, error: aiError, resetError: resetAiError } = useAICreationGeneration({
+    profileId: profileId ?? '',
+    generationType: 'lens',
+    context: aiContext,
+    resolveLocalKey,
+  })
+
+  const handleAIGenerate = useCallback(async () => {
+    if (!profileId) return
+    resetAiError()
+    const output = await generate(aiPrompt || null)
+    if (output?.type === 'lens') {
+      const { title, content, description, suggestedTagSlugs, params } = output.result
+      form.setTitle(title)
+      form.setContent(content)
+      // Pre-select suggested tag slugs that are not lens-kind tags
+      if (suggestedTagSlugs.length > 0) {
+        const withoutKinds = form.tags.filter((t) => LENS_KIND_REGISTRY[t as LensKind])
+        form.setTags([...withoutKinds, ...suggestedTagSlugs])
+      }
+      // Sync params from content (debounced handler will also pick these up)
+      if (params.length > 0) {
+        form.setVersionParams(params.map((p) => ({ label: p.label, toolId: '' })))
+      }
+      void description // description is informational, title is set above
+    }
+  }, [profileId, aiPrompt, generate, form, resetAiError])
 
   // ── AI generation state ──────────────────────────────────────────────────
   const [aiPrompt, setAiPrompt] = useState('')
@@ -145,6 +236,16 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
     },
     [form.tags, form.setTags]
   )
+
+  const handleCopyLensInstructions = async () => {
+    try {
+      await navigator.clipboard.writeText(LENS_CREATION_INSTRUCTIONS)
+      setLensInstructionsCopied(true)
+      setTimeout(() => setLensInstructionsCopied(false), 2000)
+    } catch (e) {
+      console.error('Failed to copy lens instructions', e)
+    }
+  }
 
   return (
     <Dialog
@@ -256,15 +357,35 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
                 </div>
               </div>
             </div>
-            {lensId && (
-              <LensVersionHistoryButton
-                lensId={lensId}
-                onRestore={(content) => {
-                  form.setContent(content)
-                  clearError('content')
-                }}
-              />
-            )}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCopyLensInstructions}
+                title="Copy Lens creation instructions for AI providers"
+                className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded-lg hover:bg-primary/10"
+              >
+                {lensInstructionsCopied ? (
+                  <>
+                    <Check size={13} />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy size={13} />
+                    Lens Instructions
+                  </>
+                )}
+              </button>
+              {lensId && (
+                <LensVersionHistoryButton
+                  lensId={lensId}
+                  onRestore={(content) => {
+                    form.setContent(content)
+                    clearError('content')
+                  }}
+                />
+              )}
+            </div>
           </div>
           
           <div className={`

@@ -1,0 +1,109 @@
+{
+  "app": {
+    "name": "LenserFight",
+    "tagline": "Lensler, konular ve ray'ler cebinde.",
+    "loading": "LenserFight yükleniyor"
+  },
+  "auth": {
+    "loginTitle": "Giriş yap",
+    "loginSubtitle": "Lenser çalışma alanına devam et.",
+    "registerTitle": "Hesap oluştur",
+    "registerSubtitle": "Odaklı bir mobil kurulumla topluluğa katıl.",
+    "magicTitle": "E-posta bağlantısı",
+    "magicSubtitle": "Tek dokunuşluk giriş bağlantısı göndeririz.",
+    "email": "E-posta",
+    "emailOrHandle": "E-posta veya kullanıcı adı",
+    "password": "Parola",
+    "displayName": "Ad",
+    "signIn": "Giriş yap",
+    "register": "Hesap oluştur",
+    "sendMagic": "E-posta bağlantısı gönder",
+    "magicLink": "E-posta bağlantısı kullan",
+    "backToLogin": "Girişe dön",
+    "newAccount": "Hesap oluştur",
+    "alreadyAccount": "Zaten hesabım var",
+    "oauthDivider": "Ya da şununla devam et",
+    "google": "Google",
+    "github": "GitHub",
+    "apple": "Apple",
+    "checkInbox": "Gelen kutunu kontrol et",
+    "magicSent": "Bu e-posta giriş yapabiliyorsa bağlantıyı gönderdik. Devam etmek için bu cihazda aç.",
+    "sendAgain": "Tekrar gönder",
+    "required": "Bu alan zorunludur.",
+    "invalidEmail": "Geçerli bir e-posta adresi gir.",
+    "passwordShort": "En az 8 karakter kullan.",
+    "genericError": "Bir şeyler ters gitti. Lütfen tekrar dene.",
+    "privacyNotice": "Devam ederek kabul etmiş olursunuz",
+    "privacy": "Gizlilik Politikası",
+    "terms": "Kullanım Koşulları"
+  },
+  "tabs": {
+    "threads": "Konular",
+    "lenses": "Lensler",
+    "tags": "Ray'ler",
+    "battles": "Düellolar",
+    "profile": "Profil"
+  },
+  "states": {
+    "loading": "Yükleniyor",
+    "empty": "Henüz burada bir şey yok",
+    "error": "Bu görünüm yüklenemedi.",
+    "retry": "Tekrar dene",
+    "notAuthorized": "Bu sayfayı görüntülemek için giriş yap.",
+    "notFound": "Bu öğeyi bulamadık."
+  },
+  "threads": {
+    "title": "Konular",
+    "subtitle": "Topluluk tartışmaları ve lens bağlantılı fikirler.",
+    "empty": "Henüz konu yok.",
+    "detail": "Konu",
+    "replies": "Yanıtlar",
+    "reactions": "tepkiler"
+  },
+  "lenses": {
+    "title": "Lensler",
+    "subtitle": "Yeniden kullanılabilir promptlar, beceriler ve yaratıcı akışlar.",
+    "empty": "Henüz lens yok.",
+    "detail": "Lens",
+    "uses": "kullanım"
+  },
+  "tags": {
+    "title": "Ray'ler",
+    "subtitle": "Topluluğu şekillendiren konuları keşfet.",
+    "empty": "Henüz ray yok.",
+    "detail": "Ray",
+    "threads": "Konular",
+    "lenses": "Lensler"
+  },
+  "profile": {
+    "title": "Profil",
+    "subtitle": "Aktif Lenser kimliğin.",
+    "anonymous": "Giriş yapılmadı",
+    "noProfile": "Aktif Lenser profili bulunamadı.",
+    "handle": "Kullanıcı adı",
+    "level": "Seviye",
+    "xp": "XP",
+    "signOut": "Çıkış yap"
+  },
+  "battles": {
+    "title": "Düellolar",
+    "subtitle": "Yapay zeka lens yarışmaları.",
+    "empty": "Henüz düello yok.",
+    "detail": "Düello",
+    "status": {
+      "pending": "Bekliyor",
+      "active": "Aktif",
+      "voting": "Oylamada",
+      "judging": "Değerlendirmede",
+      "completed": "Tamamlandı"
+    },
+    "timeLeft": "Bitiş",
+    "viewOnWeb": "Düelloyu tam görüntüle",
+    "webNote": "Giriş göndermek ve oy vermek için tam düello sayfasına git."
+  },
+  "actions": {
+    "back": "Geri",
+    "open": "Aç",
+    "refresh": "Yenile"
+  }
+}

@@ -7,7 +7,7 @@
 import React from 'react'
 import { Text as RNText, StyleSheet } from 'react-native'
 import type { TextStyle, TextProps as RNTextProps } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
 import { lineHeightN } from '@lenserfight/ui/tokens'
 
 export type TextVariant =

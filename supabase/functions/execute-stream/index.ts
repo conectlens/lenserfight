@@ -29,6 +29,7 @@ import {
   resolveChainabitToken,
   ProviderNotConnectedError,
 } from '../_shared/provider-token.ts'
+import { lookupModel } from '../_shared/providers/model-registry.ts'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -396,6 +397,20 @@ serve(async (req: Request): Promise<Response> => {
   const SUPPORTED: Provider[] = ['openai', 'anthropic', 'google', 'mistral']
   if (!SUPPORTED.includes(provider)) return errResponse('unsupported_provider', `Provider "${provider}" not supported`, 400, req)
   if (!model || !messages?.length) return errResponse('missing_fields', 'model and messages are required', 400, req)
+
+  // Guard: reject media models before touching the vault or opening an SSE
+  // stream. Text streaming endpoints (chat/completions, streamGenerateContent)
+  // don't accept image/video/audio models — sending them produces a 404 and
+  // burns latency. Media models must use trigger-execution instead.
+  const modelDescriptor = lookupModel(model)
+  if (modelDescriptor && modelDescriptor.kind !== 'text') {
+    return errResponse(
+      'unsupported_model',
+      `Model "${model}" produces ${modelDescriptor.kind} output. Use trigger-execution for media generation; execute-stream handles text models only.`,
+      422,
+      req,
+    )
+  }
 
   const serviceClient = createClient(
     Deno.env.get('SUPABASE_URL')!,

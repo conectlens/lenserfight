@@ -1,5 +1,5 @@
 // Browser-safe entry point. apps/web imports from here.
-// No Node imports — fetch and sessionStorage only.
+// No Node imports — fetch, sessionStorage, and IndexedDB only.
 
 export type {
   AddLocalKeyInput,
@@ -13,10 +13,17 @@ export { LocalKeyStoreError } from './lib/ports'
 
 export {
   LocalKeysGatewayClient,
+  GatewayPairingStore,
   SESSION_TOKEN_KEY,
   SESSION_GATEWAY_URL_KEY,
   DEFAULT_GATEWAY_URL,
   DEFAULT_GATEWAY_PORT,
   deriveGatewayUrl,
+  isPermittedGatewayUrl,
 } from './lib/browser/gateway-client'
-export type { GatewayClientOptions } from './lib/browser/gateway-client'
+export type {
+  GatewayClientOptions,
+  GatewayPairingRecord,
+  IdbAdapter,
+} from './lib/browser/gateway-client'
+export type { PairingLoadResult } from './lib/browser/pairing-store'

@@ -56,6 +56,7 @@ export type LocalKeyStoreErrorCode =
   | 'gateway_unreachable'
   | 'gateway_forbidden'
   | 'gateway_rate_limited'
+  | 'pairing_revoked'
 
 export class LocalKeyStoreError extends Error {
   readonly code: LocalKeyStoreErrorCode

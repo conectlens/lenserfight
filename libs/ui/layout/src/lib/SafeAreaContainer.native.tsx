@@ -7,7 +7,7 @@
 import React from 'react'
 import { SafeAreaView, StyleSheet, View } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
 
 export interface SafeAreaContainerProps {
   children:   React.ReactNode

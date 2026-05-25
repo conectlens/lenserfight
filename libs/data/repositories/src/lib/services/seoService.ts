@@ -25,7 +25,7 @@ const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
 const ARENA_OG_IMAGE = `${ARENA_HOST}/og-banner.png`
 const DEFAULT_TITLE = 'LenserFight Community | AI Lenses, Workflows, Battles, and Lensers'
 const DEFAULT_DESC =
-  'Discover public AI lens templates, workflow patterns, battle results, rays, and Lenser profiles in the open LenserFight community.'
+  'Discover public AI Prompt & Lens Templates, workflow patterns, battle results, rays, and Lenser profiles in the open LenserFight community.'
 
 const AI_KEYWORDS = [
   'AI workflows',
@@ -120,7 +120,7 @@ export const seoService = {
 
     const desc = clampDescription(
       prompt.description ||
-        `Use the "${prompt.title}" AI lens template by ${author}. Built for ${tags}. ${uses} Copy, remix, and connect this lens into LenserFight workflows, battles, and agent runs.`,
+      `Use the "${prompt.title}" AI lens template by ${author}. Built for ${tags}. ${uses} Copy, remix, and connect this lens into LenserFight workflows, battles, and agent runs.`,
     )
 
     return {
@@ -237,19 +237,19 @@ export const seoService = {
         sameAs: [pageUrl, ...(lenser.website_url ? [lenser.website_url] : [])],
         interactionStatistic: stats
           ? [
-              {
-                '@type': 'InteractionCounter',
-                interactionType: 'https://schema.org/CreateAction',
-                userInteractionCount: stats.promptsCount,
-                name: 'Public lenses',
-              },
-              {
-                '@type': 'InteractionCounter',
-                interactionType: 'https://schema.org/FollowAction',
-                userInteractionCount: stats.followersCount,
-                name: 'Followers',
-              },
-            ]
+            {
+              '@type': 'InteractionCounter',
+              interactionType: 'https://schema.org/CreateAction',
+              userInteractionCount: stats.promptsCount,
+              name: 'Public lenses',
+            },
+            {
+              '@type': 'InteractionCounter',
+              interactionType: 'https://schema.org/FollowAction',
+              userInteractionCount: stats.followersCount,
+              name: 'Followers',
+            },
+          ]
           : undefined,
       },
     }
@@ -341,13 +341,13 @@ export const seoService = {
   }),
 
   getPromptsListMeta: (): SEOMetadata => ({
-    title: `AI Lens Templates | Prompt Workflows and Automation Patterns`,
+    title: `AI Prompt & Lens Templates | Prompt Workflows and Automation Patterns`,
     description: `Browse public LenserFight lenses for coding, research, startup planning, content generation, AI automation, and reusable prompt workflows.`,
     url: `${FORUM_HOST}/lenses`,
     ogImage: DEFAULT_OG_IMAGE,
     jsonLd: collectionPageJsonLd(
-      'AI Lens Templates',
-      'Public prompt workflows, automation patterns, and reusable AI lens templates.',
+      'AI Prompt & Lens Templates',
+      'Public prompt workflows, automation patterns, and reusable AI Prompt & Lens Templates.',
       `${FORUM_HOST}/lenses`,
     ),
   }),
@@ -375,15 +375,15 @@ export const seoService = {
       index: isPublic,
       jsonLd: isPublic
         ? {
-            '@context': 'https://schema.org',
-            '@type': 'SoftwareApplication',
-            name: workflow.title,
-            description: desc,
-            url: pageUrl,
-            applicationCategory: 'AIApplication',
-            publisher: ORGANIZATION_JSON_LD,
-            isAccessibleForFree: true,
-          }
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: workflow.title,
+          description: desc,
+          url: pageUrl,
+          applicationCategory: 'AIApplication',
+          publisher: ORGANIZATION_JSON_LD,
+          isAccessibleForFree: true,
+        }
         : undefined,
     }
   },
