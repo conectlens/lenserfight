@@ -4,7 +4,8 @@ import type { ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/ty
 
 import type { LocalKeyAvailabilityReason } from '../hooks/useLocalKeyStore'
 import { Button } from '@lenserfight/ui/components'
-import { copyTextToClipboard, renderLensWithSnapshot } from '@lenserfight/utils/text'
+import { renderTemplateWithSnapshot } from '@lenserfight/domain/lens-parameters'
+import { copyTextToClipboard } from '@lenserfight/utils/text'
 import { Check, ClipboardCopy, FileJson, Loader2, Play, Square, Table2 } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
 
@@ -46,7 +47,8 @@ interface LabExecutionPanelProps {
   /** Output kind declared on the lens's output_contract.kind — pre-selects the modality
    *  and is used (in the parent) to filter which models are shown. */
   lensOutputKind?: 'text' | 'image' | 'video' | 'audio' | 'music' | null
-  /** Version id to pin execution to (from useVersionExecution). Passed to TriggerLabExecutionDTO. */
+  /** Lens version id for execution pinning and file uploads. */
+  versionId?: string
   /** True while version params are still loading (prevents freeform fallback flash). */
   isLoadingVersionParams?: boolean
   /** Upload a file for a file-type param. Returns the media_object_id. */
@@ -105,6 +107,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   selectedModelInputModalities,
   selectedModelOutputModalities,
   lensOutputKind,
+  versionId,
   isLoadingVersionParams,
   onFileParamUpload,
   fundingSource,
@@ -257,7 +260,9 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
 
   const handleCopyWithParameters = async () => {
     const rendered = form.effectiveParams.length > 0
-      ? renderLensWithSnapshot(lensContent, form.inputValues, form.effectiveParams, { keepUnsetTokens: true })
+      ? renderTemplateWithSnapshot(lensContent, form.inputValues, form.effectiveParams, {
+          keepUnsetTokens: true,
+        })
       : lensContent
     try {
       await copyTextToClipboard(rendered)
@@ -303,6 +308,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
             form.handleSubmit(e, {
               onTriggerStream,
               versionParams,
+              versionId,
               selectedProviderKey,
               selectedModelKey,
               isLocalByok,

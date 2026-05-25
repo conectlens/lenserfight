@@ -16,7 +16,7 @@ export const useCloneLens = (sourceLens: LensDetailViewModel | null) => {
     },
     onSuccess: (newLensId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.lenses.all })
-      navigate(`/lenses/${newLensId}`)
+      navigate(`/lenses/${newLensId}/main`)
     },
   })
 

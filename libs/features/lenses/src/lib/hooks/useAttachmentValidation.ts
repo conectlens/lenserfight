@@ -1,4 +1,7 @@
+import { validateParamValue as domainValidateParamValue } from '@lenserfight/domain/lens-parameters'
 import { LensVersionParam } from '@lenserfight/types'
+
+export { sanitizeStringInput } from '@lenserfight/domain/lens-parameters'
 
 // MIME type → modality mapping aligned with ai.models.input_modalities values
 const MIME_TO_MODALITY: [RegExp, string][] = [
@@ -34,80 +37,11 @@ export function canModelAcceptFile(mimeType: string, inputModalities: string[]):
   return inputModalities.includes(modality)
 }
 
-/**
- * Strips null bytes, double-brace template injection patterns {{ }},
- * and trims the string to at most 10 000 characters.
- */
-export function sanitizeStringInput(value: string): string {
-  return value
-    .replace(/\0/g, '')                  // null bytes
-    .replace(/\{\{.*?\}\}/gs, '')        // template injection {{...}}
-    .slice(0, 10_000)
-}
-
-/**
- * Validates a single parameter value against its schema.
- * Returns an error message string, or null if valid.
- */
+/** @deprecated Import from `@lenserfight/domain/lens-parameters` instead. */
 export function validateParamValue(
   value: unknown,
   param: LensVersionParam,
   modelInputModalities?: string[],
 ): string | null {
-  const tool = param.tool
-  const type = tool.type
-  const min = tool.validationSchema?.min ?? null
-  const max = tool.validationSchema?.max ?? null
-  const name = param.label
-
-  const isRequired = tool.required && !param.optional
-  if (isRequired && (value === null || value === undefined || value === '')) {
-    return `${name} is required`
-  }
-
-  if (value === null || value === undefined || value === '') return null
-
-  const strValue = String(value)
-
-  if (type === 'integer') {
-    const n = parseInt(strValue, 10)
-    if (isNaN(n) || !Number.isInteger(n)) return `${name} must be an integer`
-    if (min !== null && n < min) return `${name} must be ≥ ${min}`
-    if (max !== null && n > max) return `${name} must be ≤ ${max}`
-  }
-
-  if (type === 'float' || type === 'decimal' || type === 'number') {
-    const n = parseFloat(strValue)
-    if (isNaN(n)) return `${name} must be a number`
-    if (min !== null && n < min) return `${name} must be ≥ ${min}`
-    if (max !== null && n > max) return `${name} must be ≤ ${max}`
-  }
-
-  if (type === 'url') {
-    const schemes = tool.validationSchema?.urlScheme ?? ['http', 'https']
-    try {
-      const parsed = new URL(strValue)
-      const protocol = parsed.protocol.replace(':', '')
-      if (!schemes.includes(protocol)) {
-        return `${name} must start with ${schemes.join(' or ')}`
-      }
-    } catch {
-      return `${name} must be a valid URL`
-    }
-  }
-
-  if (type === 'date') {
-    if (isNaN(Date.parse(strValue))) return `${name} must be a valid date`
-  }
-
-  if (type === 'datetime') {
-    if (isNaN(Date.parse(strValue))) return `${name} must be a valid date-time`
-  }
-
-  if (type === 'file' && modelInputModalities) {
-    // value is expected to be a media_object_id uuid — MIME check is done before upload
-    // Nothing to validate at runtime beyond the upload gate
-  }
-
-  return null
+  return domainValidateParamValue(value, param, modelInputModalities)
 }

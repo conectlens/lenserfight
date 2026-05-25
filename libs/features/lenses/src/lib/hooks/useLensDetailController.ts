@@ -46,6 +46,18 @@ export const useLensDetailController = (
         queryClient.setQueryData(queryKeys.lensVersions.detail(latest.id), latest)
       }
 
+      // Pre-seed HEAD so owner detail/run views get correct param types without opening panels.
+      if (lensDetail.headVersionId) {
+        const head =
+          lensDetail.headVersionId === latest?.id
+            ? latest
+            : await lensesService.getVersionById(lensDetail.headVersionId)
+        if (head) {
+          queryClient.setQueryData(queryKeys.lensVersions.head(lensId), head)
+          queryClient.setQueryData(queryKeys.lensVersions.detail(head.id), head)
+        }
+      }
+
       return lensDetail
     },
     enabled: isValidUUID(lensId) && !isAuthLoading && !isLenserLoading,

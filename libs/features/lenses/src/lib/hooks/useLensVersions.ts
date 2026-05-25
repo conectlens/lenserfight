@@ -72,6 +72,16 @@ export const useLatestPublishedVersion = (lensId: string, options?: { enabled?: 
   })
 }
 
+/** HEAD (draft) version — authoring truth for owners after edit. */
+export const useHeadVersion = (lensId: string, options?: { enabled?: boolean; staleTime?: number }) => {
+  return useQuery({
+    queryKey: queryKeys.lensVersions.head(lensId),
+    queryFn: () => lensesService.getHeadVersion(lensId),
+    enabled: (options?.enabled !== false) && !!lensId,
+    staleTime: options?.staleTime ?? 120_000,
+  })
+}
+
 /**
  * Paginated version list — does NOT fetch templateBody (no fn_render_version_body per row).
  * Use for list UIs (compact picker, history panel). Use useLensVersionDetail for full content.

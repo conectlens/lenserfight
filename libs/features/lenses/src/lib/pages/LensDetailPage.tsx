@@ -58,11 +58,10 @@ import { useForkTree } from '../hooks/useForkTree'
 import { useFundingSource } from '../hooks/useFundingSource'
 import { useLabController } from '../hooks/useLabController'
 import { useLensDetailController } from '../hooks/useLensDetailController'
-import {
-  useLensVersionsPaginated,
-  useLensVersionDetail,
-  useLatestPublishedVersion,
-} from '../hooks/useLensVersions'
+import { LENS_VERSION_MAIN, lensDetailPath } from '../routing/lensVersionRoutes'
+import { useLensFileParamUpload } from '../hooks/useLensFileParamUpload'
+import { useLensVersionRoute } from '../hooks/useLensVersionRoute'
+import { useLensVersionsPaginated } from '../hooks/useLensVersions'
 
 export const LensDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -77,6 +76,8 @@ export const LensDetailPage: React.FC = () => {
 
   const { lens, relatedLenses, authorLenses, isLoading, error, actions } =
     useLensDetailController(id)
+
+  const isOwner = !!(lenser && lens && lens.author.id === lenser.id)
 
   const reportContent = useReportContent()
 
@@ -126,10 +127,10 @@ export const LensDetailPage: React.FC = () => {
     if (localKey && localKey.provider !== 'ollama') lab.handleProviderChange(localKey.provider)
   }, [funding.fundingSource, funding.selectedLocalKeyId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Version history (lazy — only fetched when picker is opened)
-  const [showVersionPicker, setShowVersionPicker] = useState(false)
-  const [previewVersionId, setPreviewVersionId] = useState<string | null>(null)
+  const versionRoute = useLensVersionRoute(id, lens)
+  const { uploadFileParam } = useLensFileParamUpload(versionRoute.resolvedVersionId)
 
+  const [showVersionPicker, setShowVersionPicker] = useState(false)
   const {
     versions,
     isLoading: isLoadingVersions,
@@ -139,32 +140,21 @@ export const LensDetailPage: React.FC = () => {
   } = useLensVersionsPaginated(id ?? '', {
     enabled: showVersionPicker,
   })
-  const { data: previewVersion, isLoading: isLoadingPreview } =
-    useLensVersionDetail(previewVersionId)
 
-  const shouldLoadLatestVersionDetail = showRunPanel || showVersionPicker || !!previewVersionId
-  // Only fetch latestPublished once the main lens query has settled; the main query pre-seeds
-  // this cache on success, so most of the time this fires 0 extra network requests.
-  const { data: latestPublished } = useLatestPublishedVersion(id ?? '', {
-    enabled: !!lens,
-    staleTime: 120_000,
-  })
-  const { data: latestPublishedDetail, isLoading: isLoadingLatestDetail } = useLensVersionDetail(
-    latestPublished?.id,
-    { enabled: !!latestPublished, staleTime: 120_000 }
-  )
-
-  // Explicit version selection takes precedence; falls back to latest published
-  const activeVersionParams =
-    previewVersion?.parameters ?? latestPublishedDetail?.parameters ?? undefined
+  const displayVersion = versionRoute.activeVersion
+  const activeVersionParams = displayVersion?.parameters
+  const activeTemplateBody = displayVersion?.templateBody ?? ''
+  const isResolvingVersion = versionRoute.isResolvingVersion
 
   const selectedModelInputModalities = lab.providerModels.find(
     (m) => m.key === lab.selectedModelKey
   )?.inputModalities
 
-  const activeVersionLabel =
-    previewVersion?.versionNumber ?? latestPublishedDetail?.versionNumber ?? null
+  const activeVersionLabel = versionRoute.isMainRoute
+    ? 'main'
+    : displayVersion?.versionNumber ?? versionRoute.routeVersionNumber
   const parameterCount = activeVersionParams?.length ?? 0
+
   const selectedModel = lab.providerModels.find((m) => m.key === lab.selectedModelKey)
   const inputModalities = selectedModelInputModalities?.length
     ? selectedModelInputModalities.join(', ')
@@ -203,8 +193,6 @@ export const LensDetailPage: React.FC = () => {
     submit: submitCreate,
     isEditMode,
   } = useCreateLens()
-
-  const isOwner = !!(lenser && lens && lens.author.id === lenser.id)
 
   const buildExportContext = useCallback(
     () => ({
@@ -279,19 +267,27 @@ export const LensDetailPage: React.FC = () => {
       if (editId && lenser) {
         lensesService.getLensDetail(editId, lenser.id).then(async (detail) => {
           if (!detail) return
+          const editVersionId = detail.headVersionId ?? detail.latestVersionId
           let initialVersionParams: CreateVersionParamInput[] = []
-          if (detail.latestVersionId) {
-            const versionDetail = await lensesService.getVersionById(detail.latestVersionId)
+          let editContent = detail.content
+          if (editVersionId) {
+            const versionDetail = await lensesService.getVersionById(editVersionId)
             initialVersionParams = (versionDetail?.parameters ?? []).map((p) => ({
               label: p.label,
               toolId: p.toolId,
               ...(p.optional ? { optional: true } : {}),
             }))
+            if (versionDetail?.templateBody) {
+              editContent = renderLensContentForCopy(
+                versionDetail.templateBody,
+                versionDetail.parameters ?? [],
+              )
+            }
           }
           openCreateModal({
             id: detail.id,
             title: detail.title,
-            content: detail.content,
+            content: editContent,
             tags: detail.tags,
             visibility: detail.visibility,
             versionParams: initialVersionParams,
@@ -335,11 +331,8 @@ export const LensDetailPage: React.FC = () => {
 
   const handleCopy = async () => {
     if (!lens) return
-    const activeVersion =
-      previewVersion ?? latestPublishedDetail ?? lens.latestPublishedVersion ?? null
-    const rawContent = activeVersion?.templateBody ?? lens.content
-    const params = activeVersion?.parameters ?? activeVersionParams ?? []
-    await copyTextToClipboard(renderLensContentForCopy(rawContent, params))
+    const rawContent = activeTemplateBody ?? lens.content
+    await copyTextToClipboard(renderLensContentForCopy(rawContent, activeVersionParams ?? []))
   }
 
   const handleSave = async () => {
@@ -379,16 +372,14 @@ export const LensDetailPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['lens-author-list', lens.id] })
       // Refresh version data so post-edit params & version list are immediately current
       queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.latestPublished(lens.id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.head(lens.id) })
       queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.list(lens.id) })
     } else {
-      navigate(`/lenses/${newId}`)
+      navigate(lensDetailPath(newId, 'main'))
     }
   }
 
-  const handleVersionToggle = () => {
-    setShowVersionPicker((v) => !v)
-    setPreviewVersionId(null)
-  }
+  const handleVersionToggle = () => setShowVersionPicker((v) => !v)
 
   if (authLoading || isLoading) {
     return (
@@ -497,7 +488,7 @@ export const LensDetailPage: React.FC = () => {
               saveCount={lens.reactionCounts.saved}
               forkTree={forkTree}
               onCopy={handleCopy}
-              onFork={() => cloneLens(previewVersionId ?? null)}
+              onFork={() => cloneLens(displayVersion?.id ?? null)}
               canFork={hasActiveLenserProfile}
               isForking={isCloning}
               onCreate={() => openCreateModal()}
@@ -594,9 +585,11 @@ export const LensDetailPage: React.FC = () => {
                 >
                   <History size={13} />
                   <span>
-                    {previewVersionId
-                      ? `v${versions.find((v) => v.id === previewVersionId)?.versionNumber ?? '?'} selected`
-                      : 'Version history'}
+                    {versionRoute.isMainRoute
+                      ? 'main'
+                      : displayVersion
+                        ? `v${displayVersion.versionNumber}`
+                        : 'Version history'}
                   </span>
                 </button>
               </div>
@@ -605,15 +598,18 @@ export const LensDetailPage: React.FC = () => {
             <DesktopFrame
               title="Lens reader preview"
               url={`lenserfight.com/lenses/${lens.id}`}
-              label={activeVersionLabel ? `v${activeVersionLabel}` : 'Reader view'}
+              label={
+                activeVersionLabel != null
+                  ? typeof activeVersionLabel === 'number'
+                    ? `v${activeVersionLabel}`
+                    : String(activeVersionLabel)
+                  : 'Reader view'
+              }
             >
               <LensBodyViewer
-                content={
-                  previewVersion?.templateBody ??
-                  latestPublishedDetail?.templateBody ??
-                  lens.content
-                }
+                content={activeTemplateBody}
                 versionParams={activeVersionParams}
+                isLoadingVersion={isResolvingVersion}
                 onCopy={handleCopy}
               />
             </DesktopFrame>
@@ -645,12 +641,16 @@ export const LensDetailPage: React.FC = () => {
                 <div className="max-h-56 overflow-y-auto rounded-2xl border border-surface-border">
                   <div className="divide-y divide-surface-border">
                     {versions.map((v) => {
-                      const isSelected = v.id === previewVersionId
+                      const isSelected = displayVersion?.id === v.id
                       return (
                         <button
                           key={v.id}
                           type="button"
-                          onClick={() => setPreviewVersionId(isSelected ? null : v.id)}
+                          onClick={() =>
+                            versionRoute.navigateToVersion(
+                              isSelected ? LENS_VERSION_MAIN : v.versionNumber
+                            )
+                          }
                           className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${
                             isSelected
                               ? 'bg-primary-yellow-500/10 text-primary-yellow-600'
@@ -682,7 +682,7 @@ export const LensDetailPage: React.FC = () => {
                       <Loader2 size={12} className="animate-spin text-greyscale-400" />
                     </div>
                   )}
-                  {previewVersionId && isLoadingPreview && (
+                  {isResolvingVersion && (
                     <div className="flex items-center justify-center gap-2 border-t border-surface-border px-4 py-3 text-xs text-greyscale-500">
                       <Loader2 size={12} className="animate-spin" />
                       Loading selected version
@@ -728,11 +728,7 @@ export const LensDetailPage: React.FC = () => {
             {hasActiveLenserProfile && showRunPanel && (
               <div className="space-y-4 pt-1">
                 <LabExecutionPanel
-                  lensContent={
-                    previewVersion?.templateBody ??
-                    latestPublishedDetail?.templateBody ??
-                    lens.content
-                  }
+                  lensContent={activeTemplateBody}
                   providers={lab.providers}
                   isLoadingProviders={lab.isLoadingProviders}
                   providerModels={lab.providerModels}
@@ -747,10 +743,9 @@ export const LensDetailPage: React.FC = () => {
                   isStreaming={lab.streamState === 'loading' || lab.streamState === 'streaming'}
                   onStop={lab.stopStream}
                   versionParams={activeVersionParams}
-                  isLoadingVersionParams={
-                    !previewVersionId &&
-                    (isLoadingLatestDetail || (!!latestPublished && !latestPublishedDetail))
-                  }
+                  versionId={versionRoute.resolvedVersionId ?? undefined}
+                  isLoadingVersionParams={isResolvingVersion}
+                  onFileParamUpload={uploadFileParam}
                   selectedModelInputModalities={selectedModelInputModalities}
                   fundingSource={funding.fundingSource}
                   onFundingSourceChange={funding.setFundingSource}

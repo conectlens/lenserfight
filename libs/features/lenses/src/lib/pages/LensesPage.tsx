@@ -155,7 +155,7 @@ export const LensesPage: React.FC = () => {
   }
 
   const handleCreateSuccess = (id: string) => {
-    navigate(`/lenses/${id}`)
+    navigate(`/lenses/${id}/main`)
   }
 
   return (
