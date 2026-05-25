@@ -285,6 +285,7 @@ export const LensDetailPage: React.FC = () => {
             initialVersionParams = (versionDetail?.parameters ?? []).map((p) => ({
               label: p.label,
               toolId: p.toolId,
+              ...(p.optional ? { optional: true } : {}),
             }))
           }
           openCreateModal({

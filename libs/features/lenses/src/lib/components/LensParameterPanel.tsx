@@ -87,7 +87,7 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
               <ParamChip
                 name={param.label}
                 type={selectedTool?.type}
-                required={selectedTool?.required ?? true}
+                required={param.optional ? false : (selectedTool?.required ?? true)}
                 size="xs"
               />
 

@@ -37,7 +37,17 @@ export const useCreateLens = () => {
       const prevMap = new Map(prev.map((p) => [p.label, p]))
       return extracted.map((ep) => {
         const existing = prevMap.get(ep.name)
-        return existing ?? { label: ep.name, toolId: textToolId, ...(ep.optional ? { optional: true } : {}) }
+        if (existing) {
+          // Content is source of truth for optional flag — sync it
+          const shouldBeOptional = !!ep.optional
+          if (!!existing.optional !== shouldBeOptional) {
+            return shouldBeOptional
+              ? { ...existing, optional: true }
+              : { label: existing.label, toolId: existing.toolId }
+          }
+          return existing
+        }
+        return { label: ep.name, toolId: textToolId, ...(ep.optional ? { optional: true } : {}) }
       })
     })
   }, [textToolId])
@@ -108,6 +118,7 @@ export const useCreateLens = () => {
       .map((p) => ({
         label: p.label,
         toolId: p.toolId || textToolId || '',
+        ...(p.optional ? { optional: true } : {}),
       }))
 
     const dto: CreateLensDTO = {

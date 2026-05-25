@@ -341,7 +341,7 @@ export function renderLensWithSnapshot(
   const legacyParams: LensParam[] = versionParams.map((p) => ({
     name: p.label,
     type: mapToolTypeToLegacyType(p.tool.type),
-    required: p.tool.required,
+    required: p.optional ? false : p.tool.required,
   }))
   return renderLens(normalised, snapshot as Record<string, any>, legacyParams, options)
 }
