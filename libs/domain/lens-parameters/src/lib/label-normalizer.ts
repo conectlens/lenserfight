@@ -9,7 +9,12 @@ export function normalizeParamLabel(raw: string): string {
   return core.toLowerCase()
 }
 
-/** Bracket token as stored in human-readable template bodies. */
-export function paramTokenBracket(label: string, optional = false): string {
-  return `[[${label}${optional ? '!' : ''}]]`
+/** Bracket token for human-readable template bodies (optional inline `:type`). */
+export function paramTokenBracket(
+  label: string,
+  optional = false,
+  typeHint?: string,
+): string {
+  const typeSuffix = typeHint && typeHint !== 'text' ? `:${typeHint}` : ''
+  return `[[${label}${typeSuffix}${optional ? '!' : ''}]]`
 }
