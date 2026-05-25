@@ -318,29 +318,9 @@ Paste this template into any AI provider (ChatGPT, Claude, Gemini, etc.), fill i
       <form onSubmit={handleSubmit} className="space-y-6" onKeyDown={handleKeyDown}>
         <div className="space-y-4">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-base font-semibold text-gray-900 dark:text-gray-100 block">
+            <label className="text-base font-semibold text-gray-900 dark:text-gray-100 block">
                 Content
               </label>
-              <button
-                type="button"
-                onClick={handleCopyLensInstructions}
-                title="Copy Lens creation instructions for AI providers"
-                className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded-lg hover:bg-primary/10"
-              >
-                {lensInstructionsCopied ? (
-                  <>
-                    <Check size={13} />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy size={13} />
-                    Lens Instructions
-                  </>
-                )}
-              </button>
-            </div>
 
             <input
               type="text"

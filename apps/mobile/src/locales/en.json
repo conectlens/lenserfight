@@ -1,0 +1,109 @@
+{
+  "app": {
+    "name": "LenserFight",
+    "tagline": "Lenses, threads, and rays in your pocket.",
+    "loading": "Loading LenserFight"
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "loginSubtitle": "Continue to your Lenser workspace.",
+    "registerTitle": "Create account",
+    "registerSubtitle": "Join the community with a focused mobile setup.",
+    "magicTitle": "Email link",
+    "magicSubtitle": "We will send a one-tap sign-in link.",
+    "email": "Email",
+    "emailOrHandle": "Email or username",
+    "password": "Password",
+    "displayName": "Name",
+    "signIn": "Sign in",
+    "register": "Create account",
+    "sendMagic": "Send email link",
+    "magicLink": "Use email link",
+    "backToLogin": "Back to sign in",
+    "newAccount": "Create an account",
+    "alreadyAccount": "I already have an account",
+    "oauthDivider": "Or continue with",
+    "google": "Google",
+    "github": "GitHub",
+    "apple": "Apple",
+    "checkInbox": "Check your inbox",
+    "magicSent": "If this email can sign in, we sent a link. Open it on this device to continue.",
+    "sendAgain": "Send again",
+    "required": "This field is required.",
+    "invalidEmail": "Enter a valid email address.",
+    "passwordShort": "Use at least 8 characters.",
+    "genericError": "Something went wrong. Please try again.",
+    "privacyNotice": "By continuing, you agree to our",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "tabs": {
+    "threads": "Threads",
+    "lenses": "Lenses",
+    "tags": "Tags",
+    "battles": "Battles",
+    "profile": "Profile"
+  },
+  "states": {
+    "loading": "Loading",
+    "empty": "Nothing here yet",
+    "error": "Could not load this view.",
+    "retry": "Try again",
+    "notAuthorized": "Sign in to view this page.",
+    "notFound": "We could not find that item."
+  },
+  "threads": {
+    "title": "Threads",
+    "subtitle": "Community discussion and lens-linked ideas.",
+    "empty": "No threads are available yet.",
+    "detail": "Thread",
+    "replies": "Replies",
+    "reactions": "reactions"
+  },
+  "lenses": {
+    "title": "Lenses",
+    "subtitle": "Reusable prompts, skills, and creative workflows.",
+    "empty": "No lenses are available yet.",
+    "detail": "Lens",
+    "uses": "uses"
+  },
+  "tags": {
+    "title": "Rays",
+    "subtitle": "Explore the topics shaping the community.",
+    "empty": "No rays are available yet.",
+    "detail": "Ray",
+    "threads": "Threads",
+    "lenses": "Lenses"
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Your active Lenser identity.",
+    "anonymous": "Not signed in",
+    "noProfile": "No active Lenser profile found.",
+    "handle": "Handle",
+    "level": "Level",
+    "xp": "XP",
+    "signOut": "Sign out"
+  },
+  "battles": {
+    "title": "Battles",
+    "subtitle": "Head-to-head AI lens competitions.",
+    "empty": "No battles available yet.",
+    "detail": "Battle",
+    "status": {
+      "pending": "Pending",
+      "active": "Active",
+      "voting": "Voting",
+      "judging": "Judging",
+      "completed": "Completed"
+    },
+    "timeLeft": "Ends",
+    "viewOnWeb": "View full battle",
+    "webNote": "Submit entries and vote on the full battle page."
+  },
+  "actions": {
+    "back": "Back",
+    "open": "Open",
+    "refresh": "Refresh"
+  }
+}

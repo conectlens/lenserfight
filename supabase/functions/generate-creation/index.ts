@@ -25,6 +25,7 @@ import {
   ProviderNotConnectedError,
   TokenExpiredError,
 } from '../_shared/provider-token.ts'
+import { lookupModel } from '../_shared/providers/model-registry.ts'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -364,7 +365,22 @@ serve(async (req: Request) => {
     return errResponse('VALIDATION_ERROR', 'Invalid funding_source', 400, req)
   }
 
-  // 3. Validate prompt length (server-side defence-in-depth)
+  // 3. Validate model kind — generate-creation is text-only (lens/workflow JSON).
+  // Image/video/audio models (dall-e-4, imagen-4, veo-3, …) have no chat
+  // completions endpoint; sending them here produces a provider 404 and burns
+  // credits. Media generation must be handled by trigger-execution.
+  if (model_key) {
+    const modelDescriptor = lookupModel(model_key)
+    if (modelDescriptor && modelDescriptor.kind !== 'text') {
+      return errResponse(
+        'VALIDATION_ERROR',
+        `Model "${model_key}" produces ${modelDescriptor.kind} output. generate-creation only accepts text models; use trigger-execution for media generation.`,
+        400, req,
+      )
+    }
+  }
+
+  // 4. Validate prompt length (server-side defence-in-depth)
   if (prompt && prompt.length > MAX_PROMPT_LENGTH) {
     return errResponse('PROMPT_TOO_LONG', `Prompt must not exceed ${MAX_PROMPT_LENGTH} characters.`, 400, req)
   }

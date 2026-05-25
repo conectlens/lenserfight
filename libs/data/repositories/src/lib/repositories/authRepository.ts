@@ -31,7 +31,7 @@ export interface AuthRepositoryPort {
   updateMetadata(metadata: Partial<UserMetadata>): Promise<void>
   requestPasswordReset(email: string, captchaToken?: string): Promise<void>
   resetPassword(password: string, token?: string): Promise<void>
-  signInWithOAuth(provider: 'google' | 'github' | 'azure' | 'custom:chainabit'): Promise<void>
+  signInWithOAuth(provider: 'google' | 'github' | 'apple' | 'azure' | 'custom:chainabit'): Promise<void>
   resendSignupConfirmation(email: string): Promise<void>
   sendMagicLink(email: string, captchaToken?: string): Promise<void>
   onAuthStateChange(
@@ -106,7 +106,7 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     if (error) throw error
   }
 
-  async signInWithOAuth(provider: 'google' | 'github' | 'azure' | 'custom:chainabit'): Promise<void> {
+  async signInWithOAuth(provider: 'google' | 'github' | 'apple' | 'azure' | 'custom:chainabit'): Promise<void> {
     // Preserve the originating page so /callback can redirect back after OAuth.
     // Priority: explicit return_url query param → current full page URL with any
     // auth-only return_url hop removed.

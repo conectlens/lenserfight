@@ -27,6 +27,9 @@ type LocalKeyAvailability =
   | 'gateway_unreachable'
   | 'gateway_not_paired'
   | 'gateway_forbidden'
+  | 'pairing_connecting'
+  | 'pairing_expired'
+  | 'pairing_revoked'
 
 interface FundingSourceToggleProps {
   fundingSource: FundingSource
@@ -44,8 +47,10 @@ interface FundingSourceToggleProps {
   onAddLocalKey: (provider: string, label: string, rawKey: string) => Promise<void>
   onRemoveLocalKey?: (id: string) => Promise<void>
   onUpdateLocalKey?: (id: string, rawKey: string, label: string) => Promise<void>
-  /** Persist the bearer token from `lf gateway pair --web` (sessionStorage). */
+  /** Persist the bearer token from `lf gateway pair --web` and save to IndexedDB. */
   onPairGateway?: (token: string) => void
+  /** Clear the stored pairing entirely. Called when the user clicks "Forget this gateway". */
+  onForgetGateway?: () => Promise<void>
   onRefreshLocalKeys?: () => Promise<void> | void
   // Common
   walletBalance: WalletBalance | undefined
@@ -430,6 +435,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   onAddLocalKey,
   onUpdateLocalKey,
   onPairGateway,
+  onForgetGateway,
   onRefreshLocalKeys,
   walletBalance,
   canUseBYOK,
@@ -476,6 +482,9 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
     }
     if (fallbackClient) {
       fallbackClient.setToken(token)
+      // Persist to IndexedDB so the pairing survives tab close, matching the
+      // behaviour of the onPairGateway path in useLocalKeyStore.
+      void fallbackClient.persistPairing()
       // Trigger a re-render in the parent's funding flow by reloading the
       // page when no refresh handler was wired. This is a last resort —
       // call sites should pass onRefreshLocalKeys to avoid the reload.
@@ -702,7 +711,13 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
                 ? 'Start the LenserFight Gateway: run `lf gateway serve` in a terminal.'
                 : localKeyAvailability === 'gateway_not_paired'
                   ? 'Pair the gateway: run `lf gateway pair --web` and paste the token below.'
-                  : 'Gateway refused the request (origin blocked).'
+                  : localKeyAvailability === 'pairing_connecting'
+                    ? 'Reconnecting to the gateway…'
+                    : localKeyAvailability === 'pairing_expired'
+                      ? 'Pairing expired (30-day inactivity). Re-pair with `lf gateway pair --web`.'
+                      : localKeyAvailability === 'pairing_revoked'
+                        ? 'Pairing was revoked. Re-pair with `lf gateway pair --web`.'
+                        : 'Gateway refused the request (origin blocked).'
           }
         >
           <button
@@ -744,7 +759,13 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
                       ? 'Gateway off'
                       : localKeyAvailability === 'gateway_not_paired'
                         ? 'Not paired'
-                        : 'Unavailable'}
+                        : localKeyAvailability === 'pairing_connecting'
+                          ? 'Reconnecting…'
+                          : localKeyAvailability === 'pairing_expired'
+                            ? 'Pairing expired'
+                            : localKeyAvailability === 'pairing_revoked'
+                              ? 'Pairing revoked'
+                              : 'Unavailable'}
               </p>
             </div>
           </button>
@@ -806,11 +827,56 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         />
       )}
 
+      {/* "Forget this gateway" — lets users explicitly clear the stored pairing.
+          Only shown when the gateway is paired and available. */}
+      {isByokLocal && localKeyAvailability === 'available' && onForgetGateway && (
+        <button
+          type="button"
+          onClick={() => void onForgetGateway()}
+          className="self-start text-[10px] text-greyscale-400 dark:text-greyscale-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+        >
+          Forget this gateway
+        </button>
+      )}
+
+      {/* Reconnecting: auto-restore from IndexedDB is in progress (~100–300 ms). */}
+      {isByokLocal && localKeyAvailability === 'pairing_connecting' && (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-surface-border bg-surface-raised">
+          <Loader2 size={14} className="animate-spin text-greyscale-400 shrink-0" />
+          <p className="text-xs text-greyscale-500 dark:text-greyscale-400">Reconnecting to gateway…</p>
+        </div>
+      )}
+
+      {/* Pairing expired: the stored credential exceeded its TTL or the gateway identity changed. */}
+      {isByokLocal && localKeyAvailability === 'pairing_expired' && (
+        <div className="flex flex-col gap-1 p-3 rounded-lg border border-amber-300/40 bg-amber-50/50 dark:bg-amber-900/10">
+          <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Pairing expired</p>
+          <p className="text-[10px] text-greyscale-500 dark:text-greyscale-400">
+            Your saved gateway pairing has expired (30-day inactivity or gateway identity changed).
+            Re-pair below.
+          </p>
+        </div>
+      )}
+
+      {/* Pairing revoked: the gateway returned 401, typically after `lf gateway pair --rotate`. */}
+      {isByokLocal && localKeyAvailability === 'pairing_revoked' && (
+        <div className="flex flex-col gap-1 p-3 rounded-lg border border-red-300/40 bg-red-50/50 dark:bg-red-900/10">
+          <p className="text-xs font-semibold text-red-600 dark:text-red-400">Pairing revoked</p>
+          <p className="text-[10px] text-greyscale-500 dark:text-greyscale-400">
+            The gateway rejected your saved token (rotated with{' '}
+            <code className="text-red-600 dark:text-red-400">lf gateway pair --rotate</code>). Re-pair
+            below.
+          </p>
+        </div>
+      )}
+
       {/* Pair the gateway. Visible whenever the user has switched to Local Keys
-          but no bearer token is paired with this origin. The pair input is the
-          only place to paste the token from `lf gateway pair --web` — keep
-          the instructions explicit so users can't miss the connection. */}
-      {isByokLocal && localKeyAvailability === 'gateway_not_paired' && (
+          but no valid pairing exists. Shown for first-time users (gateway_not_paired)
+          and when a stored pairing has expired or been revoked. */}
+      {isByokLocal &&
+        (localKeyAvailability === 'gateway_not_paired' ||
+          localKeyAvailability === 'pairing_expired' ||
+          localKeyAvailability === 'pairing_revoked') && (
         <div className="flex flex-col gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
           <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
             Paste your pairing token below ↓
@@ -870,8 +936,8 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
             )}
           </div>
           <p className="text-[10px] text-gray-400 dark:text-gray-500">
-            The token is held in this browser tab only (sessionStorage). Close the tab and you'll
-            need to pair again.
+            Your pairing is saved in this browser (IndexedDB). It expires after 30 days of
+            inactivity and is tied to this gateway's identity.
           </p>
         </div>
       )}

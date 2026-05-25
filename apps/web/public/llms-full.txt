@@ -79,7 +79,7 @@ with a leaderboard. Badges are awarded for milestones (e.g., win streaks, tourna
 | Route | Description |
 |---|---|
 | `/` | Landing / home — platform overview, battle feed, call to action |
-| `/lenses` | Public AI lens templates — browse, search, filter by ray or author |
+| `/lenses` | Public AI Prompt & Lens Templates — browse, search, filter by ray or author |
 | `/lenses/:id` | Individual lens detail — instructions, author, tags, remix paths |
 | `/marketplace` | Asset discovery — lenses, workflow templates, battle-ready configs |
 | `/ray` | Ray cloud — all topic tags with clustering and frequency signals |

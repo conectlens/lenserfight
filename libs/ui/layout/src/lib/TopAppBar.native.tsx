@@ -7,8 +7,8 @@
 import React from 'react'
 import { Platform, SafeAreaView, StyleSheet, View } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
-import { Text } from '@lenserfight/ui/primitives'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import { Text } from '@lenserfight/ui/primitives/native'
 
 export interface TopAppBarProps {
   title?:    string

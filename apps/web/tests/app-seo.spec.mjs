@@ -38,7 +38,7 @@ describe('web app SEO prerender metadata', () => {
       route,
     )
 
-    expect(html).toContain('<title>AI Lens Templates | Prompt Workflows and Automation Patterns</title>')
+    expect(html).toContain('<title>AI Prompt & Lens Templates | Prompt Workflows and Automation Patterns</title>')
     expect(html).toContain('<link rel="canonical" href="https://lenserfight.com/lenses" />')
     expect(html).toContain('<meta property="og:title"')
     expect(html).toContain('<script type="application/ld+json">')

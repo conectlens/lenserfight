@@ -1,6 +1,8 @@
 import { getMediaCapabilities } from '@lenserfight/providers'
 import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance, LensVersionParam, GenerativeMediaParams } from '@lenserfight/types'
 import type { ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/types'
+
+import type { LocalKeyAvailabilityReason } from '../hooks/useLocalKeyStore'
 import { Button } from '@lenserfight/ui/components'
 import { copyTextToClipboard, renderLensWithSnapshot } from '@lenserfight/utils/text'
 import { Check, ClipboardCopy, FileJson, Loader2, Play, Square, Table2 } from 'lucide-react'
@@ -65,11 +67,12 @@ interface LabExecutionPanelProps {
   selectedLocalKeyId?: string | null
   onLocalKeyIdChange?: (keyId: string) => void
   availableLocalKeys?: LocalKeyMeta[]
-  localKeyAvailability?: 'available' | 'gateway_unreachable' | 'gateway_not_paired' | 'gateway_forbidden'
+  localKeyAvailability?: LocalKeyAvailabilityReason
   onAddLocalKey?: (provider: string, label: string, rawKey: string) => Promise<void>
   onRemoveLocalKey?: (id: string) => Promise<void>
   onUpdateLocalKey?: (id: string, rawKey: string, label: string) => Promise<void>
   onPairGateway?: (token: string) => void
+  onForgetGateway?: () => Promise<void>
   onRefreshLocalKeys?: () => Promise<void> | void
   /** Called when the user first opens the provider dropdown — triggers lazy data fetch */
   onProviderDropdownOpen?: () => void
@@ -115,6 +118,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   onRemoveLocalKey,
   onUpdateLocalKey,
   onPairGateway,
+  onForgetGateway,
   onRefreshLocalKeys,
   onProviderDropdownOpen,
   chainabitState,
@@ -342,6 +346,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               onRemoveLocalKey={onRemoveLocalKey}
               onUpdateLocalKey={onUpdateLocalKey}
               onPairGateway={onPairGateway}
+              onForgetGateway={onForgetGateway}
               onRefreshLocalKeys={onRefreshLocalKeys}
               walletBalance={walletBalance}
               canUseBYOK={canUseBYOK ?? false}
