@@ -1,5 +1,12 @@
 import type { LensVersionParam } from '@lenserfight/types'
 
+import {
+  countFilesInSnapshot,
+  effectiveMaxCount,
+  MAX_FILES_PER_RUN,
+  normalizeFilesParamIds,
+} from './file-attachment-limits'
+
 /**
  * Validates a single parameter value against its tool schema.
  * Returns an error message string, or null if valid.
@@ -82,6 +89,17 @@ export function validateParamValue(
     void modelInputModalities
   }
 
+  if (type === 'files') {
+    const ids = normalizeFilesParamIds(value)
+    const maxCount = effectiveMaxCount(param)
+    if (ids.length > maxCount) {
+      return `${name} allows at most ${maxCount} file(s)`
+    }
+    if (modelInputModalities) {
+      void modelInputModalities
+    }
+  }
+
   return null
 }
 
@@ -98,5 +116,16 @@ export function validateAllParamValues(
     const err = validateParamValue(values[p.label], p, modelInputModalities)
     if (err) errors[p.label] = err
   }
+
+  const runFileCount = countFilesInSnapshot(values, params)
+  if (runFileCount > MAX_FILES_PER_RUN) {
+    const msg = `This run has ${runFileCount} file attachments; maximum is ${MAX_FILES_PER_RUN}`
+    for (const p of params) {
+      if (p.tool.type === 'files' && !errors[p.label]) {
+        errors[p.label] = msg
+      }
+    }
+  }
+
   return errors
 }

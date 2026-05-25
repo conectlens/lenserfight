@@ -1,5 +1,6 @@
 import type { LensVersionParam, LensVersionParamType } from '@lenserfight/types'
 
+import { normalizeFilesParamIds } from './file-attachment-limits'
 import { sanitizeStringInput } from './sanitize-string-input'
 
 const STRING_LIKE_TYPES: LensVersionParamType[] = ['text', 'textarea', 'url', 'json', 'date', 'datetime']
@@ -11,7 +12,9 @@ export function coerceParamValue(value: unknown, param: LensVersionParam): unkno
   const type = param.tool.type
 
   if (value === null || value === undefined || value === '') {
-    return type === 'boolean' ? false : type === 'multiselect' ? [] : ''
+    if (type === 'boolean') return false
+    if (type === 'multiselect' || type === 'files') return []
+    return ''
   }
 
   switch (type) {
@@ -37,6 +40,8 @@ export function coerceParamValue(value: unknown, param: LensVersionParam): unkno
       return String(value)
     case 'file':
       return String(value)
+    case 'files':
+      return normalizeFilesParamIds(value)
     default:
       if (STRING_LIKE_TYPES.includes(type)) {
         return typeof value === 'string' ? sanitizeStringInput(value) : String(value)
@@ -66,6 +71,18 @@ export function formatParamForPrompt(value: unknown, param: LensVersionParam): s
     }
     case 'array':
       return Array.isArray(value) ? value.map(String).join(', ') : String(value)
+    case 'file': {
+      const s = String(value)
+      if (/^https?:\/\//i.test(s)) return s
+      return s.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    }
+    case 'files': {
+      if (Array.isArray(value) && value.every((v) => typeof v === 'string' && /^https?:\/\//i.test(v))) {
+        return JSON.stringify(value)
+      }
+      const ids = normalizeFilesParamIds(value)
+      return JSON.stringify(ids)
+    }
     default:
       return String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;')
   }

@@ -55,4 +55,20 @@ describe('formatParamForPrompt', () => {
   it('joins multiselect values', () => {
     expect(formatParamForPrompt(['a', 'b'], param('multiselect'))).toBe('a, b')
   })
+
+  it('passes through https URLs for file params', () => {
+    const url = 'https://storage.example.com/file.pdf'
+    expect(formatParamForPrompt(url, param('file'))).toBe(url)
+  })
+
+  it('escapes raw UUID for file params', () => {
+    const id = '8f7fc7b2-cfa9-4ea9-81bd-ba12808c1231'
+    expect(formatParamForPrompt(id, param('file'))).toBe(id)
+  })
+
+  it('JSON-stringifies files param URL list', () => {
+    const p = param('files' as LensVersionParam['tool']['type'])
+    const urls = ['https://cdn.example.com/a.jpg']
+    expect(formatParamForPrompt(urls, p)).toBe(JSON.stringify(urls))
+  })
 })
