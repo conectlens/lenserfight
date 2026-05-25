@@ -72,6 +72,15 @@ export const mediaService = {
     return mediaRepo.unbindAttachment(entityType, entityId, bindingKey)
   },
 
+  unbindAttachmentObject: async (
+    entityType: string,
+    entityId: string,
+    bindingKey: string,
+    objectId: string,
+  ): Promise<void> => {
+    return mediaRepo.unbindAttachmentObject(entityType, entityId, bindingKey, objectId)
+  },
+
   /**
    * Returns the personal workspace UUID for the currently authenticated lenser.
    * Required when creating new media objects (fn_create_media_object requires a

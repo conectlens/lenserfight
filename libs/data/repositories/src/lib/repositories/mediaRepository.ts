@@ -7,6 +7,11 @@ import {
 } from '@lenserfight/types'
 import type { StorageAdapterPort } from '@lenserfight/infra/storage'
 import { getStorageAdapter } from '@lenserfight/infra/storage'
+import {
+  deliverMedia,
+  deliveryResultToPromptValue,
+  type MediaDeliveryPurpose,
+} from '../media-delivery'
 
 // --- Port (Interface) ---
 
@@ -18,9 +23,17 @@ export interface MediaRepositoryPort {
   softDelete(id: string): Promise<void>
   bindAttachment(objectId: string, entityType: string, entityId: string, bindingKey: string): Promise<void>
   unbindAttachment(entityType: string, entityId: string, bindingKey: string): Promise<void>
+  unbindAttachmentObject(
+    entityType: string,
+    entityId: string,
+    bindingKey: string,
+    objectId: string,
+  ): Promise<void>
   getAttachmentsForEntity(entityType: string, entityId: string): Promise<MediaAttachment[]>
   getSignedUploadUrl(bucket: string, objectKey: string): Promise<{ signedUrl: string; token: string }>
   getSignedReadUrl(objectId: string): Promise<string | null>
+  getDeliveredMediaValue(objectId: string, purpose: MediaDeliveryPurpose): Promise<string | null>
+  createMediaAccessToken(objectId: string, ttlSeconds?: number): Promise<string | null>
   deleteStorageObject(bucket: string, objectKey: string): Promise<void>
 }
 
@@ -180,6 +193,22 @@ export class SupabaseMediaRepository implements MediaRepositoryPort {
     if (error) this.handleError(error)
   }
 
+  async unbindAttachmentObject(
+    entityType: string,
+    entityId: string,
+    bindingKey: string,
+    objectId: string,
+  ): Promise<void> {
+    const { error } = await supabase.rpc('fn_media_unbind_attachment_object', {
+      p_entity_type: entityType,
+      p_entity_id: entityId,
+      p_binding_key: bindingKey,
+      p_object_id: objectId,
+    })
+
+    if (error) this.handleError(error)
+  }
+
   async getAttachmentsForEntity(entityType: string, entityId: string): Promise<MediaAttachment[]> {
     const { data, error } = await supabase.rpc('fn_get_entity_media_attachments', {
       p_entity_type: entityType,
@@ -203,24 +232,63 @@ export class SupabaseMediaRepository implements MediaRepositoryPort {
     return this.storageAdapter.createSignedUploadUrl(bucket, objectKey)
   }
 
+  /** Raw signed storage URL (may be loopback in local dev). Prefer getDeliveredMediaValue for consumers. */
   async getSignedReadUrl(objectId: string): Promise<string | null> {
+    return this.getRawSignedReadUrl(objectId)
+  }
+
+  async getDeliveredMediaValue(
+    objectId: string,
+    purpose: MediaDeliveryPurpose,
+  ): Promise<string | null> {
     const obj = await this.getById(objectId)
     if (!obj) return null
 
-    // External URLs are already public
-    if (obj.externalUrl) return obj.externalUrl
+    const signedUrl = await this.getRawSignedReadUrl(objectId)
+    const mimeType = obj.mimeType ?? 'application/octet-stream'
 
-    // text-only objects have no storage URL
+    const result = await deliverMedia({
+      object: obj,
+      signedUrl,
+      purpose,
+      mimeType,
+      createAccessToken: (id) => this.createMediaAccessToken(id),
+    })
+
+    return deliveryResultToPromptValue(result)
+  }
+
+  async createMediaAccessToken(objectId: string, ttlSeconds = 3600): Promise<string | null> {
+    const { data, error } = await supabase.rpc('fn_create_media_access_token', {
+      p_object_id: objectId,
+      p_ttl_seconds: ttlSeconds,
+    })
+
+    if (error) return null
+    const token = data as string | null
+    return typeof token === 'string' && token.length > 0 ? token : null
+  }
+
+  private async getRawSignedReadUrl(objectId: string): Promise<string | null> {
+    const obj = await this.getById(objectId)
+    if (!obj) return null
+
+    if (obj.externalUrl) return obj.externalUrl
     if (!obj.bucket || !obj.objectKey) return null
 
     try {
+      const signed = await this.storageAdapter.getSignedDownloadUrl(
+        obj.bucket,
+        obj.objectKey,
+        3600,
+      )
+      return signed
+    } catch {
       const { data, error } = await supabase.storage
         .from(obj.bucket)
         .createSignedUrl(obj.objectKey, 3600)
       if (error || !data?.signedUrl) return null
       return data.signedUrl
-    } catch {
-      return null
     }
   }
 

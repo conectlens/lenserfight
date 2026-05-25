@@ -1,10 +1,15 @@
 import type { ProviderMessage, ProviderRequestOptions, ProviderResponse, StreamChunk } from './types';
+import { dataUriToBase64, isDataUri } from './mediaPartWire';
 
 // ─── Wire Types ───────────────────────────────────────────────────────────────
 
+type AnthropicImageSource =
+  | { type: 'url'; url: string; media_type?: string }
+  | { type: 'base64'; media_type: string; data: string };
+
 type AnthropicContentBlock =
   | { type: 'text'; text: string }
-  | { type: 'image'; source: { type: 'url'; url: string; media_type?: string } }
+  | { type: 'image'; source: AnthropicImageSource }
   | { type: 'document'; source: { type: 'url'; url: string; media_type: string } };
 
 interface AnthropicMessage {
@@ -40,6 +45,19 @@ function toAnthropicMessage(msg: ProviderMessage): AnthropicMessage | null {
       return { type: 'text', text: part.text };
     }
     if (part.type === 'image') {
+      if (isDataUri(part.url)) {
+        const parsed = dataUriToBase64(part.url);
+        if (parsed) {
+          return {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: part.mimeType ?? parsed.mimeType,
+              data: parsed.base64,
+            },
+          };
+        }
+      }
       return {
         type: 'image',
         source: { type: 'url', url: part.url, ...(part.mimeType ? { media_type: part.mimeType } : {}) },

@@ -1,4 +1,5 @@
 import type { ProviderMessage, ProviderRequestOptions, ProviderResponse, StreamChunk } from './types';
+import { dataUriToBase64, isDataUri } from './mediaPartWire';
 
 // ─── Wire Types ───────────────────────────────────────────────────────────────
 
@@ -31,7 +32,17 @@ function toGeminiParts(msg: ProviderMessage): GeminiPart[] {
   return msg.content.map((part): GeminiPart => {
     if (part.type === 'text') return { text: part.text };
     if (part.type === 'image') {
-      // Gemini prefers fileData (URI) over inlineData for URLs
+      if (isDataUri(part.url)) {
+        const parsed = dataUriToBase64(part.url);
+        if (parsed) {
+          return {
+            inlineData: {
+              mimeType: part.mimeType ?? parsed.mimeType,
+              data: parsed.base64,
+            },
+          };
+        }
+      }
       return { fileData: { mimeType: part.mimeType ?? 'image/jpeg', fileUri: part.url } };
     }
     if (part.type === 'document') {
