@@ -6,7 +6,9 @@ import {
   SESSION_GATEWAY_URL_KEY,
   SESSION_TOKEN_KEY,
   deriveGatewayUrl,
+  isPermittedGatewayUrl,
 } from '../src/lib/browser/gateway-client'
+
 import { LocalKeyStoreError } from '../src/lib/ports'
 
 interface MemSession {
@@ -214,8 +216,59 @@ describe('deriveGatewayUrl', () => {
     expect(deriveGatewayUrl()).toBe(DEFAULT_GATEWAY_URL)
   })
 
-  it('honors the sessionStorage override', () => {
+  it('honors the sessionStorage override when the URL is HTTPS', () => {
     setBrowser('100.88.58.68', 'http:', 'https://custom.gateway:9000')
     expect(deriveGatewayUrl()).toBe('https://custom.gateway:9000')
+  })
+
+  it('ignores the sessionStorage override when it is non-loopback HTTP (security guard)', () => {
+    setBrowser('localhost', 'http:', 'http://attacker.example.com')
+    expect(deriveGatewayUrl()).toBe(DEFAULT_GATEWAY_URL)
+  })
+
+  it('ignores the sessionStorage override when it is a javascript: URI', () => {
+    setBrowser('localhost', 'http:', 'javascript:alert(1)')
+    expect(deriveGatewayUrl()).toBe(DEFAULT_GATEWAY_URL)
+  })
+
+  it('ignores an unparseable sessionStorage override', () => {
+    setBrowser('localhost', 'http:', 'not a url')
+    expect(deriveGatewayUrl()).toBe(DEFAULT_GATEWAY_URL)
+  })
+})
+
+describe('isPermittedGatewayUrl', () => {
+  it('permits https with any hostname', () => {
+    expect(isPermittedGatewayUrl('https://gateway.internal:9000')).toBe(true)
+    expect(isPermittedGatewayUrl('https://100.88.0.1:38080')).toBe(true)
+  })
+
+  it('permits http://127.0.0.1', () => {
+    expect(isPermittedGatewayUrl('http://127.0.0.1:38080')).toBe(true)
+  })
+
+  it('permits http://localhost', () => {
+    expect(isPermittedGatewayUrl('http://localhost:38080')).toBe(true)
+  })
+
+  it('permits http://[::1]', () => {
+    expect(isPermittedGatewayUrl('http://[::1]:38080')).toBe(true)
+  })
+
+  it('rejects http with a non-loopback hostname', () => {
+    expect(isPermittedGatewayUrl('http://attacker.example.com')).toBe(false)
+    expect(isPermittedGatewayUrl('http://192.168.1.42:38080')).toBe(false)
+    expect(isPermittedGatewayUrl('http://100.88.0.1:38080')).toBe(false)
+  })
+
+  it('rejects javascript: and data: URIs', () => {
+    expect(isPermittedGatewayUrl('javascript:alert(1)')).toBe(false)
+    expect(isPermittedGatewayUrl('data:text/html,<h1>x</h1>')).toBe(false)
+  })
+
+  it('rejects unparseable strings', () => {
+    expect(isPermittedGatewayUrl('')).toBe(false)
+    expect(isPermittedGatewayUrl('not a url')).toBe(false)
+    expect(isPermittedGatewayUrl('//missing-scheme')).toBe(false)
   })
 })
