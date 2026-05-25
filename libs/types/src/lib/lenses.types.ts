@@ -172,6 +172,8 @@ export interface LensVersionParam {
   toolId: string
   /** Full tool definition — always present when loaded via fn_get_version_params_with_tools. */
   tool: ToolRecord
+  /** When true the param was declared with [[label!]] syntax and is not required for execution. */
+  optional?: boolean
 }
 
 /** Input shape for creating/updating version parameters. */

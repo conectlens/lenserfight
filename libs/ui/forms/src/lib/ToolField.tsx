@@ -182,7 +182,7 @@ export const ToolField: React.FC<ToolFieldProps> = ({
       <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
         <Icon size={11} className={config.colorClass} aria-hidden />
         <span>{param.label}</span>
-        {tool.required && <span className="text-red-500 ml-0.5" aria-label="required">*</span>}
+        {tool.required && !param.optional && <span className="text-red-500 ml-0.5" aria-label="required">*</span>}
         {tool.helpText && (
           <span className="ml-1 normal-case text-gray-400 font-normal">— {tool.helpText}</span>
         )}

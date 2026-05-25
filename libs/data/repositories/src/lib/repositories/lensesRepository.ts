@@ -622,6 +622,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       p_params: (input.params ?? []).map((p) => ({
         label: p.label,
         tool_id: p.toolId,
+        optional: p.optional ?? false,
       })),
       p_tag_ids: input.tagIds ?? [],
       p_parent_lens_id: input.parentLensId ?? null,
@@ -669,7 +670,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       p_description: input.description ?? null,
       p_tag_ids: input.tagIds ?? null,
       p_params: input.params
-        ? input.params.map((p) => ({ label: p.label, tool_id: p.toolId }))
+        ? input.params.map((p) => ({ label: p.label, tool_id: p.toolId, optional: p.optional ?? false }))
         : null,
     })
 
@@ -742,6 +743,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       label: row.label as string,
       toolId: (row.tool_id as string) ?? (row.toolId as string),
       tool,
+      optional: (row.optional as boolean) ?? false,
     }
   }
 
@@ -912,11 +914,11 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   /** Replace the parameter definitions for a lens version (full replace). */
   async updateVersionParams(
     versionId: string,
-    params: Array<{ label: string; toolId: string }>
+    params: Array<{ label: string; toolId: string; optional?: boolean }>
   ): Promise<void> {
     const { error } = await supabase.rpc('fn_update_lens_version_params', {
       p_version_id: versionId,
-      p_params: params.map((p) => ({ label: p.label, tool_id: p.toolId })),
+      p_params: params.map((p) => ({ label: p.label, tool_id: p.toolId, optional: p.optional ?? false })),
     })
     if (error) this.handleError(error)
   }
