@@ -102,6 +102,13 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
                 />
               </div>
 
+              {/* Optional badge */}
+              {param.optional && (
+                <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-greyscale-100 text-greyscale-500 dark:bg-greyscale-800 dark:text-greyscale-400">
+                  optional
+                </span>
+              )}
+
               {/* Type badge */}
               {selectedTool && (
                 <span
