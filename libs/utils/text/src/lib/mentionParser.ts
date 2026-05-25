@@ -95,4 +95,11 @@ export class MentionParser {
   static createPromptToken(id: string): string {
     return `@[Prompt:${id}]`
   }
+
+  /**
+   * Generates a user mention token string.
+   */
+  static createUserToken(id: string): string {
+    return `@[User:${id}]`
+  }
 }
