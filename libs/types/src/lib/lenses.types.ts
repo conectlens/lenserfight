@@ -134,6 +134,7 @@ export type LensVersionParamType =
   | 'date'
   | 'datetime'
   | 'file'
+  | 'files'
   | 'connector'
 
 /** Mirrors lenses.tools */
@@ -152,6 +153,12 @@ export interface ToolRecord {
   validationSchema: {
     min?: number | null
     max?: number | null
+    /** Max attachments for `files` type (capped by platform default). */
+    maxCount?: number | null
+    /** Per-file byte limit for `files` / `file`. */
+    maxFileBytes?: number | null
+    /** Total bytes across all files in one `files` param. */
+    maxTotalBytes?: number | null
     urlScheme?: string[] | null
     allowedMimeTypes?: string[] | null
   } | null

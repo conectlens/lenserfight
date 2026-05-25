@@ -4,27 +4,61 @@ import type { LensParam, LensVersionParam } from '@lenserfight/types'
 // Unlike {{param}}, double-square-brackets do not appear in Jinja2/Handlebars/Mustache
 // templates that users may paste into their lens body, preventing accidental
 // parameter extraction of unrelated curly-brace patterns.
-// Matches [[label]] or [[label!]] where label starts with a word char then
-// allows word chars, spaces, and hyphens.  Trailing ! marks the param optional.
-const VARIABLE_REGEX = /\[\[(\w[\w \-_]*!?)\]\]/g
-
 // UUID-reference syntax [[:uuid]] used in stored template bodies (lenses.versions.template_body).
-// The colon prefix distinguishes param refs from named params.
 const PARAM_REF_REGEX = /\[\[:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]\]/gi
 
-export function extractParams(template: string): { name: string; optional?: boolean }[] {
-  const seen = new Set<string>()
-  const params: { name: string; optional?: boolean }[] = []
-  let match: RegExpExecArray | null
-  const re = new RegExp(VARIABLE_REGEX.source, VARIABLE_REGEX.flags)
-  while ((match = re.exec(template)) !== null) {
-    const raw = match[1].trim()
-    const optional = raw.endsWith('!')
-    const name = (optional ? raw.slice(0, -1).trimEnd() : raw).toLowerCase()
-    if (name && !seen.has(name)) {
-      seen.add(name)
-      params.push(optional ? { name, optional: true } : { name })
+const NAMED_BRACKET_REGEX = /\[\[([^\]]+)\]\]/g
+const UUID_REF_INNER = /^:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const KNOWN_PARAM_TYPES = new Set([
+  'text', 'textarea', 'json', 'number', 'integer', 'float', 'decimal', 'boolean',
+  'select', 'multiselect', 'array', 'url', 'date', 'datetime', 'file', 'files', 'connector',
+])
+
+function parseParamTokenInner(raw: string): { name: string; optional: boolean; typeHint?: string } | null {
+  if (/^\s/.test(raw) || /\s$/.test(raw)) return null
+  const trimmed = raw.trim()
+  if (!trimmed || !/^\w/.test(trimmed) || UUID_REF_INNER.test(trimmed)) return null
+
+  let optional = false
+  let core = trimmed
+  if (core.endsWith('!')) {
+    optional = true
+    core = core.slice(0, -1).trimEnd()
+  }
+
+  const colon = core.lastIndexOf(':')
+  if (colon > 0) {
+    const typePart = core.slice(colon + 1).trim().toLowerCase()
+    if (KNOWN_PARAM_TYPES.has(typePart)) {
+      const name = core.slice(0, colon).trim().toLowerCase()
+      if (!name) return null
+      return { name, optional, typeHint: typePart }
     }
+  }
+
+  const name = core.trim().toLowerCase()
+  if (!name) return null
+  return { name, optional }
+}
+
+export function extractParams(
+  template: string,
+): { name: string; optional?: boolean; typeHint?: string }[] {
+  const seen = new Set<string>()
+  const params: { name: string; optional?: boolean; typeHint?: string }[] = []
+  const re = new RegExp(NAMED_BRACKET_REGEX.source, NAMED_BRACKET_REGEX.flags)
+
+  let match: RegExpExecArray | null
+  while ((match = re.exec(template)) !== null) {
+    const parsed = parseParamTokenInner(match[1])
+    if (!parsed || seen.has(parsed.name)) continue
+    seen.add(parsed.name)
+    params.push(
+      parsed.optional || parsed.typeHint
+        ? { name: parsed.name, ...(parsed.optional ? { optional: true } : {}), ...(parsed.typeHint ? { typeHint: parsed.typeHint } : {}) }
+        : { name: parsed.name },
+    )
   }
   return params
 }
@@ -88,9 +122,10 @@ export function renderLens(
   options: RenderLensOptions = {}
 ): string {
   const paramMap = new Map(params.map((p) => [p.name, p]))
-  return template.replace(/\[\[(\w[\w \-_]*!?)\]\]/g, (match, raw) => {
-    const trimmed = raw.trim()
-    const name = (trimmed.endsWith('!') ? trimmed.slice(0, -1).trimEnd() : trimmed).toLowerCase()
+  return template.replace(NAMED_BRACKET_REGEX, (match, raw: string) => {
+    const parsed = parseParamTokenInner(raw)
+    if (!parsed) return match
+    const name = parsed.name
     const param = paramMap.get(name) ?? { name, type: 'string' as const, required: true }
     const value = values[name]
     if (value === undefined || value === null || value === '') {
@@ -104,11 +139,17 @@ export function renderLens(
 
 export type LensContentSegment =
   | { type: 'text'; content: string }
-  | { type: 'param'; name: string }
+  | { type: 'param'; name: string; optional?: boolean; typeHint?: string }
   | { type: 'param-ref'; id: string }
 
-// Combined regex that matches both [[name]] and [[:uuid]] tokens
-const COMBINED_REGEX = /\[\[(?::([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})|(\w[\w \-_]*!?))\]\]/gi
+/** Parses inner text of a `[[...]]` token (without brackets). */
+export function parseBracketParamToken(raw: string): {
+  name: string
+  optional: boolean
+  typeHint?: string
+} | null {
+  return parseParamTokenInner(raw)
+}
 
 /**
  * Splits lens content into typed segments for rendering.
@@ -120,7 +161,7 @@ export function parseContentSegments(content: string): LensContentSegment[] {
   if (!content) return []
 
   const segments: LensContentSegment[] = []
-  const re = new RegExp(COMBINED_REGEX.source, COMBINED_REGEX.flags)
+  const re = new RegExp(NAMED_BRACKET_REGEX.source, NAMED_BRACKET_REGEX.flags)
   let lastIndex = 0
   let match: RegExpExecArray | null
 
@@ -128,14 +169,21 @@ export function parseContentSegments(content: string): LensContentSegment[] {
     if (match.index > lastIndex) {
       segments.push({ type: 'text', content: content.slice(lastIndex, match.index) })
     }
-    if (match[1]) {
-      // [[:uuid]] format
-      segments.push({ type: 'param-ref', id: match[1].toLowerCase() })
+    const inner = match[1]
+    if (UUID_REF_INNER.test(inner.trim())) {
+      segments.push({ type: 'param-ref', id: inner.trim().slice(1).toLowerCase() })
     } else {
-      // [[name]] or [[name!]] format — strip optional marker from display name
-      const rawSeg = match[2].trim()
-      const segName = (rawSeg.endsWith('!') ? rawSeg.slice(0, -1).trimEnd() : rawSeg).toLowerCase()
-      segments.push({ type: 'param', name: segName })
+      const parsed = parseParamTokenInner(inner)
+      if (parsed) {
+        segments.push({
+          type: 'param',
+          name: parsed.name,
+          ...(parsed.optional ? { optional: true } : {}),
+          ...(parsed.typeHint ? { typeHint: parsed.typeHint } : {}),
+        })
+      } else {
+        segments.push({ type: 'text', content: match[0] })
+      }
     }
     lastIndex = re.lastIndex
   }
@@ -331,18 +379,22 @@ export function renderLensWithSnapshot(
   // Inline duplicate of domain renderer to avoid utils → domain layer violation.
   const normalised = resolveUuidRefs(templateBody, versionParams)
   const paramByLabel = new Map(versionParams.map((p) => [p.label.toLowerCase(), p]))
-  return normalised.replace(/\[\[(\w[\w \-_]*!?)\]\]/g, (match, raw: string) => {
-    const trimmed = raw.trim()
-    const optional = trimmed.endsWith('!')
-    const name = (optional ? trimmed.slice(0, -1).trimEnd() : trimmed).toLowerCase()
-    const param = paramByLabel.get(name)
-    const value = (snapshot as Record<string, unknown>)[name] ?? (param ? snapshot[param.label] : undefined)
+  return normalised.replace(NAMED_BRACKET_REGEX, (match, raw: string) => {
+    const parsed = parseParamTokenInner(raw)
+    if (!parsed) return match
+    const param = paramByLabel.get(parsed.name)
+    const value =
+      (snapshot as Record<string, unknown>)[parsed.name] ??
+      (param ? snapshot[param.label] : undefined)
     if (value === undefined || value === null || value === '') {
       return options.keepUnsetTokens ? match : ''
     }
     if (param?.tool.type === 'boolean') return value ? 'true' : 'false'
     if (['integer', 'number', 'float', 'decimal'].includes(param?.tool.type ?? '')) return String(value)
     if (param?.tool.type === 'multiselect' && Array.isArray(value)) return value.map(String).join(', ')
+    if (param?.tool.type === 'file' && typeof value === 'string' && /^https?:\/\//i.test(value)) {
+      return value
+    }
     return String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;')
   })
 }

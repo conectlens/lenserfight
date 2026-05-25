@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LensVersionParam } from '@lenserfight/types'
-import { extractParams, renderLensContentForCopy } from './lensTemplate'
+import { extractParams, parseContentSegments, renderLensContentForCopy } from './lensTemplate'
 
 const vp = (id: string, label: string): LensVersionParam => ({
   id,
@@ -41,6 +41,22 @@ describe('extractParams', () => {
 
   it('does not match empty brackets', () => {
     expect(extractParams('[[]]')).toEqual([])
+  })
+
+  it('extracts type hints', () => {
+    expect(extractParams('[[Input PDF:file]]')).toEqual([
+      { name: 'input pdf', typeHint: 'file' },
+    ])
+  })
+
+  it('extracts type hint with optional', () => {
+    expect(extractParams('[[Notes:textarea!]]')).toEqual([
+      { name: 'notes', optional: true, typeHint: 'textarea' },
+    ])
+  })
+
+  it('treats unknown colon suffix as label', () => {
+    expect(extractParams('[[ratio:16]]')).toEqual([{ name: 'ratio:16' }])
   })
 
   it('extracts all params from the AI wallpaper prompt example', () => {
@@ -105,5 +121,22 @@ describe('renderLensContentForCopy', () => {
       [vp(uuid, 'Topic')],
     )
     expect(out).toBe('Pre [[name]] mid [[Topic]] post')
+  })
+
+  it('strips inline type hints for display copy', () => {
+    expect(renderLensContentForCopy('Use [[Input PDF:file]] here', [])).toBe(
+      'Use [[input pdf]] here',
+    )
+  })
+})
+
+describe('parseContentSegments', () => {
+  it('parses typed param segments with typeHint', () => {
+    const segments = parseContentSegments('Attach [[File:file]] please')
+    expect(segments).toEqual([
+      { type: 'text', content: 'Attach ' },
+      { type: 'param', name: 'file', typeHint: 'file' },
+      { type: 'text', content: ' please' },
+    ])
   })
 })

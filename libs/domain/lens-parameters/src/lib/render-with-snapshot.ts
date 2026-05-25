@@ -3,9 +3,9 @@ import { resolveUuidRefs } from '@lenserfight/utils/text'
 
 import { formatParamForPrompt } from './coerce-param-value'
 import { normalizeParamLabel, paramTokenBracket } from './label-normalizer'
+import { replaceNamedParamTokens } from './parse-param-token'
 import type { RenderTemplateOptions } from './types'
 
-const NAMED_PARAM_REGEX = /\[\[(\w[\w \-_]*!?)\]\]/g
 const UUID_PARAM_REGEX =
   /\[\[:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]\]/gi
 
@@ -23,12 +23,9 @@ export function renderTemplateWithSnapshot(
     versionParams.map((p) => [normalizeParamLabel(p.label), p]),
   )
 
-  return normalised.replace(NAMED_PARAM_REGEX, (match, raw: string) => {
-    const trimmed = raw.trim()
-    const optional = trimmed.endsWith('!')
-    const name = normalizeParamLabel(optional ? trimmed.slice(0, -1) : trimmed)
-    const param = paramByLabel.get(name)
-    const value = snapshot[name] ?? snapshot[param?.label ?? '']
+  return replaceNamedParamTokens(normalised, (match, parsed) => {
+    const param = paramByLabel.get(parsed.label)
+    const value = snapshot[parsed.label] ?? snapshot[param?.label ?? '']
 
     if (value === undefined || value === null || value === '') {
       return options.keepUnsetTokens ? match : ''
@@ -43,13 +40,10 @@ export function renderTemplateWithSnapshot(
  * so DB replace and extractParams stay aligned.
  */
 export function normalizeTemplateParamTokens(content: string): string {
-  return content.replace(NAMED_PARAM_REGEX, (_, raw: string) => {
-    const trimmed = String(raw).trim()
-    const optional = trimmed.endsWith('!')
-    const core = optional ? trimmed.slice(0, -1).trimEnd() : trimmed
-    const label = normalizeParamLabel(core)
-    return paramTokenBracket(label, optional)
-  })
+  return replaceNamedParamTokens(content, (_, parsed) =>
+    paramTokenBracket(parsed.label, parsed.optional),
+  )
 }
 
-export { UUID_PARAM_REGEX, NAMED_PARAM_REGEX }
+export { UUID_PARAM_REGEX }
+export { NAMED_BRACKET_REGEX as NAMED_PARAM_REGEX } from './parse-param-token'

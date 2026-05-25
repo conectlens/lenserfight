@@ -1,9 +1,10 @@
-import type { CreateVersionParamInput, LensVersionParam } from '@lenserfight/types'
+import type { CreateVersionParamInput, LensVersionParam, LensVersionParamType } from '@lenserfight/types'
 
 /** Parsed [[label]] token from template content. */
 export interface ParamToken {
   label: string
   optional: boolean
+  typeHint?: LensVersionParamType
 }
 
 export type VersionParamBinding = CreateVersionParamInput

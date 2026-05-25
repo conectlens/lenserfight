@@ -60,6 +60,15 @@ describe('renderTemplateWithSnapshot', () => {
     )
     expect(out).toBe('Flag: true')
   })
+
+  it('substitutes [[label:type]] tokens by label', () => {
+    const out = renderTemplateWithSnapshot(
+      'File: [[Attachment:file]]',
+      { attachment: 'https://cdn.example.com/doc.pdf' },
+      [vp('attachment', 'file')],
+    )
+    expect(out).toBe('File: https://cdn.example.com/doc.pdf')
+  })
 })
 
 describe('normalizeTemplateParamTokens', () => {
@@ -67,5 +76,9 @@ describe('normalizeTemplateParamTokens', () => {
     expect(normalizeTemplateParamTokens('[[Visual Tone]] and [[Mood!]]')).toBe(
       '[[visual tone]] and [[mood!]]',
     )
+  })
+
+  it('strips inline type hints from stored tokens', () => {
+    expect(normalizeTemplateParamTokens('[[Input PDF:file!]]')).toBe('[[input pdf!]]')
   })
 })

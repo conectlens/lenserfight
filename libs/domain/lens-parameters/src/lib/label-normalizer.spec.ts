@@ -20,4 +20,9 @@ describe('paramTokenBracket', () => {
   it('builds optional token', () => {
     expect(paramTokenBracket('mood', true)).toBe('[[mood!]]')
   })
+
+  it('builds typed token with optional', () => {
+    expect(paramTokenBracket('input pdf', false, 'file')).toBe('[[input pdf:file]]')
+    expect(paramTokenBracket('notes', true, 'textarea')).toBe('[[notes:textarea!]]')
+  })
 })
