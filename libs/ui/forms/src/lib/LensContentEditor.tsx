@@ -1,6 +1,11 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react'
 import { CreateVersionParamInput, ToolRecord } from '@lenserfight/types'
-import { parseContentSegments, detectParamMismatches, type ParamMismatch } from '@lenserfight/utils/text'
+import {
+  detectParamMismatches,
+  parseBracketParamToken,
+  parseContentSegments,
+  type ParamMismatch,
+} from '@lenserfight/utils/text'
 import { ParamAutocomplete } from './ParamAutocomplete'
 import { ToolPickerDropdown } from './ToolPickerDropdown'
 import { AlertTriangle, Type, Hash, ToggleLeft, Paperclip, ChevronDown, Link, Calendar, AlignLeft } from 'lucide-react'
@@ -36,6 +41,7 @@ const QUICK_TEMPLATES: QuickTemplate[] = [
   { label: 'Number',    icon: <Hash size={12} />,        colorClass: 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400', toolKey: 'number' },
   { label: 'Toggle',    icon: <ToggleLeft size={12} />,  colorClass: 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400', toolKey: 'boolean' },
   { label: 'File',      icon: <Paperclip size={12} />,   colorClass: 'bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400', toolKey: 'file' },
+  { label: 'Files',     icon: <Paperclip size={12} />,   colorClass: 'bg-slate-100 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300', toolKey: 'files' },
   { label: 'Select',    icon: <ChevronDown size={12} />, colorClass: 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',     toolKey: 'select' },
   { label: 'URL',       icon: <Link size={12} />,        colorClass: 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400', toolKey: 'url' },
   { label: 'Date',      icon: <Calendar size={12} />,    colorClass: 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400',     toolKey: 'date' },
@@ -107,28 +113,46 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
       return { top: rect.top, left: rect.left, height: rect.height }
     }
 
-    const getChipClasses = useCallback((paramLabel: string): string => {
-      const vp = versionParams.find((p) => p.label === paramLabel)
-      if (vp?.toolId) {
-        const tool = tools.find((t) => t.id === vp.toolId)
-        if (tool) return TYPE_CHIP_CLASSES[tool.type] ?? DEFAULT_CHIP_CLASS
-      }
+    const findVersionParam = useCallback(
+      (paramLabel: string) =>
+        versionParams.find(
+          (p) => p.label === paramLabel || p.label.toLowerCase() === paramLabel.toLowerCase(),
+        ),
+      [versionParams],
+    )
+
+    const getChipClasses = useCallback((paramLabel: string, typeHint?: string): string => {
+      const vp = findVersionParam(paramLabel)
+      const toolType = vp?.toolId ? tools.find((t) => t.id === vp.toolId)?.type : typeHint
+      if (toolType) return TYPE_CHIP_CLASSES[toolType] ?? DEFAULT_CHIP_CLASS
       return DEFAULT_CHIP_CLASS
-    }, [versionParams, tools])
+    }, [findVersionParam, tools])
 
     // ─── Create chip DOM element ──────────────────────────────────────
 
-    const createChipElement = useCallback((paramLabel: string): HTMLSpanElement => {
-      const chipColors = getChipClasses(paramLabel)
-      const vp = versionParams.find((p) => p.label === paramLabel)
+    const createChipElement = useCallback((
+      paramLabel: string,
+      typeHint?: string,
+      optional?: boolean,
+    ): HTMLSpanElement => {
+      const vp = findVersionParam(paramLabel)
       const tool = vp?.toolId ? tools.find((t) => t.id === vp.toolId) : null
-      const isRequired = tool?.required !== false
+      const resolvedType = typeHint ?? tool?.type
+      const chipColors = getChipClasses(paramLabel, resolvedType)
+      const isRequired = !(optional ?? vp?.optional) && tool?.required !== false
+      const tokenInner =
+        resolvedType && resolvedType !== 'text'
+          ? `${paramLabel}:${resolvedType}`
+          : paramLabel
 
       const chip = document.createElement('span')
       chip.contentEditable = 'false'
       chip.setAttribute('data-param', paramLabel)
+      if (resolvedType && resolvedType !== 'text') {
+        chip.setAttribute('data-type', resolvedType)
+      }
       chip.className = `inline-flex items-center px-1.5 py-0.5 rounded-md font-mono text-xs font-medium select-none align-middle whitespace-nowrap border mx-0.5 ${chipColors} ${isRequired ? '' : 'border-dashed'} cursor-pointer`
-      chip.textContent = `[[${paramLabel}]]`
+      chip.textContent = `[[${tokenInner}]]`
       chip.title = `${paramLabel}${tool ? ` (${tool.label ?? tool.key})` : ''} — right-click to change tool`
 
       const openPicker = (e: Event) => {
@@ -143,7 +167,7 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
       chip.draggable = true
       chip.addEventListener('dragstart', (e) => {
         const de = e as DragEvent
-        de.dataTransfer?.setData('text/plain', `[[${paramLabel}]]`)
+        de.dataTransfer?.setData('text/plain', `[[${tokenInner}]]`)
         if (de.dataTransfer) de.dataTransfer.effectAllowed = 'move'
         internalDragName.current = paramLabel
       })
@@ -152,7 +176,7 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
       })
 
       return chip
-    }, [versionParams, tools, getChipClasses])
+    }, [findVersionParam, tools, getChipClasses])
 
     // ─── Hydration: value → DOM ───────────────────────────────────────
 
@@ -165,7 +189,9 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
         if (seg.type === 'text') {
           if (seg.content) containerRef.current?.appendChild(document.createTextNode(seg.content))
         } else if (seg.type === 'param') {
-          containerRef.current?.appendChild(createChipElement(seg.name))
+          containerRef.current?.appendChild(
+            createChipElement(seg.name, seg.typeHint, seg.optional),
+          )
         }
       })
       lastKnownValue.current = normalizedValue
@@ -180,6 +206,14 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
       }
       if (value !== lastKnownValue.current) hydrate()
     }, [value, hydrate])
+
+    // Re-render chips when bindings/tools change (e.g. [[file:file]] synced after debounce)
+    useEffect(() => {
+      if (!containerRef.current || !value) return
+      lastKnownValue.current = ''
+      hydrate()
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh chips only when bindings/tools change
+    }, [versionParams, tools])
 
     useEffect(() => {
       // Build a LensParam-compatible mismatch check using labels
@@ -202,7 +236,10 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
         } else if (node.nodeType === Node.ELEMENT_NODE) {
           const el = node as HTMLElement
           if (el.hasAttribute('data-param')) {
-            text += `[[${el.getAttribute('data-param')}]]`
+            const label = el.getAttribute('data-param') ?? ''
+            const type = el.getAttribute('data-type')
+            const inner = type && type !== 'text' ? `${label}:${type}` : label
+            text += `[[${inner}]]`
           } else if (el.tagName === 'BR') {
             text += '\n'
           } else if (el.tagName === 'DIV') {
@@ -261,12 +298,12 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
 
     // ─── Insert param chip ────────────────────────────────────────────
 
-    const insertParamByLabel = useCallback((paramLabel: string, toolId: string) => {
+    const insertParamByLabel = useCallback((paramLabel: string, toolId: string, typeHint?: string) => {
       if (!containerRef.current) return
 
       const selection = window.getSelection()
       if (!selection || selection.rangeCount === 0) {
-        const chip = createChipElement(paramLabel)
+        const chip = createChipElement(paramLabel, typeHint)
         containerRef.current.appendChild(chip)
         containerRef.current.appendChild(document.createTextNode('\u00A0'))
         serializeContent()
@@ -286,7 +323,7 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
         }
       }
 
-      const chip = createChipElement(paramLabel)
+      const chip = createChipElement(paramLabel, typeHint)
       range.insertNode(chip)
       const space = document.createTextNode('\u00A0')
       range.setStartAfter(chip)
@@ -309,7 +346,7 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
       const toolId = tool?.id ?? ''
       const uniqueLabel = uniquifyLabel(tpl.toolKey, versionParams)
       onVersionParamsChange([...versionParams, { label: uniqueLabel, toolId }])
-      insertParamByLabel(uniqueLabel, toolId)
+      insertParamByLabel(uniqueLabel, toolId, tpl.toolKey !== 'text' ? tpl.toolKey : undefined)
       containerRef.current?.focus()
     }, [tools, versionParams, onVersionParamsChange, insertParamByLabel])
 
@@ -406,16 +443,23 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
           }
           const uniqueLabel = uniquifyLabel(toolKey, versionParams)
           onVersionParamsChange([...versionParams, { label: uniqueLabel, toolId }])
-          insertParamByLabel(uniqueLabel, toolId)
+          insertParamByLabel(
+            uniqueLabel,
+            toolId,
+            toolKey !== 'text' ? toolKey : undefined,
+          )
         }
         return
       }
 
       const raw = e.dataTransfer.getData('text/plain')
-      const match = raw.match(/^\[\[(\w[\w \-_]*!?)\]\]$/)
-      if (!match) return
+      const bracketMatch = raw.match(/^\[\[([^\]]+)\]\]$/)
+      if (!bracketMatch) return
 
-      const paramLabel = match[1]
+      const parsed = parseBracketParamToken(bracketMatch[1])
+      if (!parsed) return
+
+      const paramLabel = parsed.name
       const isInternal = internalDragName.current === paramLabel
 
       const sel = window.getSelection()
@@ -439,16 +483,30 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
         existing?.parentNode?.removeChild(existing)
       }
 
-      const existingVp = versionParams.find((p) => p.label === paramLabel)
-      const toolId = existingVp?.toolId ?? tools.find((t) => t.key === 'text')?.id ?? ''
+      const existingVp = findVersionParam(paramLabel)
+      const toolFromHint = parsed.typeHint
+        ? tools.find((t) => t.type === parsed.typeHint)?.id
+        : undefined
+      const toolId =
+        existingVp?.toolId ??
+        toolFromHint ??
+        tools.find((t) => t.key === 'text')?.id ??
+        ''
 
       if (!existingVp) {
-        onVersionParamsChange([...versionParams, { label: paramLabel, toolId }])
+        onVersionParamsChange([
+          ...versionParams,
+          {
+            label: paramLabel,
+            toolId,
+            ...(parsed.optional ? { optional: true } : {}),
+          },
+        ])
       }
 
-      insertParamByLabel(paramLabel, toolId)
+      insertParamByLabel(paramLabel, toolId, parsed.typeHint)
       internalDragName.current = null
-    }, [versionParams, tools, onVersionParamsChange, insertParamByLabel])
+    }, [findVersionParam, tools, onVersionParamsChange, insertParamByLabel])
 
     // ─── Imperative handle ────────────────────────────────────────────
 

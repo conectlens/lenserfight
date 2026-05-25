@@ -3,7 +3,10 @@ import { Clipboard, Check, Zap } from 'lucide-react'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { Button } from '@lenserfight/ui/components'
 import { LensVersionParam } from '@lenserfight/types'
-import { coerceJsonImport, buildJsonTemplate, ImportResult } from '../hooks/useParamImport'
+import { buildImportJsonTemplate } from '@lenserfight/domain/lens-parameters'
+import { copyTextToClipboard } from '@lenserfight/utils/text'
+
+import { coerceJsonImport, ImportResult } from '../hooks/useParamImport'
 
 interface JsonImportDialogProps {
   open: boolean
@@ -41,17 +44,18 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
 
   // Build typed template from actual params
   const templateJson = useMemo(
-    () => buildJsonTemplate(versionParams),
+    () => buildImportJsonTemplate(versionParams),
     [versionParams],
   )
 
   const handleCopyTemplate = async () => {
+    if (!templateJson) return
     try {
-      await navigator.clipboard.writeText(templateJson)
+      await copyTextToClipboard(templateJson)
       setCopiedTemplate(true)
       setTimeout(() => setCopiedTemplate(false), 2000)
     } catch {
-      // clipboard access denied — silently ignore
+      // clipboard failed — leave state unchanged
     }
   }
 
@@ -90,7 +94,7 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
       open={open}
       onClose={handleClose}
       title="Import parameters from JSON"
-      description="Paste a JSON object. Keys must match parameter labels."
+      description="Paste a JSON object keyed by parameter labels. Copy template includes _import metadata (types, [[tokens]], file-param notes)."
       maxWidth="max-w-lg"
       footer={
         <ModalFooter
@@ -107,7 +111,7 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
         <textarea
           value={rawText}
           onChange={(e) => { setRawText(e.target.value); setParseResult(null) }}
-          placeholder={templateJson || '{\n  "param_label": "value"\n}'}
+          placeholder={templateJson || '{\n  "_import": { "format": "lenserfight-lens-snapshot-v1" },\n  "param_label": "value"\n}'}
           rows={8}
           spellCheck={false}
           className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-mono text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
@@ -158,21 +162,25 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
               <table className="w-full text-xs">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500 dark:text-gray-400">Parameter</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500 dark:text-gray-400">Label</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500 dark:text-gray-400">Type</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-500 dark:text-gray-400">Value</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-500 dark:text-gray-400">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {allParamKeys.map((key) => {
+                    const param = versionParams.find((p) => p.label === key)
                     const hasValue = key in parseResult.values
                     const hasError = key in parseResult.errors
                     const rawVal = parseResult.values[key]
                     const displayVal = rawVal !== undefined ? String(rawVal).slice(0, 40) : '—'
+                    const isFile = param?.tool.type === 'file' || param?.tool.type === 'files'
 
                     return (
                       <tr key={key} className="bg-white dark:bg-gray-900">
                         <td className="px-3 py-2 font-mono text-gray-700 dark:text-gray-300">{key}</td>
+                        <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{param?.tool.type ?? '—'}</td>
                         <td className="px-3 py-2 text-gray-600 dark:text-gray-400 font-mono truncate max-w-[160px]">
                           {hasValue ? displayVal : <span className="text-gray-300 dark:text-gray-600">—</span>}
                         </td>
@@ -184,6 +192,10 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
                           ) : hasValue ? (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300">
                               OK
+                            </span>
+                          ) : isFile ? (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                              Upload in lab
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500">

@@ -4,13 +4,15 @@ import type { ChainabitConnectionState, ChainabitAiModel } from '@lenserfight/ty
 
 import type { LocalKeyAvailabilityReason } from '../hooks/useLocalKeyStore'
 import { Button } from '@lenserfight/ui/components'
-import { renderTemplateWithSnapshot } from '@lenserfight/domain/lens-parameters'
+import { buildInputSnapshot, renderTemplateWithSnapshot } from '@lenserfight/domain/lens-parameters'
 import { copyTextToClipboard } from '@lenserfight/utils/text'
 import { Check, ClipboardCopy, FileJson, Loader2, Play, Square, Table2 } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
 
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
 import { useLabParamForm } from '../hooks/useLabParamForm'
+
+import { resolveLensFileParamsForCopy } from '../utils/resolveLensFileParamsForExecution'
 
 import { CsvImportDialog } from './CsvImportDialog'
 import { FreeformInput } from './FreeformInput'
@@ -53,6 +55,20 @@ interface LabExecutionPanelProps {
   isLoadingVersionParams?: boolean
   /** Upload a file for a file-type param. Returns the media_object_id. */
   onFileParamUpload?: (key: string, file: File) => Promise<string>
+  /** Append one file to a `files`-type param. Returns updated media_object_id list. */
+  onFilesParamUpload?: (
+    param: LensVersionParam,
+    file: File,
+    currentIds: string[],
+    allValues: Record<string, unknown>,
+    allParams: LensVersionParam[],
+  ) => Promise<string[]>
+  /** Remove one file from a `files`-type param. */
+  onFilesParamRemove?: (
+    param: LensVersionParam,
+    objectId: string,
+    currentIds: string[],
+  ) => Promise<string[]>
   /** When true, the panel is shown as a blurred, non-interactive preview. */
   isLocked?: boolean
   /** Optional message shown while the panel is locked. */
@@ -110,6 +126,8 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   versionId,
   isLoadingVersionParams,
   onFileParamUpload,
+  onFilesParamUpload,
+  onFilesParamRemove,
   fundingSource,
   onFundingSourceChange,
   selectedKeyRefId,
@@ -249,6 +267,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const [jsonImportOpen, setJsonImportOpen] = useState(false)
   const [csvImportOpen, setCsvImportOpen] = useState(false)
   const [copiedWithParams, setCopiedWithParams] = useState(false)
+  const [copiedWithInternalIds, setCopiedWithInternalIds] = useState(false)
 
   const isNonEmpty = (v: unknown) => {
     if (v === undefined || v === null) return false
@@ -258,16 +277,36 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   }
   const canCopyWithParams = Object.values(form.inputValues).some(isNonEmpty)
 
+  const renderCopyWithParameters = async (resolveFileUrls: boolean): Promise<string> => {
+    if (form.effectiveParams.length === 0) return lensContent
+
+    const snapshot = buildInputSnapshot(form.inputValues, form.effectiveParams)
+    const snapshotForPrompt = resolveFileUrls
+      ? await resolveLensFileParamsForCopy(snapshot, form.effectiveParams)
+      : snapshot
+
+    return renderTemplateWithSnapshot(lensContent, snapshotForPrompt, form.effectiveParams, {
+      keepUnsetTokens: true,
+    })
+  }
+
   const handleCopyWithParameters = async () => {
-    const rendered = form.effectiveParams.length > 0
-      ? renderTemplateWithSnapshot(lensContent, form.inputValues, form.effectiveParams, {
-          keepUnsetTokens: true,
-        })
-      : lensContent
     try {
+      const rendered = await renderCopyWithParameters(true)
       await copyTextToClipboard(rendered)
       setCopiedWithParams(true)
       setTimeout(() => setCopiedWithParams(false), 2000)
+    } catch {
+      // clipboard failed — leave state unchanged
+    }
+  }
+
+  const handleCopyWithInternalIds = async () => {
+    try {
+      const rendered = await renderCopyWithParameters(false)
+      await copyTextToClipboard(rendered)
+      setCopiedWithInternalIds(true)
+      setTimeout(() => setCopiedWithInternalIds(false), 2000)
     } catch {
       // clipboard failed — leave state unchanged
     }
@@ -733,6 +772,30 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               errors={form.fieldErrors}
               onChange={form.handleChange}
               onFileUpload={onFileParamUpload}
+              onFilesUpload={
+                onFilesParamUpload
+                  ? async (param, file, currentIds) => {
+                      const next = await onFilesParamUpload(
+                        param,
+                        file,
+                        currentIds,
+                        form.inputValues,
+                        form.effectiveParams,
+                      )
+                      form.handleChange(param.label, next)
+                      return next
+                    }
+                  : undefined
+              }
+              onFileRemove={
+                onFilesParamRemove
+                  ? async (param, objectId, currentIds) => {
+                      const next = await onFilesParamRemove(param, objectId, currentIds)
+                      form.handleChange(param.label, next)
+                      return next
+                    }
+                  : undefined
+              }
               selectedModelInputModalities={selectedModelInputModalities}
             />
           )}
@@ -788,29 +851,51 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
                 )}
               </Button>
     {canCopyWithParams && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={handleCopyWithParameters}
-                  disabled={isLocked}
-                  title="Copy lens prompt with filled parameter values"
-                  className={`flex-shrink-0 flex items-center justify-center gap-2 h-auto py-2.5 px-4 rounded-xl border shadow-sm transition-all ${copiedWithParams
-                      ? 'bg-emerald-600 border-emerald-600 text-white'
-                      : 'bg-emerald-50 border-emerald-200 text-emerald-900 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-50 dark:hover:bg-emerald-900/40'
-                    }`}
-                >
-                  {copiedWithParams ? (
-                    <>
-                      <Check size={16} strokeWidth={3} />
-                      <span>Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <ClipboardCopy size={16} />
-                      <span>Copy with Parameters</span>
-                    </>
-                  )}
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleCopyWithParameters}
+                    disabled={isLocked}
+                    title="Copy prompt with parameter values; file params use signed HTTPS URLs for external AI tools"
+                    className={`flex-shrink-0 flex items-center justify-center gap-2 h-auto py-2.5 px-4 rounded-xl border shadow-sm transition-all ${copiedWithParams
+                        ? 'bg-emerald-600 border-emerald-600 text-white'
+                        : 'bg-emerald-50 border-emerald-200 text-emerald-900 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-50 dark:hover:bg-emerald-900/40'
+                      }`}
+                  >
+                    {copiedWithParams ? (
+                      <>
+                        <Check size={16} strokeWidth={3} />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <ClipboardCopy size={16} />
+                        <span>Copy with Parameters</span>
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleCopyWithInternalIds}
+                    disabled={isLocked}
+                    title="Copy with media_object_id UUIDs for LenserFight execution (internal)"
+                    className={`flex-shrink-0 flex items-center justify-center gap-2 h-auto py-2 px-3 rounded-xl border shadow-sm transition-all text-xs ${copiedWithInternalIds
+                        ? 'bg-slate-600 border-slate-600 text-white'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 dark:bg-slate-900/30 dark:border-slate-700 dark:text-slate-200'
+                      }`}
+                  >
+                    {copiedWithInternalIds ? (
+                      <>
+                        <Check size={14} strokeWidth={3} />
+                        <span>Copied IDs</span>
+                      </>
+                    ) : (
+                      <span>Internal IDs</span>
+                    )}
+                  </Button>
+                </>
               )}
             </div>
           )}

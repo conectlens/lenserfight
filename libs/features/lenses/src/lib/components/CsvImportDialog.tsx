@@ -3,7 +3,10 @@ import { Clipboard, Check, Zap } from 'lucide-react'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { Button } from '@lenserfight/ui/components'
 import { LensVersionParam } from '@lenserfight/types'
-import { parseCsvText, coerceCsvRow, buildCsvTemplate, ParsedCsv } from '../hooks/useParamImport'
+import { buildImportCsvTemplate, buildImportCsvTemplateHint } from '@lenserfight/domain/lens-parameters'
+import { copyTextToClipboard } from '@lenserfight/utils/text'
+
+import { parseCsvText, coerceCsvRow, ParsedCsv } from '../hooks/useParamImport'
 
 interface CsvImportDialogProps {
   open: boolean
@@ -34,7 +37,12 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
 
   // Build typed CSV template from actual params
   const templateCsv = useMemo(
-    () => buildCsvTemplate(versionParams),
+    () => buildImportCsvTemplate(versionParams),
+    [versionParams],
+  )
+
+  const templateHint = useMemo(
+    () => buildImportCsvTemplateHint(versionParams),
     [versionParams],
   )
 
@@ -66,12 +74,13 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   }
 
   const handleCopyTemplate = async () => {
+    if (!templateCsv) return
     try {
-      await navigator.clipboard.writeText(templateCsv)
+      await copyTextToClipboard(templateCsv)
       setCopiedTemplate(true)
       setTimeout(() => setCopiedTemplate(false), 2000)
     } catch {
-      // clipboard access denied — silently ignore
+      // clipboard failed — leave state unchanged
     }
   }
 
@@ -110,7 +119,7 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
       open={open}
       onClose={handleClose}
       title="Import parameters from CSV"
-      description="Paste CSV data. The first row must be headers matching parameter labels."
+      description={templateHint || 'Paste CSV data. The first row must be headers matching parameter labels.'}
       maxWidth="max-w-2xl"
       footer={
         <ModalFooter

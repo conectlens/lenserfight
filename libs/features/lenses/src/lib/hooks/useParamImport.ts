@@ -1,4 +1,11 @@
+import { IMPORT_META_KEY } from '@lenserfight/domain/lens-parameters'
 import { LensVersionParam } from '@lenserfight/types'
+
+export {
+  buildImportCsvTemplate as buildCsvTemplate,
+  buildImportJsonTemplate as buildJsonTemplate,
+  buildImportCsvTemplateHint,
+} from '@lenserfight/domain/lens-parameters'
 
 export interface ImportResult {
   values: Record<string, unknown>
@@ -33,7 +40,7 @@ function coerceVersionParam(
   const label = param.label
 
   // File params cannot be imported via text
-  if (type === 'file') return { value: undefined, error: null }
+  if (type === 'file' || type === 'files') return { value: undefined, error: null }
 
   if (rawValue === null || rawValue === undefined) {
     return { value: '', error: null }
@@ -127,13 +134,14 @@ export function coerceJsonImport(
   const errors: Record<string, string> = {}
 
   for (const [rawKey, rawValue] of Object.entries(obj)) {
+    if (rawKey === IMPORT_META_KEY) continue
     const matchedKey = findParamKey(rawKey, versionParams)
     if (!matchedKey) continue // silently ignore unmatched keys
 
     // Determine which param type applies
     const vp = versionParams.find((p) => p.label === matchedKey)
     if (vp) {
-      if (vp.tool.type === 'file') continue // skip file params
+      if (vp.tool.type === 'file' || vp.tool.type === 'files') continue
       const { value, error } = coerceVersionParam(rawValue, vp)
       if (error) errors[matchedKey] = error
       else if (value !== undefined) values[matchedKey] = value
@@ -227,7 +235,7 @@ export function coerceCsvRow(
 
     const vp = versionParams.find((p) => p.label === matchedKey)
     if (vp) {
-      if (vp.tool.type === 'file') continue
+      if (vp.tool.type === 'file' || vp.tool.type === 'files') continue
       const { value, error } = coerceVersionParam(rawValue, vp)
       if (error) errors[matchedKey] = error
       else if (value !== undefined) values[matchedKey] = value
@@ -237,63 +245,3 @@ export function coerceCsvRow(
   return { values, errors }
 }
 
-// ─── Template Builders ────────────────────────────────────────────────────────
-
-function versionParamPlaceholder(param: LensVersionParam): unknown {
-  const type = param.tool.type
-  switch (type) {
-    case 'text':     return 'text value'
-    case 'textarea': return 'multiline text'
-    case 'json':     return {}
-    case 'integer':  return 0
-    case 'float':
-    case 'decimal':
-    case 'number':   return 0.0
-    case 'boolean':  return true
-    case 'date':     return '2024-01-15'
-    case 'datetime': return '2024-01-15T10:00:00'
-    case 'url':      return 'https://example.com'
-    case 'select':   return param.tool.options?.[0]?.value ?? 'option_value'
-    case 'multiselect': return [param.tool.options?.[0]?.value ?? 'option1']
-    case 'array':       return 'item1, item2'
-    case 'file':     return undefined // skip
-    default:         return 'value'
-  }
-}
-
-
-/**
- * Builds a pretty-printed JSON template string from the active params.
- * File-type params are omitted. Use as a textarea placeholder or copy-template target.
- */
-export function buildJsonTemplate(
-  versionParams: LensVersionParam[],
-): string {
-  const obj: Record<string, unknown> = {}
-  for (const p of versionParams) {
-    const val = versionParamPlaceholder(p)
-    if (val !== undefined) obj[p.label] = val
-  }
-  return JSON.stringify(obj, null, 2)
-}
-
-/**
- * Builds a two-line CSV template string: header row + one data row.
- * File-type params are omitted. Use as a textarea placeholder or copy-template target.
- */
-export function buildCsvTemplate(
-  versionParams: LensVersionParam[],
-): string {
-  const headers: string[] = []
-  const values: string[] = []
-
-  for (const p of versionParams) {
-    if (p.tool.type === 'file') continue
-    headers.push(p.label)
-    const val = versionParamPlaceholder(p)
-    values.push(val === null || val === undefined ? '' : typeof val === 'object' ? JSON.stringify(val) : String(val))
-  }
-
-  if (headers.length === 0) return ''
-  return `${headers.join(',')}\n${values.join(',')}`
-}
