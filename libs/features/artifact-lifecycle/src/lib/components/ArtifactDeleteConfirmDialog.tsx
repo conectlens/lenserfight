@@ -30,10 +30,10 @@ export const ArtifactDeleteConfirmDialog: React.FC<ArtifactDeleteConfirmDialogPr
   isDeleting,
 }) => {
   const label = ARTIFACT_LABELS[artifactType]
-  const isHardBlocked =
-    !!dependencySummary?.blocking_reasons?.length && dependencySummary.blocking_reasons.length > 0
-  const hasSoftDependencies =
-    !isHardBlocked && dependencySummary?.has_dependencies
+  // fn_artifact_delete always tombstones — no server-side hard block exists.
+  // Reserve 'hard_delete_blocked' as a future deleteMode value if ever introduced.
+  const isHardBlocked = deleteMode === ('hard_delete_blocked' as string)
+  const hasSoftDependencies = dependencySummary?.has_dependencies ?? false
 
   const subtitle =
     deleteMode === 'tombstone'
