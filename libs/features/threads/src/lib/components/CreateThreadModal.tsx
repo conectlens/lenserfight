@@ -5,9 +5,9 @@ import { createPortal } from 'react-dom'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { RichMentionInput, RichMentionInputHandle } from '@lenserfight/ui/forms'
 import { SelectField } from '@lenserfight/ui/forms'
-import { lensesService } from '@lenserfight/data/repositories'
-import { tagService } from '@lenserfight/data/repositories'
-import { LensViewModel, TagUsage } from '@lenserfight/types'
+import { lenserService, tagService } from '@lenserfight/data/repositories'
+import type { LenserSearchResult } from '@lenserfight/data/repositories'
+import { TagUsage } from '@lenserfight/types'
 import { Visibility } from '@lenserfight/types'
 import { useCreateThread } from '../hooks/useCreateThread'
 import { ThreadMediaPicker, type PendingThreadMedia } from './ThreadMediaPicker'
@@ -45,9 +45,9 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
 
   const editorRef = useRef<RichMentionInputHandle>(null)
 
-  // Prompt (@) mention state
+  // User (@) mention state
   const [mentionQuery, setMentionQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<LensViewModel[]>([])
+  const [suggestions, setSuggestions] = useState<LenserSearchResult[]>([])
   const [isMentioning, setIsMentioning] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
   const [activeIndex, setActiveIndex] = useState(0)
@@ -74,9 +74,9 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     }
   }, [isOpen, initialData, initialContent])
 
-  // Prompt mention suggestions
+  // User mention suggestions
   useEffect(() => {
-    if (!isMentioning || !mentionQuery) {
+    if (!isMentioning) {
       setSuggestions([])
       return
     }
@@ -85,9 +85,9 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
 
     const timer = setTimeout(async () => {
       try {
-        const results = await lensesService.search(mentionQuery)
+        const results = await lenserService.searchLensers(mentionQuery, 5)
         if (!cancelled) {
-          setSuggestions((results.data ?? []).slice(0, 5))
+          setSuggestions(results)
           setActiveIndex(0)
         }
       } catch (e) {
@@ -174,9 +174,9 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     if (!isSubmitting) onClose()
   }
 
-  const handleMentionSelect = (prompt: LensViewModel) => {
+  const handleMentionSelect = (user: LenserSearchResult) => {
     if (editorRef.current) {
-      editorRef.current.insertMention(prompt)
+      editorRef.current.insertUserMention(user)
     }
     setIsMentioning(false)
     setSuggestions([])
@@ -294,7 +294,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
                   setIsTagMentioning(false)
                   setTagSuggestions([])
                 }}
-                placeholder="What's on your mind? Type @ to link a prompt, # to mention or create a tag..."
+                placeholder="What's on your mind? Type @ to mention a Lenser, # to mention or create a tag..."
               />
 
               {isMentioning &&

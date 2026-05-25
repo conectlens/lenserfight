@@ -18,6 +18,12 @@ interface BatchResolvedLens {
   link: string
 }
 
+interface BatchResolvedUser {
+  id: string
+  handle: string
+  display_name: string
+}
+
 /**
  * Batch-fetches lens titles for all Prompt/Lens mention IDs in a single RPC round-trip.
  */
@@ -27,6 +33,23 @@ async function batchResolveLenses(ids: string[]): Promise<Map<string, BatchResol
     const { data, error } = await supabase.rpc('fn_resolve_mentions', { p_ids: ids })
     if (error || !data) return new Map()
     return new Map((data as BatchResolvedLens[]).map((row) => [row.id, row]))
+  } catch {
+    return new Map()
+  }
+}
+
+/**
+ * Batch-fetches user profile data for all User mention IDs in a single query.
+ */
+async function batchResolveUsers(ids: string[]): Promise<Map<string, BatchResolvedUser>> {
+  if (ids.length === 0) return new Map()
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, handle, display_name')
+      .in('id', ids)
+    if (error || !data) return new Map()
+    return new Map((data as BatchResolvedUser[]).map((row) => [row.id, row]))
   } catch {
     return new Map()
   }
@@ -50,8 +73,14 @@ export const mentionService = {
       .filter((s) => s.type === 'mention' && (s.entityType === 'Prompt' || s.entityType === 'Lens'))
       .map((s) => (s as { id: string }).id)
 
-    // Start both resolutions concurrently
+    // Collect user mention IDs
+    const userIds = segments
+      .filter((s) => s.type === 'mention' && s.entityType === 'User')
+      .map((s) => (s as { id: string }).id)
+
+    // Start all resolutions concurrently
     const lensMapPromise = batchResolveLenses(lensIds)
+    const userMapPromise = batchResolveUsers(userIds)
 
     // Resolve unique tag IDs concurrently
     const uniqueTagIds = [...new Set(
@@ -68,7 +97,7 @@ export const mentionService = {
       })
     )
     const tagMap = new Map(tagEntries)
-    const lensMap = await lensMapPromise
+    const [lensMap, userMap] = await Promise.all([lensMapPromise, userMapPromise])
 
     return segments.map((segment): ResolvedSegment => {
       if (segment.type === 'text') {
@@ -118,7 +147,28 @@ export const mentionService = {
           }
         }
 
-        // Future entity types (User, Thread)
+        if (segment.entityType === 'User') {
+          const user = userMap.get(segment.id)
+          if (user) {
+            return {
+              type: 'mention',
+              content: user.display_name || `@${user.handle}`,
+              id: segment.id,
+              entityType: 'User',
+              link: `/lenser/${user.handle}`,
+              isValid: true,
+            }
+          }
+          return {
+            type: 'mention',
+            content: 'Unknown Lenser',
+            id: segment.id,
+            entityType: 'User',
+            isValid: false,
+          }
+        }
+
+        // Future entity types (Thread, etc.)
         return {
           type: 'mention',
           content: `Unknown ${segment.entityType}`,
