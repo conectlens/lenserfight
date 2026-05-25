@@ -39,6 +39,7 @@ export interface LensRecord {
   updated_at: string
   parent_lens_id?: string | null
   forked_from_execution_id?: string | null
+  head_version_id?: string | null
   params?: LensParam[] | null
 }
 
@@ -92,8 +93,10 @@ export interface LensDetailViewModel extends LensViewModel {
   parentLensId?: string | null
   forkedFromExecutionId?: string | null
   params: LensParam[]
-  /** ID of the latest (non-archived) version — used to fetch version params when editing. */
+  /** ID of the latest published version (may lag behind HEAD after edits). */
   latestVersionId?: string | null
+  /** HEAD version id (authoring draft) — source of truth for owner edit/run. */
+  headVersionId?: string | null
   /** Full latest published version (template + params) from the same bootstrap RPC. Avoids a follow-up fetch. */
   latestPublishedVersion?: LensVersion | null
 }

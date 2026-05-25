@@ -1,3 +1,4 @@
+import { hydrateVersionParams } from '@lenserfight/domain/lens-parameters'
 import { supabase } from '@lenserfight/data/supabase'
 import { isValidUUID } from '@lenserfight/utils/validation'
 import {
@@ -8,7 +9,6 @@ import {
   CreateLensDTO,
   TagRecord,
   LensVersion,
-  LensVersionParam,
   CreateLensVersionDTO,
   ForkNode,
   ToolRecord,
@@ -67,6 +67,7 @@ export interface LensesRepositoryPort {
   getVersionById(versionId: string): Promise<LensVersion | null>
   getLatestVersionId(lensId: string): Promise<string | null>
   getLatestPublishedVersion(lensId: string): Promise<LensVersion | null>
+  getHeadVersion(lensId: string): Promise<LensVersion | null>
   createVersion(input: CreateLensVersionDTO): Promise<LensVersion>
   publishVersion(versionId: string): Promise<void>
   cloneLens(sourceLensId: string, versionId?: string | null): Promise<string>
@@ -582,9 +583,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
 
   private mapBootstrapVersion(versionRaw: Record<string, unknown>, lensId: string): LensVersion {
     const version = this.mapVersion({ ...versionRaw, lens_id: lensId })
-    version.parameters = ((versionRaw['parameters'] ?? []) as Record<string, unknown>[]).map((p) =>
-      this.mapVersionParam(p)
-    )
+    version.parameters = hydrateVersionParams(versionRaw['parameters'])
     return version
   }
 
@@ -707,46 +706,6 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
 
   // ─── Versioning ───────────────────────────────────────────────────────────
 
-  private mapVersionParam(row: Record<string, unknown>): LensVersionParam {
-    const t = (row.tool ?? row) as Record<string, unknown>
-    const schema =
-      (t.validation_schema as {
-        min?: number | null
-        max?: number | null
-        urlScheme?: string[] | null
-        allowedMimeTypes?: string[] | null
-      } | null) ?? null
-
-    const tool: ToolRecord = {
-      id: t.id as string,
-      key: t.key as string,
-      label: (t.label as string | null) ?? null,
-      description: (t.description as string | null) ?? null,
-      category: (t.category as ToolRecord['category']) ?? 'input',
-      type: (t.type as LensVersionParam['tool']['type']) ?? 'text',
-      required: (t.required as boolean) ?? true,
-      minLength: (t.min_length as number) ?? 0,
-      maxLength: (t.max_length as number) ?? 10000,
-      placeholder: (t.placeholder as string | null) ?? null,
-      helpText: (t.help_text as string | null) ?? null,
-      validationSchema: schema,
-      options: (t.options as { label: string; value: string }[] | null) ?? null,
-      sortOrder: (t.sort_order as number) ?? 0,
-      isSystem: (t.is_system as boolean) ?? false,
-      icon: (t.icon as string | null) ?? null,
-      color: (t.color as string | null) ?? null,
-    }
-
-    return {
-      id: row.id as string,
-      versionId: (row.version_id as string) ?? (row.versionId as string),
-      label: row.label as string,
-      toolId: (row.tool_id as string) ?? (row.toolId as string),
-      tool,
-      optional: (row.optional as boolean) ?? false,
-    }
-  }
-
   private mapVersion(row: Record<string, unknown>): LensVersion {
     return {
       id: row.id as string,
@@ -760,6 +719,18 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       createdAt: row.created_at as string,
       parameterCount: (row.parameter_count as number | null) ?? undefined,
     }
+  }
+
+  async getHeadVersion(lensId: string): Promise<LensVersion | null> {
+    if (!isValidUUID(lensId)) return null
+    const { data, error } = await supabase.rpc('fn_get_lens_for_execution', {
+      p_lens_id: lensId,
+    })
+    if (error) this.handleError(error)
+    const row = (Array.isArray(data) ? data[0] : data) as { head_version_id?: string } | null
+    const headId = row?.head_version_id
+    if (!headId) return null
+    return this.getVersionById(headId)
   }
 
   async getVersions(lensId: string): Promise<LensVersion[]> {
@@ -813,9 +784,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     if (pError) this.handleError(pError)
 
     const version = this.mapVersion(vRow)
-    version.parameters = (
-      (Array.isArray(paramsJson) ? paramsJson : []) as Record<string, unknown>[]
-    ).map((p) => this.mapVersionParam(p))
+    version.parameters = hydrateVersionParams(paramsJson)
     return version
   }
 
@@ -850,9 +819,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     const { data: paramsJson } = await supabase.rpc('fn_get_lens_version_parameters', {
       p_version_id: version.id,
     })
-    version.parameters = (
-      (Array.isArray(paramsJson) ? paramsJson : []) as Record<string, unknown>[]
-    ).map((p) => this.mapVersionParam(p))
+    version.parameters = hydrateVersionParams(paramsJson)
     return version
   }
 
@@ -877,9 +844,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       ...latestVersion,
       lens_id: lensId,
     })
-    version.parameters = ((latestVersion['parameters'] ?? []) as Record<string, unknown>[]).map(
-      (p) => this.mapVersionParam(p)
-    )
+    version.parameters = hydrateVersionParams(latestVersion['parameters'])
     return version
   }
 
@@ -898,9 +863,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       const { data: paramsJson } = await supabase.rpc('fn_get_lens_version_parameters', {
         p_version_id: version.id,
       })
-      version.parameters = (
-        (Array.isArray(paramsJson) ? paramsJson : []) as Record<string, unknown>[]
-      ).map((p) => this.mapVersionParam(p))
+      version.parameters = hydrateVersionParams(paramsJson)
     }
 
     return version

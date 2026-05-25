@@ -170,6 +170,7 @@ export const lensesService = {
     const reactionTotals = (bootstrap['reaction_totals'] ?? {}) as Record<string, number>
     const userReactions = (bootstrap['user_reactions'] ?? {}) as Record<string, boolean>
     const latestPublishedVersion = (record._latestPublishedVersion ?? null) as LensVersion | null
+    const headVersionId = (record.head_version_id as string | null) ?? null
 
     const [viewModel] = await mapToViewModels([record], viewerLenserId)
 
@@ -192,6 +193,7 @@ export const lensesService = {
       forkedFromExecutionId: record.forked_from_execution_id ?? null,
       params: record.params ?? [],
       latestVersionId: latestPublishedVersion?.id ?? null,
+      headVersionId,
       latestPublishedVersion,
     }
   },
@@ -304,6 +306,11 @@ export const lensesService = {
 
   getLatestPublishedVersion: async (lensId: string): Promise<LensVersion | null> => {
     return lensesRepo.getLatestPublishedVersion(lensId)
+  },
+
+  /** HEAD version (authoring draft) — used for owner run/edit param types. */
+  getHeadVersion: async (lensId: string): Promise<LensVersion | null> => {
+    return lensesRepo.getHeadVersion(lensId)
   },
 
   /** Returns the latest non-archived version regardless of publish status (draft OK). */

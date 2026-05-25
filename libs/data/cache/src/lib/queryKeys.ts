@@ -100,6 +100,7 @@ export const queryKeys = {
       [...queryKeys.lensVersions.all, 'listPaginated', lensId, offset] as const,
     detail: (versionId: string) => [...queryKeys.lensVersions.all, 'detail', versionId] as const,
     latestPublished: (lensId: string) => [...queryKeys.lensVersions.all, 'latestPublished', lensId] as const,
+    head: (lensId: string) => [...queryKeys.lensVersions.all, 'head', lensId] as const,
   },
   apiKeys: {
     all: ['apiKeys'] as const,
