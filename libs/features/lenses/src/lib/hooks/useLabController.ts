@@ -65,6 +65,8 @@ export interface LabControllerOptions {
   resolveLocalKey?: (id: string) => Promise<string>
   /** Gate provider list fetching (lazy load) */
   providersEnabled?: boolean
+  /** Gate history fetching — must have a resolved Lenser profile for fn_get_lens_execution_history to return rows */
+  hasActiveLenserProfile?: boolean
 }
 
 export const useLabController = (lensId: string, isAuthenticated = false, options: LabControllerOptions = {}) => {
@@ -118,10 +120,12 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
   const [comparisonRunIds, setComparisonRunIds] = useState<string[]>([])
 
   // --- Execution history query ---
+  // fn_get_lens_execution_history is a SECURITY DEFINER that calls lensers.get_auth_lenser_id().
+  // It returns empty rows if no Lenser profile is resolved, so we gate on hasActiveLenserProfile.
   const { data: historyPage, isLoading: isLoadingHistory } = useQuery({
     queryKey: queryKeys.executions.history(lensId, historyOffset),
     queryFn: () => executionService.getHistory(lensId, PAGE_SIZE, historyOffset),
-    enabled: !!lensId && isAuthenticated,
+    enabled: !!lensId && isAuthenticated && !!(options.hasActiveLenserProfile ?? false),
     staleTime: 60_000,
   })
 
