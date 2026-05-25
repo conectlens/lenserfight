@@ -123,6 +123,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   const editorRef = useRef<LensContentEditorHandle>(null)
   const { tools } = useTools(undefined, isOpen)
   const [lensInstructionsCopied, setLensInstructionsCopied] = useState(false)
+  const [showAiPanel, setShowAiPanel] = useState(false)
 
   // ── AI generation state ──────────────────────────────────────────────────
   const [aiPrompt, setAiPrompt] = useState('')
@@ -238,60 +239,6 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
       }
     >
       <form onSubmit={handleSubmit} className="space-y-8" noValidate>
-        {/* Section 0: AI generation (only shown when profileId is available and not editing) */}
-        {profileId && !isEditMode && (
-          <div className="rounded-2xl border border-surface-border bg-surface-sunken/60 p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary-yellow-500" />
-              <span className="text-xs font-bold text-greyscale-400 uppercase tracking-widest">
-                Generate with AI
-              </span>
-            </div>
-            <TextArea
-              id="ai-lens-prompt"
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="Describe your lens idea… or leave empty for an AI suggestion"
-              maxLength={2000}
-              minRows={2}
-              maxRows={5}
-              disabled={isGenerating}
-            />
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleAIGenerate}
-                disabled={isGenerating || isSubmitting}
-                className="inline-flex items-center gap-2 rounded-xl bg-primary-yellow-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGenerating ? (
-                  <>
-                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Generating…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {aiPrompt.trim() ? 'Generate from prompt' : 'Suggest a lens'}
-                  </>
-                )}
-              </button>
-              <span className="text-xs text-greyscale-400">
-                Uses your profile's AI funding source
-              </span>
-            </div>
-            {aiError && (
-              <Alert
-                variant="error"
-                title={friendlyAIError(aiError.code)}
-                onDismiss={resetAiError}
-              >
-                {aiError.message}
-              </Alert>
-            )}
-          </div>
-        )}
-
         {/* Section 1: Identity */}
         <div className="space-y-8">
           <div className="space-y-2">
@@ -324,6 +271,21 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {profileId && !isEditMode && (
+                <button
+                  type="button"
+                  onClick={() => setShowAiPanel((prev) => !prev)}
+                  title="Generate lens content with AI"
+                  className={`flex items-center gap-1.5 text-xs font-semibold transition-colors px-2 py-1 rounded-lg ${
+                    showAiPanel
+                      ? 'text-primary-yellow-600 bg-primary-yellow-500/10 hover:bg-primary-yellow-500/20'
+                      : 'text-primary-yellow-500 hover:text-primary-yellow-600 hover:bg-primary-yellow-500/10'
+                  }`}
+                >
+                  <Sparkles size={13} />
+                  Generate with AI
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleCopyLensInstructions}
@@ -353,7 +315,55 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
               )}
             </div>
           </div>
-          
+
+          {/* Inline AI generation panel — toggled by the "Generate with AI" button */}
+          {profileId && !isEditMode && showAiPanel && (
+            <div className="rounded-2xl border border-primary-yellow-500/30 bg-primary-yellow-500/5 p-4 space-y-3">
+              <TextArea
+                id="ai-lens-prompt"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Describe your lens idea… or leave empty for an AI suggestion"
+                maxLength={2000}
+                minRows={2}
+                maxRows={5}
+                disabled={isGenerating}
+              />
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleAIGenerate}
+                  disabled={isGenerating || isSubmitting}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary-yellow-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? (
+                    <>
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Generating…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      {aiPrompt.trim() ? 'Generate from prompt' : 'Suggest a lens'}
+                    </>
+                  )}
+                </button>
+                <span className="text-xs text-greyscale-400">
+                  Uses your profile's AI funding source
+                </span>
+              </div>
+              {aiError && (
+                <Alert
+                  variant="error"
+                  title={friendlyAIError(aiError.code)}
+                  onDismiss={resetAiError}
+                >
+                  {aiError.message}
+                </Alert>
+              )}
+            </div>
+          )}
+
           <div className={`
             rounded-2xl border transition-all duration-200 overflow-hidden
             ${errors.content ? 'border-red-500 shadow-sm shadow-red-500/10' : 'border-surface-border bg-surface-sunken'}
