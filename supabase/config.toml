@@ -481,3 +481,6 @@ verify_jwt = false
 
 [functions.test-provider]
 verify_jwt = false
+
+[functions.media-content]
+verify_jwt = false
