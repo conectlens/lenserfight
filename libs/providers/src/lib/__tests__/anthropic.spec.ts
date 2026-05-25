@@ -86,6 +86,20 @@ describe('anthropic text adapter — contract', () => {
       ])
     })
 
+    it('converts data URI image parts to source.{type:base64}', () => {
+      const messages: ProviderMessage[] = [{
+        role: 'user',
+        content: [
+          { type: 'image', url: 'data:image/png;base64,abcd', mimeType: 'image/png' },
+        ],
+      }]
+      const body = JSON.parse(anthropic.transformRequest('claude-opus-4', messages, {}).body)
+      expect(body.messages[0].content[0]).toEqual({
+        type: 'image',
+        source: { type: 'base64', media_type: 'image/png', data: 'abcd' },
+      })
+    })
+
     it('converts document parts to document blocks with media_type', () => {
       const messages: ProviderMessage[] = [{
         role: 'user',
