@@ -420,18 +420,17 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     // Slow path: private or draft thread — needs RPC hydration
     if (!viewerLenserId) return null
 
-    const { data: rpcData, error } = await supabase.rpc('fn_get_thread_with_replies', {
+    const { data: threadData, error } = await supabase.rpc('fn_get_thread_by_id_private', {
       p_thread_id: id,
-      p_reply_limit: 0,
     })
 
     if (error) {
       if ((error as any).code === 'PGRST116') return null
       this.handleError(error)
     }
-    const data = rpcData?.[0]
-    if (!data) return null
-    if ((data as any).visibility === 'private' && (data as any).lenser_id !== viewerLenserId) {
+    if (!threadData) return null
+    const data = threadData as unknown as any
+    if (data.visibility === 'private' && data.lenser_id !== viewerLenserId) {
       return null
     }
 
@@ -523,15 +522,14 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       return (data ?? []) as ThreadReplyRecord[]
     }
 
-    const { data: repliesData, error } = await supabase.rpc('fn_get_thread_with_replies', {
+    const { data: repliesData, error } = await supabase.rpc('fn_get_thread_replies_private', {
       p_thread_id: threadId,
-      p_reply_limit: limit + offset,
+      p_limit: limit,
+      p_offset: offset,
     })
 
     if (error) this.handleError(error)
-    const replies = ((repliesData ?? []) as any[]).slice(offset, offset + limit)
-
-    const replyRows = (replies ?? []) as ThreadReplyRecord[]
+    const replyRows = (repliesData ?? []) as ThreadReplyRecord[]
     const uniqueLenserIds = [...new Set(replyRows.map((r) => r.lenser_id))]
     const [reactionTotals, profileMap] = await Promise.all([
       this.getReplyReactionTotals(replyRows.map((reply) => reply.id)),
