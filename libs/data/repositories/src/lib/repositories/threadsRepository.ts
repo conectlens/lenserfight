@@ -830,12 +830,11 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
   /**
    * Delete a thread via RPC.
-   * Only the owner can delete (enforced in fn_content_delete_thread).
+   * Only the owner can delete (enforced server-side by fn_delete_thread).
    */
   async deleteThread(id: string): Promise<void> {
-    const { error } = await supabase.rpc('fn_update_thread_visibility', {
+    const { error } = await supabase.rpc('fn_delete_thread', {
       p_thread_id: id,
-      p_visibility: 'deleted',
     })
 
     if (error) this.handleError(error)
