@@ -24,7 +24,7 @@ jobs:
 
       - name: Find changed markdown files
         id: changed
-        uses: tj-actions/changed-files@2d756ea4c53f7f6b397767d8723b3a10a9f35bf2 # v44
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
           files: docs/**/*.md
 
