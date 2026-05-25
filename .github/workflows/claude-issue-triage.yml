@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Restrict trigger to repository admins
         id: gate
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const assigner = context.payload.sender.login
