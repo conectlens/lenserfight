@@ -158,40 +158,6 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
     }
   }, [profileId, aiPrompt, generate, form, resetAiError])
 
-  // ── AI generation state ──────────────────────────────────────────────────
-  const [aiPrompt, setAiPrompt] = useState('')
-  const aiContext = useMemo(
-    () => ({ userTagSlugs: form.tags.filter((t) => !LENS_KIND_REGISTRY[t as LensKind]) }),
-    [form.tags],
-  )
-  const { generate, isGenerating, error: aiError, resetError: resetAiError } = useAICreationGeneration({
-    profileId: profileId ?? '',
-    generationType: 'lens',
-    context: aiContext,
-    resolveLocalKey,
-  })
-
-  const handleAIGenerate = useCallback(async () => {
-    if (!profileId) return
-    resetAiError()
-    const output = await generate(aiPrompt || null)
-    if (output?.type === 'lens') {
-      const { title, content, description, suggestedTagSlugs, params } = output.result
-      form.setTitle(title)
-      form.setContent(content)
-      // Pre-select suggested tag slugs that are not lens-kind tags
-      if (suggestedTagSlugs.length > 0) {
-        const withoutKinds = form.tags.filter((t) => LENS_KIND_REGISTRY[t as LensKind])
-        form.setTags([...withoutKinds, ...suggestedTagSlugs])
-      }
-      // Sync params from content (debounced handler will also pick these up)
-      if (params.length > 0) {
-        form.setVersionParams(params.map((p) => ({ label: p.label, toolId: '' })))
-      }
-      void description // description is informational, title is set above
-    }
-  }, [profileId, aiPrompt, generate, form, resetAiError])
-
   const formValues = useMemo(
     () => ({ title: form.title, content: form.content, tags: form.tags }),
     [form.title, form.content, form.tags]
