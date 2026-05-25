@@ -12,6 +12,7 @@ import { BattleRoutes } from './routes/BattleRoutes'
 import { ProfileRoutes } from './routes/ProfileRoutes'
 import { WorkflowRoutes } from './routes/WorkflowRoutes'
 import { DashboardFrame } from './shell/DashboardFrame'
+import { LensVersionRedirect } from './routes/LensVersionRedirect'
 
 const LazyHomePage = lazy(() =>
   import('@lenserfight/features/home').then((module) => ({ default: module.HomePage }))
@@ -198,6 +199,14 @@ export const WebRouter: React.FC = () => {
         />
         <Route
           path="/lenses/:id"
+          element={
+            <DashboardFrame>
+              <LensVersionRedirect />
+            </DashboardFrame>
+          }
+        />
+        <Route
+          path="/lenses/:id/:versionRef"
           element={
             <DashboardFrame>
               <LazyLensLabPage />
