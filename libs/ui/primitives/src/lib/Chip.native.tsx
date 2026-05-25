@@ -3,7 +3,7 @@
  */
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
 import { Pressable } from './Pressable.native'
 import { Text } from './Text.native'
 

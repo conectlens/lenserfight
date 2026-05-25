@@ -4,7 +4,7 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { Text } from '@lenserfight/ui/primitives'
+import { Text } from '@lenserfight/ui/primitives/native'
 
 export interface EmptyStateProps {
   title:       string

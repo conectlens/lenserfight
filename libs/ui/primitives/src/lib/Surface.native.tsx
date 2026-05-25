@@ -10,7 +10,7 @@
  */
 import React from 'react'
 import { Platform, StyleSheet, View } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
 import type { NativeElevationLevel } from '@lenserfight/ui/tokens'
 import type { ViewStyle } from 'react-native'
 

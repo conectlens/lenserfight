@@ -8,9 +8,8 @@
 import React from 'react'
 import { Platform, SafeAreaView, StyleSheet, View } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
-import { Pressable } from '@lenserfight/ui/primitives'
-import { Text } from '@lenserfight/ui/primitives'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import { Pressable, Text } from '@lenserfight/ui/primitives/native'
 
 export interface BottomNavItem {
   key:        string
