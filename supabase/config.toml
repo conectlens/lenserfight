@@ -112,12 +112,30 @@ enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
 
-# Uncomment to configure local storage buckets
-# [storage.buckets.images]
-# public = false
-# file_size_limit = "50MiB"
-# allowed_mime_types = ["image/png", "image/jpeg"]
-# objects_path = "./images"
+# Local dev buckets (must match supabase/migrations/*storage_buckets*.sql + RLS policies)
+[storage.buckets.lens-resources]
+public = false
+file_size_limit = "50MiB"
+
+[storage.buckets.user-media]
+public = false
+file_size_limit = "20MiB"
+
+[storage.buckets.artifacts]
+public = false
+file_size_limit = "100MiB"
+
+[storage.buckets.public-assets]
+public = true
+file_size_limit = "10MiB"
+
+[storage.buckets.generated-media]
+public = false
+file_size_limit = "100MiB"
+
+[storage.buckets.battles-media]
+public = false
+file_size_limit = "50MiB"
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
