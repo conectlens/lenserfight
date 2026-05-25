@@ -48,7 +48,7 @@ export default defineConfig(() => {
   return {
     root: import.meta.dirname,
     envDir: import.meta.dirname,
-    envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'API_', 'CHAINABIT_API_URL', 'AUTH_', 'ARENA_', 'WEB_', 'DOCS_', 'STATUS_', 'OLLAMA_', 'POSTHOG_', 'CAPTCHA_', 'PRODUCT_', 'FEATURE_CHAINABIT_', 'DATA_SOURCE', 'ENABLE_', 'ALLOWED_', 'GOOGLE_'],
+    envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLIC_URL', 'SUPABASE_PUBLISHABLE_KEY', 'MEDIA_', 'API_', 'CHAINABIT_API_URL', 'AUTH_', 'ARENA_', 'WEB_', 'DOCS_', 'STATUS_', 'OLLAMA_', 'POSTHOG_', 'CAPTCHA_', 'PRODUCT_', 'FEATURE_CHAINABIT_', 'DATA_SOURCE', 'ENABLE_', 'ALLOWED_', 'GOOGLE_'],
     cacheDir: '../../node_modules/.vite/apps/web',
     define: {
       __APP_VERSION__: JSON.stringify(version),

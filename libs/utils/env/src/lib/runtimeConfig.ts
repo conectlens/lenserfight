@@ -82,6 +82,12 @@ export const dataBackendKind: DataBackendKind =
 
 export const isFileDataBackend = dataBackendKind === 'file'
 
+/**
+ * Public origin for Supabase API (tunnel to local :54321 in dev).
+ * Used to rewrite signed storage URLs for external tools. See SUPABASE_PUBLIC_URL in apps/web/.env.example.
+ */
+export const SUPABASE_PUBLIC_URL = readPublicBaseUrl('SUPABASE_PUBLIC_URL', '')
+
 // Local development flag (Vite dev server)
 export const isLocal = import.meta.env['ENV_MODE'] === 'development'
 
