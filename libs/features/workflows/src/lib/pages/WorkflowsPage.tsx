@@ -1,4 +1,6 @@
+import { queryKeys } from '@lenserfight/data/cache'
 import { seoService } from '@lenserfight/data/repositories'
+import { ArtifactLifecycleMenu } from '@lenserfight/features/artifact-lifecycle'
 import { useLenser } from '@lenserfight/features/profile'
 import { Button, EmptyState, ExperimentalBadge, HelpButton, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
@@ -188,6 +190,13 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
                     e.preventDefault()
                     navigate(`/workflows/${w.id}?run=1`)
                   }}
+                  actions={scope === 'mine' ? (
+                    <ArtifactLifecycleMenu
+                      type="workflow"
+                      id={w.id}
+                      extraInvalidateKeys={[queryKeys.workflows.all]}
+                    />
+                  ) : undefined}
                 />
               </Link>
             </div>

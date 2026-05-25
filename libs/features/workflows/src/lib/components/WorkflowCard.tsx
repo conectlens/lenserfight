@@ -13,9 +13,10 @@ interface WorkflowCardProps {
   showReactions?: boolean
   onClick?: () => void
   onRun?: (e: React.MouseEvent) => void
+  actions?: React.ReactNode
 }
 
-export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compact, onClick, onRun }: WorkflowCardProps) {
+export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compact, onClick, onRun, actions }: WorkflowCardProps) {
   const nodeCount = nodeCountProp ?? workflow.node_count ?? nodes?.length ?? 0
   const likeCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.like ?? 0
   const savedCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.saved ?? 0
@@ -62,6 +63,15 @@ export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compac
               {workflow.visibility === 'private' && (
                 <span title="Private workflow">
                   <Lock size={12} className="flex-shrink-0 text-greyscale-400" />
+                </span>
+              )}
+              {actions && (
+                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+                <span
+                  className="ml-auto flex-shrink-0"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+                >
+                  {actions}
                 </span>
               )}
             </div>

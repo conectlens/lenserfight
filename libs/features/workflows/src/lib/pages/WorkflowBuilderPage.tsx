@@ -790,6 +790,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                 extraInvalidateKeys={[
                   queryKeys.workflows.detail(workflowId),
                   queryKeys.workflows.byLenser(workflow?.lenser_id ?? ''),
+                  queryKeys.workflows.all,
                 ]}
                 onDeleted={() => navigate('/workflows')}
               />
