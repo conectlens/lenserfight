@@ -862,6 +862,8 @@ export const LensDetailPage: React.FC = () => {
         error={createError}
         isEditMode={isEditMode}
         lensId={isEditMode && lens ? lens.id : undefined}
+        profileId={user?.id}
+        resolveLocalKey={stableResolveLocalKey}
       />
 
       <ArtifactDeleteConfirmDialog
