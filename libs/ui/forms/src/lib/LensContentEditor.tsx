@@ -360,7 +360,7 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
           if (filtered.length > 0) {
             handleAutocompleteSelect(filtered[0].label)
           } else if (q.length > 0) {
-            const safeLabel = q.replace(/\s+/g, '_').replace(/[^\w]/g, '')
+            const safeLabel = q.replace(/[^\w\s\-]/g, '').trim()
             if (safeLabel) handleCreateNew(safeLabel)
           }
           return
@@ -412,7 +412,7 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
       }
 
       const raw = e.dataTransfer.getData('text/plain')
-      const match = raw.match(/^\[\[(\w+)\]\]$/)
+      const match = raw.match(/^\[\[(\w[\w \-_]*!?)\]\]$/)
       if (!match) return
 
       const paramLabel = match[1]

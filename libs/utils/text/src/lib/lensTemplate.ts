@@ -4,22 +4,26 @@ import type { LensParam, LensVersionParam } from '@lenserfight/types'
 // Unlike {{param}}, double-square-brackets do not appear in Jinja2/Handlebars/Mustache
 // templates that users may paste into their lens body, preventing accidental
 // parameter extraction of unrelated curly-brace patterns.
-const VARIABLE_REGEX = /\[\[(\w+)\]\]/g
+// Matches [[label]] or [[label!]] where label starts with a word char then
+// allows word chars, spaces, and hyphens.  Trailing ! marks the param optional.
+const VARIABLE_REGEX = /\[\[(\w[\w \-_]*!?)\]\]/g
 
 // UUID-reference syntax [[:uuid]] used in stored template bodies (lenses.versions.template_body).
 // The colon prefix distinguishes param refs from named params.
 const PARAM_REF_REGEX = /\[\[:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]\]/gi
 
-export function extractParams(template: string): { name: string }[] {
+export function extractParams(template: string): { name: string; optional?: boolean }[] {
   const seen = new Set<string>()
-  const params: { name: string }[] = []
+  const params: { name: string; optional?: boolean }[] = []
   let match: RegExpExecArray | null
   const re = new RegExp(VARIABLE_REGEX.source, VARIABLE_REGEX.flags)
   while ((match = re.exec(template)) !== null) {
-    const name = match[1].trim().toLowerCase()
-    if (!seen.has(name)) {
+    const raw = match[1].trim()
+    const optional = raw.endsWith('!')
+    const name = (optional ? raw.slice(0, -1).trimEnd() : raw).toLowerCase()
+    if (name && !seen.has(name)) {
       seen.add(name)
-      params.push({ name })
+      params.push(optional ? { name, optional: true } : { name })
     }
   }
   return params
@@ -84,7 +88,9 @@ export function renderLens(
   options: RenderLensOptions = {}
 ): string {
   const paramMap = new Map(params.map((p) => [p.name, p]))
-  return template.replace(/\[\[(\w+)\]\]/g, (match, name) => {
+  return template.replace(/\[\[(\w[\w \-_]*!?)\]\]/g, (match, raw) => {
+    const trimmed = raw.trim()
+    const name = (trimmed.endsWith('!') ? trimmed.slice(0, -1).trimEnd() : trimmed).toLowerCase()
     const param = paramMap.get(name) ?? { name, type: 'string' as const, required: true }
     const value = values[name]
     if (value === undefined || value === null || value === '') {
@@ -102,7 +108,7 @@ export type LensContentSegment =
   | { type: 'param-ref'; id: string }
 
 // Combined regex that matches both [[name]] and [[:uuid]] tokens
-const COMBINED_REGEX = /\[\[(?::([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})|(\w+))\]\]/gi
+const COMBINED_REGEX = /\[\[(?::([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})|(\w[\w \-_]*!?))\]\]/gi
 
 /**
  * Splits lens content into typed segments for rendering.
@@ -126,8 +132,10 @@ export function parseContentSegments(content: string): LensContentSegment[] {
       // [[:uuid]] format
       segments.push({ type: 'param-ref', id: match[1].toLowerCase() })
     } else {
-      // [[name]] format
-      segments.push({ type: 'param', name: match[2].trim().toLowerCase() })
+      // [[name]] or [[name!]] format — strip optional marker from display name
+      const rawSeg = match[2].trim()
+      const segName = (rawSeg.endsWith('!') ? rawSeg.slice(0, -1).trimEnd() : rawSeg).toLowerCase()
+      segments.push({ type: 'param', name: segName })
     }
     lastIndex = re.lastIndex
   }
