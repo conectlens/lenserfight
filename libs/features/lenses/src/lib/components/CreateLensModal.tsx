@@ -4,6 +4,7 @@ import { CreateVersionParamInput, LensKind, VisibilityEnum } from '@lenserfight/
 import { Alert, FormError } from '@lenserfight/ui/components'
 import { SelectField, LensContentEditor, type LensContentEditorHandle, InputField, TextArea } from '@lenserfight/ui/forms'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
+import { copyTextToClipboard } from '@lenserfight/utils/text'
 import { useFormValidation, isRequired, minLength } from '@lenserfight/utils/validation'
 import { Globe, Lock, Info, Sparkles, Copy, Check } from 'lucide-react'
 import React, { useMemo, useRef, useCallback, useEffect, useState } from 'react'
@@ -78,13 +79,12 @@ A **Lens** is a reusable AI prompt template that others can run, fork, and build
 - **Multi-word names are supported:** \`[[Visual Tone]]\`, \`[[Target Audience]]\`, \`[[Word Count]]\`
 - **Underscores and hyphens work too:** \`[[word_count]]\`, \`[[target-language]]\`
 - The first character must be a letter or digit — no leading spaces.
-- **Optional parameters:** append \`!\` to the label to mark a parameter as optional.
-  - \`[[Text on Wallpaper!]]\` — users may leave this blank; the Lens still runs.
-  - \`[[Things to Avoid!]]\` — same idea; blank is allowed.
+- **Optional parameters:** append \`!\` before \`]]\` (after optional type): \`[[Tone!]]\`, \`[[Notes:textarea!]]\`.
+- **Inline type hints:** \`[[label:type]]\` suggests a field type when the token is first detected, e.g. \`[[Input PDF:file]]\`, \`[[Word Count:integer]]\`.
 
 ## Parameter types you can declare
 
-\`text\` · \`textarea\` · \`number\` · \`boolean\` · \`select\` · \`multiselect\` · \`url\` · \`date\` · \`file\`
+\`text\` · \`textarea\` · \`number\` · \`integer\` · \`boolean\` · \`select\` · \`multiselect\` · \`url\` · \`date\` · \`file\` · \`files\` (multi-attachment) · and more — use \`:type\` in the token or pick a tool in the editor.
 
 ## Example Lens
 
@@ -112,7 +112,7 @@ Return the outline as a numbered list with H2 and H3 headings.
 - [ ] Title is unique and searchable
 - [ ] Description explains the outcome, not the mechanism
 - [ ] All \`[[tokens]]\` have clear, human-readable labels (spaces are allowed)
-- [ ] Optional parameters are marked with \`!\` (e.g. \`[[Special Instructions!]]\`)
+- [ ] Optional parameters use \`!\`; typed params use \`:type\` where helpful (e.g. \`[[Attachment:file]]\`, \`[[Gallery:files]]\`)
 - [ ] Template works well with default / empty parameter values
 - [ ] At least one relevant tag added
 - [ ] Visibility set to \`public\` for maximum reach
@@ -222,11 +222,11 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
 
   const handleCopyLensInstructions = async () => {
     try {
-      await navigator.clipboard.writeText(LENS_CREATION_INSTRUCTIONS)
+      await copyTextToClipboard(LENS_CREATION_INSTRUCTIONS)
       setLensInstructionsCopied(true)
       setTimeout(() => setLensInstructionsCopied(false), 2000)
-    } catch (e) {
-      console.error('Failed to copy lens instructions', e)
+    } catch {
+      // clipboard failed — leave state unchanged
     }
   }
 

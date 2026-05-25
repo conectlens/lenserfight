@@ -16,7 +16,7 @@ export const useCreateLens = () => {
   const queryClient = useQueryClient()
 
   const [isOpen, setIsOpen] = useState(false)
-  const { textToolId } = useTools(undefined, isOpen)
+  const { textToolId, tools } = useTools(undefined, isOpen)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
@@ -36,9 +36,9 @@ export const useCreateLens = () => {
   const syncParamsFromContent = useCallback(
     (rawContent: string) => {
       if (!textToolId) return
-      setVersionParams((prev) => syncBindingsFromContent(rawContent, prev, textToolId))
+      setVersionParams((prev) => syncBindingsFromContent(rawContent, prev, textToolId, tools))
     },
-    [textToolId],
+    [textToolId, tools],
   )
 
   // When the default tool ID first resolves (async tool fetch), re-sync params
@@ -47,7 +47,7 @@ export const useCreateLens = () => {
   // skipped — leaving stale/incomplete params from the stored DB row on screen.
   useEffect(() => {
     if (textToolId && content) syncParamsFromContent(content)
-  }, [textToolId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [textToolId, tools, content, syncParamsFromContent])
 
   const resetForm = useCallback(() => {
     setEditId(null)

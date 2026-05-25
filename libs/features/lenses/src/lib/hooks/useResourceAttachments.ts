@@ -55,12 +55,21 @@ export const useResourceAttachments = (
     onError: (err) => toastError(err),
   })
 
+  const unbindAttachmentObject = useCallback(
+    async (bindingKey: string, objectId: string) => {
+      if (!versionId) throw new Error('versionId is required')
+      await mediaService.unbindAttachmentObject('lens_version', versionId, bindingKey, objectId)
+    },
+    [versionId],
+  )
+
   const uploadAndAttach = useCallback(
     async (
       file: File,
       bindingKey: string,
       bucket: string = 'lens-resources',
-      ownerAuthUserId?: string | null
+      ownerAuthUserId?: string | null,
+      uniqueObjectKeyId?: string,
     ) => {
       if (!versionId) throw new Error('versionId is required')
       if (!workspaceId) throw new Error('workspaceId is required')
@@ -70,7 +79,13 @@ export const useResourceAttachments = (
       setUploadProgress((prev) => ({ ...prev, [bindingKey]: 'uploading' }))
 
       try {
-        const objectKey = buildLensResourceObjectKey(uid, versionId, bindingKey, file.name)
+        const objectKey = buildLensResourceObjectKey(
+          uid,
+          versionId,
+          bindingKey,
+          file.name,
+          uniqueObjectKeyId,
+        )
         const dto: CreateMediaObjectDTO = {
           mediaType: file.type.startsWith('image/')
             ? 'image'
@@ -125,5 +140,6 @@ export const useResourceAttachments = (
     isDetaching,
     uploadAndAttach,
     uploadProgress,
+    unbindAttachmentObject,
   }
 }

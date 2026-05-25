@@ -32,6 +32,7 @@ const TOOL_REGISTRY: Record<LensVersionParamType, ToolConfig> = {
   date:     { icon: Calendar,    colorClass: 'text-rose-500',   label: 'Date' },
   datetime: { icon: Calendar,    colorClass: 'text-rose-500',   label: 'Datetime' },
   file:     { icon: Paperclip,   colorClass: 'text-slate-500',  label: 'File' },
+  files:    { icon: Upload,      colorClass: 'text-slate-600',  label: 'Files' },
   connector: { icon: Cable,      colorClass: 'text-cyan-500',   label: 'Connector' },
 }
 
@@ -145,6 +146,130 @@ const FileToolInput: React.FC<FileToolInputProps> = ({
   )
 }
 
+// ─── Multi-file Input ────────────────────────────────────────────────────────
+
+interface FilesToolInputProps {
+  param: LensVersionParam
+  value?: string[]
+  onChange: (ids: string[]) => void
+  onFilesUpload?: (
+    param: LensVersionParam,
+    file: File,
+    currentIds: string[],
+  ) => Promise<string[]>
+  onFileRemove?: (param: LensVersionParam, objectId: string, currentIds: string[]) => Promise<string[]>
+  error?: string
+}
+
+const FilesToolInput: React.FC<FilesToolInputProps> = ({
+  param,
+  value = [],
+  onChange,
+  onFilesUpload,
+  onFileRemove,
+  error,
+}) => {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [localError, setLocalError] = useState<string | null>(null)
+
+  const accept = param.tool.validationSchema?.allowedMimeTypes?.join(',') ?? undefined
+  const ids = Array.isArray(value) ? value : value ? [String(value)] : []
+  const maxCount =
+    param.tool.validationSchema?.maxCount != null
+      ? Math.min(param.tool.validationSchema.maxCount, 10)
+      : 10
+  const atLimit = ids.length >= maxCount
+
+  const processFiles = async (files: FileList | File[]) => {
+    if (!onFilesUpload) {
+      setLocalError('File upload handler not configured.')
+      return
+    }
+    setLocalError(null)
+    setUploading(true)
+    let current = [...ids]
+    try {
+      for (const file of Array.from(files)) {
+        if (current.length >= maxCount) break
+        current = await onFilesUpload(param, file, current)
+        onChange(current)
+      }
+    } catch (err) {
+      setLocalError((err as Error).message ?? 'Upload failed')
+    } finally {
+      setUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  const handleRemove = async (objectId: string) => {
+    if (!onFileRemove) {
+      onChange(ids.filter((id) => id !== objectId))
+      return
+    }
+    try {
+      const next = await onFileRemove(param, objectId, ids)
+      onChange(next)
+    } catch (err) {
+      setLocalError((err as Error).message ?? 'Remove failed')
+    }
+  }
+
+  const displayError = localError ?? error
+
+  return (
+    <div className="space-y-2">
+      <ul className="space-y-1">
+        {ids.map((id) => (
+          <li
+            key={id}
+            className="flex items-center justify-between gap-2 rounded-md border border-gray-200 dark:border-gray-600 px-2 py-1.5 text-xs text-gray-600 dark:text-gray-300"
+          >
+            <span className="truncate font-mono">{id.slice(0, 8)}…</span>
+            <button
+              type="button"
+              className="text-red-600 dark:text-red-400 hover:underline shrink-0"
+              onClick={() => void handleRemove(id)}
+              disabled={uploading}
+            >
+              Remove
+            </button>
+          </li>
+        ))}
+      </ul>
+      {!atLimit && (
+        <div
+          className="flex items-center gap-2 p-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary-400 cursor-pointer"
+          onClick={() => fileRef.current?.click()}
+        >
+          <Upload size={16} className="text-gray-400 flex-shrink-0" />
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {uploading ? 'Uploading…' : `Add files (${ids.length}/${maxCount})`}
+          </span>
+        </div>
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        multiple
+        accept={accept}
+        className="hidden"
+        disabled={uploading || atLimit}
+        onChange={(e) => {
+          if (e.target.files?.length) void processFiles(e.target.files)
+        }}
+      />
+      {displayError && (
+        <div className="flex items-start gap-1.5 text-xs text-red-600 dark:text-red-400">
+          <AlertCircle size={12} className="flex-shrink-0 mt-0.5" />
+          <span>{displayError}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── ToolField (Factory) ──────────────────────────────────────────────────────
 
 export interface ToolFieldProps {
@@ -152,6 +277,16 @@ export interface ToolFieldProps {
   value: unknown
   onChange: (value: unknown) => void
   onFileUpload?: (key: string, file: File) => Promise<string>
+  onFilesUpload?: (
+    param: LensVersionParam,
+    file: File,
+    currentIds: string[],
+  ) => Promise<string[]>
+  onFileRemove?: (
+    param: LensVersionParam,
+    objectId: string,
+    currentIds: string[],
+  ) => Promise<string[]>
   error?: string
   disabled?: boolean
   modelInputModalities?: string[]
@@ -167,6 +302,8 @@ export const ToolField: React.FC<ToolFieldProps> = ({
   value,
   onChange,
   onFileUpload,
+  onFilesUpload,
+  onFileRemove,
   error,
   disabled = false,
   modelInputModalities,
@@ -334,7 +471,18 @@ export const ToolField: React.FC<ToolFieldProps> = ({
         />
       )}
 
-      {tool.type !== 'file' && error && <FormError message={error} />}
+      {tool.type === 'files' && (
+        <FilesToolInput
+          param={param}
+          value={Array.isArray(value) ? (value as string[]) : undefined}
+          onChange={(ids) => onChange(ids)}
+          onFilesUpload={onFilesUpload}
+          onFileRemove={onFileRemove}
+          error={error}
+        />
+      )}
+
+      {tool.type !== 'file' && tool.type !== 'files' && error && <FormError message={error} />}
     </div>
   )
 }

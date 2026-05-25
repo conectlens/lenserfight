@@ -124,7 +124,8 @@ export const LensLabPage: React.FC = () => {
   const versionExecution = useVersionExecution()
 
   const versionRoute = useLensVersionRoute(id, lens)
-  const { uploadFileParam } = useLensFileParamUpload(versionRoute.resolvedVersionId)
+  const { uploadFileParam, uploadFilesParamAppend, removeFilesParamObject } =
+    useLensFileParamUpload(versionRoute.resolvedVersionId)
 
   // Version list — lazy until picker opens (URL route resolves main without full list)
   const [showVersionPicker, setShowVersionPicker] = useState(false)
@@ -604,6 +605,12 @@ export const LensLabPage: React.FC = () => {
             versionId={versionRoute.resolvedVersionId ?? undefined}
             isLoadingVersionParams={isResolvingVersion}
             onFileParamUpload={uploadFileParam}
+            onFilesParamUpload={(param, file, currentIds, allValues, allParams) =>
+              uploadFilesParamAppend(param, file, currentIds, allValues, allParams)
+            }
+            onFilesParamRemove={(param, objectId, current) =>
+              removeFilesParamObject(param.label, objectId, current)
+            }
             selectedModelInputModalities={selectedModelInputModalities}
             selectedModelOutputModalities={selectedModelOutputModalities}
             lensOutputKind={lens?.outputKind}

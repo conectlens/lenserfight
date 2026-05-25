@@ -128,7 +128,8 @@ export const LensDetailPage: React.FC = () => {
   }, [funding.fundingSource, funding.selectedLocalKeyId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const versionRoute = useLensVersionRoute(id, lens)
-  const { uploadFileParam } = useLensFileParamUpload(versionRoute.resolvedVersionId)
+  const { uploadFileParam, uploadFilesParamAppend, removeFilesParamObject } =
+    useLensFileParamUpload(versionRoute.resolvedVersionId)
 
   const [showVersionPicker, setShowVersionPicker] = useState(false)
   const {
@@ -746,6 +747,12 @@ export const LensDetailPage: React.FC = () => {
                   versionId={versionRoute.resolvedVersionId ?? undefined}
                   isLoadingVersionParams={isResolvingVersion}
                   onFileParamUpload={uploadFileParam}
+                  onFilesParamUpload={(param, file, currentIds, allValues, allParams) =>
+                    uploadFilesParamAppend(param, file, currentIds, allValues, allParams)
+                  }
+                  onFilesParamRemove={(param, objectId, current) =>
+                    removeFilesParamObject(param.label, objectId, current)
+                  }
                   selectedModelInputModalities={selectedModelInputModalities}
                   fundingSource={funding.fundingSource}
                   onFundingSourceChange={funding.setFundingSource}
