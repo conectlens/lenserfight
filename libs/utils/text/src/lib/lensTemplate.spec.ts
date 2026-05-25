@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LensVersionParam } from '@lenserfight/types'
-import { renderLensContentForCopy } from './lensTemplate'
+import { extractParams, renderLensContentForCopy } from './lensTemplate'
 
 const vp = (id: string, label: string): LensVersionParam => ({
   id,
@@ -8,6 +8,64 @@ const vp = (id: string, label: string): LensVersionParam => ({
   label,
   toolId: 't1',
   tool: { id: 't1', type: 'string', required: true } as unknown as LensVersionParam['tool'],
+})
+
+describe('extractParams', () => {
+  it('extracts single-word params', () => {
+    expect(extractParams('[[mood]]')).toEqual([{ name: 'mood' }])
+  })
+
+  it('extracts multi-word params with spaces', () => {
+    expect(extractParams('[[Visual Tone]]')).toEqual([{ name: 'visual tone' }])
+  })
+
+  it('extracts params with hyphens', () => {
+    expect(extractParams('[[color-palette]]')).toEqual([{ name: 'color-palette' }])
+  })
+
+  it('marks params with trailing ! as optional', () => {
+    expect(extractParams('[[mood!]]')).toEqual([{ name: 'mood', optional: true }])
+  })
+
+  it('marks multi-word params with trailing ! as optional', () => {
+    expect(extractParams('[[Color Palette!]]')).toEqual([{ name: 'color palette', optional: true }])
+  })
+
+  it('deduplicates params case-insensitively', () => {
+    expect(extractParams('[[Mood]] [[mood]] [[MOOD]]')).toEqual([{ name: 'mood' }])
+  })
+
+  it('does not match tokens with leading space', () => {
+    expect(extractParams('[[ bad]]')).toEqual([])
+  })
+
+  it('does not match empty brackets', () => {
+    expect(extractParams('[[]]')).toEqual([])
+  })
+
+  it('extracts all params from the AI wallpaper prompt example', () => {
+    const template = `Theme or subject: [[Theme or Subject]]
+Visual style: [[Visual Style]]
+Mood: [[Mood]]
+Color palette: [[Color Palette]]
+Device or aspect ratio: [[Device or Aspect Ratio]]
+Level of detail: [[Level of Detail]]
+Text on wallpaper: [[Text on Wallpaper!]]
+Things to avoid: [[Things to Avoid]]`
+    const names = extractParams(template).map((p) => p.name)
+    expect(names).toEqual([
+      'theme or subject',
+      'visual style',
+      'mood',
+      'color palette',
+      'device or aspect ratio',
+      'level of detail',
+      'text on wallpaper',
+      'things to avoid',
+    ])
+    const textOnWallpaper = extractParams(template).find((p) => p.name === 'text on wallpaper')
+    expect(textOnWallpaper?.optional).toBe(true)
+  })
 })
 
 describe('renderLensContentForCopy', () => {
