@@ -519,12 +519,11 @@ describe('SupabaseThreadsRepository', () => {
   // deleteThread
   // ---------------------------------------------------------------------------
   describe('deleteThread', () => {
-    it('calls fn_update_thread_visibility with p_visibility="deleted"', async () => {
+    it('calls fn_delete_thread with p_thread_id', async () => {
       mockRpc.mockResolvedValue({ data: null, error: null })
       await repo.deleteThread(THREAD_ID)
-      expect(mockRpc).toHaveBeenCalledWith('fn_update_thread_visibility', {
+      expect(mockRpc).toHaveBeenCalledWith('fn_delete_thread', {
         p_thread_id: THREAD_ID,
-        p_visibility: 'deleted',
       })
     })
 
