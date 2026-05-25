@@ -318,18 +318,9 @@ export function resolveUuidRefs(
   )
 }
 
-function mapToolTypeToLegacyType(toolType: string): LensParam['type'] {
-  if (['number', 'integer', 'float', 'decimal'].includes(toolType)) return 'number'
-  if (toolType === 'boolean') return 'boolean'
-  if (toolType === 'select') return 'select'
-  return 'string'
-}
-
 /**
- * Renders a lens template body with a contender's input snapshot, supporting
- * both [[label]] (normal) and [[:uuid]] (draft fallback) token formats.
- *
- * snapshot is keyed by param.label, matching how VersionParamFields stores values.
+ * @deprecated Prefer `renderTemplateWithSnapshot` from `@lenserfight/domain/lens-parameters`.
+ * Kept for backward compatibility; delegates to domain implementation when bundled together.
  */
 export function renderLensWithSnapshot(
   templateBody: string,
@@ -337,11 +328,21 @@ export function renderLensWithSnapshot(
   versionParams: LensVersionParam[],
   options: RenderLensOptions = {},
 ): string {
+  // Inline duplicate of domain renderer to avoid utils → domain layer violation.
   const normalised = resolveUuidRefs(templateBody, versionParams)
-  const legacyParams: LensParam[] = versionParams.map((p) => ({
-    name: p.label,
-    type: mapToolTypeToLegacyType(p.tool.type),
-    required: p.optional ? false : p.tool.required,
-  }))
-  return renderLens(normalised, snapshot as Record<string, any>, legacyParams, options)
+  const paramByLabel = new Map(versionParams.map((p) => [p.label.toLowerCase(), p]))
+  return normalised.replace(/\[\[(\w[\w \-_]*!?)\]\]/g, (match, raw: string) => {
+    const trimmed = raw.trim()
+    const optional = trimmed.endsWith('!')
+    const name = (optional ? trimmed.slice(0, -1).trimEnd() : trimmed).toLowerCase()
+    const param = paramByLabel.get(name)
+    const value = (snapshot as Record<string, unknown>)[name] ?? (param ? snapshot[param.label] : undefined)
+    if (value === undefined || value === null || value === '') {
+      return options.keepUnsetTokens ? match : ''
+    }
+    if (param?.tool.type === 'boolean') return value ? 'true' : 'false'
+    if (['integer', 'number', 'float', 'decimal'].includes(param?.tool.type ?? '')) return String(value)
+    if (param?.tool.type === 'multiselect' && Array.isArray(value)) return value.map(String).join(', ')
+    return String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  })
 }

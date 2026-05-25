@@ -3,8 +3,11 @@ import { useState, useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService } from '@lenserfight/data/repositories'
+import {
+  normalizeTemplateParamTokens,
+  syncBindingsFromContent,
+} from '@lenserfight/domain/lens-parameters'
 import { CreateLensDTO, CreateVersionParamInput, VisibilityEnum } from '@lenserfight/types'
-import { extractParams } from '@lenserfight/utils/text'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
 import { useTools } from './useTools'
 
@@ -30,27 +33,13 @@ export const useCreateLens = () => {
    * Content is the single source of truth for which params exist; stored
    * versionParams only contribute the toolId mapping for already-known labels.
    */
-  const syncParamsFromContent = useCallback((rawContent: string) => {
-    if (!textToolId) return
-    const extracted = extractParams(rawContent)
-    setVersionParams((prev) => {
-      const prevMap = new Map(prev.map((p) => [p.label, p]))
-      return extracted.map((ep) => {
-        const existing = prevMap.get(ep.name)
-        if (existing) {
-          // Content is source of truth for optional flag — sync it
-          const shouldBeOptional = !!ep.optional
-          if (!!existing.optional !== shouldBeOptional) {
-            return shouldBeOptional
-              ? { ...existing, optional: true }
-              : { label: existing.label, toolId: existing.toolId }
-          }
-          return existing
-        }
-        return { label: ep.name, toolId: textToolId, ...(ep.optional ? { optional: true } : {}) }
-      })
-    })
-  }, [textToolId])
+  const syncParamsFromContent = useCallback(
+    (rawContent: string) => {
+      if (!textToolId) return
+      setVersionParams((prev) => syncBindingsFromContent(rawContent, prev, textToolId))
+    },
+    [textToolId],
+  )
 
   // When the default tool ID first resolves (async tool fetch), re-sync params
   // from the current content.  This covers the edit-modal open race where the
@@ -106,7 +95,7 @@ export const useCreateLens = () => {
     setError(null)
 
     const trimmedTitle = title.trim()
-    const trimmedContent = content.trim()
+    const trimmedContent = normalizeTemplateParamTokens(content.trim())
     const autoDescription =
       trimmedContent.length > 0
         ? trimmedContent.substring(0, 100) + (trimmedContent.length > 100 ? '...' : '')

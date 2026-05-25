@@ -1,25 +1,54 @@
-import { History, X, RotateCcw, Loader2 } from 'lucide-react'
+import { History, X, RotateCcw, Loader2, Pencil } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { CreateVersionParamInput } from '@lenserfight/types'
+import { renderLensContentForCopy } from '@lenserfight/utils/text'
+
 import { useLensVersions, useLensVersionDetail } from '../hooks/useLensVersions'
+
+export interface LensVersionLoadPayload {
+  content: string
+  versionParams: CreateVersionParamInput[]
+}
 
 interface LensVersionHistoryButtonProps {
   lensId: string
+  /** Publish the version and restore it as the live published lens. */
   onRestore: (content: string) => void
+  /** Load version content + parameters into the editor without publishing. */
+  onLoadVersion?: (payload: LensVersionLoadPayload) => void
+}
+
+function mapVersionParams(
+  parameters: { label: string; toolId: string; optional?: boolean }[] | undefined
+): CreateVersionParamInput[] {
+  return (parameters ?? []).map((p) => ({
+    label: p.label,
+    toolId: p.toolId,
+    ...(p.optional ? { optional: true } : {}),
+  }))
 }
 
 export const LensVersionHistoryButton: React.FC<LensVersionHistoryButtonProps> = ({
   lensId,
   onRestore,
+  onLoadVersion,
 }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const { versions, isLoading, publishVersion, isPublishing } = useLensVersions(lensId, { enabled: isOpen })
+  const { versions, isLoading, publishVersion, isPublishing } = useLensVersions(lensId, {
+    enabled: isOpen,
+  })
   const { data: versionDetail, isLoading: isLoadingDetail } = useLensVersionDetail(selectedVersionId)
   const [isRestoring, setIsRestoring] = useState(false)
+
+  const previewContent =
+    versionDetail?.templateBody && versionDetail.parameters
+      ? renderLensContentForCopy(versionDetail.templateBody, versionDetail.parameters)
+      : versionDetail?.templateBody
 
   // Close on outside click
   useEffect(() => {
@@ -38,14 +67,40 @@ export const LensVersionHistoryButton: React.FC<LensVersionHistoryButtonProps> =
     if (isOpen) setSelectedVersionId(null)
   }
 
+  const buildLoadPayload = (): LensVersionLoadPayload | null => {
+    if (!versionDetail?.templateBody) return null
+    const content = renderLensContentForCopy(
+      versionDetail.templateBody,
+      versionDetail.parameters ?? []
+    )
+    return {
+      content,
+      versionParams: mapVersionParams(versionDetail.parameters),
+    }
+  }
+
+  const handleLoadIntoEditor = () => {
+    const payload = buildLoadPayload()
+    if (!payload || !onLoadVersion) return
+    onLoadVersion(payload)
+    setIsOpen(false)
+    setSelectedVersionId(null)
+    toast.success('Version loaded into editor')
+  }
+
   const handleRestore = async () => {
-    if (!versionDetail?.templateBody || !selectedVersionId) return
+    const payload = buildLoadPayload()
+    if (!payload || !selectedVersionId) return
     setIsRestoring(true)
     try {
       await publishVersion(selectedVersionId)
-      onRestore(versionDetail.templateBody)
+      onRestore(payload.content)
+      if (onLoadVersion) {
+        onLoadVersion(payload)
+      }
       setIsOpen(false)
       setSelectedVersionId(null)
+      toast.success('Version restored and published')
     } catch {
       toast.error('Failed to restore version. Please try again.')
     } finally {
@@ -129,7 +184,7 @@ export const LensVersionHistoryButton: React.FC<LensVersionHistoryButtonProps> =
             )}
           </div>
 
-          {/* Content preview + restore */}
+          {/* Content preview + actions */}
           {selectedVersionId && (
             <div className="border-t border-gray-100 dark:border-gray-800">
               {isLoadingDetail ? (
@@ -137,12 +192,22 @@ export const LensVersionHistoryButton: React.FC<LensVersionHistoryButtonProps> =
                   <Loader2 size={13} className="animate-spin" />
                   Loading content…
                 </div>
-              ) : versionDetail?.templateBody ? (
+              ) : previewContent ? (
                 <>
                   <pre className="px-4 py-3 text-[11px] font-mono text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50 max-h-32 overflow-y-auto whitespace-pre-wrap break-words leading-relaxed">
-                    {versionDetail.templateBody}
+                    {previewContent}
                   </pre>
-                  <div className="px-4 py-2.5 flex justify-end border-t border-gray-100 dark:border-gray-800">
+                  <div className="px-4 py-2.5 flex flex-wrap justify-end gap-2 border-t border-gray-100 dark:border-gray-800">
+                    {onLoadVersion && (
+                      <button
+                        type="button"
+                        onClick={handleLoadIntoEditor}
+                        className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <Pencil size={12} />
+                        Edit in modal
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={handleRestore}
@@ -154,7 +219,7 @@ export const LensVersionHistoryButton: React.FC<LensVersionHistoryButtonProps> =
                       ) : (
                         <RotateCcw size={12} />
                       )}
-                      Restore this version
+                      Restore &amp; publish
                     </button>
                   </div>
                 </>

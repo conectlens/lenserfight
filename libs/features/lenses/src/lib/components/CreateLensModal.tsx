@@ -132,7 +132,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   resolveLocalKey,
 }) => {
   const editorRef = useRef<LensContentEditorHandle>(null)
-  const { tools } = useTools(undefined, isOpen)
+  const { tools, textToolId } = useTools(undefined, isOpen)
   const [lensInstructionsCopied, setLensInstructionsCopied] = useState(false)
   const [showAiPanel, setShowAiPanel] = useState(false)
 
@@ -163,12 +163,17 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
         form.setTags([...withoutKinds, ...suggestedTagSlugs])
       }
       // Sync params from content (debounced handler will also pick these up)
-      if (params.length > 0) {
-        form.setVersionParams(params.map((p) => ({ label: p.label, toolId: '' })))
+      if (params.length > 0 && textToolId) {
+        form.setVersionParams(
+          params.map((p) => ({
+            label: p.label,
+            toolId: textToolId,
+          })),
+        )
       }
       void description // description is informational, title is set above
     }
-  }, [profileId, aiPrompt, generate, form, resetAiError])
+  }, [profileId, aiPrompt, generate, form, resetAiError, textToolId])
 
   const formValues = useMemo(
     () => ({ title: form.title, content: form.content, tags: form.tags }),
@@ -320,6 +325,12 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
                   lensId={lensId}
                   onRestore={(content) => {
                     form.setContent(content)
+                    clearError('content')
+                  }}
+                  onLoadVersion={({ content, versionParams }) => {
+                    form.setContent(content)
+                    form.setVersionParams(versionParams)
+                    form.syncParamsFromContent(content)
                     clearError('content')
                   }}
                 />

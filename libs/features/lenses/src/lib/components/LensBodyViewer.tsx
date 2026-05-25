@@ -1,6 +1,6 @@
 import { LensVersionParam } from '@lenserfight/types'
 import { copyTextToClipboard, renderLensContentForCopy } from '@lenserfight/utils/text'
-import { Check, Copy, Terminal } from 'lucide-react'
+import { Check, Copy, Loader2, Terminal } from 'lucide-react'
 import React from 'react'
 
 import { LensContentReadonly } from './LensContentReadonly'
@@ -9,6 +9,8 @@ interface LensBodyViewerProps {
   content?: string | null
   /** Rich version params — forwarded to LensContentReadonly for tooltip display. */
   versionParams?: LensVersionParam[]
+  /** When true, shows a loader instead of rendering mismatched content/params. */
+  isLoadingVersion?: boolean
   onCopy?: () => Promise<void>
   onFork?: () => void
   canFork?: boolean
@@ -18,6 +20,7 @@ interface LensBodyViewerProps {
 export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({
   content,
   versionParams,
+  isLoadingVersion = false,
   onCopy,
 }) => {
   const safeContent = content ?? ''
@@ -62,7 +65,12 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({
             </button>
           )}
           <div className="pl-6">
-            {safeContent ? (
+            {isLoadingVersion ? (
+              <div className="flex items-center gap-2 py-8 text-sm text-greyscale-400">
+                <Loader2 size={16} className="animate-spin" />
+                Loading version…
+              </div>
+            ) : safeContent ? (
               <LensContentReadonly
                 content={safeContent}
                 versionParams={versionParams}

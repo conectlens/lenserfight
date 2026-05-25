@@ -41,8 +41,10 @@ export function createChainabitAdapter(ctx: ChainabitAdapterCtx = {}): FundingAd
     async executeMedia(req: MediaExecutionRequest): Promise<MediaExecutionResult> {
       const resp = await executionService.triggerExecution({
         lens_id: req.lensId,
+        version_id: req.versionId,
         model_id: req.model,
         input_snapshot: { ...req.inputSnapshot, prompt: req.prompt },
+        attachment_bindings: req.attachmentBindings,
         funding_source: 'platform_credit',
         origin_type: (ctx.originType ?? 'lens_preview') as 'lens_preview',
         generative_media_params: {

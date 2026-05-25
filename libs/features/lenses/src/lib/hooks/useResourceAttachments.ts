@@ -4,7 +4,7 @@ import { mediaService } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
 import { CreateMediaObjectDTO } from '@lenserfight/types'
 import { useToast } from '@lenserfight/shared/error'
-import { getStorageAdapter } from '@lenserfight/infra/storage'
+import { buildLensResourceObjectKey } from '../utils/lensStorageObjectKey'
 
 export const useVersionResources = (versionId: string | null | undefined) => {
   return useQuery({
@@ -26,6 +26,7 @@ export const useVersionResources = (versionId: string | null | undefined) => {
 export const useResourceAttachments = (
   versionId: string | null | undefined,
   workspaceId: string | null | undefined,
+  authUserId?: string | null
 ) => {
   const queryClient = useQueryClient()
   const { toastError } = useToast()
@@ -58,15 +59,18 @@ export const useResourceAttachments = (
     async (
       file: File,
       bindingKey: string,
-      bucket: string = 'lens-resources'
+      bucket: string = 'lens-resources',
+      ownerAuthUserId?: string | null
     ) => {
       if (!versionId) throw new Error('versionId is required')
       if (!workspaceId) throw new Error('workspaceId is required')
+      const uid = ownerAuthUserId ?? authUserId
+      if (!uid) throw new Error('Sign in required to upload files.')
 
       setUploadProgress((prev) => ({ ...prev, [bindingKey]: 'uploading' }))
 
       try {
-        const objectKey = `${versionId}/${bindingKey}/${file.name}`
+        const objectKey = buildLensResourceObjectKey(uid, versionId, bindingKey, file.name)
         const dto: CreateMediaObjectDTO = {
           mediaType: file.type.startsWith('image/')
             ? 'image'
@@ -83,11 +87,7 @@ export const useResourceAttachments = (
 
         const session = await mediaService.startUpload(dto, workspaceId, bucket, objectKey)
 
-        // Upload via storage adapter
-        const adapter = getStorageAdapter()
-        const { signedUrl } = await adapter.createSignedUploadUrl(bucket, objectKey)
-
-        const uploadResponse = await fetch(signedUrl, {
+        const uploadResponse = await fetch(session.signedUploadUrl, {
           method: 'PUT',
           headers: { 'Content-Type': file.type },
           body: file,
@@ -108,7 +108,7 @@ export const useResourceAttachments = (
         throw err
       }
     },
-    [versionId, workspaceId, bindAttachment, toastError]
+    [versionId, workspaceId, authUserId, bindAttachment, toastError]
   )
 
   // Backward-compatible aliases

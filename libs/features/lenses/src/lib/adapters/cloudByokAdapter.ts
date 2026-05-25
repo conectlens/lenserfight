@@ -70,11 +70,10 @@ export function createCloudByokAdapter(ctx: CloudByokAdapterCtx): FundingAdapter
       const keyRefId = requireKey()
       const resp = await executionService.triggerExecution({
         lens_id: req.lensId,
+        version_id: req.versionId,
         model_id: req.model,
-        // The edge function resolves the prompt from input_snapshot.prompt as
-        // the first fallback after generative_media_params.prompt, so injecting
-        // it here keeps the contract simple and forward-compatible.
         input_snapshot: { ...req.inputSnapshot, prompt: req.prompt },
+        attachment_bindings: req.attachmentBindings,
         funding_source: 'user_byok_cloud',
         origin_type: (ctx.originType ?? 'lens_preview') as 'lens_preview',
         byok_key_ref_id: keyRefId,
