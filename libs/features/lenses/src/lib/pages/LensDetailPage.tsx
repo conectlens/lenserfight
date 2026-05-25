@@ -106,6 +106,7 @@ export const LensDetailPage: React.FC = () => {
   const lab = useLabController(id ?? '', !!isAuthenticated, {
     providersEnabled,
     resolveLocalKey: stableResolveLocalKey,
+    hasActiveLenserProfile,
   })
   const funding = useFundingSource(lab.selectedProviderKey)
   const chainabit = useChainabitConnection()
@@ -554,16 +555,17 @@ export const LensDetailPage: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    if (!ensureProfile()) return
-                    drawerRouter.open('executions')
-                  }}
+                  onClick={() => drawerRouter.open('executions')}
                   title={
                     hasActiveLenserProfile
                       ? 'View execution history'
                       : 'Sign in or register to view executions'
                   }
-                  className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50"
+                  className={`flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium shadow-sm transition-colors ${
+                    hasActiveLenserProfile
+                      ? 'text-greyscale-600 hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50'
+                      : 'cursor-not-allowed opacity-50 text-greyscale-400'
+                  }`}
                 >
                   <ListVideo size={13} />
                   <span>Executions</span>
@@ -927,6 +929,9 @@ export const LensDetailPage: React.FC = () => {
         hasMoreHistory={lab.hasMoreHistory}
         loadMoreHistory={lab.loadMoreHistory}
         onSelectRun={lab.setSelectedRunId}
+        isLocked={!hasActiveLenserProfile}
+        lockReason={!isAuthenticated ? 'unauthenticated' : 'no_profile'}
+        onSignIn={ensureProfile}
       />
 
       <MediaGalleryDrawer open={drawerRouter.isOpen('media')} onClose={drawerRouter.close} />
