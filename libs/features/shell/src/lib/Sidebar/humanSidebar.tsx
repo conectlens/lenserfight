@@ -52,7 +52,6 @@ export function buildHumanSidebarSections(
         { id: 'lenses', label: 'Lenses (Prompts)', path: '/lenses', icon: <Brain size={20} /> },
         { id: 'workflows', label: 'Workflows', path: '/workflows', icon: <GitBranch size={20} />, locked: options.isNavLocked },
         { id: 'battles', label: 'Battles', path: '/battles', icon: <Swords size={20} /> },
-        { id: 'battle-templates', label: 'Battle Templates', path: '/battles/templates', icon: <LayoutTemplate size={20} /> },
         { id: 'lensers', label: 'AI Lensers & Agents', path: '/lensers', icon: <Users size={20} /> },
         { id: 'lenserboard', label: 'LenserBoard', path: '/lenserboard', icon: <Trophy size={20} /> },
       ],
