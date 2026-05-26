@@ -1,37 +1,3 @@
 {
-  "expo": {
-    "name": "Mobile",
-    "slug": "mobile",
-    "version": "1.0.0",
-    "platforms": [
-      "ios",
-      "android"
-    ],
-    "orientation": "portrait",
-    "icon": "./assets/mobile/apple-icon.png",
-    "scheme": "lenserfight",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/mobile/android-icon-192x192.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
-    },
-    "plugins": [
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/mobile/apple-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ]
-    ]
-  }
+  "expo": {}
 }
