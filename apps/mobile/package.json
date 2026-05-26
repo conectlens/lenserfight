@@ -2,26 +2,24 @@
   "name": "mobile",
   "version": "0.0.1",
   "private": true,
-  "main": "index.js",
   "scripts": {
     "eas-build-post-install": "cd ../../ && node tools/scripts/eas-build-post-install.mjs . apps/mobile"
   },
   "dependencies": {
-    "@expo/metro-config": "*",
-    "@expo/vector-icons": "*",
-    "@react-native-community/netinfo": "*",
-    "@testing-library/react-native": "*",
-    "expo": "*",
-    "expo-splash-screen": "*",
-    "expo-status-bar": "*",
-    "expo-system-ui": "*",
-    "jest-expo": "*",
-    "metro-config": "*",
-    "metro-resolver": "*",
-    "react": "^19.2.3",
-    "react-native": "*",
-    "posthog-react-native": "*",
-    "react-native-svg": "^15.15.4",
-    "react-native-svg-transformer": "*"
+    "@expo/metro-config": "~54.0.14",
+    "@testing-library/react-native": "~13.2.2",
+    "expo": "~54.0.34",
+    "expo-splash-screen": "~31.0.13",
+    "expo-status-bar": "~3.0.9",
+    "expo-system-ui": "~6.0.9",
+    "jest-expo": "~54.0.17",
+    "metro-config": "~0.83.5",
+    "metro-resolver": "~0.83.5",
+    "react": "*",
+    "react-native": "0.81.5",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-svg": "15.12.1",
+    "react-native-svg-transformer": "~1.5.3",
+    "react-native-web": "~0.21.2"
   }
 }
