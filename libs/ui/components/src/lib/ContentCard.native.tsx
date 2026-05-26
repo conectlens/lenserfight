@@ -3,12 +3,25 @@ import { StyleSheet, View } from 'react-native'
 import { Chip, Pressable, Surface, Text } from '@lenserfight/ui/primitives/native'
 import { useNativeTheme } from '@lenserfight/ui/providers/native'
 
-interface SummaryCardProps {
+export interface ContentCardTag {
+  id?: string
+  slug?: string
+  name?: string
+}
+
+export interface SummaryCardProps {
   title: string
-  subtitle?: string
+  subtitle?: string | null
   meta?: string
-  tags?: Array<{ id?: string; slug?: string; name?: string }>
+  tags?: ContentCardTag[]
   onPress?: () => void
+  testID?: string
+  accessibilityHint?: string
+}
+
+export interface DetailSectionProps {
+  title: string
+  children: React.ReactNode
   testID?: string
 }
 
@@ -24,10 +37,15 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   tags = [],
   onPress,
   testID,
+  accessibilityHint,
 }) => {
-  const { radius, spacing } = useNativeTheme()
+  const theme = useNativeTheme()
   const content = (
-    <Surface borderRadius={radius.xl} style={[styles.card, { padding: spacing[4] }]} testID={testID}>
+    <Surface
+      borderRadius={theme.radius.xl}
+      style={[styles.card, { padding: theme.spacing[4] }]}
+      testID={testID}
+    >
       <Text variant="h4" weight="semibold">
         {title}
       </Text>
@@ -42,7 +60,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
         </Text>
       )}
       {tags.length > 0 && (
-        <View style={styles.tags}>
+        <View style={[styles.tags, { gap: theme.spacing[2] }]}>
           {tags.slice(0, 4).map((tag) => (
             <Chip key={tag.id ?? tag.slug ?? tag.name} label={tag.name ?? tag.slug ?? 'tag'} />
           ))}
@@ -52,20 +70,28 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   )
 
   if (!onPress) return content
+
   return (
-    <Pressable onPress={onPress} accessibilityLabel={title} accessibilityRole="button">
+    <Pressable
+      onPress={onPress}
+      accessibilityLabel={title}
+      accessibilityHint={accessibilityHint}
+      accessibilityRole="button"
+    >
       {content}
     </Pressable>
   )
 }
 
-export const DetailSection: React.FC<{
-  title: string
-  children: React.ReactNode
-}> = ({ title, children }) => {
-  const { radius, spacing } = useNativeTheme()
+export const DetailSection: React.FC<DetailSectionProps> = ({ title, children, testID }) => {
+  const theme = useNativeTheme()
+
   return (
-    <Surface borderRadius={radius.xl} style={[styles.card, { padding: spacing[4] }]}>
+    <Surface
+      borderRadius={theme.radius.xl}
+      style={[styles.card, { padding: theme.spacing[4] }]}
+      testID={testID}
+    >
       <Text variant="h4" weight="semibold" style={styles.sectionTitle}>
         {title}
       </Text>
@@ -73,6 +99,9 @@ export const DetailSection: React.FC<{
     </Surface>
   )
 }
+
+SummaryCard.displayName = 'SummaryCard'
+DetailSection.displayName = 'DetailSection'
 
 const styles = StyleSheet.create({
   card: {
@@ -84,7 +113,6 @@ const styles = StyleSheet.create({
   tags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
     marginTop: 2,
   },
 })
