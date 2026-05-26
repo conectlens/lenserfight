@@ -7,21 +7,21 @@
 import React, { useEffect } from 'react'
 import { BackHandler, Modal, StyleSheet, View } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
-import { Text } from '@lenserfight/ui/primitives'
-import { Pressable } from '@lenserfight/ui/primitives'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import { Text } from '@lenserfight/ui/primitives/native'
+import { Pressable } from '@lenserfight/ui/primitives/native'
 import { Backdrop } from './Backdrop.native'
 
 export interface DialogProps {
-  open:                boolean
-  onClose?:            () => void
-  title?:              string
-  description?:        string
-  children?:           React.ReactNode
+  open: boolean
+  onClose?: () => void
+  title?: string
+  description?: string
+  children?: React.ReactNode
   /** Footer slot — typically action buttons */
-  footer?:             React.ReactNode
-  dismissOnBackdrop?:  boolean
-  style?:              ViewStyle
+  footer?: React.ReactNode
+  dismissOnBackdrop?: boolean
+  style?: ViewStyle
 }
 
 /**
@@ -68,12 +68,12 @@ export const Dialog: React.FC<DialogProps> = ({
             styles.panel,
             {
               backgroundColor: surface.overlay,
-              borderRadius:    radius['2xl'],
-              shadowColor:     spec.iosShadow.color,
-              shadowOffset:    spec.iosShadow.offset,
-              shadowOpacity:   spec.iosShadow.opacity,
-              shadowRadius:    spec.iosShadow.radius,
-              elevation:       spec.androidElevation,
+              borderRadius: radius['2xl'],
+              shadowColor: spec.iosShadow.color,
+              shadowOffset: spec.iosShadow.offset,
+              shadowOpacity: spec.iosShadow.opacity,
+              shadowRadius: spec.iosShadow.radius,
+              elevation: spec.androidElevation,
             },
             style,
           ]}
@@ -83,9 +83,15 @@ export const Dialog: React.FC<DialogProps> = ({
           {/* Header */}
           {(title || onClose) && (
             <View style={styles.header}>
-              {title && <Text variant="h4" weight="semibold">{title}</Text>}
+              {title && (
+                <Text variant="h4" weight="semibold">
+                  {title}
+                </Text>
+              )}
               {description && (
-                <Text variant="bodyS" color="muted" style={{ marginTop: 4 }}>{description}</Text>
+                <Text variant="bodyS" color="muted" style={{ marginTop: 4 }}>
+                  {description}
+                </Text>
               )}
               {onClose && (
                 <Pressable
@@ -114,37 +120,37 @@ Dialog.displayName = 'Dialog'
 
 const styles = StyleSheet.create({
   overlay: {
-    flex:           1,
-    alignItems:     'center',
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    padding:        24,
+    padding: 24,
   },
   panel: {
-    width:    '100%',
+    width: '100%',
     maxWidth: 480,
     overflow: 'hidden',
   },
   header: {
-    padding:         20,
-    paddingBottom:   12,
-    flexDirection:   'row',
-    alignItems:      'flex-start',
-    flexWrap:        'wrap',
+    padding: 20,
+    paddingBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
   },
   closeBtn: {
     marginLeft: 'auto',
-    padding:    4,
+    padding: 4,
   },
   content: {
     paddingHorizontal: 20,
-    paddingBottom:     16,
+    paddingBottom: 16,
   },
   footer: {
-    padding:      16,
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#dcdde0',
-    flexDirection:  'row',
-    gap:            8,
+    flexDirection: 'row',
+    gap: 8,
     justifyContent: 'flex-end',
   },
 })

@@ -6,12 +6,12 @@
  */
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
-import { Text } from '@lenserfight/ui/primitives'
+import { Text } from '@lenserfight/ui/primitives/native'
 
 export interface OfflineBannerProps {
   /** Pass true when the device is offline. The banner renders null when false. */
   isOffline: boolean
-  message?:  string
+  message?: string
 }
 
 /**
@@ -26,7 +26,12 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = ({
   if (!isOffline) return null
 
   return (
-    <View style={styles.banner} accessible accessibilityRole="alert" accessibilityLiveRegion="polite">
+    <View
+      style={styles.banner}
+      accessible
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+    >
       <Text variant="caption" weight="medium" style={{ color: '#ffffff' }} align="center">
         {message}
       </Text>
@@ -39,8 +44,8 @@ OfflineBanner.displayName = 'OfflineBanner'
 const styles = StyleSheet.create({
   banner: {
     backgroundColor: '#ea3942',
-    paddingVertical:   8,
+    paddingVertical: 8,
     paddingHorizontal: 16,
-    alignItems:        'center',
+    alignItems: 'center',
   },
 })

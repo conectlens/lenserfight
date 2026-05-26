@@ -9,12 +9,8 @@
  * Optional haptic feedback via expo-haptics. Falls back silently if not installed.
  */
 import React, { useCallback, useRef } from 'react'
-import {
-  Pressable as RNPressable,
-  Animated,
-  StyleSheet,
-} from 'react-native'
-import type { StyleProp, ViewStyle } from 'react-native'
+import { Pressable as RNPressable, Animated } from 'react-native'
+import type { AccessibilityRole, AccessibilityState, StyleProp, ViewStyle } from 'react-native'
 
 // Optional expo-haptics integration
 let Haptics: { impactAsync: (style?: string) => Promise<void> } | null = null
@@ -26,20 +22,20 @@ try {
 }
 
 export interface PressableProps {
-  onPress?:     () => void
+  onPress?: () => void
   onLongPress?: () => void
-  disabled?:    boolean
-  haptic?:      boolean
+  disabled?: boolean
+  haptic?: boolean
   /** Pressed opacity (0–1). Default: 0.7 */
   pressedOpacity?: number
-  style?:       StyleProp<ViewStyle>
-  children?:    React.ReactNode
-  testID?:      string
-  accessible?:  boolean
+  style?: StyleProp<ViewStyle>
+  children?: React.ReactNode
+  testID?: string
+  accessible?: boolean
   accessibilityLabel?: string
-  accessibilityRole?:  'button' | 'link' | 'menuitem' | 'tab' | 'none'
-  accessibilityHint?:  string
-  accessibilityState?: { disabled?: boolean; checked?: boolean; selected?: boolean }
+  accessibilityRole?: AccessibilityRole
+  accessibilityHint?: string
+  accessibilityState?: AccessibilityState
 }
 
 /**
@@ -74,7 +70,11 @@ export const Pressable = React.forwardRef<any, PressableProps>(
     const animatedStyle = { opacity }
 
     const handlePressIn = useCallback(() => {
-      Animated.timing(opacity, { toValue: pressedOpacity, duration: 80, useNativeDriver: true }).start()
+      Animated.timing(opacity, {
+        toValue: pressedOpacity,
+        duration: 80,
+        useNativeDriver: true,
+      }).start()
     }, [pressedOpacity, opacity])
 
     const handlePressOut = useCallback(() => {
@@ -83,7 +83,11 @@ export const Pressable = React.forwardRef<any, PressableProps>(
 
     const handlePress = useCallback(async () => {
       if (haptic && Haptics) {
-        try { await Haptics.impactAsync('light') } catch { /* ignore */ }
+        try {
+          await Haptics.impactAsync('light')
+        } catch {
+          /* ignore */
+        }
       }
       onPress?.()
     }, [haptic, onPress])
@@ -103,18 +107,10 @@ export const Pressable = React.forwardRef<any, PressableProps>(
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled, ...accessibilityState }}
       >
-        <Animated.View style={[animatedStyle, style]}>
-          {children}
-        </Animated.View>
+        <Animated.View style={[animatedStyle, style]}>{children}</Animated.View>
       </RNPressable>
     )
   }
 )
 
 Pressable.displayName = 'Pressable'
-
-const styles = StyleSheet.create({
-  disabled: {
-    opacity: 0.38,
-  },
-})

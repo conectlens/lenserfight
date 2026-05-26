@@ -7,18 +7,18 @@
 import React, { useEffect, useRef } from 'react'
 import { Animated, BackHandler, Modal, StyleSheet, View } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
 import { Backdrop } from './Backdrop.native'
 
 export interface DrawerProps {
-  open:                boolean
-  onClose?:            () => void
-  side?:               'left' | 'right'
+  open: boolean
+  onClose?: () => void
+  side?: 'left' | 'right'
   /** Drawer width in pixels. Default: 280 */
-  width?:              number
-  children:            React.ReactNode
-  footer?:              React.ReactNode
-  dismissOnBackdrop?:  boolean
+  width?: number
+  children: React.ReactNode
+  footer?: React.ReactNode
+  dismissOnBackdrop?: boolean
 }
 
 /**
@@ -30,20 +30,20 @@ export interface DrawerProps {
 export const Drawer: React.FC<DrawerProps> = ({
   open,
   onClose,
-  side    = 'left',
-  width   = 280,
+  side = 'left',
+  width = 280,
   children,
   footer,
   dismissOnBackdrop = true,
 }) => {
   const { surface, elevation } = useNativeTheme()
-  const spec    = elevation(4)
+  const spec = elevation(4)
   const translate = useRef(new Animated.Value(side === 'left' ? -width : width)).current
 
   useEffect(() => {
     Animated.timing(translate, {
-      toValue:         open ? 0 : (side === 'left' ? -width : width),
-      duration:        250,
+      toValue: open ? 0 : side === 'left' ? -width : width,
+      duration: 250,
       useNativeDriver: true,
     }).start()
   }, [open, width, side, translate])
@@ -58,11 +58,11 @@ export const Drawer: React.FC<DrawerProps> = ({
   }, [open, onClose])
 
   const shadowStyle: ViewStyle = {
-    shadowColor:   spec.iosShadow.color,
-    shadowOffset:  { width: side === 'left' ? 4 : -4, height: 0 },
+    shadowColor: spec.iosShadow.color,
+    shadowOffset: { width: side === 'left' ? 4 : -4, height: 0 },
     shadowOpacity: spec.iosShadow.opacity,
-    shadowRadius:  spec.iosShadow.radius,
-    elevation:     spec.androidElevation,
+    shadowRadius: spec.iosShadow.radius,
+    elevation: spec.androidElevation,
   }
 
   return (
@@ -83,8 +83,8 @@ export const Drawer: React.FC<DrawerProps> = ({
             {
               width,
               backgroundColor: surface.base,
-              [side]:          0,
-              transform:       [{ translateX: translate }],
+              [side]: 0,
+              transform: [{ translateX: translate }],
             },
           ]}
           accessible
@@ -106,9 +106,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   panel: {
-    position:    'absolute',
-    top:         0,
-    bottom:      0,
-    overflow:    'hidden',
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    overflow: 'hidden',
   },
 })

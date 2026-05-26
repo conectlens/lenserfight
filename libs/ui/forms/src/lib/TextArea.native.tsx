@@ -4,13 +4,13 @@
 import React from 'react'
 import { TextInput, View, StyleSheet } from 'react-native'
 import type { TextInputProps, ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
 
 export interface TextAreaProps extends Omit<TextInputProps, 'style' | 'multiline'> {
-  error?:        boolean
-  disabled?:     boolean
+  error?: boolean
+  disabled?: boolean
   numberOfLines?: number
-  style?:        ViewStyle
+  style?: ViewStyle
 }
 
 /**
@@ -28,9 +28,9 @@ export const TextArea = React.forwardRef<TextInput, TextAreaProps>(
           styles.container,
           {
             backgroundColor: surface.raised,
-            borderColor:     error ? '#ea3942' : surface.border,
-            borderRadius:    radius.xl,
-            opacity:         isDisabled ? 0.5 : 1,
+            borderColor: error ? '#ea3942' : surface.border,
+            borderRadius: radius.xl,
+            opacity: isDisabled ? 0.5 : 1,
           },
           style,
         ]}
@@ -44,10 +44,10 @@ export const TextArea = React.forwardRef<TextInput, TextAreaProps>(
           style={[
             styles.input,
             {
-              color:      surface.text,
-              fontSize:   14,
+              color: surface.text,
+              fontSize: 14,
               fontFamily: 'Inter',
-              minHeight:  numberOfLines * 22,
+              minHeight: numberOfLines * 22,
             },
           ]}
           textAlignVertical="top"
@@ -62,11 +62,11 @@ TextArea.displayName = 'TextArea'
 
 const styles = StyleSheet.create({
   container: {
-    borderWidth:       1,
-    padding:           12,
+    borderWidth: 1,
+    padding: 12,
   },
   input: {
     padding: 0,
-    margin:  0,
+    margin: 0,
   },
 })

@@ -10,7 +10,11 @@ import type {
   User,
   UserMetadata,
 } from '@lenserfight/types'
-import { SupabaseAuthRepository, type MobileOAuthProvider } from './lib/repositories/authRepository'
+import {
+  SupabaseAuthRepository,
+  type AuthChangeEvent,
+  type MobileOAuthProvider,
+} from './lib/repositories/authRepository.native'
 
 export type MobileBattle = {
   id: string
@@ -25,6 +29,26 @@ export type MobileBattle = {
 
 const authRepo = new SupabaseAuthRepository()
 
+type MobileAuthService = {
+  login(email: string, password: string, captchaToken?: string): Promise<User>
+  register(
+    email: string,
+    password: string,
+    metadata?: UserMetadata,
+    captchaToken?: string
+  ): Promise<User>
+  logout(): Promise<void>
+  getCurrentUser(): Promise<User | null>
+  updateMetadata(metadata: Partial<UserMetadata>): Promise<void>
+  requestPasswordReset(email: string, captchaToken?: string): Promise<void>
+  resetPassword(password: string): Promise<void>
+  signInWithOAuth(provider: MobileOAuthProvider): Promise<void>
+  resendSignupConfirmation(email: string): Promise<void>
+  sendMagicLink(email: string, captchaToken?: string): Promise<void>
+  onAuthStateChange(callback: (user: User | null, event: AuthChangeEvent) => void): () => void
+  resolveHandleToEmail(handle: string): Promise<string | null>
+}
+
 type Envelope<T> = {
   data: T
   meta: { limit: number; offset: number; hasNextPage: boolean }
@@ -37,7 +61,10 @@ type AuthorProfile = {
   avatar_url?: string | null
 }
 
-const mapAuthor = (record: { lenser_id?: string | null; author_profile?: AuthorProfile | null }) => ({
+const mapAuthor = (record: {
+  lenser_id?: string | null
+  author_profile?: AuthorProfile | null
+}) => ({
   id: record.author_profile?.id ?? record.lenser_id ?? 'unknown',
   handle: record.author_profile?.handle ?? 'unknown',
   displayName: record.author_profile?.display_name ?? 'Unknown',
@@ -73,7 +100,7 @@ const mapLens = (record: any): LensViewModel => ({
   tags: record.tags ?? [],
 })
 
-const envelope = <T,>(data: T[], limit: number, offset: number): Envelope<T[]> => ({
+const envelope = <T>(data: T[], limit: number, offset: number): Envelope<T[]> => ({
   data,
   meta: { limit, offset, hasNextPage: data.length >= limit },
 })
@@ -82,7 +109,7 @@ const raisePublicError = (error: unknown, message: string) => {
   if (error) throw new Error(message)
 }
 
-export const authService = {
+export const authService: MobileAuthService = {
   login: (email: string, password: string, captchaToken?: string): Promise<User> =>
     authRepo.login(email, password, captchaToken),
   register: (
@@ -104,7 +131,7 @@ export const authService = {
     authRepo.resendSignupConfirmation(email),
   sendMagicLink: (email: string, captchaToken?: string): Promise<void> =>
     authRepo.sendMagicLink(email, captchaToken),
-  onAuthStateChange: authRepo.onAuthStateChange.bind(authRepo),
+  onAuthStateChange: (callback) => authRepo.onAuthStateChange(callback),
   resolveHandleToEmail: (handle: string): Promise<string | null> =>
     authRepo.resolveHandleToEmail(handle),
 }
@@ -149,7 +176,9 @@ export const threadsService = {
   ): Promise<Envelope<ThreadFeedItem[]>> {
     const { data, error } = await supabase
       .from('vw_content_threads_public')
-      .select('id,title,content,lenser_id,author_profile,tags,reaction_totals,reply_count,visibility,status,created_at')
+      .select(
+        'id,title,content,lenser_id,author_profile,tags,reaction_totals,reply_count,visibility,status,created_at'
+      )
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
     raisePublicError(error, 'Could not load threads.')
@@ -159,7 +188,9 @@ export const threadsService = {
   async getThreadDetail(threadId: string): Promise<ThreadDetailViewModel | null> {
     const { data, error } = await supabase
       .from('vw_content_threads_public')
-      .select('id,title,content,lenser_id,author_profile,tags,reaction_totals,reply_count,visibility,status,created_at,prompt_data')
+      .select(
+        'id,title,content,lenser_id,author_profile,tags,reaction_totals,reply_count,visibility,status,created_at,prompt_data'
+      )
       .eq('id', threadId)
       .maybeSingle()
     raisePublicError(error, 'Could not load thread.')
@@ -195,7 +226,9 @@ export const lensesService = {
   async getLenses(offset = 0, limit = 20): Promise<Envelope<LensViewModel[]>> {
     const { data, error } = await supabase
       .from('vw_lenses_public')
-      .select('id,title,description,lenser_id,author_profile,tags,reaction_totals,visibility,status,created_at')
+      .select(
+        'id,title,description,lenser_id,author_profile,tags,reaction_totals,visibility,status,created_at'
+      )
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
     raisePublicError(error, 'Could not load lenses.')
@@ -203,7 +236,11 @@ export const lensesService = {
   },
 
   async getLensDetail(id: string): Promise<LensDetailViewModel | null> {
-    const { data, error } = await supabase.from('vw_lenses_public').select('*').eq('id', id).maybeSingle()
+    const { data, error } = await supabase
+      .from('vw_lenses_public')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle()
     raisePublicError(error, 'Could not load lens.')
     if (!data) return null
     const item = mapLens(data)

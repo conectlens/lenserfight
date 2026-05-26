@@ -4,19 +4,19 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
-import { Text } from '@lenserfight/ui/primitives'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import { Text } from '@lenserfight/ui/primitives/native'
 
 export interface TimelineItem {
-  id:       string
-  title:    string
+  id: string
+  title: string
   subtitle?: string
-  time?:    string
-  icon?:    React.ReactNode
+  time?: string
+  icon?: React.ReactNode
 }
 
 export interface TimelineProps {
-  items:  TimelineItem[]
+  items: TimelineItem[]
   style?: ViewStyle
 }
 
@@ -38,19 +38,19 @@ export const Timeline: React.FC<TimelineProps> = ({ items, style }) => {
           <View key={item.id} style={styles.row}>
             {/* Left column: dot + line */}
             <View style={styles.rail}>
-              <View style={[styles.dot, { backgroundColor: active }]}>
-                {item.icon ?? null}
-              </View>
-              {!isLast && (
-                <View style={[styles.line, { backgroundColor: surface.border }]} />
-              )}
+              <View style={[styles.dot, { backgroundColor: active }]}>{item.icon ?? null}</View>
+              {!isLast && <View style={[styles.line, { backgroundColor: surface.border }]} />}
             </View>
 
             {/* Content */}
             <View style={[styles.content, !isLast && styles.contentSpacing]}>
-              <Text variant="bodyS" weight="semibold">{item.title}</Text>
+              <Text variant="bodyS" weight="semibold">
+                {item.title}
+              </Text>
               {item.subtitle && (
-                <Text variant="caption" color="muted">{item.subtitle}</Text>
+                <Text variant="caption" color="muted">
+                  {item.subtitle}
+                </Text>
               )}
               {item.time && (
                 <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
@@ -74,25 +74,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   rail: {
-    alignItems:  'center',
-    width:        24,
-    marginRight:  12,
+    alignItems: 'center',
+    width: 24,
+    marginRight: 12,
   },
   dot: {
-    width:        DOT_SIZE,
-    height:       DOT_SIZE,
+    width: DOT_SIZE,
+    height: DOT_SIZE,
     borderRadius: DOT_SIZE / 2,
-    alignItems:   'center',
+    alignItems: 'center',
     justifyContent: 'center',
-    zIndex:       1,
+    zIndex: 1,
   },
   line: {
-    width:  2,
-    flex:   1,
+    width: 2,
+    flex: 1,
     marginTop: 2,
   },
   content: {
-    flex:       1,
+    flex: 1,
     paddingTop: 0,
   },
   contentSpacing: {

@@ -6,16 +6,16 @@
  */
 import React, { useEffect, useRef } from 'react'
 import { Animated, StyleSheet, Easing } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
 
 export type SpinnerSize = 'sm' | 'md' | 'lg'
 export type SpinnerVariant = 'default' | 'primary' | 'muted'
 
 export interface SpinnerProps {
-  size?:    SpinnerSize
+  size?: SpinnerSize
   variant?: SpinnerVariant
   /** Accessible label for screen readers */
-  label?:   string
+  label?: string
 }
 
 const sizeMap: Record<SpinnerSize, number> = {
@@ -31,9 +31,9 @@ const sizeMap: Record<SpinnerSize, number> = {
  * <Spinner size="md" />
  */
 export const Spinner: React.FC<SpinnerProps> = ({
-  size    = 'md',
+  size = 'md',
   variant = 'default',
-  label   = 'Loading',
+  label = 'Loading',
 }) => {
   const { surface, active } = useNativeTheme()
   const spin = useRef(new Animated.Value(0)).current
@@ -41,26 +41,26 @@ export const Spinner: React.FC<SpinnerProps> = ({
   useEffect(() => {
     Animated.loop(
       Animated.timing(spin, {
-        toValue:         1,
-        duration:        700,
-        easing:          Easing.linear,
+        toValue: 1,
+        duration: 700,
+        easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start()
   }, [spin])
 
   const rotate = spin.interpolate({
-    inputRange:  [0, 1],
+    inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   })
 
   const diameter = sizeMap[size]
-  const borderW  = size === 'sm' ? 2 : 3
+  const borderW = size === 'sm' ? 2 : 3
 
   const trackColor: Record<SpinnerVariant, string> = {
     default: active,
     primary: active,
-    muted:   surface.border,
+    muted: surface.border,
   }
   const arcColor = trackColor[variant]
   const baseColor = surface.border
@@ -70,13 +70,13 @@ export const Spinner: React.FC<SpinnerProps> = ({
       style={[
         styles.circle,
         {
-          width:             diameter,
-          height:            diameter,
-          borderRadius:      diameter / 2,
-          borderWidth:       borderW,
-          borderColor:       baseColor,
-          borderTopColor:    arcColor,
-          transform:         [{ rotate }],
+          width: diameter,
+          height: diameter,
+          borderRadius: diameter / 2,
+          borderWidth: borderW,
+          borderColor: baseColor,
+          borderTopColor: arcColor,
+          transform: [{ rotate }],
         },
       ]}
       accessible

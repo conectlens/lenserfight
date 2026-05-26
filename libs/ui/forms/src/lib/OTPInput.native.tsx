@@ -7,17 +7,17 @@
 import React, { useRef, useCallback } from 'react'
 import { TextInput, View, StyleSheet } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
-import { Text } from '@lenserfight/ui/primitives'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import { Text } from '@lenserfight/ui/primitives/native'
 
 export interface OTPInputProps {
-  value:       string
-  onChange:    (value: string) => void
-  length?:     number
-  secure?:     boolean
-  error?:      string
-  autoFocus?:  boolean
-  style?:      ViewStyle
+  value: string
+  onChange: (value: string) => void
+  length?: number
+  secure?: boolean
+  error?: string
+  autoFocus?: boolean
+  style?: ViewStyle
   onComplete?: (value: string) => void
 }
 
@@ -81,7 +81,9 @@ export const OTPInput: React.FC<OTPInputProps> = ({
           return (
             <TextInput
               key={index}
-              ref={(el) => { refs.current[index] = el }}
+              ref={(el) => {
+                refs.current[index] = el
+              }}
               value={char}
               onChangeText={(text) => handleChange(text, index)}
               onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
@@ -93,11 +95,11 @@ export const OTPInput: React.FC<OTPInputProps> = ({
               style={[
                 styles.cell,
                 {
-                  borderRadius:    radius.lg,
-                  borderColor:     error ? '#ea3942' : char ? active : surface.border,
+                  borderRadius: radius.lg,
+                  borderColor: error ? '#ea3942' : char ? active : surface.border,
                   backgroundColor: surface.raised,
-                  color:           surface.text,
-                  fontFamily:      'Inter',
+                  color: surface.text,
+                  fontFamily: 'Inter',
                 },
               ]}
               accessible
@@ -119,16 +121,16 @@ OTPInput.displayName = 'OTPInput'
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection:  'row',
-    gap:             8,
+    flexDirection: 'row',
+    gap: 8,
     justifyContent: 'center',
   },
   cell: {
-    width:          CELL_SIZE,
-    height:         CELL_SIZE,
-    borderWidth:    2,
-    textAlign:      'center',
-    fontSize:       20,
-    fontWeight:     '600',
+    width: CELL_SIZE,
+    height: CELL_SIZE,
+    borderWidth: 2,
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '600',
   },
 })

@@ -1,1 +1,1 @@
-export * from './lib/context/LenserContext'
+export * from './lib/context/LenserContext.native'

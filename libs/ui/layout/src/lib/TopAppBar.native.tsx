@@ -6,7 +6,7 @@
  */
 import React from 'react'
 import { Platform, StyleSheet, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, type Edge } from 'react-native-safe-area-context'
 import type { ViewStyle } from 'react-native'
 import { useNativeTheme } from '@lenserfight/ui/providers/native'
 import { Text } from '@lenserfight/ui/primitives/native'
@@ -22,6 +22,11 @@ export interface TopAppBarProps {
   titleNode?: React.ReactNode
   style?:    ViewStyle
   testID?:   string
+  /**
+   * Safe-area edges to apply. Defaults to ['top'] which is correct for an
+   * app bar positioned at the top of the screen.
+   */
+  safeEdges?: Edge[]
 }
 
 /**
@@ -40,6 +45,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
   titleNode,
   style,
   testID,
+  safeEdges = ['top'],
 }) => {
   const { surface, elevation } = useNativeTheme()
   const spec = elevation(2)
@@ -54,7 +60,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
     : { elevation: spec.androidElevation }
 
   return (
-    <SafeAreaView style={[{ backgroundColor: surface.base }, shadowStyle, style]} testID={testID}>
+    <SafeAreaView edges={safeEdges} style={[{ backgroundColor: surface.base }, shadowStyle, style]} testID={testID}>
       <View style={styles.bar}>
         {/* Leading */}
         <View style={styles.slot}>{leading}</View>
