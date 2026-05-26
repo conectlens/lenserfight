@@ -5,7 +5,8 @@
  * Provides leading (back), title, and trailing (actions) slots.
  */
 import React from 'react'
-import { Platform, SafeAreaView, StyleSheet, View } from 'react-native'
+import { Platform, StyleSheet, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import type { ViewStyle } from 'react-native'
 import { useNativeTheme } from '@lenserfight/ui/providers/native'
 import { Text } from '@lenserfight/ui/primitives/native'

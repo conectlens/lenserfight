@@ -5,7 +5,8 @@
  * Use as the root wrapper for all screen content.
  */
 import React from 'react'
-import { SafeAreaView, StyleSheet, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { StyleSheet } from 'react-native'
 import type { ViewStyle } from 'react-native'
 import { useNativeTheme } from '@lenserfight/ui/providers/native'
 
@@ -26,13 +27,18 @@ export interface SafeAreaContainerProps {
  */
 export const SafeAreaContainer: React.FC<SafeAreaContainerProps> = ({
   children,
+  edges,
   style,
   testID,
 }) => {
   const { surface } = useNativeTheme()
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: surface.base }, style]} testID={testID}>
+    <SafeAreaView
+      edges={edges}
+      style={[styles.root, { backgroundColor: surface.base }, style]}
+      testID={testID}
+    >
       {children}
     </SafeAreaView>
   )
