@@ -4,6 +4,11 @@ export interface OfflineBannerProps {
   /** Custom message */
   message?: string
   className?: string
+  /**
+   * Native-only: pass true when the device is offline.
+   * Ignored on web — the component detects connectivity via window events.
+   */
+  isOffline?: boolean
 }
 
 /**
