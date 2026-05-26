@@ -103,7 +103,13 @@
   },
   "actions": {
     "back": "Geri",
+    "close": "Kapat",
     "open": "Aç",
-    "refresh": "Yenile"
+    "refresh": "Yenile",
+    "goHome": "Ana sayfaya git",
+    "search": "Ara",
+    "settings": "Ayarlar",
+    "newThread": "Yeni konu",
+    "newBattle": "Yeni düello"
   }
 }
