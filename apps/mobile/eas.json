@@ -1,15 +1,8 @@
 {
-  "cli": {
-    "version": ">= 12.0.0"
-  },
   "build": {
     "production": {
-      "ios": {
-        "autoIncrement": true
-      },
       "android": {
-        "buildType": "app-bundle",
-        "autoIncrement": true
+        "buildType": "app-bundle"
       }
     },
     "development": {
@@ -27,16 +20,6 @@
     }
   },
   "submit": {
-    "production": {
-      "ios": {
-        "appleId": "REPLACE_WITH_APPLE_ID",
-        "ascAppId": "REPLACE_WITH_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID"
-      },
-      "android": {
-        "serviceAccountKeyPath": "./google-play-key.json",
-        "track": "internal"
-      }
-    }
+    "production": {}
   }
 }
