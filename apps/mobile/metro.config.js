@@ -1,6 +1,10 @@
-const { withNxMetro } = require('@nx/expo')
 const { getDefaultConfig } = require('@expo/metro-config')
+const { withNxMetro } = require('@nx/expo')
 const { mergeConfig } = require('metro-config')
+
+// NOTE: EXPO_ROUTER_APP_ROOT is NOT set here. babel-preset-expo inlines it at
+// transform time from the expo-router plugin's `root` option (app.config.js).
+// Setting the env var here has no effect — the Babel AST transform wins.
 
 const defaultConfig = getDefaultConfig(__dirname)
 const { assetExts, sourceExts } = defaultConfig.resolver
@@ -28,6 +32,5 @@ module.exports = withNxMetro(mergeConfig(defaultConfig, customConfig), {
   debug: false,
   // all the file extensions used for imports other than 'ts', 'tsx', 'js', 'jsx', 'json'
   extensions: [],
-  // Specify folders to watch, in addition to Nx defaults (workspace libraries and node_modules)
   watchFolders: [],
 })

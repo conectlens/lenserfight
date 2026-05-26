@@ -3,7 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/mobile/src",
   "projectType": "application",
-  "tags": [],
+  "tags": ["type:app", "layer:app", "surface:mobile", "scope:public", "license:oss"],
   "// targets": "to see all targets run: nx show project mobile --web",
   "targets": {
     "serve": {
@@ -11,7 +11,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/mobile",
-        "command": "expo start"
+        "command": "REACT_NATIVE_PACKAGER_HOSTNAME=${METRO_HOST:-$(node -e \"const nets = require('os').networkInterfaces(); console.log(Object.values(nets).flat().find(net => net.family === 'IPv4' && !net.internal)?.address || '127.0.0.1')\")} expo start"
       }
     }
   }
