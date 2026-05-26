@@ -78,6 +78,7 @@
       "@lenserfight/api/exports": ["libs/api/exports/src/index.ts"],
       "@lenserfight/types": ["libs/types/src/index.ts"],
       "@lenserfight/ui/components": ["libs/ui/components/src/index.ts"],
+      "@lenserfight/ui/components/native": ["libs/ui/components/src/native.ts"],
       "@lenserfight/ui/forms": ["libs/ui/forms/src/index.ts"],
       "@lenserfight/ui/forms/native": ["libs/ui/forms/src/native.ts"],
       "@lenserfight/ui/layout": ["libs/ui/layout/src/index.ts"],
