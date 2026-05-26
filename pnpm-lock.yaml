@@ -23,6 +23,12 @@ importers:
       '@expo/metro-config':
         specifier: ~54.0.14
         version: 54.0.14(expo@54.0.34(@babel/core@7.29.0)(@expo/metro-runtime@6.1.2)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))
+      '@expo/metro-runtime':
+        specifier: ~6.1.2
+        version: 6.1.2(expo@54.0.34)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      '@expo/vector-icons':
+        specifier: ^15.1.1
+        version: 15.1.1(expo-font@14.0.11(expo@54.0.34(@babel/core@7.29.0)(@expo/metro-runtime@6.1.2)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       '@fal-ai/client':
         specifier: ^1.9.5
         version: 1.9.5
@@ -119,6 +125,9 @@ importers:
       react:
         specifier: 19.1.0
         version: 19.1.0
+      react-dom:
+        specifier: ^19.1.0
+        version: 19.1.0(react@19.1.0)
       react-helmet-async:
         specifier: ^2.0.5
         version: 2.0.5(react@19.1.0)
@@ -140,6 +149,9 @@ importers:
       react-native-svg-transformer:
         specifier: ~1.5.3
         version: 1.5.3(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(typescript@5.9.3)
+      react-native-web:
+        specifier: ~0.21.0
+        version: 0.21.2(encoding@0.1.13)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react-router-dom:
         specifier: 6.30.3
         version: 6.30.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -14344,7 +14356,6 @@ snapshots:
       whatwg-fetch: 3.6.20
     optionalDependencies:
       react-dom: 19.1.0(react@19.1.0)
-    optional: true
 
   '@expo/metro@54.2.0':
     dependencies:
@@ -16776,8 +16787,7 @@ snapshots:
 
   '@react-native/js-polyfills@0.81.5': {}
 
-  '@react-native/normalize-colors@0.74.89':
-    optional: true
+  '@react-native/normalize-colors@0.74.89': {}
 
   '@react-native/normalize-colors@0.81.5': {}
 
@@ -19827,7 +19837,6 @@ snapshots:
       node-fetch: 2.7.0(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
-    optional: true
 
   cross-spawn@7.0.6:
     dependencies:
@@ -19842,7 +19851,6 @@ snapshots:
   css-in-js-utils@3.1.0:
     dependencies:
       hyphenate-style-name: 1.1.0
-    optional: true
 
   css-select@5.2.2:
     dependencies:
@@ -21121,8 +21129,7 @@ snapshots:
     dependencies:
       bser: 2.1.1
 
-  fbjs-css-vars@1.0.2:
-    optional: true
+  fbjs-css-vars@1.0.2: {}
 
   fbjs@3.0.5(encoding@0.1.13):
     dependencies:
@@ -21135,7 +21142,6 @@ snapshots:
       ua-parser-js: 1.0.41
     transitivePeerDependencies:
       - encoding
-    optional: true
 
   fd-package-json@2.0.0:
     dependencies:
@@ -21947,8 +21953,7 @@ snapshots:
 
   human-signals@8.0.1: {}
 
-  hyphenate-style-name@1.1.0:
-    optional: true
+  hyphenate-style-name@1.1.0: {}
 
   i18next-browser-languagedetector@8.2.1:
     dependencies:
@@ -22040,7 +22045,6 @@ snapshots:
   inline-style-prefixer@7.0.1:
     dependencies:
       css-in-js-utils: 3.1.0
-    optional: true
 
   inquirer@8.2.5:
     dependencies:
@@ -23737,8 +23741,7 @@ snapshots:
 
   memoize-one@5.2.1: {}
 
-  memoize-one@6.0.0:
-    optional: true
+  memoize-one@6.0.0: {}
 
   meow@13.2.0: {}
 
@@ -25366,7 +25369,6 @@ snapshots:
   promise@7.3.1:
     dependencies:
       asap: 2.0.6
-    optional: true
 
   promise@8.3.0:
     dependencies:
@@ -25596,7 +25598,6 @@ snapshots:
       styleq: 0.1.3
     transitivePeerDependencies:
       - encoding
-    optional: true
 
   react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0):
     dependencies:
@@ -26278,8 +26279,7 @@ snapshots:
       es-errors: 1.3.0
       es-object-atoms: 1.1.1
 
-  setimmediate@1.0.5:
-    optional: true
+  setimmediate@1.0.5: {}
 
   setprototypeof@1.2.0: {}
 
@@ -26661,8 +26661,7 @@ snapshots:
     dependencies:
       inline-style-parser: 0.2.7
 
-  styleq@0.1.3:
-    optional: true
+  styleq@0.1.3: {}
 
   stylis@4.3.6: {}
 
@@ -27094,8 +27093,7 @@ snapshots:
 
   typescript@5.9.3: {}
 
-  ua-parser-js@1.0.41:
-    optional: true
+  ua-parser-js@1.0.41: {}
 
   ufo@1.6.3: {}
 
