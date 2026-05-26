@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePostHog } from 'posthog-react-native'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+
 import type { MainTab, MobileNavigator, MobileRoute } from './types'
 
 function routeName(route: MobileRoute): string {
