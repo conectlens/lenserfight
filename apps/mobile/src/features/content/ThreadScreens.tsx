@@ -1,24 +1,39 @@
-import React from 'react'
-import { View } from 'react-native'
-import { Chip, Text } from '@lenserfight/ui/primitives/native'
 import { useLenserOptional } from '@lenserfight/features/profile/native'
+import {
+  DetailSection,
+  EmptyContentState,
+  ErrorState,
+  LoadingState,
+  SummaryCard,
+} from '@lenserfight/ui/components/native'
+import { SafeAreaContainer } from '@lenserfight/ui/layout/native'
+import { Chip, Text } from '@lenserfight/ui/primitives/native'
+import { useRouter } from 'expo-router'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { useThreadDetail, useThreadList } from '../../hooks/useMobileContent'
-import type { MobileNavigator } from '../../navigation/types'
-import { ScreenScaffold } from '../../ui/ScreenScaffold'
-import { EmptyContentState, ErrorState, LoadingState } from '../../ui/StateViews'
-import { DetailSection, SummaryCard } from './ContentCards'
+import { ScrollView, StyleSheet, View } from 'react-native'
 
-export const ThreadListScreen: React.FC<{ navigator: MobileNavigator }> = ({ navigator }) => {
+import { useThreadDetail, useThreadList } from '../../hooks/useMobileContent'
+import { screenStyles } from '../../styles/screenStyles'
+
+export const ThreadListScreen: React.FC = () => {
   const { t } = useTranslation()
+  const router = useRouter()
   const query = useThreadList()
 
-  return (
-    <ScreenScaffold title={t('threads.title')} subtitle={t('threads.subtitle')} testID="thread-list-screen">
-      {query.isLoading && <LoadingState />}
-      {query.isError && <ErrorState message={query.error.message} onRetry={() => query.refetch()} />}
+  const threadItems = (
+    <>
+      {query.isLoading && <LoadingState label={t('states.loading')} />}
+      {query.isError && (
+        <ErrorState
+          message={query.error.message}
+          fallbackMessage={t('states.error')}
+          retryLabel={t('states.retry')}
+          onRetry={() => query.refetch()}
+        />
+      )}
       {!query.isLoading && !query.isError && query.data?.length === 0 && (
-        <EmptyContentState description={t('threads.empty')} />
+        <EmptyContentState title={t('states.empty')} description={t('threads.empty')} />
       )}
       {query.data?.map((thread) => (
         <SummaryCard
@@ -27,56 +42,93 @@ export const ThreadListScreen: React.FC<{ navigator: MobileNavigator }> = ({ nav
           subtitle={thread.content}
           meta={`@${thread.author.handle} · ${thread.replyCount} ${t('threads.replies')} · ${thread.reactionCount} ${t('threads.reactions')}`}
           tags={thread.tags}
-          onPress={() => navigator.goThread(thread.id, thread.title)}
+          onPress={() => router.push(`/thread/${thread.id}`)}
           testID="thread-list-item"
         />
       ))}
-    </ScreenScaffold>
+    </>
+  )
+
+  return (
+    <SafeAreaContainer testID="thread-list-screen">
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={screenStyles.scroll}
+      >
+        {threadItems}
+      </ScrollView>
+    </SafeAreaContainer>
   )
 }
 
-export const ThreadDetailScreen: React.FC<{ navigator: MobileNavigator; id: string }> = ({
-  navigator,
-  id,
-}) => {
+export const ThreadDetailScreen: React.FC<{ id: string }> = ({ id }) => {
   const { t } = useTranslation()
+  const router = useRouter()
   const lenser = useLenserOptional()
   const query = useThreadDetail(id, lenser?.lenser?.id)
   const thread = query.data
 
   return (
-    <ScreenScaffold title={thread?.title ?? t('threads.detail')} onBack={navigator.goBack} testID="thread-detail-screen">
-      {query.isLoading && <LoadingState />}
-      {query.isError && <ErrorState message={query.error.message} onRetry={() => query.refetch()} />}
-      {!query.isLoading && !query.isError && !thread && <EmptyContentState description={t('states.notFound')} />}
-      {thread && (
-        <>
-          <DetailSection title={thread.title}>
-            <Text variant="bodyM">{thread.content}</Text>
-            <Text variant="caption" color="muted">
-              @{thread.author.handle} · {thread.reactionCount} {t('threads.reactions')}
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {thread.tags.map((tag) => (
-                <Chip key={tag.id} label={tag.name} onPress={() => navigator.goTag(tag.slug, tag.name)} />
-              ))}
-            </View>
-          </DetailSection>
-          <DetailSection title={t('threads.replies')}>
-            {thread.replies.length === 0 ? (
-              <Text variant="bodyM" color="muted">
-                {t('states.empty')}
+    <SafeAreaContainer testID="thread-detail-screen">
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={screenStyles.scroll}
+      >
+        {query.isLoading && <LoadingState label={t('states.loading')} />}
+        {query.isError && (
+          <ErrorState
+            message={query.error.message}
+            fallbackMessage={t('states.error')}
+            retryLabel={t('states.retry')}
+            onRetry={() => query.refetch()}
+          />
+        )}
+        {!query.isLoading && !query.isError && !thread && (
+          <EmptyContentState title={t('states.empty')} description={t('states.notFound')} />
+        )}
+        {thread && (
+          <>
+            <DetailSection title={thread.title}>
+              <Text variant="bodyM">{thread.content}</Text>
+              <Text variant="caption" color="muted">
+                @{thread.author.handle} · {thread.reactionCount} {t('threads.reactions')}
               </Text>
-            ) : (
-              thread.replies.slice(0, 10).map((reply) => (
-                <Text key={reply.id} variant="bodyM">
-                  {reply.content}
+              <View style={styles.chips}>
+                {thread.tags.map((tag) => (
+                  <Chip
+                    key={tag.id}
+                    label={tag.name}
+                    onPress={() => router.push(`/tag/${tag.slug}`)}
+                  />
+                ))}
+              </View>
+            </DetailSection>
+            <DetailSection title={t('threads.replies')}>
+              {thread.replies.length === 0 ? (
+                <Text variant="bodyM" color="muted">
+                  {t('states.empty')}
                 </Text>
-              ))
-            )}
-          </DetailSection>
-        </>
-      )}
-    </ScreenScaffold>
+              ) : (
+                thread.replies.slice(0, 10).map((reply) => (
+                  <Text key={reply.id} variant="bodyM">
+                    {reply.content}
+                  </Text>
+                ))
+              )}
+            </DetailSection>
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaContainer>
   )
 }
+
+const styles = StyleSheet.create({
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+})

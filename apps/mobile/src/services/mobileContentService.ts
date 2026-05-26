@@ -6,6 +6,7 @@ import {
   threadsService,
   type MobileBattle,
 } from '@lenserfight/data/repositories/mobile'
+
 import type {
   LensDetailViewModel,
   LensViewModel,
@@ -41,9 +42,9 @@ export const mobileContentService = {
     }
   },
 
-  async getThread(id: string, viewerLenserId?: string): Promise<ThreadDetailViewModel | null> {
+  async getThread(id: string, _viewerLenserId?: string): Promise<ThreadDetailViewModel | null> {
     try {
-      return await threadsService.getThreadDetail(id, viewerLenserId)
+      return await threadsService.getThreadDetail(id)
     } catch (error) {
       throw publicMessage(error)
     }
@@ -58,9 +59,9 @@ export const mobileContentService = {
     }
   },
 
-  async getLens(id: string, viewerLenserId?: string): Promise<LensDetailViewModel | null> {
+  async getLens(id: string, _viewerLenserId?: string): Promise<LensDetailViewModel | null> {
     try {
-      return await lensesService.getLensDetail(id, viewerLenserId)
+      return await lensesService.getLensDetail(id)
     } catch (error) {
       throw publicMessage(error)
     }
@@ -79,7 +80,7 @@ export const mobileContentService = {
       const [tag, threadResponse, lensResponse] = await Promise.all([
         tagService.getTagDetails(slug),
         threadsService.getThreadsByTag(slug, 'newest', undefined, 0, 10),
-        lensesService.filter(slug, 0, 10, 'newest'),
+        lensesService.filter(slug, 0, 10),
       ])
       return {
         tag,
