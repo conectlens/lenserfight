@@ -1,1 +1,1 @@
-export * from './lib/context/AuthContext'
+export * from './lib/context/AuthContext.native'
