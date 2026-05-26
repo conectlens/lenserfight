@@ -8,35 +8,35 @@
 import React, { useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
-import { Pressable } from '@lenserfight/ui/primitives'
-import { Text } from '@lenserfight/ui/primitives'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import { Pressable } from '@lenserfight/ui/primitives/native'
+import { Text } from '@lenserfight/ui/primitives/native'
 
 export type TabsVariant = 'underline' | 'pills'
 
 // ── Context ─────────────────────────────────────────────────────────────────
 
 interface TabsContextValue {
-  activeKey:  string
-  onChange:   (key: string) => void
-  variant:    TabsVariant
+  activeKey: string
+  onChange: (key: string) => void
+  variant: TabsVariant
 }
 
 const TabsContext = React.createContext<TabsContextValue>({
   activeKey: '',
-  onChange:  () => undefined,
-  variant:   'underline',
+  onChange: () => undefined,
+  variant: 'underline',
 })
 
 // ── Tabs container ───────────────────────────────────────────────────────────
 
 export interface TabsProps {
   defaultKey?: string
-  activeKey?:  string
-  onChange?:   (key: string) => void
-  variant?:    TabsVariant
-  style?:      ViewStyle
-  children:    React.ReactNode
+  activeKey?: string
+  onChange?: (key: string) => void
+  variant?: TabsVariant
+  style?: ViewStyle
+  children: React.ReactNode
 }
 
 export const Tabs: React.FC<TabsProps> = ({
@@ -92,10 +92,10 @@ export const TabList: React.FC<TabListProps> = ({ style, children }) => {
 // ── Tab ──────────────────────────────────────────────────────────────────────
 
 export interface TabProps {
-  tabKey:    string
-  label:     string
+  tabKey: string
+  label: string
   disabled?: boolean
-  icon?:     React.ReactNode
+  icon?: React.ReactNode
 }
 
 export const Tab: React.FC<TabProps> = ({ tabKey, label, disabled, icon }) => {
@@ -112,10 +112,11 @@ export const Tab: React.FC<TabProps> = ({ tabKey, label, disabled, icon }) => {
       accessibilityState={{ selected: isActive }}
       style={[
         styles.tab,
-        variant === 'pills' && isActive && {
-          backgroundColor: active + '18',
-          borderRadius:    20,
-        },
+        variant === 'pills' &&
+          isActive && {
+            backgroundColor: active + '18',
+            borderRadius: 20,
+          },
       ]}
     >
       {icon && <View style={styles.tabIcon}>{icon}</View>}
@@ -136,9 +137,9 @@ export const Tab: React.FC<TabProps> = ({ tabKey, label, disabled, icon }) => {
 // ── TabPanel ─────────────────────────────────────────────────────────────────
 
 export interface TabPanelProps {
-  tabKey:    string
-  style?:    ViewStyle
-  children:  React.ReactNode
+  tabKey: string
+  style?: ViewStyle
+  children: React.ReactNode
 }
 
 export const TabPanel: React.FC<TabPanelProps> = ({ tabKey, style, children }) => {
@@ -157,9 +158,9 @@ export const TabPanel: React.FC<TabPanelProps> = ({ tabKey, style, children }) =
   )
 }
 
-Tabs.displayName    = 'Tabs'
+Tabs.displayName = 'Tabs'
 TabList.displayName = 'TabList'
-Tab.displayName     = 'Tab'
+Tab.displayName = 'Tab'
 TabPanel.displayName = 'TabPanel'
 
 const styles = StyleSheet.create({
@@ -170,25 +171,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   tab: {
-    flexDirection:    'row',
-    alignItems:       'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical:   10,
-    position:         'relative',
+    paddingVertical: 10,
+    position: 'relative',
   },
   tabIcon: {
     marginRight: 6,
   },
   indicator: {
     position: 'absolute',
-    bottom:   0,
-    left:     16,
-    right:    16,
-    height:   2,
+    bottom: 0,
+    left: 16,
+    right: 16,
+    height: 2,
     borderRadius: 1,
   },
   hidden: {
-    opacity:  0,
+    opacity: 0,
     position: 'absolute',
     pointerEvents: 'none',
   },

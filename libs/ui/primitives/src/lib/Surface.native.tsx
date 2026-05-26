@@ -12,19 +12,19 @@ import React from 'react'
 import { Platform, StyleSheet, View } from 'react-native'
 import { useNativeTheme } from '@lenserfight/ui/providers/native'
 import type { NativeElevationLevel } from '@lenserfight/ui/tokens'
-import type { ViewStyle } from 'react-native'
+import type { StyleProp, ViewStyle } from 'react-native'
 
 export type SurfaceVariant = 'raised' | 'flat' | 'inset'
 
 export interface SurfaceProps {
-  variant?:       SurfaceVariant
+  variant?: SurfaceVariant
   /** Elevation level 0–5 for raised; 1–3 for inset (defaults: raised=2, inset=2, flat=0) */
-  elevation?:     NativeElevationLevel
-  borderRadius?:  number
-  style?:         ViewStyle
-  children?:      React.ReactNode
-  testID?:        string
-  accessible?:    boolean
+  elevation?: NativeElevationLevel
+  borderRadius?: number
+  style?: StyleProp<ViewStyle>
+  children?: React.ReactNode
+  testID?: string
+  accessible?: boolean
   accessibilityLabel?: string
 }
 
@@ -53,26 +53,26 @@ export const Surface = React.forwardRef<View, SurfaceProps>(
   ) => {
     const { surface, elevation, elevationInset, colorScheme } = useNativeTheme()
 
-    const isFlat   = variant === 'flat'
-    const isInset  = variant === 'inset'
+    const isFlat = variant === 'flat'
+    const isInset = variant === 'inset'
     const isRaised = variant === 'raised'
 
     const defaultLevel = isInset ? 2 : isRaised ? 2 : 0
     const level = (elevProp ?? defaultLevel) as NativeElevationLevel
 
-    const spec = isInset
-      ? elevationInset(Math.min(level, 3) as 1 | 2 | 3)
-      : elevation(level)
+    const spec = isInset ? elevationInset(Math.min(level, 3) as 1 | 2 | 3) : elevation(level)
 
-    const bgColor = isFlat
-      ? 'transparent'
-      : isInset
-      ? surface.sunken
-      : surface.raised
+    const bgColor = isFlat ? 'transparent' : isInset ? surface.sunken : surface.raised
 
     if (isFlat) {
       return (
-        <View ref={ref} style={[{ backgroundColor: 'transparent', borderRadius }, style]} testID={testID} accessible={accessible} accessibilityLabel={accessibilityLabel}>
+        <View
+          ref={ref}
+          style={[{ backgroundColor: 'transparent', borderRadius }, style]}
+          testID={testID}
+          accessible={accessible}
+          accessibilityLabel={accessibilityLabel}
+        >
           {children}
         </View>
       )
@@ -119,10 +119,10 @@ export const Surface = React.forwardRef<View, SurfaceProps>(
               StyleSheet.absoluteFillObject,
               {
                 borderRadius,
-                shadowColor:   iosHighlight.color,
-                shadowOffset:  iosHighlight.offset,
+                shadowColor: iosHighlight.color,
+                shadowOffset: iosHighlight.offset,
                 shadowOpacity: iosHighlight.opacity,
-                shadowRadius:  iosHighlight.radius,
+                shadowRadius: iosHighlight.radius,
               },
             ]}
           />
@@ -136,10 +136,10 @@ export const Surface = React.forwardRef<View, SurfaceProps>(
             {
               backgroundColor: bgColor,
               borderRadius,
-              shadowColor:   iosShadow.color,
-              shadowOffset:  iosShadow.offset,
+              shadowColor: iosShadow.color,
+              shadowOffset: iosShadow.offset,
               shadowOpacity: iosShadow.opacity,
-              shadowRadius:  iosShadow.radius,
+              shadowRadius: iosShadow.radius,
             },
             style,
           ]}

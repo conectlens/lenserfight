@@ -4,26 +4,23 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { Text } from '@lenserfight/ui/primitives'
+import { Text } from '@lenserfight/ui/primitives/native'
 
 export interface PageHeaderProps {
-  title:     string
+  title: string
   subtitle?: string
   /** Optional action slot (e.g. a Button) */
-  action?:   React.ReactNode
-  style?:    ViewStyle
+  action?: React.ReactNode
+  style?: ViewStyle
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({
-  title,
-  subtitle,
-  action,
-  style,
-}) => {
+export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, action, style }) => {
   return (
     <View style={[styles.container, style]}>
       <View style={styles.text}>
-        <Text variant="h2" weight="bold">{title}</Text>
+        <Text variant="h2" weight="bold">
+          {title}
+        </Text>
         {subtitle && (
           <Text variant="bodyM" color="muted" style={{ marginTop: 4 }}>
             {subtitle}
@@ -39,11 +36,11 @@ PageHeader.displayName = 'PageHeader'
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection:  'row',
-    alignItems:     'flex-start',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical:   16,
+    paddingVertical: 16,
   },
   text: { flex: 1 },
   action: { marginLeft: 12 },

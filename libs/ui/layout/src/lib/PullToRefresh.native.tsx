@@ -7,12 +7,12 @@
 import React from 'react'
 import { RefreshControl, ScrollView, StyleSheet } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
 
 export interface PullToRefreshProps {
-  onRefresh:    () => Promise<void> | void
-  children:     React.ReactNode
-  style?:       ViewStyle
+  onRefresh: () => Promise<void> | void
+  children: React.ReactNode
+  style?: ViewStyle
   contentStyle?: ViewStyle
 }
 

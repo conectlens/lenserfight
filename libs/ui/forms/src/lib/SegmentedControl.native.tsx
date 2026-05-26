@@ -6,16 +6,16 @@
 import React from 'react'
 import { Platform, StyleSheet, View } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
-import { Pressable } from '@lenserfight/ui/primitives'
-import { Text } from '@lenserfight/ui/primitives'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import { Pressable } from '@lenserfight/ui/primitives/native'
+import { Text } from '@lenserfight/ui/primitives/native'
 
 export interface SegmentedControlProps {
-  options:   string[]
-  value:     string
-  onChange:  (value: string) => void
+  options: string[]
+  value: string
+  onChange: (value: string) => void
   disabled?: boolean
-  style?:    ViewStyle
+  style?: ViewStyle
 }
 
 /**
@@ -33,7 +33,9 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
     // Use native SegmentedControlIOS when available
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { default: SegmentedControlIOS } = require('@react-native-segmented-control/segmented-control')
+      const {
+        default: SegmentedControlIOS,
+      } = require('@react-native-segmented-control/segmented-control')
       return (
         <SegmentedControlIOS
           values={options}
@@ -49,11 +51,23 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
   }
 
   // Custom cross-platform implementation
-  return <CustomSegmentedControl options={options} value={value} onChange={onChange} disabled={disabled} style={style} />
+  return (
+    <CustomSegmentedControl
+      options={options}
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+      style={style}
+    />
+  )
 }
 
 const CustomSegmentedControl: React.FC<SegmentedControlProps> = ({
-  options, value, onChange, disabled, style,
+  options,
+  value,
+  onChange,
+  disabled,
+  style,
 }) => {
   const { active, surface, radius } = useNativeTheme()
 
@@ -63,8 +77,8 @@ const CustomSegmentedControl: React.FC<SegmentedControlProps> = ({
         styles.container,
         {
           backgroundColor: surface.overlay,
-          borderRadius:    radius.lg,
-          borderColor:     surface.border,
+          borderRadius: radius.lg,
+          borderColor: surface.border,
         },
         style,
       ]}
@@ -84,11 +98,11 @@ const CustomSegmentedControl: React.FC<SegmentedControlProps> = ({
               { borderRadius: radius.md },
               isActive && {
                 backgroundColor: surface.base,
-                shadowColor:     '#000',
-                shadowOffset:    { width: 0, height: 1 },
-                shadowOpacity:   0.08,
-                shadowRadius:    2,
-                elevation:       2,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.08,
+                shadowRadius: 2,
+                elevation: 2,
               },
             ]}
           >
@@ -110,13 +124,13 @@ SegmentedControl.displayName = 'SegmentedControl'
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection:  'row',
-    borderWidth:    1,
-    padding:        3,
+    flexDirection: 'row',
+    borderWidth: 1,
+    padding: 3,
   },
   segment: {
-    flex:           1,
-    alignItems:     'center',
+    flex: 1,
+    alignItems: 'center',
     paddingVertical: 6,
     paddingHorizontal: 8,
   },

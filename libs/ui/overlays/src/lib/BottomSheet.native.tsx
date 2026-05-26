@@ -10,20 +10,20 @@
 import React, { useEffect } from 'react'
 import { BackHandler, Modal, StyleSheet, View } from 'react-native'
 import type { ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
-import { Text } from '@lenserfight/ui/primitives'
-import { Pressable } from '@lenserfight/ui/primitives'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import { Text } from '@lenserfight/ui/primitives/native'
+import { Pressable } from '@lenserfight/ui/primitives/native'
 import { Backdrop } from './Backdrop.native'
 
 export interface BottomSheetProps {
-  open:                boolean
-  onClose?:            () => void
-  title?:              string
+  open: boolean
+  onClose?: () => void
+  title?: string
   /** Not directly applicable on native (sheet auto-sizes). Kept for API compat. */
-  maxHeight?:          string
-  children:            React.ReactNode
-  dismissOnBackdrop?:  boolean
-  className?:          string
+  maxHeight?: string
+  children: React.ReactNode
+  dismissOnBackdrop?: boolean
+  className?: string
 }
 
 /**
@@ -61,10 +61,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     >
       <View style={styles.container}>
         {/* Backdrop — tap to dismiss */}
-        <Backdrop
-          visible
-          onDismiss={dismissOnBackdrop ? onClose : undefined}
-        />
+        <Backdrop visible onDismiss={dismissOnBackdrop ? onClose : undefined} />
 
         {/* Sheet panel */}
         <View
@@ -72,13 +69,13 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             styles.panel,
             {
               backgroundColor: surface.raised,
-              borderTopLeftRadius:  radius['2xl'],
+              borderTopLeftRadius: radius['2xl'],
               borderTopRightRadius: radius['2xl'],
-              shadowColor:     spec.iosShadow.color,
-              shadowOffset:    { width: 0, height: -3 },
-              shadowOpacity:   spec.iosShadow.opacity,
-              shadowRadius:    spec.iosShadow.radius,
-              elevation:       spec.androidElevation,
+              shadowColor: spec.iosShadow.color,
+              shadowOffset: { width: 0, height: -3 },
+              shadowOpacity: spec.iosShadow.opacity,
+              shadowRadius: spec.iosShadow.radius,
+              elevation: spec.androidElevation,
             },
           ]}
           accessible
@@ -92,10 +89,16 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           {/* Header */}
           {(title || onClose) && (
             <View style={[styles.header, { borderBottomColor: surface.border }]}>
-              {title && <Text variant="h4" weight="semibold">{title}</Text>}
+              {title && (
+                <Text variant="h4" weight="semibold">
+                  {title}
+                </Text>
+              )}
               {onClose && (
                 <Pressable onPress={onClose} accessibilityLabel="Close" style={styles.closeBtn}>
-                  <Text variant="bodyL" color="muted">✕</Text>
+                  <Text variant="bodyL" color="muted">
+                    ✕
+                  </Text>
                 </Pressable>
               )}
             </View>
@@ -113,28 +116,28 @@ BottomSheet.displayName = 'BottomSheet'
 
 const styles = StyleSheet.create({
   container: {
-    flex:           1,
+    flex: 1,
     justifyContent: 'flex-end',
   },
   panel: {
     maxHeight: '80%',
   },
   handleWrap: {
-    alignItems:     'center',
-    paddingTop:     12,
-    paddingBottom:  4,
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 4,
   },
   handle: {
-    width:        40,
-    height:       4,
+    width: 40,
+    height: 4,
     borderRadius: 2,
   },
   header: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    justifyContent:    'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical:   12,
+    paddingVertical: 12,
     borderBottomWidth: 1,
   },
   closeBtn: {
@@ -142,7 +145,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingBottom:     32,
-    paddingTop:        12,
+    paddingBottom: 32,
+    paddingTop: 12,
   },
 })

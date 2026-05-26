@@ -4,17 +4,17 @@
 import React, { useRef, useCallback } from 'react'
 import { TextInput, View, Animated, StyleSheet, Pressable } from 'react-native'
 import type { TextInputProps, ViewStyle } from 'react-native'
-import { useNativeTheme } from '@lenserfight/ui/providers'
-import { Text } from '@lenserfight/ui/primitives'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import { Text } from '@lenserfight/ui/primitives/native'
 
 export interface SearchBarProps extends Omit<TextInputProps, 'style'> {
-  value:          string
-  onChangeText:   (text: string) => void
-  onSearch?:      () => void
-  onClear?:       () => void
-  placeholder?:   string
-  loading?:       boolean
-  style?:         ViewStyle
+  value: string
+  onChangeText: (text: string) => void
+  onSearch?: () => void
+  onClear?: () => void
+  placeholder?: string
+  loading?: boolean
+  style?: ViewStyle
 }
 
 /**
@@ -40,18 +40,24 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(
     const { surface, active, radius } = useNativeTheme()
     const focusAnim = useRef(new Animated.Value(0)).current
 
-    const handleFocus = useCallback((e: any) => {
-      Animated.timing(focusAnim, { toValue: 1, duration: 150, useNativeDriver: false }).start()
-      onFocus?.(e)
-    }, [focusAnim, onFocus])
+    const handleFocus = useCallback(
+      (e: any) => {
+        Animated.timing(focusAnim, { toValue: 1, duration: 150, useNativeDriver: false }).start()
+        onFocus?.(e)
+      },
+      [focusAnim, onFocus]
+    )
 
-    const handleBlur = useCallback((e: any) => {
-      Animated.timing(focusAnim, { toValue: 0, duration: 150, useNativeDriver: false }).start()
-      onBlur?.(e)
-    }, [focusAnim, onBlur])
+    const handleBlur = useCallback(
+      (e: any) => {
+        Animated.timing(focusAnim, { toValue: 0, duration: 150, useNativeDriver: false }).start()
+        onBlur?.(e)
+      },
+      [focusAnim, onBlur]
+    )
 
     const borderColor = focusAnim.interpolate({
-      inputRange:  [0, 1],
+      inputRange: [0, 1],
       outputRange: [surface.border, active],
     })
 
@@ -61,14 +67,16 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(
           styles.container,
           {
             backgroundColor: surface.raised,
-            borderRadius:    radius['2xl'],
+            borderRadius: radius['2xl'],
             borderColor,
           },
           style,
         ]}
       >
         {/* Search icon placeholder — replace with SVG icon in production */}
-        <Text variant="bodyM" style={{ marginRight: 8, color: surface.textMuted }}>⌕</Text>
+        <Text variant="bodyM" style={{ marginRight: 8, color: surface.textMuted }}>
+          ⌕
+        </Text>
 
         <TextInput
           ref={ref}
@@ -89,8 +97,16 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(
 
         {/* Manual clear button for Android */}
         {value.length > 0 && !loading && (
-          <Pressable onPress={() => { onChangeText(''); onClear?.() }} style={styles.clearBtn}>
-            <Text variant="bodyM" style={{ color: surface.textMuted }}>✕</Text>
+          <Pressable
+            onPress={() => {
+              onChangeText('')
+              onClear?.()
+            }}
+            style={styles.clearBtn}
+          >
+            <Text variant="bodyM" style={{ color: surface.textMuted }}>
+              ✕
+            </Text>
           </Pressable>
         )}
       </Animated.View>
@@ -102,21 +118,21 @@ SearchBar.displayName = 'SearchBar'
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    borderWidth:    1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
     paddingHorizontal: 12,
-    paddingVertical:   8,
+    paddingVertical: 8,
   },
   input: {
-    flex:       1,
-    fontSize:   14,
+    flex: 1,
+    fontSize: 14,
     fontFamily: 'Inter',
-    padding:    0,
-    margin:     0,
+    padding: 0,
+    margin: 0,
   },
   clearBtn: {
-    marginLeft:  4,
-    padding:     4,
+    marginLeft: 4,
+    padding: 4,
   },
 })

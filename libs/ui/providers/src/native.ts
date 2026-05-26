@@ -1,2 +1,2 @@
-export * from './lib/NativeThemeContext'
-export * from './lib/ToastProvider'
+export * from './lib/NativeThemeContext.native'
+export * from './lib/ToastProvider.native'

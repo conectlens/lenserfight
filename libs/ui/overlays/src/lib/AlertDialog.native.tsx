@@ -6,22 +6,22 @@
 import React from 'react'
 import type { ViewStyle } from 'react-native'
 import { Dialog } from './Dialog.native'
-import { Pressable } from '@lenserfight/ui/primitives'
-import { Text } from '@lenserfight/ui/primitives'
-import { useNativeTheme } from '@lenserfight/ui/providers'
+import { Pressable } from '@lenserfight/ui/primitives/native'
+import { Text } from '@lenserfight/ui/primitives/native'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
 import { View, StyleSheet } from 'react-native'
 
 export interface AlertDialogProps {
-  open:              boolean
-  onClose:           () => void
-  onConfirm:         () => void
-  title:             string
-  description?:      string
-  confirmLabel?:     string
-  cancelLabel?:      string
-  destructive?:      boolean
-  loading?:          boolean
-  style?:            ViewStyle
+  open: boolean
+  onClose: () => void
+  onConfirm: () => void
+  title: string
+  description?: string
+  confirmLabel?: string
+  cancelLabel?: string
+  destructive?: boolean
+  loading?: boolean
+  style?: ViewStyle
 }
 
 /**
@@ -41,7 +41,7 @@ export const AlertDialog: React.FC<AlertDialogProps> = ({
   title,
   description,
   confirmLabel = 'Confirm',
-  cancelLabel  = 'Cancel',
+  cancelLabel = 'Cancel',
   destructive,
   loading,
   style,
@@ -64,7 +64,9 @@ export const AlertDialog: React.FC<AlertDialogProps> = ({
             accessibilityLabel={cancelLabel}
             style={[styles.btn, styles.cancelBtn]}
           >
-            <Text variant="bodyS" weight="medium" color="muted">{cancelLabel}</Text>
+            <Text variant="bodyS" weight="medium" color="muted">
+              {cancelLabel}
+            </Text>
           </Pressable>
           <Pressable
             onPress={onConfirm}
@@ -86,13 +88,13 @@ AlertDialog.displayName = 'AlertDialog'
 
 const styles = StyleSheet.create({
   actions: {
-    flexDirection:  'row',
-    gap:             8,
+    flexDirection: 'row',
+    gap: 8,
     justifyContent: 'flex-end',
   },
   btn: {
     paddingHorizontal: 16,
-    paddingVertical:   10,
+    paddingVertical: 10,
   },
   cancelBtn: {
     borderRadius: 8,

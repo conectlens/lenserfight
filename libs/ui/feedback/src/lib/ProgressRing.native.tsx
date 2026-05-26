@@ -6,16 +6,16 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import Svg, { Circle } from 'react-native-svg'
-import { useNativeTheme } from '@lenserfight/ui/providers'
-import { Text } from '@lenserfight/ui/primitives'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import { Text } from '@lenserfight/ui/primitives/native'
 
 export interface ProgressRingProps {
   /** 0–100 */
-  value:      number
-  size?:      number
+  value: number
+  size?: number
   strokeWidth?: number
   showLabel?: boolean
-  label?:     string
+  label?: string
 }
 
 /**
@@ -24,16 +24,16 @@ export interface ProgressRingProps {
  */
 export const ProgressRing: React.FC<ProgressRingProps> = ({
   value,
-  size        = 64,
+  size = 64,
   strokeWidth = 5,
-  showLabel   = false,
+  showLabel = false,
   label,
 }) => {
   const { active, surface } = useNativeTheme()
   const clampedValue = Math.min(100, Math.max(0, value))
 
-  const radius         = (size - strokeWidth) / 2
-  const circumference  = 2 * Math.PI * radius
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
   const strokeDashoffset = circumference - (clampedValue / 100) * circumference
 
   return (
@@ -81,8 +81,8 @@ ProgressRing.displayName = 'ProgressRing'
 
 const styles = StyleSheet.create({
   labelContainer: {
-    flex:           1,
-    alignItems:     'center',
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
   },
 })
