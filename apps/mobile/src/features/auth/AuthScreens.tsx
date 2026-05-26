@@ -1,12 +1,15 @@
-import React, { useState } from 'react'
-import { Linking, StyleSheet, View } from 'react-native'
 import { useAuth } from '@lenserfight/features/auth/native'
-import { Field, Input } from '@lenserfight/ui/forms/native'
+import { MobileButton } from '@lenserfight/ui/components/native'
 import { InlineNotice } from '@lenserfight/ui/feedback/native'
+import { Field, Input } from '@lenserfight/ui/forms/native'
 import { Pressable, Text } from '@lenserfight/ui/primitives/native'
-import { useTranslation } from 'react-i18next'
 import { WEB_BASE_URL } from '@lenserfight/utils/env'
-import { MobileButton } from '../../ui/MobileButton'
+import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Linking, StyleSheet, View } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import { useNativeTheme } from '@lenserfight/ui/providers/native'
+
 import { AuthLayout } from './AuthLayout'
 import { OAuthButtons } from './OAuthButtons'
 
@@ -14,13 +17,25 @@ const PrivacyNotice: React.FC = () => {
   const { t } = useTranslation()
   return (
     <View style={styles.privacyRow}>
-      <Text variant="caption" color="muted">{t('auth.privacyNotice')} </Text>
-      <Pressable onPress={() => Linking.openURL(`${WEB_BASE_URL}/privacy`)} accessibilityRole="link">
-        <Text variant="caption" color="muted" style={styles.link}>{t('auth.privacy')}</Text>
+      <Text variant="caption" color="muted">
+        {t('auth.privacyNotice')}{' '}
+      </Text>
+      <Pressable
+        onPress={() => Linking.openURL(`${WEB_BASE_URL}/privacy`)}
+        accessibilityRole="link"
+      >
+        <Text variant="caption" color="muted" style={styles.link}>
+          {t('auth.privacy')}
+        </Text>
       </Pressable>
-      <Text variant="caption" color="muted"> & </Text>
+      <Text variant="caption" color="muted">
+        {' '}
+        &{' '}
+      </Text>
       <Pressable onPress={() => Linking.openURL(`${WEB_BASE_URL}/terms`)} accessibilityRole="link">
-        <Text variant="caption" color="muted" style={styles.link}>{t('auth.terms')}</Text>
+        <Text variant="caption" color="muted" style={styles.link}>
+          {t('auth.terms')}
+        </Text>
       </Pressable>
     </View>
   )
@@ -42,10 +57,12 @@ export const LoginScreen: React.FC<AuthScreenProps> = ({
 }) => {
   const { t } = useTranslation()
   const { login, signInWithOAuth } = useAuth()
+  const theme = useNativeTheme()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const submit = async () => {
     setError(null)
@@ -78,7 +95,10 @@ export const LoginScreen: React.FC<AuthScreenProps> = ({
 
   return (
     <AuthLayout title={t('auth.loginTitle')} subtitle={t('auth.loginSubtitle')}>
-      <Field label={t('auth.emailOrHandle')} error={!identifier && error ? t('auth.required') : undefined}>
+      <Field
+        label={t('auth.emailOrHandle')}
+        error={!identifier && error ? t('auth.required') : undefined}
+      >
         <Input
           value={identifier}
           onChangeText={setIdentifier}
@@ -86,15 +106,30 @@ export const LoginScreen: React.FC<AuthScreenProps> = ({
           autoCorrect={false}
           textContentType="username"
           testID="login-email"
+          startAdornment={
+            <Ionicons name="person-outline" size={18} color={theme.surface.textMuted} />
+          }
         />
       </Field>
       <Field label={t('auth.password')} error={!password && error ? t('auth.required') : undefined}>
         <Input
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={!showPassword}
           textContentType="password"
           testID="login-password"
+          startAdornment={
+            <Ionicons name="lock-closed-outline" size={18} color={theme.surface.textMuted} />
+          }
+          endAdornment={
+            <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={18}
+                color={theme.surface.textMuted}
+              />
+            </Pressable>
+          }
         />
       </Field>
       {error && <InlineNotice variant="error" message={error} />}
@@ -118,6 +153,7 @@ export const LoginScreen: React.FC<AuthScreenProps> = ({
 export const MagicLinkScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   const { t } = useTranslation()
   const { sendMagicLink } = useAuth()
+  const theme = useNativeTheme()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -141,13 +177,20 @@ export const MagicLinkScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   }
 
   return (
-    <AuthLayout title={sent ? t('auth.checkInbox') : t('auth.magicTitle')} subtitle={t('auth.magicSubtitle')}>
+    <AuthLayout
+      title={sent ? t('auth.checkInbox') : t('auth.magicTitle')}
+      subtitle={t('auth.magicSubtitle')}
+    >
       {sent ? (
         <>
           <Text variant="bodyM" color="muted">
             {t('auth.magicSent')}
           </Text>
-          <MobileButton label={t('auth.sendAgain')} onPress={() => setSent(false)} variant="secondary" />
+          <MobileButton
+            label={t('auth.sendAgain')}
+            onPress={() => setSent(false)}
+            variant="secondary"
+          />
           <MobileButton label={t('auth.backToLogin')} onPress={onLogin} variant="ghost" />
         </>
       ) : (
@@ -160,6 +203,9 @@ export const MagicLinkScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
               keyboardType="email-address"
               textContentType="emailAddress"
               testID="magic-email"
+              startAdornment={
+                <Ionicons name="mail-outline" size={18} color={theme.surface.textMuted} />
+              }
             />
           </Field>
           <MobileButton
@@ -176,17 +222,16 @@ export const MagicLinkScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   )
 }
 
-export const RegisterScreen: React.FC<AuthScreenProps> = ({
-  onAuthenticated,
-  onLogin,
-}) => {
+export const RegisterScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onLogin }) => {
   const { t } = useTranslation()
   const { register, signInWithOAuth } = useAuth()
+  const theme = useNativeTheme()
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const submit = async () => {
     setError(null)
@@ -223,7 +268,15 @@ export const RegisterScreen: React.FC<AuthScreenProps> = ({
   return (
     <AuthLayout title={t('auth.registerTitle')} subtitle={t('auth.registerSubtitle')}>
       <Field label={t('auth.displayName')}>
-        <Input value={displayName} onChangeText={setDisplayName} textContentType="name" testID="register-name" />
+        <Input
+          value={displayName}
+          onChangeText={setDisplayName}
+          textContentType="name"
+          testID="register-name"
+          startAdornment={
+            <Ionicons name="person-outline" size={18} color={theme.surface.textMuted} />
+          }
+        />
       </Field>
       <Field label={t('auth.email')}>
         <Input
@@ -233,15 +286,30 @@ export const RegisterScreen: React.FC<AuthScreenProps> = ({
           keyboardType="email-address"
           textContentType="emailAddress"
           testID="register-email"
+          startAdornment={
+            <Ionicons name="mail-outline" size={18} color={theme.surface.textMuted} />
+          }
         />
       </Field>
       <Field label={t('auth.password')}>
         <Input
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={!showPassword}
           textContentType="newPassword"
           testID="register-password"
+          startAdornment={
+            <Ionicons name="lock-closed-outline" size={18} color={theme.surface.textMuted} />
+          }
+          endAdornment={
+            <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={18}
+                color={theme.surface.textMuted}
+              />
+            </Pressable>
+          }
         />
       </Field>
       {error && <InlineNotice variant="error" message={error} />}

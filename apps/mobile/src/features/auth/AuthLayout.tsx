@@ -1,9 +1,9 @@
-import React from 'react'
-import { StyleSheet, View } from 'react-native'
-import { KeyboardAvoidingFormLayout, SafeAreaContainer } from '@lenserfight/ui/layout/native'
-import { Surface, Text } from '@lenserfight/ui/primitives/native'
+import { MobileLogo } from '@lenserfight/ui/components/native'
+import { Text } from '@lenserfight/ui/primitives/native'
 import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { StyleSheet, View } from 'react-native'
 
 interface AuthLayoutProps {
   title: string
@@ -11,62 +11,61 @@ interface AuthLayoutProps {
   children: React.ReactNode
 }
 
+/**
+ * Inner auth form layout — designed to live inside AuthSheet, not as a
+ * full-screen surface.
+ *
+ * Changes from the previous version:
+ * - SafeAreaContainer removed: the sheet provides safe-area and
+ *   keyboard-avoidance via KeyboardAvoidingView + useSafeAreaInsets.
+ * - "LF" text mark replaced with MobileLogo (brand logo + wordmark).
+ * - No outer card/surface rounding: the sheet itself provides the surface.
+ * - Flat vertical stack; gap uses spacing tokens.
+ *
+ * GRASP / Low Coupling: layout concerns (safe-area, scroll, backdrop) belong
+ * to AuthSheet; this component only owns form composition.
+ */
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ title, subtitle, children }) => {
   const { t } = useTranslation()
-  const { spacing, radius } = useNativeTheme()
+  const { spacing } = useNativeTheme()
 
   return (
-    <SafeAreaContainer testID="auth-layout">
-      <KeyboardAvoidingFormLayout contentStyle={[styles.content, { padding: spacing[4] }]}>
-        <View style={styles.brand}>
-          <Surface borderRadius={radius.full} style={styles.mark}>
-            <Text variant="h2" weight="bold">
-              LF
-            </Text>
-          </Surface>
-          <Text variant="h2" weight="bold" align="center">
-            {t('app.name')}
-          </Text>
-          <Text variant="bodyM" color="muted" align="center">
-            {t('app.tagline')}
-          </Text>
-        </View>
+    <View style={styles.container} testID="auth-layout">
+      {/* Brand identity — logo mark + wordmark */}
+      <View style={[styles.brand, { marginBottom: spacing[3] }]}>
+        <MobileLogo size={44} showWordmark orientation="vertical" />
+        <Text variant="caption" color="muted" align="center">
+          {t('app.tagline')}
+        </Text>
+      </View>
 
-        <Surface borderRadius={radius.xl} style={[styles.card, { padding: spacing[5] }]}>
-          <Text variant="h2" weight="bold">
-            {title}
-          </Text>
-          <Text variant="bodyM" color="muted" style={styles.subtitle}>
-            {subtitle}
-          </Text>
-          {children}
-        </Surface>
-      </KeyboardAvoidingFormLayout>
-    </SafeAreaContainer>
+      {/* Form section */}
+      <View style={[styles.form, { gap: spacing[3] }]}>
+        <Text variant="h2" weight="bold">
+          {title}
+        </Text>
+        <Text variant="bodyM" color="muted" style={styles.subtitle}>
+          {subtitle}
+        </Text>
+        {children}
+      </View>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  container: {
+    // Not flex:1 — grows with content inside the sheet's ScrollView
+  },
   brand: {
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 24,
-    marginTop: 12,
+    gap: 6,
+    marginTop: 4,
   },
-  card: {
-    gap: 12,
-  },
-  content: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  mark: {
-    alignItems: 'center',
-    height: 64,
-    justifyContent: 'center',
-    width: 64,
+  form: {
+    // gap is set inline via spacing token
   },
   subtitle: {
-    marginBottom: 8,
+    marginBottom: 4,
   },
 })

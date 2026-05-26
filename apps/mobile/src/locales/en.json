@@ -103,7 +103,13 @@
   },
   "actions": {
     "back": "Back",
+    "close": "Close",
     "open": "Open",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "goHome": "Go to home",
+    "search": "Search",
+    "settings": "Settings",
+    "newThread": "New thread",
+    "newBattle": "New battle"
   }
 }
