@@ -197,13 +197,13 @@ const AppInner: React.FC = () => (
   </QueryClientProvider>
 )
 
-export const AppRoot: React.FC = () => (
-  <PostHogProvider
-    apiKey={PUBLIC_POSTHOG_PROJECT_TOKEN}
-    options={PUBLIC_POSTHOG_PROJECT_TOKEN ? { host: PUBLIC_POSTHOG_HOST } : undefined}
-  >
+export const AppRoot: React.FC = () =>
+  PUBLIC_POSTHOG_PROJECT_TOKEN ? (
+    <PostHogProvider apiKey={PUBLIC_POSTHOG_PROJECT_TOKEN} options={{ host: PUBLIC_POSTHOG_HOST }}>
+      <AppInner />
+    </PostHogProvider>
+  ) : (
     <AppInner />
-  </PostHogProvider>
-)
+  )
 
 export default AppRoot
