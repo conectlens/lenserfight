@@ -6,7 +6,8 @@
  * Shares the same props interface as the web version.
  */
 import React from 'react'
-import { Platform, SafeAreaView, StyleSheet, View } from 'react-native'
+import { Platform, StyleSheet, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import type { ViewStyle } from 'react-native'
 import { useNativeTheme } from '@lenserfight/ui/providers/native'
 import { Pressable, Text } from '@lenserfight/ui/primitives/native'
