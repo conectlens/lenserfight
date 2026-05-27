@@ -121,7 +121,7 @@ describe('BearerAuthGuard', () => {
 
   it('default origin patterns include Tailscale CGNAT (100.64/10)', () => {
     const patterns = DEFAULT_ALLOWED_ORIGIN_PATTERNS
-    expect(patterns.some((p) => p.test('http://YOUR_TAILSCALE_IP:3000'))).toBe(true)
+    expect(patterns.some((p) => p.test('http://100.100.1.1:3000'))).toBe(true)
     expect(patterns.some((p) => p.test('http://100.64.0.1'))).toBe(true)
     expect(patterns.some((p) => p.test('http://100.127.255.255:38080'))).toBe(true)
     // Outside the CGNAT range — must be rejected.
@@ -156,7 +156,7 @@ describe('BearerAuthGuard', () => {
     const token = await guard.ensureToken()
     const r = await guard.authorize({
       authorization: `Bearer ${token}`,
-      origin: 'http://YOUR_TAILSCALE_IP:3000',
+      origin: 'http://100.100.1.1:3000',
     })
     expect(r).toMatchObject({ ok: true })
   })
