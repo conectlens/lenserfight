@@ -1,9 +1,9 @@
+import { Text } from '@lenserfight/ui/primitives/native'
 import { Link, Stack } from 'expo-router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { Text } from '@lenserfight/ui/primitives/native'
 
 export default function NotFoundScreen() {
   const { t } = useTranslation()
@@ -12,9 +12,9 @@ export default function NotFoundScreen() {
     <>
       <Stack.Screen options={{ title: t('states.notFound') }} />
       <View style={styles.container}>
-        <Text variant="headingM">{t('states.notFound')}</Text>
+        <Text variant="h3">{t('states.notFound')}</Text>
         <Link href="/" style={styles.link}>
-          <Text variant="bodyM" color="accent">
+          <Text variant="bodyM" color="active">
             {t('actions.goHome')}
           </Text>
         </Link>

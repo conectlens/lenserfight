@@ -14,16 +14,6 @@ interface AuthLayoutProps {
 /**
  * Inner auth form layout — designed to live inside AuthSheet, not as a
  * full-screen surface.
- *
- * Changes from the previous version:
- * - SafeAreaContainer removed: the sheet provides safe-area and
- *   keyboard-avoidance via KeyboardAvoidingView + useSafeAreaInsets.
- * - "LF" text mark replaced with MobileLogo (brand logo + wordmark).
- * - No outer card/surface rounding: the sheet itself provides the surface.
- * - Flat vertical stack; gap uses spacing tokens.
- *
- * GRASP / Low Coupling: layout concerns (safe-area, scroll, backdrop) belong
- * to AuthSheet; this component only owns form composition.
  */
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ title, subtitle, children }) => {
   const { t } = useTranslation()
@@ -31,7 +21,6 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ title, subtitle, childre
 
   return (
     <View style={styles.container} testID="auth-layout">
-      {/* Brand identity — logo mark + wordmark */}
       <View style={[styles.brand, { marginBottom: spacing[3] }]}>
         <MobileLogo size={44} showWordmark orientation="vertical" />
         <Text variant="caption" color="muted" align="center">
@@ -39,7 +28,6 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ title, subtitle, childre
         </Text>
       </View>
 
-      {/* Form section */}
       <View style={[styles.form, { gap: spacing[3] }]}>
         <Text variant="h2" weight="bold">
           {title}
@@ -54,17 +42,13 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ title, subtitle, childre
 }
 
 const styles = StyleSheet.create({
-  container: {
-    // Not flex:1 — grows with content inside the sheet's ScrollView
-  },
+  container: {},
   brand: {
     alignItems: 'center',
     gap: 6,
     marginTop: 4,
   },
-  form: {
-    // gap is set inline via spacing token
-  },
+  form: {},
   subtitle: {
     marginBottom: 4,
   },

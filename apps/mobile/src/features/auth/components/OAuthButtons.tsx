@@ -1,9 +1,9 @@
-import React from 'react'
-import { StyleSheet, View, Pressable } from 'react-native'
-import { useTranslation } from 'react-i18next'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@lenserfight/ui/primitives/native'
 import { useNativeTheme } from '@lenserfight/ui/providers/native'
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 type Provider = 'google' | 'github' | 'apple'
 
@@ -22,7 +22,6 @@ export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ disabled, loading, o
 
   return (
     <View style={styles.wrap}>
-      {/* Centered beautiful divider */}
       <View style={styles.dividerContainer}>
         <View style={[styles.dividerLine, { backgroundColor: theme.surface.border }]} />
         <Text variant="caption" color="muted" style={styles.dividerText}>
@@ -31,9 +30,7 @@ export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ disabled, loading, o
         <View style={[styles.dividerLine, { backgroundColor: theme.surface.border }]} />
       </View>
 
-      {/* Side-by-side centrified Google & GitHub Buttons */}
       <View style={styles.grid}>
-        {/* Google Button */}
         <Pressable
           onPress={() => !isBtnDisabled && onOAuth('google')}
           disabled={isBtnDisabled}
@@ -41,19 +38,19 @@ export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ disabled, loading, o
             styles.halfBtn,
             {
               backgroundColor: isDark
-                ? pressed ? '#3A3A3C' : '#2C2C2E'
-                : pressed ? '#F2F2F7' : '#FFFFFF',
+                ? pressed
+                  ? '#3A3A3C'
+                  : '#2C2C2E'
+                : pressed
+                  ? '#F2F2F7'
+                  : '#FFFFFF',
               borderColor: isDark ? '#3C3C3E' : '#D1D1D6',
               borderRadius: theme.radius.lg,
               opacity: isBtnDisabled ? 0.6 : 1,
             },
           ]}
         >
-          <Ionicons
-            name="logo-google"
-            size={18}
-            color={isDark ? '#FFFFFF' : '#000000'}
-          />
+          <Ionicons name="logo-google" size={18} color={isDark ? '#FFFFFF' : '#000000'} />
           <Text
             variant="bodyM"
             weight="semibold"
@@ -63,7 +60,6 @@ export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ disabled, loading, o
           </Text>
         </Pressable>
 
-        {/* GitHub Button */}
         <Pressable
           onPress={() => !isBtnDisabled && onOAuth('github')}
           disabled={isBtnDisabled}
@@ -71,19 +67,19 @@ export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ disabled, loading, o
             styles.halfBtn,
             {
               backgroundColor: isDark
-                ? pressed ? '#2C2C2E' : '#181717'
-                : pressed ? '#F2F2F7' : '#FFFFFF',
+                ? pressed
+                  ? '#2C2C2E'
+                  : '#181717'
+                : pressed
+                  ? '#F2F2F7'
+                  : '#FFFFFF',
               borderColor: isDark ? '#3C3C3E' : '#D1D1D6',
               borderRadius: theme.radius.lg,
               opacity: isBtnDisabled ? 0.6 : 1,
             },
           ]}
         >
-          <Ionicons
-            name="logo-github"
-            size={18}
-            color={isDark ? '#FFFFFF' : '#181717'}
-          />
+          <Ionicons name="logo-github" size={18} color={isDark ? '#FFFFFF' : '#181717'} />
           <Text
             variant="bodyM"
             weight="semibold"
@@ -94,7 +90,6 @@ export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ disabled, loading, o
         </Pressable>
       </View>
 
-      {/* Sign in with Apple Button following Human Interface Guidelines */}
       <Pressable
         onPress={() => !isBtnDisabled && onOAuth('apple')}
         disabled={isBtnDisabled}
@@ -102,18 +97,18 @@ export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ disabled, loading, o
           styles.appleBtn,
           {
             backgroundColor: isDark
-              ? pressed ? '#E5E5EA' : '#FFFFFF'
-              : pressed ? '#2C2C2E' : '#000000',
+              ? pressed
+                ? '#E5E5EA'
+                : '#FFFFFF'
+              : pressed
+                ? '#2C2C2E'
+                : '#000000',
             borderRadius: theme.radius.lg,
             opacity: isBtnDisabled ? 0.6 : 1,
           },
         ]}
       >
-        <Ionicons
-          name="logo-apple"
-          size={18}
-          color={isDark ? '#000000' : '#FFFFFF'}
-        />
+        <Ionicons name="logo-apple" size={18} color={isDark ? '#000000' : '#FFFFFF'} />
         <Text
           variant="bodyM"
           weight="semibold"
