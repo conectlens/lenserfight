@@ -12,7 +12,8 @@ import { Input } from '@lenserfight/ui/forms/native'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Clipboard, ScrollView, View } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
+import { ScrollView, View } from 'react-native'
 
 import { useLensDetail } from '../../hooks/useMobileContent'
 import { screenStyles } from '../../styles/screenStyles'
@@ -89,7 +90,7 @@ export default function LensDetailRoute() {
   const handleCopy = () => {
     if (!lens) return
     const template = lens.latestPublishedVersion?.templateBody ?? lens.content
-    Clipboard.setString(fillTemplate(template, paramValues))
+    void Clipboard.setStringAsync(fillTemplate(template, paramValues))
   }
 
   return (
