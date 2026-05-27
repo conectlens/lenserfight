@@ -3,6 +3,7 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin'
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import { themeInitPlugin } from '../../libs/ui/theme/src/lib/viteThemePlugin'
 
@@ -21,7 +22,7 @@ const cookiebotPlugin = () => ({
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
-  envDir: import.meta.dirname,
+  envDir: resolve(import.meta.dirname, '../..'),
   envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'ARENA_', 'AUTH_', 'WEB_', 'DATA_SOURCE'],
   cacheDir: '../../node_modules/.vite/apps/arena',
   server: {
