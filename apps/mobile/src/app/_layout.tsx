@@ -17,7 +17,6 @@ import { StatusBar, useColorScheme } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { AuthSheetProvider, useAuthSheet } from '../context/AuthSheetContext'
-
 import { LoginScreen } from '../features/auth/components/login'
 import { MagicLinkScreen } from '../features/auth/components/magic-link'
 import { RegisterScreen } from '../features/auth/components/register'

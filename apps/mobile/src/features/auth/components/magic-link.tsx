@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 
 import { AuthLayout } from './AuthLayout'
 import { isEmail } from './isEmail'
+
 import type { AuthSheetProps } from './types'
 
 export const MagicLinkScreen: React.FC<AuthSheetProps> = ({ onLogin }) => {

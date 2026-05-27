@@ -42,21 +42,21 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="tags"
         options={{
-          title: t('tabs.threads'),
+          title: t('tabs.tags'),
           tabBarIcon: ({ focused }) => (
             <Ionicons
-              name={focused ? 'chatbubbles' : 'chatbubbles-outline'}
+              name={focused ? 'pricetag' : 'pricetag-outline'}
               size={22}
               color={focused ? iconActive : iconColor}
             />
           ),
           headerRight: () => (
             <HeaderIconButton
-              icon="create-outline"
-              onPress={withAuth(() => router.push('/thread/create' as never))}
-              accessibilityLabel={t('actions.newThread')}
+              icon="search-outline"
+              onPress={() => router.push('/search/tags' as never)}
+              accessibilityLabel={t('actions.search')}
             />
           ),
         }}
@@ -82,41 +82,41 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="tags"
+        name="create"
         options={{
-          title: t('tabs.tags'),
+          title: '',
+          tabBarLabel: () => null,
           tabBarIcon: ({ focused }) => (
             <Ionicons
-              name={focused ? 'pricetag' : 'pricetag-outline'}
-              size={22}
+              name="add-circle"
+              size={28}
               color={focused ? iconActive : iconColor}
-            />
-          ),
-          headerRight: () => (
-            <HeaderIconButton
-              icon="search-outline"
-              onPress={() => router.push('/search/tags' as never)}
-              accessibilityLabel={t('actions.search')}
             />
           ),
         }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault()
+            withAuth(() => router.push('/thread/create' as never))()
+          },
+        }}
       />
       <Tabs.Screen
-        name="battles"
+        name="index"
         options={{
-          title: t('tabs.battles'),
+          title: t('tabs.threads'),
           tabBarIcon: ({ focused }) => (
             <Ionicons
-              name={focused ? 'flash' : 'flash-outline'}
+              name={focused ? 'chatbubbles' : 'chatbubbles-outline'}
               size={22}
               color={focused ? iconActive : iconColor}
             />
           ),
           headerRight: () => (
             <HeaderIconButton
-              icon="add-circle-outline"
-              onPress={withAuth(() => router.push('/battle/create' as never))}
-              accessibilityLabel={t('actions.newBattle')}
+              icon="create-outline"
+              onPress={withAuth(() => router.push('/thread/create' as never))}
+              accessibilityLabel={t('actions.newThread')}
             />
           ),
         }}
@@ -140,7 +140,12 @@ export default function TabsLayout() {
             />
           ),
         }}
-
+      />
+      <Tabs.Screen
+        name="battles"
+        options={{
+          href: null,
+        }}
       />
     </Tabs>
   )

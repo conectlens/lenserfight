@@ -74,6 +74,7 @@ export const MobileLogo: React.FC<MobileLogoProps> = ({
             {
               color: theme.surface.text,
               fontSize: Math.round(size * 0.64),
+              lineHeight: Math.round(size * 0.64 * 1.2),
             },
             isVertical && styles.wordmarkVertical,
           ]}

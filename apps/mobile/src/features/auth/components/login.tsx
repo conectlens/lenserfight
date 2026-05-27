@@ -13,6 +13,7 @@ import { authFormStyles } from './authFormStyles'
 import { AuthLayout } from './AuthLayout'
 import { OAuthButtons } from './OAuthButtons'
 import { PrivacyNotice } from './PrivacyNotice'
+
 import type { AuthSheetProps } from './types'
 
 export const LoginScreen: React.FC<AuthSheetProps> = ({
@@ -67,6 +68,7 @@ export const LoginScreen: React.FC<AuthSheetProps> = ({
         <Input
           value={identifier}
           onChangeText={setIdentifier}
+          placeholder={t('auth.emailOrHandlePlaceholder')}
           autoCapitalize="none"
           autoCorrect={false}
           textContentType="username"
@@ -80,6 +82,7 @@ export const LoginScreen: React.FC<AuthSheetProps> = ({
         <Input
           value={password}
           onChangeText={setPassword}
+          placeholder={t('auth.passwordPlaceholder')}
           secureTextEntry={!showPassword}
           textContentType="password"
           testID="login-password"
