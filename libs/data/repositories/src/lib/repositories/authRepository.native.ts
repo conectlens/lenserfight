@@ -1,3 +1,4 @@
+import * as AppleAuthentication from 'expo-apple-authentication'
 import { Linking } from 'react-native'
 import { supabase } from '@lenserfight/data/supabase'
 import type { AuthChangeEvent } from '@supabase/supabase-js'
@@ -101,6 +102,34 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
   }
 
   async signInWithOAuth(provider: MobileOAuthProvider): Promise<void> {
+    if (provider === 'apple') {
+      const available = await AppleAuthentication.isAvailableAsync()
+      if (available) {
+        let credential: AppleAuthentication.AppleAuthenticationCredential
+        try {
+          credential = await AppleAuthentication.signInAsync({
+            requestedScopes: [
+              AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+              AppleAuthentication.AppleAuthenticationScope.EMAIL,
+            ],
+          })
+        } catch (err: unknown) {
+          if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'ERR_CANCELED') {
+            return
+          }
+          throw err
+        }
+        if (!credential.identityToken) throw new Error('Apple Sign-In did not return an identity token')
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: credential.identityToken,
+        })
+        if (error) throw error
+        return
+      }
+      // Apple Sign-In unavailable (Android / simulator) — fall through to browser redirect
+    }
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: provider as never,
       options: {

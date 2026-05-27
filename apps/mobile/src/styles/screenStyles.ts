@@ -12,7 +12,8 @@ import { StyleSheet } from 'react-native'
 export const screenStyles = StyleSheet.create({
   scroll: {
     gap: 12,
-    padding: 12,
-    paddingBottom: 24,
+    paddingHorizontal: 12,
+    paddingTop: 4,
+    paddingBottom: 16,
   },
 })

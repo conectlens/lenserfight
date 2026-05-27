@@ -10,6 +10,7 @@
     "@expo/vector-icons": "*",
     "@testing-library/react-native": "*",
     "expo": "*",
+    "expo-apple-authentication": "*",
     "expo-constants": "*",
     "expo-linking": "*",
     "expo-router": "*",

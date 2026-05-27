@@ -1,5 +1,5 @@
 import { supabase, getCachedAccessToken, getCachedSession } from '@lenserfight/data/supabase'
-import { apiFetch, unwrapEnvelope } from '@lenserfight/data/repositories'
+import { apiFetch, unwrapEnvelope } from '@lenserfight/data/repositories/apiFetch'
 import { AUTH_BASE_URL, readEnv } from '@lenserfight/utils/env'
 import type { ChainabitAiModel, ProviderBalance } from './partner-provider.interface'
 
