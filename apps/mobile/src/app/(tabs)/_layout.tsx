@@ -53,6 +53,7 @@ export default function TabsLayout() {
         name="tags"
         options={{
           title: t('tabs.tags'),
+          headerLeft: () => null,
           tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'pricetag' : 'pricetag-outline'}
@@ -73,6 +74,7 @@ export default function TabsLayout() {
         name="lenses"
         options={{
           title: t('tabs.lenses'),
+          headerLeft: () => null,
           tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'telescope' : 'telescope-outline'}
@@ -113,6 +115,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: t('tabs.threads'),
+          headerLeft: () => null,
           tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'chatbubbles' : 'chatbubbles-outline'}
@@ -133,18 +136,12 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: t('tabs.profile'),
+          headerLeft: () => null,
           tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'person-circle' : 'person-circle-outline'}
               size={22}
               color={focused ? iconActive : iconColor}
-            />
-          ),
-          headerRight: () => (
-            <HeaderIconButton
-              icon="settings-outline"
-              onPress={withAuth(() => router.push('/settings' as never))}
-              accessibilityLabel={t('actions.settings')}
             />
           ),
         }}
