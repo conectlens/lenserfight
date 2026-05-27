@@ -1,3 +1,14 @@
+/**
+ * Read a public env var by name.
+ * Web (Vite): reads `import.meta.env[key]`.
+ * Native (Expo): the `.native.ts` override reads `process.env[EXPO_PUBLIC_key] ?? process.env[key]`.
+ * Use this everywhere instead of inlining `import.meta.env` access.
+ */
+export function readEnv(key: string, fallback = ''): string {
+  const raw = import.meta.env[key] as string | undefined
+  return typeof raw === 'string' && raw.trim() !== '' ? raw.trim() : fallback
+}
+
 function readPublicBaseUrl(envKey: string, fallback: string): string {
   const raw = import.meta.env[envKey] as string | undefined
   const s =
