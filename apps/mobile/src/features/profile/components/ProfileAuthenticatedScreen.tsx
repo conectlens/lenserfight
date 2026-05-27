@@ -14,7 +14,7 @@ interface LenserProfile {
   handle?: string | null
 }
 
-interface ProfileAuthenticatedViewProps {
+interface ProfileAuthenticatedScreenProps {
   theme: NativeThemeTokens
   lenser: LenserProfile | null | undefined
   userEmail?: string | null
@@ -29,7 +29,7 @@ interface ProfileAuthenticatedViewProps {
   onShareProfile: () => void
 }
 
-export const ProfileAuthenticatedView: React.FC<ProfileAuthenticatedViewProps> = ({
+export const ProfileAuthenticatedScreen: React.FC<ProfileAuthenticatedScreenProps> = ({
   theme,
   lenser,
   userEmail,

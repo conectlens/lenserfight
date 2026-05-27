@@ -2,7 +2,7 @@ import '../i18n'
 
 import { AuthProvider, useAuth } from '@lenserfight/features/auth/native'
 import { LenserProvider } from '@lenserfight/features/profile/native'
-import { BottomActionSheet } from '@lenserfight/ui/components/native'
+import { Sheet } from '@lenserfight/ui/components/native'
 import { OfflineBanner } from '@lenserfight/ui/feedback/native'
 import { StackHeader } from '@lenserfight/ui/layout/native'
 import { NativeThemeProvider } from '@lenserfight/ui/providers/native'
@@ -17,9 +17,13 @@ import { StatusBar, useColorScheme } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { AuthSheetProvider, useAuthSheet } from '../context/AuthSheetContext'
+import { LensSheetProvider, useLensSheet } from '../context/LensSheetContext'
+import { ThreadSheetProvider, useThreadSheet } from '../context/ThreadSheetContext'
 import { LoginScreen } from '../features/auth/components/login'
 import { MagicLinkScreen } from '../features/auth/components/magic-link'
 import { RegisterScreen } from '../features/auth/components/register'
+import { CreateLensSheet } from '../features/lenses/components/CreateLensSheet'
+import { CreateThreadSheet } from '../features/threads/components/CreateThreadSheet'
 
 // Ensure deep links into detail routes still mount the (tabs) stack first.
 export const unstable_settings = {
@@ -77,20 +81,30 @@ const AuthSheetOverlay: React.FC = () => {
     )
 
   return (
-    <BottomActionSheet
+    <Sheet
       visible={isOpen}
       onDismiss={close}
       dismissAccessibilityLabel={t('actions.close')}
       testID="auth-sheet"
     >
       {authContent}
-    </BottomActionSheet>
+    </Sheet>
   )
 }
 
 const AppStatusBar: React.FC = () => {
   const colorScheme = useColorScheme()
   return <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+}
+
+const ThreadSheetOverlay: React.FC = () => {
+  const { isOpen, editData, close } = useThreadSheet()
+  return <CreateThreadSheet visible={isOpen} onDismiss={close} editData={editData} />
+}
+
+const LensSheetOverlay: React.FC = () => {
+  const { isOpen, editData, close } = useLensSheet()
+  return <CreateLensSheet visible={isOpen} onDismiss={close} editData={editData} />
 }
 
 const RootLayoutInner: React.FC = () => {
@@ -105,6 +119,8 @@ const RootLayoutInner: React.FC = () => {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
       <AuthSheetOverlay />
+      <ThreadSheetOverlay />
+      <LensSheetOverlay />
     </>
   )
 }
@@ -116,7 +132,11 @@ function AppProviders({ children }: { children: React.ReactNode }) {
         <NativeThemeProvider>
           <AuthProvider>
             <LenserProvider>
-              <AuthSheetProvider>{children}</AuthSheetProvider>
+              <AuthSheetProvider>
+                <ThreadSheetProvider>
+                  <LensSheetProvider>{children}</LensSheetProvider>
+                </ThreadSheetProvider>
+              </AuthSheetProvider>
             </LenserProvider>
           </AuthProvider>
         </NativeThemeProvider>

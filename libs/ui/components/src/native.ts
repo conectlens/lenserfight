@@ -1,4 +1,4 @@
-export * from './lib/BottomActionSheet.native'
+export * from './lib/Sheet.native'
 export * from './lib/ContentCard.native'
 export * from './lib/HomeHeader.native'
 export * from './lib/MobileButton.native'

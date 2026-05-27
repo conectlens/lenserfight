@@ -7,8 +7,8 @@ import React from 'react'
 import { ScrollView, Share } from 'react-native'
 
 import { useAuthSheet } from '../../context/AuthSheetContext'
-import { ProfileAuthenticatedView } from '../../features/profile/components/ProfileAuthenticatedView'
-import { ProfileGuestView } from '../../features/profile/components/ProfileGuestView'
+import { ProfileAuthenticatedScreen } from '../../features/profile/components/ProfileAuthenticatedScreen'
+import { ProfileGuestScreen } from '../../features/profile/components/ProfileGuestScreen'
 import { screenStyles } from '../../styles/screenStyles'
 
 export default function ProfileTab() {
@@ -50,7 +50,7 @@ export default function ProfileTab() {
         contentContainerStyle={screenStyles.scroll}
       >
         {isAuthenticated ? (
-          <ProfileAuthenticatedView
+          <ProfileAuthenticatedScreen
             theme={theme}
             lenser={lenser}
             userEmail={user?.email}
@@ -65,7 +65,7 @@ export default function ProfileTab() {
             onShareProfile={shareProfile}
           />
         ) : (
-          <ProfileGuestView theme={theme} onSignIn={() => openAuthSheet('login')} />
+          <ProfileGuestScreen theme={theme} onSignIn={() => openAuthSheet('login')} />
         )}
       </ScrollView>
     </SafeAreaContainer>
