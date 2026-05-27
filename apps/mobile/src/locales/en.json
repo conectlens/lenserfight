@@ -62,14 +62,38 @@
     "empty": "No threads are available yet.",
     "detail": "Thread",
     "replies": "Replies",
-    "reactions": "reactions"
+    "reactions": "reactions",
+    "newPost": "New post",
+    "editPost": "Edit post",
+    "postTitle": "Title",
+    "titlePlaceholder": "What's on your mind?",
+    "content": "Content",
+    "contentPlaceholder": "Share more context, details, or a question…",
+    "visibility": "Visibility"
   },
   "lenses": {
     "title": "Lenses",
     "subtitle": "Reusable prompts, skills, and creative workflows.",
     "empty": "No lenses are available yet.",
     "detail": "Lens",
-    "uses": "uses"
+    "uses": "uses",
+    "newLens": "New lens",
+    "editLens": "Edit lens",
+    "lensTitle": "Title",
+    "titlePlaceholder": "Give your lens a clear name",
+    "instructions": "Instructions",
+    "instructionsHint": "Describe the behavior, tone, and purpose of the lens.",
+    "instructionsPlaceholder": "Write the system prompt or lens instructions here…",
+    "tags": "Tags",
+    "tagsHint": "Comma-separated, e.g. creative, concise",
+    "tagsPlaceholder": "creative, concise, technical",
+    "visibility": "Visibility",
+    "createLens": "Create lens",
+    "updateLens": "Update lens"
+  },
+  "visibility": {
+    "public": "Public",
+    "private": "Private"
   },
   "tags": {
     "title": "Rays",
@@ -114,6 +138,11 @@
     "search": "Search",
     "settings": "Settings",
     "newThread": "New thread",
-    "newBattle": "New battle"
+    "newLens": "New lens",
+    "newBattle": "New battle",
+    "cancel": "Cancel",
+    "discard": "Discard",
+    "publish": "Publish",
+    "update": "Update"
   }
 }

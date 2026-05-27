@@ -8,12 +8,12 @@ import { profileStyles as styles } from './profileStyles'
 
 import type { NativeThemeTokens } from '@lenserfight/ui/tokens'
 
-interface ProfileGuestViewProps {
+interface ProfileGuestScreenProps {
   theme: NativeThemeTokens
   onSignIn: () => void
 }
 
-export const ProfileGuestView: React.FC<ProfileGuestViewProps> = ({ theme, onSignIn }) => {
+export const ProfileGuestScreen: React.FC<ProfileGuestScreenProps> = ({ theme, onSignIn }) => {
   const isDark = theme.colorScheme === 'dark'
 
   return (
