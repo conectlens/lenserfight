@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest'
+
 import { SwitchRunner } from './switch.runner'
-import type { SwitchCase } from './switch.runner'
+
 import type { NodeRunnerContext } from './node-runner.interface'
+import type { SwitchCase } from './switch.runner'
 import type { ExecutionResult } from '../execution.types'
 
 describe('SwitchRunner', () => {

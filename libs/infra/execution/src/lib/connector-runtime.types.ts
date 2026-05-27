@@ -1,5 +1,5 @@
-import type { ConnectorCapability, ConnectorProvider } from '@lenserfight/domain/oauth-connections'
 import type { ExecutionResult } from './execution.types'
+import type { ConnectorCapability, ConnectorProvider } from '@lenserfight/domain/oauth-connections'
 
 export interface ConnectorOperationRequest {
   readonly connectorRef: string

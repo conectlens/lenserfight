@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
+
 import { NullDelegationHandler, SupabaseDelegationHandler } from './delegation-handler'
 
 describe('NullDelegationHandler', () => {

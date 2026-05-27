@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
+
 import { createCompositeConnectorResolver } from './composite-connector-resolver'
+
 import type { ConnectorCredentialResolver } from './connector-credential-resolver'
 
 function makeResolver(returns: string | null): ConnectorCredentialResolver {

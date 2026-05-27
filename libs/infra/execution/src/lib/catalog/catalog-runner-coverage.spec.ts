@@ -9,8 +9,10 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest'
-import { WORKFLOW_NODE_CATALOG } from './workflow-node-catalog'
+
 import { registerDefaultNodeRunners, hasNodeRunner, clearNodeRunners } from '../runners'
+
+import { WORKFLOW_NODE_CATALOG } from './workflow-node-catalog'
 
 beforeAll(() => {
   clearNodeRunners()

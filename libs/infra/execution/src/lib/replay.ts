@@ -14,6 +14,7 @@
 // recovery loop.
 
 import { WorkflowEventType, isRunScopedEvent } from '@lenserfight/types'
+
 import type { WorkflowEventType as WorkflowEventTypeT } from '@lenserfight/types'
 
 // ── Types ──────────────────────────────────────────────────────────────────

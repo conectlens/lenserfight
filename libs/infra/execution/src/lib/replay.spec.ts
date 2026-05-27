@@ -1,7 +1,7 @@
+import { WorkflowEventType } from '@lenserfight/types'
 import { describe, it, expect } from 'vitest'
 
 import { replayRunEvents, type ReplayEvent } from './replay'
-import { WorkflowEventType } from '@lenserfight/types'
 
 /**
  * Phase 7 — Recovery: golden-file replay tests.

@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { SetVariablesRunner } from './set-variables.runner'
+
 import { registerNodeRunner, getNodeRunner, clearNodeRunners } from './node-runner.registry'
+import { SetVariablesRunner } from './set-variables.runner'
+
 import type { NodeRunnerContext } from './node-runner.interface'
 import type { ExecutionResult } from '../execution.types'
 

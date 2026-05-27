@@ -1,4 +1,5 @@
 import { AnthropicProvider } from './providers/anthropic.provider'
+import { EchoProvider } from './providers/echo.provider'
 import { FalAIProvider } from './providers/fal-ai.provider'
 import { GeminiProvider } from './providers/gemini.provider'
 import { MistralProvider } from './providers/mistral.provider'
@@ -6,7 +7,6 @@ import { OllamaProvider } from './providers/ollama.provider'
 import { OpenAIProvider } from './providers/openai.provider'
 import { PdfExportProvider } from './providers/pdf-export.provider'
 import { ResearchProvider } from './providers/research.provider'
-import { EchoProvider } from './providers/echo.provider'
 
 import type { IExecutionProvider } from './execution.types'
 
@@ -33,6 +33,8 @@ export function getExecutionProvider(id: string): IExecutionProvider {
   }
   return factory()
 }
+
+ResearchProvider.getExecutionProvider = getExecutionProvider
 
 export function registerExecutionProvider(id: string, factory: () => IExecutionProvider): void {
   PROVIDERS[id] = factory

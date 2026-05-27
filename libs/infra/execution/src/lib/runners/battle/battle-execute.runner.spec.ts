@@ -3,8 +3,9 @@
 // Covers: missing battleId, both slots complete, one slot missing metadata.
 
 import { BattleExecuteRunner } from './battle-execute.runner'
-import type { NodeRunnerContext } from '../node-runner.interface'
+
 import type { ExecutionResult } from '../../execution.types'
+import type { NodeRunnerContext } from '../node-runner.interface'
 
 function makeCtx(overrides: Partial<NodeRunnerContext> = {}): NodeRunnerContext {
   return {

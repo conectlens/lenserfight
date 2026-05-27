@@ -1,3 +1,4 @@
+import { validateFrontmatterSchema, hasSchema } from '@lenserfight/domain/spec-governance'
 import {
   NODE_OUTPUT_ENVELOPE_REQUIRED_FIELDS,
   type ContractFieldSchema,
@@ -7,7 +8,6 @@ import {
   type LensOutputContract,
   type NodeOutputEnvelope,
 } from '@lenserfight/types'
-import { validateFrontmatterSchema, hasSchema } from '@lenserfight/domain/spec-governance'
 
 /**
  * Validate spec frontmatter against its JSON Schema before execution.

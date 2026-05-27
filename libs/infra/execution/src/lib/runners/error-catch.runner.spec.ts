@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
+
 import { ErrorCatchRunner } from './error-catch.runner'
+
 import type { NodeRunnerContext } from './node-runner.interface'
 
 describe('ErrorCatchRunner', () => {
