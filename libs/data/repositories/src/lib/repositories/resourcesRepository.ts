@@ -175,19 +175,3 @@ export class SupabaseResourcesRepository implements ResourcesRepositoryPort {
   }
 }
 
-import { createResourcesRepository } from '../factory'
-export const resourcesRepository = createResourcesRepository()
-
-/**
- * Helper: full upload session — creates resource, gets signed URL.
- * Returns all info needed for the browser to upload directly to Supabase Storage.
- */
-export async function startResourceUpload(
-  input: CreateResourceDTO,
-  bucket: string,
-  objectKey: string
-): Promise<ResourceUploadSession> {
-  const resource = await resourcesRepository.create(input)
-  const signedUploadUrl = await resourcesRepository.getSignedUploadUrl(bucket, objectKey)
-  return { resourceId: resource.id, signedUploadUrl, bucket, objectKey }
-}

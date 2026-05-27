@@ -1,4 +1,4 @@
-import { authService } from '@lenserfight/data/repositories/mobile'
+import { authService } from '@lenserfight/data/repositories'
 import type { AuthState, UserMetadata } from '@lenserfight/types'
 import { getEnvMetadata } from '@lenserfight/utils/env'
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'

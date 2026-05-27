@@ -1,5 +1,7 @@
+import { readEnv, isProd } from '@lenserfight/utils/env'
+
 const isRepositoryDebugEnabled =
-  !!import.meta.env.DEV && import.meta.env.ENABLE_REPOSITORY_DEBUG === 'true'
+  !isProd && readEnv('ENABLE_REPOSITORY_DEBUG') === 'true'
 
 export function debugRepositoryEvent(
   scope: string,

@@ -297,20 +297,3 @@ export class SupabaseMediaRepository implements MediaRepositoryPort {
   }
 }
 
-import { createMediaRepository } from '../factory'
-export const mediaRepository = createMediaRepository()
-
-/**
- * Helper: full upload session — creates media object, gets signed URL.
- * Returns all info needed for the browser to upload directly to storage.
- */
-export async function startMediaUpload(
-  input: CreateMediaObjectDTO,
-  workspaceId: string,
-  bucket: string,
-  objectKey: string,
-): Promise<UploadSession> {
-  const obj = await mediaRepository.create(input, workspaceId)
-  const { signedUrl } = await mediaRepository.getSignedUploadUrl(bucket, objectKey)
-  return { objectId: obj.id, signedUploadUrl: signedUrl, bucket, objectKey }
-}

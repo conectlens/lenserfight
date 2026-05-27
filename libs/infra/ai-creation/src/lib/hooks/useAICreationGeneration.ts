@@ -2,6 +2,7 @@ import { supabase, getCachedAccessToken } from '@lenserfight/data/supabase'
 import { useState, useCallback } from 'react'
 import { ProfileAIPreferenceResolver } from '../profile-ai-preference.resolver'
 import { AICreationService } from '../ai-creation.service'
+import { readEnv } from '@lenserfight/utils/env'
 import type {
   AICreationError,
   AICreationInput,
@@ -16,9 +17,7 @@ import type {
 
 // ─── Edge Function URL ────────────────────────────────────────────────────────
 
-const SUPABASE_URL =
-  (typeof import.meta !== 'undefined' && (import.meta.env?.['SUPABASE_URL'] as string | undefined)) ??
-  'http://localhost:54321'
+const SUPABASE_URL = readEnv('SUPABASE_URL', 'http://localhost:54321')
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 // ─── Options ─────────────────────────────────────────────────────────────────
