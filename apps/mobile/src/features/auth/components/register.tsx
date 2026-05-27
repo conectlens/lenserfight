@@ -12,6 +12,7 @@ import { AuthLayout } from './AuthLayout'
 import { isEmail } from './isEmail'
 import { OAuthButtons } from './OAuthButtons'
 import { PrivacyNotice } from './PrivacyNotice'
+
 import type { AuthSheetProps } from './types'
 
 export const RegisterScreen: React.FC<AuthSheetProps> = ({ onAuthenticated, onLogin }) => {
@@ -63,6 +64,7 @@ export const RegisterScreen: React.FC<AuthSheetProps> = ({ onAuthenticated, onLo
         <Input
           value={displayName}
           onChangeText={setDisplayName}
+          placeholder={t('auth.displayNamePlaceholder')}
           textContentType="name"
           testID="register-name"
           startAdornment={
@@ -74,6 +76,7 @@ export const RegisterScreen: React.FC<AuthSheetProps> = ({ onAuthenticated, onLo
         <Input
           value={email}
           onChangeText={setEmail}
+          placeholder={t('auth.emailPlaceholder')}
           autoCapitalize="none"
           keyboardType="email-address"
           textContentType="emailAddress"
@@ -87,6 +90,7 @@ export const RegisterScreen: React.FC<AuthSheetProps> = ({ onAuthenticated, onLo
         <Input
           value={password}
           onChangeText={setPassword}
+          placeholder={t('auth.passwordPlaceholder')}
           secureTextEntry={!showPassword}
           textContentType="newPassword"
           testID="register-password"
