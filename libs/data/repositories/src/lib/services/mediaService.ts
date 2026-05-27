@@ -1,6 +1,5 @@
-import { startMediaUpload } from '../repositories/mediaRepository'
+import { startMediaUpload, createMediaRepository } from '../factory'
 import { MediaObject, MediaAttachment, CreateMediaObjectDTO, UploadSession } from '@lenserfight/types'
-import { createMediaRepository } from '../factory'
 import { supabase } from '@lenserfight/data/supabase'
 
 

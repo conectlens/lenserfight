@@ -1,13 +1,5 @@
-import { WEB_BASE_URL } from '@lenserfight/utils/env'
+import { WEB_BASE_URL, readEnv } from '@lenserfight/utils/env'
 import { DEFAULT_MEDIA_INLINE_MAX_BYTES } from './types'
-
-function readEnv(key: string): string {
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    const v = import.meta.env[key] as string | undefined
-    if (typeof v === 'string' && v.trim()) return v.trim()
-  }
-  return ''
-}
 
 /** Public Supabase API origin for rewriting signed storage URLs (e.g. ngrok → :54321). */
 export function getSupabasePublicUrl(): string {

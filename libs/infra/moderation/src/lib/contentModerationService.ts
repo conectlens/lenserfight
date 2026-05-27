@@ -1,13 +1,10 @@
+import { readEnv } from '@lenserfight/utils/env'
 import { ModerationPolicy, ModerationError } from './moderation.types'
-
 import { DictionaryPolicy, RegexPolicy, SemanticPolicy } from './policies'
 
 // SemanticPolicy uses an AI call and is off by default for OSS self-hosted installs.
-// Set MODERATION_SEMANTIC_ENABLED=true (server or browser) to activate it
-// alongside the always-on DictionaryPolicy and RegexPolicy.
-const semanticEnabled =
-  (typeof process !== 'undefined' && process.env?.['MODERATION_SEMANTIC_ENABLED'] === 'true') ||
-  (typeof import.meta !== 'undefined' && (import.meta as unknown as Record<string, Record<string, string>>).env?.['MODERATION_SEMANTIC_ENABLED'] === 'true')
+// Set MODERATION_SEMANTIC_ENABLED=true (or EXPO_PUBLIC_MODERATION_SEMANTIC_ENABLED on mobile) to activate it.
+const semanticEnabled = readEnv('MODERATION_SEMANTIC_ENABLED') === 'true'
 
 class ContentModerationService {
   private policies: ModerationPolicy[]

@@ -28,6 +28,7 @@ const shareRepo = createShareRepository()
 
 const enrichLenserProfile = async (lenser: Lenser | null): Promise<Lenser | null> => {
   if (!lenser || !lenser.website_url) return lenser
+  if (typeof window === 'undefined' || !window.location) return lenser
 
   const appDomain = window.location.host
   if (lenser.website_url.includes(appDomain) && lenser.website_url.includes('/s/')) {

@@ -8,23 +8,14 @@ export type R2Config = {
   publicBaseUrl: string
 }
 
-function read(key: string): string {
-  if (typeof process !== 'undefined' && process.env?.[key]) {
-    return String(process.env[key]).trim()
-  }
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    const v = import.meta.env[key] as string | undefined
-    if (typeof v === 'string' && v.trim()) return v.trim()
-  }
-  return ''
-}
+import { readEnv } from '@lenserfight/utils/env'
 
 export function readR2Config(): R2Config | null {
-  const accountId = read('R2_ACCOUNT_ID')
-  const accessKeyId = read('R2_ACCESS_KEY_ID')
-  const secretAccessKey = read('R2_SECRET_ACCESS_KEY')
-  const bucket = read('R2_BUCKET') || read('R2_BUCKET_NAME')
-  const publicBaseUrl = read('R2_PUBLIC_URL').replace(/\/$/, '')
+  const accountId = readEnv('R2_ACCOUNT_ID')
+  const accessKeyId = readEnv('R2_ACCESS_KEY_ID')
+  const secretAccessKey = readEnv('R2_SECRET_ACCESS_KEY')
+  const bucket = readEnv('R2_BUCKET') || readEnv('R2_BUCKET_NAME')
+  const publicBaseUrl = readEnv('R2_PUBLIC_URL').replace(/\/$/, '')
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
     return null

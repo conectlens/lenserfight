@@ -1,8 +1,8 @@
 import { supabase, getCachedAccessToken } from '@lenserfight/data/supabase'
 import { TriggerExecutionDTO, TriggerExecutionResponse } from '@lenserfight/types'
+import { readEnv } from '@lenserfight/utils/env'
 
-const SUPABASE_URL =
-  (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
+const SUPABASE_URL = readEnv('SUPABASE_URL', 'http://localhost:54321')
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 // --- Port ---
