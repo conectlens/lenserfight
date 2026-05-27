@@ -1,3 +1,13 @@
+/**
+ * Native override of readEnv: tries EXPO_PUBLIC_KEY first, then KEY, then fallback.
+ * All public env vars for Expo must be prefixed with EXPO_PUBLIC_ in .env files;
+ * the unprefixed fallback supports server-side process.env usage in Edge Functions.
+ */
+export function readEnv(key: string, fallback = ''): string {
+  const raw = process.env[`EXPO_PUBLIC_${key}`] ?? process.env[key]
+  return typeof raw === 'string' && raw.trim() !== '' ? raw.trim() : fallback
+}
+
 function readPublicBaseUrl(envKey: string, fallback: string): string {
   const expoKey = `EXPO_PUBLIC_${envKey}`
   const raw = process.env[expoKey] ?? process.env[envKey]
