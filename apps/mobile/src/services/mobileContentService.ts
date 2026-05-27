@@ -108,6 +108,22 @@ export const mobileContentService = {
     }
   },
 
+  async getLenserLenses(handle: string, viewerId?: string): Promise<LensViewModel[]> {
+    try {
+      return await lensesService.getLenserLenses(handle, 0, 10, viewerId)
+    } catch (error) {
+      throw publicMessage(error)
+    }
+  },
+
+  async getLenserThreads(handle: string, viewerId?: string): Promise<ThreadFeedItem[]> {
+    try {
+      return await threadsService.getThreadsByLenser(handle, viewerId, 0, 10)
+    } catch (error) {
+      throw publicMessage(error)
+    }
+  },
+
   async getBattle(id: string): Promise<BattleFeedItemRecord | null> {
     try {
       const record = await battlesService.getBattleById(id)
