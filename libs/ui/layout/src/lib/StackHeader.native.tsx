@@ -57,6 +57,8 @@ export interface StackHeaderProps {
   }
   options: {
     title?: string
+    /** When provided, renders instead of the automatic back button. Pass `() => null` to suppress the back button on root screens. */
+    headerLeft?: (props: { canGoBack: boolean; tintColor: string }) => React.ReactNode
     headerRight?: (props: { canGoBack: boolean; tintColor: string }) => React.ReactNode
   }
 }
@@ -66,9 +68,12 @@ export const StackHeader: React.FC<StackHeaderProps> = ({ route, options }) => {
   const router = useRouter()
   const canGoBack = router.canGoBack()
 
-  const leading = canGoBack ? (
-    <BackButton onPress={() => router.back()} color={theme.active} />
-  ) : undefined
+  const leading =
+    options.headerLeft !== undefined
+      ? (options.headerLeft({ canGoBack, tintColor: theme.active }) ?? undefined)
+      : canGoBack
+        ? <BackButton onPress={() => router.back()} color={theme.active} />
+        : undefined
 
   const trailing = options.headerRight?.({ canGoBack, tintColor: theme.active }) ?? undefined
 
