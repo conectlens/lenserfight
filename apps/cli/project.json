@@ -145,6 +145,7 @@
     },
     "test": {
       "options": {
+        "jestConfig": "apps/cli/jest.config.cjs",
         "passWithNoTests": true
       }
     }
