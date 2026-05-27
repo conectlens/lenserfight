@@ -1,8 +1,6 @@
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
-import { Check, AlertCircle, ExternalLink } from 'lucide-react'
-import React, { useRef, useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-
+import { normalizeError, type AppError } from '@lenserfight/shared/error'
+import { Button } from '@lenserfight/ui/components'
+import { Loader } from '@lenserfight/ui/feedback'
 import {
   isLocal,
   ENABLE_CAPTCHA,
@@ -10,17 +8,19 @@ import {
   WEB_BASE_URL,
   loadDevSeedCredentials,
 } from '@lenserfight/utils/env'
-import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
-import { normalizeError, type AppError } from '@lenserfight/shared/error'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
+import { Check, AlertCircle, ExternalLink } from 'lucide-react'
+import React, { useRef, useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+
 import { AuthCard } from '../components/AuthCard'
 import { BackButton } from '../components/BackButton'
-import { Button } from '@lenserfight/ui/components'
-import { Loader } from '@lenserfight/ui/feedback'
 import { InputField } from '../components/InputField'
-import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
 import { OAuthButtonGroup } from '../components/OAuthButtonGroup'
+import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
+import { useAuth } from '../context/AuthContext'
 
 export const RegisterPage: React.FC = () => {
   const { register, logout, resendSignupConfirmation, isAuthenticated, signInWithOAuth } = useAuth()

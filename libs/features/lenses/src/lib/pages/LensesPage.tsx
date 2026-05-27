@@ -1,5 +1,5 @@
 import { useAuth } from '@lenserfight/features/auth'
-import { useLensesFeed } from '@lenserfight/features/home'
+import { useLensesFeed } from '../hooks/useLensesFeed'
 import { Button, HelpButton, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL } from '@lenserfight/utils/env'

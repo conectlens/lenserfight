@@ -10,11 +10,9 @@ import {
   type WorkflowRecord,
   type WorkflowScheduleRecord,
 } from '@lenserfight/data/repositories'
-import {
-  AgentPolicySummary,
-  AgentStatusBadge,
-  useRunUnified,
-} from '@lenserfight/features/agents'
+import { AgentPolicySummary } from '@lenserfight/features/agents/AgentPolicySummary'
+import { AgentStatusBadge } from '@lenserfight/features/agents/AgentStatusBadge'
+import { useRunUnified } from '@lenserfight/features/agents/useRunUnified'
 import { BadgeDisplay } from '@lenserfight/features/lenserboard'
 import { ExportButton } from '@lenserfight/features/exports'
 import { ThreadsListCard } from '@lenserfight/features/home'
@@ -39,7 +37,7 @@ import { LenserTabContent, LenserTabs, type LenserTabDefinition, type LenserTabI
 import { useWorkspaceSwitchController } from '../useWorkspaceSwitchController'
 
 const AgentManageWizard = React.lazy(() =>
-  import('@lenserfight/features/agents').then((m) => ({ default: m.AgentManageWizard }))
+  import('@lenserfight/features/agents/AgentManageWizard').then((m) => ({ default: m.AgentManageWizard }))
 )
 
 import type {

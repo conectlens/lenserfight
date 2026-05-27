@@ -1,21 +1,23 @@
+
+
+import { rememberMeStorage } from '@lenserfight/data/supabase'
+import { normalizeError, type AppError } from '@lenserfight/shared/error'
+
+import { Button } from '@lenserfight/ui/components'
+import { Loader } from '@lenserfight/ui/feedback'
+import { ENABLE_CAPTCHA, CAPTCHA_SITE_KEY, loadDevSeedCredentials } from '@lenserfight/utils/env'
+import { isRequired, isEmailOrHandle } from '@lenserfight/utils/validation'
+import { useFormValidation } from '@lenserfight/utils/validation'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-
-import { ENABLE_CAPTCHA, CAPTCHA_SITE_KEY, loadDevSeedCredentials } from '@lenserfight/utils/env'
-
-import { useAuth } from '@lenserfight/features/auth'
-import { rememberMeStorage } from '@lenserfight/data/supabase'
-import { useFormValidation } from '@lenserfight/utils/validation'
-import { isRequired, isEmailOrHandle } from '@lenserfight/utils/validation'
-import { normalizeError, type AppError } from '@lenserfight/shared/error'
 import { AuthCard } from '../components/AuthCard'
 import { BackButton } from '../components/BackButton'
-import { Button } from '@lenserfight/ui/components'
-import { Loader } from '@lenserfight/ui/feedback'
+
 import { InputField } from '../components/InputField'
 import { OAuthButtonGroup } from '../components/OAuthButtonGroup'
+import { useAuth } from '../context/AuthContext'
 
 export const LoginPage: React.FC = () => {
   const { login, signInWithOAuth } = useAuth()

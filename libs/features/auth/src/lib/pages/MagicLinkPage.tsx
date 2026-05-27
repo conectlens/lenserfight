@@ -1,16 +1,18 @@
+import { Button } from '@lenserfight/ui/components'
+import { ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
+import { useFormValidation } from '@lenserfight/utils/validation'
+import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { Check } from 'lucide-react'
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
-import { useAuth } from '@lenserfight/features/auth'
-import { useFormValidation } from '@lenserfight/utils/validation'
-import { isRequired, isEmail } from '@lenserfight/utils/validation'
+
+
 import { AuthCard } from '../components/AuthCard'
 import { BackButton } from '../components/BackButton'
-import { Button } from '@lenserfight/ui/components'
 import { InputField } from '../components/InputField'
+import { useAuth } from '../context/AuthContext'
 
 export const MagicLinkPage: React.FC = () => {
   const { sendMagicLink } = useAuth()

@@ -14,8 +14,9 @@ import {
   useUnfollowTag,
   useFollowLenser,
   useUnfollowLenser,
-} from '@lenserfight/features/home'
-import { useLenser } from '@lenserfight/features/profile'
+} from '../useThreads'
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { useLenser } from '@lenserfight/features/profile/useLenser'
 import { CreateThreadModal } from '@lenserfight/features/threads'
 import { Avatar, Button, Card, EmptyState, HelpButton, TagBadge } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'

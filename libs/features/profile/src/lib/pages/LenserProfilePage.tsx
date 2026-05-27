@@ -6,7 +6,7 @@ import {
   reactionService,
   threadsService,
 } from '@lenserfight/data/repositories'
-import { AgentCard } from '@lenserfight/features/agents'
+import { AgentCard } from '@lenserfight/features/agents/AgentCard'
 import { BadgeDisplay } from '@lenserfight/features/lenserboard'
 import { useAuth } from '@lenserfight/features/auth'
 import { ThreadsListCard } from '@lenserfight/features/home'
