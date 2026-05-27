@@ -30,6 +30,7 @@ module.exports = {
     // root, but @expo/cli passes routerRoot to Babel which joins it with that
     // projectRoot. A relative 'src/app' resolves to <workspace>/src/app (wrong).
     ['expo-router', { root: path.resolve(__dirname, 'src/app') }],
+    'expo-apple-authentication',
     [
       'expo-splash-screen',
       {
