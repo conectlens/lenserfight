@@ -1,6 +1,14 @@
 name: Release CLI
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/cli/**'
+      - 'libs/**'
+      - 'nx.json'
+      - '.github/workflows/release-cli.yml'
   workflow_dispatch:
     inputs:
       release_channel:
@@ -53,11 +61,22 @@ concurrency:
 
 jobs:
   release:
-    name: ${{ inputs.dry_run && 'Preview' || 'Publish' }} CLI ${{ inputs.release_channel }}
+    name: ${{ (inputs.dry_run == 'true' || inputs.dry_run == true) && 'Preview' || 'Publish' }} CLI ${{ inputs.release_channel || 'stable' }}
     runs-on: ubuntu-latest
-    environment: ${{ inputs.release_channel == 'stable' && 'npm-production' || 'npm-prerelease' }}
+    environment: ${{ (inputs.release_channel || 'stable') == 'stable' && 'npm-production' || 'npm-prerelease' }}
 
     steps:
+      - name: Resolve effective inputs
+        id: effective
+        shell: bash
+        run: |
+          # On push trigger, inputs are empty — use stable/auto/no-dry-run defaults.
+          echo "dry_run=${{ inputs.dry_run == '' && 'false' || inputs.dry_run }}" >> "$GITHUB_OUTPUT"
+          echo "release_channel=${{ inputs.release_channel == '' && 'stable' || inputs.release_channel }}" >> "$GITHUB_OUTPUT"
+          echo "version_specifier=${{ inputs.version_specifier == '' && 'auto' || inputs.version_specifier }}" >> "$GITHUB_OUTPUT"
+          echo "first_release=${{ inputs.first_release == '' && 'false' || inputs.first_release }}" >> "$GITHUB_OUTPUT"
+          echo "allow_major=${{ inputs.allow_major == '' && 'false' || inputs.allow_major }}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
@@ -83,8 +102,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          channel='${{ inputs.release_channel }}'
-          specifier='${{ inputs.version_specifier }}'
+          channel='${{ steps.effective.outputs.release_channel }}'
+          specifier='${{ steps.effective.outputs.version_specifier }}'
           ref='${{ github.ref_name }}'
 
           case "$channel" in
@@ -128,7 +147,7 @@ jobs:
           fi
 
           if [[ "$specifier" = 'major' || "$specifier" = 'premajor' ]]; then
-            test '${{ inputs.allow_major }}' = 'true' || {
+            test '${{ steps.effective.outputs.allow_major }}' = 'true' || {
               echo 'Major releases require allow_major=true.' >&2
               exit 1
             }
@@ -147,7 +166,7 @@ jobs:
         run: pnpm nx run cli:smoke-install
 
       - name: Preview Nx release and npm publish
-        if: inputs.dry_run
+        if: steps.effective.outputs.dry_run == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -156,12 +175,12 @@ jobs:
           preid='${{ steps.release.outputs.preid }}'
           if [[ "$specifier" != 'auto' ]]; then args+=("$specifier"); fi
           if [[ -n "$preid" ]]; then args+=(--preid "$preid"); fi
-          if [[ '${{ inputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
+          if [[ '${{ steps.effective.outputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
           pnpm nx "${args[@]}"
           npm publish dist/apps/cli --dry-run --access public --tag '${{ steps.release.outputs.dist_tag }}'
 
       - name: Version CLI package
-        if: ${{ !inputs.dry_run }}
+        if: steps.effective.outputs.dry_run != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -173,21 +192,21 @@ jobs:
           preid='${{ steps.release.outputs.preid }}'
           if [[ "$specifier" != 'auto' ]]; then args+=("$specifier"); fi
           if [[ -n "$preid" ]]; then args+=(--preid "$preid"); fi
-          if [[ '${{ inputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
+          if [[ '${{ steps.effective.outputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
           pnpm nx "${args[@]}"
 
       - name: Generate CLI changelog
-        if: ${{ !inputs.dry_run }}
+        if: steps.effective.outputs.dry_run != 'true'
         shell: bash
         run: |
           set -euo pipefail
           version="$(node -p "require('./apps/cli/package.json').version")"
           args=(release changelog "$version" --projects=cli)
-          if [[ '${{ inputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
+          if [[ '${{ steps.effective.outputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
           pnpm nx "${args[@]}"
 
       - name: Validate versioned package
-        if: ${{ !inputs.dry_run }}
+        if: steps.effective.outputs.dry_run != 'true'
         run: pnpm nx run cli:smoke-install
 
       - name: Generate release assets
@@ -199,7 +218,7 @@ jobs:
           npm pack dist/apps/cli --pack-destination dist/apps/cli --json > dist/apps/cli/pack.json
 
       - name: Commit and tag release
-        if: ${{ !inputs.dry_run }}
+        if: steps.effective.outputs.dry_run != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -216,13 +235,13 @@ jobs:
           git push origin "$tag"
 
       - name: Publish to npm with provenance
-        if: ${{ !inputs.dry_run }}
+        if: steps.effective.outputs.dry_run != 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish dist/apps/cli --access public --tag '${{ steps.release.outputs.dist_tag }}' --provenance
 
       - name: Verify published package
-        if: ${{ !inputs.dry_run }}
+        if: steps.effective.outputs.dry_run != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -237,7 +256,7 @@ jobs:
           npm exec --yes --package "$name@$version" -- lenserfight --version
 
       - name: Create GitHub Release
-        if: ${{ !inputs.dry_run }}
+        if: steps.effective.outputs.dry_run != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -247,7 +266,7 @@ jobs:
           tag="cli@$version"
           tarball="$(node -e "const p=require('./dist/apps/cli/pack.json')[0]; console.log('dist/apps/cli/' + p.filename)")"
           prerelease_flag=()
-          if [[ '${{ inputs.release_channel }}' != 'stable' ]]; then
+          if [[ '${{ steps.effective.outputs.release_channel }}' != 'stable' ]]; then
             prerelease_flag=(--prerelease)
           fi
           gh release create "$tag" \
@@ -262,7 +281,7 @@ jobs:
       - name: Upload release artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: cli-release-${{ inputs.release_channel }}-${{ github.run_number }}
+          name: cli-release-${{ steps.effective.outputs.release_channel }}-${{ github.run_number }}
           path: |
             dist/apps/cli/*.tgz
             dist/apps/cli/pack.json
