@@ -1,7 +1,7 @@
 import { callProvider } from '@lenserfight/providers'
 
-import type { ContentPart, ProviderMessage } from '@lenserfight/providers'
 import type { IExecutionProvider, ExecutionInput, ExecutionResult, MediaType } from '../execution.types'
+import type { ContentPart, ProviderMessage } from '@lenserfight/providers'
 
 function buildUserMessage(input: ExecutionInput): ProviderMessage {
   const att = input.attachments ?? []

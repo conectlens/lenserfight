@@ -1,7 +1,7 @@
 import { getWorkflowNodeCatalogEntry } from './workflow-node-catalog'
 
-import type { WorkflowNodeConfig } from '../workflow-execution.service'
 import type { WorkflowNodeType } from '../execution.types'
+import type { WorkflowNodeConfig } from '../workflow-execution.service'
 import type { WorkflowNodeConfigField } from './workflow-node-catalog'
 
 export type ExecutableWorkflowNodeConfig = WorkflowNodeConfig & Record<string, unknown>

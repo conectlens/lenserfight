@@ -1,6 +1,8 @@
 // EventPublisher — unit tests for engine event emission.
 import { describe, it, expect, vi } from 'vitest'
+
 import { EventPublisher } from './event-publisher'
+
 import type { EnginePublishEvent } from './event-publisher'
 
 describe('EventPublisher', () => {

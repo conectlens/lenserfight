@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { SupabaseQueryRunner, isRpcAllowed } from './supabase-query.runner'
-import { KVStoreReadRunner, KVStoreWriteRunner } from './kv-store.runner'
+
 import { FileReaderRunner } from './file-reader.runner'
-import { WebhookTriggerRunner, WebhookSenderRunner } from './webhook.runner'
+import { KVStoreReadRunner, KVStoreWriteRunner } from './kv-store.runner'
 import { ScheduleTriggerRunner } from './schedule-trigger.runner'
+import { SupabaseQueryRunner, isRpcAllowed } from './supabase-query.runner'
+import { WebhookTriggerRunner, WebhookSenderRunner } from './webhook.runner'
+
 import type { NodeRunnerContext } from './node-runner.interface'
 import type { ExecutionResult } from '../execution.types'
 

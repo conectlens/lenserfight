@@ -21,8 +21,9 @@
  *   GOOGLE_OAUTH_CLIENT_SECRET
  */
 
-import type { ConnectorCredentialResolver } from './connector-credential-resolver'
 import { parseConnectorRef } from '@lenserfight/domain/oauth-connections'
+
+import type { ConnectorCredentialResolver } from './connector-credential-resolver'
 
 export interface OAuthResolverServiceClient {
   rpc<T = unknown>(

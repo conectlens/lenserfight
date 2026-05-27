@@ -1,5 +1,5 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DelegationPolicy } from './workflow-execution.service'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Phase AL — delegation handler.
 //

@@ -4,13 +4,15 @@
 // All four runners call Supabase via fetch. globalThis.fetch is mocked with
 // vi.stubGlobal so the runners never make real HTTP calls.
 
-import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest'
+import { vi, afterEach, describe, it, expect } from 'vitest'
+
 import { JudgeBattleRunner } from './judge-battle.runner'
-import { VoteCollectorRunner } from './vote-collector.runner'
-import { ScoreAggregatorRunner } from './score-aggregator.runner'
 import { LeaderboardUpdateRunner } from './leaderboard-update.runner'
-import type { NodeRunnerContext } from '../node-runner.interface'
+import { ScoreAggregatorRunner } from './score-aggregator.runner'
+import { VoteCollectorRunner } from './vote-collector.runner'
+
 import type { ExecutionResult } from '../../execution.types'
+import type { NodeRunnerContext } from '../node-runner.interface'
 
 // ─── Environment setup ────────────────────────────────────────────────────────
 

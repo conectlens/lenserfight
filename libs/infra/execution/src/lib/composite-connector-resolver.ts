@@ -16,8 +16,9 @@
  *   ctx.resolveConnector = resolver.resolve.bind(resolver)
  */
 
-import type { ConnectorCredentialResolver } from './connector-credential-resolver'
 import { parseConnectorRef } from '@lenserfight/domain/oauth-connections'
+
+import type { ConnectorCredentialResolver } from './connector-credential-resolver'
 
 /**
  * Creates a composite resolver that routes refs to the appropriate backend.

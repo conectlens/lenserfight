@@ -3,19 +3,18 @@
 // parent-failure policies, retry, timeout, cancellation, moderation, and memory.
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-import { WorkflowExecutionService } from './workflow-execution.service'
 import { registerNodeRunner, clearNodeRunners } from './runners/node-runner.registry'
 import { SetVariablesRunner } from './runners/set-variables.runner'
-import { JsonTransformRunner } from './runners/json-transform.runner'
+import { WorkflowExecutionService } from './workflow-execution.service'
 
+import type { IExecutionProvider, ExecutionInput, ExecutionResult } from './execution.types'
+import type { ModerationDecision, ModerationGateway } from './execution.types'
 import type {
   WorkflowNode,
   WorkflowEdge,
   WorkflowExecutionContext,
   NodeResult,
 } from './workflow-execution.service'
-import type { IExecutionProvider, ExecutionInput, ExecutionResult } from './execution.types'
-import type { ModerationDecision, ModerationGateway } from './execution.types'
 
 // ── Provider factories ────────────────────────────────────────────────────────
 

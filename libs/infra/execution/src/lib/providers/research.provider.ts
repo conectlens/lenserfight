@@ -43,6 +43,7 @@ interface ResearchEnvelope {
 export class ResearchProvider implements IExecutionProvider {
   readonly id = 'research'
   readonly supportedMediaTypes: MediaType[] = ['text']
+  static getExecutionProvider?: (id: string) => IExecutionProvider
 
   async execute(modelId: string, input: ExecutionInput, signal?: AbortSignal): Promise<ExecutionResult> {
     const start = Date.now()
@@ -68,9 +69,11 @@ export class ResearchProvider implements IExecutionProvider {
       ? (params['baseModelId'] as string)
       : modelId
 
-    // Lazy import to avoid a require cycle with execution.registry (which imports this provider).
-    const { getExecutionProvider } = await import('../execution.registry')
-    const baseProvider = getExecutionProvider(baseProviderId)
+    const getProvider = ResearchProvider.getExecutionProvider
+    if (!getProvider) {
+      throw new Error('ResearchProvider: static getExecutionProvider callback not initialised.')
+    }
+    const baseProvider = getProvider(baseProviderId)
     const synthesisPrompt = retrievalBlock
       ? `${retrievalBlock}\n\n---\n\n${input.prompt}`
       : input.prompt

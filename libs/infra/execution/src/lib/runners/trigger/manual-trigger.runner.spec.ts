@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
+
 import { ManualTriggerRunner } from './manual-trigger.runner'
+
 import type { NodeRunnerContext } from '../node-runner.interface'
 
 function makeCtx(overrides: Partial<NodeRunnerContext> = {}): NodeRunnerContext {

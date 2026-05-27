@@ -5,6 +5,7 @@ import { resolveMappedOutputValue } from './output-path'
 import { getNodeRunner } from './runners/node-runner.registry'
 import { detectCycle as validatorDetectCycle, PlaceholderUnboundError } from './validator'
 
+import type { ConnectorOperationExecutor } from './connector-runtime.types'
 import type {
   ExecutionInput,
   ExecutionResult,
@@ -17,7 +18,6 @@ import type {
   WorkflowNodeType,
 } from './execution.types'
 import type { PinnedOutputStore } from './pinned-output'
-import type { ConnectorOperationExecutor } from './connector-runtime.types'
 import type { NodeRunnerContext } from './runners/node-runner.interface'
 import type { LensInputContract, LensOutputContract, NodeOutputEnvelope } from '@lenserfight/types'
 

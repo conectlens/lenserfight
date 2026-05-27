@@ -5,6 +5,7 @@ import { useNativeTheme } from '@lenserfight/ui/providers/native'
 import { Tabs, useRouter } from 'expo-router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { StyleSheet } from 'react-native'
 
 import { useAuthSheet } from '../../context/AuthSheetContext'
 
@@ -37,7 +38,10 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: iconColor,
         tabBarStyle: {
           backgroundColor: theme.surface.base,
+          borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: theme.surface.border,
+          shadowOpacity: 0,
+          elevation: 0,
         },
       }}
     >

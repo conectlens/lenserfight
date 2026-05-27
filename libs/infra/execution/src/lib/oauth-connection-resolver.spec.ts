@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
 import { createOAuthConnectionResolver, nullOAuthConnectionResolver } from './oauth-connection-resolver'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
