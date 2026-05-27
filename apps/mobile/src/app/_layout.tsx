@@ -11,7 +11,7 @@ import NetInfo from '@react-native-community/netinfo'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Stack } from 'expo-router'
 import { PostHogProvider } from 'posthog-react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Component, type ErrorInfo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StatusBar, useColorScheme } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -24,6 +24,28 @@ import { MagicLinkScreen } from '../features/auth/components/magic-link'
 import { RegisterScreen } from '../features/auth/components/register'
 import { CreateLensSheet } from '../features/lenses/components/CreateLensSheet'
 import { CreateThreadSheet } from '../features/threads/components/CreateThreadSheet'
+
+class RootErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError(_: Error) {
+    return { hasError: true }
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[RootErrorBoundary]', error, info.componentStack)
+  }
+  render() {
+    if (this.state.hasError) {
+      return null // OfflineBanner / StatusBar still render above; screens go blank with a console log
+    }
+    return this.props.children
+  }
+}
 
 // Ensure deep links into detail routes still mount the (tabs) stack first.
 export const unstable_settings = {
@@ -114,13 +136,15 @@ const RootLayoutInner: React.FC = () => {
     <>
       <AppStatusBar />
       <OfflineBanner isOffline={isOffline} />
-      <Stack screenOptions={{ header: (props) => <StackHeader {...props} /> }}>
-        {/* Tabs manages its own per-tab headers; suppress the root Stack header here */}
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-      <AuthSheetOverlay />
-      <ThreadSheetOverlay />
-      <LensSheetOverlay />
+      <RootErrorBoundary>
+        <Stack screenOptions={{ header: (props) => <StackHeader {...props} /> }}>
+          {/* Tabs manages its own per-tab headers; suppress the root Stack header here */}
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+        <AuthSheetOverlay />
+        <ThreadSheetOverlay />
+        <LensSheetOverlay />
+      </RootErrorBoundary>
     </>
   )
 }
