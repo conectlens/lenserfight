@@ -207,8 +207,16 @@ export async function refreshAuthToken(): Promise<AuthTokens> {
   return tokens
 }
 
+const PRIVATE_IP_RE =
+  /^https?:\/\/(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)/
+
 export function buildAuthAppUrl(pathname = '/'): string {
-  const base = resolveConfig().authBaseUrl ?? 'https://auth.lenserfight.com'
+  const PRODUCTION_AUTH = 'https://auth.lenserfight.com'
+  const configured = resolveConfig().authBaseUrl
+  // Reject private / Tailscale CGNAT addresses — they must never appear in
+  // user-facing URLs. Only localhost and public HTTPS origins are accepted.
+  const base =
+    configured && !PRIVATE_IP_RE.test(configured) ? configured : PRODUCTION_AUTH
   return new URL(pathname, base).toString()
 }
 
