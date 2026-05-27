@@ -1,7 +1,10 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
-import { Badge, Card } from '@lenserfight/ui/components'
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { Badge } from '../../../components/src/lib/Badge'
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { Card } from '../../../components/src/lib/Card'
 
 export interface PolicyLayoutProps {
   title: string

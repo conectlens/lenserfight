@@ -1,6 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { useLenserWorkspace } from '@lenserfight/features/profile'
+import { useLenserWorkspace } from '@lenserfight/features/profile/useLenserWorkspace'
 import { Button, Card } from '@lenserfight/ui/components'
 import { useModalRouter } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'

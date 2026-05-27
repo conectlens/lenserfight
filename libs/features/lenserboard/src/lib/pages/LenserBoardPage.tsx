@@ -4,7 +4,8 @@ import { Swords } from 'lucide-react'
 
 import { PageMeta } from '@lenserfight/ui/layout'
 import { seoService } from '@lenserfight/data/repositories'
-import { useLenser } from '@lenserfight/features/profile'
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { useLenser } from '@lenserfight/features/profile/useLenser'
 import { useLeaderboard as useActivityLeaderboard } from '@lenserfight/features/home'
 import { LeaderboardTimeframe, LeaderboardScope, FollowPeriod } from '@lenserfight/types'
 import { useError, normalizeError } from '@lenserfight/shared/error'

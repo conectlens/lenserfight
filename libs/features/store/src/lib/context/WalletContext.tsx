@@ -5,7 +5,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { walletService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
-import { useLenser } from '@lenserfight/features/profile'
+import { useLenser } from '@lenserfight/features/profile/useLenser'
 
 
 interface WalletContextType {

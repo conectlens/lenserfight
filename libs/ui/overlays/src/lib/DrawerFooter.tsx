@@ -1,5 +1,7 @@
 import React from 'react'
-import { Button } from '@lenserfight/ui/components'
+
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { Button } from '../../../components/src/lib/Button'
 
 export interface DrawerFooterProps {
   /** Cancel / close handler. Renders the secondary "Cancel" button. */
