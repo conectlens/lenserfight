@@ -27,7 +27,7 @@ export interface SafeAreaContainerProps {
  */
 export const SafeAreaContainer: React.FC<SafeAreaContainerProps> = ({
   children,
-  edges,
+  edges = ['bottom', 'left', 'right'],
   style,
   testID,
 }) => {
