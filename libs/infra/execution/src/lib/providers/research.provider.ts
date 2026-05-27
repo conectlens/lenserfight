@@ -1,5 +1,3 @@
-import { getExecutionProvider } from '../execution.registry'
-
 import type { IExecutionProvider, ExecutionInput, ExecutionResult, MediaType } from '../execution.types'
 
 /**
@@ -70,6 +68,8 @@ export class ResearchProvider implements IExecutionProvider {
       ? (params['baseModelId'] as string)
       : modelId
 
+    // Lazy import to avoid a require cycle with execution.registry (which imports this provider).
+    const { getExecutionProvider } = await import('../execution.registry')
     const baseProvider = getExecutionProvider(baseProviderId)
     const synthesisPrompt = retrievalBlock
       ? `${retrievalBlock}\n\n---\n\n${input.prompt}`

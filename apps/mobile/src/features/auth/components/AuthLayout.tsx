@@ -2,7 +2,6 @@ import { MobileLogo } from '@lenserfight/ui/components/native'
 import { Text } from '@lenserfight/ui/primitives/native'
 import { useNativeTheme } from '@lenserfight/ui/providers/native'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 interface AuthLayoutProps {
@@ -16,16 +15,12 @@ interface AuthLayoutProps {
  * full-screen surface.
  */
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ title, subtitle, children }) => {
-  const { t } = useTranslation()
   const { spacing } = useNativeTheme()
 
   return (
     <View style={styles.container} testID="auth-layout">
-      <View style={[styles.brand, { marginBottom: spacing[3] }]}>
-        <MobileLogo size={44} showWordmark orientation="vertical" />
-        <Text variant="caption" color="muted" align="center">
-          {t('app.tagline')}
-        </Text>
+      <View style={[styles.brand, { marginBottom: spacing[2] }]}>
+        <MobileLogo size={32} showWordmark orientation="horizontal" />
       </View>
 
       <View style={[styles.form, { gap: spacing[3] }]}>
