@@ -47,7 +47,10 @@ export default defineConfig(() => {
   const { version, channel } = resolveAppVersion()
   return {
     root: import.meta.dirname,
-    envDir: import.meta.dirname,
+    // Root workspace dir — shared Supabase/service vars live in the root .env.local;
+    // app-specific overrides (ports, feature flags) can stay in apps/web/.env.local
+    // via Vite's .env merge order: root .env → root .env.local → mode files.
+    envDir: resolve(import.meta.dirname, '../..'),
     envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLIC_URL', 'SUPABASE_PUBLISHABLE_KEY', 'MEDIA_', 'API_', 'CHAINABIT_API_URL', 'AUTH_', 'ARENA_', 'WEB_', 'DOCS_', 'STATUS_', 'OLLAMA_', 'POSTHOG_', 'CAPTCHA_', 'PRODUCT_', 'FEATURE_CHAINABIT_', 'DATA_SOURCE', 'ENABLE_', 'ALLOWED_', 'GOOGLE_'],
     cacheDir: '../../node_modules/.vite/apps/web',
     define: {
