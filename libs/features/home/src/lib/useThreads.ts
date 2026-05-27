@@ -28,28 +28,6 @@ export const useThreadsFeed = () => {
   })
 }
 
-export const useLensesFeed = (
-  searchQuery: string,
-  selectedTag: string | null,
-  sortOrder: 'newest' | 'popular' | 'mine'
-) => {
-  return useInfiniteQuery({
-    queryKey: keys.lenses.feed({ searchQuery, selectedTag, sortOrder }),
-    queryFn: async ({ pageParam = 0 }) => {
-      if (sortOrder === 'mine') return lensesService.getMyLenses(pageParam, 12)
-      if (searchQuery) return lensesService.search(searchQuery, pageParam, 12)
-      if (selectedTag) return lensesService.filter(selectedTag, pageParam, 12, sortOrder)
-      return lensesService.sort(sortOrder, pageParam, 12)
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.meta?.hasNextPage) return undefined
-      return (lastPage.meta.offset ?? 0) + (lastPage.meta.limit ?? 12)
-    },
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-  })
-}
 
 export const useTopLenses = (enabled = true) => {
   return useQuery({
@@ -307,11 +285,5 @@ export const useLeaderboard = (period: FollowPeriod = 'all_time', limit = 20) =>
     queryKey: keys.lenser.leaderboard(period),
     queryFn: () => lenserService.getLeaderboard(period, limit),
     staleTime: 1000 * 60 * 5,
-  })
-}
-
-export const useReportContent = () => {
-  return useMutation({
-    mutationFn: (dto: ContentReportDTO) => tagFollowsService.reportContent(dto),
   })
 }
