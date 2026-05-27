@@ -607,12 +607,27 @@ COMMENT ON TYPE "battles"."voter_eligibility_enum" IS 'Who can cast votes in a b
 
 
 
+CREATE TYPE "billing"."order_status_enum" AS ENUM (
+    'pending',
+    'failed',
+    'paid',
+    'refunded',
+    'partial_refund',
+    'fraudulent'
+);
 
 
+ALTER TYPE "billing"."order_status_enum" OWNER TO "postgres";
 
 
+CREATE TYPE "billing"."product_status_enum" AS ENUM (
+    'draft',
+    'published',
+    'archived'
+);
 
 
+ALTER TYPE "billing"."product_status_enum" OWNER TO "postgres";
 
 
 CREATE TYPE "content"."content_status" AS ENUM (
@@ -1003,12 +1018,28 @@ CREATE TYPE "status"."status_window" AS ENUM (
 ALTER TYPE "status"."status_window" OWNER TO "postgres";
 
 
+CREATE TYPE "wallet"."charge_status_enum" AS ENUM (
+    'reserved',
+    'settled',
+    'released'
+);
 
 
+ALTER TYPE "wallet"."charge_status_enum" OWNER TO "postgres";
 
 
+CREATE TYPE "wallet"."transaction_type_enum" AS ENUM (
+    'deposit',
+    'spend',
+    'refund',
+    'sponsorship_deposit',
+    'sponsorship_payout',
+    'platform_fee',
+    'adjustment'
+);
 
 
+ALTER TYPE "wallet"."transaction_type_enum" OWNER TO "postgres";
 
 
 CREATE TYPE "xp"."contribution_context_enum" AS ENUM (
@@ -7648,6 +7679,12 @@ $$;
 ALTER FUNCTION "battles"."trg_submissions_validate_execution_link"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint DEFAULT 0, "p_output_tokens" bigint DEFAULT 0, "p_units" integer DEFAULT 1) RETURNS bigint
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'billing', 'ai', 'wallet'
+    AS $_$
+DECLARE
+    v_raw_usd           numeric;
     v_markup_usd        numeric;
     v_credits           bigint;
     v_markup_percent    numeric;
@@ -7748,17 +7785,61 @@ END;
 $_$;
 
 
+ALTER FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) IS 'Pricing engine: convert raw model costs to credits with markup and rounding. Reads credit rate from wallet.credit_valuation_policy (default 100 credits/USD). Reads margin policy scoped to (model_id = p_model_id OR model_id IS NULL). Returns bigint credits. Raises: PRICING_NOT_FOUND, INVALID_UNIT_TYPE.';
 
 
 
+CREATE OR REPLACE FUNCTION "billing"."tg_ledger_entries_hash"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'billing', 'public', 'pg_catalog'
+    AS $$
+DECLARE
+  v_prev   bytea;
+  v_canon  text;
+BEGIN
+  SELECT entry_hash INTO v_prev
+  FROM   billing.ledger_entries
+  WHERE  reservation_id = NEW.reservation_id
+  ORDER  BY id DESC
+  LIMIT  1;
+
+  NEW.prev_hash := v_prev;  -- NULL for the first entry of the chain
+
+  v_canon := jsonb_build_object(
+    'reservation_id', NEW.reservation_id,
+    'direction',      NEW.direction,
+    'amount_credits', NEW.amount_credits::text,
+    'amount_usd',     NEW.amount_usd::text,
+    'recorded_at',    extract(epoch from NEW.recorded_at)::text
+  )::text;
+
+  NEW.entry_hash := extensions.digest(
+    COALESCE(v_prev, ''::bytea) || convert_to(v_canon, 'UTF8'),
+    'sha256'
+  );
+
+  RETURN NEW;
+END;
+$$;
 
 
+ALTER FUNCTION "billing"."tg_ledger_entries_hash"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "billing"."tg_ledger_entries_immutable"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  RAISE EXCEPTION 'billing.ledger_entries is append-only (% blocked)', TG_OP
+    USING ERRCODE = 'P0001';
+END;
+$$;
 
 
-
-
+ALTER FUNCTION "billing"."tg_ledger_entries_immutable"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "connectors"."fn_active_workspace_id"() RETURNS "uuid"
@@ -17257,6 +17338,7 @@ $$;
 ALTER FUNCTION "organizations"."trg_audit_logs_immutable"() OWNER TO "postgres";
 
 
+COMMENT ON FUNCTION "organizations"."trg_audit_logs_immutable"() IS 'Defense-in-depth trigger preventing UPDATE/DELETE on organizations.audit_logs. Mirrors wallet.trg_transactions_immutable() pattern.';
 
 
 
@@ -21900,6 +21982,7 @@ $$;
 ALTER FUNCTION "public"."fn_battles_notify_webhooks"("p_battle_id" "uuid", "p_event_type" "text", "p_payload" "jsonb") OWNER TO "postgres";
 
 
+COMMENT ON FUNCTION "public"."fn_battles_notify_webhooks"("p_battle_id" "uuid", "p_event_type" "text", "p_payload" "jsonb") IS 'CB: Inserts webhook_outbox entries for matching active subscriptions.';
 
 
 
@@ -22904,6 +22987,7 @@ $$;
 ALTER FUNCTION "public"."fn_byok_key_resolve"("p_agent_id" "uuid", "p_provider" "text", "p_model_id" "text") OWNER TO "postgres";
 
 
+COMMENT ON FUNCTION "public"."fn_byok_key_resolve"("p_agent_id" "uuid", "p_provider" "text", "p_model_id" "text") IS 'AR / CG1: legacy BYOK resolve. Preserved for backward compatibility with lf-gatewayd <= 0.10. Raises E_BYOK_CONTEXT_MISSING when billing.runtime_settings.byok_require_reservation = true.';
 
 
 
@@ -26029,6 +26113,7 @@ $$;
 ALTER FUNCTION "public"."fn_cost_reserve"("p_ai_lenser_id" "uuid", "p_pricing_snapshot_id" "uuid", "p_reserved_credits" numeric, "p_reserved_usd" numeric, "p_provider_key" "text", "p_idempotency_key" "text", "p_context" "jsonb", "p_actor_id" "uuid", "p_org_id" "uuid", "p_ttl" interval) OWNER TO "postgres";
 
 
+COMMENT ON FUNCTION "public"."fn_cost_reserve"("p_ai_lenser_id" "uuid", "p_pricing_snapshot_id" "uuid", "p_reserved_credits" numeric, "p_reserved_usd" numeric, "p_provider_key" "text", "p_idempotency_key" "text", "p_context" "jsonb", "p_actor_id" "uuid", "p_org_id" "uuid", "p_ttl" interval) IS 'CG1: creates a held reservation + debit_hold ledger entry. Service_role only. Idempotent on (ai_lenser_id, idempotency_key). Fails closed on budget when billing.runtime_settings.enforce = true.';
 
 
 
@@ -44124,93 +44209,669 @@ $$;
 ALTER FUNCTION "tenancy"."set_updated_at"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text" DEFAULT NULL::"text", "p_reference_id" "uuid" DEFAULT NULL::"uuid", "p_description" "text" DEFAULT NULL::"text", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+DECLARE
+    v_account_id  uuid;
+    v_new_balance bigint;
+    v_tx_id       uuid;
+BEGIN
+    -- Validate credit transaction types
+    IF p_tx_type NOT IN ('deposit', 'refund', 'sponsorship_payout', 'adjustment') THEN
+        RAISE EXCEPTION 'INVALID_CREDIT_TYPE: % is not a valid credit transaction type', p_tx_type;
+    END IF;
+
+    -- Validate amount
+    IF p_amount <= 0 THEN
+        RAISE EXCEPTION 'INVALID_AMOUNT: amount must be positive, got %', p_amount;
+    END IF;
+
+    -- Lock the account row (or create if first deposit)
+    SELECT "id" INTO v_account_id
+    FROM "wallet"."accounts"
+    WHERE "lenser_id" = p_lenser_id
+    FOR UPDATE;
+
+    IF v_account_id IS NULL THEN
+        -- Auto-create account on first deposit
+        INSERT INTO "wallet"."accounts" ("lenser_id", "balance", "lifetime_deposits")
+        VALUES (p_lenser_id, 0, 0)
+        RETURNING "id" INTO v_account_id;
+    ELSE
+        -- Check frozen status
+        IF (SELECT "frozen" FROM "wallet"."accounts" WHERE "id" = v_account_id) THEN
+            RAISE EXCEPTION 'ACCOUNT_FROZEN: wallet account for lenser % is frozen', p_lenser_id;
+        END IF;
+    END IF;
+
+    -- Update balance and lifetime deposits
+    UPDATE "wallet"."accounts"
+    SET "balance"           = "balance" + p_amount,
+        "lifetime_deposits" = "lifetime_deposits" + p_amount,
+        "updated_at"        = now()
+    WHERE "id" = v_account_id
+    RETURNING "balance" INTO v_new_balance;
+
+    -- Insert transaction record
+    INSERT INTO "wallet"."transactions" (
+        "account_id", "tx_type", "amount", "direction", "balance_after",
+        "reference_type", "reference_id", "description", "metadata"
+    )
+    VALUES (
+        v_account_id, p_tx_type, p_amount, 1, v_new_balance,
+        p_reference_type, p_reference_id, p_description, p_metadata
+    )
+    RETURNING "id" INTO v_tx_id;
+
+    RETURN v_tx_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") IS 'Atomically credit a wallet account. Auto-creates account on first deposit. Validates credit types: deposit, refund, sponsorship_payout, adjustment.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text" DEFAULT NULL::"text", "p_reference_id" "uuid" DEFAULT NULL::"uuid", "p_description" "text" DEFAULT NULL::"text", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+DECLARE
+    v_account_id     uuid;
+    v_current_balance bigint;
+    v_frozen         boolean;
+    v_new_balance    bigint;
+    v_tx_id          uuid;
+    v_limit_rec      RECORD;
+BEGIN
+    -- Validate debit transaction types
+    IF p_tx_type NOT IN ('spend', 'sponsorship_deposit', 'platform_fee', 'adjustment') THEN
+        RAISE EXCEPTION 'INVALID_DEBIT_TYPE: % is not a valid debit transaction type', p_tx_type;
+    END IF;
+
+    -- Validate amount
+    IF p_amount <= 0 THEN
+        RAISE EXCEPTION 'INVALID_AMOUNT: amount must be positive, got %', p_amount;
+    END IF;
+
+    -- Lock the account row
+    SELECT "id", "balance", "frozen"
+    INTO v_account_id, v_current_balance, v_frozen
+    FROM "wallet"."accounts"
+    WHERE "lenser_id" = p_lenser_id
+    FOR UPDATE;
+
+    IF v_account_id IS NULL THEN
+        RAISE EXCEPTION 'WALLET_NOT_FOUND: no wallet account for lenser %', p_lenser_id;
+    END IF;
+
+    IF v_frozen THEN
+        RAISE EXCEPTION 'ACCOUNT_FROZEN: wallet account for lenser % is frozen', p_lenser_id;
+    END IF;
 
+    -- Check balance
+    IF v_current_balance < p_amount THEN
+        RAISE EXCEPTION 'INSUFFICIENT_BALANCE: balance=%, requested=%', v_current_balance, p_amount;
+    END IF;
 
+    -- Check spending limits (only for spend type — not for platform fees or adjustments)
+    IF p_tx_type = 'spend' THEN
+        FOR v_limit_rec IN
+            SELECT "id", "period", "limit_credits", "current_usage", "period_start"
+            FROM "wallet"."spending_limits"
+            WHERE "account_id" = v_account_id
+            FOR UPDATE
+        LOOP
+            -- Check if the period is still active
+            IF (v_limit_rec.period = 'daily' AND v_limit_rec.period_start > now() - interval '1 day')
+                OR (v_limit_rec.period = 'monthly' AND v_limit_rec.period_start > now() - interval '1 month')
+            THEN
+                IF v_limit_rec.current_usage + p_amount > v_limit_rec.limit_credits THEN
+                    RAISE EXCEPTION 'SPENDING_LIMIT_EXCEEDED: % limit=%, usage=%, requested=%',
+                        v_limit_rec.period, v_limit_rec.limit_credits, v_limit_rec.current_usage, p_amount;
+                END IF;
+
+                -- Update usage
+                UPDATE "wallet"."spending_limits"
+                SET "current_usage" = "current_usage" + p_amount,
+                    "updated_at"    = now()
+                WHERE "id" = v_limit_rec.id;
+            END IF;
+        END LOOP;
+    END IF;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    -- Debit the account
+    UPDATE "wallet"."accounts"
+    SET "balance"        = "balance" - p_amount,
+        "lifetime_spent" = "lifetime_spent" + p_amount,
+        "updated_at"     = now()
+    WHERE "id" = v_account_id
+    RETURNING "balance" INTO v_new_balance;
+
+    -- Insert transaction record
+    INSERT INTO "wallet"."transactions" (
+        "account_id", "tx_type", "amount", "direction", "balance_after",
+        "reference_type", "reference_id", "description", "metadata"
+    )
+    VALUES (
+        v_account_id, p_tx_type, p_amount, -1, v_new_balance,
+        p_reference_type, p_reference_id, p_description, p_metadata
+    )
+    RETURNING "id" INTO v_tx_id;
+
+    RETURN v_tx_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") IS 'Atomically debit a wallet account. Enforces balance >= 0 and spending limits. Validates debit types: spend, sponsorship_deposit, platform_fee, adjustment.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") RETURNS bigint
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+  SELECT COALESCE(
+    (SELECT balance FROM wallet.accounts WHERE lenser_id = p_lenser_id),
+    0
+  );
+$$;
+
+
+ALTER FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") IS 'Returns current credit balance for a lenser. Returns 0 if no wallet account exists.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."get_credits_per_usd"() RETURNS numeric
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+    SELECT COALESCE(
+        (SELECT baseline_credits_per_usd
+         FROM wallet.credit_valuation_policy
+         WHERE singleton = true
+         LIMIT 1),
+        100  -- safe default
+    );
+$$;
+
+
+ALTER FUNCTION "wallet"."get_credits_per_usd"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."get_credits_per_usd"() IS 'Returns the current baseline credits-per-USD rate from wallet.credit_valuation_policy. Falls back to 100 if no policy row exists.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") RETURNS TABLE("available_balance" bigint, "pending_reserved" bigint, "total_balance" bigint, "lifetime_deposits" bigint, "lifetime_spent" bigint, "remaining_pct" numeric)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+    SELECT
+        a.balance                                                           AS available_balance,
+        COALESCE(SUM(pc.reserved_amount), 0)::bigint                       AS pending_reserved,
+        (a.balance + COALESCE(SUM(pc.reserved_amount), 0))::bigint         AS total_balance,
+        a.lifetime_deposits,
+        a.lifetime_spent,
+        CASE
+            WHEN a.lifetime_deposits = 0 THEN 100.00
+            ELSE ROUND((a.balance::numeric / a.lifetime_deposits::numeric) * 100, 2)
+        END                                                                 AS remaining_pct
+    FROM wallet.accounts a
+    LEFT JOIN wallet.pending_charges pc
+           ON pc.account_id = a.id
+          AND pc.status = 'reserved'
+    WHERE a.lenser_id = p_lenser_id
+    GROUP BY a.id, a.balance, a.lifetime_deposits, a.lifetime_spent;
+$$;
+
+
+ALTER FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") IS 'Returns enriched wallet balance for a lenser: available_balance (spendable), pending_reserved (held), total_balance, lifetime_deposits, lifetime_spent, remaining_pct (available as % of deposits). Returns no rows if the lenser has no wallet account.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+DECLARE
+    v_charge      "wallet"."pending_charges"%ROWTYPE;
+    v_new_balance bigint;
+BEGIN
+    -- Lock and fetch pending charge
+    SELECT * INTO v_charge
+    FROM "wallet"."pending_charges"
+    WHERE "id" = p_reservation_id
+    FOR UPDATE;
+
+    IF v_charge.id IS NULL THEN
+        RAISE EXCEPTION 'RESERVATION_NOT_FOUND: reservation % does not exist', p_reservation_id;
+    END IF;
+
+    IF v_charge.status != 'reserved'::charge_status_enum THEN
+        RAISE EXCEPTION 'RESERVATION_ALREADY_FINALIZED: reservation % is already % (not reserved)',
+            p_reservation_id, v_charge.status;
+    END IF;
+
+    -- Full refund
+    UPDATE "wallet"."accounts"
+    SET "balance" = "balance" + v_charge.reserved_amount,
+        "updated_at" = now()
+    WHERE "id" = v_charge.account_id
+    RETURNING "balance" INTO v_new_balance;
+
+    -- Insert refund transaction
+    INSERT INTO "wallet"."transactions" (
+        "account_id", "tx_type", "amount", "direction", "balance_after",
+        "reference_type", "reference_id", "description"
+    )
+    VALUES (
+        v_charge.account_id, 'refund'::wallet.transaction_type_enum,
+        v_charge.reserved_amount, 1, v_new_balance,
+        'wallet.pending_charges'::text, p_reservation_id,
+        'Full refund on execution failure'
+    );
+
+    -- Mark charge as released
+    UPDATE "wallet"."pending_charges"
+    SET "status" = 'released'::charge_status_enum,
+        "settled_at" = now()
+    WHERE "id" = p_reservation_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") IS 'Fully refund reservation on execution failure. Raises: RESERVATION_NOT_FOUND, RESERVATION_ALREADY_FINALIZED.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid" DEFAULT NULL::"uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+DECLARE
+    v_charge      "wallet"."pending_charges"%ROWTYPE;
+    v_new_balance bigint;
+BEGIN
+    -- Lock and fetch pending charge
+    SELECT * INTO v_charge
+    FROM "wallet"."pending_charges"
+    WHERE "id" = p_reservation_id
+    FOR UPDATE;
+
+    IF v_charge.id IS NULL THEN
+        RAISE EXCEPTION 'RESERVATION_NOT_FOUND: reservation % does not exist', p_reservation_id;
+    END IF;
+
+    -- Ownership check (optional but enforced when caller supplies a lenser_id)
+    IF p_expected_lenser_id IS NOT NULL
+       AND v_charge.lenser_id IS DISTINCT FROM p_expected_lenser_id THEN
+        RAISE EXCEPTION 'UNAUTHORIZED_RELEASE: reservation % does not belong to lenser %',
+            p_reservation_id, p_expected_lenser_id;
+    END IF;
+
+    IF v_charge.status != 'reserved'::charge_status_enum THEN
+        RAISE EXCEPTION 'RESERVATION_ALREADY_FINALIZED: reservation % is already % (not reserved)',
+            p_reservation_id, v_charge.status;
+    END IF;
+
+    -- Full refund
+    UPDATE "wallet"."accounts"
+    SET "balance" = "balance" + v_charge.reserved_amount,
+        "updated_at" = now()
+    WHERE "id" = v_charge.account_id
+    RETURNING "balance" INTO v_new_balance;
+
+    -- Insert refund transaction
+    INSERT INTO "wallet"."transactions" (
+        "account_id", "tx_type", "amount", "direction", "balance_after",
+        "reference_type", "reference_id", "description"
+    )
+    VALUES (
+        v_charge.account_id, 'refund'::wallet.transaction_type_enum,
+        v_charge.reserved_amount, 1, v_new_balance,
+        'wallet.pending_charges'::text, p_reservation_id,
+        'Full refund on execution failure'
+    );
+
+    -- Mark charge as released
+    UPDATE "wallet"."pending_charges"
+    SET "status" = 'released'::charge_status_enum,
+        "settled_at" = now()
+    WHERE "id" = p_reservation_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") IS 'Fully refund reservation on execution failure. p_expected_lenser_id: when supplied, raises UNAUTHORIZED_RELEASE if the reservation owner does not match — prevents cross-user refund manipulation with a leaked platform key. Raises: RESERVATION_NOT_FOUND, RESERVATION_ALREADY_FINALIZED, UNAUTHORIZED_RELEASE.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text" DEFAULT NULL::"text") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+DECLARE
+    v_account_id     uuid;
+    v_reservation_id uuid;
+    v_new_balance    bigint;
+BEGIN
+    -- Validate amount
+    IF p_amount <= 0 THEN
+        RAISE EXCEPTION 'INVALID_AMOUNT: amount must be positive, got %', p_amount;
+    END IF;
+
+    -- Lock the account row (must exist)
+    SELECT "id" INTO v_account_id
+    FROM "wallet"."accounts"
+    WHERE "lenser_id" = p_lenser_id
+    FOR UPDATE;
+
+    IF v_account_id IS NULL THEN
+        RAISE EXCEPTION 'WALLET_NOT_FOUND: no wallet for lenser %', p_lenser_id;
+    END IF;
+
+    -- Check frozen status
+    IF (SELECT "frozen" FROM "wallet"."accounts" WHERE "id" = v_account_id) THEN
+        RAISE EXCEPTION 'ACCOUNT_FROZEN: wallet account for lenser % is frozen', p_lenser_id;
+    END IF;
+
+    -- Check sufficient balance
+    IF (SELECT "balance" FROM "wallet"."accounts" WHERE "id" = v_account_id) < p_amount THEN
+        RAISE EXCEPTION 'INSUFFICIENT_BALANCE: requested %, available %',
+            p_amount, (SELECT "balance" FROM "wallet"."accounts" WHERE "id" = v_account_id);
+    END IF;
+
+    -- Debit account
+    UPDATE "wallet"."accounts"
+    SET "balance" = "balance" - p_amount,
+        "updated_at" = now()
+    WHERE "id" = v_account_id
+    RETURNING "balance" INTO v_new_balance;
+
+    -- Insert transaction
+    INSERT INTO "wallet"."transactions" (
+        "account_id", "tx_type", "amount", "direction", "balance_after",
+        "reference_type", "reference_id", "description"
+    )
+    VALUES (
+        v_account_id, 'spend'::wallet.transaction_type_enum, p_amount, -1, v_new_balance,
+        'wallet.pending_charges'::text, p_reference_id, p_description
+    );
+
+    -- Insert pending charge (UNIQUE constraint prevents duplicate)
+    INSERT INTO "wallet"."pending_charges" (
+        "account_id", "lenser_id", "reserved_amount", "status",
+        "reference_id", "description"
+    )
+    VALUES (
+        v_account_id, p_lenser_id, p_amount, 'reserved'::charge_status_enum,
+        p_reference_id, p_description
+    )
+    RETURNING "id" INTO v_reservation_id;
+
+    RETURN v_reservation_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") IS 'Atomically debit credits and create reservation. Returns reservation_id (UUID). Raises: WALLET_NOT_FOUND, ACCOUNT_FROZEN, INSUFFICIENT_BALANCE.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text" DEFAULT NULL::"text") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+declare
+  v_ref_uuid uuid;
+begin
+  begin
+    v_ref_uuid := p_reference_id::uuid;
+  exception when invalid_text_representation then
+    raise exception 'INVALID_REFERENCE_ID: reference_id must be a valid UUID, got: %', p_reference_id;
+  end;
+
+  return "wallet"."reserve_credits"(p_lenser_id, p_amount, v_ref_uuid, p_description);
+end;
+$$;
+
+
+ALTER FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") IS 'Wrapper around reserve_credits that validates p_reference_id is a valid UUID before casting. Use this from application code to get a clear error on malformed reference IDs.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."reset_spending_period"("p_period" "text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+BEGIN
+    IF p_period NOT IN ('daily', 'monthly') THEN
+        RAISE EXCEPTION 'INVALID_PERIOD: must be daily or monthly, got %', p_period;
+    END IF;
+
+    UPDATE "wallet"."spending_limits"
+    SET "current_usage" = 0,
+        "period_start"  = now(),
+        "updated_at"    = now()
+    WHERE "period" = p_period
+      AND (
+          (p_period = 'daily'   AND "period_start" <= now() - interval '1 day')
+          OR
+          (p_period = 'monthly' AND "period_start" <= now() - interval '1 month')
+      );
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."reset_spending_period"("p_period" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."reset_spending_period"("p_period" "text") IS 'Resets current_usage to 0 for all spending limits where the period has elapsed. Called by pg_cron.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet', 'execution'
+    AS $$
+DECLARE
+    v_charge       wallet.pending_charges%ROWTYPE;
+    v_delta        bigint;
+    v_new_balance  bigint;
+    v_overrun      bigint;
+BEGIN
+    -- Validate actual amount
+    IF p_actual_amount < 0 THEN
+        RAISE EXCEPTION 'INVALID_AMOUNT: actual amount must be non-negative, got %', p_actual_amount;
+    END IF;
+
+    -- Lock and fetch pending charge
+    SELECT * INTO v_charge
+    FROM wallet.pending_charges
+    WHERE id = p_reservation_id
+    FOR UPDATE;
+
+    IF v_charge.id IS NULL THEN
+        RAISE EXCEPTION 'RESERVATION_NOT_FOUND: reservation % does not exist', p_reservation_id;
+    END IF;
+
+    IF v_charge.status != 'reserved'::wallet.charge_status_enum THEN
+        RAISE EXCEPTION 'RESERVATION_ALREADY_FINALIZED: reservation % is already % (not reserved)',
+            p_reservation_id, v_charge.status;
+    END IF;
+
+    -- Detect cost overrun (actual > reserved) before capping.
+    -- This means the token estimation was too low — tag for monitoring.
+    v_overrun := p_actual_amount - v_charge.reserved_amount;
+    IF v_overrun > 0 THEN
+        RAISE WARNING 'COST_OVERRUN: reservation % actual=% reserved=% overrun=%',
+            p_reservation_id, p_actual_amount, v_charge.reserved_amount, v_overrun;
+
+        -- Tag the overrun run for monitoring (best-effort, non-blocking)
+        BEGIN
+            INSERT INTO execution.execution_tags (run_id, tag, severity, metadata)
+            VALUES (
+                p_reservation_id,
+                'cost_overrun',
+                'warn',
+                jsonb_build_object(
+                    'reserved_credits', v_charge.reserved_amount,
+                    'actual_credits',   p_actual_amount,
+                    'overrun_credits',  v_overrun
+                )
+            );
+        EXCEPTION WHEN OTHERS THEN
+            -- run_id FK may not match execution.runs; ignore silently
+            NULL;
+        END;
+    END IF;
+
+    -- Cap actual at reserved (user never pays more than they reserved)
+    p_actual_amount := LEAST(p_actual_amount, v_charge.reserved_amount);
+
+    -- Calculate refund delta
+    v_delta := v_charge.reserved_amount - p_actual_amount;
+
+    -- If refund needed, credit back to account
+    IF v_delta > 0 THEN
+        UPDATE wallet.accounts
+        SET balance    = balance + v_delta,
+            updated_at = now()
+        WHERE id = v_charge.account_id
+        RETURNING balance INTO v_new_balance;
+
+        -- Insert refund transaction
+        INSERT INTO wallet.transactions (
+            account_id, tx_type, amount, direction, balance_after,
+            reference_type, reference_id, description
+        )
+        VALUES (
+            v_charge.account_id, 'refund'::wallet.transaction_type_enum,
+            v_delta, 1, v_new_balance,
+            'wallet.pending_charges'::text, p_reservation_id,
+            'Refund from charge settlement'
+        );
+    END IF;
+
+    -- Update lifetime_spent with the amount actually charged (not the reserved amount)
+    UPDATE wallet.accounts
+    SET lifetime_spent = lifetime_spent + p_actual_amount,
+        updated_at     = now()
+    WHERE id = v_charge.account_id;
+
+    -- Mark charge as settled
+    UPDATE wallet.pending_charges
+    SET status         = 'settled'::wallet.charge_status_enum,
+        settled_amount = p_actual_amount,
+        settled_at     = now()
+    WHERE id = p_reservation_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) IS 'Finalize charge with actual amount. Refunds delta if actual < reserved. Updates lifetime_spent on wallet.accounts with the settled amount. Logs a cost_overrun tag to execution.execution_tags if actual > reserved. Raises: RESERVATION_NOT_FOUND, RESERVATION_ALREADY_FINALIZED.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."trg_auto_create_account"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet', 'lensers'
+    AS $$
+BEGIN
+  INSERT INTO wallet.accounts (lenser_id)
+  VALUES (NEW.id)
+  ON CONFLICT (lenser_id) DO NOTHING;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."trg_auto_create_account"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "wallet"."trg_transactions_immutable"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'wallet'
+    AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        RAISE EXCEPTION 'Wallet transactions are immutable. Deletion is not permitted.';
+    ELSIF TG_OP = 'UPDATE' THEN
+        RAISE EXCEPTION 'Wallet transactions are immutable. Updates are not permitted.';
+    END IF;
+    RETURN NULL;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."trg_transactions_immutable"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "wallet"."trg_verify_balance_after"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+    v_current_balance bigint;
+    v_expected_balance bigint;
+BEGIN
+    -- Get the current account balance
+    SELECT balance INTO v_current_balance
+    FROM wallet.accounts
+    WHERE id = NEW.account_id
+    FOR UPDATE;  -- lock row to prevent concurrent corruption
+
+    IF v_current_balance IS NULL THEN
+        RAISE EXCEPTION 'WALLET_ACCOUNT_NOT_FOUND: No wallet account with id=%', NEW.account_id;
+    END IF;
+
+    -- Expected balance = current balance + (amount * direction)
+    -- Note: the wallet functions update the account balance BEFORE inserting the
+    -- transaction, so current balance should already reflect this transaction.
+    -- We verify balance_after matches the current (already-updated) balance.
+    IF NEW.balance_after <> v_current_balance THEN
+        RAISE EXCEPTION 'BALANCE_MISMATCH: balance_after (%) does not match account balance (%) for account_id=%. '
+            'This indicates a bug in the wallet function that inserted this transaction.',
+            NEW.balance_after, v_current_balance, NEW.account_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."trg_verify_balance_after"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "xp"."apply"("p_lenser_id" "uuid", "p_rule_key" "text", "p_source" "xp"."source_enum", "p_source_ref_type" "text", "p_source_ref_id" "uuid", "p_app_id" "uuid" DEFAULT '00000000-0000-0000-0000-000000000000'::"uuid") RETURNS "void"
@@ -48755,126 +49416,415 @@ COMMENT ON TABLE "battles"."votes" IS 'Vote records. Direct INSERT restricted to
 
 
 
+CREATE TABLE IF NOT EXISTS "billing"."budget_policies" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "scope" "text" NOT NULL,
+    "scope_id" "uuid" NOT NULL,
+    "daily_credits" numeric(20,6),
+    "monthly_credits" numeric(20,6),
+    "burst_credits" numeric(20,6),
+    "soft_threshold_pct" smallint DEFAULT 80 NOT NULL,
+    "hard_action" "text" DEFAULT 'block'::"text" NOT NULL,
+    "rpm_limit" integer,
+    "tpm_limit" integer,
+    "emergency_kill" boolean DEFAULT false NOT NULL,
+    "updated_by" "uuid",
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "budget_policies_hard_action_check" CHECK (("hard_action" = ANY (ARRAY['block'::"text", 'queue'::"text", 'degrade'::"text"]))),
+    CONSTRAINT "budget_policies_rpm_limit_check" CHECK ((("rpm_limit" IS NULL) OR ("rpm_limit" > 0))),
+    CONSTRAINT "budget_policies_scope_check" CHECK (("scope" = ANY (ARRAY['agent'::"text", 'org'::"text", 'user'::"text"]))),
+    CONSTRAINT "budget_policies_soft_threshold_pct_check" CHECK ((("soft_threshold_pct" >= 1) AND ("soft_threshold_pct" <= 99))),
+    CONSTRAINT "budget_policies_tpm_limit_check" CHECK ((("tpm_limit" IS NULL) OR ("tpm_limit" > 0)))
+);
+
+
+ALTER TABLE "billing"."budget_policies" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "billing"."budget_policies" IS 'CG1: surface only; CG2 wires fn_cost_reserve to consult this table. In CG1, fn_cost_reserve falls back to agents.policies.spending_limit_credits.';
+
+
+
+CREATE TABLE IF NOT EXISTS "billing"."checkout_sessions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "lenser_id" "uuid" NOT NULL,
+    "variant_id" "uuid" NOT NULL,
+    "ls_checkout_url" "text",
+    "custom_price_cents" bigint,
+    "status" "text" DEFAULT 'created'::"text" NOT NULL,
+    "expires_at" timestamp with time zone,
+    "test_mode" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "completed_at" timestamp with time zone,
+    CONSTRAINT "checkout_sessions_custom_price_check" CHECK ((("custom_price_cents" IS NULL) OR ("custom_price_cents" > 0))),
+    CONSTRAINT "checkout_sessions_status_check" CHECK (("status" = ANY (ARRAY['created'::"text", 'completed'::"text", 'expired'::"text", 'abandoned'::"text"])))
+);
+
+
+ALTER TABLE "billing"."checkout_sessions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "billing"."checkout_sessions" IS 'Tracks LemonSqueezy checkout creation. Maps lenser_id to checkout URL. Status updated when webhook confirms payment.';
+
 
 
+CREATE TABLE IF NOT EXISTS "billing"."cost_reservations" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "ai_lenser_id" "uuid" NOT NULL,
+    "actor_id" "uuid",
+    "org_id" "uuid",
+    "model_id" "uuid" NOT NULL,
+    "provider_key" "text" NOT NULL,
+    "pricing_snapshot_id" "uuid" NOT NULL,
+    "reserved_credits" numeric(20,6) NOT NULL,
+    "reserved_usd" numeric(20,6) NOT NULL,
+    "running_credits" numeric(20,6) DEFAULT 0 NOT NULL,
+    "committed_credits" numeric(20,6),
+    "committed_usd" numeric(20,6),
+    "status" "text" DEFAULT 'held'::"text" NOT NULL,
+    "reason_released" "text",
+    "context" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "idempotency_key" "text" NOT NULL,
+    "shadow_mode" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "held_until" timestamp with time zone NOT NULL,
+    "committed_at" timestamp with time zone,
+    "released_at" timestamp with time zone,
+    CONSTRAINT "cost_reservations_committed_credits_check" CHECK ((("committed_credits" IS NULL) OR ("committed_credits" >= (0)::numeric))),
+    CONSTRAINT "cost_reservations_held_future" CHECK ((("status" <> 'held'::"text") OR ("held_until" > "created_at"))),
+    CONSTRAINT "cost_reservations_reserved_credits_check" CHECK (("reserved_credits" > (0)::numeric)),
+    CONSTRAINT "cost_reservations_reserved_usd_check" CHECK (("reserved_usd" >= (0)::numeric)),
+    CONSTRAINT "cost_reservations_running_credits_check" CHECK (("running_credits" >= (0)::numeric)),
+    CONSTRAINT "cost_reservations_status_check" CHECK (("status" = ANY (ARRAY['held'::"text", 'committed'::"text", 'released'::"text", 'expired'::"text"])))
+);
+
+
+ALTER TABLE "billing"."cost_reservations" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "billing"."cost_reservations" IS 'CG1: escrow row for one upcoming AI provider call. Lifecycle: held -> committed | released | expired. The id is the unforgeable per-call token consumed by fn_byok_key_resolve_v2.';
+
+
+
+CREATE TABLE IF NOT EXISTS "billing"."execution_margin_policies" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "model_id" "uuid",
+    "markup_percent" numeric(5,2) DEFAULT 0 NOT NULL,
+    "fixed_fee_usd" numeric(12,8) DEFAULT 0 NOT NULL,
+    "rounding_mode" "text" DEFAULT 'ceil'::"text" NOT NULL,
+    "min_charge_credits" integer DEFAULT 1 NOT NULL,
+    "max_charge_credits" integer,
+    "effective_from" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "effective_to" timestamp with time zone,
+    "is_active" boolean DEFAULT true NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "billing_margin_policies_markup_nonneg" CHECK ((("markup_percent" >= (0)::numeric) AND ("fixed_fee_usd" >= (0)::numeric))),
+    CONSTRAINT "billing_margin_policies_max_gte_min" CHECK ((("max_charge_credits" IS NULL) OR ("max_charge_credits" >= "min_charge_credits"))),
+    CONSTRAINT "billing_margin_policies_min_credits_nonneg" CHECK (("min_charge_credits" >= 0)),
+    CONSTRAINT "billing_margin_policies_rounding_check" CHECK (("rounding_mode" = ANY (ARRAY['ceil'::"text", 'floor'::"text", 'round'::"text"])))
+);
 
 
+ALTER TABLE "billing"."execution_margin_policies" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "billing"."execution_margin_policies" IS 'Platform markup policies applied on top of AI provider cost. model_id=NULL = global default policy. SERVICE_ROLE ONLY. Cross-schema FK to ai.models(id) — billing schema depends on ai schema for model identity.';
 
 
 
+CREATE TABLE IF NOT EXISTS "billing"."ledger_entries" (
+    "id" bigint NOT NULL,
+    "reservation_id" "uuid" NOT NULL,
+    "ai_lenser_id" "uuid" NOT NULL,
+    "org_id" "uuid",
+    "direction" "text" NOT NULL,
+    "amount_credits" numeric(20,6) NOT NULL,
+    "amount_usd" numeric(20,6) NOT NULL,
+    "prev_hash" "bytea",
+    "entry_hash" "bytea" NOT NULL,
+    "recorded_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "ledger_entries_direction_check" CHECK (("direction" = ANY (ARRAY['debit_hold'::"text", 'debit_commit'::"text", 'release'::"text", 'adjustment'::"text"])))
+);
 
 
+ALTER TABLE "billing"."ledger_entries" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "billing"."ledger_entries" IS 'CG1: append-only, hash-chained ledger of all credit movements. Triggers compute entry_hash and block UPDATE/DELETE; an offline reconciliation job recomputes the chain.';
 
 
 
+CREATE SEQUENCE IF NOT EXISTS "billing"."ledger_entries_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER SEQUENCE "billing"."ledger_entries_id_seq" OWNER TO "postgres";
 
 
+ALTER SEQUENCE "billing"."ledger_entries_id_seq" OWNED BY "billing"."ledger_entries"."id";
 
 
 
+CREATE TABLE IF NOT EXISTS "billing"."orders" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "ls_order_id" bigint NOT NULL,
+    "ls_identifier" "text" NOT NULL,
+    "webhook_event_id" "uuid" NOT NULL,
+    "store_id" bigint NOT NULL,
+    "ls_customer_id" bigint NOT NULL,
+    "lenser_id" "uuid" NOT NULL,
+    "order_number" integer NOT NULL,
+    "user_name" "text",
+    "user_email" "text" NOT NULL,
+    "currency" "text" DEFAULT 'USD'::"text" NOT NULL,
+    "currency_rate" numeric(10,6) DEFAULT 1.0 NOT NULL,
+    "status" "billing"."order_status_enum" DEFAULT 'pending'::"billing"."order_status_enum" NOT NULL,
+    "subtotal_cents" bigint NOT NULL,
+    "tax_cents" bigint DEFAULT 0 NOT NULL,
+    "total_cents" bigint NOT NULL,
+    "total_usd_cents" bigint NOT NULL,
+    "product_id" "uuid",
+    "variant_id" "uuid",
+    "product_name" "text" NOT NULL,
+    "variant_name" "text",
+    "credits_granted" bigint DEFAULT 0 NOT NULL,
+    "first_order" boolean DEFAULT false NOT NULL,
+    "test_mode" boolean DEFAULT false NOT NULL,
+    "refunded" boolean DEFAULT false NOT NULL,
+    "refunded_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "ck_billing_orders_total_cents_nonneg" CHECK ((("total_cents" IS NULL) OR ("total_cents" >= 0))),
+    CONSTRAINT "ck_billing_orders_total_usd_cents_nonneg" CHECK ((("total_usd_cents" IS NULL) OR ("total_usd_cents" >= 0)))
+);
 
 
+ALTER TABLE "billing"."orders" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "billing"."orders" IS 'Processed LemonSqueezy orders mapped to lenser_id. lenser_id resolved from checkout_data.custom.user_id in webhook payload.';
 
 
 
+COMMENT ON COLUMN "billing"."orders"."ls_identifier" IS 'LemonSqueezy UUID identifier for the order. Useful as external reference.';
 
 
 
+COMMENT ON COLUMN "billing"."orders"."lenser_id" IS 'Resolved from checkout_data.custom.user_id. ON DELETE RESTRICT — cannot delete profile with paid orders.';
 
 
 
+COMMENT ON COLUMN "billing"."orders"."credits_granted" IS 'Credits credited to wallet from this order. Sourced from billing.products.credits_granted.';
 
 
 
+CREATE TABLE IF NOT EXISTS "billing"."pricing_snapshots" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "model_id" "uuid" NOT NULL,
+    "source_pricing_id" "uuid" NOT NULL,
+    "unit_type" "ai"."unit_type_enum" NOT NULL,
+    "input_cpm_usd" numeric(20,10) NOT NULL,
+    "output_cpm_usd" numeric(20,10) NOT NULL,
+    "unit_cost_usd" numeric(20,10),
+    "credit_rate_usd" numeric(20,10) DEFAULT 0.001 NOT NULL,
+    "taken_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "pricing_snapshots_credit_rate_usd_check" CHECK (("credit_rate_usd" > (0)::numeric)),
+    CONSTRAINT "pricing_snapshots_input_cpm_usd_check" CHECK (("input_cpm_usd" >= (0)::numeric)),
+    CONSTRAINT "pricing_snapshots_output_cpm_usd_check" CHECK (("output_cpm_usd" >= (0)::numeric))
+);
 
 
+ALTER TABLE "billing"."pricing_snapshots" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "billing"."pricing_snapshots" IS 'CG1: immutable pin of provider list price at quote time. References the authoritative ai.model_pricing row so a price change between quote and commit cannot create or hide spend.';
 
 
 
+COMMENT ON COLUMN "billing"."pricing_snapshots"."credit_rate_usd" IS 'USD per platform credit at snapshot time. Default 0.001 = 1000 credits/$. Per-org overrides land in CG8 via tenancy.orgs.credit_rate_usd_override.';
 
 
 
+CREATE TABLE IF NOT EXISTS "billing"."products" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "ls_product_id" bigint NOT NULL,
+    "store_id" bigint NOT NULL,
+    "name" "text" NOT NULL,
+    "slug" "text" NOT NULL,
+    "status" "billing"."product_status_enum" DEFAULT 'draft'::"billing"."product_status_enum" NOT NULL,
+    "price_cents" bigint NOT NULL,
+    "credits_granted" bigint NOT NULL,
+    "pay_what_you_want" boolean DEFAULT false NOT NULL,
+    "buy_now_url" "text",
+    "description" "text",
+    "test_mode" boolean DEFAULT false NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "products_credits_granted_check" CHECK (("credits_granted" > 0)),
+    CONSTRAINT "products_price_cents_check" CHECK (("price_cents" >= 0))
+);
 
 
+ALTER TABLE "billing"."products" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "billing"."products" IS 'LemonSqueezy credit pack products. 1 credit = $0.01 USD (100 credits per USD).';
 
 
 
+COMMENT ON COLUMN "billing"."products"."ls_product_id" IS 'LemonSqueezy product ID (integer). Used to match webhook payloads.';
 
 
 
+COMMENT ON COLUMN "billing"."products"."credits_granted" IS 'Number of wallet credits granted when this product is purchased.';
 
 
 
+CREATE TABLE IF NOT EXISTS "billing"."provider_circuit_state" (
+    "provider_key" "text" NOT NULL,
+    "state" "text" DEFAULT 'closed'::"text" NOT NULL,
+    "failure_count" integer DEFAULT 0 NOT NULL,
+    "last_failure_at" timestamp with time zone,
+    "opened_at" timestamp with time zone,
+    "next_probe_at" timestamp with time zone,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "provider_circuit_state_failure_count_check" CHECK (("failure_count" >= 0)),
+    CONSTRAINT "provider_circuit_state_state_check" CHECK (("state" = ANY (ARRAY['closed'::"text", 'half_open'::"text", 'open'::"text"])))
+);
 
 
+ALTER TABLE "billing"."provider_circuit_state" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "billing"."runtime_settings" (
+    "id" smallint DEFAULT 1 NOT NULL,
+    "enforce" boolean DEFAULT false NOT NULL,
+    "byok_require_reservation" boolean DEFAULT false NOT NULL,
+    "reservation_default_ttl" interval DEFAULT '00:05:00'::interval NOT NULL,
+    "meter_headroom_pct" smallint DEFAULT 10 NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "runtime_settings_id_check" CHECK (("id" = 1)),
+    CONSTRAINT "runtime_settings_meter_headroom_pct_check" CHECK ((("meter_headroom_pct" >= 0) AND ("meter_headroom_pct" <= 100)))
+);
 
 
+ALTER TABLE "billing"."runtime_settings" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "billing"."runtime_settings" IS 'CG1: singleton runtime config for the cost governance plane. id=1 enforced.';
 
 
 
+COMMENT ON COLUMN "billing"."runtime_settings"."enforce" IS 'When false, fn_cost_reserve still records reservations and ledger entries but does NOT raise on budget violations (shadow mode). Flip to true after CG2 ships budget policies. Mirrors the BILLING_ENFORCE env flag on workers.';
 
 
 
+COMMENT ON COLUMN "billing"."runtime_settings"."byok_require_reservation" IS 'When true, legacy fn_byok_key_resolve (v1) raises E_BYOK_CONTEXT_MISSING; callers must use fn_byok_key_resolve_v2 with a held reservation_id. Keep false until every worker (lf-gatewayd, platform-api) ships v2 calls.';
 
 
 
+CREATE TABLE IF NOT EXISTS "billing"."spend_anomalies" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "ai_lenser_id" "uuid" NOT NULL,
+    "window_start" timestamp with time zone NOT NULL,
+    "window_end" timestamp with time zone NOT NULL,
+    "score" numeric(6,3) NOT NULL,
+    "signals" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "action_taken" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "spend_anomalies_check" CHECK (("window_end" > "window_start"))
+);
 
 
+ALTER TABLE "billing"."spend_anomalies" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "billing"."variants" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "ls_variant_id" bigint NOT NULL,
+    "product_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "slug" "text" NOT NULL,
+    "status" "text" DEFAULT 'active'::"text" NOT NULL,
+    "has_license_keys" boolean DEFAULT false NOT NULL,
+    "test_mode" boolean DEFAULT false NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "variants_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'inactive'::"text"])))
+);
 
 
+ALTER TABLE "billing"."variants" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "billing"."variants" IS 'Mirror of LemonSqueezy variants. Each product has at least one variant.';
 
 
 
+CREATE OR REPLACE VIEW "billing"."vw_products" AS
+ SELECT "p"."id",
+    "p"."ls_product_id",
+    "p"."name",
+    "p"."slug",
+    "p"."description",
+    "p"."price_cents",
+    "p"."credits_granted",
+    "p"."pay_what_you_want",
+    "p"."buy_now_url",
+    "p"."test_mode",
+    "p"."metadata",
+    "v"."id" AS "variant_id",
+    "v"."ls_variant_id",
+    "v"."name" AS "variant_name",
+    COALESCE("o"."order_count", (0)::bigint) AS "order_count"
+   FROM (("billing"."products" "p"
+     JOIN LATERAL ( SELECT "variants"."id",
+            "variants"."ls_variant_id",
+            "variants"."name"
+           FROM "billing"."variants"
+          WHERE (("variants"."product_id" = "p"."id") AND ("variants"."status" = 'active'::"text"))
+          ORDER BY "variants"."ls_variant_id"
+         LIMIT 1) "v" ON (true))
+     LEFT JOIN ( SELECT "orders"."product_id",
+            "count"(*) AS "order_count"
+           FROM "billing"."orders"
+          WHERE ("orders"."status" = 'paid'::"billing"."order_status_enum")
+          GROUP BY "orders"."product_id") "o" ON (("o"."product_id" = "p"."id")))
+  WHERE ("p"."status" = 'published'::"billing"."product_status_enum")
+  ORDER BY "p"."price_cents";
 
 
+ALTER VIEW "billing"."vw_products" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "billing"."webhook_events" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "ls_event_id" "text" NOT NULL,
+    "event_name" "text" NOT NULL,
+    "payload" "jsonb" NOT NULL,
+    "processed" boolean DEFAULT false NOT NULL,
+    "processed_at" timestamp with time zone,
+    "error_message" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
 
 
+ALTER TABLE "billing"."webhook_events" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "billing"."webhook_events" IS 'Raw LemonSqueezy webhook event log. ls_event_id is the idempotency key — duplicate webhooks are rejected by UNIQUE constraint.';
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+COMMENT ON COLUMN "billing"."webhook_events"."payload" IS 'Full JSON:API envelope from LemonSqueezy webhook.';
 
 
 
@@ -52792,87 +53742,189 @@ COMMENT ON TABLE "tenancy"."workspaces" IS 'Canonical tenant boundary. Every len
 
 
 
+CREATE TABLE IF NOT EXISTS "wallet"."accounts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "lenser_id" "uuid" NOT NULL,
+    "balance" bigint DEFAULT 0 NOT NULL,
+    "lifetime_deposits" bigint DEFAULT 0 NOT NULL,
+    "lifetime_spent" bigint DEFAULT 0 NOT NULL,
+    "frozen" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "accounts_balance_non_negative" CHECK (("balance" >= 0))
+);
 
 
+ALTER TABLE "wallet"."accounts" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "wallet"."accounts" IS 'Wallet account per lenser. balance >= 0 enforced at DB level. ON DELETE RESTRICT — close wallet before deleting profile.';
 
 
 
+COMMENT ON COLUMN "wallet"."accounts"."balance" IS 'Current credit balance. Always >= 0. Updated atomically by wallet functions.';
 
 
 
+COMMENT ON COLUMN "wallet"."accounts"."lifetime_deposits" IS 'Cumulative credits deposited (monotonically increasing).';
 
 
 
+COMMENT ON COLUMN "wallet"."accounts"."lifetime_spent" IS 'Cumulative credits spent (monotonically increasing).';
 
 
 
+COMMENT ON COLUMN "wallet"."accounts"."frozen" IS 'Admin suspension flag. Frozen accounts cannot transact.';
 
 
 
+CREATE TABLE IF NOT EXISTS "wallet"."credit_valuation_policy" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "singleton" boolean DEFAULT true NOT NULL,
+    "baseline_credits_per_usd" numeric(12,4) NOT NULL,
+    "tier_small_step" numeric(12,6),
+    "tier_large_threshold" numeric(12,6),
+    "tier_large_step" numeric(12,6),
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "credit_valuation_rate_positive" CHECK (("baseline_credits_per_usd" > (0)::numeric)),
+    CONSTRAINT "credit_valuation_singleton_true" CHECK (("singleton" = true))
+);
 
 
+ALTER TABLE "wallet"."credit_valuation_policy" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "wallet"."credit_valuation_policy" IS 'Singleton table holding the global credit-to-USD conversion rate. 1 credit = 1 / baseline_credits_per_usd USD. With baseline_credits_per_usd = 100, 1 credit = $0.01.';
 
 
 
+CREATE TABLE IF NOT EXISTS "wallet"."organization_accounts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "org_id" "uuid" NOT NULL,
+    "balance" bigint DEFAULT 0 NOT NULL,
+    "lifetime_deposits" bigint DEFAULT 0 NOT NULL,
+    "lifetime_spent" bigint DEFAULT 0 NOT NULL,
+    "frozen" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "org_accounts_balance_non_negative" CHECK (("balance" >= 0))
+);
 
 
+ALTER TABLE "wallet"."organization_accounts" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "wallet"."organization_accounts" IS 'Wallet account per organization (team/community). Mirrors wallet.accounts structure. Functions deferred — table created for schema readiness.';
 
 
 
+COMMENT ON COLUMN "wallet"."organization_accounts"."org_id" IS 'FK to actors.organizations. ON DELETE RESTRICT — close wallet before deleting org.';
 
 
 
+CREATE TABLE IF NOT EXISTS "wallet"."pending_charges" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "account_id" "uuid" NOT NULL,
+    "lenser_id" "uuid" NOT NULL,
+    "reserved_amount" bigint NOT NULL,
+    "settled_amount" bigint,
+    "status" "wallet"."charge_status_enum" DEFAULT 'reserved'::"wallet"."charge_status_enum" NOT NULL,
+    "reference_id" "uuid" NOT NULL,
+    "description" "text",
+    "reserved_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "settled_at" timestamp with time zone,
+    CONSTRAINT "pending_charges_reserved_positive" CHECK (("reserved_amount" > 0)),
+    CONSTRAINT "pending_charges_settled_non_negative" CHECK ((("settled_amount" IS NULL) OR ("settled_amount" >= 0)))
+);
 
 
+ALTER TABLE "wallet"."pending_charges" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "wallet"."pending_charges" IS 'Pre-authorization ledger for execution runs. Tracks reserved → settled/released lifecycle. Enforces idempotency via reference_id UNIQUE constraint.';
 
 
 
+COMMENT ON COLUMN "wallet"."pending_charges"."reserved_amount" IS 'Credits debited from account when reservation created. Remains until charge settled or released.';
 
 
 
+COMMENT ON COLUMN "wallet"."pending_charges"."settled_amount" IS 'Actual credits charged after execution completes. NULL until settled. If NULL at release, full refund applied.';
 
 
 
+COMMENT ON COLUMN "wallet"."pending_charges"."reference_id" IS 'FK to execution.runs.id. UNIQUE constraint prevents double-charging on Worker retry.';
 
 
 
+CREATE TABLE IF NOT EXISTS "wallet"."spending_limits" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "account_id" "uuid" NOT NULL,
+    "period" "text" NOT NULL,
+    "limit_credits" bigint NOT NULL,
+    "current_usage" bigint DEFAULT 0 NOT NULL,
+    "period_start" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "spending_limits_limit_check" CHECK (("limit_credits" > 0)),
+    CONSTRAINT "spending_limits_period_check" CHECK (("period" = ANY (ARRAY['daily'::"text", 'monthly'::"text"])))
+);
 
 
+ALTER TABLE "wallet"."spending_limits" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "wallet"."spending_limits" IS 'Optional per-account spending caps. current_usage reset to 0 by pg_cron at period boundaries.';
 
 
 
+CREATE TABLE IF NOT EXISTS "wallet"."transactions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "account_id" "uuid" NOT NULL,
+    "tx_type" "wallet"."transaction_type_enum" NOT NULL,
+    "amount" bigint NOT NULL,
+    "direction" smallint NOT NULL,
+    "balance_after" bigint NOT NULL,
+    "reference_type" "text",
+    "reference_id" "uuid",
+    "description" "text",
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "idempotency_key" "text",
+    CONSTRAINT "transactions_amount_positive" CHECK (("amount" > 0)),
+    CONSTRAINT "transactions_direction_check" CHECK (("direction" = ANY (ARRAY[1, '-1'::integer])))
+);
 
 
+ALTER TABLE "wallet"."transactions" OWNER TO "postgres";
 
 
+COMMENT ON TABLE "wallet"."transactions" IS 'Append-only wallet transaction ledger. No UPDATE/DELETE allowed. balance_after enables audit verification: balance_after[n] = balance_after[n-1] + (amount * direction).';
 
 
 
+COMMENT ON COLUMN "wallet"."transactions"."amount" IS 'Always positive. Effective amount = amount * direction.';
 
 
 
+COMMENT ON COLUMN "wallet"."transactions"."direction" IS '+1 for credits (deposit, refund, sponsorship_payout), -1 for debits (spend, sponsorship_deposit, platform_fee).';
 
 
 
+COMMENT ON COLUMN "wallet"."transactions"."balance_after" IS 'Account balance after this transaction. Enables full audit trail verification.';
 
 
 
+COMMENT ON COLUMN "wallet"."transactions"."reference_type" IS 'Source entity type, e.g. billing.orders, execution.runs, battles.sponsorship_contributions.';
 
 
 
+COMMENT ON COLUMN "wallet"."transactions"."reference_id" IS 'Source entity UUID. Combined with reference_type for cross-schema tracing.';
 
 
 
+COMMENT ON COLUMN "wallet"."transactions"."idempotency_key" IS 'Optional idempotency key for dedup. When set, prevents duplicate transactions from retried API calls. SHA-256 hash of scope|actor|operation context.';
 
 
 
@@ -53062,6 +54114,7 @@ ALTER TABLE ONLY "automation"."cron_runs" ALTER COLUMN "id" SET DEFAULT "nextval
 
 
 
+ALTER TABLE ONLY "billing"."ledger_entries" ALTER COLUMN "id" SET DEFAULT "nextval"('"billing"."ledger_entries_id_seq"'::"regclass");
 
 
 
@@ -53973,60 +55026,98 @@ ALTER TABLE ONLY "battles"."votes"
 
 
 
+ALTER TABLE ONLY "billing"."execution_margin_policies"
+    ADD CONSTRAINT "billing_execution_margin_policies_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "billing"."budget_policies"
+    ADD CONSTRAINT "budget_policies_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "billing"."budget_policies"
+    ADD CONSTRAINT "budget_policies_scope_unique" UNIQUE ("scope", "scope_id");
 
 
 
+ALTER TABLE ONLY "billing"."checkout_sessions"
+    ADD CONSTRAINT "checkout_sessions_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "billing"."cost_reservations"
+    ADD CONSTRAINT "cost_reservations_idem_unique" UNIQUE ("ai_lenser_id", "idempotency_key");
 
 
 
+ALTER TABLE ONLY "billing"."cost_reservations"
+    ADD CONSTRAINT "cost_reservations_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "billing"."ledger_entries"
+    ADD CONSTRAINT "ledger_entries_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_ls_order_id_key" UNIQUE ("ls_order_id");
 
 
 
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "billing"."pricing_snapshots"
+    ADD CONSTRAINT "pricing_snapshots_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "billing"."products"
+    ADD CONSTRAINT "products_ls_product_id_key" UNIQUE ("ls_product_id");
 
 
 
+ALTER TABLE ONLY "billing"."products"
+    ADD CONSTRAINT "products_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "billing"."provider_circuit_state"
+    ADD CONSTRAINT "provider_circuit_state_pkey" PRIMARY KEY ("provider_key");
 
 
 
+ALTER TABLE ONLY "billing"."runtime_settings"
+    ADD CONSTRAINT "runtime_settings_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "billing"."spend_anomalies"
+    ADD CONSTRAINT "spend_anomalies_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "billing"."variants"
+    ADD CONSTRAINT "variants_ls_variant_id_key" UNIQUE ("ls_variant_id");
 
 
 
+ALTER TABLE ONLY "billing"."variants"
+    ADD CONSTRAINT "variants_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "billing"."webhook_events"
+    ADD CONSTRAINT "webhook_events_ls_event_id_key" UNIQUE ("ls_event_id");
 
 
 
+ALTER TABLE ONLY "billing"."webhook_events"
+    ADD CONSTRAINT "webhook_events_pkey" PRIMARY KEY ("id");
 
 
 
@@ -54895,36 +55986,58 @@ ALTER TABLE ONLY "tenancy"."workspaces"
 
 
 
+ALTER TABLE ONLY "wallet"."accounts"
+    ADD CONSTRAINT "accounts_lenser_id_key" UNIQUE ("lenser_id");
 
 
 
+ALTER TABLE ONLY "wallet"."accounts"
+    ADD CONSTRAINT "accounts_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "wallet"."credit_valuation_policy"
+    ADD CONSTRAINT "credit_valuation_policy_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "wallet"."credit_valuation_policy"
+    ADD CONSTRAINT "credit_valuation_singleton" UNIQUE ("singleton");
 
 
 
+ALTER TABLE ONLY "wallet"."organization_accounts"
+    ADD CONSTRAINT "organization_accounts_org_id_key" UNIQUE ("org_id");
 
 
 
+ALTER TABLE ONLY "wallet"."organization_accounts"
+    ADD CONSTRAINT "organization_accounts_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "wallet"."pending_charges"
+    ADD CONSTRAINT "pending_charges_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "wallet"."pending_charges"
+    ADD CONSTRAINT "pending_charges_reference_unique" UNIQUE ("reference_id");
 
 
 
+ALTER TABLE ONLY "wallet"."spending_limits"
+    ADD CONSTRAINT "spending_limits_account_period_key" UNIQUE ("account_id", "period");
 
 
 
+ALTER TABLE ONLY "wallet"."spending_limits"
+    ADD CONSTRAINT "spending_limits_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "wallet"."transactions"
+    ADD CONSTRAINT "transactions_pkey" PRIMARY KEY ("id");
 
 
 
@@ -56019,78 +57132,103 @@ CREATE UNIQUE INDEX "uq_sponsorship_payouts_pool_tx" ON "battles"."sponsorship_p
 
 
 
+CREATE INDEX "idx_billing_checkout_active" ON "billing"."checkout_sessions" USING "btree" ("status") WHERE ("status" = 'created'::"text");
 
 
 
+CREATE INDEX "idx_billing_checkout_lenser" ON "billing"."checkout_sessions" USING "btree" ("lenser_id", "created_at" DESC);
 
 
 
+CREATE INDEX "idx_billing_execution_margin_policies_active" ON "billing"."execution_margin_policies" USING "btree" ("model_id", "effective_from" DESC) WHERE (("is_active" = true) AND ("effective_to" IS NULL));
 
 
 
+CREATE INDEX "idx_billing_margin_policies_active" ON "billing"."execution_margin_policies" USING "btree" ("model_id", "is_active") WHERE (("is_active" = true) AND ("effective_to" IS NULL));
 
 
 
+CREATE INDEX "idx_billing_orders_lenser" ON "billing"."orders" USING "btree" ("lenser_id", "created_at" DESC);
 
 
 
+CREATE INDEX "idx_billing_orders_ls_id" ON "billing"."orders" USING "btree" ("ls_order_id");
 
 
 
+CREATE INDEX "idx_billing_orders_product_paid" ON "billing"."orders" USING "btree" ("product_id", "status") WHERE ("status" = 'paid'::"billing"."order_status_enum");
 
 
 
+CREATE INDEX "idx_billing_orders_status" ON "billing"."orders" USING "btree" ("status", "created_at" DESC);
 
 
 
+CREATE INDEX "idx_billing_orders_webhook" ON "billing"."orders" USING "btree" ("webhook_event_id");
 
 
 
+CREATE INDEX "idx_billing_products_ls_id" ON "billing"."products" USING "btree" ("ls_product_id");
 
 
 
+CREATE INDEX "idx_billing_products_status" ON "billing"."products" USING "btree" ("status") WHERE ("status" = 'published'::"billing"."product_status_enum");
 
 
 
+CREATE INDEX "idx_billing_variants_ls_id" ON "billing"."variants" USING "btree" ("ls_variant_id");
 
 
 
+CREATE INDEX "idx_billing_variants_product" ON "billing"."variants" USING "btree" ("product_id");
 
 
 
+CREATE INDEX "idx_billing_webhook_event_name" ON "billing"."webhook_events" USING "btree" ("event_name", "created_at" DESC);
 
 
 
+CREATE INDEX "idx_billing_webhook_unprocessed" ON "billing"."webhook_events" USING "btree" ("processed", "created_at") WHERE ("processed" = false);
 
 
 
+CREATE INDEX "idx_cost_reservations_held_until" ON "billing"."cost_reservations" USING "btree" ("held_until") WHERE ("status" = 'held'::"text");
 
 
 
+CREATE INDEX "idx_cost_reservations_lenser_created" ON "billing"."cost_reservations" USING "btree" ("ai_lenser_id", "created_at" DESC);
 
 
 
+CREATE INDEX "idx_cost_reservations_lenser_model_status" ON "billing"."cost_reservations" USING "btree" ("ai_lenser_id", "model_id", "status");
 
 
 
+CREATE INDEX "idx_cost_reservations_lenser_status_created" ON "billing"."cost_reservations" USING "btree" ("ai_lenser_id", "status", "created_at");
 
 
 
+CREATE INDEX "idx_fk_checkout_sessions_variant_id" ON "billing"."checkout_sessions" USING "btree" ("variant_id");
 
 
 
+CREATE INDEX "idx_fk_orders_variant_id" ON "billing"."orders" USING "btree" ("variant_id");
 
 
 
+CREATE INDEX "idx_ledger_entries_lenser_recorded" ON "billing"."ledger_entries" USING "btree" ("ai_lenser_id", "recorded_at" DESC);
 
 
 
+CREATE INDEX "idx_ledger_entries_reservation" ON "billing"."ledger_entries" USING "btree" ("reservation_id", "id");
 
 
 
+CREATE INDEX "idx_pricing_snapshots_model_taken" ON "billing"."pricing_snapshots" USING "btree" ("model_id", "taken_at" DESC);
 
 
 
+CREATE INDEX "idx_spend_anomalies_lenser_created" ON "billing"."spend_anomalies" USING "btree" ("ai_lenser_id", "created_at" DESC);
 
 
 
@@ -57382,30 +58520,39 @@ CREATE INDEX "idx_workspaces_owner" ON "tenancy"."workspaces" USING "btree" ("ow
 
 
 
+CREATE INDEX "idx_pending_charges_account" ON "wallet"."pending_charges" USING "btree" ("account_id", "status");
 
 
 
+CREATE INDEX "idx_pending_charges_lenser" ON "wallet"."pending_charges" USING "btree" ("lenser_id", "reserved_at" DESC);
 
 
 
+CREATE INDEX "idx_pending_charges_status" ON "wallet"."pending_charges" USING "btree" ("status") WHERE ("status" = 'reserved'::"wallet"."charge_status_enum");
 
 
 
+CREATE INDEX "idx_transactions_account_time" ON "wallet"."transactions" USING "btree" ("account_id", "created_at" DESC);
 
 
 
+CREATE INDEX "idx_wallet_spending_account" ON "wallet"."spending_limits" USING "btree" ("account_id", "period");
 
 
 
+CREATE UNIQUE INDEX "idx_wallet_tx_idempotency" ON "wallet"."transactions" USING "btree" ("idempotency_key") WHERE ("idempotency_key" IS NOT NULL);
 
 
 
+CREATE INDEX "idx_wallet_tx_reference" ON "wallet"."transactions" USING "btree" ("reference_type", "reference_id") WHERE ("reference_id" IS NOT NULL);
 
 
 
+CREATE UNIQUE INDEX "idx_wallet_tx_reference_idempotency" ON "wallet"."transactions" USING "btree" ("reference_type", "reference_id") WHERE ("reference_id" IS NOT NULL);
 
 
 
+CREATE INDEX "idx_wallet_tx_type_created" ON "wallet"."transactions" USING "btree" ("tx_type", "created_at" DESC);
 
 
 
@@ -57858,18 +59005,23 @@ ALTER TABLE "battles"."battles" DISABLE TRIGGER "trg_xp_battle_published";
 
 
 
+CREATE OR REPLACE TRIGGER "trg_billing_margin_policies_updated_at" BEFORE UPDATE ON "billing"."execution_margin_policies" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
+CREATE OR REPLACE TRIGGER "trg_billing_products_updated_at" BEFORE UPDATE ON "billing"."products" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
+CREATE OR REPLACE TRIGGER "trg_ledger_entries_hash" BEFORE INSERT ON "billing"."ledger_entries" FOR EACH ROW EXECUTE FUNCTION "billing"."tg_ledger_entries_hash"();
 
 
 
+CREATE OR REPLACE TRIGGER "trg_ledger_entries_no_delete" BEFORE DELETE ON "billing"."ledger_entries" FOR EACH ROW EXECUTE FUNCTION "billing"."tg_ledger_entries_immutable"();
 
 
 
+CREATE OR REPLACE TRIGGER "trg_ledger_entries_no_update" BEFORE UPDATE ON "billing"."ledger_entries" FOR EACH ROW EXECUTE FUNCTION "billing"."tg_ledger_entries_immutable"();
 
 
 
@@ -58025,6 +59177,7 @@ CREATE OR REPLACE TRIGGER "trg_audit_lenser_profile" AFTER DELETE OR UPDATE ON "
 
 
 
+CREATE OR REPLACE TRIGGER "trg_auto_create_wallet_account" AFTER INSERT ON "lensers"."profiles" FOR EACH ROW EXECUTE FUNCTION "wallet"."trg_auto_create_account"();
 
 
 
@@ -58362,24 +59515,31 @@ CREATE OR REPLACE TRIGGER "trg_workspaces_set_updated_at" BEFORE UPDATE ON "tena
 
 
 
+CREATE OR REPLACE TRIGGER "trg_audit_wallet_account" AFTER UPDATE ON "wallet"."accounts" FOR EACH ROW EXECUTE FUNCTION "audit"."trg_fn_audit_wallet_account"();
 
 
 
+CREATE OR REPLACE TRIGGER "trg_org_accounts_updated_at" BEFORE UPDATE ON "wallet"."organization_accounts" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
+CREATE OR REPLACE TRIGGER "trg_transactions_no_delete" BEFORE DELETE ON "wallet"."transactions" FOR EACH ROW EXECUTE FUNCTION "wallet"."trg_transactions_immutable"();
 
 
 
+CREATE OR REPLACE TRIGGER "trg_transactions_no_update" BEFORE UPDATE ON "wallet"."transactions" FOR EACH ROW EXECUTE FUNCTION "wallet"."trg_transactions_immutable"();
 
 
 
+CREATE OR REPLACE TRIGGER "trg_verify_balance_after" BEFORE INSERT ON "wallet"."transactions" FOR EACH ROW EXECUTE FUNCTION "wallet"."trg_verify_balance_after"();
 
 
 
+CREATE OR REPLACE TRIGGER "trg_wallet_accounts_updated_at" BEFORE UPDATE ON "wallet"."accounts" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
+CREATE OR REPLACE TRIGGER "trg_wallet_spending_limits_updated_at" BEFORE UPDATE ON "wallet"."spending_limits" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
@@ -59568,48 +60728,78 @@ ALTER TABLE ONLY "battles"."votes"
 
 
 
+ALTER TABLE ONLY "billing"."execution_margin_policies"
+    ADD CONSTRAINT "billing_margin_policies_model_fkey" FOREIGN KEY ("model_id") REFERENCES "ai"."models"("id") ON DELETE CASCADE;
 
 
 
+ALTER TABLE ONLY "billing"."checkout_sessions"
+    ADD CONSTRAINT "checkout_sessions_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
 
 
 
+ALTER TABLE ONLY "billing"."checkout_sessions"
+    ADD CONSTRAINT "checkout_sessions_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "billing"."variants"("id") ON DELETE CASCADE;
 
 
 
+ALTER TABLE ONLY "billing"."cost_reservations"
+    ADD CONSTRAINT "cost_reservations_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE RESTRICT;
 
 
 
+ALTER TABLE ONLY "billing"."cost_reservations"
+    ADD CONSTRAINT "cost_reservations_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "ai"."models"("id") ON DELETE RESTRICT;
 
 
 
+ALTER TABLE ONLY "billing"."cost_reservations"
+    ADD CONSTRAINT "cost_reservations_pricing_snapshot_id_fkey" FOREIGN KEY ("pricing_snapshot_id") REFERENCES "billing"."pricing_snapshots"("id") ON DELETE RESTRICT;
 
 
 
+ALTER TABLE ONLY "billing"."ledger_entries"
+    ADD CONSTRAINT "ledger_entries_reservation_id_fkey" FOREIGN KEY ("reservation_id") REFERENCES "billing"."cost_reservations"("id") ON DELETE RESTRICT;
 
 
 
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
 
 
 
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "billing"."products"("id") ON DELETE SET NULL;
 
 
 
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "billing"."variants"("id") ON DELETE SET NULL;
 
 
 
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_webhook_event_id_fkey" FOREIGN KEY ("webhook_event_id") REFERENCES "billing"."webhook_events"("id");
 
 
 
+ALTER TABLE ONLY "billing"."pricing_snapshots"
+    ADD CONSTRAINT "pricing_snapshots_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "ai"."models"("id") ON DELETE RESTRICT;
 
 
 
+ALTER TABLE ONLY "billing"."pricing_snapshots"
+    ADD CONSTRAINT "pricing_snapshots_source_pricing_id_fkey" FOREIGN KEY ("source_pricing_id") REFERENCES "ai"."model_pricing"("id") ON DELETE RESTRICT;
 
 
 
+ALTER TABLE ONLY "billing"."spend_anomalies"
+    ADD CONSTRAINT "spend_anomalies_ai_lenser_id_fkey" FOREIGN KEY ("ai_lenser_id") REFERENCES "agents"."ai_lensers"("id") ON DELETE CASCADE;
 
 
 
+ALTER TABLE ONLY "billing"."variants"
+    ADD CONSTRAINT "variants_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "billing"."products"("id") ON DELETE CASCADE;
 
 
 
@@ -60710,21 +61900,33 @@ ALTER TABLE ONLY "tenancy"."workspaces"
 
 
 
+ALTER TABLE ONLY "wallet"."accounts"
+    ADD CONSTRAINT "accounts_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
 
 
 
+ALTER TABLE ONLY "wallet"."organization_accounts"
+    ADD CONSTRAINT "organization_accounts_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE RESTRICT;
 
 
 
+ALTER TABLE ONLY "wallet"."pending_charges"
+    ADD CONSTRAINT "pending_charges_account_fkey" FOREIGN KEY ("account_id") REFERENCES "wallet"."accounts"("id") ON DELETE RESTRICT;
 
 
 
+ALTER TABLE ONLY "wallet"."pending_charges"
+    ADD CONSTRAINT "pending_charges_lenser_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
 
 
 
+ALTER TABLE ONLY "wallet"."spending_limits"
+    ADD CONSTRAINT "spending_limits_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "wallet"."accounts"("id") ON DELETE CASCADE;
 
 
 
+ALTER TABLE ONLY "wallet"."transactions"
+    ADD CONSTRAINT "transactions_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "wallet"."accounts"("id") ON DELETE RESTRICT;
 
 
 
@@ -62281,77 +63483,112 @@ CREATE POLICY "votes_select" ON "battles"."votes" FOR SELECT USING (((EXISTS ( S
 
 
 
+CREATE POLICY "billing_margin_policies_service_all" ON "billing"."execution_margin_policies" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+ALTER TABLE "billing"."budget_policies" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "billing"."checkout_sessions" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "checkout_sessions_service_all" ON "billing"."checkout_sessions" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+ALTER TABLE "billing"."cost_reservations" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "billing"."execution_margin_policies" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "billing"."ledger_entries" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "billing"."orders" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "orders_service_all" ON "billing"."orders" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+ALTER TABLE "billing"."pricing_snapshots" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "billing"."products" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "products_service_all" ON "billing"."products" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+ALTER TABLE "billing"."provider_circuit_state" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "rls_budget_policies_service_all" ON "billing"."budget_policies" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+CREATE POLICY "rls_cost_reservations_owner_select" ON "billing"."cost_reservations" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM ("agents"."ai_lensers" "al"
+     JOIN "lensers"."profiles" "p" ON (("p"."id" = "al"."profile_id")))
+  WHERE (("al"."id" = "cost_reservations"."ai_lenser_id") AND ("p"."user_id" = "auth"."uid"())))));
 
 
 
+CREATE POLICY "rls_cost_reservations_service_all" ON "billing"."cost_reservations" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+CREATE POLICY "rls_ledger_entries_owner_select" ON "billing"."ledger_entries" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM ("agents"."ai_lensers" "al"
+     JOIN "lensers"."profiles" "p" ON (("p"."id" = "al"."profile_id")))
+  WHERE (("al"."id" = "ledger_entries"."ai_lenser_id") AND ("p"."user_id" = "auth"."uid"())))));
 
 
 
+CREATE POLICY "rls_ledger_entries_service_all" ON "billing"."ledger_entries" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+CREATE POLICY "rls_pricing_snapshots_service_all" ON "billing"."pricing_snapshots" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+CREATE POLICY "rls_provider_circuit_service_all" ON "billing"."provider_circuit_state" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+CREATE POLICY "rls_runtime_settings_auth_read" ON "billing"."runtime_settings" FOR SELECT TO "authenticated" USING (true);
 
 
 
+CREATE POLICY "rls_runtime_settings_service_all" ON "billing"."runtime_settings" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+CREATE POLICY "rls_spend_anomalies_service_all" ON "billing"."spend_anomalies" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+ALTER TABLE "billing"."runtime_settings" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "billing"."spend_anomalies" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "billing"."variants" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "variants_service_all" ON "billing"."variants" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+ALTER TABLE "billing"."webhook_events" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "webhook_events_service_all" ON "billing"."webhook_events" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
@@ -64292,39 +65529,55 @@ ALTER TABLE "tenancy"."workspace_members" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "tenancy"."workspaces" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "wallet"."accounts" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "accounts_service_all" ON "wallet"."accounts" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+ALTER TABLE "wallet"."credit_valuation_policy" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "credit_valuation_service_all" ON "wallet"."credit_valuation_policy" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+CREATE POLICY "org_accounts_select_member" ON "wallet"."organization_accounts" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "om"
+  WHERE (("om"."org_id" = "organization_accounts"."org_id") AND ("om"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
 
 
 
+CREATE POLICY "org_accounts_service_all" ON "wallet"."organization_accounts" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+ALTER TABLE "wallet"."organization_accounts" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "wallet"."pending_charges" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "pending_charges_service_all" ON "wallet"."pending_charges" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+ALTER TABLE "wallet"."spending_limits" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "spending_limits_service_all" ON "wallet"."spending_limits" TO "service_role" USING (true) WITH CHECK (true);
 
 
 
+ALTER TABLE "wallet"."transactions" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "transactions_service_insert" ON "wallet"."transactions" FOR INSERT TO "service_role" WITH CHECK (true);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+CREATE POLICY "transactions_service_select" ON "wallet"."transactions" FOR SELECT TO "service_role" USING (true);
 
 
 
@@ -65188,6 +66441,8 @@ GRANT ALL ON FUNCTION "battles"."trg_submissions_validate_execution_link"() TO "
 
 
 
+REVOKE ALL ON FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) TO "service_role";
 
 
 
@@ -70818,33 +72073,53 @@ GRANT ALL ON FUNCTION "tenancy"."set_updated_at"() TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "wallet"."reset_spending_period"("p_period" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."reset_spending_period"("p_period" "text") TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) TO "service_role";
 
 
 
@@ -71488,48 +72763,67 @@ GRANT ALL ON TABLE "battles"."votes" TO "service_role";
 
 
 
+GRANT SELECT,INSERT,UPDATE ON TABLE "billing"."budget_policies" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "billing"."checkout_sessions" TO "service_role";
 
 
 
+GRANT SELECT ON TABLE "billing"."cost_reservations" TO "authenticated";
+GRANT SELECT,INSERT,UPDATE ON TABLE "billing"."cost_reservations" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "billing"."execution_margin_policies" TO "service_role";
 
 
 
+GRANT SELECT ON TABLE "billing"."ledger_entries" TO "authenticated";
+GRANT SELECT,INSERT ON TABLE "billing"."ledger_entries" TO "service_role";
 
 
 
+GRANT USAGE ON SEQUENCE "billing"."ledger_entries_id_seq" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "billing"."orders" TO "service_role";
 
 
 
+GRANT SELECT,INSERT ON TABLE "billing"."pricing_snapshots" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "billing"."products" TO "service_role";
 
 
 
+GRANT SELECT,INSERT,UPDATE ON TABLE "billing"."provider_circuit_state" TO "service_role";
 
 
 
+GRANT SELECT ON TABLE "billing"."runtime_settings" TO "authenticated";
+GRANT SELECT,INSERT,UPDATE ON TABLE "billing"."runtime_settings" TO "service_role";
 
 
 
+GRANT SELECT,INSERT ON TABLE "billing"."spend_anomalies" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "billing"."variants" TO "service_role";
 
 
 
+GRANT SELECT ON TABLE "billing"."vw_products" TO "service_role";
+GRANT SELECT ON TABLE "billing"."vw_products" TO "authenticated";
 
 
 
+GRANT ALL ON TABLE "billing"."webhook_events" TO "service_role";
 
 
 
@@ -72170,18 +73464,25 @@ GRANT ALL ON TABLE "tenancy"."workspaces" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "wallet"."accounts" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "wallet"."organization_accounts" TO "anon";
+GRANT ALL ON TABLE "wallet"."organization_accounts" TO "authenticated";
+GRANT ALL ON TABLE "wallet"."organization_accounts" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "wallet"."pending_charges" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "wallet"."spending_limits" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "wallet"."transactions" TO "service_role";
 
 
 
