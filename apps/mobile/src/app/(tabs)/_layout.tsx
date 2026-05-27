@@ -8,12 +8,16 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
 import { useAuthSheet } from '../../context/AuthSheetContext'
+import { useLensSheet } from '../../context/LensSheetContext'
+import { useThreadSheet } from '../../context/ThreadSheetContext'
 
 export default function TabsLayout() {
   const { t } = useTranslation()
   const { isAuthenticated } = useAuth()
   const theme = useNativeTheme()
   const { open: openAuthSheet } = useAuthSheet()
+  const { open: openThreadSheet } = useThreadSheet()
+  const { open: openLensSheet } = useLensSheet()
   const router = useRouter()
 
   const iconColor = theme.surface.textMuted
@@ -78,9 +82,9 @@ export default function TabsLayout() {
           ),
           headerRight: () => (
             <HeaderIconButton
-              icon="search-outline"
-              onPress={() => router.push('/search/lenses' as never)}
-              accessibilityLabel={t('actions.search')}
+              icon="add-outline"
+              onPress={withAuth(() => openLensSheet())}
+              accessibilityLabel={t('actions.newLens')}
             />
           ),
         }}
@@ -101,7 +105,7 @@ export default function TabsLayout() {
         listeners={{
           tabPress: (e) => {
             e.preventDefault()
-            withAuth(() => router.push('/thread/create' as never))()
+            withAuth(() => openThreadSheet())()
           },
         }}
       />
@@ -119,7 +123,7 @@ export default function TabsLayout() {
           headerRight: () => (
             <HeaderIconButton
               icon="create-outline"
-              onPress={withAuth(() => router.push('/thread/create' as never))}
+              onPress={withAuth(() => openThreadSheet())}
               accessibilityLabel={t('actions.newThread')}
             />
           ),

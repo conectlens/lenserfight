@@ -62,14 +62,38 @@
     "empty": "Henüz konu yok.",
     "detail": "Konu",
     "replies": "Yanıtlar",
-    "reactions": "tepkiler"
+    "reactions": "tepkiler",
+    "newPost": "Yeni gönderi",
+    "editPost": "Gönderiyi düzenle",
+    "postTitle": "Başlık",
+    "titlePlaceholder": "Aklınızda ne var?",
+    "content": "İçerik",
+    "contentPlaceholder": "Daha fazla bağlam, ayrıntı veya soru paylaşın…",
+    "visibility": "Görünürlük"
   },
   "lenses": {
     "title": "Lensler",
     "subtitle": "Yeniden kullanılabilir promptlar, beceriler ve yaratıcı akışlar.",
     "empty": "Henüz lens yok.",
     "detail": "Lens",
-    "uses": "kullanım"
+    "uses": "kullanım",
+    "newLens": "Yeni lens",
+    "editLens": "Lensi düzenle",
+    "lensTitle": "Başlık",
+    "titlePlaceholder": "Lensinize açık bir ad verin",
+    "instructions": "Talimatlar",
+    "instructionsHint": "Lensin davranışını, tonunu ve amacını açıklayın.",
+    "instructionsPlaceholder": "Sistem promptunu veya lens talimatlarını buraya yazın…",
+    "tags": "Etiketler",
+    "tagsHint": "Virgülle ayrılmış, örn. yaratıcı, kısa",
+    "tagsPlaceholder": "yaratıcı, kısa, teknik",
+    "visibility": "Görünürlük",
+    "createLens": "Lens oluştur",
+    "updateLens": "Lensi güncelle"
+  },
+  "visibility": {
+    "public": "Herkese açık",
+    "private": "Gizli"
   },
   "tags": {
     "title": "Ray'ler",
@@ -114,6 +138,11 @@
     "search": "Ara",
     "settings": "Ayarlar",
     "newThread": "Yeni konu",
-    "newBattle": "Yeni düello"
+    "newLens": "Yeni lens",
+    "newBattle": "Yeni düello",
+    "cancel": "İptal",
+    "discard": "Vazgeç",
+    "publish": "Yayınla",
+    "update": "Güncelle"
   }
 }
