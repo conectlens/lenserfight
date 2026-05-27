@@ -1,6 +1,6 @@
 import React from 'react'
 import { Dialog } from '@lenserfight/ui/overlays'
-import { WaitingListSection } from '@lenserfight/features/waiting-list'
+import { WaitingListSection } from './WaitingListSection'
 
 interface WaitingListModalProps {
   isOpen: boolean
