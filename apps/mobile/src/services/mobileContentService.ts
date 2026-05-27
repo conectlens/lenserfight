@@ -1,11 +1,11 @@
 import {
   battlesService,
+  type BattleFeedItemRecord,
   lenserService,
   lensesService,
   tagService,
   threadsService,
-  type MobileBattle,
-} from '@lenserfight/data/repositories/mobile'
+} from '@lenserfight/data/repositories'
 
 import type {
   LensDetailViewModel,
@@ -16,7 +16,7 @@ import type {
   ThreadFeedItem,
 } from '@lenserfight/types'
 
-export type { MobileBattle }
+export type { BattleFeedItemRecord as MobileBattle }
 
 export interface TagDetailBundle {
   tag: TagUsage | null
@@ -42,9 +42,9 @@ export const mobileContentService = {
     }
   },
 
-  async getThread(id: string, _viewerLenserId?: string): Promise<ThreadDetailViewModel | null> {
+  async getThread(id: string, viewerLenserId?: string): Promise<ThreadDetailViewModel | null> {
     try {
-      return await threadsService.getThreadDetail(id)
+      return await threadsService.getThreadDetail(id, viewerLenserId)
     } catch (error) {
       throw publicMessage(error)
     }
@@ -59,9 +59,9 @@ export const mobileContentService = {
     }
   },
 
-  async getLens(id: string, _viewerLenserId?: string): Promise<LensDetailViewModel | null> {
+  async getLens(id: string, viewerLenserId?: string): Promise<LensDetailViewModel | null> {
     try {
-      return await lensesService.getLensDetail(id)
+      return await lensesService.getLensDetail(id, viewerLenserId)
     } catch (error) {
       throw publicMessage(error)
     }
@@ -100,17 +100,39 @@ export const mobileContentService = {
     }
   },
 
-  async listBattles(): Promise<MobileBattle[]> {
+  async listBattles(): Promise<BattleFeedItemRecord[]> {
     try {
-      return await battlesService.listBattles(0, 20)
+      return await battlesService.getBattlesFeedItems({ limit: 20 })
     } catch (error) {
       throw publicMessage(error)
     }
   },
 
-  async getBattle(id: string): Promise<MobileBattle | null> {
+  async getBattle(id: string): Promise<BattleFeedItemRecord | null> {
     try {
-      return await battlesService.getBattle(id)
+      const record = await battlesService.getBattleById(id)
+      if (!record) return null
+      // Map BattleRecord to BattleFeedItemRecord shape for the mobile screen
+      return {
+        id: record.id,
+        slug: record.slug ?? '',
+        title: record.title ?? 'Untitled',
+        status: record.status,
+        published_at: record.published_at ?? null,
+        battle_type: record.battle_type,
+        voter_eligibility: record.voter_eligibility ?? 'open',
+        total_vote_count: record.total_vote_count ?? 0,
+        voting_opens_at: record.voting_opens_at ?? null,
+        voting_closes_at: record.voting_closes_at ?? null,
+        contender_a_id: null,
+        contender_a_name: null,
+        contender_a_type: null,
+        contender_b_id: null,
+        contender_b_name: null,
+        contender_b_type: null,
+        winner_slot: null,
+        content_type: null,
+      } as BattleFeedItemRecord
     } catch (error) {
       throw publicMessage(error)
     }
