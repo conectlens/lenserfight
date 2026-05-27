@@ -1,6 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService, toolsService } from '@lenserfight/data/repositories'
-import { useLenserWorkspace } from '@lenserfight/features/profile'
+import { useLenserWorkspace } from '@lenserfight/features/profile/useLenserWorkspace'
 import { Button } from '@lenserfight/ui/components'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'

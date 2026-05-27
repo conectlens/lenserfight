@@ -1,6 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService } from '@lenserfight/data/repositories'
-import { useLenserWorkspace } from '@lenserfight/features/profile'
+import { useLenserWorkspace } from '@lenserfight/features/profile/useLenserWorkspace'
 import type { LenserProfileDTO, ProfileAccessPayload } from '@lenserfight/types'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'

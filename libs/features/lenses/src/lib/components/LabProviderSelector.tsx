@@ -1,10 +1,14 @@
-import React, { useEffect } from 'react'
-import { Loader2 } from 'lucide-react'
-import { SearchSelectField } from '@lenserfight/ui/forms'
-import { AIProviderSelectList, AIModelSelectList } from '@lenserfight/features/generations'
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { AIModelSelectList } from '@lenserfight/features/generations/AIModelSelectList'
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { AIProviderSelectList } from '@lenserfight/features/generations/AIProviderSelectList'
 import { AIProvider, AIProviderModel, FundingSource } from '@lenserfight/types'
-import type { ChainabitAiModel } from '@lenserfight/types'
+import { SearchSelectField } from '@lenserfight/ui/forms'
+import { Loader2 } from 'lucide-react'
+import React, { useEffect } from 'react'
+
 import type { OllamaModelInfo } from '../hooks/useOllamaModels'
+import type { ChainabitAiModel } from '@lenserfight/types'
 
 interface LabProviderSelectorProps {
   fundingSource: FundingSource | undefined

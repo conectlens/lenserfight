@@ -1,15 +1,15 @@
+import { Button, FormError } from '@lenserfight/ui/components'
+import { useFormValidation } from '@lenserfight/utils/validation'
+import { isRequired, minLength } from '@lenserfight/utils/validation'
 import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react'
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { useAuth } from '@lenserfight/features/auth'
-import { useFormValidation } from '@lenserfight/utils/validation'
-import { isRequired, minLength } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
 import { BackButton } from '../components/BackButton'
-import { Button, FormError } from '@lenserfight/ui/components'
 import { InputField } from '../components/InputField'
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
+import { useAuth } from '../context/AuthContext'
 
 /** Minimum password length — must match PasswordStrengthMeter's visual indicator and supabase config. */
 const MIN_PASSWORD_LENGTH = 8

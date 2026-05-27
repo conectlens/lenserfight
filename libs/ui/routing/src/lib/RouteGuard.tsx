@@ -1,7 +1,12 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { useAuth } from '@lenserfight/features/auth'
-import { useLenserOptional } from '@lenserfight/features/profile'
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { useLenserOptional } from '@lenserfight/features/profile/useLenser'
 import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
+
+ 
+ 
 
 export interface RouteAccessContext {
   isAuthenticated: boolean

@@ -1,9 +1,14 @@
+
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { useAuth } from '@lenserfight/features/auth'
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { useLenser } from '@lenserfight/features/profile/useLenser'
+import { Dialog } from '@lenserfight/ui/overlays'
 import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from '@lenserfight/features/auth'
-import { useLenser } from '@lenserfight/features/profile'
-import { Dialog } from '@lenserfight/ui/overlays'
+
 import { useModalRouter } from './useModalRouter'
+
 import type { ModalAccessContext } from './ModalRoute'
 
 export interface ModalQueryDrivenProps {

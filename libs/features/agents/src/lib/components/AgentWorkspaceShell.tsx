@@ -1,4 +1,5 @@
-import { useLenserWorkspace, useWorkspaceSwitchController } from '@lenserfight/features/profile'
+import { useLenserWorkspace } from '@lenserfight/features/profile/useLenserWorkspace'
+import { useWorkspaceSwitchController } from '@lenserfight/features/profile/useWorkspaceSwitchController'
 import { Alert } from '@lenserfight/ui/components'
 import { useIsMutating } from '@tanstack/react-query'
 import React from 'react'
