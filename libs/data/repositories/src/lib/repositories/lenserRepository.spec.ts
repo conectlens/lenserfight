@@ -26,6 +26,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
     from: mockFrom,
     auth: { getSession: mockGetSession },
   },
+  getCachedSession: vi.fn(() => null),
 }))
 
 import { SupabaseLenserRepository, mapProfileToAuthProfileGate } from './lenserRepository'
