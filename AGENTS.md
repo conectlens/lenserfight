@@ -69,6 +69,11 @@ When the task clearly matches a project skill, activate the relevant skill from 
 - `mobile-language-checker` — mobile locale resolution, language settings
 - `mobile-ruleset` — canonical mobile design rules
 
+#### Mobile env var rules
+- **Never use `import.meta.env.*`** in code bundled by Metro (Expo/Hermes). Hermes does not support `import.meta`.
+- Use `process.env.EXPO_PUBLIC_*` for all client-visible env vars in mobile and shared-with-mobile code. Only vars with the `EXPO_PUBLIC_` prefix are inlined by Expo at build time — see `apps/mobile/.env.example`.
+- Web-only files using `import.meta.env`, `window.*`, or `react-router-dom` that are exported from a shared barrel must have a `.native.tsx` stub so Metro resolves the stub instead of the web file.
+
 ### Testing & review
 - `unit-test-planner` — test scope and layering decisions
 - `unit-tester` — writing unit/integration tests
