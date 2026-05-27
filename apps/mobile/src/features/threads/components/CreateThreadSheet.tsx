@@ -73,7 +73,7 @@ export const CreateThreadSheet: React.FC<CreateThreadSheetProps> = ({
   return (
     <Sheet
       visible={visible}
-      onDismiss={isSubmitting ? undefined : onDismiss}
+      onDismiss={isSubmitting ? () => {} : onDismiss}
       dismissAccessibilityLabel={t('actions.close')}
       testID="create-thread-sheet"
     >
