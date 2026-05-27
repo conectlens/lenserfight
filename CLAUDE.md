@@ -50,6 +50,11 @@
 - When adding features, decide placement first, then implementation.
 - When modifying migrations, assess blast radius before proposing changes.
 
+## Mobile env var rules (apps/mobile and libs/* shared with mobile)
+- **NEVER use `import.meta.env.*`** in code that Metro (Expo/Hermes) bundles. Hermes does not support `import.meta`.
+- Use `process.env.EXPO_PUBLIC_*` for all client-visible env vars in mobile code. Expo inlines only vars with the `EXPO_PUBLIC_` prefix at build time — see `apps/mobile/.env.example` for the canonical list.
+- Web-only files that use `import.meta.env`, `window.*`, or `react-router-dom` and are exported from a shared barrel **must** have a `.native.tsx` stub alongside them so Metro resolves the stub instead of the web version.
+
 ## Skill routing
 Use the matching skill when work is specialized:
 
