@@ -16,6 +16,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
       getSession: (...args: unknown[]) => getSessionMock(...args),
     },
   },
+  getCachedSession: vi.fn(() => null),
 }))
 
 import { SupabaseAgentsRepository } from './agentsRepository'

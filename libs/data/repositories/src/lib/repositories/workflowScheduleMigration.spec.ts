@@ -4,13 +4,13 @@ import { describe, expect, it } from 'vitest'
 
 const migrationPath = join(
   process.cwd(),
-  'supabase/migrations/20260501025000_fix_workflow_schedule_rpc.sql'
+  'supabase/migration-guards/20260501025000_fix_workflow_schedule_rpc.sql'
 )
 const migrationSql = readFileSync(migrationPath, 'utf8')
 
 const completionPath = join(
   process.cwd(),
-  'supabase/migrations/20260501030000_schedule_dispatch_completion.sql'
+  'supabase/migration-guards/20260501030000_schedule_dispatch_completion.sql'
 )
 const completionSql = readFileSync(completionPath, 'utf8')
 
