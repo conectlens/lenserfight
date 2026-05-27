@@ -1,0 +1,23 @@
+-- Pre-OSS Gateway Security Hardening (documentation marker)
+--
+-- This migration is intentionally a no-op.  The actual enforcement lives in the
+-- remote_schema baseline and subsequent incremental migrations.
+--
+-- Key security policies documented here:
+--
+-- 1. chain_verify_owner_required
+--    audit.fn_chain_verify() raises EXCEPTION 'chain_verify_owner_required'
+--    (ERRCODE 42501) when a non-service_role caller tries to verify a gateway
+--    hash chain they do not own.
+--
+-- 2. Gateway device approval gate
+--    agents.gateway_devices.approved_at must be non-NULL before a device can
+--    claim commands via fn_gateway_claim_commands_v2.
+--
+-- 3. Envelope signature enforcement
+--    agents.gateway_commands carries envelope_sig (Ed25519 base64url) and
+--    envelope_nonce for replay protection.
+--
+-- 4. RLS on gateway tables
+--    gateway_devices: owner_id = auth.uid()
+--    gateway_commands: owner via gateway_devices join
