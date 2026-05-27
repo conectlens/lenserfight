@@ -8,6 +8,10 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(citty|@lenserfight/domain)/)',
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    'src/commands/spec\\.ts$',
+  ],
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../../coverage/apps/cli',
   moduleNameMapper: {
