@@ -68,3 +68,19 @@ export function useBattleDetail(id: string) {
     enabled: !!id,
   })
 }
+
+export function useLenserLenses(handle?: string | null, viewerId?: string) {
+  return useQuery({
+    queryKey: ['mobile', 'lenser-lenses', handle, viewerId ?? 'anonymous'],
+    queryFn: () => mobileContentService.getLenserLenses(handle!, viewerId),
+    enabled: !!handle,
+  })
+}
+
+export function useLenserThreads(handle?: string | null, viewerId?: string) {
+  return useQuery({
+    queryKey: ['mobile', 'lenser-threads', handle, viewerId ?? 'anonymous'],
+    queryFn: () => mobileContentService.getLenserThreads(handle!, viewerId),
+    enabled: !!handle,
+  })
+}
