@@ -1,4 +1,4 @@
-import { lenserService } from '@lenserfight/data/repositories/mobile'
+import { lenserService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth/native'
 import type { CreateLenserDTO, Lenser } from '@lenserfight/types'
 import { useQuery, useQueryClient } from '@tanstack/react-query'

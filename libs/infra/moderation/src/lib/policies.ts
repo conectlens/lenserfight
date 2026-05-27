@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai'
+import { readEnv } from '@lenserfight/utils/env'
 
 import { ModerationPolicy, ModerationResult } from './moderation.types'
 
@@ -89,19 +90,8 @@ export class SemanticPolicy implements ModerationPolicy {
   private apiKey: string | null
 
   private resolveApiKey(): string | null {
-    const viteEnv =
-      typeof import.meta !== 'undefined' && import.meta.env
-        ? ((import.meta.env['GOOGLE_AI_API_KEY'] as string | undefined) ??
-          (import.meta.env['API_KEY'] as string | undefined))
-        : undefined
-    if (typeof viteEnv === 'string' && viteEnv.trim() !== '') return viteEnv.trim()
-
-    const processEnv = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
-      ?.env
-    const nodeEnvKey = processEnv?.['GOOGLE_AI_API_KEY'] ?? processEnv?.['API_KEY']
-    if (typeof nodeEnvKey === 'string' && nodeEnvKey.trim() !== '') return nodeEnvKey.trim()
-
-    return null
+    const key = readEnv('GOOGLE_AI_API_KEY') || readEnv('API_KEY')
+    return key || null
   }
 
   constructor() {

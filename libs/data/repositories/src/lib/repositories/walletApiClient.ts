@@ -9,9 +9,9 @@ import {
 } from '@lenserfight/types'
 import type { ApiResponseEnvelope } from '@lenserfight/api/contracts'
 import { apiFetch, unwrapEnvelope } from '../apiFetch'
+import { readEnv } from '@lenserfight/utils/env'
 
-const SUPABASE_URL =
-  (import.meta.env['SUPABASE_URL'] as string | undefined) ?? 'http://localhost:54321'
+const SUPABASE_URL = readEnv('SUPABASE_URL', 'http://localhost:54321')
 const EDGE_BASE = `${SUPABASE_URL}/functions/v1`
 
 async function getAuthHeader(): Promise<Record<string, string>> {

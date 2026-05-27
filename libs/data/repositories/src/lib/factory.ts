@@ -5,6 +5,7 @@
  * No caller above the service layer is aware of this switch.
  */
 import { isFileDataBackend } from '@lenserfight/utils/env'
+import type { CreateMediaObjectDTO, UploadSession, CreateResourceDTO, ResourceUploadSession } from '@lenserfight/types'
 import { fileModeStub } from './repositories/file/stub'
 
 // ── Supabase implementations ──────────────────────────────────────────────────
@@ -107,6 +108,8 @@ export function createExecutionRepository(): ExecutionRepositoryPort {
     : new SupabaseExecutionRepository()
 }
 
+export const executionRepository = createExecutionRepository()
+
 export function createFeedbackRepository(): FeedbackRepositoryPort {
   return isFileDataBackend
     ? fileModeStub<FeedbackRepositoryPort>('FeedbackRepository')
@@ -123,6 +126,19 @@ export function createMediaRepository(): MediaRepositoryPort {
   return isFileDataBackend
     ? fileModeStub<MediaRepositoryPort>('MediaRepository')
     : new SupabaseMediaRepository()
+}
+
+export const mediaRepository = createMediaRepository()
+
+export async function startMediaUpload(
+  input: CreateMediaObjectDTO,
+  workspaceId: string,
+  bucket: string,
+  objectKey: string,
+): Promise<UploadSession> {
+  const obj = await mediaRepository.create(input, workspaceId)
+  const { signedUrl } = await mediaRepository.getSignedUploadUrl(bucket, objectKey)
+  return { objectId: obj.id, signedUploadUrl: signedUrl, bucket, objectKey }
 }
 
 export function createPreferencesRepository(): PreferencesRepositoryPort {
@@ -147,6 +163,18 @@ export function createResourcesRepository(): ResourcesRepositoryPort {
   return isFileDataBackend
     ? fileModeStub<ResourcesRepositoryPort>('ResourcesRepository')
     : new SupabaseResourcesRepository()
+}
+
+export const resourcesRepository = createResourcesRepository()
+
+export async function startResourceUpload(
+  input: CreateResourceDTO,
+  bucket: string,
+  objectKey: string,
+): Promise<ResourceUploadSession> {
+  const resource = await resourcesRepository.create(input)
+  const signedUploadUrl = await resourcesRepository.getSignedUploadUrl(bucket, objectKey)
+  return { resourceId: resource.id, signedUploadUrl, bucket, objectKey }
 }
 
 export function createShareRepository(): ShareRepositoryPort {
