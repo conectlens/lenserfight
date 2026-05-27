@@ -485,16 +485,15 @@ describe('SupabaseThreadsRepository', () => {
       })
     })
 
-    it('calls fn_update_thread_translation with p_description (not p_content)', async () => {
+    it('calls fn_update_thread_translation with p_thread_id and p_content', async () => {
       mockRpc.mockResolvedValue({ data: null, error: null })
       chainMethods.maybeSingle.mockResolvedValue({ data: rawThread, error: null })
       await repo.updateThread(THREAD_ID, { title: 'New Title', content: 'New Content' })
-      expect(mockRpc).toHaveBeenCalledWith('fn_update_thread_translation', expect.objectContaining({
-        p_entity_id: THREAD_ID,
-        p_entity_type: 'thread',
+      expect(mockRpc).toHaveBeenCalledWith('fn_update_thread_translation', {
+        p_thread_id: THREAD_ID,
         p_title: 'New Title',
-        p_description: 'New Content',
-      }))
+        p_content: 'New Content',
+      })
     })
 
     it('calls fn_remap_thread_tags when dto contains tagIds', async () => {
@@ -537,13 +536,11 @@ describe('SupabaseThreadsRepository', () => {
   // deleteReply
   // ---------------------------------------------------------------------------
   describe('deleteReply', () => {
-    it('calls fn_create_thread_reply with p_content="[deleted]"', async () => {
+    it('calls fn_delete_thread_reply with p_reply_id', async () => {
       mockRpc.mockResolvedValue({ data: null, error: null })
       await repo.deleteReply(REPLY_ID)
-      expect(mockRpc).toHaveBeenCalledWith('fn_create_thread_reply', {
-        p_thread_id: REPLY_ID,
-        p_content: '[deleted]',
-        p_parent_reply_id: null,
+      expect(mockRpc).toHaveBeenCalledWith('fn_delete_thread_reply', {
+        p_reply_id: REPLY_ID,
       })
     })
 

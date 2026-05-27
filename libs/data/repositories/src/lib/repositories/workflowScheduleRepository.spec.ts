@@ -47,8 +47,8 @@ describe('fn_upsert_workflow_schedule — CRUD invariants', () => {
   })
 
   it('supports deactivation via p_is_active = false', () => {
-    expect(rpcSql).toContain('p_is_active boolean DEFAULT true')
-    expect(rpcSql).toContain('is_active = p_is_active')
+    expect(rpcSql).toMatch(/p_is_active\s+boolean DEFAULT true/)
+    expect(rpcSql).toMatch(/is_active\s*=\s*p_is_active/)
   })
 
   it('scopes read query to the authenticated lenser (owner isolation)', () => {
