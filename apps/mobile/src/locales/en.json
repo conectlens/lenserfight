@@ -89,7 +89,11 @@
     "tagsPlaceholder": "creative, concise, technical",
     "visibility": "Visibility",
     "createLens": "Create lens",
-    "updateLens": "Update lens"
+    "updateLens": "Update lens",
+    "parameters": "Parameters",
+    "parametersHint": "Fill in the parameters to prepare the lens for execution.",
+    "copy": "Copy",
+    "copyFilled": "Copy with parameters"
   },
   "visibility": {
     "public": "Public",
@@ -111,7 +115,8 @@
     "handle": "Handle",
     "level": "Level",
     "xp": "XP",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "shareProfile": "Share Profile"
   },
   "battles": {
     "title": "Battles",

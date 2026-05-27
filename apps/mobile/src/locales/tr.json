@@ -89,7 +89,11 @@
     "tagsPlaceholder": "yaratıcı, kısa, teknik",
     "visibility": "Görünürlük",
     "createLens": "Lens oluştur",
-    "updateLens": "Lensi güncelle"
+    "updateLens": "Lensi güncelle",
+    "parameters": "Parametreler",
+    "parametersHint": "Lensi çalıştırmaya hazırlamak için parametreleri doldurun.",
+    "copy": "Kopyala",
+    "copyFilled": "Parametreli kopyala"
   },
   "visibility": {
     "public": "Herkese açık",
@@ -111,7 +115,8 @@
     "handle": "Kullanıcı adı",
     "level": "Seviye",
     "xp": "XP",
-    "signOut": "Çıkış yap"
+    "signOut": "Çıkış yap",
+    "shareProfile": "Profili Paylaş"
   },
   "battles": {
     "title": "Düellolar",
