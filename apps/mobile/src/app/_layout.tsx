@@ -11,17 +11,16 @@ import NetInfo from '@react-native-community/netinfo'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Stack } from 'expo-router'
 import { PostHogProvider } from 'posthog-react-native'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StatusBar, useColorScheme } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { AuthSheetProvider, useAuthSheet } from '../context/AuthSheetContext'
-import {
-  LoginScreen,
-  MagicLinkScreen,
-  RegisterScreen,
-} from '../features/auth/AuthScreens'
+
+import { LoginScreen } from '../features/auth/components/login'
+import { MagicLinkScreen } from '../features/auth/components/magic-link'
+import { RegisterScreen } from '../features/auth/components/register'
 
 // Ensure deep links into detail routes still mount the (tabs) stack first.
 export const unstable_settings = {
