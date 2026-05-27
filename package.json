@@ -86,6 +86,7 @@
     "consola": "^3.4.2",
     "core-js": "3.49.0",
     "expo": "~54.0.34",
+    "expo-apple-authentication": "~8.0.8",
     "expo-constants": "~18.0.13",
     "expo-linking": "~8.0.12",
     "expo-router": "~6.0.23",
