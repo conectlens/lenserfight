@@ -142,4 +142,30 @@ export const profileStyles = StyleSheet.create({
     marginTop: 12,
     width: '100%',
   },
+  tabBar: {
+    flexDirection: 'row',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginBottom: 4,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  tabIndicator: {
+    height: 2,
+    borderRadius: 1,
+    marginTop: 6,
+    width: '60%',
+  },
+  tabContent: {
+    minHeight: 200,
+    gap: 10,
+  },
+  tabEmptyWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+  },
 })
