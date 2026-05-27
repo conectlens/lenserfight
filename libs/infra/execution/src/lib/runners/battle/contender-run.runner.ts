@@ -18,6 +18,7 @@
  */
 
 import { inferAttachmentsFromRendered } from '../../execution-attachments'
+
 import type { ExecutionInput, WorkflowNodeType } from '../../execution.types'
 import type { INodeRunner, NodeRunnerContext, NodeRunnerResult } from '../node-runner.interface'
 

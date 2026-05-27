@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest'
 
 import { validateWorkflow, detectCycle, TRIGGER_NODE_TYPES } from './validator'
+
 import type { ValidationNodeShape, ValidationEdgeShape } from './validator'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

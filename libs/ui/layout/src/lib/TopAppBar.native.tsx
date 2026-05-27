@@ -47,20 +47,14 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
   testID,
   safeEdges = ['top'],
 }) => {
-  const { surface, elevation } = useNativeTheme()
-  const spec = elevation(2)
-
-  const shadowStyle: ViewStyle = Platform.OS === 'ios'
-    ? {
-        shadowColor:   spec.iosShadow.color,
-        shadowOffset:  spec.iosShadow.offset,
-        shadowOpacity: spec.iosShadow.opacity,
-        shadowRadius:  spec.iosShadow.radius,
-      }
-    : { elevation: spec.androidElevation }
+  const { surface } = useNativeTheme()
+  const borderStyle: ViewStyle = {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: surface.border,
+  }
 
   return (
-    <SafeAreaView edges={safeEdges} style={[{ backgroundColor: surface.base }, shadowStyle, style]} testID={testID}>
+    <SafeAreaView edges={safeEdges} style={[{ backgroundColor: surface.base }, borderStyle, style]} testID={testID}>
       <View style={styles.bar}>
         {/* Leading */}
         <View style={styles.slot}>{leading}</View>

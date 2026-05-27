@@ -1,18 +1,20 @@
 import { getOAuthCapabilityDefinition } from '@lenserfight/domain/oauth-connections'
-import type { ConnectorProvider } from '@lenserfight/domain/oauth-connections'
-import type { ConnectorCredentialResolver } from './connector-credential-resolver'
-import type {
-  ConnectorOperationAdapter,
-  ConnectorOperationExecutor,
-  ConnectorOperationRequest,
-  ConnectorResolvedCredential,
-} from './connector-runtime.types'
-import type { ExecutionResult } from './execution.types'
+
 import {
   maskSensitiveFields,
   sanitizeCustomHttpHeaders,
   validateCustomHttpUrl,
 } from './custom-http-safety'
+
+import type { ConnectorCredentialResolver } from './connector-credential-resolver'
+import type {
+  ConnectorOperationAdapter,
+  ConnectorOperationExecutor,
+  ConnectorResolvedCredential,
+} from './connector-runtime.types'
+import type { ExecutionResult } from './execution.types'
+import type { ConnectorProvider } from '@lenserfight/domain/oauth-connections'
+
 
 const PRIORITY_PROVIDERS = new Set<ConnectorProvider>([
   'notion',

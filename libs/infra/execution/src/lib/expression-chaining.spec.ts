@@ -15,6 +15,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { resolveRenderedInputs } from './prompt-resolver'
+
 import type { ResolverEdge, ResolverNode, ResolverUpstreamResult } from './prompt-resolver'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

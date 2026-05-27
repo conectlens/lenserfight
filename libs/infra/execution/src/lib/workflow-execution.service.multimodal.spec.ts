@@ -4,12 +4,12 @@ import { describe, it, expect, vi } from 'vitest'
 
 import { WorkflowExecutionService } from './workflow-execution.service'
 
+import type { IExecutionProvider, ExecutionInput, ExecutionResult } from './execution.types'
 import type {
   WorkflowNode,
   WorkflowEdge,
   WorkflowExecutionContext,
 } from './workflow-execution.service'
-import type { IExecutionProvider, ExecutionInput, ExecutionResult } from './execution.types'
 
 // ── Provider factories ───────────────────────────────────────────────────────
 

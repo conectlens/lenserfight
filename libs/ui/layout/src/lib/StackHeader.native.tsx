@@ -38,7 +38,7 @@ const BackButton: React.FC<{ onPress: () => void; color: string }> = ({ onPress,
   <Pressable
     onPress={onPress}
     style={styles.backHit}
-    hitSlop={8}
+    hitSlop={12}
     accessibilityLabel="Back"
     accessibilityRole="button"
   >

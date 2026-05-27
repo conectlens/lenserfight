@@ -4,9 +4,11 @@
 // personality note passed in params, battle metadata in output.
 
 import { vi } from 'vitest'
+
 import { ContenderRunRunner } from './contender-run.runner'
-import type { NodeRunnerContext } from '../node-runner.interface'
+
 import type { ExecutionResult } from '../../execution.types'
+import type { NodeRunnerContext } from '../node-runner.interface'
 
 function makeCtx(overrides: Partial<NodeRunnerContext> = {}): NodeRunnerContext {
   return {

@@ -1,14 +1,16 @@
 // PromptResolver — unit tests for input binding, merge strategies,
 // conditional edge filtering, and prompt template rendering.
 import { describe, it, expect } from 'vitest'
+
 import {
   resolveRenderedInputs,
   isEdgeConditionSatisfied,
   renderPrompt,
   replaceTokenVariants,
 } from './prompt-resolver'
-import type { ResolverEdge, ResolverNode, ResolverUpstreamResult, MergeStrategy } from './prompt-resolver'
 import { PlaceholderUnboundError } from './validator'
+
+import type { ResolverEdge, ResolverNode, ResolverUpstreamResult } from './prompt-resolver'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

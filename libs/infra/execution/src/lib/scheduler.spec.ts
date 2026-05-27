@@ -1,6 +1,8 @@
 // Scheduler — unit tests for pure wave-computation over workflow DAGs.
 import { describe, it, expect } from 'vitest'
+
 import { Scheduler } from './scheduler'
+
 import type { SchedulerNode, SchedulerEdge } from './scheduler'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

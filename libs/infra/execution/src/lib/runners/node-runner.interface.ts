@@ -12,8 +12,8 @@
  * - Indirection: the registry decouples callers from concrete runners.
  */
 
-import type { ExecutionInput, ExecutionResult, WorkflowNodeType } from '../execution.types'
 import type { ConnectorOperationExecutor } from '../connector-runtime.types'
+import type { ExecutionInput, ExecutionResult, WorkflowNodeType } from '../execution.types'
 import type { LensOutputContract } from '@lenserfight/types'
 
 /**

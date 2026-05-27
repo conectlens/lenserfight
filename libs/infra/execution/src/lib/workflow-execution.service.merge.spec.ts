@@ -4,13 +4,13 @@ import { describe, it, expect } from 'vitest'
 
 import { WorkflowExecutionService } from './workflow-execution.service'
 
+import type { IExecutionProvider, ExecutionInput, ExecutionResult } from './execution.types'
 import type {
   WorkflowNode,
   WorkflowEdge,
   WorkflowExecutionContext,
   NodeResult,
 } from './workflow-execution.service'
-import type { IExecutionProvider, ExecutionInput, ExecutionResult } from './execution.types'
 
 // ── Factories ────────────────────────────────────────────────────────────────
 

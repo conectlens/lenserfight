@@ -46,7 +46,7 @@ export const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.button, pressed && styles.pressed]}
-      hitSlop={8}
+      hitSlop={12}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       testID={testID}

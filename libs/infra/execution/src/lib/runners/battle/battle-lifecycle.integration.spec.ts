@@ -4,16 +4,17 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 
 import { WorkflowExecutionService } from '../../workflow-execution.service'
 import { registerNodeRunner, clearNodeRunners } from '../node-runner.registry'
-import { ContenderRunRunner } from './contender-run.runner'
-import { BattleExecuteRunner } from './battle-execute.runner'
 
+import { BattleExecuteRunner } from './battle-execute.runner'
+import { ContenderRunRunner } from './contender-run.runner'
+
+import type { IExecutionProvider, ExecutionInput, ExecutionResult } from '../../execution.types'
 import type {
   WorkflowNode,
   WorkflowEdge,
   WorkflowExecutionContext,
   NodeResult,
 } from '../../workflow-execution.service'
-import type { IExecutionProvider, ExecutionInput, ExecutionResult } from '../../execution.types'
 
 // ── Provider factory ─────────────────────────────────────────────────────────
 
