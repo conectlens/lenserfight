@@ -16,6 +16,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
       getSession,
     },
   },
+  getCachedAccessToken: vi.fn(() => 'test-token'),
 }))
 
 import { walletApiClient } from './walletApiClient'
