@@ -1,3 +1,13 @@
+## 0.3.2 (2026-05-28)
+
+### 🩹 Fixes
+
+- resolve device login code uniqueness collisions and remove adapter-connector from npm release workflow ([e2abdf5c](https://github.com/conectlens/lenserfight/commit/e2abdf5c))
+
+### ❤️ Thank You
+
+- Ömer Faruk Coşkun
+
 ## 1.1.0 (2026-05-28)
 
 This was a version bump only for cli to align it with other projects, there were no code changes.
