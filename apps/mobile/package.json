@@ -80,5 +80,6 @@
     "vite": "*",
     "vite-plugin-dts": "*",
     "vitest": "*"
-  }
+  },
+  "devDependencies": {}
 }
