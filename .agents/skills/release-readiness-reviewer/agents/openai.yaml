@@ -1,0 +1,7 @@
+interface:
+  display_name: "Release Readiness Reviewer"
+  short_description: "Review whether a change set is ready for release across code, migrations, tests, docs, and rollout planning. Use before production releases, high-risk merges, or milestone sign-off."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#ffde59"
+  default_prompt: "Review release readiness and return a ship/no-ship assessment with required actions."
