@@ -1,11 +1,11 @@
 ---
 title: Lens Tools — MCP Server
-description: Reference for all 14 lens tools in the LenserFight MCP server — list, search, get, create, update, fork, run, validate, extract params, archive, delete, visibility, and versioning.
+description: Reference for all 15 lens tools in the LenserFight MCP server — list, search, get, create, update, fork, run, find-and-run, validate, extract params, archive, delete, visibility, and versioning.
 ---
 
 # Lens Tools
 
-The MCP server provides **14 tools** for managing and executing lenses. Lenses are versioned prompt templates that accept named parameters — `[[ParamName]]` for required, `[[ParamName!]]` for optional.
+The MCP server provides **15 tools** for managing and executing lenses. Lenses are versioned prompt templates that accept named parameters — `[[ParamName]]` for required, `[[ParamName!]]` for optional.
 
 ---
 
@@ -161,9 +161,41 @@ Change the visibility tier of a lens.
 
 ---
 
+## `lens_find_and_run`
+
+Single-call shortcut: search for a lens by keyword, resolve its template, and return a ready-to-execute prompt — or report what parameters are still needed.
+
+**Parameters**
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `query` | string (≥ 1 char) | Yes | — | Search terms to find the lens |
+| `param_values` | `Record<string, string>` | No | `{}` | Parameter values to inject if a lens is found |
+| `visibility` | `'public' \| 'community' \| 'private'` | No | — | Filter search by visibility |
+
+**Returns**
+
+One of three response shapes depending on what the server finds:
+
+```json
+{ "status": "ready", "resolved_prompt": "...", "lens_title": "...", "lens_description": "...", "lens_id": "..." }
+{ "status": "needs_params", "missing": ["Topic", "Language"], "all_parameters": [...], "lens_title": "...", "lens_id": "..." }
+{ "status": "no_match", "query": "..." }
+```
+
+**When to use `lens_find_and_run` vs `lens_run`:**
+
+| | `lens_find_and_run` | `lens_run` |
+|---|---|---|
+| Know the lens ID? | No | Yes |
+| Searching by topic/keyword? | Yes | No |
+| Need a single tool call? | Yes | Requires `lens_search` first |
+
+---
+
 ## `lens_run`
 
-Resolve a lens template by substituting parameter tokens with provided values. Returns a ready-to-use prompt string. **This tool does not call any LLM** — the calling assistant decides whether and how to use the resolved prompt.
+Resolve a lens template by substituting parameter tokens with provided values. Returns a ready-to-use prompt string. **This tool does not call any LLM** — the calling assistant executes the resolved prompt.
 
 **Parameters**
 
@@ -179,22 +211,26 @@ Resolve a lens template by substituting parameter tokens with provided values. R
 ```json
 {
   "resolved_prompt": "Summarize the following text in English using a formal tone.\n\nText: The quick brown fox.",
+  "lens_title": "Text Summarizer",
+  "lens_description": "Summarizes any input text with configurable language and tone.",
   "run_id": "uuid-or-null",
   "lens_id": "...",
   "version_id": "...",
   "params_used": ["Language", "InputText"],
   "estimated_input_tokens": 42,
-  "persisted": true
+  "persisted": true,
+  "next_step": "Execute the resolved_prompt above and return the output to the user."
 }
 ```
 
 **Token resolution rules:**
 
 - Each `[[Name]]` token is replaced with `param_values[name]` (case-insensitive lookup).
-- Required tokens with no provided value → `MISSING_PARAMS` error with a `missing` array.
-- Optional tokens (`[[Name!]]`) with no provided value → replaced with an empty string `""`.
+- Required tokens with no provided value → `MISSING_PARAMS` error listing `missing` labels, `all_parameters`, `lens_title`, and `lens_description`.
+- Optional tokens (`[[Name!]]`) with no provided value → replaced with an empty string.
+- Unknown keys in `param_values` are ignored.
 
-**Error codes** `NOT_FOUND` · `MISSING_PARAMS` (includes `{ missing: string[] }`)
+**Error codes** `NOT_FOUND` · `MISSING_PARAMS` (includes `{ missing, all_parameters, lens_title, lens_description }`)
 
 ---
 
