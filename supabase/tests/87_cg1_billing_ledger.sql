@@ -4,9 +4,15 @@
 -- =============================================================================
 BEGIN;
 
-SELECT plan(14);
+SELECT plan(15);
 
--- 1. New billing tables exist
+-- 1. billing.runtime_settings singleton row exists
+SELECT ok(
+  (SELECT count(*) = 1 FROM billing.runtime_settings WHERE id = 1),
+  'billing.runtime_settings singleton row (id=1) exists'
+);
+
+-- 2. New billing tables exist
 SELECT ok(
   EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
           WHERE n.nspname = 'billing' AND c.relname = 'pricing_snapshots'),
