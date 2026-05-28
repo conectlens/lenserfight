@@ -34,7 +34,7 @@ jobs:
   release:
     name: ${{ inputs.dry_run && 'Preview' || 'Publish' }} sdk + adapter-connector
     runs-on: ubuntu-latest
-    environment: npm-production
+    environment: npm-release
 
     steps:
       - name: Check release prerequisites
