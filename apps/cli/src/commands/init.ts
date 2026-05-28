@@ -48,13 +48,17 @@ export default defineCommand({
 
     const supabaseUrl = args.url || (mode === 'local' ? LOCAL_DEFAULT_URL : CLOUD_SUPABASE_URL);
 
-    saveConfig({ mode: mode as 'local' | 'cloud', supabaseUrl, dbPort: 54322, apiPort: 54321 });
+    // Project config never stores cloud secrets or personal URL overrides.
+    // For local mode write the URL into the project file (safe, same for all devs).
+    // For cloud mode write only the mode; URL + anon key go to the device config.
+    const projectUrl = mode === 'local' ? supabaseUrl : undefined;
+    saveConfig({ mode: mode as 'local' | 'cloud', supabaseUrl: projectUrl, dbPort: 54322, apiPort: 54321 });
     const userConfigCreated = ensureUserConfigDir();
 
-    // In cloud mode, store the public anon key in the device config so every command
-    // works immediately without requiring SUPABASE_ANON_KEY in the environment.
+    // In cloud mode, store the public URL and anon key in the device config so
+    // every command works immediately without env vars or editing project config.
     if (mode === 'cloud' && !loadEnvConfig().supabaseAnonKey) {
-      saveUserConfig({ supabaseAnonKey: CLOUD_ANON_KEY });
+      saveUserConfig({ supabaseUrl, supabaseAnonKey: CLOUD_ANON_KEY });
     }
 
     consola.success('Created .lenserfight/lenserfight.json (mode: %s)', mode);
