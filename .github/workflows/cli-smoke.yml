@@ -54,6 +54,9 @@ jobs:
       GOOGLE_API_KEY: ''
       MISTRAL_API_KEY: ''
     steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
       - name: Setup workspace
         uses: ./.github/actions/setup-workspace
 
@@ -79,6 +82,9 @@ jobs:
       # File-backed keychain (CI must not require a real OS keyring).
       LF_GATEWAY_KEY_FILE_FALLBACK: '1'
     steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
       - name: Setup workspace
         uses: ./.github/actions/setup-workspace
 

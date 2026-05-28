@@ -1,20 +1,20 @@
 name: Release prelude
 description: >
-  Release-job bootstrap — validates BOT_PAT presence (unless dry-run), checks
-  out with BOT_PAT for protected-branch push authority, sets up pnpm + Node
-  with the npm registry URL, installs deps, and configures git identity.
-  Composes setup-workspace.
+  Release-job bootstrap — validates BOT_PAT presence (unless dry-run), runs
+  setup-workspace with the npm registry URL, and configures git identity.
+
+  IMPORTANT: callers MUST run actions/checkout before this action, using
+  fetch-depth=0, persist-credentials=true, and token=BOT_PAT (with GITHUB_TOKEN
+  fallback) so the release commit can be pushed back to the protected branch.
 
 inputs:
   dry_run:
     description: When 'true', the BOT_PAT prerequisite check and git identity config are skipped.
     required: true
   bot_pat:
-    description: Personal access token with repo scope and branch-protection bypass. Pass secrets.BOT_PAT.
-    required: true
-  github_token:
-    description: Fallback GitHub token for dry-run checkouts. Pass secrets.GITHUB_TOKEN or github.token.
-    required: true
+    description: Personal access token with repo scope and branch-protection bypass. Pass secrets.BOT_PAT. Required when dry_run='false'.
+    required: false
+    default: ''
   node-version:
     description: Node.js version.
     required: false
@@ -38,9 +38,6 @@ runs:
     - name: Setup workspace
       uses: ./.github/actions/setup-workspace
       with:
-        fetch-depth: '0'
-        persist-credentials: 'true'
-        token: ${{ inputs.bot_pat != '' && inputs.bot_pat || inputs.github_token }}
         registry-url: https://registry.npmjs.org
         node-version: ${{ inputs.node-version }}
 

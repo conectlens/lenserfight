@@ -81,12 +81,18 @@ jobs:
           echo "first_release=${{ inputs.first_release == '' && 'false' || inputs.first_release }}" >> "$GITHUB_OUTPUT"
           echo "allow_major=${{ inputs.allow_major == '' && 'false' || inputs.allow_major }}" >> "$GITHUB_OUTPUT"
 
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+
       - name: Release prelude
         uses: ./.github/actions/release-prelude
         with:
           dry_run: ${{ steps.effective.outputs.dry_run }}
           bot_pat: ${{ secrets.BOT_PAT }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure release
         id: release
