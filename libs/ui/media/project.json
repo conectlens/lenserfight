@@ -1,0 +1,9 @@
+{
+  "name": "media",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/media/src",
+  "projectType": "library",
+  "tags": ["layer:ui", "scope:shared", "license:shared"],
+  "// targets": "to see all targets run: nx show project media --web",
+  "targets": {}
+}
