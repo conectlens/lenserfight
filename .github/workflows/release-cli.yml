@@ -160,7 +160,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Preflight release-critical tests
-        run: pnpm nx run cli:test --testPathPatterns="run.spec.ts|auth.spec.ts|local-battle-engine.spec.ts|exec-context.spec.ts"
+        run: pnpm nx run cli:test --testPathPattern='run\.spec\.ts\|auth\.spec\.ts\|local-battle-engine\.spec\.ts\|exec-context\.spec\.ts' --forceExit
 
       - name: Preflight package validation
         run: pnpm nx run cli:smoke-install
