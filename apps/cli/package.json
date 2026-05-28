@@ -1,6 +1,6 @@
 {
   "name": "@lenserfight/cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "LenserFight CLI - manage battles, agents, workflows, and local dev.",
   "private": false,
   "type": "commonjs",
