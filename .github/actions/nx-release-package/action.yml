@@ -45,7 +45,7 @@ inputs:
 
 outputs:
   bumped:
-    description: "'true' if the version was bumped; 'false' if no releasable commits were found."
+    description: "'true' if a publish is needed (newly versioned or prior publish failed); 'false' if version is current on npm."
     value: ${{ steps.version.outputs.bumped }}
   version:
     description: The resolved package version after versioning (unchanged if bumped=false).
@@ -74,22 +74,30 @@ runs:
 
         after="$(node -p "require('./${{ inputs.package_json_path }}').version")"
         tag="${{ inputs.project }}@${after}"
+        pkg_name="$(node -p "require('./${{ inputs.package_json_path }}').name")"
 
         {
           echo "version=$after"
           echo "tag=$tag"
         } >> "$GITHUB_OUTPUT"
 
-        if [[ "$before" == "$after" ]]; then
-          echo "bumped=false" >> "$GITHUB_OUTPUT"
-          echo "::notice::${{ inputs.project }} — no releasable commits, version unchanged at $after. Skipping."
-        else
-          echo "bumped=true" >> "$GITHUB_OUTPUT"
+        if [[ "$before" != "$after" ]]; then
+          echo "bumped=true"         >> "$GITHUB_OUTPUT"
+          echo "needs_commit=true"   >> "$GITHUB_OUTPUT"
           echo "::notice::${{ inputs.project }} bumped $before → $after"
+        elif npm view "${pkg_name}@${after}" version --json >/dev/null 2>&1; then
+          echo "bumped=false"        >> "$GITHUB_OUTPUT"
+          echo "needs_commit=false"  >> "$GITHUB_OUTPUT"
+          echo "::notice::${{ inputs.project }} — version unchanged at $after and already on npm. Skipping."
+        else
+          # Version committed to git but npm publish never completed; re-publish without re-committing.
+          echo "bumped=true"         >> "$GITHUB_OUTPUT"
+          echo "needs_commit=false"  >> "$GITHUB_OUTPUT"
+          echo "::notice::${{ inputs.project }} — $after missing from npm (prior publish failed). Re-publishing."
         fi
 
     - name: Generate changelog
-      if: steps.version.outputs.bumped == 'true'
+      if: steps.version.outputs.needs_commit == 'true'
       shell: bash
       run: |
         set -euo pipefail
@@ -98,7 +106,7 @@ runs:
         pnpm nx "${args[@]}"
 
     - name: Commit and push branch
-      if: steps.version.outputs.bumped == 'true'
+      if: steps.version.outputs.needs_commit == 'true'
       shell: bash
       run: |
         set -euo pipefail
