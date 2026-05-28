@@ -1,0 +1,56 @@
+name: Setup workspace
+description: >
+  Standard workspace bootstrap — checkout, pnpm, Node, and (optionally) install
+  dependencies. Pins every third-party action to the SHA used by the release
+  workflows so all CI jobs share one supply-chain posture.
+
+inputs:
+  node-version:
+    description: Node.js version to install.
+    required: false
+    default: '22'
+  fetch-depth:
+    description: Git fetch depth. Use '0' for release jobs that need full history.
+    required: false
+    default: '1'
+  persist-credentials:
+    description: Whether the checkout step keeps credentials for subsequent git push operations.
+    required: false
+    default: 'false'
+  token:
+    description: GitHub token for the checkout. Defaults to GITHUB_TOKEN; pass BOT_PAT for release jobs that push to protected branches.
+    required: false
+    default: ${{ github.token }}
+  registry-url:
+    description: npm registry URL. Set to https://registry.npmjs.org for publish jobs so NODE_AUTH_TOKEN is honored.
+    required: false
+    default: ''
+  install:
+    description: Whether to run pnpm install --frozen-lockfile after setup.
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        persist-credentials: ${{ inputs.persist-credentials }}
+        token: ${{ inputs.token }}
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
+
+    - name: Setup Node
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+        registry-url: ${{ inputs.registry-url }}
+
+    - name: Install dependencies
+      if: inputs.install == 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile

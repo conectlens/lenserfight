@@ -15,7 +15,7 @@ describe('CJS build output', () => {
     }
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const sdk = require(distPath)
-    expect(typeof sdk.ConnectorAdapterV1).not.toBe('undefined')
+    // ConnectorAdapterV1 is an interface — erased at build time, not present at runtime
     expect(typeof sdk.HttpConnectorAdapter).toBe('function')
     expect(typeof sdk.registerConnectorAdapter).toBe('function')
     expect(Array.isArray(sdk.CONNECTOR_SCOPES)).toBe(true)
