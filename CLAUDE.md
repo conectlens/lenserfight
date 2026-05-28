@@ -105,6 +105,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 | DB/RLS/indexes | `supabase-schema-reviewer` · `database-schema-reviewer` · `supabase-rls-security-reviewer` · `supabase-index-trigger-reviewer` · `supabase-api-rpc-reviewer` |
 | Migration risk | `migration-risk-reviewer` |
 | AI cost / token waste | `ai-cost-manager-reducer` |
+| Docs (refactor / new pages) | `docs-manager` |
 | Commits/docs/product | `smart-commit` · `docs-publication-manager` · `product-owner-decider` · `release-readiness-reviewer` |
 
 † Enforce before approving any React/Vite or React Native/Expo change.

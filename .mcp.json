@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "lenserfight": {
+      "command": "node",
+      "args": ["dist/apps/mcp-server/main.js"],
+      "env": {
+        "SUPABASE_URL": "${SUPABASE_URL}",
+        "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}",
+        "SUPABASE_ANON_KEY": "${SUPABASE_ANON_KEY}",
+        "SUPABASE_JWT_SECRET": "${SUPABASE_JWT_SECRET}",
+        "LENSERFIGHT_LENSER_ID": "${LENSERFIGHT_LENSER_ID}",
+        "MCP_TRANSPORT": "stdio"
+      }
+    }
+  }
+}

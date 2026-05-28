@@ -1,0 +1,71 @@
+{
+  "name": "mcp-server",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/mcp-server/src",
+  "projectType": "application",
+  "tags": ["scope:internal", "license:oss"],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/mcp-server",
+        "format": ["cjs"],
+        "bundle": true,
+        "thirdParty": true,
+        "main": "apps/mcp-server/src/main.ts",
+        "tsConfig": "apps/mcp-server/tsconfig.app.json",
+        "generatePackageJson": true,
+        "esbuildOptions": {
+          "sourcemap": true,
+          "outExtension": {
+            ".js": ".js"
+          },
+          "define": {
+            "import.meta.env": "undefined"
+          }
+        }
+      },
+      "configurations": {
+        "development": {},
+        "production": {
+          "esbuildOptions": {
+            "sourcemap": false,
+            "outExtension": {
+              ".js": ".js"
+            },
+            "define": {
+              "import.meta.env": "undefined"
+            }
+          }
+        }
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "mcp-server:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "mcp-server:build:development"
+        },
+        "production": {
+          "buildTarget": "mcp-server:build:production"
+        }
+      }
+    },
+    "test": {
+      "options": {
+        "jestConfig": "apps/mcp-server/jest.config.cjs",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

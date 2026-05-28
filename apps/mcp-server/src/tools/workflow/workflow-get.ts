@@ -1,0 +1,28 @@
+import { z } from 'zod';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { ok, fail } from '../../types.js';
+
+export function registerWorkflowGet(server: McpServer, sb: SupabaseClient): void {
+  server.tool(
+    'workflow_get',
+    'Get a workflow with its head version and scheduling info.',
+    {
+      workflow_id: z.string().uuid(),
+    },
+    async ({ workflow_id }) => {
+      const t0 = Date.now();
+      try {
+        const { data, error } = (await sb.rpc('fn_mcp_workflow_get' as never, {
+          p_workflow_id: workflow_id,
+        })) as unknown as { data: unknown; error: { message: string } | null };
+
+        if (error) throw new Error(error.message);
+        if (!data) return fail('NOT_FOUND', `Workflow ${workflow_id} not found`, {}, 'workflow_get', t0);
+        return ok(data, 'workflow_get', t0);
+      } catch (e) {
+        return fail('DB_ERROR', (e as Error).message, {}, 'workflow_get', t0);
+      }
+    }
+  );
+}

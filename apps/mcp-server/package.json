@@ -1,0 +1,12 @@
+{
+  "name": "@lenserfight/mcp-server",
+  "version": "1.0.0",
+  "description": "LenserFight MCP server — Lens, Battle, and Workflow tools over stdio/HTTP.",
+  "private": true,
+  "type": "commonjs",
+  "main": "./main.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "Apache-2.0"
+}
