@@ -1,17 +1,12 @@
 name: Release CLI
 
 on:
-  # Auto-release fires after smoke-timing (the longer gate) passes on main.
-  # coverage-gate runs in parallel and typically finishes first, so by the time
-  # smoke-timing completes both gates have had a chance to fail.
-  # Using a single trigger avoids double-firing (workflow_run is OR, not AND).
-  workflow_run:
-    workflows:
-      - smoke-timing
+  # Auto-release fires on every push to main (i.e. after a PR is merged).
+  # The workflow runs its own preflight (preflight-tests.sh + smoke-install)
+  # before publishing, so no external gate is required.
+  push:
     branches:
       - main
-    types:
-      - completed
   workflow_dispatch:
     inputs:
       release_channel:
@@ -75,10 +70,9 @@ jobs:
     # a [skip ci] commit between CI start and finish.
     if: >-
       github.event_name == 'workflow_dispatch' || (
-        github.event_name == 'workflow_run' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        !startsWith(github.event.workflow_run.head_commit.message, 'chore(release):') &&
-        !contains(github.event.workflow_run.head_commit.message, '[skip ci]')
+        github.event_name == 'push' &&
+        !startsWith(github.event.head_commit.message, 'chore(release):') &&
+        !contains(github.event.head_commit.message, '[skip ci]')
       )
 
     steps:
@@ -86,7 +80,7 @@ jobs:
         id: effective
         shell: bash
         run: |
-          # workflow_run trigger: inputs are empty — use stable/auto/no-dry-run defaults.
+          # push trigger: inputs are empty — use stable/auto/no-dry-run defaults.
           echo "dry_run=${{ inputs.dry_run == '' && 'false' || inputs.dry_run }}" >> "$GITHUB_OUTPUT"
           echo "release_channel=${{ inputs.release_channel == '' && 'stable' || inputs.release_channel }}" >> "$GITHUB_OUTPUT"
           echo "version_specifier=${{ inputs.version_specifier == '' && 'auto' || inputs.version_specifier }}" >> "$GITHUB_OUTPUT"
