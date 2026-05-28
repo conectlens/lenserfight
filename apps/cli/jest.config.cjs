@@ -5,6 +5,13 @@ module.exports = {
   transform: {
     '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(citty|@lenserfight/domain)/)',
+  ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    'src/commands/spec\\.ts$',
+  ],
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../../coverage/apps/cli',
   moduleNameMapper: {

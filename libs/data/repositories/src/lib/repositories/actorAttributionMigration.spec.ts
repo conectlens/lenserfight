@@ -7,17 +7,17 @@ const workspaceRoot = existsSync(join(process.cwd(), 'supabase'))
   : resolve(process.cwd(), '../../..')
 
 const migrationSql = readFileSync(
-  join(workspaceRoot, 'supabase/migrations/20260501040000_actor_attribution.sql'),
+  join(workspaceRoot, 'supabase/migration-guards/20260501040000_actor_attribution.sql'),
   'utf8'
 )
 
 const manualRunSql = readFileSync(
-  join(workspaceRoot, 'supabase/migrations/20260501050000_manual_run_attribution.sql'),
+  join(workspaceRoot, 'supabase/migration-guards/20260501050000_manual_run_attribution.sql'),
   'utf8'
 )
 
 const switchIdentifierSql = readFileSync(
-  join(workspaceRoot, 'supabase/migrations/20270701000001_fix_switch_active_lenser_identifier.sql'),
+  join(workspaceRoot, 'supabase/migration-guards/20270701000001_fix_switch_active_lenser_identifier.sql'),
   'utf8'
 )
 

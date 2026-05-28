@@ -323,6 +323,10 @@ BEGIN
      'XP when a battle submission passes judge evaluation. Rewarded once per submission.',
      30, NULL, 5, 150, 750, 'standard', NULL, true),
 
+    (v_battles_app, 'VERIFIED_LOCAL_EXECUTION_COMPLETED', 'Local Execution Verified',
+     'Award XP when a local battle execution is successfully verified by the trust gateway.',
+     120, NULL, 5, 600, 3000, 'hard', NULL, true),
+
     (v_battles_app, 'FAIR_EVALUATION_COMPLETED', 'Fair Evaluation Cast',
      'XP for casting a vote that aligns with consensus (quality signal from judge).',
      15, 600, 10, 150, 750, 'standard', NULL, true)

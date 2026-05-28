@@ -25,11 +25,13 @@ jest.mock('../../utils/output', () => ({
 }))
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyCmd = { run?: (ctx: any) => Promise<void>; subCommands?: Record<string, any> }
+type DevCycleCmd = { run?: (ctx: any) => Promise<void>; subCommands?: Record<string, any> }
 
-async function getDevCycle(): Promise<AnyCmd> {
-  const { default: battleCmd } = (await import('../battle')) as { default: AnyCmd }
-  return battleCmd.subCommands?.['dev-cycle'] as AnyCmd
+export {} // ensure file is treated as a module
+
+async function getDevCycle(): Promise<DevCycleCmd> {
+  const { default: battleCmd } = (await import('../battle')) as { default: DevCycleCmd }
+  return battleCmd.subCommands?.['dev-cycle'] as DevCycleCmd
 }
 
 beforeEach(() => {

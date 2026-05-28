@@ -1,17 +1,26 @@
+import { AgentClient } from './agent-client'
 import { BattleClient } from './battle-client'
 import { createFetchRpcClient, type SupabaseLikeRpcClient } from './client'
+import { LensClient } from './lens-client'
+import { ProtocolClient } from './protocol-client'
 import { TemplateClient } from './template-client'
 import type { CreateClientOptions } from './types'
 
 export class LenserFightClient {
   readonly battles: BattleClient
   readonly templates: TemplateClient
+  readonly lenses: LensClient
+  readonly agents: AgentClient
+  readonly protocols: ProtocolClient
   private readonly rpc: SupabaseLikeRpcClient
 
   constructor(rpcClient: SupabaseLikeRpcClient) {
     this.rpc = rpcClient
     this.battles = new BattleClient(rpcClient)
     this.templates = new TemplateClient(rpcClient)
+    this.lenses = new LensClient(rpcClient)
+    this.agents = new AgentClient(rpcClient)
+    this.protocols = new ProtocolClient(rpcClient)
   }
 
   /**
