@@ -42,8 +42,8 @@ describe('detectNode', () => {
 
 describe('detectDocker', () => {
   it('returns ok when docker is found and running', () => {
-    mockExecSync.mockReturnValueOnce('/usr/bin/docker' as unknown as string) // which docker
-    mockExecSync.mockReturnValueOnce('' as unknown as string) // docker info
+    mockExecSync.mockReturnValueOnce('/usr/bin/docker' as unknown as Buffer) // which docker
+    mockExecSync.mockReturnValueOnce('' as unknown as Buffer) // docker info
 
     const result = detectDocker()
 
@@ -63,8 +63,8 @@ describe('detectDocker', () => {
 
 describe('detectSupabaseCli', () => {
   it('returns ok when supabase CLI is found', () => {
-    mockExecSync.mockReturnValueOnce('/usr/local/bin/supabase' as unknown as string) // which supabase
-    mockExecSync.mockReturnValueOnce('1.120.0\n' as unknown as string) // supabase --version
+    mockExecSync.mockReturnValueOnce('/usr/local/bin/supabase' as unknown as Buffer) // which supabase
+    mockExecSync.mockReturnValueOnce('1.120.0\n' as unknown as Buffer) // supabase --version
 
     const result = detectSupabaseCli()
 
