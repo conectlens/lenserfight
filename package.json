@@ -101,6 +101,7 @@
     "idb": "^8.0.3",
     "lucide-react": "0.344.0",
     "pdf-lib": "^1.17.1",
+    "playwright": "^1.60.0",
     "posthog-js": "^1.363.5",
     "posthog-react-native": "^4.45.16",
     "react": "19.1.0",
