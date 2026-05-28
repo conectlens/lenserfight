@@ -1,15 +1,15 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 export function registerBattleSubmitRun(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'battle_submit_run',
     'Submit an AI or human execution result for a battle contender. The content_text is the response to the battle task_prompt.',
     {
-      battle_id: z.string().uuid(),
-      contender_id: z.string().uuid(),
+      battle_id: zUuid,
+      contender_id: zUuid,
       content_text: z.string().min(1).max(100000),
     },
     async (args) => {

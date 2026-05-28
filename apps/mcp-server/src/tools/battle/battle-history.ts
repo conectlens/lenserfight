@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { paginated, fail } from '../../types.js';
+import { paginated, fail, zUuid } from '../../types.js';
 import { getConfig } from '../../config.js';
 
 export function registerBattleHistory(server: McpServer, sb: SupabaseClient): void {
@@ -9,7 +9,7 @@ export function registerBattleHistory(server: McpServer, sb: SupabaseClient): vo
     'battle_history',
     'Get structured battle history for a lenser — battles they created or participated in, with outcomes.',
     {
-      lenser_id: z.string().uuid().optional(),
+      lenser_id: zUuid.optional(),
       limit: z.number().int().min(1).max(100).default(20).optional(),
       offset: z.number().int().min(0).default(0).optional(),
       status: z.enum(['closed','published','archived']).optional(),

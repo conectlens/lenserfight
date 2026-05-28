@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 export function registerBattleScore(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'battle_score',
     'Read scoring data for a battle: vote aggregates per contender and any AI judge verdicts.',
     {
-      battle_id: z.string().uuid(),
+      battle_id: zUuid,
     },
     async ({ battle_id }) => {
       const t0 = Date.now();

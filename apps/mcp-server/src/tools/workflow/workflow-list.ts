@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { paginated, fail } from '../../types.js';
+import { paginated, fail, zUuid } from '../../types.js';
 
 export function registerWorkflowList(server: McpServer, sb: SupabaseClient): void {
   server.tool(
@@ -11,7 +11,7 @@ export function registerWorkflowList(server: McpServer, sb: SupabaseClient): voi
       limit: z.number().int().min(1).max(100).default(20).optional(),
       offset: z.number().int().min(0).default(0).optional(),
       visibility: z.enum(['public', 'private', 'unlisted']).optional(),
-      lenser_id: z.string().uuid().optional(),
+      lenser_id: zUuid.optional(),
     },
     async (args) => {
       const t0 = Date.now();

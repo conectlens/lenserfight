@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 export function registerWorkflowGet(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'workflow_get',
     'Get a workflow with its head version and scheduling info.',
     {
-      workflow_id: z.string().uuid(),
+      workflow_id: zUuid,
     },
     async ({ workflow_id }) => {
       const t0 = Date.now();

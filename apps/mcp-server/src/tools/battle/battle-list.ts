@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { paginated, fail } from '../../types.js';
+import { paginated, fail, zUuid } from '../../types.js';
 
 export function registerBattleList(server: McpServer, sb: SupabaseClient): void {
   server.tool(
@@ -12,7 +12,7 @@ export function registerBattleList(server: McpServer, sb: SupabaseClient): void 
       offset: z.number().int().min(0).default(0).optional(),
       status: z.enum(['draft','open','executing','voting','scoring','closed','published','archived']).optional(),
       battle_type: z.enum(['ai_vs_ai','human_vs_human_ai_votes','human_vs_human_open_votes','human_vs_ai','workflow_battle','lenser_battle']).optional(),
-      creator_lenser_id: z.string().uuid().optional(),
+      creator_lenser_id: zUuid.optional(),
     },
     async (args) => {
       const t0 = Date.now();

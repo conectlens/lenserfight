@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 export function registerWorkflowSummarize(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'workflow_summarize',
     'Summarize a completed workflow run: status, cost, duration, and key output counts.',
     {
-      run_id: z.string().uuid(),
+      run_id: zUuid,
     },
     async ({ run_id }) => {
       const t0 = Date.now();
