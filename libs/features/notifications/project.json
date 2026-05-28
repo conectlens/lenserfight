@@ -1,0 +1,14 @@
+{
+  "name": "notifications",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/notifications/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:notifications",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project notifications --web",
+  "targets": {}
+}
