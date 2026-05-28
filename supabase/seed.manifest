@@ -73,8 +73,3 @@ seeds/50_lenser_design_workflows.sql
 seeds/51_lenser_character_battles.sql
 seeds/06_multimodal_battles.sql
 seeds/52_battle_e2e_seed.sql
-
-# ── CI acceptance fixtures ────────────────────────────────────────────────────
-# Inserts the minimal rows needed for the seeds-smoke acceptance gate.
-# Must run last so all FK dependencies (workflows, lensers, etc.) are present.
-seeds/60_ci_workflow_run.sql
