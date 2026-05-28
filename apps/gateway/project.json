@@ -1,0 +1,79 @@
+{
+  "name": "gateway",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/gateway/src",
+  "projectType": "application",
+  "tags": [
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/gateway",
+        "format": ["cjs"],
+        "bundle": true,
+        "main": "apps/gateway/src/main.ts",
+        "tsConfig": "apps/gateway/tsconfig.app.json",
+        "generatePackageJson": true,
+        "esbuildOptions": {
+          "sourcemap": true,
+          "outExtension": { ".js": ".js" },
+          "banner": { "js": "#!/usr/bin/env node" }
+        }
+      },
+      "configurations": {
+        "development": {},
+        "production": {
+          "esbuildOptions": {
+            "sourcemap": false,
+            "outExtension": { ".js": ".js" },
+            "banner": { "js": "#!/usr/bin/env node" }
+          }
+        }
+      }
+    },
+    "build-init": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/gateway",
+        "format": ["cjs"],
+        "bundle": true,
+        "deleteOutputPath": false,
+        "main": "apps/gateway/src/init.ts",
+        "tsConfig": "apps/gateway/tsconfig.app.json",
+        "esbuildOptions": {
+          "outExtension": { ".js": ".js" },
+          "banner": { "js": "#!/usr/bin/env node" }
+        }
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "gateway:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": { "buildTarget": "gateway:build:development" },
+        "production": { "buildTarget": "gateway:build:production" }
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../coverage/apps/gateway"
+      }
+    }
+  }
+}
