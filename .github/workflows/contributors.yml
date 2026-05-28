@@ -41,10 +41,9 @@ jobs:
           use_username: true
           columns_per_row: 6
           commit_message: "docs(contributors): sync contributors in README.md"
-          auto_detect_branch_protection: true
+          auto_detect_branch_protection: false
           image_size: 100
           collaborators: direct
-          pr_title_on_protected: "docs(contributor): contributors readme action update"
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_PAT }}
 
@@ -56,9 +55,8 @@ jobs:
           use_username: true
           columns_per_row: 6
           commit_message: "docs(contributors): sync contributors in docs"
-          auto_detect_branch_protection: true
+          auto_detect_branch_protection: false
           image_size: 100
           collaborators: direct
-          pr_title_on_protected: "docs(contributor): contributors readme action update"
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_PAT }}
