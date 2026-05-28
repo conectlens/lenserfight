@@ -60,3 +60,16 @@ jobs:
           collaborators: direct
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_PAT }}
+
+      - name: Fix malformed tbody closing tag
+        if: steps.pat.outputs.available == 'true'
+        run: |
+          # akhilmhdh/contributors-readme-action emits <tbody> instead of </tbody>
+          # as the closing tag — fix both files after the action commits.
+          git pull --ff-only
+          for f in README.md docs/community/contributors.md; do
+            perl -i -0pe 's|<tbody>(\n</table>)|</tbody>$1|g' "$f"
+          done
+          git add README.md docs/community/contributors.md
+          git diff --cached --quiet || git commit -m "docs(contributors): fix malformed tbody closing tag [skip ci]"
+          git push
