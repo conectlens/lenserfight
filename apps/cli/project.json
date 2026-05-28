@@ -14,6 +14,7 @@
         "outputPath": "dist/apps/cli",
         "format": ["cjs"],
         "bundle": true,
+        "thirdParty": true,
         "main": "apps/cli/src/main.ts",
         "tsConfig": "apps/cli/tsconfig.app.json",
         "assets": [
