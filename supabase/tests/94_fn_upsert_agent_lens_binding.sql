@@ -74,8 +74,13 @@ FROM _fix
 ON CONFLICT DO NOTHING;
 
 -- Create a second unrelated human lenser (stranger)
-INSERT INTO lensers.profiles (id, handle, status, type)
-VALUES ('99900004-0000-0000-0000-000000000001', '_test_stranger', 'active', 'human')
+INSERT INTO auth.users (id, email)
+VALUES ('99900004-0000-0000-0000-000000000001', 'test94-stranger@test.local')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO lensers.profiles (id, user_id, handle, display_name, status, type)
+VALUES ('99900004-0000-0000-0000-000000000001', '99900004-0000-0000-0000-000000000001',
+        '_test_stranger', 'T94 Stranger', 'active', 'human')
 ON CONFLICT DO NOTHING;
 
 -- ─── Test 1: owner binds their own (human-owned) lens ────────────────────────
