@@ -19,6 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.CONTRIBUTORS_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Update README.md contributors list
         uses: akhilmhdh/contributors-readme-action@v2.3.11
@@ -30,7 +31,7 @@ jobs:
           auto_detect_branch_protection: true
           image_size: 100
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CONTRIBUTORS_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Update docs community contributors list
         uses: akhilmhdh/contributors-readme-action@v2.3.11
@@ -42,4 +43,4 @@ jobs:
           auto_detect_branch_protection: true
           image_size: 100
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CONTRIBUTORS_PAT || secrets.GITHUB_TOKEN }}
