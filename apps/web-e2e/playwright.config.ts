@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
-import { workspaceRoot } from '@nx/devkit'
+import { resolve } from 'path'
 
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000'
+const workspaceRoot = resolve(__dirname, '../..')
 
 export default defineConfig({
   testDir: './src',
