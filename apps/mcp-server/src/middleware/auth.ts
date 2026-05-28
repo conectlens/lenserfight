@@ -75,10 +75,7 @@ export async function resolveAuth(
 ): Promise<AuthContext | null> {
   if (!authHeader?.startsWith('Bearer ')) return null;
   const token = authHeader.slice(7);
-
-  if (token.startsWith('lf_mcp_')) {
-    return resolveMcpToken(token, cfg);
-  }
+  if (token.startsWith('lf_mcp_')) return resolveMcpToken(token, cfg);
   return resolveSupabaseJwt(token, cfg);
 }
 
