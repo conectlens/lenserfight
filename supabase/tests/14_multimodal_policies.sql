@@ -3,7 +3,7 @@
 -- =============================================================================
 BEGIN;
 
-SELECT plan(5);
+SELECT plan(6);
 
 -- 1. media_manifest column exists on lenses.workflow_runs
 SELECT has_column(
@@ -56,6 +56,12 @@ SELECT throws_ok(
   'P0001',
   NULL,
   'fn_assert_modality_allowed should raise P0001 for unknown agent + video modality'
+);
+
+-- 6. fn_append_workflow_run_media is granted to service_role only
+SELECT ok(
+  NOT has_function_privilege('authenticated', 'public.fn_append_workflow_run_media(uuid,uuid,text,text,text)', 'EXECUTE'),
+  'fn_append_workflow_run_media should NOT be executable by authenticated role'
 );
 
 SELECT finish();
