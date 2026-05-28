@@ -1,0 +1,7 @@
+interface:
+  display_name: "Repository Pattern Reviewer"
+  short_description: "Review repositories, cache behavior, data-access boundaries, and error mapping. Use when persistence code becomes leaky, caching is suspicious, or feature code reaches into transport/storage details."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#ffde59"
+  default_prompt: "Review repository boundaries, caching, and error mapping; propose a cleaner contract."
