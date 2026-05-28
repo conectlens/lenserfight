@@ -209,4 +209,8 @@ seeds/40_benchmark.sql
 #                                  with pre-cast votes. Dev-only.
 #
 # seeds/61_dev_byok_stubs.sql   — Echo provider BYOK stub for dev user. Dev-only.
+#
+# seeds/60_ci_workflow_run.sql  — Minimal workflow_run fixture for the
+#                                  seeds-smoke acceptance gate
+#                                  (lenses.workflow_runs >= 1). Dev/CI only.
 # =============================================================================
