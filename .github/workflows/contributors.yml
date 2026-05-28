@@ -66,6 +66,8 @@ jobs:
         run: |
           # akhilmhdh/contributors-readme-action emits <tbody> instead of </tbody>
           # as the closing tag — fix both files after the action commits.
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
           git pull --ff-only
           for f in README.md docs/community/contributors.md; do
             perl -i -0pe 's|<tbody>(\n</table>)|</tbody>$1|g' "$f"
