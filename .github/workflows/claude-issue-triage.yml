@@ -43,7 +43,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          node-version: 22
 
       - name: Run Claude to fix issue and open PR
         # Pin to an immutable commit SHA before merging this change. Resolve via:

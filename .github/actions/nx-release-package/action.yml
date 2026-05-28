@@ -1,0 +1,153 @@
+name: Nx release one package
+description: >
+  Version (conventional commits), generate changelog, commit, tag, push, build,
+  publish to npm with provenance, and verify registry propagation — for a single
+  Nx-managed package. Caller owns checkout, pnpm/Node setup, and git config.
+
+inputs:
+  project:
+    description: Nx project name (e.g. sdk, cli, adapters-connector).
+    required: true
+  package_json_path:
+    description: Workspace-relative path to the package's package.json (e.g. libs/sdk/package.json).
+    required: true
+  dist_path:
+    description: Workspace-relative path to the publishable dist directory (e.g. dist/libs/sdk).
+    required: true
+  dist_tag:
+    description: npm dist-tag for the publish (e.g. latest, alpha, beta).
+    required: true
+    default: latest
+  npm_access:
+    description: npm publish access level (public or restricted).
+    required: true
+    default: public
+  npm_token:
+    description: npm automation token (NODE_AUTH_TOKEN). Pass via secrets.NPM_TOKEN.
+    required: true
+  first_release:
+    description: Set to 'true' only for the very first Nx-managed release of this package.
+    required: false
+    default: 'false'
+  specifier:
+    description: Nx version specifier override. Leave empty or 'auto' for conventional commits.
+    required: false
+    default: auto
+  preid:
+    description: Prerelease identifier appended to bumped version (e.g. beta, rc). Empty for stable.
+    required: false
+    default: ''
+  git_ref:
+    description: Branch ref to push the release commit to (e.g. main).
+    required: true
+    default: main
+
+outputs:
+  bumped:
+    description: "'true' if the version was bumped; 'false' if no releasable commits were found."
+    value: ${{ steps.version.outputs.bumped }}
+  version:
+    description: The resolved package version after versioning (unchanged if bumped=false).
+    value: ${{ steps.version.outputs.version }}
+  tag:
+    description: The git tag that was (or would be) created (e.g. sdk@1.2.3).
+    value: ${{ steps.version.outputs.tag }}
+
+runs:
+  using: composite
+  steps:
+    - name: Version package
+      id: version
+      shell: bash
+      run: |
+        set -euo pipefail
+        before="$(node -p "require('./${{ inputs.package_json_path }}').version")"
+
+        args=(release version --projects=${{ inputs.project }} --stage-changes)
+        specifier='${{ inputs.specifier }}'
+        preid='${{ inputs.preid }}'
+        if [[ -n "$specifier" && "$specifier" != 'auto' ]]; then args+=("$specifier"); fi
+        if [[ -n "$preid" ]]; then args+=(--preid "$preid"); fi
+        if [[ '${{ inputs.first_release }}' == 'true' ]]; then args+=(--first-release); fi
+        pnpm nx "${args[@]}"
+
+        after="$(node -p "require('./${{ inputs.package_json_path }}').version")"
+        tag="${{ inputs.project }}@${after}"
+
+        {
+          echo "version=$after"
+          echo "tag=$tag"
+        } >> "$GITHUB_OUTPUT"
+
+        if [[ "$before" == "$after" ]]; then
+          echo "bumped=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::${{ inputs.project }} — no releasable commits, version unchanged at $after. Skipping."
+        else
+          echo "bumped=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::${{ inputs.project }} bumped $before → $after"
+        fi
+
+    - name: Generate changelog
+      if: steps.version.outputs.bumped == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        args=(release changelog '${{ steps.version.outputs.version }}' --projects=${{ inputs.project }})
+        if [[ '${{ inputs.first_release }}' == 'true' ]]; then args+=(--first-release); fi
+        pnpm nx "${args[@]}"
+
+    - name: Commit and tag
+      if: steps.version.outputs.bumped == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        pkg_json="${{ inputs.package_json_path }}"
+        changelog="${pkg_json%/package.json}/CHANGELOG.md"
+        tag='${{ steps.version.outputs.tag }}'
+
+        git add "$pkg_json" "$changelog" --ignore-missing
+        if git diff --cached --quiet; then
+          echo "::error::Nothing staged after version+changelog for ${{ inputs.project }} — unexpected state." >&2
+          exit 1
+        fi
+
+        git commit -m "chore(release): $tag [skip ci]"
+
+        if git rev-parse "$tag" >/dev/null 2>&1; then
+          echo "::warning::Tag $tag already exists — skipping tag creation."
+        else
+          git tag -a "$tag" -m "$tag"
+        fi
+
+        git push origin "HEAD:${{ inputs.git_ref }}"
+        git push origin "$tag"
+
+    - name: Build
+      if: steps.version.outputs.bumped == 'true'
+      shell: bash
+      run: pnpm nx build ${{ inputs.project }}
+
+    - name: Publish to npm
+      if: steps.version.outputs.bumped == 'true'
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm_token }}
+      run: |
+        npm publish '${{ inputs.dist_path }}' \
+          --access '${{ inputs.npm_access }}' \
+          --tag '${{ inputs.dist_tag }}' \
+          --provenance
+
+    - name: Verify registry propagation
+      if: steps.version.outputs.bumped == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        pkg_name="$(node -p "require('./${{ inputs.package_json_path }}').name")"
+        version='${{ steps.version.outputs.version }}'
+        for attempt in 1 2 3 4 5; do
+          npm view "${pkg_name}@${version}" version --json > /dev/null 2>&1 && break
+          echo "Attempt $attempt: ${pkg_name}@${version} not yet propagated, waiting..."
+          sleep $((attempt * 10))
+        done
+        echo "Verified: ${pkg_name}@${version}"

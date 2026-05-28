@@ -10,6 +10,7 @@ on:
       - 'docs/en/reference/cli/**'
       - 'tools/gen-cli-docs.mjs'
       - 'tools/check-cli-docs.mjs'
+      - '.github/actions/setup-workspace/**'
       - '.github/workflows/docs-drift.yml'
   push:
     branches:
@@ -31,17 +32,8 @@ jobs:
     name: CLI docs drift check (gen-cli-docs --check)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
 
       - name: Check CLI docs are up to date
         run: pnpm gen-cli-docs:check
@@ -50,17 +42,8 @@ jobs:
     name: CLI docs coverage check (registered command ↔ markdown page)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
 
       - name: Verify every registered subcommand has a docs page (and vice versa)
         run: pnpm check-cli-docs
