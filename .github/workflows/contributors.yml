@@ -10,6 +10,10 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: contributors-sync
+  cancel-in-progress: true
+
 jobs:
   sync-contributors:
     runs-on: ubuntu-latest
@@ -40,7 +44,7 @@ jobs:
           readme_path: README.md
           use_username: true
           columns_per_row: 6
-          commit_message: "docs(contributors): sync contributors in README.md"
+          commit_message: "docs(contributors): sync contributors in README.md [skip ci]"
           auto_detect_branch_protection: false
           image_size: 100
           collaborators: direct
@@ -54,7 +58,7 @@ jobs:
           readme_path: docs/community/contributors.md
           use_username: true
           columns_per_row: 6
-          commit_message: "docs(contributors): sync contributors in docs"
+          commit_message: "docs(contributors): sync contributors in docs [skip ci]"
           auto_detect_branch_protection: false
           image_size: 100
           collaborators: direct
