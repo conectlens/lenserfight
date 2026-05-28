@@ -1,6 +1,6 @@
 {
   "name": "@lenserfight/sdk",
-  "version": "0.2.0-alpha.1",
+  "version": "0.2.0-alpha.2",
   "description": "LenserFight public client SDK — read battles, lenses, agents, protocols, and templates from any Supabase-backed deployment",
   "license": "Apache-2.0",
   "main": "./index.cjs",
@@ -13,7 +13,12 @@
       "require": "./index.cjs"
     }
   },
-  "files": ["index.mjs", "index.cjs", "index.d.ts", "README.md"],
+  "files": [
+    "index.mjs",
+    "index.cjs",
+    "index.d.ts",
+    "README.md"
+  ],
   "keywords": [
     "lenserfight",
     "ai-agents",
