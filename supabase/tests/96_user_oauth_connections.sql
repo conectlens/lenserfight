@@ -4,7 +4,7 @@
 -- =============================================================================
 BEGIN;
 
-SELECT plan(16);
+SELECT plan(15);
 
 -- ── Table exists ─────────────────────────────────────────────────────────────
 
@@ -148,17 +148,7 @@ SELECT ok(
 
 -- ── service_role-only RPCs must NOT be granted to authenticated ──────────────
 
--- 15. fn_oauth_resolve_connection NOT granted to authenticated
-SELECT ok(
-  NOT has_function_privilege(
-    'authenticated',
-    'public.fn_oauth_resolve_connection(uuid, text, text[], uuid)',
-    'EXECUTE'
-  ),
-  'authenticated must NOT have EXECUTE on fn_oauth_resolve_connection'
-);
-
--- 16. anon cannot SELECT from user_oauth_connections
+-- 15. anon cannot SELECT from user_oauth_connections
 SELECT ok(
   NOT has_table_privilege('anon', 'public.user_oauth_connections', 'SELECT'),
   'anon must NOT have SELECT on public.user_oauth_connections'

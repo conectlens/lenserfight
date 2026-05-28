@@ -18,19 +18,20 @@ SELECT plan(7);
 
 -- ─── Fixtures ────────────────────────────────────────────────────────────────
 
--- Use an existing human lenser: @omerfar (from seed)
--- We create a fresh AI lenser owned by @omerfar for isolation.
+-- Create a synthetic human owner (avoids dependency on any specific seed handle)
+INSERT INTO auth.users (id, email)
+VALUES ('99900099-0000-0000-0000-000000000001', 'test94-owner@test.local')
+ON CONFLICT (id) DO NOTHING;
 
-DO $$ BEGIN
-  -- Ensure @omerfar is active
-  UPDATE lensers.profiles SET status = 'active' WHERE handle = 'omerfar';
-END $$;
+INSERT INTO lensers.profiles (id, user_id, handle, display_name, type, status)
+VALUES ('99900099-0000-0000-0000-000000000001', '99900099-0000-0000-0000-000000000001',
+        '_t94_fix_owner', 'T94 Owner', 'human', 'active')
+ON CONFLICT (id) DO NOTHING;
 
--- Helper: get @omerfar's profile id
 CREATE TEMP TABLE _fix AS
 SELECT
-  (SELECT id FROM lensers.profiles WHERE handle = 'omerfar')            AS human_id,
-  (SELECT user_id FROM lensers.profiles WHERE handle = 'omerfar')       AS human_user_id,
+  '99900099-0000-0000-0000-000000000001'::uuid                          AS human_id,
+  '99900099-0000-0000-0000-000000000001'::uuid                          AS human_user_id,
   -- public system lens (owned by @lenserfight)
   '40000000-0001-0003-0001-000000000001'::uuid                          AS public_lens_id,
   -- lenserfight system profile id

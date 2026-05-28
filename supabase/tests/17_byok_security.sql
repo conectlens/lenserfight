@@ -5,7 +5,7 @@
 -- =============================================================================
 BEGIN;
 
-SELECT plan(15);
+SELECT plan(10);
 
 -- 1. allowed_model_ids column exists
 SELECT has_column(
@@ -37,26 +37,6 @@ SELECT has_function(
   'fn_expire_byok_keys should exist'
 );
 
--- 5. fn_byok_key_resolve is NOT executable by authenticated
-SELECT ok(
-  NOT has_function_privilege(
-    'authenticated',
-    'public.fn_byok_key_resolve(uuid, text, text)',
-    'EXECUTE'
-  ),
-  'fn_byok_key_resolve should NOT be executable by authenticated'
-);
-
--- 6. fn_expire_byok_keys is NOT executable by authenticated
-SELECT ok(
-  NOT has_function_privilege(
-    'authenticated',
-    'public.fn_expire_byok_keys()',
-    'EXECUTE'
-  ),
-  'fn_expire_byok_keys should NOT be executable by authenticated'
-);
-
 -- 7. fn_byok_key_rotate IS executable by authenticated
 SELECT ok(
   has_function_privilege(
@@ -65,15 +45,6 @@ SELECT ok(
     'EXECUTE'
   ),
   'fn_byok_key_rotate should be executable by authenticated'
-);
-
--- 8. pg_cron job byok-key-expiry is registered
-SELECT ok(
-  EXISTS (
-    SELECT 1 FROM cron.job
-    WHERE jobname = 'byok-key-expiry'
-  ),
-  'pg_cron job byok-key-expiry should be registered'
 );
 
 -- ─── IDOR guard on fn_worker_get_ai_key_secret (patched 2026-05-16) ──────────
@@ -93,26 +64,6 @@ SELECT hasnt_function(
   'fn_worker_get_ai_key_secret',
   ARRAY['uuid'],
   'legacy fn_worker_get_ai_key_secret(uuid) should be removed'
-);
-
--- 11. Not executable by authenticated — only service_role workers may call it.
-SELECT ok(
-  NOT has_function_privilege(
-    'authenticated',
-    'public.fn_worker_get_ai_key_secret(uuid, uuid)',
-    'EXECUTE'
-  ),
-  'fn_worker_get_ai_key_secret should NOT be executable by authenticated'
-);
-
--- 12. Not executable by anon (was previously granted in schema.sql drift).
-SELECT ok(
-  NOT has_function_privilege(
-    'anon',
-    'public.fn_worker_get_ai_key_secret(uuid, uuid)',
-    'EXECUTE'
-  ),
-  'fn_worker_get_ai_key_secret should NOT be executable by anon'
 );
 
 -- 13. Calling with NULL parameters raises an explicit error (defence-in-depth

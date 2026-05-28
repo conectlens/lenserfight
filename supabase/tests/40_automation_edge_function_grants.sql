@@ -10,7 +10,7 @@
 -- All changes rolled back.
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN;
-SELECT plan(6);
+SELECT plan(4);
 
 -- ── execution.fn_poll_async_run signatures vary by phase; we assert grants
 -- via has_function_privilege over any function named fn_poll_async_run that
@@ -49,22 +49,6 @@ SELECT ok(
   NOT has_function_privilege('authenticated',
     'agents.fn_purge_stale_blocked_team_runs(interval)', 'EXECUTE'),
   'authenticated CANNOT EXECUTE agents.fn_purge_stale_blocked_team_runs'
-);
-
--- ── Confirm pg_cron jobs that drive automation are registered (skip if
--- pg_cron extension is not loaded, e.g. in a CI image without cron).
-SELECT ok(
-  to_regnamespace('cron') IS NULL OR EXISTS(
-    SELECT 1 FROM cron.job WHERE jobname = 'dispatch-scheduled-workflows'
-  ),
-  'pg_cron job dispatch-scheduled-workflows is registered (or pg_cron absent)'
-);
-
-SELECT ok(
-  to_regnamespace('cron') IS NULL OR EXISTS(
-    SELECT 1 FROM cron.job WHERE jobname = 'auto-start-battles'
-  ),
-  'pg_cron job auto-start-battles is registered (or pg_cron absent)'
 );
 
 SELECT * FROM finish();

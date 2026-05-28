@@ -21,7 +21,20 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.CONTRIBUTORS_PAT || secrets.GITHUB_TOKEN }}
 
+      - name: Check PAT availability
+        id: pat
+        env:
+          CONTRIBUTORS_PAT: ${{ secrets.CONTRIBUTORS_PAT }}
+        run: |
+          if [[ -n "$CONTRIBUTORS_PAT" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::CONTRIBUTORS_PAT is not set — contributors sync skipped. Set the secret to enable automatic PR creation on protected branches."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Update README.md contributors list
+        if: steps.pat.outputs.available == 'true'
         uses: akhilmhdh/contributors-readme-action@v2.3.11
         with:
           readme_path: README.md
@@ -30,10 +43,13 @@ jobs:
           commit_message: "docs(contributors): sync contributors in README.md"
           auto_detect_branch_protection: true
           image_size: 100
+          collaborators: direct
+          pr_title_on_protected: "docs(contributor): contributors readme action update"
         env:
-          GITHUB_TOKEN: ${{ secrets.CONTRIBUTORS_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CONTRIBUTORS_PAT }}
 
       - name: Update docs community contributors list
+        if: steps.pat.outputs.available == 'true'
         uses: akhilmhdh/contributors-readme-action@v2.3.11
         with:
           readme_path: docs/community/contributors.md
@@ -42,5 +58,7 @@ jobs:
           commit_message: "docs(contributors): sync contributors in docs"
           auto_detect_branch_protection: true
           image_size: 100
+          collaborators: direct
+          pr_title_on_protected: "docs(contributor): contributors readme action update"
         env:
-          GITHUB_TOKEN: ${{ secrets.CONTRIBUTORS_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CONTRIBUTORS_PAT }}

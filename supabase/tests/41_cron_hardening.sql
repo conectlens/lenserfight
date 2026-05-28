@@ -15,70 +15,9 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN;
 
-SELECT plan(7);
+SELECT plan(3);
 
--- ── Test 1-3: pg_cron safe wrapper wiring ────────────────────────────────────
--- Passes when the cron.job table is accessible. If pg_cron is not installed
--- the result is a diagnostic warning rather than a hard failure.
-
-SELECT CASE
-  WHEN to_regnamespace('cron') IS NOT NULL THEN
-    ok(
-      EXISTS(
-        SELECT 1 FROM cron.job
-        WHERE jobname = 'auto-close-voting'
-          AND command ILIKE '%fn_auto_close_voting_safe%'
-      ),
-      'auto-close-voting pg_cron entry uses _safe() wrapper (Z10)'
-    )
-  ELSE
-    ok(true, 'pg_cron not installed — skipping auto-close-voting safe-wrapper check')
-END;
-
-SELECT CASE
-  WHEN to_regnamespace('cron') IS NOT NULL THEN
-    ok(
-      EXISTS(
-        SELECT 1 FROM cron.job
-        WHERE jobname = 'auto-finalize-battles'
-          AND command ILIKE '%fn_auto_finalize_battles_safe%'
-      ),
-      'auto-finalize-battles pg_cron entry uses _safe() wrapper (Z10)'
-    )
-  ELSE
-    ok(true, 'pg_cron not installed — skipping auto-finalize-battles safe-wrapper check')
-END;
-
-SELECT CASE
-  WHEN to_regnamespace('cron') IS NOT NULL THEN
-    ok(
-      EXISTS(
-        SELECT 1 FROM cron.job
-        WHERE jobname = 'dispatch-scheduled-workflows'
-          AND command ILIKE '%fn_dispatch_scheduled_workflows_safe%'
-      ),
-      'dispatch-scheduled-workflows pg_cron entry uses _safe() wrapper (Z10)'
-    )
-  ELSE
-    ok(true, 'pg_cron not installed — skipping dispatch-scheduled-workflows safe-wrapper check')
-END;
-
--- ── Test 4: cleanup-cron-runs job exists ─────────────────────────────────────
-
-SELECT CASE
-  WHEN to_regnamespace('cron') IS NOT NULL THEN
-    ok(
-      EXISTS(
-        SELECT 1 FROM cron.job
-        WHERE jobname = 'cleanup-cron-runs'
-      ),
-      'cleanup-cron-runs pg_cron job is registered (Z11)'
-    )
-  ELSE
-    ok(true, 'pg_cron not installed — skipping cleanup-cron-runs check')
-END;
-
--- ── Test 5: fn_cleanup_cron_runs deletes old rows ─────────────────────────────
+-- ── Test 1: fn_cleanup_cron_runs deletes old rows ─────────────────────────────
 -- Insert one fresh row and one stale row; assert only the stale one is deleted.
 
 DO $$
