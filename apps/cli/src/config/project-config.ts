@@ -21,7 +21,6 @@ export interface ProjectConfig {
 
 /** Device-level config — secrets, auth tokens, and workspace registry. */
 export interface UserConfig {
-  supabaseUrl?: string;
   supabaseAnonKey?: string;
   supabaseServiceRoleKey?: string;
   defaultAdapterId?: string;
@@ -93,10 +92,6 @@ export const LOCAL_ANON_KEY =
 const LOCAL_SERVICE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0';
 
-// Production LenserFight cloud — public/anon values safe to ship in the binary.
-export const CLOUD_SUPABASE_URL = 'https://jrjlbycxihqqbwmsmpjn.supabase.co';
-export const CLOUD_ANON_KEY = 'sb_publishable_L1H6fuj1jULbxhWBrfze2Q_vUyb7cB6';
-
 // ---------------------------------------------------------------------------
 // OS-aware device config directory
 //
@@ -147,7 +142,7 @@ const PROJECT_CONFIG_FILE_IN_DIR = 'lenserfight.json';
 const PROJECT_CONFIG_LEGACY_FILE = '.lenserfight.json';
 
 const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
-  mode: 'cloud',
+  mode: 'local',
   dbPort: 54322,
   apiPort: 54321,
 };
@@ -467,9 +462,8 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
     mode: forcedLocal ? 'local' : project.mode,
     supabaseUrl:
       env.supabaseUrl ||
-      user.supabaseUrl ||
       project.supabaseUrl ||
-      (isLocal ? LOCAL_SUPABASE_URL : CLOUD_SUPABASE_URL),
+      (isLocal ? LOCAL_SUPABASE_URL : ''),
     cloudApiUrl:
       env.cloudApiUrl ||
       project.cloudApiUrl ||
@@ -484,7 +478,7 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
     supabaseAnonKey:
       env.supabaseAnonKey ||
       user.supabaseAnonKey ||
-      (isLocal ? LOCAL_ANON_KEY : CLOUD_ANON_KEY),
+      (isLocal ? LOCAL_ANON_KEY : ''),
     supabaseServiceRoleKey:
       env.supabaseServiceRoleKey ||
       user.supabaseServiceRoleKey ||
