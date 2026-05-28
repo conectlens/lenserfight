@@ -58,8 +58,8 @@ jobs:
 
       - name: Preflight tests
         run: |
-          pnpm nx test sdk --ci
-          pnpm nx test adapters-connector --ci
+          pnpm nx run sdk:test-ci
+          pnpm nx run adapters-connector:test-ci
 
       - name: Preview version + changelog (dry run)
         if: inputs.dry_run
