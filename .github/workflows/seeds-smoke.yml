@@ -52,7 +52,7 @@ jobs:
 
       - name: Acceptance — workflow_runs must be non-empty
         run: |
-          PSQL="supabase db psql -- -t -A -c"
+          PSQL="psql ${LOCAL_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres} -t -A -c"
           RUNS=$($PSQL "SELECT count(*) FROM lenses.workflow_runs;")
           AGENTS=$($PSQL "SELECT count(*) FROM agents.ai_lensers;")
           VERSIONS=$($PSQL "SELECT count(*) FROM lenses.versions;")
