@@ -108,9 +108,12 @@ Prefer existing skills before inventing workflows. Keep changes minimal, local, 
 | DTOs/contracts/data | `contract-dto-consistency-reviewer` · `api-contract-reviewer` · `repository-pattern-reviewer` |
 | DB/RLS/indexes | `supabase-schema-reviewer` · `database-schema-reviewer` · `supabase-rls-security-reviewer` · `supabase-index-trigger-reviewer` · `supabase-api-rpc-reviewer` |
 | Migration risk | `migration-risk-reviewer` |
+| AI cost / token waste | `ai-cost-manager-reducer` |
 | Commits/docs/product | `smart-commit` · `docs-publication-manager` · `product-owner-decider` · `release-readiness-reviewer` |
 
 † Enforce before approving any React/Vite or React Native/Expo change.
+
+Before approving or modifying AI-powered code, always consider AI cost, token usage, repeated AI calls, cache opportunities, model-routing efficiency, and whether the optimization preserves the full reasoning chain and system correctness.
 
 ## Teams (cross-layer only)
 `supabase-platform-team` · `frontend-experience-team` · `feature-delivery-team` · `release-governance-team` · `architecture-review-team`
