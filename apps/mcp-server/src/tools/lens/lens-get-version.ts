@@ -1,15 +1,15 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 export function registerLensGetVersion(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_get_version',
     'Get a specific lens version by its ID or semver string. Returns the full template body and parameter list.',
     {
-      lens_id: z.string().uuid(),
-      version_id: z.string().uuid().optional(),
+      lens_id: zUuid,
+      version_id: zUuid.optional(),
       semver: z.string().optional(),
     },
     async (args) => {

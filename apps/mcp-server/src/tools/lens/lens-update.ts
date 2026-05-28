@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 export function registerLensUpdate(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_update',
     'Update a lens. Creates a new immutable version — the original is never modified. Pass template_body to change the prompt, params to change parameters.',
     {
-      lens_id: z.string().uuid(),
+      lens_id: zUuid,
       template_body: z.string().min(50).optional(),
       visibility: z.enum(['public', 'community', 'private']).optional(),
       params: z
