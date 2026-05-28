@@ -64,7 +64,8 @@ jobs:
         run: pnpm audit --prod --audit-level high
 
       - name: Test CLI release-critical paths
-        run: pnpm nx run cli:test --testPathPattern='run\.spec\.ts\|auth\.spec\.ts\|local-battle-engine\.spec\.ts\|exec-context\.spec\.ts' --forceExit
+        shell: bash
+        run: pnpm nx run cli:test --testPathPattern='"run\.spec\.ts|auth\.spec\.ts|local-battle-engine\.spec\.ts|exec-context\.spec\.ts"' --forceExit
 
       - name: Build, validate, and smoke install package
         run: pnpm nx run cli:smoke-install
