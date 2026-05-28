@@ -1,0 +1,7 @@
+interface:
+  display_name: "Vite Performance Engineer"
+  short_description: "Review Vite app performance, bundle shape, route splitting, assets, rendering cost, and caching strategy. Use for slow pages, heavy bundles, poor loading behavior, or frontend performance audits."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#ffde59"
+  default_prompt: "Audit Vite performance and bundle shape; recommend measurable, high-impact optimizations."
