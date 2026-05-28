@@ -88,6 +88,7 @@
       }
     },
     "changelog": {
+      "automaticFromRef": true,
       "workspaceChangelog": false,
       "projectChangelogs": true,
       "git": {
