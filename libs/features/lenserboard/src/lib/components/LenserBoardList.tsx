@@ -1,0 +1,77 @@
+import React from 'react'
+
+import { Button } from '@lenserfight/ui/components'
+import { LeaderboardEntry } from '@lenserfight/types'
+
+import { LenserBoardRow } from './LenserBoardRow'
+import { MyPositionStrip } from './MyPositionStrip'
+
+interface LenserBoardListProps {
+  data: LeaderboardEntry[]
+  userEntry?: LeaderboardEntry | null
+  isLoading: boolean
+  currentUserId?: string
+  hasMore?: boolean
+  onLoadMore?: () => void
+  isFetchingNextPage?: boolean
+}
+
+export const LenserBoardList: React.FC<LenserBoardListProps> = ({
+  data,
+  userEntry,
+  isLoading,
+  currentUserId,
+  hasMore,
+  onLoadMore,
+  isFetchingNextPage,
+}) => {
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
+        ))}
+      </div>
+    )
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="py-20 text-center text-gray-500 dark:text-gray-400">
+        <p className="text-lg font-medium">No lensers found for this period.</p>
+      </div>
+    )
+  }
+
+  const userInTopList = data.some((e) => e.lenserId === currentUserId)
+
+  return (
+    <div className="relative pb-24 md:pb-0">
+      <div className="flex flex-col gap-3">
+        {data.map((entry) => (
+          <LenserBoardRow
+            key={entry.lenserId}
+            mode="xp"
+            entry={entry}
+            isCurrentUser={entry.lenserId === currentUserId}
+          />
+        ))}
+      </div>
+
+      {hasMore && (
+        <div className="mt-8 flex justify-center">
+          <Button
+            onClick={onLoadMore}
+            isLoading={isFetchingNextPage}
+            variant="secondary"
+            className="w-auto px-8"
+          >
+            Load More
+          </Button>
+        </div>
+      )}
+
+      {!userInTopList && userEntry && currentUserId && <MyPositionStrip entry={userEntry} />}
+    </div>
+  )
+}
