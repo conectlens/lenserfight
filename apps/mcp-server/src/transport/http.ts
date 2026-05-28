@@ -4,7 +4,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { McpServerConfig } from '../config.js';
-import { buildDiscoveryDocument } from '../oauth/discovery.js';
+import { buildDiscoveryDocument, buildProtectedResourceDocument } from '../oauth/discovery.js';
 import { resolveAuth } from '../middleware/auth.js';
 import { getServiceClient, createUserScopedClient } from '../client.js';
 
@@ -55,6 +55,91 @@ function verifyPkce(codeVerifier: string, codeChallenge: string): boolean {
 // ---------------------------------------------------------------------------
 // OAuth handlers
 // ---------------------------------------------------------------------------
+
+async function handleRegister(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  cfg: McpServerConfig
+): Promise<void> {
+  let body: Record<string, unknown> = {};
+  try {
+    const raw = await readBody(req);
+    if (raw.trim()) body = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    jsonResponse(res, 400, { error: 'invalid_request', error_description: 'Invalid JSON body' });
+    return;
+  }
+
+  const redirectUris = Array.isArray(body['redirect_uris'])
+    ? (body['redirect_uris'] as string[]).filter((u) => typeof u === 'string')
+    : [];
+
+  const clientName = typeof body['client_name'] === 'string'
+    ? body['client_name'].slice(0, 120)
+    : 'Dynamic MCP Client';
+
+  const svc = getServiceClient();
+  const clientId = `lf_mcp_client_${crypto.randomBytes(16).toString('hex')}`;
+
+  // Find any active lenser to own this client (use the first one for local dev).
+  // In production this would be tied to an authenticated user.
+  const { data: profile } = await (svc as never as {
+    schema: (s: string) => {
+      from: (t: string) => {
+        select: (c: string) => {
+          limit: (n: number) => {
+            single: () => Promise<{ data: { id: string } | null; error: unknown }>;
+          };
+        };
+      };
+    };
+  })
+    .schema('lensers')
+    .from('profiles')
+    .select('id')
+    .limit(1)
+    .single();
+
+  if (!profile) {
+    jsonResponse(res, 500, { error: 'server_error', error_description: 'No lenser profile found in local DB' });
+    return;
+  }
+
+  const { error: insertErr } = await (svc as never as {
+    schema: (s: string) => {
+      from: (t: string) => {
+        insert: (row: Record<string, unknown>) => Promise<{ error: unknown }>;
+      };
+    };
+  })
+    .schema('lensers')
+    .from('mcp_clients')
+    .insert({
+      lenser_id: profile.id,
+      client_id: clientId,
+      name: clientName,
+      redirect_uris: redirectUris,
+      requires_secret: false,
+      is_active: true,
+    });
+
+  if (insertErr) {
+    jsonResponse(res, 500, { error: 'server_error', error_description: 'Failed to register client' });
+    return;
+  }
+
+  // RFC 7591 response
+  jsonResponse(res, 201, {
+    client_id: clientId,
+    client_name: clientName,
+    redirect_uris: redirectUris,
+    grant_types: ['authorization_code'],
+    response_types: ['code'],
+    token_endpoint_auth_method: 'none',
+    registration_access_token: null,
+    client_id_issued_at: Math.floor(Date.now() / 1000),
+  });
+}
 
 async function handleAuthorize(
   req: http.IncomingMessage,
@@ -465,10 +550,29 @@ export async function bootHttp(
       return;
     }
 
+    // RFC 9728 — Claude.ai hits this first to discover the authorization server
+    if (url.pathname === '/.well-known/oauth-protected-resource' ||
+        url.pathname === '/.well-known/oauth-protected-resource/mcp') {
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify(buildProtectedResourceDocument(cfg)));
+      return;
+    }
+
     if (url.pathname === '/health') {
       res.setHeader('Content-Type', 'application/json');
       res.writeHead(200);
       res.end(JSON.stringify({ status: 'ok', server: 'lenserfight-mcp', version: '1.0.0' }));
+      return;
+    }
+
+    // RFC 7591 — Dynamic Client Registration (Claude.ai uses this to self-register)
+    if (url.pathname === '/oauth/register') {
+      if (req.method !== 'POST') {
+        jsonResponse(res, 405, { error: 'method_not_allowed' });
+        return;
+      }
+      await handleRegister(req, res, cfg);
       return;
     }
 
