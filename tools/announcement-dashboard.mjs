@@ -118,6 +118,7 @@ const groups = [
     name: 'AG — Telemetry & health',
     checks: [
       fileExists('tools/gen-status-page.mjs', 'gen:status-page script'),
+      fileExists('.github/workflows/status-page.yml', 'status page CI workflow'),
       fileExists('docs/how-to/operations/incident-response.md', 'incident response doc'),
       fileExists('docs/how-to/contributors/github-discussions-setup.md', 'discussions setup doc'),
     ],
