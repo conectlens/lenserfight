@@ -159,8 +159,7 @@ runs:
       run: |
         npm publish ${{ inputs.dist_path }} \
           --access ${{ inputs.npm_access }} \
-          --tag ${{ inputs.dist_tag }} \
-          --provenance
+          --tag ${{ inputs.dist_tag }}
 
     - name: Tag release
       if: steps.version.outputs.bumped == 'true'
