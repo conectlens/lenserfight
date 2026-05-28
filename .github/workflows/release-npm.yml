@@ -1,4 +1,4 @@
-name: Release npm packages (sdk + adapter-connector)
+name: Release npm packages (sdk)
 
 on:
   # Auto-release fires only after required CI passes on main — never races with tests.
@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   release:
-    name: ${{ (inputs.dry_run == 'true' || inputs.dry_run == true) && 'Preview' || 'Publish' }} sdk + adapter-connector
+    name: ${{ (inputs.dry_run == 'true' || inputs.dry_run == true) && 'Preview' || 'Publish' }} sdk
     runs-on: ubuntu-latest
     environment: npm-release
 
@@ -69,20 +69,17 @@ jobs:
           bot_pat: ${{ secrets.BOT_PAT }}
 
       - name: Preflight tests
-        run: |
-          pnpm nx run sdk:test
-          pnpm nx run adapters-connector:test
+        run: pnpm nx run sdk:test
 
       - name: Preview version + changelog (dry run)
         if: steps.effective.outputs.dry_run == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          args=(release --projects=sdk,adapters-connector --skip-publish --dry-run --yes)
+          args=(release --projects=sdk --skip-publish --dry-run --yes)
           if [[ '${{ steps.effective.outputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
           pnpm nx "${args[@]}"
           npm publish dist/libs/sdk --dry-run --access public --tag alpha
-          npm publish dist/libs/adapters/connector --dry-run --access public
 
       - name: Release sdk
         if: steps.effective.outputs.dry_run != 'true'
@@ -93,20 +90,6 @@ jobs:
           package_json_path: libs/sdk/package.json
           dist_path: dist/libs/sdk
           dist_tag: alpha
-          npm_access: public
-          npm_token: ${{ secrets.NPM_TOKEN }}
-          first_release: ${{ steps.effective.outputs.first_release }}
-          git_ref: main
-
-      - name: Release adapter-connector
-        if: steps.effective.outputs.dry_run != 'true'
-        id: connector
-        uses: ./.github/actions/nx-release-package
-        with:
-          project: adapters-connector
-          package_json_path: libs/adapters/connector/package.json
-          dist_path: dist/libs/adapters/connector
-          dist_tag: latest
           npm_access: public
           npm_token: ${{ secrets.NPM_TOKEN }}
           first_release: ${{ steps.effective.outputs.first_release }}
