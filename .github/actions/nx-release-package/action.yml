@@ -114,7 +114,8 @@ runs:
         changelog="${pkg_json%/package.json}/CHANGELOG.md"
         tag='${{ steps.version.outputs.tag }}'
 
-        git add "$pkg_json" "$changelog" --ignore-missing
+        git add "$pkg_json"
+        [ -f "$changelog" ] && git add "$changelog" || true
         if git diff --cached --quiet; then
           echo "::error::Nothing staged after version+changelog for ${{ inputs.project }} — unexpected state." >&2
           exit 1
