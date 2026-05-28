@@ -1,3 +1,31 @@
+## 0.2.0-alpha.16 (2026-05-28)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.15 (2026-05-28)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.14 (2026-05-28)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.13 (2026-05-28)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.12 (2026-05-28)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.11 (2026-05-28)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.10 (2026-05-28)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
 ## 0.2.0-alpha.9 (2026-05-28)
 
 This was a version bump only for sdk to align it with other projects, there were no code changes.
