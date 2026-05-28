@@ -1,52 +1,43 @@
-// Mock supabase client — all mocks must be inside vi.hoisted() because
-// vi.mock is hoisted to the top of the file.
-const { mockSelect, mockInsert, mockUpdate, mockEq, mockIn, mockMaybeSingle, mockSingle, mockFrom } =
-  vi.hoisted(() => ({
-    mockSelect: vi.fn(),
-    mockInsert: vi.fn(),
-    mockUpdate: vi.fn(),
-    mockEq: vi.fn(),
-    mockIn: vi.fn(),
-    mockMaybeSingle: vi.fn(),
-    mockSingle: vi.fn(),
-    mockFrom: vi.fn(),
-  }))
+import { generatedChallengesRepository } from './generatedChallengesRepository'
 
-function setupMockChains() {
-  mockSingle.mockResolvedValue({ data: null, error: null })
-  mockMaybeSingle.mockResolvedValue({ data: null, error: null })
-  mockSelect.mockReturnValue({ single: mockSingle })
-  mockInsert.mockReturnValue({ select: mockSelect })
-  mockEq.mockImplementation(() => ({
-    eq: mockEq,
-    in: mockIn,
-    maybeSingle: mockMaybeSingle,
-  }))
-  mockIn.mockReturnValue({ error: null })
-  mockUpdate.mockReturnValue({ eq: mockEq })
-  mockFrom.mockImplementation(() => ({
-    insert: mockInsert,
-    update: mockUpdate,
-    select: vi.fn().mockReturnValue({
-      eq: mockEq,
-    }),
-  }))
-}
+// Mock supabase client
+const mockSelect = vi.fn()
+const mockInsert = vi.fn()
+const mockUpdate = vi.fn()
+const mockEq = vi.fn()
+const mockIn = vi.fn()
+const mockMaybeSingle = vi.fn()
+const mockSingle = vi.fn()
 
 vi.mock('@lenserfight/data/supabase', () => ({
   supabase: {
-    from: mockFrom,
+    from: vi.fn(() => ({
+      insert: mockInsert.mockReturnValue({
+        select: mockSelect.mockReturnValue({
+          single: mockSingle,
+        }),
+      }),
+      update: mockUpdate.mockReturnValue({
+        eq: mockEq.mockReturnValue({
+          eq: mockEq.mockReturnValue({ error: null }),
+          in: mockIn.mockReturnValue({ error: null }),
+        }),
+      }),
+      select: mockSelect.mockReturnValue({
+        eq: mockEq.mockReturnValue({
+          eq: mockEq.mockReturnValue({
+            maybeSingle: mockMaybeSingle,
+          }),
+          maybeSingle: mockMaybeSingle,
+        }),
+      }),
+    })),
   },
-  getCachedSession: vi.fn(() => null),
-  getCachedAccessToken: vi.fn(() => null),
 }))
-
-import { generatedChallengesRepository } from './generatedChallengesRepository'
 
 describe('generatedChallengesRepository', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    setupMockChains()
   })
 
   describe('create', () => {
