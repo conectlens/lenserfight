@@ -63,7 +63,7 @@ jobs:
   release:
     name: ${{ (inputs.dry_run == 'true' || inputs.dry_run == true) && 'Preview' || 'Publish' }} CLI ${{ inputs.release_channel || 'stable' }}
     runs-on: ubuntu-latest
-    environment: ${{ (inputs.release_channel || 'stable') == 'stable' && 'npm-production' || 'npm-prerelease' }}
+    environment: npm-release
 
     steps:
       - name: Resolve effective inputs
