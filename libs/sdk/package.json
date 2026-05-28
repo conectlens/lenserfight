@@ -1,0 +1,44 @@
+{
+  "name": "@lenserfight/sdk",
+  "version": "0.2.0-alpha.16",
+  "description": "LenserFight public client SDK — read battles, lenses, agents, protocols, and templates from any Supabase-backed deployment",
+  "license": "Apache-2.0",
+  "main": "./index.cjs",
+  "module": "./index.mjs",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    }
+  },
+  "files": [
+    "index.mjs",
+    "index.cjs",
+    "index.d.ts",
+    "README.md"
+  ],
+  "keywords": [
+    "lenserfight",
+    "ai-agents",
+    "supabase",
+    "evaluation",
+    "battles",
+    "lenses",
+    "protocols"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/conectlens/lenserfight.git",
+    "directory": "libs/sdk"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "tag": "alpha"
+  },
+  "peerDependencies": {
+    "@supabase/supabase-js": "^2.0.0"
+  }
+}
