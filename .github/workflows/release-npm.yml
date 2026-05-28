@@ -1,11 +1,12 @@
 name: Release npm packages (sdk)
 
 on:
-  # Auto-release fires only after required CI passes on main — never races with tests.
-  # Both coverage-gate AND smoke-timing must complete successfully before this runs.
+  # Auto-release fires after smoke-timing (the longer gate) passes on main.
+  # coverage-gate runs in parallel and typically finishes first, so by the time
+  # smoke-timing completes both gates have had a chance to fail.
+  # Using a single trigger avoids double-firing (workflow_run is OR, not AND).
   workflow_run:
     workflows:
-      - coverage-gate
       - smoke-timing
     branches:
       - main
@@ -39,15 +40,19 @@ jobs:
     name: ${{ (inputs.dry_run == 'true' || inputs.dry_run == true) && 'Preview' || 'Publish' }} sdk
     runs-on: ubuntu-latest
     environment: npm-release
+    # Skip when triggered by a release/skip-ci commit to break the re-release loop.
+    # workflow_run.head_commit.message reflects the HEAD at CI completion time; checking
+    # it here prevents re-releasing when the contributors sync or a prior release pushed
+    # a [skip ci] commit between CI start and finish.
+    if: >-
+      github.event_name == 'workflow_dispatch' || (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        !startsWith(github.event.workflow_run.head_commit.message, 'chore(release):') &&
+        !contains(github.event.workflow_run.head_commit.message, '[skip ci]')
+      )
 
     steps:
-      - name: Gate — CI must have passed
-        if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success'
-        shell: bash
-        run: |
-          echo "::notice::Upstream workflow '${{ github.event.workflow_run.name }}' concluded '${{ github.event.workflow_run.conclusion }}' — skipping release."
-          exit 0
-
       - name: Resolve effective inputs
         id: effective
         shell: bash
