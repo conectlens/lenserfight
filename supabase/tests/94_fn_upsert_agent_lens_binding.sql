@@ -37,12 +37,10 @@ SELECT
   'b2000000-0000-0000-0000-000000000001'::uuid                          AS system_lenser_id;
 
 -- Create a throw-away AI lenser owned by @omerfar
-INSERT INTO agents.ai_lensers (id, profile_id, display_name, status)
+INSERT INTO agents.ai_lensers (id, profile_id)
 SELECT
   '99900001-0000-0000-0000-000000000001',
-  human_id,
-  'Test Agent',
-  'active'
+  human_id
 FROM _fix
 ON CONFLICT DO NOTHING;
 
