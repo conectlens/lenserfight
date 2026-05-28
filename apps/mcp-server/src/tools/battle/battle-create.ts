@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getServiceClient } from '../../client.js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail } from '../../types.js';
 
 function slugify(title: string): string {
@@ -12,7 +12,7 @@ function slugify(title: string): string {
   return `${base}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export function registerBattleCreate(server: McpServer): void {
+export function registerBattleCreate(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'battle_create',
     'Create a new battle. The task_prompt defines what competitors must do. Returns the new battle with its ID.',
@@ -27,34 +27,31 @@ export function registerBattleCreate(server: McpServer): void {
     async (args) => {
       const t0 = Date.now();
       try {
-        const sb = getServiceClient();
-        const { data, error } = await sb.rpc('fn_battles_create' as never, {
+        const { data, error } = (await sb.rpc('fn_battles_create' as never, {
           p_title: args.title,
           p_slug: slugify(args.title),
           p_task_prompt: args.task_prompt,
           p_rubric_id: null,
-        }) as unknown as { data: { id: string } | null; error: { message: string } | null };
+        })) as unknown as { data: string | null; error: { message: string } | null };
         if (error) throw new Error(error.message);
         if (!data) throw new Error('No battle ID returned');
 
-        const updates: Record<string, unknown> = {};
-        if (args.battle_type) updates['battle_type'] = args.battle_type;
-        if (args.judging_mode) updates['judging_mode'] = args.judging_mode;
-        if (args.max_contenders) updates['max_contenders'] = args.max_contenders;
-        if (args.ai_judge_model_key) {
-          updates['ai_judge_model_key'] = args.ai_judge_model_key;
-          updates['ai_judge_enabled'] = true;
+        const battleId = data;
+        const hasConfig =
+          args.battle_type || args.judging_mode || args.max_contenders || args.ai_judge_model_key;
+
+        if (hasConfig) {
+          const { error: cfgErr } = (await sb.rpc('fn_mcp_battle_update_config' as never, {
+            p_battle_id: battleId,
+            p_battle_type: args.battle_type ?? null,
+            p_judging_mode: args.judging_mode ?? null,
+            p_max_contenders: args.max_contenders ?? null,
+            p_ai_judge_model_key: args.ai_judge_model_key ?? null,
+          })) as unknown as { data: unknown; error: { message: string } | null };
+          if (cfgErr) throw new Error(cfgErr.message);
         }
 
-        if (Object.keys(updates).length > 0) {
-          await (sb as never as { schema: (s: string) => typeof sb })
-            .schema('battles')
-            .from('battles')
-            .update({ ...updates, updated_at: new Date().toISOString() })
-            .eq('id', data.id);
-        }
-
-        return ok({ id: data.id, title: args.title }, 'battle_create', t0);
+        return ok({ id: battleId, title: args.title }, 'battle_create', t0);
       } catch (e) {
         return fail('DB_ERROR', (e as Error).message, {}, 'battle_create', t0);
       }

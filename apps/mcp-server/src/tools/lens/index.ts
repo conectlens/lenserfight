@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { registerLensList } from './lens-list.js';
 import { registerLensSearch } from './lens-search.js';
 import { registerLensGet } from './lens-get.js';
@@ -14,19 +15,19 @@ import { registerLensFork } from './lens-fork.js';
 import { registerLensVersions } from './lens-versions.js';
 import { registerLensGetVersion } from './lens-get-version.js';
 
-export function registerLensTools(server: McpServer): void {
-  registerLensList(server);
-  registerLensSearch(server);
-  registerLensGet(server);
-  registerLensCreate(server);
-  registerLensUpdate(server);
-  registerLensArchive(server);
-  registerLensDelete(server);
-  registerLensSetVisibility(server);
-  registerLensValidateParams(server);
-  registerLensExtractParams(server);
-  registerLensRun(server);
-  registerLensFork(server);
-  registerLensVersions(server);
-  registerLensGetVersion(server);
+export function registerLensTools(server: McpServer, sb: SupabaseClient): void {
+  registerLensList(server, sb);
+  registerLensSearch(server, sb);
+  registerLensGet(server, sb);
+  registerLensCreate(server, sb);
+  registerLensUpdate(server, sb);
+  registerLensArchive(server, sb);
+  registerLensDelete(server, sb);
+  registerLensSetVisibility(server, sb);
+  registerLensValidateParams(server, sb);
+  registerLensExtractParams(server, sb);
+  registerLensRun(server, sb);
+  registerLensFork(server, sb);
+  registerLensVersions(server, sb);
+  registerLensGetVersion(server, sb);
 }

@@ -1,43 +1,38 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getServiceClient } from '../../client.js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail } from '../../types.js';
 
-export function registerLensValidateParams(server: McpServer): void {
+interface ResolveTemplateResult {
+  lens_id: string;
+  version_id: string;
+  template_body: string;
+  parameters: Array<{ id: string; label: string; optional: boolean }>;
+}
+
+export function registerLensValidateParams(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_validate_params',
     'Validate parameter values against a lens version schema. Returns which params are missing, which are unknown, and whether the input is valid.',
     {
       lens_id: z.string().uuid(),
       version_id: z.string().uuid().optional(),
-      values: z.record(z.string()),
+      values: z.record(z.string(), z.string()),
     },
     async ({ lens_id, version_id, values }) => {
       const t0 = Date.now();
       try {
-        const sb = getServiceClient();
-        const schema = (sb as never as { schema: (s: string) => typeof sb }).schema('lenses');
-
-        let resolvedVersionId = version_id;
-        if (!resolvedVersionId) {
-          const { data: lens } = await schema
-            .from('lenses')
-            .select('head_version_id')
-            .eq('id', lens_id)
-            .is('deleted_at', null)
-            .single() as unknown as { data: { head_version_id: string } | null; error: unknown };
-          if (!lens) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'lens_validate_params', t0);
-          resolvedVersionId = lens.head_version_id;
-        }
-
-        const { data: params } = await schema
-          .from('version_parameters')
-          .select('id, label, optional')
-          .eq('version_id', resolvedVersionId) as unknown as {
-          data: Array<{ id: string; label: string; optional: boolean }> | null;
+        const { data, error } = (await sb.rpc('fn_mcp_lens_resolve_template' as never, {
+          p_lens_id: lens_id,
+          p_version_id: version_id ?? null,
+        })) as unknown as {
+          data: ResolveTemplateResult | null;
+          error: { message: string } | null;
         };
+        if (error) throw new Error(error.message);
+        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'lens_validate_params', t0);
 
-        const allParams = params ?? [];
+        const allParams = data.parameters ?? [];
         const providedLabels = Object.keys(values).map((k) => k.toLowerCase());
 
         const missing = allParams

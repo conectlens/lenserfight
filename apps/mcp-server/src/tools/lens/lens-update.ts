@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getServiceClient } from '../../client.js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail } from '../../types.js';
 
-export function registerLensUpdate(server: McpServer): void {
+export function registerLensUpdate(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_update',
     'Update a lens. Creates a new immutable version — the original is never modified. Pass template_body to change the prompt, params to change parameters.',
@@ -18,7 +18,6 @@ export function registerLensUpdate(server: McpServer): void {
     async (args) => {
       const t0 = Date.now();
       try {
-        const sb = getServiceClient();
         const { data, error } = await sb.rpc('fn_update_lens' as never, {
           p_lens_id: args.lens_id,
           p_template_body: args.template_body ?? null,

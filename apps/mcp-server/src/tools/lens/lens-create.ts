@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getServiceClient } from '../../client.js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail } from '../../types.js';
 
-export function registerLensCreate(server: McpServer): void {
+export function registerLensCreate(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_create',
     'Create a new lens with a template body and optional parameters. Template must be at least 50 characters. Use [[ParamName]] for required params, [[ParamName!]] for optional ones.',
@@ -24,7 +24,6 @@ export function registerLensCreate(server: McpServer): void {
     async (args) => {
       const t0 = Date.now();
       try {
-        const sb = getServiceClient();
         const { data, error } = await sb.rpc('fn_create_lens' as never, {
           p_title: args.title,
           p_template_body: args.template_body,

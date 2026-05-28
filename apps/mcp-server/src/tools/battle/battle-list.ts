@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getServiceClient } from '../../client.js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { paginated, fail } from '../../types.js';
 
-export function registerBattleList(server: McpServer): void {
+export function registerBattleList(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'battle_list',
     'List battles with pagination. Filter by status, battle_type, or creator lenser.',
@@ -19,22 +19,18 @@ export function registerBattleList(server: McpServer): void {
       const limit = args.limit ?? 20;
       const offset = args.offset ?? 0;
       try {
-        const sb = getServiceClient();
-        let q = (sb as never as { schema: (s: string) => typeof sb })
-          .schema('battles')
-          .from('battles')
-          .select('id, title, slug, status, battle_type, judging_mode, created_at, updated_at, creator_lenser_id, total_vote_count', { count: 'exact' })
-          .is('deleted_at', null)
-          .range(offset, offset + limit - 1)
-          .order('created_at', { ascending: false });
-
-        if (args.status) q = (q as never as { eq: (...a: unknown[]) => typeof q }).eq('status', args.status);
-        if (args.battle_type) q = (q as never as { eq: (...a: unknown[]) => typeof q }).eq('battle_type', args.battle_type);
-        if (args.creator_lenser_id) q = (q as never as { eq: (...a: unknown[]) => typeof q }).eq('creator_lenser_id', args.creator_lenser_id);
-
-        const { data, error, count } = await q as unknown as { data: unknown[]; error: { message: string } | null; count: number | null };
+        const { data, error } = (await sb.rpc('fn_mcp_battle_list' as never, {
+          p_limit: limit,
+          p_offset: offset,
+          p_status: args.status ?? null,
+          p_battle_type: args.battle_type ?? null,
+          p_creator_lenser_id: args.creator_lenser_id ?? null,
+        })) as unknown as {
+          data: { data: unknown[]; count: number } | null;
+          error: { message: string } | null;
+        };
         if (error) throw new Error(error.message);
-        return paginated(data ?? [], count ?? 0, limit, offset, 'battle_list', t0);
+        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'battle_list', t0);
       } catch (e) {
         return fail('DB_ERROR', (e as Error).message, {}, 'battle_list', t0);
       }

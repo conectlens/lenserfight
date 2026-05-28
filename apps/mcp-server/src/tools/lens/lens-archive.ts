@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getServiceClient } from '../../client.js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail } from '../../types.js';
 
-export function registerLensArchive(server: McpServer): void {
+export function registerLensArchive(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_archive',
     'Archive a lens. Sets status to archived and records the archived_at timestamp. The lens is hidden from listings but not deleted.',
@@ -13,17 +13,12 @@ export function registerLensArchive(server: McpServer): void {
     async ({ lens_id }) => {
       const t0 = Date.now();
       try {
-        const sb = getServiceClient();
-        const { data, error } = await (sb as never as { schema: (s: string) => typeof sb })
-          .schema('lenses')
-          .from('lenses')
-          .update({ status: 'archived', archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-          .eq('id', lens_id)
-          .is('deleted_at', null)
-          .select('id, status, archived_at')
-          .single() as unknown as { data: unknown; error: { message: string; code: string } | null };
+        const { data, error } = (await sb.rpc('fn_mcp_lens_archive' as never, {
+          p_lens_id: lens_id,
+        })) as unknown as { data: unknown; error: { message: string } | null };
         if (error) {
-          if (error.code === 'PGRST116') return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'lens_archive', t0);
+          if (error.message?.includes('lens_not_found')) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'lens_archive', t0);
+          if (error.message?.includes('access_denied')) return fail('FORBIDDEN', 'You do not own this lens', {}, 'lens_archive', t0);
           throw new Error(error.message);
         }
         return ok(data, 'lens_archive', t0);

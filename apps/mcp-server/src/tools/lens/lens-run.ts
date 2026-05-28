@@ -1,12 +1,19 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getServiceClient } from '../../client.js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail } from '../../types.js';
 
 interface VersionParam {
   id: string;
   label: string;
   optional: boolean;
+}
+
+interface ResolveTemplateResult {
+  lens_id: string;
+  version_id: string;
+  template_body: string;
+  parameters: VersionParam[];
 }
 
 export function resolveTemplate(
@@ -38,48 +45,35 @@ export function resolveTemplate(
   return { resolved, missing, used };
 }
 
-export function registerLensRun(server: McpServer): void {
+export function registerLensRun(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_run',
     'Resolve a lens template by substituting [[Parameter]] tokens with provided values. Returns the resolved prompt ready for AI execution. Does NOT call an LLM — the calling AI model executes the resolved prompt. Optionally creates a workflow_run record for tracking.',
     {
       lens_id: z.string().uuid(),
       version_id: z.string().uuid().optional(),
-      param_values: z.record(z.string()).default({}).optional(),
+      param_values: z.record(z.string(), z.string()).default({}).optional(),
       workflow_id: z.string().uuid().optional(),
     },
     async (args) => {
       const t0 = Date.now();
-      const values = args.param_values ?? {};
+      const values: Record<string, string> = (args.param_values ?? {}) as Record<string, string>;
       try {
-        const sb = getServiceClient();
-        const schema = (sb as never as { schema: (s: string) => typeof sb }).schema('lenses');
+        const { data: resolveData, error: resolveErr } = (await sb.rpc(
+          'fn_mcp_lens_resolve_template' as never,
+          { p_lens_id: args.lens_id, p_version_id: args.version_id ?? null }
+        )) as unknown as {
+          data: ResolveTemplateResult | null;
+          error: { message: string } | null;
+        };
+        if (resolveErr) throw new Error(resolveErr.message);
+        if (!resolveData) return fail('NOT_FOUND', `Lens ${args.lens_id} not found`, {}, 'lens_run', t0);
 
-        let resolvedVersionId = args.version_id;
-        if (!resolvedVersionId) {
-          const { data: lens, error: lensErr } = await schema
-            .from('lenses')
-            .select('head_version_id')
-            .eq('id', args.lens_id)
-            .is('deleted_at', null)
-            .single() as unknown as { data: { head_version_id: string } | null; error: unknown };
-          if (lensErr || !lens) return fail('NOT_FOUND', `Lens ${args.lens_id} not found`, {}, 'lens_run', t0);
-          resolvedVersionId = lens.head_version_id;
-        }
-
-        const { data: version, error: verErr } = await schema
-          .from('versions')
-          .select('template_body')
-          .eq('id', resolvedVersionId)
-          .single() as unknown as { data: { template_body: string } | null; error: unknown };
-        if (verErr || !version) return fail('NOT_FOUND', `Version ${resolvedVersionId} not found`, {}, 'lens_run', t0);
-
-        const { data: params } = await schema
-          .from('version_parameters')
-          .select('id, label, optional')
-          .eq('version_id', resolvedVersionId) as unknown as { data: VersionParam[] | null };
-
-        const { resolved, missing, used } = resolveTemplate(version.template_body, params ?? [], values);
+        const { resolved, missing, used } = resolveTemplate(
+          resolveData.template_body,
+          resolveData.parameters ?? [],
+          values
+        );
 
         if (missing.length > 0) {
           return fail('MISSING_PARAMS', 'Required parameters not provided.', { missing }, 'lens_run', t0);
@@ -89,21 +83,23 @@ export function registerLensRun(server: McpServer): void {
         let persisted = false;
 
         if (args.workflow_id) {
-          const { data: run, error: runErr } = await schema
-            .from('workflow_runs')
-            .insert({
-              workflow_id: args.workflow_id,
-              status: 'pending',
-              trigger_mode: 'manual',
-              context_inputs: values,
-              metadata: {
+          const { data: run, error: runErr } = (await sb.rpc(
+            'fn_mcp_workflow_run_start' as never,
+            {
+              p_workflow_id: args.workflow_id,
+              p_inputs: values,
+              p_global_model_id: null,
+              p_idempotency_key: null,
+              p_metadata: {
                 mcp_tool: 'lens_run',
                 lens_id: args.lens_id,
-                version_id: resolvedVersionId,
+                version_id: resolveData.version_id,
               },
-            })
-            .select('id')
-            .single() as unknown as { data: { id: string } | null; error: unknown };
+            }
+          )) as unknown as {
+            data: { id: string } | null;
+            error: { message: string } | null;
+          };
           if (!runErr && run) {
             runId = run.id;
             persisted = true;
@@ -114,7 +110,7 @@ export function registerLensRun(server: McpServer): void {
           resolved_prompt: resolved,
           run_id: runId,
           lens_id: args.lens_id,
-          version_id: resolvedVersionId,
+          version_id: resolveData.version_id,
           params_used: used,
           estimated_input_tokens: Math.ceil(resolved.length / 4),
           persisted,
