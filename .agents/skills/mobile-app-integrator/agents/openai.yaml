@@ -1,0 +1,7 @@
+interface:
+  display_name: "Mobile App Integrator"
+  short_description: "Implement mobile features in apps/mobile with shared code in packages/* and Expo/React Native safe boundaries."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#10b981"
+  default_prompt: "Review or apply mobile implementation rules for lenserfight. Keep route wiring and composition in apps/mobile, move reusable logic to packages/*, use shared native UI intentionally, and verify changes with targeted Nx checks."
