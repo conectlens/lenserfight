@@ -1,8 +1,9 @@
 name: Nx release one package
 description: >
-  Version (conventional commits), generate changelog, commit, tag, push, build,
-  publish to npm with provenance, and verify registry propagation — for a single
-  Nx-managed package. Caller owns checkout, pnpm/Node setup, and git config.
+  Version (conventional commits), generate changelog, commit, push, build,
+  publish to npm with provenance, tag (only after successful publish), and
+  verify registry propagation — for a single Nx-managed package.
+  Caller owns checkout, pnpm/Node setup, and git config.
 
 inputs:
   project:
@@ -50,7 +51,7 @@ outputs:
     description: The resolved package version after versioning (unchanged if bumped=false).
     value: ${{ steps.version.outputs.version }}
   tag:
-    description: The git tag that was (or would be) created (e.g. sdk@1.2.3).
+    description: The git tag created after successful publish (e.g. sdk@1.2.3).
     value: ${{ steps.version.outputs.tag }}
 
 runs:
@@ -96,7 +97,7 @@ runs:
         if [[ '${{ inputs.first_release }}' == 'true' ]]; then args+=(--first-release); fi
         pnpm nx "${args[@]}"
 
-    - name: Commit and tag
+    - name: Commit and push branch
       if: steps.version.outputs.bumped == 'true'
       shell: bash
       run: |
@@ -112,15 +113,7 @@ runs:
         fi
 
         git commit -m "chore(release): $tag [skip ci]"
-
-        if git rev-parse "$tag" >/dev/null 2>&1; then
-          echo "::warning::Tag $tag already exists — skipping tag creation."
-        else
-          git tag -a "$tag" -m "$tag"
-        fi
-
         git push origin "HEAD:${{ inputs.git_ref }}"
-        git push origin "$tag"
 
     - name: Build
       if: steps.version.outputs.bumped == 'true'
@@ -133,10 +126,24 @@ runs:
       env:
         NODE_AUTH_TOKEN: ${{ inputs.npm_token }}
       run: |
-        npm publish '${{ inputs.dist_path }}' \
-          --access '${{ inputs.npm_access }}' \
-          --tag '${{ inputs.dist_tag }}' \
+        npm publish ${{ inputs.dist_path }} \
+          --access ${{ inputs.npm_access }} \
+          --tag ${{ inputs.dist_tag }} \
           --provenance
+
+    - name: Tag release
+      if: steps.version.outputs.bumped == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        tag='${{ steps.version.outputs.tag }}'
+        if git rev-parse "$tag" >/dev/null 2>&1; then
+          echo "::warning::Tag $tag already exists — skipping tag creation."
+        else
+          git tag -a "$tag" -m "$tag"
+          git push origin "$tag"
+          echo "::notice::Tagged and pushed: $tag"
+        fi
 
     - name: Verify registry propagation
       if: steps.version.outputs.bumped == 'true'
