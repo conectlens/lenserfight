@@ -14,3 +14,14 @@ export function getServiceClient(): SupabaseClient {
   });
   return _client;
 }
+
+export function createUserScopedClient(
+  supabaseUrl: string,
+  supabaseAnonKey: string,
+  userJwt: string
+): SupabaseClient {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${userJwt}` } },
+  });
+}
