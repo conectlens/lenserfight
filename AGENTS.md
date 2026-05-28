@@ -1,123 +1,122 @@
+# AGENTS.md
+
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+## 1. Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+## 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Performance Under Stress
+
+**Every change must survive heavy load.** Before finishing, mentally stress the code at ~1M concurrent or near-concurrent users and account for memory usage, CPU cost, and network round-trips — flag N+1 queries, unbounded loops, blocking I/O, retry storms, and missing TTL/pagination instead of shipping them.
+
+## 5. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
 
-# General Guidelines for working with Nx
+# Nx
+- Run tasks via `pnpm nx run/run-many/affected`. Never guess flags — use `nx_docs` or `--help`.
+- Scaffold: invoke `nx-generate` skill first. Explore: invoke `nx-workspace` skill first.
+- Plugin docs: `node_modules/@nx/<plugin>/PLUGIN.md` (skip if missing).
 
-- For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
-- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
-- Prefix nx commands with the workspace's package manager (e.g., `pnpm nx build`, `npm exec nx test`) - avoids using globally installed CLI
-- You have access to the Nx MCP server and its tools, use them to help the user
-- For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.
-- NEVER guess CLI flags - always check nx_docs or `--help` first when unsure
+# Operating Model
+Instructions: `AGENTS.md` · Runtime: `.codex/config.toml` · Roles: `.codex/agents/*.toml` · Skills: `.agents/skills/*` `.claude/skills/*` `.gemini/skills/*`
 
-## Scaffolding & Generators
+Prefer existing skills before inventing workflows. Keep changes minimal, local, reversible. Preserve product/UI/test/Supabase boundaries. Docs: operational and concrete, no marketing language.
 
-- For scaffolding tasks (creating apps, libs, project structure, setup), ALWAYS invoke the `nx-generate` skill FIRST before exploring or calling MCP tools
+**Roles:** `ci-monitor` — CI/pipeline failures · `explorer` — trace paths, no edits · `reviewer` — arch/release/security risk · `worker` — implement once path is clear
 
-## When to use nx_docs
+# LenserFight
 
-- USE for: advanced config options, unfamiliar flags, migration guides, plugin configuration, edge cases
-- DON'T USE for: basic generator syntax (`nx g @nx/react:app`), standard commands, things you already know
-- The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
+**Stack:** Nx monorepo · `apps/web` entry · `supabase/` DB · Supabase backend.
 
-## Operating model
+**Layers (low→high):** `domain` → `api` → `data` → `features` · `infra` · `providers` | cross-cut: `shared` `types` `ui` `utils`
 
-This repository is optimized for Codex using a layered instruction model:
-- persistent repo guidance in `AGENTS.md`
-- Codex runtime config in `.codex/config.toml`
-- role-specific behavior in `.codex/agents/*.toml`
-- reusable project skills in `.agents/skills/*`, `.claude/skills/*`, and `.gemini/skills/*`
+**Mobile env:** No `import.meta.env` in Metro/Hermes. Use `process.env.EXPO_PUBLIC_*`. Add `.native.tsx` stubs for web-only barrel exports.
 
-## Project defaults
+## Skills
 
-- Prefer existing repository skills from the local skills folders before inventing a new workflow.
-- Keep changes minimal, local, and reversible.
-- Preserve architectural boundaries between product, UI, tests, and Supabase concerns.
-- When reviewing, prioritize correctness, security, migration safety, and maintainability over style-only commentary.
-- When editing docs, keep them operational and concrete. Avoid marketing language.
+| Task | Skill |
+|---|---|
+| Repo shape/cycles/tags | `repo-architecture-auditor` |
+| Feature placement | `feature-slice-designer` · `repo-performance-guard` |
+| Responsibility/coupling | `grasp-ooad-review` |
+| Vite/React perf† | `vite-performance-engineer` · `react-vite-performance-reviewer` |
+| Tailwind/UX/a11y/tokens | `tailwind-ui-ux-reviewer` · `ui-contract-guard` |
+| i18n/locale/SEO | `apps-language-rules` · `language-integrator` |
+| Mobile design/impl/product | `mobile-app-designer` · `mobile-app-integrator` · `mobile-app-product-owner` |
+| Mobile perf/locale† | `mobile-app-reviewer` · `react-native-performance-reviewer` · `mobile-language-checker` · `mobile-ruleset` |
+| Tests | `unit-test-planner` · `unit-tester` |
+| Deep review/security | `deep-code-reviewer` · `security-reviewer` |
+| DTOs/contracts/data | `contract-dto-consistency-reviewer` · `api-contract-reviewer` · `repository-pattern-reviewer` |
+| DB/RLS/indexes | `supabase-schema-reviewer` · `database-schema-reviewer` · `supabase-rls-security-reviewer` · `supabase-index-trigger-reviewer` · `supabase-api-rpc-reviewer` |
+| Migration risk | `migration-risk-reviewer` |
+| Commits/docs/product | `smart-commit` · `docs-publication-manager` · `product-owner-decider` · `release-readiness-reviewer` |
 
-## Role routing
+† Enforce before approving any React/Vite or React Native/Expo change.
 
-Use these roles intentionally:
-- `ci-monitor`: investigate CI failures, flaky checks, and release-blocking pipeline regressions.
-- `explorer`: trace code paths and gather evidence without editing.
-- `reviewer`: perform focused risk reviews for architecture, release readiness, data access, and security.
-- `worker`: implement narrowly scoped fixes once the path is clear.
+## Teams (cross-layer only)
+`supabase-platform-team` · `frontend-experience-team` · `feature-delivery-team` · `release-governance-team` · `architecture-review-team`
 
-## Preferred skill activation
+**Delivery:** Lead with findings · risky changes get rollout/rollback notes · DB work calls out grants/RLS/indexes/triggers · frontend calls out UX regressions/a11y/bundle · tests justify the layer.
 
-When the task clearly matches a project skill, activate the relevant skill from `.agents/skills`, especially for:
-
-### Architecture & repo
-- `repo-architecture-auditor` — repo shape, Nx tags, import cycles, dependency drift
-- `repo-performance-guard` — overfetching, pagination, query/rendering perf patterns
-- `feature-slice-designer` — new feature placement across layers
-- `grasp-ooad-review` — code responsibility, coupling, cohesion, refactor direction
-
-### Frontend & UI
-- `vite-performance-engineer` — Vite bundle/runtime performance
-- `tailwind-ui-ux-reviewer` — Tailwind, UX, accessibility, visual consistency
-- `ui-contract-guard` — shared UI contracts, tokens, platform entrypoints
-- `apps-language-rules` — i18n strings, locale coverage, hreflang SEO
-- `language-integrator` — adding or porting a new language/locale
-- `react-vite-performance-reviewer` — deep browser performance review: re-renders, bundle size, memory, CPU, network cost, LCP, render-blocking resources, and stressful traffic conditions
-
-> **Enforcement:** Before approving any React/ViteJS change, evaluate browser performance, memory pressure, CPU usage, network cost, bundle impact, render stability, and stressful traffic conditions — use the `react-vite-performance-reviewer` skill to enforce this gate.
-
-### Mobile (apps/mobile)
-- `mobile-app-designer` — screen design, iOS/Android specifics, design system
-- `mobile-app-integrator` — new mobile feature implementation
-- `mobile-app-product-owner` — mobile product decisions and roadmap
-- `mobile-app-reviewer` — mobile performance, security, permissions, render cost
-- `mobile-language-checker` — mobile locale resolution, language settings
-- `mobile-ruleset` — canonical mobile design rules
-- `react-native-performance-reviewer` — deep mobile performance review: re-renders, memory, CPU, battery, network, FlatList, animations, native bridge, and stressful user conditions
-
-> **Enforcement:** Before approving any React Native or Expo Go change, evaluate mobile performance, memory pressure, CPU usage, battery impact, network cost, render stability, and behavior under stressful user conditions — use the `react-native-performance-reviewer` skill to enforce this gate.
-
-#### Mobile env var rules
-- **Never use `import.meta.env.*`** in code bundled by Metro (Expo/Hermes). Hermes does not support `import.meta`.
-- Use `process.env.EXPO_PUBLIC_*` for all client-visible env vars in mobile and shared-with-mobile code. Only vars with the `EXPO_PUBLIC_` prefix are inlined by Expo at build time — see `apps/mobile/.env.example`.
-- Web-only files using `import.meta.env`, `window.*`, or `react-router-dom` that are exported from a shared barrel must have a `.native.tsx` stub so Metro resolves the stub instead of the web file.
-
-### Testing & review
-- `unit-test-planner` — test scope and layering decisions
-- `unit-tester` — writing unit/integration tests
-- `deep-code-reviewer` — correctness bugs, race conditions, type-safety, security
-- `security-reviewer` — security across RLS, Edge Functions, React client, CLI auth
-
-### Contracts & data
-- `contract-dto-consistency-reviewer` — contract/DTO/domain mismatch
-- `api-contract-reviewer` — RPC/PostgREST API contracts and response types
-- `repository-pattern-reviewer` — repository/cache/data access review
-
-### Supabase & database
-- `supabase-schema-reviewer` — Supabase schema design
-- `database-schema-reviewer` — general Postgres schema, integrity, migration safety
-- `supabase-rls-security-reviewer` — RLS, grants, exposed schemas, definer risk
-- `supabase-index-trigger-reviewer` — indexes, triggers, write amplification
-- `supabase-api-rpc-reviewer` — RPC/functions and API exposure
-- `migration-risk-reviewer` — migration blast radius and rollout
-
-### Delivery & ops
-- `smart-commit` — staging and committing changes
-- `docs-publication-manager` — public/internal docs and README quality
-- `product-owner-decider` — product decisions, scope cuts, acceptance
-- `release-readiness-reviewer` — release gate review
-
-## Delivery expectations
-
-- Summaries should lead with concrete findings, not generic reassurance.
-- For risky changes, provide rollout and rollback notes.
-- For DB or Supabase work, explicitly call out grants, RLS, indexes, triggers, and contract implications.
-- For frontend work, call out UX regressions, accessibility, and bundle/runtime impact.
-- For tests, explain why each proposed test belongs at that layer.
-
-## Validation
-
-Before finalizing:
-- run the smallest relevant validation available
-- mention what was validated and what was not
-- if CI or local checks were not run, say so explicitly
+**Validation:** Run smallest relevant check. State what was/wasn't validated. If CI wasn't run, say so.
 
 <!-- nx configuration end-->
