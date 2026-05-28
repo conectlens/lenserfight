@@ -1,8 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-const { mockRpc, mockGetUser } = vi.hoisted(() => ({
+const { mockRpc, mockGetUser, mockCachedSession } = vi.hoisted(() => ({
   mockRpc: vi.fn(),
   mockGetUser: vi.fn(),
+  mockCachedSession: vi.fn(),
 }))
 
 vi.mock('@lenserfight/data/supabase', () => ({
@@ -10,6 +11,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
     rpc: mockRpc,
     auth: { getUser: mockGetUser },
   },
+  getCachedSession: mockCachedSession,
 }))
 
 import { SupabaseReactionRepository } from './reactionRepository'
@@ -43,6 +45,7 @@ describe('SupabaseReactionRepository', () => {
     vi.clearAllMocks()
     mockRpc.mockResolvedValue({ data: null, error: null })
     mockGetUser.mockResolvedValue({ data: { user: { id: LENSER_ID } } })
+    mockCachedSession.mockReturnValue({ user: { id: LENSER_ID } })
   })
 
   // ---------------------------------------------------------------------------
@@ -83,7 +86,7 @@ describe('SupabaseReactionRepository', () => {
   // ---------------------------------------------------------------------------
   describe('getUserReaction', () => {
     it('returns empty array when no authenticated user', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: null } })
+      mockCachedSession.mockReturnValue(null)
       expect(await repo.getUserReaction('lens', TARGET_ID, LENSER_ID)).toEqual([])
       expect(mockRpc).not.toHaveBeenCalled()
     })
@@ -146,7 +149,7 @@ describe('SupabaseReactionRepository', () => {
     })
 
     it('returns empty array when no authenticated user', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: null } })
+      mockCachedSession.mockReturnValue(null)
       expect(await repo.getBatchUserReactions('lens', [TARGET_ID], LENSER_ID)).toEqual([])
     })
 

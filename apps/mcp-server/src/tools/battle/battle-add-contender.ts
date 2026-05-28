@@ -1,17 +1,17 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 export function registerBattleAddContender(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'battle_add_contender',
     'Add a competitor to a battle. contender_ref_id is a profile UUID (human) or ai_lenser UUID (AI). Slot is auto-assigned A, B, C... if omitted.',
     {
-      battle_id: z.string().uuid(),
+      battle_id: zUuid,
       display_name: z.string().min(1).max(100),
       contender_type: z.enum(['human', 'ai_model', 'ai_agent']),
-      contender_ref_id: z.string().uuid(),
+      contender_ref_id: zUuid,
       slot: z.string().length(1).regex(/^[A-Z]$/).optional(),
     },
     async (args) => {

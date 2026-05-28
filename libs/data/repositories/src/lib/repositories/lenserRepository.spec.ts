@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-const { mockRpc, mockFrom, mockSelect, mockEq, mockOrder, mockRange, mockGetSession, chainMethods } =
+const { mockRpc, mockFrom, mockSelect, mockEq, mockOrder, mockRange, mockGetSession, mockCachedSession, chainMethods } =
   vi.hoisted(() => {
     const mockSelect = vi.fn()
     const mockEq = vi.fn()
@@ -16,6 +16,7 @@ const { mockRpc, mockFrom, mockSelect, mockEq, mockOrder, mockRange, mockGetSess
       mockOrder,
       mockRange,
       mockGetSession: vi.fn(),
+      mockCachedSession: vi.fn(),
       chainMethods,
     }
   })
@@ -26,6 +27,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
     from: mockFrom,
     auth: { getSession: mockGetSession },
   },
+  getCachedSession: mockCachedSession,
 }))
 
 import { SupabaseLenserRepository, mapProfileToAuthProfileGate } from './lenserRepository'
@@ -103,6 +105,7 @@ describe('SupabaseLenserRepository', () => {
     mockRpc.mockResolvedValue({ data: null, error: null })
     mockFrom.mockReturnValue(chainMethods)
     mockGetSession.mockResolvedValue({ data: { session: null } })
+    mockCachedSession.mockReturnValue(null)
     Object.values(chainMethods).forEach((m) => m.mockReturnValue(chainMethods))
   })
 
@@ -139,13 +142,13 @@ describe('SupabaseLenserRepository', () => {
   // ---------------------------------------------------------------------------
   describe('getActiveLenser', () => {
     it('returns null when no session', async () => {
-      mockGetSession.mockResolvedValue({ data: { session: null } })
+      mockCachedSession.mockReturnValue(null)
       expect(await repo.getActiveLenser()).toBeNull()
       expect(mockRpc).not.toHaveBeenCalled()
     })
 
     it('calls fn_lensers_get_active_profile when session exists', async () => {
-      mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } } })
+      mockCachedSession.mockReturnValue({ user: { id: 'u-1' } })
       mockRpc.mockResolvedValue({ data: [fakeLenser], error: null })
       const result = await repo.getActiveLenser()
       expect(mockRpc).toHaveBeenCalledWith('fn_lensers_get_active_profile')
@@ -153,13 +156,13 @@ describe('SupabaseLenserRepository', () => {
     })
 
     it('returns null when RPC returns error', async () => {
-      mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } } })
+      mockCachedSession.mockReturnValue({ user: { id: 'u-1' } })
       mockRpc.mockResolvedValue({ data: null, error: new Error('auth error') })
       expect(await repo.getActiveLenser()).toBeNull()
     })
 
     it('returns null when data is null', async () => {
-      mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } } })
+      mockCachedSession.mockReturnValue({ user: { id: 'u-1' } })
       mockRpc.mockResolvedValue({ data: null, error: null })
       expect(await repo.getActiveLenser()).toBeNull()
     })
@@ -167,7 +170,7 @@ describe('SupabaseLenserRepository', () => {
 
   describe('getAuthenticatedLenser', () => {
     it('delegates to getActiveLenser', async () => {
-      mockGetSession.mockResolvedValue({ data: { session: null } })
+      mockCachedSession.mockReturnValue(null)
       expect(await repo.getAuthenticatedLenser()).toBeNull()
     })
   })
@@ -177,12 +180,12 @@ describe('SupabaseLenserRepository', () => {
   // ---------------------------------------------------------------------------
   describe('getAuthenticatedProfileGate', () => {
     it('returns { kind: "new" } when no session', async () => {
-      mockGetSession.mockResolvedValue({ data: { session: null } })
+      mockCachedSession.mockReturnValue(null)
       expect(await repo.getAuthenticatedProfileGate()).toEqual({ kind: 'new' })
     })
 
     it('calls fn_get_auth_profile_gate and maps result', async () => {
-      mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } } })
+      mockCachedSession.mockReturnValue({ user: { id: 'u-1' } })
       mockRpc.mockResolvedValue({ data: [{ status: 'active', deletion_requested_at: null, onboarding_step: 2 }], error: null })
       const result = await repo.getAuthenticatedProfileGate()
       expect(mockRpc).toHaveBeenCalledWith('fn_get_auth_profile_gate')
@@ -190,7 +193,7 @@ describe('SupabaseLenserRepository', () => {
     })
 
     it('rethrows errors from fn_get_auth_profile_gate', async () => {
-      mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } } })
+      mockCachedSession.mockReturnValue({ user: { id: 'u-1' } })
       mockRpc.mockResolvedValue({ data: null, error: new Error('gate error') })
       await expect(repo.getAuthenticatedProfileGate()).rejects.toThrow('gate error')
     })

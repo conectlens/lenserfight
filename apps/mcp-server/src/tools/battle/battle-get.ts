@@ -1,14 +1,13 @@
-import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 export function registerBattleGet(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'battle_get',
     'Get a battle with its contenders, vote aggregates, and submissions.',
     {
-      battle_id: z.string().uuid(),
+      battle_id: zUuid,
     },
     async ({ battle_id }) => {
       const t0 = Date.now();

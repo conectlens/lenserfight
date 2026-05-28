@@ -1,41 +1,47 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 
-const { mockGetSession, mockApiFetch } = vi.hoisted(() => ({
+const { mockGetSession, mockGetCachedAccessToken } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
-  mockApiFetch: vi.fn(),
+  mockGetCachedAccessToken: vi.fn().mockReturnValue(null),
 }))
 
 vi.mock('@lenserfight/data/supabase', () => ({
   supabase: {
     auth: { getSession: mockGetSession },
   },
-}))
-
-vi.mock('../apiFetch', () => ({
-  apiFetch: mockApiFetch,
+  getCachedAccessToken: mockGetCachedAccessToken,
 }))
 
 vi.mock('@lenserfight/utils/env', () => ({
-  API_BASE_URL: 'https://api.example.com',
+  readEnv: vi.fn((key: string, fallback?: string) => fallback ?? ''),
 }))
 
 import { HttpExecutionApiClient } from './executionApiClient'
 
+const EDGE_URL = 'http://localhost:54321/functions/v1/trigger-execution'
+
 describe('HttpExecutionApiClient', () => {
   let client: HttpExecutionApiClient
+  let fetchSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     client = new HttpExecutionApiClient()
     vi.clearAllMocks()
     mockGetSession.mockResolvedValue({ data: { session: { access_token: 'jwt-token-123' } } })
-    mockApiFetch.mockResolvedValue({ json: vi.fn().mockResolvedValue({ executionId: 'exec-1' }) })
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ executionId: 'exec-1' }), { status: 200 })
+    )
+  })
+
+  afterEach(() => {
+    fetchSpy.mockRestore()
   })
 
   describe('triggerExecution', () => {
-    it('fetches session and posts to /v1/executions with bearer token', async () => {
+    it('posts to trigger-execution edge function with bearer token', async () => {
       const dto = { workflowId: 'wf-1', inputs: { key: 'val' } } as any
       await client.triggerExecution(dto)
-      expect(mockApiFetch).toHaveBeenCalledWith('https://api.example.com/v1/executions', {
+      expect(fetchSpy).toHaveBeenCalledWith(EDGE_URL, {
         method: 'POST',
         headers: expect.objectContaining({
           'Content-Type': 'application/json',
@@ -51,15 +57,16 @@ describe('HttpExecutionApiClient', () => {
     })
 
     it('returns parsed JSON response', async () => {
-      const mockJson = vi.fn().mockResolvedValue({ executionId: 'exec-1', status: 'queued' })
-      mockApiFetch.mockResolvedValue({ json: mockJson })
+      fetchSpy.mockResolvedValue(
+        new Response(JSON.stringify({ executionId: 'exec-1', status: 'queued' }), { status: 200 })
+      )
       const result = await client.triggerExecution({ workflowId: 'wf-1' } as any)
       expect(result).toEqual({ executionId: 'exec-1', status: 'queued' })
     })
 
-    it('propagates fetch errors', async () => {
-      mockApiFetch.mockRejectedValue(new Error('network error'))
-      await expect(client.triggerExecution({} as any)).rejects.toThrow('network error')
+    it('throws when response is not ok', async () => {
+      fetchSpy.mockResolvedValue(new Response('Internal Server Error', { status: 500 }))
+      await expect(client.triggerExecution({} as any)).rejects.toThrow('trigger-execution failed')
     })
   })
 })

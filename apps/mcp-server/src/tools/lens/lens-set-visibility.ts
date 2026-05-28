@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 export function registerLensSetVisibility(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_set_visibility',
     'Change the visibility of a lens. public = anyone, community = logged-in users, private = owner only.',
     {
-      lens_id: z.string().uuid(),
+      lens_id: zUuid,
       visibility: z.enum(['public', 'community', 'private']),
     },
     async ({ lens_id, visibility }) => {

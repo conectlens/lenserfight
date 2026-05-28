@@ -2,6 +2,7 @@ import { generatedChallengesRepository } from './generatedChallengesRepository'
 
 // Mock supabase client
 const mockSelect = vi.fn()
+const mockInsertSelect = vi.fn()
 const mockInsert = vi.fn()
 const mockUpdate = vi.fn()
 const mockEq = vi.fn()
@@ -13,7 +14,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
   supabase: {
     from: vi.fn(() => ({
       insert: mockInsert.mockReturnValue({
-        select: mockSelect.mockReturnValue({
+        select: mockInsertSelect.mockReturnValue({
           single: mockSingle,
         }),
       }),

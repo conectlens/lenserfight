@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 interface ResolveTemplateResult {
   lens_id: string;
@@ -14,7 +14,7 @@ export function registerLensFork(server: McpServer, sb: SupabaseClient): void {
     'lens_fork',
     'Fork a lens. Creates a new lens with the source as its parent. Optionally override the title or template body.',
     {
-      source_lens_id: z.string().uuid(),
+      source_lens_id: zUuid,
       title: z.string().min(1).max(200).optional(),
       template_body: z.string().min(50).optional(),
       visibility: z.enum(['public', 'community', 'private']).default('public').optional(),

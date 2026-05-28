@@ -11,6 +11,7 @@ import { registerLensSetVisibility } from './lens-set-visibility.js';
 import { registerLensValidateParams } from './lens-validate-params.js';
 import { registerLensExtractParams } from './lens-extract-params.js';
 import { registerLensRun } from './lens-run.js';
+import { registerLensFindAndRun } from './lens-find-and-run.js';
 import { registerLensFork } from './lens-fork.js';
 import { registerLensVersions } from './lens-versions.js';
 import { registerLensGetVersion } from './lens-get-version.js';
@@ -27,6 +28,7 @@ export function registerLensTools(server: McpServer, sb: SupabaseClient): void {
   registerLensValidateParams(server, sb);
   registerLensExtractParams(server, sb);
   registerLensRun(server, sb);
+  registerLensFindAndRun(server, sb);
   registerLensFork(server, sb);
   registerLensVersions(server, sb);
   registerLensGetVersion(server, sb);

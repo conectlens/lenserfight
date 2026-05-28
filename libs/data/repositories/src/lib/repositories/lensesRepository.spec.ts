@@ -790,7 +790,7 @@ describe('SupabaseLensesRepository', () => {
       await repo.updateVersionParams(VERSION_ID, [{ label: 'Input', toolId: 'tool-1' }])
       expect(mockRpc).toHaveBeenCalledWith('fn_update_lens_version_params', {
         p_version_id: VERSION_ID,
-        p_params: [{ label: 'Input', tool_id: 'tool-1' }],
+        p_params: [{ label: 'Input', tool_id: 'tool-1', optional: false }],
       })
     })
   })

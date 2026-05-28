@@ -6,7 +6,7 @@ import { paginated, fail } from '../../types.js';
 export function registerLensSearch(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_search',
-    'Search lenses by keyword. Matches against version template bodies and IDs. Returns paginated results.',
+    'Full-text search lenses by keyword across title, description, and rendered content. Returns lenses with title, description, language, author, tags, and head_version_id. Use this when the user describes what they want (e.g. "logo brief", "code review") rather than knowing a specific lens id.',
     {
       query: z.string().min(1),
       visibility: z.enum(['public', 'community', 'private']).optional(),

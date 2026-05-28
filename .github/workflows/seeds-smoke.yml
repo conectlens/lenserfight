@@ -42,7 +42,20 @@ jobs:
         run: supabase start
 
       - name: Reset database (applies migrations + seed.sql)
-        run: supabase db reset --local --yes
+        # `supabase db reset` finishes by polling Studio/Kong while containers
+        # are still warming up; the first poll occasionally returns 502 even
+        # though migrations succeeded. Retry once after a short cool-down.
+        run: |
+          for attempt in 1 2; do
+            if supabase db reset --local --yes; then
+              exit 0
+            fi
+            echo "db reset attempt $attempt failed; restarting Supabase and retrying"
+            supabase stop --no-backup || true
+            sleep 5
+            supabase start
+          done
+          exit 1
 
       - name: Stop Supabase
         if: always()

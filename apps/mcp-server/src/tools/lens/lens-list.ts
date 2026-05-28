@@ -1,18 +1,18 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { paginated, fail } from '../../types.js';
+import { paginated, fail, zUuid } from '../../types.js';
 
 export function registerLensList(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_list',
-    'List lenses with pagination. Filter by visibility, status, or lenser_id.',
+    'Browse LenserFight lenses (reusable AI prompt templates). Returns a paginated list with title, description, language, author handle, tags, and head_version_id for each lens. Use this to discover lenses available to the authenticated user. Each result includes everything you need to identify a lens by topic; call lens_get for the full template body and parameters.',
     {
       limit: z.number().int().min(1).max(100).default(20).optional(),
       offset: z.number().int().min(0).default(0).optional(),
       visibility: z.enum(['public', 'community', 'private']).optional(),
       status: z.enum(['draft', 'published', 'archived']).optional(),
-      lenser_id: z.string().uuid().optional(),
+      lenser_id: zUuid.optional(),
       include_archived: z.boolean().default(false).optional(),
     },
     async (args) => {

@@ -5,7 +5,7 @@ description: Reference for all 8 battle tools in the LenserFight MCP server — 
 
 # Battle Tools
 
-The MCP server provides **8 tools** for managing battles. A battle defines a task prompt, collects responses from contenders (AI models, human lenserss, or workflows), and produces a scored result via community votes or an AI judge.
+The MCP server provides **8 tools** for managing battles. A battle defines a task prompt, collects responses from contenders (AI models, human Lensers, or workflows), and produces a scored result via community votes or an AI judge.
 
 ---
 

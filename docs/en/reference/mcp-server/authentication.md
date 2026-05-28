@@ -1,6 +1,6 @@
 ---
 title: MCP Server Authentication
-description: Token types, OAuth PKCE flow, and long-lived MCP token setup for the LenserFight MCP server.
+description: Token types, OAuth 2.1 PKCE flow, and long-lived MCP token setup for the LenserFight MCP server.
 ---
 
 # Authentication
@@ -13,69 +13,82 @@ The MCP server supports three authentication strategies depending on how it is d
 
 ### Service role key (stdio mode only)
 
-In stdio mode the server reads `SUPABASE_SERVICE_ROLE_KEY` from the environment at startup. No Bearer header is required — the service role key is pre-configured and shared for all requests. This bypasses Supabase RLS, so restrict stdio mode to trusted local environments.
+In stdio mode the server reads `SUPABASE_SERVICE_ROLE_KEY` from the environment at startup. No Bearer header is required — the service role key is pre-configured and used for all requests. This bypasses Supabase RLS entirely, so restrict stdio mode to trusted local environments.
 
-### Supabase JWT (HTTP mode — OAuth users)
+### MCP token (`lf_mcp_*`)
 
-When using the HTTP transport or the Supabase Edge Function, every request must include:
-
-```http
-Authorization: Bearer <supabase-jwt>
-```
-
-The server validates the token by calling `sb.auth.getUser(token)` on the service-role Supabase client. On success it resolves the caller's `lenser_id` via the RPC `fn_mcp_resolve_lenser_id(auth_user_id)` and creates an `AuthContext`:
-
-```ts
-interface AuthContext {
-  lenserId: string;  // the lenser UUID the tools operate on behalf of
-  userId: string;    // Supabase auth user UUID
-  userJwt: string;   // the original JWT, forwarded to the user-scoped client
-}
-```
-
-### MCP token (long-lived app tokens)
-
-MCP tokens are long-lived credentials that bypass the Supabase session expiry. They follow the format `lf_mcp_<32 hex characters>`.
+MCP tokens are long-lived credentials issued by the MCP server's OAuth flow. They follow the format `lf_mcp_<64 hex characters>`.
 
 **Resolution flow:**
 
 1. Token is extracted from `Authorization: Bearer lf_mcp_…`.
 2. RPC `fn_mcp_resolve_token(token)` returns `{ lenser_id, supabase_refresh_token }`.
 3. The refresh token is exchanged for a fresh Supabase JWT.
-4. The fresh JWT is used to build the user-scoped Supabase client.
+4. The fresh JWT is used to build the user-scoped Supabase client (RLS applies normally).
 
-MCP tokens are suitable for CI pipelines, agent automations, or any context where re-triggering the OAuth flow is impractical. Generate them from the LenserFight web app under **Settings → Developer → MCP Tokens**.
+MCP tokens are suitable for AI agent automations or CI pipelines where re-triggering the OAuth login flow is impractical.
+
+### Supabase JWT (advanced)
+
+When using the HTTP transport with a short-lived Supabase JWT, include:
+
+```http
+Authorization: Bearer <supabase-jwt>
+```
+
+The server validates the token via `sb.auth.getUser(token)`, resolves the caller's `lenser_id` via RPC, and creates a user-scoped client. Supabase JWTs expire after the configured session lifetime (default 1 hour) — MCP tokens do not expire unless revoked.
 
 ---
 
-## OAuth PKCE flow (HTTP mode)
+## OAuth 2.1 PKCE flow
 
-When a client such as Claude.ai connects to the HTTP server or the Supabase Edge Function, it reads the OAuth discovery document and starts a PKCE authorization flow.
+When Claude.ai or another HTTP client connects, it reads the OAuth discovery document and starts a PKCE authorization flow.
 
-### Discovery document
+### Discovery documents
 
 ```
 GET /.well-known/oauth-authorization-server
+GET /.well-known/oauth-protected-resource
+GET /.well-known/oauth-protected-resource/mcp
 ```
 
-Response shape:
+The authorization server document advertises:
 
 ```json
 {
-  "issuer": "https://your-server-base-url",
-  "authorization_endpoint": "https://your-server-base-url/oauth/authorize",
-  "token_endpoint": "https://your-server-base-url/oauth/token",
-  "userinfo_endpoint": "https://<project>.supabase.co/auth/v1/user",
-  "jwks_uri": "https://<project>.supabase.co/auth/v1/jwks",
+  "issuer": "https://<server-base-url>",
+  "authorization_endpoint": "https://<server-base-url>/oauth/authorize",
+  "token_endpoint": "https://<server-base-url>/oauth/token",
+  "registration_endpoint": "https://<server-base-url>/oauth/register",
   "response_types_supported": ["code"],
   "grant_types_supported": ["authorization_code"],
   "code_challenge_methods_supported": ["S256"],
-  "scopes_supported": ["openid", "email", "profile"],
-  "token_endpoint_auth_methods_supported": ["client_secret_post"]
+  "token_endpoint_auth_methods_supported": ["none"]
 }
 ```
 
-The `issuer`, `authorization_endpoint`, and `token_endpoint` are derived from `MCP_OAUTH_BASE_URL`. The `userinfo_endpoint` and `jwks_uri` point to your Supabase project's auth service.
+### Dynamic client registration
+
+The server supports [RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591) dynamic client registration. Clients that do not have a pre-registered `client_id` (like Claude.ai on first connection) call `POST /oauth/register` to receive one:
+
+```http
+POST /oauth/register
+Content-Type: application/json
+
+{
+  "client_name": "Claude",
+  "redirect_uris": ["https://claude.ai/api/mcp/auth_callback"]
+}
+```
+
+Response:
+```json
+{
+  "client_id": "lf_mcp_client_<generated>",
+  "redirect_uris": ["https://claude.ai/api/mcp/auth_callback"],
+  "token_endpoint_auth_method": "none"
+}
+```
 
 ### Flow summary
 
@@ -83,43 +96,55 @@ The `issuer`, `authorization_endpoint`, and `token_endpoint` are derived from `M
 sequenceDiagram
   participant Client as MCP Client (Claude.ai)
   participant MCP as MCP Server
-  participant Supabase as Supabase Auth
+  participant User as User (browser)
+  participant DB as Supabase DB
 
   Client->>MCP: GET /.well-known/oauth-authorization-server
   MCP-->>Client: Discovery document
 
+  Client->>MCP: POST /oauth/register (if no client_id)
+  MCP-->>Client: { client_id }
+
   Client->>Client: Generate code_verifier + code_challenge (S256)
-  Client->>MCP: GET /oauth/authorize?response_type=code&code_challenge=…
-  MCP->>Supabase: Redirect to Supabase login UI
-  Supabase-->>Client: Authorization code
+  Client->>MCP: GET /oauth/authorize?code_challenge=...&client_id=...
+  MCP-->>User: HTML login form
+
+  User->>MCP: POST /oauth/login (email + password)
+  MCP->>DB: Supabase password auth → resolve lenser_id
+  DB-->>MCP: lenser_id + session
+  MCP->>MCP: Issue lf_mcp_* token, store auth code
+  MCP-->>User: Redirect to client with ?code=lf_mcp_...
 
   Client->>MCP: POST /oauth/token (code + code_verifier)
-  MCP->>Supabase: Exchange code for JWT
-  Supabase-->>MCP: access_token (JWT)
-  MCP-->>Client: access_token
+  MCP-->>Client: { access_token: "lf_mcp_..." }
 
-  Client->>MCP: POST /mcp (Authorization: Bearer <jwt>)
-  MCP->>Supabase: auth.getUser(jwt) → resolve lenser_id
+  Client->>MCP: POST /mcp (Authorization: Bearer lf_mcp_...)
+  MCP->>DB: fn_mcp_resolve_token → lenser_id + refresh token
   MCP-->>Client: Tool result
 ```
 
+### Key design notes
+
+- The `code` returned in the redirect **is** the `lf_mcp_*` bearer token. On `POST /oauth/token`, if the code already starts with `lf_mcp_`, the server returns it directly. This makes the flow compatible with clients (like Claude.ai) whose token exchange call comes from a cloud backend that cannot reach localhost.
+- The local dev client `lf_mcp_client_localdev` is created automatically on every server boot via `fn_mcp_ensure_local_dev_client`. It is PKCE-only (`requires_secret = false`) and is never lost by a DB reset.
+
 ---
 
-## Request headers
+## Request headers (HTTP mode)
 
 | Header | Value | Required |
 |---|---|---|
-| `Authorization` | `Bearer <supabase-jwt>` or `Bearer lf_mcp_<hex>` | Yes (HTTP mode) |
+| `Authorization` | `Bearer lf_mcp_<hex>` or `Bearer <supabase-jwt>` | Yes |
 | `mcp-session-id` | Opaque string issued at session start | Recommended |
 | `Content-Type` | `application/json` | Yes |
 
-The `mcp-session-id` header is used to route requests to the correct in-memory session. If omitted, the server creates a new session for each request, which is less efficient but still correct.
+If `mcp-session-id` is omitted, the server creates a new in-memory session for each request, which is less efficient but still correct.
 
 ---
 
 ## Security considerations
 
-- The service role key bypasses RLS on every Supabase table. Never expose it in client-side code or commit it to source control.
-- In stdio mode, access to the running process is equivalent to access to the service role key.
-- Supabase JWTs expire after the configured session lifetime (default 1 hour). MCP tokens do not expire unless revoked.
-- Revoke MCP tokens from **Settings → Developer → MCP Tokens** in the LenserFight web app.
+- The service role key bypasses RLS on every table. Never expose it in client-side code or commit it to a public repository.
+- In stdio mode, shell access is equivalent to service role key access — restrict it to your own machine.
+- MCP tokens are long-lived. Avoid logging them. If a token is leaked, revoke it by deleting the corresponding row from `lensers.mcp_tokens`.
+- The HTML login form uses `escapeHtml` to prevent XSS in error messages.

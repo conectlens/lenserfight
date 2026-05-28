@@ -1,14 +1,13 @@
-import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 export function registerLensVersions(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_versions',
     'List all versions of a lens ordered newest-first. Each version is immutable — new edits create new versions.',
     {
-      lens_id: z.string().uuid(),
+      lens_id: zUuid,
     },
     async ({ lens_id }) => {
       const t0 = Date.now();

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 const DESTRUCTIVE_STATUSES = new Set(['closed', 'archived']);
 
@@ -10,7 +10,7 @@ export function registerBattleSetStatus(server: McpServer, sb: SupabaseClient): 
     'battle_set_status',
     'Transition a battle to a new status. The DB enforces legal transitions — illegal moves are rejected. Closing or archiving requires confirm: true.',
     {
-      battle_id: z.string().uuid(),
+      battle_id: zUuid,
       status: z.enum(['open','executing','voting','scoring','closed','published','archived']),
       confirm: z.literal(true).optional(),
     },

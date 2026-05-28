@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 interface ResolveTemplateResult {
   lens_id: string;
@@ -15,8 +15,8 @@ export function registerLensValidateParams(server: McpServer, sb: SupabaseClient
     'lens_validate_params',
     'Validate parameter values against a lens version schema. Returns which params are missing, which are unknown, and whether the input is valid.',
     {
-      lens_id: z.string().uuid(),
-      version_id: z.string().uuid().optional(),
+      lens_id: zUuid,
+      version_id: zUuid.optional(),
       values: z.record(z.string(), z.string()),
     },
     async ({ lens_id, version_id, values }) => {

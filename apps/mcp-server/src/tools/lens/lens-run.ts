@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 interface VersionParam {
   id: string;
@@ -14,6 +14,8 @@ interface ResolveTemplateResult {
   version_id: string;
   template_body: string;
   parameters: VersionParam[];
+  title?: string | null;
+  description?: string | null;
 }
 
 export function resolveTemplate(
@@ -48,12 +50,26 @@ export function resolveTemplate(
 export function registerLensRun(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_run',
-    'Resolve a lens template by substituting [[Parameter]] tokens with provided values. Returns the resolved prompt ready for AI execution. Does NOT call an LLM — the calling AI model executes the resolved prompt. Optionally creates a workflow_run record for tracking.',
+    `Resolve a lens template into a ready-to-execute prompt by substituting its [[Parameter]] tokens with values you supply.
+
+WORKFLOW:
+1. Discover lenses with lens_list or lens_search.
+2. Call lens_get(lens_id) to see the parameter list (label + optional flag) and template body.
+3. Call lens_run(lens_id, param_values={"Topic":"...", "Language":"..."}) with values keyed by parameter label.
+4. The returned 'resolved_prompt' is what YOU (the AI model) should execute next — this tool does NOT call an LLM. Read 'resolved_prompt' and respond to the user with the result.
+
+PARAM VALUES:
+- Match parameter labels case-insensitively (e.g. "topic" works for label "Topic").
+- Missing required params → returns MISSING_PARAMS error with the labels to ask the user for.
+- Unknown keys are ignored.
+- Optional params not provided → token replaced with empty string.
+
+If workflow_id is given, the run is persisted as a workflow_run for telemetry; otherwise it is ephemeral.`,
     {
-      lens_id: z.string().uuid(),
-      version_id: z.string().uuid().optional(),
+      lens_id: zUuid,
+      version_id: zUuid.optional(),
       param_values: z.record(z.string(), z.string()).default({}).optional(),
-      workflow_id: z.string().uuid().optional(),
+      workflow_id: zUuid.optional(),
     },
     async (args) => {
       const t0 = Date.now();
@@ -76,7 +92,18 @@ export function registerLensRun(server: McpServer, sb: SupabaseClient): void {
         );
 
         if (missing.length > 0) {
-          return fail('MISSING_PARAMS', 'Required parameters not provided.', { missing }, 'lens_run', t0);
+          return fail(
+            'MISSING_PARAMS',
+            `Lens "${resolveData.title ?? args.lens_id}" needs ${missing.length} more parameter(s) before it can run. Ask the user for: ${missing.join(', ')}. Then call lens_run again with param_values including these labels.`,
+            {
+              missing,
+              all_parameters: resolveData.parameters ?? [],
+              lens_title: resolveData.title ?? null,
+              lens_description: resolveData.description ?? null,
+            },
+            'lens_run',
+            t0
+          );
         }
 
         let runId: string | null = null;
@@ -108,12 +135,15 @@ export function registerLensRun(server: McpServer, sb: SupabaseClient): void {
 
         return ok({
           resolved_prompt: resolved,
-          run_id: runId,
+          lens_title: resolveData.title ?? null,
+          lens_description: resolveData.description ?? null,
           lens_id: args.lens_id,
           version_id: resolveData.version_id,
+          run_id: runId,
           params_used: used,
           estimated_input_tokens: Math.ceil(resolved.length / 4),
           persisted,
+          next_step: 'Execute the resolved_prompt and return the result to the user. This MCP tool does not call any LLM itself.',
         }, 'lens_run', t0);
       } catch (e) {
         return fail('DB_ERROR', (e as Error).message, {}, 'lens_run', t0);

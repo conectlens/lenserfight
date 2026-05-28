@@ -1,14 +1,13 @@
-import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 export function registerLensGet(server: McpServer, sb: SupabaseClient): void {
   server.tool(
     'lens_get',
-    'Get a lens with its head version details and full parameter list.',
+    'Fetch a single lens with full metadata: title, description, content (rendered preview), author, tags, language, and its head version including the template body, input/output contracts, and parameter list. Call this after lens_list / lens_search when you need the actual template + parameters to execute a lens via lens_run.',
     {
-      lens_id: z.string().uuid('lens_id must be a valid UUID'),
+      lens_id: zUuid,
     },
     async ({ lens_id }) => {
       const t0 = Date.now();

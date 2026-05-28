@@ -1,7 +1,6 @@
-import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ok, fail } from '../../types.js';
+import { ok, fail, zUuid } from '../../types.js';
 
 interface ResolveTemplateResult {
   lens_id: string;
@@ -15,8 +14,8 @@ export function registerLensExtractParams(server: McpServer, sb: SupabaseClient)
     'lens_extract_params',
     'Extract [[Parameter]] token info from a lens version. Returns each parameter label, whether it is optional, and its internal UUID.',
     {
-      lens_id: z.string().uuid(),
-      version_id: z.string().uuid().optional(),
+      lens_id: zUuid,
+      version_id: zUuid.optional(),
     },
     async ({ lens_id, version_id }) => {
       const t0 = Date.now();
