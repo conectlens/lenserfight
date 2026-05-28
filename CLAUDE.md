@@ -71,6 +71,9 @@ Use the matching skill when work is specialized:
 - shared UI contracts (libs/ui, tokens, platform entrypoints) → `ui-contract-guard`
 - i18n strings, locale coverage, hreflang SEO → `apps-language-rules`
 - adding or porting a new language/locale → `language-integrator`
+- deep performance review (re-renders, bundle, memory, CPU, network, LCP, jank, high-traffic conditions) → `react-vite-performance-reviewer`
+
+> **Enforcement:** Before approving any React/ViteJS change, evaluate browser performance, memory pressure, CPU usage, network cost, bundle impact, render stability, and stressful traffic conditions — use the `react-vite-performance-reviewer` skill to enforce this gate.
 
 ### Mobile (apps/mobile)
 - screen design, iOS/Android specifics, design system → `mobile-app-designer`
@@ -79,6 +82,9 @@ Use the matching skill when work is specialized:
 - mobile performance, security, permissions, render cost → `mobile-app-reviewer`
 - mobile locale resolution, language settings → `mobile-language-checker`
 - canonical mobile design rules → `mobile-ruleset`
+- deep performance review (re-renders, memory, CPU, battery, network, jank, stressful conditions) → `react-native-performance-reviewer`
+
+> **Enforcement:** Before approving any React Native or Expo Go change, evaluate mobile performance, memory pressure, CPU usage, battery impact, network cost, render stability, and behavior under stressful user conditions — use the `react-native-performance-reviewer` skill to enforce this gate.
 
 ### Testing & review
 - test scope and layering → `unit-test-planner`

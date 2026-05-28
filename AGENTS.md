@@ -60,6 +60,9 @@ When the task clearly matches a project skill, activate the relevant skill from 
 - `ui-contract-guard` — shared UI contracts, tokens, platform entrypoints
 - `apps-language-rules` — i18n strings, locale coverage, hreflang SEO
 - `language-integrator` — adding or porting a new language/locale
+- `react-vite-performance-reviewer` — deep browser performance review: re-renders, bundle size, memory, CPU, network cost, LCP, render-blocking resources, and stressful traffic conditions
+
+> **Enforcement:** Before approving any React/ViteJS change, evaluate browser performance, memory pressure, CPU usage, network cost, bundle impact, render stability, and stressful traffic conditions — use the `react-vite-performance-reviewer` skill to enforce this gate.
 
 ### Mobile (apps/mobile)
 - `mobile-app-designer` — screen design, iOS/Android specifics, design system
@@ -68,6 +71,9 @@ When the task clearly matches a project skill, activate the relevant skill from 
 - `mobile-app-reviewer` — mobile performance, security, permissions, render cost
 - `mobile-language-checker` — mobile locale resolution, language settings
 - `mobile-ruleset` — canonical mobile design rules
+- `react-native-performance-reviewer` — deep mobile performance review: re-renders, memory, CPU, battery, network, FlatList, animations, native bridge, and stressful user conditions
+
+> **Enforcement:** Before approving any React Native or Expo Go change, evaluate mobile performance, memory pressure, CPU usage, battery impact, network cost, render stability, and behavior under stressful user conditions — use the `react-native-performance-reviewer` skill to enforce this gate.
 
 #### Mobile env var rules
 - **Never use `import.meta.env.*`** in code bundled by Metro (Expo/Hermes). Hermes does not support `import.meta`.
