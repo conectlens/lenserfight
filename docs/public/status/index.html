@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LenserFight Status</title>
+  <meta name="robots" content="noindex">
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #09090b; color: #fafafa; }
+    .container { max-width: 720px; margin: 0 auto; padding: 40px 16px; }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { color: #a1a1aa; font-size: 0.9rem; margin-bottom: 32px; }
+    .overall { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 600; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; background: #18181b; border-radius: 8px; overflow: hidden; }
+    th { text-align: left; padding: 10px 16px; background: #27272a; font-size: 0.8rem; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.05em; }
+    .footer { margin-top: 24px; color: #52525b; font-size: 0.8rem; }
+    a { color: #818cf8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>LenserFight Status</h1>
+    <p class="subtitle">Generated Sat, 09 May 2026 15:53:05 GMT</p>
+    <div class="overall">
+      <span style="width:14px;height:14px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+      Degraded
+    </div>
+    <table>
+      <thead><tr><th>Check</th><th>Status</th><th>Note</th></tr></thead>
+      <tbody>
+    <tr>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a">API health</td>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;margin-right:6px"></span>ok</td>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a;color:#a1a1aa;font-size:0.85em"></td>
+    </tr>
+    <tr>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a">cron: dispatch-scheduled-workflows</td>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6b7280;margin-right:6px"></span>unknown</td>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a;color:#a1a1aa;font-size:0.85em">not reported by fn_health</td>
+    </tr>
+    <tr>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a">cron: webhook-outbox-dispatcher</td>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6b7280;margin-right:6px"></span>unknown</td>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a;color:#a1a1aa;font-size:0.85em">not reported by fn_health</td>
+    </tr>
+    <tr>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a">Platform flags</td>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6b7280;margin-right:6px"></span>unknown</td>
+      <td style="padding:8px 16px;border-bottom:1px solid #27272a;color:#a1a1aa;font-size:0.85em">HTTP 404</td>
+    </tr></tbody>
+    </table>
+    <p class="footer">
+      Updated nightly. For incidents see <a href="https://github.com/conectlens/lenserfight/discussions">GitHub Discussions</a>.
+    </p>
+  </div>
+</body>
+</html>
