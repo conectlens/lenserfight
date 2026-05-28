@@ -1,0 +1,32 @@
+{
+  "name": "scripts",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "tags": ["scope:workspace", "license:oss"],
+  "targets": {
+    "e2e-battle": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "cwd": ".",
+        "command": "bash scripts/e2e-battle.sh"
+      }
+    },
+    "coverage-gate": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "cwd": ".",
+        "command": "bash scripts/coverage-gate.sh"
+      }
+    },
+    "announcement-dashboard": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "cwd": ".",
+        "command": "bash scripts/announcement-dashboard.sh"
+      }
+    }
+  }
+}
