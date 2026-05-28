@@ -25,7 +25,6 @@ import consola from 'consola'
 import { callRpc, handleError } from '../utils/api'
 import { printTable, printJson } from '../utils/output'
 import { assertSafe } from '../lib/safety'
-import platformCmd from './platform'
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
 const mockHandleError = handleError as jest.MockedFunction<typeof handleError>
@@ -56,8 +55,9 @@ beforeEach(() => {
   mockAssertSafe.mockResolvedValue(undefined as never)
 })
 
-function getSubCmd(key: string): AnyCmd {
-  const cmd = platformCmd as unknown as AnyCmd
+async function getSubCmd(key: string): Promise<AnyCmd> {
+  jest.resetModules()
+  const { default: cmd } = (await import('./platform')) as { default: AnyCmd }
   const sub = cmd.subCommands?.[key]
   return typeof sub === 'function' ? sub() : (sub as AnyCmd)
 }
@@ -69,7 +69,7 @@ function getSubCmd(key: string): AnyCmd {
 describe('platform status', () => {
   it('prints a table with all metrics', async () => {
     mockCallRpc.mockResolvedValueOnce(HEALTHY_STATUS as never)
-    const cmd = getSubCmd('status')
+    const cmd = await getSubCmd('status')
     await cmd.run?.({ args: { json: false } })
 
     expect(mockCallRpc).toHaveBeenCalledWith(
@@ -93,15 +93,15 @@ describe('platform status', () => {
       ...HEALTHY_STATUS,
       system_kill_switch_active: true,
     } as never)
-    const cmd = getSubCmd('status')
+    const cmd = await getSubCmd('status')
     await cmd.run?.({ args: { json: false } })
 
-    expect(consola.warn).toHaveBeenCalledWith(expect.stringContaining('LOCKED'))
+    expect(consola.warn).toHaveBeenCalledWith(expect.stringContaining('LOCKED'), expect.anything())
   })
 
   it('warns when stale workers are detected', async () => {
     mockCallRpc.mockResolvedValueOnce({ ...HEALTHY_STATUS, stale_worker_count: 3 } as never)
-    const cmd = getSubCmd('status')
+    const cmd = await getSubCmd('status')
     await cmd.run?.({ args: { json: false } })
 
     expect(consola.warn).toHaveBeenCalledWith(
@@ -112,7 +112,7 @@ describe('platform status', () => {
 
   it('prints JSON when --json flag is set', async () => {
     mockCallRpc.mockResolvedValueOnce(HEALTHY_STATUS as never)
-    const cmd = getSubCmd('status')
+    const cmd = await getSubCmd('status')
     await cmd.run?.({ args: { json: true } })
 
     expect(mockPrintJson).toHaveBeenCalledWith(HEALTHY_STATUS)
@@ -121,7 +121,7 @@ describe('platform status', () => {
 
   it('calls handleError on API failure', async () => {
     mockCallRpc.mockRejectedValueOnce(new Error('rpc_error'))
-    const cmd = getSubCmd('status')
+    const cmd = await getSubCmd('status')
     await cmd.run?.({ args: { json: false } })
 
     expect(mockHandleError).toHaveBeenCalled()
@@ -139,7 +139,7 @@ describe('platform emergency-stop', () => {
       cancelled_runs: 0,
       cancelled_jobs: 0,
     } as never)
-    const cmd = getSubCmd('emergency-stop')
+    const cmd = await getSubCmd('emergency-stop')
     await cmd.run?.({ args: { reason: 'runaway scheduler', force: false } })
 
     expect(mockAssertSafe).toHaveBeenCalledWith(
@@ -158,7 +158,7 @@ describe('platform emergency-stop', () => {
 
   it('calls handleError on API failure', async () => {
     mockCallRpc.mockRejectedValueOnce(new Error('permission denied'))
-    const cmd = getSubCmd('emergency-stop')
+    const cmd = await getSubCmd('emergency-stop')
     await cmd.run?.({ args: { reason: 'test', force: true } })
 
     expect(mockHandleError).toHaveBeenCalled()
@@ -176,7 +176,7 @@ describe('platform kill-all', () => {
       cancelled_runs: 5,
       cancelled_jobs: 2,
     } as never)
-    const cmd = getSubCmd('kill-all')
+    const cmd = await getSubCmd('kill-all')
     await cmd.run?.({ args: { reason: 'queue flood', force: true } })
 
     expect(mockAssertSafe).toHaveBeenCalledWith(
@@ -192,7 +192,7 @@ describe('platform kill-all', () => {
 
   it('calls handleError on API failure', async () => {
     mockCallRpc.mockRejectedValueOnce(new Error('boom'))
-    const cmd = getSubCmd('kill-all')
+    const cmd = await getSubCmd('kill-all')
     await cmd.run?.({ args: { reason: 'test', force: true } })
 
     expect(mockHandleError).toHaveBeenCalled()
@@ -206,7 +206,7 @@ describe('platform kill-all', () => {
 describe('platform resume', () => {
   it('lifts the kill switch by id', async () => {
     mockCallRpc.mockResolvedValueOnce(null as never)
-    const cmd = getSubCmd('resume')
+    const cmd = await getSubCmd('resume')
     await cmd.run?.({ args: { id: 'sw-abc' } })
 
     expect(mockCallRpc).toHaveBeenCalledWith(
@@ -219,7 +219,7 @@ describe('platform resume', () => {
 
   it('does not call assertSafe', async () => {
     mockCallRpc.mockResolvedValueOnce(null as never)
-    const cmd = getSubCmd('resume')
+    const cmd = await getSubCmd('resume')
     await cmd.run?.({ args: { id: 'sw-abc' } })
 
     expect(mockAssertSafe).not.toHaveBeenCalled()
@@ -227,7 +227,7 @@ describe('platform resume', () => {
 
   it('calls handleError on API failure', async () => {
     mockCallRpc.mockRejectedValueOnce(new Error('not found'))
-    const cmd = getSubCmd('resume')
+    const cmd = await getSubCmd('resume')
     await cmd.run?.({ args: { id: 'bad-id' } })
 
     expect(mockHandleError).toHaveBeenCalled()
@@ -241,7 +241,7 @@ describe('platform resume', () => {
 describe('platform queue-freeze', () => {
   it('calls assertSafe with HIGH risk and calls fn_queue_freeze', async () => {
     mockCallRpc.mockResolvedValueOnce(null as never)
-    const cmd = getSubCmd('queue-freeze')
+    const cmd = await getSubCmd('queue-freeze')
     await cmd.run?.({ args: { reason: 'deploy window', force: true } })
 
     expect(mockAssertSafe).toHaveBeenCalledWith(expect.objectContaining({ risk: 'HIGH' }))
@@ -255,7 +255,7 @@ describe('platform queue-freeze', () => {
 
   it('calls handleError on API failure', async () => {
     mockCallRpc.mockRejectedValueOnce(new Error('forbidden'))
-    const cmd = getSubCmd('queue-freeze')
+    const cmd = await getSubCmd('queue-freeze')
     await cmd.run?.({ args: { reason: 'test', force: true } })
 
     expect(mockHandleError).toHaveBeenCalled()
@@ -269,7 +269,7 @@ describe('platform queue-freeze', () => {
 describe('platform queue-unfreeze', () => {
   it('calls fn_queue_unfreeze and does not call assertSafe', async () => {
     mockCallRpc.mockResolvedValueOnce(null as never)
-    const cmd = getSubCmd('queue-unfreeze')
+    const cmd = await getSubCmd('queue-unfreeze')
     await cmd.run?.({})
 
     expect(mockCallRpc).toHaveBeenCalledWith(
@@ -283,7 +283,7 @@ describe('platform queue-unfreeze', () => {
 
   it('calls handleError on API failure', async () => {
     mockCallRpc.mockRejectedValueOnce(new Error('err'))
-    const cmd = getSubCmd('queue-unfreeze')
+    const cmd = await getSubCmd('queue-unfreeze')
     await cmd.run?.({})
 
     expect(mockHandleError).toHaveBeenCalled()
@@ -297,7 +297,7 @@ describe('platform queue-unfreeze', () => {
 describe('platform scheduler-disable', () => {
   it('calls assertSafe with HIGH risk and fn_queue_freeze', async () => {
     mockCallRpc.mockResolvedValueOnce(null as never)
-    const cmd = getSubCmd('scheduler-disable')
+    const cmd = await getSubCmd('scheduler-disable')
     await cmd.run?.({ args: { reason: 'maintenance', force: true } })
 
     expect(mockAssertSafe).toHaveBeenCalledWith(expect.objectContaining({ risk: 'HIGH' }))
@@ -312,7 +312,7 @@ describe('platform scheduler-disable', () => {
 describe('platform scheduler-enable', () => {
   it('calls fn_queue_unfreeze and does not call assertSafe', async () => {
     mockCallRpc.mockResolvedValueOnce(null as never)
-    const cmd = getSubCmd('scheduler-enable')
+    const cmd = await getSubCmd('scheduler-enable')
     await cmd.run?.({})
 
     expect(mockCallRpc).toHaveBeenCalledWith(
