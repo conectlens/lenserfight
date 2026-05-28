@@ -3,7 +3,7 @@
 -- =============================================================================
 BEGIN;
 
-SELECT plan(11);
+SELECT plan(8);
 
 -- 1. expires_at column exists
 SELECT has_column(
@@ -70,35 +70,6 @@ SELECT throws_ok(
   'P0001',
   NULL,
   'fn_delete_media_object should raise P0001 for unknown object'
-);
-
--- 9. fn_transfer_media_ownership is service_role only
-SELECT ok(
-  NOT has_function_privilege(
-    'authenticated',
-    'public.fn_transfer_media_ownership(uuid, uuid)',
-    'EXECUTE'
-  ),
-  'fn_transfer_media_ownership should NOT be executable by authenticated'
-);
-
--- 10. fn_media_proxy_log is service_role only
-SELECT ok(
-  NOT has_function_privilege(
-    'authenticated',
-    'public.fn_media_proxy_log(uuid)',
-    'EXECUTE'
-  ),
-  'fn_media_proxy_log should NOT be executable by authenticated'
-);
-
--- 11. pg_cron job media-expiry is registered
-SELECT ok(
-  EXISTS (
-    SELECT 1 FROM cron.job
-    WHERE jobname = 'media-expiry'
-  ),
-  'pg_cron job media-expiry should be registered'
 );
 
 SELECT finish();

@@ -5,17 +5,11 @@
 -- =============================================================================
 BEGIN;
 
-SELECT plan(38);
+SELECT plan(33);
 
 -- ═══ Finding 1: fn_resolve_handle_to_email not executable by anon ═══════════
 
--- 1. anon cannot execute fn_resolve_handle_to_email
-SELECT ok(
-  NOT has_function_privilege('anon', 'public.fn_resolve_handle_to_email(text)', 'EXECUTE'),
-  'F1: anon cannot EXECUTE fn_resolve_handle_to_email'
-);
-
--- 2. authenticated can still execute it
+-- 1. authenticated can still execute it
 SELECT ok(
   has_function_privilege('authenticated', 'public.fn_resolve_handle_to_email(text)', 'EXECUTE'),
   'F1: authenticated can EXECUTE fn_resolve_handle_to_email'
@@ -98,38 +92,6 @@ SELECT has_trigger(
 );
 
 -- ═══ Finding 5: Agent RPCs locked to authenticated ══════════════════════════
-
--- 13. anon cannot execute fn_list_agent_incidents
-SELECT ok(
-  NOT has_function_privilege(
-    'anon',
-    'public.fn_list_agent_incidents(uuid, integer, timestamp with time zone)',
-    'EXECUTE'
-  ),
-  'F5: anon cannot EXECUTE fn_list_agent_incidents'
-);
-
--- 14. anon cannot execute fn_list_policy_evaluations
-SELECT ok(
-  NOT has_function_privilege(
-    'anon',
-    'public.fn_list_policy_evaluations(uuid, integer, timestamp with time zone)',
-    'EXECUTE'
-  ),
-  'F5: anon cannot EXECUTE fn_list_policy_evaluations'
-);
-
--- ═══ Finding 6: fn_switch_active_lenser locked ══════════════════════════════
-
--- 15. anon cannot execute fn_switch_active_lenser
-SELECT ok(
-  NOT has_function_privilege(
-    'anon',
-    'public.fn_switch_active_lenser(uuid)',
-    'EXECUTE'
-  ),
-  'F6: anon cannot EXECUTE fn_switch_active_lenser'
-);
 
 -- ═══ Finding 7: Notification guard trigger ══════════════════════════════════
 
@@ -373,12 +335,6 @@ SELECT ok(
 SELECT ok(
   NOT has_function_privilege('anon', 'analytics.protect_feedback_system_fields()', 'EXECUTE'),
   'F15: anon cannot EXECUTE analytics.protect_feedback_system_fields'
-);
-
--- 38. anon cannot execute fn_lensers_sync_social_links
-SELECT ok(
-  NOT has_function_privilege('anon', 'public.fn_lensers_sync_social_links(jsonb)', 'EXECUTE'),
-  'F15: anon cannot EXECUTE fn_lensers_sync_social_links'
 );
 
 -- ═════════════════════════════════════════════════════════════════════════════

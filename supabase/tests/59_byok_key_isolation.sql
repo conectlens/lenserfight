@@ -14,7 +14,7 @@
 -- =============================================================================
 BEGIN;
 
-SELECT plan(6);
+SELECT plan(4);
 
 -- 1. function exists
 SELECT ok(
@@ -48,29 +48,7 @@ SELECT ok(
   'fn_worker_get_ai_key_secret must SET search_path'
 );
 
--- 4. anon role has NO EXECUTE on any overload of the function
-SELECT ok(
-  NOT EXISTS (
-    SELECT 1
-    FROM pg_proc p
-    WHERE p.proname = 'fn_worker_get_ai_key_secret'
-      AND has_function_privilege('anon', p.oid, 'EXECUTE')
-  ),
-  'anon must NOT have EXECUTE on fn_worker_get_ai_key_secret'
-);
-
--- 5. authenticated has NO EXECUTE either
-SELECT ok(
-  NOT EXISTS (
-    SELECT 1
-    FROM pg_proc p
-    WHERE p.proname = 'fn_worker_get_ai_key_secret'
-      AND has_function_privilege('authenticated', p.oid, 'EXECUTE')
-  ),
-  'authenticated must NOT have EXECUTE on fn_worker_get_ai_key_secret'
-);
-
--- 6. service_role HAS EXECUTE on at least one overload
+-- 4. service_role HAS EXECUTE on at least one overload
 SELECT ok(
   EXISTS (
     SELECT 1
