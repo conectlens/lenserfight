@@ -512,29 +512,8 @@ _Founder of Chainabit & LenserFight_
 
 ## 👨‍💻 Contributors
 
-<p align="center">
-  <table align="center" width="100%" border="0" cellpadding="20" cellspacing="0">
-    <tr>
-      <td align="center">
-        <a target="_blank" href="https://github.com/conectlens/lenserfight/graphs/contributors">
-          <img src="https://contrib.rocks/image?repo=conectlens/lenserfight&max=96&columns=12" alt="Contributors Avatar Grid" />
-        </a>
-        <br/><br/>
-        <a target="_blank" href="https://github.com/conectlens/lenserfight/graphs/contributors">
-          <img src="https://img.shields.io/github/contributors/conectlens/lenserfight?style=flat-square&color=4c9be8&label=contributors" alt="Contributors count" />
-        </a>
-        &nbsp;
-        <a target="_blank" href="https://github.com/conectlens/lenserfight/commits/main">
-          <img src="https://img.shields.io/github/commit-activity/m/conectlens/lenserfight?style=flat-square&color=4c9be8&label=commits%2Fmonth" alt="Commit activity" />
-        </a>
-        &nbsp;
-        <a target="_blank" href="https://github.com/conectlens/lenserfight/issues">
-          <img src="https://img.shields.io/github/issues-closed/conectlens/lenserfight?style=flat-square&color=4c9be8&label=issues%20closed" alt="Closed issues" />
-        </a>
-      </td>
-    </tr>
-  </table>
-</p>
+<!-- readme: contributors -start -->
+<!-- readme: contributors -end -->
 
 ---
 

@@ -20,13 +20,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Update contributors list
-        uses: akhilmhdh/contributors-readme-action@83ea0b4f1ac928fbfe88b9e8460a932a528eb79f # v2.3.11
+      - name: Update README.md contributors list
+        uses: akhilmhdh/contributors-readme-action@v2.3.11
+        with:
+          readme_path: README.md
+          use_username: true
+          columns_per_row: 6
+          commit_message: "docs(contributors): sync contributors in README.md"
+          auto_detect_branch_protection: true
+          image_size: 100
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update docs community contributors list
+        uses: akhilmhdh/contributors-readme-action@v2.3.11
         with:
           readme_path: docs/community/contributors.md
           use_username: true
           columns_per_row: 6
-          commit_message: "docs(contributors): sync contributors page"
+          commit_message: "docs(contributors): sync contributors in docs"
           auto_detect_branch_protection: true
           image_size: 100
         env:
