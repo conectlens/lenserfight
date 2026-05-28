@@ -21,6 +21,7 @@ import { LensRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
 
 import { createLenserRepository, createShareRepository } from '../factory'
+import { shareService } from './shareService'
 
 
 const lenserRepo = createLenserRepository()
@@ -90,6 +91,25 @@ export const lenserService = {
     if (data.website_url) {
       const url = data.website_url.trim()
       data.website_url = url && !/^https?:\/\//i.test(url) ? `https://${url}` : url || undefined
+    }
+
+    if (data.website_url && typeof window !== 'undefined' && window.location) {
+      const appDomain = window.location.host
+      const isAlreadyShareLink = data.website_url.includes(appDomain) && data.website_url.includes('/s/')
+      if (!isAlreadyShareLink) {
+        try {
+          const shared = await shareService.createOrGetSharedLink({
+            resourceType: 'external',
+            meta: { url: data.website_url },
+            displayName: data.website_url,
+          })
+          if (shared?.short_id) {
+            data.website_url = shareService.getShareUrl(shared.short_id)
+          }
+        } catch {
+          // Fall back to raw URL on failure
+        }
+      }
     }
 
     const updated = await lenserRepo.updateLenser(data)
