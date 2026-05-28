@@ -70,6 +70,7 @@
     "@google/genai": "^1.46.0",
     "@juristr/nx-tailwind-sync": "^0.0.9",
     "@marsidev/react-turnstile": "^1.4.2",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@noble/ciphers": "^2.2.0",
     "@noble/hashes": "^2.2.0",
     "@posthog/react": "^1.9.0",
@@ -117,7 +118,8 @@
     "rehype-raw": "^7.0.0",
     "sonner": "^1.7.4",
     "tslib": "^2.8.1",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
