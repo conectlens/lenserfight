@@ -57,6 +57,9 @@ seeds/46_connectors.sql
 seeds/47_chainabit_productivity_templates.sql
 seeds/48_workflow_templates.sql
 
+# ── Dev run stubs — ensures acceptance checks pass after cold db reset ────────
+seeds/53_dev_workflow_run_stubs.sql
+
 # ── Geo lookups (countries only — community edition) ──────────────────────
 seeds/03_regions.sql
 seeds/04_subregions.sql
