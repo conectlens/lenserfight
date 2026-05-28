@@ -524,7 +524,7 @@ _Founder of Chainabit & LenserFight_
                 </a>
             </td>
 		</tr>
-	</tbody>
+	<tbody>
 </table>
 <!-- readme: contributors -end -->
 
