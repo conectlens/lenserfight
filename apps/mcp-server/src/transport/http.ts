@@ -24,7 +24,7 @@ function readBody(req: http.IncomingMessage): Promise<string> {
   });
 }
 
-function parseFormBody(raw: string): Record<string, string> {
+export function parseFormBody(raw: string): Record<string, string> {
   const params = new URLSearchParams(raw);
   const result: Record<string, string> = {};
   for (const [k, v] of params.entries()) result[k] = v;
@@ -38,18 +38,16 @@ function jsonResponse(res: http.ServerResponse, status: number, body: unknown): 
   res.end(payload);
 }
 
-function generateToken(): string {
+export function generateToken(): string {
   return `lf_mcp_${crypto.randomBytes(32).toString('hex')}`;
 }
 
-function generateCode(): string {
-  return crypto.randomBytes(16).toString('hex');
-}
-
-function verifyPkce(codeVerifier: string, codeChallenge: string): boolean {
+export function verifyPkce(codeVerifier: string, codeChallenge: string): boolean {
   const digest = crypto.createHash('sha256').update(codeVerifier).digest();
   return digest.toString('base64url') === codeChallenge;
 }
+
+export { escapeHtml };
 
 // ---------------------------------------------------------------------------
 // RPC result types
@@ -63,8 +61,7 @@ type RpcResult<T> = { data: T | null; error: { message: string } | null };
 
 async function handleRegister(
   req: http.IncomingMessage,
-  res: http.ServerResponse,
-  cfg: McpServerConfig
+  res: http.ServerResponse
 ): Promise<void> {
   let body: Record<string, unknown> = {};
   try {
@@ -108,8 +105,66 @@ async function handleRegister(
   });
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c] as string));
+}
+
+function renderLoginPage(opts: {
+  formAction: string;
+  authCodeId: string;
+  email?: string;
+  error?: string;
+  hint?: string;
+}): string {
+  const errBlock = opts.error
+    ? `<div class="err">
+         <strong>${escapeHtml(opts.error)}</strong>
+         ${opts.hint ? `<p>${escapeHtml(opts.hint)}</p>` : ''}
+       </div>`
+    : '';
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LenserFight — Sign in</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e5e5e5; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
+    .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 2rem; width: 100%; max-width: 380px; }
+    h1 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.4rem; color: #fff; }
+    .sub { font-size: 0.8rem; color: #888; margin-bottom: 1.25rem; }
+    label { display: block; font-size: 0.8rem; color: #999; margin-bottom: 0.35rem; }
+    input { width: 100%; padding: 0.6rem 0.8rem; background: #111; border: 1px solid #333; border-radius: 6px; color: #e5e5e5; font-size: 0.9rem; margin-bottom: 1rem; outline: none; }
+    input:focus { border-color: #555; }
+    button { width: 100%; padding: 0.65rem; background: #fff; color: #000; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+    button:hover { background: #e5e5e5; }
+    .err { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25); color: #fca5a5; font-size: 0.8rem; padding: 0.7rem 0.85rem; border-radius: 6px; margin-bottom: 1rem; line-height: 1.4; }
+    .err strong { display: block; margin-bottom: 0.25rem; color: #fecaca; }
+    .err p { margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Sign in to LenserFight</h1>
+    <p class="sub">Authorize the MCP connector to access your lenses, battles, and workflows.</p>
+    ${errBlock}
+    <form method="POST" action="${escapeHtml(opts.formAction)}">
+      <input type="hidden" name="auth_code_id" value="${escapeHtml(opts.authCodeId)}">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required autofocus value="${escapeHtml(opts.email ?? '')}" placeholder="you@example.com">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required placeholder="••••••••">
+      <button type="submit">Sign in</button>
+    </form>
+  </div>
+</body>
+</html>`;
+}
+
 async function handleAuthorize(
-  req: http.IncomingMessage,
   res: http.ServerResponse,
   url: URL,
   cfg: McpServerConfig
@@ -118,6 +173,24 @@ async function handleAuthorize(
   const redirectUri   = url.searchParams.get('redirect_uri');
   const codeChallenge = url.searchParams.get('code_challenge');
   const state         = url.searchParams.get('state');
+  const errorParam    = url.searchParams.get('error');
+  const existingId    = url.searchParams.get('auth_code_id');
+  const emailParam    = url.searchParams.get('email');
+  const hintParam     = url.searchParams.get('hint');
+
+  // Retry case: redisplay form with error
+  if (existingId && errorParam) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.writeHead(200);
+    res.end(renderLoginPage({
+      formAction: `${cfg.mcpOAuthBaseUrl}/oauth/login`,
+      authCodeId: existingId,
+      email: emailParam ?? undefined,
+      error: errorParam,
+      hint: hintParam ?? undefined,
+    }));
+    return;
+  }
 
   if (!clientId || !redirectUri) {
     jsonResponse(res, 400, { error: 'invalid_request', error_description: 'client_id and redirect_uri are required' });
@@ -153,44 +226,12 @@ async function handleAuthorize(
     return;
   }
 
-  // Show a simple login form — Supabase email auth uses password signin, not /authorize
-  const formAction = `${cfg.mcpOAuthBaseUrl}/oauth/login`;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.writeHead(200);
-  res.end(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LenserFight — Sign in</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e5e5e5; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 2rem; width: 100%; max-width: 360px; }
-    h1 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem; color: #fff; }
-    label { display: block; font-size: 0.8rem; color: #999; margin-bottom: 0.35rem; }
-    input { width: 100%; padding: 0.6rem 0.8rem; background: #111; border: 1px solid #333; border-radius: 6px; color: #e5e5e5; font-size: 0.9rem; margin-bottom: 1rem; outline: none; }
-    input:focus { border-color: #555; }
-    button { width: 100%; padding: 0.65rem; background: #fff; color: #000; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
-    button:hover { background: #e5e5e5; }
-    .err { color: #f87171; font-size: 0.8rem; margin-bottom: 1rem; display: none; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>Sign in to LenserFight Local</h1>
-    <p class="err" id="err"></p>
-    <form method="POST" action="${formAction}">
-      <input type="hidden" name="auth_code_id" value="${authCodeId}">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" required autofocus placeholder="you@example.com">
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" required placeholder="••••••••">
-      <button type="submit">Sign in</button>
-    </form>
-  </div>
-</body>
-</html>`);
+  res.end(renderLoginPage({
+    formAction: `${cfg.mcpOAuthBaseUrl}/oauth/login`,
+    authCodeId,
+  }));
 }
 
 async function handleLogin(
@@ -209,6 +250,19 @@ async function handleLogin(
 
   const svc = getServiceClient();
 
+  // Redirect back to the form with a friendly error
+  const showError = (errorMsg: string, hint?: string) => {
+    const params = new URLSearchParams({
+      auth_code_id,
+      error:  errorMsg,
+      email:  email ?? '',
+    });
+    if (hint) params.set('hint', hint);
+    res.setHeader('Location', `${cfg.mcpOAuthBaseUrl}/oauth/authorize?${params.toString()}`);
+    res.writeHead(302);
+    res.end();
+  };
+
   // Verify the auth code exists before attempting sign-in
   const { data: pendingRows } = (await svc.rpc('fn_mcp_oauth_lookup_auth_code' as never, {
     p_id: auth_code_id,
@@ -216,7 +270,10 @@ async function handleLogin(
 
   const pending = pendingRows?.[0] ?? null;
   if (!pending) {
-    jsonResponse(res, 400, { error: 'invalid_request', error_description: 'Invalid or expired auth session' });
+    jsonResponse(res, 400, {
+      error: 'invalid_request',
+      error_description: 'Sign-in session has expired. Please start the connector flow from Claude.ai again.',
+    });
     return;
   }
 
@@ -228,11 +285,17 @@ async function handleLogin(
   });
 
   if (!signInResp.ok) {
-    const errBody = (await signInResp.json()) as { error_description?: string };
-    const msg = encodeURIComponent(errBody.error_description ?? 'Sign-in failed');
-    res.setHeader('Location', `${cfg.mcpOAuthBaseUrl}/oauth/authorize?error=${msg}&auth_code_id=${auth_code_id}`);
-    res.writeHead(302);
-    res.end();
+    let serverMsg = 'Invalid email or password.';
+    try {
+      const errBody = (await signInResp.json()) as { error_description?: string; msg?: string };
+      serverMsg = errBody.error_description ?? errBody.msg ?? serverMsg;
+    } catch {
+      /* ignore parse errors */
+    }
+    showError(
+      'Sign-in failed',
+      `${serverMsg} Double-check your email and password. If you registered through Google/GitHub, sign in there first to set a password.`
+    );
     return;
   }
 
@@ -247,7 +310,10 @@ async function handleLogin(
   } as never)) as RpcResult<string>;
 
   if (!lenserId) {
-    jsonResponse(res, 400, { error: 'invalid_grant', error_description: 'No lenser profile found for this account' });
+    showError(
+      'No Lenser profile found',
+      `Your account (${email}) is authenticated, but has no Lenser profile yet. Open the LenserFight web app and complete onboarding (pick a handle) first, then retry the connector authorization.`
+    );
     return;
   }
 
@@ -285,8 +351,7 @@ async function handleLogin(
 
 async function handleToken(
   req: http.IncomingMessage,
-  res: http.ServerResponse,
-  cfg: McpServerConfig
+  res: http.ServerResponse
 ): Promise<void> {
   const rawBody = await readBody(req);
   const contentType = req.headers['content-type'] ?? '';
@@ -508,12 +573,12 @@ export async function bootHttp(
     // RFC 7591 — dynamic client registration
     if (url.pathname === '/oauth/register') {
       if (req.method !== 'POST') { jsonResponse(res, 405, { error: 'method_not_allowed' }); return; }
-      await handleRegister(req, res, cfg);
+      await handleRegister(req, res);
       return;
     }
 
     if (url.pathname === '/oauth/authorize') {
-      await handleAuthorize(req, res, url, cfg);
+      await handleAuthorize(res, url, cfg);
       return;
     }
 
@@ -531,7 +596,7 @@ export async function bootHttp(
 
     if (url.pathname === '/oauth/token') {
       if (req.method !== 'POST') { jsonResponse(res, 405, { error: 'method_not_allowed' }); return; }
-      await handleToken(req, res, cfg);
+      await handleToken(req, res);
       return;
     }
 
