@@ -21,6 +21,7 @@ export interface ProjectConfig {
 
 /** Device-level config — secrets, auth tokens, and workspace registry. */
 export interface UserConfig {
+  supabaseUrl?: string;
   supabaseAnonKey?: string;
   supabaseServiceRoleKey?: string;
   defaultAdapterId?: string;
@@ -466,6 +467,7 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
     mode: forcedLocal ? 'local' : project.mode,
     supabaseUrl:
       env.supabaseUrl ||
+      user.supabaseUrl ||
       project.supabaseUrl ||
       (isLocal ? LOCAL_SUPABASE_URL : CLOUD_SUPABASE_URL),
     cloudApiUrl:

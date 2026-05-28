@@ -212,11 +212,15 @@ const PRIVATE_IP_RE =
 
 export function buildAuthAppUrl(pathname = '/'): string {
   const PRODUCTION_AUTH = 'https://auth.lenserfight.com'
-  const configured = resolveConfig().authBaseUrl
+  const LOCAL_AUTH = 'http://localhost:3004'
+  const config = resolveConfig()
+  const configured = config.authBaseUrl
   // Reject private / Tailscale CGNAT addresses — they must never appear in
   // user-facing URLs. Only localhost and public HTTPS origins are accepted.
-  const base =
-    configured && !PRIVATE_IP_RE.test(configured) ? configured : PRODUCTION_AUTH
+  if (configured && !PRIVATE_IP_RE.test(configured)) {
+    return new URL(pathname, configured).toString()
+  }
+  const base = config.mode === 'local' ? LOCAL_AUTH : PRODUCTION_AUTH
   return new URL(pathname, base).toString()
 }
 
