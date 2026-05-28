@@ -1,3 +1,13 @@
+## 0.4.0 (2026-05-28)
+
+### 🚀 Features
+
+- update CLI to default to cloud mode and automatically persist public Supabase credentials to device config ([d95c8e56](https://github.com/conectlens/lenserfight/commit/d95c8e56))
+
+### ❤️ Thank You
+
+- Ömer Faruk Coşkun
+
 ## 0.3.2 (2026-05-28)
 
 ### 🩹 Fixes
