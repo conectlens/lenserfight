@@ -1,18 +1,16 @@
 name: Release CLI
 
 on:
-  push:
+  # Auto-release fires only after required CI passes on main — never races with tests.
+  # Both coverage-gate AND smoke-timing must complete successfully before this runs.
+  workflow_run:
+    workflows:
+      - coverage-gate
+      - smoke-timing
     branches:
       - main
-    paths:
-      - 'apps/cli/**'
-      - 'libs/**'
-      - 'nx.json'
-      - 'tools/cli-release/**'
-      - '.github/actions/setup-workspace/**'
-      - '.github/actions/release-prelude/**'
-      - '.github/actions/nx-release-package/**'
-      - '.github/workflows/release-cli.yml'
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       release_channel:
@@ -60,7 +58,9 @@ permissions:
   id-token: write
 
 concurrency:
-  group: release-cli
+  # Shared group with release-npm so both workflows serialize on the same branch.
+  # cancel-in-progress: false — never cancel a release mid-flight.
+  group: release-main
   cancel-in-progress: false
 
 jobs:
@@ -70,11 +70,21 @@ jobs:
     environment: npm-release
 
     steps:
+      - name: Gate — CI must have passed
+        # For workflow_run triggers: skip the release if the upstream CI workflow
+        # failed or was cancelled. This is a soft exit (conclusion=neutral) not a
+        # failure so the check doesn't turn red on non-releasable CI runs.
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success'
+        shell: bash
+        run: |
+          echo "::notice::Upstream workflow '${{ github.event.workflow_run.name }}' concluded '${{ github.event.workflow_run.conclusion }}' — skipping release."
+          exit 0
+
       - name: Resolve effective inputs
         id: effective
         shell: bash
         run: |
-          # On push trigger, inputs are empty — use stable/auto/no-dry-run defaults.
+          # workflow_run trigger: inputs are empty — use stable/auto/no-dry-run defaults.
           echo "dry_run=${{ inputs.dry_run == '' && 'false' || inputs.dry_run }}" >> "$GITHUB_OUTPUT"
           echo "release_channel=${{ inputs.release_channel == '' && 'stable' || inputs.release_channel }}" >> "$GITHUB_OUTPUT"
           echo "version_specifier=${{ inputs.version_specifier == '' && 'auto' || inputs.version_specifier }}" >> "$GITHUB_OUTPUT"
