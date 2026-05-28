@@ -7,7 +7,7 @@
 -- =============================================================================
 BEGIN;
 
-SELECT plan(9);
+SELECT plan(10);
 
 -- ── P1a: WORKFLOW_RUN_RECEIVED ────────────────────────────────────────────────
 
@@ -112,6 +112,15 @@ SELECT ok(
       AND p.proname = 'fn_xp_auto_activate_seasons_safe'
   ),
   'xp.fn_xp_auto_activate_seasons_safe wrapper exists'
+);
+
+-- 10. pg_cron job is registered
+SELECT ok(
+  EXISTS (
+    SELECT 1 FROM cron.job
+    WHERE jobname = 'xp-auto-activate-seasons'
+  ),
+  'pg_cron job xp-auto-activate-seasons is registered'
 );
 
 SELECT * FROM finish();
