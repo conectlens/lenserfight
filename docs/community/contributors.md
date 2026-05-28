@@ -14,6 +14,6 @@ Thank you to all the people who have contributed to LenserFight! 🎉
                 </a>
             </td>
 		</tr>
-	</tbody>
+	<tbody>
 </table>
 <!-- readme: contributors -end -->
