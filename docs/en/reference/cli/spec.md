@@ -1,6 +1,6 @@
 ---
 title: lf spec
-description: LenserFight spec governance: validate, inspect, migrate, and hash spec files.
+description: "LenserFight spec governance: validate, inspect, migrate, and hash spec files."
 ---
 
 <!-- AUTO-GEN-START -->
