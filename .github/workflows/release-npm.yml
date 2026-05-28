@@ -37,11 +37,23 @@ jobs:
     environment: npm-production
 
     steps:
+      - name: Check release prerequisites
+        if: ${{ !inputs.dry_run }}
+        env:
+          BOT_PAT: ${{ secrets.BOT_PAT }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$BOT_PAT" ]]; then
+            echo "::error::BOT_PAT secret is not set. A PAT with repo scope and branch-protection bypass is required to push release commits to the protected main branch."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           fetch-depth: 0
           persist-credentials: true
+          token: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
