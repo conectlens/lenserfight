@@ -1,28 +1,30 @@
 {
   "name": "docs",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/docs/src",
   "projectType": "application",
-  "sourceRoot": "apps/docs",
-  "tags": [],
+  "tags": [
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project docs --web",
   "targets": {
-    "build": {
-      "command": "vitepress build apps/docs",
+    "serve": {
+      "executor": "nx:run-commands",
       "options": {
-        "cwd": "{workspaceRoot}"
-      },
-      "outputs": ["{workspaceRoot}/apps/docs/.vitepress/dist"],
-      "cache": true
+        "command": "npm exec vitepress dev apps/docs -- --port 3002"
+      }
     },
-    "dev": {
-      "command": "vitepress dev apps/docs",
+    "build": {
+      "executor": "nx:run-commands",
       "options": {
-        "cwd": "{workspaceRoot}"
+        "command": "npm exec vitepress build apps/docs"
       }
     },
     "preview": {
-      "command": "vitepress preview apps/docs",
+      "executor": "nx:run-commands",
       "options": {
-        "cwd": "{workspaceRoot}"
+        "command": "npm exec vitepress preview apps/docs -- --port 3002"
       }
     }
   }
