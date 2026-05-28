@@ -24,7 +24,7 @@ import { CONNECTOR_SCOPES } from './scopes'
 
 const MIGRATION_PATH = resolve(
   __dirname,
-  '../../../../../supabase/migrations/20260503100000_connectors_rpcs.sql',
+  '../../../../../supabase/migrations/20260519131536_remote_schema.sql',
 )
 
 function parseSqlAllowList(sql: string): string[] {
