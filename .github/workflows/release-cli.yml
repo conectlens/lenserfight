@@ -213,7 +213,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm sbom --omit dev --sbom-format cyclonedx > dist/apps/cli/cli-sbom.cyclonedx.json
+          npx --yes @cyclonedx/cdxgen --required-only -t js -o dist/apps/cli/cli-sbom.cyclonedx.json
           node tools/cli-release/release-notes.mjs --package-dir dist/apps/cli --output dist/apps/cli/release-notes.md
           npm pack dist/apps/cli --pack-destination dist/apps/cli --json > dist/apps/cli/pack.json
 
