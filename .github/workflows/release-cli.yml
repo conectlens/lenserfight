@@ -8,6 +8,10 @@ on:
       - 'apps/cli/**'
       - 'libs/**'
       - 'nx.json'
+      - 'tools/cli-release/**'
+      - '.github/actions/setup-workspace/**'
+      - '.github/actions/release-prelude/**'
+      - '.github/actions/nx-release-package/**'
       - '.github/workflows/release-cli.yml'
   workflow_dispatch:
     inputs:
@@ -77,17 +81,6 @@ jobs:
           echo "first_release=${{ inputs.first_release == '' && 'false' || inputs.first_release }}" >> "$GITHUB_OUTPUT"
           echo "allow_major=${{ inputs.allow_major == '' && 'false' || inputs.allow_major }}" >> "$GITHUB_OUTPUT"
 
-      - name: Check release prerequisites
-        if: steps.effective.outputs.dry_run != 'true'
-        env:
-          BOT_PAT: ${{ secrets.BOT_PAT }}
-        run: |
-          set -euo pipefail
-          if [[ -z "$BOT_PAT" ]]; then
-            echo "::error::BOT_PAT secret is not set. A PAT with repo scope and branch-protection bypass is required to push release commits to the protected main branch."
-            exit 1
-          fi
-
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
@@ -95,18 +88,11 @@ jobs:
           persist-credentials: true
           token: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
-
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - name: Release prelude
+        uses: ./.github/actions/release-prelude
         with:
-          node-version: 22
-          cache: pnpm
-          registry-url: https://registry.npmjs.org
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          dry_run: ${{ steps.effective.outputs.dry_run }}
+          bot_pat: ${{ secrets.BOT_PAT }}
 
       - name: Configure release
         id: release
@@ -122,13 +108,13 @@ jobs:
             stable)
               dist_tag='latest'
               preid=''
-              test "$ref" = 'main' || { echo 'Stable releases must run from main.' >&2; exit 1; }
+              test "$ref" = 'main' || { echo '::error::Stable releases must run from main.' >&2; exit 1; }
               ;;
             beta)
               dist_tag='beta'
               preid='beta'
               [[ "$ref" = 'main' || "$ref" = 'development' || "$ref" == release/* ]] || {
-                echo 'Beta releases must run from main, development, or release/*.' >&2
+                echo '::error::Beta releases must run from main, development, or release/*.' >&2
                 exit 1
               }
               ;;
@@ -136,7 +122,7 @@ jobs:
               dist_tag='rc'
               preid='rc'
               [[ "$ref" = 'main' || "$ref" == release/* ]] || {
-                echo 'Release candidates must run from main or release/*.' >&2
+                echo '::error::Release candidates must run from main or release/*.' >&2
                 exit 1
               }
               ;;
@@ -144,12 +130,12 @@ jobs:
               dist_tag='nightly'
               preid='nightly'
               [[ "$ref" = 'main' || "$ref" = 'development' ]] || {
-                echo 'Nightly releases must run from main or development.' >&2
+                echo '::error::Nightly releases must run from main or development.' >&2
                 exit 1
               }
               ;;
             *)
-              echo "Unknown release channel: $channel" >&2
+              echo "::error::Unknown release channel: $channel" >&2
               exit 1
               ;;
           esac
@@ -160,7 +146,7 @@ jobs:
 
           if [[ "$specifier" = 'major' || "$specifier" = 'premajor' ]]; then
             test '${{ steps.effective.outputs.allow_major }}' = 'true' || {
-              echo 'Major releases require allow_major=true.' >&2
+              echo '::error::Major releases require allow_major=true.' >&2
               exit 1
             }
           fi
@@ -172,8 +158,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Preflight release-critical tests
-        shell: bash
-        run: pnpm nx run cli:test --testPathPattern='"run\.spec\.ts|auth\.spec\.ts|local-battle-engine\.spec\.ts|exec-context\.spec\.ts"' --forceExit
+        run: bash tools/cli-release/preflight-tests.sh
 
       - name: Preflight package validation
         run: pnpm nx run cli:smoke-install
@@ -192,37 +177,28 @@ jobs:
           pnpm nx "${args[@]}"
           npm publish dist/apps/cli --dry-run --access public --tag '${{ steps.release.outputs.dist_tag }}'
 
-      - name: Version CLI package
+      - name: Release CLI package
         if: steps.effective.outputs.dry_run != 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-
-          args=(release version --projects=cli --stage-changes)
-          specifier='${{ steps.release.outputs.specifier }}'
-          preid='${{ steps.release.outputs.preid }}'
-          if [[ "$specifier" != 'auto' ]]; then args+=("$specifier"); fi
-          if [[ -n "$preid" ]]; then args+=(--preid "$preid"); fi
-          if [[ '${{ steps.effective.outputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
-          pnpm nx "${args[@]}"
-
-      - name: Generate CLI changelog
-        if: steps.effective.outputs.dry_run != 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="$(node -p "require('./apps/cli/package.json').version")"
-          args=(release changelog "$version" --projects=cli)
-          if [[ '${{ steps.effective.outputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
-          pnpm nx "${args[@]}"
+        id: cli
+        uses: ./.github/actions/nx-release-package
+        with:
+          project: cli
+          package_json_path: apps/cli/package.json
+          dist_path: dist/apps/cli
+          dist_tag: ${{ steps.release.outputs.dist_tag }}
+          npm_access: public
+          npm_token: ${{ secrets.NPM_TOKEN }}
+          first_release: ${{ steps.effective.outputs.first_release }}
+          specifier: ${{ steps.release.outputs.specifier }}
+          preid: ${{ steps.release.outputs.preid }}
+          git_ref: ${{ github.ref_name }}
 
       - name: Validate versioned package
-        if: steps.effective.outputs.dry_run != 'true'
+        if: steps.effective.outputs.dry_run != 'true' && steps.cli.outputs.bumped == 'true'
         run: pnpm nx run cli:smoke-install
 
       - name: Generate release assets
+        if: steps.cli.outputs.bumped != 'false'
         shell: bash
         run: |
           set -euo pipefail
@@ -230,53 +206,27 @@ jobs:
           node tools/cli-release/release-notes.mjs --package-dir dist/apps/cli --output dist/apps/cli/release-notes.md
           npm pack dist/apps/cli --pack-destination dist/apps/cli --json > dist/apps/cli/pack.json
 
-      - name: Commit and tag release
-        if: steps.effective.outputs.dry_run != 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="$(node -p "require('./apps/cli/package.json').version")"
-          tag="cli@$version"
-
-          git diff -- apps/cli/package.json apps/cli/CHANGELOG.md
-          git add apps/cli/package.json apps/cli/CHANGELOG.md
-          git diff --cached --quiet && { echo 'No release files changed.' >&2; exit 1; }
-          git commit -m "chore(release): $tag [skip ci]"
-          git rev-parse "$tag" >/dev/null 2>&1 && { echo "Tag already exists: $tag" >&2; exit 1; }
-          git tag -a "$tag" -m "$tag"
-          git push origin "HEAD:${{ github.ref_name }}"
-          git push origin "$tag"
-
-      - name: Publish to npm with provenance
-        if: steps.effective.outputs.dry_run != 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish dist/apps/cli --access public --tag '${{ steps.release.outputs.dist_tag }}' --provenance
-
-      - name: Verify published package
-        if: steps.effective.outputs.dry_run != 'true'
+      - name: Verify published CLI binary
+        if: steps.effective.outputs.dry_run != 'true' && steps.cli.outputs.bumped == 'true'
         shell: bash
         run: |
           set -euo pipefail
           name="$(node -p "require('./apps/cli/package.json').name")"
-          version="$(node -p "require('./apps/cli/package.json').version")"
+          version='${{ steps.cli.outputs.version }}'
           for attempt in 1 2 3 4 5; do
-            if npm view "$name@$version" version dist.integrity dist.tarball --json > dist/apps/cli/npm-view.json; then
-              break
-            fi
+            npm view "${name}@${version}" version dist.integrity dist.tarball --json > dist/apps/cli/npm-view.json 2>/dev/null && break
             sleep $((attempt * 10))
           done
-          npm exec --yes --package "$name@$version" -- lenserfight --version
+          npm exec --yes --package "${name}@${version}" -- lenserfight --version
 
       - name: Create GitHub Release
-        if: steps.effective.outputs.dry_run != 'true'
+        if: steps.effective.outputs.dry_run != 'true' && steps.cli.outputs.bumped == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          version="$(node -p "require('./apps/cli/package.json').version")"
-          tag="cli@$version"
+          tag='${{ steps.cli.outputs.tag }}'
           tarball="$(node -e "const p=require('./dist/apps/cli/pack.json')[0]; console.log('dist/apps/cli/' + p.filename)")"
           prerelease_flag=()
           if [[ '${{ steps.effective.outputs.release_channel }}' != 'stable' ]]; then

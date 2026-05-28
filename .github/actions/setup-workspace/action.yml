@@ -1,0 +1,41 @@
+name: Setup workspace
+description: >
+  Standard workspace bootstrap — pnpm, Node, and (optionally) install
+  dependencies. Pins every third-party action to the SHA used by the release
+  workflows so all CI jobs share one supply-chain posture.
+
+  IMPORTANT: callers MUST run actions/checkout before this action. Local
+  composite actions are loaded from disk, so the repo must already be checked
+  out by the time the runner resolves './.github/actions/setup-workspace'.
+
+inputs:
+  node-version:
+    description: Node.js version to install.
+    required: false
+    default: '22'
+  registry-url:
+    description: npm registry URL. Set to https://registry.npmjs.org for publish jobs so NODE_AUTH_TOKEN is honored.
+    required: false
+    default: ''
+  install:
+    description: Whether to run pnpm install --frozen-lockfile after setup.
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
+
+    - name: Setup Node
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+        registry-url: ${{ inputs.registry-url }}
+
+    - name: Install dependencies
+      if: inputs.install == 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile

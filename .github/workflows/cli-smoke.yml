@@ -16,6 +16,7 @@ on:
       - 'docs/explanation/gateway/**'
       - 'docs/tr/explanation/gateway/**'
       - 'docs/reference/cli/gateway.md'
+      - '.github/actions/setup-workspace/**'
       - '.github/workflows/cli-smoke.yml'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -37,6 +38,7 @@ on:
       - 'docs/explanation/gateway/**'
       - 'docs/tr/explanation/gateway/**'
       - 'docs/reference/cli/gateway.md'
+      - '.github/actions/setup-workspace/**'
       - '.github/workflows/cli-smoke.yml'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -52,17 +54,11 @@ jobs:
       GOOGLE_API_KEY: ''
       MISTRAL_API_KEY: ''
     steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
-      - uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
 
       - name: Run CLI unit tests (includes credentialless dry-run spec)
         run: pnpm nx test cli --testPathPattern='run\.spec\.ts' --forceExit
@@ -86,17 +82,11 @@ jobs:
       # File-backed keychain (CI must not require a real OS keyring).
       LF_GATEWAY_KEY_FILE_FALLBACK: '1'
     steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
-      - uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
 
       - name: Build CLI
         run: pnpm nx build cli
