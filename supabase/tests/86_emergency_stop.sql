@@ -28,7 +28,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN;
 
-SELECT plan(12);
+SELECT plan(18);
 
 -- ── Test 1: admin.execution_control table exists ─────────────────────────────
 
@@ -38,7 +38,14 @@ SELECT has_table(
   'admin.execution_control table exists (Migration 1)'
 );
 
--- ── Test 2: fn_get_execution_status function exists ──────────────────────────
+-- ── Test 2: Singleton row pre-seeded ─────────────────────────────────────────
+
+SELECT ok(
+  (SELECT COUNT(*) FROM admin.execution_control) = 1,
+  'admin.execution_control has exactly 1 row (singleton)'
+);
+
+-- ── Test 3: fn_get_execution_status function exists ──────────────────────────
 
 SELECT has_function(
   'public',
@@ -97,7 +104,51 @@ SELECT has_function(
   'fn_emergency_stop(text, boolean) function exists'
 );
 
--- ── Test 10: fn_timeout_stale_runs(integer) exists ───────────────────────────
+-- ── Test 10: anon cannot call fn_emergency_stop ───────────────────────────────
+
+SELECT ok(
+  NOT has_function_privilege(
+    'anon',
+    'public.fn_emergency_stop(text, boolean)',
+    'EXECUTE'
+  ),
+  'anon role does not have EXECUTE on fn_emergency_stop'
+);
+
+-- ── Test 11: anon cannot call fn_cancel_all_active_runs ───────────────────────
+
+SELECT ok(
+  NOT has_function_privilege(
+    'anon',
+    'public.fn_cancel_all_active_runs(text)',
+    'EXECUTE'
+  ),
+  'anon role does not have EXECUTE on fn_cancel_all_active_runs'
+);
+
+-- ── Test 12: anon cannot call fn_queue_freeze ────────────────────────────────
+
+SELECT ok(
+  NOT has_function_privilege(
+    'anon',
+    'public.fn_queue_freeze(text)',
+    'EXECUTE'
+  ),
+  'anon role does not have EXECUTE on fn_queue_freeze'
+);
+
+-- ── Test 13: anon cannot call fn_queue_unfreeze ──────────────────────────────
+
+SELECT ok(
+  NOT has_function_privilege(
+    'anon',
+    'public.fn_queue_unfreeze()',
+    'EXECUTE'
+  ),
+  'anon role does not have EXECUTE on fn_queue_unfreeze'
+);
+
+-- ── Test 14: fn_timeout_stale_runs(integer) exists ───────────────────────────
 
 SELECT has_function(
   'public',
@@ -126,7 +177,14 @@ SELECT throws_ok(
   'execution_control CHECK(id = 1) rejects id = 2'
 );
 
--- ── Test 13: fn_timeout_stale_runs_safe() (cron wrapper) exists ──────────────
+-- ── Test 17: queue_frozen defaults to false in fn_get_execution_status ────────
+
+SELECT ok(
+  (SELECT (public.fn_get_execution_status()->>'queue_frozen')::boolean) = false,
+  'fn_get_execution_status() reports queue_frozen = false when not frozen'
+);
+
+-- ── Test 18: fn_timeout_stale_runs_safe() (cron wrapper) exists ──────────────
 
 SELECT has_function(
   'public',

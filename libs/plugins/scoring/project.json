@@ -1,0 +1,11 @@
+{
+  "name": "plugins-scoring",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/plugins/scoring/src",
+  "projectType": "library",
+  "tags": [
+    "layer:plugins",
+    "scope:public"
+  ],
+  "targets": {}
+}

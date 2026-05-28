@@ -1,0 +1,6 @@
+outputs/
+cache/
+local-battles/
+automation-registry.json
+*.result.md
+*.result.json

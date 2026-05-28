@@ -1,0 +1,14 @@
+{
+  "name": "feature-lenses",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/lenses/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:lenses",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project feature-lenses --web",
+  "targets": {}
+}

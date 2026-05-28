@@ -1,0 +1,17 @@
+{
+  "name": "@lenserfight-examples/word-count-scoring-plugin",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Reference scoring plugin for LenserFight — emits word_count and sentence_count signals from a submission's content text. Demonstrates the ScoringPluginV1 contract.",
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/demo.ts"
+  },
+  "dependencies": {
+    "@lenserfight/plugins-scoring": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

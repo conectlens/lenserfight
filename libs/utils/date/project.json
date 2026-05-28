@@ -1,0 +1,14 @@
+{
+  "name": "date",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/utils/date/src",
+  "projectType": "library",
+  "tags": [
+    "layer:utils",
+    "util:date",
+    "scope:shared",
+    "license:shared"
+  ],
+  "// targets": "to see all targets run: nx show project date --web",
+  "targets": {}
+}

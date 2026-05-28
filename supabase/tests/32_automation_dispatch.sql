@@ -16,7 +16,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN;
 
-SELECT plan(11);
+SELECT plan(13);
 
 -- ── Fixture ────────────────────────────────────────────────────────────────
 -- Use a synthetic Alice workflow with a fresh node so the dispatcher has
@@ -159,8 +159,8 @@ SELECT lives_ok(
 SELECT is(
   (SELECT last_dispatch_status FROM lenses.workflow_schedules
    WHERE id = current_setting('app.pgtap32d8.sched_id')::uuid),
-  'skipped_condition',
-  'condition raise → last_dispatch_status=skipped_condition (D8)'
+  'condition_failed',
+  'condition raise → last_dispatch_status=condition_failed (D8)'
 );
 
 -- ── Test 5 (D7): the active-only partial index exists ─────────────────────
@@ -172,6 +172,51 @@ SELECT ok(
       AND indexname  = 'idx_workflow_schedules_active'
   ),
   'idx_workflow_schedules_active partial index exists (D7)'
+);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Wrapper kill-switch test.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Toggle the autonomy_dispatch_enabled flag OFF. Direct UPDATE works because
+-- this transaction never elevates to authenticated role (system_flags has
+-- a deny-write policy for authenticated, but writes as postgres bypass RLS).
+UPDATE platform.system_flags
+SET value = 'false'::jsonb, updated_at = now()
+WHERE key = 'autonomy_dispatch_enabled';
+
+-- Seed a fresh schedule so we know any new rows would only come from the
+-- wrapper executing.
+DO $$
+DECLARE
+  v_wf_id uuid := gen_random_uuid();
+  v_sched_id uuid := gen_random_uuid();
+BEGIN
+  INSERT INTO lenses.workflows (id, lenser_id, title, visibility)
+  VALUES (v_wf_id, 'b2000000-0000-0000-0000-000000000001'::uuid,
+          'pgTAP 32 wrapper wf', 'private');
+  INSERT INTO lenses.workflow_schedules (
+    id, workflow_id, cron_expr, timezone, is_active,
+    approval_policy
+  ) VALUES (
+    v_sched_id, v_wf_id, '* * * * *', 'UTC', true,
+    jsonb_build_object('requiresApproval', false)
+  );
+  PERFORM set_config('app.pgtap32b.sched_id', v_sched_id::text, true);
+END $$;
+
+SELECT is(
+  (SELECT public.fn_dispatch_scheduled_workflows_with_approval())::text,
+  '0',
+  'wrapper returns 0 when autonomy_dispatch_enabled=false'
+);
+
+SELECT is(
+  (SELECT count(*)::int
+   FROM lenses.workflow_runs
+   WHERE schedule_id = current_setting('app.pgtap32b.sched_id')::uuid),
+  0,
+  'no workflow_runs created while kill switch is off'
 );
 
 SELECT * FROM finish();

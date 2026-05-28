@@ -16,7 +16,7 @@ describe('createClient', () => {
     ).toThrowError(/requires `anonKey`/)
   })
 
-  it('returns a client with all sub-clients', () => {
+  it('returns a client with battles and templates clients', () => {
     const lf = createClient({
       url: 'http://localhost:54321',
       anonKey: 'anon-key',
@@ -24,9 +24,6 @@ describe('createClient', () => {
     })
     expect(lf.battles).toBeDefined()
     expect(lf.templates).toBeDefined()
-    expect(lf.lenses).toBeDefined()
-    expect(lf.agents).toBeDefined()
-    expect(lf.protocols).toBeDefined()
     expect(typeof lf.rpcCall).toBe('function')
   })
 
@@ -45,7 +42,7 @@ describe('createClient', () => {
   })
 
   it('exports SDK_VERSION matching the package.json alpha line', () => {
-    expect(SDK_VERSION).toMatch(/^0\.2\.0-alpha\.\d+$/)
+    expect(SDK_VERSION).toMatch(/^0\.1\.0-alpha\.\d+$/)
   })
 })
 

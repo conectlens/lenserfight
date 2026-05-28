@@ -1,0 +1,13 @@
+{
+  "name": "infra-storage",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/infra/storage/src",
+  "projectType": "library",
+  "tags": [
+    "layer:infra",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project infra-storage --web",
+  "targets": {}
+}

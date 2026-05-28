@@ -1,0 +1,12 @@
+export * from './lib/Surface'
+export * from './lib/Text'
+export * from './lib/Heading'
+export * from './lib/Divider'
+export * from './lib/Spinner'
+export * from './lib/Pressable'
+export * from './lib/VisuallyHidden'
+export * from './lib/Chip'
+export * from './lib/IconButton'
+// Mobile-only primitives (resolved via .native.tsx by Metro)
+export * from './lib/HapticPressable'
+export * from './lib/FloatingActionButton'

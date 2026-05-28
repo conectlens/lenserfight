@@ -30,7 +30,7 @@ describe('seoService', () => {
     })
 
     expect(meta.title).toBe('GitHub Review Workflow | AI Lens Template by Open Source Builder')
-    expect(meta.url).toBe('https://moon.lenserfight.com/lenses/github-review-workflow')
+    expect(meta.url).toBe('https://lenserfight.com/lenses/github-review-workflow')
     expect(meta.description).toContain('Review pull requests')
     expect(meta.jsonLd?.['@type']).toBe('CreativeWork')
     expect(meta.jsonLd?.keywords).toContain('GitHub Review')
@@ -47,7 +47,7 @@ describe('seoService', () => {
       trendingScore: 10,
     })
 
-    expect(meta.url).toBe('https://moon.lenserfight.com/ray/startup-planning')
+    expect(meta.url).toBe('https://lenserfight.com/ray/startup-planning')
     expect(meta.title).toContain('Startup Planning AI Workflows')
     expect(meta.jsonLd?.['@type']).toBe('CollectionPage')
   })

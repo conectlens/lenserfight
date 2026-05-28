@@ -1,0 +1,14 @@
+{
+  "name": "threads",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/threads/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:threads",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project threads --web",
+  "targets": {}
+}

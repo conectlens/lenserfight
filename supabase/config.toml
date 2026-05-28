@@ -175,6 +175,9 @@ site_url = "http://127.0.0.1:3000"
 additional_redirect_urls = [
   "https://127.0.0.1:3000",
   "http://localhost:3004/callback",
+  # Tailscale local-network dev (update IP to match your `tailscale ip -4`)
+  "http://100.88.58.68:3004/callback",
+  "http://100.88.58.68:3000",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600

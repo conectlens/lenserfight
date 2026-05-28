@@ -20,7 +20,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN;
 
-SELECT plan(6);
+SELECT plan(8);
 
 -- ── Fixtures (service_role) ──────────────────────────────────────────────────
 
@@ -190,14 +190,36 @@ SELECT is(
   'T5: invite human → entity_map.ai_lenser_id is NULL'
 );
 
--- T6: authenticated must retain EXECUTE on fn_redacted_agent_snapshot
+-- ── T6-T8: anon grant revocation on snapshot functions ───────────────────────
+
+-- T6: anon must NOT have EXECUTE on fn_redacted_agent_snapshot
+SELECT ok(
+  NOT has_function_privilege(
+    'anon',
+    'public.fn_redacted_agent_snapshot(uuid)',
+    'EXECUTE'
+  ),
+  'T6: anon cannot EXECUTE fn_redacted_agent_snapshot'
+);
+
+-- T7: anon must NOT have EXECUTE on fn_redacted_agent_snapshot_hash
+SELECT ok(
+  NOT has_function_privilege(
+    'anon',
+    'public.fn_redacted_agent_snapshot_hash(uuid)',
+    'EXECUTE'
+  ),
+  'T7: anon cannot EXECUTE fn_redacted_agent_snapshot_hash'
+);
+
+-- T8: authenticated must retain EXECUTE on fn_redacted_agent_snapshot
 SELECT ok(
   has_function_privilege(
     'authenticated',
     'public.fn_redacted_agent_snapshot(uuid)',
     'EXECUTE'
   ),
-  'T6: authenticated retains EXECUTE on fn_redacted_agent_snapshot'
+  'T8: authenticated retains EXECUTE on fn_redacted_agent_snapshot'
 );
 
 ROLLBACK;

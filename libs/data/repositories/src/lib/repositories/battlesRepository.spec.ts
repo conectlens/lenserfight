@@ -421,12 +421,6 @@ describe('SupabaseBattlesRepository', () => {
         p_handicap_config: null,
         p_workflow_id: null,
         p_lens_id: null,
-        p_shared_input_snapshot: null,
-        p_lenser_battle_policy: null,
-        p_task_source: null,
-        p_contender_structure: null,
-        p_judging_mode: null,
-        p_challenge_type: null,
       })
     })
 
@@ -718,7 +712,6 @@ describe('SupabaseBattlesRepository', () => {
         p_contender_type: 'ai_agent',
         p_contender_ref_id: 'agent-1',
         p_display_name: 'Agent Alpha',
-        p_handle: null,
       })
       expect(result).toEqual(fakeContender)
     })
@@ -805,7 +798,6 @@ describe('SupabaseBattlesRepository', () => {
         p_battle_id: BATTLE_ID,
         p_lens_id: 'lens-1',
         p_version_id: 'v-1',
-        p_input_snapshot: {},
       })
       expect(result).toEqual(fakeAssignment)
     })

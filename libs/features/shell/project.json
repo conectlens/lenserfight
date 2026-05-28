@@ -1,0 +1,14 @@
+{
+  "name": "shell",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/shell/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:shell",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project shell --web",
+  "targets": {}
+}

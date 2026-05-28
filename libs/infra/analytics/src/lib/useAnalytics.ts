@@ -1,9 +1,19 @@
-import { globalAnalyticsController } from './controller'
-import { AnalyticsEvent } from './types'
+import { useCallback } from 'react'
+import { AnalyticsTargetType } from '@lenserfight/types'
 
-export function useAnalyticsApi() {
-  return {
-    trackEvent: (event: AnalyticsEvent) => globalAnalyticsController.trackEvent(event),
-    trackPageView: (path: string) => globalAnalyticsController.trackPageView(path),
-  }
+import { analyticsService } from './analyticsService'
+
+export const useAnalytics = () => {
+  const trackView = useCallback(
+    (
+      targetType: AnalyticsTargetType,
+      targetId?: string,
+      identity?: { userId?: string | null; lenserId?: string | null }
+    ) => {
+      analyticsService.trackView(targetType, targetId, identity ?? {})
+    },
+    []
+  )
+
+  return { trackView }
 }

@@ -4,25 +4,25 @@ import { describe, expect, it } from 'vitest'
 
 const rpcMigrationPath = join(
   process.cwd(),
-  'supabase/migration-guards/20260501025000_fix_workflow_schedule_rpc.sql'
+  'supabase/migrations/20260501025000_fix_workflow_schedule_rpc.sql'
 )
 const rpcSql = readFileSync(rpcMigrationPath, 'utf8')
 
 const completionPath = join(
   process.cwd(),
-  'supabase/migration-guards/20260501030000_schedule_dispatch_completion.sql'
+  'supabase/migrations/20260501030000_schedule_dispatch_completion.sql'
 )
 const completionSql = readFileSync(completionPath, 'utf8')
 
 const approvalGatePath = join(
   process.cwd(),
-  'supabase/migration-guards/20270301000000_phase2_schedule_approval_gate_enforce.sql'
+  'supabase/migrations/20270301000000_phase2_schedule_approval_gate_enforce.sql'
 )
 const approvalGateSql = readFileSync(approvalGatePath, 'utf8')
 
 const rlsPath = join(
   process.cwd(),
-  'supabase/migration-guards/20270301100000_phase2_schedule_rls_owner_filter.sql'
+  'supabase/migrations/20270301100000_phase2_schedule_rls_owner_filter.sql'
 )
 const rlsSql = readFileSync(rlsPath, 'utf8')
 
@@ -47,8 +47,8 @@ describe('fn_upsert_workflow_schedule — CRUD invariants', () => {
   })
 
   it('supports deactivation via p_is_active = false', () => {
-    expect(rpcSql).toMatch(/p_is_active\s+boolean DEFAULT true/)
-    expect(rpcSql).toMatch(/is_active\s*=\s*p_is_active/)
+    expect(rpcSql).toContain('p_is_active boolean DEFAULT true')
+    expect(rpcSql).toContain('is_active = p_is_active')
   })
 
   it('scopes read query to the authenticated lenser (owner isolation)', () => {

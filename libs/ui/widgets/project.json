@@ -1,0 +1,13 @@
+{
+  "name": "widgets",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/widgets/src",
+  "projectType": "library",
+  "tags": [
+    "layer:ui",
+    "ui:widgets",
+    "scope:shared",
+    "license:shared"
+  ],
+  "targets": {}
+}

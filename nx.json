@@ -78,25 +78,18 @@
       "pattern": "{projectName}@{version}",
       "requireSemver": true
     },
+    "git": {
+      "commitMessage": "chore(release): publish [skip ci]",
+      "stageChanges": true,
+      "commit": false,
+      "tag": false
+    },
     "version": {
-      "conventionalCommits": true,
-      "git": {
-        "commitMessage": "chore(release): publish [skip ci]",
-        "stageChanges": true,
-        "commit": false,
-        "tag": false
-      }
+      "conventionalCommits": true
     },
     "changelog": {
-      "automaticFromRef": true,
       "workspaceChangelog": false,
-      "projectChangelogs": true,
-      "git": {
-        "commitMessage": "chore(release): publish [skip ci]",
-        "stageChanges": true,
-        "commit": false,
-        "tag": false
-      }
+      "projectChangelogs": true
     },
     "groups": {
       "sdk": {

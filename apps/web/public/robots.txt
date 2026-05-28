@@ -1,0 +1,56 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /account/
+Disallow: /billing
+Disallow: /chat
+Disallow: /notifications
+Disallow: /onboarding
+Disallow: /settings/
+Disallow: /s/
+Disallow: /agents/*/workspace
+Disallow: /battles/create
+Disallow: /battles/new
+Disallow: /battles/templates/new
+Disallow: /battles/templates/*/edit
+Disallow: /threads/compose
+Disallow: /workflows/*/run/
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+Sitemap: https://moon.lenserfight.com/sitemap.xml

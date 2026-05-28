@@ -1,0 +1,14 @@
+{
+  "name": "moderation",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/infra/moderation/src",
+  "projectType": "library",
+  "tags": [
+    "layer:infra",
+    "infra:moderation",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project moderation --web",
+  "targets": {}
+}

@@ -1,0 +1,14 @@
+{
+  "name": "util-number",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/utils/number/src",
+  "projectType": "library",
+  "tags": [
+    "layer:utils",
+    "util:number",
+    "scope:shared",
+    "license:shared"
+  ],
+  "// targets": "to see all targets run: nx show project util-number --web",
+  "targets": {}
+}

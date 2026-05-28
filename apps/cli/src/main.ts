@@ -3,6 +3,7 @@ import consola from 'consola'
 import { setExecContext, getExecContext } from './lib/exec-context'
 import { readCliVersion } from './lib/version'
 
+// Parse --local and --debug before citty takes over so they activate even
 // when placed after the subcommand name (e.g. `lf cmd --local`).
 function parseGlobalFlagsEarly(): void {
   const argv = process.argv.slice(2)
@@ -161,9 +162,9 @@ setImmediate(() => {
           if (result?.hasUpdate && isNewer(result.current, result.latest)) {
             process.stderr.write(
               `\n  ╭─────────────────────────────────────────────────────╮\n` +
-              `  │  Update available: v${result.current} → v${result.latest.padEnd(Math.max(0, result.current.length))}  │\n` +
-              `  │  Run \`lf update\` for upgrade instructions.           │\n` +
-              `  ╰─────────────────────────────────────────────────────╯\n\n`
+                `  │  Update available: v${result.current} → v${result.latest.padEnd(Math.max(0, result.current.length))}  │\n` +
+                `  │  Run \`lf update\` for upgrade instructions.           │\n` +
+                `  ╰─────────────────────────────────────────────────────╯\n\n`
             )
           }
         })

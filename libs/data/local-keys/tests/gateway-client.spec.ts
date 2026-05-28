@@ -207,7 +207,7 @@ describe('deriveGatewayUrl', () => {
   })
 
   it('returns loopback when served from a Tailscale IP (gateway is always local)', () => {
-    setBrowser('YOUR_TAILSCALE_IP', 'http:')
+    setBrowser('100.88.58.68', 'http:')
     expect(deriveGatewayUrl()).toBe(DEFAULT_GATEWAY_URL)
   })
 
@@ -217,7 +217,7 @@ describe('deriveGatewayUrl', () => {
   })
 
   it('honors the sessionStorage override when the URL is HTTPS', () => {
-    setBrowser('YOUR_TAILSCALE_IP', 'http:', 'https://custom.gateway:9000')
+    setBrowser('100.88.58.68', 'http:', 'https://custom.gateway:9000')
     expect(deriveGatewayUrl()).toBe('https://custom.gateway:9000')
   })
 

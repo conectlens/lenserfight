@@ -1,0 +1,140 @@
+[
+    {
+        "name": "lenser_dna.json",
+  "character_name": "Lenser",
+  "type": "3D stylized robotic mascot",
+  "core_identity": "Single large central lens-eye symbolizing intelligence, emotion, and light",
+  "dimensions": {
+    "height_cm": 60,
+    "head_body_ratio": "1.3:1",
+    "head_diameter_cm": 28,
+    "shoulder_width_cm": 22
+  },
+  "materials": {
+    "primary": "matte polymer",
+    "secondary": "brushed aluminum",
+    "joints": "soft silicone",
+    "lens": "multi-element glass with iris coating and micro-dust speckles",
+    "emitter": "translucent polycarbonate for chest core and antenna tip"
+  },
+  "colors": {
+    "primary_body": "#ffde59",
+    "secondary_body": "#213f74",
+    "accents": ["#FFFFFF", "#2C66C7"]
+  },
+  "head": {
+    "shell": {
+      "shape": "perfect sphere with shallow front bezel",
+      "panel_lines": "two subtle service seams at 10 and 2 o’clock"
+    },
+    "lens_eye": {
+      "appearance": "stacked camera optics with visible aperture blades and ring reflections",
+      "ring_layers": 4,
+      "glow_color": "deep blue gradient",
+      "blink_method": "quick iris stop-down to f/8 then reopen"
+    },
+    "ears_cylindrical": {
+      "count": 2,
+      "placement": "mid-head, 90° from lens axis",
+      "size_cm": { "length": 5, "diameter": 3.2 },
+      "mount": "aluminum stub + rubber gasket",
+      "detail": "rear vent slit and tiny status LED facing back"
+    },
+    "antenna": {
+      "stem": "thin graphite rod, 4 mm diameter, 5 cm height",
+      "base": "flush magnetic socket with dark rubber skirt",
+      "tip": "star-like micro-bulb",
+      "tip_behavior": "idle 5% glow, ramps to 40% on emphasis",
+      "position": "top-center"
+    }
+  },
+  "torso": {
+    "shell": "rounded barrel with soft abdominal groove",
+    "shoulder_caps": "segmented plates overlapping cape collar",
+    "abdomen": "elastic silicone ring for breathing motion"
+  },
+  "arms": {
+    "segments": 3,
+    "hand": "three fingers + thumb, rounded pads",
+    "default_pose": "hands joined over chest core"
+  },
+  "legs": {
+    "thigh_covers": "short convex shells",
+    "knee": "ball joint with rubber boot",
+    "feet": "oval soles with non-slip ring"
+  },
+  "chest_core": {
+    "design": "circular glowing element inspired by Iron Man’s arc reactor",
+    "core_color": "variant_defined", 
+    "behavior": "soft pulse 60–80 BPM, syncs with lens bloom on emotion"
+  },
+  "clothing": {
+    "cape": { "color_outer": "#213f74", "color_inner": "#2e4f89", "style": "short cape with high collar and soft hem" },
+    "bodysuit": { "color": "#FFFFFF", "accent_lines": "#ffde59" }
+  },
+  "pose": { "neutral": "hands joined near chest core", "expression": "calm and focused" },
+  "symbolism": {
+    "lens_eye": "perception and truth",
+    "core": "connection and consciousness",
+    "yellow_body": "creativity and light"
+  },
+  "views": {
+    "front": "Lens centered, cylindrical ears visible symmetrically, antenna vertical, cape collar flares left/right, core centered.",
+    "right": "Right ear shows full cylinder and rear vent; cape overlaps to back; lens rim depth visible; arm seams and elbow boot visible.",
+    "left": "Mirror of right; left hip seam and power-port hatch indicated by subtle seam.",
+    "back": "Cape forms teardrop; antenna base socket visible; two oval maintenance panels; heel soles show traction ring; ear LEDs visible.",
+    "top": "Perfect circular head with antenna at dead center; ears align on a straight lateral axis; cape collar forms shallow crescent."
+  },
+  "rig_points": {
+    "head": "head_ctrl at sphere center",
+    "lens": "iris_ctrl for aperture, focus_ctrl for depth bloom",
+    "antenna": "antenna_fk at base, tip_light intensity channel",
+    "ears": "ear_R_fk and ear_L_fk for subtle tilt",
+    "hands": "hand_L/R_ik",
+    "cape": "cloth_sim with 3 pin constraints at collar"
+  },
+  "visual_rule": "Mascot must have only one central eye-lens; no additional eyes or optical elements allowed anywhere on the head or body."
+},
+{
+  "variant_name": "Lense",
+  "inherits_from": "lenser_dna.json",
+  "gender_identity": "male",
+  "body_modifications": {
+    "height_cm": 63,
+    "body_shape": "broader shoulders, slightly stronger limbs",
+    "antenna_tip": "metallic short rod with micro light ring",
+    "lens_frame": "thicker metallic rim with engraved radial texture"
+  },
+  "clothing": {
+    "cape": {
+      "color_outer": "#1b335f",
+      "color_inner": "#304b83",
+      "style": "angular tactical cut with high collar"
+    },
+    "bodysuit": {
+      "color": "#f8f8f8",
+      "accent_lines": "#ffde59",
+      "addition": "reinforced arm and knee pads"
+    }
+  },
+  "chest_core_override": { "core_color": "#2DA8FF" },
+  "facial_expression": {
+    "style": "sharp LED smile line",
+    "emotional_focus": "determination and protection"
+  },
+  "personality_shift": {
+    "primary_traits": ["strong-willed", "protective", "strategic"],
+    "secondary_traits": ["analytical", "loyal"]
+  },
+  "symbolism_extension": {
+    "armor_details": "symbolize stability and defense",
+    "antenna_shape": "represents focus and leadership"
+  },
+  "views_delta": {
+    "front": "core glows blue; collar points angle outward more aggressively",
+    "back": "cape hem has two angular notches",
+    "top": "antenna tip replaces star with ring LED"
+  }
+}
+
+]
