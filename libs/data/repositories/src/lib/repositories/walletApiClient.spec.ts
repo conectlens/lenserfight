@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const { getSession } = vi.hoisted(() => ({
+const { getSession, getCachedAccessToken } = vi.hoisted(() => ({
   getSession: vi.fn().mockResolvedValue({
     data: {
       session: {
@@ -8,6 +8,7 @@ const { getSession } = vi.hoisted(() => ({
       },
     },
   }),
+  getCachedAccessToken: vi.fn().mockReturnValue('test-token'),
 }))
 
 vi.mock('@lenserfight/data/supabase', () => ({
@@ -16,6 +17,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
       getSession,
     },
   },
+  getCachedAccessToken,
 }))
 
 import { walletApiClient } from './walletApiClient'

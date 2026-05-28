@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
+import { fileURLToPath } from 'url'
 import { resolve } from 'path'
 
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000'
 const workspaceRoot = resolve(__dirname, '../..')
 

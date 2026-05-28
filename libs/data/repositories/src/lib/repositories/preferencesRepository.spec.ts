@@ -1,8 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-const { mockRpc, mockGetSession } = vi.hoisted(() => ({
+const { mockRpc, mockGetSession, mockCachedSession } = vi.hoisted(() => ({
   mockRpc: vi.fn(),
   mockGetSession: vi.fn(),
+  mockCachedSession: vi.fn(),
 }))
 
 vi.mock('@lenserfight/data/supabase', () => ({
@@ -10,6 +11,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
     rpc: mockRpc,
     auth: { getSession: mockGetSession },
   },
+  getCachedSession: mockCachedSession,
 }))
 
 import { SupabasePreferencesRepository } from './preferencesRepository'
@@ -21,8 +23,9 @@ describe('SupabasePreferencesRepository', () => {
     repo = new SupabasePreferencesRepository()
     vi.clearAllMocks()
     mockRpc.mockResolvedValue({ data: null, error: null })
-    // Default: authenticated session present
     mockGetSession.mockResolvedValue({ data: { session: { access_token: 'test-jwt' } } })
+    // Default: authenticated session present
+    mockCachedSession.mockReturnValue({ user: { id: 'user-1' } })
   })
 
   // ---------------------------------------------------------------------------
@@ -53,7 +56,7 @@ describe('SupabasePreferencesRepository', () => {
     })
 
     it('returns null without calling RPC when no session exists', async () => {
-      mockGetSession.mockResolvedValue({ data: { session: null } })
+      mockCachedSession.mockReturnValue(null)
       expect(await repo.getPreferences()).toBeNull()
       expect(mockRpc).not.toHaveBeenCalled()
     })
@@ -88,7 +91,7 @@ describe('SupabasePreferencesRepository', () => {
     })
 
     it('skips RPC when no session exists', async () => {
-      mockGetSession.mockResolvedValue({ data: { session: null } })
+      mockCachedSession.mockReturnValue(null)
       await repo.updatePreferences({ theme: 'dark' })
       expect(mockRpc).not.toHaveBeenCalled()
     })

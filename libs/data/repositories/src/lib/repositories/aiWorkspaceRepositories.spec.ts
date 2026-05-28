@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const rpcMock = vi.fn()
 const getSessionMock = vi.fn()
+const getCachedSessionMock = vi.fn()
 const maybeSingleMock = vi.fn()
 const eqMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }))
 const selectMock = vi.fn(() => ({ eq: eqMock }))
@@ -16,6 +17,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
       getSession: (...args: unknown[]) => getSessionMock(...args),
     },
   },
+  getCachedSession: (...args: unknown[]) => getCachedSessionMock(...args),
 }))
 
 import { SupabaseAgentsRepository } from './agentsRepository'
@@ -37,6 +39,7 @@ describe('AI workspace repository contracts', () => {
     getSessionMock.mockResolvedValue({
       data: { session: { user: { id: 'user-1' } } },
     })
+    getCachedSessionMock.mockReturnValue({ user: { id: 'user-1' } })
     rpcMock.mockResolvedValue({
       data: [
         {

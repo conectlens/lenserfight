@@ -115,10 +115,10 @@ The server starts an HTTP listener (default port 3001). ngrok creates a public H
 ### Step 1 — Set env vars
 
 ```bash
-export SUPABASE_URL=https://abc123.supabase.co
-export SUPABASE_SERVICE_ROLE_KEY=service_role_key_here
-export SUPABASE_ANON_KEY=anon_key_here
-export SUPABASE_JWT_SECRET=jwt_secret_here
+export SUPABASE_URL=http://127.0.0.1:54321
+export SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+export SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+export SUPABASE_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters-long
 export MCP_TRANSPORT=http
 export MCP_HTTP_PORT=3001
 ```

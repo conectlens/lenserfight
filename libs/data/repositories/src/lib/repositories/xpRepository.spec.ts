@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-const { mockRpc, mockFrom, mockSelect, mockEq, mockMaybeSingle, mockOrder, mockRange, mockGetSession } = vi.hoisted(() => {
+const { mockRpc, mockFrom, mockSelect, mockEq, mockMaybeSingle, mockOrder, mockRange, mockGetSession, mockCachedSession } = vi.hoisted(() => {
   const mockMaybeSingle = vi.fn()
   const mockRange = vi.fn()
   const mockOrder = vi.fn()
@@ -8,6 +8,7 @@ const { mockRpc, mockFrom, mockSelect, mockEq, mockMaybeSingle, mockOrder, mockR
   const mockSelect = vi.fn()
   const mockFrom = vi.fn()
   const mockGetSession = vi.fn()
+  const mockCachedSession = vi.fn()
   const mockRpc = vi.fn()
 
   mockEq.mockReturnValue({ maybeSingle: mockMaybeSingle })
@@ -15,7 +16,7 @@ const { mockRpc, mockFrom, mockSelect, mockEq, mockMaybeSingle, mockOrder, mockR
   mockOrder.mockReturnValue({ range: mockRange })
   mockFrom.mockReturnValue({ select: mockSelect })
 
-  return { mockRpc, mockFrom, mockSelect, mockEq, mockMaybeSingle, mockOrder, mockRange, mockGetSession }
+  return { mockRpc, mockFrom, mockSelect, mockEq, mockMaybeSingle, mockOrder, mockRange, mockGetSession, mockCachedSession }
 })
 
 vi.mock('@lenserfight/data/supabase', () => ({
@@ -24,6 +25,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
     from: mockFrom,
     auth: { getSession: mockGetSession },
   },
+  getCachedSession: mockCachedSession,
 }))
 
 import { SupabaseXPRepository, XP_APP_IDS } from './xpRepository'
@@ -44,6 +46,7 @@ describe('SupabaseXPRepository', () => {
     mockOrder.mockReturnValue({ range: mockRange })
     mockFrom.mockReturnValue({ select: mockSelect })
     mockGetSession.mockResolvedValue({ data: { session: null } })
+    mockCachedSession.mockReturnValue(null)
   })
 
   // ---------------------------------------------------------------------------
@@ -288,14 +291,14 @@ describe('SupabaseXPRepository', () => {
 
     it('sets userEntry when session user is in the list', async () => {
       mockRange.mockResolvedValue({ data: [rawRow], error: null })
-      mockGetSession.mockResolvedValue({ data: { session: { user: { id: LENSER_ID } } } })
+      mockCachedSession.mockReturnValue({ user: { id: LENSER_ID } })
       const { userEntry } = await repo.getLeaderboard('all_time', 'global')
       expect(userEntry?.lenserId).toBe(LENSER_ID)
     })
 
     it('sets userEntry null when user is not in the list', async () => {
       mockRange.mockResolvedValue({ data: [rawRow], error: null })
-      mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'other-user' } } } })
+      mockCachedSession.mockReturnValue({ user: { id: 'other-user' } })
       const { userEntry } = await repo.getLeaderboard('all_time', 'global')
       expect(userEntry).toBeNull()
     })
@@ -384,14 +387,14 @@ describe('SupabaseXPRepository', () => {
 
     it('sets userEntry when session user is in list', async () => {
       mockRpc.mockResolvedValue({ data: [rawEntry], error: null })
-      mockGetSession.mockResolvedValue({ data: { session: { user: { id: LENSER_ID } } } })
+      mockCachedSession.mockReturnValue({ user: { id: LENSER_ID } })
       const { userEntry } = await repo.getSeasonLeaderboard()
       expect(userEntry?.lenserId).toBe(LENSER_ID)
     })
 
     it('sets userEntry null when no session', async () => {
       mockRpc.mockResolvedValue({ data: [rawEntry], error: null })
-      mockGetSession.mockResolvedValue({ data: { session: null } })
+      mockCachedSession.mockReturnValue(null)
       const { userEntry } = await repo.getSeasonLeaderboard()
       expect(userEntry).toBeNull()
     })
