@@ -65,23 +65,23 @@ export const DeviceApprovalPage: React.FC = () => {
     setMessage(null)
 
     try {
+      if (isLoginMode) {
+        // Login mode: the code lives in device_login_requests, not device_approval_requests.
+        // Go straight to storeDeviceLoginSession — never call approveDeviceRequest here.
+        await storeDeviceLoginSession(userCode.trim().toUpperCase())
+        const target = returnUrl || DEFAULT_RETURN_URL
+        setMessage('Login approved. Redirecting to your dashboard…')
+        window.setTimeout(() => {
+          replaceLocationSafely(target)
+        }, LOGIN_REDIRECT_DELAY_MS)
+        return
+      }
+
       const result = await authService.approveDeviceRequest({
         userCode: userCode.trim().toUpperCase(),
       })
 
       if (result.status === 'approved') {
-        if (isLoginMode) {
-          await storeDeviceLoginSession(userCode.trim().toUpperCase())
-          // Login mode always auto-redirects to the dashboard so the browser doesn't
-          // strand on an empty approval screen after the CLI has the tokens.
-          const target = returnUrl || DEFAULT_RETURN_URL
-          setMessage('Login approved. Redirecting to your dashboard…')
-          window.setTimeout(() => {
-            replaceLocationSafely(target)
-          }, LOGIN_REDIRECT_DELAY_MS)
-          return
-        }
-
         setMessage(
           result.label
             ? `Device approved for ${result.label}. You can return to the CLI.`
