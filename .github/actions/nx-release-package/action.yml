@@ -122,7 +122,29 @@ runs:
         fi
 
         git commit -m "chore(release): $tag [skip ci]"
-        git push origin "HEAD:${{ inputs.git_ref }}"
+
+        # Rebase onto the latest remote state before pushing.
+        # Another workflow (e.g. contributors sync) may have pushed commits to
+        # main between this job's checkout and now, causing a non-fast-forward
+        # rejection. A rebase is safe here: the only conflicts possible are in
+        # package.json/CHANGELOG.md of OTHER packages, which is very unlikely,
+        # and if it does happen git rebase will abort and the error is explicit.
+        for attempt in 1 2 3; do
+          git fetch origin "${{ inputs.git_ref }}"
+          if git rebase "origin/${{ inputs.git_ref }}"; then
+            git push origin "HEAD:${{ inputs.git_ref }}" && break
+          else
+            git rebase --abort
+            echo "::error::Rebase failed — conflicting changes on ${{ inputs.git_ref }} for ${{ inputs.project }}." >&2
+            exit 1
+          fi
+          if [[ $attempt -eq 3 ]]; then
+            echo "::error::Failed to push $tag after 3 attempts." >&2
+            exit 1
+          fi
+          echo "Push attempt $attempt failed, retrying in $((attempt * 5))s..."
+          sleep $((attempt * 5))
+        done
 
     - name: Build
       if: steps.version.outputs.bumped == 'true'
