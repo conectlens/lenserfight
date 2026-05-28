@@ -1,0 +1,13 @@
+{
+  "name": "types",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/types/src",
+  "projectType": "library",
+  "tags": [
+    "layer:types",
+    "scope:shared",
+    "license:shared"
+  ],
+  "// targets": "to see all targets run: nx show project types --web",
+  "targets": {}
+}

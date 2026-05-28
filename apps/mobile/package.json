@@ -21,8 +21,6 @@
     "@nx/eslint-plugin": "*",
     "@nx/js": "*",
     "@nx/react": "*",
-    "@nx/rollup": "*",
-    "@nx/vite": "*",
     "@posthog/react": "*",
     "@react-native-community/netinfo": "*",
     "@supabase/supabase-js": "*",
@@ -52,7 +50,6 @@
     "idb": "*",
     "jest-expo": "*",
     "lucide-react": "*",
-    "mermaid": "*",
     "metro-config": "*",
     "metro-resolver": "*",
     "pdf-lib": "*",
@@ -76,9 +73,7 @@
     "semver": "*",
     "sonner": "*",
     "tsconfig-paths": "*",
-    "tslib": "*",
-    "vite": "*",
-    "vite-plugin-dts": "*",
-    "vitest": "*"
-  }
+    "tslib": "*"
+  },
+  "devDependencies": {}
 }

@@ -1,0 +1,14 @@
+{
+  "name": "tags",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/tags/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:tags",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project tags --web",
+  "targets": {}
+}

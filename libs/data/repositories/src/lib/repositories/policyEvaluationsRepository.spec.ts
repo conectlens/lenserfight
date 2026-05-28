@@ -25,8 +25,6 @@ vi.mock('@lenserfight/data/supabase', () => ({
     schema: mockSchema.mockReturnValue({ from: mockFrom.mockReturnValue(chainMethods) }),
     rpc: mockRpc,
   },
-  getCachedSession: vi.fn(() => null),
-  getCachedAccessToken: vi.fn(() => null),
 }))
 
 import { SupabasePolicyEvaluationsRepository } from './policyEvaluationsRepository'
@@ -52,10 +50,10 @@ describe('SupabasePolicyEvaluationsRepository', () => {
       })
     })
 
-    it('filters by verdict in JavaScript after RPC', async () => {
+    it('filters by verdict in JavaScript after RPC (via decision field)', async () => {
       const rows = [
-        { verdict: 'deny', policy_type: 'kill_switch' },
-        { verdict: 'allow', policy_type: 'budget' },
+        { decision: 'deny', policy_type: 'kill_switch' },
+        { decision: 'allow', policy_type: 'budget' },
       ]
       mockRpc.mockResolvedValue({ data: rows, error: null })
       const result = await repo.listPolicyLog('agent-1', { verdict: 'deny', limit: 5 })

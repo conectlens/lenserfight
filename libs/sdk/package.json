@@ -13,20 +13,13 @@
       "require": "./index.cjs"
     }
   },
-  "files": [
-    "index.mjs",
-    "index.cjs",
-    "index.d.ts",
-    "README.md"
-  ],
+  "files": ["index.mjs", "index.cjs", "index.d.ts", "README.md"],
   "keywords": [
     "lenserfight",
     "ai-agents",
     "supabase",
     "evaluation",
-    "battles",
-    "lenses",
-    "protocols"
+    "battles"
   ],
   "repository": {
     "type": "git",

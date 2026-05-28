@@ -1,0 +1,35 @@
+{
+  "name": "repositories",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/data/repositories/src",
+  "projectType": "library",
+  "tags": [
+    "layer:data",
+    "data:repositories",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project repositories --web",
+  "targets": {
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../../coverage/libs/data/repositories"
+      }
+    },
+    "coverage": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../../coverage/libs/data/repositories",
+        "coverage": true,
+        "coverageThresholds": {
+          "lines": 80,
+          "statements": 80,
+          "functions": 70
+        }
+      }
+    }
+  }
+}

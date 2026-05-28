@@ -354,7 +354,6 @@ name: review
 description: Combine legal and finance review. This is not legal advice and not financial advice.
 nodes:
   - id: legal
-    kind: lens
     lens: legal-review
 ---
 

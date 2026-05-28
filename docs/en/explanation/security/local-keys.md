@@ -97,8 +97,8 @@ allow-list permits browser origins on `lenserfight.com`, `localhost`,
 ranges (`10/8`, `172.16/12`, `192.168/16`), and `.local` mDNS hostnames.
 The web app's gateway client derives its target URL from
 `window.location.hostname` — so a page served at
-`http://YOUR_TAILSCALE_IP:3000` automatically reaches the gateway at
-`http://YOUR_TAILSCALE_IP:38080`.
+`http://100.88.58.68:3000` automatically reaches the gateway at
+`http://100.88.58.68:38080`.
 
 For the gateway to answer on a non-loopback address, run it in
 **keys-only mode** with an explicit bind. Keys-only mode is the right
@@ -111,7 +111,7 @@ are only relevant to the unrelated signed-coordination surface:
 lf gateway serve --keys-only --bind 0.0.0.0
 
 # Or pin to a specific Tailscale IP.
-lf gateway serve --keys-only --bind YOUR_TAILSCALE_IP
+lf gateway serve --keys-only --bind 100.88.58.68
 ```
 
 The full-coordination daemon (`lf gateway serve` without `--keys-only`)

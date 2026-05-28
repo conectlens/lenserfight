@@ -1,0 +1,7 @@
+interface:
+  display_name: "Mobile Language Checker"
+  short_description: "Validate mobile language preferences, locale resolution, onboarding localization, and in-app language settings."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#10b981"
+  default_prompt: "Review or apply mobile language rules for lenserfight. Validate preferredLanguage persistence, locale resolution, onboarding localization, and supported locale consistency."

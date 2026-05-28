@@ -1,0 +1,13 @@
+{
+  "name": "overlays",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/overlays/src",
+  "projectType": "library",
+  "tags": [
+    "layer:ui",
+    "ui:overlays",
+    "scope:shared",
+    "license:shared"
+  ],
+  "targets": {}
+}

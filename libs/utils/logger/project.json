@@ -1,0 +1,14 @@
+{
+  "name": "util-logger",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/utils/logger/src",
+  "projectType": "library",
+  "tags": [
+    "layer:utils",
+    "util:logger",
+    "scope:shared",
+    "license:shared"
+  ],
+  "// targets": "to see all targets run: nx show project util-logger --web",
+  "targets": {}
+}

@@ -1,4 +1,3 @@
-jest.mock('citty', () => ({ defineCommand: (opts: unknown) => opts }))
 jest.mock('./api', () => ({ callRpc: jest.fn() }))
 jest.mock('./output', () => ({
   printJson: jest.fn(),

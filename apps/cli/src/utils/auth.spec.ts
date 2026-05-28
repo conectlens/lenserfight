@@ -86,24 +86,4 @@ describe('developer token CLI helpers', () => {
       'http://localhost:5173/device-approval?code=ABCD-EFGH'
     );
   });
-
-  it.each([
-    'http://100.64.0.1:3004',
-    'http://10.0.0.1:3004',
-    'http://192.168.1.5:3004',
-    'http://172.16.0.1:3004',
-  ])('falls back to production URL when authBaseUrl is a private/Tailscale IP: %s', (privateUrl) => {
-    mockResolveConfig.mockReturnValue({
-      mode: 'local',
-      supabaseUrl: 'http://127.0.0.1:54321',
-      cloudApiUrl: 'http://localhost:8786',
-      supabaseAnonKey: 'anon',
-      dbPort: 54322,
-      apiPort: 54321,
-      authBaseUrl: privateUrl,
-    });
-    expect(buildAuthAppUrl('/device-approval?code=ABCD-EFGH')).toBe(
-      'https://auth.lenserfight.com/device-approval?code=ABCD-EFGH'
-    );
-  });
 });

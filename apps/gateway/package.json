@@ -1,0 +1,10 @@
+{
+  "name": "lf-gatewayd",
+  "version": "0.1.0",
+  "description": "LenserFight Trust Gateway daemon (lf-gatewayd) — local-first signed coordination layer.",
+  "bin": {
+    "lf-gatewayd": "./main.js",
+    "lf-gateway-init": "./init.js"
+  },
+  "license": "Apache-2.0"
+}

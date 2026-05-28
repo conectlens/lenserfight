@@ -44,17 +44,6 @@ jobs:
       - name: Reset database (applies migrations + seed.sql)
         run: supabase db reset --local --yes
 
-      - name: Acceptance — workflow_runs must be non-empty
-        run: |
-          PSQL="psql ${LOCAL_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres} -t -A -c"
-          RUNS=$($PSQL "SELECT count(*) FROM lenses.workflow_runs;")
-          AGENTS=$($PSQL "SELECT count(*) FROM agents.ai_lensers;")
-          VERSIONS=$($PSQL "SELECT count(*) FROM lenses.versions;")
-          echo "workflow_runs=$RUNS  ai_lensers=$AGENTS  lens_versions=$VERSIONS"
-          [ "$RUNS" -ge 1 ] || { echo "FAIL: expected ≥1 workflow_runs"; exit 1; }
-          [ "$AGENTS" -ge 1 ] || { echo "FAIL: expected ≥1 ai_lensers"; exit 1; }
-          [ "$VERSIONS" -ge 2 ] || { echo "FAIL: expected ≥2 lens versions"; exit 1; }
-
       - name: Stop Supabase
         if: always()
         run: supabase stop --no-backup

@@ -1,29 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { rpcMock, getCachedSessionMock, maybeSingleMock, eqMock, selectMock, fromMock, schemaMock } =
-  vi.hoisted(() => {
-    const maybeSingleMock = vi.fn()
-    const eqMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }))
-    const selectMock = vi.fn(() => ({ eq: eqMock }))
-    const fromMock = vi.fn(() => ({ select: selectMock }))
-    const schemaMock = vi.fn(() => ({ from: fromMock }))
-    return {
-      rpcMock: vi.fn(),
-      getCachedSessionMock: vi.fn(() => null),
-      maybeSingleMock,
-      eqMock,
-      selectMock,
-      fromMock,
-      schemaMock,
-    }
-  })
+const rpcMock = vi.fn()
+const getSessionMock = vi.fn()
+const maybeSingleMock = vi.fn()
+const eqMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }))
+const selectMock = vi.fn(() => ({ eq: eqMock }))
+const fromMock = vi.fn(() => ({ select: selectMock }))
+const schemaMock = vi.fn(() => ({ from: fromMock }))
 
 vi.mock('@lenserfight/data/supabase', () => ({
   supabase: {
     rpc: (...args: unknown[]) => rpcMock(...args),
     schema: (...args: unknown[]) => schemaMock(...args),
+    auth: {
+      getSession: (...args: unknown[]) => getSessionMock(...args),
+    },
   },
-  getCachedSession: getCachedSessionMock,
 }))
 
 import { SupabaseAgentsRepository } from './agentsRepository'
@@ -33,8 +25,7 @@ import { SupabaseWorkflowsRepository } from './workflowsRepository'
 describe('AI workspace repository contracts', () => {
   beforeEach(() => {
     rpcMock.mockReset()
-    getCachedSessionMock.mockReset()
-    getCachedSessionMock.mockReturnValue(null)
+    getSessionMock.mockReset()
     maybeSingleMock.mockReset()
     eqMock.mockClear()
     selectMock.mockClear()
@@ -43,7 +34,9 @@ describe('AI workspace repository contracts', () => {
   })
 
   it('resolves the authenticated lenser through the active-workspace RPC', async () => {
-    getCachedSessionMock.mockReturnValue({ user: { id: 'user-1' } })
+    getSessionMock.mockResolvedValue({
+      data: { session: { user: { id: 'user-1' } } },
+    })
     rpcMock.mockResolvedValue({
       data: [
         {

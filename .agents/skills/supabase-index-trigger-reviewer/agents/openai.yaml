@@ -1,0 +1,7 @@
+interface:
+  display_name: "Supabase Index Trigger Reviewer"
+  short_description: "Review Postgres indexes, triggers, write amplification, and performance risk in Supabase migrations. Use for slow queries, missing indexes, trigger-heavy designs, stale propagation issues, and DB-side performance tuning."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#ffde59"
+  default_prompt: "Review indexes/triggers for performance risk and write amplification; recommend exact fixes."
