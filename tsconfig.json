@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "useDefineForClassFields": false,
+    "types": ["node", "vite/client", "vitest/globals"],
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "extends": "./tsconfig.base.json"
+}
