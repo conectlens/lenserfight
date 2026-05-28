@@ -18,7 +18,7 @@ export interface SEOMetadata {
 }
 
 const SITE_NAME = 'LenserFight'
-const FORUM_HOST = 'https://moon.lenserfight.com'
+const FORUM_HOST = 'https://lenserfight.com'
 const ARENA_HOST = 'https://arena.lenserfight.com'
 const DOCS_HOST = 'https://docs.lenserfight.com'
 const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
