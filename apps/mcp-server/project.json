@@ -5,6 +5,28 @@
   "projectType": "application",
   "tags": ["scope:internal", "license:oss"],
   "targets": {
+    "worker-build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/mcp-server/worker.js"],
+      "options": {
+        "command": "node_modules/.bin/esbuild apps/mcp-server/src/worker.ts --bundle --format=esm --platform=browser --outfile=dist/apps/mcp-server/worker.js --define:import.meta.env=undefined --conditions=worker,browser,import,default --external:node:* --external:crypto --external:http --external:http2 --external:stream --external:net --external:tls --external:zlib --external:url --external:util --external:path --external:fs --external:os --external:events --external:buffer"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["worker-build"],
+      "options": {
+        "cwd": "apps/mcp-server",
+        "command": "npx wrangler deploy"
+      }
+    },
+    "secrets:push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/mcp-server",
+        "command": "node -e \"const fs=require('fs');const {execSync}=require('child_process');const lines=fs.readFileSync('.env','utf8').split('\\n');lines.filter(l=>l&&!l.startsWith('#')).forEach(l=>{const [k,...v]=l.split('=');if(k&&v.length){console.log('pushing '+k.trim());execSync('npx wrangler secret put '+k.trim()+' --name lenserfight-mcp',{input:v.join('=').trim(),stdio:['pipe','inherit','inherit']})}});\""
+      }
+    },
     "build": {
       "executor": "@nx/esbuild:esbuild",
       "outputs": ["{options.outputPath}"],

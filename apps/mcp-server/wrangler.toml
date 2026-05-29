@@ -1,0 +1,18 @@
+name = "lenserfight-mcp"
+main = "../../dist/apps/mcp-server/worker.js"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+MCP_OAUTH_BASE_URL = "https://mcp.lenserfight.com"
+AUTH_APP_BASE_URL  = "https://auth.lenserfight.com"
+
+# Secrets (set via: wrangler secret put <NAME>)
+# SUPABASE_URL
+# SUPABASE_SERVICE_ROLE_KEY
+# SUPABASE_ANON_KEY
+# SUPABASE_JWT_SECRET
+
+[[routes]]
+pattern = "mcp.lenserfight.com/*"
+zone_name = "lenserfight.com"
