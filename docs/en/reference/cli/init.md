@@ -1,48 +1,53 @@
 ---
 title: lf init
-description: Initialize .lenserfight.json. Keys are never stored here — use env vars or ~/.lenserfight/lenserfight.json.
+description: Initialize user-level lenserfight.json under your OS config directory. Use --project for a repo-local file.
 ---
 
 # `lf init`
 
-Creates the project-level config file `.lenserfight.json` and ensures the device-level config directory `~/.lenserfight/` exists. This is the minimal setup step — for a guided experience, use [`lf setup`](setup.md) or [`lf onboard`](onboard.md) instead.
+Creates **user-level** `lenserfight.json` under your OS config directory (e.g. `~/.config/lenserfight/lenserfight.json` on Linux) and ensures `config.json` exists for auth tokens. Nothing is written into the current git repository unless you pass `--project`.
 
 ```bash
-lf init                           # local mode (default)
+lf init                           # cloud mode (default) → user config dir
+lf init --mode local              # local Supabase stack
 lf init --mode cloud --url https://your-project.supabase.co
+lf init --project                 # optional: .lenserfight/lenserfight.json in cwd
 ```
+
+For a guided experience, use [`lf setup`](setup.md) or [`lf onboard`](onboard.md) instead.
 
 ---
 
-## Two config files
+## Config layers
 
 | File | Scope | Contains | Safe to commit? |
 |---|---|---|---|
-| `.lenserfight.json` | Project | mode, Supabase URL, ports | Yes |
-| `~/.lenserfight/lenserfight.json` | Device | auth tokens, dev tokens, onboarding state | **No** — gitignored by default |
+| `~/.config/lenserfight/lenserfight.json` (Linux) | User | mode, Supabase URL, ports | **No** — stays on your machine |
+| `~/.config/lenserfight/config.json` | User | auth tokens, dev tokens | **No** |
+| `.lenserfight/lenserfight.json` | Project (`--project` only) | mode, URL, ports (team override) | Yes, if the team agrees |
 
-`lf init` writes to `.lenserfight.json`. Secrets are never stored in the project config — they live in environment variables or the device config.
+Secrets are never written to `lenserfight.json` — use environment variables or `config.json` after `lf auth login`.
 
 ---
 
 ## Examples
 
-### Local mode (default)
+### Local mode
 
 ```bash
-lf init
+lf init --mode local
 ```
 
 Output:
 
 ```
-✔ Created .lenserfight.json (mode: local)
-✔ Created ~/.lenserfight/lenserfight.json (tokens stored here after login)
+✔ Created user config: /home/you/.config/lenserfight/lenserfight.json (mode: local)
+✔ Created /home/you/.config/lenserfight/config.json (tokens stored here after login)
 ℹ Anon key : local Supabase defaults (auto)
 ℹ URL      : http://127.0.0.1:54321
 ```
 
-### Cloud mode
+### Cloud mode (default)
 
 ```bash
 lf init --mode cloud --url https://xyzproject.supabase.co
@@ -51,7 +56,7 @@ lf init --mode cloud --url https://xyzproject.supabase.co
 Output:
 
 ```
-✔ Created .lenserfight.json (mode: cloud)
+✔ Created user config: …/lenserfight.json (mode: cloud)
 ℹ Anon key : detected in .env/.env.local
 ℹ URL      : https://xyzproject.supabase.co
 ```
@@ -64,10 +69,10 @@ If the anon key is missing:
 
 ### Re-initializing
 
-If `.lenserfight.json` already exists, `lf init` warns before overwriting:
+If user config already exists, `lf init` warns before overwriting:
 
 ```
-⚠ .lenserfight.json already exists (mode: local)
+⚠ User config already exists (mode: local)
 ℹ Overwriting with mode: cloud
 ```
 
@@ -77,9 +82,10 @@ If `.lenserfight.json` already exists, `lf init` warns before overwriting:
 
 | Flag | Type | Default | Description |
 |---|---|---|---|
-| `--mode` | string | `local` | Environment mode: `local` or `cloud` |
+| `--mode` | string | `cloud` | Environment mode: `local` or `cloud` |
 | `--url` | string | — | Supabase URL (auto-detected as `http://127.0.0.1:54321` for local mode) |
 | `--source` | string | `auto` | Key source hint: `auto`, `env`, `supabase` |
+| `--project` | boolean | `false` | Write `.lenserfight/lenserfight.json` in the current directory |
 
 ---
 

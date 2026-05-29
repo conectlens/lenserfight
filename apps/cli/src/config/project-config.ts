@@ -288,6 +288,11 @@ export function getDeviceConfigPath(): string {
   return resolve(getDeviceConfigDir(), 'config.json');
 }
 
+/** User-level preferences (mode, URLs, ports) — not committed to git. */
+export function getUserPreferencesPath(): string {
+  return resolve(getDeviceConfigDir(), 'lenserfight.json');
+}
+
 // Legacy ~/.lenserfight — kept for backward compatibility
 const LEGACY_DEVICE_CONFIG_DIR = resolve(homedir(), '.lenserfight');
 const LEGACY_DEVICE_CONFIG_PATH = resolve(LEGACY_DEVICE_CONFIG_DIR, 'lenserfight.json');
@@ -327,10 +332,74 @@ export function findLegacyConfigPath(cwd = process.cwd()): string {
   return resolve(cwd, PROJECT_CONFIG_LEGACY_FILE);
 }
 
-export function configExists(cwd = process.cwd()): boolean {
+/** True when this working directory has a project-scoped config file. */
+export function projectConfigExists(cwd = process.cwd()): boolean {
   return (
     existsSync(findConfigPath(cwd)) || existsSync(findLegacyConfigPath(cwd))
   );
+}
+
+/** @alias {@link projectConfigExists} */
+export function configExists(cwd = process.cwd()): boolean {
+  return projectConfigExists(cwd);
+}
+
+export function userPreferencesExist(): boolean {
+  if (existsSync(getUserPreferencesPath())) return true;
+  // Legacy ~/.lenserfight/lenserfight.json may hold mode/URL (or older combined config)
+  if (!existsSync(LEGACY_DEVICE_CONFIG_PATH)) return false;
+  try {
+    const raw = JSON.parse(readFileSync(LEGACY_DEVICE_CONFIG_PATH, 'utf-8')) as Record<string, unknown>;
+    return typeof raw['mode'] === 'string' || typeof raw['supabaseUrl'] === 'string';
+  } catch {
+    return false;
+  }
+}
+
+function readProjectConfigFile(activePath: string): ProjectConfig {
+  try {
+    const raw = JSON.parse(readFileSync(activePath, 'utf-8'));
+    return { ...DEFAULT_PROJECT_CONFIG, ...stripSecrets(raw) } as ProjectConfig;
+  } catch {
+    return { ...DEFAULT_PROJECT_CONFIG };
+  }
+}
+
+function readUserPreferences(): ProjectConfig {
+  const candidates = [getUserPreferencesPath(), LEGACY_DEVICE_CONFIG_PATH];
+  for (const path of candidates) {
+    if (!existsSync(path)) continue;
+    try {
+      const raw = JSON.parse(readFileSync(path, 'utf-8')) as Record<string, unknown>;
+      if (path === LEGACY_DEVICE_CONFIG_PATH && !raw['mode'] && !raw['supabaseUrl']) {
+        continue;
+      }
+      return { ...DEFAULT_PROJECT_CONFIG, ...stripSecrets(raw) } as ProjectConfig;
+    } catch {
+      // try next candidate
+    }
+  }
+  return { ...DEFAULT_PROJECT_CONFIG };
+}
+
+function applyCloudSafeProjectFields(safe: Record<string, unknown>): void {
+  const effectiveMode = safe['mode'] ?? 'cloud';
+  if (effectiveMode !== 'cloud') return;
+  if (typeof safe['supabaseUrl'] === 'string' && isDevOnlyHostUrl(safe['supabaseUrl'])) {
+    delete safe['supabaseUrl'];
+  }
+  if (typeof safe['cloudApiUrl'] === 'string' && isDevOnlyHostUrl(safe['cloudApiUrl'])) {
+    delete safe['cloudApiUrl'];
+  }
+}
+
+export function saveUserPreferences(config: Partial<ProjectConfig>): void {
+  ensureUserConfigDir();
+  const existing = readUserPreferences();
+  const merged = { ...existing, ...config } as Record<string, unknown>;
+  const safe = stripSecrets(merged);
+  applyCloudSafeProjectFields(safe);
+  writeFileSync(getUserPreferencesPath(), JSON.stringify(safe, null, 2) + '\n');
 }
 
 function stripSecrets(raw: Record<string, unknown>): Record<string, unknown> {
@@ -348,24 +417,25 @@ function stripSecrets(raw: Record<string, unknown>): Record<string, unknown> {
   return safe;
 }
 
-export function loadConfig(cwd = process.cwd()): ProjectConfig {
+/** Project-scoped file only (ignores user preferences). */
+export function readProjectConfigAt(cwd = process.cwd()): ProjectConfig {
   const dirPath = findConfigPath(cwd);
   const legacyPath = findLegacyConfigPath(cwd);
-
-  // Prefer directory-based config; fall back to legacy flat file
   const activePath = existsSync(dirPath)
     ? dirPath
     : existsSync(legacyPath)
-    ? legacyPath
-    : null;
-
+      ? legacyPath
+      : null;
   if (!activePath) return { ...DEFAULT_PROJECT_CONFIG };
-  try {
-    const raw = JSON.parse(readFileSync(activePath, 'utf-8'));
-    return { ...DEFAULT_PROJECT_CONFIG, ...stripSecrets(raw) } as ProjectConfig;
-  } catch {
-    return { ...DEFAULT_PROJECT_CONFIG };
-  }
+  return readProjectConfigFile(activePath);
+}
+
+export function loadConfig(cwd = process.cwd()): ProjectConfig {
+  const user = readUserPreferences();
+  if (!projectConfigExists(cwd)) return user;
+  // User preferences own mode; project may supply repo-local ports/URLs only.
+  const project = readProjectConfigAt(cwd);
+  return { ...project, ...user };
 }
 
 export function saveConfig(
@@ -397,15 +467,7 @@ export function saveConfig(
 
   const merged = { ...existing, ...config } as Record<string, unknown>;
   const safe = stripSecrets(merged);
-  const effectiveMode = (safe['mode'] ?? existing['mode'] ?? 'cloud') as 'local' | 'cloud';
-  if (effectiveMode === 'cloud') {
-    if (typeof safe['supabaseUrl'] === 'string' && isDevOnlyHostUrl(safe['supabaseUrl'])) {
-      delete safe['supabaseUrl'];
-    }
-    if (typeof safe['cloudApiUrl'] === 'string' && isDevOnlyHostUrl(safe['cloudApiUrl'])) {
-      delete safe['cloudApiUrl'];
-    }
-  }
+  applyCloudSafeProjectFields(safe);
   writeFileSync(dirPath, JSON.stringify(safe, null, 2) + '\n');
 
   // Best-effort: register this workspace in the device config so the TUI
@@ -624,7 +686,7 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
 
 export type EffectiveApiMode = 'local' | 'cloud';
 
-export type EffectiveModeSource = 'env-local' | 'env-cloud' | 'project' | 'default';
+export type EffectiveModeSource = 'env-local' | 'env-cloud' | 'project' | 'user' | 'default';
 
 /** Resolved API target for this invocation (`local` = Supabase local stack only). */
 export function getEffectiveMode(cwd = process.cwd()): {
@@ -637,8 +699,11 @@ export function getEffectiveMode(cwd = process.cwd()): {
   if (process.env['LF_CLOUD'] === '1') {
     return { mode: 'cloud', source: 'env-cloud' };
   }
-  if (configExists(cwd)) {
-    return { mode: loadConfig(cwd).mode, source: 'project' };
+  if (userPreferencesExist()) {
+    return { mode: readUserPreferences().mode, source: 'user' };
+  }
+  if (projectConfigExists(cwd)) {
+    return { mode: readProjectConfigAt(cwd).mode, source: 'project' };
   }
   return { mode: 'cloud', source: 'default' };
 }

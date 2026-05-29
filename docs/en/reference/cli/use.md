@@ -9,7 +9,7 @@ description: Show or persistently switch the active mode (local / cloud) for the
 lf use [local|cloud] [--json]
 ```
 
-Show the current active mode or switch it persistently. Mode is written to `.lenserfight/lenserfight.json` and applies to every subsequent `lf` invocation in that directory.
+Show the current active mode or switch it persistently. **Mode is always stored in your OS user config** (e.g. `~/.config/lenserfight/lenserfight.json` on Linux) — the single source of truth. Repo-local `.lenserfight/lenserfight.json` is **not** updated unless you pass `--project`.
 
 ---
 
@@ -34,7 +34,7 @@ Output:
 ```
   ──────────────────────────────────────
   ●  Active mode   local
-     Source        /your/project/.lenserfight/lenserfight.json
+     Source        /home/you/.config/lenserfight/lenserfight.json
   ──────────────────────────────────────
 
   Switch:  lf use cloud  ·  per-invocation: lf --cloud <cmd>
@@ -42,7 +42,7 @@ Output:
 
 The `Source` line tells you whether the mode comes from:
 
-- Your project config file (`.lenserfight/lenserfight.json`)
+- Your user config file (`~/.config/lenserfight/lenserfight.json` on Linux)
 - An environment override (`LF_LOCAL` / `LF_CLOUD` / `--local` / `--cloud` flag)
 - The built-in default (`cloud`) when no project config exists
 

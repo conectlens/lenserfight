@@ -175,7 +175,7 @@ const GUIDANCE: Record<CliErrorKind, RecoveryGuidance> = {
   config: {
     strategy: 'Initialize or repair your project config, then retry.',
     hints: [
-      'lf init   # create or repair .lenserfight/lenserfight.json',
+      'lf init   # create user config (~/.config/lenserfight/lenserfight.json)',
       'lf doctor # run full config health check',
       'lf env    # review active environment variables',
       'lf doctor   # inspect device config path and content',

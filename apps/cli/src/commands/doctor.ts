@@ -3,8 +3,10 @@ import {
   configExists,
   getEffectiveMode,
   getOnboardingState,
+  getUserPreferencesPath,
   loadConfig,
   resolveConfig,
+  userPreferencesExist,
 } from '../config/project-config'
 import {
   detectCloudApi,
@@ -75,9 +77,12 @@ export default defineCommand({
 
     if (configExists()) {
       const config = loadConfig()
-      push('project_config', 'pass', `.lenserfight.json present (mode=${config.mode})`)
+      push('project_config', 'pass', `.lenserfight/lenserfight.json present (mode=${config.mode})`)
+    } else if (userPreferencesExist()) {
+      const { mode, source } = getEffectiveMode()
+      push('project_config', 'pass', `User config ${getUserPreferencesPath()} (mode=${mode}, source=${source})`)
     } else {
-      push('project_config', 'warn', 'No .lenserfight.json found. Run `lf setup` or `lf init`.')
+      push('project_config', 'warn', 'No user or project config. Run `lf init`.')
     }
 
     const onboarding = getOnboardingState()

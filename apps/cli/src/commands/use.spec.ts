@@ -11,10 +11,12 @@ jest.mock('consola', () => ({
   },
 }))
 jest.mock('../config/project-config', () => ({
-  configExists: jest.fn(),
+  projectConfigExists: jest.fn(),
   findConfigPath: jest.fn(() => '/project/.lenserfight/lenserfight.json'),
-  loadConfig: jest.fn(),
+  getUserPreferencesPath: jest.fn(() => '/home/user/.config/lenserfight/lenserfight.json'),
+  readProjectConfigAt: jest.fn(),
   saveConfig: jest.fn(),
+  saveUserPreferences: jest.fn(),
   getEffectiveMode: jest.fn(),
 }))
 jest.mock('../utils/ansi', () => ({
@@ -33,18 +35,18 @@ jest.mock('../utils/ansi', () => ({
 
 import consola from 'consola'
 import {
-  configExists,
+  projectConfigExists,
   findConfigPath,
   getEffectiveMode,
-  loadConfig,
   saveConfig,
+  saveUserPreferences,
 } from '../config/project-config'
 
-const mockConfigExists = configExists as jest.MockedFunction<typeof configExists>
+const mockProjectConfigExists = projectConfigExists as jest.MockedFunction<typeof projectConfigExists>
 const mockGetEffectiveMode = getEffectiveMode as jest.MockedFunction<typeof getEffectiveMode>
 const mockFindConfigPath = findConfigPath as jest.MockedFunction<typeof findConfigPath>
-const mockLoadConfig = loadConfig as jest.MockedFunction<typeof loadConfig>
 const mockSaveConfig = saveConfig as jest.MockedFunction<typeof saveConfig>
+const mockSaveUserPreferences = saveUserPreferences as jest.MockedFunction<typeof saveUserPreferences>
 const mockConsolaSuccess = (consola as unknown as { success: jest.Mock }).success
 const mockConsolaInfo = (consola as unknown as { info: jest.Mock }).info
 const mockConsolaError = (consola as unknown as { error: jest.Mock }).error
@@ -69,7 +71,7 @@ beforeEach(() => {
 
 describe('lf use (no args)', () => {
   it('shows default cloud mode when no project config exists', async () => {
-    mockConfigExists.mockReturnValue(false)
+    mockProjectConfigExists.mockReturnValue(false)
     const logSpy = jest.spyOn(console, 'log').mockImplementation()
 
     await useCmd.run?.({ args: { mode: undefined, json: false } })
@@ -79,10 +81,9 @@ describe('lf use (no args)', () => {
     logSpy.mockRestore()
   })
 
-  it('shows local mode when project config is set to local', async () => {
-    mockConfigExists.mockReturnValue(true)
-    mockLoadConfig.mockReturnValue({ mode: 'local', dbPort: 54322, apiPort: 54321 })
-    mockGetEffectiveMode.mockReturnValue({ mode: 'local', source: 'project' })
+  it('shows local mode when user config is local', async () => {
+    mockProjectConfigExists.mockReturnValue(false)
+    mockGetEffectiveMode.mockReturnValue({ mode: 'local', source: 'user' })
     const logSpy = jest.spyOn(console, 'log').mockImplementation()
 
     await useCmd.run?.({ args: { mode: undefined, json: false } })
@@ -93,9 +94,8 @@ describe('lf use (no args)', () => {
   })
 
   it('emits JSON when --json passed', async () => {
-    mockConfigExists.mockReturnValue(true)
-    mockLoadConfig.mockReturnValue({ mode: 'cloud', dbPort: 54322, apiPort: 54321 })
-    mockGetEffectiveMode.mockReturnValue({ mode: 'cloud', source: 'project' })
+    mockProjectConfigExists.mockReturnValue(true)
+    mockGetEffectiveMode.mockReturnValue({ mode: 'cloud', source: 'user' })
     const writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
 
     await useCmd.run?.({ args: { mode: undefined, json: true } })
@@ -104,12 +104,13 @@ describe('lf use (no args)', () => {
     const parsed = JSON.parse(raw)
     expect(parsed.mode).toBe('cloud')
     expect(parsed).toHaveProperty('source')
+    expect(parsed.configPath).toContain('lenserfight.json')
     writeSpy.mockRestore()
   })
 
   it('notes env override in JSON output when LF_CLOUD is set', async () => {
     process.env['LF_CLOUD'] = '1'
-    mockConfigExists.mockReturnValue(false)
+    mockProjectConfigExists.mockReturnValue(false)
     mockGetEffectiveMode.mockReturnValue({ mode: 'cloud', source: 'env-cloud' })
     const writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
 
@@ -125,65 +126,69 @@ describe('lf use (no args)', () => {
 // ── Switch mode ────────────────────────────────────────────────────────────
 
 describe('lf use <mode>', () => {
-  it('switches from cloud to local and saves config', async () => {
-    mockConfigExists.mockReturnValue(true)
-    mockLoadConfig.mockReturnValue({ mode: 'cloud', dbPort: 54322, apiPort: 54321 })
+  it('switches from cloud to local via user config only', async () => {
+    mockProjectConfigExists.mockReturnValue(true)
+    mockGetEffectiveMode.mockReturnValue({ mode: 'cloud', source: 'user' })
 
-    await useCmd.run?.({ args: { mode: 'local', json: false } })
+    await useCmd.run?.({ args: { mode: 'local', json: false, project: false } })
 
-    expect(mockSaveConfig).toHaveBeenCalledWith({ mode: 'local' })
+    expect(mockSaveUserPreferences).toHaveBeenCalledWith({ mode: 'local' })
+    expect(mockSaveConfig).not.toHaveBeenCalled()
     expect(mockConsolaSuccess).toHaveBeenCalledWith(expect.stringContaining('Supabase local'))
   })
 
-  it('switches from local to cloud and saves config', async () => {
-    mockConfigExists.mockReturnValue(true)
-    mockLoadConfig.mockReturnValue({ mode: 'local', dbPort: 54322, apiPort: 54321 })
+  it('switches from local to cloud via user config only', async () => {
+    mockProjectConfigExists.mockReturnValue(true)
+    mockGetEffectiveMode.mockReturnValue({ mode: 'local', source: 'user' })
 
-    await useCmd.run?.({ args: { mode: 'cloud', json: false } })
+    await useCmd.run?.({ args: { mode: 'cloud', json: false, project: false } })
 
-    expect(mockSaveConfig).toHaveBeenCalledWith({ mode: 'cloud' })
+    expect(mockSaveUserPreferences).toHaveBeenCalledWith({ mode: 'cloud' })
+    expect(mockSaveConfig).not.toHaveBeenCalled()
     expect(mockConsolaSuccess).toHaveBeenCalledWith(expect.stringContaining('Cloud'))
   })
 
-  it('creates config when no project config exists', async () => {
-    mockConfigExists.mockReturnValue(false)
+  it('also updates project file when --project is set', async () => {
+    mockProjectConfigExists.mockReturnValue(true)
+    mockGetEffectiveMode.mockReturnValue({ mode: 'cloud', source: 'user' })
 
-    await useCmd.run?.({ args: { mode: 'local', json: false } })
+    await useCmd.run?.({ args: { mode: 'local', json: false, project: true } })
 
+    expect(mockSaveUserPreferences).toHaveBeenCalledWith({ mode: 'local' })
     expect(mockSaveConfig).toHaveBeenCalledWith({ mode: 'local' })
-    expect(mockConsolaSuccess).toHaveBeenCalled()
   })
 
   it('prints info tip after switching to local', async () => {
-    mockConfigExists.mockReturnValue(false)
+    mockProjectConfigExists.mockReturnValue(false)
+    mockGetEffectiveMode.mockReturnValue({ mode: 'cloud', source: 'user' })
 
-    await useCmd.run?.({ args: { mode: 'local', json: false } })
+    await useCmd.run?.({ args: { mode: 'local', json: false, project: false } })
 
     const calls = mockConsolaInfo.mock.calls.map((c) => c[0] as string)
     expect(calls.some((s) => s.includes('lf setup'))).toBe(true)
   })
 
   it('prints info tip after switching to cloud', async () => {
-    mockConfigExists.mockReturnValue(false)
+    mockProjectConfigExists.mockReturnValue(false)
+    mockGetEffectiveMode.mockReturnValue({ mode: 'local', source: 'user' })
 
-    await useCmd.run?.({ args: { mode: 'cloud', json: false } })
+    await useCmd.run?.({ args: { mode: 'cloud', json: false, project: false } })
 
     const calls = mockConsolaInfo.mock.calls.map((c) => c[0] as string)
     expect(calls.some((s) => s.includes('lf auth login'))).toBe(true)
   })
 
   it('is a no-op when already in the requested mode', async () => {
-    mockConfigExists.mockReturnValue(true)
-    mockLoadConfig.mockReturnValue({ mode: 'cloud', dbPort: 54322, apiPort: 54321 })
+    mockGetEffectiveMode.mockReturnValue({ mode: 'cloud', source: 'user' })
 
-    await useCmd.run?.({ args: { mode: 'cloud', json: false } })
+    await useCmd.run?.({ args: { mode: 'cloud', json: false, project: false } })
 
     expect(mockSaveConfig).not.toHaveBeenCalled()
     expect(mockConsolaInfo).toHaveBeenCalledWith(expect.stringContaining('Already'))
   })
 
   it('rejects unknown mode values', async () => {
-    await useCmd.run?.({ args: { mode: 'staging', json: false } })
+    await useCmd.run?.({ args: { mode: 'staging', json: false, project: false } })
 
     expect(mockConsolaError).toHaveBeenCalledWith(expect.stringContaining('"staging"'))
     expect(process.exitCode).toBe(1)

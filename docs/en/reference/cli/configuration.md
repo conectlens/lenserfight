@@ -2,9 +2,23 @@
 
 The CLI uses a **two-layer config model** to keep secrets out of your repository.
 
-## Project config — `.lenserfight/lenserfight.json`
+## User config — OS path (default for `lf init`)
 
-Stores non-secret settings for this project. Safe to commit. Created by `lenserfight init`.
+Stores your personal mode, Supabase URL, and ports. **Not** written into git repositories by default.
+
+| Operating System | Path |
+|-----------------|------|
+| Linux | `$XDG_CONFIG_HOME/lenserfight/lenserfight.json` (default: `~/.config/lenserfight/lenserfight.json`) |
+| macOS | `~/Library/Application Support/lenserfight/lenserfight.json` |
+| Windows | `%APPDATA%\lenserfight\lenserfight.json` |
+
+Run `lenserfight init` from any directory to create this file. Use `lenserfight init --project` only when you intentionally want a repo-local override (see below).
+
+---
+
+## Project config — `.lenserfight/lenserfight.json` (optional)
+
+Stores non-secret settings for a specific repository. Safe to commit when the team shares the same target. Created only with `lenserfight init --project`.
 
 ```
 your-project/
