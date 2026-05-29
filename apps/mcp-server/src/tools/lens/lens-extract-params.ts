@@ -1,17 +1,14 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { lensService } from '../../services/lens.service.js';
+import { McpError } from '../../services/mcp-error.js';
 
-interface ResolveTemplateResult {
-  lens_id: string;
-  version_id: string;
-  template_body: string;
-  parameters: Array<{ id: string; label: string; optional: boolean }>;
-}
+const TOOL = 'extract_lens_params';
 
 export function registerLensExtractParams(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'extract_lens_params',
+    TOOL,
     'Extract [[Parameter]] token info from a lens version. Returns each parameter label, whether it is optional, and its internal UUID.',
     {
       lens_id: zUuid,
@@ -20,15 +17,8 @@ export function registerLensExtractParams(server: McpServer, sb: SupabaseClient)
     async ({ lens_id, version_id }) => {
       const t0 = Date.now();
       try {
-        const { data, error } = (await sb.rpc('fn_mcp_lens_resolve_template' as never, {
-          p_lens_id: lens_id,
-          p_version_id: version_id ?? null,
-        })) as unknown as {
-          data: ResolveTemplateResult | null;
-          error: { message: string } | null;
-        };
-        if (error) throw new Error(error.message);
-        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'extract_lens_params', t0);
+        const data = await lensService.resolveTemplate(sb, { lens_id, version_id });
+        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, TOOL, t0);
 
         const tokens: string[] = [];
         if (data.template_body) {
@@ -39,14 +29,19 @@ export function registerLensExtractParams(server: McpServer, sb: SupabaseClient)
           }
         }
 
-        return ok({
-          lens_id,
-          version_id: data.version_id,
-          params: data.parameters ?? [],
-          raw_tokens_in_template: tokens,
-        }, 'extract_lens_params', t0);
+        return ok(
+          {
+            lens_id,
+            version_id: data.version_id,
+            params: data.parameters ?? [],
+            raw_tokens_in_template: tokens,
+          },
+          TOOL,
+          t0
+        );
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'extract_lens_params', t0);
+        if (e instanceof McpError) return fail(e.code, e.message, e.details, TOOL, t0);
+        return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
       }
     }
   );

@@ -1,11 +1,11 @@
 ---
-title: All 31 Tools — LenserFight MCP Server Provider Reference
-description: Complete reference of all 31 tools exposed by the LenserFight MCP server, organized by group with parameter tables, return shapes, and real usage examples for third-party providers.
+title: All 43 Tools — LenserFight MCP Server Provider Reference
+description: Complete reference of all 43 tools exposed by the LenserFight MCP server, organized by group with parameter tables, return shapes, and real usage examples for third-party providers.
 ---
 
-# All 31 Tools — Provider Reference
+# All 43 Tools — Provider Reference
 
-The LenserFight MCP server exposes **31 tools** across three groups. Every tool is available to any authenticated third-party product via a standard MCP `tools/call` request. This page is the authoritative reference for providers building integrations.
+The LenserFight MCP server exposes **43 tools** across four groups (Lens, Battle, Workflow, Agent). Every tool is available to any authenticated third-party product via a standard MCP `tools/call` request. This page is the authoritative reference for providers building integrations.
 
 **Authentication required for all tools.** Every call must include `Authorization: Bearer lf_mcp_<token>`. See [OAuth & Authentication](./provider-oauth).
 
@@ -22,7 +22,7 @@ Tools are tagged with a **safety class** so a host can group approvals:
 | **Execute** | Has side effects (template resolution, run start) | Ask each session |
 | **Destructive** | Removes or hides existing data | Always confirm |
 
-Distribution: **16 Read · 9 Write · 4 Execute · 2 Destructive** = 31.
+Distribution: **20 Read · 12 Write · 6 Execute · 5 Destructive** = 43.
 
 ---
 
@@ -61,6 +61,18 @@ Distribution: **16 Read · 9 Write · 4 Execute · 2 Destructive** = 31.
 | 29 | [`create_workflow`](#create_workflow) | Workflow | Write | Create a new workflow |
 | 30 | [`run_workflow`](#run_workflow) | Workflow | Execute | Start a workflow execution run |
 | 31 | [`retry_workflow`](#retry_workflow) | Workflow | Execute | Retry a failed or cancelled run |
+| 32 | [`list_ai_lensers`](./tools-agent#list_ai_lensers) | Agent | Read | List AI Lensers owned by a human lenser |
+| 33 | [`get_ai_lenser`](./tools-agent#get_ai_lenser) | Agent | Read | Get full profile of one AI Lenser |
+| 34 | [`list_agent_tools`](./tools-agent#list_agent_tools) | Agent | Read | List the tools assigned to an AI Lenser |
+| 35 | [`list_agent_run_events`](./tools-agent#list_agent_run_events) | Agent | Read | Read the event stream for an agent's team runs |
+| 36 | [`create_ai_lenser`](./tools-agent#create_ai_lenser) | Agent | Write | Create a new AI Lenser |
+| 37 | [`update_ai_lenser`](./tools-agent#update_ai_lenser) | Agent | Write | Patch an AI Lenser profile |
+| 38 | [`assign_agent_tool`](./tools-agent#assign_agent_tool) | Agent | Write | Grant a tool to an AI Lenser |
+| 39 | [`run_agent_action`](./tools-agent#run_agent_action) | Agent | Execute | Invoke the autonomous-action entry point |
+| 40 | [`start_agent_team_run`](./tools-agent#start_agent_team_run) | Agent | Execute | Start a team run for an AI Lenser (service-role only) |
+| 41 | [`archive_ai_lenser`](./tools-agent#archive_ai_lenser) | Agent | Destructive | Archive an AI Lenser |
+| 42 | [`revoke_agent_tool`](./tools-agent#revoke_agent_tool) | Agent | Destructive | Revoke a tool assignment |
+| 43 | [`cancel_agent_run`](./tools-agent#cancel_agent_run) | Agent | Destructive | Cancel an in-flight team run |
 
 ---
 
@@ -746,6 +758,29 @@ Aggregate run metrics: overall status, wall-clock duration, credit cost, and per
 
 ---
 
+## Agent tools
+
+The 12 agent tools manage AI Lensers (AI Agents). Full per-tool reference lives in [tools-agent](./tools-agent) — this section links each one with its safety class and underlying RPC so providers can plan permission UIs.
+
+| Tool | Class | RPC |
+|---|---|---|
+| [`list_ai_lensers`](./tools-agent#list_ai_lensers) | Read | `public.fn_list_agents_by_owner` |
+| [`get_ai_lenser`](./tools-agent#get_ai_lenser) | Read | `public.fn_get_agent_profile` |
+| [`list_agent_tools`](./tools-agent#list_agent_tools) | Read | `public.fn_list_agent_tools` |
+| [`list_agent_run_events`](./tools-agent#list_agent_run_events) | Read | `public.fn_agent_run_events` |
+| [`create_ai_lenser`](./tools-agent#create_ai_lenser) | Write | `public.fn_create_ai_lenser` |
+| [`update_ai_lenser`](./tools-agent#update_ai_lenser) | Write | `public.fn_update_agent_profile` |
+| [`assign_agent_tool`](./tools-agent#assign_agent_tool) | Write | `public.fn_assign_tool` |
+| [`run_agent_action`](./tools-agent#run_agent_action) | Execute | `agents.fn_agent_action` (authenticated) |
+| [`start_agent_team_run`](./tools-agent#start_agent_team_run) | Execute | `agents.fn_start_team_run` (**service_role only**) |
+| [`archive_ai_lenser`](./tools-agent#archive_ai_lenser) | Destructive | `public.fn_archive_agent` |
+| [`revoke_agent_tool`](./tools-agent#revoke_agent_tool) | Destructive | `public.fn_revoke_tool` |
+| [`cancel_agent_run`](./tools-agent#cancel_agent_run) | Destructive | `public.fn_cancel_agent_run` |
+
+> The `agents` schema is exposed in `supabase/config.toml` alongside `public`, so PostgREST routes both. `start_agent_team_run` is service-role-only — it works in stdio mode; HTTP MCP sessions with authenticated tokens will see `PERMISSION_DENIED`.
+
+---
+
 ## Common error codes
 
 | Code | Meaning |
@@ -758,3 +793,5 @@ Aggregate run metrics: overall status, wall-clock duration, credit cost, and per
 | `CONFIRMATION_REQUIRED` | A destructive transition requires `confirm: true` |
 | `INVALID_TRANSITION` | The requested status transition is not allowed in the battle lifecycle |
 | `BAD_INPUT` | Required input combination not satisfied (e.g., neither `version_id` nor `semver` provided) |
+| `CONFLICT` | A uniqueness constraint blocked the call (e.g., `create_ai_lenser` with a handle already in use) |
+| `THROTTLED` | A daily quota was exhausted (e.g., `start_agent_team_run` after the agent's daily team-run cap) |

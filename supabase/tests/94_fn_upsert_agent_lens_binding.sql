@@ -17,26 +17,41 @@ BEGIN;
 SELECT plan(7);
 
 -- ─── Fixtures ────────────────────────────────────────────────────────────────
+-- All fixture UUIDs use the 94000001-* / 94000004-* range to avoid seed conflicts.
 
--- Use an existing human lenser: @omerfar (from seed)
--- We create a fresh AI lenser owned by @omerfar for isolation.
+-- Human owner: auth record + lenser profile
+INSERT INTO auth.users (id, email)
+VALUES ('94000001-0000-0000-0000-000000000001', 't94_human@test.local')
+ON CONFLICT (id) DO NOTHING;
 
-DO $$ BEGIN
-  -- Ensure @omerfar is active
-  UPDATE lensers.profiles SET status = 'active' WHERE handle = 'omerfar';
-END $$;
+INSERT INTO lensers.profiles (id, user_id, handle, display_name, type, status)
+VALUES ('94000001-0000-0000-0000-000000000001',
+        '94000001-0000-0000-0000-000000000001',
+        '_t94_human', 'T94 Human', 'human', 'active')
+ON CONFLICT (id) DO NOTHING;
 
--- Helper: get @omerfar's profile id
+-- Stranger (non-owner): auth record + lenser profile
+INSERT INTO auth.users (id, email)
+VALUES ('94000004-0000-0000-0000-000000000001', 't94_stranger@test.local')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO lensers.profiles (id, user_id, handle, display_name, status, type)
+VALUES ('94000004-0000-0000-0000-000000000001',
+        '94000004-0000-0000-0000-000000000001',
+        '_t94_stranger', 'T94 Stranger', 'active', 'human')
+ON CONFLICT (id) DO NOTHING;
+
+-- Helper temp table with known UUIDs (no seed dependency)
 CREATE TEMP TABLE _fix AS
 SELECT
-  (SELECT id FROM lensers.profiles WHERE handle = 'omerfar')            AS human_id,
-  (SELECT user_id FROM lensers.profiles WHERE handle = 'omerfar')       AS human_user_id,
-  -- public system lens (owned by @lenserfight)
-  '40000000-0001-0003-0001-000000000001'::uuid                          AS public_lens_id,
-  -- lenserfight system profile id
-  'b2000000-0000-0000-0000-000000000001'::uuid                          AS system_lenser_id;
+  '94000001-0000-0000-0000-000000000001'::uuid  AS human_id,
+  '94000001-0000-0000-0000-000000000001'::uuid  AS human_user_id,
+  -- public system lens (owned by @lenserfight, seeded)
+  '40000000-0001-0003-0001-000000000001'::uuid  AS public_lens_id,
+  -- lenserfight system profile id (seeded)
+  'b2000000-0000-0000-0000-000000000001'::uuid  AS system_lenser_id;
 
--- Create a throw-away AI lenser owned by @omerfar
+-- Create a throw-away AI lenser owned by the human fixture
 INSERT INTO agents.ai_lensers (id, profile_id, display_name, status)
 SELECT
   '99900001-0000-0000-0000-000000000001',
@@ -64,7 +79,7 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
--- Create a lens owned by @omerfar (human-owned)
+-- Create a lens owned by the human fixture
 INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
 SELECT
   '99900003-0000-0000-0000-000000000001',
@@ -72,11 +87,6 @@ SELECT
   'public',
   'published'
 FROM _fix
-ON CONFLICT DO NOTHING;
-
--- Create a second unrelated human lenser (stranger)
-INSERT INTO lensers.profiles (id, handle, status, type)
-VALUES ('99900004-0000-0000-0000-000000000001', '_test_stranger', 'active', 'human')
 ON CONFLICT DO NOTHING;
 
 -- ─── Test 1: owner binds their own (human-owned) lens ────────────────────────
@@ -123,7 +133,7 @@ SELECT throws_ok(
 -- ─── Test 4: non-owner cannot bind anything ───────────────────────────────────
 SELECT throws_ok(
   $$
-    SET LOCAL "request.jwt.claims" = '{"sub":"99900004-0000-0000-0000-000000000001","role":"authenticated"}';
+    SET LOCAL "request.jwt.claims" = '{"sub":"94000004-0000-0000-0000-000000000001","role":"authenticated"}';
     SELECT fn_upsert_agent_lens_binding(
       '99900001-0000-0000-0000-000000000001',
       '40000000-0001-0003-0001-000000000001',

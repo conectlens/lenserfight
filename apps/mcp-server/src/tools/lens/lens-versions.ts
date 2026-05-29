@@ -1,24 +1,24 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { lensService } from '../../services/lens.service.js';
+import { McpError } from '../../services/mcp-error.js';
+
+const TOOL = 'list_lens_versions';
 
 export function registerLensVersions(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'list_lens_versions',
+    TOOL,
     'List all versions of a lens ordered newest-first. Each version is immutable — new edits create new versions.',
-    {
-      lens_id: zUuid,
-    },
+    { lens_id: zUuid },
     async ({ lens_id }) => {
       const t0 = Date.now();
       try {
-        const { data, error } = (await sb.rpc('fn_mcp_lens_versions' as never, {
-          p_lens_id: lens_id,
-        })) as unknown as { data: unknown; error: { message: string } | null };
-        if (error) throw new Error(error.message);
-        return ok(data ?? { lens_id, versions: [], count: 0 }, 'list_lens_versions', t0);
+        const data = await lensService.listVersions(sb, lens_id);
+        return ok(data, TOOL, t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'list_lens_versions', t0);
+        if (e instanceof McpError) return fail(e.code, e.message, e.details, TOOL, t0);
+        return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
       }
     }
   );

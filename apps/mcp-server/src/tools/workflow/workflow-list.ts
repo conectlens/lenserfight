@@ -2,10 +2,14 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { paginated, fail, zUuid } from '../../types.js';
+import { workflowService } from '../../services/workflow.service.js';
+import { McpError } from '../../services/mcp-error.js';
+
+const TOOL = 'list_workflows';
 
 export function registerWorkflowList(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'list_workflows',
+    TOOL,
     'List workflows with pagination. Optionally filter by visibility or lenser.',
     {
       limit: z.number().int().min(1).max(100).default(20).optional(),
@@ -18,19 +22,16 @@ export function registerWorkflowList(server: McpServer, sb: SupabaseClient): voi
       const limit = args.limit ?? 20;
       const offset = args.offset ?? 0;
       try {
-        const { data, error } = (await sb.rpc('fn_mcp_workflow_list' as never, {
-          p_limit: limit,
-          p_offset: offset,
-          p_visibility: args.visibility ?? null,
-          p_lenser_id: args.lenser_id ?? null,
-        })) as unknown as {
-          data: { data: unknown[]; count: number } | null;
-          error: { message: string } | null;
-        };
-        if (error) throw new Error(error.message);
-        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'list_workflows', t0);
+        const { items, total } = await workflowService.list(sb, {
+          limit,
+          offset,
+          visibility: args.visibility,
+          lenser_id: args.lenser_id,
+        });
+        return paginated(items, total, limit, offset, TOOL, t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'list_workflows', t0);
+        if (e instanceof McpError) return fail(e.code, e.message, e.details, TOOL, t0);
+        return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
       }
     }
   );

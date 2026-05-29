@@ -3,10 +3,14 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { paginated, fail, zUuid } from '../../types.js';
 import { getConfig } from '../../config.js';
+import { battleService } from '../../services/battle.service.js';
+import { McpError } from '../../services/mcp-error.js';
+
+const TOOL = 'get_battle_history';
 
 export function registerBattleHistory(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'get_battle_history',
+    TOOL,
     'Get structured battle history for a lenser — battles they created or participated in, with outcomes.',
     {
       lenser_id: zUuid.optional(),
@@ -20,19 +24,16 @@ export function registerBattleHistory(server: McpServer, sb: SupabaseClient): vo
       const offset = args.offset ?? 0;
       const lenserId = args.lenser_id ?? getConfig().lenserId;
       try {
-        const { data, error } = (await sb.rpc('fn_mcp_battle_history' as never, {
-          p_lenser_id: lenserId ?? null,
-          p_limit: limit,
-          p_offset: offset,
-          p_status: args.status ?? null,
-        })) as unknown as {
-          data: { data: unknown[]; count: number } | null;
-          error: { message: string } | null;
-        };
-        if (error) throw new Error(error.message);
-        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'get_battle_history', t0);
+        const { items, total } = await battleService.history(sb, {
+          lenser_id: lenserId ?? null,
+          limit,
+          offset,
+          status: args.status,
+        });
+        return paginated(items, total, limit, offset, TOOL, t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'get_battle_history', t0);
+        if (e instanceof McpError) return fail(e.code, e.message, e.details, TOOL, t0);
+        return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
       }
     }
   );

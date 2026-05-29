@@ -2,10 +2,14 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { lensService } from '../../services/lens.service.js';
+import { McpError } from '../../services/mcp-error.js';
+
+const TOOL = 'get_lens_version';
 
 export function registerLensGetVersion(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'get_lens_version',
+    TOOL,
     'Get a specific lens version by its ID or semver string. Returns the full template body and parameter list.',
     {
       lens_id: zUuid,
@@ -15,19 +19,19 @@ export function registerLensGetVersion(server: McpServer, sb: SupabaseClient): v
     async (args) => {
       const t0 = Date.now();
       if (!args.version_id && !args.semver) {
-        return fail('BAD_INPUT', 'Provide version_id or semver', {}, 'get_lens_version', t0);
+        return fail('BAD_INPUT', 'Provide version_id or semver', {}, TOOL, t0);
       }
       try {
-        const { data, error } = (await sb.rpc('fn_mcp_lens_get_version' as never, {
-          p_lens_id: args.lens_id,
-          p_version_id: args.version_id ?? null,
-          p_semver: args.semver ?? null,
-        })) as unknown as { data: unknown; error: { message: string } | null };
-        if (error) throw new Error(error.message);
-        if (!data) return fail('NOT_FOUND', 'Version not found', {}, 'get_lens_version', t0);
-        return ok(data, 'get_lens_version', t0);
+        const data = await lensService.getVersion(sb, {
+          lens_id: args.lens_id,
+          version_id: args.version_id,
+          semver: args.semver,
+        });
+        if (!data) return fail('NOT_FOUND', 'Version not found', {}, TOOL, t0);
+        return ok(data, TOOL, t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'get_lens_version', t0);
+        if (e instanceof McpError) return fail(e.code, e.message, e.details, TOOL, t0);
+        return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
       }
     }
   );

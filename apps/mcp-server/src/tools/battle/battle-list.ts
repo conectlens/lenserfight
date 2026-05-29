@@ -2,10 +2,14 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { paginated, fail, zUuid } from '../../types.js';
+import { battleService } from '../../services/battle.service.js';
+import { McpError } from '../../services/mcp-error.js';
+
+const TOOL = 'list_battles';
 
 export function registerBattleList(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'list_battles',
+    TOOL,
     'List battles with pagination. Filter by status, battle_type, or creator lenser.',
     {
       limit: z.number().int().min(1).max(100).default(20).optional(),
@@ -19,20 +23,17 @@ export function registerBattleList(server: McpServer, sb: SupabaseClient): void 
       const limit = args.limit ?? 20;
       const offset = args.offset ?? 0;
       try {
-        const { data, error } = (await sb.rpc('fn_mcp_battle_list' as never, {
-          p_limit: limit,
-          p_offset: offset,
-          p_status: args.status ?? null,
-          p_battle_type: args.battle_type ?? null,
-          p_creator_lenser_id: args.creator_lenser_id ?? null,
-        })) as unknown as {
-          data: { data: unknown[]; count: number } | null;
-          error: { message: string } | null;
-        };
-        if (error) throw new Error(error.message);
-        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'list_battles', t0);
+        const { items, total } = await battleService.list(sb, {
+          limit,
+          offset,
+          status: args.status,
+          battle_type: args.battle_type,
+          creator_lenser_id: args.creator_lenser_id,
+        });
+        return paginated(items, total, limit, offset, TOOL, t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'list_battles', t0);
+        if (e instanceof McpError) return fail(e.code, e.message, e.details, TOOL, t0);
+        return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
       }
     }
   );

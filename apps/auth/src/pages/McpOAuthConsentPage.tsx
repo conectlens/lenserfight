@@ -55,6 +55,15 @@ function resolveMcpServerUrl(serverParam: string | null): string {
   return MCP_SERVER_URL
 }
 
+function isNgrokUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname
+    return ALLOWED_MCP_PATTERNS.some((re) => re.test(host))
+  } catch {
+    return false
+  }
+}
+
 type Phase =
   | { name: 'loading' }
   | { name: 'fetching' }
@@ -87,7 +96,7 @@ export const McpOAuthConsentPage: React.FC = () => {
     }
     setPhase({ name: 'fetching' })
     fetch(`${mcpServerUrl}/oauth/client-info?id=${encodeURIComponent(id)}`, {
-      headers: { 'ngrok-skip-browser-warning': 'true' },
+      headers: isNgrokUrl(mcpServerUrl) ? { 'ngrok-skip-browser-warning': 'true' } : {},
     })
       .then((r) => r.json())
       .then((data) => {
@@ -113,7 +122,7 @@ export const McpOAuthConsentPage: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
+          ...(isNgrokUrl(mcpServerUrl) ? { 'ngrok-skip-browser-warning': 'true' } : {}),
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ id, refresh_token: session.refresh_token }),
