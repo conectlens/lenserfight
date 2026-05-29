@@ -1,4 +1,4 @@
-import { resolveConfig } from './project-config'
+import { getEffectiveMode, resolveConfig } from './project-config'
 
 jest.mock('node:fs', () => ({
   existsSync: jest.fn().mockReturnValue(false),
@@ -34,5 +34,16 @@ describe('project-config defaults and overrides', () => {
     process.env['LF_CLOUD'] = '1'
     const config = resolveConfig()
     expect(config.mode).toBe('cloud')
+  })
+
+  it('getEffectiveMode prefers LF_LOCAL over LF_CLOUD', () => {
+    process.env['LF_LOCAL'] = '1'
+    process.env['LF_CLOUD'] = '1'
+    expect(getEffectiveMode().mode).toBe('local')
+    expect(getEffectiveMode().source).toBe('env-local')
+  })
+
+  it('getEffectiveMode defaults to cloud', () => {
+    expect(getEffectiveMode()).toEqual({ mode: 'cloud', source: 'default' })
   })
 })

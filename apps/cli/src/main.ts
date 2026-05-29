@@ -1,5 +1,6 @@
 import { defineCommand, runMain } from 'citty'
 import consola from 'consola'
+import { getEffectiveMode } from './config/project-config'
 import { setExecContext, getExecContext } from './lib/exec-context'
 import { readCliVersion } from './lib/version'
 
@@ -44,7 +45,7 @@ const main = defineCommand({
   args: {
     local: {
       type: 'boolean',
-      description: 'Override project config mode to local for this invocation',
+      description: 'Override API mode to Supabase local (127.0.0.1) for this invocation',
       default: false,
     },
     cloud: {
@@ -64,16 +65,23 @@ const main = defineCommand({
     if (ctx.args.cloud) process.env['LF_CLOUD'] = '1'
     if (ctx.args.debug) process.env['LF_DEBUG'] = '1'
 
-    const isLocal = process.env['LF_LOCAL'] === '1'
+    const { mode: effectiveMode } = getEffectiveMode()
     const isDebug = process.env['LF_DEBUG'] === '1'
-    setExecContext({ isLocal, isDebug })
+    setExecContext({ isLocal: effectiveMode === 'local', isDebug })
 
     if (isDebug) consola.level = 4
-    if (isLocal) process.stderr.write('local mode active\n')
+    if (effectiveMode === 'local') {
+      process.stderr.write('Supabase local mode active (--local / lf use local)\n')
+    }
 
     await defaultRun(ctx)
   },
   subCommands: {
+    // Top-level aliases for the most common auth actions
+    login: () => import('./commands/auth').then((m) => (m.default.subCommands as Record<string, unknown>)['login'] as ReturnType<typeof defineCommand>),
+    logout: () => import('./commands/auth').then((m) => (m.default.subCommands as Record<string, unknown>)['logout'] as ReturnType<typeof defineCommand>),
+    // Mode switch: `lf use local` / `lf use cloud` / `lf use` (show)
+    use: () => import('./commands/use').then((m) => m.default),
     init: () => import('./commands/init').then((m) => m.default),
     doctor: () => import('./commands/doctor').then((m) => m.default),
     db: () => import('./commands/db').then((m) => m.default),
@@ -107,6 +115,7 @@ const main = defineCommand({
     communities: () => import('./commands/communities').then((m) => m.default),
     connectors: () => import('./commands/connectors').then((m) => m.default),
     connect: () => import('./commands/connect').then((m) => m.default),
+    sync: () => import('./commands/sync').then((m) => m.default),
     invite: () => import('./commands/invite').then((m) => m.default),
     lenser: () => import('./commands/lenser').then((m) => m.default),
     providers: () => import('./commands/providers').then((m) => m.default),

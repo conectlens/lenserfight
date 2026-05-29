@@ -3,7 +3,7 @@ import consola from 'consola';
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { loadConfig } from '../config/project-config';
+import { getEffectiveMode } from '../config/project-config';
 import { runCombineSeedsIfPresent } from '../lib/combine-seeds';
 
 export default defineCommand({
@@ -32,9 +32,7 @@ export default defineCommand({
       return;
     }
 
-    const config = loadConfig();
-
-    if (config.mode === 'local') {
+    if (getEffectiveMode().mode === 'local') {
       if (!args.force) {
         consola.warn('This will run `supabase db reset`, which DROPS and recreates the local database.');
         consola.warn('All local data will be lost. Re-run with --force to confirm.');

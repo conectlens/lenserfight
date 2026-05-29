@@ -21,6 +21,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import consola from 'consola'
+import { getEffectiveMode } from '../config/project-config'
 import { getExecContext } from './exec-context'
 
 export type TelemetryEvent = {
@@ -52,7 +53,7 @@ function isEnabled(): boolean {
 }
 
 export async function promptTelemetryConsent(): Promise<void> {
-  if (getExecContext().isLocal) return
+  if (getEffectiveMode().mode === 'local') return
   if (process.env['LF_TELEMETRY'] !== 'opt-in') return
   if (existsSync(CONFIG_PATH)) return
   if (!process.stdin.isTTY) return
@@ -83,9 +84,9 @@ export async function promptTelemetryConsent(): Promise<void> {
 }
 
 export async function recordEvent(event: TelemetryEvent): Promise<void> {
-  const { isLocal, isDebug } = getExecContext()
-  if (isLocal) {
-    if (isDebug) consola.debug(`[${new Date().toISOString().slice(11, 23)}] telemetry skipped: local mode`)
+  const { isDebug } = getExecContext()
+  if (getEffectiveMode().mode === 'local') {
+    if (isDebug) consola.debug(`[${new Date().toISOString().slice(11, 23)}] telemetry skipped: Supabase local mode`)
     return
   }
   if (!isEnabled() || !ENDPOINT) return

@@ -17,7 +17,22 @@
 
 `lf` is the CLI for LenserFight. Running `lf` with no arguments opens an interactive TUI dashboard. Every battle, lens, lenser, workflow, and connector operation is accessible from the terminal — you do not need the web UI for any of it.
 
-Built on [citty](https://github.com/unjs/citty) and [consola](https://github.com/unjs/consola). Distributed as a single CJS bundle (`dist/apps/cli/main.js`) compiled by esbuild. Supports `local` mode (Supabase running on localhost) and `cloud` mode (lenserfight.com API). Mode is set in `.lenserfight.json` at project root or via `--mode` flag at runtime.
+Built on [citty](https://github.com/unjs/citty) and [consola](https://github.com/unjs/consola). Distributed as a single CJS bundle (`dist/apps/cli/main.js`) compiled by esbuild.
+
+### Runtime backends
+
+| Backend | CLI surface | Docker required? |
+|---------|-------------|------------------|
+| **Cloud** (default) | Most RPC commands, `lf auth login` | No |
+| **Supabase local** | `lf use local`, `lf --local`, `lf db *` | Only for `db dev` / sync |
+| **File workspace** | `lf validate`, `lf battle file *`, `lf workflow run` | No |
+
+- **Default API mode:** Cloud (no project file needed).
+- **Persist:** `lf use cloud` \| `lf use local` → `.lenserfight/lenserfight.json`
+- **Override once:** `lf --cloud <cmd>` \| `lf --local <cmd>` (Supabase local only — not file battles)
+- **File battles:** `lf battle file` (deprecated alias: `lf battle local`)
+
+See [Runtime backends](../../docs/en/reference/cli/runtime-backends.md).
 
 ---
 
@@ -48,9 +63,9 @@ CI runners, and Docker-style Node environments. Node `>=22` is required.
 ## Onboarding (after npm install)
 
 ```bash
-lf init                  # create .lenserfight.json (local mode by default)
-lf auth login            # browser-based login (or --email/--password for headless)
-lf doctor                # validate Node, Docker, Supabase CLI, Ollama, auth
+lf init                  # create .lenserfight.json (cloud mode by default)
+lf auth login            # browser-based login (or --email/--password for Supabase local)
+lf doctor                # validate environment (Docker checks only with --mode local)
 lf onboard               # guided first-run: auth check → profile → first battle template
 lf setup --interactive   # full journey checklist with step-by-step prompts
 ```
@@ -58,7 +73,7 @@ lf setup --interactive   # full journey checklist with step-by-step prompts
 **No account needed — offline battle with Ollama:**
 
 ```bash
-lf battle local run --example haiku-shootout
+lf battle file run --example haiku-shootout
 ```
 
 Shell completion (one-time):
@@ -91,19 +106,36 @@ Two configuration files govern `lf` behavior:
 
 | File | Location | Purpose | Commit? |
 |------|----------|---------|---------|
-| `.lenserfight.json` | project root | mode, supabaseUrl, ports | Yes — no secrets |
-| `~/.lenserfight/config.json` | user home | auth tokens, API keys | Never |
+| `.lenserfight/lenserfight.json` | project root | mode, supabaseUrl, ports | Yes — no secrets |
+| `~/.config/lenserfight/config.json` | OS user config dir | auth tokens, API keys | Never |
 
-**Modes:**
+**API modes** (`mode` in project config):
 
-- `local` — Supabase at `http://127.0.0.1:54321`. Everything runs on your machine.
-- `cloud` — lenserfight.com API. Requires auth.
+- `cloud` — LenserFight official API (default).
+- `local` — Supabase at `http://127.0.0.1:54321` (Supabase local stack only).
 
-**Initialize:**
+**File workspace** does not use `mode`; it is always available via `lf battle file`, `lf validate`, etc.
+
+**Switch mode (persistent):**
 
 ```bash
-lf init               # local mode (default)
-lf init --mode cloud  # cloud mode
+lf use cloud          # switch to cloud and save to project config
+lf use local          # switch to local and save to project config
+lf use                # show current mode and its source
+```
+
+**Override for one invocation:**
+
+```bash
+lf --cloud <cmd>      # use cloud just for this command
+lf --local <cmd>      # use local just for this command
+```
+
+**Initialize from scratch:**
+
+```bash
+lf init               # create project config, defaults to cloud mode
+lf init --mode local  # initialize in local mode
 ```
 
 ---
@@ -129,6 +161,9 @@ lf init --mode cloud  # cloud mode
 
 | Command | Description |
 |---------|-------------|
+| `lf login` | Browser-based login (shorthand for `lf auth login`) |
+| `lf login --email E --password P` | Headless login |
+| `lf logout` | Clear local tokens (shorthand for `lf auth logout`) |
 | `lf auth login` | Browser-based login |
 | `lf auth login --email E --password P` | Headless login |
 | `lf auth logout` | Clear local tokens |
@@ -253,6 +288,7 @@ lf init --mode cloud  # cloud mode
 
 | Command | Description |
 |---------|-------------|
+| `lf use [local\|cloud]` | Show or persistently switch the active mode |
 | `lf import` | Import data |
 | `lf export` | Export data |
 | `lf profile` | Profile management |

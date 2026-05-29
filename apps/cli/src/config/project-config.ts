@@ -238,7 +238,7 @@ export function saveConfig(
   try {
     syncWorkspaceToDevice(
       cwd,
-      ((config.mode ?? existing['mode'] ?? 'local') as 'local' | 'cloud'),
+      ((config.mode ?? existing['mode'] ?? 'cloud') as 'local' | 'cloud'),
       dirPath,
     );
   } catch {
@@ -442,6 +442,31 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
 }
 
 // ---------------------------------------------------------------------------
+// Effective API mode (Supabase local vs Cloud) — single precedence everywhere
+// ---------------------------------------------------------------------------
+
+export type EffectiveApiMode = 'local' | 'cloud';
+
+export type EffectiveModeSource = 'env-local' | 'env-cloud' | 'project' | 'default';
+
+/** Resolved API target for this invocation (`local` = Supabase local stack only). */
+export function getEffectiveMode(cwd = process.cwd()): {
+  mode: EffectiveApiMode;
+  source: EffectiveModeSource;
+} {
+  if (process.env['LF_LOCAL'] === '1') {
+    return { mode: 'local', source: 'env-local' };
+  }
+  if (process.env['LF_CLOUD'] === '1') {
+    return { mode: 'cloud', source: 'env-cloud' };
+  }
+  if (configExists(cwd)) {
+    return { mode: loadConfig(cwd).mode, source: 'project' };
+  }
+  return { mode: 'cloud', source: 'default' };
+}
+
+// ---------------------------------------------------------------------------
 // Fully-resolved config — used by all commands
 // Resolution order (highest → lowest):
 //   1. process.env / .env.local / .env
@@ -454,16 +479,7 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
   const user = loadUserConfig();
   const env = loadEnvConfig(cwd);
 
-  // --local / --cloud global flags override project config mode for this invocation
-  const forcedLocal = process.env['LF_LOCAL'] === '1';
-  const forcedCloud = process.env['LF_CLOUD'] === '1';
-
-  let mode: 'local' | 'cloud' = project.mode;
-  if (forcedLocal) {
-    mode = 'local';
-  } else if (forcedCloud) {
-    mode = 'cloud';
-  }
+  const { mode } = getEffectiveMode(cwd);
 
   const isLocal = mode === 'local';
 

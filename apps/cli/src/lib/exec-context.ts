@@ -1,5 +1,3 @@
-import type { ArgsDef } from 'citty'
-
 export interface ExecContext {
   isLocal: boolean
   isDebug: boolean
@@ -19,21 +17,3 @@ export function getExecContext(): Readonly<ExecContext> {
 export function _resetForTest(): void {
   ctx = { isLocal: false, isDebug: false, commandStartMs: Date.now() }
 }
-
-export const GLOBAL_ARGS = {
-  local: {
-    type: 'boolean' as const,
-    description: 'Override project config mode to local for this invocation',
-    default: false,
-  },
-  cloud: {
-    type: 'boolean' as const,
-    description: 'Override project config mode to cloud for this invocation',
-    default: false,
-  },
-  debug: {
-    type: 'boolean' as const,
-    description: 'Enable verbose debug diagnostics on stderr',
-    default: false,
-  },
-} satisfies ArgsDef

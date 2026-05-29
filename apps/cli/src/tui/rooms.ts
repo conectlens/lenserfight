@@ -260,7 +260,7 @@ export const ROOMS: Record<string, LabyrinthRoom> = {
           key: 'L',
           label: 'Run Local Battle',
           sublabel: 'offline — uses Ollama',
-          action: { type: 'prompt', prefill: 'battle local run --id ' },
+          action: { type: 'prompt', prefill: 'battle file run --id ' },
           unlocked: true,
           badge: 'LOCAL',
         })
@@ -407,8 +407,8 @@ export const ROOMS: Record<string, LabyrinthRoom> = {
           id: 'local_battle_start',
           key: 'b',
           label: 'Start Local Battle',
-          sublabel: 'battle local run --id <ID>',
-          action: { type: 'prompt', prefill: 'battle local run --id ' },
+          sublabel: 'battle file run --id <ID>',
+          action: { type: 'prompt', prefill: 'battle file run --id ' },
           unlocked: true,
         },
         {
@@ -416,7 +416,7 @@ export const ROOMS: Record<string, LabyrinthRoom> = {
           key: 'm',
           label: 'List Local Models',
           sublabel: 'available in Ollama',
-          action: { type: 'execute', argv: ['models', 'list', '--local'] },
+          action: { type: 'execute', argv: ['models', 'list'] },
           unlocked: env.ollama,
         },
         {
@@ -432,14 +432,14 @@ export const ROOMS: Record<string, LabyrinthRoom> = {
           key: 'i',
           label: 'New Local Battle',
           sublabel: '--name <name>',
-          action: { type: 'prompt', prefill: 'battle local init --name ' },
+          action: { type: 'prompt', prefill: 'battle file init --name ' },
           unlocked: true,
         },
         {
           id: 'local_battle_list',
           key: 'l',
           label: 'List Local Battles',
-          action: { type: 'execute', argv: ['battle', 'local', 'list'] },
+          action: { type: 'execute', argv: ['battle', 'file', 'list'] },
           unlocked: true,
         },
       ]

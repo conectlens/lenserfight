@@ -2,7 +2,14 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import consola from 'consola';
 import { toSnakeCaseKeys } from '@lenserfight/utils/text';
-import { resolveConfig as resolveBaseConfig, loadUserConfig, saveUserConfig, getDeviceConfigDir, type LenserfightConfig } from '../config/project-config';
+import {
+  resolveConfig as resolveBaseConfig,
+  loadUserConfig,
+  saveUserConfig,
+  getDeviceConfigDir,
+  getEffectiveMode,
+  type LenserfightConfig,
+} from '../config/project-config';
 import { reportCliError } from './error-reporter';
 import { getExecContext } from '../lib/exec-context';
 import { redactHeaders, redactUrl } from '../lib/redact';
@@ -134,12 +141,11 @@ async function tryRefreshToken(config: LenserfightConfig): Promise<void> {
 }
 
 function warnIfProductionInLocalMode(config: LenserfightConfig): void {
-  const { isLocal } = getExecContext();
-  if (!isLocal) return;
+  if (getEffectiveMode().mode !== 'local') return;
   if (config.supabaseUrl.includes('supabase.co'))
-    consola.warn(`--local active but supabaseUrl points to production: ${config.supabaseUrl}`);
+    consola.warn(`Supabase local mode active but supabaseUrl points to production: ${config.supabaseUrl}`);
   if (config.cloudApiUrl.includes('lenserfight.com'))
-    consola.warn(`--local active but cloudApiUrl points to production: ${config.cloudApiUrl}`);
+    consola.warn(`Supabase local mode active but cloudApiUrl points to production: ${config.cloudApiUrl}`);
 }
 
 async function callRpcInner<T = unknown>(

@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty'
 import {
   configExists,
+  getEffectiveMode,
   getOnboardingState,
   loadConfig,
   resolveConfig,
@@ -39,6 +40,7 @@ export default defineCommand({
   },
   async run({ args }) {
     const config = resolveConfig()
+    const { mode: effectiveMode, source: effectiveSource } = getEffectiveMode()
     const onboarding = getOnboardingState()
     const project = configExists() ? loadConfig() : null
     const authed = isAuthenticated()
@@ -53,7 +55,9 @@ export default defineCommand({
     if (args.json) {
       const payload: Record<string, unknown> = {
         projectConfigPresent: !!project,
-        mode: project?.mode ?? config.mode,
+        mode: effectiveMode,
+        modeSource: effectiveSource,
+        projectMode: project?.mode ?? null,
         supabaseUrl: config.supabaseUrl || null,
         cloudApiUrl: config.cloudApiUrl || null,
         supabaseAnonKeyPresent: !!config.supabaseAnonKey,
@@ -90,10 +94,19 @@ export default defineCommand({
     const authMark = authed ? c.success(`${sym.pass} authenticated`) : c.error(`${sym.fail} not authenticated`)
     console.log(`Auth          ${authMark}`)
 
+    // Mode row (effective API target: Cloud vs Supabase local)
+    const modeLabel =
+      effectiveMode === 'local' ? c.localhost('Supabase local') : c.cloud('Cloud')
+    const modeSuffix =
+      effectiveSource === 'env-local' || effectiveSource === 'env-cloud'
+        ? c.warn(` (${effectiveSource === 'env-local' ? '--local' : '--cloud'} override)`)
+        : c.muted(` — switch: lf use ${effectiveMode === 'local' ? 'cloud' : 'local'}`)
+    console.log(`API mode      ${c.bold(modeLabel)}${modeSuffix}`)
+    console.log(`File workspace ${c.success(sym.pass)}  always available (lf validate, lf battle file)`)
+
     // Environment row
     const node = detectNode()
-    const mode = project?.mode ?? config.mode
-    if (mode === 'local') {
+    if (effectiveMode === 'local') {
       const supabase = detectSupabaseCli()
       const docker = detectDocker()
       const envOk = node.ok && supabase.ok && docker.ok
@@ -103,7 +116,7 @@ export default defineCommand({
       )
     } else {
       const mark = node.ok ? c.success(sym.pass) : c.error(sym.fail)
-      console.log(`Environment   ${mark}  Node ${node.detail} ${c.muted(sym.dot)} mode=${mode}`)
+      console.log(`Environment   ${mark}  Node ${node.detail}`)
     }
 
     console.log(`API           ${config.cloudApiUrl ?? c.muted('(not set)')}`)

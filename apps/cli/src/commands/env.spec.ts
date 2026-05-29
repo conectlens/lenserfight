@@ -17,6 +17,7 @@ jest.mock('../config/project-config', () => ({
     supabaseUrl: 'http://127.0.0.1:54321',
     cloudApiUrl: null,
   }),
+  getEffectiveMode: jest.fn().mockReturnValue({ mode: 'local', source: 'project' }),
 }))
 jest.mock('../utils/output', () => ({
   printJson: jest.fn(),

@@ -11,100 +11,63 @@ interface Example {
 }
 
 const EXAMPLES: Example[] = [
-  // ── Getting Started ─────────────────────────────────────────────────────────
   {
-    category: 'getting-started',
-    title: 'Initialize a local project',
-    commands: ['lf init --mode local', 'lf db dev', 'lf doctor'],
-    description: 'Set up .lenserfight.json, start Supabase, and verify the environment.',
+    category: 'cloud',
+    title: 'Cloud default — authenticate and list battles',
+    commands: ['lf init', 'lf auth login', 'lf status', 'lf battle list --status open'],
+    description: 'Default API mode is Cloud. No Docker required.',
   },
   {
-    category: 'getting-started',
-    title: 'Authenticate and check status',
-    commands: ['lf auth login', 'lf auth whoami', 'lf status'],
-    description: 'Sign in via browser, confirm identity, and view system health.',
-  },
-
-  // ── Lenses ──────────────────────────────────────────────────────────────────
-  {
-    category: 'lenses',
-    title: 'Create and publish a lens',
+    category: 'cloud',
+    title: 'Create and publish a lens on Cloud',
     commands: [
-      'lf lens create --name "Code Review" --description "Evaluate code quality"',
-      'lf lens version create --lens <id>',
+      'lf lens create --title "Code Review" --body "$(cat prompt.md)"',
       'lf lens version publish --lens <id> --version <vid>',
     ],
-    description: 'Define a lens, draft a version, and publish it for use in battles.',
-  },
-
-  // ── Battles ─────────────────────────────────────────────────────────────────
-  {
-    category: 'battles',
-    title: 'Create and run a local battle',
-    commands: [
-      'lf battle local init --title "GPT vs Claude"',
-      'lf battle local add-contender --slot A --provider openai --model gpt-4o',
-      'lf battle local add-contender --slot B --provider anthropic --model claude-sonnet-4-6',
-      'lf battle local run',
-    ],
-    description: 'Run a battle entirely offline using BYOK keys. No auth required.',
+    description: 'Manage lenses against the hosted Supabase API.',
   },
   {
-    category: 'battles',
-    title: 'Join and vote on a cloud battle',
-    commands: [
-      'lf battle list --status open',
-      'lf battle join <battle-id> --lenser <lenser-id>',
-      'lf battle vote <battle-id> --winner A',
-    ],
-    description: 'Discover open battles, enter your lenser, and cast a vote.',
+    category: 'supabase-local',
+    title: 'Supabase local stack',
+    commands: ['lf use local', 'lf db dev', 'lf doctor --mode local', 'lf auth login --email you@dev.local'],
+    description: 'Opt in to 127.0.0.1 Supabase. Docker required only for db/dev.',
   },
-
-  // ── Workflows ───────────────────────────────────────────────────────────────
   {
-    category: 'workflows',
-    title: 'Simulate a workflow locally',
+    category: 'file-workspace',
+    title: 'File workspace — validate and simulate',
     commands: [
-      'lf workflow run ./WORKFLOW.md --inputs \'{"topic": "AI Safety"}\'',
+      'lf validate .lenserfight/lenses/my-lens/LENS.MD',
+      'lf workflow run ./COLENS.MD --inputs \'{"topic": "AI Safety"}\'',
     ],
-    description: 'Parse a WORKFLOW.md and simulate the execution graph without calling APIs.',
+    description: 'Markdown objects on disk. No init, Docker, or cloud keys required.',
   },
-
-  // ── Teams ───────────────────────────────────────────────────────────────────
   {
-    category: 'teams',
-    title: 'Create a team and dispatch',
+    category: 'file-workspace',
+    title: 'File workspace battle (offline)',
     commands: [
-      'lf team create --name "Research Squad"',
-      'lf team add-member --team <id> --lenser <lenser-id>',
-      'lf team dispatch --team <id> --prompt "Analyze recent papers"',
+      'lf battle file init --name "GPT vs Claude" --task "Write a haiku"',
+      'lf battle file add-contender A --provider openai --model gpt-4o-mini',
+      'lf battle file add-contender B --provider anthropic --model claude-haiku-4-5',
+      'lf battle file run',
     ],
-    description: 'Assemble an agent team and trigger a collaborative run.',
+    description: 'BYOK file battles. Not the same as global --local (Supabase).',
   },
-
-  // ── Diagnostics ─────────────────────────────────────────────────────────────
+  {
+    category: 'file-supabase-bridge',
+    title: 'Sync file workspace → Supabase local',
+    commands: [
+      'lf import .lenserfight/',
+      'lf use local',
+      'lf sync plan',
+      'lf sync push --all',
+    ],
+    description: 'Bridge markdown registry to local PostgREST when the stack is running.',
+  },
   {
     category: 'diagnostics',
-    title: 'Full environment check',
-    commands: [
-      'lf doctor',
-      'lf doctor --check ollama',
-      'lf doctor --check byok',
-      'lf gateway doctor',
-    ],
-    description: 'Verify Node, Docker, Supabase, Ollama, BYOK keys, and gateway health.',
-  },
-
-  // ── Automation ──────────────────────────────────────────────────────────────
-  {
-    category: 'automation',
-    title: 'Schedule a recurring battle',
-    commands: [
-      'lf schedule create --workflow <id> --cron "0 9 * * MON"',
-      'lf schedule list',
-      'lf schedule health',
-    ],
-    description: 'Run battles on a weekly schedule with health monitoring.',
+    title: 'Environment check',
+    commands: ['lf doctor', 'lf doctor --mode local', 'lf env'],
+    description: 'Cloud doctor skips Docker; Supabase checks only with --mode local.',
   },
 ]
 
@@ -113,12 +76,12 @@ const CATEGORIES = [...new Set(EXAMPLES.map((e) => e.category))]
 export default defineCommand({
   meta: {
     name: 'examples',
-    description: 'Show common CLI usage examples grouped by category.',
+    description: 'Show common CLI usage examples grouped by runtime backend.',
   },
   args: {
     category: {
       type: 'string',
-      description: `Filter by category: ${CATEGORIES.join(', ')}`,
+      description: `Filter: ${CATEGORIES.join(', ')}`,
     },
     json: {
       type: 'boolean',
@@ -159,6 +122,8 @@ export default defineCommand({
       console.log('')
     }
 
-    console.log(`${c.muted(`Run \`lf examples --category <name>\` to filter. Categories: ${CATEGORIES.join(', ')}`)}\n`)
+    console.log(
+      `${c.muted(`Categories: ${CATEGORIES.join(', ')}. Global --local = Supabase local only.`)}\n`
+    )
   },
 })
