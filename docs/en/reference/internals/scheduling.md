@@ -59,7 +59,7 @@ TypeScript: [WorkflowScheduleRecord](../../libs/types/src/lib/workflows.types.ts
 ## Read RPC
 
 ```sql
-public.fn_get_workflow_schedules(p_workflow_id uuid DEFAULT NULL)
+public.fn_workflow_get_schedules(p_workflow_id uuid DEFAULT NULL)
 ```
 
 Returns every schedule the active workspace owns (joins `lenses.workflows` filtered by `lensers.get_auth_lenser_id()`). When `p_workflow_id` is supplied, scopes to that workflow. Source: [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:692](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L692).
@@ -239,7 +239,7 @@ CLI coverage is partial today. See [cli-reference.md](./cli-reference#schedule-c
 
 The following are **Proposed (not yet implemented)**:
 
-- **`schedule create / pause / resume / delete / list / inspect` CLI commands** — direct callers for `fn_upsert_workflow_schedule`, `fn_get_workflow_schedules`, and the to-be-added pause and delete RPCs.
+- **`schedule create / pause / resume / delete / list / inspect` CLI commands** — direct callers for `fn_upsert_workflow_schedule`, `fn_workflow_get_schedules`, and the to-be-added pause and delete RPCs.
 - **`fn_pause_workflow_schedule(uuid)`** and **`fn_resume_workflow_schedule(uuid)`** — single-purpose RPCs so paused state cannot be confused with `is_active=false from misuse`.
 - **Schedule-history view** — a query view that returns the last N dispatched runs for a schedule with status, cost, and approval outcome.
 - **Audit event for bypass attempts** — `agents.agent_run_events` with `event_type='approval_bypass_attempt'` whenever a schedule with `requiresApproval=true` is dispatched without a corresponding `approved` decision.

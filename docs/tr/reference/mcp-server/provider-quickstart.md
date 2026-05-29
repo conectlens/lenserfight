@@ -5,7 +5,7 @@ description: Yapay zeka ürününüzü LenserFight MCP sunucusuna 5 dakikadan k�
 
 # Sağlayıcı Hızlı Başlangıç
 
-**Hedef:** MCP uyumlu ürününüzü LenserFight MCP sunucusuna bağlamak, bir kullanıcıyı yetkilendirmek ve başarılı bir `lens_list` çağrısı yapmak — 5 dakikadan kısa sürede.
+**Hedef:** MCP uyumlu ürününüzü LenserFight MCP sunucusuna bağlamak, bir kullanıcıyı yetkilendirmek ve başarılı bir `list_lenses` çağrısı yapmak — 5 dakikadan kısa sürede.
 
 **İhtiyacınız olanlar:**
 - MCP uyumlu bir istemci (Claude.ai, Cursor veya OAuth 2.1 PKCE + RFC 7591 standartlarını uygulayan herhangi bir istemci)
@@ -18,7 +18,7 @@ description: Yapay zeka ürününüzü LenserFight MCP sunucusuna 5 dakikadan k�
 LenserFight MCP sunucu, LF Cloud üzerinde barındırılmaktadır. Tek kararlı uç nokta:
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+https://mcp.lenserfight.com/mcp
 ```
 
 Bu URL tüm MCP JSON-RPC isteklerini, OAuth keşif (discovery) işlemlerini, jeton değişimlerini ve sağlık kontrollerini yönetir. Ayrı bir temel URL'ye gerek yoktur.
@@ -30,7 +30,7 @@ Bu URL tüm MCP JSON-RPC isteklerini, OAuth keşif (discovery) işlemlerini, jet
 LenserFight'a önceden kayıt olmanız gerekmez. İlk bağlantıda istemciniz şu isteği gönderir:
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/register
+POST https://mcp.lenserfight.com/oauth/register
 Content-Type: application/json
 
 {
@@ -57,7 +57,7 @@ Yanıt:
 Bir PKCE kod doğrulayıcısı (code verifier) ve sınaması (challenge) oluşturun, ardından kullanıcıyı şuraya yönlendirin:
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize
+https://mcp.lenserfight.com/oauth/authorize
   ?response_type=code
   &client_id=lf_mcp_client_abc123...
   &redirect_uri=https://myproduct.com/api/mcp/auth_callback
@@ -75,7 +75,7 @@ Başarılı olunduğunda sunucu, `?code=lf_mcp_<hex>&state=<your_state>` paramet
 ## Adım 4 — Kodu bir jetonla değiştirin
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/token
+POST https://mcp.lenserfight.com/oauth/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=authorization_code
@@ -100,7 +100,7 @@ Yanıt:
 ## Adım 5 — İlk araç çağrınızı yapın
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+POST https://mcp.lenserfight.com/mcp
 Authorization: Bearer lf_mcp_abc123...
 Content-Type: application/json
 
@@ -109,7 +109,7 @@ Content-Type: application/json
   "id": 1,
   "method": "tools/call",
   "params": {
-    "name": "lens_list",
+    "name": "list_lenses",
     "arguments": { "limit": 5 }
   }
 }
@@ -142,7 +142,7 @@ Eğer ürününüz Claude.ai **ise**:
 1. **claude.ai → Ayarlar (Settings) → Bağlayıcılar (Connectors) → Özel bağlayıcı ekle (Add custom connector)** yolunu izleyin.
 2. **Remote MCP server URL** alanını şu şekilde ayarlayın:
    ```
-   https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+   https://mcp.lenserfight.com/mcp
    ```
 3. OAuth Client ID ve Secret alanlarını boş bırakın (dinamik kayıt bu işlemi yönetir).
 4. **Ekle (Add)** seçeneğine tıklayın. Açılan pencere belirdiğinde LenserFight kimlik bilgilerinizle giriş yapın.
@@ -158,7 +158,7 @@ MCP yapılandırma dosyanıza ekleyin (örneğin, çalışma alanınızdaki `~/.
 {
   "mcpServers": {
     "lenserfight": {
-      "url": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp"
+      "url": "https://mcp.lenserfight.com/mcp"
     }
   }
 }
@@ -173,12 +173,12 @@ Cursor, keşif belgesinden OAuth gereksinimini algılayacak ve bir LenserFight a
 İstediğiniz zaman:
 
 ```bash
-curl https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/health
+curl https://mcp.lenserfight.com/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 
 Veya AI asistanınızın içinden:
-> "LenserFight bağlantısını kullanarak `limit=1` ile `lens_list` aracını çağır."
+> "LenserFight bağlantısını kullanarak `limit=1` ile `list_lenses` aracını çağır."
 
 ---
 

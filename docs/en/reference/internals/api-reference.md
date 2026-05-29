@@ -50,9 +50,9 @@ Underlying RPCs: `fn_render_version_body`, `fn_get_version_params_with_tools`, `
 | `getPopular(offset, limit, search?)`             | `fn_get_popular_workflows`   |
 | `listTemplates(limit?, offset?)`                 | `fn_list_workflow_templates` |
 | `getById(id)`                                    | `lenses.workflows` REST      |
-| `getBootstrap(workflowId)`                       | `fn_get_workflow_bootstrap`  |
+| `getBootstrap(workflowId)`                       | `fn_workflow_get_bootstrap`  |
 | `forkWorkflow(sourceId)`                         | `fn_fork_workflow`           |
-| `createWorkflow(input)`                          | `fn_create_workflow`         |
+| `createWorkflow(input)`                          | `fn_workflow_create`         |
 | `updateWorkflow(id, input)`                      | `fn_update_workflow`         |
 | `getNodes(workflowId)`                           | `lenses.workflow_nodes` REST |
 | `getEdges(workflowId)`                           | `lenses.workflow_edges` REST |
@@ -69,7 +69,7 @@ Underlying RPCs: `fn_render_version_body`, `fn_get_version_params_with_tools`, `
 | `getNodeResults(runId)`                        | `lenses.workflow_node_results` REST                                                                                          |
 | `updateNodeResult(runId, nodeId, status, ...)` | `fn_update_workflow_node_result`                                                                                             |
 | `updateRunStatus(runId, status)`               | `fn_update_workflow_run_status`                                                                                              |
-| `getRunState(runId)`                           | `fn_get_workflow_run_state` (returns [`WorkflowRunStateProjection`](../../libs/types/src/lib/workflow-events.types.ts#L369)) |
+| `getRunState(runId)`                           | `fn_workflow_get_run_state` (returns [`WorkflowRunStateProjection`](../../libs/types/src/lib/workflow-events.types.ts#L369)) |
 | `getRunProvenance(runId)`                      | `fn_get_run_provenance`                                                                                                      |
 | `recordRunProvenance(input)`                   | `fn_record_workflow_run_provenance`                                                                                          |
 | `appendRunEvent(runId, type, payload)`         | `fn_append_workflow_run_event`                                                                                               |
@@ -81,7 +81,7 @@ Underlying RPCs: `fn_render_version_body`, `fn_get_version_params_with_tools`, `
 | Method                                                                     | Notes                           |
 | -------------------------------------------------------------------------- | ------------------------------- |
 | `getVersions(workflowId)`                                                  | `lenses.workflow_versions` REST |
-| `createVersion(workflowId, changelog?)`                                    | `fn_create_workflow_version`    |
+| `createVersion(workflowId, changelog?)`                                    | `fn_workflow_create_version`    |
 | `publishVersion(versionId)`                                                | `fn_publish_workflow_version`   |
 | `restoreVersion(versionId)`                                                | `fn_restore_workflow_version`   |
 | `listPhases(workflowId)` / `upsertPhase` / `deletePhase` / `reorderPhases` | `lenses.workflow_phases`        |
@@ -91,7 +91,7 @@ Underlying RPCs: `fn_render_version_body`, `fn_get_version_params_with_tools`, `
 
 | Method                       | RPC                                                                                                              |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `getSchedules(workflowId?)`  | [`fn_get_workflow_schedules`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L692)   |
+| `getSchedules(workflowId?)`  | [`fn_workflow_get_schedules`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L692)   |
 | `upsertSchedule(input)`      | [`fn_upsert_workflow_schedule`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L762) |
 | `deleteSchedule(scheduleId)` | REST DELETE                                                                                                      |
 

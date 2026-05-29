@@ -13,7 +13,7 @@ import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { Check, AlertCircle, ExternalLink } from 'lucide-react'
 import React, { useRef, useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { AuthCard } from '../components/AuthCard'
 import { BackButton } from '../components/BackButton'
@@ -25,6 +25,8 @@ import { useAuth } from '../context/AuthContext'
 export const RegisterPage: React.FC = () => {
   const { register, logout, resendSignupConfirmation, isAuthenticated, signInWithOAuth } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const returnUrl = searchParams.get('return_url') ?? ''
 
   const [formData, setFormData] = useState({
     displayName: '',
@@ -77,9 +79,9 @@ export const RegisterPage: React.FC = () => {
   // Prevent auto-redirect if we are in the middle of a registration flow
   useEffect(() => {
     if (isAuthenticated && !isSuccess && !loading) {
-      navigate('/', { replace: true })
+      navigate(returnUrl || '/', { replace: true })
     }
-  }, [isAuthenticated, isSuccess, loading, navigate])
+  }, [isAuthenticated, isSuccess, loading, navigate, returnUrl])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -124,6 +126,9 @@ export const RegisterPage: React.FC = () => {
 
       // Success State - start overlay
       setIsSuccess(true)
+
+      // Persist return_url so OAuthCallbackPage can restore it after email confirmation.
+      if (returnUrl) sessionStorage.setItem('auth_return_url', returnUrl)
 
       // Delay for animation
       setTimeout(() => {
@@ -309,7 +314,7 @@ export const RegisterPage: React.FC = () => {
               {showResend && (
                 <div className="ml-6 mt-1">
                   <Link
-                    to="/auth/login"
+                    to={returnUrl ? `/login?return_url=${encodeURIComponent(returnUrl)}` : '/login'}
                     className="text-xs font-bold underline hover:text-red-800 dark:hover:text-red-300"
                   >
                     Go to Sign In

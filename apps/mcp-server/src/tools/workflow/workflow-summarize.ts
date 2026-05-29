@@ -4,7 +4,7 @@ import { ok, fail, zUuid } from '../../types.js';
 
 export function registerWorkflowSummarize(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'workflow_summarize',
+    'summarize_workflow',
     'Summarize a completed workflow run: status, cost, duration, and key output counts.',
     {
       run_id: zUuid,
@@ -16,10 +16,10 @@ export function registerWorkflowSummarize(server: McpServer, sb: SupabaseClient)
           p_run_id: run_id,
         })) as unknown as { data: unknown; error: { message: string } | null };
         if (error) throw new Error(error.message);
-        if (!data) return fail('NOT_FOUND', `Run ${run_id} not found`, {}, 'workflow_summarize', t0);
-        return ok(data, 'workflow_summarize', t0);
+        if (!data) return fail('NOT_FOUND', `Run ${run_id} not found`, {}, 'summarize_workflow', t0);
+        return ok(data, 'summarize_workflow', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'workflow_summarize', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'summarize_workflow', t0);
       }
     }
   );

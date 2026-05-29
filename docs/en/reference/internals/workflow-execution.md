@@ -83,7 +83,7 @@ Merge strategies on edges: `last_write_wins | concat | array | json_object`.
 ## Browser vs worker execution
 
 - **Browser path** (`useWorkflowExecution`): structural `validateWorkflow` plus `validateBrowserExecutionPlan` run before `startRun`. The engine resolves **per-node** `config.model_id` (or the run default) to an execution provider. Edges use **`source_output_key`** with dotted paths into upstream `output_data` (see `resolveMappedOutputValue` in `@lenserfight/infra/execution`). **Cloud BYOK** manual runs are not executed in the browser in production keys mode; the UI blocks Execute until a supported funding path is chosen.
-- **Scheduled worker** (`scheduled-workflow-worker`): claims runs via the worker RPC, loads lens template bodies with `fn_worker_get_lens_template_body`, resolves providers per node, and persists full **`output_data` jsonb** plus optional **`resolved_input_snapshot`** / **`provider_route`** on `lenses.workflow_node_results` through `fn_worker_upsert_node_result`.
+- **Scheduled worker** (`scheduled-workflow-worker`): claims runs via the worker RPC, loads lens template bodies with `fn_worker_lens_get_template_body`, resolves providers per node, and persists full **`output_data` jsonb** plus optional **`resolved_input_snapshot`** / **`provider_route`** on `lenses.workflow_node_results` through `fn_worker_upsert_node_result`.
 
 ## Parallel lanes
 
@@ -137,7 +137,7 @@ Persisted to `lenses.workflow_run_events` and framed onto SSE as [WorkflowSseEve
 
 ## Run state projection
 
-One round trip rebuilds the entire inspector. [`fn_get_workflow_run_state(p_run_id)`](../../supabase/migrations/20260426010000_n8n_execution_model.sql) returns:
+One round trip rebuilds the entire inspector. [`fn_workflow_get_run_state(p_run_id)`](../../supabase/migrations/20260426010000_n8n_execution_model.sql) returns:
 
 - `active_node_id` — the node currently executing (status in `running / streaming / retrying`).
 - `pending_count`, `waiting_count`, `in_flight_count`, `executed_count`, `failed_count`.

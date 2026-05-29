@@ -9,43 +9,58 @@ The LenserFight MCP server exposes **31 tools** across three groups. Every tool 
 
 **Authentication required for all tools.** Every call must include `Authorization: Bearer lf_mcp_<token>`. See [OAuth & Authentication](./provider-oauth).
 
+## Naming and safety classes
+
+Every tool ID follows the sector-standard `verb_noun` shape (`list_lenses`, `get_battle`, `run_workflow`) — the same convention used by Anthropic's reference connectors (Gmail: `list_labels`, `get_thread`, `create_draft`).
+
+Tools are tagged with a **safety class** so a host can group approvals:
+
+| Class | Meaning | Auto-approve safe? |
+|---|---|---|
+| **Read** | No state change — list, fetch, validate, summarize | Yes |
+| **Write** | Creates or mutates state | Ask first time |
+| **Execute** | Has side effects (template resolution, run start) | Ask each session |
+| **Destructive** | Removes or hides existing data | Always confirm |
+
+Distribution: **16 Read · 9 Write · 4 Execute · 2 Destructive** = 31.
+
 ---
 
 ## Quick reference
 
-| # | Tool | Group | What it does |
-|---|---|---|---|
-| 1 | [`lens_list`](#lens_list) | Lens | List lenses with filters and pagination |
-| 2 | [`lens_search`](#lens_search) | Lens | Full-text search across lenses |
-| 3 | [`lens_get`](#lens_get) | Lens | Get a single lens with its template and parameters |
-| 4 | [`lens_create`](#lens_create) | Lens | Create a new lens with a template body |
-| 5 | [`lens_update`](#lens_update) | Lens | Create a new immutable version of an existing lens |
-| 6 | [`lens_fork`](#lens_fork) | Lens | Fork a public or community lens into your own account |
-| 7 | [`lens_run`](#lens_run) | Lens | Resolve a lens template into a ready-to-execute prompt |
-| 8 | [`lens_find_and_run`](#lens_find_and_run) | Lens | Search + run in one call |
-| 9 | [`lens_validate_params`](#lens_validate_params) | Lens | Validate parameter values against a lens schema |
-| 10 | [`lens_extract_params`](#lens_extract_params) | Lens | Extract the parameter schema from a lens |
-| 11 | [`lens_archive`](#lens_archive) | Lens | Archive a lens (hidden but not deleted) |
-| 12 | [`lens_delete`](#lens_delete) | Lens | Soft-delete a lens (requires confirmation) |
-| 13 | [`lens_set_visibility`](#lens_set_visibility) | Lens | Change a lens visibility tier |
-| 14 | [`lens_versions`](#lens_versions) | Lens | List all versions of a lens |
-| 15 | [`lens_get_version`](#lens_get_version) | Lens | Get details of a specific lens version |
-| 16 | [`battle_list`](#battle_list) | Battle | List battles with filters and pagination |
-| 17 | [`battle_get`](#battle_get) | Battle | Get full battle details including contenders and scores |
-| 18 | [`battle_create`](#battle_create) | Battle | Create a new battle |
-| 19 | [`battle_add_contender`](#battle_add_contender) | Battle | Add an AI model, lenser, or workflow as a contender |
-| 20 | [`battle_submit_run`](#battle_submit_run) | Battle | Submit a contender's response to the task prompt |
-| 21 | [`battle_score`](#battle_score) | Battle | Read vote aggregates and AI judge verdicts |
-| 22 | [`battle_set_status`](#battle_set_status) | Battle | Transition a battle to a new lifecycle status |
-| 23 | [`battle_history`](#battle_history) | Battle | List battles a lenser created or participated in |
-| 24 | [`workflow_list`](#workflow_list) | Workflow | List workflows with filters and pagination |
-| 25 | [`workflow_get`](#workflow_get) | Workflow | Get full workflow details |
-| 26 | [`workflow_create`](#workflow_create) | Workflow | Create a new workflow |
-| 27 | [`workflow_run`](#workflow_run) | Workflow | Start a workflow execution run |
-| 28 | [`workflow_run_status`](#workflow_run_status) | Workflow | Poll status and credit cost of a run |
-| 29 | [`workflow_run_logs`](#workflow_run_logs) | Workflow | Read per-node execution logs |
-| 30 | [`workflow_retry`](#workflow_retry) | Workflow | Retry a failed or cancelled run |
-| 31 | [`workflow_summarize`](#workflow_summarize) | Workflow | Get aggregated run metrics |
+| # | Tool | Group | Class | What it does |
+|---|---|---|---|---|
+| 1 | [`list_lenses`](#list_lenses) | Lens | Read | List lenses with filters and pagination |
+| 2 | [`search_lenses`](#search_lenses) | Lens | Read | Full-text search across lenses |
+| 3 | [`get_lens`](#get_lens) | Lens | Read | Get a single lens with its template and parameters |
+| 4 | [`list_lens_versions`](#list_lens_versions) | Lens | Read | List all versions of a lens |
+| 5 | [`get_lens_version`](#get_lens_version) | Lens | Read | Get details of a specific lens version |
+| 6 | [`extract_lens_params`](#extract_lens_params) | Lens | Read | Extract the parameter schema from a lens |
+| 7 | [`validate_lens_params`](#validate_lens_params) | Lens | Read | Validate parameter values against a lens schema |
+| 8 | [`create_lens`](#create_lens) | Lens | Write | Create a new lens with a template body |
+| 9 | [`update_lens`](#update_lens) | Lens | Write | Create a new immutable version of an existing lens |
+| 10 | [`fork_lens`](#fork_lens) | Lens | Write | Fork a public or community lens into your own account |
+| 11 | [`set_lens_visibility`](#set_lens_visibility) | Lens | Write | Change a lens visibility tier |
+| 12 | [`run_lens`](#run_lens) | Lens | Execute | Resolve a lens template into a ready-to-execute prompt |
+| 13 | [`find_and_run_lens`](#find_and_run_lens) | Lens | Execute | Search + run in one call |
+| 14 | [`archive_lens`](#archive_lens) | Lens | Destructive | Archive a lens (hidden but not deleted) |
+| 15 | [`delete_lens`](#delete_lens) | Lens | Destructive | Soft-delete a lens (requires confirmation) |
+| 16 | [`list_battles`](#list_battles) | Battle | Read | List battles with filters and pagination |
+| 17 | [`get_battle`](#get_battle) | Battle | Read | Get full battle details including contenders and scores |
+| 18 | [`get_battle_score`](#get_battle_score) | Battle | Read | Read vote aggregates and AI judge verdicts |
+| 19 | [`get_battle_history`](#get_battle_history) | Battle | Read | List battles a lenser created or participated in |
+| 20 | [`create_battle`](#create_battle) | Battle | Write | Create a new battle |
+| 21 | [`add_battle_contender`](#add_battle_contender) | Battle | Write | Add an AI model, lenser, or workflow as a contender |
+| 22 | [`submit_battle_run`](#submit_battle_run) | Battle | Write | Submit a contender's response to the task prompt |
+| 23 | [`set_battle_status`](#set_battle_status) | Battle | Write | Transition a battle to a new lifecycle status |
+| 24 | [`list_workflows`](#list_workflows) | Workflow | Read | List workflows with filters and pagination |
+| 25 | [`get_workflow`](#get_workflow) | Workflow | Read | Get full workflow details |
+| 26 | [`get_workflow_run_status`](#get_workflow_run_status) | Workflow | Read | Poll status and credit cost of a run |
+| 27 | [`get_workflow_run_logs`](#get_workflow_run_logs) | Workflow | Read | Read per-node execution logs |
+| 28 | [`summarize_workflow`](#summarize_workflow) | Workflow | Read | Get aggregated run metrics |
+| 29 | [`create_workflow`](#create_workflow) | Workflow | Write | Create a new workflow |
+| 30 | [`run_workflow`](#run_workflow) | Workflow | Execute | Start a workflow execution run |
+| 31 | [`retry_workflow`](#retry_workflow) | Workflow | Execute | Retry a failed or cancelled run |
 
 ---
 
@@ -54,7 +69,7 @@ The LenserFight MCP server exposes **31 tools** across three groups. Every tool 
 All tools use the MCP `tools/call` method:
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+POST https://mcp.lenserfight.com/mcp
 Authorization: Bearer lf_mcp_<token>
 Content-Type: application/json
 
@@ -63,7 +78,7 @@ Content-Type: application/json
   "id": 1,
   "method": "tools/call",
   "params": {
-    "name": "lens_list",
+    "name": "list_lenses",
     "arguments": { "limit": 5, "visibility": "public" }
   }
 }
@@ -75,7 +90,7 @@ The result is always returned in `result.content[0].text` as a JSON string.
 
 ## Lens tools
 
-### `lens_list`
+### `list_lenses`
 
 List lenses with optional filters and pagination.
 
@@ -97,7 +112,7 @@ List lenses with optional filters and pagination.
 
 ---
 
-### `lens_search`
+### `search_lenses`
 
 Full-text search across lens titles, descriptions, and template bodies.
 
@@ -117,7 +132,7 @@ Full-text search across lens titles, descriptions, and template bodies.
 
 ---
 
-### `lens_get`
+### `get_lens`
 
 Get a single lens including its head version template body and full parameter list.
 
@@ -129,7 +144,7 @@ Get a single lens including its head version template body and full parameter li
 
 ---
 
-### `lens_create`
+### `create_lens`
 
 Create a new lens with a template body and optional parameter declarations.
 
@@ -156,7 +171,7 @@ This creates three parameters: `Language` (required), `Code` (required), `FocusA
 
 ---
 
-### `lens_update`
+### `update_lens`
 
 Create an immutable new version of an existing lens. The original version is never modified.
 
@@ -171,7 +186,7 @@ Create an immutable new version of an existing lens. The original version is nev
 
 ---
 
-### `lens_fork`
+### `fork_lens`
 
 Fork a public or community lens into a new lens owned by the authenticated user. The fork records its origin via `parent_lens_id`.
 
@@ -186,7 +201,7 @@ Fork a public or community lens into a new lens owned by the authenticated user.
 
 ---
 
-### `lens_run`
+### `run_lens`
 
 Resolve a lens template by substituting `[[Parameter]]` tokens with provided values. Returns a ready-to-execute prompt string. **This tool does not call any LLM** — the calling AI model executes the returned prompt.
 
@@ -221,7 +236,7 @@ Resolve a lens template by substituting `[[Parameter]]` tokens with provided val
 
 ---
 
-### `lens_find_and_run`
+### `find_and_run_lens`
 
 Search for a lens by keyword, resolve its template, and return a ready-to-execute prompt — all in one call. The most useful shortcut for conversational AI assistants.
 
@@ -243,12 +258,12 @@ Search for a lens by keyword, resolve its template, and return a ready-to-execut
 { "status": "no_match", "query": "code review" }
 ```
 
-**When to use `lens_find_and_run` vs `lens_run`:**
+**When to use `find_and_run_lens` vs `run_lens`:**
 
-| | `lens_find_and_run` | `lens_run` |
+| | `find_and_run_lens` | `run_lens` |
 |---|---|---|
 | Know the lens ID? | No — searching by topic | Yes — have exact UUID |
-| Minimum tool calls? | 1 | Requires `lens_search` first |
+| Minimum tool calls? | 1 | Requires `search_lenses` first |
 
 **Example — run a logo brief lens with one call:**
 ```json
@@ -257,7 +272,7 @@ Search for a lens by keyword, resolve its template, and return a ready-to-execut
 
 ---
 
-### `lens_validate_params`
+### `validate_lens_params`
 
 Check whether a set of parameter values satisfies the schema of a lens before attempting to run it.
 
@@ -280,7 +295,7 @@ Check whether a set of parameter values satisfies the schema of a lens before at
 
 ---
 
-### `lens_extract_params`
+### `extract_lens_params`
 
 Extract the full parameter schema from a lens template.
 
@@ -304,7 +319,7 @@ Extract the full parameter schema from a lens template.
 
 ---
 
-### `lens_archive`
+### `archive_lens`
 
 Archive a lens. Archived lenses are excluded from listings but not deleted — they can be restored.
 
@@ -318,7 +333,7 @@ Archive a lens. Archived lenses are excluded from listings but not deleted — t
 
 ---
 
-### `lens_delete`
+### `delete_lens`
 
 Soft-delete a lens. Requires explicit confirmation to prevent accidental deletion.
 
@@ -335,7 +350,7 @@ Soft-delete a lens. Requires explicit confirmation to prevent accidental deletio
 
 ---
 
-### `lens_set_visibility`
+### `set_lens_visibility`
 
 Change the visibility tier of a lens.
 
@@ -356,7 +371,7 @@ Change the visibility tier of a lens.
 
 ---
 
-### `lens_versions`
+### `list_lens_versions`
 
 List all versions of a lens, ordered newest first.
 
@@ -368,7 +383,7 @@ List all versions of a lens, ordered newest first.
 
 ---
 
-### `lens_get_version`
+### `get_lens_version`
 
 Get full details of a specific lens version, including template body and parameter list.
 
@@ -398,7 +413,7 @@ Get full details of a specific lens version, including template body and paramet
 
 ## Battle tools
 
-### `battle_list`
+### `list_battles`
 
 List battles with optional filters and pagination.
 
@@ -414,7 +429,7 @@ List battles with optional filters and pagination.
 
 ---
 
-### `battle_get`
+### `get_battle`
 
 Get full battle details including contenders, vote aggregates, and all submissions.
 
@@ -426,7 +441,7 @@ Get full battle details including contenders, vote aggregates, and all submissio
 
 ---
 
-### `battle_create`
+### `create_battle`
 
 Create a new battle. The `task_prompt` is the challenge all contenders must respond to.
 
@@ -434,7 +449,7 @@ Create a new battle. The `task_prompt` is the challenge all contenders must resp
 |---|---|---|---|---|
 | `title` | string (1–200 chars) | Yes | — | Display name |
 | `task_prompt` | string (1–32 000 chars) | Yes | — | The challenge / question all contenders respond to |
-| `battle_type` | see `battle_list` | No | `'ai_vs_ai'` | Format of the battle |
+| `battle_type` | see `list_battles` | No | `'ai_vs_ai'` | Format of the battle |
 | `judging_mode` | `'community_vote' \| 'ai_judge' \| 'rubric_score' \| 'auto_score'` | No | `'ai_judge'` | How responses are evaluated |
 | `max_contenders` | number (2–26) | No | `2` | Maximum contender slots |
 | `ai_judge_model_key` | string | No | — | Specific model key for the AI judge |
@@ -454,7 +469,7 @@ Create a new battle. The `task_prompt` is the challenge all contenders must resp
 
 ---
 
-### `battle_add_contender`
+### `add_battle_contender`
 
 Add an AI model, lenser, or workflow as a contender. Slots are auto-assigned A, B, C … Z.
 
@@ -472,7 +487,7 @@ Add an AI model, lenser, or workflow as a contender. Slots are auto-assigned A, 
 
 ---
 
-### `battle_submit_run`
+### `submit_battle_run`
 
 Submit a contender's response to the battle's `task_prompt`.
 
@@ -488,7 +503,7 @@ Submit a contender's response to the battle's `task_prompt`.
 
 ---
 
-### `battle_score`
+### `get_battle_score`
 
 Read vote aggregates and AI judge verdicts for a battle.
 
@@ -517,7 +532,7 @@ Read vote aggregates and AI judge verdicts for a battle.
 
 ---
 
-### `battle_set_status`
+### `set_battle_status`
 
 Transition a battle to a new lifecycle status. Transitioning to `closed` or `archived` requires `confirm: true`.
 
@@ -540,7 +555,7 @@ draft → open → executing → voting → scoring → closed → published
 
 ---
 
-### `battle_history`
+### `get_battle_history`
 
 List battles a lenser created or participated in as a contender.
 
@@ -557,7 +572,7 @@ List battles a lenser created or participated in as a contender.
 
 ## Workflow tools
 
-### `workflow_list`
+### `list_workflows`
 
 List workflows with optional filters and pagination.
 
@@ -572,7 +587,7 @@ List workflows with optional filters and pagination.
 
 ---
 
-### `workflow_get`
+### `get_workflow`
 
 Get full details of a workflow including its head version and scheduling metadata.
 
@@ -584,7 +599,7 @@ Get full details of a workflow including its head version and scheduling metadat
 
 ---
 
-### `workflow_create`
+### `create_workflow`
 
 Create a new workflow as a reusable multi-step execution container.
 
@@ -601,9 +616,9 @@ Create a new workflow as a reusable multi-step execution container.
 
 ---
 
-### `workflow_run`
+### `run_workflow`
 
-Start a workflow execution. Returns a `run_id` immediately; poll `workflow_run_status` for completion.
+Start a workflow execution. Returns a `run_id` immediately; poll `get_workflow_run_status` for completion.
 
 | Parameter | Type | Required | Default | Description |
 |---|---|---|---|---|
@@ -624,7 +639,7 @@ Start a workflow execution. Returns a `run_id` immediately; poll `workflow_run_s
 
 ---
 
-### `workflow_run_status`
+### `get_workflow_run_status`
 
 Poll the current status and credit cost of a running or completed workflow run.
 
@@ -652,12 +667,12 @@ Poll the current status and credit cost of a running or completed workflow run.
 | `pending` | Queued, not yet started |
 | `running` | Actively executing |
 | `completed` | All nodes finished successfully |
-| `failed` | One or more nodes failed — use `workflow_run_logs` |
+| `failed` | One or more nodes failed — use `get_workflow_run_logs` |
 | `cancelled` | Manually cancelled |
 
 ---
 
-### `workflow_run_logs`
+### `get_workflow_run_logs`
 
 Read per-node execution logs for a run, ordered by start time.
 
@@ -685,7 +700,7 @@ Read per-node execution logs for a run, ordered by start time.
 
 ---
 
-### `workflow_retry`
+### `retry_workflow`
 
 Retry a failed or cancelled run with the same inputs. Creates a new run linked to the original via `parent_run_id`.
 
@@ -705,7 +720,7 @@ Retry a failed or cancelled run with the same inputs. Creates a new run linked t
 
 ---
 
-### `workflow_summarize`
+### `summarize_workflow`
 
 Aggregate run metrics: overall status, wall-clock duration, credit cost, and per-node result counts.
 
@@ -737,7 +752,7 @@ Aggregate run metrics: overall status, wall-clock duration, credit cost, and per
 |---|---|
 | `NOT_FOUND` | The resource does not exist or is not accessible to the authenticated user |
 | `FORBIDDEN` | The user does not own or have write access to the resource |
-| `MISSING_PARAMS` | A `lens_run` call is missing required parameter values; response includes `missing` list |
+| `MISSING_PARAMS` | A `run_lens` call is missing required parameter values; response includes `missing` list |
 | `MISSING_LENSER` | No `lenser_id` was provided and `LENSERFIGHT_LENSER_ID` is not set |
 | `SLOTS_FULL` | All 26 contender slots in a battle are assigned |
 | `CONFIRMATION_REQUIRED` | A destructive transition requires `confirm: true` |

@@ -31,7 +31,7 @@ Headers:
 Some repo-backed functions live in exposed schemas such as `lenses` or `agents` and are typically called through the Supabase client:
 
 ```ts
-supabase.schema('lenses').rpc('fn_create_lens', payload)
+supabase.schema('lenses').rpc('fn_lens_create', payload)
 supabase.schema('agents').rpc('fn_create_ai_lenser', payload)
 ```
 
@@ -72,8 +72,8 @@ Lens creation and versioning are schema-scoped and used directly by the lens rep
 
 | RPC | Schema | Auth | Purpose |
 |-----|--------|------|---------|
-| `fn_create_lens` | `lenses` | authenticated | create lens + initial version |
-| `fn_update_lens` | `lenses` | owner-only | update metadata and draft body |
+| `fn_lens_create` | `lenses` | authenticated | create lens + initial version |
+| `fn_lens_update` | `lenses` | owner-only | update metadata and draft body |
 | `fn_create_draft_version` | `lenses` | authenticated | append new draft version |
 | `fn_publish_version` | `lenses` | owner-only | publish draft version |
 | `fn_clone_lens` | `lenses` | authenticated | clone public published lens |
@@ -83,7 +83,7 @@ Lens creation and versioning are schema-scoped and used directly by the lens rep
 ### Example: create a lens
 
 ```ts
-await supabase.schema('lenses').rpc('fn_create_lens', {
+await supabase.schema('lenses').rpc('fn_lens_create', {
   p_visibility: 'public',
   p_template_body: 'Write a detailed summary of [[topic]] with citations and caveats.',
   p_title: 'Research Summary',
@@ -102,11 +102,11 @@ These are the main repo-backed workflow functions used by the builder, runtime h
 | `fn_get_my_workflows` | authenticated | list owner workflows with filter |
 | `fn_workflows_get_popular` | anon / authenticated | popular public workflows |
 | `fn_list_template_workflows` | anon / authenticated | template workflows |
-| `fn_get_workflow_detail` | anon / authenticated | workflow detail |
-| `fn_get_workflow_bootstrap` | anon / authenticated | workflow + nodes + edges |
-| `fn_get_workflow_nodes` | anon / authenticated | nodes only |
-| `fn_get_workflow_edges` | anon / authenticated | edges only |
-| `fn_create_workflow` | authenticated | create workflow |
+| `fn_workflow_get_detail` | anon / authenticated | workflow detail |
+| `fn_workflow_get_bootstrap` | anon / authenticated | workflow + nodes + edges |
+| `fn_workflow_get_nodes` | anon / authenticated | nodes only |
+| `fn_workflow_get_edges` | anon / authenticated | edges only |
+| `fn_workflow_create` | authenticated | create workflow |
 | `fn_update_workflow` | owner-only | update workflow metadata |
 | `fn_clone_workflow` | authenticated | fork workflow |
 | `fn_upsert_workflow_nodes` | owner-only | insert/update nodes |
@@ -114,15 +114,15 @@ These are the main repo-backed workflow functions used by the builder, runtime h
 | `fn_delete_workflow_node` | owner-only | delete node |
 | `fn_delete_workflow_edge` | owner-only | delete edge |
 | `fn_start_workflow_run` | authenticated | create or reuse run |
-| `fn_get_workflow_run` | authenticated | fetch run |
-| `fn_get_workflow_node_results` | authenticated | fetch node results |
+| `fn_workflow_get_run` | authenticated | fetch run |
+| `fn_workflow_get_node_results` | authenticated | fetch node results |
 | `fn_update_workflow_node_result` | authenticated / service | persist node result |
 | `fn_update_workflow_run_status` | authenticated / service | update run status |
 | `fn_append_workflow_run_event` | authenticated / service | append event |
 | `fn_list_workflow_run_events` | authenticated / service | replay events |
 | `fn_tag_workflow_run` | owner-only / service | attach run tags |
-| `fn_get_workflow_versions` | authenticated | list versions |
-| `fn_create_workflow_version` | owner-only | create version |
+| `fn_workflow_get_versions` | authenticated | list versions |
+| `fn_workflow_create_version` | owner-only | create version |
 | `fn_publish_workflow_version` | owner-only | publish version |
 | `fn_restore_workflow_version` | owner-only | restore version |
 

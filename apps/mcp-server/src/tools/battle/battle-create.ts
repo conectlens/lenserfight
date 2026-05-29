@@ -14,7 +14,7 @@ function slugify(title: string): string {
 
 export function registerBattleCreate(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'battle_create',
+    'create_battle',
     'Create a new battle. The task_prompt defines what competitors must do. Returns the new battle with its ID.',
     {
       title: z.string().min(1).max(200),
@@ -51,9 +51,9 @@ export function registerBattleCreate(server: McpServer, sb: SupabaseClient): voi
           if (cfgErr) throw new Error(cfgErr.message);
         }
 
-        return ok({ id: battleId, title: args.title }, 'battle_create', t0);
+        return ok({ id: battleId, title: args.title }, 'create_battle', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'battle_create', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'create_battle', t0);
       }
     }
   );

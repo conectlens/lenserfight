@@ -6,11 +6,11 @@ A custom [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 
 ## What is MCP?
 
-Think of MCP as USB-C for AI: a single, open standard that lets any AI assistant talk to any data source or tool. Instead of pasting lens IDs into chat messages, you say *"run the `code-reviewer` lens with Topic=TypeScript"* and Claude calls `lens_run` directly.
+Think of MCP as USB-C for AI: a single, open standard that lets any AI assistant talk to any data source or tool. Instead of pasting lens IDs into chat messages, you say *"run the `code-reviewer` lens with Topic=TypeScript"* and Claude calls `run_lens` directly.
 
 MCP separates **servers** (tools that expose capabilities) from **clients** (the AI that uses them). This server is a **Resource Server** — it wraps LenserFight's Supabase database and exposes 30 typed tools.
 
-> **This vs the generic Supabase MCP**: `mcp.supabase.com` gives an AI generic SQL access to any Supabase project. This server wraps LenserFight's *business logic* — `lens_run` resolves `[[Parameter]]` tokens from the database, `battle_score` fetches vote aggregates and AI judge verdicts, `workflow_summarize` calculates cost and duration. You get typed, safe, purpose-built tools, not raw SQL access.
+> **This vs the generic Supabase MCP**: `mcp.supabase.com` gives an AI generic SQL access to any Supabase project. This server wraps LenserFight's *business logic* — `run_lens` resolves `[[Parameter]]` tokens from the database, `get_battle_score` fetches vote aggregates and AI judge verdicts, `summarize_workflow` calculates cost and duration. You get typed, safe, purpose-built tools, not raw SQL access.
 
 ---
 
@@ -188,21 +188,21 @@ supabase functions deploy lenserfight-mcp
 
 ### Lens Tools (14)
 
-#### `lens_list`
+#### `list_lenses`
 List lenses with pagination and optional filters.
 
 ```json
 { "limit": 10, "offset": 0, "visibility": "public", "status": "published" }
 ```
 
-#### `lens_search`
+#### `search_lenses`
 Full-text search by query string.
 
 ```json
 { "query": "code review", "limit": 5 }
 ```
 
-#### `lens_get`
+#### `get_lens`
 Get a lens including its head version body and all parameters.
 
 ```json
@@ -211,7 +211,7 @@ Get a lens including its head version body and all parameters.
 
 Returns: lens metadata, `versions.template_body`, `version_parameters[{id, label, optional}]`.
 
-#### `lens_create`
+#### `create_lens`
 Create a new lens. Use `[[ParamName]]` for required parameters, `[[ParamName!]]` for optional ones.
 
 ```json
@@ -227,7 +227,7 @@ Create a new lens. Use `[[ParamName]]` for required parameters, `[[ParamName!]]`
 }
 ```
 
-#### `lens_update`
+#### `update_lens`
 Create a new immutable version of an existing lens. LenserFight uses immutable versioning — editing creates a new version and updates `head_version_id`.
 
 ```json
@@ -239,21 +239,21 @@ Create a new immutable version of an existing lens. LenserFight uses immutable v
 }
 ```
 
-#### `lens_archive`
+#### `archive_lens`
 Archive a lens. Archived lenses are hidden from default listings but not deleted.
 
 ```json
 { "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
 ```
 
-#### `lens_delete`
+#### `delete_lens`
 Soft-delete a lens. Requires `confirm: true` — this cannot be undone via the API.
 
 ```json
 { "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "confirm": true }
 ```
 
-#### `lens_set_visibility`
+#### `set_lens_visibility`
 Change a lens's visibility tier.
 
 ```json
@@ -262,8 +262,8 @@ Change a lens's visibility tier.
 
 Values: `public` (anyone can run), `community` (logged-in users), `private` (owner only).
 
-#### `lens_validate_params`
-Check whether a set of param values satisfies a lens version's schema. Useful before calling `lens_run`.
+#### `validate_lens_params`
+Check whether a set of param values satisfies a lens version's schema. Useful before calling `run_lens`.
 
 ```json
 {
@@ -274,7 +274,7 @@ Check whether a set of param values satisfies a lens version's schema. Useful be
 
 Returns: `{ valid, missing, unknown }`.
 
-#### `lens_extract_params`
+#### `extract_lens_params`
 Inspect a lens version to see its `[[Parameter]]` tokens and the parameter schema stored in the database.
 
 ```json
@@ -283,7 +283,7 @@ Inspect a lens version to see its `[[Parameter]]` tokens and the parameter schem
 
 Returns: `{ params[{id, label, optional}], tokens_in_template }`.
 
-#### `lens_run`
+#### `run_lens`
 **The key tool.** Resolves `[[:uuid]]` tokens in a lens template with provided values and returns the ready-to-use prompt. **Does NOT call an LLM** — the calling AI (Claude) executes the resolved prompt naturally.
 
 Token resolution flow:
@@ -309,7 +309,7 @@ Token resolution flow:
 
 Returns: `{ resolved_prompt, run_id, lens_id, version_id, params_used, estimated_input_tokens, persisted }`.
 
-#### `lens_fork`
+#### `fork_lens`
 Fork a lens into a new one, copying the template and parameter schema. The fork is linked to the source via `parent_lens_id`.
 
 ```json
@@ -320,7 +320,7 @@ Fork a lens into a new one, copying the template and parameter schema. The fork 
 }
 ```
 
-#### `lens_versions`
+#### `list_lens_versions`
 List all versions of a lens, newest first.
 
 ```json
@@ -329,7 +329,7 @@ List all versions of a lens, newest first.
 
 Returns: `[{id, semver, created_at, changelog}]`.
 
-#### `lens_get_version`
+#### `get_lens_version`
 Get a specific version by `version_id` or `semver` string.
 
 ```json
@@ -340,21 +340,21 @@ Get a specific version by `version_id` or `semver` string.
 
 ### Battle Tools (8)
 
-#### `battle_list`
+#### `list_battles`
 List battles with filters.
 
 ```json
 { "limit": 10, "status": "voting", "battle_type": "ai_vs_ai" }
 ```
 
-#### `battle_get`
+#### `get_battle`
 Get full battle details: contenders, vote aggregates, entity maps.
 
 ```json
 { "battle_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
 ```
 
-#### `battle_create`
+#### `create_battle`
 Create a new battle. The `task_prompt` is what all competitors respond to.
 
 ```json
@@ -367,7 +367,7 @@ Create a new battle. The `task_prompt` is what all competitors respond to.
 }
 ```
 
-#### `battle_add_contender`
+#### `add_battle_contender`
 Add an AI model, lenser, or workflow as a contender. Slots are auto-assigned A, B, C, ...
 
 ```json
@@ -380,7 +380,7 @@ Add an AI model, lenser, or workflow as a contender. Slots are auto-assigned A, 
 }
 ```
 
-#### `battle_submit_run`
+#### `submit_battle_run`
 Submit a contender's output for scoring by the AI judge.
 
 ```json
@@ -393,7 +393,7 @@ Submit a contender's output for scoring by the AI judge.
 }
 ```
 
-#### `battle_score`
+#### `get_battle_score`
 Read vote aggregates and AI judge verdicts for a battle.
 
 ```json
@@ -402,7 +402,7 @@ Read vote aggregates and AI judge verdicts for a battle.
 
 Returns: `{ vote_aggregates, ai_judge_verdicts }`.
 
-#### `battle_set_status`
+#### `set_battle_status`
 Change a battle's status. The database enforces valid state transitions. Closing or archiving requires `confirm: true`.
 
 ```json
@@ -411,7 +411,7 @@ Change a battle's status. The database enforces valid state transitions. Closing
 
 Status progression: `draft → open → executing → voting → scoring → closed/published`.
 
-#### `battle_history`
+#### `get_battle_history`
 Get battles created by a lenser.
 
 ```json
@@ -422,21 +422,21 @@ Get battles created by a lenser.
 
 ### Workflow Tools (8)
 
-#### `workflow_list`
+#### `list_workflows`
 List workflows with pagination.
 
 ```json
 { "lenser_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "limit": 10 }
 ```
 
-#### `workflow_get`
+#### `get_workflow`
 Get workflow details.
 
 ```json
 { "workflow_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
 ```
 
-#### `workflow_create`
+#### `create_workflow`
 Create a new workflow.
 
 ```json
@@ -447,7 +447,7 @@ Create a new workflow.
 }
 ```
 
-#### `workflow_run`
+#### `run_workflow`
 Start a workflow run. Returns a `run_id` for polling.
 
 ```json
@@ -457,7 +457,7 @@ Start a workflow run. Returns a `run_id` for polling.
 }
 ```
 
-#### `workflow_run_status`
+#### `get_workflow_run_status`
 Poll the status and cost of a running workflow.
 
 ```json
@@ -468,7 +468,7 @@ Returns: `{ id, status, started_at, completed_at, spent_credits, budget_credits,
 
 Status values: `pending → running → completed | failed | cancelled`.
 
-#### `workflow_run_logs`
+#### `get_workflow_run_logs`
 Get node-level execution logs ordered by start time.
 
 ```json
@@ -477,14 +477,14 @@ Get node-level execution logs ordered by start time.
 
 Returns: `{ run, node_results[{node_id, status, output, tokens_used, cost_credits, ...}] }`.
 
-#### `workflow_retry`
+#### `retry_workflow`
 Retry a failed or cancelled run with the same inputs. Creates a new run linked via `parent_run_id`.
 
 ```json
 { "run_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
 ```
 
-#### `workflow_summarize`
+#### `summarize_workflow`
 Aggregate run metrics: status, duration, credit cost, and node result counts.
 
 ```json
@@ -495,7 +495,7 @@ Returns: `{ status, duration_ms, spent_credits, budget_credits, cost_metadata, n
 
 ---
 
-## Token Resolution: How `lens_run` Works
+## Token Resolution: How `run_lens` Works
 
 LenserFight stores lens templates with `[[ParameterLabel]]` tokens (user-facing) that get translated to `[[:uuid]]` format in the database via `fn_replace_param_label_token`. The MCP server resolves these using TypeScript, not an LLM:
 
@@ -523,8 +523,8 @@ The resolution is a **pure function** (`resolveTemplate`) with unit tests in `sr
 
 - **Service role key**: The Node.js server uses `SUPABASE_SERVICE_ROLE_KEY` which bypasses RLS. This is intentional — the MCP server acts on behalf of the authenticated user or the configured `LENSERFIGHT_LENSER_ID`. Do not expose the service role key publicly.
 - **JWT validation** (HTTP mode): Every `/mcp` request must carry `Authorization: Bearer <supabase-jwt>`. The token is validated via `sb.auth.getUser(token)`. Invalid tokens get `401 Unauthorized`.
-- **Soft deletes**: `lens_delete` and battle archiving are soft-deletes. Data is never physically removed via these tools.
-- **Confirmation guards**: `lens_delete` requires `confirm: true`. `battle_set_status` to `closed` or `archived` requires `confirm: true`.
+- **Soft deletes**: `delete_lens` and battle archiving are soft-deletes. Data is never physically removed via these tools.
+- **Confirmation guards**: `delete_lens` requires `confirm: true`. `set_battle_status` to `closed` or `archived` requires `confirm: true`.
 - **Dev project only**: Do not point this server at a production Supabase project without additional access controls. The service role key has full database access.
 
 ---
@@ -578,8 +578,8 @@ If the table does not exist, audit logging silently falls back to `process.stder
 - The service role key must be for the correct Supabase project
 - Run `supabase status` to confirm the URL matches
 
-**`MISSING_PARAMS` from `lens_run`**
-- Call `lens_extract_params` first to see which parameters the lens needs
+**`MISSING_PARAMS` from `run_lens`**
+- Call `extract_lens_params` first to see which parameters the lens needs
 - Keys are case-insensitive: `"language"` matches `"Language"`
 
 **`401 Unauthorized` (HTTP mode)**
@@ -587,7 +587,7 @@ If the table does not exist, audit logging silently falls back to `process.stder
 - OAuth flow: authenticate at the `/auth/callback` URL, then use the returned access token
 
 **`CONFIRM_REQUIRED`**
-- `lens_delete` and `battle_set_status` to `closed`/`archived` need `"confirm": true` in the input
+- `delete_lens` and `set_battle_status` to `closed`/`archived` need `"confirm": true` in the input
 
 **Edge Function cold start**
 - Sessions are in Deno isolate memory. Cold starts lose sessions; the MCP client reconnects automatically. This is normal behavior.

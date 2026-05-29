@@ -26,7 +26,7 @@ Neredeyse tüm sağlayıcı entegrasyonları için yalnızca **MCP jetonlarını
 Tüm uç noktalar, MCP sunucuyla aynı temel URL üzerinden sunulur:
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp
+https://mcp.lenserfight.com
 ```
 
 | Uç nokta | Yöntem | Amaç |
@@ -81,15 +81,15 @@ sequenceDiagram
 ### Adım 1 — Sunucuyu keşfedin (isteğe bağlı ancak önerilir)
 
 ```bash
-curl https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/.well-known/oauth-authorization-server
+curl https://mcp.lenserfight.com/.well-known/oauth-authorization-server
 ```
 
 ```json
 {
-  "issuer": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp",
-  "authorization_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize",
-  "token_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/token",
-  "registration_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/register",
+  "issuer": "https://mcp.lenserfight.com",
+  "authorization_endpoint": "https://mcp.lenserfight.com/oauth/authorize",
+  "token_endpoint": "https://mcp.lenserfight.com/oauth/token",
+  "registration_endpoint": "https://mcp.lenserfight.com/oauth/register",
   "response_types_supported": ["code"],
   "grant_types_supported": ["authorization_code"],
   "code_challenge_methods_supported": ["S256"],
@@ -103,10 +103,12 @@ Bunu ayrıştırın ve önbelleğe alın. Yolları sabit olarak kodlamak yerine 
 
 ### Adım 2 — İstemcinizi kaydedin
 
+> **LF Cloud notu:** Dinamik kayıt `https://mcp.lenserfight.com` üzerinden doğru şekilde çalışmaktadır — Cloudflare proxy, MCP sunucusunu etki alanı kökünde sunduğundan OAuth keşfi beklenen şekilde çözümlenir. Claude.ai bağlayıcısını eklerken Client ID alanını boş bırakabilirsiniz.
+
 Bunu ürün başına bir kez (veya dağıtım başına bir kez) çalıştırın. `client_id` değerini kalıcı olarak kaydedin.
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/register
+POST https://mcp.lenserfight.com/oauth/register
 Content-Type: application/json
 
 {
@@ -157,7 +159,7 @@ const codeChallenge = crypto
 URL'yi oluşturun:
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize
+https://mcp.lenserfight.com/oauth/authorize
   ?response_type=code
   &client_id=lf_mcp_client_a1b2c3d4...
   &redirect_uri=https://acme.example.com/api/mcp/callback
@@ -187,7 +189,7 @@ CSRF saldırılarını önlemek için **`state` değerinin Adım 4'te oluşturdu
 ### Adım 6 — Kodu bir erişim jetonula değiştirin
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/token
+POST https://mcp.lenserfight.com/oauth/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=authorization_code
@@ -214,7 +216,7 @@ Yanıt:
 Jetonu her isteğe ekleyin:
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+POST https://mcp.lenserfight.com/mcp
 Authorization: Bearer lf_mcp_abc123...
 Content-Type: application/json
 mcp-session-id: <your_session_id>
@@ -223,7 +225,7 @@ mcp-session-id: <your_session_id>
   "jsonrpc": "2.0",
   "id": 1,
   "method": "tools/call",
-  "params": { "name": "lens_list", "arguments": { "limit": 5 } }
+  "params": { "name": "list_lenses", "arguments": { "limit": 5 } }
 }
 ```
 

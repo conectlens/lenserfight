@@ -38,7 +38,7 @@ Bu entegrasyon bölümü, [Diátaxis çerçevesi](https://diataxis.fr) takip edi
 ## Uç nokta (Endpoint)
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+https://mcp.lenserfight.com/mcp
 ```
 
 Bu, kararlı LF Cloud uç noktasıdır. Yerel sunucu gerekmez. Kimlik doğrulaması OAuth akışı üzerinden gerçekleştirilir — kullanıcılarınız LenserFight kimlik bilgileriyle oturum açar ve ürününüzü bir kez yetkilendirir.
@@ -52,14 +52,14 @@ Bu, kararlı LF Cloud uç noktasıdır. Yerel sunucu gerekmez. Kimlik doğrulama
 - [ ] Kullanıcı başına `lf_mcp_*` erişim jetonunu (access token) saklayın
 - [ ] Her MCP isteğine `Authorization: Bearer lf_mcp_...` üst bilgisini (header) ekleyin
 - [ ] Kullanıcıların lenserfight.com adresinde katılım adımlarını tamamlamasını sağlamak için `No Lenser profile found` hatasını ele alın
-- [ ] Bağlantının sağlıklı olduğunu doğrulamak için `lens_list` aracıyla test edin
+- [ ] Bağlantının sağlıklı olduğunu doğrulamak için `list_lenses` aracıyla test edin
 
 ---
 
 ## Sağlık kontrolü (Health Check)
 
 ```bash
-curl https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/health
+curl https://mcp.lenserfight.com/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 

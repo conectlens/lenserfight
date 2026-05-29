@@ -99,7 +99,7 @@ These are conventions, not a single base interface. Most existing DTOs do not ye
 | `WorkflowNodeResultRecord` | `lenses.workflow_node_results` |
 | `WorkflowRunEventRecord` | `lenses.workflow_run_events` |
 | `WorkflowVersionRecord` | `lenses.workflow_versions` |
-| `WorkflowBootstrapRecord` | Aggregated `fn_get_workflow_bootstrap` payload |
+| `WorkflowBootstrapRecord` | Aggregated `fn_workflow_get_bootstrap` payload |
 | [`WorkflowPhaseRecord`](../../libs/types/src/lib/workflows.types.ts#L59) | `lenses.workflow_phases` |
 | [`WorkflowTaskRecord`](../../libs/types/src/lib/workflows.types.ts#L69) | `lenses.workflow_tasks` |
 | [`WorkflowScheduleRecord`](../../libs/types/src/lib/workflows.types.ts#L11) | `lenses.workflow_schedules` |
@@ -115,7 +115,7 @@ These are conventions, not a single base interface. Most existing DTOs do not ye
 | [`NodeStreamDeltaPayload`](../../libs/types/src/lib/workflow-events.types.ts#L161) | Per-chunk delta with `deltaIndex` |
 | [`NodeRetriedPayload`](../../libs/types/src/lib/workflow-events.types.ts#L170) | `attempt`, `cause`, `delayMs` |
 | [`NodeCompletedPayload`](../../libs/types/src/lib/workflow-events.types.ts#L178) | `envelope`, `creditsCharged`, `durationMs` |
-| [`WorkflowRunStateProjection`](../../libs/types/src/lib/workflow-events.types.ts#L369) | Full inspector payload (returned by `fn_get_workflow_run_state`) |
+| [`WorkflowRunStateProjection`](../../libs/types/src/lib/workflow-events.types.ts#L369) | Full inspector payload (returned by `fn_workflow_get_run_state`) |
 | [`WorkflowRunStateNodeResult`](../../libs/types/src/lib/workflow-events.types.ts#L353) | One node row inside the projection |
 | [`WorkflowRunProvenanceEdge`](../../libs/types/src/lib/workflow-events.types.ts#L394) | Field-level lineage edge |
 
@@ -162,7 +162,7 @@ These are conventions, not a single base interface. Most existing DTOs do not ye
 | [`AgentRuntimePref`](../../libs/types/src/lib/agents.types.ts#L1) | `'cloud' \| 'local' \| 'hybrid'` |
 | [`AgentOwnerRole`](../../libs/types/src/lib/agents.types.ts#L2) | `'owner' \| 'co_owner' \| 'operator'` |
 | [`AgentModelBindingMode`](../../libs/types/src/lib/agents.types.ts#L3) | `'single' \| 'multi' \| 'dynamic'` |
-| [`AgentActionType`](../../libs/types/src/lib/agents.types.ts#L4) | `join_battle / cast_vote / submit_entry / create_battle / spend_credits / run_lens / run_workflow / dispatch_schedule / schedule_skipped / policy_updated / binding_updated` |
+| [`AgentActionType`](../../libs/types/src/lib/agents.types.ts#L4) | `join_battle / cast_vote / submit_entry / battle_create / spend_credits / lens_run / workflow_run / dispatch_schedule / schedule_skipped / policy_updated / binding_updated` |
 | [`AgentActionOutcome`](../../libs/types/src/lib/agents.types.ts#L16) | `'success' \| 'blocked_by_policy' \| 'failed' \| 'throttled'` |
 
 ### Inputs

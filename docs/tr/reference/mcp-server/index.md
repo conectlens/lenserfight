@@ -1,6 +1,6 @@
 ---
 title: MCP Sunucu Referansı
-description: LenserFight MCP sunucusu — lensler, savaşlar ve iş akışları için 30 araç. Claude Code, Cursor veya Claude.ai'yi LF Cloud veya yerel stdio üzerinden dakikalar içinde bağlayın.
+description: LenserFight MCP sunucusu — lensler, savaşlar ve iş akışları için 31 araç. Claude Code, Cursor veya Claude.ai'yi LF Cloud veya yerel stdio üzerinden dakikalar içinde bağlayın.
 ---
 
 # MCP Sunucu Referansı
@@ -14,7 +14,7 @@ LenserFight MCP sunucusu, [Model Context Protocol (Model Bağlam Protokolü)](ht
 1. **claude.ai → Ayarlar (Settings) → Bağlayıcılar (Connectors) → Özel bağlayıcı ekle (Add custom connector)** adımlarını izleyin.
 2. URL alanını şu şekilde ayarlayın:
    ```
-   https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+   https://mcp.lenserfight.com/mcp
    ```
 3. Client ID ve Secret alanlarını boş bırakın. **Ekle (Add)** seçeneğine tıklayın.
 4. Yetkilendirme penceresi açıldığında LenserFight hesabınızla giriş yapın.
@@ -25,11 +25,16 @@ Tüm bağlantı modları ve sorun giderme için [Kurulum (Setup)](/en/reference/
 
 ## Araçlara genel bakış
 
-| Grup | Araç Sayısı | Ne yapabilirsiniz? |
+Her araç adı sektör standardı `fiil_isim` formunu izler (örn. `list_lenses`, `get_battle`, `run_workflow`) — Anthropic'in referans bağlayıcılarında (Gmail: `list_labels`, `get_thread`, `create_draft`) kullanılan kalıbın aynısı.
+
+Her sayfa, araçları **güvenlik sınıfına** göre gruplar — `Read`, `Write`, `Execute`, `Destructive` — böylece bir host, araç başına değil sınıf başına onay isteyebilir.
+
+| Grup | Araç Sayısı | Read · Write · Execute · Destructive |
 |---|---|---|
-| [Lens araçları](/en/reference/mcp-server/tools-lens) | 15 | Lensleri listeleme, arama, getirme, oluşturma, güncelleme, çatallama, çalıştırma, bulup-çalıştırma, parametre doğrulama, parametre çıkarma, arşivleme, silme, görünürlük ayarlama, sürümleri listeleme, sürüm detaylarını getirme |
-| [Savaş araçları](/en/reference/mcp-server/tools-battle) | 8 | Savaşları listeleme, getirme, oluşturma; yarışmacı ekleme; gönderim yapma; skorları okuma; durum geçişi yapma; geçmişi görüntüleme |
-| [İş akışı araçları](/en/reference/mcp-server/tools-workflow) | 8 | İş akışlarını listeleme, getirme, oluşturma; çalıştırma; durumu sorgulama; günlükleri okuma; yeniden deneme; özetleme |
+| [Lens araçları](/en/reference/mcp-server/tools-lens) | 15 | 7 · 4 · 2 · 2 |
+| [Savaş araçları](/en/reference/mcp-server/tools-battle) | 8 | 4 · 4 · 0 · 0 |
+| [İş akışı araçları](/en/reference/mcp-server/tools-workflow) | 8 | 5 · 1 · 2 · 0 |
+| **Toplam** | **31** | **16 · 9 · 4 · 2** |
 
 ---
 
@@ -53,7 +58,7 @@ Sunucu, `@modelcontextprotocol/sdk` kullanılarak oluşturulmuştur.
 
 **HTTP modunda** (LF Cloud veya yerel tünel), her istek bir lenser kimliğiyle çözümlenen bir taşıyıcı jeton (bearer token) taşır. RLS normal şekilde uygulanır.
 
-Her araç, bir Supabase RPC işlevine (örneğin `fn_mcp_lens_list`, `fn_battles_submit`) yetki devreder. Hiçbir araç doğrudan üçüncü taraf bir LLM çağırmaz. Bunun en belirgin örneği `lens_run` aracıdır: şablondaki `[[Parameter]]` belirteçlerini çözer ve tamamlanmış bir istem (prompt) dizesi döndürür — bu istemi yürüten şey çağıran asistanın kendisidir.
+Her araç, bir Supabase RPC işlevine (örneğin `fn_mcp_lens_list`, `fn_battles_submit`) yetki devreder. Hiçbir araç doğrudan üçüncü taraf bir LLM çağırmaz. Bunun en belirgin örneği `run_lens` aracıdır: şablondaki `[[Parameter]]` belirteçlerini çözer ve tamamlanmış bir istem (prompt) dizesi döndürür — bu istemi yürüten şey çağıran asistanın kendisidir.
 
 ---
 

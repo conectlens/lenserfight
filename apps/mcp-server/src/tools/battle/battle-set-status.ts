@@ -7,7 +7,7 @@ const DESTRUCTIVE_STATUSES = new Set(['closed', 'archived']);
 
 export function registerBattleSetStatus(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'battle_set_status',
+    'set_battle_status',
     'Transition a battle to a new status. The DB enforces legal transitions — illegal moves are rejected. Closing or archiving requires confirm: true.',
     {
       battle_id: zUuid,
@@ -17,7 +17,7 @@ export function registerBattleSetStatus(server: McpServer, sb: SupabaseClient): 
     async (args) => {
       const t0 = Date.now();
       if (DESTRUCTIVE_STATUSES.has(args.status) && !args.confirm) {
-        return fail('CONFIRMATION_REQUIRED', `Setting status to "${args.status}" requires confirm: true`, {}, 'battle_set_status', t0);
+        return fail('CONFIRMATION_REQUIRED', `Setting status to "${args.status}" requires confirm: true`, {}, 'set_battle_status', t0);
       }
       try {
         const { data, error } = (await sb.rpc('fn_mcp_battle_set_status' as never, {
@@ -26,16 +26,16 @@ export function registerBattleSetStatus(server: McpServer, sb: SupabaseClient): 
         })) as unknown as { data: unknown; error: { message: string } | null };
 
         if (error) {
-          if (error.message?.includes('battle_not_found')) return fail('NOT_FOUND', `Battle ${args.battle_id} not found`, {}, 'battle_set_status', t0);
-          if (error.message?.includes('access_denied')) return fail('FORBIDDEN', 'You do not own this battle', {}, 'battle_set_status', t0);
+          if (error.message?.includes('battle_not_found')) return fail('NOT_FOUND', `Battle ${args.battle_id} not found`, {}, 'set_battle_status', t0);
+          if (error.message?.includes('access_denied')) return fail('FORBIDDEN', 'You do not own this battle', {}, 'set_battle_status', t0);
           if (error.message?.includes('invalid_status_transition') || error.message?.includes('transition')) {
-            return fail('INVALID_TRANSITION', error.message, {}, 'battle_set_status', t0);
+            return fail('INVALID_TRANSITION', error.message, {}, 'set_battle_status', t0);
           }
           throw new Error(error.message);
         }
-        return ok(data, 'battle_set_status', t0);
+        return ok(data, 'set_battle_status', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'battle_set_status', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'set_battle_status', t0);
       }
     }
   );

@@ -4,7 +4,7 @@ import { ok, fail, zUuid } from '../../types.js';
 
 export function registerWorkflowRunLogs(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'workflow_run_logs',
+    'get_workflow_run_logs',
     'Get execution logs and node outputs for a workflow run, ordered by time.',
     {
       run_id: zUuid,
@@ -16,9 +16,9 @@ export function registerWorkflowRunLogs(server: McpServer, sb: SupabaseClient): 
           p_run_id: run_id,
         })) as unknown as { data: unknown; error: { message: string } | null };
         if (error) throw new Error(error.message);
-        return ok(data ?? { run: null, node_results: [] }, 'workflow_run_logs', t0);
+        return ok(data ?? { run: null, node_results: [] }, 'get_workflow_run_logs', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'workflow_run_logs', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'get_workflow_run_logs', t0);
       }
     }
   );

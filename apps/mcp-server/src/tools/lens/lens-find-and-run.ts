@@ -29,10 +29,10 @@ interface LensSearchHit {
 
 export function registerLensFindAndRun(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'lens_find_and_run',
+    'find_and_run_lens',
     `One-shot: find the best matching lens for a topic and either run it (if all required params are supplied) or report what's missing.
 
-PURPOSE: Use this when the user asks "use the X lens to do Y" — instead of chaining lens_search + lens_get + lens_run, this single call does the lookup, picks the top match, and either returns the resolved prompt or the missing-parameter spec.
+PURPOSE: Use this when the user asks "use the X lens to do Y" — instead of chaining search_lenses + get_lens + run_lens, this single call does the lookup, picks the top match, and either returns the resolved prompt or the missing-parameter spec.
 
 INPUTS:
 - query: free-text search (e.g. "logo brief", "code review", "translation")
@@ -41,7 +41,7 @@ INPUTS:
 OUTCOMES:
 1. status="ready": resolved_prompt is set — execute it and return result to user.
 2. status="needs_params": missing[] lists labels to ask the user for, plus all_parameters[] with optional flags.
-3. status="no_match": no lens matches the query — ask the user to be more specific or call lens_list.`,
+3. status="no_match": no lens matches the query — ask the user to be more specific or call list_lenses.`,
     {
       query: z.string().min(1).describe('What the user wants to do, in natural language'),
       param_values: z.record(z.string(), z.string()).default({}).optional(),
@@ -69,8 +69,8 @@ OUTCOMES:
           return ok({
             status: 'no_match',
             query: args.query,
-            hint: 'No lens matched. Try a broader keyword, ask the user for a topic, or call lens_list to browse available lenses.',
-          }, 'lens_find_and_run', t0);
+            hint: 'No lens matched. Try a broader keyword, ask the user for a topic, or call list_lenses to browse available lenses.',
+          }, 'find_and_run_lens', t0);
         }
 
         const best = hits[0];
@@ -85,7 +85,7 @@ OUTCOMES:
         };
         if (resolveErr) throw new Error(resolveErr.message);
         if (!resolveData) {
-          return fail('NOT_FOUND', `Lens ${best.id} resolved to no template`, {}, 'lens_find_and_run', t0);
+          return fail('NOT_FOUND', `Lens ${best.id} resolved to no template`, {}, 'find_and_run_lens', t0);
         }
 
         const { resolved, missing, used } = resolveTemplate(
@@ -105,8 +105,8 @@ OUTCOMES:
             missing,
             all_parameters: resolveData.parameters,
             other_candidates: hits.slice(1).map((h) => ({ id: h.id, title: h.title })),
-            instruction: `Ask the user for these labels: ${missing.join(', ')}. Then call lens_run(lens_id="${best.id}", param_values={...}).`,
-          }, 'lens_find_and_run', t0);
+            instruction: `Ask the user for these labels: ${missing.join(', ')}. Then call run_lens(lens_id="${best.id}", param_values={...}).`,
+          }, 'find_and_run_lens', t0);
         }
 
         return ok({
@@ -121,9 +121,9 @@ OUTCOMES:
           version_id: resolveData.version_id,
           estimated_input_tokens: Math.ceil(resolved.length / 4),
           instruction: 'Execute the resolved_prompt and return the result to the user. This tool does not call any LLM.',
-        }, 'lens_find_and_run', t0);
+        }, 'find_and_run_lens', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'lens_find_and_run', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'find_and_run_lens', t0);
       }
     }
   );

@@ -77,7 +77,7 @@ The Ray Cloud visualisation at `/ray` inherits the same language-aware tag data 
 
 ### Lens and Thread language at publish time
 
-When a Lens is created (`lenses.fn_create_lens`), the `p_language_code` parameter determines the `language_code` stored in `content.entity_translations` for the original translation. Threads follow the same polymorphic pattern via `entity_translations` (`entity_type = 'thread'`). Only the **original** translation row (`is_original = true`) feeds the suggestion ranking; machine-translated variants are available for display but are not scored separately.
+When a Lens is created (`lenses.fn_lens_create`), the `p_language_code` parameter determines the `language_code` stored in `content.entity_translations` for the original translation. Threads follow the same polymorphic pattern via `entity_translations` (`entity_type = 'thread'`). Only the **original** translation row (`is_original = true`) feeds the suggestion ranking; machine-translated variants are available for display but are not scored separately.
 
 ### Summary
 

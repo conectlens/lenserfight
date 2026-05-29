@@ -5,7 +5,7 @@ import { ok, fail, zUuid } from '../../types.js';
 
 export function registerBattleSubmitRun(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'battle_submit_run',
+    'submit_battle_run',
     'Submit an AI or human execution result for a battle contender. The content_text is the response to the battle task_prompt.',
     {
       battle_id: zUuid,
@@ -21,9 +21,9 @@ export function registerBattleSubmitRun(server: McpServer, sb: SupabaseClient): 
           p_content_text: args.content_text,
         }) as unknown as { data: unknown; error: { message: string } | null };
         if (error) throw new Error(error.message);
-        return ok(data ?? { submitted: true }, 'battle_submit_run', t0);
+        return ok(data ?? { submitted: true }, 'submit_battle_run', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'battle_submit_run', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'submit_battle_run', t0);
       }
     }
   );

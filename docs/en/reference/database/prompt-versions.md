@@ -75,8 +75,8 @@ Recursive fork ancestry chain. Query by `lens_id` to get all ancestors. Depth 1 
 
 | Function | Security | Description |
 |----------|----------|-------------|
-| `lenses.fn_create_lens(...)` | DEFINER | Atomic lens creation: lens + version 1 + translation + tags. |
-| `lenses.fn_update_lens(...)` | DEFINER | Atomic lens update: visibility, template body (via version upsert), translation, tags. |
+| `lenses.fn_lens_create(...)` | DEFINER | Atomic lens creation: lens + version 1 + translation + tags. |
+| `lenses.fn_lens_update(...)` | DEFINER | Atomic lens update: visibility, template body (via version upsert), translation, tags. |
 | `lenses.fn_upsert_draft_version(p_lens_id, p_template_body, ...)` | DEFINER | Creates/updates draft version. Validates 50-char minimum. |
 | `lenses.fn_publish_version(p_version_id)` | DEFINER | Ownership check + atomic draft -> published transition. |
 | `lenses.fn_clone_lens(p_source_lens_id, p_version_id)` | DEFINER | Clones from published version of public+published lens only. |

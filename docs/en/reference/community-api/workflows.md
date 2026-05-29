@@ -64,11 +64,11 @@ Community Edition currently supports:
 | `fn_get_my_workflows` | owner listing with filters |
 | `fn_workflows_get_popular` | public popular workflows |
 | `fn_list_template_workflows` | public template strip |
-| `fn_get_workflow_detail` | workflow detail record |
-| `fn_get_workflow_bootstrap` | workflow + nodes + edges |
-| `fn_get_workflow_nodes` | nodes only |
-| `fn_get_workflow_edges` | edges only |
-| `fn_create_workflow` | create workflow |
+| `fn_workflow_get_detail` | workflow detail record |
+| `fn_workflow_get_bootstrap` | workflow + nodes + edges |
+| `fn_workflow_get_nodes` | nodes only |
+| `fn_workflow_get_edges` | edges only |
+| `fn_workflow_create` | create workflow |
 | `fn_update_workflow` | update workflow metadata |
 | `fn_clone_workflow` | fork workflow |
 | `fn_upsert_workflow_nodes` | insert/update nodes |
@@ -76,15 +76,15 @@ Community Edition currently supports:
 | `fn_delete_workflow_node` | delete node |
 | `fn_delete_workflow_edge` | delete edge |
 | `fn_start_workflow_run` | create or reuse run |
-| `fn_get_workflow_run` | run record |
-| `fn_get_workflow_node_results` | node result list |
+| `fn_workflow_get_run` | run record |
+| `fn_workflow_get_node_results` | node result list |
 | `fn_update_workflow_node_result` | node result status/output |
 | `fn_update_workflow_run_status` | run status |
 | `fn_append_workflow_run_event` | append event for timeline/SSE replay |
 | `fn_list_workflow_run_events` | event replay |
 | `fn_tag_workflow_run` | owner/service tagging |
-| `fn_get_workflow_versions` | version list |
-| `fn_create_workflow_version` | create version snapshot |
+| `fn_workflow_get_versions` | version list |
+| `fn_workflow_create_version` | create version snapshot |
 | `fn_publish_workflow_version` | publish version |
 | `fn_restore_workflow_version` | restore version |
 

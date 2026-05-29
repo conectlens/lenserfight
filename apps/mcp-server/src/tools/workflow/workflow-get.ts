@@ -4,7 +4,7 @@ import { ok, fail, zUuid } from '../../types.js';
 
 export function registerWorkflowGet(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'workflow_get',
+    'get_workflow',
     'Get a workflow with its head version and scheduling info.',
     {
       workflow_id: zUuid,
@@ -17,10 +17,10 @@ export function registerWorkflowGet(server: McpServer, sb: SupabaseClient): void
         })) as unknown as { data: unknown; error: { message: string } | null };
 
         if (error) throw new Error(error.message);
-        if (!data) return fail('NOT_FOUND', `Workflow ${workflow_id} not found`, {}, 'workflow_get', t0);
-        return ok(data, 'workflow_get', t0);
+        if (!data) return fail('NOT_FOUND', `Workflow ${workflow_id} not found`, {}, 'get_workflow', t0);
+        return ok(data, 'get_workflow', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'workflow_get', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'get_workflow', t0);
       }
     }
   );

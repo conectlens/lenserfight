@@ -1,15 +1,30 @@
 ---
 title: Lens Tools — MCP Server
-description: Reference for all 15 lens tools in the LenserFight MCP server — list, search, get, create, update, fork, run, find-and-run, validate, extract params, archive, delete, visibility, and versioning.
+description: Reference for all 15 lens tools in the LenserFight MCP server, grouped by safety class (Read / Write / Execute / Destructive).
 ---
 
 # Lens Tools
 
 The MCP server provides **15 tools** for managing and executing lenses. Lenses are versioned prompt templates that accept named parameters — `[[ParamName]]` for required, `[[ParamName!]]` for optional.
 
+Tools follow the `verb_noun` naming convention (`list_lenses`, `get_lens`, `run_lens`) — the sector-standard pattern used by Anthropic's reference connectors (Gmail's `list_labels`, `get_thread`, `create_draft`).
+
+Tools are grouped by **safety class** so a host (Claude.ai, Cursor, Claude Code) can request approval per class instead of per tool:
+
+| Class | Count | What it does |
+|---|---|---|
+| [Read](#read) | 7 | No state change — list, fetch, inspect, validate |
+| [Write](#write) | 4 | Creates or mutates state |
+| [Execute](#execute) | 2 | Side-effects through template resolution |
+| [Destructive](#destructive) | 2 | Removes or hides existing data |
+
 ---
 
-## `lens_list`
+## Read
+
+Pure reads. Safe to call without per-call confirmation.
+
+### `list_lenses`
 
 List lenses with optional filters and pagination.
 
@@ -28,7 +43,7 @@ List lenses with optional filters and pagination.
 
 ---
 
-## `lens_search`
+### `search_lenses`
 
 Full-text search lenses by query string.
 
@@ -45,7 +60,7 @@ Full-text search lenses by query string.
 
 ---
 
-## `lens_get`
+### `get_lens`
 
 Get a lens including its head version template body and full parameter list.
 
@@ -59,7 +74,112 @@ Get a lens including its head version template body and full parameter list.
 
 ---
 
-## `lens_create`
+### `list_lens_versions`
+
+List all versions of a lens, ordered newest first.
+
+**Parameters**
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `lens_id` | UUID | Yes | The lens whose versions to list |
+
+**Returns** `[{ id, semver, created_at, changelog }]` — or `{ lens_id, versions: [], count: 0 }` if no versions exist.
+
+---
+
+### `get_lens_version`
+
+Get the full details of a specific lens version, including template body and parameter list.
+
+**Parameters**
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `lens_id` | UUID | Yes | The parent lens |
+| `version_id` | UUID | No | Version UUID (one of `version_id` or `semver` required) |
+| `semver` | string | No | Semantic version string, e.g. `"1.2.0"` |
+
+**Returns**
+
+```json
+{
+  "id": "...",
+  "semver": "1.2.0",
+  "template_body": "...",
+  "changelog": "Added Style parameter.",
+  "created_at": "2026-05-01T00:00:00Z",
+  "version_parameters": [
+    { "id": "...", "label": "Language", "optional": false },
+    { "id": "...", "label": "Style", "optional": true }
+  ]
+}
+```
+
+**Error codes** `BAD_INPUT` (if neither `version_id` nor `semver` provided) · `NOT_FOUND`
+
+---
+
+### `extract_lens_params`
+
+Extract the parameter schema from a lens template — lists every `[[token]]` in the template and whether it is required or optional.
+
+**Parameters**
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `lens_id` | UUID | Yes | The lens to inspect |
+| `version_id` | UUID | No | Specific version (defaults to head) |
+
+**Returns**
+
+```json
+{
+  "lens_id": "...",
+  "version_id": "...",
+  "params": [
+    { "id": "uuid", "label": "Language", "optional": false },
+    { "id": "uuid", "label": "Style", "optional": true }
+  ],
+  "raw_tokens_in_template": ["[[Language]]", "[[Style!]]", "[[InputText]]"]
+}
+```
+
+---
+
+### `validate_lens_params`
+
+Check whether a set of parameter values satisfies the schema of a lens version.
+
+**Parameters**
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `lens_id` | UUID | Yes | The lens to validate against |
+| `version_id` | UUID | No | Specific version (defaults to head) |
+| `values` | `Record<string, string>` | Yes | Parameter values to validate (case-insensitive keys) |
+
+**Returns**
+
+```json
+{
+  "valid": false,
+  "missing": ["Language"],
+  "unknown": ["Typo"],
+  "total_params": 3,
+  "provided": 2
+}
+```
+
+Use this tool before calling `run_lens` when you want to surface validation errors to the user without attempting execution.
+
+---
+
+## Write
+
+Mutates state — creates new resources or changes existing ones. Hosts should ask the user before approving for the first time.
+
+### `create_lens`
 
 Create a new lens with a template body and optional parameter declarations.
 
@@ -86,7 +206,7 @@ This template has two required parameters (`Language`, `InputText`) and one opti
 
 ---
 
-## `lens_update`
+### `update_lens`
 
 Create an immutable new version of an existing lens. The original version is never modified.
 
@@ -103,42 +223,24 @@ Create an immutable new version of an existing lens. The original version is nev
 
 ---
 
-## `lens_archive`
+### `fork_lens`
 
-Archive a lens. Archived lenses are hidden from listings but not deleted and can be restored.
-
-**Parameters**
-
-| Name | Type | Required | Description |
-|---|---|---|---|
-| `lens_id` | UUID | Yes | The lens to archive |
-
-**Returns** `{ lens_id, status: 'archived' }`
-
-**Error codes** `NOT_FOUND` · `FORBIDDEN`
-
----
-
-## `lens_delete`
-
-Soft-delete a lens. Requires explicit confirmation to prevent accidental deletion.
+Fork a public or community lens into a new lens owned by the caller. The fork is linked to its source via `parent_lens_id`.
 
 **Parameters**
 
-| Name | Type | Required | Description |
-|---|---|---|---|
-| `lens_id` | UUID | Yes | The lens to delete |
-| `confirm` | `true` (literal) | Yes | Must be exactly `true` |
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `source_lens_id` | UUID | Yes | — | The lens to fork |
+| `title` | string (1–200 chars) | No | `"Fork of {id}"` | Title for the new lens |
+| `template_body` | string (≥ 50 chars) | No | Copied from source | Custom template body (overrides source) |
+| `visibility` | `'public' \| 'community' \| 'private'` | No | `'public'` | Initial visibility of the fork |
 
-**Returns** `{ deleted: true, ... }`
-
-**Error codes** `NOT_FOUND` · `FORBIDDEN`
-
-> Deletion is soft — the lens record is marked deleted and excluded from all queries. It is not physically removed from the database.
+**Returns** New lens object with `forked_from: source_lens_id`.
 
 ---
 
-## `lens_set_visibility`
+### `set_lens_visibility`
 
 Change the visibility tier of a lens.
 
@@ -161,41 +263,13 @@ Change the visibility tier of a lens.
 
 ---
 
-## `lens_find_and_run`
+## Execute
 
-Single-call shortcut: search for a lens by keyword, resolve its template, and return a ready-to-execute prompt — or report what parameters are still needed.
+Resolves a template and (optionally) records a workflow run. Does **not** call any LLM — the calling assistant is what executes the returned prompt.
 
-**Parameters**
+### `run_lens`
 
-| Name | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `query` | string (≥ 1 char) | Yes | — | Search terms to find the lens |
-| `param_values` | `Record<string, string>` | No | `{}` | Parameter values to inject if a lens is found |
-| `visibility` | `'public' \| 'community' \| 'private'` | No | — | Filter search by visibility |
-
-**Returns**
-
-One of three response shapes depending on what the server finds:
-
-```json
-{ "status": "ready", "resolved_prompt": "...", "lens_title": "...", "lens_description": "...", "lens_id": "..." }
-{ "status": "needs_params", "missing": ["Topic", "Language"], "all_parameters": [...], "lens_title": "...", "lens_id": "..." }
-{ "status": "no_match", "query": "..." }
-```
-
-**When to use `lens_find_and_run` vs `lens_run`:**
-
-| | `lens_find_and_run` | `lens_run` |
-|---|---|---|
-| Know the lens ID? | No | Yes |
-| Searching by topic/keyword? | Yes | No |
-| Need a single tool call? | Yes | Requires `lens_search` first |
-
----
-
-## `lens_run`
-
-Resolve a lens template by substituting parameter tokens with provided values. Returns a ready-to-use prompt string. **This tool does not call any LLM** — the calling assistant executes the resolved prompt.
+Resolve a lens template by substituting parameter tokens with provided values. Returns a ready-to-use prompt string.
 
 **Parameters**
 
@@ -234,118 +308,71 @@ Resolve a lens template by substituting parameter tokens with provided values. R
 
 ---
 
-## `lens_fork`
+### `find_and_run_lens`
 
-Fork a public or community lens into a new lens owned by the caller. The fork is linked to its source via `parent_lens_id`.
+Single-call shortcut: search for a lens by keyword, resolve its template, and return a ready-to-execute prompt — or report what parameters are still needed.
 
 **Parameters**
 
 | Name | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `source_lens_id` | UUID | Yes | — | The lens to fork |
-| `title` | string (1–200 chars) | No | `"Fork of {id}"` | Title for the new lens |
-| `template_body` | string (≥ 50 chars) | No | Copied from source | Custom template body (overrides source) |
-| `visibility` | `'public' \| 'community' \| 'private'` | No | `'public'` | Initial visibility of the fork |
-
-**Returns** New lens object with `forked_from: source_lens_id`.
-
----
-
-## `lens_validate_params`
-
-Check whether a set of parameter values satisfies the schema of a lens version.
-
-**Parameters**
-
-| Name | Type | Required | Description |
-|---|---|---|---|
-| `lens_id` | UUID | Yes | The lens to validate against |
-| `version_id` | UUID | No | Specific version (defaults to head) |
-| `values` | `Record<string, string>` | Yes | Parameter values to validate (case-insensitive keys) |
+| `query` | string (≥ 1 char) | Yes | — | Search terms to find the lens |
+| `param_values` | `Record<string, string>` | No | `{}` | Parameter values to inject if a lens is found |
+| `visibility` | `'public' \| 'community' \| 'private'` | No | — | Filter search by visibility |
 
 **Returns**
 
+One of three response shapes depending on what the server finds:
+
 ```json
-{
-  "valid": false,
-  "missing": ["Language"],
-  "unknown": ["Typo"],
-  "total_params": 3,
-  "provided": 2
-}
+{ "status": "ready", "resolved_prompt": "...", "lens_title": "...", "lens_description": "...", "lens_id": "..." }
+{ "status": "needs_params", "missing": ["Topic", "Language"], "all_parameters": [...], "lens_title": "...", "lens_id": "..." }
+{ "status": "no_match", "query": "..." }
 ```
 
-Use this tool before calling `lens_run` when you want to surface validation errors to the user without attempting execution.
+**When to use `find_and_run_lens` vs `run_lens`:**
+
+| | `find_and_run_lens` | `run_lens` |
+|---|---|---|
+| Know the lens ID? | No | Yes |
+| Searching by topic/keyword? | Yes | No |
+| Need a single tool call? | Yes | Requires `search_lenses` first |
 
 ---
 
-## `lens_extract_params`
+## Destructive
 
-Extract the parameter schema from a lens template — lists every `[[token]]` in the template and whether it is required or optional.
+Removes or hides existing data. Hosts should require explicit user confirmation every time.
+
+### `archive_lens`
+
+Archive a lens. Archived lenses are hidden from listings but not deleted and can be restored.
 
 **Parameters**
 
 | Name | Type | Required | Description |
 |---|---|---|---|
-| `lens_id` | UUID | Yes | The lens to inspect |
-| `version_id` | UUID | No | Specific version (defaults to head) |
+| `lens_id` | UUID | Yes | The lens to archive |
 
-**Returns**
+**Returns** `{ lens_id, status: 'archived' }`
 
-```json
-{
-  "lens_id": "...",
-  "version_id": "...",
-  "params": [
-    { "id": "uuid", "label": "Language", "optional": false },
-    { "id": "uuid", "label": "Style", "optional": true }
-  ],
-  "raw_tokens_in_template": ["[[Language]]", "[[Style!]]", "[[InputText]]"]
-}
-```
+**Error codes** `NOT_FOUND` · `FORBIDDEN`
 
 ---
 
-## `lens_versions`
+### `delete_lens`
 
-List all versions of a lens, ordered newest first.
+Soft-delete a lens. Requires explicit confirmation to prevent accidental deletion.
 
 **Parameters**
 
 | Name | Type | Required | Description |
 |---|---|---|---|
-| `lens_id` | UUID | Yes | The lens whose versions to list |
+| `lens_id` | UUID | Yes | The lens to delete |
+| `confirm` | `true` (literal) | Yes | Must be exactly `true` |
 
-**Returns** `[{ id, semver, created_at, changelog }]` — or `{ lens_id, versions: [], count: 0 }` if no versions exist.
+**Returns** `{ deleted: true, ... }`
 
----
+**Error codes** `NOT_FOUND` · `FORBIDDEN`
 
-## `lens_get_version`
-
-Get the full details of a specific lens version, including template body and parameter list.
-
-**Parameters**
-
-| Name | Type | Required | Description |
-|---|---|---|---|
-| `lens_id` | UUID | Yes | The parent lens |
-| `version_id` | UUID | No | Version UUID (one of `version_id` or `semver` required) |
-| `semver` | string | No | Semantic version string, e.g. `"1.2.0"` |
-
-**Returns**
-
-```json
-{
-  "id": "...",
-  "semver": "1.2.0",
-  "template_body": "...",
-  "changelog": "Added Style parameter.",
-  "created_at": "2026-05-01T00:00:00Z",
-  "version_parameters": [
-    { "id": "...", "label": "Language", "optional": false },
-    { "id": "...", "label": "Style", "optional": true }
-  ]
-}
-```
-
-**Error codes** `BAD_INPUT` (if neither `version_id` nor `semver` provided) · `NOT_FOUND`
+> Deletion is soft — the lens record is marked deleted and excluded from all queries. It is not physically removed from the database.

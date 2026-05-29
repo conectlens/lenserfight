@@ -12,7 +12,7 @@ interface ResolveTemplateResult {
 
 export function registerLensValidateParams(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'lens_validate_params',
+    'validate_lens_params',
     'Validate parameter values against a lens version schema. Returns which params are missing, which are unknown, and whether the input is valid.',
     {
       lens_id: zUuid,
@@ -30,7 +30,7 @@ export function registerLensValidateParams(server: McpServer, sb: SupabaseClient
           error: { message: string } | null;
         };
         if (error) throw new Error(error.message);
-        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'lens_validate_params', t0);
+        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'validate_lens_params', t0);
 
         const allParams = data.parameters ?? [];
         const providedLabels = Object.keys(values).map((k) => k.toLowerCase());
@@ -48,9 +48,9 @@ export function registerLensValidateParams(server: McpServer, sb: SupabaseClient
           unknown,
           total_params: allParams.length,
           provided: Object.keys(values).length,
-        }, 'lens_validate_params', t0);
+        }, 'validate_lens_params', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'lens_validate_params', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'validate_lens_params', t0);
       }
     }
   );

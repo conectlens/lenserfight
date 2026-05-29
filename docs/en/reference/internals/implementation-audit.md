@@ -121,11 +121,11 @@ This page is the Phase 0 baseline for autonomous-agent work. It is intentionally
 - `fn_get_my_workflows`
 - `fn_workflows_get_popular`
 - `fn_list_template_workflows`
-- `fn_get_workflow_detail`
-- `fn_get_workflow_bootstrap`
-- `fn_get_workflow_nodes`
-- `fn_get_workflow_edges`
-- `fn_create_workflow`
+- `fn_workflow_get_detail`
+- `fn_workflow_get_bootstrap`
+- `fn_workflow_get_nodes`
+- `fn_workflow_get_edges`
+- `fn_workflow_create`
 - `fn_update_workflow`
 - `fn_clone_workflow`
 - `fn_upsert_workflow_nodes`
@@ -133,20 +133,20 @@ This page is the Phase 0 baseline for autonomous-agent work. It is intentionally
 - `fn_delete_workflow_node`
 - `fn_delete_workflow_edge`
 - `fn_start_workflow_run`
-- `fn_get_workflow_run`
-- `fn_get_workflow_node_results`
+- `fn_workflow_get_run`
+- `fn_workflow_get_node_results`
 - `fn_update_workflow_node_result`
-- `fn_get_workflow_run_state`
+- `fn_workflow_get_run_state`
 - `fn_get_run_provenance`
 - `fn_record_run_provenance`
 - `fn_update_workflow_run_status`
 - `fn_append_workflow_run_event`
 - `fn_list_workflow_run_events`
-- `fn_get_workflow_schedules`
+- `fn_workflow_get_schedules`
 - `fn_upsert_workflow_schedule`
 - `fn_delete_workflow_schedule`
-- `fn_get_workflow_versions`
-- `fn_create_workflow_version`
+- `fn_workflow_get_versions`
+- `fn_workflow_create_version`
 - `fn_publish_workflow_version`
 - `fn_restore_workflow_version`
 - `fn_list_workflow_runs`
@@ -179,7 +179,7 @@ flowchart TD
 
 ### Current runtime entry points
 
-- Lens/media execution: `execution.fn_run_lens_api`, `execution.fn_complete_async_run`, `supabase/functions/poll-async-executions`
+- Lens/media execution: `execution.fn_lens_run_api`, `execution.fn_complete_async_run`, `supabase/functions/poll-async-executions`
 - Workflow execution: `fn_start_workflow_run` plus `libs/infra/execution`
 - Scheduled workflow execution: `lenses.fn_dispatch_scheduled_workflows`
 - Agent workspace bootstrap: `fn_get_agent_workspace_bootstrap`
@@ -189,7 +189,7 @@ flowchart TD
 
 | Surface              | Canonical store                                                         | Current event examples                                                                 |
 | -------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Agent actions        | `agents.action_logs`                                                    | `run_lens`, `run_workflow`, `dispatch_schedule`, `schedule_skipped`, `binding_updated` |
+| Agent actions        | `agents.action_logs`                                                    | `lens_run`, `workflow_run`, `dispatch_schedule`, `schedule_skipped`, `binding_updated` |
 | Agent team execution | `agents.agent_run_events`, `agents.agent_run_steps`, `agents.team_runs` | approval decisions, per-step progress, blocked/completed states                        |
 | Workflow execution   | `lenses.workflow_run_events`, `lenses.workflow_node_results`            | queued, running, streaming, failed, retries, waiting reasons                           |
 | Lens/media execution | `execution.runs`, `execution.artifacts`, `media.objects`                | provider completion, artifacts, costs, moderation follow-ups                           |

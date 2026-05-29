@@ -971,7 +971,7 @@ Each migration is reversible:
 | **Registry** | `families`, `capability_nodes`, `factions` are typed registries |
 | **Composite** | `family_inheritance` edges express hybrid families |
 | **Strategy** | Per-family `personality_strategy` resolution |
-| **Factory** | Character creation goes through `fn_create_lenser_character(family_key, overrides)` |
+| **Factory** | Character creation goes through `fn_lens_createer_character(family_key, overrides)` |
 | **Observer** | Reputation observes execution events; capability observes reputation |
 | **State** | Session state machine `baseline → active → reflective → evolved` |
 | **Adapter** | Capability registry adapts Lens/Workflow/Tool to a uniform contract |

@@ -69,7 +69,7 @@ The authorization server document advertises:
 
 ### Dynamic client registration
 
-The server supports [RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591) dynamic client registration. Clients that do not have a pre-registered `client_id` (like Claude.ai on first connection) call `POST /oauth/register` to receive one:
+The server supports [RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591) dynamic client registration. Clients call `POST /oauth/register` to receive a `client_id`:
 
 ```http
 POST /oauth/register
@@ -89,6 +89,8 @@ Response:
   "token_endpoint_auth_method": "none"
 }
 ```
+
+> **LF Cloud note:** Dynamic registration works correctly via `https://mcp.lenserfight.com` — the Cloudflare proxy serves the MCP server at the domain root, so OAuth discovery resolves as expected.
 
 ### Flow summary
 

@@ -5,7 +5,7 @@ import { ok, fail } from '../../types.js';
 
 export function registerLensCreate(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'lens_create',
+    'create_lens',
     'Create a new lens with a template body and optional parameters. Template must be at least 50 characters. Use [[ParamName]] for required params, [[ParamName!]] for optional ones.',
     {
       title: z.string().min(1).max(200),
@@ -33,9 +33,9 @@ export function registerLensCreate(server: McpServer, sb: SupabaseClient): void 
           ),
         }) as unknown as { data: unknown; error: { message: string } | null };
         if (error) throw new Error(error.message);
-        return ok(data, 'lens_create', t0);
+        return ok(data, 'create_lens', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'lens_create', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'create_lens', t0);
       }
     }
   );

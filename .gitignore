@@ -32,6 +32,7 @@ yarn.lock
 # Environment variables — root and per-app (actual values; examples are committed)
 .env
 .env.local
+.env.mcp.local
 .env.production
 .env.development
 apps/*/.env

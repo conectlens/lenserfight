@@ -4,7 +4,7 @@ import { ok, fail, zUuid } from '../../types.js';
 
 export function registerWorkflowRunStatus(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'workflow_run_status',
+    'get_workflow_run_status',
     'Get the current status and progress of a workflow run. Includes cost breakdown and active node.',
     {
       run_id: zUuid,
@@ -16,10 +16,10 @@ export function registerWorkflowRunStatus(server: McpServer, sb: SupabaseClient)
           p_run_id: run_id,
         })) as unknown as { data: unknown; error: { message: string } | null };
         if (error) throw new Error(error.message);
-        if (!data) return fail('NOT_FOUND', `Run ${run_id} not found`, {}, 'workflow_run_status', t0);
-        return ok(data, 'workflow_run_status', t0);
+        if (!data) return fail('NOT_FOUND', `Run ${run_id} not found`, {}, 'get_workflow_run_status', t0);
+        return ok(data, 'get_workflow_run_status', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'workflow_run_status', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'get_workflow_run_status', t0);
       }
     }
   );
