@@ -728,12 +728,15 @@ Deno.serve(async (req: Request) => {
     if (!client || client.length === 0) {
       return new Response("Unknown client_id", { status: 400, headers: CORS_HEADERS });
     }
-    const { data: codeId } = await sb.rpc("fn_mcp_oauth_create_auth_code", {
+    const { data: codeId, error: codeErr } = await sb.rpc("fn_mcp_oauth_create_auth_code", {
       p_client_id: clientId,
       p_redirect_uri: redirectUri,
       p_code_challenge: codeChallenge,
       p_state: state,
     });
+    if (codeErr || !codeId) {
+      return new Response("Failed to create authorization request: " + (codeErr?.message ?? "null code"), { status: 500, headers: CORS_HEADERS });
+    }
 
     const loginUrl = new URL(`${MCP_BASE_URL}/oauth/login`);
     loginUrl.searchParams.set("id", codeId);
