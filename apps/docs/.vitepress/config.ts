@@ -2693,6 +2693,7 @@ export default defineConfig({
           items: [
             { text: 'Development Commands', link: '/en/reference/cli/dev' },
             { text: 'Execution Modes', link: '/en/reference/cli/execution-modes' },
+            { text: 'Switch Mode (lf use)', link: '/en/reference/cli/use' },
           ],
         },
         {

@@ -90,9 +90,17 @@ export default defineCommand({
     const authMark = authed ? c.success(`${sym.pass} authenticated`) : c.error(`${sym.fail} not authenticated`)
     console.log(`Auth          ${authMark}`)
 
+    // Mode row
+    const mode = project?.mode ?? config.mode
+    const modeEnvOverride = process.env['LF_LOCAL'] === '1' || process.env['LF_CLOUD'] === '1'
+    const modeLabel = mode === 'local' ? c.localhost('local') : c.cloud('cloud')
+    const modeSuffix = modeEnvOverride
+      ? c.warn(' (env override — run `lf use` to see persistent setting)')
+      : c.muted(` — switch: lf use ${mode === 'local' ? 'cloud' : 'local'}`)
+    console.log(`Mode          ${c.bold(modeLabel)}${modeSuffix}`)
+
     // Environment row
     const node = detectNode()
-    const mode = project?.mode ?? config.mode
     if (mode === 'local') {
       const supabase = detectSupabaseCli()
       const docker = detectDocker()
@@ -103,7 +111,7 @@ export default defineCommand({
       )
     } else {
       const mark = node.ok ? c.success(sym.pass) : c.error(sym.fail)
-      console.log(`Environment   ${mark}  Node ${node.detail} ${c.muted(sym.dot)} mode=${mode}`)
+      console.log(`Environment   ${mark}  Node ${node.detail}`)
     }
 
     console.log(`API           ${config.cloudApiUrl ?? c.muted('(not set)')}`)
