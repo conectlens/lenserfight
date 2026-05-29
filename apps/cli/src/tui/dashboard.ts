@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process'
 import { callRest } from '../utils/api'
+import { runChild } from './run-child'
 import { getActiveProfileName } from '../utils/profiles'
 import { probeBackendHealth } from '../lib/health-probe'
 import { truncate } from '../utils/output'
@@ -125,7 +125,20 @@ export const COMMAND_CATALOG: Array<{ cmd: string; desc: string }> = [
   { cmd: 'run policy-check',              desc: 'Check run policy compliance' },
   // ── workflow ─────────────────────────────────────────────────────────────────
   { cmd: 'workflow run',                  desc: 'Run a workflow locally against a file-based automation object' },
-  // ── execution ───────────────────────────────────────────────────────────────
+  // ── execute / configure (unified hubs) ───────────────────────────────────────
+  { cmd: 'execute status',                desc: 'Global execution queue health' },
+  { cmd: 'execute workflow list',         desc: 'List workflow runs' },
+  { cmd: 'execute workflow wait',         desc: 'Wait for workflow run' },
+  { cmd: 'execute workflow stream',       desc: 'Stream workflow events (SSE-style)' },
+  { cmd: 'execute battle exec',           desc: 'Cloud battle AI execution' },
+  { cmd: 'execute battle dispatch',       desc: 'Dispatch battle agent' },
+  { cmd: 'execute battle file-run',       desc: 'File-workspace battle run' },
+  { cmd: 'execute lens prompt',           desc: 'Lens/model prompt execution' },
+  { cmd: 'configure keys list',           desc: 'Local BYOK keys (file)' },
+  { cmd: 'configure byok list',           desc: 'Cloud BYOK keys (Supabase)' },
+  { cmd: 'configure ollama',              desc: 'Ollama local model URL' },
+  { cmd: 'configure providers list',      desc: 'AI provider catalog' },
+  // ── execution (legacy; prefer execute workflow) ───────────────────────────
   { cmd: 'execution list',                desc: 'List workflow executions' },
   { cmd: 'execution inspect',             desc: 'Inspect an execution in detail' },
   { cmd: 'execution provenance',          desc: 'Show execution provenance chain' },
@@ -483,6 +496,8 @@ function paintMainScreen(): void {
 
   buf.push('')
   const bindings = [
+    keyBind('e', 'execute'),
+    keyBind('k', 'configure'),
     keyBind('a', 'approvals'),
     keyBind('b', 'battles'),
     keyBind('s', 'schedules'),
@@ -547,7 +562,9 @@ const SUB_DASHBOARDS: Record<string, SubDashboardDef> = {
       { key: 'l', cmd:    ['battle', 'list'],                             label: 'list battles' },
       { key: 'v', prompt: 'battle view ',                                 label: 'view battle     [<SLUG-or-ID>]' },
       { key: 'c', prompt: 'battle create --lenser-a  --lenser-b ',        label: 'create battle   [--lenser-a <ID> --lenser-b <ID>]' },
-      { key: 's', prompt: 'battle stream ',                               label: 'stream battle   [<SLUG-or-ID>]' },
+      { key: 'x', prompt: 'battle exec ',                                 label: 'exec battle     [<id>]' },
+      { key: 'd', prompt: 'battle dispatch ',                             label: 'dispatch battle [<id>]' },
+      { key: 's', prompt: 'battle stream-feed ',                          label: 'stream battle   [<SLUG-or-ID>]' },
     ],
     exitKeys: ['q', 'Q', '\x1b'],
   },
@@ -589,6 +606,30 @@ const SUB_DASHBOARDS: Record<string, SubDashboardDef> = {
     commands: [
       { key: 'f', cmd: ['feed'],                                          label: 'show activity feed' },
       { key: 'l', cmd: ['leaderboard'],                                   label: 'show leaderboard' },
+    ],
+    exitKeys: ['q', 'Q', '\x1b'],
+  },
+  e: {
+    title: 'Execute',
+    commands: [
+      { key: 's', cmd: ['execute', 'status'],                             label: 'execution health' },
+      { key: 'w', cmd: ['execute', 'workflow', 'list'],                  label: 'list workflow runs' },
+      { key: 't', prompt: 'execute workflow wait ',                      label: 'wait run        [<RUN-UUID>]' },
+      { key: 'v', prompt: 'execute workflow stream ',                    label: 'stream events   [<RUN-UUID>]' },
+      { key: 'b', prompt: 'execute battle exec ',                        label: 'battle exec     [<id>]' },
+      { key: 'p', prompt: 'execute lens prompt --model ',                label: 'lens prompt     [--model …]' },
+      { key: 'd', prompt: 'execute team dispatch ',                       label: 'team dispatch   [args]' },
+    ],
+    exitKeys: ['q', 'Q', '\x1b'],
+  },
+  k: {
+    title: 'Configure',
+    commands: [
+      { key: 'l', cmd: ['configure', 'keys', 'list'],                     label: 'local BYOK keys' },
+      { key: 'b', cmd: ['configure', 'byok', 'list'],                     label: 'cloud BYOK hints' },
+      { key: 'o', cmd: ['configure', 'ollama'],                           label: 'Ollama settings' },
+      { key: 'p', cmd: ['configure', 'providers', 'list'],                label: 'AI providers' },
+      { key: 'e', cmd: ['configure', 'env'],                              label: 'env resolution' },
     ],
     exitKeys: ['q', 'Q', '\x1b'],
   },
@@ -753,23 +794,6 @@ function waitForReturnKey(): Promise<void> {
       if (RETURN_KEYS.has(key)) { process.stdin.off('data', onData); resolve() }
     }
     process.stdin.on('data', onData)
-  })
-}
-
-function runChild(argv: string[]): Promise<void> {
-  return new Promise((resolve) => {
-    process.stdout.write(A.showCursor + A.clearScreen + A.homeCursor)
-    process.stdout.write(`\n  ${A.bold}${A.brightCyan}${sym.run}  lf ${argv.join(' ')}${A.reset}\n\n`)
-    const child = spawn('lf', argv, { stdio: 'inherit' })
-    child.on('exit', () => {
-      process.stdout.write(`\n  ${A.gray}Press ${A.brightYellow}q${A.reset}${A.gray} / ${A.brightYellow}Enter${A.reset}${A.gray} to return…${A.reset}\n`)
-      void waitForReturnKey().then(resolve)
-    })
-    child.on('error', () => {
-      process.stdout.write(`\n  ${A.brightRed}${sym.fail}  could not spawn lf — is it on PATH?${A.reset}\n`)
-      process.stdout.write(`  ${A.gray}Press ${A.brightYellow}q${A.reset}${A.gray} to return.${A.reset}\n`)
-      void waitForReturnKey().then(resolve)
-    })
   })
 }
 
