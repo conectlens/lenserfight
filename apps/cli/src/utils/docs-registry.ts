@@ -84,6 +84,7 @@ const KIND_DOCS_MAP: Partial<Record<CliErrorKind, string>> = {
   workflow:      'workflow-nodes',
   battle:        'battle-lifecycle',
   schema:        'schemas',
+  api_schema:    'cli-reference',
   config:        'configuration',
   local_model:   'local-models',
   unknown:       'troubleshooting',

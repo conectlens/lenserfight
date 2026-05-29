@@ -26,6 +26,7 @@
  *   - automation-rules.md          (concept page)
  *   - local-battle-key.md          (config subcommand)
  *   - webhook-secret.md            (config subcommand)
+ *   - runtime-backends.md          (concept page)
  */
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
@@ -58,6 +59,7 @@ const CONCEPT_PAGES = new Set([
   'local-battle-key', // lf config local-battle-key
   'webhook-secret',   // lf config webhook-secret
   'community',        // social/feed grab-bag page
+  'runtime-backends', // cloud / local / file-workspace backends overview
 ])
 
 // ─── 1. Read registered subcommands from main.ts ──────────────────────────

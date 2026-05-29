@@ -9,7 +9,7 @@ import type { CliErrorKind } from './error-taxonomy'
 const ALL_KINDS: CliErrorKind[] = [
   'unauthorized', 'forbidden', 'not_found', 'rate_limited',
   'network', 'gateway', 'provider', 'multimodal', 'workflow',
-  'battle', 'schema', 'config', 'local_model', 'unknown',
+  'battle', 'schema', 'api_schema', 'config', 'local_model', 'unknown',
 ]
 
 // ─── getRecoveryGuidance ──────────────────────────────────────────────────────

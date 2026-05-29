@@ -28,6 +28,15 @@ export function redact(value: string): string {
   return value
 }
 
+/** Password hider for terminal display — partial mask unless `reveal` is true. */
+export function maskSecret(value: string, reveal = false): string {
+  if (!value) return ''
+  if (reveal) return value
+  if (redact(value) === '[REDACTED]') return '••••••'
+  if (value.length <= 8) return '••••••'
+  return `${value.slice(0, 4)}…${value.slice(-4)}`
+}
+
 export function redactHeaders(
   headers: Record<string, string>
 ): Record<string, string> {

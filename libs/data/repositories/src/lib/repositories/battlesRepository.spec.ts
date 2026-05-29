@@ -427,6 +427,7 @@ describe('SupabaseBattlesRepository', () => {
         p_contender_structure: null,
         p_judging_mode: null,
         p_challenge_type: null,
+        p_automation_config: null,
       })
     })
 

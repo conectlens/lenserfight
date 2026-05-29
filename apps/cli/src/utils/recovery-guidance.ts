@@ -172,6 +172,17 @@ const GUIDANCE: Record<CliErrorKind, RecoveryGuidance> = {
     docsKey: 'schemas',
   },
 
+  api_schema: {
+    strategy: 'This command hit a non-exposed database schema. Retry with the RPC-backed subcommand or update the CLI.',
+    hints: [
+      'lf auth login   # ensure cloud session is active',
+      'lf doctor       # verify cloud API reachability',
+      'Use subcommands documented in `lf --help` — avoid raw schema table access',
+    ],
+    inspectArea: 'lf doctor',
+    docsKey: 'cli-reference',
+  },
+
   config: {
     strategy: 'Initialize or repair your project config, then retry.',
     hints: [

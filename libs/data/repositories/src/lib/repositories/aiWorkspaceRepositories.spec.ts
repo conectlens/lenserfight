@@ -155,7 +155,7 @@ describe('AI workspace repository contracts', () => {
       is_active: true,
     })
 
-    expect(rpcMock).toHaveBeenNthCalledWith(1, 'fn_get_workflow_schedules', {})
+    expect(rpcMock).toHaveBeenNthCalledWith(1, 'fn_get_workflow_schedules', { p_limit: 50 })
     expect(rpcMock).toHaveBeenNthCalledWith(2, 'fn_upsert_workflow_schedule', {
       p_workflow_id: 'workflow-1',
       p_schedule_id: null,
@@ -187,6 +187,7 @@ describe('AI workspace repository contracts', () => {
 
     expect(rpcMock).toHaveBeenCalledWith('fn_get_workflow_schedules', {
       p_workflow_id: 'workflow-1',
+      p_limit: 50,
     })
   })
 

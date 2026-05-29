@@ -1,7 +1,11 @@
-jest.mock('../utils/api', () => ({
-  callRest: jest.fn().mockResolvedValue([]),
-  callRpc: jest.fn(),
-  handleError: jest.fn(),
+jest.mock('../lib/data-services', () => ({
+  getHumanActivityFeed: jest.fn().mockResolvedValue([]),
+}))
+jest.mock('../lib/agent-workspace-context', () => ({
+  getAgentWorkspaceContext: jest.fn().mockReturnValue(null),
+}))
+jest.mock('../commands/agents', () => ({
+  formatAgentWorkspaceBanner: jest.fn().mockReturnValue(null),
 }))
 jest.mock('../utils/profiles', () => ({
   getActiveProfileName: jest.fn().mockResolvedValue('default'),
@@ -19,7 +23,13 @@ import {
   validateSubcommand,
   getSuggestions,
   COMMAND_CATALOG,
+  applyWorkspacePrompt,
 } from './dashboard'
+import { getAgentWorkspaceContext } from '../lib/agent-workspace-context'
+
+const mockGetAgentWorkspaceContext = getAgentWorkspaceContext as jest.MockedFunction<
+  typeof getAgentWorkspaceContext
+>
 
 describe('dashboard pure formatters', () => {
   it('formatHealthStatus(true) renders a green pill', () => {
@@ -112,6 +122,19 @@ describe('getSuggestions', () => {
     const lower = getSuggestions('battle')
     const upper = getSuggestions('BATTLE')
     expect(lower.length).toBe(upper.length)
+  })
+})
+
+describe('applyWorkspacePrompt', () => {
+  it('injects selected agent into agent-tab prompts', () => {
+    mockGetAgentWorkspaceContext.mockReturnValue({
+      aiLenserId: 'agent-uuid',
+      handle: 'research-bot',
+      displayName: 'Research Bot',
+      selectedAt: '2026-05-29T00:00:00Z',
+    })
+    expect(applyWorkspacePrompt('agents stop ', 'agent')).toContain('research-bot')
+    expect(applyWorkspacePrompt('approval list --ai-lenser ', 'agent')).toContain('agent-uuid')
   })
 })
 

@@ -1,4 +1,4 @@
-import { redact, redactHeaders, redactUrl } from './redact'
+import { redact, redactHeaders, redactUrl, maskSecret } from './redact'
 
 const JWT =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24ifQ.abc123'
@@ -23,6 +23,24 @@ describe('redact', () => {
 
   it('passes empty string unchanged', () => {
     expect(redact('')).toBe('')
+  })
+})
+
+describe('maskSecret', () => {
+  it('returns bullet mask for JWT-like values', () => {
+    expect(maskSecret(JWT)).toBe('••••••')
+  })
+
+  it('partially masks medium-length secrets', () => {
+    expect(maskSecret('sk-live-abcdefghijklmnop')).toBe('sk-l…mnop')
+  })
+
+  it('reveals full value when reveal=true', () => {
+    expect(maskSecret('sk-live-secret', true)).toBe('sk-live-secret')
+  })
+
+  it('leaves public URLs visible when not high-entropy', () => {
+    expect(maskSecret('https://abc.supabase.co')).toBe('http…e.co')
   })
 })
 
