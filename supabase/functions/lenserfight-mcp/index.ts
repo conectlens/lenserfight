@@ -1,8 +1,10 @@
 // deno-lint-ignore-file no-explicit-any
 // @ts-nocheck — Deno Edge Function; type safety provided by Deno's npm: import resolver
+const BUILD_TAG = "2026-05-29-v7-bypass-sdk-transport";
+console.log(`[lenserfight-mcp] boot ${BUILD_TAG}`);
 
-import { McpServer } from "npm:@modelcontextprotocol/sdk@1.15.0/server/mcp.js";
-import { StreamableHTTPServerTransport } from "npm:@modelcontextprotocol/sdk@1.15.0/server/streamableHttp.js";
+import { McpServer } from "npm:@modelcontextprotocol/sdk@1.29.0/server/mcp.js";
+import { StreamableHTTPServerTransport } from "npm:@modelcontextprotocol/sdk@1.29.0/server/streamableHttp.js";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 
@@ -567,80 +569,85 @@ function protectedResourceDoc() {
 // StreamableHTTPServerTransport expects Node.js IncomingMessage/ServerResponse.
 // These minimal shims provide the interface the SDK needs.
 
-function makeShims(req: Request, bodyText: string): [any, any, Promise<Response>] {
-  const nodeReq = {
+function makeShims(req: Request, _bodyText: string): [any, any, Promise<Response>] {
+  const nodeReq: any = {
     method: req.method.toUpperCase(),
     url: new URL(req.url).pathname,
     headers: Object.fromEntries(req.headers.entries()),
-    on: () => nodeReq,
-    once: () => nodeReq,
-    removeListener: () => nodeReq,
   };
+  nodeReq.on = () => nodeReq;
+  nodeReq.once = () => nodeReq;
+  nodeReq.removeListener = () => nodeReq;
 
   const resHeaders: Record<string, string> = {};
   const chunks: string[] = [];
-  let status = 200;
   let ended = false;
   let resolve!: (r: Response) => void;
   const responsePromise = new Promise<Response>((r) => { resolve = r; });
 
-  const nodeRes = {
+  const nodeRes: any = {
     statusCode: 200,
     writableEnded: false,
-    setHeader(name: string, value: string) { resHeaders[name] = value; },
-    getHeader(name: string) { return resHeaders[name]; },
-    writeHead(code: number, hdrs?: Record<string, string>) {
-      status = code;
-      if (hdrs) Object.assign(resHeaders, hdrs);
-    },
-    write(chunk: string | Uint8Array) {
-      if (!ended) chunks.push(typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk));
-      return true;
-    },
-    end(chunk?: string | Uint8Array) {
-      if (chunk) chunks.push(typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk));
-      ended = true;
-      nodeRes.writableEnded = true;
-      resolve(new Response(chunks.join("") || null, { status, headers: resHeaders }));
-    },
-    on: () => nodeRes,
-    once: () => nodeRes,
-    removeListener: () => nodeRes,
-    flushHeaders: () => {},
+    headersSent: false,
   };
+  nodeRes.setHeader = (name: string, value: string) => { resHeaders[name.toLowerCase()] = value; return nodeRes; };
+  nodeRes.getHeader = (name: string) => resHeaders[name.toLowerCase()];
+  nodeRes.removeHeader = (name: string) => { delete resHeaders[name.toLowerCase()]; return nodeRes; };
+  nodeRes.writeHead = (code: number, hdrs?: Record<string, string>) => {
+    nodeRes.statusCode = code;
+    if (hdrs) for (const [k, v] of Object.entries(hdrs)) resHeaders[k.toLowerCase()] = v;
+    nodeRes.headersSent = true;
+    return nodeRes;
+  };
+  nodeRes.write = (chunk: string | Uint8Array) => {
+    if (!ended) chunks.push(typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk));
+    return true;
+  };
+  nodeRes.end = (chunk?: string | Uint8Array) => {
+    if (chunk) chunks.push(typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk));
+    ended = true;
+    nodeRes.writableEnded = true;
+    resolve(new Response(chunks.join("") || null, { status: nodeRes.statusCode, headers: resHeaders }));
+    return nodeRes;
+  };
+  nodeRes.on = () => nodeRes;
+  nodeRes.once = () => nodeRes;
+  nodeRes.removeListener = () => nodeRes;
+  nodeRes.flushHeaders = () => nodeRes;
 
   return [nodeReq, nodeRes, responsePromise];
 }
 
 // ─── Server initialization ────────────────────────────────────────────────────
-// Lazy-initialized on the first request, shared across warm invocations.
+// Edge Functions are stateless — use the SDK's stateless mode so each request
+// is self-contained (no session handshake required between requests).
 
-type SessionEntry = { transport: StreamableHTTPServerTransport };
-const sessions = new Map<string, SessionEntry>();
-let globalServer: McpServer | null = null;
+async function createSession(): Promise<{ server: McpServer }> {
+  const server = new McpServer({ name: "lenserfight", version: "1.0.0" });
+  registerTools(server);
+  return { server };
+}
 
-async function getOrCreateSession(sessionId: string | null): Promise<{ server: McpServer; transport: StreamableHTTPServerTransport; sessionId: string }> {
-  if (sessionId && sessions.has(sessionId)) {
-    const session = sessions.get(sessionId)!;
-    return { server: globalServer!, transport: session.transport, sessionId };
+type RegisteredTool = {
+  name: string;
+  description?: string;
+  inputSchema?: any;
+  callback: (args: any) => Promise<any>;
+};
+
+// Pull the tool registry out of McpServer regardless of SDK internal shape.
+function getRegisteredTools(server: McpServer): RegisteredTool[] {
+  const s = server as any;
+  const candidates = [s._registeredTools, s.server?._registeredTools, s._server?._registeredTools, s._tools];
+  const reg = candidates.find((c) => c && typeof c === "object");
+  if (!reg) {
+    console.error("[lenserfight-mcp] could not locate _registeredTools on McpServer instance");
+    return [];
   }
-
-  const newSessionId = sessionId ?? crypto.randomUUID();
-
-  if (!globalServer) {
-    globalServer = new McpServer({ name: "lenserfight", version: "1.0.0" });
-    registerTools(globalServer);
-  }
-
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: () => newSessionId,
-  });
-  await globalServer.connect(transport);
-
-  sessions.set(newSessionId, { transport });
-  transport.onclose = () => sessions.delete(newSessionId);
-
-  return { server: globalServer, transport, sessionId: newSessionId };
+  const entries: RegisteredTool[] = reg instanceof Map
+    ? Array.from(reg.entries()).map(([name, t]: [string, any]) => ({ name, ...t }))
+    : Object.entries(reg).map(([name, t]: [string, any]) => ({ name, ...t }));
+  return entries;
 }
 
 // ─── Token Validation ─────────────────────────────────────────────────────────
@@ -883,24 +890,109 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Get or create MCP session
-  const incomingSessionId = req.headers.get("mcp-session-id");
-  const { transport, sessionId } = await getOrCreateSession(incomingSessionId);
+  // GET /mcp would open an SSE stream for server-pushed notifications.
+  // Edge Functions can't keep long-lived connections; return 405 so Claude moves on.
+  if (req.method === "GET") {
+    return Response.json(
+      { error: "method_not_allowed", error_description: "Stateless MCP server — no SSE stream available." },
+      { status: 405, headers: { ...CORS_HEADERS, Allow: "POST" } }
+    );
+  }
 
   // Parse the request body for POST
   const bodyText = req.method === "POST" ? await req.text() : "";
-  const parsedBody = bodyText ? JSON.parse(bodyText) : undefined;
+  let parsedBody: any;
+  try {
+    parsedBody = bodyText ? JSON.parse(bodyText) : undefined;
+  } catch (e) {
+    console.error(`[lenserfight-mcp] body parse error: ${(e as Error).message}; bodyText=${bodyText.slice(0, 200)}`);
+    return Response.json({ error: "invalid_json", message: (e as Error).message }, { status: 400, headers: CORS_HEADERS });
+  }
 
-  const [nodeReq, nodeRes, responsePromise] = makeShims(req, bodyText);
+  console.log(`[lenserfight-mcp] ${req.method} /mcp body=${bodyText.slice(0, 400)}`);
 
-  await transport.handleRequest(nodeReq, nodeRes, parsedBody);
+  // ── Direct JSON-RPC handling (bypasses StreamableHTTPServerTransport) ──
+  // The SDK's Node-shim transport is fragile on Deno; handle the protocol ourselves.
+  const { server: mcpServer } = await createSession();
+  const tools = getRegisteredTools(mcpServer);
 
-  const response = await responsePromise;
+  const handleOne = async (msg: any): Promise<any | null> => {
+    const { id, method, params } = msg ?? {};
 
-  // Attach CORS and session headers
-  const finalHeaders = new Headers(response.headers);
-  for (const [k, v] of Object.entries(CORS_HEADERS)) finalHeaders.set(k, v);
-  finalHeaders.set("mcp-session-id", sessionId);
+    if (method === "initialize") {
+      return {
+        jsonrpc: "2.0",
+        id,
+        result: {
+          protocolVersion: params?.protocolVersion ?? "2025-06-18",
+          serverInfo: { name: "lenserfight", version: "1.0.0" },
+          capabilities: { tools: { listChanged: false } },
+        },
+      };
+    }
 
-  return new Response(response.body, { status: response.status, headers: finalHeaders });
+    if (typeof method === "string" && method.startsWith("notifications/")) {
+      return null; // notifications get no response
+    }
+
+    if (method === "tools/list") {
+      return {
+        jsonrpc: "2.0",
+        id,
+        result: {
+          tools: tools.map((t) => ({
+            name: t.name,
+            description: t.description ?? "",
+            inputSchema: t.inputSchema ?? { type: "object", properties: {} },
+          })),
+        },
+      };
+    }
+
+    if (method === "tools/call") {
+      const name = params?.name;
+      const args = params?.arguments ?? {};
+      const tool = tools.find((t) => t.name === name);
+      if (!tool) {
+        return { jsonrpc: "2.0", id, error: { code: -32602, message: `Unknown tool: ${name}` } };
+      }
+      try {
+        const result = await tool.callback(args);
+        return { jsonrpc: "2.0", id, result };
+      } catch (e) {
+        const err = e as Error;
+        console.error(`[lenserfight-mcp] tool ${name} threw: ${err.message}`);
+        return { jsonrpc: "2.0", id, error: { code: -32603, message: err.message } };
+      }
+    }
+
+    if (method === "ping") {
+      return { jsonrpc: "2.0", id, result: {} };
+    }
+
+    return { jsonrpc: "2.0", id, error: { code: -32601, message: `Method not found: ${method}` } };
+  };
+
+  try {
+    const responses = Array.isArray(parsedBody)
+      ? (await Promise.all(parsedBody.map(handleOne))).filter((r) => r !== null)
+      : await handleOne(parsedBody);
+
+    // Notifications: no body
+    if (responses === null || (Array.isArray(responses) && responses.length === 0)) {
+      return new Response(null, { status: 202, headers: CORS_HEADERS });
+    }
+
+    return Response.json(responses, {
+      status: 200,
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    const err = e as Error;
+    console.error(`[lenserfight-mcp] handler threw: ${err.message}\n${err.stack}`);
+    return Response.json(
+      { jsonrpc: "2.0", id: parsedBody?.id ?? null, error: { code: -32603, message: err.message } },
+      { status: 500, headers: CORS_HEADERS }
+    );
+  }
 });
