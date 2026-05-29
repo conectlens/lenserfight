@@ -67,6 +67,12 @@ export const LensDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { lenser, hasLenser } = useAuthenticatedLenser()
+  const normalizedLenserHandle = lenser?.handle?.trim().toLowerCase()
+  const hasActiveLenserProfile =
+    !!lenser &&
+    hasLenser &&
+    normalizedLenserHandle !== 'anon' &&
+    normalizedLenserHandle !== 'anonymous'
   const { isLoading: authLoading, isAuthenticated, redirectToLogin, user } = useAuth()
   const { setShareConfig } = useShareContext()
   const { setPageActions, setPageTitle } = useUI()
@@ -108,6 +114,9 @@ export const LensDetailPage: React.FC = () => {
     providersEnabled,
     resolveLocalKey: stableResolveLocalKey,
     hasActiveLenserProfile,
+    // History is fetched by ExecutionHistoryDrawer itself (uncontrolled mode),
+    // so the controller no longer needs to load it here.
+    historyEnabled: false,
   })
   const funding = useFundingSource(lab.selectedProviderKey)
   const chainabit = useChainabitConnection()
@@ -174,13 +183,6 @@ export const LensDetailPage: React.FC = () => {
       : 'No execution yet'
   const historyLabel =
     versions.length > 0 ? `${versions.length} versions` : 'No version history yet'
-  const normalizedLenserHandle = lenser?.handle?.trim().toLowerCase()
-  const hasActiveLenserProfile =
-    !!lenser &&
-    hasLenser &&
-    normalizedLenserHandle !== 'anon' &&
-    normalizedLenserHandle !== 'anonymous'
-
   const { cloneLens, isCloning } = useCloneLens(lens ?? null)
   const { forkTree } = useForkTree(id ?? '', lens?.parentLensId)
 
@@ -554,11 +556,10 @@ export const LensDetailPage: React.FC = () => {
                       ? 'View execution history'
                       : 'Sign in or register to view executions'
                   }
-                  className={`flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium shadow-sm transition-colors ${
-                    hasActiveLenserProfile
-                      ? 'text-greyscale-600 hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50'
-                      : 'cursor-not-allowed opacity-50 text-greyscale-400'
-                  }`}
+                  className={`flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium shadow-sm transition-colors ${hasActiveLenserProfile
+                    ? 'text-greyscale-600 hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50'
+                    : 'cursor-not-allowed opacity-50 text-greyscale-400'
+                    }`}
                 >
                   <ListVideo size={13} />
                   <span>Executions</span>
@@ -578,11 +579,10 @@ export const LensDetailPage: React.FC = () => {
                   type="button"
                   onClick={handleVersionToggle}
                   title={showVersionPicker ? 'Hide version history' : 'Show version history'}
-                  className={`flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-medium shadow-sm transition-colors ${
-                    showVersionPicker
-                      ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
-                      : 'border-surface-border bg-surface-base text-greyscale-600 hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50'
-                  }`}
+                  className={`flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-medium shadow-sm transition-colors ${showVersionPicker
+                    ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
+                    : 'border-surface-border bg-surface-base text-greyscale-600 hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50'
+                    }`}
                 >
                   <History size={13} />
                   <span>
@@ -652,11 +652,10 @@ export const LensDetailPage: React.FC = () => {
                               isSelected ? LENS_VERSION_MAIN : v.versionNumber
                             )
                           }
-                          className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${
-                            isSelected
-                              ? 'bg-primary-yellow-500/10 text-primary-yellow-600'
-                              : 'bg-surface-base text-greyscale-700 hover:bg-surface-raised dark:text-greyscale-300'
-                          }`}
+                          className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${isSelected
+                            ? 'bg-primary-yellow-500/10 text-primary-yellow-600'
+                            : 'bg-surface-base text-greyscale-700 hover:bg-surface-raised dark:text-greyscale-300'
+                            }`}
                         >
                           <span className="font-mono text-xs font-bold w-8 shrink-0">
                             v{v.versionNumber}
@@ -704,9 +703,8 @@ export const LensDetailPage: React.FC = () => {
                 }
                 setShowRunPanel((v) => !v)
               }}
-              className={`flex w-full items-center gap-3 rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-left transition-colors hover:border-primary-yellow-500 ${
-                !hasActiveLenserProfile ? 'cursor-not-allowed opacity-75' : ''
-              }`}
+              className={`flex w-full items-center gap-3 rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-left transition-colors hover:border-primary-yellow-500 ${!hasActiveLenserProfile ? 'cursor-not-allowed opacity-75' : ''
+                }`}
             >
               <Play
                 size={15}
@@ -927,10 +925,6 @@ export const LensDetailPage: React.FC = () => {
         open={drawerRouter.isOpen('executions')}
         onClose={drawerRouter.close}
         lensId={id ?? ''}
-        history={lab.history}
-        isLoadingHistory={lab.isLoadingHistory}
-        hasMoreHistory={lab.hasMoreHistory}
-        loadMoreHistory={lab.loadMoreHistory}
         onSelectRun={lab.setSelectedRunId}
         isLocked={!hasActiveLenserProfile}
         lockReason={!isAuthenticated ? 'unauthenticated' : 'no_profile'}

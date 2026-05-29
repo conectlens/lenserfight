@@ -61,6 +61,12 @@ export const LensLabPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { lenser, hasLenser } = useAuthenticatedLenser()
+  const normalizedLenserHandle = lenser?.handle?.trim().toLowerCase()
+  const hasActiveLenserProfile =
+    !!lenser &&
+    hasLenser &&
+    normalizedLenserHandle !== 'anon' &&
+    normalizedLenserHandle !== 'anonymous'
   const drawerRouter = useDrawerRouter()
   const { isLoading: authLoading, isAuthenticated, redirectToLogin, user } = useAuth()
   const { setShareConfig } = useShareContext()
@@ -96,6 +102,10 @@ export const LensLabPage: React.FC = () => {
     preferredModelKey: preferences?.ai_model_key,
     providersEnabled,
     resolveLocalKey: stableResolveLocalKey,
+    hasActiveLenserProfile,
+    // The inline LabExecutionTimeline is always visible on this page, so load
+    // history eagerly. (The drawer fetches its own history independently.)
+    historyEnabled: true,
   })
 
   const funding = useFundingSource(lab.selectedProviderKey)
@@ -171,13 +181,6 @@ export const LensLabPage: React.FC = () => {
     submit: submitCreate,
     isEditMode,
   } = useCreateLens()
-
-  const normalizedLenserHandle = lenser?.handle?.trim().toLowerCase()
-  const hasActiveLenserProfile =
-    !!lenser &&
-    hasLenser &&
-    normalizedLenserHandle !== 'anon' &&
-    normalizedLenserHandle !== 'anonymous'
 
   const ensureProfile = useCallback((): boolean => {
     if (!isAuthenticated) {
@@ -471,11 +474,10 @@ export const LensLabPage: React.FC = () => {
                 type="button"
                 onClick={() => setShowVersionPicker((v) => !v)}
                 title={showVersionPicker ? 'Hide version history' : 'Show version history'}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all ${
-                  showVersionPicker
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all ${showVersionPicker
                     ? 'border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
-                }`}
+                  }`}
               >
                 <History size={13} />
                 <span>
@@ -524,21 +526,19 @@ export const LensLabPage: React.FC = () => {
                             isSelected ? LENS_VERSION_MAIN : v.versionNumber
                           )
                         }
-                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
-                          isSelected
+                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${isSelected
                             ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
                             : 'hover:bg-gray-50 dark:hover:bg-gray-800/60 text-gray-700 dark:text-gray-300'
-                        }`}
+                          }`}
                       >
                         <span className="font-mono font-bold text-xs w-8 shrink-0">
                           v{v.versionNumber}
                         </span>
                         <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
-                            v.status === 'draft'
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${v.status === 'draft'
                               ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
                               : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                          }`}
+                            }`}
                         >
                           {v.status}
                         </span>
@@ -701,11 +701,10 @@ export const LensLabPage: React.FC = () => {
         open={drawerRouter.isOpen('executions')}
         onClose={drawerRouter.close}
         lensId={id ?? ''}
-        history={lab.history}
-        isLoadingHistory={lab.isLoadingHistory}
-        hasMoreHistory={lab.hasMoreHistory}
-        loadMoreHistory={lab.loadMoreHistory}
         onSelectRun={lab.setSelectedRunId}
+        isLocked={!hasActiveLenserProfile}
+        lockReason={!isAuthenticated ? 'unauthenticated' : 'no_profile'}
+        onSignIn={ensureProfile}
       />
 
       {isReportOpen && (
