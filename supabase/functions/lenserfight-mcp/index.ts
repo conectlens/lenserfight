@@ -536,7 +536,9 @@ function registerTools(server: McpServer) {
 
 // ─── OAuth Discovery ──────────────────────────────────────────────────────────
 
-const MCP_BASE_URL = `${SUPABASE_URL}/functions/v1/lenserfight-mcp`;
+// Use public base URL if proxied via Cloudflare Worker (set per-request below)
+const SUPABASE_BASE_URL = `${SUPABASE_URL}/functions/v1/lenserfight-mcp`;
+let MCP_BASE_URL = SUPABASE_BASE_URL;
 
 const discoveryDoc = {
   issuer: MCP_BASE_URL,
@@ -548,6 +550,11 @@ const discoveryDoc = {
   code_challenge_methods_supported: ["S256"],
   scopes_supported: ["openid"],
   token_endpoint_auth_methods_supported: ["none"],
+};
+
+const protectedResourceDoc = {
+  resource: `${MCP_BASE_URL}/mcp`,
+  authorization_servers: [MCP_BASE_URL],
 };
 
 // ─── Node.js HTTP shims for StreamableHTTPServerTransport ────────────────────
@@ -664,6 +671,10 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
+  // When proxied via Cloudflare Worker, use the public domain for all OAuth URLs
+  const publicBase = req.headers.get("x-mcp-public-base");
+  MCP_BASE_URL = publicBase ?? SUPABASE_BASE_URL;
+
   const url = new URL(req.url);
 
   // Health check
@@ -672,9 +683,11 @@ Deno.serve(async (req: Request) => {
   }
 
   // OAuth 2.1 discovery
-  if (url.pathname.endsWith("/.well-known/oauth-authorization-server") ||
-      url.pathname.endsWith("/.well-known/oauth-protected-resource")) {
+  if (url.pathname.endsWith("/.well-known/oauth-authorization-server")) {
     return Response.json(discoveryDoc, { headers: { ...CORS_HEADERS, "Cache-Control": "public, max-age=3600" } });
+  }
+  if (url.pathname.endsWith("/.well-known/oauth-protected-resource")) {
+    return Response.json(protectedResourceDoc, { headers: { ...CORS_HEADERS, "Cache-Control": "public, max-age=3600" } });
   }
 
   // ── RFC 7591 Dynamic Client Registration ────────────────────────────────────
@@ -848,7 +861,11 @@ button:hover{background:#6d28d9}</style></head>
   if (!await validateBearer(req.headers.get("authorization"))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
-      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      headers: {
+        ...CORS_HEADERS,
+        "Content-Type": "application/json",
+        "WWW-Authenticate": `Bearer realm="${MCP_BASE_URL}", as_uri="${MCP_BASE_URL}", resource_metadata="${MCP_BASE_URL}/.well-known/oauth-protected-resource"`,
+      },
     });
   }
 

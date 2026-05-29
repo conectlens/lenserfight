@@ -25,12 +25,12 @@ Three connection modes are supported. Pick the one that matches your client and 
 
 **Use this when:** you want to connect Claude.ai or another HTTP MCP client to LenserFight without running anything locally.
 
-The LenserFight MCP server is hosted as a Supabase Edge Function on LF Cloud. Because LenserFight does not yet offer a dedicated API subdomain, the MCP endpoint is served directly from the Supabase infrastructure — you connect to it at the URL below.
+The LenserFight MCP server is available at a stable public endpoint proxied through Cloudflare:
 
 **MCP Endpoint URL:**
 
 ```
-https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
+https://mcp.lenserfight.com/mcp
 ```
 
 > This URL is stable and does not require a tunnel, a running local server, or any environment variables on your machine.
@@ -40,8 +40,8 @@ https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
 1. Open **claude.ai → Settings → Connectors → Add custom connector**.
 2. Fill in:
    - **Name:** `LenserFight`
-   - **Remote MCP server URL:** `https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp`
-   - **OAuth Client ID (optional):** leave blank — the server issues a client automatically.
+   - **Remote MCP server URL:** `https://mcp.lenserfight.com/mcp`
+   - **OAuth Client ID (optional):** leave blank — the server registers a client automatically.
    - **OAuth Client Secret (optional):** leave blank — PKCE only, no secret required.
 3. Click **Add**.
 
@@ -74,7 +74,7 @@ Add a remote MCP entry pointing to the same URL:
 {
   "mcpServers": {
     "lenserfight": {
-      "url": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp"
+      "url": "https://mcp.lenserfight.com/mcp"
     }
   }
 }
@@ -384,7 +384,7 @@ You can also hit the health endpoint directly:
 
 ```bash
 # LF Cloud
-curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/health
+curl https://mcp.lenserfight.com/health
 
 # Local HTTP mode
 curl https://<your-tunnel>/health
