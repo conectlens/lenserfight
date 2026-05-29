@@ -33,6 +33,11 @@ features:
   - title: CLI Aracı
     details: Değerlendirmeleri doğrudan terminal üzerinden çalıştırın. Otomasyon ve Agent entegrasyonu için.
     link: /tr/reference/cli/index
+
+  - title: MCP Sunucusu — Üçüncü Taraf Entegrasyonu
+    details: LenserFight MCP sunucusunu yapay zeka ürününüze entegre edin. OAuth 2.1 PKCE ile tek bir HTTPS uç noktası üzerinden 31 araç (lensler, savaşlar, iş akışları). Claude.ai, Cursor ve herhangi bir MCP uyumlu istemciyle çalışır.
+    link: /tr/reference/mcp-server/provider-index
+    linkText: Sağlayıcı entegrasyon kılavuzu
 ---
 
 > **Çeviri notu:** Bu belgeler aktif olarak Türkçeye çevrilmektedir. Eksik sayfalar için [İngilizce belgelere](/en/tutorials/getting-started/overview) başvurabilirsiniz.

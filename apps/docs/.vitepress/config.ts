@@ -315,6 +315,30 @@ const EN_REFERENCE_SIDEBAR = [
       { text: 'CLI', link: '/en/reference/cli/index' },
       { text: 'Battles', link: '/en/reference/battles/index' },
       { text: 'Connectors (alpha)', link: '/en/reference/connectors/index' },
+      {
+        text: 'MCP Server',
+        collapsed: false,
+        items: [
+          { text: 'Overview', link: '/en/reference/mcp-server/index' },
+          { text: 'Setup', link: '/en/reference/mcp-server/setup' },
+          { text: 'Authentication', link: '/en/reference/mcp-server/authentication' },
+          { text: 'Lens Tools', link: '/en/reference/mcp-server/tools-lens' },
+          { text: 'Battle Tools', link: '/en/reference/mcp-server/tools-battle' },
+          { text: 'Workflow Tools', link: '/en/reference/mcp-server/tools-workflow' },
+          {
+            text: 'Third-Party Integration',
+            collapsed: false,
+            items: [
+              { text: 'Provider Hub', link: '/en/reference/mcp-server/provider-index' },
+              { text: 'Quickstart', link: '/en/reference/mcp-server/provider-quickstart' },
+              { text: 'Integration Guide', link: '/en/reference/mcp-server/provider-integration' },
+              { text: 'Connection Modes', link: '/en/reference/mcp-server/provider-connection' },
+              { text: 'OAuth & Auth', link: '/en/reference/mcp-server/provider-oauth' },
+              { text: 'All 31 Tools', link: '/en/reference/mcp-server/provider-tools' },
+            ],
+          },
+        ],
+      },
       { text: 'Automation Objects', link: '/en/reference/automation/markdown-objects' },
       {
         text: 'Background Worker',
@@ -798,6 +822,8 @@ export default defineConfig({
               { text: 'Savaşlar', link: '/tr/reference/battles/index' },
               { text: 'Platform ve API', link: '/tr/reference/platform-api/api-overview' },
               { text: 'Veritabanı', link: '/tr/reference/database/schema-overview' },
+              { text: 'MCP Sunucusu', link: '/tr/reference/mcp-server/index' },
+              { text: 'MCP Sağlayıcı Entegrasyonu', link: '/tr/reference/mcp-server/provider-index' },
               { text: 'İç Referanslar', link: '/en/reference/internals/overview' },
             ],
           },
@@ -1145,11 +1171,39 @@ export default defineConfig({
                 { text: 'Savaşlar', link: '/tr/reference/battles/index' },
                 { text: 'Platform ve API', link: '/tr/reference/platform-api/api-overview' },
                 { text: 'Veritabanı', link: '/tr/reference/database/schema-overview' },
+                { text: 'MCP Sunucusu', link: '/tr/reference/mcp-server/index' },
+                { text: 'MCP Sağlayıcı Entegrasyonu', link: '/tr/reference/mcp-server/provider-index' },
                 {
                   text: 'Bilinen Önizleme Yüzeyleri',
                   link: '/tr/reference/known-preview-surfaces',
                 },
                 { text: 'Bilinen Sınırlamalar', link: '/tr/reference/known-limitations' },
+              ],
+            },
+          ],
+          '/tr/reference/mcp-server/': [
+            {
+              text: 'MCP Sunucusu',
+              collapsed: false,
+              items: [
+                { text: 'Genel Bakış', link: '/tr/reference/mcp-server/index' },
+                { text: 'Kurulum', link: '/tr/reference/mcp-server/setup' },
+                { text: 'Kimlik Doğrulama', link: '/tr/reference/mcp-server/authentication' },
+                { text: 'Lens Araçları', link: '/tr/reference/mcp-server/tools-lens' },
+                { text: 'Savaş Araçları', link: '/tr/reference/mcp-server/tools-battle' },
+                { text: 'İş Akışları Araçları', link: '/tr/reference/mcp-server/tools-workflow' },
+              ],
+            },
+            {
+              text: 'Üçüncü Taraf Entegrasyonu',
+              collapsed: false,
+              items: [
+                { text: 'Sağlayıcı Paneli', link: '/tr/reference/mcp-server/provider-index' },
+                { text: 'Hızlı Başlangıç', link: '/tr/reference/mcp-server/provider-quickstart' },
+                { text: 'Entegrasyon Kılavuzu', link: '/tr/reference/mcp-server/provider-integration' },
+                { text: 'Bağlantı Modları', link: '/tr/reference/mcp-server/provider-connection' },
+                { text: 'OAuth ve Yetkilendirme', link: '/tr/reference/mcp-server/provider-oauth' },
+                { text: '31 Aracın Tümü', link: '/tr/reference/mcp-server/provider-tools' },
               ],
             },
           ],
@@ -1584,6 +1638,8 @@ export default defineConfig({
           { text: 'Platform API', link: '/en/reference/platform-api/api-overview' },
           { text: 'Database', link: '/en/reference/database/schema-overview' },
           { text: 'Connectors', link: '/en/reference/connectors/index' },
+          { text: 'MCP Server', link: '/en/reference/mcp-server/index' },
+          { text: 'MCP Provider Integration', link: '/en/reference/mcp-server/provider-index' },
           { text: 'Internals', link: '/en/reference/internals/overview' },
         ],
       },
@@ -2418,6 +2474,32 @@ export default defineConfig({
       ],
       // ── Reference ──────────────────────────────────────────────────────────
       '/en/reference/': EN_REFERENCE_SIDEBAR,
+      '/en/reference/mcp-server/': [
+        {
+          text: 'MCP Server',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/en/reference/mcp-server/index' },
+            { text: 'Setup', link: '/en/reference/mcp-server/setup' },
+            { text: 'Authentication', link: '/en/reference/mcp-server/authentication' },
+            { text: 'Lens Tools', link: '/en/reference/mcp-server/tools-lens' },
+            { text: 'Battle Tools', link: '/en/reference/mcp-server/tools-battle' },
+            { text: 'Workflow Tools', link: '/en/reference/mcp-server/tools-workflow' },
+          ],
+        },
+        {
+          text: 'Third-Party Integration',
+          collapsed: false,
+          items: [
+            { text: 'Provider Hub', link: '/en/reference/mcp-server/provider-index' },
+            { text: 'Quickstart', link: '/en/reference/mcp-server/provider-quickstart' },
+            { text: 'Integration Guide', link: '/en/reference/mcp-server/provider-integration' },
+            { text: 'Connection Modes', link: '/en/reference/mcp-server/provider-connection' },
+            { text: 'OAuth & Auth', link: '/en/reference/mcp-server/provider-oauth' },
+            { text: 'All 31 Tools', link: '/en/reference/mcp-server/provider-tools' },
+          ],
+        },
+      ],
       '/en/rfcs/': [
         {
           text: 'RFCs',
