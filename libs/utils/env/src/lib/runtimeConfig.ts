@@ -50,6 +50,19 @@ export const WEB_BASE_URL = readPublicBaseUrl('WEB_BASE_URL', 'https://lenserfig
 /** Documentation site origin. Override with `DOCS_BASE_URL` (e.g. http://localhost:5174 in local dev). */
 export const DOCS_BASE_URL = readPublicBaseUrl('DOCS_BASE_URL', 'https://docs.lenserfight.com')
 
+/**
+ * LenserFight MCP server origin (no trailing slash).
+ * Cloud prod: `https://mcp.lenserfight.com`.
+ * Local dev (supabase functions serve): `http://127.0.0.1:54321/functions/v1/lenserfight-mcp`.
+ * Override with `MCP_SERVER_URL` in your `.env.local`.
+ */
+export const MCP_SERVER_URL = readPublicBaseUrl(
+  'MCP_SERVER_URL',
+  import.meta.env.DEV
+    ? 'http://127.0.0.1:54321/functions/v1/lenserfight-mcp'
+    : 'https://mcp.lenserfight.com'
+)
+
 /** Chainabit web app origin — used for deep-links to wallet top-up and partner attribution. Override with `CHAINABIT_APP_URL`. */
 export const CHAINABIT_APP_URL = readPublicBaseUrl('CHAINABIT_APP_URL', 'https://app.chainabit.com')
 

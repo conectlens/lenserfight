@@ -11,6 +11,7 @@ import { OAuthCallbackPage } from '../pages/OAuthCallbackPage'
 import { AccountRecoveryPage } from '../pages/AccountRecoveryPage'
 import { AccountUnavailablePage } from '../pages/AccountUnavailablePage'
 import { DeviceApprovalPage } from '../pages/DeviceApprovalPage'
+import { McpOAuthConsentPage } from '../pages/McpOAuthConsentPage'
 import { GatewayGuard } from '../components/GatewayGuard'
 
 export const AuthRouter: React.FC = () => {
@@ -35,6 +36,7 @@ export const AuthRouter: React.FC = () => {
         <Route path="/account-recovery" element={<AccountRecoveryPage />} />
         <Route path="/account-unavailable" element={<AccountUnavailablePage />} />
         <Route path="/device-approval" element={<DeviceApprovalPage />} />
+        <Route path="/mcp/auth" element={<McpOAuthConsentPage />} />
         {/*
          * /reset-password is intentionally excluded from GatewayGuard.
          * When a user clicks a password-reset email link, Supabase establishes a

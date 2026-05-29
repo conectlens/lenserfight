@@ -272,6 +272,7 @@ export const CreateLenserProfileModal: React.FC = () => {
 
   // ── Step 1 submit: save language + theme, advance to AI setup ───────
   const handleStep1Next = async () => {
+    if (!hasLenser) { goToStep(0); return }
     setIsCompletingStep1(true)
     setSubmitError(null)
     try {

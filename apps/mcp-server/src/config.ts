@@ -4,6 +4,7 @@ export interface McpServerConfig {
   supabaseAnonKey: string;
   supabaseJwtSecret: string;
   mcpOAuthBaseUrl: string;
+  authAppBaseUrl: string;
   lenserId?: string;
   transport: 'stdio' | 'http';
   httpPort: number;
@@ -40,6 +41,7 @@ export function getConfig(): McpServerConfig {
     supabaseAnonKey: anonKey!,
     supabaseJwtSecret: jwt!,
     mcpOAuthBaseUrl: process.env['MCP_OAUTH_BASE_URL'] ?? `http://localhost:${httpPort}`,
+    authAppBaseUrl: process.env['AUTH_APP_BASE_URL'] ?? 'http://localhost:3004',
     lenserId: process.env['LENSERFIGHT_LENSER_ID'],
     transport: (process.env['MCP_TRANSPORT'] as 'stdio' | 'http') ?? 'stdio',
     httpPort,

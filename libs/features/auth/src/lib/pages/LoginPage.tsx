@@ -11,7 +11,7 @@ import { useFormValidation } from '@lenserfight/utils/validation'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthCard } from '../components/AuthCard'
 import { BackButton } from '../components/BackButton'
 
@@ -22,6 +22,8 @@ import { useAuth } from '../context/AuthContext'
 export const LoginPage: React.FC = () => {
   const { login, signInWithOAuth } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const returnUrl = searchParams.get('return_url') ?? ''
 
   const [formData, setFormData] = useState({
     identifier: '',
@@ -240,7 +242,7 @@ export const LoginPage: React.FC = () => {
         <div className="mt-4 text-center text-sm text-gray-500 font-medium">
           New to LenserFight?
           <Link
-            to="/register"
+            to={returnUrl ? `/register?return_url=${encodeURIComponent(returnUrl)}` : '/register'}
             className="ml-1.5 text-gray-900 dark:text-white hover:text-primary-700 dark:hover:text-primary-400 font-bold hover:underline transition-colors"
           >
             Join ConectLens

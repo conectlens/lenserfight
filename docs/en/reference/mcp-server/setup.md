@@ -45,18 +45,20 @@ https://mcp.lenserfight.com/mcp
    - **OAuth Client Secret (optional):** leave blank — PKCE only, no secret required.
 3. Click **Add**.
 
-### Step 2 — Sign in
+### Step 2 — Authorize
 
-Claude.ai opens an authorization popup served by the LF Cloud MCP server.
+Claude.ai opens an authorization popup. You are redirected to **auth.lenserfight.com** — the LenserFight sign-in page — where you can sign in with any method (email/password, Google, GitHub, magic link, etc.).
 
-Sign in with your **LenserFight account** (the same email and password you use at [lenserfight.com](https://lenserfight.com)). Your account must have completed the onboarding flow (choosing a handle) before you can authorize.
+After signing in you land on the consent screen. Click **Allow** to grant the connector access to your lenses, battles, and workflows.
 
-If sign-in fails:
+Your account must have completed the onboarding flow (choosing a handle) before you can authorize.
+
+If authorization fails:
 
 | Error | Cause | Fix |
 |---|---|---|
-| **Sign-in failed** | Wrong email or password | Try signing in at lenserfight.com first to confirm your credentials |
 | **No Lenser profile found** | Account exists but onboarding was never completed | Sign in at lenserfight.com, complete the handle selection step, then retry |
+| **Authorization failed** | Session expired or was already used | Start the connector flow again from Claude.ai settings |
 
 ### Step 3 — Test the connection
 
@@ -226,13 +228,32 @@ export MCP_OAUTH_BASE_URL=https://<your-id>.trycloudflare.com
 
 ### Step 2 — Build and start the MCP server
 
-Make sure your env vars are sourced (see [Mode 2 Step 1](#step-1--create-a-local-env-file)), then:
+Run these commands **in order** in a second terminal (keep ngrok running in the first):
 
 ```bash
+# 1. Load Supabase credentials into the shell
+source .env.mcp.local
+
+# 2. Switch transport to HTTP and set the port
 export MCP_TRANSPORT=http
 export MCP_HTTP_PORT=3001
+
+# 3. Build (--skip-nx-cache forces a fresh compile; safe to omit if you haven't changed source)
+pnpm nx build mcp-server --skip-nx-cache
+
+# 4. Start
 node dist/apps/mcp-server/main.js
 ```
+
+Why each line matters:
+
+| Command | Why |
+|---|---|
+| `source .env.mcp.local` | Puts `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, and `SUPABASE_JWT_SECRET` into the current shell. Without this the server exits immediately with a missing-env-vars error. |
+| `export MCP_TRANSPORT=http` | The default transport is `stdio` — without this the server starts in stdio mode and skips all HTTP logic, printing only `[lenserfight-mcp] stdio transport ready`. |
+| `export MCP_HTTP_PORT=3001` | Must match the port you passed to `ngrok http 3001`. |
+| `pnpm nx build mcp-server --skip-nx-cache` | Nx caches build outputs; if the cache is stale the old binary runs. `--skip-nx-cache` forces a fresh compile so your latest source is what runs. Omit it on subsequent restarts if you haven't changed source. |
+| `node dist/apps/mcp-server/main.js` | Runs the compiled server. On startup it probes ngrok's local API (`127.0.0.1:4040`) to auto-detect the public tunnel URL. **ngrok must already be running** before this step. |
 
 On success, you'll see a startup banner:
 
@@ -263,11 +284,17 @@ If you see a `PUBLIC URL REQUIRED` warning, either the tunnel is not running or 
    - **OAuth Client Secret (optional):** leave blank — PKCE only.
 3. Click **Add**.
 
-### Step 4 — Sign in
+### Step 4 — Authorize via the local auth app
 
-Claude.ai opens an authorization popup served by your local MCP server.
+Claude.ai opens an authorization popup. Your local MCP server redirects to `localhost:3004/mcp/auth` — the local auth app consent page.
 
-Sign in with **any LenserFight account that has a Lenser profile.** The seed creates the `@lenserfight` profile — to use it, set a known password in Supabase Studio's SQL editor (`http://127.0.0.1:54323`):
+> **The local auth app must be running.** Start it with:
+> ```bash
+> pnpm nx serve auth
+> ```
+> It serves on `http://localhost:3004` by default.
+
+Sign in with **any LenserFight account that has a Lenser profile** using any method available in the auth app (email/password, magic link, etc.). The seed creates the `@lenserfight` profile — to sign in with it, set a known password in Supabase Studio (`http://127.0.0.1:54323`):
 
 ```sql
 UPDATE auth.users
@@ -275,14 +302,15 @@ UPDATE auth.users
  WHERE email = 'hey@lenserfight.com';
 ```
 
-Then sign in with `hey@lenserfight.com` / `localdev123`.
+Then sign in with `hey@lenserfight.com` / `localdev123` and click **Allow** on the consent screen.
 
-If sign-in fails:
+If authorization fails:
 
 | Error | Cause | Fix |
 |---|---|---|
-| **Sign-in failed** | Wrong email or password | Use the SQL above to set a known password |
-| **No Lenser profile found** | The auth account has no Lenser profile | Open the LenserFight web app, sign in, complete onboarding, then retry the connector flow |
+| **Redirected to blank page or 404** | Local auth app is not running | Run `pnpm nx serve auth` and retry |
+| **No Lenser profile found** | The auth account has no Lenser profile | Open the LenserFight web app, sign in, complete onboarding, then retry |
+| **Authorization session expired** | More than 5 minutes passed before clicking Allow | Start the connector flow again from Claude.ai settings |
 
 ### Step 5 — Test it
 
@@ -354,13 +382,35 @@ Almost always means the discovery document advertises a localhost URL that Anthr
 
 The bearer token is not being recognised. Most likely causes: the token was revoked by a DB reset, or the auth code expired (5-minute window). Re-open the connector settings in Claude.ai and re-authorize.
 
-### `Sign-in failed`
+### Consent page shows a blank page or 404 (local tunnel mode)
 
-The email and password do not match a Supabase auth user. Run the `UPDATE auth.users` SQL above with a password you know.
+The local auth app (`apps/auth`) is not running. Start it:
+
+```bash
+pnpm nx serve auth
+```
+
+It must be reachable at `http://localhost:3004` before the tunnel redirects land.
 
 ### `No Lenser profile found`
 
 The auth account exists but never completed the onboarding flow. Sign in to the LenserFight web app, pick a handle, then retry the connector authorization.
+
+### Clear the VitePress docs cache
+
+If the docs build produces stale output or fails with a cache-related error:
+
+```bash
+rm -rf apps/docs/.vitepress/cache
+pnpm nx build docs
+```
+
+For a full clean including the dist:
+
+```bash
+rm -rf apps/docs/.vitepress/cache apps/docs/.vitepress/dist
+pnpm nx build docs
+```
 
 ### `PUBLIC URL REQUIRED` warning at startup
 

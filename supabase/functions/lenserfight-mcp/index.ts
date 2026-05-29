@@ -536,9 +536,10 @@ function registerTools(server: McpServer) {
 
 // ─── OAuth Discovery ──────────────────────────────────────────────────────────
 
-// Use public base URL if proxied via Cloudflare Worker (set per-request below)
 const SUPABASE_BASE_URL = `${SUPABASE_URL}/functions/v1/lenserfight-mcp`;
 let MCP_BASE_URL = SUPABASE_BASE_URL;
+// apps/auth hosts the OAuth consent UI; MCP server redirects there after creating the auth code.
+const AUTH_APP_BASE_URL = Deno.env.get("AUTH_APP_BASE_URL") ?? "https://auth.lenserfight.com";
 
 function discoveryDoc() {
   return {
@@ -738,58 +739,63 @@ Deno.serve(async (req: Request) => {
       return new Response("Failed to create authorization request: " + (codeErr?.message ?? "null code"), { status: 500, headers: CORS_HEADERS });
     }
 
-    const loginUrl = new URL(`${MCP_BASE_URL}/oauth/login`);
-    loginUrl.searchParams.set("id", codeId);
-    return Response.redirect(loginUrl.toString(), 302);
+    // Redirect to apps/auth consent page — it handles auth and calls /oauth/complete.
+    const consentUrl = new URL(`${AUTH_APP_BASE_URL}/mcp/auth`);
+    consentUrl.searchParams.set("id", codeId);
+    return Response.redirect(consentUrl.toString(), 302);
   }
 
-  // ── OAuth Login Form (GET) ───────────────────────────────────────────────────
-  if (url.pathname.endsWith("/oauth/login") && req.method === "GET") {
-    const id = url.searchParams.get("id") ?? "";
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sign in to LenserFight</title>
-<style>body{font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#0f0f10}
-form{background:#1a1a1e;padding:2rem;border-radius:12px;width:320px;color:#fff}
-h1{margin:0 0 1.5rem;font-size:1.25rem}
-label{display:block;margin-bottom:.25rem;font-size:.875rem;color:#aaa}
-input{width:100%;padding:.6rem .75rem;border:1px solid #333;border-radius:6px;background:#0f0f10;color:#fff;font-size:1rem;box-sizing:border-box;margin-bottom:1rem}
-button{width:100%;padding:.75rem;background:#7c3aed;color:#fff;border:0;border-radius:6px;font-size:1rem;cursor:pointer}
-button:hover{background:#6d28d9}</style></head>
-<body><form method="POST" action="${MCP_BASE_URL}/oauth/login">
-<h1>Sign in to LenserFight</h1>
-<input type="hidden" name="id" value="${id}">
-<label>Email</label><input type="email" name="email" required autofocus>
-<label>Password</label><input type="password" name="password" required>
-<button type="submit">Sign in</button>
-</form></body></html>`;
-    return new Response(html, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "text/html; charset=utf-8" } });
-  }
-
-  // ── OAuth Login Form (POST) ──────────────────────────────────────────────────
-  if (url.pathname.endsWith("/oauth/login") && req.method === "POST") {
+  // ── OAuth Client Info (public — used by consent page to show app name) ───────
+  if (url.pathname.endsWith("/oauth/client-info") && req.method === "GET") {
+    const id = url.searchParams.get("id");
+    if (!id) return Response.json({ error: "missing_id" }, { status: 400, headers: CORS_HEADERS });
     try {
-      const form = await req.formData();
-      const id = form.get("id") as string;
-      const email = form.get("email") as string;
-      const password = form.get("password") as string;
+      const sb = getClient();
+      const { data: codeRows } = await sb.rpc("fn_mcp_oauth_lookup_auth_code", { p_id: id });
+      if (!codeRows || codeRows.length === 0) {
+        return Response.json({ error: "invalid_request" }, { status: 404, headers: CORS_HEADERS });
+      }
+      const { data: clientRow } = await lensers(sb).from("mcp_clients").select("name").eq("client_id", codeRows[0].client_id).maybeSingle();
+      return Response.json(
+        { client_name: clientRow?.name ?? "Unknown" },
+        { headers: { ...CORS_HEADERS, "Cache-Control": "no-store" } }
+      );
+    } catch (e) {
+      return Response.json({ error: "server_error" }, { status: 500, headers: CORS_HEADERS });
+    }
+  }
+
+  // ── OAuth Complete (JWT-authenticated — called by consent page on Allow) ─────
+  // Body: { id: "<auth_code_uuid>", refresh_token: "<supabase_refresh_token>" }
+  // Returns: { code, redirect_uri, state }  — the page navigates to redirect_uri.
+  if (url.pathname.endsWith("/oauth/complete") && req.method === "POST") {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS_HEADERS });
+    }
+    const jwt = authHeader.slice(7);
+    try {
+      const body = await req.json().catch(() => ({}));
+      const { id, refresh_token } = body as { id?: string; refresh_token?: string };
+      if (!id || !refresh_token) {
+        return Response.json({ error: "invalid_request", error_description: "id and refresh_token are required" }, { status: 400, headers: CORS_HEADERS });
+      }
 
       const sb = getClient();
-      const { data: codeRow } = await sb.rpc("fn_mcp_oauth_lookup_auth_code", { p_id: id });
-      if (!codeRow || codeRow.length === 0) {
-        return new Response("Invalid or expired authorization request.", { status: 400, headers: CORS_HEADERS });
-      }
-      const row = codeRow[0];
-
-      const { data: signIn, error: signInErr } = await sb.auth.signInWithPassword({ email, password });
-      if (signInErr || !signIn?.session) {
-        const loginUrl = new URL(`${MCP_BASE_URL}/oauth/login`);
-        loginUrl.searchParams.set("id", id);
-        loginUrl.searchParams.set("error", "invalid_credentials");
-        return Response.redirect(loginUrl.toString(), 302);
+      const { data: userData, error: userErr } = await sb.auth.getUser(jwt);
+      if (userErr || !userData.user) {
+        return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS_HEADERS });
       }
 
-      const { data: lenserId } = await sb.rpc("fn_mcp_resolve_lenser_id", { p_auth_user_id: signIn.user.id });
+      const { data: codeRows } = await sb.rpc("fn_mcp_oauth_lookup_auth_code", { p_id: id });
+      if (!codeRows || codeRows.length === 0) {
+        return Response.json({ error: "invalid_request", error_description: "Unknown authorization id" }, { status: 400, headers: CORS_HEADERS });
+      }
+      const codeRow = codeRows[0];
+
+      const { data: lenserId } = await sb.rpc("fn_mcp_resolve_lenser_id", { p_auth_user_id: userData.user.id });
       if (!lenserId) {
-        return new Response("No LenserFight profile found. Please complete onboarding at lenserfight.com first.", { status: 400, headers: CORS_HEADERS });
+        return Response.json({ error: "access_denied", error_description: "No LenserFight profile found. Complete onboarding at lenserfight.com first." }, { status: 403, headers: CORS_HEADERS });
       }
 
       const code = Array.from(crypto.getRandomValues(new Uint8Array(24))).map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -797,15 +803,15 @@ button:hover{background:#6d28d9}</style></head>
         p_id: id,
         p_code: code,
         p_lenser_id: lenserId,
-        p_supabase_refresh_token: signIn.session.refresh_token,
+        p_supabase_refresh_token: refresh_token,
       });
 
-      const redirectUrl = new URL(row.redirect_uri);
-      redirectUrl.searchParams.set("code", code);
-      if (row.original_state) redirectUrl.searchParams.set("state", row.original_state);
-      return Response.redirect(redirectUrl.toString(), 302);
+      return Response.json(
+        { code, redirect_uri: codeRow.redirect_uri, state: codeRow.original_state },
+        { headers: { ...CORS_HEADERS, "Cache-Control": "no-store" } }
+      );
     } catch (e) {
-      return new Response("Login error: " + (e as Error).message, { status: 500, headers: CORS_HEADERS });
+      return Response.json({ error: "server_error", error_description: (e as Error).message }, { status: 500, headers: CORS_HEADERS });
     }
   }
 

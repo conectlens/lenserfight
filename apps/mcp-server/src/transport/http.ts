@@ -111,59 +111,6 @@ function escapeHtml(s: string): string {
   }[c] as string));
 }
 
-function renderLoginPage(opts: {
-  formAction: string;
-  authCodeId: string;
-  email?: string;
-  error?: string;
-  hint?: string;
-}): string {
-  const errBlock = opts.error
-    ? `<div class="err">
-         <strong>${escapeHtml(opts.error)}</strong>
-         ${opts.hint ? `<p>${escapeHtml(opts.hint)}</p>` : ''}
-       </div>`
-    : '';
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LenserFight — Sign in</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e5e5e5; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
-    .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 2rem; width: 100%; max-width: 380px; }
-    h1 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.4rem; color: #fff; }
-    .sub { font-size: 0.8rem; color: #888; margin-bottom: 1.25rem; }
-    label { display: block; font-size: 0.8rem; color: #999; margin-bottom: 0.35rem; }
-    input { width: 100%; padding: 0.6rem 0.8rem; background: #111; border: 1px solid #333; border-radius: 6px; color: #e5e5e5; font-size: 0.9rem; margin-bottom: 1rem; outline: none; }
-    input:focus { border-color: #555; }
-    button { width: 100%; padding: 0.65rem; background: #fff; color: #000; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
-    button:hover { background: #e5e5e5; }
-    .err { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25); color: #fca5a5; font-size: 0.8rem; padding: 0.7rem 0.85rem; border-radius: 6px; margin-bottom: 1rem; line-height: 1.4; }
-    .err strong { display: block; margin-bottom: 0.25rem; color: #fecaca; }
-    .err p { margin: 0; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>Sign in to LenserFight</h1>
-    <p class="sub">Authorize the MCP connector to access your lenses, battles, and workflows.</p>
-    ${errBlock}
-    <form method="POST" action="${escapeHtml(opts.formAction)}">
-      <input type="hidden" name="auth_code_id" value="${escapeHtml(opts.authCodeId)}">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" required autofocus value="${escapeHtml(opts.email ?? '')}" placeholder="you@example.com">
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" required placeholder="••••••••">
-      <button type="submit">Sign in</button>
-    </form>
-  </div>
-</body>
-</html>`;
-}
-
 async function handleAuthorize(
   res: http.ServerResponse,
   url: URL,
@@ -173,24 +120,6 @@ async function handleAuthorize(
   const redirectUri   = url.searchParams.get('redirect_uri');
   const codeChallenge = url.searchParams.get('code_challenge');
   const state         = url.searchParams.get('state');
-  const errorParam    = url.searchParams.get('error');
-  const existingId    = url.searchParams.get('auth_code_id');
-  const emailParam    = url.searchParams.get('email');
-  const hintParam     = url.searchParams.get('hint');
-
-  // Retry case: redisplay form with error
-  if (existingId && errorParam) {
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.writeHead(200);
-    res.end(renderLoginPage({
-      formAction: `${cfg.mcpOAuthBaseUrl}/oauth/login`,
-      authCodeId: existingId,
-      email: emailParam ?? undefined,
-      error: errorParam,
-      hint: hintParam ?? undefined,
-    }));
-    return;
-  }
 
   if (!clientId || !redirectUri) {
     jsonResponse(res, 400, { error: 'invalid_request', error_description: 'client_id and redirect_uri are required' });
@@ -226,127 +155,125 @@ async function handleAuthorize(
     return;
   }
 
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.writeHead(200);
-  res.end(renderLoginPage({
-    formAction: `${cfg.mcpOAuthBaseUrl}/oauth/login`,
-    authCodeId,
-  }));
+  // Redirect to the auth app consent page, passing the tunnel URL so the
+  // consent page knows which server to call /oauth/complete back on.
+  const consentUrl = new URL(`${cfg.authAppBaseUrl}/mcp/auth`);
+  consentUrl.searchParams.set('id', authCodeId);
+  consentUrl.searchParams.set('server', cfg.mcpOAuthBaseUrl);
+
+  res.setHeader('Location', consentUrl.toString());
+  res.writeHead(302);
+  res.end();
 }
 
-async function handleLogin(
-  req: http.IncomingMessage,
+async function handleClientInfo(
   res: http.ServerResponse,
-  cfg: McpServerConfig
+  url: URL
 ): Promise<void> {
-  const rawBody = await readBody(req);
-  const body = parseFormBody(rawBody);
-  const { email, password, auth_code_id } = body;
-
-  if (!email || !password || !auth_code_id) {
-    jsonResponse(res, 400, { error: 'invalid_request', error_description: 'email, password, and auth_code_id are required' });
+  const id = url.searchParams.get('id');
+  if (!id) {
+    jsonResponse(res, 400, { error: 'invalid_request', error_description: 'id is required' });
     return;
   }
 
   const svc = getServiceClient();
 
-  // Redirect back to the form with a friendly error
-  const showError = (errorMsg: string, hint?: string) => {
-    const params = new URLSearchParams({
-      auth_code_id,
-      error:  errorMsg,
-      email:  email ?? '',
-    });
-    if (hint) params.set('hint', hint);
-    res.setHeader('Location', `${cfg.mcpOAuthBaseUrl}/oauth/authorize?${params.toString()}`);
-    res.writeHead(302);
-    res.end();
-  };
+  const { data: codeRows } = (await svc.rpc('fn_mcp_oauth_lookup_auth_code' as never, {
+    p_id: id,
+  } as never)) as RpcResult<{ client_id: string }[]>;
 
-  // Verify the auth code exists before attempting sign-in
+  const codeRow = codeRows?.[0] ?? null;
+  if (!codeRow) {
+    jsonResponse(res, 404, { error: 'not_found', error_description: 'Authorization session not found or expired' });
+    return;
+  }
+
+  const { data: clientRows } = (await svc.rpc('fn_mcp_oauth_lookup_client' as never, {
+    p_client_id: codeRow.client_id,
+  } as never)) as RpcResult<{ id: string; name: string; redirect_uris: string[]; requires_secret: boolean }[]>;
+
+  jsonResponse(res, 200, { client_name: clientRows?.[0]?.name ?? 'Unknown' });
+}
+
+async function handleComplete(
+  req: http.IncomingMessage,
+  res: http.ServerResponse
+): Promise<void> {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader?.startsWith('Bearer ')) {
+    jsonResponse(res, 401, { error: 'unauthorized', error_description: 'Bearer token required' });
+    return;
+  }
+  const jwt = authHeader.slice(7);
+
+  let body: { id?: string; refresh_token?: string } = {};
+  try {
+    const raw = await readBody(req);
+    body = JSON.parse(raw) as { id?: string; refresh_token?: string };
+  } catch {
+    jsonResponse(res, 400, { error: 'invalid_request', error_description: 'Invalid JSON body' });
+    return;
+  }
+
+  const { id, refresh_token } = body;
+  if (!id || !refresh_token) {
+    jsonResponse(res, 400, { error: 'invalid_request', error_description: 'id and refresh_token are required' });
+    return;
+  }
+
+  // Use service client to validate user JWT — local Supabase validates local tokens
+  const svc = getServiceClient();
+  const { data: { user }, error: userErr } = await svc.auth.getUser(jwt);
+  if (userErr || !user) {
+    jsonResponse(res, 401, { error: 'unauthorized', error_description: 'Invalid or expired token' });
+    return;
+  }
+
+  const { data: lenserId, error: resolveErr } = (await svc.rpc('fn_mcp_resolve_lenser_id' as never, {
+    p_auth_user_id: user.id,
+  } as never)) as RpcResult<string>;
+
+  if (resolveErr) {
+    process.stderr.write(`[lenserfight-mcp] fn_mcp_resolve_lenser_id error for user ${user.id}: ${resolveErr.message}\n`);
+  }
+  if (!lenserId) {
+    jsonResponse(res, 403, { error: 'forbidden', error_description: 'No Lenser profile found. Complete onboarding first.' });
+    return;
+  }
+
   const { data: pendingRows } = (await svc.rpc('fn_mcp_oauth_lookup_auth_code' as never, {
-    p_id: auth_code_id,
+    p_id: id,
   } as never)) as RpcResult<{ id: string; client_id: string; redirect_uri: string; original_state: string | null }[]>;
 
   const pending = pendingRows?.[0] ?? null;
   if (!pending) {
-    jsonResponse(res, 400, {
-      error: 'invalid_request',
-      error_description: 'Sign-in session has expired. Please start the connector flow from Claude.ai again.',
-    });
+    jsonResponse(res, 400, { error: 'invalid_request', error_description: 'Authorization session expired. Restart the connector flow.' });
     return;
   }
 
-  // Sign in with email + password via Supabase Auth
-  const signInResp = await fetch(`${cfg.supabaseUrl}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: cfg.supabaseAnonKey },
-    body: JSON.stringify({ email, password }),
-  });
-
-  if (!signInResp.ok) {
-    let serverMsg = 'Invalid email or password.';
-    try {
-      const errBody = (await signInResp.json()) as { error_description?: string; msg?: string };
-      serverMsg = errBody.error_description ?? errBody.msg ?? serverMsg;
-    } catch {
-      /* ignore parse errors */
-    }
-    showError(
-      'Sign-in failed',
-      `${serverMsg} Double-check your email and password. If you registered through Google/GitHub, sign in there first to set a password.`
-    );
-    return;
-  }
-
-  const tokenData = (await signInResp.json()) as {
-    access_token: string;
-    refresh_token: string;
-    user: { id: string };
-  };
-
-  const { data: lenserId } = (await svc.rpc('fn_mcp_resolve_lenser_id' as never, {
-    p_auth_user_id: tokenData.user.id,
-  } as never)) as RpcResult<string>;
-
-  if (!lenserId) {
-    showError(
-      'No Lenser profile found',
-      `Your account (${email}) is authenticated, but has no Lenser profile yet. Open the LenserFight web app and complete onboarding (pick a handle) first, then retry the connector authorization.`
-    );
-    return;
-  }
-
-  // Dual-mode: the value we use as `code` IS a valid bearer token.
-  // Claude.ai's cloud uses the code directly as the bearer on /mcp — no /oauth/token call.
-  // But we also keep standard code-exchange working for spec-compliant clients.
   const token = generateToken();
 
-  // 1) Register as a bearer token so resolveMcpToken finds it
   await svc.rpc('fn_mcp_oauth_issue_token' as never, {
     p_client_id:              pending.client_id,
     p_lenser_id:              lenserId,
     p_token:                  token,
-    p_supabase_refresh_token: tokenData.refresh_token,
+    p_supabase_refresh_token: refresh_token,
   } as never);
 
-  // 2) Also stash as an auth code so /oauth/token can redeem it (and return the same token)
   await svc.rpc('fn_mcp_oauth_complete_auth_code' as never, {
     p_id:                     pending.id,
     p_code:                   token,
     p_lenser_id:              lenserId,
-    p_supabase_refresh_token: tokenData.refresh_token,
+    p_supabase_refresh_token: refresh_token,
   } as never);
 
-  process.stderr.write(`[lenserfight-mcp] login: issued ${token.slice(0, 16)}... → redirecting\n`);
+  process.stderr.write(`[lenserfight-mcp] complete: issued ${token.slice(0, 16)}... for lenser ${lenserId}\n`);
 
-  const redirectUrl = new URL(pending.redirect_uri);
-  redirectUrl.searchParams.set('code', token);
-  if (pending.original_state) redirectUrl.searchParams.set('state', pending.original_state);
-
-  res.setHeader('Location', redirectUrl.toString());
-  res.writeHead(302);
-  res.end();
+  jsonResponse(res, 200, {
+    code:         token,
+    redirect_uri: pending.redirect_uri,
+    state:        pending.original_state,
+  });
 }
 
 async function handleToken(
@@ -536,8 +463,10 @@ export async function bootHttp(
     const url = new URL(req.url ?? '/', `http://localhost:${cfg.httpPort}`);
 
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Mcp-Session-Id');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Mcp-Session-Id, ngrok-skip-browser-warning');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    // ngrok-skip-browser-warning bypasses the ngrok free-tier interstitial for browser fetch calls.
+    res.setHeader('ngrok-skip-browser-warning', 'true');
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
@@ -578,19 +507,20 @@ export async function bootHttp(
     }
 
     if (url.pathname === '/oauth/authorize') {
+      if (req.method !== 'GET') { jsonResponse(res, 405, { error: 'method_not_allowed' }); return; }
       await handleAuthorize(res, url, cfg);
       return;
     }
 
-    if (url.pathname === '/oauth/login') {
-      if (req.method !== 'POST') { jsonResponse(res, 405, { error: 'method_not_allowed' }); return; }
-      await handleLogin(req, res, cfg);
+    if (url.pathname === '/oauth/client-info') {
+      if (req.method !== 'GET') { jsonResponse(res, 405, { error: 'method_not_allowed' }); return; }
+      await handleClientInfo(res, url);
       return;
     }
 
-    // /oauth/callback is kept for redirect_uri registration compatibility but is no longer used
-    if (url.pathname === '/oauth/callback') {
-      jsonResponse(res, 400, { error: 'invalid_request', error_description: 'Use /oauth/login instead' });
+    if (url.pathname === '/oauth/complete') {
+      if (req.method !== 'POST') { jsonResponse(res, 405, { error: 'method_not_allowed' }); return; }
+      await handleComplete(req, res);
       return;
     }
 
@@ -663,7 +593,7 @@ export async function bootHttp(
         `  │  Server base URL : ${cfg.mcpOAuthBaseUrl.padEnd(50)}│\n` +
         `  │                                                                      │\n` +
         `  │  Claude.ai → Settings → Connectors → Add connector:                 │\n` +
-        `  │    URL       : ${cfg.mcpOAuthBaseUrl.padEnd(53)}│\n` +
+        `  │    URL       : ${(cfg.mcpOAuthBaseUrl + '/mcp').padEnd(53)}│\n` +
         `  │    Client ID : ${LOCAL_CLIENT_ID.padEnd(53)}│\n` +
         `  └──────────────────────────────────────────────────────────────────────┘\n` +
         `\n`
