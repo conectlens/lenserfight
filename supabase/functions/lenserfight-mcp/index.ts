@@ -536,15 +536,17 @@ function registerTools(server: McpServer) {
 
 // ─── OAuth Discovery ──────────────────────────────────────────────────────────
 
+const MCP_BASE_URL = `${SUPABASE_URL}/functions/v1/lenserfight-mcp`;
+
 const discoveryDoc = {
-  issuer: `${SUPABASE_URL}/auth/v1`,
-  authorization_endpoint: `${SUPABASE_URL}/auth/v1/authorize`,
-  token_endpoint: `${SUPABASE_URL}/auth/v1/token`,
-  userinfo_endpoint: `${SUPABASE_URL}/auth/v1/user`,
+  issuer: MCP_BASE_URL,
+  authorization_endpoint: `${MCP_BASE_URL}/oauth/authorize`,
+  token_endpoint: `${MCP_BASE_URL}/oauth/token`,
+  registration_endpoint: `${MCP_BASE_URL}/oauth/register`,
   response_types_supported: ["code"],
   grant_types_supported: ["authorization_code"],
   code_challenge_methods_supported: ["S256"],
-  scopes_supported: ["openid", "email", "profile"],
+  scopes_supported: ["openid"],
   token_endpoint_auth_methods_supported: ["none"],
 };
 
@@ -629,13 +631,18 @@ async function getOrCreateSession(sessionId: string | null): Promise<{ server: M
   return { server: globalServer, transport, sessionId: newSessionId };
 }
 
-// ─── JWT Validation ───────────────────────────────────────────────────────────
+// ─── Token Validation ─────────────────────────────────────────────────────────
+// Accepts both Supabase JWTs and lf_mcp_* bearer tokens issued by our OAuth flow.
 
-async function validateJwt(authHeader: string | null): Promise<boolean> {
+async function validateBearer(authHeader: string | null): Promise<boolean> {
   if (!authHeader?.startsWith("Bearer ")) return false;
   const token = authHeader.slice(7);
   try {
     const sb = getClient();
+    if (token.startsWith("lf_mcp_")) {
+      const { data } = await sb.rpc("fn_mcp_resolve_token", { p_token: token });
+      return Array.isArray(data) ? data.length > 0 : !!data;
+    }
     const { data, error } = await sb.auth.getUser(token);
     return !error && !!data.user;
   } catch {
@@ -665,12 +672,180 @@ Deno.serve(async (req: Request) => {
   }
 
   // OAuth 2.1 discovery
-  if (url.pathname.endsWith("/.well-known/oauth-authorization-server")) {
+  if (url.pathname.endsWith("/.well-known/oauth-authorization-server") ||
+      url.pathname.endsWith("/.well-known/oauth-protected-resource")) {
     return Response.json(discoveryDoc, { headers: { ...CORS_HEADERS, "Cache-Control": "public, max-age=3600" } });
   }
 
-  // All /mcp routes require a valid Bearer JWT
-  if (!await validateJwt(req.headers.get("authorization"))) {
+  // ── RFC 7591 Dynamic Client Registration ────────────────────────────────────
+  if (url.pathname.endsWith("/oauth/register") && req.method === "POST") {
+    try {
+      const body = await req.json().catch(() => ({}));
+      const redirectUris: string[] = Array.isArray(body.redirect_uris) ? body.redirect_uris : [];
+      const clientName: string = body.client_name ?? "MCP Client";
+      const clientId = "lf_mcp_client_" + Array.from(crypto.getRandomValues(new Uint8Array(16))).map((b) => b.toString(16).padStart(2, "0")).join("");
+      const sb = getClient();
+      await sb.rpc("fn_mcp_oauth_register_dynamic_client", {
+        p_client_id: clientId,
+        p_name: clientName,
+        p_redirect_uris: redirectUris,
+      });
+      return Response.json(
+        { client_id: clientId, client_name: clientName, redirect_uris: redirectUris, token_endpoint_auth_method: "none", grant_types: ["authorization_code"], response_types: ["code"] },
+        { status: 201, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
+    } catch (e) {
+      return Response.json({ error: "registration_failed", error_description: (e as Error).message }, { status: 400, headers: CORS_HEADERS });
+    }
+  }
+
+  // ── OAuth Authorization Endpoint ────────────────────────────────────────────
+  if (url.pathname.endsWith("/oauth/authorize") && req.method === "GET") {
+    const clientId = url.searchParams.get("client_id") ?? "";
+    const redirectUri = url.searchParams.get("redirect_uri") ?? "";
+    const codeChallenge = url.searchParams.get("code_challenge") ?? "";
+    const state = url.searchParams.get("state") ?? "";
+
+    const sb = getClient();
+    const { data: client } = await sb.rpc("fn_mcp_oauth_lookup_client", { p_client_id: clientId });
+    if (!client || client.length === 0) {
+      return new Response("Unknown client_id", { status: 400, headers: CORS_HEADERS });
+    }
+    const { data: codeId } = await sb.rpc("fn_mcp_oauth_create_auth_code", {
+      p_client_id: clientId,
+      p_redirect_uri: redirectUri,
+      p_code_challenge: codeChallenge,
+      p_state: state,
+    });
+
+    const loginUrl = new URL(`${MCP_BASE_URL}/oauth/login`);
+    loginUrl.searchParams.set("id", codeId);
+    return Response.redirect(loginUrl.toString(), 302);
+  }
+
+  // ── OAuth Login Form (GET) ───────────────────────────────────────────────────
+  if (url.pathname.endsWith("/oauth/login") && req.method === "GET") {
+    const id = url.searchParams.get("id") ?? "";
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sign in to LenserFight</title>
+<style>body{font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#0f0f10}
+form{background:#1a1a1e;padding:2rem;border-radius:12px;width:320px;color:#fff}
+h1{margin:0 0 1.5rem;font-size:1.25rem}
+label{display:block;margin-bottom:.25rem;font-size:.875rem;color:#aaa}
+input{width:100%;padding:.6rem .75rem;border:1px solid #333;border-radius:6px;background:#0f0f10;color:#fff;font-size:1rem;box-sizing:border-box;margin-bottom:1rem}
+button{width:100%;padding:.75rem;background:#7c3aed;color:#fff;border:0;border-radius:6px;font-size:1rem;cursor:pointer}
+button:hover{background:#6d28d9}</style></head>
+<body><form method="POST" action="/functions/v1/lenserfight-mcp/oauth/login">
+<h1>Sign in to LenserFight</h1>
+<input type="hidden" name="id" value="${id}">
+<label>Email</label><input type="email" name="email" required autofocus>
+<label>Password</label><input type="password" name="password" required>
+<button type="submit">Sign in</button>
+</form></body></html>`;
+    return new Response(html, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "text/html; charset=utf-8" } });
+  }
+
+  // ── OAuth Login Form (POST) ──────────────────────────────────────────────────
+  if (url.pathname.endsWith("/oauth/login") && req.method === "POST") {
+    try {
+      const form = await req.formData();
+      const id = form.get("id") as string;
+      const email = form.get("email") as string;
+      const password = form.get("password") as string;
+
+      const sb = getClient();
+      const { data: codeRow } = await sb.rpc("fn_mcp_oauth_lookup_auth_code", { p_id: id });
+      if (!codeRow || codeRow.length === 0) {
+        return new Response("Invalid or expired authorization request.", { status: 400, headers: CORS_HEADERS });
+      }
+      const row = codeRow[0];
+
+      const { data: signIn, error: signInErr } = await sb.auth.signInWithPassword({ email, password });
+      if (signInErr || !signIn?.session) {
+        const loginUrl = new URL(`${MCP_BASE_URL}/oauth/login`);
+        loginUrl.searchParams.set("id", id);
+        loginUrl.searchParams.set("error", "invalid_credentials");
+        return Response.redirect(loginUrl.toString(), 302);
+      }
+
+      const { data: lenserId } = await sb.rpc("fn_mcp_resolve_lenser_id", { p_auth_user_id: signIn.user.id });
+      if (!lenserId) {
+        return new Response("No LenserFight profile found. Please complete onboarding at lenserfight.com first.", { status: 400, headers: CORS_HEADERS });
+      }
+
+      const code = Array.from(crypto.getRandomValues(new Uint8Array(24))).map((b) => b.toString(16).padStart(2, "0")).join("");
+      await sb.rpc("fn_mcp_oauth_complete_auth_code", {
+        p_id: id,
+        p_code: code,
+        p_lenser_id: lenserId,
+        p_supabase_refresh_token: signIn.session.refresh_token,
+      });
+
+      const redirectUrl = new URL(row.redirect_uri);
+      redirectUrl.searchParams.set("code", code);
+      if (row.original_state) redirectUrl.searchParams.set("state", row.original_state);
+      return Response.redirect(redirectUrl.toString(), 302);
+    } catch (e) {
+      return new Response("Login error: " + (e as Error).message, { status: 500, headers: CORS_HEADERS });
+    }
+  }
+
+  // ── OAuth Token Endpoint ─────────────────────────────────────────────────────
+  if (url.pathname.endsWith("/oauth/token") && req.method === "POST") {
+    try {
+      const contentType = req.headers.get("content-type") ?? "";
+      let params: Record<string, string> = {};
+      if (contentType.includes("application/x-www-form-urlencoded")) {
+        const text = await req.text();
+        params = Object.fromEntries(new URLSearchParams(text));
+      } else {
+        params = await req.json().catch(() => ({}));
+      }
+
+      const { grant_type, code, client_id, code_verifier, redirect_uri } = params;
+      if (grant_type !== "authorization_code" || !code || !client_id) {
+        return Response.json({ error: "invalid_request" }, { status: 400, headers: CORS_HEADERS });
+      }
+
+      const sb = getClient();
+      const { data: codeRows } = await sb.rpc("fn_mcp_oauth_exchange_code", { p_code: code, p_client_id: client_id });
+      if (!codeRows || codeRows.length === 0) {
+        return Response.json({ error: "invalid_grant" }, { status: 400, headers: CORS_HEADERS });
+      }
+      const codeRow = codeRows[0];
+
+      if (new Date(codeRow.expires_at) < new Date()) {
+        return Response.json({ error: "invalid_grant", error_description: "code expired" }, { status: 400, headers: CORS_HEADERS });
+      }
+
+      // PKCE verification
+      if (codeRow.code_challenge && code_verifier) {
+        const verifierBytes = new TextEncoder().encode(code_verifier);
+        const hashBuf = await crypto.subtle.digest("SHA-256", verifierBytes);
+        const challenge = btoa(String.fromCharCode(...new Uint8Array(hashBuf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        if (challenge !== codeRow.code_challenge) {
+          return Response.json({ error: "invalid_grant", error_description: "pkce_mismatch" }, { status: 400, headers: CORS_HEADERS });
+        }
+      }
+
+      const token = "lf_mcp_" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map((b) => b.toString(16).padStart(2, "0")).join("");
+      await sb.rpc("fn_mcp_oauth_issue_token", {
+        p_client_id: client_id,
+        p_lenser_id: codeRow.lenser_id,
+        p_token: token,
+        p_supabase_refresh_token: codeRow.supabase_refresh_token,
+      });
+
+      return Response.json(
+        { access_token: token, token_type: "bearer", scope: "openid" },
+        { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json", "Cache-Control": "no-store" } }
+      );
+    } catch (e) {
+      return Response.json({ error: "server_error", error_description: (e as Error).message }, { status: 500, headers: CORS_HEADERS });
+    }
+  }
+
+  // All /mcp routes require a valid Bearer JWT or MCP token
+  if (!await validateBearer(req.headers.get("authorization"))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
