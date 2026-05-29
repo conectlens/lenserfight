@@ -103,6 +103,9 @@
         "version": {
           "conventionalCommits": true,
           "fallbackCurrentVersionResolver": "disk"
+        },
+        "changelog": {
+          "automaticFromRef": true
         }
       },
       "adapters": {
