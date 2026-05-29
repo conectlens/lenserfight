@@ -11,13 +11,16 @@ jest.mock('consola', () => ({
 }))
 jest.mock('../config/project-config', () => ({
   configExists: jest.fn().mockReturnValue(true),
-  loadConfig: jest.fn().mockReturnValue({ mode: 'local' }),
+  loadConfig: jest.fn().mockReturnValue({ mode: 'cloud' }),
   resolveConfig: jest.fn().mockReturnValue({
-    mode: 'local',
-    supabaseUrl: 'http://127.0.0.1:54321',
-    cloudApiUrl: null,
+    mode: 'cloud',
+    supabaseUrl: 'https://cloud-project.supabase.co',
+    cloudApiUrl: 'https://api.lenserfight.com',
+    supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.sig',
+    supabaseServiceRoleKey: undefined,
+    ollamaBaseUrl: undefined,
   }),
-  getEffectiveMode: jest.fn().mockReturnValue({ mode: 'local', source: 'project' }),
+  getEffectiveMode: jest.fn().mockReturnValue({ mode: 'cloud', source: 'default' }),
 }))
 jest.mock('../utils/output', () => ({
   printJson: jest.fn(),
@@ -33,9 +36,10 @@ jest.mock('@lenserfight/providers', () => ({
   },
 }))
 
-import { printJson } from '../utils/output'
+import { printJson, printTable } from '../utils/output'
 
 const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
+const mockPrintTable = printTable as jest.MockedFunction<typeof printTable>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCmd = { run?: (ctx: any) => Promise<void> }
@@ -48,6 +52,11 @@ beforeAll(async () => {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  for (const key of Object.keys(process.env)) {
+    if (key.startsWith('SUPABASE_') || key.startsWith('LENSERFIGHT_') || key.startsWith('OPENAI_')) {
+      delete process.env[key]
+    }
+  }
 })
 
 describe('env', () => {
@@ -57,20 +66,43 @@ describe('env', () => {
     expect(mockPrintJson).toHaveBeenCalledWith(
       expect.objectContaining({
         variables: expect.arrayContaining([
-          expect.objectContaining({ name: 'SUPABASE_URL' }),
+          expect.objectContaining({ name: 'SUPABASE_URL', status: 'set', source: 'config' }),
+          expect.objectContaining({
+            name: 'SUPABASE_ANON_KEY',
+            status: 'set',
+            source: 'config',
+            value: '••••••',
+          }),
         ]),
         config: expect.objectContaining({ present: true }),
         byok: expect.objectContaining({ openai: true }),
-      })
+      }),
     )
   })
 
-  it('prints human-readable table', async () => {
+  it('masks secrets in the table output and shows config-sourced values', async () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation()
 
     await envCmd.run?.({ args: { json: false, reveal: false }, cmd: {}, rawArgs: [] })
 
-    expect(consoleSpy).toHaveBeenCalled()
+    expect(mockPrintTable).toHaveBeenCalled()
+    const rows = mockPrintTable.mock.calls[0]?.[1] as string[][]
+    const anonRow = rows.find((row) => row[0] === 'SUPABASE_ANON_KEY')
+    expect(anonRow?.[3]).toBe('••••••')
+    expect(anonRow?.[2]).toBe('config')
     consoleSpy.mockRestore()
+  })
+
+  it('prefers process.env over resolved config', async () => {
+    process.env['SUPABASE_URL'] = 'https://from-env.supabase.co'
+
+    await envCmd.run?.({ args: { json: true, reveal: false }, cmd: {}, rawArgs: [] })
+
+    const payload = mockPrintJson.mock.calls[0]?.[0] as {
+      variables: Array<{ name: string; source: string; value: string }>
+    }
+    const urlEntry = payload.variables.find((v) => v.name === 'SUPABASE_URL')
+    expect(urlEntry?.source).toBe('env')
+    expect(urlEntry?.value).toBe('https://from-env.supabase.co')
   })
 })

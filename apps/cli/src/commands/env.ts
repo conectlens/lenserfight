@@ -4,36 +4,67 @@ import {
   configExists,
   loadConfig,
   getEffectiveMode,
+  type LenserfightConfig,
 } from '../config/project-config'
+import { maskSecret } from '../lib/redact'
 import { printJson, printTable } from '../utils/output'
 import { c, sym } from '../utils/ansi'
 import { byokKeyResolver } from '@lenserfight/providers'
 
-type EnvStatus = 'set' | 'missing' | 'default'
+type EnvStatus = 'set' | 'missing'
+type EnvSource = 'env' | 'config' | ''
 
 interface EnvEntry {
   name: string
   status: EnvStatus
   value: string
-  source: string
+  source: EnvSource
 }
 
-function mask(val: string | undefined | null): string {
-  if (!val) return ''
-  if (val.length <= 8) return '****'
-  return val.slice(0, 4) + '…' + val.slice(-4)
+const CONFIG_FIELD_BY_ENV: Partial<
+  Record<string, (config: LenserfightConfig) => string | undefined>
+> = {
+  SUPABASE_URL: (config) => config.supabaseUrl,
+  SUPABASE_ANON_KEY: (config) => config.supabaseAnonKey,
+  SUPABASE_SERVICE_ROLE_KEY: (config) => config.supabaseServiceRoleKey,
+  LENSERFIGHT_API_URL: (config) => config.cloudApiUrl,
+  OLLAMA_BASE_URL: (config) => config.ollamaBaseUrl,
 }
 
-function checkEnv(name: string, opts?: { secret?: boolean }): EnvEntry {
-  const val = process.env[name]
-  if (val) {
+function formatValue(
+  raw: string | undefined,
+  opts: { secret?: boolean; reveal?: boolean },
+): string {
+  if (!raw) return ''
+  if (opts.secret) return maskSecret(raw, opts.reveal)
+  return raw
+}
+
+function resolveEnvEntry(
+  name: string,
+  config: LenserfightConfig,
+  opts?: { secret?: boolean; reveal?: boolean },
+): EnvEntry {
+  const fromEnv = process.env[name]
+  if (fromEnv) {
     return {
       name,
       status: 'set',
-      value: opts?.secret ? mask(val) : val,
+      value: formatValue(fromEnv, opts),
       source: 'env',
     }
   }
+
+  const fromConfig = CONFIG_FIELD_BY_ENV[name]?.(config)
+  if (fromConfig) {
+    return {
+      name,
+      status: 'set',
+      value: formatValue(fromConfig, opts),
+      source: 'config',
+    }
+  }
+
   return { name, status: 'missing', value: '', source: '' }
 }
 
@@ -74,14 +105,16 @@ export default defineCommand({
     },
   },
   async run({ args }) {
+    const resolved = resolveConfig()
     const entries: EnvEntry[] = ENV_VARS.map((v) =>
-      checkEnv(v.name, { secret: v.secret && !args.reveal })
+      resolveEnvEntry(v.name, resolved, {
+        secret: v.secret,
+        reveal: args.reveal,
+      }),
     )
 
-    // Add config file info
     const hasConfig = configExists()
     const config = hasConfig ? loadConfig() : null
-    const resolved = resolveConfig()
     const { mode: effectiveMode, source: effectiveSource } = getEffectiveMode()
 
     if (args.json) {
@@ -107,26 +140,36 @@ export default defineCommand({
     console.log(`\n${c.bold('Environment Variables')}\n`)
 
     printTable(
-      ['Variable', 'Status', 'Value'],
+      ['Variable', 'Status', 'Source', 'Value'],
       entries.map((e) => [
         e.name,
         e.status === 'set'
           ? `${c.success(sym.pass)} set`
           : `${c.muted(sym.dot)} missing`,
+        e.source ? c.muted(e.source) : c.muted('-'),
         e.value || c.muted('-'),
       ]),
-      [30, 12, 40]
+      [28, 12, 8, 36],
     )
 
     console.log(`\n${c.bold('Project Config')}`)
     console.log(
       `  ${hasConfig ? c.success(sym.pass) : c.warn(sym.warn)} .lenserfight.json: ${hasConfig ? `present (mode=${config?.mode})` : 'not found'}`,
     )
+    console.log(
+      `  ${c.muted('effective mode:')} ${effectiveMode} ${c.muted(`(${effectiveSource})`)}`,
+    )
 
     console.log(`\n${c.bold('BYOK Provider Keys')}`)
     for (const provider of ['openai', 'anthropic', 'google', 'mistral'] as const) {
       const has = byokKeyResolver.has(provider)
-      console.log(`  ${has ? c.success(sym.pass) : c.muted(sym.dot)} ${provider}: ${has ? 'configured' : 'not set'}`)
+      console.log(
+        `  ${has ? c.success(sym.pass) : c.muted(sym.dot)} ${provider}: ${has ? c.muted('configured (hidden)') : 'not set'}`,
+      )
+    }
+
+    if (!args.reveal) {
+      console.log(`\n${c.muted('Secrets are masked. Pass --reveal to show full values.')}`)
     }
 
     console.log('')
