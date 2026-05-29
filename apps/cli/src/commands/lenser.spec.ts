@@ -67,16 +67,9 @@ function mockAiListCatalog(): void {
     .mockResolvedValueOnce([
       { id: 'profile-public', handle: 'ai_gpt', display_name: 'GPT', type: 'ai' },
     ] as never)
-
-  mockCallRest.mockResolvedValueOnce([
-    {
-      id: 'agent-public',
-      profile_id: 'profile-public',
-      display_name: 'GPT',
-      is_active: true,
-      created_at: '2026-01-02',
-    },
-  ] as never)
+    .mockResolvedValueOnce([
+      { profile_id: 'profile-public', ai_lenser_id: 'agent-public' },
+    ] as never)
 }
 
 describe('lenser find', () => {
@@ -84,7 +77,7 @@ describe('lenser find', () => {
     mockCallRpc.mockResolvedValueOnce([
       { id: 'p1', handle: 'ofcskn', display_name: 'OFC', type: 'human' },
     ] as never)
-    mockCallRest.mockResolvedValueOnce([] as never)
+    mockCallRpc.mockResolvedValueOnce([] as never)
 
     const cmd = await getSubCmd('find')
     await cmd.run?.({ args: { handle: '@ofcskn', json: false }, rawArgs: ['@ofcskn'] })

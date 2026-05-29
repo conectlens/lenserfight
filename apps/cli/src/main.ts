@@ -181,7 +181,7 @@ setImmediate(() => {
             process.stderr.write(
               `\n  ╭─────────────────────────────────────────────────────╮\n` +
                 `  │  Update available: v${result.current} → v${result.latest.padEnd(Math.max(0, result.current.length))}  │\n` +
-                `  │  Run \`lf update\` for upgrade instructions.           │\n` +
+                `  │  Run \`lf update\` to upgrade.                         │\n` +
                 `  ╰─────────────────────────────────────────────────────╯\n\n`
             )
           }

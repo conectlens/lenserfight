@@ -1,4 +1,4 @@
-import { callRpc, callRest } from '../utils/api';
+import { callRpc } from '../utils/api';
 
 export type LenserKind = 'human' | 'ai';
 export type LenserListFilter = 'all' | LenserKind;
@@ -88,18 +88,38 @@ async function searchLensers(query: string, limit: number): Promise<LenserSearch
   return Array.isArray(rows) ? rows : [];
 }
 
+async function resolveAiLenserIdsForProfiles(profileIds: string[]): Promise<Map<string, string>> {
+  if (profileIds.length === 0) return new Map();
+
+  try {
+    const rows = await callRpc<Array<{ profile_id: string; ai_lenser_id: string }>>(
+      'fn_resolve_ai_lenser_ids_for_profiles',
+      { p_profile_ids: profileIds },
+      { requireAuth: true },
+    );
+    return new Map((rows ?? []).map((r) => [r.profile_id, r.ai_lenser_id]));
+  } catch {
+    const byProfile = new Map<string, string>();
+    await Promise.all(
+      profileIds.map(async (profileId) => {
+        const profile = await callRpc<AgentProfileJson | null>(
+          'fn_get_agent_profile_by_profile_id',
+          { p_profile_id: profileId },
+          { requireAuth: true },
+        );
+        const id = profile?.id ?? profile?.ai_lenser_id;
+        if (id) byProfile.set(profileId, String(id));
+      }),
+    );
+    return byProfile;
+  }
+}
+
 async function attachAiLenserIds(rows: LenserCatalogRow[]): Promise<LenserCatalogRow[]> {
   const aiProfiles = rows.filter((r) => r.type === 'ai');
   if (aiProfiles.length === 0) return rows;
 
-  const profileIds = aiProfiles.map((r) => r.profile_id).join(',');
-  const agents = await callRest<
-    Array<{ id: string; profile_id: string }>
-  >('agents', 'ai_lensers', 'GET', undefined, {
-    requireAuth: true,
-    query: { select: 'id,profile_id', profile_id: `in.(${profileIds})`, limit: aiProfiles.length },
-  });
-  const byProfile = new Map((agents ?? []).map((a) => [a.profile_id, a.id]));
+  const byProfile = await resolveAiLenserIdsForProfiles(aiProfiles.map((r) => r.profile_id));
 
   return rows.map((r) =>
     r.type === 'ai' ? { ...r, ai_lenser_id: byProfile.get(r.profile_id) } : r,
@@ -167,40 +187,20 @@ async function listPublicAiLensers(limit = 50): Promise<LenserCatalogRow[]> {
   const aiProfiles = search.filter((p) => p.type === 'ai');
   if (aiProfiles.length === 0) return [];
 
-  const profileIds = aiProfiles.map((p) => p.id).join(',');
-  const agents = await callRest<
-    Array<{
-      id: string;
-      profile_id: string;
-      display_name: string | null;
-      is_active: boolean;
-      created_at: string;
-      runtime_pref: string | null;
-    }>
-  >('agents', 'ai_lensers', 'GET', undefined, {
-    requireAuth: true,
-    query: {
-      select: 'id,profile_id,display_name,is_active,created_at,runtime_pref',
-      profile_id: `in.(${profileIds})`,
-      limit,
-    },
-  });
-  const agentByProfile = new Map((agents ?? []).map((a) => [a.profile_id, a]));
+  const agentByProfile = await resolveAiLenserIdsForProfiles(aiProfiles.map((p) => p.id));
 
   const rows: LenserCatalogRow[] = [];
   for (const profile of aiProfiles) {
-    const agent = agentByProfile.get(profile.id);
-    if (!agent) continue;
+    const aiLenserId = agentByProfile.get(profile.id);
+    if (!aiLenserId) continue;
     rows.push(
       mapAgentProfileToRow(
         {
-          id: agent.id,
+          id: aiLenserId,
           profile_id: profile.id,
           handle: profile.handle,
-          display_name: profile.display_name ?? agent.display_name,
-          is_active: agent.is_active,
-          created_at: agent.created_at,
-          runtime_pref: agent.runtime_pref,
+          display_name: profile.display_name,
+          is_active: true,
         },
         'public',
       ),
@@ -235,19 +235,19 @@ export async function listLensers(filter: LenserListFilter = 'all'): Promise<Len
 }
 
 export async function resolveAiLenserIdFromProfileId(profileId: string): Promise<string> {
-  const agents = await callRest<Array<{ id: string }>>(
-    'agents',
-    'ai_lensers',
-    'GET',
-    undefined,
-    {
-      requireAuth: true,
-      query: { select: 'id', profile_id: `eq.${profileId}`, limit: 1 },
-    },
+  const owned = await callRpc<AgentProfileJson | null>(
+    'fn_get_agent_profile_by_profile_id',
+    { p_profile_id: profileId },
+    { requireAuth: true },
   );
-  const agent = agents?.[0];
-  if (!agent) throw new Error('Profile exists but has no AI lenser record.');
-  return agent.id;
+  const ownedId = owned?.id ?? owned?.ai_lenser_id;
+  if (ownedId) return String(ownedId);
+
+  const resolved = await resolveAiLenserIdsForProfiles([profileId]);
+  const aiLenserId = resolved.get(profileId);
+  if (aiLenserId) return aiLenserId;
+
+  throw new Error('Profile exists but has no AI lenser record.');
 }
 
 export async function resolveProfileId(identifier: string): Promise<string> {
@@ -271,14 +271,16 @@ export async function resolveProfileId(identifier: string): Promise<string> {
 export async function resolveAiLenserIdFromIdentifier(identifier: string): Promise<string> {
   const raw = identifier.trim();
   if (UUID_RE.test(raw)) {
-    const rows = await callRest<Array<{ id: string }>>(
-      'agents',
-      'ai_lensers',
-      'GET',
-      undefined,
-      { requireAuth: true, query: { select: 'id', id: `eq.${raw}`, limit: 1 } },
+    const owned = await callRpc<AgentProfileJson | null>(
+      'fn_get_agent_profile',
+      { p_ai_lenser_id: raw },
+      { requireAuth: true },
     );
-    if (rows?.[0]) return rows[0].id;
+    if (owned?.id) return String(owned.id);
+
+    const publicProfile = await getPublicAiLenserProfile(raw);
+    if (publicProfile?.id) return String(publicProfile.id);
+
     throw new Error(`No AI lenser found with id ${raw}. Run \`lf lenser ai list\`.`);
   }
 
@@ -316,6 +318,29 @@ export async function resolveAiLenserIdFromIdentifier(identifier: string): Promi
   );
 }
 
+async function getPublicAiLenserProfile(aiLenserId: string): Promise<AgentProfileJson | null> {
+  const snap = await callRpc<Record<string, unknown> | null>(
+    'fn_redacted_agent_snapshot',
+    { p_ai_lenser_id: aiLenserId },
+    { requireAuth: true },
+  );
+  if (!snap || typeof snap !== 'object') return null;
+
+  const agentId = String(snap.agent_id ?? '');
+  if (!agentId) return null;
+
+  return {
+    id: agentId,
+    ai_lenser_id: agentId,
+    profile_id: String(snap.profile_id ?? ''),
+    handle: String(snap.handle ?? ''),
+    display_name: (snap.display_name as string | null) ?? null,
+    is_active: snap.is_active !== false,
+    runtime_pref: (snap.runtime_pref as string | null) ?? null,
+    lenser_type: 'ai',
+  };
+}
+
 export async function getAiLenserProfile(aiLenserId: string): Promise<AgentProfileJson | null> {
   const owned = await callRpc<AgentProfileJson | null>(
     'fn_get_agent_profile',
@@ -324,43 +349,5 @@ export async function getAiLenserProfile(aiLenserId: string): Promise<AgentProfi
   );
   if (owned && typeof owned === 'object') return owned;
 
-  const agents = await callRest<
-    Array<{
-      id: string;
-      profile_id: string;
-      display_name: string | null;
-      is_active: boolean;
-      created_at: string;
-      runtime_pref: string | null;
-    }>
-  >('agents', 'ai_lensers', 'GET', undefined, {
-    requireAuth: true,
-    query: {
-      select: 'id,profile_id,display_name,is_active,created_at,runtime_pref',
-      id: `eq.${aiLenserId}`,
-      limit: 1,
-    },
-  });
-  const agent = agents?.[0];
-  if (!agent) return null;
-
-  const profiles = await callRest<
-    Array<{ id: string; handle: string; display_name: string | null; type: string }>
-  >('lensers', 'profiles', 'GET', undefined, {
-    requireAuth: true,
-    query: { select: 'id,handle,display_name,type', id: `eq.${agent.profile_id}`, limit: 1 },
-  });
-  const profile = profiles?.[0];
-  if (!profile || profile.type !== 'ai') return null;
-
-  return {
-    id: agent.id,
-    profile_id: agent.profile_id,
-    handle: profile.handle,
-    display_name: profile.display_name ?? agent.display_name,
-    is_active: agent.is_active,
-    created_at: agent.created_at,
-    runtime_pref: agent.runtime_pref,
-    lenser_type: profile.type,
-  };
+  return getPublicAiLenserProfile(aiLenserId);
 }

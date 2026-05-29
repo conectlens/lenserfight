@@ -1,24 +1,26 @@
+import { spawnSync } from 'node:child_process'
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { checkForUpdate, detectChannel } from '@lenserfight/utils/update-check'
+import { checkForUpdate, detectChannel, invalidateUpdateCache } from '@lenserfight/utils/update-check'
 import { readCliVersion } from '../lib/version'
 
 /**
- * `lf update` — check for and guide the user through updating the CLI.
- *
- * The command never executes shell commands on the user's behalf (supply-chain
- * safety). It detects the likely install method and prints the correct update
- * command for the user to run themselves.
+ * `lf update` — check for CLI updates and install when a newer release is available.
  */
 export default defineCommand({
   meta: {
     name: 'update',
-    description: 'Check for CLI updates and print upgrade instructions.',
+    description: 'Check for CLI updates and install the latest release when stale.',
   },
   args: {
     check: {
       type: 'boolean',
-      description: 'Only check and print the result; do not print install commands',
+      description: 'Only check; do not install',
+      default: false,
+    },
+    instructions: {
+      type: 'boolean',
+      description: 'Print install commands instead of running them',
       default: false,
     },
     json: {
@@ -58,37 +60,25 @@ export default defineCommand({
     if (args.check) return
 
     const installMethod = detectInstallMethod()
+    const targetSpec = resolveInstallSpec(channel, result.latest)
 
-    consola.info('Run one of the following to update:\n')
-
-    switch (installMethod) {
-      case 'npm-global':
-        process.stdout.write(`  npm install -g @lenserfight/cli@latest\n\n`)
-        break
-      case 'pnpm-global':
-        process.stdout.write(`  pnpm add -g @lenserfight/cli@latest\n\n`)
-        break
-      case 'yarn-global':
-        process.stdout.write(`  yarn global add @lenserfight/cli@latest\n\n`)
-        break
-      default:
-        // Can't reliably detect — show all options
-        process.stdout.write(`  npm install -g @lenserfight/cli@latest\n`)
-        process.stdout.write(`  pnpm add -g @lenserfight/cli@latest\n`)
-        process.stdout.write(`  yarn global add @lenserfight/cli@latest\n\n`)
+    if (args.instructions) {
+      printInstallInstructions(installMethod, targetSpec, channel)
+      return
     }
 
-    if (channel !== 'stable') {
-      consola.warn(
-        `You are on the '${channel}' channel. The command above installs the latest stable release.`,
-      )
-      process.stdout.write(
-        `  To stay on the '${channel}' channel:\n` +
-        `  npm install -g @lenserfight/cli@${channel}\n\n`,
-      )
+    consola.start(`Installing ${targetSpec}…`)
+    const ok = runPackageManagerInstall(installMethod, targetSpec)
+    if (!ok) {
+      consola.error('Update failed. Try the command below manually:\n')
+      printInstallInstructions(installMethod, targetSpec, channel)
+      process.exitCode = 1
+      return
     }
 
-    consola.info('After updating, run `lf doctor` to verify your environment.')
+    invalidateUpdateCache()
+    consola.success(`Updated to ${targetSpec}`)
+    consola.info('Run `lf doctor` to verify your environment.')
   },
 })
 
@@ -97,19 +87,73 @@ export default defineCommand({
 type InstallMethod = 'npm-global' | 'pnpm-global' | 'yarn-global' | 'unknown'
 
 function detectInstallMethod(): InstallMethod {
-  // Check which package manager's bin directory the binary lives in
-  const execPath = process.execPath // node binary path
-  const argv0 = process.argv[1] ?? '' // path to the lf script
+  const execPath = process.execPath
+  const argv0 = process.argv[1] ?? ''
 
   if (argv0.includes('/.pnpm/') || argv0.includes('/pnpm/global/')) return 'pnpm-global'
   if (argv0.includes('/yarn/bin/') || argv0.includes('/.yarn/')) return 'yarn-global'
   if (argv0.includes('/npm/') || execPath.includes('/npm/')) return 'npm-global'
 
-  // Check environment — npm sets npm_config_user_agent
   const ua = process.env['npm_config_user_agent'] ?? ''
   if (ua.startsWith('pnpm/')) return 'pnpm-global'
   if (ua.startsWith('yarn/')) return 'yarn-global'
   if (ua.startsWith('npm/')) return 'npm-global'
 
   return 'unknown'
+}
+
+function resolveInstallSpec(channel: ReturnType<typeof detectChannel>, latest: string): string {
+  if (channel === 'stable') return '@lenserfight/cli@latest'
+  return `@lenserfight/cli@${latest}`
+}
+
+function packageManagerCommand(method: InstallMethod): { cmd: string; args: string[] } | null {
+  switch (method) {
+    case 'npm-global':
+      return { cmd: 'npm', args: ['install', '-g'] }
+    case 'pnpm-global':
+      return { cmd: 'pnpm', args: ['add', '-g'] }
+    case 'yarn-global':
+      return { cmd: 'yarn', args: ['global', 'add'] }
+    default:
+      return null
+  }
+}
+
+function runPackageManagerInstall(method: InstallMethod, targetSpec: string): boolean {
+  const pm = packageManagerCommand(method)
+  if (!pm) return false
+
+  const result = spawnSync(pm.cmd, [...pm.args, targetSpec], { stdio: 'inherit' })
+  return result.status === 0
+}
+
+function printInstallInstructions(
+  installMethod: InstallMethod,
+  targetSpec: string,
+  channel: ReturnType<typeof detectChannel>,
+): void {
+  consola.info('Run one of the following to update:\n')
+
+  switch (installMethod) {
+    case 'npm-global':
+      process.stdout.write(`  npm install -g ${targetSpec}\n\n`)
+      break
+    case 'pnpm-global':
+      process.stdout.write(`  pnpm add -g ${targetSpec}\n\n`)
+      break
+    case 'yarn-global':
+      process.stdout.write(`  yarn global add ${targetSpec}\n\n`)
+      break
+    default:
+      process.stdout.write(`  npm install -g ${targetSpec}\n`)
+      process.stdout.write(`  pnpm add -g ${targetSpec}\n`)
+      process.stdout.write(`  yarn global add ${targetSpec}\n\n`)
+  }
+
+  if (channel !== 'stable') {
+    consola.warn(
+      `You are on the '${channel}' channel. The command above targets ${targetSpec}.`,
+    )
+  }
 }
