@@ -9,3 +9,19 @@ export {
   type ContentFeedType,
   type ContentFeedRow,
 } from './content-feed'
+export {
+  getMyExecutionActivityFeed,
+  getLensExecutionHistory,
+  listWorkflowRuns,
+  listRecentWorkflowRuns,
+  getExecutionPlatformStatus,
+  type WorkflowRunListRow,
+  type ExecutionPlatformStatus,
+} from './executions'
+export {
+  listActiveTeamRuns,
+  cancelAgentTeamRun,
+  killAgentWorkers,
+  type AgentTeamRunRow,
+  type KillAgentWorkersResult,
+} from './agent-runs'
