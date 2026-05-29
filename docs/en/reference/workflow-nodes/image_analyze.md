@@ -24,7 +24,7 @@ The Image Analyze node accepts an image input and runs it through a configured v
 
 | Port | Type | Description |
 |---|---|---|
-| `image` | string | Buffer | The image to analyze. Accepts a URL (http/https or signed storage URL), a base64-encoded data URI, or a binary Buffer. |
+| `image` | string or binary buffer | The image to analyze. Accepts a URL (http/https or signed storage URL), a base64-encoded data URI, or a binary Buffer. |
 | `prompt_override` | string | Optional. When present, replaces the static prompt from config at runtime. Useful for dynamic analysis instructions from upstream nodes. |
 
 ## Outputs

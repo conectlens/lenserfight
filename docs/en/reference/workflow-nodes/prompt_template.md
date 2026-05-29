@@ -8,7 +8,7 @@ description: Renders a parameterised prompt string by interpolating upstream var
 ## Overview
 
 ::: v-pre
-The `prompt_template` node takes a string template with `{{variable}}` placeholders and produces a fully rendered string by substituting values from upstream workflow data or static defaults. It is most commonly placed immediately before a `lens_execute` or `code` node to construct the exact text sent to a model. The interpolation engine supports simple variable substitution and dot-path access (e.g. `{{user.name}}`); it does not execute logic — use `code` for conditional rendering.
+The `prompt_template` node takes a string template with `&#123;&#123;variable&#125;&#125;` placeholders and produces a fully rendered string by substituting values from upstream workflow data or static defaults. It is most commonly placed immediately before a `lens_execute` or `code` node to construct the exact text sent to a model. The interpolation engine supports simple variable substitution and dot-path access (e.g. `&#123;&#123;user.name&#125;&#125;`); it does not execute logic — use `code` for conditional rendering.
 :::
 
 ## Configuration
@@ -16,7 +16,7 @@ The `prompt_template` node takes a string template with `{{variable}}` placehold
 ::: v-pre
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `template` | string | Yes | — | The template string. Wrap variable names in double curly braces: `{{variable_name}}`. Supports dot-path notation: `{{result.score}}`. |
+| `template` | string | Yes | — | The template string. Wrap variable names in double curly braces: `&#123;&#123;variable_name&#125;&#125;`. Supports dot-path notation: `&#123;&#123;result.score&#125;&#125;`. |
 | `variables` | object | No | `{}` | Static default values for template variables. These are overridden by any matching key in the `input` port's data. |
 | `strict` | boolean | No | `false` | When `true`, the node fails if any placeholder has no resolved value (neither from input nor from `variables`). When `false`, unresolved placeholders are replaced with an empty string. |
 | `trim_output` | boolean | No | `true` | Strip leading and trailing whitespace from the rendered string before emitting. |
@@ -70,7 +70,7 @@ The battle ended in a draw.
 
 - Template variables are resolved by merging `variables` (lower priority) with the `input` object (higher priority), so upstream data always wins over static defaults.
 ::: v-pre
-- Dot-path access works for any depth: `{{a.b.c}}` resolves the nested key `c` inside `b` inside `a`. Array indexing (`{{items.0}}`) is also supported.
+- Dot-path access works for any depth: `&#123;&#123;a.b.c&#125;&#125;` resolves the nested key `c` inside `b` inside `a`. Array indexing (`&#123;&#123;items.0&#125;&#125;`) is also supported.
 :::
 - For templates longer than a few hundred characters, consider storing the template text in a workflow variable or `kv_store` node and reading it in dynamically — this makes it easier to update without editing the workflow graph.
 - This node does not call any AI model; it is purely string interpolation and adds negligible latency.

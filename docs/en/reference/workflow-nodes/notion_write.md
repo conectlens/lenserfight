@@ -36,6 +36,8 @@ The Notion Write node creates a new page or updates an existing page in a Notion
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "notion_write",
@@ -65,3 +67,6 @@ The Notion Write node creates a new page or updates an existing page in a Notion
   }
 }
 ```
+
+</div>
+

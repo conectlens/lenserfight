@@ -1,16 +1,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { lensService } from '../../services/lens.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'archive_lens';
+const meta = getToolMeta('archive_lens');
+const TOOL = meta.name;
 
 export function registerLensArchive(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Archive a lens. Sets status to archived and records the archived_at timestamp. The lens is hidden from listings but not deleted.',
-    { lens_id: zUuid },
+  registerMcpTool(server, meta,
+    { lens_id: p.lens_id },
     async ({ lens_id }) => {
       const t0 = Date.now();
       try {

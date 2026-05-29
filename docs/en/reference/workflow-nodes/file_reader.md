@@ -14,7 +14,7 @@ The File Reader node reads a file from a configured storage provider and emits i
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `storage_provider` | enum (local, s3, supabase) | Yes | Storage backend to read from. Must match the provider where the file was written. |
-| `file_path` | string | Yes | Path or key of the file within the storage provider. Supports template variables (e.g. {{run.artifact_path}}). |
+| `file_path` | string | Yes | Path or key of the file within the storage provider. Supports template variables (e.g. &#123;&#123;run.artifact_path&#125;&#125;). |
 | `encoding` | enum (utf8, base64) | No | Output encoding for file contents. Defaults to utf8. Use base64 for binary files such as images or PDFs. |
 | `credential_id` | string | No | ID of the stored credential to use when authenticating with the storage provider. Required for S3 and private Supabase buckets. |
 | `fail_on_missing` | boolean | No | When true, routes to the error output if the file does not exist. When false, emits an empty string and continues on the output port. Defaults to true. |
@@ -34,6 +34,8 @@ The File Reader node reads a file from a configured storage provider and emits i
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "file_reader",
@@ -46,3 +48,6 @@ The File Reader node reads a file from a configured storage provider and emits i
   }
 }
 ```
+
+</div>
+

@@ -13,7 +13,7 @@ The `sms_send` node sends an SMS message to a specified phone number using a con
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `to` | string | Yes | Recipient phone number in E.164 format (e.g. +14155552671). Supports template expressions such as {{trigger.phone}}. |
+| `to` | string | Yes | Recipient phone number in E.164 format (e.g. +14155552671). Supports template expressions such as &#123;&#123;trigger.phone&#125;&#125;. |
 | `body` | string | Yes | Text content of the SMS message. Supports template interpolation from upstream node outputs. Max 1600 characters (multi-segment SMS). |
 | `from` | string | No | Sender phone number or alphanumeric sender ID in E.164 format. Overrides the default number configured on the credential. Must be a number owned by the connected provider account. |
 | `credentialId` | string | Yes | ID of the stored SMS provider credential (e.g. a Twilio Account SID / Auth Token pair) used to authenticate the send request. |
@@ -35,6 +35,8 @@ The `sms_send` node sends an SMS message to a specified phone number using a con
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "sms_send",
@@ -47,3 +49,6 @@ The `sms_send` node sends an SMS message to a specified phone number using a con
   }
 }
 ```
+
+</div>
+

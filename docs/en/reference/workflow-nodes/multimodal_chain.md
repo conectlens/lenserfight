@@ -14,7 +14,7 @@ The `multimodal_chain` node assembles text, image, audio, and video inputs from 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `model_id` | string | Yes | Model key used by the downstream provider to process the assembled multimodal prompt (e.g. `google:gemini-2.0-flash`, `openai:gpt-4o`). Must reference a model that supports all modalities present in the chain. |
-| `prompt_template` | string | Yes | Handlebars-style template rendered as the text part of the outgoing prompt. May reference upstream outputs via `{{label}}` placeholders. Combined with attached media before dispatch. |
+| `prompt_template` | string | Yes | Handlebars-style template rendered as the text part of the outgoing prompt. May reference upstream outputs via `&#123;&#123;label&#125;&#125;` placeholders. Combined with attached media before dispatch. |
 | `modalities` | enum | No | Ordered list of modalities to include in the assembled context. Accepted values: `text`, `image`, `audio`, `video`. Defaults to including all connected input ports. Omitting a modality suppresses it even when the upstream port has data. |
 | `max_attachments` | number | No | Maximum number of media attachments forwarded to the provider. Defaults to `4`. Capped at `8` by the execution engine regardless of this value. |
 | `onParentFailure` | enum | No | Behavior when an upstream node fails. Accepted values: `propagate` (default), `skip`, `substitute_default`. |
@@ -37,6 +37,8 @@ The `multimodal_chain` node assembles text, image, audio, and video inputs from 
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "multimodal_chain",
@@ -52,3 +54,6 @@ The `multimodal_chain` node assembles text, image, audio, and video inputs from 
   }
 }
 ```
+
+</div>
+

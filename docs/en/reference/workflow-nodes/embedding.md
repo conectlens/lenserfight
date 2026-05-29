@@ -31,7 +31,7 @@ The Embedding node calls an embedding model API and converts a text string into 
 | Port | Type | Description |
 |---|---|---|
 | `output` | object | The original input object with `output_field` added (or overwritten). The embedding value is an array of floats (or a base64 string when `encoding_format` is `"base64"`). |
-| `embedding` | array\<number\> | The raw embedding vector, emitted separately for easy wiring into `vector_search`'s `query_embedding` port. |
+| `embedding` | array of numbers | The raw embedding vector, emitted separately for easy wiring into `vector_search`'s `query_embedding` port. |
 | `usage` | object | Token usage information: `{ prompt_tokens: number, total_tokens: number }`. |
 
 ## Example

@@ -57,30 +57,32 @@ Multi-word actions: first action-word becomes the verb, domain slots in second.
 
 ## Tool template
 
+MCP separates **name** (machine id, `verb_noun` snake_case), **title** (human UI label), and **description** (AI guidance). Add metadata in `tool-metadata.ts`, then register with `registerMcpTool`.
+
 ```typescript
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { ok, fail, zUuid } from '../../types.js';
 
+const meta = getToolMeta('pin_lens');
+const TOOL = meta.name;
+
 export function registerLensPin(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    'pin_lens',                          // verb_noun — verb first
-    'Pin a lens to the caller\'s profile.',
-    { lens_id: zUuid },
-    async ({ lens_id }) => {
-      const t0 = Date.now();
-      try {
-        const { data, error } = (await sb.rpc('fn_mcp_lens_pin' as never, {  // fn_mcp_domain_action
-          p_lens_id: lens_id,
-        })) as unknown as { data: unknown; error: { message: string } | null };
-        if (error) throw new Error(error.message);
-        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'pin_lens', t0);
-        return ok(data, 'pin_lens', t0);
-      } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'pin_lens', t0);
-      }
+  registerMcpTool(server, meta, { lens_id: zUuid }, async ({ lens_id }) => {
+    const t0 = Date.now();
+    try {
+      const { data, error } = (await sb.rpc('fn_mcp_lens_pin' as never, {
+        p_lens_id: lens_id,
+      })) as unknown as { data: unknown; error: { message: string } | null };
+      if (error) throw new Error(error.message);
+      if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, TOOL, t0);
+      return ok(data, TOOL, t0);
+    } catch (e) {
+      return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
     }
-  );
+  });
 }
 ```
 

@@ -1,18 +1,20 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { lensService } from '../../services/lens.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'fork_lens';
+const meta = getToolMeta('fork_lens');
+const TOOL = meta.name;
 
 export function registerLensFork(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Fork a lens. Creates a new lens with the source as its parent. Optionally override the title or template body.',
+  registerMcpTool(server, meta,
     {
-      source_lens_id: zUuid,
+      source_lens_id: p.lens_id,
       title: z.string().min(1).max(200).optional(),
       template_body: z.string().min(50).optional(),
       visibility: z.enum(['public', 'community', 'private']).default('public').optional(),

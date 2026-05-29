@@ -1,21 +1,23 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { workflowService } from '../../services/workflow.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'create_workflow';
+const meta = getToolMeta('create_workflow');
+const TOOL = meta.name;
 
 export function registerWorkflowCreate(server: McpServer, sb: SupabaseClient, authLenserId?: string): void {
-  server.tool(
-    TOOL,
-    'Create a new workflow. Workflows are reusable multi-step execution containers that chain lens runs and AI operations. lenser_id defaults to the authenticated user.',
+  registerMcpTool(server, meta,
     {
       title: z.string().min(1).max(200),
       description: z.string().max(2000).optional(),
       visibility: z.enum(['public', 'private', 'unlisted']).default('private').optional(),
-      lenser_id: zUuid.optional(),
+      lenser_id: p.lenser_id.optional(),
     },
     async (args) => {
       const t0 = Date.now();

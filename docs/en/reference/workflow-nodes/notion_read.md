@@ -13,7 +13,7 @@ The Notion Read node fetches the content of a Notion page or the rows of a Notio
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `resource_type` | enum (page | database) | Yes | Whether to read a single Notion page or query a full database. |
+| `resource_type` | enum (page, database) | Yes | Whether to read a single Notion page or query a full database. |
 | `resource_id` | string | Yes | The Notion page ID or database ID to read. Accepts the UUID form (with or without hyphens) or a full Notion URL. |
 | `filter` | object | No | A Notion filter object applied when resource_type is database. Follows the Notion API filter schema (e.g. {property, rich_text, contains}). |
 | `sorts` | array | No | An array of Notion sort descriptors applied when resource_type is database. Each entry specifies a property name and direction (ascending | descending). |

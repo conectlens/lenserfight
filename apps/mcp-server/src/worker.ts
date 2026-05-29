@@ -363,8 +363,10 @@ async function handleToken(req: Request, env: Env): Promise<Response> {
 
 type RegisteredTool = {
   name: string;
+  title?: string;
   description?: string;
   inputSchema?: Record<string, unknown>;
+  annotations?: Record<string, unknown>;
   handler: (args: Record<string, unknown>) => Promise<unknown>;
 };
 
@@ -420,8 +422,22 @@ function getTools(server: ReturnType<typeof buildServer>): RegisteredTool[] {
     return [];
   }
   return reg instanceof Map
-    ? Array.from(reg.entries()).map(([name, t]) => ({ name, handler: t.handler, description: t.description, inputSchema: t.inputSchema }))
-    : Object.entries(reg).map(([name, t]) => ({ name, handler: t.handler, description: t.description, inputSchema: t.inputSchema }));
+    ? Array.from(reg.entries()).map(([name, t]) => ({
+        name,
+        title: t.title,
+        handler: t.handler,
+        description: t.description,
+        inputSchema: t.inputSchema,
+        annotations: t.annotations,
+      }))
+    : Object.entries(reg).map(([name, t]) => ({
+        name,
+        title: t.title,
+        handler: t.handler,
+        description: t.description,
+        inputSchema: t.inputSchema,
+        annotations: t.annotations,
+      }));
 }
 
 
@@ -491,8 +507,10 @@ async function handleMcp(req: Request, env: Env, cfg: McpServerConfig): Promise<
         result: {
           tools: tools.map((t) => ({
             name: t.name,
+            title: t.title ?? t.name,
             description: t.description ?? '',
-            inputSchema: t.inputSchema ?? { type: 'object', properties: {} },
+            inputSchema: t.inputSchema ?? { type: 'object', additionalProperties: false },
+            ...(t.annotations ? { annotations: t.annotations } : {}),
           })),
         },
       };

@@ -1,16 +1,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { battleService } from '../../services/battle.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'get_battle_score';
+const meta = getToolMeta('get_battle_score');
+const TOOL = meta.name;
 
 export function registerBattleScore(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Read scoring data for a battle: vote aggregates per contender and any AI judge verdicts.',
-    { battle_id: zUuid },
+  registerMcpTool(server, meta,
+    { battle_id: p.battle_id },
     async ({ battle_id }) => {
       const t0 = Date.now();
       try {

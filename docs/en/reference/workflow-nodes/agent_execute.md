@@ -15,7 +15,7 @@ The `agent_execute` node launches an AI agent that autonomously selects and call
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `agent_id` | string | No | — | UUID of a saved AI Lenser to use as the agent definition (system prompt, tool defaults, model). Takes precedence over `instructions` when both are provided. |
-| `instructions` | string | No | — | Inline system prompt / goal description for the agent. Used when no `agent_id` is given. Supports `{{variable}}` interpolation from `input`. |
+| `instructions` | string | No | — | Inline system prompt / goal description for the agent. Used when no `agent_id` is given. Supports `&#123;&#123;variable&#125;&#125;` interpolation from `input`. |
 | `tools` | array | No | `[]` | List of tool names the agent is permitted to call (e.g. `["web_search", "lens_execute", "sql_query"]`). Granting only the tools the task needs reduces cost and attack surface. |
 | `model_key` | string | No | `"default"` | Model routing key. Use `"default"` to apply the workspace model policy, or a specific key such as `"claude-sonnet-4-6"` to override. |
 | `max_steps` | number | No | `10` | Maximum number of reasoning steps (tool calls + completions) before the agent is forced to produce a final answer. Capped at `50`. |
@@ -27,7 +27,7 @@ The `agent_execute` node launches an AI agent that autonomously selects and call
 ::: v-pre
 | Port | Type | Description |
 |---|---|---|
-| `input` | object | Initial context injected into the agent's first user message and available for `{{variable}}` interpolation in `instructions`. |
+| `input` | object | Initial context injected into the agent's first user message and available for `&#123;&#123;variable&#125;&#125;` interpolation in `instructions`. |
 :::
 
 ## Outputs
@@ -38,6 +38,8 @@ The `agent_execute` node launches an AI agent that autonomously selects and call
 | `error` | object | Present on unrecoverable failure (model error, tool permission denied, or `on_max_steps: "fail"` triggered); contains `message` and `code`. |
 
 ## Example
+
+<div v-pre>
 
 ```json
 {
@@ -70,6 +72,8 @@ Inline instructions variant (no saved Lenser):
   }
 }
 ```
+
+</div>
 
 </div>
 

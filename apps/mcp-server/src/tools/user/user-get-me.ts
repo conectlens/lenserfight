@@ -1,15 +1,14 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail } from '../../types.js';
 
-const TOOL = 'get_me';
+const meta = getToolMeta('get_me');
+const TOOL = meta.name;
 
 export function registerUserGetMe(server: McpServer, sb: SupabaseClient, lenserId?: string): void {
-  server.tool(
-    TOOL,
-    'Get the authenticated user\'s own lenser profile: id, handle, display_name, bio, status, type, and timestamps. Call this first when you need to know who the current user is before performing actions on their behalf.',
-    {},
-    async () => {
+  registerMcpTool(server, meta, {}, async () => {
       const t0 = Date.now();
       if (!lenserId) {
         return fail('MISSING_LENSER', 'Not authenticated as a lenser. Complete onboarding first.', {}, TOOL, t0);

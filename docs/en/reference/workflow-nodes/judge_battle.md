@@ -14,7 +14,7 @@ The Judge Battle node retrieves every accepted submission for the specified batt
 ::: v-pre
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `battle_id` | string | Yes | — | UUID of the battle to judge. Can be a static value or a template expression referencing an upstream node's output (e.g. `{{nodes.battle_create.output.battle_id}}`). |
+| `battle_id` | string | Yes | — | UUID of the battle to judge. Can be a static value or a template expression referencing an upstream node's output (e.g. `&#123;&#123;nodes.battle_create.output.battle_id&#125;&#125;`). |
 | `model_key` | string | Yes | — | Identifier of the judge model to use (e.g. `"claude-sonnet-4-6"`, `"gpt-4o"`). Must be a model available in the workspace's AI provider settings. |
 | `criteria` | array of objects | Yes | — | Scoring dimensions. Each element must have a `name` (string) and a `description` (string) that is passed verbatim to the judge. |
 | `max_score_per_criterion` | integer | No | `10` | Upper bound for each criterion's score. The judge is instructed to produce a score in `[0, max_score_per_criterion]`. |

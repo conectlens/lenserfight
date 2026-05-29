@@ -32,7 +32,7 @@ The Object Storage Download node retrieves a file from an S3-compatible object s
 
 | Port | Type | Description |
 |---|---|---|
-| `output` | string | Buffer | The decoded file contents. Type is string when encoding is utf8, Buffer otherwise. Upstream context is merged with a fileContent property containing the downloaded data. |
+| `output` | string or binary buffer | The decoded file contents. Type is string when encoding is utf8, Buffer otherwise. Upstream context is merged with a fileContent property containing the downloaded data. |
 | `error` | object | Emitted when the download fails — object not found, permission denied, network timeout, or credential error. Carries message, code, and bucket/key for downstream error-handling or retry nodes. |
 
 ## Example

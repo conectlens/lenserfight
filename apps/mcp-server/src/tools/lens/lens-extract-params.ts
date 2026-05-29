@@ -1,18 +1,20 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { lensService } from '../../services/lens.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'extract_lens_params';
+const meta = getToolMeta('extract_lens_params');
+const TOOL = meta.name;
 
 export function registerLensExtractParams(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Extract [[Parameter]] token info from a lens version. Returns each parameter label, whether it is optional, and its internal UUID.',
+  registerMcpTool(server, meta,
     {
-      lens_id: zUuid,
-      version_id: zUuid.optional(),
+      lens_id: p.lens_id,
+      version_id: p.lens_version_id.optional(),
     },
     async ({ lens_id, version_id }) => {
       const t0 = Date.now();

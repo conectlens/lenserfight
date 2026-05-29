@@ -13,7 +13,7 @@ The Data Mapper node transforms an incoming data object by selecting, renaming, 
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `mappings` | array<object> | Yes | Ordered list of field mapping rules. Each rule specifies a source field path (dot-notation), a target field name, an optional type cast (string | number | boolean | json), and an optional default value used when the source path resolves to null or undefined. |
+| `mappings` | array of objects | Yes | Ordered list of field mapping rules. Each rule specifies a source field path (dot-notation), a target field name, an optional type cast (string | number | boolean | json), and an optional default value used when the source path resolves to null or undefined. |
 | `passthroughUnmapped` | boolean | No | When true, fields not referenced by any mapping rule are copied as-is to the output object. Defaults to false (unmapped fields are dropped). |
 | `strictMode` | boolean | No | When true, any source field path that cannot be resolved (and has no default) routes execution to the error output instead of silently skipping the field. Defaults to false. |
 | `outputRoot` | string | No | Optional dot-notation path to nest the entire mapped result under in the output object (e.g. 'payload.data'). Useful when a downstream node expects the result inside a wrapper key. |

@@ -1,18 +1,20 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { battleService } from '../../services/battle.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'submit_battle_run';
+const meta = getToolMeta('submit_battle_run');
+const TOOL = meta.name;
 
 export function registerBattleSubmitRun(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Submit an AI or human execution result for a battle contender. The content_text is the response to the battle task_prompt.',
+  registerMcpTool(server, meta,
     {
-      battle_id: zUuid,
+      battle_id: p.battle_id,
       contender_id: zUuid,
       content_text: z.string().min(1).max(100000),
     },

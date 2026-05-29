@@ -1,18 +1,20 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { paginated, fail } from '../../types.js';
+import { p } from '../tool-params.js';
 import { lensService } from '../../services/lens.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'search_lenses';
+const meta = getToolMeta('search_lenses');
+const TOOL = meta.name;
 
 export function registerLensSearch(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Full-text search lenses by keyword across title, description, and rendered content. Returns lenses with title, description, language, author, tags, and head_version_id. Use this when the user describes what they want (e.g. "logo brief", "code review") rather than knowing a specific lens id.',
+  registerMcpTool(server, meta,
     {
-      query: z.string().min(1),
+      query: p.query,
       visibility: z.enum(['public', 'community', 'private']).optional(),
       limit: z.number().int().min(1).max(100).default(20).optional(),
       offset: z.number().int().min(0).default(0).optional(),

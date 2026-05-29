@@ -16,7 +16,7 @@ The Linear Issue Create node calls the Linear API to create a new issue in a spe
 | `credentialId` | string | Yes | ID of the stored Linear API key credential used to authenticate requests. |
 | `teamId` | string | Yes | Linear team ID where the issue will be created. Found in team settings. |
 | `projectId` | string | No | Optional Linear project ID to associate the issue with a specific project inside the team. |
-| `title` | string | Yes | Title of the issue. Supports template expressions (e.g. {{input.battleTitle}}). |
+| `title` | string | Yes | Title of the issue. Supports template expressions (e.g. &#123;&#123;input.battleTitle&#125;&#125;). |
 | `description` | string | No | Markdown body for the issue. Supports template expressions. |
 | `priority` | enum | No | Issue priority: no_priority, urgent, high, medium, or low. Defaults to no_priority. |
 | `assigneeId` | string | No | Linear user ID to assign the issue to on creation. |
@@ -37,6 +37,8 @@ The Linear Issue Create node calls the Linear API to create a new issue in a spe
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "linear_issue_create",
@@ -49,3 +51,6 @@ The Linear Issue Create node calls the Linear API to create a new issue in a spe
   }
 }
 ```
+
+</div>
+

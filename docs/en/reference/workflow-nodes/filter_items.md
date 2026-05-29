@@ -13,7 +13,7 @@ The Filter Items node takes a list and emits only the elements that satisfy a co
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `condition` | string | Yes | Expression evaluated against each item to determine inclusion. Supports JSONPath (e.g. `$.score >= 0.8`) and template syntax (e.g. `{{item.status}} === 'passed'`). Items where the expression is truthy go to `matched`; falsy items go to `unmatched`. |
+| `condition` | string | Yes | Expression evaluated against each item to determine inclusion. Supports JSONPath (e.g. `$.score >= 0.8`) and template syntax (e.g. `&#123;&#123;item.status&#125;&#125; === 'passed'`). Items where the expression is truthy go to `matched`; falsy items go to `unmatched`. |
 | `inputPath` | string | No | JSONPath into the incoming payload that resolves to the array to filter (e.g. `$.results`). Defaults to the root value when omitted, which must itself be an array. |
 | `stopOnError` | boolean | No | When true, a runtime evaluation error on any item halts the node and routes the error to the `error` output. When false (default), items that throw evaluation errors are treated as non-matching and sent to `unmatched`. |
 | `limit` | number | No | Maximum number of matched items to emit. Once the limit is reached, evaluation stops and remaining items are discarded. Useful for capping downstream load. No limit is applied when omitted. |
@@ -34,6 +34,8 @@ The Filter Items node takes a list and emits only the elements that satisfy a co
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "filter_items",
@@ -45,3 +47,6 @@ The Filter Items node takes a list and emits only the elements that satisfy a co
   }
 }
 ```
+
+</div>
+

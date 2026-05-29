@@ -3,6 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 export interface CapturedTool {
   name: string;
+  title?: string;
   description: string;
   paramsSchema: unknown;
   handler: (args: unknown) => Promise<{ content: Array<{ type: string; text: string }> }>;
@@ -13,20 +14,25 @@ export interface CapturedTool {
  * its handler directly with arbitrary args.
  */
 export function captureTool(
-  register: (server: McpServer, sb: SupabaseClient) => void
+  register: (server: McpServer, sb: SupabaseClient, lenserId?: string) => void
 ): CapturedTool {
   let captured: CapturedTool | null = null;
   const server = {
-    tool: (name: string, description: string, paramsSchema: unknown, handler: unknown) => {
+    registerTool: (
+      name: string,
+      config: { title?: string; description?: string; inputSchema?: unknown },
+      handler: unknown
+    ) => {
       captured = {
         name,
-        description,
-        paramsSchema,
+        title: config.title,
+        description: config.description ?? '',
+        paramsSchema: config.inputSchema,
         handler: handler as CapturedTool['handler'],
       };
     },
   } as unknown as McpServer;
-  register(server, {} as SupabaseClient);
+  register(server, {} as SupabaseClient, process.env['LENSERFIGHT_LENSER_ID']);
   if (!captured) throw new Error('Tool register did not call server.tool');
   return captured;
 }

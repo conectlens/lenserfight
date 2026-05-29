@@ -16,7 +16,7 @@ The Jira Issue Create node creates a new issue in a specified Jira project using
 | `credentialId` | string | Yes | ID of the stored Jira credential (API token + account email + base URL) used to authenticate requests. |
 | `projectKey` | string | Yes | The Jira project key (e.g. ENG, OPS) where the issue will be created. |
 | `issueType` | enum | Yes | Type of issue to create. Accepted values: Bug, Task, Story, Epic, Sub-task. |
-| `summary` | string | Yes | Issue title. Supports template expressions (e.g. {{input.title}}) resolved at runtime. |
+| `summary` | string | Yes | Issue title. Supports template expressions (e.g. &#123;&#123;input.title&#125;&#125;) resolved at runtime. |
 | `description` | string | No | Issue body in Jira Document Format (ADF) or plain text. Template expressions are resolved before sending. |
 | `priority` | enum | No | Issue priority. Accepted values: Highest, High, Medium, Low, Lowest. Defaults to Medium when omitted. |
 | `assigneeAccountId` | string | No | Jira account ID of the user to assign the issue to. Leave blank to leave unassigned. |
@@ -37,6 +37,8 @@ The Jira Issue Create node creates a new issue in a specified Jira project using
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "jira_issue_create",
@@ -51,3 +53,6 @@ The Jira Issue Create node creates a new issue in a specified Jira project using
   }
 }
 ```
+
+</div>
+

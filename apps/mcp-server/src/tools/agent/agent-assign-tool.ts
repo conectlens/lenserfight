@@ -1,19 +1,21 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { agentService } from '../../services/agent.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'assign_agent_tool';
+const meta = getToolMeta('assign_agent_tool');
+const TOOL = meta.name;
 
 export function registerAgentAssignTool(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Grant a tool to an AI Lenser. By default the tool is allowed; pass allowed=false to register a known-but-denied entry. Optional profile_id binds the assignment to a specific tool profile (config preset).',
+  registerMcpTool(server, meta,
     {
-      ai_lenser_id: zUuid,
-      tool_id: zUuid,
+      ai_lenser_id: p.ai_lenser_id,
+      tool_id: p.tool_id,
       profile_id: zUuid.optional(),
       allowed: z.boolean().default(true).optional(),
     },

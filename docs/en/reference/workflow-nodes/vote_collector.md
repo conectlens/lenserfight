@@ -13,11 +13,11 @@ The Vote Collector node gathers human or automated votes on battle contender out
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `vote_mode` | enum (human | automated | hybrid) | Yes | Determines who casts votes. 'human' waits for audience input, 'automated' uses AI judge scores, 'hybrid' accepts both and merges them. |
+| `vote_mode` | enum (human, automated, hybrid) | Yes | Determines who casts votes. 'human' waits for audience input, 'automated' uses AI judge scores, 'hybrid' accepts both and merges them. |
 | `quorum` | number | Yes | Minimum number of votes required before results are finalized. Votes received below this threshold before timeout cause the node to route to the error port. |
 | `timeout_seconds` | number | Yes | How long (in seconds) the node waits for votes before closing the window. On expiry, finalizes if quorum is met, otherwise emits to the error port. |
 | `allow_anonymous` | boolean | No | When true, unauthenticated voters may participate. Defaults to false, which restricts voting to authenticated users only. |
-| `tiebreak_strategy` | enum (random | ai_judge | creator_decides | none) | No | Strategy applied when votes are exactly tied. Defaults to 'none', which routes the tie to the error port for manual resolution. |
+| `tiebreak_strategy` | enum (random, ai_judge, creator_decides, none) | No | Strategy applied when votes are exactly tied. Defaults to 'none', which routes the tie to the error port for manual resolution. |
 | `weight_by_role` | boolean | No | When true, votes from users with elevated roles (e.g. judges, verified lenSers) carry a configurable multiplier. Defaults to false (all votes equal weight). |
 
 ## Inputs
@@ -25,7 +25,7 @@ The Vote Collector node gathers human or automated votes on battle contender out
 | Port | Type | Description |
 |---|---|---|
 | `battle_outputs` | BattleOutput[] | Array of contender outputs to present to voters. Each entry must contain a contender ID and the output payload. |
-| `voter_list` | string[] | null | Optional allowlist of user IDs permitted to vote. When null and allow_anonymous is false, all authenticated users may vote. |
+| `voter_list` | string array or null | Optional allowlist of user IDs permitted to vote. When null and allow_anonymous is false, all authenticated users may vote. |
 
 ## Outputs
 

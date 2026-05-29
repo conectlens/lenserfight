@@ -1,12 +1,16 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { lensService } from '../../services/lens.service.js';
 import { workflowService } from '../../services/workflow.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'run_lens';
+const meta = getToolMeta('run_lens');
+const TOOL = meta.name;
 
 interface VersionParam {
   id: string;
@@ -44,28 +48,12 @@ export function resolveTemplate(
 }
 
 export function registerLensRun(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    `Resolve a lens template into a ready-to-execute prompt by substituting its [[Parameter]] tokens with values you supply.
-
-WORKFLOW:
-1. Discover lenses with list_lenses or search_lenses.
-2. Call get_lens(lens_id) to see the parameter list (label + optional flag) and template body.
-3. Call run_lens(lens_id, param_values={"Topic":"...", "Language":"..."}) with values keyed by parameter label.
-4. The returned 'resolved_prompt' is what YOU (the AI model) should execute next — this tool does NOT call an LLM. Read 'resolved_prompt' and respond to the user with the result.
-
-PARAM VALUES:
-- Match parameter labels case-insensitively (e.g. "topic" works for label "Topic").
-- Missing required params → returns MISSING_PARAMS error with the labels to ask the user for.
-- Unknown keys are ignored.
-- Optional params not provided → token replaced with empty string.
-
-If workflow_id is given, the run is persisted as a workflow run record for telemetry; otherwise it is ephemeral.`,
+  registerMcpTool(server, meta,
     {
-      lens_id: zUuid,
-      version_id: zUuid.optional(),
+      lens_id: p.lens_id,
+      version_id: p.lens_version_id.optional(),
       param_values: z.record(z.string(), z.string()).default({}).optional(),
-      workflow_id: zUuid.optional(),
+      workflow_id: p.workflow_id.optional(),
     },
     async (args) => {
       const t0 = Date.now();

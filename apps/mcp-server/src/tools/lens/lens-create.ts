@@ -1,16 +1,17 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail } from '../../types.js';
 import { lensService } from '../../services/lens.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'create_lens';
+const meta = getToolMeta('create_lens');
+const TOOL = meta.name;
 
 export function registerLensCreate(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Create a new lens with a template body and optional parameters. Template must be at least 50 characters. Use [[ParamName]] for required params, [[ParamName!]] for optional ones.',
+  registerMcpTool(server, meta,
     {
       title: z.string().min(1).max(200),
       template_body: z.string().min(50, 'Template must be at least 50 characters'),

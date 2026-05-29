@@ -1,18 +1,20 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { lensService } from '../../services/lens.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'update_lens';
+const meta = getToolMeta('update_lens');
+const TOOL = meta.name;
 
 export function registerLensUpdate(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Update a lens. Creates a new immutable version — the original is never modified. Pass template_body to change the prompt, params to change parameters.',
+  registerMcpTool(server, meta,
     {
-      lens_id: zUuid,
+      lens_id: p.lens_id,
       template_body: z.string().min(50).optional(),
       visibility: z.enum(['public', 'community', 'private']).optional(),
       params: z

@@ -35,6 +35,8 @@ The Image Upscale node takes an input image and enlarges it to a higher resoluti
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "image_upscale",
@@ -46,3 +48,6 @@ The Image Upscale node takes an input image and enlarges it to a higher resoluti
   }
 }
 ```
+
+</div>
+

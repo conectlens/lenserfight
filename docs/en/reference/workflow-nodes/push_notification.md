@@ -13,10 +13,10 @@ The Push Notification node sends a push notification to a device token or a name
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `provider` | enum (fcm | apns | expo) | Yes | Push provider to use for delivery. Determines which credential set is resolved at runtime. |
+| `provider` | enum (fcm, apns, expo) | Yes | Push provider to use for delivery. Determines which credential set is resolved at runtime. |
 | `credentialId` | string | Yes | ID of the stored credential that authenticates against the selected provider. |
 | `target` | string | Yes | Device registration token or topic name (prefix with '/topics/' for topic-based fanout). |
-| `title` | string | Yes | Notification title shown in the system tray. Supports template variables (e.g. {{battle.title}}). |
+| `title` | string | Yes | Notification title shown in the system tray. Supports template variables (e.g. &#123;&#123;battle.title&#125;&#125;). |
 | `body` | string | Yes | Notification body text. Supports template variables. |
 | `data` | object | No | Arbitrary key-value payload delivered silently alongside the visible notification. |
 | `sound` | string | No | Sound file name to play on delivery. Use 'default' for the system default sound. Omit to send silently. |
@@ -38,6 +38,8 @@ The Push Notification node sends a push notification to a device token or a name
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "push_notification",
@@ -55,3 +57,6 @@ The Push Notification node sends a push notification to a device token or a name
   }
 }
 ```
+
+</div>
+

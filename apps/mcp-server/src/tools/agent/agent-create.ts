@@ -1,21 +1,23 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { agentService } from '../../services/agent.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'create_ai_lenser';
+const meta = getToolMeta('create_ai_lenser');
+const TOOL = meta.name;
 
 export function registerAgentCreate(server: McpServer, sb: SupabaseClient, lenserId?: string): void {
-  server.tool(
-    TOOL,
-    'Create a new AI Lenser (AI Agent) owned by the authenticated lenser. The handle is the @ identifier and must be globally unique among lensers. ai_model_id is optional at creation — bind a model later via update_ai_lenser. owner_lenser_id defaults to the authenticated user.',
+  registerMcpTool(server, meta,
     {
       handle: z.string().min(1).max(64),
       display_name: z.string().min(1).max(120),
       ai_model_id: zUuid.optional(),
-      owner_lenser_id: zUuid.optional(),
+      owner_lenser_id: p.owner_lenser_id.optional(),
     },
     async (args) => {
       const t0 = Date.now();

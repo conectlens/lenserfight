@@ -16,7 +16,7 @@ The GitHub Issue Create node creates a new issue in a specified GitHub repositor
 | `credential` | string | Yes | ID of the stored GitHub credential (personal access token or OAuth app token) with `repo` scope. |
 | `owner` | string | Yes | GitHub repository owner — a user login or organization name (e.g. `acme-org`). |
 | `repo` | string | Yes | Repository name without the owner prefix (e.g. `backend-api`). |
-| `title` | string | Yes | Issue title. Supports template variables (e.g. `{{input.title}}`). |
+| `title` | string | Yes | Issue title. Supports template variables (e.g. `&#123;&#123;input.title&#125;&#125;`). |
 | `body` | string | No | Issue body in Markdown. Supports template variables. |
 | `labels` | string | No | Comma-separated list of label names to apply (e.g. `bug,automated`). Labels that do not exist in the repository are silently ignored by the GitHub API. |
 | `assignees` | string | No | Comma-separated list of GitHub usernames to assign the issue to. |
@@ -37,6 +37,8 @@ The GitHub Issue Create node creates a new issue in a specified GitHub repositor
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "github_issue_create",
@@ -50,3 +52,6 @@ The GitHub Issue Create node creates a new issue in a specified GitHub repositor
   }
 }
 ```
+
+</div>
+

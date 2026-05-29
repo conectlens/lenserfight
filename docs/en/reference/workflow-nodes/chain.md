@@ -33,6 +33,8 @@ The Chain node accumulates upstream outputs into an ordered message history (sys
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "chain",
@@ -59,3 +61,6 @@ The Chain node accumulates upstream outputs into an ordered message history (sys
   }
 }
 ```
+
+</div>
+

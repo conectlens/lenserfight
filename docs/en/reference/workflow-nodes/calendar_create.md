@@ -15,7 +15,7 @@ The Calendar Create node creates a calendar event using a configured calendar in
 |---|---|---|---|
 | `credentialId` | string | Yes | ID of the calendar OAuth credential to use for authentication. |
 | `calendarId` | string | Yes | Target calendar identifier (e.g. 'primary' or a specific calendar ID). |
-| `title` | string | Yes | Event title. Supports template expressions (e.g. '{{battle.title}} Review'). |
+| `title` | string | Yes | Event title. Supports template expressions (e.g. '&#123;&#123;battle.title&#125;&#125; Review'). |
 | `startTime` | string | Yes | ISO 8601 datetime string for the event start time. |
 | `endTime` | string | Yes | ISO 8601 datetime string for the event end time. |
 | `description` | string | No | Optional event body or notes. Supports template expressions. |
@@ -39,6 +39,8 @@ The Calendar Create node creates a calendar event using a configured calendar in
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "calendar_create",
@@ -54,3 +56,6 @@ The Calendar Create node creates a calendar event using a configured calendar in
   }
 }
 ```
+
+</div>
+

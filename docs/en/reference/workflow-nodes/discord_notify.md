@@ -14,7 +14,7 @@ The Discord Notify node sends a message to a Discord channel using an incoming w
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `webhookUrl` | string | Yes | The Discord incoming webhook URL (e.g. https://discord.com/api/webhooks/{id}/{token}). Obtain from Discord Server Settings → Integrations → Webhooks. |
-| `content` | string | Yes | The message text to send. Supports template variables from upstream outputs (e.g. 'Battle {{battleId}} finished — winner: {{winner}}'). |
+| `content` | string | Yes | The message text to send. Supports template variables from upstream outputs (e.g. 'Battle &#123;&#123;battleId&#125;&#125; finished — winner: &#123;&#123;winner&#125;&#125;'). |
 | `username` | string | No | Override the display name of the webhook bot for this message. Defaults to the name set on the webhook in Discord. |
 | `avatarUrl` | string | No | URL of an image to use as the bot avatar for this message. Overrides the webhook's default avatar. |
 | `embedTitle` | string | No | If set, wraps the message in a Discord embed with this string as the embed title. |
@@ -36,6 +36,8 @@ The Discord Notify node sends a message to a Discord channel using an incoming w
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "discord_notify",
@@ -47,3 +49,6 @@ The Discord Notify node sends a message to a Discord channel using an incoming w
   }
 }
 ```
+
+</div>
+

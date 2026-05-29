@@ -22,7 +22,7 @@ The Split In Batches node divides an incoming array into fixed-size chunks and e
 
 | Port | Type | Description |
 |---|---|---|
-| `input` | array | object | The data payload containing the array to split. If the root value is an array it is used directly; otherwise provide inputPath to locate the array within the object. |
+| `input` | array or object | The data payload containing the array to split. If the root value is an array it is used directly; otherwise provide inputPath to locate the array within the object. |
 
 ## Outputs
 

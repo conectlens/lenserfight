@@ -13,7 +13,7 @@ The Stop & Return node terminates workflow execution immediately and emits a spe
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `returnValue` | string | object | number | boolean | No | The value to emit as the workflow's final output. Accepts a static literal or a template expression referencing upstream outputs (e.g. `{{nodes.summarize.output}}`). Defaults to null if omitted. |
+| `returnValue` | string | object | number | boolean | No | The value to emit as the workflow's final output. Accepts a static literal or a template expression referencing upstream outputs (e.g. `&#123;&#123;nodes.summarize.output&#125;&#125;`). Defaults to null if omitted. |
 | `returnAs` | enum(raw, json, text) | No | Serialization format for the return value. `raw` passes the value as-is, `json` serializes it to a JSON string, `text` coerces it to a plain string. Defaults to `raw`. |
 | `label` | string | No | Human-readable label for this exit point, shown in the workflow graph. Useful when multiple Stop & Return nodes exist on different branches (e.g. "success", "fallback", "error exit"). |
 | `statusCode` | number | No | Optional integer status code attached to the return envelope (e.g. 200, 400, 500). Consumed by callers that treat workflows as API-like handlers. Has no effect on execution flow. |
@@ -33,6 +33,8 @@ The Stop & Return node terminates workflow execution immediately and emits a spe
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "stop_return",
@@ -44,3 +46,6 @@ The Stop & Return node terminates workflow execution immediately and emits a spe
   }
 }
 ```
+
+</div>
+

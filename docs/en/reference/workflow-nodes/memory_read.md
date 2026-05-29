@@ -14,7 +14,7 @@ The Memory Read node retrieves previously stored data from the platform's memory
 ::: v-pre
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `memory_id` | string | Yes | — | Namespace that groups related memory entries. Typically matches a user ID, session ID, or logical context name (e.g. `"user:{{userId}}:prefs"`). Supports template expressions. |
+| `memory_id` | string | Yes | — | Namespace that groups related memory entries. Typically matches a user ID, session ID, or logical context name (e.g. `"user:&#123;&#123;userId&#125;&#125;:prefs"`). Supports template expressions. |
 | `key` | string | No | `"*"` | Specific memory key to retrieve. Use `"*"` to return all keys within the namespace up to `limit`. |
 | `type` | string | No | `"session"` | Memory tier to read from. One of `"session"` (run-scoped) or `"long_term"` (persistent across runs). |
 | `limit` | integer | No | `10` | Maximum number of entries to return when `key` is `"*"`. Range: 1–100. Ignored when a specific key is requested. |
@@ -61,6 +61,6 @@ The Memory Read node retrieves previously stored data from the platform's memory
 - Session memory is automatically purged when the workflow run completes; long-term memory persists until explicitly deleted or overwritten by a `memory_write` node.
 - Reading all keys (`"*"`) is useful for debugging but should be avoided in production for namespaces with many entries; use a specific key and paginate via `limit` instead.
 ::: v-pre
-- `memory_id` supports `{{expression}}` template syntax, allowing the namespace to be parameterised by run context variables such as `run.userId` or `run.sessionId`.
+- `memory_id` supports `&#123;&#123;expression&#125;&#125;` template syntax, allowing the namespace to be parameterised by run context variables such as `run.userId` or `run.sessionId`.
 :::
 - The `not_found` output port allows clean cache-miss handling; connect it to an `if_condition` node or directly to a node that generates the missing value.

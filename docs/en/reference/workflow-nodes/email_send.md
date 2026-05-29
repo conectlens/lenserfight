@@ -14,7 +14,7 @@ The Email Send node sends an email to one or more recipients using a configured 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `credentialId` | string | Yes | ID of the SMTP or email provider credential configured in workspace integrations (e.g. SendGrid, Postmark, or custom SMTP). |
-| `to` | string | Yes | Recipient address(es). Supports a single address, a comma-separated list, or a template expression resolving to either (e.g. `{{input.user_email}}`). |
+| `to` | string | Yes | Recipient address(es). Supports a single address, a comma-separated list, or a template expression resolving to either (e.g. `&#123;&#123;input.user_email&#125;&#125;`). |
 | `subject` | string | Yes | Email subject line. Supports template interpolation from upstream node output. |
 | `body` | string | Yes | Email body content. Supports plain text or HTML. Supports template interpolation from upstream node output. |
 | `bodyFormat` | enum | No | Content type of the body field. Accepted values: `text` (default) or `html`. |
@@ -37,6 +37,8 @@ The Email Send node sends an email to one or more recipients using a configured 
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "email_send",
@@ -50,3 +52,6 @@ The Email Send node sends an email to one or more recipients using a configured 
   }
 }
 ```
+
+</div>
+

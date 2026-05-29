@@ -13,7 +13,7 @@ The File Writer node writes data to a file in the configured storage backend (lo
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `destination_path` | string | Yes | Target file path relative to the storage root (e.g. `results/battle-123/output.json`). Supports template variables such as `{{run_id}}` and `{{timestamp}}`. |
+| `destination_path` | string | Yes | Target file path relative to the storage root (e.g. `results/battle-123/output.json`). Supports template variables such as `&#123;&#123;run_id&#125;&#125;` and `&#123;&#123;timestamp&#125;&#125;`. |
 | `storage_bucket` | string | Yes | Name of the storage bucket or root directory to write into. Must exist and be writable by the workflow's service credentials. |
 | `write_mode` | enum | No | Controls behavior when the target file already exists. One of `overwrite` (default), `append`, or `error_if_exists`. |
 | `content_type` | enum | No | MIME type hint for the stored file. One of `text/plain`, `application/json`, `text/csv`, or `application/octet-stream`. Defaults to `application/json` when the input data is an object. |
@@ -34,6 +34,8 @@ The File Writer node writes data to a file in the configured storage backend (lo
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "file_writer",
@@ -45,3 +47,6 @@ The File Writer node writes data to a file in the configured storage backend (lo
   }
 }
 ```
+
+</div>
+

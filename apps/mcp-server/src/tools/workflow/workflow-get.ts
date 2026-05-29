@@ -1,16 +1,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { workflowService } from '../../services/workflow.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'get_workflow';
+const meta = getToolMeta('get_workflow');
+const TOOL = meta.name;
 
 export function registerWorkflowGet(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Get a workflow with its head version and scheduling info.',
-    { workflow_id: zUuid },
+  registerMcpTool(server, meta,
+    { workflow_id: p.workflow_id },
     async ({ workflow_id }) => {
       const t0 = Date.now();
       try {

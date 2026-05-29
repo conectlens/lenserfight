@@ -1,18 +1,20 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { lensService } from '../../services/lens.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'set_lens_visibility';
+const meta = getToolMeta('set_lens_visibility');
+const TOOL = meta.name;
 
 export function registerLensSetVisibility(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Change the visibility of a lens. public = anyone, community = logged-in users, private = owner only.',
+  registerMcpTool(server, meta,
     {
-      lens_id: zUuid,
+      lens_id: p.lens_id,
       visibility: z.enum(['public', 'community', 'private']),
     },
     async ({ lens_id, visibility }) => {

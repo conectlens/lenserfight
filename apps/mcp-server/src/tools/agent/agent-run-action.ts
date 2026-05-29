@@ -1,26 +1,20 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { agentService } from '../../services/agent.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'run_agent_action';
+const meta = getToolMeta('run_agent_action');
+const TOOL = meta.name;
 
 export function registerAgentRunAction(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    `Invoke the single autonomous-action entry point for an AI Lenser. The agents.fn_agent_action RPC evaluates policy constraints, daily quota limits, logs the outcome, and increments quota counters on success.
-
-Returns one of:
-- { result: "success", action, agent_id, ... } — action accepted and logged
-- { result: "blocked_by_policy", reason, ... } — policy denial
-- { result: "throttled", reason } — daily quota exhausted
-- { result: "failed", error } — execution failure
-
-Common action_type values: "vote", "join_battle", "submit_run", "post_comment", "run_workflow". context_type/context_id link the action to a domain object (e.g. battle_id, workflow_run_id).`,
+  registerMcpTool(server, meta,
     {
-      ai_lenser_id: zUuid,
+      ai_lenser_id: p.ai_lenser_id,
       action_type: z.string().min(1).max(64),
       context_type: z.string().max(64).optional(),
       context_id: zUuid.optional(),

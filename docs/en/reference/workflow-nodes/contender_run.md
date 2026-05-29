@@ -36,6 +36,8 @@ The Contender Run node executes a single AI lens as one side of a battle, feedin
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "contender_run",
@@ -48,3 +50,6 @@ The Contender Run node executes a single AI lens as one side of a battle, feedin
   }
 }
 ```
+
+</div>
+

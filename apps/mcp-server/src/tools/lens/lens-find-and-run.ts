@@ -1,12 +1,16 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail } from '../../types.js';
+import { p } from '../tool-params.js';
 import { lensService } from '../../services/lens.service.js';
 import { McpError } from '../../services/mcp-error.js';
 import { resolveTemplate } from './lens-run.js';
 
-const TOOL = 'find_and_run_lens';
+const meta = getToolMeta('find_and_run_lens');
+const TOOL = meta.name;
 
 interface LensSearchHit {
   id: string;
@@ -17,22 +21,9 @@ interface LensSearchHit {
 }
 
 export function registerLensFindAndRun(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    `One-shot: find the best matching lens for a topic and either run it (if all required params are supplied) or report what's missing.
-
-PURPOSE: Use this when the user asks "use the X lens to do Y" — instead of chaining search_lenses + get_lens + run_lens, this single call does the lookup, picks the top match, and either returns the resolved prompt or the missing-parameter spec.
-
-INPUTS:
-- query: free-text search (e.g. "logo brief", "code review", "translation")
-- param_values: object of {ParameterLabel: "value"} pairs you already know
-
-OUTCOMES:
-1. status="ready": resolved_prompt is set — execute it and return result to user.
-2. status="needs_params": missing[] lists labels to ask the user for, plus all_parameters[] with optional flags.
-3. status="no_match": no lens matches the query — ask the user to be more specific or call list_lenses.`,
+  registerMcpTool(server, meta,
     {
-      query: z.string().min(1).describe('What the user wants to do, in natural language'),
+      query: p.query,
       param_values: z.record(z.string(), z.string()).default({}).optional(),
       visibility: z.enum(['public', 'community', 'private']).optional(),
     },

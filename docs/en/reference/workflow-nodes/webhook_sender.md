@@ -37,6 +37,8 @@ The Webhook Sender node sends an HTTP request to a configured external URL, forw
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "webhook_sender",
@@ -50,3 +52,6 @@ The Webhook Sender node sends an HTTP request to a configured external URL, forw
   }
 }
 ```
+
+</div>
+

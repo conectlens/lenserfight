@@ -1,18 +1,20 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { workflowService } from '../../services/workflow.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'run_workflow';
+const meta = getToolMeta('run_workflow');
+const TOOL = meta.name;
 
 export function registerWorkflowRun(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Trigger a workflow execution with optional input parameters. Returns a run_id to track progress. Use get_workflow_run_status to poll.',
+  registerMcpTool(server, meta,
     {
-      workflow_id: zUuid,
+      workflow_id: p.workflow_id,
       inputs: z.record(z.string(), z.unknown()).default({}).optional(),
       global_model_id: z.string().optional(),
       idempotency_key: z.string().max(128).optional(),

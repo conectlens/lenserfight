@@ -15,7 +15,7 @@ The Slack Notify node sends a formatted message to a specified Slack channel usi
 |---|---|---|---|
 | `credential_id` | string | Yes | ID of the stored Slack credential (webhook URL or bot token) used to authenticate the request. |
 | `channel` | string | Yes | Slack channel name or ID to post to (e.g. #battle-results or C0123456789). Ignored when the credential is a webhook URL, which encodes the channel. |
-| `message` | string | Yes | Message text to send. Supports Slack mrkdwn formatting and template variable interpolation (e.g. {{battle.title}}). |
+| `message` | string | Yes | Message text to send. Supports Slack mrkdwn formatting and template variable interpolation (e.g. &#123;&#123;battle.title&#125;&#125;). |
 | `username` | string | No | Display name override for the bot. Defaults to the app name registered with the credential. |
 | `icon_emoji` | string | No | Emoji to use as the bot avatar (e.g. :trophy:). Ignored when icon_url is also set. |
 | `icon_url` | string | No | URL of an image to use as the bot avatar. Takes precedence over icon_emoji. |
@@ -37,6 +37,8 @@ The Slack Notify node sends a formatted message to a specified Slack channel usi
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "slack_notify",
@@ -48,3 +50,6 @@ The Slack Notify node sends a formatted message to a specified Slack channel usi
   }
 }
 ```
+
+</div>
+
