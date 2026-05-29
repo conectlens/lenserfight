@@ -1,7 +1,5 @@
-jest.mock('../utils/api', () => ({
-  callRest: jest.fn().mockResolvedValue([]),
-  callRpc: jest.fn(),
-  handleError: jest.fn(),
+jest.mock('../lib/data-services', () => ({
+  getHumanActivityFeed: jest.fn().mockResolvedValue([]),
 }))
 jest.mock('../utils/profiles', () => ({
   getActiveProfileName: jest.fn().mockResolvedValue('default'),

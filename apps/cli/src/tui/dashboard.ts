@@ -1,7 +1,7 @@
-import { callRest } from '../utils/api'
 import { runChild } from './run-child'
 import { getActiveProfileName } from '../utils/profiles'
 import { probeBackendHealth } from '../lib/health-probe'
+import { getHumanActivityFeed } from '../lib/data-services'
 import { truncate } from '../utils/output'
 import { A, sym } from '../utils/ansi'
 
@@ -396,21 +396,14 @@ let _cachedLogs: ActionLogRow[] = []
 
 async function fetchRecentLogs(): Promise<ActionLogRow[]> {
   try {
-    const rows = await callRest<ActionLogRow[]>(
-      'agents',
-      'action_logs',
-      'GET',
-      undefined,
-      {
-        requireAuth: true,
-        query: {
-          select: 'id,ai_lenser_id,team_run_id,action_type,payload,created_at',
-          order: 'created_at.desc',
-          limit: 10,
-        },
-      },
-    )
-    return rows ?? []
+    const feed = await getHumanActivityFeed(10)
+    return feed.map((item) => ({
+      ai_lenser_id: item.ai_lenser_id,
+      team_run_id: item.team_run_id,
+      action_type: item.action_type ?? item.kind,
+      payload: item.payload,
+      created_at: item.occurred_at,
+    }))
   } catch {
     return []
   }

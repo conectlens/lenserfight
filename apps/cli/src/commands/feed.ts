@@ -1,29 +1,19 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { callRpc, handleError } from '../utils/api';
+import { getPersonalContentFeed, isContentFeedType } from '../lib/data-services';
+import { handleError } from '../utils/api';
 import { printTable, printJson, truncate } from '../utils/output';
-
-function extractProfileId(profile: unknown): string | undefined {
-  if (Array.isArray(profile)) {
-    return profile.length > 0 ? extractProfileId(profile[0]) : undefined;
-  }
-  if (profile && typeof profile === 'object' && 'id' in profile) {
-    const id = (profile as { id?: unknown }).id;
-    return typeof id === 'string' ? id : undefined;
-  }
-  return undefined;
-}
 
 export default defineCommand({
   meta: {
     name: 'feed',
-    description: 'View your personalised content feed (threads or prompts).',
+    description: 'View your personalised content feed (threads or lenses).',
   },
   args: {
     type: {
       type: 'string',
       default: 'threads',
-      description: 'Content type: threads | prompts',
+      description: 'Content type: threads | lenses (alias: prompts)',
     },
     limit: {
       type: 'string',
@@ -37,44 +27,22 @@ export default defineCommand({
     },
   },
   async run({ args }) {
-    const validTypes = ['threads', 'prompts'];
-    if (!validTypes.includes(args.type)) {
-      consola.error('Invalid type: %s. Must be one of: %s', args.type, validTypes.join(', '));
+    if (!isContentFeedType(args.type)) {
+      consola.error(
+        'Invalid type: %s. Must be one of: threads, lenses, prompts',
+        args.type,
+      );
       process.exitCode = 1;
       return;
     }
 
     try {
-      // Resolve authenticated lenser ID
-      const self = await callRpc<Record<string, unknown>>(
-        'fn_lensers_get_active_profile',
-        {},
-        { requireAuth: true }
-      );
-      const selfId = extractProfileId(self);
-      if (!selfId) {
-        consola.warn('No lenser profile found. Create one at lenserfight.com before using feed.');
-        return;
-      }
+      const limit = parseInt(args.limit, 10)
+      const results = await getPersonalContentFeed(args.type, limit)
 
-      const rpc =
-        args.type === 'prompts'
-          ? 'fn_content_get_personal_prompts'
-          : 'fn_content_get_personal_threads';
-
-      const results = await callRpc<Array<Record<string, unknown>>>(
-        rpc,
-        {
-          p_lenser_id: selfId,
-          p_limit: parseInt(args.limit, 10),
-          p_offset: 0,
-        },
-        { requireAuth: true }
-      );
-
-      if (!results?.length) {
+      if (!results.length) {
         consola.info(
-          'Your personalised feed is empty. Follow tags and lensers to populate it.'
+          'Your personalised feed is empty. Follow tags and lensers to populate it.',
         );
         return;
       }
@@ -91,7 +59,7 @@ export default defineCommand({
           truncate(String(r.title || '(no title)'), 38),
           typeof r.personal_score === 'number' ? r.personal_score.toFixed(3) : '-',
           String(r.primary_language || '-'),
-        ])
+        ]),
       );
     } catch (err) {
       handleError(err);

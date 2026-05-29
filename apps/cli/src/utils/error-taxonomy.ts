@@ -24,6 +24,7 @@ export type CliErrorKind =
   | 'workflow' // workflow node failure / DAG execution error
   | 'battle' // battle lifecycle failure (submit, vote, finalize …)
   | 'schema' // schema validation failure / invalid JSON / malformed input
+  | 'api_schema' // PostgREST schema not exposed (PGRST106) — use RPC, not REST
   | 'config' // missing or invalid project / device config
   | 'local_model' // Ollama / local-model specific failure
   | 'unknown' // unclassified
@@ -144,6 +145,14 @@ const TAXONOMY: Record<CliErrorKind, Omit<TaxonomyEntry, 'kind'>> = {
     component: 'schema validator',
     docsKey: 'schemas',
     inspectArea: 'lf validate',
+  },
+  api_schema: {
+    headline: 'API ERROR',
+    detail: 'A command tried to read a database schema that is not exposed via PostgREST. Use the supported RPC-backed CLI commands instead.',
+    recoverable: true,
+    component: 'PostgREST',
+    docsKey: 'cli-reference',
+    inspectArea: 'lf doctor',
   },
   config: {
     headline: 'CONFIG ERROR',
@@ -324,7 +333,7 @@ export function classifyError(error: unknown): TaxonomyEntry {
   // PostgREST schema-exposure errors (e.g. "Invalid schema: agents") — must
   // come BEFORE the generic 'schema' check which would swallow these.
   if (c2 === 'PGRST106' || m.includes('invalid schema') || m.includes('no schema named')) {
-    return entry('config', error)
+    return entry('api_schema', error)
   }
 
   // Schema / validation
