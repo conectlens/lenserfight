@@ -32,6 +32,8 @@ export function createChainabitAdapter(ctx: ChainabitAdapterCtx = {}): FundingAd
           provider: req.provider,
           model: req.model,
           messages: req.messages,
+          lens_id: req.lensId,
+          version_id: req.versionId,
         },
         signal,
         callbacks,

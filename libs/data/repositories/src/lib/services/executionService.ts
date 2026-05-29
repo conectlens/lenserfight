@@ -1,4 +1,4 @@
-import { TriggerExecutionDTO, SetArtifactVisibilityDTO, PersistLocalExecutionDTO } from '@lenserfight/types'
+import { TriggerExecutionDTO, SetArtifactVisibilityDTO, PersistLocalExecutionDTO, PersistStreamedExecutionDTO } from '@lenserfight/types'
 import { HttpExecutionApiClient } from '../repositories/executionApiClient'
 import { createExecutionRepository } from '../factory'
 
@@ -37,4 +37,12 @@ export const executionService = {
   /** Persist a completed local BYOK execution to the database. Best-effort — stream output is already visible. */
   persistLocalExecution: (dto: PersistLocalExecutionDTO) =>
     repo.persistLocalExecution(dto),
+
+  /**
+   * Persist a completed streamed TEXT execution (platform_credit / cloud BYOK /
+   * local BYOK) so it appears in execution history. Idempotent on runId — dedups
+   * against the server-side edge-function write. Best-effort.
+   */
+  persistStreamedExecution: (dto: PersistStreamedExecutionDTO) =>
+    repo.persistStreamedExecution(dto),
 }

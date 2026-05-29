@@ -7,6 +7,7 @@ import {
   ExecutionRunStatus,
   SetArtifactVisibilityDTO,
   PersistLocalExecutionDTO,
+  PersistStreamedExecutionDTO,
 } from '@lenserfight/types'
 
 // --- Port ---
@@ -20,6 +21,7 @@ export interface ExecutionRepositoryPort {
   pollRunStatus(runId: string): Promise<Pick<ExecutionRun, 'id' | 'status' | 'completedAt' | 'errorCode'>>
   setArtifactVisibility(dto: SetArtifactVisibilityDTO): Promise<void>
   persistLocalExecution(dto: PersistLocalExecutionDTO): Promise<string>
+  persistStreamedExecution(dto: PersistStreamedExecutionDTO): Promise<string>
 }
 
 // --- Supabase Implementation ---
@@ -185,6 +187,24 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       p_content_text: dto.contentText,
       p_token_input: dto.tokenInput,
       p_token_output: dto.tokenOutput,
+    })
+
+    if (error) this.handleError(error)
+    return data as string
+  }
+
+  async persistStreamedExecution(dto: PersistStreamedExecutionDTO): Promise<string> {
+    const { data, error } = await supabase.rpc('fn_persist_streamed_execution', {
+      p_run_id: dto.runId,
+      p_lens_id: dto.lensId,
+      p_version_id: dto.versionId ?? null,
+      p_provider: dto.provider,
+      p_model: dto.model,
+      p_content_text: dto.contentText,
+      p_token_input: dto.tokenInput,
+      p_token_output: dto.tokenOutput,
+      p_credit_cost: dto.creditCost ?? 0,
+      p_funding_source: dto.fundingSource,
     })
 
     if (error) this.handleError(error)

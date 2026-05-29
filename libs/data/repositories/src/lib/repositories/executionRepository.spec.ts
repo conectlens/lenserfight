@@ -340,4 +340,70 @@ describe('SupabaseExecutionRepository', () => {
       })).rejects.toThrow('persist error')
     })
   })
+
+  // ---------------------------------------------------------------------------
+  // persistStreamedExecution
+  // ---------------------------------------------------------------------------
+  describe('persistStreamedExecution', () => {
+    it('calls fn_persist_streamed_execution with run id, funding, credits and returns run id', async () => {
+      mockRpc.mockResolvedValue({ data: RUN_ID, error: null })
+      const result = await repo.persistStreamedExecution({
+        runId: RUN_ID,
+        lensId: LENS_ID,
+        versionId: 'v-1',
+        provider: 'openai',
+        model: 'gpt-4o',
+        contentText: 'streamed output',
+        tokenInput: 12,
+        tokenOutput: 34,
+        creditCost: 7,
+        fundingSource: 'platform_credit',
+      })
+      expect(mockRpc).toHaveBeenCalledWith('fn_persist_streamed_execution', {
+        p_run_id: RUN_ID,
+        p_lens_id: LENS_ID,
+        p_version_id: 'v-1',
+        p_provider: 'openai',
+        p_model: 'gpt-4o',
+        p_content_text: 'streamed output',
+        p_token_input: 12,
+        p_token_output: 34,
+        p_credit_cost: 7,
+        p_funding_source: 'platform_credit',
+      })
+      expect(result).toBe(RUN_ID)
+    })
+
+    it('defaults version_id to null and credit_cost to 0', async () => {
+      mockRpc.mockResolvedValue({ data: RUN_ID, error: null })
+      await repo.persistStreamedExecution({
+        runId: RUN_ID,
+        lensId: LENS_ID,
+        provider: 'anthropic',
+        model: 'claude-sonnet-4-6',
+        contentText: 'text',
+        tokenInput: 0,
+        tokenOutput: 0,
+        fundingSource: 'user_byok_local',
+      })
+      expect(mockRpc).toHaveBeenCalledWith(
+        'fn_persist_streamed_execution',
+        expect.objectContaining({ p_version_id: null, p_credit_cost: 0 }),
+      )
+    })
+
+    it('rethrows errors', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: new Error('stream persist error') })
+      await expect(repo.persistStreamedExecution({
+        runId: RUN_ID,
+        lensId: LENS_ID,
+        provider: 'openai',
+        model: 'gpt-4o',
+        contentText: 'text',
+        tokenInput: 0,
+        tokenOutput: 0,
+        fundingSource: 'user_byok_cloud',
+      })).rejects.toThrow('stream persist error')
+    })
+  })
 })

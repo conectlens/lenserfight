@@ -42,6 +42,10 @@ export interface ExecuteRequest {
   messages: Message[]
   max_tokens?: number
   temperature?: number
+  /** Lens being executed — forwarded so the edge fn can persist run history. */
+  lens_id?: string
+  /** Pinned lens version, if any. */
+  version_id?: string
 }
 
 export interface ExecuteResponse {

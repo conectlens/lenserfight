@@ -148,6 +148,8 @@ export const walletApiClient = {
           model: req.model,
           messages: req.messages,
           funding_source: 'platform_credit',
+          ...(req.lens_id ? { lens_id: req.lens_id } : {}),
+          ...(req.version_id ? { version_id: req.version_id } : {}),
           ...(req.max_tokens ? { max_tokens: req.max_tokens } : {}),
           ...(req.temperature !== undefined ? { temperature: req.temperature } : {}),
         }),
