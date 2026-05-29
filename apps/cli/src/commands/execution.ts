@@ -1,5 +1,9 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
+import {
+  getExecutionPlatformStatus,
+  listRecentWorkflowRuns,
+} from '../lib/data-services/executions'
 import { callRest, callRpc, handleError } from '../utils/api'
 import { printJson, printTable, truncate } from '../utils/output'
 import { assertSafe } from '../lib/safety'
@@ -119,18 +123,10 @@ const executionList = defineCommand({
       return
     }
     try {
-      const query: Record<string, string | number | undefined> = {
-        select:
-          'id,workflow_id,status,active_node_id,created_at,started_at,completed_at,parent_run_id',
-        order: 'created_at.desc',
-        limit: args.limit,
-      }
-      if (args.workflow) query.workflow_id = `eq.${args.workflow}`
-      if (args.status) query.status = `eq.${args.status}`
-
-      const rows = await callRest<WorkflowRunRow[]>('lenses', 'workflow_runs', 'GET', undefined, {
-        requireAuth: true,
-        query,
+      const rows = await listRecentWorkflowRuns({
+        workflowId: args.workflow || undefined,
+        status: args.status || undefined,
+        limit: parseInt(args.limit, 10) || 25,
       })
 
       if (!rows || rows.length === 0) {
@@ -667,36 +663,18 @@ const executionRetry = defineCommand({
 // Global execution health dashboard. Available to all authenticated users
 // (not admin-only) so operators can check system state without elevated access.
 
-interface ExecutionControlStatus {
-  system_kill_switch_active: boolean
-  queue_frozen: boolean
-  frozen_reason: string | null
-  active_run_count: number
-  queued_run_count: number
-  active_battle_job_count: number
-  queued_battle_job_count: number
-  active_worker_count: number
-  stale_worker_count: number
-  dlq_workflow_count: number
-  dlq_battle_count: number
-}
-
 const executionStatus = defineCommand({
   meta: {
     name: 'status',
     description:
-      'Show global execution health dashboard (active runs, queued jobs, worker health).',
+      'Show platform execution health: queue state, in-flight runs/jobs, workers, and DLQ depth.',
   },
   args: {
     json: { type: 'boolean', description: 'Output as JSON', default: false },
   },
   async run({ args }) {
     try {
-      const status = await callRpc<ExecutionControlStatus>(
-        'fn_get_execution_status',
-        {},
-        { requireAuth: true }
-      )
+      const status = await getExecutionPlatformStatus()
 
       if (args.json) {
         printJson(status)
@@ -720,6 +698,10 @@ const executionStatus = defineCommand({
           ['Workflow DLQ', String(status.dlq_workflow_count)],
           ['Battle DLQ', String(status.dlq_battle_count)],
         ]
+      )
+
+      consola.info(
+        'Queue Frozen "running" = new workflow and battle jobs are accepted. Counts are platform-wide snapshots — zero means idle, not broken.',
       )
 
       if (status.system_kill_switch_active) {

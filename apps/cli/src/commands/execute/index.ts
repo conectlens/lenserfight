@@ -16,6 +16,7 @@ export default defineCommand({
         const sub = (m.default as { subCommands?: Record<string, unknown> }).subCommands
         return sub?.['status'] as ReturnType<typeof defineCommand>
       }),
+    history: () => import('./history').then((m) => m.default),
     workflow: defineCommand({
       meta: {
         name: 'workflow',
