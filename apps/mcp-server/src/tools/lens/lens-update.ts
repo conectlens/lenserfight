@@ -5,7 +5,7 @@ import { ok, fail, zUuid } from '../../types.js';
 
 export function registerLensUpdate(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'lens_update',
+    'update_lens',
     'Update a lens. Creates a new immutable version — the original is never modified. Pass template_body to change the prompt, params to change parameters.',
     {
       lens_id: zUuid,
@@ -25,9 +25,9 @@ export function registerLensUpdate(server: McpServer, sb: SupabaseClient): void 
           p_params: args.params ? JSON.stringify(args.params) : null,
         }) as unknown as { data: unknown; error: { message: string } | null };
         if (error) throw new Error(error.message);
-        return ok(data, 'lens_update', t0);
+        return ok(data, 'update_lens', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'lens_update', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'update_lens', t0);
       }
     }
   );

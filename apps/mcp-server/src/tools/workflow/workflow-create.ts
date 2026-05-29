@@ -6,7 +6,7 @@ import { getConfig } from '../../config.js';
 
 export function registerWorkflowCreate(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'workflow_create',
+    'create_workflow',
     'Create a new workflow. Workflows are reusable multi-step execution containers that chain lens runs and AI operations.',
     {
       title: z.string().min(1).max(200),
@@ -26,13 +26,13 @@ export function registerWorkflowCreate(server: McpServer, sb: SupabaseClient): v
         })) as unknown as { data: unknown; error: { message: string } | null };
         if (error) {
           if (error.message?.includes('missing_lenser_id')) {
-            return fail('MISSING_LENSER', 'lenser_id required. Set LENSERFIGHT_LENSER_ID or pass lenser_id.', {}, 'workflow_create', t0);
+            return fail('MISSING_LENSER', 'lenser_id required. Set LENSERFIGHT_LENSER_ID or pass lenser_id.', {}, 'create_workflow', t0);
           }
           throw new Error(error.message);
         }
-        return ok(data, 'workflow_create', t0);
+        return ok(data, 'create_workflow', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'workflow_create', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'create_workflow', t0);
       }
     }
   );

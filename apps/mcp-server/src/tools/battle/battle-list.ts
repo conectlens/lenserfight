@@ -5,7 +5,7 @@ import { paginated, fail, zUuid } from '../../types.js';
 
 export function registerBattleList(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'battle_list',
+    'list_battles',
     'List battles with pagination. Filter by status, battle_type, or creator lenser.',
     {
       limit: z.number().int().min(1).max(100).default(20).optional(),
@@ -30,9 +30,9 @@ export function registerBattleList(server: McpServer, sb: SupabaseClient): void 
           error: { message: string } | null;
         };
         if (error) throw new Error(error.message);
-        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'battle_list', t0);
+        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'list_battles', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'battle_list', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'list_battles', t0);
       }
     }
   );

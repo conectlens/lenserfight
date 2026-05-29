@@ -33,7 +33,7 @@ function paginated(items: unknown[], total: number, limit: number, offset: numbe
   return ok({ items, total, limit, offset, has_more: offset + items.length < total });
 }
 
-// ─── Token resolver (lens_run) ────────────────────────────────────────────────
+// ─── Token resolver (run_lens) ────────────────────────────────────────────────
 
 function resolveTemplate(body: string, params: any[], values: Record<string, string>) {
   let resolved = body;
@@ -58,7 +58,7 @@ function registerTools(server: McpServer) {
 
   // ── Lens tools ──────────────────────────────────────────────────────────────
 
-  server.tool("lens_list", "List lenses with pagination. Filter by visibility, status, or lenser_id.", {
+  server.tool("list_lenses", "List lenses with pagination. Filter by visibility, status, or lenser_id.", {
     limit: z.number().int().min(1).max(100).default(20).optional(),
     offset: z.number().int().min(0).default(0).optional(),
     visibility: z.enum(["public","community","private"]).optional(),
@@ -80,7 +80,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_search", "Full-text search lenses by query string, with optional tag and visibility filters.", {
+  server.tool("search_lenses", "Full-text search lenses by query string, with optional tag and visibility filters.", {
     query: z.string().min(1),
     limit: z.number().int().min(1).max(50).default(10).optional(),
     offset: z.number().int().min(0).default(0).optional(),
@@ -97,7 +97,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_get", "Get a lens with its head version body and parameter list.", {
+  server.tool("get_lens", "Get a lens with its head version body and parameter list.", {
     lens_id: z.string().uuid(),
   }, async ({ lens_id }: any) => {
     try {
@@ -108,7 +108,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_create", "Create a new lens. Use [[Param]] for required params, [[Param!]] for optional.", {
+  server.tool("create_lens", "Create a new lens. Use [[Param]] for required params, [[Param!]] for optional.", {
     title: z.string().min(1).max(200),
     template_body: z.string().min(50),
     visibility: z.enum(["public","community","private"]).default("public").optional(),
@@ -122,7 +122,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_update", "Create a new immutable version of a lens with an updated template. Returns the new version.", {
+  server.tool("update_lens", "Create a new immutable version of a lens with an updated template. Returns the new version.", {
     lens_id: z.string().uuid(),
     template_body: z.string().min(50),
     params: z.array(z.object({ label: z.string().min(1), optional: z.boolean().default(false).optional() })).default([]).optional(),
@@ -136,7 +136,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_archive", "Archive a lens. Archived lenses are hidden from default listings.", {
+  server.tool("archive_lens", "Archive a lens. Archived lenses are hidden from default listings.", {
     lens_id: z.string().uuid(),
   }, async ({ lens_id }: any) => {
     try {
@@ -147,7 +147,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_delete", "Soft-delete a lens. Requires explicit confirmation.", {
+  server.tool("delete_lens", "Soft-delete a lens. Requires explicit confirmation.", {
     lens_id: z.string().uuid(),
     confirm: z.literal(true),
   }, async ({ lens_id }: any) => {
@@ -159,7 +159,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_set_visibility", "Change the visibility of a lens.", {
+  server.tool("set_lens_visibility", "Change the visibility of a lens.", {
     lens_id: z.string().uuid(),
     visibility: z.enum(["public","community","private"]),
   }, async ({ lens_id, visibility }: any) => {
@@ -171,7 +171,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_validate_params", "Validate a set of parameter values against a lens version's schema. Returns missing required params and unknown keys.", {
+  server.tool("validate_lens_params", "Validate a set of parameter values against a lens version's schema. Returns missing required params and unknown keys.", {
     lens_id: z.string().uuid(),
     version_id: z.string().uuid().optional(),
     param_values: z.record(z.string()),
@@ -193,7 +193,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_extract_params", "Extract [[Parameter]] tokens from a lens template and return the parameter schema.", {
+  server.tool("extract_lens_params", "Extract [[Parameter]] tokens from a lens template and return the parameter schema.", {
     lens_id: z.string().uuid(),
     version_id: z.string().uuid().optional(),
   }, async (args: any) => {
@@ -212,7 +212,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_run", "Resolve a lens template by substituting [[Param]] tokens with values. Returns the ready-to-use prompt. Does NOT call an LLM. Optionally creates a workflow_run record.", {
+  server.tool("run_lens", "Resolve a lens template by substituting [[Param]] tokens with values. Returns the ready-to-use prompt. Does NOT call an LLM. Optionally creates a workflow run record.", {
     lens_id: z.string().uuid(),
     version_id: z.string().uuid().optional(),
     param_values: z.record(z.string()).default({}).optional(),
@@ -235,14 +235,14 @@ function registerTools(server: McpServer) {
       let runId: string | null = null;
       let persisted = false;
       if (args.workflow_id) {
-        const { data: run } = await lenses(sb).from("workflow_runs").insert({ workflow_id: args.workflow_id, status: "pending", trigger_mode: "manual", context_inputs: values, metadata: { mcp_tool: "lens_run", lens_id: args.lens_id, version_id: versionId } }).select("id").single();
+        const { data: run } = await lenses(sb).from("workflow_runs").insert({ workflow_id: args.workflow_id, status: "pending", trigger_mode: "manual", context_inputs: values, metadata: { mcp_tool: "run_lens", lens_id: args.lens_id, version_id: versionId } }).select("id").single();
         if (run) { runId = run.id; persisted = true; }
       }
       return ok({ resolved_prompt: resolved, run_id: runId, lens_id: args.lens_id, version_id: versionId, params_used: used, estimated_input_tokens: Math.ceil(resolved.length / 4), persisted });
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_fork", "Fork an existing lens into a new one. Copies the template and parameter schema.", {
+  server.tool("fork_lens", "Fork an existing lens into a new one. Copies the template and parameter schema.", {
     source_lens_id: z.string().uuid(),
     title: z.string().min(1).max(200),
     visibility: z.enum(["public","community","private"]).default("private").optional(),
@@ -258,7 +258,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_versions", "List all versions of a lens ordered by creation date, newest first.", {
+  server.tool("list_lens_versions", "List all versions of a lens ordered by creation date, newest first.", {
     lens_id: z.string().uuid(),
   }, async ({ lens_id }: any) => {
     try {
@@ -269,7 +269,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("lens_get_version", "Get a specific lens version by version ID or semver string.", {
+  server.tool("get_lens_version", "Get a specific lens version by version ID or semver string.", {
     lens_id: z.string().uuid(),
     version_id: z.string().uuid().optional(),
     semver: z.string().optional(),
@@ -288,7 +288,7 @@ function registerTools(server: McpServer) {
 
   // ── Battle tools ────────────────────────────────────────────────────────────
 
-  server.tool("battle_list", "List battles with pagination. Filter by status, battle_type, or creator.", {
+  server.tool("list_battles", "List battles with pagination. Filter by status, battle_type, or creator.", {
     limit: z.number().int().min(1).max(100).default(20).optional(),
     offset: z.number().int().min(0).default(0).optional(),
     status: z.enum(["draft","open","executing","voting","scoring","closed","published","archived"]).optional(),
@@ -308,7 +308,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("battle_get", "Get a battle with contenders, vote aggregates, and submission summary.", {
+  server.tool("get_battle", "Get a battle with contenders, vote aggregates, and submission summary.", {
     battle_id: z.string().uuid(),
   }, async ({ battle_id }: any) => {
     try {
@@ -319,7 +319,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("battle_create", "Create a new battle. The task_prompt defines what competitors must accomplish.", {
+  server.tool("create_battle", "Create a new battle. The task_prompt defines what competitors must accomplish.", {
     title: z.string().min(1).max(200),
     task_prompt: z.string().min(1).max(32000),
     battle_type: z.enum(["ai_vs_ai","human_vs_human_ai_votes","human_vs_human_open_votes","human_vs_ai","workflow_battle","lenser_battle"]).default("ai_vs_ai").optional(),
@@ -342,7 +342,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("battle_add_contender", "Add a contender (AI model, lenser, or workflow) to a battle.", {
+  server.tool("add_battle_contender", "Add a contender (AI model, lenser, or workflow) to a battle.", {
     battle_id: z.string().uuid(),
     contender_type: z.enum(["ai_model","lenser","workflow"]),
     display_name: z.string().min(1).max(100),
@@ -362,7 +362,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("battle_submit_run", "Submit a contender's run result for scoring.", {
+  server.tool("submit_battle_run", "Submit a contender's run result for scoring.", {
     battle_id: z.string().uuid(),
     contender_id: z.string().uuid(),
     output: z.string().min(1),
@@ -377,7 +377,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("battle_score", "Get vote aggregates and AI judge verdicts for a battle.", {
+  server.tool("get_battle_score", "Get vote aggregates and AI judge verdicts for a battle.", {
     battle_id: z.string().uuid(),
   }, async ({ battle_id }: any) => {
     try {
@@ -390,7 +390,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("battle_set_status", "Change the status of a battle. Closing or archiving requires confirmation.", {
+  server.tool("set_battle_status", "Change the status of a battle. Closing or archiving requires confirmation.", {
     battle_id: z.string().uuid(),
     status: z.enum(["draft","open","executing","voting","scoring","closed","published","archived"]),
     confirm: z.boolean().optional(),
@@ -409,7 +409,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("battle_history", "Get the battle history for a lenser: battles they created or participated in as a contender.", {
+  server.tool("get_battle_history", "Get the battle history for a lenser: battles they created or participated in as a contender.", {
     lenser_id: z.string().uuid(),
     limit: z.number().int().min(1).max(100).default(20).optional(),
     offset: z.number().int().min(0).default(0).optional(),
@@ -425,7 +425,7 @@ function registerTools(server: McpServer) {
 
   // ── Workflow tools ──────────────────────────────────────────────────────────
 
-  server.tool("workflow_list", "List workflows with pagination.", {
+  server.tool("list_workflows", "List workflows with pagination.", {
     limit: z.number().int().min(1).max(100).default(20).optional(),
     offset: z.number().int().min(0).default(0).optional(),
     lenser_id: z.string().uuid().optional(),
@@ -441,7 +441,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("workflow_get", "Get a workflow with its current version details.", {
+  server.tool("get_workflow", "Get a workflow with its current version details.", {
     workflow_id: z.string().uuid(),
   }, async ({ workflow_id }: any) => {
     try {
@@ -452,7 +452,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("workflow_create", "Create a new workflow.", {
+  server.tool("create_workflow", "Create a new workflow.", {
     name: z.string().min(1).max(200),
     description: z.string().optional(),
     lenser_id: z.string().uuid(),
@@ -465,20 +465,20 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("workflow_run", "Start a workflow run with optional context inputs. Returns the run_id for status polling.", {
+  server.tool("run_workflow", "Start a workflow run with optional context inputs. Returns the run_id for status polling.", {
     workflow_id: z.string().uuid(),
     context_inputs: z.record(z.string()).default({}).optional(),
     global_model_id: z.string().uuid().optional(),
   }, async (args: any) => {
     try {
       const sb = getClient();
-      const { data, error } = await lenses(sb).from("workflow_runs").insert({ workflow_id: args.workflow_id, status: "pending", trigger_mode: "manual", context_inputs: args.context_inputs ?? {}, global_model_id: args.global_model_id ?? null, metadata: { mcp_tool: "workflow_run" } }).select("id,status,created_at").single();
+      const { data, error } = await lenses(sb).from("workflow_runs").insert({ workflow_id: args.workflow_id, status: "pending", trigger_mode: "manual", context_inputs: args.context_inputs ?? {}, global_model_id: args.global_model_id ?? null, metadata: { mcp_tool: "run_workflow" } }).select("id,status,created_at").single();
       if (error) throw new Error(error.message);
       return ok(data);
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("workflow_run_status", "Get the current status, progress, and cost metadata of a workflow run.", {
+  server.tool("get_workflow_run_status", "Get the current status, progress, and cost metadata of a workflow run.", {
     run_id: z.string().uuid(),
   }, async ({ run_id }: any) => {
     try {
@@ -489,7 +489,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("workflow_run_logs", "Get node-level execution logs for a workflow run, ordered by time.", {
+  server.tool("get_workflow_run_logs", "Get node-level execution logs for a workflow run, ordered by time.", {
     run_id: z.string().uuid(),
   }, async ({ run_id }: any) => {
     try {
@@ -503,7 +503,7 @@ function registerTools(server: McpServer) {
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("workflow_retry", "Retry a failed or cancelled workflow run with the same inputs. Links to original via parent_run_id.", {
+  server.tool("retry_workflow", "Retry a failed or cancelled workflow run with the same inputs. Links to original via parent_run_id.", {
     run_id: z.string().uuid(),
   }, async ({ run_id }: any) => {
     try {
@@ -511,13 +511,13 @@ function registerTools(server: McpServer) {
       const { data: original, error: fetchErr } = await lenses(sb).from("workflow_runs").select("id,workflow_id,context_inputs,global_model_id,status").eq("id", run_id).single();
       if (fetchErr) { if (fetchErr.code === "PGRST116") return fail("NOT_FOUND", `Run ${run_id} not found`); throw new Error(fetchErr.message); }
       if (!original) return fail("NOT_FOUND", `Run ${run_id} not found`);
-      const { data: newRun, error: insertErr } = await lenses(sb).from("workflow_runs").insert({ workflow_id: original.workflow_id, status: "pending", trigger_mode: "manual", context_inputs: original.context_inputs, global_model_id: original.global_model_id, parent_run_id: run_id, metadata: { mcp_tool: "workflow_retry", retried_from: run_id } }).select("id,status,created_at").single();
+      const { data: newRun, error: insertErr } = await lenses(sb).from("workflow_runs").insert({ workflow_id: original.workflow_id, status: "pending", trigger_mode: "manual", context_inputs: original.context_inputs, global_model_id: original.global_model_id, parent_run_id: run_id, metadata: { mcp_tool: "retry_workflow", retried_from: run_id } }).select("id,status,created_at").single();
       if (insertErr) throw new Error(insertErr.message);
       return ok({ new_run: newRun, original_run_id: run_id });
     } catch (e) { return fail("DB_ERROR", (e as Error).message); }
   });
 
-  server.tool("workflow_summarize", "Summarize a completed workflow run: status, cost, duration, and node result counts.", {
+  server.tool("summarize_workflow", "Summarize a completed workflow run: status, cost, duration, and node result counts.", {
     run_id: z.string().uuid(),
   }, async ({ run_id }: any) => {
     try {

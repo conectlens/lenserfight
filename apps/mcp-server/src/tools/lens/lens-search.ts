@@ -5,7 +5,7 @@ import { paginated, fail } from '../../types.js';
 
 export function registerLensSearch(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'lens_search',
+    'search_lenses',
     'Full-text search lenses by keyword across title, description, and rendered content. Returns lenses with title, description, language, author, tags, and head_version_id. Use this when the user describes what they want (e.g. "logo brief", "code review") rather than knowing a specific lens id.',
     {
       query: z.string().min(1),
@@ -28,9 +28,9 @@ export function registerLensSearch(server: McpServer, sb: SupabaseClient): void 
           error: { message: string } | null;
         };
         if (error) throw new Error(error.message);
-        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'lens_search', t0);
+        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'search_lenses', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'lens_search', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'search_lenses', t0);
       }
     }
   );

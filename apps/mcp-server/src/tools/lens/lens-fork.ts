@@ -11,7 +11,7 @@ interface ResolveTemplateResult {
 
 export function registerLensFork(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'lens_fork',
+    'fork_lens',
     'Fork a lens. Creates a new lens with the source as its parent. Optionally override the title or template body.',
     {
       source_lens_id: zUuid,
@@ -34,7 +34,7 @@ export function registerLensFork(server: McpServer, sb: SupabaseClient): void {
           if (resolveErr) throw new Error(resolveErr.message);
           finalTemplateBody = resolveData?.template_body;
         }
-        if (!finalTemplateBody) return fail('NOT_FOUND', `Source lens ${args.source_lens_id} or its template not found`, {}, 'lens_fork', t0);
+        if (!finalTemplateBody) return fail('NOT_FOUND', `Source lens ${args.source_lens_id} or its template not found`, {}, 'fork_lens', t0);
 
         const { data, error } = (await sb.rpc('fn_create_lens' as never, {
           p_title: args.title ?? `Fork of ${args.source_lens_id}`,
@@ -44,9 +44,9 @@ export function registerLensFork(server: McpServer, sb: SupabaseClient): void {
           p_params: JSON.stringify([]),
         })) as unknown as { data: unknown; error: { message: string } | null };
         if (error) throw new Error(error.message);
-        return ok(data, 'lens_fork', t0);
+        return ok(data, 'fork_lens', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'lens_fork', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'fork_lens', t0);
       }
     }
   );

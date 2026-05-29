@@ -11,7 +11,7 @@ interface ResolveTemplateResult {
 
 export function registerLensExtractParams(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'lens_extract_params',
+    'extract_lens_params',
     'Extract [[Parameter]] token info from a lens version. Returns each parameter label, whether it is optional, and its internal UUID.',
     {
       lens_id: zUuid,
@@ -28,7 +28,7 @@ export function registerLensExtractParams(server: McpServer, sb: SupabaseClient)
           error: { message: string } | null;
         };
         if (error) throw new Error(error.message);
-        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'lens_extract_params', t0);
+        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'extract_lens_params', t0);
 
         const tokens: string[] = [];
         if (data.template_body) {
@@ -44,9 +44,9 @@ export function registerLensExtractParams(server: McpServer, sb: SupabaseClient)
           version_id: data.version_id,
           params: data.parameters ?? [],
           raw_tokens_in_template: tokens,
-        }, 'lens_extract_params', t0);
+        }, 'extract_lens_params', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'lens_extract_params', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'extract_lens_params', t0);
       }
     }
   );

@@ -49,13 +49,13 @@ export function resolveTemplate(
 
 export function registerLensRun(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'lens_run',
+    'run_lens',
     `Resolve a lens template into a ready-to-execute prompt by substituting its [[Parameter]] tokens with values you supply.
 
 WORKFLOW:
-1. Discover lenses with lens_list or lens_search.
-2. Call lens_get(lens_id) to see the parameter list (label + optional flag) and template body.
-3. Call lens_run(lens_id, param_values={"Topic":"...", "Language":"..."}) with values keyed by parameter label.
+1. Discover lenses with list_lenses or search_lenses.
+2. Call get_lens(lens_id) to see the parameter list (label + optional flag) and template body.
+3. Call run_lens(lens_id, param_values={"Topic":"...", "Language":"..."}) with values keyed by parameter label.
 4. The returned 'resolved_prompt' is what YOU (the AI model) should execute next — this tool does NOT call an LLM. Read 'resolved_prompt' and respond to the user with the result.
 
 PARAM VALUES:
@@ -64,7 +64,7 @@ PARAM VALUES:
 - Unknown keys are ignored.
 - Optional params not provided → token replaced with empty string.
 
-If workflow_id is given, the run is persisted as a workflow_run for telemetry; otherwise it is ephemeral.`,
+If workflow_id is given, the run is persisted as a workflow run record for telemetry; otherwise it is ephemeral.`,
     {
       lens_id: zUuid,
       version_id: zUuid.optional(),
@@ -83,7 +83,7 @@ If workflow_id is given, the run is persisted as a workflow_run for telemetry; o
           error: { message: string } | null;
         };
         if (resolveErr) throw new Error(resolveErr.message);
-        if (!resolveData) return fail('NOT_FOUND', `Lens ${args.lens_id} not found`, {}, 'lens_run', t0);
+        if (!resolveData) return fail('NOT_FOUND', `Lens ${args.lens_id} not found`, {}, 'run_lens', t0);
 
         const { resolved, missing, used } = resolveTemplate(
           resolveData.template_body,
@@ -94,14 +94,14 @@ If workflow_id is given, the run is persisted as a workflow_run for telemetry; o
         if (missing.length > 0) {
           return fail(
             'MISSING_PARAMS',
-            `Lens "${resolveData.title ?? args.lens_id}" needs ${missing.length} more parameter(s) before it can run. Ask the user for: ${missing.join(', ')}. Then call lens_run again with param_values including these labels.`,
+            `Lens "${resolveData.title ?? args.lens_id}" needs ${missing.length} more parameter(s) before it can run. Ask the user for: ${missing.join(', ')}. Then call run_lens again with param_values including these labels.`,
             {
               missing,
               all_parameters: resolveData.parameters ?? [],
               lens_title: resolveData.title ?? null,
               lens_description: resolveData.description ?? null,
             },
-            'lens_run',
+            'run_lens',
             t0
           );
         }
@@ -118,7 +118,7 @@ If workflow_id is given, the run is persisted as a workflow_run for telemetry; o
               p_global_model_id: null,
               p_idempotency_key: null,
               p_metadata: {
-                mcp_tool: 'lens_run',
+                mcp_tool: 'run_lens',
                 lens_id: args.lens_id,
                 version_id: resolveData.version_id,
               },
@@ -144,9 +144,9 @@ If workflow_id is given, the run is persisted as a workflow_run for telemetry; o
           estimated_input_tokens: Math.ceil(resolved.length / 4),
           persisted,
           next_step: 'Execute the resolved_prompt and return the result to the user. This MCP tool does not call any LLM itself.',
-        }, 'lens_run', t0);
+        }, 'run_lens', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'lens_run', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'run_lens', t0);
       }
     }
   );

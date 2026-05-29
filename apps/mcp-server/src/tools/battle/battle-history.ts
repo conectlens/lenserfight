@@ -6,7 +6,7 @@ import { getConfig } from '../../config.js';
 
 export function registerBattleHistory(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'battle_history',
+    'get_battle_history',
     'Get structured battle history for a lenser — battles they created or participated in, with outcomes.',
     {
       lenser_id: zUuid.optional(),
@@ -30,9 +30,9 @@ export function registerBattleHistory(server: McpServer, sb: SupabaseClient): vo
           error: { message: string } | null;
         };
         if (error) throw new Error(error.message);
-        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'battle_history', t0);
+        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'get_battle_history', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'battle_history', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'get_battle_history', t0);
       }
     }
   );

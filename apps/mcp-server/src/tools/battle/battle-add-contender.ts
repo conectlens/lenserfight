@@ -5,7 +5,7 @@ import { ok, fail, zUuid } from '../../types.js';
 
 export function registerBattleAddContender(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'battle_add_contender',
+    'add_battle_contender',
     'Add a competitor to a battle. contender_ref_id is a profile UUID (human) or ai_lenser UUID (AI). Slot is auto-assigned A, B, C... if omitted.',
     {
       battle_id: zUuid,
@@ -26,13 +26,13 @@ export function registerBattleAddContender(server: McpServer, sb: SupabaseClient
         })) as unknown as { data: unknown; error: { message: string } | null };
 
         if (error) {
-          if (error.message?.includes('slots_full')) return fail('SLOTS_FULL', 'All 26 contender slots are taken', {}, 'battle_add_contender', t0);
-          if (error.message?.includes('access_denied')) return fail('FORBIDDEN', 'You do not own this battle', {}, 'battle_add_contender', t0);
+          if (error.message?.includes('slots_full')) return fail('SLOTS_FULL', 'All 26 contender slots are taken', {}, 'add_battle_contender', t0);
+          if (error.message?.includes('access_denied')) return fail('FORBIDDEN', 'You do not own this battle', {}, 'add_battle_contender', t0);
           throw new Error(error.message);
         }
-        return ok(data, 'battle_add_contender', t0);
+        return ok(data, 'add_battle_contender', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'battle_add_contender', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'add_battle_contender', t0);
       }
     }
   );

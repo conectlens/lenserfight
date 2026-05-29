@@ -4,7 +4,7 @@ import { ok, fail, zUuid } from '../../types.js';
 
 export function registerLensVersions(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'lens_versions',
+    'list_lens_versions',
     'List all versions of a lens ordered newest-first. Each version is immutable — new edits create new versions.',
     {
       lens_id: zUuid,
@@ -16,9 +16,9 @@ export function registerLensVersions(server: McpServer, sb: SupabaseClient): voi
           p_lens_id: lens_id,
         })) as unknown as { data: unknown; error: { message: string } | null };
         if (error) throw new Error(error.message);
-        return ok(data ?? { lens_id, versions: [], count: 0 }, 'lens_versions', t0);
+        return ok(data ?? { lens_id, versions: [], count: 0 }, 'list_lens_versions', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'lens_versions', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'list_lens_versions', t0);
       }
     }
   );

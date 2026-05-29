@@ -5,8 +5,8 @@ import { paginated, fail, zUuid } from '../../types.js';
 
 export function registerLensList(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'lens_list',
-    'Browse LenserFight lenses (reusable AI prompt templates). Returns a paginated list with title, description, language, author handle, tags, and head_version_id for each lens. Use this to discover lenses available to the authenticated user. Each result includes everything you need to identify a lens by topic; call lens_get for the full template body and parameters.',
+    'list_lenses',
+    'Browse LenserFight lenses (reusable AI prompt templates). Returns a paginated list with title, description, language, author handle, tags, and head_version_id for each lens. Use this to discover lenses available to the authenticated user. Each result includes everything you need to identify a lens by topic; call get_lens for the full template body and parameters.',
     {
       limit: z.number().int().min(1).max(100).default(20).optional(),
       offset: z.number().int().min(0).default(0).optional(),
@@ -32,9 +32,9 @@ export function registerLensList(server: McpServer, sb: SupabaseClient): void {
           error: { message: string } | null;
         };
         if (error) throw new Error(error.message);
-        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'lens_list', t0);
+        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'list_lenses', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'lens_list', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'list_lenses', t0);
       }
     }
   );

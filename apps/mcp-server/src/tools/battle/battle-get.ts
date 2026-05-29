@@ -4,7 +4,7 @@ import { ok, fail, zUuid } from '../../types.js';
 
 export function registerBattleGet(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'battle_get',
+    'get_battle',
     'Get a battle with its contenders, vote aggregates, and submissions.',
     {
       battle_id: zUuid,
@@ -17,10 +17,10 @@ export function registerBattleGet(server: McpServer, sb: SupabaseClient): void {
         })) as unknown as { data: unknown; error: { message: string } | null };
 
         if (error) throw new Error(error.message);
-        if (!data) return fail('NOT_FOUND', `Battle ${battle_id} not found`, {}, 'battle_get', t0);
-        return ok(data, 'battle_get', t0);
+        if (!data) return fail('NOT_FOUND', `Battle ${battle_id} not found`, {}, 'get_battle', t0);
+        return ok(data, 'get_battle', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'battle_get', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'get_battle', t0);
       }
     }
   );

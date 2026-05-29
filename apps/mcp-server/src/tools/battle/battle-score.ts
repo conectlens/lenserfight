@@ -4,7 +4,7 @@ import { ok, fail, zUuid } from '../../types.js';
 
 export function registerBattleScore(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'battle_score',
+    'get_battle_score',
     'Read scoring data for a battle: vote aggregates per contender and any AI judge verdicts.',
     {
       battle_id: zUuid,
@@ -16,9 +16,9 @@ export function registerBattleScore(server: McpServer, sb: SupabaseClient): void
           p_battle_id: battle_id,
         })) as unknown as { data: unknown; error: { message: string } | null };
         if (error) throw new Error(error.message);
-        return ok(data, 'battle_score', t0);
+        return ok(data, 'get_battle_score', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'battle_score', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'get_battle_score', t0);
       }
     }
   );

@@ -4,8 +4,8 @@ import { ok, fail, zUuid } from '../../types.js';
 
 export function registerLensGet(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'lens_get',
-    'Fetch a single lens with full metadata: title, description, content (rendered preview), author, tags, language, and its head version including the template body, input/output contracts, and parameter list. Call this after lens_list / lens_search when you need the actual template + parameters to execute a lens via lens_run.',
+    'get_lens',
+    'Fetch a single lens with full metadata: title, description, content (rendered preview), author, tags, language, and its head version including the template body, input/output contracts, and parameter list. Call this after list_lenses / search_lenses when you need the actual template + parameters to execute a lens via run_lens.',
     {
       lens_id: zUuid,
     },
@@ -16,10 +16,10 @@ export function registerLensGet(server: McpServer, sb: SupabaseClient): void {
           p_lens_id: lens_id,
         })) as unknown as { data: unknown; error: { message: string } | null };
         if (error) throw new Error(error.message);
-        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'lens_get', t0);
-        return ok(data, 'lens_get', t0);
+        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'get_lens', t0);
+        return ok(data, 'get_lens', t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'lens_get', t0);
+        return fail('DB_ERROR', (e as Error).message, {}, 'get_lens', t0);
       }
     }
   );
