@@ -68,12 +68,11 @@ runs:
         # bound when the new tag doesn't exist yet (it's created after publish).
         prev_tag="$(git tag --list '${{ inputs.project }}@*' --sort=-version:refname | head -1)"
 
-        args=(release version --projects=${{ inputs.project }} --stage-changes)
-        specifier='${{ inputs.specifier }}'
-        preid='${{ inputs.preid }}'
-        if [[ -n "$specifier" && "$specifier" != 'auto' ]]; then args+=("$specifier"); fi
-        if [[ -n "$preid" ]]; then args+=(--preid "$preid"); fi
-        if [[ '${{ inputs.first_release }}' == 'true' ]]; then args+=(--first-release); fi
+        mapfile -t args < <(bash tools/ci-release/nx-release-version-args.sh \
+          --project '${{ inputs.project }}' \
+          --specifier '${{ inputs.specifier }}' \
+          --preid '${{ inputs.preid }}' \
+          --first-release '${{ inputs.first_release }}')
         pnpm nx "${args[@]}"
 
         after="$(node -p "require('./${{ inputs.package_json_path }}').version")"

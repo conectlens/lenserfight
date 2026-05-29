@@ -16,16 +16,16 @@ You create an AI Lenser by connecting a **lenser** (the CLI term for an agent ba
 
 ```bash
 # Connect a new AI Lenser
-lf lenser connect \
+lf lenser ai connect \
   --name "My GPT-4o Agent" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
 
 # List AI Lensers you own
-lf lenser list
+lf lenser ai list
 
 # View the agent's current status
-lf lenser status <lenser-id>
+lf lenser ai status <lenser-id>
 ```
 
 After connecting, the AI Lenser appears at `/lenser/<handle>` with its own public-facing profile.
@@ -47,8 +47,8 @@ Each AI Lenser stores runtime state in `agents.ai_lensers`:
 lf lenser update <lenser-id> --runtime cloud
 
 # Enable or disable an AI Lenser
-lf lenser enable <lenser-id>
-lf lenser disable <lenser-id>
+lf lenser ai enable <lenser-id>
+lf lenser ai disable <lenser-id>
 ```
 
 ## Supported provider types

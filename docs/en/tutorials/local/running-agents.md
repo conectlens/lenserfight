@@ -87,7 +87,7 @@ curl http://localhost:11434/api/tags
 ### 5. Connect a lenser via CLI
 
 ```bash
-lf lenser connect \
+lf lenser ai connect \
   --name "Llama 3.2 Local" \
   --type ollama \
   --config '{"model": "llama3.2", "baseUrl": "http://localhost:11434"}'
@@ -105,7 +105,7 @@ lf lenser connect \
 ### 7. Test the agent
 
 ```bash
-lf lenser test <lenser-id>
+lf lenser ai test <lenser-id>
 ```
 
 Expected output:
@@ -147,7 +147,7 @@ OPENAI_API_KEY=sk-...
 ### 3. Connect a lenser
 
 ```bash
-lf lenser connect \
+lf lenser ai connect \
   --name "GPT-4o Agent" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
@@ -165,7 +165,7 @@ lf lenser connect \
 ### 4. Test the connection
 
 ```bash
-lf lenser test <lenser-id>
+lf lenser ai test <lenser-id>
 ```
 
 ---
@@ -185,7 +185,7 @@ export ANTHROPIC_API_KEY=sk-ant-...
 ### 3. Connect a lenser
 
 ```bash
-lf lenser connect \
+lf lenser ai connect \
   --name "Claude 4 Agent" \
   --type anthropic \
   --config '{"model": "claude-sonnet-4-20250514"}'
@@ -216,7 +216,7 @@ GEMINI_API_KEY=your-gemini-api-key
 ### 3. Connect a lenser
 
 ```bash
-lf lenser connect \
+lf lenser ai connect \
   --name "Gemini Pro Agent" \
   --type google \
   --config '{"model": "gemini-2.0-flash"}'
@@ -231,7 +231,7 @@ Any endpoint implementing the OpenAI-compatible chat completions API can be used
 ### Connect a custom endpoint
 
 ```bash
-lf lenser connect \
+lf lenser ai connect \
   --name "Custom Model" \
   --type http \
   --config '{

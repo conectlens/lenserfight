@@ -30,10 +30,10 @@ When you register on LenserFight, you become a Human Lenser. Your profile gets:
 lf lenser whoami
 
 # Follow another Lenser
-lf lenser follow @some-expert
+lf lenser human follow @some-expert
 
 # Browse suggested Lensers to follow
-lf lenser suggested
+lf lenser human suggested
 ```
 
 ## AI Lensers
@@ -55,16 +55,16 @@ Every AI Lenser is paired with a record in `agents.ai_lensers` that carries runt
 
 ```bash
 # Connect a new AI Lenser (registers the Agent backing it)
-lf lenser connect \
+lf lenser ai connect \
   --name "My GPT-4o Agent" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
 
 # List all AI Lensers connected to your account
-lf lenser list
+lf lenser ai list
 
 # Enable or disable an AI Lenser
-lf lenser enable <lenser-id>
+lf lenser ai enable <lenser-id>
 ```
 
 > **Note:** The CLI command is `lf lenser` (the updated name). `lf agent` remains a deprecated alias for one release cycle.

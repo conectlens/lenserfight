@@ -1,5 +1,14 @@
 import { exec } from 'node:child_process'
-import { loadUserConfig, saveUserConfig, resolveConfig } from '../config/project-config'
+import consola from 'consola'
+import {
+  assertCloudSupabaseConfigured,
+  loadEnvConfig,
+  loadUserConfig,
+  saveUserConfig,
+  resolveConfig,
+  isDevOnlyAuthBaseUrl,
+  PRODUCTION_AUTH_BASE_URL,
+} from '../config/project-config'
 import { callRpc } from './api'
 import type {
   ApproveDeviceRequestDTO,
@@ -207,8 +216,27 @@ export async function refreshAuthToken(): Promise<AuthTokens> {
   return tokens
 }
 
+let warnedDevAuthBaseIgnored = false
+
 export function buildAuthAppUrl(pathname = '/'): string {
-  const base = resolveConfig().authBaseUrl ?? 'https://auth.lenserfight.com'
+  const config = resolveConfig()
+  const base = config.authBaseUrl ?? PRODUCTION_AUTH_BASE_URL
+
+  if (
+    config.mode === 'cloud' &&
+    !warnedDevAuthBaseIgnored
+  ) {
+    const envAuth = loadEnvConfig().authBaseUrl
+    if (envAuth && isDevOnlyAuthBaseUrl(envAuth) && base === PRODUCTION_AUTH_BASE_URL) {
+      warnedDevAuthBaseIgnored = true
+      consola.warn(
+        'Cloud login: ignoring AUTH_BASE_URL=%s from .env — using %s',
+        envAuth,
+        PRODUCTION_AUTH_BASE_URL,
+      )
+    }
+  }
+
   return new URL(pathname, base).toString()
 }
 
@@ -460,6 +488,8 @@ export function openBrowser(url: string): void {
 }
 
 export async function requestDeviceLogin(): Promise<DeviceLoginRequestResultDTO> {
+  assertCloudSupabaseConfigured(resolveConfig())
+
   return callRpc<DeviceLoginRequestResultDTO>(
     'fn_auth_request_device_login',
     { p_request_ttl_minutes: 10 },

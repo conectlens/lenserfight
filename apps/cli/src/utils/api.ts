@@ -8,6 +8,9 @@ import {
   saveUserConfig,
   getDeviceConfigDir,
   getEffectiveMode,
+  assertCloudSupabaseConfigured,
+  isDevOnlyHostUrl,
+  loadEnvConfig,
   type LenserfightConfig,
 } from '../config/project-config';
 import { reportCliError } from './error-reporter';
@@ -140,12 +143,32 @@ async function tryRefreshToken(config: LenserfightConfig): Promise<void> {
   });
 }
 
+let warnedCloudDevEnvIgnored = false;
+
+function warnIfModeConfigMismatch(config: LenserfightConfig): void {
+  const { mode } = getEffectiveMode();
+  if (mode === 'local') {
+    if (config.supabaseUrl.includes('supabase.co'))
+      consola.warn(`Supabase local mode active but supabaseUrl points to production: ${config.supabaseUrl}`);
+    if (config.cloudApiUrl.includes('supabase.co'))
+      consola.warn(`Supabase local mode active but cloudApiUrl points to production: ${config.cloudApiUrl}`);
+    return;
+  }
+
+  if (mode !== 'cloud' || warnedCloudDevEnvIgnored) return;
+  const env = loadEnvConfig();
+  const ignored =
+    (env.supabaseUrl && isDevOnlyHostUrl(env.supabaseUrl)) ||
+    (env.cloudApiUrl && isDevOnlyHostUrl(env.cloudApiUrl));
+  if (!ignored) return;
+  warnedCloudDevEnvIgnored = true;
+  consola.warn(
+    'Cloud mode: ignoring local dev SUPABASE_URL/API_URL from .env — using official LenserFight Cloud Supabase',
+  );
+}
+
 function warnIfProductionInLocalMode(config: LenserfightConfig): void {
-  if (getEffectiveMode().mode !== 'local') return;
-  if (config.supabaseUrl.includes('supabase.co'))
-    consola.warn(`Supabase local mode active but supabaseUrl points to production: ${config.supabaseUrl}`);
-  if (config.cloudApiUrl.includes('lenserfight.com'))
-    consola.warn(`Supabase local mode active but cloudApiUrl points to production: ${config.cloudApiUrl}`);
+  warnIfModeConfigMismatch(config);
 }
 
 async function callRpcInner<T = unknown>(
@@ -157,6 +180,7 @@ async function callRpcInner<T = unknown>(
   let config = resolveConfig();
 
   warnIfProductionInLocalMode(config);
+  assertCloudSupabaseConfigured(config);
 
   if (!config.supabaseAnonKey) {
     throw new Error(

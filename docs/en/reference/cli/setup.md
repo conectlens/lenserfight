@@ -42,7 +42,7 @@ lf setup --json           # machine-readable checklist state
     [ ] Create a Workflow
          → run: lf workflow create --template single-agent
     [ ] Create a Lenser
-         → run: lf lenser connect
+         → run: lf lenser ai connect
     [ ] Create or Join a Battle
          → run: lf battle create
 

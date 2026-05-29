@@ -154,9 +154,9 @@ See [Communities Commands](communities.md).
 
 | Command | Description |
 |---------|-------------|
-| `lf lenser follow/unfollow <id>` | Follow or unfollow a lenser |
-| `lf lenser followers/following` | List followers/following |
-| `lf lenser suggested` | Suggested lensers to follow |
+| `lf lenser human follow/unfollow <id>` | Follow or unfollow a lenser |
+| `lf lenser human followers/following` | List followers/following |
+| `lf lenser human suggested` | Suggested lensers to follow |
 | `lf tag follow/unfollow/followed` | Follow tags |
 | `lf feed` | View personalised content feed |
 | `lf leaderboard` | Activity leaderboard |
@@ -168,10 +168,10 @@ See [Community Commands](community.md).
 
 | Command | Description |
 |---------|-------------|
-| `lf lenser connect` | Register a lenser record |
-| `lf lenser list/view/enable/remove` | Manage lenser records |
-| `lf lenser test` | Probe a registered lenser |
-| `lf lenser types` | List preview lenser types |
+| `lf lenser ai connect` | Register a lenser record |
+| `lf lenser ai list/view/enable/remove` | Manage AI lensers and gateway runners |
+| `lf lenser ai test` | Probe a registered lenser |
+| `lf lenser ai types` | List preview lenser types |
 
 `lf agent` remains a deprecated alias for one release cycle.
 

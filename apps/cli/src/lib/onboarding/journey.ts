@@ -40,7 +40,7 @@ export const JOURNEY_STEPS: JourneyStep[] = [
     id: 'agent_created',
     label: 'Create a Lenser',
     required: true,
-    command: 'lf lenser connect',
+    command: 'lf lenser ai connect',
     webPath: '/lensers/new',
     dependsOn: 'lens_created',
   },

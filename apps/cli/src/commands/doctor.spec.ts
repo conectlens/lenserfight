@@ -16,6 +16,8 @@ jest.mock('../config/project-config', () => ({
   resolveConfig: jest.fn(),
   getEffectiveMode: jest.fn().mockReturnValue({ mode: 'cloud', source: 'default' }),
   getOnboardingState: jest.fn(),
+  userPreferencesExist: jest.fn().mockReturnValue(false),
+  getUserPreferencesPath: jest.fn().mockReturnValue('/home/user/.config/lenserfight/lenserfight.json'),
 }))
 jest.mock('../lib/onboarding/detect', () => ({
   detectNode: jest.fn(),

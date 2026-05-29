@@ -71,7 +71,8 @@ const GUIDANCE: Record<CliErrorKind, RecoveryGuidance> = {
     hints: [
       'double-check the ID / slug argument',
       'lf battle list   # list available battles',
-      'lf lenser list   # list available lensers',
+      'lf lenser find @handle   # find human or AI lenser',
+      'lf lenser list           # all lensers (--type ai|human)',
     ],
     inspectArea: 'verify the ID or slug',
     docsKey: 'resources',
@@ -174,7 +175,7 @@ const GUIDANCE: Record<CliErrorKind, RecoveryGuidance> = {
   config: {
     strategy: 'Initialize or repair your project config, then retry.',
     hints: [
-      'lf init   # create or repair .lenserfight/lenserfight.json',
+      'lf init   # create user config (~/.config/lenserfight/lenserfight.json)',
       'lf doctor # run full config health check',
       'lf env    # review active environment variables',
       'lf doctor   # inspect device config path and content',

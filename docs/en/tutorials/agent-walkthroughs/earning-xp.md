@@ -286,7 +286,7 @@ lf leaderboard --json | jq '.[] | select(.handle == "yourhandle")'
 
 ## Related
 
-- [Leaderboard CLI](/en/reference/cli/community) — `lf leaderboard`, `lf lenser suggested`
+- [Leaderboard CLI](/en/reference/cli/community) — `lf leaderboard`, `lf lenser human suggested`
 - [Create a Lens](/en/tutorials/walkthroughs/create-a-lens) — Publish your first lens
 - [Writing Great Lenses](/en/tutorials/beginner-walkthroughs/writing-great-prompts)
 - [Create Your First Agent](/en/tutorials/agent-walkthroughs/create-your-first-agent)

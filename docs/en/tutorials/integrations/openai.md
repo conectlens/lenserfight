@@ -43,7 +43,7 @@ OPENAI_API_KEY=sk-...
 ### 3. Create a lenser
 
 ```bash
-lf lenser connect \
+lf lenser ai connect \
   --name "GPT-4o Agent" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
@@ -61,7 +61,7 @@ lf lenser connect \
 
 ```bash
 # With org and project scoping
-lf lenser connect \
+lf lenser ai connect \
   --name "Org Agent" \
   --type openai-agents \
   --config '{

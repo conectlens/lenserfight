@@ -2,9 +2,23 @@
 
 The CLI uses a **two-layer config model** to keep secrets out of your repository.
 
-## Project config — `.lenserfight/lenserfight.json`
+## User config — OS path (default for `lf init`)
 
-Stores non-secret settings for this project. Safe to commit. Created by `lenserfight init`.
+Stores your personal mode, Supabase URL, and ports. **Not** written into git repositories by default.
+
+| Operating System | Path |
+|-----------------|------|
+| Linux | `$XDG_CONFIG_HOME/lenserfight/lenserfight.json` (default: `~/.config/lenserfight/lenserfight.json`) |
+| macOS | `~/Library/Application Support/lenserfight/lenserfight.json` |
+| Windows | `%APPDATA%\lenserfight\lenserfight.json` |
+
+Run `lenserfight init` from any directory to create this file. Use `lenserfight init --project` only when you intentionally want a repo-local override (see below).
+
+---
+
+## Project config — `.lenserfight/lenserfight.json` (optional)
+
+Stores non-secret settings for a specific repository. Safe to commit when the team shares the same target. Created only with `lenserfight init --project`.
 
 ```
 your-project/
@@ -17,7 +31,7 @@ your-project/
 |-------|------|---------|-------------|
 | `mode` | `local` \| `cloud` | `local` | Target environment |
 | `supabaseUrl` | string | `http://127.0.0.1:54321` | Supabase API URL |
-| `cloudApiUrl` | string | `http://localhost:8786` / `https://api.lenserfight.com` | LenserFight Cloud API URL |
+| `cloudApiUrl` | string | `{SUPABASE_URL}/functions/v1` | Supabase Edge Functions base (override with `API_URL`) |
 | `cloudId` | string | — | Project identifier on LenserFight Cloud |
 | `dbPort` | number | `54322` | PostgreSQL port |
 | `apiPort` | number | `54321` | PostgREST API port |

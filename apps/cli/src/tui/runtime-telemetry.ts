@@ -1,7 +1,8 @@
 import os from 'node:os'
 import { execFile } from 'node:child_process'
 import { A, sym } from '../utils/ansi'
-import { resolveConfig } from '../config/project-config'
+import { getEffectiveMode, resolveConfig } from '../config/project-config'
+import { getHealthProbeUrls, probeHealthUrls } from '../lib/health-probe'
 
 // ── Mode ──────────────────────────────────────────────────────────────────────
 
@@ -171,25 +172,38 @@ async function probeServices(): Promise<void> {
       }
     } catch { results.push({ name: 'OLLAMA', status: 'down', detail: 'unreachable' }) }
 
-    // Supabase
-    try {
-      if (config.supabaseUrl) {
-        const res = await probe(`${config.supabaseUrl}/auth/v1/health`)
-        results.push({ name: 'SUPABASE', status: res.ok ? 'up' : 'down', detail: res.ok ? 'healthy' : `HTTP ${res.status}` })
-      } else {
-        results.push({ name: 'SUPABASE', status: 'unknown', detail: 'not configured' })
-      }
-    } catch { results.push({ name: 'SUPABASE', status: 'down', detail: 'unreachable' }) }
+    const apiMode = getEffectiveMode().mode
 
-    // Cloud API
+    // Supabase (cloud: official project auth health; local: same + optional legacy API)
     try {
-      if (config.cloudApiUrl) {
-        const res = await probe(`${config.cloudApiUrl}/health`)
-        results.push({ name: 'CLOUD API', status: res.ok ? 'up' : 'down', detail: res.ok ? 'healthy' : `HTTP ${res.status}` })
+      const healthUrls = getHealthProbeUrls(apiMode, config)
+      if (healthUrls.length === 0) {
+        results.push({ name: 'SUPABASE', status: 'unknown', detail: 'not configured' })
+      } else if (await probeHealthUrls(healthUrls, { apikey: config.supabaseAnonKey })) {
+        results.push({ name: 'SUPABASE', status: 'up', detail: 'healthy' })
       } else {
-        results.push({ name: 'CLOUD API', status: 'unknown', detail: 'not configured' })
+        results.push({ name: 'SUPABASE', status: 'down', detail: 'unreachable' })
       }
-    } catch { results.push({ name: 'CLOUD API', status: 'down', detail: 'unreachable' }) }
+    } catch {
+      results.push({ name: 'SUPABASE', status: 'down', detail: 'unreachable' })
+    }
+
+    // Legacy standalone platform API (local dev only — not Edge Functions /functions/v1)
+    if (apiMode === 'local') {
+      try {
+        const legacy = getHealthProbeUrls('local', config).find((u) => u.endsWith('/health'))
+        if (legacy) {
+          const res = await probe(legacy)
+          results.push({
+            name: 'PLATFORM API',
+            status: res.ok ? 'up' : 'down',
+            detail: res.ok ? 'healthy' : `HTTP ${res.status}`,
+          })
+        }
+      } catch {
+        results.push({ name: 'PLATFORM API', status: 'down', detail: 'unreachable' })
+      }
+    }
 
     // Docker
     await new Promise<void>((resolve) => {

@@ -3,9 +3,10 @@ import { resolve } from 'node:path'
 import {
   LOCAL_ANON_KEY,
   LOCAL_SUPABASE_URL,
-  configExists,
   ensureUserConfigDir,
+  projectConfigExists,
   saveConfig,
+  saveUserPreferences,
 } from '../../../config/project-config'
 import type { OnboardingStep } from '../schema'
 
@@ -15,13 +16,16 @@ export const configureProjectStep: OnboardingStep = {
   async run(options) {
     ensureUserConfigDir()
 
-    if (!configExists()) {
-      if (!options.dryRun) {
-        saveConfig({
-          mode: options.mode,
-          dbPort: 54322,
-          apiPort: 54321,
-        })
+    if (!options.dryRun) {
+      const prefs = {
+        mode: options.mode,
+        dbPort: 54322,
+        apiPort: 54321,
+      };
+      if (projectConfigExists()) {
+        saveConfig(prefs);
+      } else {
+        saveUserPreferences(prefs);
       }
     }
 
@@ -30,7 +34,7 @@ export const configureProjectStep: OnboardingStep = {
       const lines = [
         `SUPABASE_URL=${LOCAL_SUPABASE_URL}`,
         `SUPABASE_ANON_KEY=${LOCAL_ANON_KEY}`,
-        'API_URL=http://localhost:8786',
+        `API_URL=${LOCAL_SUPABASE_URL}/functions/v1`,
       ]
       if (options.ollamaBaseUrl) {
         lines.push(`LENSERFIGHT_OLLAMA_BASE_URL=${options.ollamaBaseUrl}`)

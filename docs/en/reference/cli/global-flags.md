@@ -12,7 +12,7 @@ This flag does **not** mean file-workspace battles — use `lf battle file` for 
 
 ### What it does
 
-- Forces all API calls to use localhost endpoints (`http://127.0.0.1:54321`, `http://localhost:8786`) regardless of what `.lenserfight.json` specifies.
+- Forces all API calls to use localhost Supabase (`http://127.0.0.1:54321`, Edge Functions at `/functions/v1`) regardless of what `.lenserfight.json` specifies.
 - Prints `Supabase local mode active` to stderr on startup.
 - Disables telemetry for this invocation.
 - Warns if the resolved Supabase or API URL still points to production (soft warning — does not abort the command).

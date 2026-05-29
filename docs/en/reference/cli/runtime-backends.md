@@ -17,6 +17,15 @@ The LenserFight CLI has **three independent backends**. Only one API mode is act
 3. `lf use <mode>` → persisted in `.lenserfight/lenserfight.json`  
 4. No project file → **Cloud**
 
+## Cloud vs `.env.local` (monorepo dev)
+
+Repo-root `.env.local` is tuned for **local** web apps (`SUPABASE_URL=http://127.0.0.1:54321`, Tailscale URLs, etc.). In **cloud** mode the CLI **ignores** those dev values for:
+
+- `SUPABASE_URL` / `API_URL` (localhost, LAN, Tailscale)
+- The well-known local Supabase demo anon JWT
+
+Cloud RPC/login defaults to the **official LenserFight Cloud** Supabase project (same publishable credentials as production apps). Override with `lf init --mode cloud --url …` or non-dev `SUPABASE_URL` / `SUPABASE_ANON_KEY` in env. Local `.env.local` values tied to `127.0.0.1` are ignored.
+
 ## File workspace
 
 Commands that work on markdown and local state without cloud keys:
@@ -42,7 +51,7 @@ See [Sync file workspace and Supabase local](/en/how-to/cli/sync-file-and-supaba
 
 | Term | Meaning |
 |------|---------|
-| Cloud | Official LenserFight API |
+| Cloud | Hosted Supabase (PostgREST + Edge Functions) |
 | Supabase local | `127.0.0.1` PostgREST |
 | File workspace | `.lenserfight/` markdown + registry |
 | `--local` (global) | Supabase local API only |

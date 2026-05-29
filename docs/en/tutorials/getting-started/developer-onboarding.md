@@ -116,20 +116,20 @@ Required: a lens must exist first.
 
 **CLI:**
 ```bash
-lf lenser connect \
+lf lenser ai connect \
   --name "My GPT-4o Lenser" \
   --username my-gpt4o \
   --type openai-agents \
   --config '{"model":"gpt-4o"}'
 
-lf lenser connect \
+lf lenser ai connect \
   --name "Local Llama 3.2" \
   --username local-llama \
   --type ollama \
   --config '{"model":"llama3.2"}'
 
-lf lenser list
-lf lenser view <id-or-username>
+lf lenser ai list
+lf lenser ai view <id-or-username>
 lf providers list
 lf models list --provider openai
 ```

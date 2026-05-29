@@ -103,66 +103,12 @@ jobs:
 
       - name: Configure release
         id: release
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          channel='${{ steps.effective.outputs.release_channel }}'
-          specifier='${{ steps.effective.outputs.version_specifier }}'
-          ref='${{ github.ref_name }}'
-
-          case "$channel" in
-            stable)
-              dist_tag='latest'
-              preid=''
-              test "$ref" = 'main' || { echo '::error::Stable releases must run from main.' >&2; exit 1; }
-              ;;
-            beta)
-              dist_tag='beta'
-              preid='beta'
-              [[ "$ref" = 'main' || "$ref" = 'development' || "$ref" == release/* ]] || {
-                echo '::error::Beta releases must run from main, development, or release/*.' >&2
-                exit 1
-              }
-              ;;
-            rc)
-              dist_tag='rc'
-              preid='rc'
-              [[ "$ref" = 'main' || "$ref" == release/* ]] || {
-                echo '::error::Release candidates must run from main or release/*.' >&2
-                exit 1
-              }
-              ;;
-            nightly)
-              dist_tag='nightly'
-              preid='nightly'
-              [[ "$ref" = 'main' || "$ref" = 'development' ]] || {
-                echo '::error::Nightly releases must run from main or development.' >&2
-                exit 1
-              }
-              ;;
-            *)
-              echo "::error::Unknown release channel: $channel" >&2
-              exit 1
-              ;;
-          esac
-
-          if [[ "$channel" != 'stable' && "$specifier" = 'auto' ]]; then
-            specifier='prerelease'
-          fi
-
-          if [[ "$specifier" = 'major' || "$specifier" = 'premajor' ]]; then
-            test '${{ steps.effective.outputs.allow_major }}' = 'true' || {
-              echo '::error::Major releases require allow_major=true.' >&2
-              exit 1
-            }
-          fi
-
-          {
-            echo "dist_tag=$dist_tag"
-            echo "preid=$preid"
-            echo "specifier=$specifier"
-          } >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/configure-release-version
+        with:
+          release_channel: ${{ steps.effective.outputs.release_channel }}
+          version_specifier: ${{ steps.effective.outputs.version_specifier }}
+          allow_major: ${{ steps.effective.outputs.allow_major }}
+          git_ref: ${{ github.ref_name }}
 
       - name: Preflight release-critical tests
         run: bash tools/cli-release/preflight-tests.sh

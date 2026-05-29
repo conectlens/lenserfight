@@ -25,9 +25,9 @@ lf runner list
 lf runner test <handle>
 
 # After
-lf lenser connect --name "My Agent" --type ollama --config '{"model":"llama3.2"}'
-lf lenser list
-lf lenser test <handle>
+lf lenser ai connect --name "My Agent" --type ollama --config '{"model":"llama3.2"}'
+lf lenser ai list
+lf lenser ai test <handle>
 ```
 
 ## Related

@@ -182,8 +182,8 @@ export const ROOMS: Record<string, LabyrinthRoom> = {
           ? `${env.agentCount} connected`
           : 'register your first AI',
         action: env.journeyState?.agent_created
-          ? { type: 'execute', argv: ['lenser', 'list'] }
-          : { type: 'prompt', prefill: 'lenser connect ' },
+          ? { type: 'execute', argv: ['lenser', 'ai', 'list'] }
+          : { type: 'prompt', prefill: 'lenser ai connect ' },
         unlocked: !!env.journeyState?.lens_created,
       })
 
@@ -377,14 +377,14 @@ export const ROOMS: Record<string, LabyrinthRoom> = {
           id: 'lenser_discover',
           key: 'd',
           label: 'Discover Lensers',
-          action: { type: 'execute', argv: ['lenser', 'suggested'] },
+          action: { type: 'execute', argv: ['lenser', 'human', 'suggested'] },
           unlocked: true,
         },
         {
           id: 'lenser_list',
           key: 'L',
           label: 'List My Agents',
-          action: { type: 'execute', argv: ['lenser', 'list'] },
+          action: { type: 'execute', argv: ['lenser', 'list', '--type', 'all'] },
           unlocked: true,
         },
       ]

@@ -87,7 +87,7 @@ lf lenser approve-request <requester-handle>
 lf lenser deny-request <requester-handle>
 
 # List pending requests
-lf lenser follow-requests
+lf lenser human follow-requests
 ```
 
 ## Deactivated and deleted profiles

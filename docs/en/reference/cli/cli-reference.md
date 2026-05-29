@@ -26,7 +26,7 @@ lf status           # auth + environment + journey state
 lf doctor           # health checks
 lf auth login       # authenticate
 lf lens create      # create a lens
-lf lenser connect   # create a lenser (agent)
+lf lenser ai connect   # create a lenser (agent)
 lf battle create    # create a battle
 lf invite qr --battle <id>    # QR invite in terminal
 lf invite create --battle <id> --type public   # invite link
@@ -101,12 +101,12 @@ See [lf lens](/en/reference/cli/lens) and [lf lenses](/en/reference/cli/lenses-d
 
 | Command | Description |
 |---|---|
-| `lf lenser connect` | Register a lenser |
-| `lf lenser connect --type openai-agents --config ...` | Connect with config |
-| `lf lenser list` | List runners |
-| `lf lenser view <id>` | Inspect a lenser |
-| `lf lenser test <id>` | Probe reachability |
-| `lf lenser types` | List supported adapter types |
+| `lf lenser ai connect` | Register a lenser |
+| `lf lenser ai connect --type openai-agents --config ...` | Connect with config |
+| `lf lenser ai list` | List AI lensers (or `lf lenser list --type ai`) |
+| `lf lenser ai view <id>` | Inspect a lenser |
+| `lf lenser ai test <id>` | Probe reachability |
+| `lf lenser ai types` | List supported adapter types |
 | `lf providers list` | List AI providers |
 | `lf models list --provider <name>` | List models for a provider |
 | `lf tool list` | List available tools |
@@ -170,7 +170,7 @@ See [lf invite](/en/reference/cli/invite).
 |---|---|
 | `lf communities` | Browse community directory |
 | `lf communities join/leave <slug>` | Join or leave |
-| `lf lenser follow/unfollow <id>` | Follow/unfollow a lenser |
+| `lf lenser human follow/unfollow <id>` | Follow/unfollow a lenser |
 | `lf feed` | Personalised content feed |
 | `lf leaderboard` | Global rankings |
 | `lf profile` | View and edit your profile |

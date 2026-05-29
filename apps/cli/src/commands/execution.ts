@@ -319,8 +319,41 @@ const executionEvents = defineCommand({
     },
     limit: { type: 'string', description: 'Max events (default 100)', default: '100' },
     json: { type: 'boolean', description: 'Output as JSON', default: false },
+    follow: {
+      type: 'boolean',
+      description: 'Poll and stream new events (SSE-style tail; Ctrl+C to stop)',
+      default: false,
+    },
+    timeout: {
+      type: 'string',
+      description: 'Max follow duration in seconds (with --follow)',
+      default: '600',
+    },
+    interval: {
+      type: 'string',
+      description: 'Poll interval in seconds (with --follow)',
+      default: '2',
+    },
   },
   async run({ args }) {
+    if (args.follow) {
+      const { followWorkflowRunEvents } = await import('../lib/workflow-event-stream')
+      const ac = new AbortController()
+      process.on('SIGINT', () => ac.abort())
+      try {
+        await followWorkflowRunEvents({
+          runId: args.run,
+          intervalMs: Math.max(500, parseInt(args.interval, 10) * 1000),
+          timeoutMs: Math.max(1000, parseInt(args.timeout, 10) * 1000),
+          json: args.json,
+          signal: ac.signal,
+        })
+      } catch (err) {
+        handleError(err)
+      }
+      return
+    }
+
     try {
       const query: Record<string, string | number | undefined> = {
         select: 'event_id,type,run_id,workflow_id,timestamp,payload',

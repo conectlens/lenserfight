@@ -27,7 +27,7 @@ lf profile use staging && lf
 
 The dashboard renders three regions, top to bottom:
 
-1. **Header.** Workspace banner, the active profile name (highlighted), and a colored health badge (`HEALTHY` green or `DOWN` red). The badge probes the platform-api `/health` endpoint when available, falling back to Supabase auth health.
+1. **Header.** Workspace banner, the active profile name (highlighted), and a colored health badge (`HEALTHY` green or `DOWN` red). In **cloud** mode the badge uses hosted Supabase `GET /auth/v1/health` (with the publishable/anon key). In **local** mode it also tries a legacy platform-api `/health` when configured (not `{SUPABASE_URL}/functions/v1/health`).
 2. **Status line.** Local timestamp and the refresh cadence (`refresh 2s`).
 3. **Recent agent action logs.** Up to 10 rows from `agents.action_logs`, newest first, showing time, action type, and a truncated payload preview.
 
@@ -37,11 +37,18 @@ A footer line lists the key bindings.
 
 | Key | Action |
 |---|---|
-| `a` | Approvals — runs `lf approval list` in a child process. |
-| `b` | Battles — runs `lf battle list`. |
-| `s` | Schedules — runs `lf schedule list`. |
-| `m` | Memory — runs `lf memory list-entries`. |
+| `e` | **Execute** — workflow runs, battle exec, lens prompts, team dispatch ([`lf execute`](/en/reference/cli/execute.md)). |
+| `k` | **Configure** — local BYOK keys, cloud BYOK, Ollama, providers ([`lf configure`](/en/reference/cli/configure.md)). |
+| `a` | Approvals — pending agent run approvals. |
+| `b` | Battles — list, create, exec, stream-feed. |
+| `s` | Schedules — workflow schedules. |
+| `m` | Memory — agent memory entries. |
+| `l` | Lensers — human + AI lenser catalog. |
+| `f` | Feed and leaderboard. |
+| `:` | Command bar (autocomplete over 200+ commands). |
 | `q` / `Esc` / `Ctrl-C` | Quit and restore the cursor. |
+
+Child commands show a short **fsociety-style** prelude before running. Long waits support streaming via `lf execute workflow stream` or `lf execution events --follow`.
 
 When you trigger a binding, the dashboard pauses, hands the terminal to the spawned `lf` subcommand, and returns to the live view when you press `q` after the child exits.
 

@@ -3,15 +3,30 @@ import consola from 'consola';
 import { callRpc, callRest, handleError } from '../utils/api';
 import { printTable, printJson, truncate } from '../utils/output';
 import { runLifecycleAction, type CliLifecycleAction } from '../utils/lifecycle';
+import {
+  UUID_RE,
+  SHORT_ID_RE,
+  formatHandle,
+  findLensersByHandle,
+  getAiLenserProfile,
+  listAiLensers,
+  listLensers,
+  nextStepHint,
+  normalizeUsername,
+  parseLenserTypeFilter,
+  resolveAiLenserIdFromIdentifier,
+  resolveProfileId,
+  resolveSelfProfileId,
+  type LenserCatalogRow,
+} from '../lib/lenser-catalog';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const SHORT_ID_RE = /^[0-9a-f]{6,12}$/i;
 const USERNAME_RE = /^[a-z0-9][a-z0-9_-]{2,31}$/;
 
+/** Local gateway execution adapter (execution.runners) — not agents.ai_lensers. */
 type RunnerRow = {
   id: string;
   name: string;
@@ -21,10 +36,6 @@ type RunnerRow = {
   is_active: boolean;
   created_at: string;
 };
-
-function normalizeUsername(value: string): string {
-  return value.trim().replace(/^@/, '').toLowerCase();
-}
 
 function readIdentifier(args: { id?: string; handle?: string }, rawArgs?: string[]): string {
   const rawTokens = (rawArgs ?? []).filter((token) => !token.startsWith('--'));
@@ -39,49 +50,36 @@ function displayRunnerHandle(row: RunnerRow | Record<string, unknown>): string {
   return typeof value === 'string' && value.length > 0 ? `@${normalizeUsername(value)}` : '-';
 }
 
-function extractProfileId(profile: unknown): string | null {
-  if (Array.isArray(profile)) return profile.length > 0 ? extractProfileId(profile[0]) : null;
-  if (profile && typeof profile === 'object' && 'id' in profile) {
-    const id = (profile as { id?: unknown }).id;
-    return typeof id === 'string' ? id : null;
+function printCatalogRows(rows: LenserCatalogRow[], json: boolean, aiDetail = false): void {
+  if (json) {
+    printJson(rows);
+    return;
   }
-  return null;
-}
-
-async function resolveSelfId(): Promise<string | null> {
-  const self = await callRpc<unknown>(
-    'fn_lensers_get_active_profile',
-    {},
-    { requireAuth: true }
-  );
-  return extractProfileId(self);
-}
-
-async function resolveProfileId(identifier: string): Promise<string> {
-  const raw = identifier.trim();
-  if (UUID_RE.test(raw)) return raw;
-
-  const handle = normalizeUsername(raw);
-  const rows = await callRest<Array<{ id: string; handle: string; display_name: string | null }>>(
-    'lensers',
-    'profiles',
-    'GET',
-    undefined,
-    {
-      requireAuth: true,
-      query: {
-        select: 'id,handle,display_name',
-        handle: `eq.${handle}`,
-        limit: 2,
-      },
-    }
-  );
-
-  const profile = rows?.[0];
-  if (!profile) {
-    throw new Error(`No lenser profile found for "${identifier}". Use a UUID or username like @${handle}.`);
+  if (aiDetail) {
+    printTable(
+      ['Username', 'Name', 'Scope', 'Runtime', 'Active', 'AI agent ID'],
+      rows.map((a) => [
+        formatHandle(a.handle),
+        truncate(a.display_name, 28),
+        a.scope ?? '—',
+        a.runtime_pref ?? '—',
+        a.is_active === false ? 'no' : 'yes',
+        a.ai_lenser_id ?? '—',
+      ]),
+    );
+    return;
   }
-  return profile.id;
+  printTable(
+    ['Type', 'Username', 'Name', 'Profile ID', 'AI agent ID', 'Scope'],
+    rows.map((r) => [
+      r.type,
+      formatHandle(r.handle),
+      truncate(r.display_name, 28),
+      `${r.profile_id.slice(0, 8)}…`,
+      r.ai_lenser_id ? `${r.ai_lenser_id.slice(0, 8)}…` : '—',
+      r.scope ?? '—',
+    ]),
+  );
 }
 
 async function listRunners(): Promise<RunnerRow[]> {
@@ -109,46 +107,106 @@ async function resolveRunnerId(identifier: string): Promise<string> {
   if (matches.length === 1) return matches[0].id;
   if (matches.length > 1) {
     throw new Error(
-      `Identifier "${identifier}" matches multiple lensers. Use a longer ID or the exact username shown by \`lf lenser list\`.`
+      `Identifier "${identifier}" matches multiple gateway runners. Use \`lf lenser ai list\`.`
     );
   }
   throw new Error(
-    `No registered AI lenser found for "${identifier}". Run \`lf lenser list\` and use the ID, username, or exact name.`
+    `No gateway runner found for "${identifier}". Use \`lf lenser ai list\` for platform AI lensers.`,
   );
 }
 
-async function resolveAiLenserId(handle: string): Promise<string> {
-  const normalized = normalizeUsername(handle);
-  const rows = await callRest<Array<{ id: string }>>(
-    'lensers',
-    'profiles',
-    'GET',
-    undefined,
-    { requireAuth: true, query: { select: 'id', handle: `eq.${normalized}` } }
-  );
-  const profile = rows?.[0];
-  if (!profile) throw new Error(`No profile found for handle @${normalized}`);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyCittyCmd = { run?: (ctx: any) => Promise<unknown> | unknown; [key: string]: unknown };
 
-  const agents = await callRest<Array<{ id: string }>>(
-    'agents',
-    'ai_lensers',
-    'GET',
-    undefined,
-    { requireAuth: true, query: { select: 'id', profile_id: `eq.${profile.id}` } }
-  );
-  const agent = agents?.[0];
-  if (!agent) throw new Error(`No AI lenser found for @${normalized}`);
-  return agent.id;
-}
-
-async function resolveLifecycleAgentId(identifier: string): Promise<string> {
-  const raw = identifier.trim();
-  if (UUID_RE.test(raw)) return raw;
-  return resolveAiLenserId(raw);
+function deprecate(cmd: AnyCittyCmd, message: string): AnyCittyCmd {
+  const prev = cmd.run;
+  return defineCommand({
+    ...cmd,
+    async run(ctx: Parameters<NonNullable<typeof prev>>[0]) {
+      consola.warn(message);
+      return prev?.(ctx);
+    },
+  } as Parameters<typeof defineCommand>[0]);
 }
 
 // ---------------------------------------------------------------------------
-// Social graph subcommands
+// Top-level: find & list (any lenser type)
+// ---------------------------------------------------------------------------
+
+const find = defineCommand({
+  meta: {
+    name: 'find',
+    description: 'Find a human or AI lenser by @handle (exact match).',
+  },
+  args: {
+    handle: {
+      type: 'positional',
+      description: 'Username, with or without @ (e.g. ofcskn or @ofcskn)',
+      required: true,
+    },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args, rawArgs }) {
+    try {
+      const identifier = readIdentifier({ handle: args.handle }, rawArgs);
+      const rows = await findLensersByHandle(identifier);
+      if (!rows.length) {
+        consola.info('No lenser found for %s.', formatHandle(identifier));
+        return;
+      }
+      if (args.json) {
+        printJson(rows);
+        return;
+      }
+      for (const row of rows) {
+        consola.info('Type:       %s', row.type);
+        consola.info('Username:   %s', formatHandle(row.handle));
+        consola.info('Name:       %s', row.display_name);
+        consola.info('Profile ID: %s', row.profile_id);
+        if (row.ai_lenser_id) consola.info('AI agent:   %s', row.ai_lenser_id);
+        consola.info('Try:        %s', nextStepHint(row));
+        consola.info('');
+      }
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+const list = defineCommand({
+  meta: {
+    name: 'list',
+    description: 'List lensers. Default: human + AI. Filter with --type ai|human|all.',
+  },
+  args: {
+    type: {
+      type: 'string',
+      description: 'Filter: all (default), ai, or human',
+      default: 'all',
+    },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const filter = parseLenserTypeFilter(args.type);
+      const rows = await listLensers(filter);
+      if (!rows.length) {
+        if (args.json) {
+          printJson([]);
+          return;
+        }
+        consola.info('No lensers found for filter --type %s.', filter);
+        return;
+      }
+      printCatalogRows(rows, args.json, filter === 'ai');
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Human lenser commands (auth.users-backed profiles)
 // ---------------------------------------------------------------------------
 
 const follow = defineCommand({
@@ -190,8 +248,8 @@ const followers = defineCommand({
   },
   async run({ args }) {
     try {
-      const lenserId = args.id || (await resolveSelfId());
-      if (!lenserId) { consola.warn('No lenser profile found. Run `auth login` first.'); return; }
+      const lenserId = args.id || (await resolveSelfProfileId());
+      if (!lenserId) { consola.warn('No lenser profile found. Run `lf auth login` first.'); return; }
       const results = await callRpc<Array<Record<string, unknown>>>(
         'fn_lensers_get_follows',
         { p_lenser_id: lenserId, p_type: 'followers', p_limit: parseInt(args.limit, 10), p_offset: 0 },
@@ -221,8 +279,8 @@ const following = defineCommand({
   },
   async run({ args }) {
     try {
-      const lenserId = args.id || (await resolveSelfId());
-      if (!lenserId) { consola.warn('No lenser profile found. Run `auth login` first.'); return; }
+      const lenserId = args.id || (await resolveSelfProfileId());
+      if (!lenserId) { consola.warn('No lenser profile found. Run `lf auth login` first.'); return; }
       const results = await callRpc<Array<Record<string, unknown>>>(
         'fn_lensers_get_follows',
         { p_lenser_id: lenserId, p_type: 'following', p_limit: parseInt(args.limit, 10), p_offset: 0 },
@@ -251,7 +309,7 @@ const suggested = defineCommand({
   },
   async run({ args }) {
     try {
-      const selfId = await resolveSelfId();
+      const selfId = await resolveSelfProfileId();
       if (!selfId) { consola.warn('No lenser profile found. Create one at lenserfight.com first.'); return; }
       const results = await callRpc<Array<Record<string, unknown>>>(
         'fn_lensers_get_suggested',
@@ -328,30 +386,57 @@ const connect = defineCommand({
   },
 });
 
-const list = defineCommand({
-  meta: { name: 'list', description: 'List your registered AI lensers.' },
+const aiList = defineCommand({
+  meta: {
+    name: 'list',
+    description: 'List your AI lensers and public AI lensers on LenserFight Cloud.',
+  },
   args: {
     json: { type: 'boolean', description: 'Output as JSON', default: false },
   },
   async run({ args }) {
     try {
-      const lensers = await listRunners();
-
+      const lensers = await listAiLensers();
       if (args.json) { printJson(lensers); return; }
-      if (!Array.isArray(lensers) || lensers.length === 0) { consola.info('No AI lensers registered.'); return; }
-
-      printTable(
-        ['ID', 'Username', 'Name', 'Type', 'Active', 'Created'],
-        lensers.map((a) => [
-          a.id,
-          displayRunnerHandle(a),
-          a.name,
-          a.adapter_type,
-          a.is_active ? 'yes' : 'no',
-          new Date(a.created_at).toLocaleDateString(),
-        ])
-      );
+      if (!lensers.length) {
+        consola.info('No AI lensers found (none owned and none public).');
+        return;
+      }
+      printCatalogRows(lensers, false, true);
     } catch (err) { handleError(err); }
+  },
+});
+
+const humanList = defineCommand({
+  meta: { name: 'list', description: 'List discoverable human lenser profiles.' },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const rows = await listLensers('human');
+      if (!rows.length) {
+        consola.info('No human lensers found.');
+        return;
+      }
+      printCatalogRows(rows, args.json);
+    } catch (err) { handleError(err); }
+  },
+});
+
+const humanThreads = defineCommand({
+  meta: { name: 'threads', description: 'Your personalised thread feed (human lenser home).' },
+  args: {
+    limit: { type: 'string', default: '10', description: 'Number of items' },
+    json: { type: 'boolean', default: false, description: 'Output as JSON' },
+  },
+  async run({ args }) {
+    const feedMod = await import('./feed');
+    const feedRun = (feedMod.default as AnyCittyCmd).run;
+    return feedRun?.({
+      args: { type: 'threads', limit: args.limit, json: args.json },
+      rawArgs: [],
+    });
   },
 });
 
@@ -389,21 +474,17 @@ const view = defineCommand({
   async run({ args, rawArgs }) {
     try {
       const identifier = readIdentifier(args, rawArgs);
-      const id = await resolveRunnerId(identifier);
-      const raw = await callRpc<RunnerRow | RunnerRow[]>(
-        'fn_runner_get', { p_adapter_id: id }, { requireAuth: true }
-      );
-      const lenser: RunnerRow | null = Array.isArray(raw) ? (raw[0] ?? null) : (raw ?? null);
-      if (!lenser) { consola.warn('Lenser not found: %s', identifier); return; }
+      const id = await resolveAiLenserIdFromIdentifier(identifier);
+      const lenser = await getAiLenserProfile(id);
+      if (!lenser) { consola.warn('AI lenser not found: %s', identifier); return; }
       if (args.json) { printJson(lenser); return; }
-      consola.info('ID:      %s', lenser.id);
-      consola.info('Username:%s', displayRunnerHandle(lenser));
-      consola.info('Name:    %s', lenser.name);
-      consola.info('Type:    %s', lenser.adapter_type);
-      consola.info('Active:  %s', lenser.is_active ? 'yes' : 'no');
-      consola.info('Created: %s', lenser.created_at);
-      const config = (lenser as unknown as Record<string, unknown>).config;
-      if (config) consola.info('Config:  %s', JSON.stringify(config, null, 2));
+      consola.info('ID:       %s', lenser.id);
+      consola.info('Username: @%s', normalizeUsername(String(lenser.handle ?? '')));
+      consola.info('Name:     %s', lenser.display_name ?? '—');
+      consola.info('Runtime:  %s', lenser.runtime_pref ?? '—');
+      consola.info('Active:   %s', lenser.is_active === false ? 'no' : 'yes');
+      if (lenser.created_at) consola.info('Created:  %s', lenser.created_at);
+      if (lenser.owner_handle) consola.info('Owner:    @%s', lenser.owner_handle);
     } catch (err) { handleError(err); }
   },
 });
@@ -470,7 +551,7 @@ const pause = defineCommand({
   },
   async run({ args }) {
     try {
-      const aiLenserId = await resolveAiLenserId(args.handle);
+      const aiLenserId = await resolveAiLenserIdFromIdentifier(args.handle);
       await callRpc('fn_pause_agent', { p_ai_lenser_id: aiLenserId }, { requireAuth: true });
       consola.success('Lenser @%s paused. New runs will be blocked.', args.handle);
     } catch (err) { handleError(err); }
@@ -484,7 +565,7 @@ const resume = defineCommand({
   },
   async run({ args }) {
     try {
-      const aiLenserId = await resolveAiLenserId(args.handle);
+      const aiLenserId = await resolveAiLenserIdFromIdentifier(args.handle);
       await callRpc('fn_resume_agent', { p_ai_lenser_id: aiLenserId }, { requireAuth: true });
       consola.success('Lenser @%s resumed.', args.handle);
     } catch (err) { handleError(err); }
@@ -499,7 +580,7 @@ const lenserStatus = defineCommand({
   },
   async run({ args }) {
     try {
-      const aiLenserId = await resolveAiLenserId(args.handle);
+      const aiLenserId = await resolveAiLenserIdFromIdentifier(args.handle);
 
       const settingsRows = await callRest<Array<Record<string, unknown>>>(
         'agents', 'workspace_settings', 'GET', undefined,
@@ -551,7 +632,7 @@ function agentLifecycleCommand(action: CliLifecycleAction, description: string) 
     },
     async run({ args }) {
       try {
-        const aiLenserId = await resolveLifecycleAgentId(args.id);
+        const aiLenserId = await resolveAiLenserIdFromIdentifier(args.id);
         await runLifecycleAction('agent', aiLenserId, action, args.json);
       } catch (err) { handleError(err); }
     },
@@ -561,24 +642,34 @@ function agentLifecycleCommand(action: CliLifecycleAction, description: string) 
 // ---------------------------------------------------------------------------
 // Root: lf lenser
 // ---------------------------------------------------------------------------
-export default defineCommand({
+const human = defineCommand({
   meta: {
-    name: 'lenser',
-    description: 'Manage lensers: social graph (follow/unfollow) and AI lenser registration (connect, list, view, pause, resume).',
+    name: 'human',
+    description: 'Human lensers (profiles linked to auth accounts): follow, feed, list.',
   },
   subCommands: {
-    // Social graph
     follow,
     unfollow,
     followers,
     following,
     suggested,
-    // AI lenser management
+    list: humanList,
+    threads: humanThreads,
+  },
+});
+
+const ai = defineCommand({
+  meta: {
+    name: 'ai',
+    description: 'AI lensers (agents): connect, list, view, pause, lifecycle.',
+  },
+  subCommands: {
     connect,
-    list,
+    list: aiList,
     view,
     enable,
     remove,
+    disable,
     test,
     types,
     pause,
@@ -590,5 +681,35 @@ export default defineCommand({
     delete: agentLifecycleCommand('delete', 'Request dependency-aware AI lenser deletion; used agents become tombstones.'),
     pin: agentLifecycleCommand('pin', 'Pin an AI lenser to your saved artifacts.'),
     unpin: agentLifecycleCommand('unpin', 'Remove your saved pin from an AI lenser.'),
+  },
+});
+
+export default defineCommand({
+  meta: {
+    name: 'lenser',
+    description:
+      'Human and AI lensers: `lf lenser find @handle`, `lf lenser list`, `lf lenser human …`, `lf lenser ai …`.',
+  },
+  subCommands: {
+    find,
+    list,
+    human,
+    ai,
+    // Deprecated top-level aliases (pre-v0.9 layout)
+    follow: deprecate(follow, 'Use `lf lenser human follow` instead.'),
+    unfollow: deprecate(unfollow, 'Use `lf lenser human unfollow` instead.'),
+    followers: deprecate(followers, 'Use `lf lenser human followers` instead.'),
+    following: deprecate(following, 'Use `lf lenser human following` instead.'),
+    suggested: deprecate(suggested, 'Use `lf lenser human suggested` instead.'),
+    connect: deprecate(connect, 'Use `lf lenser ai connect` instead.'),
+    view: deprecate(view, 'Use `lf lenser ai view` instead.'),
+    enable: deprecate(enable, 'Use `lf lenser ai enable` instead.'),
+    remove: deprecate(remove, 'Use `lf lenser ai remove` instead.'),
+    disable: deprecate(disable, 'Use `lf lenser ai disable` instead.'),
+    test: deprecate(test, 'Use `lf lenser ai test` instead.'),
+    types: deprecate(types, 'Use `lf lenser ai types` instead.'),
+    pause: deprecate(pause, 'Use `lf lenser ai pause` instead.'),
+    resume: deprecate(resume, 'Use `lf lenser ai resume` instead.'),
+    status: deprecate(lenserStatus, 'Use `lf lenser ai status` instead.'),
   },
 });

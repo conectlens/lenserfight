@@ -8,11 +8,16 @@ import {
 const mockLoadUserConfig = jest.fn()
 const mockSaveUserConfig = jest.fn()
 const mockResolveConfig = jest.fn()
+const mockLoadEnvConfig = jest.fn()
 
 jest.mock('../config/project-config', () => ({
+  ...jest.requireActual<typeof import('../config/project-config')>(
+    '../config/project-config',
+  ),
   loadUserConfig: () => mockLoadUserConfig(),
   saveUserConfig: (partial: Record<string, unknown>) => mockSaveUserConfig(partial),
   resolveConfig: () => mockResolveConfig(),
+  loadEnvConfig: () => mockLoadEnvConfig(),
 }))
 
 describe('developer token CLI helpers', () => {
@@ -20,6 +25,8 @@ describe('developer token CLI helpers', () => {
     mockLoadUserConfig.mockReset();
     mockSaveUserConfig.mockReset();
     mockResolveConfig.mockReset();
+    mockLoadEnvConfig.mockReset();
+    mockLoadEnvConfig.mockReturnValue({});
     mockResolveConfig.mockReturnValue({
       mode: 'local',
       supabaseUrl: 'http://127.0.0.1:54321',
@@ -84,6 +91,21 @@ describe('developer token CLI helpers', () => {
     });
     expect(buildAuthAppUrl('/device-approval?code=ABCD-EFGH')).toBe(
       'http://localhost:5173/device-approval?code=ABCD-EFGH'
+    );
+  });
+
+  it('uses production auth URL in cloud mode even when resolveConfig strips dev env', () => {
+    mockResolveConfig.mockReturnValue({
+      mode: 'cloud',
+      supabaseUrl: 'https://x.supabase.co',
+      cloudApiUrl: 'https://x.supabase.co/functions/v1',
+      supabaseAnonKey: 'anon',
+      dbPort: 54322,
+      apiPort: 54321,
+      authBaseUrl: 'https://auth.lenserfight.com',
+    });
+    expect(buildAuthAppUrl('/device-approval?code=ABCD-EFGH')).toBe(
+      'https://auth.lenserfight.com/device-approval?code=ABCD-EFGH'
     );
   });
 });

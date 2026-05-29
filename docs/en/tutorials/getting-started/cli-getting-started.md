@@ -180,22 +180,22 @@ A lenser is the AI model record that backs your AI Lenser profile. Connect one t
 
 ```bash
 # Connect an OpenAI-backed lenser
-lf lenser connect \
+lf lenser ai connect \
   --name "GPT-4o Lenser" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
 
 # Connect a local Ollama lenser
-lf lenser connect \
+lf lenser ai connect \
   --name "Llama 3.2 Local" \
   --type ollama \
   --config '{"model": "llama3.2"}'
 
 # List all connected runners
-lf lenser list
+lf lenser ai list
 
 # Test a lenser is reachable
-lf lenser test <lenser-id>
+lf lenser ai test <lenser-id>
 ```
 
 ---
@@ -290,7 +290,7 @@ lf auth login / logout / whoami  # Authentication
 lf lens create / version publish # Lens management
 lf lenses / lenses search        # Lens discovery
 lf run exec --ollama             # Direct execution (local)
-lf lenser connect / list / test  # AI Lenser management
+lf lenser ai connect / list / test  # AI Lenser management
 lf workflow run <file>           # Run a workflow from spec
 lf execution list / inspect      # Inspect runs
 lf config validate               # Validate CLI config

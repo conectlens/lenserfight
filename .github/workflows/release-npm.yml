@@ -9,6 +9,30 @@ on:
       - main
   workflow_dispatch:
     inputs:
+      release_channel:
+        description: npm dist-tag and prerelease lane.
+        required: true
+        type: choice
+        default: alpha
+        options:
+          - alpha
+          - beta
+          - rc
+          - stable
+      version_specifier:
+        description: Nx release specifier. Use auto for conventional commits.
+        required: true
+        type: choice
+        default: auto
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+          - prerelease
+          - prepatch
+          - preminor
+          - premajor
       dry_run:
         description: Preview versioning and npm publish without changing git or npm.
         required: true
@@ -16,6 +40,11 @@ on:
         default: true
       first_release:
         description: Use only for the very first release (no prior nx-managed git tag exists).
+        required: true
+        type: boolean
+        default: false
+      allow_major:
+        description: Required when intentionally publishing a major release.
         required: true
         type: boolean
         default: false
@@ -32,7 +61,7 @@ concurrency:
 
 jobs:
   release:
-    name: ${{ (inputs.dry_run == 'true' || inputs.dry_run == true) && 'Preview' || 'Publish' }} sdk
+    name: ${{ (inputs.dry_run == 'true' || inputs.dry_run == true) && 'Preview' || 'Publish' }} sdk ${{ inputs.release_channel || 'alpha' }}
     runs-on: ubuntu-latest
     environment: npm-release
     # Skip when triggered by a release/skip-ci commit to break the re-release loop.
@@ -51,8 +80,12 @@ jobs:
         id: effective
         shell: bash
         run: |
+          # push trigger: inputs are empty — use alpha/auto/no-dry-run defaults for pre-1.0 SDK.
           echo "dry_run=${{ inputs.dry_run == '' && 'false' || inputs.dry_run }}" >> "$GITHUB_OUTPUT"
+          echo "release_channel=${{ inputs.release_channel == '' && 'alpha' || inputs.release_channel }}" >> "$GITHUB_OUTPUT"
+          echo "version_specifier=${{ inputs.version_specifier == '' && 'auto' || inputs.version_specifier }}" >> "$GITHUB_OUTPUT"
           echo "first_release=${{ inputs.first_release == '' && 'false' || inputs.first_release }}" >> "$GITHUB_OUTPUT"
+          echo "allow_major=${{ inputs.allow_major == '' && 'false' || inputs.allow_major }}" >> "$GITHUB_OUTPUT"
 
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -68,6 +101,15 @@ jobs:
           dry_run: ${{ steps.effective.outputs.dry_run }}
           bot_pat: ${{ secrets.BOT_PAT }}
 
+      - name: Configure release
+        id: release
+        uses: ./.github/actions/configure-release-version
+        with:
+          release_channel: ${{ steps.effective.outputs.release_channel }}
+          version_specifier: ${{ steps.effective.outputs.version_specifier }}
+          allow_major: ${{ steps.effective.outputs.allow_major }}
+          git_ref: ${{ github.ref_name }}
+
       - name: Preflight tests
         run: pnpm nx run sdk:test
 
@@ -77,9 +119,13 @@ jobs:
         run: |
           set -euo pipefail
           args=(release --projects=sdk --skip-publish --dry-run --yes)
+          specifier='${{ steps.release.outputs.specifier }}'
+          preid='${{ steps.release.outputs.preid }}'
+          if [[ "$specifier" != 'auto' ]]; then args+=("$specifier"); fi
+          if [[ -n "$preid" ]]; then args+=(--preid "$preid"); fi
           if [[ '${{ steps.effective.outputs.first_release }}' = 'true' ]]; then args+=(--first-release); fi
           pnpm nx "${args[@]}"
-          npm publish dist/libs/sdk --dry-run --access public --tag alpha
+          npm publish dist/libs/sdk --dry-run --access public --tag '${{ steps.release.outputs.dist_tag }}'
 
       - name: Release sdk
         if: steps.effective.outputs.dry_run != 'true'
@@ -89,8 +135,10 @@ jobs:
           project: sdk
           package_json_path: libs/sdk/package.json
           dist_path: dist/libs/sdk
-          dist_tag: alpha
+          dist_tag: ${{ steps.release.outputs.dist_tag }}
           npm_access: public
           npm_token: ${{ secrets.NPM_TOKEN }}
           first_release: ${{ steps.effective.outputs.first_release }}
-          git_ref: main
+          specifier: ${{ steps.release.outputs.specifier }}
+          preid: ${{ steps.release.outputs.preid }}
+          git_ref: ${{ github.ref_name }}

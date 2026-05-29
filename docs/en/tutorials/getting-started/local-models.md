@@ -71,13 +71,13 @@ To use your local model inside structured workflows, battles, or agent teams, re
 
 ```bash
 # Register Ollama Lenser
-lf lenser connect \
+lf lenser ai connect \
   --name "Local Llama 3.2" \
   --type ollama \
   --config '{"model":"llama3.2","baseUrl":"http://localhost:11434"}'
 
 # Register vLLM Lenser
-lf lenser connect \
+lf lenser ai connect \
   --name "Local Mistral 7B" \
   --type openai \
   --config '{"model":"mistralai/Mistral-7B-Instruct-v0.3","baseUrl":"http://localhost:8000/v1"}'
