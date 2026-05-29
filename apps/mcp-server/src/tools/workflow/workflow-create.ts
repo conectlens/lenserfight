@@ -2,16 +2,15 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
-import { getConfig } from '../../config.js';
 import { workflowService } from '../../services/workflow.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
 const TOOL = 'create_workflow';
 
-export function registerWorkflowCreate(server: McpServer, sb: SupabaseClient): void {
+export function registerWorkflowCreate(server: McpServer, sb: SupabaseClient, authLenserId?: string): void {
   server.tool(
     TOOL,
-    'Create a new workflow. Workflows are reusable multi-step execution containers that chain lens runs and AI operations.',
+    'Create a new workflow. Workflows are reusable multi-step execution containers that chain lens runs and AI operations. lenser_id defaults to the authenticated user.',
     {
       title: z.string().min(1).max(200),
       description: z.string().max(2000).optional(),
@@ -20,7 +19,7 @@ export function registerWorkflowCreate(server: McpServer, sb: SupabaseClient): v
     },
     async (args) => {
       const t0 = Date.now();
-      const lenserId = args.lenser_id ?? getConfig().lenserId ?? null;
+      const lenserId = args.lenser_id ?? authLenserId ?? null;
       if (!lenserId) {
         return fail(
           'MISSING_LENSER',

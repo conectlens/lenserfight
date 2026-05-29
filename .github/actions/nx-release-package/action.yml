@@ -63,6 +63,10 @@ runs:
       run: |
         set -euo pipefail
         before="$(node -p "require('./${{ inputs.package_json_path }}').version")"
+        # Capture the most recent tag for this project before bumping so we can
+        # pass --from to the changelog step. Nx changelog needs an explicit lower
+        # bound when the new tag doesn't exist yet (it's created after publish).
+        prev_tag="$(git tag --list '${{ inputs.project }}@*' --sort=-version:refname | head -1)"
 
         args=(release version --projects=${{ inputs.project }} --stage-changes)
         specifier='${{ inputs.specifier }}'
@@ -79,6 +83,7 @@ runs:
         {
           echo "version=$after"
           echo "tag=$tag"
+          echo "prev_tag=${prev_tag}"
         } >> "$GITHUB_OUTPUT"
 
         if [[ "$before" != "$after" ]]; then
@@ -102,7 +107,13 @@ runs:
       run: |
         set -euo pipefail
         args=(release changelog '${{ steps.version.outputs.version }}' --projects=${{ inputs.project }})
-        if [[ '${{ inputs.first_release }}' == 'true' ]]; then args+=(--first-release); fi
+        if [[ '${{ inputs.first_release }}' == 'true' ]]; then
+          args+=(--first-release)
+        elif [[ -n '${{ steps.version.outputs.prev_tag }}' ]]; then
+          # The new tag doesn't exist yet (created only after successful publish),
+          # so Nx can't auto-resolve the lower bound. Pass the previous tag explicitly.
+          args+=(--from '${{ steps.version.outputs.prev_tag }}')
+        fi
         pnpm nx "${args[@]}"
 
     - name: Commit and push branch

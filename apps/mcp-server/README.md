@@ -1,6 +1,6 @@
 # LenserFight MCP Server
 
-A custom [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that gives AI assistants like Claude direct access to LenserFight's Lenses, Workflows, and Battles — without copy-pasting IDs, without switching apps.
+A custom [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that gives AI assistants like Claude direct access to LenserFight's Lenses, Battles, Workflows, and AI Lensers — without copy-pasting IDs, without switching apps.
 
 ---
 
@@ -8,54 +8,57 @@ A custom [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 
 Think of MCP as USB-C for AI: a single, open standard that lets any AI assistant talk to any data source or tool. Instead of pasting lens IDs into chat messages, you say *"run the `code-reviewer` lens with Topic=TypeScript"* and Claude calls `run_lens` directly.
 
-MCP separates **servers** (tools that expose capabilities) from **clients** (the AI that uses them). This server is a **Resource Server** — it wraps LenserFight's Supabase database and exposes 30 typed tools.
+MCP separates **servers** (tools that expose capabilities) from **clients** (the AI that uses them). This server is a **Resource Server** — it wraps LenserFight's Supabase database and exposes 42 typed tools.
 
 > **This vs the generic Supabase MCP**: `mcp.supabase.com` gives an AI generic SQL access to any Supabase project. This server wraps LenserFight's *business logic* — `run_lens` resolves `[[Parameter]]` tokens from the database, `get_battle_score` fetches vote aggregates and AI judge verdicts, `summarize_workflow` calculates cost and duration. You get typed, safe, purpose-built tools, not raw SQL access.
 
 ---
 
-## 30 Tools Across 3 Groups
+## 42 Tools Across 4 Groups
 
 | Group | Count | Purpose |
 |---|---|---|
-| **Lens** | 14 | Create, run, fork, version, and search prompt templates |
+| **Lens** | 15 | Create, run, fork, version, and search prompt templates |
 | **Battle** | 8 | Create battles, add contenders, submit runs, read scores |
 | **Workflow** | 8 | Create, run, monitor, retry, and summarize workflow executions |
+| **Agent** | 12 | Create and manage AI Lensers, assign tools, run team actions |
 
 ---
 
-## Three Transport Modes
+## Transport Modes
 
-| Mode | Use Case | Auth | URL |
+| Mode | Use Case | Entry point | URL |
 |---|---|---|---|
-| **stdio** | Claude Code CLI, Cursor desktop | Service role key from env | No URL (process pipes) |
-| **HTTP local** | Claude.ai web connector via ngrok | Bearer JWT (Supabase) | `http://localhost:3001/mcp` |
-| **HTTP deployed** | Claude.ai web connector (production) | Bearer JWT (Supabase) | `https://<PROJECT>.supabase.co/functions/v1/lenserfight-mcp` |
+| **Cloudflare Worker** | Claude.ai web — production | `src/worker.ts` | `https://mcp.lenserfight.com/mcp` |
+| **stdio** | Claude Code CLI, Cursor desktop | `src/main.ts` | No URL (process pipes) |
+| **HTTP local** | Claude.ai web connector via ngrok | `src/main.ts` | `http://localhost:3001/mcp` |
 
 ---
 
 ## OAuth Architecture
 
-LenserFight's **Supabase Auth** is the OAuth Authorization Server. This MCP server is the Resource Server. Claude.ai and Cursor are public OAuth clients (no client_id / client_secret needed — PKCE only).
+LenserFight uses its own OAuth 2.1 flow backed by Supabase Auth. This MCP server is the Resource Server. Claude.ai is a public OAuth client (PKCE only — no client secret needed).
 
 ```
-Claude.ai / Cursor
-    │  1. GET /.well-known/oauth-authorization-server
+Claude.ai
+    │  1. GET /.well-known/oauth-protected-resource
+    │  2. GET /.well-known/oauth-authorization-server
     ▼
-MCP Server exposes discovery document pointing at Supabase Auth
-    │  2. Redirect to Supabase Auth
+mcp.lenserfight.com  (Cloudflare Worker)
+    │  3. GET /oauth/authorize  →  redirect to auth.lenserfight.com/mcp/auth
     ▼
-https://<PROJECT>.supabase.co/auth/v1/authorize
-    │  3. User logs in via LenserFight auth app
-    │  4. Supabase issues JWT (access token)
+auth.lenserfight.com  (consent page)
+    │  4. User signs in, clicks Allow
+    │  5. POST /oauth/complete  →  server issues lf_mcp_* token
+    │  6. POST /oauth/token     →  Claude exchanges code for access token
     ▼
-Claude.ai / Cursor holds:  Authorization: Bearer <supabase-jwt>
-    │  5. All tool calls include this header
+Claude.ai holds:  Authorization: Bearer lf_mcp_<hex>
+    │  7. All /mcp calls include this header
     ▼
-MCP Server validates JWT → sb.auth.getUser(token) → extracts lenser profile
+Worker validates token via fn_mcp_resolve_token RPC
+  → resolves Supabase refresh token → issues per-request user-scoped client
+  → tools run with user's RLS context
 ```
-
-**No client secret needed.** The discovery document advertises `token_endpoint_auth_methods_supported: ["none"]`, which tells clients PKCE is sufficient.
 
 ---
 
@@ -63,531 +66,194 @@ MCP Server validates JWT → sb.auth.getUser(token) → extracts lenser profile
 
 | Variable | Required | Description |
 |---|---|---|
-| `SUPABASE_URL` | Yes | Your Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role key — bypasses RLS; keep secret |
-| `SUPABASE_JWT_SECRET` | Yes (HTTP mode) | Used to validate Bearer JWTs in HTTP transport |
-| `LENSERFIGHT_LENSER_ID` | No | Scopes list operations to a specific lenser in stdio mode |
+| `SUPABASE_URL` | Yes | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role key — bypasses RLS for OAuth operations |
+| `SUPABASE_ANON_KEY` | Yes | Anon key — used to create user-scoped clients from refresh tokens |
+| `SUPABASE_JWT_SECRET` | Yes | Validates Supabase JWTs in HTTP transport |
+| `MCP_OAUTH_BASE_URL` | Worker/HTTP | Public base URL (`https://mcp.lenserfight.com` in prod) |
+| `AUTH_APP_BASE_URL` | Worker/HTTP | Consent page URL (`https://auth.lenserfight.com` in prod) |
+| `LENSERFIGHT_LENSER_ID` | No | Scope stdio tool calls to a specific lenser UUID |
 | `MCP_TRANSPORT` | No | `stdio` (default) or `http` |
-| `MCP_HTTP_PORT` | No | HTTP port (default: `3001`) |
+| `MCP_HTTP_PORT` | No | HTTP port for local mode (default: `3001`) |
 
 ---
 
-## Setup — Transport 1: stdio (Claude Code CLI)
+## Setup — Cloudflare Worker (Production)
+
+The worker entry point (`src/worker.ts`) uses the Fetch API and shares all tool/service/OAuth logic with the Node server. It is the **source of truth for the production MCP endpoint** at `https://mcp.lenserfight.com`.
+
+### Step 1 — Fill in `.env.local`
+
+Copy the template and populate your production Supabase credentials:
+
+```
+apps/mcp-server/.env.local
+```
+
+```bash
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+SUPABASE_ANON_KEY=eyJ...
+SUPABASE_JWT_SECRET=your-jwt-secret
+```
+
+This file is gitignored and never committed.
+
+### Step 2 — Push secrets to Cloudflare
+
+```bash
+pnpm nx run mcp-server:"secrets:push"
+```
+
+This reads `.env.local` and pushes each key as a Wrangler secret to the `lenserfight-mcp` Worker, equivalent to running `wrangler secret put` for each variable individually.
+
+### Step 3 — Build and deploy
+
+```bash
+pnpm nx run mcp-server:deploy
+```
+
+This runs `worker-build` (esbuild → `dist/apps/mcp-server/worker.js`) then `wrangler deploy`. The Cloudflare build pipeline (configured in the Cloudflare dashboard) runs the same command on push to `main`.
+
+### Step 4 — Verify
+
+```bash
+curl https://mcp.lenserfight.com/health
+# {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
+```
+
+---
+
+## Setup — stdio (Claude Code CLI)
 
 The simplest and most secure option. No network, no auth tokens, no browser.
 
-**1. Build the server:**
+### Step 1 — Create `.env.mcp.local`
+
+```bash
+# apps/mcp-server/.env.mcp.local  ← gitignored, do not commit
+export SUPABASE_URL=http://127.0.0.1:54321
+export SUPABASE_SERVICE_ROLE_KEY=<from supabase status>
+export SUPABASE_ANON_KEY=<from supabase status>
+export SUPABASE_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters-long
+export MCP_TRANSPORT=stdio
+# export LENSERFIGHT_LENSER_ID=<your-lenser-uuid>
+```
+
+Source it before launching Claude Code:
+
+```bash
+source apps/mcp-server/.env.mcp.local
+```
+
+### Step 2 — Build
 
 ```bash
 pnpm nx build mcp-server
 ```
 
-This produces `dist/apps/mcp-server/main.js`.
+Output: `dist/apps/mcp-server/main.js`
 
-**2. Set environment variables** in your shell (add to `~/.bashrc` or `~/.zshrc`):
+### Step 3 — Start Claude Code
 
-```bash
-export SUPABASE_URL=https://your-project.supabase.co
-export SUPABASE_SERVICE_ROLE_KEY=eyJ...
-export SUPABASE_JWT_SECRET=your-jwt-secret
-export LENSERFIGHT_LENSER_ID=your-lenser-uuid
-```
-
-**3. `.mcp.json`** in the repo root registers the server with Claude Code:
-
-```json
-{
-  "mcpServers": {
-    "lenserfight": {
-      "command": "node",
-      "args": ["dist/apps/mcp-server/main.js"],
-      "env": {
-        "SUPABASE_URL": "${SUPABASE_URL}",
-        "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}",
-        "SUPABASE_JWT_SECRET": "${SUPABASE_JWT_SECRET}",
-        "LENSERFIGHT_LENSER_ID": "${LENSERFIGHT_LENSER_ID}",
-        "MCP_TRANSPORT": "stdio"
-      }
-    }
-  }
-}
-```
-
-Claude Code reads `.mcp.json` from the workspace root automatically. After reloading, the `lenserfight` server appears in the tool list.
-
-**Test it:**
-```
-> List my lenses
-> Run the code-reviewer lens with Topic=TypeScript Language=English
-> Create a new battle: "Claude vs GPT on system design"
-```
+The repo root `.mcp.json` auto-registers the server. Type `/mcp` to confirm it's listed.
 
 ---
 
-## Setup — Transport 2: HTTP Local + ngrok (Claude.ai Web Connector)
+## Setup — HTTP + tunnel (local Claude.ai)
 
-Use this when you want to connect Claude.ai (the web app) to your local machine.
+Use this to connect Claude.ai to your local machine during development.
 
-**1. Build and start the HTTP server:**
-
-```bash
-pnpm nx build mcp-server
-MCP_TRANSPORT=http SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... SUPABASE_JWT_SECRET=... \
-  node dist/apps/mcp-server/main.js
-# → [lenserfight-mcp] HTTP transport ready on port 3001
-```
-
-**2. Expose it with ngrok:**
+### Step 1 — Start a tunnel
 
 ```bash
 ngrok http 3001
-# → Forwarding https://xxxx-xxxx.ngrok-free.app → localhost:3001
 ```
 
-**3. Add the ngrok URL as an allowed redirect URI** in Supabase Auth:
-- Go to your Supabase project → Authentication → URL Configuration
-- Add `https://xxxx-xxxx.ngrok-free.app/auth/callback` to Redirect URLs
-
-**4. Add a custom connector in Claude.ai:**
-- Claude.ai → Settings → Integrations → Add custom connector
-- MCP server URL: `https://xxxx-xxxx.ngrok-free.app/mcp`
-- Authentication: OAuth 2.0 (Claude.ai will discover the Supabase endpoints automatically via `/.well-known/oauth-authorization-server`)
-- Authorize with your LenserFight account
-
-Claude.ai now has access to all 30 LenserFight tools via OAuth.
-
----
-
-## Setup — Transport 3: Supabase Edge Function (Deployed)
-
-Use this for a permanent, public MCP endpoint — no local server, no ngrok.
-
-**1. Set Edge Function secrets** (one-time):
+### Step 2 — Start the server
 
 ```bash
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJ...
-supabase secrets set SUPABASE_JWT_SECRET=your-jwt-secret
-# SUPABASE_URL is injected automatically in Edge Functions
+source apps/mcp-server/.env.mcp.local
+export MCP_TRANSPORT=http
+export MCP_HTTP_PORT=3001
+pnpm nx build mcp-server
+node dist/apps/mcp-server/main.js
 ```
 
-**2. Deploy:**
-
-```bash
-supabase functions deploy lenserfight-mcp
-```
-
-**3. Add a custom connector in Claude.ai:**
-- MCP server URL: `https://<PROJECT_REF>.supabase.co/functions/v1/lenserfight-mcp/mcp`
-- Authentication: OAuth 2.0
-
-> **Edge Function limitation:** Sessions are held in Deno isolate memory. A cold start loses active sessions; the MCP client reconnects automatically on the next call. This is transparent for tool calls.
+The server auto-detects the ngrok URL from `127.0.0.1:4040` and prints a startup banner with the connector URL to paste into Claude.ai.
 
 ---
 
-## All 30 Tools
+## Nx Targets
 
-### Lens Tools (14)
-
-#### `list_lenses`
-List lenses with pagination and optional filters.
-
-```json
-{ "limit": 10, "offset": 0, "visibility": "public", "status": "published" }
-```
-
-#### `search_lenses`
-Full-text search by query string.
-
-```json
-{ "query": "code review", "limit": 5 }
-```
-
-#### `get_lens`
-Get a lens including its head version body and all parameters.
-
-```json
-{ "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-```
-
-Returns: lens metadata, `versions.template_body`, `version_parameters[{id, label, optional}]`.
-
-#### `create_lens`
-Create a new lens. Use `[[ParamName]]` for required parameters, `[[ParamName!]]` for optional ones.
-
-```json
-{
-  "title": "Code Reviewer",
-  "template_body": "Review the following [[Language]] code for [[ReviewType]] issues:\n\n[[Code]]",
-  "visibility": "public",
-  "params": [
-    { "label": "Language", "optional": false },
-    { "label": "Code", "optional": false },
-    { "label": "ReviewType", "optional": true }
-  ]
-}
-```
-
-#### `update_lens`
-Create a new immutable version of an existing lens. LenserFight uses immutable versioning — editing creates a new version and updates `head_version_id`.
-
-```json
-{
-  "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "template_body": "Updated template: review [[Language]] code...",
-  "params": [{ "label": "Language" }],
-  "changelog": "Simplified parameter set"
-}
-```
-
-#### `archive_lens`
-Archive a lens. Archived lenses are hidden from default listings but not deleted.
-
-```json
-{ "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-```
-
-#### `delete_lens`
-Soft-delete a lens. Requires `confirm: true` — this cannot be undone via the API.
-
-```json
-{ "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "confirm": true }
-```
-
-#### `set_lens_visibility`
-Change a lens's visibility tier.
-
-```json
-{ "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "visibility": "community" }
-```
-
-Values: `public` (anyone can run), `community` (logged-in users), `private` (owner only).
-
-#### `validate_lens_params`
-Check whether a set of param values satisfies a lens version's schema. Useful before calling `run_lens`.
-
-```json
-{
-  "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "param_values": { "Language": "TypeScript", "Code": "function foo() {}" }
-}
-```
-
-Returns: `{ valid, missing, unknown }`.
-
-#### `extract_lens_params`
-Inspect a lens version to see its `[[Parameter]]` tokens and the parameter schema stored in the database.
-
-```json
-{ "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-```
-
-Returns: `{ params[{id, label, optional}], tokens_in_template }`.
-
-#### `run_lens`
-**The key tool.** Resolves `[[:uuid]]` tokens in a lens template with provided values and returns the ready-to-use prompt. **Does NOT call an LLM** — the calling AI (Claude) executes the resolved prompt naturally.
-
-Token resolution flow:
-1. Fetch `head_version_id` from `lenses.lenses` (unless `version_id` given)
-2. Fetch `template_body` from `lenses.versions`
-3. Fetch `version_parameters` — `[{id, label, optional}]`
-4. For each param: substitute `[[:uuid]]` with `values[label]` (case-insensitive)
-5. Required param missing → return `MISSING_PARAMS` error with `missing` list
-6. Optional param missing → replace token with `''`
-7. If `workflow_id` provided: insert `workflow_runs` record (status=`pending`)
-
-```json
-{
-  "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "param_values": {
-    "Language": "TypeScript",
-    "Code": "const x = 1",
-    "ReviewType": "security"
-  },
-  "workflow_id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
-}
-```
-
-Returns: `{ resolved_prompt, run_id, lens_id, version_id, params_used, estimated_input_tokens, persisted }`.
-
-#### `fork_lens`
-Fork a lens into a new one, copying the template and parameter schema. The fork is linked to the source via `parent_lens_id`.
-
-```json
-{
-  "source_lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "title": "Code Reviewer — TypeScript Only",
-  "visibility": "private"
-}
-```
-
-#### `list_lens_versions`
-List all versions of a lens, newest first.
-
-```json
-{ "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-```
-
-Returns: `[{id, semver, created_at, changelog}]`.
-
-#### `get_lens_version`
-Get a specific version by `version_id` or `semver` string.
-
-```json
-{ "lens_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "semver": "1.2.0" }
-```
+| Target | Command | Description |
+|---|---|---|
+| `build` | `pnpm nx build mcp-server` | Build Node.js CJS bundle (`src/main.ts`) |
+| `worker-build` | `pnpm nx run mcp-server:worker-build` | Build Cloudflare Worker ESM bundle (`src/worker.ts`) |
+| `deploy` | `pnpm nx run mcp-server:deploy` | Build worker + `wrangler deploy` |
+| `secrets:push` | `pnpm nx run mcp-server:"secrets:push"` | Push `.env.local` values as Wrangler secrets |
+| `serve` | `pnpm nx serve mcp-server` | Build + run Node server (stdio mode) |
+| `test` | `pnpm nx test mcp-server` | Run Jest tests |
 
 ---
 
-### Battle Tools (8)
-
-#### `list_battles`
-List battles with filters.
-
-```json
-{ "limit": 10, "status": "voting", "battle_type": "ai_vs_ai" }
-```
-
-#### `get_battle`
-Get full battle details: contenders, vote aggregates, entity maps.
-
-```json
-{ "battle_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-```
-
-#### `create_battle`
-Create a new battle. The `task_prompt` is what all competitors respond to.
-
-```json
-{
-  "title": "System Design: Rate Limiter",
-  "task_prompt": "Design a distributed rate limiter for 1M RPS. Include architecture, data store choice, and failure modes.",
-  "battle_type": "ai_vs_ai",
-  "judging_mode": "ai_judge",
-  "max_contenders": 3
-}
-```
-
-#### `add_battle_contender`
-Add an AI model, lenser, or workflow as a contender. Slots are auto-assigned A, B, C, ...
-
-```json
-{
-  "battle_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "contender_type": "ai_model",
-  "display_name": "Claude Opus 4",
-  "entity_id": "model-uuid",
-  "entity_type": "model"
-}
-```
-
-#### `submit_battle_run`
-Submit a contender's output for scoring by the AI judge.
-
-```json
-{
-  "battle_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "contender_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "output": "Here is my rate limiter design: ...",
-  "model_key": "claude-opus-4",
-  "tokens_used": 1842
-}
-```
-
-#### `get_battle_score`
-Read vote aggregates and AI judge verdicts for a battle.
-
-```json
-{ "battle_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-```
-
-Returns: `{ vote_aggregates, ai_judge_verdicts }`.
-
-#### `set_battle_status`
-Change a battle's status. The database enforces valid state transitions. Closing or archiving requires `confirm: true`.
-
-```json
-{ "battle_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "status": "open" }
-```
-
-Status progression: `draft → open → executing → voting → scoring → closed/published`.
-
-#### `get_battle_history`
-Get battles created by a lenser.
-
-```json
-{ "lenser_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "limit": 20 }
-```
-
----
-
-### Workflow Tools (8)
-
-#### `list_workflows`
-List workflows with pagination.
-
-```json
-{ "lenser_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "limit": 10 }
-```
-
-#### `get_workflow`
-Get workflow details.
-
-```json
-{ "workflow_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-```
-
-#### `create_workflow`
-Create a new workflow.
-
-```json
-{
-  "name": "Code Review Pipeline",
-  "description": "Multi-step code review: lint, security, style",
-  "lenser_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-}
-```
-
-#### `run_workflow`
-Start a workflow run. Returns a `run_id` for polling.
-
-```json
-{
-  "workflow_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "context_inputs": { "Language": "Go", "Code": "..." }
-}
-```
-
-#### `get_workflow_run_status`
-Poll the status and cost of a running workflow.
-
-```json
-{ "run_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-```
-
-Returns: `{ id, status, started_at, completed_at, spent_credits, budget_credits, cost_metadata }`.
-
-Status values: `pending → running → completed | failed | cancelled`.
-
-#### `get_workflow_run_logs`
-Get node-level execution logs ordered by start time.
-
-```json
-{ "run_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-```
-
-Returns: `{ run, node_results[{node_id, status, output, tokens_used, cost_credits, ...}] }`.
-
-#### `retry_workflow`
-Retry a failed or cancelled run with the same inputs. Creates a new run linked via `parent_run_id`.
-
-```json
-{ "run_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-```
-
-#### `summarize_workflow`
-Aggregate run metrics: status, duration, credit cost, and node result counts.
-
-```json
-{ "run_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-```
-
-Returns: `{ status, duration_ms, spent_credits, budget_credits, cost_metadata, nodes: {total, completed, failed, skipped} }`.
-
----
-
-## Token Resolution: How `run_lens` Works
-
-LenserFight stores lens templates with `[[ParameterLabel]]` tokens (user-facing) that get translated to `[[:uuid]]` format in the database via `fn_replace_param_label_token`. The MCP server resolves these using TypeScript, not an LLM:
+## Architecture
 
 ```
-Template stored in DB:
-  "Review [[:aaaaaaaa-0000-...]] code for [[:bbbbbbbb-0000-...]] issues: [[:cccccccc-0000-...]]"
-
-Parameters:
-  [{id: "aaaaaaaa-...", label: "Language", optional: false},
-   {id: "bbbbbbbb-...", label: "ReviewType", optional: true},
-   {id: "cccccccc-...", label: "Code", optional: false}]
-
-Input: { Language: "TypeScript", Code: "const x = 1" }
-
-Resolved:
-  "Review TypeScript code for  issues: const x = 1"
-  (ReviewType is optional, replaced with '')
+src/
+├── worker.ts          Cloudflare Worker entry — Fetch API, no Node deps
+├── main.ts            Node.js entry — stdio + HTTP via Node http module
+├── config.ts          Env var parsing (Node; Worker reads from Env binding)
+├── client.ts          Supabase client factory
+├── types.ts           Shared ok/fail/paginated helpers + zUuid
+├── middleware/
+│   └── auth.ts        resolveAuth: validates lf_mcp_* tokens + Supabase JWTs
+├── oauth/
+│   └── discovery.ts   buildDiscoveryDocument / buildProtectedResourceDocument
+├── transport/
+│   ├── http.ts        Node HTTP server (local dev + tunnel mode)
+│   └── stdio.ts       stdio transport (Claude Code CLI)
+├── tools/
+│   ├── lens/          15 lens tools
+│   ├── battle/        8 battle tools
+│   ├── workflow/      8 workflow tools
+│   └── agent/         12 AI Lenser tools
+└── services/
+    ├── lens.service.ts
+    ├── battle.service.ts
+    ├── workflow.service.ts
+    └── agent.service.ts
 ```
 
-The resolution is a **pure function** (`resolveTemplate`) with unit tests in `src/__tests__/lens-run.spec.ts`. No LLM is called — the calling AI (Claude) executes the resolved prompt naturally.
+`worker.ts` reuses everything under `tools/`, `services/`, `middleware/`, and `oauth/`. Only `transport/http.ts` (Node `http` module) and `config.ts` (`process.env`) are Node-specific and are not imported by the Worker.
 
 ---
 
 ## Security Model
 
-- **Service role key**: The Node.js server uses `SUPABASE_SERVICE_ROLE_KEY` which bypasses RLS. This is intentional — the MCP server acts on behalf of the authenticated user or the configured `LENSERFIGHT_LENSER_ID`. Do not expose the service role key publicly.
-- **JWT validation** (HTTP mode): Every `/mcp` request must carry `Authorization: Bearer <supabase-jwt>`. The token is validated via `sb.auth.getUser(token)`. Invalid tokens get `401 Unauthorized`.
-- **Soft deletes**: `delete_lens` and battle archiving are soft-deletes. Data is never physically removed via these tools.
-- **Confirmation guards**: `delete_lens` requires `confirm: true`. `set_battle_status` to `closed` or `archived` requires `confirm: true`.
-- **Dev project only**: Do not point this server at a production Supabase project without additional access controls. The service role key has full database access.
-
----
-
-## Audit Logging
-
-The server writes to `audit.mcp_tool_calls` if the table exists. Schema:
-
-```sql
-create table audit.mcp_tool_calls (
-  id uuid primary key default gen_random_uuid(),
-  tool_name text not null,
-  duration_ms int,
-  success bool not null,
-  error_code text,
-  called_at timestamptz default now()
-);
-```
-
-If the table does not exist, audit logging silently falls back to `process.stderr`.
-
----
-
-## Architecture (GRASP/OOAD)
-
-| Pattern | Applied |
-|---|---|
-| **Information Expert** | Each tool file owns its own Supabase query |
-| **Controller** | `McpServer` is the system controller; tool groups are use-case controllers |
-| **Creator** | `registerLensTools/registerBattleTools/registerWorkflowTools` own their registrations |
-| **High Cohesion** | One file = one tool; one module = one transport |
-| **Low Coupling** | Tools depend only on `getServiceClient()` + `types.ts` |
-| **Protected Variation** | JWT middleware shields tools from transport/auth changes |
-| **Pure Fabrication** | `audit.ts` is a cross-cutting service, not in the domain model |
-| **Indirection** | `getServiceClient()` indirects tools from Supabase connection details |
+- **Service role key**: Used only for OAuth operations (token lookup, client registration). Tool calls use per-user Supabase clients derived from the authenticated lenser's refresh token — RLS applies.
+- **JWT validation**: Every `/mcp` request must carry `Authorization: Bearer lf_mcp_<hex>`. The token is resolved via `fn_mcp_resolve_token` RPC, which returns the linked Supabase refresh token. Invalid tokens get `401`.
+- **Confirmation guards**: `delete_lens`, `archive_ai_lenser`, and `set_battle_status` to `closed`/`archived` require `confirm: true`.
+- **Soft deletes**: No tool physically removes rows — all deletes set `deleted_at`.
 
 ---
 
 ## Troubleshooting
 
-**`lenserfight` server doesn't appear in Claude Code**
-- Confirm `pnpm nx build mcp-server` succeeded and `dist/apps/mcp-server/main.js` exists
-- Confirm all three required env vars are set in your shell
-- Reload Claude Code (`.mcp.json` is read on startup)
+**`No change found in Function`** (Supabase deploy)
+The Supabase Edge Function is deprecated in favour of the Cloudflare Worker. Use `pnpm nx run mcp-server:deploy` instead.
 
-**`stdout contamination: framing error`**
-- The server must never write to `stdout` (only `stderr`). If a tool uses `console.log`, replace with `process.stderr.write()`
-- `audit.ts` logs to stderr automatically if the DB table is missing
+**`401 Unauthorized` on `/mcp`**
+The bearer token is not being recognised. Re-authorize the connector in Claude.ai settings.
 
-**`schema "lenses" not found`**
-- The service role key must be for the correct Supabase project
-- Run `supabase status` to confirm the URL matches
+**`could not locate _registeredTools`** in Worker logs
+The MCP SDK changed its internal registry key. Check `src/worker.ts` → `getTools()` and add the new key to the candidates list.
 
 **`MISSING_PARAMS` from `run_lens`**
-- Call `extract_lens_params` first to see which parameters the lens needs
-- Keys are case-insensitive: `"language"` matches `"Language"`
-
-**`401 Unauthorized` (HTTP mode)**
-- The Bearer token must be a valid Supabase JWT from the LenserFight auth app
-- OAuth flow: authenticate at the `/auth/callback` URL, then use the returned access token
+Call `extract_lens_params` first to see which parameters the lens needs. Keys are case-insensitive.
 
 **`CONFIRM_REQUIRED`**
-- `delete_lens` and `set_battle_status` to `closed`/`archived` need `"confirm": true` in the input
+Pass `"confirm": true` for destructive operations (`delete_lens`, `archive_ai_lenser`, `set_battle_status` to `closed`/`archived`).
 
-**Edge Function cold start**
-- Sessions are in Deno isolate memory. Cold starts lose sessions; the MCP client reconnects automatically. This is normal behavior.
+**Worker bundle too large**
+The current bundle is ~1.8MB (within Cloudflare's 10MB limit). If it grows, run `pnpm nx run mcp-server:worker-build 2>&1 | grep "worker.js"` to see the current size.

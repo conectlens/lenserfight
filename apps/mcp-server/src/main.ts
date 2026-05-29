@@ -6,19 +6,21 @@ import { registerLensTools } from './tools/lens/index.js';
 import { registerBattleTools } from './tools/battle/index.js';
 import { registerWorkflowTools } from './tools/workflow/index.js';
 import { registerAgentTools } from './tools/agent/index.js';
+import { registerUserTools } from './tools/user/index.js';
 import { bootStdio } from './transport/stdio.js';
 import { bootHttp } from './transport/http.js';
 
-export function buildServer(sb: SupabaseClient): McpServer {
+export function buildServer(sb: SupabaseClient, lenserId?: string): McpServer {
   const server = new McpServer({
     name: 'lenserfight',
     version: '1.0.0',
   });
 
-  registerLensTools(server, sb);
-  registerBattleTools(server, sb);
-  registerWorkflowTools(server, sb);
-  registerAgentTools(server, sb);
+  registerLensTools(server, sb, lenserId);
+  registerBattleTools(server, sb, lenserId);
+  registerWorkflowTools(server, sb, lenserId);
+  registerAgentTools(server, sb, lenserId);
+  registerUserTools(server, sb, lenserId);
 
   return server;
 }
@@ -31,7 +33,7 @@ async function main(): Promise<void> {
     await bootHttp(buildServer, cfg);
   } else {
     // stdio mode: single service-role client (admin/local dev)
-    const server = buildServer(getServiceClient());
+    const server = buildServer(getServiceClient(), cfg.lenserId);
     await bootStdio(server);
   }
 }

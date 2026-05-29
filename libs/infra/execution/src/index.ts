@@ -190,3 +190,21 @@ export { SupabaseQueryRunner, isRpcAllowed, KVStoreReadRunner, KVStoreWriteRunne
 
 // ── CQ: Communication & Integration Node Runners ────────────────────────
 export { EmailSendRunner, SlackNotifyRunner, DiscordNotifyRunner, GitHubReadRunner, RssFeedRunner, NotionReadRunner, GoogleSheetsReadRunner, GoogleSheetsWriteRunner } from './lib/runners'
+
+// ── CT: Envelope-handler composition root ───────────────────────────────
+// Runners that need user-auth context (BattleCreateRunner, ScheduleTriggerRunner)
+// emit intent envelopes. The workflow executor's post-run hook should call
+// `createDefaultEnvelopeRegistry().dispatch(output, postRunCtx)` for each final
+// node output. Handlers are JWT-gated; see envelope-handlers/types.ts.
+export {
+  BattleCreateHandler,
+  ScheduleTriggerHandler,
+  EnvelopeHandlerRegistry,
+  createDefaultEnvelopeRegistry,
+} from './lib/envelope-handlers'
+export type {
+  DispatchOutcome,
+  EnvelopeHandler,
+  EnvelopeHandlerResult,
+  PostRunContext,
+} from './lib/envelope-handlers'

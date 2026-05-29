@@ -1,6 +1,6 @@
 import type { WorkflowVersionRecord } from '@lenserfight/data/repositories'
-import { Archive, Check, Clock, GitBranch, RotateCcw, Upload } from 'lucide-react'
-import React, { useState } from 'react'
+import { Archive, Check, Clock, GitBranch, GitCompare, RotateCcw, Upload } from 'lucide-react'
+import React, { useMemo, useState } from 'react'
 
 import {
   useWorkflowVersions,
@@ -8,6 +8,8 @@ import {
   usePublishWorkflowVersion,
   useRestoreWorkflowVersion,
 } from '../hooks/useWorkflowVersions'
+
+import { WorkflowVersionDiff, type WorkflowVersion } from './WorkflowVersionDiff'
 
 interface WorkflowVersionPanelProps {
   workflowId: string
@@ -32,12 +34,28 @@ export function WorkflowVersionPanel({ workflowId, isOwner }: WorkflowVersionPan
   const { mutate: publishVersion, isPending: isPublishing } = usePublishWorkflowVersion(workflowId)
   const { mutate: restoreVersion, isPending: isRestoring } = useRestoreWorkflowVersion(workflowId)
   const [changelog, setChangelog] = useState('')
+  const [compareTarget, setCompareTarget] = useState<WorkflowVersionRecord | null>(null)
+
+  const publishedVersion = useMemo(
+    () => (versions ?? []).find((v) => v.status === 'published') ?? null,
+    [versions],
+  )
 
   const handleCreateVersion = () => {
     createVersion(changelog || undefined, {
       onSuccess: () => setChangelog(''),
     })
   }
+
+  // Snapshot bodies are not on WorkflowVersionRecord; loading them requires
+  // fn_get_workflow_version_snapshot (post-launch Phase 3). The diff renders
+  // an explanatory "snapshot data unavailable" hint when both sides are empty.
+  const diffPair = compareTarget && publishedVersion
+    ? {
+        a: { ...compareTarget, snapshot: { nodes: [], edges: [] } } satisfies WorkflowVersion,
+        b: { ...publishedVersion, snapshot: { nodes: [], edges: [] } } satisfies WorkflowVersion,
+      }
+    : null
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -81,8 +99,10 @@ export function WorkflowVersionPanel({ workflowId, isOwner }: WorkflowVersionPan
               key={v.id}
               version={v}
               isOwner={isOwner}
+              canCompare={!!publishedVersion && publishedVersion.id !== v.id}
               onPublish={() => publishVersion(v.id)}
               onRestore={() => restoreVersion(v.id)}
+              onCompare={() => setCompareTarget(v)}
               isPublishing={isPublishing}
               isRestoring={isRestoring}
             />
@@ -94,6 +114,16 @@ export function WorkflowVersionPanel({ workflowId, isOwner }: WorkflowVersionPan
           )}
         </div>
       )}
+
+      {diffPair && (
+        <WorkflowVersionDiff
+          workflowId={workflowId}
+          versionA={diffPair.a}
+          versionB={diffPair.b}
+          open={!!compareTarget}
+          onOpenChange={(b) => !b && setCompareTarget(null)}
+        />
+      )}
     </div>
   )
 }
@@ -101,13 +131,15 @@ export function WorkflowVersionPanel({ workflowId, isOwner }: WorkflowVersionPan
 interface VersionCardProps {
   version: WorkflowVersionRecord
   isOwner: boolean
+  canCompare: boolean
   onPublish: () => void
   onRestore: () => void
+  onCompare: () => void
   isPublishing: boolean
   isRestoring: boolean
 }
 
-function VersionCard({ version, isOwner, onPublish, onRestore, isPublishing, isRestoring }: VersionCardProps) {
+function VersionCard({ version, isOwner, canCompare, onPublish, onRestore, onCompare, isPublishing, isRestoring }: VersionCardProps) {
   const date = new Date(version.created_at)
   const formattedDate = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
   const formattedTime = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
@@ -158,6 +190,16 @@ function VersionCard({ version, isOwner, onPublish, onRestore, isPublishing, isR
             <RotateCcw size={10} />
             Restore
           </button>
+          {canCompare && (
+            <button
+              onClick={onCompare}
+              className="flex items-center gap-1 rounded-md bg-surface-raised px-2 py-1 text-[10px] font-medium text-greyscale-600 dark:text-greyscale-300 hover:bg-surface-border"
+              aria-label="Compare to current"
+            >
+              <GitCompare size={10} />
+              Compare
+            </button>
+          )}
         </div>
       )}
     </div>

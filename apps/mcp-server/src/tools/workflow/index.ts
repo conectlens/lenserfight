@@ -9,10 +9,10 @@ import { registerWorkflowRunLogs } from './workflow-run-logs.js';
 import { registerWorkflowRetry } from './workflow-retry.js';
 import { registerWorkflowSummarize } from './workflow-summarize.js';
 
-export function registerWorkflowTools(server: McpServer, sb: SupabaseClient): void {
+export function registerWorkflowTools(server: McpServer, sb: SupabaseClient, lenserId?: string): void {
   registerWorkflowList(server, sb);
   registerWorkflowGet(server, sb);
-  registerWorkflowCreate(server, sb);
+  registerWorkflowCreate(server, sb, lenserId);
   registerWorkflowRun(server, sb);
   registerWorkflowRunStatus(server, sb);
   registerWorkflowRunLogs(server, sb);

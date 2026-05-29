@@ -16,7 +16,7 @@ import { registerLensFork } from './lens-fork.js';
 import { registerLensVersions } from './lens-versions.js';
 import { registerLensGetVersion } from './lens-get-version.js';
 
-export function registerLensTools(server: McpServer, sb: SupabaseClient): void {
+export function registerLensTools(server: McpServer, sb: SupabaseClient, _lenserId?: string): void {
   registerLensList(server, sb);
   registerLensSearch(server, sb);
   registerLensGet(server, sb);

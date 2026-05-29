@@ -55,6 +55,7 @@ function mapKnownError(message: string | undefined): McpError | null {
   if (message.includes('handle_taken')) return new McpError('CONFLICT', 'Handle is already in use');
   if (message.includes('quota_exceeded')) return new McpError('THROTTLED', 'Daily team-run quota exceeded for this AI Lenser');
   if (message.includes('not_found')) return new McpError('NOT_FOUND', 'Resource not found');
+  if (message.includes('owner_must_be_active_human_lenser')) return new McpError('FORBIDDEN', 'The owner lenser must be an active human profile. Call get_me to verify your identity.');
   return null;
 }
 

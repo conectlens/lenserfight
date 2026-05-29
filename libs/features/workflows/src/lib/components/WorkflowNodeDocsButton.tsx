@@ -1,23 +1,22 @@
 import { getWorkflowNodeCatalogEntry } from '@lenserfight/infra/execution'
-import { useLocale } from '@lenserfight/shared/i18n-locale'
 import { Button, Tooltip } from '@lenserfight/ui/components'
 import { BookOpen } from 'lucide-react'
-import React from 'react'
+import React, { useState } from 'react'
 
-import { getWorkflowNodeDocsHref } from '../utils/workflow-node-docs'
+import { WorkflowNodeDocsPanel } from './WorkflowNodeDocsPanel'
 
 interface WorkflowNodeDocsButtonProps {
   nodeType: string
-  /** sm = 11 px icon for palette/canvas; md = 12 px for config panel header */
+  /** sm = palette/canvas; md = config panel header */
   size?: 'sm' | 'md'
   tooltipPosition?: 'top' | 'bottom' | 'left' | 'right'
   className?: string
 }
 
 /**
- * A small BookOpen icon button that opens the node's documentation page in a
- * new tab. Returns null when no published docs page is available so callers
- * never render a broken link.
+ * BookOpen icon button that toggles an inline 320px side panel rendering the
+ * node's reference docs. Returns null when no catalog entry exists so callers
+ * never render a broken affordance.
  *
  * Event propagation is stopped on both mousedown (prevents drag initiation in
  * palette cards) and click (prevents canvas node config panel from opening).
@@ -28,34 +27,40 @@ export function WorkflowNodeDocsButton({
   tooltipPosition = 'top',
   className,
 }: WorkflowNodeDocsButtonProps) {
-  const { locale } = useLocale()
   const entry = getWorkflowNodeCatalogEntry(nodeType)
-  const href = entry ? getWorkflowNodeDocsHref(entry.docsPath, locale) : null
+  const [open, setOpen] = useState(false)
+  const [hasOpened, setHasOpened] = useState(false)
 
-  if (!href) return null
+  if (!entry) return null
 
   return (
-    <Tooltip
-      content={`${entry!.displayName} docs`}
-      position={tooltipPosition}
-      delayMs={400}
-    >
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className={`!h-5 !w-5 !rounded-md !p-0 !text-greyscale-400 hover:!text-sky-500 ${className ?? ''}`}
-        aria-label={`View ${entry!.displayName} documentation`}
-        title={`View ${entry!.displayName} documentation`}
-        onMouseDown={(e: React.MouseEvent) => e.stopPropagation()}
-        onClick={(e: React.MouseEvent) => {
-          e.stopPropagation()
-          e.preventDefault()
-          window.open(href, '_blank', 'noreferrer')
-        }}
+    <>
+      <Tooltip
+        content={`${entry.displayName} docs`}
+        position={tooltipPosition}
+        delayMs={400}
       >
-        <BookOpen size={size === 'sm' ? 11 : 12} />
-      </Button>
-    </Tooltip>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className={`!h-5 !w-5 !rounded-md !p-0 !text-greyscale-400 hover:!text-sky-500 ${className ?? ''}`}
+          aria-label={`View ${entry.displayName} documentation`}
+          title={`View ${entry.displayName} documentation`}
+          onMouseDown={(e: React.MouseEvent) => e.stopPropagation()}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation()
+            e.preventDefault()
+            setHasOpened(true)
+            setOpen(true)
+          }}
+        >
+          <BookOpen size={size === 'sm' ? 16 : 18} />
+        </Button>
+      </Tooltip>
+      {hasOpened && (
+        <WorkflowNodeDocsPanel nodeType={nodeType} open={open} onOpenChange={setOpen} />
+      )}
+    </>
   )
 }

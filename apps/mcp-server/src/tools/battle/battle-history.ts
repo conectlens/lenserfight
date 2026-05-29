@@ -2,16 +2,15 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { paginated, fail, zUuid } from '../../types.js';
-import { getConfig } from '../../config.js';
 import { battleService } from '../../services/battle.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
 const TOOL = 'get_battle_history';
 
-export function registerBattleHistory(server: McpServer, sb: SupabaseClient): void {
+export function registerBattleHistory(server: McpServer, sb: SupabaseClient, authLenserId?: string): void {
   server.tool(
     TOOL,
-    'Get structured battle history for a lenser — battles they created or participated in, with outcomes.',
+    'Get structured battle history for a lenser — battles they created or participated in, with outcomes. Defaults to the authenticated user when lenser_id is omitted.',
     {
       lenser_id: zUuid.optional(),
       limit: z.number().int().min(1).max(100).default(20).optional(),
@@ -22,7 +21,7 @@ export function registerBattleHistory(server: McpServer, sb: SupabaseClient): vo
       const t0 = Date.now();
       const limit = args.limit ?? 20;
       const offset = args.offset ?? 0;
-      const lenserId = args.lenser_id ?? getConfig().lenserId;
+      const lenserId = args.lenser_id ?? authLenserId;
       try {
         const { items, total } = await battleService.history(sb, {
           lenser_id: lenserId ?? null,

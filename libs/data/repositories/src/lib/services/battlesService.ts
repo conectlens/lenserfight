@@ -104,6 +104,18 @@ export const battlesService = {
   updateBattle: (id: string, input: Partial<CreateBattleInput>): Promise<BattleRecord> =>
     battlesRepo.updateBattle(id, input),
 
+  updateAutomationConfig: async (
+    id: string,
+    config: Record<string, unknown>,
+  ): Promise<void> => {
+    const { supabase } = await import('@lenserfight/data/supabase')
+    const { error } = await supabase.rpc('fn_update_battle_automation_config', {
+      p_battle_id: id,
+      p_automation_config: config,
+    })
+    if (error) throw error
+  },
+
   scheduleBattle: (input: ScheduleBattleInput): Promise<BattleRecord> =>
     battlesRepo.scheduleBattle(input),
 

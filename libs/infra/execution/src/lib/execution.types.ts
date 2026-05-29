@@ -65,6 +65,8 @@ export type WorkflowNodeType =
   | 'vote_collector'
   | 'score_aggregator'
   | 'leaderboard_update'
+  // CU — Series advancement
+  | 'series_advance'
   // CP — Storage & I/O Nodes
   | 'supabase_query'
   | 'kv_store_read'

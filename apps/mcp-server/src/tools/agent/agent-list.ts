@@ -6,16 +6,16 @@ import { McpError } from '../../services/mcp-error.js';
 
 const TOOL = 'list_ai_lensers';
 
-export function registerAgentList(server: McpServer, sb: SupabaseClient): void {
+export function registerAgentList(server: McpServer, sb: SupabaseClient, lenserId?: string): void {
   server.tool(
     TOOL,
-    'List AI Lensers (AI Agents) owned by a human lenser. Returns each agent\'s profile snapshot — id, handle, display_name, ai_model_id, status, created_at — so the caller can pick one to inspect or operate on. Pass owner_lenser_id to scope; defaults to LENSERFIGHT_LENSER_ID env var when omitted.',
+    'List AI Lensers (AI Agents) owned by a human lenser. Returns each agent\'s profile snapshot — id, handle, display_name, ai_model_id, status, created_at — so the caller can pick one to inspect or operate on. Defaults to the authenticated user when owner_lenser_id is omitted.',
     {
       owner_lenser_id: zUuid.optional(),
     },
     async (args) => {
       const t0 = Date.now();
-      const owner = args.owner_lenser_id ?? process.env.LENSERFIGHT_LENSER_ID;
+      const owner = args.owner_lenser_id ?? lenserId;
       if (!owner) {
         return fail(
           'MISSING_LENSER',

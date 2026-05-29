@@ -5,19 +5,19 @@ description: Step-by-step guide to connecting Claude Code, Cursor, or Claude.ai 
 
 # MCP Server Setup
 
-The **LenserFight MCP server** exposes your lenses, battles, workflows, and runs as callable tools that any [Model Context Protocol](https://modelcontextprotocol.io/docs/getting-started/intro) client can use. Once connected, you can ask Claude things like:
+The **LenserFight MCP server** exposes your lenses, battles, workflows, and AI Lensers as callable tools that any [Model Context Protocol](https://modelcontextprotocol.io/docs/getting-started/intro) client can use. Once connected, you can ask Claude things like:
 
 - *"Search my lenses for a code review template, then run it on this file."*
 - *"List my open battles and rank them by votes."*
-- *"Start a workflow run for workflow X with inputs {topic: React}."*
+- *"Create an AI Lenser called @reviewer and assign it the code-review tool."*
 
 Three connection modes are supported. Pick the one that matches your client and environment:
 
 | Mode | Client | Setup time | Requires local repo? |
 |---|---|---|---|
-| [LF Cloud](#mode-1-lf-cloud-claude-ai-web-any-http-client) | Claude.ai web, any HTTP MCP client | ~2 min | No |
+| [LF Cloud](#mode-1-lf-cloud-claudeai-web-any-http-client) | Claude.ai web, any HTTP MCP client | ~2 min | No |
 | [stdio](#mode-2-stdio-claude-code-cursor-desktop) | Claude Code CLI, Cursor, any child-process MCP client | ~3 min | Yes |
-| [HTTP + tunnel](#mode-3-http--tunnel-claude-ai-web-local-dev) | Claude.ai web (local dev) | ~8 min | Yes |
+| [HTTP + tunnel](#mode-3-http--tunnel-claudeai-web-local-dev) | Claude.ai web (local dev) | ~8 min | Yes |
 
 ---
 
@@ -25,9 +25,7 @@ Three connection modes are supported. Pick the one that matches your client and 
 
 **Use this when:** you want to connect Claude.ai or another HTTP MCP client to LenserFight without running anything locally.
 
-The LenserFight MCP server is available at a stable public endpoint proxied through Cloudflare:
-
-**MCP Endpoint URL:**
+The LenserFight MCP server runs as a **Cloudflare Worker** at a stable public endpoint:
 
 ```
 https://mcp.lenserfight.com/mcp
@@ -49,7 +47,7 @@ https://mcp.lenserfight.com/mcp
 
 Claude.ai opens an authorization popup. You are redirected to **auth.lenserfight.com** — the LenserFight sign-in page — where you can sign in with any method (email/password, Google, GitHub, magic link, etc.).
 
-After signing in you land on the consent screen. Click **Allow** to grant the connector access to your lenses, battles, and workflows.
+After signing in you land on the consent screen. Click **Allow** to grant the connector access to your lenses, battles, workflows, and AI Lensers.
 
 Your account must have completed the onboarding flow (choosing a handle) before you can authorize.
 
@@ -69,8 +67,6 @@ Back in Claude.ai, start a new chat and ask:
 Claude calls `list_lenses` and responds. If it works, the integration is healthy.
 
 ### Cursor / other HTTP MCP clients
-
-Add a remote MCP entry pointing to the same URL:
 
 ```json
 {
@@ -96,54 +92,29 @@ The client reads `.mcp.json` at the repo root and starts `node dist/apps/mcp-ser
 
 ### Prerequisites
 
-Before starting:
+1. A running local Supabase instance: `supabase start`
+2. Node.js 22+ and pnpm 9+
+3. The MCP server built: `pnpm nx build mcp-server`
 
-1. **A running local Supabase instance.** From the repo root:
-   ```bash
-   supabase start
-   ```
-   Verify with `supabase status` — Studio should appear at `http://127.0.0.1:54323`.
+### Step 1 — Fill in `.env.mcp.local`
 
-2. **The database seed loaded.** The seed runs automatically on the first `supabase start`. It creates sample lenses, battles, and the `@lenserfight` profile.
-
-3. **Node.js 22+** and **pnpm 9+** installed.
-
-4. **The MCP server built:**
-   ```bash
-   pnpm nx build mcp-server
-   ```
-   Output lands at `dist/apps/mcp-server/main.js`.
-
-### Environment variables
-
-| Variable | Required | What it does |
-|---|---|---|
-| `SUPABASE_URL` | Yes | Local: `http://127.0.0.1:54321` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role JWT. Copy from `supabase status -o env` |
-| `SUPABASE_ANON_KEY` | Yes | Anon JWT. Copy from `supabase status -o env` |
-| `SUPABASE_JWT_SECRET` | Yes | Local default: `super-secret-jwt-token-with-at-least-32-characters-long` |
-| `LENSERFIGHT_LENSER_ID` | No | Scope tool calls to a specific lenser UUID |
-| `MCP_TRANSPORT` | No | Set to `stdio` (default) |
-
-> **Local credentials are safe to commit.** Every `supabase start` produces the same well-known keys and JWT secret. Do not reuse these values in production.
-
-### Step 1 — Create a local env file
+The repo ships `apps/mcp-server/.env.mcp.local` as a template. Fill in your local credentials:
 
 ```bash
-# .env.mcp.local  ← add this file to .gitignore, do not commit
 export SUPABASE_URL=http://127.0.0.1:54321
-export SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
-export SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+export SUPABASE_SERVICE_ROLE_KEY=<from: supabase status>
+export SUPABASE_ANON_KEY=<from: supabase status>
 export SUPABASE_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters-long
 export MCP_TRANSPORT=stdio
-# Optional: uncomment and set to scope tool calls to your lenser profile
 # export LENSERFIGHT_LENSER_ID=<your-lenser-uuid>
 ```
+
+> **Local credentials are safe to commit.** Every `supabase start` produces the same well-known keys and JWT secret. Do not reuse these values in production.
 
 Source it before launching your client:
 
 ```bash
-source ./.env.mcp.local
+source apps/mcp-server/.env.mcp.local
 ```
 
 ### Step 2 — Confirm `.mcp.json` exists
@@ -179,192 +150,134 @@ Launch Claude Code from inside the repo root. It auto-discovers `.mcp.json` and 
 Use the lenserfight MCP server to list my lenses.
 ```
 
-Claude calls `list_lenses` and returns the result.
-
 > **Security note:** stdio mode runs with the service role key, which bypasses RLS. Keep `.env.mcp.local` out of version control and do not share your shell session.
 
 ---
 
 ## Mode 3: HTTP + tunnel (Claude.ai web, local dev)
 
-**Use this when:** you are developing locally and want Claude.ai (the web app) to connect to your local MCP server — for example, to test changes before deploying to LF Cloud.
+**Use this when:** you are developing locally and want Claude.ai to connect to your local MCP server — for example, to test changes before deploying to LF Cloud.
 
-> **Why a tunnel is mandatory:** Claude.ai's OAuth token exchange happens server-side from Anthropic's cloud infrastructure. Your browser can reach `localhost`, but Anthropic's servers cannot — you need a public HTTPS URL that forwards to your local server.
-
-### Prerequisites
-
-Same as [Mode 2 prerequisites](#prerequisites-1), plus a tunnel tool:
-
-- **ngrok** (recommended — auto-detected): [ngrok.com/download](https://ngrok.com/download)
-- **cloudflared** (alternative): requires setting `MCP_OAUTH_BASE_URL` manually
+> **Why a tunnel is mandatory:** Claude.ai's OAuth token exchange happens server-side from Anthropic's cloud. Your browser can reach `localhost`, but Anthropic's servers cannot — you need a public HTTPS URL that forwards to your local server.
 
 ### Step 1 — Start a tunnel
-
-**With ngrok (auto-detected):**
 
 ```bash
 ngrok http 3001
 ```
 
-The server reads the public URL from ngrok's local API on startup — you don't need to copy or paste anything. Your terminal will show a line like:
-
-```
-Forwarding   https://<random-id>.ngrok-free.app -> http://localhost:3001
-```
-
-**With cloudflared:**
-
-```bash
-cloudflared tunnel --url http://localhost:3001
-```
-
-Then set the URL manually before starting the server:
-
-```bash
-export MCP_OAUTH_BASE_URL=https://<your-id>.trycloudflare.com
-```
-
-**With any other tunnel:** set `MCP_OAUTH_BASE_URL` to its HTTPS URL before starting.
+The server auto-detects the ngrok URL from its local API on startup.
 
 ### Step 2 — Build and start the MCP server
 
-Run these commands **in order** in a second terminal (keep ngrok running in the first):
-
 ```bash
-# 1. Load Supabase credentials into the shell
-source .env.mcp.local
-
-# 2. Switch transport to HTTP and set the port
+source apps/mcp-server/.env.mcp.local
 export MCP_TRANSPORT=http
 export MCP_HTTP_PORT=3001
-
-# 3. Build (--skip-nx-cache forces a fresh compile; safe to omit if you haven't changed source)
 pnpm nx build mcp-server --skip-nx-cache
-
-# 4. Start
 node dist/apps/mcp-server/main.js
 ```
 
-Why each line matters:
-
-| Command | Why |
-|---|---|
-| `source .env.mcp.local` | Puts `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, and `SUPABASE_JWT_SECRET` into the current shell. Without this the server exits immediately with a missing-env-vars error. |
-| `export MCP_TRANSPORT=http` | The default transport is `stdio` — without this the server starts in stdio mode and skips all HTTP logic, printing only `[lenserfight-mcp] stdio transport ready`. |
-| `export MCP_HTTP_PORT=3001` | Must match the port you passed to `ngrok http 3001`. |
-| `pnpm nx build mcp-server --skip-nx-cache` | Nx caches build outputs; if the cache is stale the old binary runs. `--skip-nx-cache` forces a fresh compile so your latest source is what runs. Omit it on subsequent restarts if you haven't changed source. |
-| `node dist/apps/mcp-server/main.js` | Runs the compiled server. On startup it probes ngrok's local API (`127.0.0.1:4040`) to auto-detect the public tunnel URL. **ngrok must already be running** before this step. |
-
-On success, you'll see a startup banner:
+On success the startup banner shows the connector URL:
 
 ```
-[lenserfight-mcp] auto-detected public tunnel: https://<your-tunnel-url>.ngrok-free.app
+[lenserfight-mcp] auto-detected public tunnel: https://<your-tunnel>.ngrok-free.app
 [lenserfight-mcp] HTTP transport ready on http://localhost:3001/mcp
 
   ┌─ Local dev OAuth credentials ──────────────────────────────────┐
   │  OAuth Client ID : lf_mcp_client_localdev                      │
-  │  Auth method     : PKCE (no client secret required)            │
-  │  Server base URL : https://<your-tunnel-url>.ngrok-free.app    │
-  │                                                                 │
-  │  Claude.ai → Settings → Connectors → Add connector:            │
-  │    URL       : https://<your-tunnel-url>.ngrok-free.app/mcp    │
-  │    Client ID : lf_mcp_client_localdev                          │
+  │  Server base URL : https://<your-tunnel>.ngrok-free.app        │
+  │  Claude.ai URL   : https://<your-tunnel>.ngrok-free.app/mcp    │
   └─────────────────────────────────────────────────────────────────┘
 ```
 
-If you see a `PUBLIC URL REQUIRED` warning, either the tunnel is not running or was not auto-detected. Set `MCP_OAUTH_BASE_URL` manually and restart.
-
 ### Step 3 — Add the connector in Claude.ai
 
-1. Open **claude.ai → Settings → Connectors → Add custom connector**.
-2. Fill in:
-   - **Name:** `LenserFight Local`
-   - **Remote MCP server URL:** the tunnel URL from the startup banner **plus `/mcp`**. Example: `https://<your-tunnel>.ngrok-free.app/mcp`
-   - **OAuth Client ID (optional):** `lf_mcp_client_localdev`
-   - **OAuth Client Secret (optional):** leave blank — PKCE only.
-3. Click **Add**.
+1. **Remote MCP server URL:** `https://<your-tunnel>.ngrok-free.app/mcp`
+2. **OAuth Client ID (optional):** `lf_mcp_client_localdev`
+3. **OAuth Client Secret:** leave blank.
 
 ### Step 4 — Authorize via the local auth app
 
-Claude.ai opens an authorization popup. Your local MCP server redirects to `localhost:3004/mcp/auth` — the local auth app consent page.
+The local auth app must be running:
 
-> **The local auth app must be running.** Start it with:
-> ```bash
-> pnpm nx serve auth
-> ```
-> It serves on `http://localhost:3004` by default.
-
-Sign in with **any LenserFight account that has a Lenser profile** using any method available in the auth app (email/password, magic link, etc.). The seed creates the `@lenserfight` profile — to sign in with it, set a known password in Supabase Studio (`http://127.0.0.1:54323`):
-
-```sql
-UPDATE auth.users
-   SET encrypted_password = extensions.crypt('localdev123', extensions.gen_salt('bf'))
- WHERE email = 'hey@lenserfight.com';
+```bash
+pnpm nx serve auth
 ```
 
-Then sign in with `hey@lenserfight.com` / `localdev123` and click **Allow** on the consent screen.
-
-If authorization fails:
-
-| Error | Cause | Fix |
-|---|---|---|
-| **Redirected to blank page or 404** | Local auth app is not running | Run `pnpm nx serve auth` and retry |
-| **No Lenser profile found** | The auth account has no Lenser profile | The auth app automatically redirects to onboarding and completes authorization on return — no manual navigation needed. |
-| **Authorization session expired** | More than 5 minutes passed before clicking Allow | Start the connector flow again from Claude.ai settings |
-
-### Step 5 — Test it
-
-Back in Claude.ai, start a new chat and ask:
-
-> "Use the LenserFight Local connector to list my lenses."
-
-Claude calls `list_lenses` and responds.
+Sign in at `http://localhost:3004` with any account that has a Lenser profile, then click **Allow**.
 
 ### Reconnecting after a restart
 
-ngrok free tier assigns a **new URL on every restart**. After restarting ngrok:
+ngrok free tier assigns a new URL on every restart. After restarting ngrok:
 
 1. Restart the MCP server — it auto-detects the new URL.
-2. In Claude.ai, **delete and re-add** the connector with the updated URL.
+2. In Claude.ai, delete and re-add the connector with the updated URL.
 
-The OAuth client `lf_mcp_client_localdev` and its database row are recreated on every server boot — a DB reset does not break it.
+---
+
+## Deploying LF Cloud (contributors)
+
+If you have Cloudflare access to the `lenserfight-mcp` Worker:
+
+### Step 1 — Fill in `apps/mcp-server/.env.local`
+
+```bash
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+SUPABASE_ANON_KEY=eyJ...
+SUPABASE_JWT_SECRET=your-jwt-secret
+```
+
+This file is gitignored. Never commit it.
+
+### Step 2 — Push secrets
+
+```bash
+pnpm nx run mcp-server:"secrets:push"
+```
+
+This reads `.env.local` and pushes each key as a Wrangler secret to the `lenserfight-mcp` Worker — equivalent to running `wrangler secret put` for each variable.
+
+### Step 3 — Build and deploy
+
+```bash
+pnpm nx run mcp-server:deploy
+```
+
+This builds the Worker bundle (`src/worker.ts` → `dist/apps/mcp-server/worker.js` via esbuild) then runs `wrangler deploy`. The Cloudflare dashboard build pipeline runs the same steps automatically on push to `main`.
+
+### Step 4 — Verify
+
+```bash
+curl https://mcp.lenserfight.com/health
+# {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
+```
 
 ---
 
 ## What you can do once connected
 
-Available tool families — see the full parameter tables in the tool reference pages:
+Available tool families — 42 tools total:
 
-- **[Lens tools](./tools-lens)** — `list_lenses`, `search_lenses`, `get_lens`, `run_lens`, `find_and_run_lens`, `create_lens`, `update_lens`, `fork_lens`, `list_lens_versions`, and more
+- **[Lens tools](./tools-lens)** — `list_lenses`, `search_lenses`, `get_lens`, `run_lens`, `find_and_run_lens`, `create_lens`, `update_lens`, `fork_lens`, `list_lens_versions`, `get_lens_version`, `archive_lens`, `delete_lens`, `set_lens_visibility`, `validate_lens_params`, `extract_lens_params`
 - **[Battle tools](./tools-battle)** — `list_battles`, `get_battle`, `create_battle`, `add_battle_contender`, `submit_battle_run`, `get_battle_score`, `set_battle_status`, `get_battle_history`
 - **[Workflow tools](./tools-workflow)** — `list_workflows`, `get_workflow`, `create_workflow`, `run_workflow`, `get_workflow_run_status`, `get_workflow_run_logs`, `retry_workflow`, `summarize_workflow`
+- **[Agent tools](./tools-agent)** — `list_ai_lensers`, `get_ai_lenser`, `create_ai_lenser`, `update_ai_lenser`, `archive_ai_lenser`, `list_agent_tools`, `assign_agent_tool`, `revoke_agent_tool`, `run_agent_action`, `start_agent_team_run`, `cancel_agent_run`, `list_agent_run_events`
 
 ### Daily usage examples
 
 **Discover and run a lens by topic:**
 > "Use `find_and_run_lens` with query='logo brief'. Ask me for any missing parameters."
 
-The tool returns either a `resolved_prompt` (Claude executes it immediately) or a `needs_params` list with the labels it still needs from you.
-
 **Run a known lens with parameters:**
 > "Call `run_lens` with `lens_id=<uuid>` and `param_values={Topic: 'TypeScript', Language: 'English'}`."
 
 **Browse your battles:**
-> "List my last 10 battles using `list_battles`."
+> "List my last 10 battles."
 
-**Start and monitor a workflow:**
-> "Create a workflow named 'Daily Summary', start a run with empty inputs, then poll `get_workflow_run_status` until it completes."
-
-### How `run_lens` works
-
-`run_lens` only **resolves the template** — it substitutes `[[Parameter]]` tokens with the values you supply and returns the finished prompt string. The calling AI model (Claude) is what actually executes that prompt. The flow is:
-
-1. You ask: *"Use the logo brief lens for ACME Corp."*
-2. Claude calls `find_and_run_lens(query='logo brief', param_values={Brand: 'ACME Corp'})`.
-3. The server returns `{ resolved_prompt: "Generate a logo brief for ACME Corp...", lens_title: "Logo Brief", ... }`.
-4. Claude executes the resolved prompt and returns the output to you.
-
-If required parameters are missing, the tool returns `MISSING_PARAMS` with the exact labels — Claude asks you for them and retries automatically.
+**Create and run an AI Lenser:**
+> "Create an AI Lenser called @reviewer, then start a team run with task 'Review this PR description'."
 
 ---
 
@@ -380,57 +293,29 @@ Almost always means the discovery document advertises a localhost URL that Anthr
 
 ### `401 Unauthorized` on `POST /mcp`
 
-The bearer token is not being recognised. Most likely causes: the token was revoked by a DB reset, or the auth code expired (5-minute window). Re-open the connector settings in Claude.ai and re-authorize.
+The bearer token is not being recognised. Re-authorize the connector in Claude.ai settings.
 
 ### Consent page shows a blank page or 404 (local tunnel mode)
 
-The local auth app (`apps/auth`) is not running. Start it:
-
-```bash
-pnpm nx serve auth
-```
-
-It must be reachable at `http://localhost:3004` before the tunnel redirects land.
+The local auth app is not running. Start it with `pnpm nx serve auth`.
 
 ### `No Lenser profile found`
 
-The auth account exists but never completed the onboarding flow. The auth app automatically redirects to onboarding and completes authorization on return — no manual navigation needed.
-
-### Clear the VitePress docs cache
-
-If the docs build produces stale output or fails with a cache-related error:
-
-```bash
-rm -rf apps/docs/.vitepress/cache
-pnpm nx build docs
-```
-
-For a full clean including the dist:
-
-```bash
-rm -rf apps/docs/.vitepress/cache apps/docs/.vitepress/dist
-pnpm nx build docs
-```
+The auth account exists but never completed the onboarding flow. The auth app automatically redirects to onboarding and completes authorization on return.
 
 ### `PUBLIC URL REQUIRED` warning at startup
 
-The tunnel was not detected. Either start ngrok first (`ngrok http 3001`) or set `MCP_OAUTH_BASE_URL=https://your-public-url` before running `node dist/apps/mcp-server/main.js`.
+The tunnel was not detected. Either start ngrok first (`ngrok http 3001`) or set `MCP_OAUTH_BASE_URL=https://your-public-url` before running the server.
 
 ### `WARN: environment variable is unset`
 
-You forgot to source your env file. Run `source ./.env.mcp.local` before starting the server.
+You forgot to source your env file. Run `source apps/mcp-server/.env.mcp.local` before starting the server.
 
 ---
 
 ## Verifying the end-to-end connection
 
-After connecting in any mode, run this two-step check:
-
-> "List my lenses using the LenserFight connector, then describe the first result in detail."
-
-Claude should call `list_lenses`, then `get_lens` on the first ID. If both succeed, the integration is healthy.
-
-You can also hit the health endpoint directly:
+After connecting in any mode:
 
 ```bash
 # LF Cloud
@@ -439,9 +324,14 @@ curl https://mcp.lenserfight.com/health
 # Local HTTP mode
 curl https://<your-tunnel>/health
 
-# Expected response
+# Expected
 {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
+
+Then in Claude.ai:
+> "List my lenses using the LenserFight connector, then describe the first result in detail."
+
+Claude should call `list_lenses`, then `get_lens` on the first ID. If both succeed, the integration is healthy.
 
 ---
 

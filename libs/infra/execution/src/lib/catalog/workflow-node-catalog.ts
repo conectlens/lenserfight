@@ -909,6 +909,7 @@ function battleNodes(): WorkflowNodeCatalogEntry[] {
     simpleNode('vote_collector', 'Vote Collector', 'Collect human or automated votes for a battle.', 'battle', 'Vote', jsonIn, 'json', battleOpts('battleId', { battleId: '$.battleId', closeAfterVotes: 7 }, { votes: [{ voter: 'u1', contenderId: 'sourced' }] }, 'score_aggregator')),
     simpleNode('score_aggregator', 'Score Aggregator', 'Aggregate judge scores and votes into final rankings.', 'battle', 'Trophy', jsonIn, 'battle_result', battleOpts('aggregation', { aggregation: 'weighted_average', weights: { judge: 0.8, vote: 0.2 } }, { winner: 'sourced', finalScore: 91.6 }, 'leaderboard_update')),
     simpleNode('leaderboard_update', 'Leaderboard Update', 'Write battle results to a leaderboard.', 'battle', 'ListOrdered', [io('battleResult', 'battle_result', 'Battle result to publish.', { required: true })], 'json', battleOpts('leaderboardId', { leaderboardId: 'arena_weekly', scorePath: '$.finalScore', visibility: 'workspace' }, { updated: true, rank: 1 }, 'slack_notify')),
+    simpleNode('series_advance', 'Series Advance', 'Advance a battle series to its next round (or finalize on the last round).', 'battle', 'ArrowRightCircle', [io('seriesId', 'text', 'Series to advance.', { required: true })], 'json', battleOpts('seriesId', { seriesId: '$.seriesId' }, { seriesId: 'series_123', seriesComplete: false, currentRound: 2, roundCount: 3 }, 'leaderboard_update')),
   ]
 }
 

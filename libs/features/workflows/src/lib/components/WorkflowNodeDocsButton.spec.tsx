@@ -1,21 +1,24 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import React from 'react'
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest'
+import { vi, describe, it, expect, beforeEach } from 'vitest'
 
 // Stub UI package to avoid data/repositories circular SSR init issue
 vi.mock('@lenserfight/ui/components', () => ({
   Button: ({ children, onClick, onMouseDown, 'aria-label': ariaLabel, title, ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement> & { children?: React.ReactNode }) =>
     React.createElement('button', { onClick, onMouseDown, 'aria-label': ariaLabel, title, ...rest }, children),
   Tooltip: ({ children }: { children: React.ReactNode }) => children,
+  MarkdownRenderer: ({ content }: { content: string }) => React.createElement('div', { 'data-testid': 'md' }, content),
 }))
 
-// Mock the docs URL builder so we don't need to resolve the env module graph
-vi.mock('../utils/workflow-node-docs', () => ({
-  getWorkflowNodeDocsHref: (docsPath: string | null | undefined, locale: string) => {
-    if (!docsPath) return null
-    if (docsPath.startsWith('/docs/workflows/nodes/')) return null
-    return `https://docs.lenserfight.com/${locale}${docsPath}`
-  },
+vi.mock('@lenserfight/ui/overlays', () => ({
+  Drawer: ({ open, title, children, onClose }: { open: boolean; title?: string; children: React.ReactNode; onClose?: () => void }) =>
+    open
+      ? React.createElement('div', { 'data-testid': 'docs-panel', role: 'dialog' }, [
+          React.createElement('h2', { key: 'title' }, title),
+          React.createElement('button', { key: 'close', 'aria-label': 'Close drawer', onClick: onClose }, 'x'),
+          React.createElement('div', { key: 'body' }, children),
+        ])
+      : null,
 }))
 
 vi.mock('@lenserfight/shared/i18n-locale', () => ({
@@ -27,28 +30,25 @@ vi.mock('@lenserfight/infra/execution', () => ({
     if (type === 'manual_trigger') {
       return {
         displayName: 'Manual Trigger',
+        description: 'Starts a workflow manually.',
+        category: 'trigger',
+        inputs: [],
+        outputs: [{ name: 'payload', type: 'json', description: 'Trigger payload' }],
         docsPath: '/reference/workflows/nodes/trigger#manual-trigger',
       }
     }
     if (type === 'unknown_node') return undefined
-    if (type === 'placeholder_node') {
-      return {
-        displayName: 'Placeholder',
-        docsPath: '/docs/workflows/nodes/placeholder_node',
-      }
-    }
     return undefined
   },
 }))
 
 import { WorkflowNodeDocsButton } from './WorkflowNodeDocsButton'
-import { useLocale } from '@lenserfight/shared/i18n-locale'
 
 describe('WorkflowNodeDocsButton', () => {
   beforeEach(() => {
-    vi.spyOn(window, 'open').mockImplementation(() => null)
-    // Reset useLocale to default 'en' before each test
-    ;(useLocale as MockedFunction<typeof useLocale>).mockReturnValue({ locale: 'en' })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('', { status: 404 }),
+    )
   })
 
   it('renders null when catalog entry is not found', () => {
@@ -56,12 +56,7 @@ describe('WorkflowNodeDocsButton', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders null when docsPath is a placeholder path', () => {
-    const { container } = render(<WorkflowNodeDocsButton nodeType="placeholder_node" />)
-    expect(container.firstChild).toBeNull()
-  })
-
-  it('renders a BookOpen button when a valid href resolves', () => {
+  it('renders a BookOpen button when a catalog entry exists', () => {
     render(<WorkflowNodeDocsButton nodeType="manual_trigger" />)
     expect(screen.getByRole('button', { name: /View Manual Trigger documentation/i })).toBeDefined()
   })
@@ -72,15 +67,31 @@ describe('WorkflowNodeDocsButton', () => {
     expect(button.getAttribute('aria-label')).toBe('View Manual Trigger documentation')
   })
 
-  it('calls window.open with correct locale URL on click', () => {
+  it('does not mount the docs panel before being clicked', () => {
     render(<WorkflowNodeDocsButton nodeType="manual_trigger" />)
-    const button = screen.getByRole('button', { name: /View Manual Trigger documentation/i })
-    fireEvent.click(button)
-    expect(window.open).toHaveBeenCalledWith(
-      'https://docs.lenserfight.com/en/reference/workflows/nodes/trigger#manual-trigger',
-      '_blank',
-      'noreferrer',
-    )
+    expect(screen.queryByTestId('docs-panel')).toBeNull()
+  })
+
+  it('opens the inline docs panel on click instead of a new tab', async () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+    render(<WorkflowNodeDocsButton nodeType="manual_trigger" />)
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /View Manual Trigger documentation/i }))
+    })
+    expect(screen.getByTestId('docs-panel')).toBeDefined()
+    expect(openSpy).not.toHaveBeenCalled()
+  })
+
+  it('closes the panel when the panel close button is clicked', async () => {
+    render(<WorkflowNodeDocsButton nodeType="manual_trigger" />)
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /View Manual Trigger documentation/i }))
+    })
+    expect(screen.getByTestId('docs-panel')).toBeDefined()
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Close drawer/i }))
+    })
+    expect(screen.queryByTestId('docs-panel')).toBeNull()
   })
 
   it('stops click event propagation', () => {
@@ -103,16 +114,5 @@ describe('WorkflowNodeDocsButton', () => {
     )
     fireEvent.mouseDown(screen.getByRole('button', { name: /View Manual Trigger documentation/i }))
     expect(parentMousedownHandler).not.toHaveBeenCalled()
-  })
-
-  it('uses tr locale from useLocale when building the URL', () => {
-    ;(useLocale as MockedFunction<typeof useLocale>).mockReturnValueOnce({ locale: 'tr' })
-    render(<WorkflowNodeDocsButton nodeType="manual_trigger" />)
-    fireEvent.click(screen.getByRole('button', { name: /View Manual Trigger documentation/i }))
-    expect(window.open).toHaveBeenCalledWith(
-      'https://docs.lenserfight.com/tr/reference/workflows/nodes/trigger#manual-trigger',
-      '_blank',
-      'noreferrer',
-    )
   })
 })
