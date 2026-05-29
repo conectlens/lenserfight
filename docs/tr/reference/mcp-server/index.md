@@ -14,7 +14,7 @@ LenserFight MCP sunucusu, [Model Context Protocol (Model Bağlam Protokolü)](ht
 1. **claude.ai → Ayarlar (Settings) → Bağlayıcılar (Connectors) → Özel bağlayıcı ekle (Add custom connector)** adımlarını izleyin.
 2. URL alanını şu şekilde ayarlayın:
    ```
-   https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+   https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
    ```
 3. Client ID ve Secret alanlarını boş bırakın. **Ekle (Add)** seçeneğine tıklayın.
 4. Yetkilendirme penceresi açıldığında LenserFight hesabınızla giriş yapın.

@@ -38,7 +38,7 @@ This integration section is organized following the [Diátaxis framework](https:
 ## The endpoint
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
 ```
 
 This is the stable LF Cloud endpoint. No local server required. Authentication is handled through the OAuth flow — your users sign in with their LenserFight credentials and authorize your product once.
@@ -59,7 +59,7 @@ This is the stable LF Cloud endpoint. No local server required. Authentication i
 ## Health check
 
 ```bash
-curl https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/health
+curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 

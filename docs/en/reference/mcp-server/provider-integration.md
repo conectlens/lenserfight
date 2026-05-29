@@ -46,7 +46,7 @@ The server supports two transports:
 The hosted endpoint at LF Cloud is the standard path for third-party products. Your MCP client sends HTTP POST requests to the endpoint URL; authentication is handled by the OAuth 2.1 PKCE flow.
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
 ```
 
 This is a Supabase Edge Function. It is deployed globally, stateless, and rate-limited per token. There is no separate LenserFight API domain yet — the Supabase URL is the stable public endpoint.
@@ -130,7 +130,7 @@ The server publishes three standard discovery documents. Any fully compliant OAu
 ## Health check
 
 ```bash
-curl https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/health
+curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 

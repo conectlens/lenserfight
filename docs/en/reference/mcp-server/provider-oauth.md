@@ -26,7 +26,7 @@ For virtually all provider integrations, you will use **MCP tokens** exclusively
 All endpoints are served from the same base URL as the MCP server:
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp
+https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp
 ```
 
 | Endpoint | Method | Purpose |
@@ -81,15 +81,15 @@ sequenceDiagram
 ### Step 1 — Discover the server (optional but recommended)
 
 ```bash
-curl https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/.well-known/oauth-authorization-server
+curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/.well-known/oauth-authorization-server
 ```
 
 ```json
 {
-  "issuer": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp",
-  "authorization_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize",
-  "token_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/token",
-  "registration_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/register",
+  "issuer": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp",
+  "authorization_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize",
+  "token_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/token",
+  "registration_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/register",
   "response_types_supported": ["code"],
   "grant_types_supported": ["authorization_code"],
   "code_challenge_methods_supported": ["S256"],
@@ -106,7 +106,7 @@ Parse and cache this. Use the endpoint values instead of hard-coding paths — t
 Call this once per product (or once per deployment). Save the `client_id` permanently.
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/register
+POST https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/register
 Content-Type: application/json
 
 {
@@ -157,7 +157,7 @@ Store `codeVerifier` in your server-side session. You will need it in Step 5.
 Construct the URL:
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize
+https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize
   ?response_type=code
   &client_id=lf_mcp_client_a1b2c3d4...
   &redirect_uri=https://acme.example.com/api/mcp/callback
@@ -187,7 +187,7 @@ https://acme.example.com/api/mcp/callback?code=lf_mcp_abc123...&state=<your_stat
 ### Step 6 — Exchange the code for an access token
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/token
+POST https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=authorization_code
@@ -214,7 +214,7 @@ Response:
 Include the token on every request:
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+POST https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
 Authorization: Bearer lf_mcp_abc123...
 Content-Type: application/json
 mcp-session-id: <your_session_id>

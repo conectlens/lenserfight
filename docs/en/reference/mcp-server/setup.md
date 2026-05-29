@@ -30,7 +30,7 @@ The LenserFight MCP server is hosted as a Supabase Edge Function on LF Cloud. Be
 **MCP Endpoint URL:**
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
 ```
 
 > This URL is stable and does not require a tunnel, a running local server, or any environment variables on your machine.
@@ -40,7 +40,7 @@ https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
 1. Open **claude.ai → Settings → Connectors → Add custom connector**.
 2. Fill in:
    - **Name:** `LenserFight`
-   - **Remote MCP server URL:** `https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp`
+   - **Remote MCP server URL:** `https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp`
    - **OAuth Client ID (optional):** leave blank — the server issues a client automatically.
    - **OAuth Client Secret (optional):** leave blank — PKCE only, no secret required.
 3. Click **Add**.
@@ -74,7 +74,7 @@ Add a remote MCP entry pointing to the same URL:
 {
   "mcpServers": {
     "lenserfight": {
-      "url": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp"
+      "url": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp"
     }
   }
 }
@@ -384,7 +384,7 @@ You can also hit the health endpoint directly:
 
 ```bash
 # LF Cloud
-curl https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/health
+curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/health
 
 # Local HTTP mode
 curl https://<your-tunnel>/health

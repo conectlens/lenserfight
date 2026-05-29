@@ -54,7 +54,7 @@ The LenserFight MCP server exposes **31 tools** across three groups. Every tool 
 All tools use the MCP `tools/call` method:
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+POST https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
 Authorization: Bearer lf_mcp_<token>
 Content-Type: application/json
 

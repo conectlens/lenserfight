@@ -54,7 +54,7 @@ LenserFight MCP sunucusu, üç grup altında **31 araç** sunar. Her araç, stan
 Tüm araçlar standart MCP `tools/call` yöntemini kullanır:
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+POST https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
 Authorization: Bearer lf_mcp_<token>
 Content-Type: application/json
 

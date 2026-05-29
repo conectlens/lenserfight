@@ -38,7 +38,7 @@ Bu entegrasyon bölümü, [Diátaxis çerçevesi](https://diataxis.fr) takip edi
 ## Uç nokta (Endpoint)
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
 ```
 
 Bu, kararlı LF Cloud uç noktasıdır. Yerel sunucu gerekmez. Kimlik doğrulaması OAuth akışı üzerinden gerçekleştirilir — kullanıcılarınız LenserFight kimlik bilgileriyle oturum açar ve ürününüzü bir kez yetkilendirir.
@@ -59,7 +59,7 @@ Bu, kararlı LF Cloud uç noktasıdır. Yerel sunucu gerekmez. Kimlik doğrulama
 ## Sağlık kontrolü (Health Check)
 
 ```bash
-curl https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/health
+curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 

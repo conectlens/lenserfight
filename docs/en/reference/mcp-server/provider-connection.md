@@ -24,7 +24,7 @@ The LenserFight MCP server runs as a Supabase Edge Function. There is no separat
 ### Endpoint
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
 ```
 
 ### OAuth discovery (automatic for compliant clients)
@@ -32,15 +32,15 @@ https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
 A fully MCP-compliant client reads the discovery document and handles OAuth automatically:
 
 ```bash
-curl https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/.well-known/oauth-authorization-server
+curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/.well-known/oauth-authorization-server
 ```
 
 ```json
 {
-  "issuer": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp",
-  "authorization_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize",
-  "token_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/token",
-  "registration_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/register",
+  "issuer": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp",
+  "authorization_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize",
+  "token_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/token",
+  "registration_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/register",
   "response_types_supported": ["code"],
   "grant_types_supported": ["authorization_code"],
   "code_challenge_methods_supported": ["S256"],
@@ -53,7 +53,7 @@ curl https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/.well
 1. Open **claude.ai → Settings → Connectors → Add custom connector**.
 2. Fill in:
    - **Name:** `LenserFight`
-   - **Remote MCP server URL:** `https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp`
+   - **Remote MCP server URL:** `https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp`
    - **OAuth Client ID:** leave blank (dynamic registration)
    - **OAuth Client Secret:** leave blank (PKCE only — no secret)
 3. Click **Add**.
@@ -67,7 +67,7 @@ In `~/.cursor/mcp.json` (or the per-project `.mcp.json` in your workspace root):
 {
   "mcpServers": {
     "lenserfight": {
-      "url": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp"
+      "url": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp"
     }
   }
 }
@@ -91,7 +91,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 
 const transport = new StreamableHTTPClientTransport(
-  new URL('https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp'),
+  new URL('https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp'),
   {
     // After completing the OAuth flow, supply the lf_mcp_* access token here
     requestInit: {

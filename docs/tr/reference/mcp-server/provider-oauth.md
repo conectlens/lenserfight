@@ -26,7 +26,7 @@ Neredeyse tüm sağlayıcı entegrasyonları için yalnızca **MCP jetonlarını
 Tüm uç noktalar, MCP sunucuyla aynı temel URL üzerinden sunulur:
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp
+https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp
 ```
 
 | Uç nokta | Yöntem | Amaç |
@@ -81,15 +81,15 @@ sequenceDiagram
 ### Adım 1 — Sunucuyu keşfedin (isteğe bağlı ancak önerilir)
 
 ```bash
-curl https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/.well-known/oauth-authorization-server
+curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/.well-known/oauth-authorization-server
 ```
 
 ```json
 {
-  "issuer": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp",
-  "authorization_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize",
-  "token_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/token",
-  "registration_endpoint": "https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/register",
+  "issuer": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp",
+  "authorization_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize",
+  "token_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/token",
+  "registration_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/register",
   "response_types_supported": ["code"],
   "grant_types_supported": ["authorization_code"],
   "code_challenge_methods_supported": ["S256"],
@@ -106,7 +106,7 @@ Bunu ayrıştırın ve önbelleğe alın. Yolları sabit olarak kodlamak yerine 
 Bunu ürün başına bir kez (veya dağıtım başına bir kez) çalıştırın. `client_id` değerini kalıcı olarak kaydedin.
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/register
+POST https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/register
 Content-Type: application/json
 
 {
@@ -157,7 +157,7 @@ const codeChallenge = crypto
 URL'yi oluşturun:
 
 ```
-https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize
+https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize
   ?response_type=code
   &client_id=lf_mcp_client_a1b2c3d4...
   &redirect_uri=https://acme.example.com/api/mcp/callback
@@ -187,7 +187,7 @@ CSRF saldırılarını önlemek için **`state` değerinin Adım 4'te oluşturdu
 ### Adım 6 — Kodu bir erişim jetonula değiştirin
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/oauth/token
+POST https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=authorization_code
@@ -214,7 +214,7 @@ Yanıt:
 Jetonu her isteğe ekleyin:
 
 ```http
-POST https://jclyxohzpbsfjgpnucco.supabase.co/functions/v1/lenserfight-mcp/mcp
+POST https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
 Authorization: Bearer lf_mcp_abc123...
 Content-Type: application/json
 mcp-session-id: <your_session_id>
