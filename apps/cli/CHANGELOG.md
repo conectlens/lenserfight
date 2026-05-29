@@ -1,3 +1,22 @@
+## 0.11.0 (2026-05-29)
+
+### 🚀 Features
+
+- **cli:** add agents workspace hub with kill command and TUI tabs ([a9f5d752a](https://github.com/conectlens/lenserfight/commit/a9f5d752a))
+- **cli:** add execute history and clarify execution status output ([160a0f978](https://github.com/conectlens/lenserfight/commit/160a0f978))
+- **cli:** add executions and agent-runs data-services facades ([46ad0fd39](https://github.com/conectlens/lenserfight/commit/46ad0fd39))
+- **cli:** route feed and dashboard through data-services facade ([05c1d67c6](https://github.com/conectlens/lenserfight/commit/05c1d67c6))
+
+### 🩹 Fixes
+
+- **cli:** resolve workflows build and add agents/workflows docs ([323631750](https://github.com/conectlens/lenserfight/commit/323631750))
+- **cli:** mask secrets and resolve configure env from config ([f93e0d832](https://github.com/conectlens/lenserfight/commit/f93e0d832))
+
+### ❤️ Thank You
+
+- Cursor @cursoragent
+- Ömer Faruk Coşkun
+
 ## 0.10.0 (2026-05-29)
 
 ### 🚀 Features
