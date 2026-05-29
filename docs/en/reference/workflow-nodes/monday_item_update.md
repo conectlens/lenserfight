@@ -15,7 +15,7 @@ The Monday Item Update node updates an existing item on a Monday.com board by wr
 |---|---|---|---|
 | `credentialId` | string | Yes | ID of the stored Monday.com API credential (OAuth token or API key) used to authenticate requests. |
 | `boardId` | string | Yes | The Monday.com board ID that contains the item to update. |
-| `itemId` | string | Yes | The ID of the item to update. Accepts a literal value or a template expression referencing an upstream output (e.g. {{trigger.itemId}}). |
+| `itemId` | string | Yes | The ID of the item to update. Accepts a literal value or a template expression referencing an upstream output (e.g. &#123;&#123;trigger.itemId&#125;&#125;). |
 | `columnValues` | object | Yes | Key-value map of column IDs to their new values. Values must conform to Monday.com column-type formats (e.g. {"status": {"label": "Done"}, "date": {"date": "2026-05-29"}}). |
 | `createLabelsIfMissing` | boolean | No | When true, automatically creates status/dropdown labels that do not yet exist on the board instead of returning an error. Defaults to false. |
 
@@ -33,6 +33,8 @@ The Monday Item Update node updates an existing item on a Monday.com board by wr
 | `error` | object | Emitted when the update fails. Contains an error code, message, and the original request payload for debugging or retry logic. |
 
 ## Example
+
+<div v-pre>
 
 ```json
 {
@@ -53,3 +55,6 @@ The Monday Item Update node updates an existing item on a Monday.com board by wr
   }
 }
 ```
+
+</div>
+

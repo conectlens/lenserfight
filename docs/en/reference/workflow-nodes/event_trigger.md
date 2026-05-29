@@ -26,7 +26,7 @@ The Event Trigger node starts a workflow run automatically when a named platform
 
 | Port | Type | Description |
 |---|---|---|
-| `event` | json | The matched platform event object. Shape: `{ type: string, data: Record<string, unknown>, timestamp: string (ISO-8601) }`. In manual/test runs a stub with an empty `data` object is emitted instead. |
+| `event` | json | The matched platform event object. Shape: `{ type: string, data: string-keyed map, timestamp: string (ISO-8601) }`. In manual/test runs a stub with an empty `data` object is emitted instead. |
 
 ## Example
 

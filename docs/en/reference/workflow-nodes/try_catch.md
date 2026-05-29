@@ -30,7 +30,7 @@ The Try / Catch node wraps one or more downstream nodes in error-handling logic,
 | Port | Type | Description |
 |---|---|---|
 | `output` | any | Emits the result of the wrapped nodes when execution completes without error. |
-| `error` | { message: string; code: string; nodeId: string; attempt: number } | Emits the caught error object when a wrapped node fails. Contains the error message, an error code, the ID of the failing node, and the attempt number after retries are exhausted. |
+| `error` | error object | Emits the caught error object when a wrapped node fails. Includes `message`, `code`, `nodeId` (failing node), and `attempt` (after retries are exhausted). |
 
 ## Example
 

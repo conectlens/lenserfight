@@ -14,7 +14,7 @@ The `http_request` node sends a single HTTP request to an external endpoint and 
 ::: v-pre
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `url` | string | Yes | — | The full URL to call, including scheme and path. Supports `{{variable}}` interpolation from workflow variables. |
+| `url` | string | Yes | — | The full URL to call, including scheme and path. Supports `&#123;&#123;variable&#125;&#125;` interpolation from workflow variables. |
 | `method` | string | Yes | `"GET"` | HTTP method: `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`. |
 | `headers` | object | No | `{}` | Key-value map of request headers. Use this for `Authorization`, `Content-Type`, and other standard headers. |
 | `body` | string | No | — | Request body as a raw string. For JSON payloads set `Content-Type: application/json` in `headers` and stringify the object. Ignored for GET and DELETE. |
@@ -28,7 +28,7 @@ The `http_request` node sends a single HTTP request to an external endpoint and 
 ::: v-pre
 | Port | Type | Description |
 |---|---|---|
-| `input` | object | Upstream data available for `{{variable}}` interpolation in `url`, `headers`, and `body`. |
+| `input` | object | Upstream data available for `&#123;&#123;variable&#125;&#125;` interpolation in `url`, `headers`, and `body`. |
 :::
 
 ## Outputs
@@ -69,7 +69,7 @@ The `http_request` node sends a single HTTP request to an external endpoint and 
 
 - HTTP 4xx and 5xx responses are **not** automatically treated as errors — the node succeeds and the status code is available in `output.status`. Add a `switch` or `if_condition` node downstream to branch on status if needed.
 ::: v-pre
-- Environment secrets (API keys, tokens) should be stored as workflow environment variables and referenced via `{{env.VARIABLE_NAME}}` rather than hardcoded in `headers` or `body`.
+- Environment secrets (API keys, tokens) should be stored as workflow environment variables and referenced via `&#123;&#123;env.VARIABLE_NAME&#125;&#125;` rather than hardcoded in `headers` or `body`.
 :::
 - The node enforces a hard ceiling of 60 000 ms regardless of `timeout_ms` to prevent a single step from blocking the worker indefinitely.
 - Response bodies larger than 10 MB are truncated; for large file transfers use `object_storage_upload` / `object_storage_download` nodes instead.

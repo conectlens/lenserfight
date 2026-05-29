@@ -13,8 +13,8 @@ The KV Store Write node persists a value under a named key in the workflow's sco
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `key` | string | Yes | The key under which the value is stored. Supports template expressions (e.g. `battle_{{run.id}}_score`) for dynamic key names. |
-| `value` | string | Yes | The value to write. Accepts a literal string, a JSON expression, or a reference to an upstream node output (e.g. `{{nodes.scorer.output.score}}`). |
+| `key` | string | Yes | The key under which the value is stored. Supports template expressions (e.g. `battle_&#123;&#123;run.id&#125;&#125;_score`) for dynamic key names. |
+| `value` | string | Yes | The value to write. Accepts a literal string, a JSON expression, or a reference to an upstream node output (e.g. `&#123;&#123;nodes.scorer.output.score&#125;&#125;`). |
 | `scope` | enum | No | Storage scope: `run` (default, isolated per workflow run), `workflow` (shared across all runs of this workflow), or `global` (shared across all workflows in the project). |
 | `ttl` | number | No | Time-to-live in seconds. If set, the key expires automatically after this duration. Omit for indefinite storage within the scope lifetime. |
 | `overwrite` | boolean | No | When false, the write is skipped silently if the key already exists. Defaults to true (always overwrite). |
@@ -35,6 +35,8 @@ The KV Store Write node persists a value under a named key in the workflow's sco
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "kv_store_write",
@@ -47,3 +49,6 @@ The KV Store Write node persists a value under a named key in the workflow's sco
   }
 }
 ```
+
+</div>
+

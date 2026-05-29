@@ -32,7 +32,7 @@ The Video Analyze node submits a video to a vision-capable AI model and returns 
 
 | Port | Type | Description |
 |---|---|---|
-| `output` | object | Successful analysis result. Shape depends on `mode`: `description` — `{ summary: string }`; `frames` — `{ frames: Array<{ timestamp_seconds: number, annotation: string }> }`; `metadata` — `{ duration_seconds: number, resolution: string, scene_count: number }`. |
+| `output` | object | Successful analysis result. Shape depends on `mode`: `description` — `{ summary: string }`; `frames` — `{ frames: array of { timestamp_seconds: number, annotation: string } objects }`; `metadata` — `{ duration_seconds: number, resolution: string, scene_count: number }`. |
 | `error` | object | Emitted when analysis fails (unsupported model, provider error, video too long, or invalid input). Contains `{ code: string, message: string, retriable: boolean }`. |
 
 ## Example

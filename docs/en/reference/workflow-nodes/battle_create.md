@@ -59,7 +59,7 @@ The Battle Create node programmatically creates a LenserFight battle as part of 
 ## Notes
 
 ::: v-pre
-- Template expressions like `{{run.week_number}}` in string fields are resolved at execution time from the workflow run context before the RPC call is made.
+- Template expressions like `&#123;&#123;run.week_number&#125;&#125;` in string fields are resolved at execution time from the workflow run context before the RPC call is made.
 :::
 - When `automation_mode` is `"full_auto"`, the battle automatically transitions through `open` → `judging` → `closed` states without requiring manual intervention; pair this with a `judge_battle` node downstream to complete the cycle.
 - The creating workflow's owner becomes the battle owner; the battle will appear in their dashboard under "Automated Battles".

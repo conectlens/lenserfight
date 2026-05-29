@@ -13,16 +13,16 @@ The Text node holds a static string value that is injected into the workflow at 
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `content` | string (multiline) | Yes | The static text value this node emits. Supports plain text and template variables using {{variableName}} syntax resolved at runtime. |
+| `content` | string (multiline) | Yes | The static text value this node emits. Supports plain text and template variables using &#123;&#123;variableName&#125;&#125; syntax resolved at runtime. |
 | `label` | string | No | Display name shown on the node canvas. Does not affect execution. |
 | `trim` | boolean | No | When true, leading and trailing whitespace is stripped from the content before emission. Defaults to false. |
-| `encoding` | enum (utf-8 | base64) | No | Output encoding for the string value. Use base64 when downstream nodes expect encoded binary-safe text. Defaults to utf-8. |
+| `encoding` | enum (utf-8, base64) | No | Output encoding for the string value. Use base64 when downstream nodes expect encoded binary-safe text. Defaults to utf-8. |
 
 ## Inputs
 
 | Port | Type | Description |
 |---|---|---|
-| `variables` | Record<string, string> | Optional key-value map used to resolve {{variableName}} placeholders in the content field at execution time. If omitted, placeholders are left as-is. |
+| `variables` | string-keyed map | Optional key-value map used to resolve &#123;&#123;variableName&#125;&#125; placeholders in the content field at execution time. If omitted, placeholders are left as-is. |
 
 ## Outputs
 
@@ -31,6 +31,8 @@ The Text node holds a static string value that is injected into the workflow at 
 | `output` | string | The resolved text content after variable substitution and any configured transforms (e.g. trimming, encoding). |
 
 ## Example
+
+<div v-pre>
 
 ```json
 {
@@ -43,3 +45,6 @@ The Text node holds a static string value that is injected into the workflow at 
   }
 }
 ```
+
+</div>
+

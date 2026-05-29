@@ -22,14 +22,14 @@ The Deduplicate node removes duplicate items from an incoming list, emitting onl
 
 | Port | Type | Description |
 |---|---|---|
-| `input` | array<object> | The list of items to deduplicate. Each element should be an object; primitive arrays are not supported. |
+| `input` | array of objects | The list of items to deduplicate. Each element should be an object; primitive arrays are not supported. |
 
 ## Outputs
 
 | Port | Type | Description |
 |---|---|---|
-| `output` | array<object> | The deduplicated list, containing only the kept occurrence of each unique key value, in original order. |
-| `unresolved` | array<object> | Items for which the configured key path could not be resolved (missing field or null value). Only emitted when `emitUnresolved` is `true`. |
+| `output` | array of objects | The deduplicated list, containing only the kept occurrence of each unique key value, in original order. |
+| `unresolved` | array of objects | Items for which the configured key path could not be resolved (missing field or null value). Only emitted when `emitUnresolved` is `true`. |
 
 ## Example
 

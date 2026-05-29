@@ -16,7 +16,7 @@ The Monday Item Create node creates a new item in a specified Monday.com board a
 | `credentialId` | string | Yes | ID of the stored Monday.com API credential (OAuth or personal API token) used to authenticate requests. |
 | `boardId` | string | Yes | Numeric ID of the Monday.com board where the item will be created. Accepts a static value or a template expression referencing upstream data. |
 | `groupId` | string | No | ID of the group within the board to add the item to. Defaults to the board's first group when omitted. |
-| `itemName` | string | Yes | Display name of the new item. Supports template expressions (e.g. `{{battle.title}}`). |
+| `itemName` | string | Yes | Display name of the new item. Supports template expressions (e.g. `&#123;&#123;battle.title&#125;&#125;`). |
 | `columnValues` | object | No | Key-value map of Monday.com column IDs to their values, serialized as the Monday.com column_values JSON structure. Used to populate status, date, text, or people columns at creation time. |
 | `createLabelsIfMissing` | boolean | No | When true, automatically creates missing status or dropdown labels instead of failing. Defaults to false. |
 
@@ -34,6 +34,8 @@ The Monday Item Create node creates a new item in a specified Monday.com board a
 | `error` | object | Emitted when the API call fails (authentication error, invalid board/group ID, column value schema mismatch, or rate limit exceeded). Contains `message` and `code` fields. |
 
 ## Example
+
+<div v-pre>
 
 ```json
 {
@@ -56,3 +58,6 @@ The Monday Item Create node creates a new item in a specified Monday.com board a
   }
 }
 ```
+
+</div>
+

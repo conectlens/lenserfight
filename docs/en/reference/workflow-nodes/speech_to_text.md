@@ -24,7 +24,7 @@ The Speech To Text node accepts an audio input and returns a plain-text transcri
 
 | Port | Type | Description |
 |---|---|---|
-| `audio` | AudioBuffer | FileRef | Raw audio data or a file reference (URL or storage key) pointing to the audio to transcribe. Accepted formats depend on the provider; WAV, MP3, and FLAC are broadly supported. |
+| `audio` | audio buffer or file reference | Raw audio data or a file reference (URL or storage key) pointing to the audio to transcribe. Accepted formats depend on the provider; WAV, MP3, and FLAC are broadly supported. |
 | `prompt` | string | Optional runtime context prompt that overrides the static prompt set in config, useful for dynamic vocabulary hints. |
 
 ## Outputs

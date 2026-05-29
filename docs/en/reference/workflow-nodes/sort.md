@@ -13,7 +13,7 @@ The Sort node reorders a list of items by one or more fields in ascending or des
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `sortKeys` | array<object> | Yes | Ordered list of sort criteria. Each entry specifies a `field` (dot-path into each item, e.g. `score.total`) and a `direction` (`asc` or `desc`). Criteria are applied in declaration order as a stable multi-key sort. |
+| `sortKeys` | array of objects | Yes | Ordered list of sort criteria. Each entry specifies a `field` (dot-path into each item, e.g. `score.total`) and a `direction` (`asc` or `desc`). Criteria are applied in declaration order as a stable multi-key sort. |
 | `nullsPosition` | enum | No | Where items whose sort field is null or missing are placed: `first` or `last`. Defaults to `last`. |
 | `caseSensitive` | boolean | No | When sorting string fields, whether comparison is case-sensitive. Defaults to `false`. |
 | `inputPath` | string | No | Dot-path to the array within the incoming data object. If omitted, the node treats the entire input value as the array. |
@@ -22,7 +22,7 @@ The Sort node reorders a list of items by one or more fields in ascending or des
 
 | Port | Type | Description |
 |---|---|---|
-| `input` | array | object | The data to sort. Must be an array, or an object containing an array at the path specified by `inputPath`. |
+| `input` | array or object | The data to sort. Must be an array, or an object containing an array at the path specified by `inputPath`. |
 
 ## Outputs
 

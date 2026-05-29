@@ -16,7 +16,7 @@ The GraphQL Request node executes a single GraphQL query or mutation against a c
 | `endpoint` | string | Yes | The full URL of the GraphQL endpoint (e.g. https://api.example.com/graphql). |
 | `operation` | string | Yes | The GraphQL query or mutation document as a string. |
 | `operationName` | string | No | The named operation to execute when the document contains multiple operations. |
-| `variables` | object | No | Key-value map of GraphQL variables. Values may reference workflow context via template expressions (e.g. {{ context.userId }}). |
+| `variables` | object | No | Key-value map of GraphQL variables. Values may reference workflow context via template expressions (e.g. &#123;&#123; context.userId &#125;&#125;). |
 | `credentialId` | string | No | Reference to a stored credential used to inject an Authorization header. Leave empty for public endpoints. |
 | `headers` | object | No | Additional HTTP headers to include in the request (e.g. x-api-version). |
 | `timeoutMs` | number | No | Maximum time in milliseconds to wait for a response before failing. Defaults to 10000. |
@@ -36,6 +36,8 @@ The GraphQL Request node executes a single GraphQL query or mutation against a c
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "graphql_request",
@@ -51,3 +53,6 @@ The GraphQL Request node executes a single GraphQL query or mutation against a c
   }
 }
 ```
+
+</div>
+

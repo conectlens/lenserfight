@@ -25,7 +25,7 @@ The Google Sheets Write node writes or appends row data to a specified Google Sh
 
 | Port | Type | Description |
 |---|---|---|
-| `input` | array<object> | array<array> | Tabular data to write. Each element represents one row — either a flat object (keys become column values in order) or an array of cell values. A single object is also accepted and treated as one row. |
+| `input` | array of objects or nested array | Tabular data to write. Each element represents one row — either a flat object (keys become column values in order) or an array of cell values. A single object is also accepted and treated as one row. |
 
 ## Outputs
 

@@ -31,6 +31,8 @@ The Supabase Query node calls a pre-approved Supabase RPC function and emits the
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "supabase_query",
@@ -42,3 +44,6 @@ The Supabase Query node calls a pre-approved Supabase RPC function and emits the
   }
 }
 ```
+
+</div>
+

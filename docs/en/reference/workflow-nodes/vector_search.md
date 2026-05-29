@@ -15,7 +15,7 @@ The Vector Search node queries a named vector collection using either a plain-te
 |---|---|---|---|---|
 | `collection` | string | Yes | — | Name of the vector store collection to query. Must exist in the platform's vector store registry. |
 | `query_text` | string | No | — | Plain-text search query. Mutually exclusive with `query_embedding`. The platform converts this to an embedding before searching. |
-| `query_embedding` | array\<number\> | No | — | Pre-computed embedding vector. Use when you need to reuse an embedding produced by the `embedding` node. Mutually exclusive with `query_text`. |
+| `query_embedding` | array of numbers | No | — | Pre-computed embedding vector. Use when you need to reuse an embedding produced by the `embedding` node. Mutually exclusive with `query_text`. |
 | `top_k` | integer | No | `5` | Maximum number of results to return. Range: 1–100. |
 | `score_threshold` | number | No | `0.0` | Minimum cosine similarity score (0–1) a result must achieve to be included. Results below this value are silently dropped. |
 | `metadata_filter` | object | No | `{}` | Key/value pairs matched against document metadata before scoring. All specified keys must match (AND semantics). |
@@ -26,13 +26,13 @@ The Vector Search node queries a named vector collection using either a plain-te
 | Port | Type | Description |
 |---|---|---|
 | `query_text` | string | Optional override for the `query_text` config field. If provided at runtime, it takes precedence over the static config value. |
-| `query_embedding` | array\<number\> | Optional pre-computed embedding passed at runtime from an upstream `embedding` node. |
+| `query_embedding` | array of numbers | Optional pre-computed embedding passed at runtime from an upstream `embedding` node. |
 
 ## Outputs
 
 | Port | Type | Description |
 |---|---|---|
-| `results` | array\<object\> | Ordered list of matching documents. Each item contains `id` (string), `score` (number), `content` (string), and optionally `metadata` (object). |
+| `results` | array of objects | Ordered list of matching documents. Each item contains `id` (string), `score` (number), `content` (string), and optionally `metadata` (object). |
 | `count` | number | Total number of results returned (after threshold filtering). |
 
 ## Example

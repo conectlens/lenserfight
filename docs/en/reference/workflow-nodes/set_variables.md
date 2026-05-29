@@ -13,9 +13,9 @@ The Set Variables node writes one or more named values into the workflow's share
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `variables` | array<object> | Yes | List of variable assignments. Each entry has a `name` (string, the variable key) and a `value` (any scalar or expression). Names must be unique within the node; duplicates are resolved in order (last wins). |
-| `variables[].name` | string | Yes | The variable key written into workflow scope. Must be a valid identifier (alphanumeric and underscores, no spaces). Referenced downstream as `{{variables.name}}`. |
-| `variables[].value` | string | number | boolean | Yes | The value to assign. Accepts static literals or expression syntax (e.g. `{{nodes.fetch.output.count}}`) to reference upstream outputs. |
+| `variables` | array of objects | Yes | List of variable assignments. Each entry has a `name` (string, the variable key) and a `value` (any scalar or expression). Names must be unique within the node; duplicates are resolved in order (last wins). |
+| `variables[].name` | string | Yes | The variable key written into workflow scope. Must be a valid identifier (alphanumeric and underscores, no spaces). Referenced downstream as `&#123;&#123;variables.name&#125;&#125;`. |
+| `variables[].value` | string | number | boolean | Yes | The value to assign. Accepts static literals or expression syntax (e.g. `&#123;&#123;nodes.fetch.output.count&#125;&#125;`) to reference upstream outputs. |
 | `variables[].overwrite` | boolean | No | When false, skips assignment if the variable already exists in scope. Defaults to true. Useful for setting defaults early in a workflow without clobbering values set by earlier branches. |
 
 ## Inputs
@@ -31,6 +31,8 @@ The Set Variables node writes one or more named values into the workflow's share
 | `output` | any | Passes the incoming execution context downstream, augmented with the newly set variables. The original payload is forwarded unchanged; variable writes are side-effects on workflow scope. |
 
 ## Example
+
+<div v-pre>
 
 ```json
 {
@@ -56,3 +58,6 @@ The Set Variables node writes one or more named values into the workflow's share
   }
 }
 ```
+
+</div>
+

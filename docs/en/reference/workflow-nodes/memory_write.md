@@ -14,7 +14,7 @@ The Memory Write node persists arbitrary JSON values into the platform's memory 
 ::: v-pre
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `memory_id` | string | Yes | — | Namespace that groups related memory entries. Supports `{{expression}}` template syntax (e.g. `"user:{{run.userId}}:ctx"`). |
+| `memory_id` | string | Yes | — | Namespace that groups related memory entries. Supports `&#123;&#123;expression&#125;&#125;` template syntax (e.g. `"user:&#123;&#123;run.userId&#125;&#125;:ctx"`). |
 | `key` | string | Yes | — | Unique key within the namespace under which the value is stored. |
 | `value` | any | No | — | Static JSON value to write. If omitted, the node reads the value from the `value` input port at runtime. |
 | `type` | string | No | `"session"` | Memory tier to write to. One of `"session"` (run-scoped) or `"long_term"` (persisted across runs). |

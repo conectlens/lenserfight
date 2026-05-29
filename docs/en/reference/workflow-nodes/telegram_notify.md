@@ -17,7 +17,7 @@ The Telegram Notify node sends a message to a specified Telegram chat, group, or
 | `chatId` | string | Yes | Target chat, group, or channel ID. Negative IDs indicate groups/supergroups; channel IDs use the @username or numeric format. |
 | `parseMode` | enum | No | Message formatting mode. One of: MarkdownV2, HTML, or plain (default). Determines how the message text is rendered in the Telegram client. |
 | `disableNotification` | boolean | No | When true, the message is delivered silently — recipients receive no sound or banner alert. Defaults to false. |
-| `messageTemplate` | string | Yes | Message body to send. Supports template variables (e.g. {{battle.title}}, {{winner.handle}}) interpolated from the incoming execution context. |
+| `messageTemplate` | string | Yes | Message body to send. Supports template variables (e.g. &#123;&#123;battle.title&#125;&#125;, &#123;&#123;winner.handle&#125;&#125;) interpolated from the incoming execution context. |
 
 ## Inputs
 
@@ -34,6 +34,8 @@ The Telegram Notify node sends a message to a specified Telegram chat, group, or
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "telegram_notify",
@@ -45,3 +47,6 @@ The Telegram Notify node sends a message to a specified Telegram chat, group, or
   }
 }
 ```
+
+</div>
+

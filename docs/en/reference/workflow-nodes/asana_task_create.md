@@ -15,7 +15,7 @@ The Asana Task Create node creates a new task in a specified Asana project using
 |---|---|---|---|
 | `credentialId` | string | Yes | ID of the stored Asana credential (personal access token or OAuth2 connection) used to authenticate API requests. |
 | `projectGid` | string | Yes | The GID of the Asana project where the task will be created. Found in the project URL. |
-| `taskName` | string | Yes | Name of the task to create. Supports template expressions (e.g. {{input.battleTitle}}) to inject upstream data. |
+| `taskName` | string | Yes | Name of the task to create. Supports template expressions (e.g. `input.battleTitle` placeholders) to inject upstream data. |
 | `description` | string | No | Plain-text or HTML notes for the task body. Supports template expressions. |
 | `assigneeEmail` | string | No | Email address of the Asana workspace member to assign the task to. If omitted, the task is unassigned. |
 | `dueOn` | string | No | Due date in YYYY-MM-DD format. Supports template expressions for dynamic dates. |
@@ -37,6 +37,8 @@ The Asana Task Create node creates a new task in a specified Asana project using
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "asana_task_create",
@@ -50,3 +52,5 @@ The Asana Task Create node creates a new task in a specified Asana project using
   }
 }
 ```
+
+</div>

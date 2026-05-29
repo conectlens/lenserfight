@@ -29,7 +29,7 @@ The Audio Transcribe node converts an audio input into a plain-text transcript u
 
 | Port | Type | Description |
 |---|---|---|
-| `transcript` | string | TranscriptSegment[] | The transcribed text. A plain string when outputFormat is plain_text; an array of {start: number, end: number, text: string} objects when outputFormat is timestamped. |
+| `transcript` | string or transcript segments | The transcribed text. A plain string when outputFormat is plain_text; an array of {start: number, end: number, text: string} objects when outputFormat is timestamped. |
 | `error` | NodeError | Emitted when transcription fails. Contains code, message, and provider-specific detail. Downstream nodes can inspect this to implement retry or fallback logic. |
 
 ## Example

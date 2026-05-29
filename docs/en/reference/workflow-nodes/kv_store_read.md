@@ -13,7 +13,7 @@ The KV Store Read node retrieves a value from the workflow's shared key-value st
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `key` | string | Yes | The key to look up in the KV store. Supports template expressions (e.g. `battle_{{run.id}}_score`). |
+| `key` | string | Yes | The key to look up in the KV store. Supports template expressions (e.g. `battle_&#123;&#123;run.id&#125;&#125;_score`). |
 | `namespace` | string | No | Optional namespace prefix to scope the key. Defaults to the workflow's own namespace if omitted. |
 | `default_value` | string | No | Value to emit on the `output` port when the key is not found, instead of routing to `not_found`. Leave blank to use the `not_found` branch. |
 | `parse_json` | boolean | No | When true, parses the stored string value as JSON before emitting it. Fails with a parse error if the value is not valid JSON. |
@@ -34,6 +34,8 @@ The KV Store Read node retrieves a value from the workflow's shared key-value st
 
 ## Example
 
+<div v-pre>
+
 ```json
 {
   "nodeType": "kv_store_read",
@@ -45,3 +47,6 @@ The KV Store Read node retrieves a value from the workflow's shared key-value st
   }
 }
 ```
+
+</div>
+

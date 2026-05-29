@@ -14,7 +14,7 @@ The Asana Task Update node modifies an existing Asana task by its task ID, allow
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `credentialId` | string | Yes | ID of the stored Asana API credential (Personal Access Token or OAuth) used to authenticate requests. |
-| `taskId` | string | Yes | The GID of the Asana task to update. Supports template expressions (e.g. {{input.taskId}}) to resolve at runtime. |
+| `taskId` | string | Yes | The GID of the Asana task to update. Supports template expressions (e.g. &#123;&#123;input.taskId&#125;&#125;) to resolve at runtime. |
 | `name` | string | No | New name for the task. Leave blank to leave the field unchanged. |
 | `notes` | string | No | Updated plain-text description / notes body for the task. |
 | `assigneeId` | string | No | GID of the Asana user to assign the task to. Use 'me' to assign to the token owner. |
@@ -26,7 +26,7 @@ The Asana Task Update node modifies an existing Asana task by its task ID, allow
 
 | Port | Type | Description |
 |---|---|---|
-| `input` | object | Trigger signal and optional payload. Any field can be referenced in config via template expressions (e.g. {{input.taskId}}). |
+| `input` | object | Trigger signal and optional payload. Any field can be referenced in config via template expressions (e.g. &#123;&#123;input.taskId&#125;&#125;). |
 
 ## Outputs
 
@@ -36,6 +36,8 @@ The Asana Task Update node modifies an existing Asana task by its task ID, allow
 | `error` | object | Emitted when the API call fails (e.g. invalid task GID, auth error, rate limit). Contains message and HTTP status code. |
 
 ## Example
+
+<div v-pre>
 
 ```json
 {
@@ -48,3 +50,6 @@ The Asana Task Update node modifies an existing Asana task by its task ID, allow
   }
 }
 ```
+
+</div>
+

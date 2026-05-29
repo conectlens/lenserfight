@@ -14,7 +14,7 @@ The Judge Evaluator node assembles a structured evaluation prompt from the text 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `rubric` | string | No | Free-text evaluation criteria injected verbatim into the judge prompt. Defaults to 'Evaluate quality, relevance, and clarity.' if omitted. Write self-contained criteria — the downstream Lens receives this text with no additional context. |
-| `comparisonMode` | enum ("pairwise" | "absolute") | No | Controls how many upstream outputs are included. 'pairwise' (default) uses the first two; 'absolute' includes all upstream outputs. Use 'absolute' for leaderboard-style ranking across more than two contenders. |
+| `comparisonMode` | enum ("pairwise", "absolute") | No | Controls how many upstream outputs are included. 'pairwise' (default) uses the first two; 'absolute' includes all upstream outputs. Use 'absolute' for leaderboard-style ranking across more than two contenders. |
 | `sourceNodeIds` | string[] | No | Explicit list of upstream node IDs whose outputs should be evaluated. When set, overrides the automatic selection performed by comparisonMode. Useful when the workflow graph has more upstream nodes than should be included in the evaluation. |
 | `maxScore` | number | No | Upper bound of the score range the downstream judge should use (default 10, capped at 100). The value is embedded in the prompt instruction ('Score each entry from 0 to N') and exposed in the output data for downstream nodes to use during score normalisation. |
 
