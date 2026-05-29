@@ -579,7 +579,7 @@ WITH extra_model_seed AS (
         false,
         false,
         false,
-        'https://docs.openclaw.ai/providers/ollama',
+        'https://ollama.com',
         true
       ),
       (
@@ -591,7 +591,7 @@ WITH extra_model_seed AS (
         true,
         false,
         false,
-        'https://docs.openclaw.ai/providers/ollama',
+        'https://ollama.com',
         true
       )
   ) AS t(
