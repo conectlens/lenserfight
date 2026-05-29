@@ -1,3 +1,14 @@
+## 0.9.0 (2026-05-29)
+
+### 🚀 Features
+
+- implement sync command to manage file-to-Supabase workspace synchronization and runtime backend orchestration ([928b92c5c](https://github.com/conectlens/lenserfight/commit/928b92c5c))
+- implement `lf use` command for persistent mode switching and add auth aliases ([17a8e921d](https://github.com/conectlens/lenserfight/commit/17a8e921d))
+
+### ❤️ Thank You
+
+- Ömer Faruk Coşkun
+
 ## 0.8.0 (2026-05-29)
 
 ### 🚀 Features
