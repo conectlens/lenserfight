@@ -680,13 +680,13 @@ describe('SupabaseWorkflowsRepository', () => {
     it('calls fn_get_workflow_schedules with p_workflow_id', async () => {
       mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.getSchedules(WF_ID)
-      expect(mockRpc).toHaveBeenCalledWith('fn_get_workflow_schedules', { p_workflow_id: WF_ID })
+      expect(mockRpc).toHaveBeenCalledWith('fn_get_workflow_schedules', { p_workflow_id: WF_ID, p_limit: 50 })
     })
 
     it('calls fn_get_workflow_schedules with empty object when no workflowId', async () => {
       mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.getSchedules()
-      expect(mockRpc).toHaveBeenCalledWith('fn_get_workflow_schedules', {})
+      expect(mockRpc).toHaveBeenCalledWith('fn_get_workflow_schedules', { p_limit: 50 })
     })
 
     it('maps nullable schedule fields to defaults', async () => {
