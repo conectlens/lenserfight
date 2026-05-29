@@ -263,6 +263,27 @@ export interface PersistLocalExecutionDTO {
   tokenOutput: number
 }
 
+/**
+ * DTO for persisting a completed streamed TEXT execution (platform_credit /
+ * cloud BYOK / local BYOK) after the stream ends. Keyed on `runId` (the id from
+ * the stream's `start` event) so it dedups against the server-side edge-function
+ * write — see public.fn_persist_streamed_execution.
+ */
+export interface PersistStreamedExecutionDTO {
+  /** Run id from the stream `start` event — the dedup key. */
+  runId: string
+  lensId: string
+  versionId?: string
+  provider: string
+  model: string
+  contentText: string
+  tokenInput: number
+  tokenOutput: number
+  /** Credits charged (0 for BYOK). */
+  creditCost?: number
+  fundingSource: FundingSource
+}
+
 /** Semantic alias — a RayRun is an ExecutionRun produced from a Lens execution */
 export type RayRun = ExecutionRun
 

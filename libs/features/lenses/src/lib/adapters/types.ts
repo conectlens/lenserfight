@@ -25,6 +25,8 @@ export type MediaModality = 'image' | 'video' | 'audio' | 'music'
 
 export interface TextStreamRequest {
   lensId: string
+  /** Pinned lens version (URL-routed preview); persisted with the run for history. */
+  versionId?: string
   provider: TextProviderKey
   model: string
   messages: Message[]

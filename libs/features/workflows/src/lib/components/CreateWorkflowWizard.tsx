@@ -54,6 +54,8 @@ export interface CreateWorkflowWizardProps {
     description?: string | null
     visibility: string
   }
+  /** Template workflow id to fork immediately when the wizard opens. */
+  initialTemplateId?: string | null
 }
 
 const VISIBILITY_OPTIONS = [
@@ -272,7 +274,7 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
 
 // ─── Wizard ──────────────────────────────────────────────────────────────────
 
-export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCreated, onCancel, editMode, initialWorkflow }) => {
+export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCreated, onCancel, editMode, initialWorkflow, initialTemplateId }) => {
   const navigate = useNavigate()
   const [showTemplatePicker, setShowTemplatePicker] = useState(!editMode)
   const { data: templates = [], isLoading: templatesLoading } = useTemplateWorkflows(12)
@@ -318,6 +320,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     })
 
   const cronPanelRef = useRef<WorkflowCronPanelRef>(null)
+  const initialTemplateForkedRef = useRef(false)
 
   // Lens picker state: map of id → title for selected lenses
   const [selectedLenses, setSelectedLenses] = useState<Map<string, string>>(new Map())

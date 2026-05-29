@@ -11,6 +11,16 @@ export function useWorkflowVersions(workflowId: string) {
   })
 }
 
+
+export function useWorkflowVersionSnapshot(versionId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['workflow', 'version-snapshot', versionId],
+    queryFn: () => (versionId ? workflowsService.getVersionSnapshot(versionId) : Promise.resolve(null)),
+    enabled: !!versionId,
+    staleTime: 1000 * 60 * 5,
+  })
+}
+
 export function useCreateWorkflowVersion(workflowId: string) {
   const queryClient = useQueryClient()
 

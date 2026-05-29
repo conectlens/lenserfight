@@ -8,6 +8,7 @@ import { PlusCircle, Zap } from 'lucide-react'
 
 import { BattleCard } from '../components/display/BattleCard'
 import { BattleTemplateCarousel } from '../components/BattleTemplateCarousel'
+import { deriveBattleType } from '../util/battle-type-codec'
 import { useBattlesFeed } from '../hooks/query/useBattlesFeed'
 import type { BattlesFeedSortBy } from '../hooks/query/useBattlesFeed'
 
@@ -194,7 +195,7 @@ export function BattlesFeedPage() {
                 title={b.title}
                 status={b.status}
                 totalVoteCount={b.total_vote_count}
-                battleType={b.battle_type}
+                battleType={deriveBattleType(b)}
                 contentType={b.content_type}
                 voterEligibility={b.voter_eligibility}
                 votingOpensAt={b.voting_opens_at}

@@ -1,6 +1,7 @@
 import { shouldHaltScheduling, type BudgetSnapshot } from './budget-reconciler'
 import { validateInputs, validateOutput } from './contract-validator'
 import { inferAttachmentsFromRendered } from './execution-attachments'
+import { createDefaultEnvelopeRegistry, type DispatchOutcome } from './envelope-handlers'
 import { resolveMappedOutputValue } from './output-path'
 import { getNodeRunner } from './runners/node-runner.registry'
 import { detectCycle as validatorDetectCycle, PlaceholderUnboundError } from './validator'
@@ -20,6 +21,7 @@ import type {
 import type { PinnedOutputStore } from './pinned-output'
 import type { NodeRunnerContext } from './runners/node-runner.interface'
 import type { LensInputContract, LensOutputContract, NodeOutputEnvelope } from '@lenserfight/types'
+import type { PostRunContext } from './envelope-handlers'
 
 // ── Public types ──────────────────────────────────────────────────────────
 
@@ -189,6 +191,10 @@ export interface WorkflowRunResult {
   nodeResults: NodeResult[]
 }
 
+export interface PostRunEnvelopeDispatcher {
+  dispatch(output: unknown, ctx: PostRunContext): Promise<DispatchOutcome[]>
+}
+
 export type EngineEventName =
   | 'node_queued'
   | 'node_waiting'
@@ -304,6 +310,17 @@ export interface WorkflowExecutionContext {
    * observational, not load-bearing.
    */
   memory?: MemoryFlushSink
+  /**
+   * Phase CT — optional post-run envelope dispatch context. When present and
+   * the run completes successfully, the engine dispatches every terminal node
+   * output through the configured envelope dispatcher. Handler failures are
+   * reported as outcomes by the registry and never change the run status.
+   */
+  postRunEnvelopeContext?: PostRunContext
+  /** Tests and alternate runtimes may inject a stub dispatcher. */
+  postRunEnvelopeDispatcher?: PostRunEnvelopeDispatcher
+  /** Optional observability sink for post-run dispatch outcomes. */
+  onPostRunEnvelopeOutcomes?(outcomes: DispatchOutcome[]): void | Promise<void>
   /**
    * Phase AL — delegation dispatcher. When set, the engine calls this on
    * `delegate_to_agent` actions. When unset, delegation actions surface as
@@ -1167,6 +1184,7 @@ export class WorkflowExecutionService {
 
     const finalResult = finish(ctx.runId, results)
     await notifyMemoryRunCompleted(finalResult.status)
+    await dispatchPostRunEnvelopes(ctx, nodes, edges, finalResult)
     return finalResult
   }
 }
@@ -1674,6 +1692,39 @@ async function emit(ctx: WorkflowExecutionContext, event: EngineEvent): Promise<
   } catch {
     // observability failures must never break execution
   }
+}
+
+
+async function dispatchPostRunEnvelopes(
+  ctx: WorkflowExecutionContext,
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+  result: WorkflowRunResult,
+): Promise<void> {
+  if (result.status !== 'completed' || !ctx.postRunEnvelopeContext) return
+
+  const terminalNodeIds = findTerminalNodeIds(nodes, edges)
+  const dispatcher = ctx.postRunEnvelopeDispatcher ?? createDefaultEnvelopeRegistry()
+  const outcomes: DispatchOutcome[] = []
+
+  for (const nodeResult of result.nodeResults) {
+    if (!terminalNodeIds.has(nodeResult.nodeId)) continue
+    const output = nodeResult.envelope ?? nodeResult.outputData
+    if (!output) continue
+    outcomes.push(...await dispatcher.dispatch(output, ctx.postRunEnvelopeContext))
+  }
+
+  if (outcomes.length === 0 || !ctx.onPostRunEnvelopeOutcomes) return
+  try {
+    await ctx.onPostRunEnvelopeOutcomes(outcomes)
+  } catch {
+    // Post-run dispatch is side-effect observability; never break completion.
+  }
+}
+
+function findTerminalNodeIds(nodes: WorkflowNode[], edges: WorkflowEdge[]): Set<string> {
+  const hasOutgoing = new Set(edges.map((edge) => edge.sourceNodeId))
+  return new Set(nodes.filter((node) => !hasOutgoing.has(node.id)).map((node) => node.id))
 }
 
 function finish(

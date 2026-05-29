@@ -121,6 +121,40 @@ describe('single-node workflow', () => {
     const result = await service.executeWorkflow([n('a')], [], ctx)
     expect(result.nodeResults[0].outputData?.['text']).toBe('my output')
   })
+
+  it('dispatches terminal node envelopes after a completed run', async () => {
+    const service = new WorkflowExecutionService(echoProvider(() => 'my output'))
+    const dispatch = vi.fn().mockResolvedValue([
+      { handler: 'test_handler', status: 'handled' as const },
+    ])
+    const onOutcomes = vi.fn()
+    const postRunEnvelopeContext = {
+      workflowRunId: 'run-dag-test',
+      workflowId: 'workflow-1',
+      lenserId: 'lenser-1',
+      userJwt: 'jwt',
+      supabaseUrl: 'https://test.supabase.co',
+      supabaseAnonKey: 'anon',
+      supabaseServiceRoleKey: 'service-role',
+    }
+    const ctx = makeCtx({
+      rootInputs: { input: 'x' },
+      postRunEnvelopeContext,
+      postRunEnvelopeDispatcher: { dispatch },
+      onPostRunEnvelopeOutcomes: onOutcomes,
+    })
+
+    const result = await service.executeWorkflow([n('a')], [], ctx)
+
+    expect(result.status).toBe('completed')
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ text: 'my output' }),
+      postRunEnvelopeContext,
+    )
+    expect(onOutcomes).toHaveBeenCalledWith([
+      { handler: 'test_handler', status: 'handled' },
+    ])
+  })
 })
 
 // ── Linear chain A→B→C ────────────────────────────────────────────────────────

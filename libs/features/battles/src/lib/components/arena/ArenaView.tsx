@@ -14,6 +14,7 @@ import { useSubmitVote } from '../../hooks/mutations/useSubmitVote'
 import { useVoteAggregates } from '../../hooks/query/useVoteAggregates'
 import { useVoterEligibility } from '../../hooks/query/useVoterEligibility'
 import { useAiJudgeVerdicts } from '../../hooks/query/useAiJudgeVerdicts'
+import { deriveBattleType } from '../../util/battle-type-codec'
 
 import { BattleChatPanel } from '../chat/BattleChatPanel'
 import { BattleCreatorPanel } from '../display/BattleCreatorPanel'
@@ -102,6 +103,7 @@ export function ArenaView({
   const { isEligible } = useVoterEligibility(battle?.id, currentUserId)
 
   const stateMachine = useBattleStateMachine(battle?.status)
+  const battleType = battle ? deriveBattleType(battle) : null
   const currentPhase = forcePhase ?? stateMachine.currentPhase
 
   const contenders = contendersData?.contenders ?? []
@@ -280,7 +282,7 @@ export function ArenaView({
                 <BattleCreatorPanel
                   battleId={battle.id}
                   status={battle.status}
-                  battleType={battle.battle_type}
+                  battleType={battleType ?? 'ai_vs_ai'}
                   onPublish={publishBattle}
                   isPublishing={isPublishing}
                   onStartExecution={startExecution}

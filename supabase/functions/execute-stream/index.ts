@@ -43,6 +43,9 @@ interface StreamBody {
   key_ref_id?: string
   max_tokens?: number
   temperature?: number
+  /** Lens being executed — enables server-side persistence into execution history. */
+  lens_id?: string
+  version_id?: string
 }
 
 interface TokenUsage {
@@ -365,6 +368,10 @@ async function pumpGoogleStream(
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 serve(async (req: Request): Promise<Response> => {
+  // Top-level guard: catch any synchronous or async exception that would otherwise
+  // surface as the opaque {"message":"An unexpected error occurred"} runtime error.
+  // This wrapper gives us the actual error message and logs it for debugging.
+  try {
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
@@ -392,7 +399,7 @@ serve(async (req: Request): Promise<Response> => {
     return errResponse('invalid_json', 'Request body must be valid JSON', 400, req)
   }
 
-  const { provider, model, messages, funding_source, key_ref_id, max_tokens, temperature } = body
+  const { provider, model, messages, funding_source, key_ref_id, max_tokens, temperature, lens_id, version_id } = body
 
   const SUPPORTED: Provider[] = ['openai', 'anthropic', 'google', 'mistral']
   if (!SUPPORTED.includes(provider)) return errResponse('unsupported_provider', `Provider "${provider}" not supported`, 400, req)
@@ -422,9 +429,28 @@ serve(async (req: Request): Promise<Response> => {
   const writer = writable.getWriter()
   const runId = crypto.randomUUID()
   const abortController = new AbortController()
-  req.signal.addEventListener('abort', () => abortController.abort())
+  // req.signal may be null/undefined in some edge runtime versions — guard before subscribing.
+  req.signal?.addEventListener('abort', () => abortController.abort())
+
+  // Accumulate the streamed result so the run can be persisted server-side
+  // (source of truth) after the stream completes. The emit wrapper taps the
+  // frames already flowing to the client — no extra provider round-trips.
+  let accumulatedText = ''
+  let finalUsage: TokenUsage = { input_tokens: 0, output_tokens: 0 }
+  let finalCredits = 0
+  let sawError = false
 
   const emit = (event: string, data: unknown) => {
+    if (event === 'token') {
+      const c = (data as { content?: string } | null)?.content
+      if (typeof c === 'string') accumulatedText += c
+    } else if (event === 'end') {
+      const d = data as { usage?: TokenUsage; credits_charged?: number } | null
+      if (d?.usage) finalUsage = d.usage
+      if (typeof d?.credits_charged === 'number') finalCredits = d.credits_charged
+    } else if (event === 'error') {
+      sawError = true
+    }
     writer.write(sseFrame(event, data)).catch(() => abortController.abort())
   }
 
@@ -468,13 +494,46 @@ serve(async (req: Request): Promise<Response> => {
 
         await streamChainabit(chainabitToken, model, messages, maxTokens, temperature, signal, emit)
       }
+
+      // ── Persist the completed run (source of truth) ──────────────────────────
+      // Idempotent on runId — dedups against the authenticated client's onEnd
+      // fallback. Only when tied to a lens; non-fatal on failure so a persist
+      // hiccup never breaks the already-delivered stream.
+      if (!sawError && !signal.aborted && lens_id) {
+        try {
+          await serviceClient.rpc('fn_worker_persist_streamed_execution', {
+            p_run_id: runId,
+            p_user_id: user.id,
+            p_lens_id: lens_id,
+            p_version_id: version_id ?? null,
+            p_provider: provider,
+            p_model: model,
+            p_content_text: accumulatedText,
+            p_token_input: finalUsage.input_tokens,
+            p_token_output: finalUsage.output_tokens,
+            p_credit_cost: finalCredits,
+            p_funding_source: funding_source,
+          })
+        } catch (persistErr: unknown) {
+          console.error('[execute-stream] history persist failed (non-fatal):', persistErr)
+        }
+      }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') return
-      emit('error', { message: err instanceof Error ? err.message : 'Execution failed', code: 'provider_error' })
+      const msg = err instanceof Error ? err.message : 'Execution failed'
+      console.error('[execute-stream] Provider stream error:', err)
+      emit('error', { message: msg, code: 'provider_error' })
     } finally {
       writer.close().catch(() => {})
     }
   })()
 
   return new Response(readable, { status: 200, headers: sseHeaders(req) })
+  } catch (handlerErr: unknown) {
+    // Surface the actual error instead of letting the runtime return the opaque
+    // {"message":"An unexpected error occurred"} 500. Logs appear in `supabase functions serve`.
+    const msg = handlerErr instanceof Error ? handlerErr.message : String(handlerErr)
+    console.error('[execute-stream] Unhandled handler exception:', handlerErr)
+    return errResponse('internal_error', msg, 500, req)
+  }
 })

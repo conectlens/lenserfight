@@ -134,10 +134,9 @@ export const LabExecutionTimeline: React.FC<LabExecutionTimelineProps> = ({
                 onClick={() => onSelectRun(item.requestId, item.runId)}
                 className={`
                   group flex items-start gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors
-                  ${
-                    isSelected
-                      ? 'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-700'
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
+                  ${isSelected
+                    ? 'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-700'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
                   }
                 `}
               >
@@ -209,10 +208,9 @@ export const LabExecutionTimeline: React.FC<LabExecutionTimelineProps> = ({
                     title={isInComparison ? 'Remove from comparison' : 'Add to comparison (max 2)'}
                     className={`
                       flex-shrink-0 w-5 h-5 rounded border text-xs font-bold transition-colors
-                      ${
-                        isInComparison
-                          ? 'border-primary-500 bg-primary-500 text-white'
-                          : 'border-gray-300 dark:border-gray-600 text-gray-400 opacity-0 group-hover:opacity-100'
+                      ${isInComparison
+                        ? 'border-primary-500 bg-primary-500 text-white'
+                        : 'border-gray-300 dark:border-gray-600 text-gray-400 opacity-0 group-hover:opacity-100'
                       }
                     `}
                   >

@@ -1082,7 +1082,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                   {/* Recovery banner — shown when the run terminated with failure */}
                   {runId &&
                     !isRunning &&
-                    (liveRunState?.status === 'failed' || liveRunState?.status === 'timed_out') && (
+                    (liveRunState?.lifecycle === 'failed') && (
                       <WorkflowRunRecoveryBanner
                         runStatus={liveRunState!.status}
                         failedNodeLabel={

@@ -24,16 +24,16 @@ const TOPIC_MAP: Record<string, string> = {
   update: '/reference/cli/update',
 
   // Getting started
-  'getting-started': '/tutorials/getting-started/quick-start',
+  'getting-started': '/tutorials/getting-started/quickstart',
   install: '/tutorials/getting-started/installation',
-  auth: '/tutorials/getting-started/authentication',
-  quickstart: '/tutorials/getting-started/quick-start',
+  auth: '/tutorials/local/authentication',
+  quickstart: '/tutorials/getting-started/quickstart',
 
   // Guides
-  local: '/tutorials/local/local-setup',
-  ollama: '/tutorials/local/ollama-setup',
-  byok: '/how-to/integrations/byok',
-  troubleshoot: '/how-to/operations/troubleshooting',
+  local: '/reference/database/local-setup',
+  ollama: '/tutorials/integrations/ollama',
+  byok: '/how-to/battles/byok-execution',
+  troubleshoot: '/tutorials/troubleshooting/build-failures',
 }
 
 function openUrl(url: string): void {

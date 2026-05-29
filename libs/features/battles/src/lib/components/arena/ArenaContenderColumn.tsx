@@ -1,3 +1,4 @@
+import { mapToLifecycle } from '@lenserfight/api/contracts'
 import React from 'react'
 import type { Contender, Submission, VoteAggregate } from '../../types/battle.types'
 import type { BattleContentRenderer } from '../../types/battle-renderer.types'
@@ -79,7 +80,7 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
             )}
             {executionJob && (
               <ExecutionStatusBadge
-                status={executionJob.status}
+                lifecycle={mapToLifecycle(executionJob.status, 'battle_job')}
                 retryCount={executionJob.retry_count}
               />
             )}

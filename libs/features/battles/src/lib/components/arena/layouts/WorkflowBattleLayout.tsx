@@ -170,7 +170,7 @@ function ContenderWorkflowPanel({
           )}
         </div>
         {executionJob && (
-          <ExecutionStatusBadge status={executionJob.status} retryCount={executionJob.retry_count} />
+          <ExecutionStatusBadge lifecycle={mapToLifecycle(executionJob.status, 'battle_job')} retryCount={executionJob.retry_count} />
         )}
       </div>
 

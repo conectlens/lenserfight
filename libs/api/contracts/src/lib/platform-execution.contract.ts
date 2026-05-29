@@ -1,6 +1,48 @@
 import type { ApiResponseEnvelope } from './envelope'
 import type { ArtifactKind, ExecutionRunStatus, FundingSource } from '@lenserfight/types'
 
+
+export type ExecutionLifecycle =
+  | 'pending'
+  | 'queued'
+  | 'claimed'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+
+export type ExecutionLifecycleSource = 'workflow' | 'battle_job'
+
+export function mapToLifecycle(
+  rawStatus: string | null | undefined,
+  _source: ExecutionLifecycleSource,
+): ExecutionLifecycle {
+  switch ((rawStatus ?? '').toLowerCase()) {
+    case 'queued':
+      return 'queued'
+    case 'claimed':
+      return 'claimed'
+    case 'running':
+    case 'streaming':
+    case 'recovered':
+      return 'running'
+    case 'completed':
+    case 'succeeded':
+      return 'completed'
+    case 'cancelled':
+    case 'canceled':
+      return 'cancelled'
+    case 'failed':
+    case 'timed_out':
+      return 'failed'
+    case 'pending':
+    case 'draft':
+    case 'validated':
+    default:
+      return 'pending'
+  }
+}
+
 export interface LensExecuteRequest {
   params: Record<string, unknown>
   modelOverride?: string

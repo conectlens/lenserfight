@@ -73,6 +73,8 @@ export interface LabControllerOptions {
   providersEnabled?: boolean
   /** Gate history fetching — must have a resolved Lenser profile for fn_get_lens_execution_history to return rows */
   hasActiveLenserProfile?: boolean
+  /** Defer history fetching until true (e.g. only when the drawer is open) */
+  historyEnabled?: boolean
 }
 
 export const useLabController = (lensId: string, isAuthenticated = false, options: LabControllerOptions = {}) => {
@@ -131,7 +133,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
   const { data: historyPage, isLoading: isLoadingHistory } = useQuery({
     queryKey: queryKeys.executions.history(lensId, historyOffset),
     queryFn: () => executionService.getHistory(lensId, PAGE_SIZE, historyOffset),
-    enabled: !!lensId && isAuthenticated && !!(options.hasActiveLenserProfile ?? false),
+    enabled: !!lensId && isAuthenticated && !!(options.hasActiveLenserProfile ?? false) && !!(options.historyEnabled ?? false),
     staleTime: 60_000,
   })
 
@@ -356,9 +358,15 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
       setStreamError(null)
       setLocalMediaArtifact(null)
 
+      // Captured synchronously from the `start` event so onEnd can persist with
+      // the same run_id the server used — this is the dedup key shared with the
+      // edge function's server-side write.
+      let capturedRunId: string | null = null
+
       const callbacks = {
         onStart: (runId: string) => {
           if (!isActive()) return
+          capturedRunId = runId
           setStreamRunId(runId)
           setStreamState('streaming')
         },
@@ -374,19 +382,29 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
           setStreamCredits(credits)
           setStreamState('complete')
 
-          // Persist local BYOK executions to the database so they survive page refresh
-          if (fundingSource === 'user_byok_local' && streamOutputRef.current) {
+          // Persist the completed text run so it appears in execution history and
+          // survives a page refresh. Keyed on the stream's run_id, so for
+          // platform_credit this dedups against the edge function's authoritative
+          // server-side write; for cloud/local BYOK (browser-direct streams) this
+          // is the only writer. Best-effort — the output is already on screen.
+          if (capturedRunId && streamOutputRef.current) {
             executionService
-              .persistLocalExecution({
+              .persistStreamedExecution({
+                runId: capturedRunId,
                 lensId,
+                versionId: dto.versionId,
                 provider: dto.providerKey,
                 model: dto.modelKey,
                 contentText: streamOutputRef.current,
                 tokenInput: usage.input_tokens,
                 tokenOutput: usage.output_tokens,
+                creditCost: credits,
+                fundingSource,
               })
               .then((runId) => {
                 if (isActive()) setStreamRunId(runId)
+                queryClient.invalidateQueries({ queryKey: queryKeys.executions.history(lensId) })
+                setHistoryOffset(0)
               })
               .catch(() => {
                 // Best-effort — stream output is already visible to the user
@@ -414,6 +432,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
           adapter.streamText(
             {
               lensId,
+              versionId: dto.versionId,
               provider: dto.providerKey,
               model: dto.modelKey,
               messages,

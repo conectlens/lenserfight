@@ -18,7 +18,7 @@ type FetchState =
   | { status: 'error' }
 
 function buildDocsUrl(nodeType: string, locale: string): string {
-  return `/docs/${locale}/reference/workflow-nodes/${nodeType}.md`
+  return `/docs/${locale}/reference/workflow-nodes/${nodeType}`
 }
 
 /**
@@ -131,7 +131,11 @@ export function WorkflowNodeDocsPanel({
           {fetchState.status === 'ready' && <MarkdownRenderer content={fetchState.body} />}
           {fetchState.status === 'missing' && (
             <div className="text-xs text-greyscale-500">
-              Documentation coming soon. Catalog metadata only.
+              Full documentation for this node is available at{' '}
+              <code className="bg-greyscale-100 dark:bg-greyscale-800 px-1 rounded">
+                /reference/workflow-nodes/{nodeType}
+              </code>
+              .
             </div>
           )}
           {fetchState.status === 'error' && (

@@ -3,6 +3,9 @@ export * from './lib/types/battle.types'
 export * from './lib/types/battle-execution.types'
 export * from './lib/types/battle-renderer.types'
 
+// ── Utilities ───────────────────────────────────────────────────────────────
+export * from './lib/util/battle-type-codec'
+
 // ── Hooks — query (read-only data fetching) ──────────────────────────────────
 export * from './lib/hooks/query/useBattle'
 export * from './lib/hooks/query/useBattleContenders'
@@ -127,6 +130,9 @@ export * from './lib/components/chat/BattleChatPanel'
 export * from './lib/components/chat/LenserChatRail'
 export * from './lib/components/chat/ChatMessage'
 
+// ── Components — series ─────────────────────────────────────────────────────
+export * from './lib/components/series/SeriesAdvanceButton'
+
 // ── Pages ────────────────────────────────────────────────────────────────────
 export * from './lib/pages/BattlesFeedPage'
 // Phase BP — public anon-safe discovery page
@@ -134,6 +140,7 @@ export * from './lib/pages/BattlesDiscoveryPage'
 export * from './lib/pages/BattleTemplatesPage'
 export * from './lib/pages/BattleTemplateEditorPage'
 export * from './lib/pages/BattleSeriesPage'
+export * from './lib/pages/SeriesListPage'
 export { BattleTemplateCard } from './lib/components/BattleTemplateCard'
 export type { BattleTemplateCardProps } from './lib/components/BattleTemplateCard'
 export { BattleTemplateCarousel } from './lib/components/BattleTemplateCarousel'

@@ -28,44 +28,44 @@ const BASE = 'https://docs.lenserfight.com'
  */
 export const DOCS_REGISTRY: Record<string, string> = {
   // Auth
-  'auth-login':        `${BASE}/guides/auth/login`,
-  'auth-tokens':       `${BASE}/guides/auth/developer-tokens`,
-  'permissions':       `${BASE}/guides/auth/permissions`,
+  'auth-login':        `${BASE}/reference/cli/auth`,
+  'auth-tokens':       `${BASE}/reference/cli/auth#developer-tokens`,
+  'permissions':       `${BASE}/tutorials/local/authentication#role-and-permission-model`,
 
   // Setup & config
-  'configuration':     `${BASE}/guides/configuration`,
-  'local-setup':       `${BASE}/guides/local-development`,
-  'gateway-setup':     `${BASE}/guides/gateway/setup`,
-  'local-models':      `${BASE}/guides/local-models/ollama`,
+  'configuration':     `${BASE}/reference/cli/configuration`,
+  'local-setup':       `${BASE}/how-to/dev/local-setup`,
+  'gateway-setup':     `${BASE}/reference/cli/gateway`,
+  'local-models':      `${BASE}/tutorials/integrations/ollama`,
 
   // API & connectivity
-  'connectivity':      `${BASE}/troubleshooting/connectivity`,
-  'rate-limits':       `${BASE}/reference/rate-limits`,
-  'resources':         `${BASE}/reference/resources`,
+  'connectivity':      `${BASE}/tutorials/troubleshooting/database-issues`,
+  'rate-limits':       `${BASE}/reference/platform-api/api-overview#rate-limits`,
+  'resources':         `${BASE}/reference/community-api/index`,
 
   // Providers
-  'providers':         `${BASE}/guides/providers/overview`,
-  'provider-keys':     `${BASE}/guides/providers/api-keys`,
-  'multimodal':        `${BASE}/guides/providers/multimodal`,
+  'providers':         `${BASE}/reference/ai-providers`,
+  'provider-keys':     `${BASE}/reference/cli/keys`,
+  'multimodal':        `${BASE}/reference/ai-models`,
 
   // Workflow
-  'workflow-nodes':    `${BASE}/guides/workflows/nodes`,
-  'workflow-dsl':      `${BASE}/guides/workflows/dsl`,
-  'workflow-debug':    `${BASE}/guides/workflows/debugging`,
+  'workflow-nodes':    `${BASE}/reference/workflows/workflow-node-catalog`,
+  'workflow-dsl':      `${BASE}/reference/workflows/execution-engine`,
+  'workflow-debug':    `${BASE}/tutorials/troubleshooting/workflow-issues`,
 
   // Battle
-  'battle-lifecycle':  `${BASE}/guides/battles/lifecycle`,
-  'battle-replay':     `${BASE}/guides/battles/replay`,
-  'battle-templates':  `${BASE}/guides/battles/templates`,
+  'battle-lifecycle':  `${BASE}/reference/battles/index`,
+  'battle-replay':     `${BASE}/reference/battles/index`,
+  'battle-templates':  `${BASE}/reference/battles/index`,
 
   // Schemas & validation
-  'schemas':           `${BASE}/reference/schemas`,
-  'schema-drift':      `${BASE}/reference/schemas/drift`,
+  'schemas':           `${BASE}/reference/database/schema-overview`,
+  'schema-drift':      `${BASE}/reference/database/schema-overview`,
 
   // General troubleshooting
-  'troubleshooting':   `${BASE}/troubleshooting`,
-  'doctor':            `${BASE}/troubleshooting/doctor`,
-  'byok':              `${BASE}/guides/byok`,
+  'troubleshooting':   `${BASE}/reference/known-limitations`,
+  'doctor':            `${BASE}/reference/cli/doctor`,
+  'byok':              `${BASE}/reference/cli/byok`,
   'cli-reference':     `${BASE}/reference/cli`,
 }
 

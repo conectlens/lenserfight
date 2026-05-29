@@ -1,3 +1,4 @@
+import { mapToLifecycle } from '@lenserfight/api/contracts'
 import React from 'react'
 import { Layers } from 'lucide-react'
 import type { BattleLayoutContext } from '../../../types/battle-layout.types'
@@ -89,7 +90,7 @@ export function TextBattleLayout(ctx: BattleLayoutContext) {
                       <span className="px-1.5 py-0.5 rounded-md bg-primary-yellow-100 text-[10px] font-bold text-primary-yellow-900 border border-primary-yellow-300">YOU</span>
                     )}
                     {executionJob && (
-                      <ExecutionStatusBadge status={executionJob.status} retryCount={executionJob.retry_count} />
+                      <ExecutionStatusBadge lifecycle={mapToLifecycle(executionJob.status, 'battle_job')} retryCount={executionJob.retry_count} />
                     )}
                     {lensDetails[contender.id] && (
                       <span className="hidden sm:flex items-center gap-1 text-[10px] text-greyscale-400 bg-surface-raised border border-surface-border px-2 py-0.5 rounded-full">

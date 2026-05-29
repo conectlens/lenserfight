@@ -483,8 +483,9 @@ export function useWorkflowExecution({
 
         // Mark run as completed or failed
         await workflowsService.updateRunStatus(runId, result.status)
-        await appendRunEventSafe(resultStatusToRunEvent(result.status), { status: result.status })
-        await appendRunEventSafe(WorkflowEventType.RUN_STATUS_CHANGED, { status: result.status })
+        const lifecycle = mapToLifecycle(result.status, 'workflow')
+        await appendRunEventSafe(resultStatusToRunEvent(result.status), { status: result.status, lifecycle })
+        await appendRunEventSafe(WorkflowEventType.RUN_STATUS_CHANGED, { status: result.status, lifecycle })
 
         return result
       } catch (error) {

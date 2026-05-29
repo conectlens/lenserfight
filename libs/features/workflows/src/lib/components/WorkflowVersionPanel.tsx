@@ -7,6 +7,7 @@ import {
   useCreateWorkflowVersion,
   usePublishWorkflowVersion,
   useRestoreWorkflowVersion,
+  useWorkflowVersionSnapshot,
 } from '../hooks/useWorkflowVersions'
 
 import { WorkflowVersionDiff, type WorkflowVersion } from './WorkflowVersionDiff'
@@ -35,10 +36,13 @@ export function WorkflowVersionPanel({ workflowId, isOwner }: WorkflowVersionPan
   const { mutate: restoreVersion, isPending: isRestoring } = useRestoreWorkflowVersion(workflowId)
   const [changelog, setChangelog] = useState('')
   const [compareTarget, setCompareTarget] = useState<WorkflowVersionRecord | null>(null)
-
   const publishedVersion = useMemo(
     () => (versions ?? []).find((v) => v.status === 'published') ?? null,
     [versions],
+  )
+  const targetSnapshot = useWorkflowVersionSnapshot(compareTarget?.id)
+  const publishedSnapshot = useWorkflowVersionSnapshot(
+    compareTarget && publishedVersion ? publishedVersion.id : null,
   )
 
   const handleCreateVersion = () => {
@@ -47,15 +51,14 @@ export function WorkflowVersionPanel({ workflowId, isOwner }: WorkflowVersionPan
     })
   }
 
-  // Snapshot bodies are not on WorkflowVersionRecord; loading them requires
-  // fn_get_workflow_version_snapshot (post-launch Phase 3). The diff renders
-  // an explanatory "snapshot data unavailable" hint when both sides are empty.
+  const emptySnapshot = { nodes: [], edges: [] }
   const diffPair = compareTarget && publishedVersion
     ? {
-        a: { ...compareTarget, snapshot: { nodes: [], edges: [] } } satisfies WorkflowVersion,
-        b: { ...publishedVersion, snapshot: { nodes: [], edges: [] } } satisfies WorkflowVersion,
+        a: { ...compareTarget, snapshot: targetSnapshot.data ?? emptySnapshot } satisfies WorkflowVersion,
+        b: { ...publishedVersion, snapshot: publishedSnapshot.data ?? emptySnapshot } satisfies WorkflowVersion,
       }
     : null
+  const isSnapshotLoading = targetSnapshot.isLoading || publishedSnapshot.isLoading
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -122,6 +125,10 @@ export function WorkflowVersionPanel({ workflowId, isOwner }: WorkflowVersionPan
           versionB={diffPair.b}
           open={!!compareTarget}
           onOpenChange={(b) => !b && setCompareTarget(null)}
+          isLoading={isSnapshotLoading}
+          canRestore={isOwner}
+          onRestoreVersion={(versionId) => restoreVersion(versionId)}
+          isRestoring={isRestoring}
         />
       )}
     </div>

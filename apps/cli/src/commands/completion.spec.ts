@@ -1,3 +1,5 @@
+export {}
+
 jest.mock('citty', () => ({ defineCommand: (opts: unknown) => opts }))
 jest.mock('consola', () => ({
   __esModule: true,

@@ -15,7 +15,7 @@ const EXAMPLES: Example[] = [
   {
     category: 'getting-started',
     title: 'Initialize a local project',
-    commands: ['lf init --mode local', 'lf dev', 'lf doctor'],
+    commands: ['lf init --mode local', 'lf db dev', 'lf doctor'],
     description: 'Set up .lenserfight.json, start Supabase, and verify the environment.',
   },
   {

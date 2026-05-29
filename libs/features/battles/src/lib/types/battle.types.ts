@@ -65,6 +65,7 @@ export interface Battle {
   published_at: string | null
   voting_opens_at: string | null
   voting_closes_at: string | null
+  /** @deprecated Use deriveBattleType(battle) for UI branching/presentation. */
   battle_type: BattleType
   voter_eligibility: VoterEligibility
   handicap_config: AIHandicapConfig

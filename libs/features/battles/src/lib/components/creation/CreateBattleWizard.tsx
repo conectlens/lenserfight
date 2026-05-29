@@ -72,6 +72,7 @@ import {
 import type { LenserBattlePolicy } from '@lenserfight/domain/battle-governance'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../../types/battle.types'
+import { deriveBattleType } from '../../util/battle-type-codec'
 import type { LensViewModel } from '@lenserfight/types'
 import { useInviteContender } from '../../hooks/mutations/useInviteContender'
 
@@ -491,12 +492,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                 ? ''
                 : battle.task_prompt
             )
-            setBattleType(battle.battle_type)
+            const existingBattleType = deriveBattleType(battle)
+            setBattleType(existingBattleType)
             setVoterEligibility(battle.voter_eligibility)
             if (battle.handicap_config) {
               setHandicap(battle.handicap_config as unknown as AIHandicapConfig)
             }
-            if (battle.battle_type === 'lenser_battle') {
+            if (existingBattleType === 'lenser_battle') {
               setTaskSource('lens') // V2: lenser_battle is now a policy overlay, default to lens
             } else if (battle.workflow_id) {
               setBattleFormat('workflow')
@@ -510,7 +512,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             // Skip format/source/type steps if we already have them
             if (
               step === 0 &&
-              (battle.workflow_id || battle.lens_id || battle.battle_type === 'lenser_battle')
+              (battle.workflow_id || battle.lens_id || existingBattleType === 'lenser_battle')
             ) {
               goToStep(3)
             }
@@ -791,6 +793,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         contender_structure: contenderStructure,
         judging_mode: judgingMode,
         ...(challengeType ? { challenge_type: challengeType } : {}),
+        ...(autoAssignContenders || autoPromote
+          ? { automation_config: { autoAssignContenders, autoPromote } }
+          : {}),
       }
 
       let battle
@@ -806,21 +811,6 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       // automation, the parent's success navigation).
       if (!battle?.id || !isValidUUID(battle.id) || !battle?.slug) {
         throw new Error('Battle creation succeeded but the response is missing id or slug.')
-      }
-
-      // Phase CT — persist automation_config when the user opted in. fn_battles_create
-      // and fn_update_battle do not yet accept this field; until they do, we patch the
-      // row directly. Owner RLS permits this.
-      if (autoAssignContenders || autoPromote) {
-        try {
-          await battlesService.updateAutomationConfig?.(battle.id, {
-            autoAssignContenders,
-            autoPromote,
-          })
-        } catch (err) {
-          // Non-fatal: persistence layer may not yet expose the helper.
-          console.warn('[CreateBattleWizard] automation_config persist skipped:', err)
-        }
       }
 
       // Persist execution config for AI battles

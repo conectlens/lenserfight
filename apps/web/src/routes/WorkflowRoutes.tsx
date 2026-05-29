@@ -1,6 +1,6 @@
 import { ModalRoute } from '@lenserfight/ui/routing'
 import React, { lazy } from 'react'
-import { Route, useNavigate, useParams } from 'react-router-dom'
+import { Route, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { DashboardFrame } from '../shell/DashboardFrame'
 
@@ -15,6 +15,11 @@ const LazyWorkflowBuilderPage = lazy(() =>
 const LazyWorkflowTemplateGalleryPage = lazy(() =>
   import('@lenserfight/features/workflows').then((module) => ({
     default: module.WorkflowTemplateGalleryPage,
+  }))
+)
+const LazyWorkflowSchedulesPage = lazy(() =>
+  import('@lenserfight/features/workflows').then((module) => ({
+    default: module.WorkflowSchedulesPage,
   }))
 )
 const LazyCreateWorkflowWizard = lazy(() =>
@@ -52,6 +57,7 @@ const WorkflowBuilderPageRoute: React.FC = () => {
 
 const CreateWorkflowModal: React.FC = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const close = () => navigate('/workflows')
   return (
     <ModalRoute
@@ -62,6 +68,7 @@ const CreateWorkflowModal: React.FC = () => {
       <LazyCreateWorkflowWizard
         onCreated={(workflowId) => navigate(`/workflows/${workflowId}`)}
         onCancel={close}
+        initialTemplateId={searchParams.get('template_id')}
       />
     </ModalRoute>
   )
@@ -86,6 +93,15 @@ export function WorkflowRoutes(): React.ReactElement {
         element={
           <DashboardFrame>
             <LazyWorkflowTemplateGalleryPage />
+          </DashboardFrame>
+        }
+      />
+
+      <Route
+        path="/workflows/schedules"
+        element={
+          <DashboardFrame>
+            <LazyWorkflowSchedulesPage />
           </DashboardFrame>
         }
       />

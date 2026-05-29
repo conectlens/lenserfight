@@ -76,9 +76,7 @@ const main = defineCommand({
   subCommands: {
     init: () => import('./commands/init').then((m) => m.default),
     doctor: () => import('./commands/doctor').then((m) => m.default),
-    dev: () => import('./commands/dev').then((m) => m.default),
-    seed: () => import('./commands/seed').then((m) => m.default),
-    reset: () => import('./commands/reset').then((m) => m.default),
+    db: () => import('./commands/db').then((m) => m.default),
     status: () => import('./commands/status').then((m) => m.default),
     validate: () => import('./commands/validate').then((m) => m.default),
     spec: () => import('./commands/spec').then((m) => m.default),
