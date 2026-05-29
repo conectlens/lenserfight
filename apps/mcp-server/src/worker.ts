@@ -455,7 +455,7 @@ async function handleMcp(req: Request, env: Env, cfg: McpServerConfig): Promise<
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { Authorization: `Bearer ${ctx.userJwt}` } },
   });
-  const server = buildServer(userClient);
+  const server = buildServer(userClient, ctx.lenserId);
   const tools = getTools(server);
 
   let msg: Record<string, unknown>;
