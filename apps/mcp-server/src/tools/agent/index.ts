@@ -13,10 +13,10 @@ import { registerAgentStartTeamRun } from './agent-start-team-run.js';
 import { registerAgentCancelRun } from './agent-cancel-run.js';
 import { registerAgentListRunEvents } from './agent-list-run-events.js';
 
-export function registerAgentTools(server: McpServer, sb: SupabaseClient): void {
-  registerAgentList(server, sb);
+export function registerAgentTools(server: McpServer, sb: SupabaseClient, lenserId?: string): void {
+  registerAgentList(server, sb, lenserId);
   registerAgentGet(server, sb);
-  registerAgentCreate(server, sb);
+  registerAgentCreate(server, sb, lenserId);
   registerAgentUpdate(server, sb);
   registerAgentArchive(server, sb);
   registerAgentListTools(server, sb);

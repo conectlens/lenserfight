@@ -424,7 +424,7 @@ async function detectPublicTunnel(localPort: number): Promise<string | null> {
 }
 
 export async function bootHttp(
-  buildServer: (sb: SupabaseClient) => McpServer,
+  buildServer: (sb: SupabaseClient, lenserId?: string) => McpServer,
   cfg: McpServerConfig
 ): Promise<void> {
   // Claude.ai's cloud calls /oauth/token and /mcp from Anthropic's servers — they cannot
@@ -561,7 +561,7 @@ export async function bootHttp(
     }
 
     const userClient = createUserScopedClient(cfg.supabaseUrl, cfg.supabaseAnonKey, ctx.userJwt);
-    const server = buildServer(userClient);
+    const server = buildServer(userClient, ctx.lenserId);
 
     const newSessionId = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
     const transport = new StreamableHTTPServerTransport({

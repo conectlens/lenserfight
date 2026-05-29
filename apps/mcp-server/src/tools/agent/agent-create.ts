@@ -7,10 +7,10 @@ import { McpError } from '../../services/mcp-error.js';
 
 const TOOL = 'create_ai_lenser';
 
-export function registerAgentCreate(server: McpServer, sb: SupabaseClient): void {
+export function registerAgentCreate(server: McpServer, sb: SupabaseClient, lenserId?: string): void {
   server.tool(
     TOOL,
-    'Create a new AI Lenser (AI Agent) owned by a human lenser. The handle is the @ identifier and must be globally unique among lensers. ai_model_id is optional at creation — bind a model later via update_ai_lenser. owner_lenser_id defaults to LENSERFIGHT_LENSER_ID env var.',
+    'Create a new AI Lenser (AI Agent) owned by the authenticated lenser. The handle is the @ identifier and must be globally unique among lensers. ai_model_id is optional at creation — bind a model later via update_ai_lenser. owner_lenser_id defaults to the authenticated user.',
     {
       handle: z.string().min(1).max(64),
       display_name: z.string().min(1).max(120),
@@ -19,7 +19,7 @@ export function registerAgentCreate(server: McpServer, sb: SupabaseClient): void
     },
     async (args) => {
       const t0 = Date.now();
-      const owner = args.owner_lenser_id ?? process.env.LENSERFIGHT_LENSER_ID;
+      const owner = args.owner_lenser_id ?? lenserId;
       if (!owner) {
         return fail(
           'MISSING_LENSER',

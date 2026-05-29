@@ -9,7 +9,7 @@ import { registerBattleScore } from './battle-score.js';
 import { registerBattleSetStatus } from './battle-set-status.js';
 import { registerBattleHistory } from './battle-history.js';
 
-export function registerBattleTools(server: McpServer, sb: SupabaseClient): void {
+export function registerBattleTools(server: McpServer, sb: SupabaseClient, lenserId?: string): void {
   registerBattleList(server, sb);
   registerBattleGet(server, sb);
   registerBattleCreate(server, sb);
@@ -17,5 +17,5 @@ export function registerBattleTools(server: McpServer, sb: SupabaseClient): void
   registerBattleSubmitRun(server, sb);
   registerBattleScore(server, sb);
   registerBattleSetStatus(server, sb);
-  registerBattleHistory(server, sb);
+  registerBattleHistory(server, sb, lenserId);
 }
