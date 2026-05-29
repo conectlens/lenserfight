@@ -365,7 +365,7 @@ type RegisteredTool = {
   name: string;
   description?: string;
   inputSchema?: Record<string, unknown>;
-  callback: (args: Record<string, unknown>) => Promise<unknown>;
+  handler: (args: Record<string, unknown>) => Promise<unknown>;
 };
 
 // Token validation that reads directly from Worker env bindings (not process.env)
@@ -420,8 +420,8 @@ function getTools(server: ReturnType<typeof buildServer>): RegisteredTool[] {
     return [];
   }
   return reg instanceof Map
-    ? Array.from(reg.entries()).map(([name, t]) => ({ name, ...t }))
-    : Object.entries(reg).map(([name, t]) => ({ name, ...t }));
+    ? Array.from(reg.entries()).map(([name, t]) => ({ name, handler: t.handler, description: t.description, inputSchema: t.inputSchema }))
+    : Object.entries(reg).map(([name, t]) => ({ name, handler: t.handler, description: t.description, inputSchema: t.inputSchema }));
 }
 
 
@@ -506,7 +506,7 @@ async function handleMcp(req: Request, env: Env, cfg: McpServerConfig): Promise<
         return { jsonrpc: '2.0', id, error: { code: -32602, message: `Unknown tool: ${name}` } };
       }
       try {
-        const result = await tool.callback(args);
+        const result = await tool.handler(args);
         return { jsonrpc: '2.0', id, result };
       } catch (e) {
         const err = e as Error;
