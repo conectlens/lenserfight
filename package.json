@@ -139,7 +139,8 @@
     "sonner": "^1.7.4",
     "tslib": "^2.8.1",
     "yaml": "^2.9.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "ajv": "^8.18.0"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
@@ -176,7 +177,6 @@
     "@vitejs/plugin-react": "^5.2.0",
     "@vitest/coverage-v8": "4.1.1",
     "@vitest/ui": "4.1.1",
-    "ajv": "^8.18.0",
     "autoprefixer": "^10.4.27",
     "babel-jest": "^30.3.0",
     "babel-preset-expo": "~54.0.10",
