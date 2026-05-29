@@ -1,3 +1,13 @@
+## 0.8.0 (2026-05-29)
+
+### 🚀 Features
+
+- implement battle series listing with database RPCs and associated UI components ([4c2738ca5](https://github.com/conectlens/lenserfight/commit/4c2738ca5))
+
+### ❤️ Thank You
+
+- Ömer Faruk Coşkun
+
 ## 0.7.0 (2026-05-29)
 
 ### 🚀 Features
