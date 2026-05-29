@@ -126,4 +126,9 @@ describe('init', () => {
 
     expect(consolaWarn).toHaveBeenCalledWith(expect.stringContaining('SUPABASE_ANON_KEY'))
   })
+
+  it('defaults to cloud mode in metadata', () => {
+    const rawInitCmd = require('./init').default
+    expect(rawInitCmd.args.mode.default).toBe('cloud')
+  })
 })

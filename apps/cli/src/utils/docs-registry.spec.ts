@@ -49,9 +49,12 @@ describe('docsKeyForKind', () => {
 
 describe('formatDocLink', () => {
   const originalIsTTY = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY')
+  const originalTERM = process.env['TERM']
 
   afterEach(() => {
     delete process.env['NO_COLOR']
+    if (originalTERM === undefined) delete process.env['TERM']
+    else process.env['TERM'] = originalTERM
     if (originalIsTTY) {
       Object.defineProperty(process.stdout, 'isTTY', originalIsTTY)
     }
@@ -83,6 +86,7 @@ describe('formatDocLink', () => {
 
   it('includes OSC 8 hyperlink sequences in color mode', () => {
     process.env['NO_COLOR'] = ''
+    process.env['TERM'] = 'xterm-256color'
     Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true })
     const result = formatDocLink('auth-login')!
     // OSC 8 starts with \x1b]8;;

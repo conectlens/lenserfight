@@ -26,6 +26,11 @@ export const GLOBAL_ARGS = {
     description: 'Override project config mode to local for this invocation',
     default: false,
   },
+  cloud: {
+    type: 'boolean' as const,
+    description: 'Override project config mode to cloud for this invocation',
+    default: false,
+  },
   debug: {
     type: 'boolean' as const,
     description: 'Enable verbose debug diagnostics on stderr',

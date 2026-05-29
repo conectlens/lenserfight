@@ -8,6 +8,7 @@ import { readCliVersion } from './lib/version'
 function parseGlobalFlagsEarly(): void {
   const argv = process.argv.slice(2)
   if (argv.includes('--local')) process.env['LF_LOCAL'] = '1'
+  if (argv.includes('--cloud')) process.env['LF_CLOUD'] = '1'
   if (argv.includes('--debug')) process.env['LF_DEBUG'] = '1'
 }
 parseGlobalFlagsEarly()
@@ -46,6 +47,11 @@ const main = defineCommand({
       description: 'Override project config mode to local for this invocation',
       default: false,
     },
+    cloud: {
+      type: 'boolean',
+      description: 'Override project config mode to cloud for this invocation',
+      default: false,
+    },
     debug: {
       type: 'boolean',
       description: 'Enable verbose debug diagnostics on stderr',
@@ -55,6 +61,7 @@ const main = defineCommand({
   async run(ctx) {
     // Also set env vars from citty-parsed root args (handles `lf --local cmd`)
     if (ctx.args.local) process.env['LF_LOCAL'] = '1'
+    if (ctx.args.cloud) process.env['LF_CLOUD'] = '1'
     if (ctx.args.debug) process.env['LF_DEBUG'] = '1'
 
     const isLocal = process.env['LF_LOCAL'] === '1'
