@@ -6,7 +6,7 @@ type RpcResult<T> = { data: T | null; error: { message: string } | null };
 export interface ListWorkflowsArgs {
   limit: number;
   offset: number;
-  status?: string | null;
+  visibility?: string | null;
   lenser_id?: string | null;
 }
 export interface PagedResult { items: unknown[]; total: number }
@@ -31,6 +31,8 @@ function mapError(message: string | undefined): McpError | null {
   if (message.includes('access_denied')) return new McpError('FORBIDDEN', 'You do not have access to this workflow');
   if (message.includes('workflow_not_found')) return new McpError('NOT_FOUND', 'Workflow not found');
   if (message.includes('run_not_found')) return new McpError('NOT_FOUND', 'Workflow run not found');
+  if (message.includes('missing_lenser_id'))
+    return new McpError('MISSING_LENSER', 'lenser_id required. Set LENSERFIGHT_LENSER_ID or pass lenser_id.');
   return null;
 }
 
@@ -39,7 +41,7 @@ export const workflowService = {
     const { data, error } = (await sb.rpc('fn_mcp_workflow_list' as never, {
       p_limit: args.limit,
       p_offset: args.offset,
-      p_status: args.status ?? null,
+      p_visibility: args.visibility ?? null,
       p_lenser_id: args.lenser_id ?? null,
     })) as unknown as RpcResult<{ data: unknown[]; count: number }>;
     if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
