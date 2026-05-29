@@ -1,6 +1,8 @@
+import { mapToLifecycle } from '@lenserfight/api/contracts'
 import React from 'react'
 import type { PublicExecutionJobRecord } from '../../hooks/query/useExecutionJobs'
 import type { Contender } from '../../types/battle.types'
+import { ExecutionStatusBadge } from '../arena/ExecutionStatusBadge'
 
 interface ExecutionMetadataPanelProps {
   executionJobs: PublicExecutionJobRecord[]
@@ -48,12 +50,10 @@ export function ExecutionMetadataPanel({ executionJobs, contenders }: ExecutionM
               </div>
 
               <MetaRow label="Status" value={
-                <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                  job.status === 'completed' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' :
-                  job.status === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
-                  job.status === 'running' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                  'bg-surface-interactive text-surface-text-muted'
-                }`}>{job.status}</span>
+                <ExecutionStatusBadge
+                  lifecycle={mapToLifecycle(job.status, 'battle_job')}
+                  retryCount={job.retry_count}
+                />
               } />
 
               <MetaRow label="Duration" value={duration} />

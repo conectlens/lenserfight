@@ -223,6 +223,7 @@ export function ChallengeGeneratorStep({
           streamPromise.then(resolve).catch(reject)
         })
       } catch (err) {
+        console.error('[ChallengeGenerator] Text generation failed:', err)
         onGenerationStatusChange('failed')
         onGenerationErrorChange(normalizeError(err).message)
       }
@@ -269,6 +270,7 @@ export function ChallengeGeneratorStep({
       onQuestionTextChange(questionResult.trim())
       onGenerationStatusChange('ready')
     } catch (err) {
+      console.error('[ChallengeGenerator] Media generation failed:', err)
       onGenerationStatusChange('failed')
       onGenerationErrorChange(normalizeError(err).message)
     }

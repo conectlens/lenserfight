@@ -37,6 +37,20 @@ export interface BattleSeriesRecord {
   updated_at: string
 }
 
+export interface SeriesListRecord {
+  series_id: string
+  title: string
+  template_id: string
+  creator_lenser_id: string
+  round_count: number
+  current_round: number
+  status: 'active' | 'complete'
+  current_battle_id: string | null
+  current_battle_slug: string | null
+  current_battle_status: string | null
+  updated_at: string
+}
+
 export interface SeriesRoundRecord {
   series_id: string
   title: string
@@ -106,6 +120,7 @@ export interface BattleRecord {
   challenge_type?: string | null
   shared_input_snapshot?: Record<string, unknown> | null
   lenser_battle_policy?: Record<string, unknown> | null
+  automation_config?: Record<string, unknown> | null
 }
 
 export interface TrendingBattleRecord {
@@ -184,6 +199,8 @@ export interface CreateBattleInput {
   judging_mode?: string
   /** Challenge type ID from the challenge registry. */
   challenge_type?: string
+  /** Optional battle automation settings persisted as battles.battles.automation_config. */
+  automation_config?: Record<string, unknown>
 }
 
 export interface ContenderRecord {
@@ -456,6 +473,7 @@ export interface BattlesRepositoryPort {
   // Phase BH: battle series
   createSeries(templateId: string, title: string, roundCount?: number): Promise<BattleSeriesRecord>
   advanceSeries(seriesId: string): Promise<BattleSeriesRecord>
+  listSeries(limit?: number, offset?: number): Promise<SeriesListRecord[]>
   getSeries(seriesId: string): Promise<SeriesRoundRecord[]>
   // Phase BJ: model conformance logging
   logModelTestRun(input: LogModelTestRunInput): Promise<ModelTestRunRecord>
@@ -695,6 +713,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       p_slug: this.generateSlug(input.title),
       p_task_prompt: input.task_prompt,
       p_rubric_id: null,
+      p_automation_config: input.automation_config ?? {},
     })
     if (error) this.handleError(error)
     const battleId = Array.isArray(data) ? data[0] : data
@@ -721,6 +740,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       p_contender_structure: input.contender_structure ?? null,
       p_judging_mode: input.judging_mode ?? null,
       p_challenge_type: input.challenge_type ?? null,
+      p_automation_config: input.automation_config ?? null,
     })
     if (error) this.handleError(error)
     const row = Array.isArray(data) ? data[0] : data
@@ -1142,6 +1162,15 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     })
     if (error) this.handleError(error)
     return data as BattleSeriesRecord
+  }
+
+  async listSeries(limit = 24, offset = 0): Promise<SeriesListRecord[]> {
+    const { data, error } = await supabase.rpc('fn_list_series', {
+      p_limit: limit,
+      p_offset: offset,
+    })
+    if (error) this.handleError(error)
+    return (data ?? []) as SeriesListRecord[]
   }
 
   async getSeries(seriesId: string): Promise<SeriesRoundRecord[]> {

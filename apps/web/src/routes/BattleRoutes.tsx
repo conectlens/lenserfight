@@ -25,6 +25,9 @@ const LazyBattleTemplateEditorPage = lazy(() =>
 const LazyBattleSeriesPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.BattleSeriesPage }))
 )
+const LazySeriesListPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.SeriesListPage }))
+)
 const LazyCreateBattleWizard = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.CreateBattleWizard }))
 )
@@ -127,6 +130,22 @@ export function BattleRoutes(): React.ReactElement {
       element={
         <DashboardFrame>
           <CreateTemplateRoute />
+        </DashboardFrame>
+      }
+    />
+    <Route
+      path="/series"
+      element={
+        <DashboardFrame>
+          <LazySeriesListPage />
+        </DashboardFrame>
+      }
+    />
+    <Route
+      path="/series/:id"
+      element={
+        <DashboardFrame>
+          <LazyBattleSeriesPage />
         </DashboardFrame>
       }
     />

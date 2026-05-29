@@ -4,6 +4,7 @@ import { Trophy } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 
 import { BattleCard } from '../components/display/BattleCard'
+import { deriveBattleType } from '../util/battle-type-codec'
 import { SpectatorFeedWidget } from '../components/SpectatorFeedWidget'
 import { useBattlesFeed } from '../hooks/query/useBattlesFeed'
 
@@ -90,7 +91,7 @@ export function ArenaBattlesDiscoveryPage() {
                   title={b.title}
                   status={b.status}
                   totalVoteCount={b.total_vote_count}
-                  battleType={b.battle_type}
+                  battleType={deriveBattleType(b)}
                   voterEligibility={b.voter_eligibility}
                   votingOpensAt={b.voting_opens_at}
                   votingClosesAt={b.voting_closes_at}

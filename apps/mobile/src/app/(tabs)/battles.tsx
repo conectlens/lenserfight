@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView } from 'react-native'
 
 import { useBattleList } from '../../hooks/useMobileContent'
+import { getBattleTypeLabel } from '../../utils/battleTypeLabel'
 import { screenStyles } from '../../styles/screenStyles'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -53,7 +54,7 @@ export default function BattlesTab() {
               `battles.status.${STATUS_LABELS[battle.status] ?? battle.status}`,
               battle.status
             )}
-            meta={battle.battle_type}
+            meta={getBattleTypeLabel(battle)}
             tags={[]}
             onPress={() => router.push(`/battle/${battle.id}`)}
             testID="battle-list-item"

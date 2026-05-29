@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import { Linking, ScrollView, View } from 'react-native'
 
 import { useBattleDetail } from '../../hooks/useMobileContent'
+import { getBattleTypeLabel } from '../../utils/battleTypeLabel'
 import { screenStyles } from '../../styles/screenStyles'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -65,7 +66,7 @@ export default function BattleDetailRoute() {
                       battle.status
                     )}
                   />
-                  <Chip label={battle.battle_type} />
+                  <Chip label={getBattleTypeLabel(battle)} />
                 </View>
                 {battle.voting_opens_at && (
                   <Text variant="caption" color="muted">

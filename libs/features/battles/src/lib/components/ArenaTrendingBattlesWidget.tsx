@@ -4,6 +4,7 @@ import React from 'react'
 
 import { useTrendingBattles } from '../hooks/query/useTrendingBattles'
 import { HotBattleCard } from './display/HotBattleCard'
+import { deriveBattleType } from '../util/battle-type-codec'
 
 const DISPLAY_COUNT = 4
 
@@ -51,7 +52,7 @@ export function ArenaTrendingBattlesWidget({ baseUrl = '' }: ArenaTrendingBattle
               key={b.id}
               href={`${baseUrl}/battles/${b.slug}`}
               title={b.title}
-              battleType={b.battle_type}
+              battleType={deriveBattleType(b)}
               totalVoteCount={b.total_vote_count}
               voteVelocity={b.vote_velocity}
               contenderAName={b.contender_a_name}

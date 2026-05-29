@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, CheckCircle2, ChevronRight, Trophy } from 'lucide-react'
+import { CheckCircle2, ChevronRight, Trophy } from 'lucide-react'
 import React, { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -9,6 +9,7 @@ import type { SeriesRoundRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useShareContext } from '@lenserfight/features/share'
 import { Button, EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
+import { SeriesAdvanceButton } from '../components/series/SeriesAdvanceButton'
 
 // Phase BH — bracket-style view for a battle series. Owner sees an
 // "Advance Series" button when the current round battle is closed.
@@ -101,12 +102,11 @@ export function BattleSeriesPage() {
             </span>
           )}
         </div>
-        {canAdvance && (
-          <Button size="sm" onClick={() => advance.mutate()} disabled={advance.isPending}>
-            {advance.isPending ? 'Advancing…' : 'Advance series'}
-            <ArrowRight size={14} className="ml-1" />
-          </Button>
-        )}
+        <SeriesAdvanceButton
+          canAdvance={!!canAdvance}
+          isPending={advance.isPending}
+          onAdvance={() => advance.mutate()}
+        />
       </div>
 
       <ol className="mt-6 space-y-2">

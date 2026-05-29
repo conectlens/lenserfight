@@ -35,6 +35,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { BattleStatusBadge } from '../display/BattleStatusBadge'
+import { deriveBattleType } from '../../util/battle-type-codec'
 import type { Battle, BattleType, Contender, VoterEligibility } from '../../types/battle.types'
 import type { LensContextDetail } from '../../types/battle-layout.types'
 
@@ -459,6 +460,7 @@ function LenserPolicySection({ policy }: { policy: Record<string, unknown> }) {
 // ─── BattleRulesSection ───────────────────────────────────────────────────────
 
 function BattleRulesSection({ battle }: { battle: Battle }) {
+  const battleType = deriveBattleType(battle)
   const taskSource = battle.task_source as TaskSource | null | undefined
   const contenderStructure = battle.contender_structure as ContenderStructure | null | undefined
   const judgingMode = battle.judging_mode as JudgingMode | null | undefined
@@ -500,7 +502,7 @@ function BattleRulesSection({ battle }: { battle: Battle }) {
           <Row
             icon={Swords}
             label="Type"
-            value={BATTLE_TYPE_LABELS[battle.battle_type] ?? battle.battle_type}
+            value={BATTLE_TYPE_LABELS[battleType] ?? battleType}
           />
         )}
       </div>
@@ -526,13 +528,14 @@ export function BattleRulesDrawer({
   contenders,
 }: BattleRulesDrawerProps) {
   const taskSource = battle.task_source as TaskSource | null | undefined
+  const battleType = deriveBattleType(battle)
   const hasAIContenders =
     battle.contender_structure === 'ai_vs_ai' ||
     battle.contender_structure === 'human_vs_ai' ||
-    battle.battle_type === 'ai_vs_ai' ||
-    battle.battle_type === 'human_vs_ai' ||
-    battle.battle_type === 'workflow_battle' ||
-    battle.battle_type === 'lenser_battle'
+    battleType === 'ai_vs_ai' ||
+    battleType === 'human_vs_ai' ||
+    battleType === 'workflow_battle' ||
+    battleType === 'lenser_battle'
 
   return (
     <Drawer open={open} onClose={onClose} side="right" width="w-80 sm:w-96" title="Battle Rules">
@@ -579,12 +582,12 @@ export function BattleRulesDrawer({
         {/* ── Type-specific sections ─────────────────────────────────────── */}
 
         {/* Workflow task */}
-        {(taskSource === 'workflow' || battle.battle_type === 'workflow_battle') &&
+        {(taskSource === 'workflow' || battleType === 'workflow_battle') &&
           battle.workflow_id && <WorkflowSection workflowId={battle.workflow_id} />}
 
         {/* Lens task */}
         {(taskSource === 'lens' ||
-          (!taskSource && battle.lens_id && battle.battle_type !== 'workflow_battle')) && (
+          (!taskSource && battle.lens_id && battleType !== 'workflow_battle')) && (
           <LensSection battle={battle} contenders={contenders} lensDetails={lensDetails} />
         )}
 
@@ -594,7 +597,7 @@ export function BattleRulesDrawer({
         )}
 
         {/* Legacy: lens linked (no task_source, has lens_id, no contender lens details handled above) */}
-        {!taskSource && battle.lens_id && battle.battle_type === 'lenser_battle' && (
+        {!taskSource && battle.lens_id && battleType === 'lenser_battle' && (
           <Section label="Lens">
             {contenders && contenders.length > 0 ? (
               <div className="space-y-2">

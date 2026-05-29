@@ -1,6 +1,7 @@
 import type { BattleLayoutStrategy } from '../../../types/battle-layout.types'
 import type { BattleContentType } from '../../../types/battle-renderer.types'
 import type { Battle, BattleType } from '../../../types/battle.types'
+import { deriveBattleType } from '../../../util/battle-type-codec'
 import { AudioBattleLayout } from './AudioBattleLayout'
 import { GenericBattleLayout } from './GenericBattleLayout'
 import { ImageBattleLayout } from './ImageBattleLayout'
@@ -59,12 +60,11 @@ const BATTLE_TYPE_LAYOUT: Partial<Record<BattleType, string>> = {
  * Returns the most appropriate BattleLayoutStrategy for the given battle.
  */
 export function resolveBattleLayout(battle: Battle): BattleLayoutStrategy {
-  // 1. battle_type override
-  if (battle.battle_type) {
-    const override = BATTLE_TYPE_LAYOUT[battle.battle_type]
-    if (override && LAYOUT_REGISTRY[override]) {
-      return LAYOUT_REGISTRY[override]!
-    }
+  // 1. battle type override
+  const battleType = deriveBattleType(battle)
+  const override = BATTLE_TYPE_LAYOUT[battleType]
+  if (override && LAYOUT_REGISTRY[override]) {
+    return LAYOUT_REGISTRY[override]!
   }
 
   // 2. content_type mapping

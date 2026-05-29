@@ -5,6 +5,7 @@ import { HelpButton } from '@lenserfight/ui/components'
 import { ExportButton } from '@lenserfight/features/exports'
 import type { Battle, BattleType, BattleUIPhase } from '../../types/battle.types'
 import { useCountdown } from '../../hooks/utils/useCountdown'
+import { deriveBattleType } from '../../util/battle-type-codec'
 
 const PHASE_LABELS: Record<BattleUIPhase, { label: string; color: string }> = {
   idle: { label: 'Open', color: 'bg-status-green/10 text-status-green' },
@@ -61,6 +62,7 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
   onToggleMusic,
 }) => {
   const { label, color } = PHASE_LABELS[currentPhase]
+  const battleType = deriveBattleType(battle)
 
   // Determine the relevant countdown based on phase
   const votingOpensCountdown = useCountdown(
@@ -103,7 +105,7 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
 
       {/* Category chip */}
       <span className="hidden sm:flex flex-shrink-0 items-center text-[11px] font-semibold px-2.5 py-1 rounded-full bg-surface-raised text-surface-text-muted border border-surface-border">
-        {BATTLE_TYPE_SHORT[battle.battle_type] ?? battle.battle_type}
+        {BATTLE_TYPE_SHORT[battleType] ?? battleType}
       </span>
 
       {/* Phase badge */}
@@ -187,7 +189,7 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
 
       <HelpButton
         path={
-          BATTLE_TYPE_DOC_PATH[battle.battle_type] ??
+          BATTLE_TYPE_DOC_PATH[battleType] ??
           '/tutorials/battle-walkthroughs/your-first-battle'
         }
         label="How to battle"

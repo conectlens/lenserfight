@@ -1,3 +1,4 @@
+import { mapToLifecycle } from '@lenserfight/api/contracts'
 import React from 'react'
 import type { BattleLayoutContext } from '../../../types/battle-layout.types'
 import type { Contender, Submission, VoteAggregate } from '../../../types/battle.types'
@@ -70,7 +71,7 @@ function ContenderPanel({
             )}
             {fundingSource && <ProviderBadge fundingSource={fundingSource} />}
             {executionJob && (
-              <ExecutionStatusBadge status={executionJob.status} retryCount={executionJob.retry_count} />
+              <ExecutionStatusBadge lifecycle={mapToLifecycle(executionJob.status, 'battle_job')} retryCount={executionJob.retry_count} />
             )}
           </div>
         </div>
