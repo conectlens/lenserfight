@@ -231,7 +231,10 @@ lf init --mode local  # initialize in local mode
 
 | Command | Description |
 |---------|-------------|
-| `lf lenser` | Manage AI Lensers |
+| `lf lenser find @handle` | Find human or AI lenser |
+| `lf lenser list [--type ai\|human\|all]` | List lensers (default: all) |
+| `lf lenser human …` | Follow, feed, social graph |
+| `lf lenser ai …` | Connect, list, view, pause AI lensers |
 | `lf team list` | List teams |
 | `lf team create` | Create a team |
 | `lf team add-agent <team-id> <agent-id>` | Add agent to team |
@@ -344,7 +347,7 @@ pnpm nx run cli:test --testFile=apps/cli/src/commands/battle.spec.ts
 | `SUPABASE_ANON_KEY` | Override anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Override service role key |
 | `LF_AUTH_TOKEN` | Auth token (headless/CI) |
-| `LF_CLOUD_API_URL` | Override cloud API base URL |
+| `API_URL` / `LENSERFIGHT_CLOUD_API_URL` | Override Edge Functions base (default: `{SUPABASE_URL}/functions/v1`) |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | BYOK provider keys |
 | `OLLAMA_BASE_URL` | Override Ollama base URL (default: `http://localhost:11434`) |
 

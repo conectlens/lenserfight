@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import { callRest } from '../utils/api'
 import { getActiveProfileName } from '../utils/profiles'
-import { resolveConfig } from '../config/project-config'
+import { probeBackendHealth } from '../lib/health-probe'
 import { truncate } from '../utils/output'
 import { A, sym } from '../utils/ansi'
 
@@ -95,21 +95,24 @@ export const COMMAND_CATALOG: Array<{ cmd: string; desc: string }> = [
   { cmd: 'battle tournament start',       desc: 'Start the tournament — seeds bracket and creates round 1 battles' },
   { cmd: 'battle tournament bracket',     desc: 'Show the tournament bracket' },
   // ── lenser ──────────────────────────────────────────────────────────────────
-  { cmd: 'lenser connect',                desc: 'Register a new AI lenser' },
-  { cmd: 'lenser list',                   desc: 'List registered AI lensers' },
-  { cmd: 'lenser view',                   desc: 'View lenser config and status' },
-  { cmd: 'lenser remove',                 desc: 'Deactivate an AI lenser' },
-  { cmd: 'lenser enable',                 desc: 'Re-activate a deactivated AI lenser' },
-  { cmd: 'lenser test',                   desc: 'Send a probe to verify an AI lenser is reachable' },
-  { cmd: 'lenser types',                  desc: 'List all supported AI lenser types' },
-  { cmd: 'lenser pause',                  desc: 'Pause an AI lenser — new runs will be blocked' },
-  { cmd: 'lenser resume',                 desc: 'Resume a paused AI lenser' },
-  { cmd: 'lenser status',                 desc: 'Show workspace settings and active run count for a lenser' },
-  { cmd: 'lenser follow',                 desc: 'Follow a lenser by UUID' },
-  { cmd: 'lenser unfollow',               desc: 'Unfollow a lenser' },
-  { cmd: 'lenser followers',              desc: 'List followers of a lenser' },
-  { cmd: 'lenser following',              desc: 'List lensers you follow' },
-  { cmd: 'lenser suggested',              desc: 'Discover suggested lensers ranked by tag overlap' },
+  { cmd: 'lenser find',                   desc: 'Find a human or AI lenser by @handle' },
+  { cmd: 'lenser list',                   desc: 'List lensers (--type ai|human|all)' },
+  { cmd: 'lenser ai connect',             desc: 'Register a new AI lenser (gateway runner)' },
+  { cmd: 'lenser ai list',                desc: 'List your and public AI lensers' },
+  { cmd: 'lenser ai view',                desc: 'View AI lenser profile and status' },
+  { cmd: 'lenser ai remove',              desc: 'Deactivate a gateway runner' },
+  { cmd: 'lenser ai enable',              desc: 'Re-activate a deactivated runner' },
+  { cmd: 'lenser ai test',                desc: 'Probe a gateway runner' },
+  { cmd: 'lenser ai types',               desc: 'Supported AI adapter types' },
+  { cmd: 'lenser ai pause',               desc: 'Pause an AI lenser — block new runs' },
+  { cmd: 'lenser ai resume',              desc: 'Resume a paused AI lenser' },
+  { cmd: 'lenser ai status',              desc: 'Workspace settings and active run count' },
+  { cmd: 'lenser human follow',           desc: 'Follow a human lenser by @handle or UUID' },
+  { cmd: 'lenser human unfollow',         desc: 'Unfollow a human lenser' },
+  { cmd: 'lenser human followers',        desc: 'List followers' },
+  { cmd: 'lenser human following',        desc: 'List following' },
+  { cmd: 'lenser human suggested',        desc: 'Suggested lensers by tag overlap' },
+  { cmd: 'lenser human threads',          desc: 'Personalised thread feed' },
   // ── run (top-level) ─────────────────────────────────────────────────────────
   { cmd: 'run submit',                    desc: 'Submit a response for a running battle' },
   { cmd: 'run vote',                      desc: 'Vote on a run' },
@@ -309,13 +312,14 @@ const REQUIRED_FLAGS: Record<string, string[]> = {
   'battle byok-key list':       ['--agent'],
   'battle byok-key revoke':     ['--agent'],
   // lenser
-  'lenser view':                [],
-  'lenser follow':              [],
-  'lenser unfollow':            [],
-  'lenser pause':               [],
-  'lenser resume':              [],
-  'lenser status':              [],
-  'lenser test':                [],
+  'lenser find':                [],
+  'lenser ai view':             [],
+  'lenser human follow':        [],
+  'lenser human unfollow':      [],
+  'lenser ai pause':            [],
+  'lenser ai resume':           [],
+  'lenser ai status':           [],
+  'lenser ai test':             [],
   // memory
   'memory list-entries':        ['--agent'],
   'memory list-profiles':       ['--agent'],
@@ -366,29 +370,7 @@ export function validateSubcommand(argv: string[]): string | null {
 // ─── Health probe ────────────────────────────────────────────────────────────
 
 async function probeHealth(): Promise<boolean> {
-  try {
-    const config = resolveConfig()
-    if (!config.supabaseUrl) return false
-    const probeUrls = [
-      config.cloudApiUrl ? `${config.cloudApiUrl}/health` : null,
-      `${config.supabaseUrl}/auth/v1/health`,
-    ].filter((u): u is string => !!u)
-
-    for (const url of probeUrls) {
-      try {
-        const ctrl = new AbortController()
-        const timer = setTimeout(() => ctrl.abort(), 1500)
-        const res = await fetch(url, { signal: ctrl.signal })
-        clearTimeout(timer)
-        if (res.ok) return true
-      } catch {
-        /* try next */
-      }
-    }
-    return false
-  } catch {
-    return false
-  }
+  return probeBackendHealth()
 }
 
 // ─── Cached render state (for synchronous repaints) ──────────────────────────
@@ -592,13 +574,13 @@ const SUB_DASHBOARDS: Record<string, SubDashboardDef> = {
   l: {
     title: 'Lensers',
     commands: [
-      { key: 'l', cmd:    ['lenser', 'list'],                             label: 'list AI lensers' },
-      { key: 'v', prompt: 'lenser view ',                                 label: 'view lenser     [<UUID>]' },
-      { key: 'f', cmd:    ['lenser', 'followers'],                        label: 'list followers' },
-      { key: 'g', cmd:    ['lenser', 'following'],                        label: 'list following' },
-      { key: 'd', cmd:    ['lenser', 'suggested'],                        label: 'discover lensers' },
-      { key: 'p', prompt: 'lenser pause ',                                label: 'pause lenser    [<handle>]' },
-      { key: 'r', prompt: 'lenser resume ',                               label: 'resume lenser   [<handle>]' },
+      { key: 'l', cmd:    ['lenser', 'list'],                             label: 'list lensers    [--type ai|human|all]' },
+      { key: 'v', prompt: 'lenser ai view ',                              label: 'view AI lenser  [@handle|id]' },
+      { key: 'f', cmd:    ['lenser', 'human', 'followers'],               label: 'list followers' },
+      { key: 'g', cmd:    ['lenser', 'human', 'following'],              label: 'list following' },
+      { key: 'd', cmd:    ['lenser', 'human', 'suggested'],              label: 'discover lensers' },
+      { key: 'p', prompt: 'lenser ai pause ',                             label: 'pause AI lenser [@handle]' },
+      { key: 'r', prompt: 'lenser ai resume ',                            label: 'resume AI lenser [@handle]' },
     ],
     exitKeys: ['q', 'Q', '\x1b'],
   },

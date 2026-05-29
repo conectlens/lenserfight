@@ -71,7 +71,8 @@ const GUIDANCE: Record<CliErrorKind, RecoveryGuidance> = {
     hints: [
       'double-check the ID / slug argument',
       'lf battle list   # list available battles',
-      'lf lenser list   # list available lensers',
+      'lf lenser find @handle   # find human or AI lenser',
+      'lf lenser list           # all lensers (--type ai|human)',
     ],
     inspectArea: 'verify the ID or slug',
     docsKey: 'resources',

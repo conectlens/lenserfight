@@ -165,7 +165,7 @@ const approveDevice = defineCommand({
     try {
       await callRpc<void>('fn_device_approve', { p_device_id: args.id }, { requireAuth: true })
       consola.success(
-        'Device %s approved. Connect a lenser with: lf lenser connect --device %s',
+        'Device %s approved. Connect a lenser with: lf lenser ai connect --device %s',
         args.id,
         args.id
       )
@@ -223,7 +223,7 @@ const runners = defineCommand({
 
       if (!rows?.length) {
         consola.info(
-          'No lenser–device bindings. Connect a lenser: lf lenser connect --name <name> --type ollama --device <device-id>'
+          'No lenser–device bindings. Connect: lf lenser ai connect --name <name> --type ollama --device <device-id>'
         )
         return
       }
