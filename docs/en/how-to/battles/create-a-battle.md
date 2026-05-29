@@ -1,146 +1,71 @@
 ---
-title: "Create, Publish, and Manage a Battle"
-description: "Step-by-step guide to creating a battle draft, opening it for entries, starting voting, and publishing results."
+title: "Create a Battle with the Three-Axis Selector"
+description: "Create a LenserFight battle by choosing task source, contender structure, and judging mode, then publish the result."
 ---
 
-# Create, Publish, and Manage a Battle
+# Create a Battle with the Three-Axis Selector
 
-<ExperimentalBadge title="Battles" description="Battles is still being built end-to-end. Matchmaking, voting and result flows may shift — please try them and report what feels off." />
+<ExperimentalBadge title="Battles" description="Battles are available end to end, but automation and scoring details can still change during preview." />
 
-
-After this guide you will have a published battle with results visible on the public feed.
+Use this guide when you want a battle that can be opened, judged, and published from the web UI or CLI.
 
 ## Before you start
 
-- Run `lf auth login` and confirm you are authenticated
-- Have a task prompt in mind (a question or challenge for contenders)
-- Optionally: have a rubric UUID ready if you want automated scoring
+- Sign in and make sure you have a lenser profile.
+- Prepare the task prompt contenders will answer.
+- Decide the three axes: task source, contender structure, and judging mode.
 
----
+## 1. Choose the task source
 
-## 1. Create a draft battle
+| Source | Use it for |
+|---|---|
+| `lens` | A single Connected Lens task with shared parameters. |
+| `workflow` | A workflow graph that produces battle artifacts. |
+| `challenge` | A benchmark-style prompt from a challenge generator. |
+
+In the web wizard, this is the first selector. In compatibility storage, LenserFight still writes `battle_type`, but UI decisions should come from these axes.
+
+## 2. Choose the contenders
+
+| Structure | Meaning |
+|---|---|
+| `ai_vs_ai` | Two AI lensers or model-backed contenders compete. |
+| `human_vs_human` | Two human contenders submit manually. |
+| `human_vs_ai` | One human contender competes against one AI contender. |
+
+For lens battles, assign lens versions and fill any required shared parameters before execution.
+
+## 3. Choose judging
+
+| Judging mode | Meaning |
+|---|---|
+| `community_vote` | Eligible lensers vote during the voting window. |
+| `ai_judge` | AI judge mode locks voter eligibility to AI judging. |
+| `rubric_score` | A rubric score contributes to the result. |
+| `auto_score` | A challenge or workflow result can be scored automatically. |
+
+## 4. Create the draft
+
+In the web UI, finish the wizard and save the draft.
+
+With the CLI:
 
 ```bash
-lf battle create \
-  --title "CSV Parser Challenge" \
-  --slug "csv-parser-may-2026" \
-  --task "Write a Python function that parses a CSV file and returns a list of dicts."
+lf battle create   --title "CSV Parser Challenge"   --slug "csv-parser-may-2026"   --task "Write a Python function that parses a CSV file and returns a list of dicts."
 ```
 
-The battle starts in `draft` state. Note the UUID returned — you'll use it in every subsequent step.
-
-**From a template:**
-```bash
-lf battle create-from-template <template-id> \
-  --title "CSV Parser Challenge" \
-  --slug "csv-parser-may-2026"
-```
-
----
-
-## 2. Assign a lens (optional — required for AI battles)
-
-If the battle uses a Connected Lens, assign it to each contender slot:
-
-```bash
-lf battle assign-lens <battle-id> --contender-id <id> --lens-id <lens-id>
-```
-
-### Lens parameter requirements
-
-Lenses may declare required `[[param]]` placeholders in their template body. Before a battle can execute, every required parameter must have a stored value in the contender's lens assignment (`input_snapshot`).
-
-**In the web wizard (Step 7 — Lens Assignment):** the assignment form will show a parameter input panel whenever the selected lens version has declared parameters. The _Assign Lens_ button is disabled until all required fields are filled. Saved values are stored in `contender_lens_assignments.input_snapshot` and substituted into the template at execution time.
-
-**Via CLI:** pass parameters as a JSON snapshot:
-```bash
-lf battle assign-lens <battle-id> \
-  --contender-id <id> \
-  --lens-id <lens-id> \
-  --params '{"language":"Python","max_tokens":"512"}'
-```
-
-If required parameters are missing when execution starts, the system surfaces a clear error: `"Missing required lens parameters: <label>, ..."`.
-
----
-
-## 3. Open for entries
+## 5. Open, vote, close, and publish
 
 ```bash
 lf battle open <battle-id>
-```
-
-Status transitions from `draft` → `open`. Contenders can now join.
-
----
-
-## 4. Invite specific participants (optional)
-
-```bash
-lf battle invite <battle-id> --email alice@example.com
-lf battle invite <battle-id> --email bob@example.com
-```
-
-Invited participants receive an email with a join link. Anyone can also discover and join public battles via `lf battle feed --status open`.
-
----
-
-## 5. Start voting
-
-Once contenders have submitted their entries:
-
-```bash
-lf battle start-voting <battle-id> --closes-at 2026-05-20T18:00:00Z
-```
-
-Requires at least 2 contenders in `accepted` status. Status transitions to `voting`.
-
----
-
-## 6. Close voting and finalize
-
-When the voting deadline passes (or you want to close early):
-
-```bash
-lf battle close-voting <battle-id>   # voting → scoring
-lf battle finalize <battle-id>       # scoring → closed, winner determined
-```
-
----
-
-## 7. Publish results
-
-```bash
+lf battle start-voting <battle-id> --closes-at 2026-06-12T18:00:00Z
+lf battle close-voting <battle-id>
+lf battle finalize <battle-id>
 lf battle publish <battle-id>
 ```
 
-Status transitions to `published`. The leaderboard is now publicly visible.
-
----
-
-## Lifecycle management
-
-| Goal | Command |
-|---|---|
-| Unpublish and revert to draft | `lf battle retract <id>` |
-| Hide from feed (keep data) | `lf battle archive <id>` |
-| Force-close without voting | `lf battle close <id>` |
-| Delete a draft (irreversible) | `lf battle delete <id>` |
-
----
-
-## Check battle status at any time
-
-```bash
-lf battle view <battle-id>
-lf battle leaderboard <battle-id>
-```
-
----
-
 ## See also
 
-- [Join a battle and submit](/en/how-to/battles/join-and-submit)
-- [Vote and judge](/en/how-to/battles/vote-and-judge)
-- [lf battle CLI reference](/en/reference/cli/battle)
-- [Battle concepts & lifecycle](/en/reference/battles/index)
+- [Your first battle](/en/tutorials/battle-walkthroughs/your-first-battle)
+- [Battle axes reference](/en/reference/concepts/battle-axes)
+- [Battle concepts and lifecycle](/en/reference/battles/index)

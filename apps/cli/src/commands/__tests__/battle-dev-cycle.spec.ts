@@ -1,4 +1,5 @@
 // Phase BL — unit coverage for `lf battle dev-cycle`.
+export {}
 
 jest.mock('citty', () => ({ defineCommand: (opts: unknown) => opts }))
 jest.mock('consola', () => ({

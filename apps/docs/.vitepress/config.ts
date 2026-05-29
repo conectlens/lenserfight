@@ -307,6 +307,37 @@ const EN_REFERENCE_WORKFLOWS_SIDEBAR = [
   },
 ]
 
+const EN_REFERENCE_WORKFLOW_NODES_SIDEBAR = [
+  {
+    text: 'Workflow Nodes',
+    collapsed: true,
+    items: [
+      { text: 'Overview', link: '/en/reference/workflow-nodes/' },
+      { text: 'Lens Execute', link: '/en/reference/workflow-nodes/lens_execute' },
+      { text: 'Prompt Template', link: '/en/reference/workflow-nodes/prompt_template' },
+      { text: 'HTTP Request', link: '/en/reference/workflow-nodes/http_request' },
+      { text: 'Code', link: '/en/reference/workflow-nodes/code' },
+      { text: 'Switch', link: '/en/reference/workflow-nodes/switch' },
+      { text: 'Loop Map', link: '/en/reference/workflow-nodes/loop_map' },
+      { text: 'Agent Execute', link: '/en/reference/workflow-nodes/agent_execute' },
+      { text: 'Output Parser', link: '/en/reference/workflow-nodes/output_parser' },
+      { text: 'Vector Search', link: '/en/reference/workflow-nodes/vector_search' },
+      { text: 'Memory Read', link: '/en/reference/workflow-nodes/memory_read' },
+      { text: 'Memory Write', link: '/en/reference/workflow-nodes/memory_write' },
+      { text: 'Embedding', link: '/en/reference/workflow-nodes/embedding' },
+      { text: 'Summarizer', link: '/en/reference/workflow-nodes/summarizer' },
+      { text: 'Classifier', link: '/en/reference/workflow-nodes/classifier' },
+      { text: 'Manual Trigger', link: '/en/reference/workflow-nodes/manual_trigger' },
+      { text: 'Schedule Trigger', link: '/en/reference/workflow-nodes/schedule_trigger' },
+      { text: 'Webhook Trigger', link: '/en/reference/workflow-nodes/webhook_trigger' },
+      { text: 'Battle Create', link: '/en/reference/workflow-nodes/battle_create' },
+      { text: 'Judge Battle', link: '/en/reference/workflow-nodes/judge_battle' },
+      { text: 'Score Aggregator', link: '/en/reference/workflow-nodes/score_aggregator' },
+      { text: 'Series Advance', link: '/en/reference/workflow-nodes/series_advance' },
+    ],
+  },
+]
+
 const EN_REFERENCE_SIDEBAR = [
   {
     text: 'Reference',
@@ -314,6 +345,7 @@ const EN_REFERENCE_SIDEBAR = [
       { text: 'Community API', link: '/en/reference/community-api/index' },
       { text: 'CLI', link: '/en/reference/cli/index' },
       { text: 'Battles', link: '/en/reference/battles/index' },
+      { text: 'Battle Axes', link: '/en/reference/concepts/battle-axes' },
       { text: 'Connectors (alpha)', link: '/en/reference/connectors/index' },
       {
         text: 'MCP Server',
@@ -351,6 +383,34 @@ const EN_REFERENCE_SIDEBAR = [
       { text: 'Database', link: '/en/reference/database/schema-overview' },
       { text: 'Workflows', link: '/en/reference/workflows/execution-engine' },
       { text: 'Workflow Node Catalog', link: '/en/reference/workflows/workflow-node-catalog' },
+      {
+        text: 'Workflow Nodes',
+        collapsed: true,
+        items: [
+          { text: 'Overview', link: '/en/reference/workflow-nodes/' },
+          { text: 'Lens Execute', link: '/en/reference/workflow-nodes/lens_execute' },
+          { text: 'Prompt Template', link: '/en/reference/workflow-nodes/prompt_template' },
+          { text: 'HTTP Request', link: '/en/reference/workflow-nodes/http_request' },
+          { text: 'Code', link: '/en/reference/workflow-nodes/code' },
+          { text: 'Switch', link: '/en/reference/workflow-nodes/switch' },
+          { text: 'Loop Map', link: '/en/reference/workflow-nodes/loop_map' },
+          { text: 'Agent Execute', link: '/en/reference/workflow-nodes/agent_execute' },
+          { text: 'Output Parser', link: '/en/reference/workflow-nodes/output_parser' },
+          { text: 'Vector Search', link: '/en/reference/workflow-nodes/vector_search' },
+          { text: 'Memory Read', link: '/en/reference/workflow-nodes/memory_read' },
+          { text: 'Memory Write', link: '/en/reference/workflow-nodes/memory_write' },
+          { text: 'Embedding', link: '/en/reference/workflow-nodes/embedding' },
+          { text: 'Summarizer', link: '/en/reference/workflow-nodes/summarizer' },
+          { text: 'Classifier', link: '/en/reference/workflow-nodes/classifier' },
+          { text: 'Manual Trigger', link: '/en/reference/workflow-nodes/manual_trigger' },
+          { text: 'Schedule Trigger', link: '/en/reference/workflow-nodes/schedule_trigger' },
+          { text: 'Webhook Trigger', link: '/en/reference/workflow-nodes/webhook_trigger' },
+          { text: 'Battle Create', link: '/en/reference/workflow-nodes/battle_create' },
+          { text: 'Judge Battle', link: '/en/reference/workflow-nodes/judge_battle' },
+          { text: 'Score Aggregator', link: '/en/reference/workflow-nodes/score_aggregator' },
+          { text: 'Series Advance', link: '/en/reference/workflow-nodes/series_advance' },
+        ],
+      },
       {
         text: 'AI Providers',
         collapsed: true,
@@ -421,6 +481,12 @@ export default defineConfig({
     /^\/ray$/,
     /^\/ray\//,
     /ConectLens-agent-skills$/,
+    /cli\/dev$/,
+    /cli\/reset$/,
+    /\.\/dev$/,
+    /\.\/reset$/,
+    /dev\.md$/,
+    /reset\.md$/,
   ],
 
   title: SITE_TITLE,
@@ -481,9 +547,9 @@ export default defineConfig({
     pageData.description = description
     pageData.frontmatter['description'] = description
     pageData.frontmatter['head'] ??= []
-    ;(pageData.frontmatter['head'] as unknown[]).push(
-      ...buildPageHeadTags(relativePath, title, description, frontmatter)
-    )
+      ; (pageData.frontmatter['head'] as unknown[]).push(
+        ...buildPageHeadTags(relativePath, title, description, frontmatter)
+      )
   },
 
   head: [
@@ -663,19 +729,19 @@ export default defineConfig({
     // ── GA4 (production only — injected at build time via env) ─────────────────
     ...(process.env['ENV_MODE'] === 'production' && process.env['GA_MEASUREMENT_ID']
       ? ([
-          [
-            'script',
-            {
-              async: '',
-              src: `https://www.googletagmanager.com/gtag/js?id=${process.env['GA_MEASUREMENT_ID']}`,
-            },
-          ],
-          [
-            'script',
-            {},
-            `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${process.env['GA_MEASUREMENT_ID']}',{send_page_view:false});`,
-          ],
-        ] as [string, Record<string, string>, string?][])
+        [
+          'script',
+          {
+            async: '',
+            src: `https://www.googletagmanager.com/gtag/js?id=${process.env['GA_MEASUREMENT_ID']}`,
+          },
+        ],
+        [
+          'script',
+          {},
+          `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${process.env['GA_MEASUREMENT_ID']}',{send_page_view:false});`,
+        ],
+      ] as [string, Record<string, string>, string?][])
       : []),
   ],
 
@@ -710,27 +776,27 @@ export default defineConfig({
       writeFileSync(
         bareHtmlPath,
         `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">` +
-          `<meta http-equiv="refresh" content="0;url=${targetUrl}">` +
-          `<link rel="canonical" href="${targetUrl}">` +
-          `<title>LenserFight Docs</title>` +
-          `<style>` +
-          `*,::before,::after{box-sizing:border-box;margin:0;padding:0}` +
-          `html,body{height:100%;background:#0a0f1e;color:#f5f5f5;font-family:system-ui,sans-serif}` +
-          `body{display:flex;align-items:center;justify-content:center}` +
-          `.ring{position:absolute;border-radius:50%;border:3px solid transparent}` +
-          `.r1{width:64px;height:64px;border-top-color:#f0c040;animation:spin 1.4s linear infinite}` +
-          `.r2{width:52px;height:52px;border-top-color:rgba(240,192,64,.4);animation:spin .9s linear infinite reverse}` +
-          `.r3{width:40px;height:40px;background:rgba(240,192,64,.08);border:none;animation:pulse 1.8s ease-in-out infinite}` +
-          `.dot{width:8px;height:8px;border-radius:50%;background:#f0c040;animation:pulse 1s ease-in-out infinite}` +
-          `.wrap{position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center}` +
-          `@keyframes spin{to{transform:rotate(360deg)}}` +
-          `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}` +
-          `</style></head>` +
-          `<body><div class="wrap">` +
-          `<div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="dot"></div>` +
-          `</div>` +
-          `<script>window.location.replace(${JSON.stringify(targetUrl)})<\/script>` +
-          `</body></html>`
+        `<meta http-equiv="refresh" content="0;url=${targetUrl}">` +
+        `<link rel="canonical" href="${targetUrl}">` +
+        `<title>LenserFight Docs</title>` +
+        `<style>` +
+        `*,::before,::after{box-sizing:border-box;margin:0;padding:0}` +
+        `html,body{height:100%;background:#0a0f1e;color:#f5f5f5;font-family:system-ui,sans-serif}` +
+        `body{display:flex;align-items:center;justify-content:center}` +
+        `.ring{position:absolute;border-radius:50%;border:3px solid transparent}` +
+        `.r1{width:64px;height:64px;border-top-color:#f0c040;animation:spin 1.4s linear infinite}` +
+        `.r2{width:52px;height:52px;border-top-color:rgba(240,192,64,.4);animation:spin .9s linear infinite reverse}` +
+        `.r3{width:40px;height:40px;background:rgba(240,192,64,.08);border:none;animation:pulse 1.8s ease-in-out infinite}` +
+        `.dot{width:8px;height:8px;border-radius:50%;background:#f0c040;animation:pulse 1s ease-in-out infinite}` +
+        `.wrap{position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center}` +
+        `@keyframes spin{to{transform:rotate(360deg)}}` +
+        `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}` +
+        `</style></head>` +
+        `<body><div class="wrap">` +
+        `<div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="dot"></div>` +
+        `</div>` +
+        `<script>window.location.replace(${JSON.stringify(targetUrl)})<\/script>` +
+        `</body></html>`
       )
     }
     function mirrorEnSection(enSectionDir: string, bareSectionDir: string, urlBase: string) {
@@ -821,6 +887,7 @@ export default defineConfig({
             items: [
               { text: 'CLI', link: '/tr/reference/cli/index' },
               { text: 'Savaşlar', link: '/tr/reference/battles/index' },
+              { text: 'Savaş Eksenleri', link: '/tr/reference/concepts/battle-axes' },
               { text: 'Platform ve API', link: '/tr/reference/platform-api/api-overview' },
               { text: 'Veritabanı', link: '/tr/reference/database/schema-overview' },
               { text: 'MCP Sunucusu', link: '/tr/reference/mcp-server/index' },
@@ -2610,6 +2677,7 @@ export default defineConfig({
         },
       ],
       '/en/reference/workflows/': EN_REFERENCE_WORKFLOWS_SIDEBAR,
+      '/en/reference/workflow-nodes/': EN_REFERENCE_WORKFLOW_NODES_SIDEBAR,
       '/en/reference/cli/': [
         {
           text: 'CLI',

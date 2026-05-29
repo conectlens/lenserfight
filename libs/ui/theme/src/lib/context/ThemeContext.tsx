@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { useAuth } from '@lenserfight/features/auth'
+import { useOptionalAuth } from '@lenserfight/features/auth'
 
 import { themeController, Theme, ResolvedTheme, resolveTheme, getSystemTheme } from '../themeController'
 
@@ -16,7 +16,8 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth()
+  const auth = useOptionalAuth()
+  const user = auth?.user
   const [themeMode, setThemeModeState] = useState<Theme>('system')
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(getSystemTheme())
 

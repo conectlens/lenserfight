@@ -390,3 +390,8 @@ export const useAuth = () => {
   if (!context) throw new Error('useAuth must be used within AuthProvider')
   return context
 }
+
+/** Returns auth context if available, null otherwise. Safe to call outside AuthProvider (e.g. during HMR boundary validation). */
+export const useOptionalAuth = (): AuthContextType | null => {
+  return useContext(AuthContext) ?? null
+}

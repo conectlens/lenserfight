@@ -75,6 +75,7 @@ export function stripMarkdown(value: string): string {
   return compactText(
     value
       .replace(/^---[\s\S]*?---/, '')
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
       .replace(/```[\s\S]*?```/g, ' ')
       .replace(/`([^`]+)`/g, '$1')
       .replace(/!\[[^\]]*]\([^)]+\)/g, ' ')
