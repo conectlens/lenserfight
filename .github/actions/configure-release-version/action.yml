@@ -1,0 +1,48 @@
+name: Configure release version
+description: >
+  Map a release channel to npm dist-tag, SemVer 2.0 pre-release identifier (preid),
+  and Nx version specifier per industry-standard semver/npm conventions.
+
+inputs:
+  release_channel:
+    description: Release lane (stable, beta, rc, nightly, alpha).
+    required: true
+  version_specifier:
+    description: Nx version specifier (auto, patch, minor, major, prerelease, prepatch, preminor, premajor).
+    required: true
+    default: auto
+  allow_major:
+    description: Set to true when intentionally publishing a major release.
+    required: false
+    default: 'false'
+  git_ref:
+    description: Branch or ref name (e.g. main, development, release/1.2).
+    required: true
+
+outputs:
+  dist_tag:
+    description: npm dist-tag (latest, beta, rc, nightly, alpha).
+    value: ${{ steps.configure.outputs.dist_tag }}
+  preid:
+    description: SemVer pre-release identifier; empty for stable.
+    value: ${{ steps.configure.outputs.preid }}
+  specifier:
+    description: Resolved Nx version specifier.
+    value: ${{ steps.configure.outputs.specifier }}
+
+runs:
+  using: composite
+  steps:
+    - name: Configure channel and specifier
+      id: configure
+      shell: bash
+      run: |
+        set -euo pipefail
+        mapfile -t lines < <(bash tools/ci-release/configure-release-version.sh \
+          --channel '${{ inputs.release_channel }}' \
+          --specifier '${{ inputs.version_specifier }}' \
+          --ref '${{ inputs.git_ref }}' \
+          --allow-major '${{ inputs.allow_major }}')
+        for line in "${lines[@]}"; do
+          echo "$line" >> "$GITHUB_OUTPUT"
+        done
