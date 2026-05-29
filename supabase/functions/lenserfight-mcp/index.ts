@@ -540,22 +540,26 @@ function registerTools(server: McpServer) {
 const SUPABASE_BASE_URL = `${SUPABASE_URL}/functions/v1/lenserfight-mcp`;
 let MCP_BASE_URL = SUPABASE_BASE_URL;
 
-const discoveryDoc = {
-  issuer: MCP_BASE_URL,
-  authorization_endpoint: `${MCP_BASE_URL}/oauth/authorize`,
-  token_endpoint: `${MCP_BASE_URL}/oauth/token`,
-  registration_endpoint: `${MCP_BASE_URL}/oauth/register`,
-  response_types_supported: ["code"],
-  grant_types_supported: ["authorization_code"],
-  code_challenge_methods_supported: ["S256"],
-  scopes_supported: ["openid"],
-  token_endpoint_auth_methods_supported: ["none"],
-};
+function discoveryDoc() {
+  return {
+    issuer: MCP_BASE_URL,
+    authorization_endpoint: `${MCP_BASE_URL}/oauth/authorize`,
+    token_endpoint: `${MCP_BASE_URL}/oauth/token`,
+    registration_endpoint: `${MCP_BASE_URL}/oauth/register`,
+    response_types_supported: ["code"],
+    grant_types_supported: ["authorization_code"],
+    code_challenge_methods_supported: ["S256"],
+    scopes_supported: ["openid"],
+    token_endpoint_auth_methods_supported: ["none"],
+  };
+}
 
-const protectedResourceDoc = {
-  resource: `${MCP_BASE_URL}/mcp`,
-  authorization_servers: [MCP_BASE_URL],
-};
+function protectedResourceDoc() {
+  return {
+    resource: `${MCP_BASE_URL}/mcp`,
+    authorization_servers: [MCP_BASE_URL],
+  };
+}
 
 // ─── Node.js HTTP shims for StreamableHTTPServerTransport ────────────────────
 // Deno edge functions expose Fetch API (Request/Response). The MCP SDK's
@@ -684,10 +688,10 @@ Deno.serve(async (req: Request) => {
 
   // OAuth 2.1 discovery
   if (url.pathname.endsWith("/.well-known/oauth-authorization-server")) {
-    return Response.json(discoveryDoc, { headers: { ...CORS_HEADERS, "Cache-Control": "public, max-age=3600" } });
+    return Response.json(discoveryDoc(), { headers: { ...CORS_HEADERS, "Cache-Control": "no-store" } });
   }
   if (url.pathname.endsWith("/.well-known/oauth-protected-resource")) {
-    return Response.json(protectedResourceDoc, { headers: { ...CORS_HEADERS, "Cache-Control": "public, max-age=3600" } });
+    return Response.json(protectedResourceDoc(), { headers: { ...CORS_HEADERS, "Cache-Control": "no-store" } });
   }
 
   // ── RFC 7591 Dynamic Client Registration ────────────────────────────────────
@@ -747,7 +751,7 @@ label{display:block;margin-bottom:.25rem;font-size:.875rem;color:#aaa}
 input{width:100%;padding:.6rem .75rem;border:1px solid #333;border-radius:6px;background:#0f0f10;color:#fff;font-size:1rem;box-sizing:border-box;margin-bottom:1rem}
 button{width:100%;padding:.75rem;background:#7c3aed;color:#fff;border:0;border-radius:6px;font-size:1rem;cursor:pointer}
 button:hover{background:#6d28d9}</style></head>
-<body><form method="POST" action="/functions/v1/lenserfight-mcp/oauth/login">
+<body><form method="POST" action="${MCP_BASE_URL}/oauth/login">
 <h1>Sign in to LenserFight</h1>
 <input type="hidden" name="id" value="${id}">
 <label>Email</label><input type="email" name="email" required autofocus>
