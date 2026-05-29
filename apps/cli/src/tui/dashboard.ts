@@ -2,6 +2,9 @@ import { runChild } from './run-child'
 import { getActiveProfileName } from '../utils/profiles'
 import { probeBackendHealth } from '../lib/health-probe'
 import { getHumanActivityFeed } from '../lib/data-services'
+import { getAgentWorkspaceContext } from '../lib/agent-workspace-context'
+import { formatAgentWorkspaceBanner } from '../commands/agents'
+import { getAgentWorkspaceOpsLines } from '../commands/agents/workspace-ops'
 import { truncate } from '../utils/output'
 import { A, sym } from '../utils/ansi'
 
@@ -127,6 +130,7 @@ export const COMMAND_CATALOG: Array<{ cmd: string; desc: string }> = [
   { cmd: 'workflow run',                  desc: 'Run a workflow locally against a file-based automation object' },
   // ── execute / configure (unified hubs) ───────────────────────────────────────
   { cmd: 'execute status',                desc: 'Global execution queue health' },
+  { cmd: 'execute history',               desc: 'Your execution history (activity, lens, workflow)' },
   { cmd: 'execute workflow list',         desc: 'List workflow runs' },
   { cmd: 'execute workflow wait',         desc: 'Wait for workflow run' },
   { cmd: 'execute workflow stream',       desc: 'Stream workflow events (SSE-style)' },
@@ -134,6 +138,25 @@ export const COMMAND_CATALOG: Array<{ cmd: string; desc: string }> = [
   { cmd: 'execute battle dispatch',       desc: 'Dispatch battle agent' },
   { cmd: 'execute battle file-run',       desc: 'File-workspace battle run' },
   { cmd: 'execute lens prompt',           desc: 'Lens/model prompt execution' },
+  // ── agents / workflows hubs ─────────────────────────────────────────────────
+  { cmd: 'agents use',                    desc: 'Select agent workspace context' },
+  { cmd: 'agents ops',                    desc: 'Show workspace operations menu' },
+  { cmd: 'agents list',                   desc: 'List your AI agents' },
+  { cmd: 'agents get',                    desc: 'Get agent profile (workspace default)' },
+  { cmd: 'agents runs',                   desc: 'Team runs for workspace agent' },
+  { cmd: 'agents inspect',                desc: 'Workspace bootstrap (teams, runs)' },
+  { cmd: 'agents dispatch',               desc: 'Dispatch workflow assignment' },
+  { cmd: 'agents team list',              desc: 'List teams for workspace agent' },
+  { cmd: 'agents memory search',          desc: 'Search agent memory' },
+  { cmd: 'agents stop',                   desc: 'Pause workspace agent' },
+  { cmd: 'agents kill',                   desc: 'Emergency: cancel runs + kill switch + pause' },
+  { cmd: 'agents logs',                   desc: 'Action logs for workspace agent' },
+  { cmd: 'workflows list',                desc: 'List cloud workflows' },
+  { cmd: 'workflows get',                 desc: 'Workflow lifecycle status' },
+  { cmd: 'workflows runs',                desc: 'Recent workflow runs' },
+  { cmd: 'workflows schedule',            desc: 'Create workflow schedule' },
+  { cmd: 'workflows insert',              desc: 'Insert workflow trigger' },
+  { cmd: 'workflows stop',                desc: 'Cancel a workflow run' },
   { cmd: 'configure keys list',           desc: 'Local BYOK keys (file)' },
   { cmd: 'configure byok list',           desc: 'Cloud BYOK keys (Supabase)' },
   { cmd: 'configure ollama',              desc: 'Ollama local model URL' },
@@ -473,6 +496,10 @@ function paintMainScreen(): void {
 
   buf.push('')
   buf.push(`  ${brand}   ${A.gray}│${A.reset}   ${profilePart}   ${A.gray}│${A.reset}   ${health}`)
+  const agentBanner = formatAgentWorkspaceBanner()
+  if (agentBanner) {
+    buf.push(`  ${agentBanner}`)
+  }
   buf.push(`  ${A.gray}${'─'.repeat(60)}${A.reset}`)
   buf.push(`  ${A.gray}${new Date().toLocaleString()}  ${sym.dot}  refresh 2s${A.reset}`)
   buf.push('')
@@ -489,6 +516,8 @@ function paintMainScreen(): void {
 
   buf.push('')
   const bindings = [
+    keyBind('g', 'agents'),
+    keyBind('w', 'workflows'),
     keyBind('e', 'execute'),
     keyBind('k', 'configure'),
     keyBind('a', 'approvals'),
@@ -537,6 +566,34 @@ interface SubDashboardDef {
   title: string
   commands: SubCommandDef[]
   exitKeys: string[]
+  /** Visual + prompt behavior for workspace-style tabs. */
+  workspace?: 'agent' | 'workflow'
+}
+
+/** Inject selected agent id into dashboard prompts when applicable. */
+export function applyWorkspacePrompt(input: string, workspace?: SubDashboardDef['workspace']): string {
+  if (workspace !== 'agent') return input
+  const ctx = getAgentWorkspaceContext()
+  if (!ctx) return input
+  return input
+    .replace(/\$AGENT/g, ctx.aiLenserId)
+    .replace(/--ai-lenser $/, `--ai-lenser ${ctx.aiLenserId} `)
+    .replace(/--agent $/, `--agent ${ctx.aiLenserId} `)
+    .replace(/agents use $/, `agents use @${ctx.handle} `)
+    .replace(/agents get $/, `agents get @${ctx.handle} `)
+    .replace(/agents stop $/, `agents stop @${ctx.handle} `)
+    .replace(/agents resume $/, `agents resume @${ctx.handle} `)
+    .replace(/agents delete $/, `agents delete @${ctx.handle} `)
+    .replace(/agents runs $/, `agents runs @${ctx.handle} `)
+    .replace(/agents inspect $/, `agents inspect @${ctx.handle} `)
+    .replace(/agents dispatch --assignment /, `agents dispatch --assignment `)
+    .replace(/agents kill $/, `agents kill @${ctx.handle} --confirm `)
+    .replace(/kill-switch status $/, `kill-switch status @${ctx.handle} `)
+    .replace(/team inspect $/, `team inspect @${ctx.handle} `)
+    .replace(/team list --ai-lenser $/, `team list --ai-lenser ${ctx.aiLenserId} `)
+    .replace(/agents memory search --query /, `agents memory search --query `)
+    .replace(/memory search --agent  --query /, `memory search --query `)
+    .replace(/schedule create $/, `schedule create `)
 }
 
 const SUB_DASHBOARDS: Record<string, SubDashboardDef> = {
@@ -606,6 +663,7 @@ const SUB_DASHBOARDS: Record<string, SubDashboardDef> = {
     title: 'Execute',
     commands: [
       { key: 's', cmd: ['execute', 'status'],                             label: 'execution health' },
+      { key: 'h', cmd: ['execute', 'history'],                            label: 'your execution history' },
       { key: 'w', cmd: ['execute', 'workflow', 'list'],                  label: 'list workflow runs' },
       { key: 't', prompt: 'execute workflow wait ',                      label: 'wait run        [<RUN-UUID>]' },
       { key: 'v', prompt: 'execute workflow stream ',                    label: 'stream events   [<RUN-UUID>]' },
@@ -626,6 +684,53 @@ const SUB_DASHBOARDS: Record<string, SubDashboardDef> = {
     ],
     exitKeys: ['q', 'Q', '\x1b'],
   },
+  g: {
+    title: 'Agents',
+    workspace: 'agent',
+    commands: [
+      { key: 'u', prompt: 'agents use ',                                  label: 'select workspace  [@handle|uuid]' },
+      { key: 'c', cmd: ['agents', 'clear'],                               label: 'clear workspace selection' },
+      { key: 'i', cmd: ['agents', 'context'],                             label: 'show workspace context' },
+      { key: 'f', cmd: ['agents', 'ops'],                                  label: 'workspace operations menu' },
+      { key: 'l', cmd: ['agents', 'list'],                                label: 'list agents' },
+      { key: 'g', cmd: ['agents', 'get'],                                 label: 'get agent       (uses selection)' },
+      { key: 'n', cmd: ['agents', 'create'],                              label: 'create / connect agent' },
+      { key: 't', cmd: ['agents', 'inspect'],                             label: 'inspect workspace bootstrap' },
+      { key: 'R', cmd: ['agents', 'runs'],                                label: 'team runs       (recent)' },
+      { key: 'T', cmd: ['agents', 'team', 'list'],                         label: 'list teams' },
+      { key: 'e', prompt: 'agents dispatch --assignment  --workflow-id ', label: 'dispatch assignment' },
+      { key: 'o', cmd: ['agents', 'logs'],                                label: 'action logs' },
+      { key: 'm', cmd: ['agents', 'memory'],                              label: 'memory profiles' },
+      { key: 'E', prompt: 'agents memory search --query ',                 label: 'search memory   [--query …]' },
+      { key: 'a', cmd: ['agents', 'approvals'],                           label: 'pending approvals' },
+      { key: 's', cmd: ['agents', 'schedule'],                            label: 'list schedules' },
+      { key: 'S', prompt: 'schedule create ',                              label: 'create schedule (wizard)' },
+      { key: 'x', cmd: ['agents', 'stop'],                                label: 'stop agent      (pause)' },
+      { key: 'r', cmd: ['agents', 'resume'],                             label: 'resume agent' },
+      { key: 'K', prompt: 'kill-switch status ',                          label: 'kill switch status' },
+      { key: 'k', cmd: ['agents', 'kill', '--confirm'],                    label: 'KILL workers    (emergency)' },
+      { key: 'd', cmd: ['agents', 'delete'],                              label: 'delete agent    (uses selection)' },
+    ],
+    exitKeys: ['q', 'Q', '\x1b'],
+  },
+  w: {
+    title: 'Workflows',
+    workspace: 'workflow',
+    commands: [
+      { key: 'l', cmd: ['workflows', 'list'],                             label: 'list workflows' },
+      { key: 'g', prompt: 'workflows get ',                               label: 'get lifecycle   [<uuid>]' },
+      { key: 'n', prompt: 'workflows create --name ',                     label: 'create workflow [--name …]' },
+      { key: 'i', prompt: 'workflows insert ',                            label: 'insert trigger  [<workflow-uuid>]' },
+      { key: 'u', prompt: 'workflows update ',                            label: 'update schedule [<schedule-uuid>]' },
+      { key: 'd', prompt: 'workflows delete ',                             label: 'delete workflow [<uuid>]' },
+      { key: 'p', prompt: 'workflows stop ',                              label: 'stop run        [<run-uuid>]' },
+      { key: 's', cmd: ['workflows', 'schedule'],                          label: 'create schedule (wizard)' },
+      { key: 'r', cmd: ['workflows', 'runs'],                              label: 'list recent runs' },
+      { key: 'f', prompt: 'workflows run ',                               label: 'run local file  [WORKFLOW.md]' },
+      { key: 'v', prompt: 'workflows validate ',                           label: 'validate file   [WORKFLOW.md]' },
+    ],
+    exitKeys: ['q', 'Q', '\x1b'],
+  },
 }
 
 // ─── Sub-dashboard screen painter ────────────────────────────────────────────
@@ -634,10 +739,37 @@ function paintSubScreen(def: SubDashboardDef, subCmd: CmdBarState): void {
   const buf: string[] = []
 
   const brand = `${A.brightMagenta}${A.bold}${sym.fight}  LenserFight${A.reset}`
-  const title = `${A.brightCyan}${A.bold}${def.title}${A.reset}`
+  const titleAccent =
+    def.workspace === 'agent' && getAgentWorkspaceContext()
+      ? `${A.brightGreen}${A.bold}`
+      : def.workspace === 'workflow'
+        ? `${A.brightBlue}${A.bold}`
+        : `${A.brightCyan}${A.bold}`
+  const title = `${titleAccent}${def.title}${A.reset}`
 
   buf.push('')
   buf.push(`  ${brand}   ${A.gray}│${A.reset}   ${title}`)
+  if (def.workspace === 'agent') {
+    const banner = formatAgentWorkspaceBanner()
+    if (banner) {
+      buf.push(`  ${banner}`)
+      const opLines = getAgentWorkspaceOpsLines(6)
+      if (opLines.length > 0) {
+        buf.push(`  ${A.dim}Workspace:${A.reset}`)
+        for (const line of opLines) {
+          buf.push(`    ${line}`)
+        }
+      }
+    } else {
+      buf.push(
+        `  ${A.gray}${sym.dot}${A.reset}  ${A.dim}No agent selected — press ${A.brightYellow}u${A.reset}${A.dim} to choose your workspace agent${A.reset}`,
+      )
+    }
+  } else if (def.workspace === 'workflow') {
+    buf.push(
+      `  ${A.brightBlue}${A.bold}${sym.dot}${A.reset}  ${A.dim}Cloud workflows + schedules + runs${A.reset}`,
+    )
+  }
   buf.push(`  ${A.gray}${'─'.repeat(60)}${A.reset}`)
   buf.push('')
   buf.push(`  ${A.bold}${A.brightWhite}Actions${A.reset}`)
@@ -756,9 +888,13 @@ async function runSubDashboard(def: SubDashboardDef): Promise<void> {
       const action = def.commands.find((c) => c.key === key)
       if (action) {
         if (action.prompt !== undefined) {
-          // Pre-fill the command bar — user completes args then presses Enter
-          subCmd = { active: true, input: action.prompt, error: null, selectedSuggestion: -1 }
-          paintSubScreen(def, subCmd)
+        subCmd = {
+          active: true,
+          input: applyWorkspacePrompt(action.prompt, def.workspace),
+          error: null,
+          selectedSuggestion: -1,
+        }
+        paintSubScreen(def, subCmd)
         } else if (action.cmd) {
           process.stdin.off('data', onData)
           try { process.stdin.setRawMode(false) } catch { /* ignore */ }

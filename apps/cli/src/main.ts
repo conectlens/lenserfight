@@ -22,8 +22,8 @@ const runnerDeprecatedCommand = () =>
   })
 
 const agentDeprecatedCommand = () =>
-  import('./commands/lenser').then((m) => {
-    consola.warn("'agent' is deprecated. Use 'lenser' instead.")
+  import('./commands/agents').then((m) => {
+    consola.warn("'agent' is deprecated. Use 'agents' instead.")
     return m.default
   })
 
@@ -104,6 +104,8 @@ const main = defineCommand({
     'battle-moderation': () => import('./commands/battle-moderation').then((m) => m.default),
     run: () => import('./commands/run').then((m) => m.default),
     workflow: () => import('./commands/workflow').then((m) => m.default),
+    workflows: () => import('./commands/workflows').then((m) => m.default),
+    agents: () => import('./commands/agents').then((m) => m.default),
     evaluate: () => import('./commands/evaluate').then((m) => m.default),
     tool: () => import('./commands/tool').then((m) => m.default),
     memory: () => import('./commands/memory').then((m) => m.default),
