@@ -2,17 +2,14 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { lensService } from '../../services/lens.service.js';
+import { McpError } from '../../services/mcp-error.js';
 
-interface ResolveTemplateResult {
-  lens_id: string;
-  version_id: string;
-  template_body: string;
-  parameters: Array<{ id: string; label: string; optional: boolean }>;
-}
+const TOOL = 'validate_lens_params';
 
 export function registerLensValidateParams(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'validate_lens_params',
+    TOOL,
     'Validate parameter values against a lens version schema. Returns which params are missing, which are unknown, and whether the input is valid.',
     {
       lens_id: zUuid,
@@ -22,15 +19,8 @@ export function registerLensValidateParams(server: McpServer, sb: SupabaseClient
     async ({ lens_id, version_id, values }) => {
       const t0 = Date.now();
       try {
-        const { data, error } = (await sb.rpc('fn_mcp_lens_resolve_template' as never, {
-          p_lens_id: lens_id,
-          p_version_id: version_id ?? null,
-        })) as unknown as {
-          data: ResolveTemplateResult | null;
-          error: { message: string } | null;
-        };
-        if (error) throw new Error(error.message);
-        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, 'validate_lens_params', t0);
+        const data = await lensService.resolveTemplate(sb, { lens_id, version_id });
+        if (!data) return fail('NOT_FOUND', `Lens ${lens_id} not found`, {}, TOOL, t0);
 
         const allParams = data.parameters ?? [];
         const providedLabels = Object.keys(values).map((k) => k.toLowerCase());
@@ -42,15 +32,20 @@ export function registerLensValidateParams(server: McpServer, sb: SupabaseClient
         const knownLabels = allParams.map((p) => p.label.toLowerCase());
         const unknown = Object.keys(values).filter((k) => !knownLabels.includes(k.toLowerCase()));
 
-        return ok({
-          valid: missing.length === 0 && unknown.length === 0,
-          missing,
-          unknown,
-          total_params: allParams.length,
-          provided: Object.keys(values).length,
-        }, 'validate_lens_params', t0);
+        return ok(
+          {
+            valid: missing.length === 0 && unknown.length === 0,
+            missing,
+            unknown,
+            total_params: allParams.length,
+            provided: Object.keys(values).length,
+          },
+          TOOL,
+          t0
+        );
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'validate_lens_params', t0);
+        if (e instanceof McpError) return fail(e.code, e.message, e.details, TOOL, t0);
+        return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
       }
     }
   );

@@ -2,20 +2,16 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { lensService } from '../../services/lens.service.js';
+import { workflowService } from '../../services/workflow.service.js';
+import { McpError } from '../../services/mcp-error.js';
+
+const TOOL = 'run_lens';
 
 interface VersionParam {
   id: string;
   label: string;
   optional: boolean;
-}
-
-interface ResolveTemplateResult {
-  lens_id: string;
-  version_id: string;
-  template_body: string;
-  parameters: VersionParam[];
-  title?: string | null;
-  description?: string | null;
 }
 
 export function resolveTemplate(
@@ -49,7 +45,7 @@ export function resolveTemplate(
 
 export function registerLensRun(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'run_lens',
+    TOOL,
     `Resolve a lens template into a ready-to-execute prompt by substituting its [[Parameter]] tokens with values you supply.
 
 WORKFLOW:
@@ -75,15 +71,11 @@ If workflow_id is given, the run is persisted as a workflow run record for telem
       const t0 = Date.now();
       const values: Record<string, string> = (args.param_values ?? {}) as Record<string, string>;
       try {
-        const { data: resolveData, error: resolveErr } = (await sb.rpc(
-          'fn_mcp_lens_resolve_template' as never,
-          { p_lens_id: args.lens_id, p_version_id: args.version_id ?? null }
-        )) as unknown as {
-          data: ResolveTemplateResult | null;
-          error: { message: string } | null;
-        };
-        if (resolveErr) throw new Error(resolveErr.message);
-        if (!resolveData) return fail('NOT_FOUND', `Lens ${args.lens_id} not found`, {}, 'run_lens', t0);
+        const resolveData = await lensService.resolveTemplate(sb, {
+          lens_id: args.lens_id,
+          version_id: args.version_id,
+        });
+        if (!resolveData) return fail('NOT_FOUND', `Lens ${args.lens_id} not found`, {}, TOOL, t0);
 
         const { resolved, missing, used } = resolveTemplate(
           resolveData.template_body,
@@ -101,7 +93,7 @@ If workflow_id is given, the run is persisted as a workflow run record for telem
               lens_title: resolveData.title ?? null,
               lens_description: resolveData.description ?? null,
             },
-            'run_lens',
+            TOOL,
             t0
           );
         }
@@ -110,43 +102,47 @@ If workflow_id is given, the run is persisted as a workflow run record for telem
         let persisted = false;
 
         if (args.workflow_id) {
-          const { data: run, error: runErr } = (await sb.rpc(
-            'fn_mcp_workflow_run_start' as never,
-            {
-              p_workflow_id: args.workflow_id,
-              p_inputs: values,
-              p_global_model_id: null,
-              p_idempotency_key: null,
-              p_metadata: {
-                mcp_tool: 'run_lens',
+          try {
+            const run = await workflowService.startRun(sb, {
+              workflow_id: args.workflow_id,
+              inputs: values,
+              global_model_id: null,
+              idempotency_key: null,
+              metadata: {
+                mcp_tool: TOOL,
                 lens_id: args.lens_id,
                 version_id: resolveData.version_id,
               },
+            });
+            if (run) {
+              runId = run.id;
+              persisted = true;
             }
-          )) as unknown as {
-            data: { id: string } | null;
-            error: { message: string } | null;
-          };
-          if (!runErr && run) {
-            runId = run.id;
-            persisted = true;
+          } catch {
+            // Persistence is best-effort; lens resolution still succeeds.
           }
         }
 
-        return ok({
-          resolved_prompt: resolved,
-          lens_title: resolveData.title ?? null,
-          lens_description: resolveData.description ?? null,
-          lens_id: args.lens_id,
-          version_id: resolveData.version_id,
-          run_id: runId,
-          params_used: used,
-          estimated_input_tokens: Math.ceil(resolved.length / 4),
-          persisted,
-          next_step: 'Execute the resolved_prompt and return the result to the user. This MCP tool does not call any LLM itself.',
-        }, 'run_lens', t0);
+        return ok(
+          {
+            resolved_prompt: resolved,
+            lens_title: resolveData.title ?? null,
+            lens_description: resolveData.description ?? null,
+            lens_id: args.lens_id,
+            version_id: resolveData.version_id,
+            run_id: runId,
+            params_used: used,
+            estimated_input_tokens: Math.ceil(resolved.length / 4),
+            persisted,
+            next_step:
+              'Execute the resolved_prompt and return the result to the user. This MCP tool does not call any LLM itself.',
+          },
+          TOOL,
+          t0
+        );
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'run_lens', t0);
+        if (e instanceof McpError) return fail(e.code, e.message, e.details, TOOL, t0);
+        return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
       }
     }
   );

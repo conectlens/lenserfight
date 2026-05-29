@@ -2,10 +2,14 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { paginated, fail, zUuid } from '../../types.js';
+import { lensService } from '../../services/lens.service.js';
+import { McpError } from '../../services/mcp-error.js';
+
+const TOOL = 'list_lenses';
 
 export function registerLensList(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'list_lenses',
+    TOOL,
     'Browse LenserFight lenses (reusable AI prompt templates). Returns a paginated list with title, description, language, author handle, tags, and head_version_id for each lens. Use this to discover lenses available to the authenticated user. Each result includes everything you need to identify a lens by topic; call get_lens for the full template body and parameters.',
     {
       limit: z.number().int().min(1).max(100).default(20).optional(),
@@ -20,21 +24,18 @@ export function registerLensList(server: McpServer, sb: SupabaseClient): void {
       const limit = args.limit ?? 20;
       const offset = args.offset ?? 0;
       try {
-        const { data, error } = (await sb.rpc('fn_mcp_lens_list' as never, {
-          p_limit: limit,
-          p_offset: offset,
-          p_visibility: args.visibility ?? null,
-          p_status: args.status ?? null,
-          p_lenser_id: args.lenser_id ?? null,
-          p_include_archived: args.include_archived ?? false,
-        })) as unknown as {
-          data: { data: unknown[]; count: number } | null;
-          error: { message: string } | null;
-        };
-        if (error) throw new Error(error.message);
-        return paginated(data?.data ?? [], data?.count ?? 0, limit, offset, 'list_lenses', t0);
+        const { items, total } = await lensService.list(sb, {
+          limit,
+          offset,
+          visibility: args.visibility,
+          status: args.status,
+          lenser_id: args.lenser_id,
+          include_archived: args.include_archived,
+        });
+        return paginated(items, total, limit, offset, TOOL, t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'list_lenses', t0);
+        if (e instanceof McpError) return fail(e.code, e.message, e.details, TOOL, t0);
+        return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
       }
     }
   );

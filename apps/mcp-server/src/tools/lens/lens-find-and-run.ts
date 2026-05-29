@@ -2,22 +2,11 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail } from '../../types.js';
+import { lensService } from '../../services/lens.service.js';
+import { McpError } from '../../services/mcp-error.js';
 import { resolveTemplate } from './lens-run.js';
 
-interface VersionParam {
-  id: string;
-  label: string;
-  optional: boolean;
-}
-
-interface ResolveTemplateResult {
-  lens_id: string;
-  version_id: string;
-  template_body: string;
-  parameters: VersionParam[];
-  title?: string | null;
-  description?: string | null;
-}
+const TOOL = 'find_and_run_lens';
 
 interface LensSearchHit {
   id: string;
@@ -29,7 +18,7 @@ interface LensSearchHit {
 
 export function registerLensFindAndRun(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'find_and_run_lens',
+    TOOL,
     `One-shot: find the best matching lens for a topic and either run it (if all required params are supplied) or report what's missing.
 
 PURPOSE: Use this when the user asks "use the X lens to do Y" — instead of chaining search_lenses + get_lens + run_lens, this single call does the lookup, picks the top match, and either returns the resolved prompt or the missing-parameter spec.
@@ -52,40 +41,31 @@ OUTCOMES:
       const values: Record<string, string> = (args.param_values ?? {}) as Record<string, string>;
 
       try {
-        // 1. Search for matching lenses
-        const { data: searchData, error: searchErr } = (await sb.rpc('fn_mcp_lens_search' as never, {
-          p_query: args.query,
-          p_visibility: args.visibility ?? null,
-          p_limit: 5,
-          p_offset: 0,
-        })) as unknown as {
-          data: { data: LensSearchHit[]; count: number } | null;
-          error: { message: string } | null;
-        };
-        if (searchErr) throw new Error(searchErr.message);
+        const { items } = await lensService.search(sb, {
+          query: args.query,
+          limit: 5,
+          offset: 0,
+          visibility: args.visibility,
+        });
+        const hits = items as LensSearchHit[];
 
-        const hits = searchData?.data ?? [];
         if (hits.length === 0) {
-          return ok({
-            status: 'no_match',
-            query: args.query,
-            hint: 'No lens matched. Try a broader keyword, ask the user for a topic, or call list_lenses to browse available lenses.',
-          }, 'find_and_run_lens', t0);
+          return ok(
+            {
+              status: 'no_match',
+              query: args.query,
+              hint: 'No lens matched. Try a broader keyword, ask the user for a topic, or call list_lenses to browse available lenses.',
+            },
+            TOOL,
+            t0
+          );
         }
 
         const best = hits[0];
 
-        // 2. Resolve template + params for the top hit
-        const { data: resolveData, error: resolveErr } = (await sb.rpc(
-          'fn_mcp_lens_resolve_template' as never,
-          { p_lens_id: best.id, p_version_id: null }
-        )) as unknown as {
-          data: ResolveTemplateResult | null;
-          error: { message: string } | null;
-        };
-        if (resolveErr) throw new Error(resolveErr.message);
+        const resolveData = await lensService.resolveTemplate(sb, { lens_id: best.id });
         if (!resolveData) {
-          return fail('NOT_FOUND', `Lens ${best.id} resolved to no template`, {}, 'find_and_run_lens', t0);
+          return fail('NOT_FOUND', `Lens ${best.id} resolved to no template`, {}, TOOL, t0);
         }
 
         const { resolved, missing, used } = resolveTemplate(
@@ -95,35 +75,37 @@ OUTCOMES:
         );
 
         if (missing.length > 0) {
-          return ok({
-            status: 'needs_params',
-            lens: {
-              id: best.id,
-              title: resolveData.title,
-              description: resolveData.description,
+          return ok(
+            {
+              status: 'needs_params',
+              lens: { id: best.id, title: resolveData.title, description: resolveData.description },
+              missing,
+              all_parameters: resolveData.parameters,
+              other_candidates: hits.slice(1).map((h) => ({ id: h.id, title: h.title })),
+              instruction: `Ask the user for these labels: ${missing.join(', ')}. Then call run_lens(lens_id="${best.id}", param_values={...}).`,
             },
-            missing,
-            all_parameters: resolveData.parameters,
-            other_candidates: hits.slice(1).map((h) => ({ id: h.id, title: h.title })),
-            instruction: `Ask the user for these labels: ${missing.join(', ')}. Then call run_lens(lens_id="${best.id}", param_values={...}).`,
-          }, 'find_and_run_lens', t0);
+            TOOL,
+            t0
+          );
         }
 
-        return ok({
-          status: 'ready',
-          lens: {
-            id: best.id,
-            title: resolveData.title,
-            description: resolveData.description,
+        return ok(
+          {
+            status: 'ready',
+            lens: { id: best.id, title: resolveData.title, description: resolveData.description },
+            resolved_prompt: resolved,
+            params_used: used,
+            version_id: resolveData.version_id,
+            estimated_input_tokens: Math.ceil(resolved.length / 4),
+            instruction:
+              'Execute the resolved_prompt and return the result to the user. This tool does not call any LLM.',
           },
-          resolved_prompt: resolved,
-          params_used: used,
-          version_id: resolveData.version_id,
-          estimated_input_tokens: Math.ceil(resolved.length / 4),
-          instruction: 'Execute the resolved_prompt and return the result to the user. This tool does not call any LLM.',
-        }, 'find_and_run_lens', t0);
+          TOOL,
+          t0
+        );
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'find_and_run_lens', t0);
+        if (e instanceof McpError) return fail(e.code, e.message, e.details, TOOL, t0);
+        return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
       }
     }
   );

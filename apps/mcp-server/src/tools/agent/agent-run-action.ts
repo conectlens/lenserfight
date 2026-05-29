@@ -2,10 +2,14 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { agentService } from '../../services/agent.service.js';
+import { McpError } from '../../services/mcp-error.js';
+
+const TOOL = 'run_agent_action';
 
 export function registerAgentRunAction(server: McpServer, sb: SupabaseClient): void {
   server.tool(
-    'run_agent_action',
+    TOOL,
     `Invoke the single autonomous-action entry point for an AI Lenser. The agents.fn_agent_action RPC evaluates policy constraints, daily quota limits, logs the outcome, and increments quota counters on success.
 
 Returns one of:
@@ -25,27 +29,17 @@ Common action_type values: "vote", "join_battle", "submit_run", "post_comment", 
     async (args) => {
       const t0 = Date.now();
       try {
-        const { data, error } = (await sb
-          .schema('agents' as never)
-          .rpc('fn_agent_action' as never, {
-            p_ai_lenser_id: args.ai_lenser_id,
-            p_action_type: args.action_type,
-            p_context_type: args.context_type ?? null,
-            p_context_id: args.context_id ?? null,
-            p_metadata: args.metadata ?? {},
-          })) as unknown as {
-          data: unknown;
-          error: { message: string } | null;
-        };
-        if (error) {
-          if (error.message?.includes('access_denied')) {
-            return fail('FORBIDDEN', 'You do not own this AI Lenser', {}, 'run_agent_action', t0);
-          }
-          throw new Error(error.message);
-        }
-        return ok(data, 'run_agent_action', t0);
+        const data = await agentService.runAction(sb, {
+          ai_lenser_id: args.ai_lenser_id,
+          action_type: args.action_type,
+          context_type: args.context_type ?? null,
+          context_id: args.context_id ?? null,
+          metadata: args.metadata ?? {},
+        });
+        return ok(data, TOOL, t0);
       } catch (e) {
-        return fail('DB_ERROR', (e as Error).message, {}, 'run_agent_action', t0);
+        if (e instanceof McpError) return fail(e.code, e.message, e.details, TOOL, t0);
+        return fail('DB_ERROR', (e as Error).message, {}, TOOL, t0);
       }
     }
   );
