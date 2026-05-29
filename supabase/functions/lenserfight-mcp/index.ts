@@ -742,6 +742,7 @@ Deno.serve(async (req: Request) => {
     // Redirect to apps/auth consent page — it handles auth and calls /oauth/complete.
     const consentUrl = new URL(`${AUTH_APP_BASE_URL}/mcp/auth`);
     consentUrl.searchParams.set("id", codeId);
+    consentUrl.searchParams.set("server", MCP_BASE_URL);
     return Response.redirect(consentUrl.toString(), 302);
   }
 
