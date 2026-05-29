@@ -23,6 +23,12 @@ import type { Provider, GenerativeMediaProvider } from './types'
 
 export type AnyProvider = Provider | GenerativeMediaProvider
 
+export interface ModelPricingPerKToken {
+  input: number | null
+  output: number | null
+  currency: 'USD'
+}
+
 export interface ModelDescriptor {
   /** LenserFight canonical key — what callers / DB rows pass in. */
   key: string
@@ -35,6 +41,14 @@ export interface ModelDescriptor {
   wireModel: string
   /** Output kind this model produces — drives modality validation. */
   kind: 'text' | 'image' | 'video' | 'audio' | 'music'
+  /** Public list price per 1K tokens, when the provider publishes token pricing. */
+  pricingPerKToken: ModelPricingPerKToken | null
+  /** Published context window in tokens, when applicable. */
+  contextWindow: number | null
+  /** ISO release date from provider docs, when known. */
+  releasedAt: string | null
+  /** ISO deprecation date from provider docs, when announced. */
+  deprecatedAt: string | null
 }
 
 /**
@@ -52,7 +66,22 @@ export interface ModelDescriptor {
  *
  * Entries are listed by provider for readability. Adding a model = one row.
  */
-const MODELS: ModelDescriptor[] = [
+type ModelRegistryEntry = Omit<
+  ModelDescriptor,
+  'pricingPerKToken' | 'contextWindow' | 'releasedAt' | 'deprecatedAt'
+>
+
+const DEFAULT_MODEL_METADATA = {
+  pricingPerKToken: null,
+  contextWindow: null,
+  releasedAt: null,
+  deprecatedAt: null,
+} satisfies Pick<
+  ModelDescriptor,
+  'pricingPerKToken' | 'contextWindow' | 'releasedAt' | 'deprecatedAt'
+>
+
+const MODEL_ENTRIES: ModelRegistryEntry[] = [
   // ── OpenAI text ──────────────────────────────────────────────────────────
   // LF's forward-looking gpt-5.4-* keys all alias to the most capable current
   // OpenAI text model so the wire format stays valid. When real gpt-5 ships,
@@ -133,6 +162,11 @@ const MODELS: ModelDescriptor[] = [
   // Intentionally absent from the wire registry: no public Midjourney API.
   // Surfacing it as an unsupported model gives users an actionable message.
 ]
+
+const MODELS: ModelDescriptor[] = MODEL_ENTRIES.map((model) => ({
+  ...DEFAULT_MODEL_METADATA,
+  ...model,
+}))
 
 const BY_KEY = new Map<string, ModelDescriptor>(MODELS.map((m) => [m.key, m]))
 

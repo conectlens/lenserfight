@@ -66,7 +66,7 @@ export type { ModelCapabilities, ValidationError } from './lib/capability-mapper
 export { CapabilityMapper, capabilityMapper } from './lib/capability-mapper';
 
 // ─── Model Registry (canonical LF keys → real provider keys) ─────────────────
-export type { ModelDescriptor, AnyProvider } from './lib/model-registry';
+export type { ModelDescriptor, ModelPricingPerKToken, AnyProvider } from './lib/model-registry';
 export {
   lookupModel,
   detectProvider,
@@ -132,6 +132,17 @@ export { falStableVideoAdapter } from './lib/fal-stable-video';
 
 // ─── Ollama Constants ─────────────────────────────────────────────────────────
 export { OLLAMA_DEFAULT_BASE_URL } from './lib/ollama';
+
+export type {
+  CheckProviderStatusInput,
+  ProviderStatusResult,
+  ProviderStatusState,
+} from './lib/provider-status';
+export {
+  __testing,
+  checkProviderStatus,
+  registerProviderStatusChecker,
+} from './lib/provider-status';
 
 // ─── Provider Registry ────────────────────────────────────────────────────────
 
