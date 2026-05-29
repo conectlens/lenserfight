@@ -1,5 +1,10 @@
 import { defineCommand } from 'citty'
-import { resolveConfig, configExists, loadConfig } from '../config/project-config'
+import {
+  resolveConfig,
+  configExists,
+  loadConfig,
+  getEffectiveMode,
+} from '../config/project-config'
 import { printJson, printTable } from '../utils/output'
 import { c, sym } from '../utils/ansi'
 import { byokKeyResolver } from '@lenserfight/providers'
@@ -77,13 +82,16 @@ export default defineCommand({
     const hasConfig = configExists()
     const config = hasConfig ? loadConfig() : null
     const resolved = resolveConfig()
+    const { mode: effectiveMode, source: effectiveSource } = getEffectiveMode()
 
     if (args.json) {
       printJson({
         variables: entries,
         config: {
           present: hasConfig,
-          mode: config?.mode ?? null,
+          projectMode: config?.mode ?? null,
+          effectiveMode,
+          effectiveModeSource: effectiveSource,
           supabaseUrl: resolved.supabaseUrl ?? null,
         },
         byok: {

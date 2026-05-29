@@ -3,6 +3,7 @@ import consola from 'consola'
 import {
   configExists,
   findConfigPath,
+  getEffectiveMode,
   loadConfig,
   saveConfig,
 } from '../config/project-config'
@@ -11,19 +12,20 @@ import { c, sym } from '../utils/ansi'
 type Mode = 'local' | 'cloud'
 
 function currentModeInfo(): { mode: Mode; source: string } {
-  if (process.env['LF_LOCAL'] === '1')
-    return { mode: 'local', source: `env override (LF_LOCAL / --local)` }
-  if (process.env['LF_CLOUD'] === '1')
-    return { mode: 'cloud', source: `env override (LF_CLOUD / --cloud)` }
-  if (configExists()) {
-    const cfg = loadConfig()
-    return { mode: cfg.mode, source: findConfigPath() }
-  }
-  return { mode: 'cloud', source: 'default (no project config — run `lf init` to create one)' }
+  const { mode, source } = getEffectiveMode()
+  const sourceLabel =
+    source === 'env-local'
+      ? 'env override (LF_LOCAL / --local)'
+      : source === 'env-cloud'
+        ? 'env override (LF_CLOUD / --cloud)'
+        : source === 'project'
+          ? findConfigPath()
+          : 'default (no project config — run `lf init` to create one)'
+  return { mode, source: sourceLabel }
 }
 
 function modeLabel(m: Mode): string {
-  return m === 'local' ? c.localhost('local') : c.cloud('cloud')
+  return m === 'local' ? c.localhost('Supabase local') : c.cloud('Cloud')
 }
 
 export default defineCommand({
@@ -62,7 +64,8 @@ export default defineCommand({
       console.log(`  ${sym.info}  Active mode   ${c.bold(modeLabel(mode))}`)
       console.log(`     Source        ${c.muted(source)}`)
       console.log(sep)
-      console.log(`\n  Switch:  ${c.accent(`lf use ${other}`)}  ${c.muted('·')}  per-invocation: ${c.muted(`lf --${other} <cmd>`)}\n`)
+      console.log(`  File workspace  ${c.success('always on')}  ${c.muted('(lf battle file, lf validate — no Docker)')}`)
+      console.log(`\n  Switch API:  ${c.accent(`lf use ${other}`)}  ${c.muted('·')}  once: ${c.muted(`lf --${other} <cmd>`)}\n`)
       return
     }
 

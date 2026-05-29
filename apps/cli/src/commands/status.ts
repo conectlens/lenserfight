@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty'
 import {
   configExists,
+  getEffectiveMode,
   getOnboardingState,
   loadConfig,
   resolveConfig,
@@ -39,6 +40,7 @@ export default defineCommand({
   },
   async run({ args }) {
     const config = resolveConfig()
+    const { mode: effectiveMode, source: effectiveSource } = getEffectiveMode()
     const onboarding = getOnboardingState()
     const project = configExists() ? loadConfig() : null
     const authed = isAuthenticated()
@@ -53,7 +55,9 @@ export default defineCommand({
     if (args.json) {
       const payload: Record<string, unknown> = {
         projectConfigPresent: !!project,
-        mode: project?.mode ?? config.mode,
+        mode: effectiveMode,
+        modeSource: effectiveSource,
+        projectMode: project?.mode ?? null,
         supabaseUrl: config.supabaseUrl || null,
         cloudApiUrl: config.cloudApiUrl || null,
         supabaseAnonKeyPresent: !!config.supabaseAnonKey,
@@ -90,18 +94,19 @@ export default defineCommand({
     const authMark = authed ? c.success(`${sym.pass} authenticated`) : c.error(`${sym.fail} not authenticated`)
     console.log(`Auth          ${authMark}`)
 
-    // Mode row
-    const mode = project?.mode ?? config.mode
-    const modeEnvOverride = process.env['LF_LOCAL'] === '1' || process.env['LF_CLOUD'] === '1'
-    const modeLabel = mode === 'local' ? c.localhost('local') : c.cloud('cloud')
-    const modeSuffix = modeEnvOverride
-      ? c.warn(' (env override — run `lf use` to see persistent setting)')
-      : c.muted(` — switch: lf use ${mode === 'local' ? 'cloud' : 'local'}`)
-    console.log(`Mode          ${c.bold(modeLabel)}${modeSuffix}`)
+    // Mode row (effective API target: Cloud vs Supabase local)
+    const modeLabel =
+      effectiveMode === 'local' ? c.localhost('Supabase local') : c.cloud('Cloud')
+    const modeSuffix =
+      effectiveSource === 'env-local' || effectiveSource === 'env-cloud'
+        ? c.warn(` (${effectiveSource === 'env-local' ? '--local' : '--cloud'} override)`)
+        : c.muted(` — switch: lf use ${effectiveMode === 'local' ? 'cloud' : 'local'}`)
+    console.log(`API mode      ${c.bold(modeLabel)}${modeSuffix}`)
+    console.log(`File workspace ${c.success(sym.pass)}  always available (lf validate, lf battle file)`)
 
     // Environment row
     const node = detectNode()
-    if (mode === 'local') {
+    if (effectiveMode === 'local') {
       const supabase = detectSupabaseCli()
       const docker = detectDocker()
       const envOk = node.ok && supabase.ok && docker.ok

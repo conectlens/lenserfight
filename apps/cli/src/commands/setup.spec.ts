@@ -281,14 +281,14 @@ describe('setup journey mode', () => {
 })
 
 describe('setup auto-detection', () => {
-  it('falls back to --mode local when no config and not authenticated', async () => {
+  it('falls back to cloud env setup when no config and not authenticated', async () => {
     mockConfigExists.mockReturnValue(false)
     mockIsAuthenticated.mockReturnValue(false)
 
     await setupCmd.run?.({ args: { mode: '', json: false, 'skip-open': true }, cmd: {}, rawArgs: [] })
 
     expect(mockPrintInfo).toHaveBeenCalledWith(expect.stringContaining('environment setup'))
-    expect(mockMarkOnboardingComplete).toHaveBeenCalledWith('local')
+    expect(mockMarkOnboardingComplete).toHaveBeenCalledWith('cloud')
   })
 
   it('errors on unknown mode', async () => {

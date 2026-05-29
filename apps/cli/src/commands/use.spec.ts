@@ -15,6 +15,7 @@ jest.mock('../config/project-config', () => ({
   findConfigPath: jest.fn(() => '/project/.lenserfight/lenserfight.json'),
   loadConfig: jest.fn(),
   saveConfig: jest.fn(),
+  getEffectiveMode: jest.fn(),
 }))
 jest.mock('../utils/ansi', () => ({
   c: {
@@ -24,6 +25,7 @@ jest.mock('../utils/ansi', () => ({
     accent: (s: string) => s,
     muted: (s: string) => s,
     warn: (s: string) => s,
+    success: (s: string) => s,
   },
   sym: { info: '●' },
   A: { gray: '', reset: '' },
@@ -33,11 +35,13 @@ import consola from 'consola'
 import {
   configExists,
   findConfigPath,
+  getEffectiveMode,
   loadConfig,
   saveConfig,
 } from '../config/project-config'
 
 const mockConfigExists = configExists as jest.MockedFunction<typeof configExists>
+const mockGetEffectiveMode = getEffectiveMode as jest.MockedFunction<typeof getEffectiveMode>
 const mockFindConfigPath = findConfigPath as jest.MockedFunction<typeof findConfigPath>
 const mockLoadConfig = loadConfig as jest.MockedFunction<typeof loadConfig>
 const mockSaveConfig = saveConfig as jest.MockedFunction<typeof saveConfig>
@@ -58,6 +62,7 @@ beforeEach(() => {
   delete process.env['LF_LOCAL']
   delete process.env['LF_CLOUD']
   mockFindConfigPath.mockReturnValue('/project/.lenserfight/lenserfight.json')
+  mockGetEffectiveMode.mockReturnValue({ mode: 'cloud', source: 'default' })
 })
 
 // ── Show current mode (no args) ────────────────────────────────────────────
@@ -70,25 +75,27 @@ describe('lf use (no args)', () => {
     await useCmd.run?.({ args: { mode: undefined, json: false } })
 
     const output = logSpy.mock.calls.map((c) => c.join(' ')).join('\n')
-    expect(output).toContain('cloud')
+    expect(output).toContain('Cloud')
     logSpy.mockRestore()
   })
 
   it('shows local mode when project config is set to local', async () => {
     mockConfigExists.mockReturnValue(true)
     mockLoadConfig.mockReturnValue({ mode: 'local', dbPort: 54322, apiPort: 54321 })
+    mockGetEffectiveMode.mockReturnValue({ mode: 'local', source: 'project' })
     const logSpy = jest.spyOn(console, 'log').mockImplementation()
 
     await useCmd.run?.({ args: { mode: undefined, json: false } })
 
     const output = logSpy.mock.calls.map((c) => c.join(' ')).join('\n')
-    expect(output).toContain('local')
+    expect(output).toContain('Supabase local')
     logSpy.mockRestore()
   })
 
   it('emits JSON when --json passed', async () => {
     mockConfigExists.mockReturnValue(true)
     mockLoadConfig.mockReturnValue({ mode: 'cloud', dbPort: 54322, apiPort: 54321 })
+    mockGetEffectiveMode.mockReturnValue({ mode: 'cloud', source: 'project' })
     const writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
 
     await useCmd.run?.({ args: { mode: undefined, json: true } })
@@ -103,6 +110,7 @@ describe('lf use (no args)', () => {
   it('notes env override in JSON output when LF_CLOUD is set', async () => {
     process.env['LF_CLOUD'] = '1'
     mockConfigExists.mockReturnValue(false)
+    mockGetEffectiveMode.mockReturnValue({ mode: 'cloud', source: 'env-cloud' })
     const writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
 
     await useCmd.run?.({ args: { mode: undefined, json: true } })
@@ -124,7 +132,7 @@ describe('lf use <mode>', () => {
     await useCmd.run?.({ args: { mode: 'local', json: false } })
 
     expect(mockSaveConfig).toHaveBeenCalledWith({ mode: 'local' })
-    expect(mockConsolaSuccess).toHaveBeenCalledWith(expect.stringContaining('local'))
+    expect(mockConsolaSuccess).toHaveBeenCalledWith(expect.stringContaining('Supabase local'))
   })
 
   it('switches from local to cloud and saves config', async () => {
@@ -134,7 +142,7 @@ describe('lf use <mode>', () => {
     await useCmd.run?.({ args: { mode: 'cloud', json: false } })
 
     expect(mockSaveConfig).toHaveBeenCalledWith({ mode: 'cloud' })
-    expect(mockConsolaSuccess).toHaveBeenCalledWith(expect.stringContaining('cloud'))
+    expect(mockConsolaSuccess).toHaveBeenCalledWith(expect.stringContaining('Cloud'))
   })
 
   it('creates config when no project config exists', async () => {

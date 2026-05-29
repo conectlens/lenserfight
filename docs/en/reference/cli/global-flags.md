@@ -6,12 +6,14 @@ Two global flags are available on every LenserFight CLI command.
 
 ## `--local`
 
-Override the project config mode to `local` for the duration of the command.
+Override the project config API mode to **Supabase local** for the duration of the command.
+
+This flag does **not** mean file-workspace battles — use `lf battle file` for those.
 
 ### What it does
 
 - Forces all API calls to use localhost endpoints (`http://127.0.0.1:54321`, `http://localhost:8786`) regardless of what `.lenserfight.json` specifies.
-- Prints `local mode active` to stderr on startup.
+- Prints `Supabase local mode active` to stderr on startup.
 - Disables telemetry for this invocation.
 - Warns if the resolved Supabase or API URL still points to production (soft warning — does not abort the command).
 
@@ -37,9 +39,9 @@ When `--local` is active the config resolution order becomes:
 
 The project config file (`mode` field in `.lenserfight.json`) is overridden for this invocation only and is not modified on disk.
 
-### Note on `lf battle leaderboard --local`
+### `lf battle leaderboard --file`
 
-The `--local` flag on `lf battle leaderboard` is a **separate per-command flag** that shows local battles ranked by vote totals. It has a different meaning from the global `--local` described here.
+Use `--file` to rank **file-workspace** battles. The old `--local` flag on this command is deprecated (it collided with global `--local`).
 
 ---
 

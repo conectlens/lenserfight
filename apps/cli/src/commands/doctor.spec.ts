@@ -14,6 +14,7 @@ jest.mock('../config/project-config', () => ({
   configExists: jest.fn(),
   loadConfig: jest.fn(),
   resolveConfig: jest.fn(),
+  getEffectiveMode: jest.fn().mockReturnValue({ mode: 'cloud', source: 'default' }),
   getOnboardingState: jest.fn(),
 }))
 jest.mock('../lib/onboarding/detect', () => ({

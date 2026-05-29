@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty'
 import {
   configExists,
+  getEffectiveMode,
   getOnboardingState,
   loadConfig,
   resolveConfig,
@@ -45,7 +46,9 @@ export default defineCommand({
   },
   async run({ args }) {
     const resolved = resolveConfig()
-    const mode = args.mode === 'cloud' ? 'cloud' : args.mode === 'local' ? 'local' : resolved.mode
+    const effective = getEffectiveMode()
+    const mode =
+      args.mode === 'cloud' ? 'cloud' : args.mode === 'local' ? 'local' : effective.mode
     const requestedCheck = (args.check as DoctorCheckId | undefined) ?? 'core'
     let hasError = false
 
@@ -66,6 +69,8 @@ export default defineCommand({
 
       const docker = detectDocker()
       push('docker', docker.ok ? 'pass' : 'fail', docker.detail)
+    } else {
+      push('supabase_local', 'pass', 'skipped — Cloud/file workspace (use lf doctor --mode local for Docker checks)')
     }
 
     if (configExists()) {

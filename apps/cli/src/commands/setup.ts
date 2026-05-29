@@ -59,7 +59,7 @@ const ENV_STEPS: OnboardingStep[] = [
 
 function resolveSetupOptions(args: Record<string, unknown>): SetupOptions {
   return {
-    mode: args.mode === 'cloud' ? 'cloud' : 'local',
+    mode: args.mode === 'local' ? 'local' : 'cloud',
     dryRun: Boolean(args['dry-run']),
     nonInteractive: Boolean(args['non-interactive']),
     resume: Boolean(args.resume),
@@ -353,8 +353,8 @@ export default defineCommand({
     if (rawMode === 'journey' || rawMode === '') {
       // Fresh-clone fallback: no config, no auth → run env setup
       if (rawMode === '' && !configExists() && !isAuthenticated()) {
-        printInfo('No project config found. Running environment setup (--mode local).')
-        return runEnvSetup(resolveSetupOptions({ ...args, mode: 'local' } as Record<string, unknown>))
+        printInfo('No project config found. Running environment setup (default: cloud).')
+        return runEnvSetup(resolveSetupOptions({ ...args, mode: 'cloud' } as Record<string, unknown>))
       }
       return runJourneySetup(Boolean(args.interactive), Boolean(args.json))
     }

@@ -2691,9 +2691,11 @@ export default defineConfig({
         {
           text: 'Environment & Dev',
           items: [
+            { text: 'Runtime Backends', link: '/en/reference/cli/runtime-backends' },
             { text: 'Development Commands', link: '/en/reference/cli/dev' },
             { text: 'Execution Modes', link: '/en/reference/cli/execution-modes' },
             { text: 'Switch Mode (lf use)', link: '/en/reference/cli/use' },
+            { text: 'Global Flags (--local)', link: '/en/reference/cli/global-flags' },
           ],
         },
         {

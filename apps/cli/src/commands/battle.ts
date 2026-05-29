@@ -5,6 +5,7 @@ import { resolve } from 'node:path'
 import { homedir } from 'node:os'
 import { type PrivateBattleFrontmatter } from '@lenserfight/types'
 import { callRpc, handleError } from '../utils/api'
+import { wrapBattleLocalAliasCommand } from '../lib/battle-file-alias'
 import { assertSafe } from '../lib/safety'
 import {
   buildWorkflowSimulationReport,
@@ -142,12 +143,12 @@ const join = defineCommand({
     },
     mode: {
       type: 'string',
-      description: 'Execution mode: local | cloud | manual (default: cloud)',
+      description: 'Execution mode: device | cloud | manual (default: cloud)',
       default: 'cloud',
     },
     device: {
       type: 'string',
-      description: 'Device UUID for local execution',
+      description: 'Device UUID for device-side execution (--mode device)',
       default: '',
     },
     json: {
@@ -157,11 +158,16 @@ const join = defineCommand({
     },
   },
   async run({ args }) {
-    const mode = args.mode || 'cloud'
+    let mode = String(args.mode || 'cloud')
+    if (mode === 'local') {
+      consola.warn("'--mode local' is deprecated. Use '--mode device' for on-device runner execution.")
+      mode = 'device'
+    }
+    const rpcRunnerMode = mode === 'device' ? 'local' : mode
 
-    if (mode === 'local' && !args.device) {
+    if (mode === 'device' && !args.device) {
       consola.warn(
-        'Local mode selected but no --device provided. Use `lf gateway devices` to find your device ID.'
+        'Device mode selected but no --device provided. Use `lf gateway devices` to find your device ID.'
       )
     }
 
@@ -171,7 +177,7 @@ const join = defineCommand({
         {
           p_battle_id: args.id,
           p_agent_id: args.agent || null,
-          p_runner_mode: mode,
+          p_runner_mode: rpcRunnerMode,
           p_device_id: args.device || null,
         },
         { requireAuth: true }
@@ -188,7 +194,7 @@ const join = defineCommand({
       if (args.device) consola.info('Device: %s', args.device)
       consola.info('')
       consola.info('Submit your entry:')
-      if (mode === 'local') {
+      if (mode === 'device') {
         consola.info('  lf battle submit %s --run-id <run-id> --attestation', args.id)
       } else {
         consola.info('  lf battle submit %s --text "your response"', args.id)
@@ -497,7 +503,7 @@ const run = defineCommand({
       consola.info('JSON:    %s', resultJson)
       if (skipAiJudge || !judgeSection) {
         consola.info('')
-        consola.info('Vote: lf battle local vote --slot A|B|draw --id %s', state.id.slice(0, 8))
+        consola.info('Vote: lf battle file vote --slot A|B|draw --id %s', state.id.slice(0, 8))
       }
       return
     }
@@ -929,7 +935,7 @@ const leaderboard = defineCommand({
   meta: {
     name: 'leaderboard',
     description:
-      'Show the scoring leaderboard for a battle (cloud) or your local battles ranked by votes (--local).',
+      'Show the scoring leaderboard for a battle (cloud) or file-workspace battles ranked by votes (--file).',
   },
   args: {
     id: {
@@ -937,14 +943,19 @@ const leaderboard = defineCommand({
       description: 'Battle UUID (cloud mode only)',
       required: false,
     },
+    file: {
+      type: 'boolean',
+      description: 'Rank file-workspace battles by vote totals — no cloud needed',
+      default: false,
+    },
     local: {
       type: 'boolean',
-      description: 'Rank your local battles by vote totals — no cloud needed',
+      description: 'Deprecated: use --file (global --local is Supabase local API override)',
       default: false,
     },
     limit: {
       type: 'string',
-      description: 'Max rows to show in --local mode',
+      description: 'Max rows to show in --file mode',
       default: '20',
     },
     json: {
@@ -954,11 +965,17 @@ const leaderboard = defineCommand({
     },
   },
   async run({ args }) {
-    if (args.local) {
+    const showFileBattles = args.file || args.local
+    if (args.local && !args.file) {
+      consola.warn(
+        'leaderboard --local is deprecated. Use --file for file-workspace battles. Global --local means Supabase local API.'
+      )
+    }
+    if (showFileBattles) {
       try {
         const battles = localBattleStore.list()
         if (!battles.length) {
-          consola.info('No local battles found. Run: lf battle local run --example haiku-shootout')
+          consola.info('No file-workspace battles found. Run: lf battle file run --example haiku-shootout')
           return
         }
 
@@ -997,7 +1014,7 @@ const leaderboard = defineCommand({
           return
         }
 
-        consola.info('Local Battle Leaderboard — ranked by vote count')
+        consola.info('File workspace battle leaderboard — ranked by vote count')
         printTable(
           ['#', 'Name', 'Status', 'Winner', 'A', 'B', 'Draw', 'Total', 'Date'],
           ranked.map(({ b, aWins, bWins, draws, total, winner }, i) => [
@@ -1019,7 +1036,7 @@ const leaderboard = defineCommand({
     }
 
     if (!args.id) {
-      consola.error('Provide a battle UUID or use --local to show local battles.')
+      consola.error('Provide a battle UUID or use --file to show file-workspace battles.')
       process.exitCode = 1
       return
     }
@@ -2210,7 +2227,7 @@ const feed = defineCommand({
 })
 
 // ---------------------------------------------------------------------------
-// battle local — offline dev battle subcommand group
+// battle file — file-workspace offline battles (no cloud or Supabase required)
 // ---------------------------------------------------------------------------
 import {
   localBattleStore,
@@ -2244,10 +2261,10 @@ const localInit = defineCommand({
       consola.info('')
       consola.info('Next steps:')
       consola.info(
-        '  lf battle local add-contender A --provider anthropic --model claude-haiku-4-5'
+        '  lf battle file add-contender A --provider anthropic --model claude-haiku-4-5'
       )
-      consola.info('  lf battle local add-contender B --provider ollama    --model llama3')
-      consola.info('  lf battle local run %s', state.id)
+      consola.info('  lf battle file add-contender B --provider ollama    --model llama3')
+      consola.info('  lf battle file run %s', state.id)
     } catch (err) {
       handleError(err)
     }
@@ -2279,7 +2296,7 @@ const localAddContender = defineCommand({
     try {
       const state = args.id ? localBattleStore.load(args.id) : localBattleStore.list()[0]
       if (!state) {
-        consola.error('No local battles found. Run `lf battle local init` first.')
+        consola.error('No local battles found. Run `lf battle file init` first.')
         process.exitCode = 1
         return
       }
@@ -2389,14 +2406,14 @@ const localRun = defineCommand({
           ? localBattleStore.resolve(args.id)
           : localBattleStore.list()[0]
       if (!state) {
-        consola.error('No local battles found. Run `lf battle local init` first.')
+        consola.error('No local battles found. Run `lf battle file init` first.')
         process.exitCode = 1
         return
       }
       if (state.status === 'draft') {
         consola.error('Add both contenders first:')
-        consola.info('  lf battle local add-contender A --provider <p> --model <m>')
-        consola.info('  lf battle local add-contender B --provider <p> --model <m>')
+        consola.info('  lf battle file add-contender A --provider <p> --model <m>')
+        consola.info('  lf battle file add-contender B --provider <p> --model <m>')
         process.exitCode = 1
         return
       }
@@ -2460,7 +2477,7 @@ const localRun = defineCommand({
 
       const skipAiJudge = args['no-judge'] || args.judge === 'human'
       if (skipAiJudge) {
-        consola.info('Next: lf battle local vote %s --slot A|B|draw', updated.id.slice(0, 8))
+        consola.info('Next: lf battle file vote %s --slot A|B|draw', updated.id.slice(0, 8))
       } else {
         await runLocalAiJudge(updated.id)
       }
@@ -2476,7 +2493,7 @@ async function runLocalAiJudge(battleId: string): Promise<void> {
     consola.warn(
       'AI judge skipped — no provider key found (ANTHROPIC_API_KEY, OPENAI_API_KEY, or Ollama).'
     )
-    consola.info('Run `lf battle local vote --slot A|B|draw` to judge manually.')
+    consola.info('Run `lf battle file vote --slot A|B|draw` to judge manually.')
     return
   }
   const keyHint =
@@ -2502,13 +2519,13 @@ async function runLocalAiJudge(battleId: string): Promise<void> {
     consola.info('Rationale: %s', verdict.rationale)
     consola.info('Judge: %s/%s (%d tokens)', verdict.provider, verdict.model, verdict.tokensUsed)
     consola.info('')
-    consola.info('Override: lf battle local vote %s --slot A|B|draw', battleId.slice(0, 8))
+    consola.info('Override: lf battle file vote %s --slot A|B|draw', battleId.slice(0, 8))
   } catch (judgeErr) {
     consola.warn(
       'AI judge failed: %s',
       judgeErr instanceof Error ? judgeErr.message : String(judgeErr)
     )
-    consola.info('Run `lf battle local vote --slot A|B|draw` to judge manually.')
+    consola.info('Run `lf battle file vote --slot A|B|draw` to judge manually.')
   }
 }
 
@@ -2535,7 +2552,7 @@ const localVote = defineCommand({
         return
       }
       if (state.status !== 'executed' && state.status !== 'voted') {
-        consola.error('Run the battle first: lf battle local run')
+        consola.error('Run the battle first: lf battle file run')
         process.exitCode = 1
         return
       }
@@ -2568,7 +2585,7 @@ const localStatus = defineCommand({
     try {
       const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0]
       if (!state) {
-        consola.info('No local battles yet. Run `lf battle local init`.')
+        consola.info('No local battles yet. Run `lf battle file init`.')
         return
       }
       if (args.json) {
@@ -2633,7 +2650,7 @@ const localList = defineCommand({
     try {
       const all = localBattleStore.list()
       if (!all.length) {
-        consola.info('No local battles. Run `lf battle local init` to create one.')
+        consola.info('No local battles. Run `lf battle file init` to create one.')
         return
       }
       if (args.json) {
@@ -2703,16 +2720,37 @@ const localPush = defineCommand({
   },
 })
 
+const fileBattleSubCommands = {
+  init: localInit,
+  'add-contender': localAddContender,
+  run: localRun,
+  vote: localVote,
+  status: localStatus,
+  list: localList,
+  push: localPush,
+}
+
+const file = defineCommand({
+  meta: {
+    name: 'file',
+    description: 'Manage file-workspace battles (no cloud, Supabase, or auth required).',
+  },
+  subCommands: fileBattleSubCommands,
+})
+
 const local = defineCommand({
-  meta: { name: 'local', description: 'Manage offline local battles (no cloud or auth required).' },
+  meta: {
+    name: 'local',
+    description: 'Deprecated: use `battle file` for file-workspace battles.',
+  },
   subCommands: {
-    init: localInit,
-    'add-contender': localAddContender,
-    run: localRun,
-    vote: localVote,
-    status: localStatus,
-    list: localList,
-    push: localPush,
+    init: wrapBattleLocalAliasCommand(localInit),
+    'add-contender': wrapBattleLocalAliasCommand(localAddContender),
+    run: wrapBattleLocalAliasCommand(localRun),
+    vote: wrapBattleLocalAliasCommand(localVote),
+    status: wrapBattleLocalAliasCommand(localStatus),
+    list: wrapBattleLocalAliasCommand(localList),
+    push: wrapBattleLocalAliasCommand(localPush),
   },
 })
 
@@ -4800,6 +4838,7 @@ export default defineCommand({
     messages,
     'post-message': postMessage,
     feed,
+    file,
     local,
     push: localPush,
     exec,

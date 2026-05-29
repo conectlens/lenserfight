@@ -55,7 +55,15 @@ beforeEach(() => {
 })
 
 describe('init', () => {
-  it('creates config with local defaults on fresh init', async () => {
+  it('creates config with cloud by default when mode omitted', async () => {
+    await initCmd.run?.({ args: { mode: 'cloud', source: 'auto' }, cmd: {}, rawArgs: [] })
+
+    expect(mockSaveConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ mode: 'cloud' })
+    )
+  })
+
+  it('creates config with local when --mode local', async () => {
     await initCmd.run?.({ args: { mode: 'local', source: 'auto' }, cmd: {}, rawArgs: [] })
 
     expect(mockSaveConfig).toHaveBeenCalledWith(

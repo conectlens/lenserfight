@@ -51,15 +51,15 @@ describe('examples', () => {
     await examplesCmd.run?.({ args: { json: true, category: undefined }, cmd: {}, rawArgs: [] })
 
     expect(mockPrintJson).toHaveBeenCalledWith(expect.arrayContaining([
-      expect.objectContaining({ category: 'getting-started' }),
+      expect.objectContaining({ category: 'cloud' }),
     ]))
   })
 
   it('filters by category', async () => {
-    await examplesCmd.run?.({ args: { json: true, category: 'battles' }, cmd: {}, rawArgs: [] })
+    await examplesCmd.run?.({ args: { json: true, category: 'file-workspace' }, cmd: {}, rawArgs: [] })
 
     const jsonArg = mockPrintJson.mock.calls[0][0] as Array<{ category: string }>
-    expect(jsonArg.every((e) => e.category === 'battles')).toBe(true)
+    expect(jsonArg.every((e) => e.category === 'file-workspace')).toBe(true)
   })
 
   it('warns on unknown category', async () => {

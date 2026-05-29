@@ -13,6 +13,7 @@ jest.mock('../config/project-config', () => ({
   configExists: jest.fn(),
   loadConfig: jest.fn(),
   resolveConfig: jest.fn(),
+  getEffectiveMode: jest.fn().mockReturnValue({ mode: 'cloud', source: 'default' }),
   getOnboardingState: jest.fn(),
 }))
 jest.mock('../utils/auth', () => ({
@@ -35,11 +36,18 @@ jest.mock('../utils/output', () => ({
   truncate: jest.fn((s: string) => s),
 }))
 
-import { configExists, resolveConfig, getOnboardingState, loadConfig } from '../config/project-config'
+import {
+  configExists,
+  resolveConfig,
+  getEffectiveMode,
+  getOnboardingState,
+  loadConfig,
+} from '../config/project-config'
 import { isAuthenticated } from '../utils/auth'
 import { fetchJourneyState } from '../lib/onboarding/journey'
 import { printJson } from '../utils/output'
 
+const mockGetEffectiveMode = getEffectiveMode as jest.MockedFunction<typeof getEffectiveMode>
 const mockConfigExists = configExists as jest.MockedFunction<typeof configExists>
 const mockResolveConfig = resolveConfig as jest.MockedFunction<typeof resolveConfig>
 const mockGetOnboardingState = getOnboardingState as jest.MockedFunction<typeof getOnboardingState>
@@ -71,6 +79,7 @@ beforeEach(() => {
   mockGetOnboardingState.mockReturnValue(null)
   mockIsAuthenticated.mockReturnValue(false)
   mockFetchJourneyState.mockResolvedValue(null)
+  mockGetEffectiveMode.mockReturnValue({ mode: 'local', source: 'project' })
 })
 
 describe('status', () => {
@@ -81,6 +90,7 @@ describe('status', () => {
       expect.objectContaining({
         projectConfigPresent: true,
         mode: 'local',
+        modeSource: 'project',
         authStatus: 'not_authenticated',
       })
     )
