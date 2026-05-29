@@ -1,3 +1,16 @@
+## 0.10.0 (2026-05-29)
+
+### 🚀 Features
+
+- **cli:** add execute/configure hubs and expand TUI dashboard ([60fad3025](https://github.com/conectlens/lenserfight/commit/60fad3025))
+- **cli:** split lenser commands into human, ai, find, and list ([c42e3be04](https://github.com/conectlens/lenserfight/commit/c42e3be04))
+- **cli:** use hosted Supabase defaults and fix cloud health probes ([35ed9f4d0](https://github.com/conectlens/lenserfight/commit/35ed9f4d0))
+
+### ❤️ Thank You
+
+- Cursor @cursoragent
+- Ömer Faruk Coşkun
+
 ## 0.9.0 (2026-05-29)
 
 ### 🚀 Features
