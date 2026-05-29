@@ -1,11 +1,14 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail } from '../../types.js';
 import { battleService } from '../../services/battle.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'create_battle';
+const meta = getToolMeta('create_battle');
+const TOOL = meta.name;
 
 function slugify(title: string): string {
   const base = title
@@ -17,9 +20,7 @@ function slugify(title: string): string {
 }
 
 export function registerBattleCreate(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Create a new battle. The task_prompt defines what competitors must do. Returns the new battle with its ID.',
+  registerMcpTool(server, meta,
     {
       title: z.string().min(1).max(200),
       task_prompt: z.string().min(1).max(32000),

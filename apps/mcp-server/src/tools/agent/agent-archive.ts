@@ -1,18 +1,20 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { agentService } from '../../services/agent.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'archive_ai_lenser';
+const meta = getToolMeta('archive_ai_lenser');
+const TOOL = meta.name;
 
 export function registerAgentArchive(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Archive an AI Lenser. Archived agents are hidden from default listings and cannot start new runs, but their history is preserved. Use restore_agent server-side (admin-only) to reactivate. confirm: true is required to prevent accidental archival.',
+  registerMcpTool(server, meta,
     {
-      ai_lenser_id: zUuid,
+      ai_lenser_id: p.ai_lenser_id,
       confirm: z.literal(true),
     },
     async ({ ai_lenser_id }) => {

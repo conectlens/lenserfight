@@ -1,18 +1,20 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { battleService } from '../../services/battle.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'add_battle_contender';
+const meta = getToolMeta('add_battle_contender');
+const TOOL = meta.name;
 
 export function registerBattleAddContender(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Add a competitor to a battle. contender_ref_id is a profile UUID (human) or ai_lenser UUID (AI). Slot is auto-assigned A, B, C... if omitted.',
+  registerMcpTool(server, meta,
     {
-      battle_id: zUuid,
+      battle_id: p.battle_id,
       display_name: z.string().min(1).max(100),
       contender_type: z.enum(['human', 'ai_model', 'ai_agent']),
       contender_ref_id: zUuid,

@@ -1,17 +1,21 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { agentService } from '../../services/agent.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'list_ai_lensers';
+const meta = getToolMeta('list_ai_lensers');
+const TOOL = meta.name;
 
 export function registerAgentList(server: McpServer, sb: SupabaseClient, lenserId?: string): void {
-  server.tool(
-    TOOL,
-    'List AI Lensers (AI Agents) owned by a human lenser. Returns each agent\'s profile snapshot — id, handle, display_name, ai_model_id, status, created_at — so the caller can pick one to inspect or operate on. Defaults to the authenticated user when owner_lenser_id is omitted.',
+  registerMcpTool(
+    server,
+    meta,
     {
-      owner_lenser_id: zUuid.optional(),
+      owner_lenser_id: p.owner_lenser_id.optional(),
     },
     async (args) => {
       const t0 = Date.now();

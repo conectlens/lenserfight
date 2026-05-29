@@ -1,19 +1,23 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { agentService } from '../../services/agent.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'list_agent_run_events';
+const meta = getToolMeta('list_agent_run_events');
+const TOOL = meta.name;
 
 export function registerAgentListRunEvents(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Read the event stream for an AI Lenser\'s team runs — tool invocations, step transitions, errors. Optionally filter by run_id or event_type. Limit caps at 500 server-side; owner-only.',
+  registerMcpTool(
+    server,
+    meta,
     {
-      ai_lenser_id: zUuid,
-      run_id: zUuid.optional(),
+      ai_lenser_id: p.ai_lenser_id,
+      run_id: p.workflow_run_id.optional(),
       event_type: z.string().max(64).optional(),
       limit: z.number().int().min(1).max(500).default(100).optional(),
     },

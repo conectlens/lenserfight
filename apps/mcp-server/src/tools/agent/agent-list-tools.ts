@@ -1,18 +1,20 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { agentService } from '../../services/agent.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'list_agent_tools';
+const meta = getToolMeta('list_agent_tools');
+const TOOL = meta.name;
 
 export function registerAgentListTools(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'List the tools assigned to an AI Lenser — what it is allowed to invoke during a team run. Each row is a tool_assignment with tool metadata. Use cursor (last tool_assignment.id) for keyset pagination.',
+  registerMcpTool(server, meta,
     {
-      ai_lenser_id: zUuid,
+      ai_lenser_id: p.ai_lenser_id,
       limit: z.number().int().min(1).max(200).default(50).optional(),
       cursor: zUuid.optional(),
     },

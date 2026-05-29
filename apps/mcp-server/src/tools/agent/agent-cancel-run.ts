@@ -1,16 +1,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { agentService } from '../../services/agent.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'cancel_agent_run';
+const meta = getToolMeta('cancel_agent_run');
+const TOOL = meta.name;
 
 export function registerAgentCancelRun(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Cancel an in-flight team run for an AI Lenser. The run transitions to "cancelled"; any pending tool invocations are aborted. Already-completed runs are a no-op.',
-    { team_run_id: zUuid, ai_lenser_id: zUuid },
+  registerMcpTool(server, meta,
+    { team_run_id: p.workflow_run_id, ai_lenser_id: p.ai_lenser_id },
     async ({ team_run_id, ai_lenser_id }) => {
       const t0 = Date.now();
       try {

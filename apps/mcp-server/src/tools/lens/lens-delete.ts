@@ -1,18 +1,20 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { lensService } from '../../services/lens.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'delete_lens';
+const meta = getToolMeta('delete_lens');
+const TOOL = meta.name;
 
 export function registerLensDelete(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Soft-delete a lens by setting deleted_at. DESTRUCTIVE — requires confirm: true. The lens will no longer appear in any listings.',
+  registerMcpTool(server, meta,
     {
-      lens_id: zUuid,
+      lens_id: p.lens_id,
       confirm: z.literal(true, {
         error: () => ({ message: 'You must pass confirm: true to delete a lens.' }),
       }),

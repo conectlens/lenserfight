@@ -1,16 +1,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { lensService } from '../../services/lens.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'get_lens';
+const meta = getToolMeta('get_lens');
+const TOOL = meta.name;
 
 export function registerLensGet(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Fetch a single lens with full metadata: title, description, content (rendered preview), author, tags, language, and its head version including the template body, input/output contracts, and parameter list. Call this after list_lenses / search_lenses when you need the actual template + parameters to execute a lens via run_lens.',
-    { lens_id: zUuid },
+  registerMcpTool(server, meta,
+    { lens_id: p.lens_id },
     async ({ lens_id }) => {
       const t0 = Date.now();
       try {

@@ -1,19 +1,21 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { lensService } from '../../services/lens.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'validate_lens_params';
+const meta = getToolMeta('validate_lens_params');
+const TOOL = meta.name;
 
 export function registerLensValidateParams(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Validate parameter values against a lens version schema. Returns which params are missing, which are unknown, and whether the input is valid.',
+  registerMcpTool(server, meta,
     {
-      lens_id: zUuid,
-      version_id: zUuid.optional(),
+      lens_id: p.lens_id,
+      version_id: p.lens_version_id.optional(),
       values: z.record(z.string(), z.string()),
     },
     async ({ lens_id, version_id, values }) => {

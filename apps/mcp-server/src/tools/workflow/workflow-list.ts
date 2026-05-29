@@ -1,21 +1,23 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { paginated, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { workflowService } from '../../services/workflow.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'list_workflows';
+const meta = getToolMeta('list_workflows');
+const TOOL = meta.name;
 
 export function registerWorkflowList(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'List workflows with pagination. Optionally filter by visibility or lenser.',
+  registerMcpTool(server, meta,
     {
       limit: z.number().int().min(1).max(100).default(20).optional(),
       offset: z.number().int().min(0).default(0).optional(),
       visibility: z.enum(['public', 'private', 'unlisted']).optional(),
-      lenser_id: zUuid.optional(),
+      lenser_id: p.lenser_id.optional(),
     },
     async (args) => {
       const t0 = Date.now();

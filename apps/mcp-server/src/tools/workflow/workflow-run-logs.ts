@@ -1,16 +1,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerMcpTool } from '../register-tool.js';
+import { getToolMeta } from '../tool-metadata.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ok, fail, zUuid } from '../../types.js';
+import { p } from '../tool-params.js';
 import { workflowService } from '../../services/workflow.service.js';
 import { McpError } from '../../services/mcp-error.js';
 
-const TOOL = 'get_workflow_run_logs';
+const meta = getToolMeta('get_workflow_run_logs');
+const TOOL = meta.name;
 
 export function registerWorkflowRunLogs(server: McpServer, sb: SupabaseClient): void {
-  server.tool(
-    TOOL,
-    'Get execution logs and node outputs for a workflow run, ordered by time.',
-    { run_id: zUuid },
+  registerMcpTool(server, meta,
+    { run_id: p.workflow_run_id },
     async ({ run_id }) => {
       const t0 = Date.now();
       try {
