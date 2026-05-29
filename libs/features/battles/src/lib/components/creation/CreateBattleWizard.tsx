@@ -808,6 +808,21 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         throw new Error('Battle creation succeeded but the response is missing id or slug.')
       }
 
+      // Phase CT — persist automation_config when the user opted in. fn_battles_create
+      // and fn_update_battle do not yet accept this field; until they do, we patch the
+      // row directly. Owner RLS permits this.
+      if (autoAssignContenders || autoPromote) {
+        try {
+          await battlesService.updateAutomationConfig?.(battle.id, {
+            autoAssignContenders,
+            autoPromote,
+          })
+        } catch (err) {
+          // Non-fatal: persistence layer may not yet expose the helper.
+          console.warn('[CreateBattleWizard] automation_config persist skipped:', err)
+        }
+      }
+
       // Persist execution config for AI battles
       if (resolvedBattleType === 'ai_vs_ai' && selectedProviderKey && selectedModelKey) {
         await battleExecutionRepository.upsertExecutionConfig({

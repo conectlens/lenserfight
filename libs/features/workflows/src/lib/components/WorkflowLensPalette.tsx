@@ -23,6 +23,8 @@ import {
   FileText,
   Globe,
   GripVertical,
+  LayoutGrid,
+  LayoutPanelTop,
   Link,
   MessageSquare,
   Repeat,
@@ -55,8 +57,10 @@ interface WorkflowLensPaletteProps {
 }
 
 type PaletteTab = 'mine' | 'popular'
+type PaletteMode = 'split' | 'grid'
 
 const PAGE_SIZE = 20
+const PALETTE_MODE_STORAGE_KEY = 'lf:palette:mode'
 
 export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }: WorkflowLensPaletteProps) {
   const { user } = useAuth()
@@ -65,7 +69,21 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [allowAutoFetchNextPage, setAllowAutoFetchNextPage] = useState(false)
   const [kindFilter, setKindFilter] = useState<LensKind | null>(null)
+  const [paletteMode, setPaletteMode] = useState<PaletteMode>('split')
   const sentinelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const stored = window.localStorage.getItem(PALETTE_MODE_STORAGE_KEY)
+    if (stored === 'split' || stored === 'grid') setPaletteMode(stored)
+  }, [])
+
+  const handlePaletteModeChange = (mode: PaletteMode) => {
+    setPaletteMode(mode)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(PALETTE_MODE_STORAGE_KEY, mode)
+    }
+  }
 
   // Debounce: only propagate search query after 300ms of inactivity
   useEffect(() => {
@@ -203,15 +221,47 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
         </Button>
       </div>
       <div className="px-3 pt-2 pb-2 space-y-2">
-        {/* Search */}
-        <SearchBar
-          value={rawSearch}
-          onChange={(e) => setRawSearch(e.target.value)}
-          onClear={() => { setRawSearch(''); setDebouncedSearch('') }}
-          loading={loadingSearch && rawSearch.length >= 3}
-          placeholder="Search lenses… (3+ chars)"
-          className="text-xs"
-        />
+        {/* Search + Mode toggle */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex-1 min-w-0">
+            <SearchBar
+              value={rawSearch}
+              onChange={(e) => setRawSearch(e.target.value)}
+              onClear={() => { setRawSearch(''); setDebouncedSearch('') }}
+              loading={loadingSearch && rawSearch.length >= 3}
+              placeholder="Search lenses… (3+ chars)"
+              className="text-xs"
+            />
+          </div>
+          <div role="group" aria-label="Palette layout" className="flex flex-shrink-0 rounded-lg border border-surface-border bg-surface-raised p-0.5">
+            <button
+              type="button"
+              onClick={() => handlePaletteModeChange('split')}
+              aria-label="Split layout"
+              aria-pressed={paletteMode === 'split'}
+              title="Split layout"
+              className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${paletteMode === 'split'
+                  ? 'bg-primary-yellow-500/15 text-primary-yellow-600'
+                  : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                }`}
+            >
+              <LayoutPanelTop size={12} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePaletteModeChange('grid')}
+              aria-label="Grid layout"
+              aria-pressed={paletteMode === 'grid'}
+              title="Grid layout"
+              className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${paletteMode === 'grid'
+                  ? 'bg-primary-yellow-500/15 text-primary-yellow-600'
+                  : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                }`}
+            >
+              <LayoutGrid size={12} />
+            </button>
+          </div>
+        </div>
 
         {/* Tabs */}
         {!isSearching && myLenses.length > 0 && (
@@ -263,63 +313,67 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
         </div>
       </div>
 
-      {/* ── Split layout: Lenses (top half) + Utility Nodes (bottom half) ── */}
+      {/* ── Layout: Split (lenses + utility nodes) or Grid (utility nodes only) ── */}
       <div className="flex-1 flex flex-col min-h-0">
-        {/* Top half: Lens list — scrollable */}
-        <div
-          className="flex-1 min-h-0 overflow-y-auto px-2 pb-2 space-y-1"
-          onScroll={() => setAllowAutoFetchNextPage(true)}
-        >
-          {isLoading &&
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-10 rounded-xl bg-surface-raised animate-pulse" />
-            ))}
+        {paletteMode === 'split' && (
+          <div
+            className="flex-1 min-h-0 overflow-y-auto px-2 pb-2 space-y-1"
+            onScroll={() => setAllowAutoFetchNextPage(true)}
+          >
+            {isLoading &&
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-10 rounded-xl bg-surface-raised animate-pulse" />
+              ))}
 
-          {!isLoading && displayLenses.length === 0 && (
-            <p className="py-4 text-center text-xs text-greyscale-400">
-              {isSearching ? 'No lenses found.' : 'No lenses available.'}
-            </p>
-          )}
+            {!isLoading && displayLenses.length === 0 && (
+              <p className="py-4 text-center text-xs text-greyscale-400">
+                {isSearching ? 'No lenses found.' : 'No lenses available.'}
+              </p>
+            )}
 
-          {!isLoading &&
-            displayLenses.map((lens) => (
-              <div
-                key={lens.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, lens)}
-                title={`Drag to add "${lens.title}"`}
-                className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-2.5 py-2 cursor-grab active:cursor-grabbing select-none hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5 transition-colors group"
-              >
-                <GripVertical
-                  size={12}
-                  className="flex-shrink-0 text-greyscale-300 group-hover:text-greyscale-400 transition-colors"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="truncate text-xs font-medium text-greyscale-800 dark:text-greyscale-100 leading-tight">
-                    {lens.title}
-                  </p>
-                  {lens.visibility !== 'public' && (
-                    <p className="text-[10px] text-greyscale-400 capitalize mt-0.5">{lens.visibility}</p>
-                  )}
+            {!isLoading &&
+              displayLenses.map((lens) => (
+                <div
+                  key={lens.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, lens)}
+                  title={`Drag to add "${lens.title}"`}
+                  className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-2.5 py-2 cursor-grab active:cursor-grabbing select-none hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5 transition-colors group"
+                >
+                  <GripVertical
+                    size={12}
+                    className="flex-shrink-0 text-greyscale-300 group-hover:text-greyscale-400 transition-colors"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-xs font-medium text-greyscale-800 dark:text-greyscale-100 leading-tight">
+                      {lens.title}
+                    </p>
+                    {lens.visibility !== 'public' && (
+                      <p className="text-[10px] text-greyscale-400 capitalize mt-0.5">{lens.visibility}</p>
+                    )}
+                  </div>
                 </div>
+              ))}
+
+            {/* Sentinel for infinite scroll */}
+            {!isSearching && (
+              <div ref={sentinelRef} className="h-4" />
+            )}
+
+            {/* Loading more indicator */}
+            {activeQuery?.isFetchingNextPage && (
+              <div className="flex justify-center py-2">
+                <div className="h-4 w-4 rounded-full border-2 border-primary-yellow-500 border-t-transparent animate-spin" />
               </div>
-            ))}
+            )}
+          </div>
+        )}
 
-          {/* Sentinel for infinite scroll */}
-          {!isSearching && (
-            <div ref={sentinelRef} className="h-4" />
-          )}
-
-          {/* Loading more indicator */}
-          {activeQuery?.isFetchingNextPage && (
-            <div className="flex justify-center py-2">
-              <div className="h-4 w-4 rounded-full border-2 border-primary-yellow-500 border-t-transparent animate-spin" />
-            </div>
-          )}
-        </div>
-
-        {/* Bottom half: Utility Nodes — scrollable */}
-        <div className="flex-1 min-h-0 overflow-y-auto border-t border-surface-border px-3 py-2 space-y-1.5">
+        {/* Utility Nodes — scrollable; full height in grid mode, bottom half in split mode */}
+        <div
+          data-testid="palette-utility-panel"
+          className={`flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-1.5 ${paletteMode === 'split' ? 'border-t border-surface-border' : ''}`}
+        >
           {utilityNodesByCategory.map(({ category, nodes: catalogNodes }) => (
             <div key={category} className="space-y-1.5">
               {category === 'trigger' ? (

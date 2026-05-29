@@ -54,3 +54,30 @@ export interface PlatformRunStatus {
 export type LensExecuteResponse = ApiResponseEnvelope<PlatformExecutionAccepted>
 export type WorkflowRunResponse = ApiResponseEnvelope<PlatformExecutionAccepted>
 export type RunStatusResponse = ApiResponseEnvelope<PlatformRunStatus>
+
+/**
+ * Phase CT — Battle automation config persisted into `battles.battles.automation_config`.
+ * Surfaced by step 9 of CreateBattleWizard. Stored as JSONB (size-capped at 8KB
+ * by the DB CHECK constraint).
+ */
+export interface BattleAutomationConfig {
+  /** Auto-assign AI lensers to empty contender slots before the battle starts. */
+  autoAssignContenders?: boolean
+  /** Promote draft → open automatically when all readiness checks pass. */
+  autoPromote?: boolean
+  /** Optional workflow to attach for automated battle progression. */
+  workflowId?: string
+  /** Optional cron-based schedule (advanced, requires workflowId). */
+  schedule?: {
+    cron: string
+    timezone: string
+  }
+}
+
+/**
+ * Optional automation_config field accepted by fn_battles_create / fn_update_battle.
+ * Defaulted to `{}` server-side when omitted.
+ */
+export interface BattleCreateAutomationOptions {
+  automation_config?: BattleAutomationConfig
+}

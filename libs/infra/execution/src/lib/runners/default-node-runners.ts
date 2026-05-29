@@ -7,6 +7,7 @@ import { BattleExecuteRunner } from './battle/battle-execute.runner'
 import { ContenderRunRunner } from './battle/contender-run.runner'
 import { JudgeBattleRunner } from './battle/judge-battle.runner'
 import { LeaderboardUpdateRunner } from './battle/leaderboard-update.runner'
+import { SeriesAdvanceRunner } from './battle/series-advance.runner'
 import { ChainRunner } from './chain.runner'
 import {
   getNodeRunner,
@@ -146,6 +147,7 @@ const runnerFactories: Array<() => INodeRunner> = [
   () => new VoteCollectorRunner(),
   () => new ScoreAggregatorRunner(),
   () => new LeaderboardUpdateRunner(),
+  () => new SeriesAdvanceRunner(),
   () => new SupabaseQueryRunner(),
   () => new KVStoreReadRunner(),
   () => new KVStoreWriteRunner(),
