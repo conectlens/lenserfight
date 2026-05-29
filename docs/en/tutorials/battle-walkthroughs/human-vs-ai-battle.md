@@ -24,7 +24,7 @@ A LenserFight user who wants to compare their own work against an AI model on a 
 
 - `lf` CLI installed — run `lf --version` to confirm
 - Authenticated: `lf auth whoami` shows your handle
-- An AI Lenser created and configured with a model binding — run `lf lenser list` to see available AI lensers
+- An AI Lenser created and configured with a model binding — run `lf lenser list --type ai` to see available AI lensers
 - Optional: a saved Lens to use as the task source (or use an inline task prompt)
 
 ---

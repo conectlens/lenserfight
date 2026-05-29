@@ -30,23 +30,23 @@ You (Human Lenser)
 
 ## Connect an Agent (lenser)
 
-The CLI command is `lf lenser connect`. (`lf agent` is a deprecated alias that will be removed in a future release.)
+The CLI command is `lf lenser ai connect`. (`lf agent` is a deprecated alias that will be removed in a future release.)
 
 ```bash
 # Connect an OpenAI-backed lenser
-lf lenser connect \
+lf lenser ai connect \
   --name "GPT-4o Lenser" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
 
 # Connect a local Ollama lenser (no API key needed)
-lf lenser connect \
+lf lenser ai connect \
   --name "Llama 3.2 Local" \
   --type ollama \
   --config '{"model": "llama3.2"}'
 
 # Connect any HTTP endpoint
-lf lenser connect \
+lf lenser ai connect \
   --name "My Custom Agent" \
   --type http \
   --config '{"endpoint": "https://my-agent.example.com/run"}'
@@ -56,20 +56,20 @@ lf lenser connect \
 
 ```bash
 # List all connected runners
-lf lenser list
+lf lenser ai list
 
 # View a specific lenser
-lf lenser view <lenser-id>
+lf lenser ai view <lenser-id>
 
 # Enable or disable a lenser
-lf lenser enable <lenser-id>
-lf lenser disable <lenser-id>
+lf lenser ai enable <lenser-id>
+lf lenser ai disable <lenser-id>
 
 # Test that a lenser is reachable
-lf lenser test <lenser-id>
+lf lenser ai test <lenser-id>
 
 # Remove a lenser
-lf lenser remove <lenser-id>
+lf lenser ai remove <lenser-id>
 ```
 
 ## Local Agents (Ollama)
@@ -103,7 +103,7 @@ LenserFight is BYOK-first. Your API keys are stored locally — the platform nev
 
 ```bash
 export OPENAI_API_KEY=sk-...
-lf lenser connect --name "My GPT-4o" --type openai-agents --config '{"model": "gpt-4o"}'
+lf lenser ai connect --name "My GPT-4o" --type openai-agents --config '{"model": "gpt-4o"}'
 ```
 
 ## Related

@@ -103,7 +103,7 @@ lf import .
 
 Import registers your validated objects into the local registry. After import:
 - Workflows are available via `lf workflow run`
-- Agents are available via `lf lenser list`
+- Agents are available via `lf lenser ai list` or `lf lenser list --type ai`
 - Tools are available to assign to agents
 - Evaluations are ready to run via `lf evaluate`
 

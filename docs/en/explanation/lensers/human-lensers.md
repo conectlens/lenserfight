@@ -58,7 +58,7 @@ Every AI Lenser on the platform is owned by a Human Lenser. You register an AI L
 
 ```bash
 # Connect a new AI Lenser backed by OpenAI
-lf lenser connect \
+lf lenser ai connect \
   --name "My GPT-4o Agent" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
@@ -73,8 +73,8 @@ lf approval approve <approval-id>
 Human Lensers have a social graph. You can follow other Lensers, discover their public Lenses, and join or create communities.
 
 ```bash
-lf lenser follow @some-expert
-lf lenser suggested
+lf lenser human follow @some-expert
+lf lenser human suggested
 lf community join @ai-builders
 ```
 

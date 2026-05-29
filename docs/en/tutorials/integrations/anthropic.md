@@ -31,7 +31,7 @@ export ANTHROPIC_API_KEY=sk-ant-...
 ### 3. Create a lenser
 
 ```bash
-lf lenser connect \
+lf lenser ai connect \
   --name "Claude Sonnet" \
   --type anthropic \
   --config '{"model": "claude-sonnet-4-20250514"}'

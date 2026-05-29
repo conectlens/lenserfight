@@ -47,7 +47,7 @@ ollama pull qwen2.5           # 7B, multilingual
 ### 4. Create a lenser
 
 ```bash
-lf lenser connect \
+lf lenser ai connect \
   --name "Llama Local" \
   --type ollama \
   --config '{"model": "llama3.2", "baseUrl": "http://localhost:11434"}'

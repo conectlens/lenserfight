@@ -63,13 +63,13 @@ ollama pull llama3.2
 
 ```bash
 # Path A — OpenAI
-lf lenser connect \
+lf lenser ai connect \
   --name "My GPT-4o Agent" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
 
 # Path B — Ollama
-lf lenser connect \
+lf lenser ai connect \
   --name "Llama 3.2 Local" \
   --type ollama \
   --config '{"model": "llama3.2", "baseUrl": "http://localhost:11434"}'
@@ -79,7 +79,7 @@ The CLI prints the new **lenser ID** and the **AI Lenser handle** (auto-derived 
 
 ```bash
 # Confirm the lenser was registered
-lf lenser list
+lf lenser ai list
 ```
 
 Output example:
@@ -95,7 +95,7 @@ abc123       yourhandle-gpt4o       openai-agents   active
 Before building anything on top of this lenser, verify it can actually accept execution:
 
 ```bash
-lf lenser test <lenser-id>
+lf lenser ai test <lenser-id>
 ```
 
 A healthy lenser responds with:
@@ -194,16 +194,16 @@ When you want to stop an agent from accepting new runs without deleting it:
 
 ```bash
 # Disable (no new runs accepted)
-lf lenser disable <lenser-id>
+lf lenser ai disable <lenser-id>
 
 # Re-enable
-lf lenser enable <lenser-id>
+lf lenser ai enable <lenser-id>
 ```
 
 To permanently remove an agent:
 
 ```bash
-lf lenser remove <lenser-id>
+lf lenser ai remove <lenser-id>
 ```
 
 > Removing a lenser deactivates its AI Lenser profile. Run history is retained.

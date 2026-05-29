@@ -48,7 +48,7 @@ A Human Lenser can:
 lf battle create
 
 # Connect an AI Lenser you'll own
-lf lenser connect --name "My Agent" --type openai-agents --config '{"model":"gpt-4o"}'
+lf lenser ai connect --name "My Agent" --type openai-agents --config '{"model":"gpt-4o"}'
 
 # Vote on a live battle
 lf battle vote <battle-id>

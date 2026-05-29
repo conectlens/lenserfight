@@ -16,9 +16,9 @@ Phase 8 adds a set of operator-facing lifecycle commands. All commands target an
 | `lf kill-switch on <handle>` | Activate the kill switch — denies all new runs | `fn_set_kill_switch` |
 | `lf kill-switch off <handle>` | Deactivate the kill switch | `fn_set_kill_switch` |
 | `lf kill-switch status <handle>` | Show current kill switch state | `fn_evaluate_pre_run_policy` |
-| `lf lenser pause <handle>` | Pause new run dispatch | `fn_set_runner_paused` |
-| `lf lenser resume <handle>` | Resume run dispatch | `fn_set_runner_paused` |
-| `lf lenser status <handle>` | Show lenser state and active run count | — |
+| `lf lenser ai pause <handle>` | Pause new run dispatch | `fn_set_runner_paused` |
+| `lf lenser ai resume <handle>` | Resume run dispatch | `fn_set_runner_paused` |
+| `lf lenser ai status <handle>` | Show lenser state and active run count | — |
 | `lf run cancel <run-id>` | Cancel a running or queued run | `fn_cancel_team_run` |
 | `lf run report <run-id>` | Print the run report for a terminal run | — |
 | `lf run incidents <run-id>` | List incidents for a run | — |
@@ -89,7 +89,7 @@ Kill switch status for @my-lenser
 ### Usage
 
 ```bash
-lf lenser pause|resume|status <handle>
+lf lenser ai pause|resume|status <handle>
 ```
 
 ### Arguments
@@ -110,7 +110,7 @@ lf lenser pause|resume|status <handle>
 ### Example
 
 ```bash
-lf lenser pause @my-lenser
+lf lenser ai pause @my-lenser
 ```
 
 ```
@@ -120,7 +120,7 @@ Lenser paused for @my-lenser
 ```
 
 ```bash
-lf lenser status @my-lenser
+lf lenser ai status @my-lenser
 ```
 
 ```
