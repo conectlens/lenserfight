@@ -1,3 +1,14 @@
+## 0.7.0 (2026-05-29)
+
+### 🚀 Features
+
+- unify battle type derivation, standardize execution lifecycle states, and update CLI project config defaults to cloud mode ([ed83dcf89](https://github.com/conectlens/lenserfight/commit/ed83dcf89))
+- standardize execution lifecycle states and integrate automation configuration into database and battle APIs. ([8272f08cc](https://github.com/conectlens/lenserfight/commit/8272f08cc))
+
+### ❤️ Thank You
+
+- Ömer Faruk Coşkun
+
 ## 0.6.0 (2026-05-29)
 
 This was a version bump only for cli to align it with other projects, there were no code changes.
