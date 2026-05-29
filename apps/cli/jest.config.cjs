@@ -3,7 +3,8 @@ module.exports = {
   preset: '../../jest.preset.cjs',
   testEnvironment: 'node',
   transform: {
-    '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
+    '^.+\\.[tj]sx?$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
+    '^.+\\.m[jt]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
   transformIgnorePatterns: [
     'node_modules/(?!(citty|@lenserfight/domain)/)',
@@ -12,7 +13,7 @@ module.exports = {
     '/node_modules/',
     'src/commands/spec\\.ts$',
   ],
-  moduleFileExtensions: ['ts', 'js', 'html'],
+  moduleFileExtensions: ['ts', 'js', 'html', 'mjs'],
   coverageDirectory: '../../coverage/apps/cli',
   moduleNameMapper: {
     '^yaml$': require.resolve('yaml'),

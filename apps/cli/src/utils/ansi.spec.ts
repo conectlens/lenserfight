@@ -120,7 +120,7 @@ describe('stripAnsi', () => {
 
 describe('ansi', () => {
   it('wraps text in the sequence and reset in color mode', () => {
-    withEnv({ NO_COLOR: undefined }, () => {
+    withEnv({ NO_COLOR: undefined, TERM: 'xterm-256color' }, () => {
       withTTY(true, () => {
         const result = ansi(A.red, 'hello')
         expect(result).toContain('\x1b[31m')
@@ -150,7 +150,7 @@ describe('hyperlink — OSC 8 rendering', () => {
   const LABEL = 'Auth guide'
 
   it('emits OSC 8 opening sequence \x1b]8;; in color mode', () => {
-    withEnv({ NO_COLOR: undefined }, () => {
+    withEnv({ NO_COLOR: undefined, TERM: 'xterm-256color' }, () => {
       withTTY(true, () => {
         const result = hyperlink(URL, LABEL)
         expect(result).toContain('\x1b]8;;')
@@ -159,7 +159,7 @@ describe('hyperlink — OSC 8 rendering', () => {
   })
 
   it('embeds the URL in the OSC 8 sequence', () => {
-    withEnv({ NO_COLOR: undefined }, () => {
+    withEnv({ NO_COLOR: undefined, TERM: 'xterm-256color' }, () => {
       withTTY(true, () => {
         const result = hyperlink(URL, LABEL)
         expect(result).toContain(URL)
@@ -168,7 +168,7 @@ describe('hyperlink — OSC 8 rendering', () => {
   })
 
   it('embeds the label between the OSC 8 open and close sequences', () => {
-    withEnv({ NO_COLOR: undefined }, () => {
+    withEnv({ NO_COLOR: undefined, TERM: 'xterm-256color' }, () => {
       withTTY(true, () => {
         const result = hyperlink(URL, LABEL)
         // Structure: \x1b]8;;<url>\x1b\\ <label> \x1b]8;;\x1b\\
@@ -182,7 +182,7 @@ describe('hyperlink — OSC 8 rendering', () => {
   })
 
   it('emits OSC 8 closing sequence in color mode', () => {
-    withEnv({ NO_COLOR: undefined }, () => {
+    withEnv({ NO_COLOR: undefined, TERM: 'xterm-256color' }, () => {
       withTTY(true, () => {
         const result = hyperlink(URL, LABEL)
         // Closing sequence: \x1b]8;;\x1b\\ (empty URL = close)
@@ -219,7 +219,7 @@ describe('hyperlink — OSC 8 rendering', () => {
   })
 
   it('stripAnsi removes the OSC 8 sequences and returns just the label', () => {
-    withEnv({ NO_COLOR: undefined }, () => {
+    withEnv({ NO_COLOR: undefined, TERM: 'xterm-256color' }, () => {
       withTTY(true, () => {
         const linked = hyperlink(URL, LABEL)
         expect(stripAnsi(linked)).toBe(LABEL)
@@ -228,7 +228,7 @@ describe('hyperlink — OSC 8 rendering', () => {
   })
 
   it('works with URLs containing query parameters', () => {
-    withEnv({ NO_COLOR: undefined }, () => {
+    withEnv({ NO_COLOR: undefined, TERM: 'xterm-256color' }, () => {
       withTTY(true, () => {
         const urlWithQuery = `${URL}?ref=cli&version=2`
         const result = hyperlink(urlWithQuery, LABEL)
@@ -275,7 +275,7 @@ describe('c.* semantic wrappers in plain-text mode', () => {
   })
 
   it.each(wrappers)('c.%s contains the original text in color mode', (name, fn) => {
-    withEnv({ NO_COLOR: undefined }, () => {
+    withEnv({ NO_COLOR: undefined, TERM: 'xterm-256color' }, () => {
       withTTY(true, () => {
         const result = fn(TEXT)
         expect(result).toContain(TEXT)
@@ -284,7 +284,7 @@ describe('c.* semantic wrappers in plain-text mode', () => {
   })
 
   it.each(wrappers)('c.%s emits ANSI in color mode', (name, fn) => {
-    withEnv({ NO_COLOR: undefined }, () => {
+    withEnv({ NO_COLOR: undefined, TERM: 'xterm-256color' }, () => {
       withTTY(true, () => {
         const result = fn(TEXT)
         // eslint-disable-next-line no-control-regex

@@ -10,6 +10,9 @@ jest.mock('consola', () => ({
     info: jest.fn(),
   },
 }))
+jest.mock('citty', () => ({
+  defineCommand: jest.fn(),
+}))
 
 import { callRpc } from './api'
 import { printJson, printTable } from './output'

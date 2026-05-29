@@ -1,36 +1,39 @@
+const mockError = jest.fn()
+const mockWarn = jest.fn()
+const mockInfo = jest.fn()
+const mockSuccess = jest.fn()
+const mockLog = jest.fn()
+
+const mockCallRpc = jest.fn()
+const mockHandleError = jest.fn()
+
+const mockPrintTable = jest.fn()
+const mockPrintJson = jest.fn()
+
+const mockAssertSafe = jest.fn()
+
 jest.mock('citty', () => ({ defineCommand: (opts: unknown) => opts }))
 jest.mock('consola', () => ({
   __esModule: true,
   default: {
-    error: jest.fn(),
-    warn: jest.fn(),
-    info: jest.fn(),
-    success: jest.fn(),
-    log: jest.fn(),
+    error: mockError,
+    warn: mockWarn,
+    info: mockInfo,
+    success: mockSuccess,
+    log: mockLog,
   },
 }))
 jest.mock('../utils/api', () => ({
-  callRpc: jest.fn(),
-  handleError: jest.fn(),
+  callRpc: mockCallRpc,
+  handleError: mockHandleError,
 }))
 jest.mock('../utils/output', () => ({
-  printTable: jest.fn(),
-  printJson: jest.fn(),
+  printTable: mockPrintTable,
+  printJson: mockPrintJson,
 }))
 jest.mock('../lib/safety', () => ({
-  assertSafe: jest.fn(),
+  assertSafe: mockAssertSafe,
 }))
-
-import consola from 'consola'
-import { callRpc, handleError } from '../utils/api'
-import { printTable, printJson } from '../utils/output'
-import { assertSafe } from '../lib/safety'
-
-const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
-const mockHandleError = handleError as jest.MockedFunction<typeof handleError>
-const mockPrintTable = printTable as jest.MockedFunction<typeof printTable>
-const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
-const mockAssertSafe = assertSafe as jest.MockedFunction<typeof assertSafe>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCmd = { run?: (ctx: any) => Promise<void>; subCommands?: Record<string, any> }
@@ -85,7 +88,7 @@ describe('platform status', () => {
         ['Stale Workers', '0'],
       ])
     )
-    expect(consola.warn).not.toHaveBeenCalled()
+    expect(mockWarn).not.toHaveBeenCalled()
   })
 
   it('warns when system is locked', async () => {
@@ -96,15 +99,15 @@ describe('platform status', () => {
     const cmd = await getSubCmd('status')
     await cmd.run?.({ args: { json: false } })
 
-    expect(consola.warn).toHaveBeenCalledWith(expect.stringContaining('LOCKED'), expect.anything())
+    expect(mockWarn).toHaveBeenCalledWith(expect.stringContaining('LOCKED'))
   })
 
   it('warns when stale workers are detected', async () => {
-    mockCallRpc.mockResolvedValueOnce({ ...HEALTHY_STATUS, stale_worker_count: 3 } as never)
+    mockCallRpc.mockResolvedValue({ ...HEALTHY_STATUS, stale_worker_count: 3 } as never)
     const cmd = await getSubCmd('status')
     await cmd.run?.({ args: { json: false } })
 
-    expect(consola.warn).toHaveBeenCalledWith(
+    expect(mockWarn).toHaveBeenCalledWith(
       expect.stringContaining('stale worker'),
       expect.anything()
     )
@@ -150,7 +153,7 @@ describe('platform emergency-stop', () => {
       { p_reason: 'runaway scheduler', p_force_mode: false },
       expect.objectContaining({ requireAuth: true })
     )
-    expect(consola.warn).toHaveBeenCalledWith(
+    expect(mockWarn).toHaveBeenCalledWith(
       expect.stringContaining('ACTIVATED'),
       expect.anything()
     )
@@ -187,7 +190,7 @@ describe('platform kill-all', () => {
       { p_reason: 'queue flood', p_force_mode: true },
       expect.objectContaining({ requireAuth: true })
     )
-    expect(consola.warn).toHaveBeenCalledWith(expect.stringContaining('Cancelled'), 5, 2)
+    expect(mockWarn).toHaveBeenCalledWith(expect.stringContaining('Cancelled'), 5, 2)
   })
 
   it('calls handleError on API failure', async () => {
@@ -214,7 +217,7 @@ describe('platform resume', () => {
       { p_switch_id: 'sw-abc' },
       expect.objectContaining({ requireAuth: true })
     )
-    expect(consola.success).toHaveBeenCalled()
+    expect(mockSuccess).toHaveBeenCalled()
   })
 
   it('does not call assertSafe', async () => {
@@ -250,7 +253,7 @@ describe('platform queue-freeze', () => {
       { p_reason: 'deploy window' },
       expect.objectContaining({ requireAuth: true })
     )
-    expect(consola.warn).toHaveBeenCalled()
+    expect(mockWarn).toHaveBeenCalled()
   })
 
   it('calls handleError on API failure', async () => {
@@ -278,7 +281,7 @@ describe('platform queue-unfreeze', () => {
       expect.objectContaining({ requireAuth: true })
     )
     expect(mockAssertSafe).not.toHaveBeenCalled()
-    expect(consola.success).toHaveBeenCalled()
+    expect(mockSuccess).toHaveBeenCalled()
   })
 
   it('calls handleError on API failure', async () => {
@@ -321,6 +324,6 @@ describe('platform scheduler-enable', () => {
       expect.objectContaining({ requireAuth: true })
     )
     expect(mockAssertSafe).not.toHaveBeenCalled()
-    expect(consola.success).toHaveBeenCalled()
+    expect(mockSuccess).toHaveBeenCalled()
   })
 })
