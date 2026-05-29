@@ -424,6 +424,21 @@ function getTools(server: ReturnType<typeof buildServer>): RegisteredTool[] {
     : Object.entries(reg).map(([name, t]) => ({ name, ...t }));
 }
 
+function toolCategory(name: string): string {
+  if (name.startsWith('list_lens') || name.startsWith('get_lens') || name.startsWith('search_lens') ||
+      name.startsWith('create_lens') || name.startsWith('update_lens') || name.startsWith('fork_lens') ||
+      name.startsWith('archive_lens') || name.startsWith('delete_lens') || name.startsWith('set_lens') ||
+      name.startsWith('validate_lens') || name.startsWith('extract_lens') || name.startsWith('run_lens') ||
+      name.startsWith('find_and_run')) return 'Lenses';
+  if (name.startsWith('list_battle') || name.startsWith('get_battle') || name.startsWith('create_battle') ||
+      name.startsWith('add_battle') || name.startsWith('submit_battle') || name.startsWith('set_battle')) return 'Battles';
+  if (name.startsWith('list_workflow') || name.startsWith('get_workflow') || name.startsWith('create_workflow') ||
+      name.startsWith('run_workflow') || name.startsWith('retry_workflow') || name.startsWith('summarize_workflow')) return 'Workflows';
+  if (name.includes('ai_lenser') || name.includes('agent') || name.startsWith('start_agent') ||
+      name.startsWith('cancel_agent') || name.startsWith('run_agent')) return 'AI Lensers';
+  return 'LenserFight';
+}
+
 async function handleMcp(req: Request, env: Env, cfg: McpServerConfig): Promise<Response> {
   const authHeader = req.headers.get('authorization');
 
@@ -492,6 +507,9 @@ async function handleMcp(req: Request, env: Env, cfg: McpServerConfig): Promise<
             name: t.name,
             description: t.description ?? '',
             inputSchema: t.inputSchema ?? { type: 'object', properties: {} },
+            annotations: {
+              category: toolCategory(t.name),
+            },
           })),
         },
       };
