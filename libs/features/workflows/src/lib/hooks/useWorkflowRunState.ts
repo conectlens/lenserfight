@@ -1,3 +1,4 @@
+import { mapToLifecycle, type ExecutionLifecycle } from '@lenserfight/api/contracts'
 import { workflowsService } from '@lenserfight/data/repositories'
 import type {
   WorkflowRunProvenanceEdge,
@@ -6,6 +7,10 @@ import type {
 import { useQuery } from '@tanstack/react-query'
 
 const STALE_MS = 1000
+
+export type WorkflowRunStateWithLifecycle = WorkflowRunStateProjection & {
+  lifecycle: ExecutionLifecycle
+}
 
 /**
  * N8N-style canonical run-state projection. Returns a snapshot describing
@@ -18,11 +23,18 @@ const STALE_MS = 1000
  * frames. Polling halts as soon as the projection reports a terminal status.
  */
 export function useWorkflowRunState(runId: string | null | undefined) {
-  return useQuery<WorkflowRunStateProjection | null>({
+  return useQuery<WorkflowRunStateProjection | null, Error, WorkflowRunStateWithLifecycle | null>({
     queryKey: ['workflow', 'run-state', runId],
     enabled: Boolean(runId),
     queryFn: () => (runId ? workflowsService.getRunState(runId) : Promise.resolve(null)),
     staleTime: STALE_MS,
+    select: (state) =>
+      state
+        ? {
+            ...state,
+            lifecycle: mapToLifecycle(state.status, 'workflow'),
+          }
+        : null,
     refetchInterval: (query) => {
       const state = query.state.data
       if (!state) return STALE_MS

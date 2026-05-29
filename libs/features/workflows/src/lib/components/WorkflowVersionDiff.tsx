@@ -4,8 +4,8 @@ import type {
   WorkflowVersionRecord,
 } from '@lenserfight/data/repositories'
 import { Dialog } from '@lenserfight/ui/overlays'
-import { ChevronDown, ChevronRight, GitCompare } from 'lucide-react'
-import React, { useMemo, useState } from 'react'
+import { ChevronDown, ChevronRight, GitCompare, RotateCcw } from 'lucide-react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 export interface WorkflowVersionSnapshot {
   nodes: WorkflowNodeRecord[]
@@ -22,6 +22,10 @@ interface WorkflowVersionDiffProps {
   versionB: WorkflowVersion
   open: boolean
   onOpenChange: (b: boolean) => void
+  isLoading?: boolean
+  canRestore?: boolean
+  onRestoreVersion?: (versionId: string) => void
+  isRestoring?: boolean
 }
 
 const NODE_LIMIT = 50
@@ -123,6 +127,10 @@ export function WorkflowVersionDiff({
   versionB,
   open,
   onOpenChange,
+  isLoading = false,
+  canRestore = false,
+  onRestoreVersion,
+  isRestoring = false,
 }: WorkflowVersionDiffProps) {
   const nodesA = versionA.snapshot.nodes
   const nodesB = versionB.snapshot.nodes
@@ -139,6 +147,31 @@ export function WorkflowVersionDiff({
     () => (tooLarge ? [] : diffEdges(edgesA, edgesB)),
     [edgesA, edgesB, tooLarge],
   )
+  const changedNodeEntries = useMemo(
+    () => nodeEntries.filter((entry) => entry.kind !== 'unchanged'),
+    [nodeEntries],
+  )
+  const [activeNodeIndex, setActiveNodeIndex] = useState(0)
+  const activeNodeId = changedNodeEntries[activeNodeIndex]?.id ?? null
+
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'j' && event.key !== 'k') return
+      if (changedNodeEntries.length === 0) return
+      event.preventDefault()
+      setActiveNodeIndex((current) => {
+        const delta = event.key === 'j' ? 1 : -1
+        return (current + delta + changedNodeEntries.length) % changedNodeEntries.length
+      })
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [changedNodeEntries.length, open])
+
+  useEffect(() => {
+    setActiveNodeIndex(0)
+  }, [versionA.id, versionB.id])
 
   return (
     <Dialog
@@ -148,21 +181,32 @@ export function WorkflowVersionDiff({
       icon={<GitCompare size={16} />}
       maxWidth="max-w-3xl"
     >
-      {tooLarge ? (
+      {isLoading ? (
+        <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
+          Loading version snapshots…
+        </p>
+      ) : tooLarge ? (
         <p className="text-sm text-yellow-600 dark:text-yellow-400">
           Diff too large to display safely ({nodesA.length} vs {nodesB.length} nodes, limit{' '}
           {NODE_LIMIT}).
         </p>
       ) : nodesA.length === 0 && nodesB.length === 0 ? (
         <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
-          Snapshot data is not yet available for archived versions. Inline diff will
-          render once the version-snapshot fetch API ships (post-launch Phase 3).
+          No snapshot rows were returned for these versions. The version may be missing archived node data or you may not have access.
         </p>
       ) : (
         <div className="flex flex-col gap-4">
           <DiffSection title="Nodes" total={nodeEntries.length}>
             {nodeEntries.map((entry) => (
-              <NodeDiffRow key={entry.id} entry={entry} />
+              <NodeDiffRow
+                key={entry.id}
+                entry={entry}
+                selected={entry.id === activeNodeId}
+                restoreVersionNumber={versionA.version_number}
+                canRestore={canRestore}
+                onRestore={() => onRestoreVersion?.(versionA.id)}
+                isRestoring={isRestoring}
+              />
             ))}
           </DiffSection>
           <DiffSection title="Edges" total={edgeEntries.length}>
@@ -195,7 +239,21 @@ function DiffSection({
   )
 }
 
-function NodeDiffRow({ entry }: { entry: NodeDiffEntry }) {
+function NodeDiffRow({
+  entry,
+  selected,
+  restoreVersionNumber,
+  canRestore,
+  onRestore,
+  isRestoring,
+}: {
+  entry: NodeDiffEntry
+  selected: boolean
+  restoreVersionNumber: number
+  canRestore: boolean
+  onRestore: () => void
+  isRestoring: boolean
+}) {
   const [expanded, setExpanded] = useState(entry.kind === 'modified')
   const canExpand = entry.kind === 'modified'
   const displayLabel =
@@ -203,9 +261,9 @@ function NodeDiffRow({ entry }: { entry: NodeDiffEntry }) {
 
   return (
     <div
-      className={`rounded-lg border border-surface-border p-2 text-xs ${
-        entry.kind === 'unchanged' ? 'opacity-50' : ''
-      }`}
+      className={`rounded-lg border p-2 text-xs ${
+        selected ? 'border-primary-yellow-500 ring-1 ring-primary-yellow-500/50' : 'border-surface-border'
+      } ${entry.kind === 'unchanged' ? 'opacity-50' : ''}`}
     >
       <button
         type="button"
@@ -227,14 +285,21 @@ function NodeDiffRow({ entry }: { entry: NodeDiffEntry }) {
           </span>
         )}
       </button>
+      {canRestore && entry.kind !== 'unchanged' && (
+        <button
+          type="button"
+          onClick={onRestore}
+          disabled={isRestoring}
+          className="mt-2 inline-flex items-center gap-1 rounded border border-surface-border px-1.5 py-0.5 text-[10px] font-medium text-greyscale-600 hover:bg-surface-raised disabled:opacity-50 dark:text-greyscale-300"
+        >
+          <RotateCcw size={10} />
+          {isRestoring ? 'Restoring…' : `Restore v${restoreVersionNumber}`}
+        </button>
+      )}
       {expanded && entry.kind === 'modified' && (
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <pre className="overflow-x-auto rounded bg-surface-base p-2 text-[10px] text-greyscale-600 dark:text-greyscale-300">
-            {JSON.stringify(entry.a, null, 2)}
-          </pre>
-          <pre className="overflow-x-auto rounded bg-surface-base p-2 text-[10px] text-greyscale-600 dark:text-greyscale-300">
-            {JSON.stringify(entry.b, null, 2)}
-          </pre>
+          <JsonDelta value={entry.a} />
+          <JsonDelta value={entry.b} />
         </div>
       )}
     </div>
@@ -257,5 +322,13 @@ function EdgeDiffRow({ entry }: { entry: EdgeDiffEntry }) {
         {edge.source_node_id.slice(0, 8)} → {edge.target_node_id.slice(0, 8)}
       </span>
     </div>
+  )
+}
+
+function JsonDelta({ value }: { value: unknown }) {
+  return (
+    <pre className="overflow-x-auto rounded bg-surface-base p-2 text-[10px] text-greyscale-600 dark:text-greyscale-300 language-json">
+      <code>{JSON.stringify(value, null, 2)}</code>
+    </pre>
   )
 }

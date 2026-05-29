@@ -132,7 +132,7 @@ export class PdfExportProvider implements IExecutionProvider {
     }
 
     const bytes = await doc.save()
-    const blob = new Blob([bytes], { type: 'application/pdf' })
+    const blob = new Blob([bytes as Uint8Array<ArrayBuffer>], { type: 'application/pdf' })
     const url = typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
       ? URL.createObjectURL(blob)
       : `data:application/pdf;base64,${bufferToBase64(bytes)}`

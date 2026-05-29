@@ -1470,6 +1470,7 @@ export type Database = {
       fn_battles_close: { Args: { p_battle_id: string }; Returns: undefined }
       fn_battles_create: {
         Args: {
+          p_automation_config?: Json
           p_rubric_id?: string
           p_slug: string
           p_task_prompt: string
@@ -1876,6 +1877,7 @@ export type Database = {
           battle_count: number
           created_at: string
           description: string
+          executions_30d: number
           fork_count: number
           id: string
           lenser_id: string
@@ -4025,7 +4027,7 @@ export type Database = {
         }[]
       }
       fn_get_workflow_schedules: {
-        Args: { p_workflow_id?: string }
+        Args: { p_limit?: number; p_workflow_id?: string }
         Returns: {
           approval_policy: Json
           assignee_id: string
@@ -4052,6 +4054,10 @@ export type Database = {
           workflow_id: string
           workflow_title: string
         }[]
+      }
+      fn_get_workflow_version_snapshot: {
+        Args: { p_version_id: string }
+        Returns: { edges: Json; nodes: Json }[]
       }
       fn_get_workflow_versions: {
         Args: { p_workflow_id: string }
@@ -4634,13 +4640,30 @@ export type Database = {
         Returns: Json[]
       }
       fn_list_team_edges: { Args: { p_team_id: string }; Returns: Json[] }
-      fn_list_template_workflows: {
+      fn_list_series: {
         Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          series_id: string
+          title: string
+          template_id: string
+          creator_lenser_id: string
+          round_count: number
+          current_round: number
+          status: string
+          current_battle_id: string
+          current_battle_slug: string
+          current_battle_status: string
+          updated_at: string
+        }[]
+      }
+      fn_list_template_workflows: {
+        Args: { p_category?: string; p_limit?: number; p_offset?: number; p_search?: string }
         Returns: {
           author_display_name: string
           author_handle: string
           created_at: string
           description: string
+          executions_30d: number
           fork_count: number
           id: string
           kinds: string[]
@@ -5486,6 +5509,7 @@ export type Database = {
       }
       fn_update_battle: {
         Args: {
+          p_automation_config?: Json
           p_battle_id: string
           p_battle_type?: string
           p_challenge_type?: string

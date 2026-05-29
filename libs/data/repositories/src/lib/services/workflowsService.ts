@@ -6,6 +6,7 @@ import { type WorkflowRecord,
   type WorkflowRunRecord,
   type WorkflowNodeResultRecord,
   type WorkflowVersionRecord,
+  type WorkflowVersionSnapshotRecord,
   type WorkflowRunEventRecord,
   type CreateWorkflowInput,
   type UpdateWorkflowInput,
@@ -13,6 +14,7 @@ import { type WorkflowRecord,
   type UpsertEdgeInput,
   type WorkflowsListFilter,
   type TemplateWorkflowRecord,
+  type ListTemplateWorkflowsOptions,
   type UpdateNodeResultOptions,
   type RecordRunProvenanceInput,
 } from '../repositories/workflowsRepository'
@@ -37,6 +39,7 @@ export type {
   WorkflowRunRecord,
   WorkflowNodeResultRecord,
   WorkflowVersionRecord,
+  WorkflowVersionSnapshotRecord,
   WorkflowRunEventRecord,
   CreateWorkflowInput,
   UpdateWorkflowInput,
@@ -44,6 +47,7 @@ export type {
   UpsertEdgeInput,
   WorkflowsListFilter,
   TemplateWorkflowRecord,
+  ListTemplateWorkflowsOptions,
 }
 export type { UpsertWorkflowScheduleInput, WorkflowScheduleRecord }
 export type { WorkflowPhaseRecord, WorkflowTaskRecord }
@@ -69,8 +73,12 @@ export const workflowsService = {
   getPopular: (offset: number, limit: number, search?: string): Promise<ApiResponseEnvelope<WorkflowRecord[]>> =>
     workflowsRepo.getPopular(offset, limit, search),
 
-  listTemplates: (limit?: number, offset?: number): Promise<TemplateWorkflowRecord[]> =>
-    workflowsRepo.listTemplates(limit, offset),
+  listTemplates: (
+    limit?: number,
+    offset?: number,
+    options?: ListTemplateWorkflowsOptions,
+  ): Promise<TemplateWorkflowRecord[]> =>
+    workflowsRepo.listTemplates(limit, offset, options),
 
   getById: (id: string): Promise<WorkflowRecord | null> =>
     workflowsRepo.getById(id),
@@ -179,6 +187,9 @@ export const workflowsService = {
 
   getVersions: (workflowId: string): Promise<WorkflowVersionRecord[]> =>
     workflowsRepo.getVersions(workflowId),
+
+  getVersionSnapshot: (versionId: string): Promise<WorkflowVersionSnapshotRecord | null> =>
+    workflowsRepo.getVersionSnapshot(versionId),
 
   createVersion: (workflowId: string, changelog?: string): Promise<string> =>
     workflowsRepo.createVersion(workflowId, changelog),

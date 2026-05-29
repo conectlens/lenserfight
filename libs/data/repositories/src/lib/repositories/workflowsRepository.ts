@@ -72,6 +72,13 @@ export interface TemplateWorkflowRecord {
   author_display_name?: string | null
   /** Aggregated lens-kind tag slugs across the workflow's nodes (e.g. `text`, `image`). */
   kinds: string[]
+  /** Number of workflow executions in the last 30 days. */
+  executions_30d?: number
+}
+
+export interface ListTemplateWorkflowsOptions {
+  search?: string | null
+  category?: string | null
 }
 
 export interface WorkflowNodeRecord {
@@ -105,6 +112,11 @@ export interface WorkflowEdgeRecord {
 
 export interface WorkflowBootstrapRecord {
   workflow: WorkflowRecord | null
+  nodes: WorkflowNodeRecord[]
+  edges: WorkflowEdgeRecord[]
+}
+
+export interface WorkflowVersionSnapshotRecord {
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
 }
@@ -291,7 +303,7 @@ export interface WorkflowsRepositoryPort {
     limit: number,
     search?: string
   ): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
-  listTemplates(limit?: number, offset?: number): Promise<TemplateWorkflowRecord[]>
+  listTemplates(limit?: number, offset?: number, options?: ListTemplateWorkflowsOptions): Promise<TemplateWorkflowRecord[]>
   getById(id: string): Promise<WorkflowRecord | null>
   getBootstrap(workflowId: string): Promise<WorkflowBootstrapRecord | null>
   getNodes(workflowId: string): Promise<WorkflowNodeRecord[]>
@@ -353,6 +365,7 @@ export interface WorkflowsRepositoryPort {
   deleteSchedule(scheduleId: string): Promise<void>
   getScheduleHistory(scheduleId: string): Promise<WorkflowScheduleRunHistoryRecord[]>
   getVersions(workflowId: string): Promise<WorkflowVersionRecord[]>
+  getVersionSnapshot(versionId: string): Promise<WorkflowVersionSnapshotRecord | null>
   createVersion(workflowId: string, changelog?: string): Promise<string>
   publishVersion(versionId: string): Promise<void>
   restoreVersion(versionId: string): Promise<void>
@@ -485,9 +498,21 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     })
   }
 
-  async listTemplates(limit = 12, offset = 0): Promise<TemplateWorkflowRecord[]> {
+  async listTemplates(
+    limit = 12,
+    offset = 0,
+    options: ListTemplateWorkflowsOptions = {},
+  ): Promise<TemplateWorkflowRecord[]> {
+    const params = options.search || options.category
+      ? {
+          p_limit: limit,
+          p_offset: offset,
+          p_search: options.search?.trim() || null,
+          p_category: options.category?.trim() || null,
+        }
+      : { p_limit: limit, p_offset: offset }
     const { data, error } = await this.timedRpc('fn_list_template_workflows', () =>
-      supabase.rpc('fn_list_template_workflows', { p_limit: limit, p_offset: offset })
+      supabase.rpc('fn_list_template_workflows', params)
     )
     if (error) this.handleError(error)
     return (data ?? []) as TemplateWorkflowRecord[]
@@ -780,7 +805,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
   async getSchedules(workflowId?: string): Promise<WorkflowScheduleRecord[]> {
     const { data, error } = await supabase.rpc(
       'fn_get_workflow_schedules',
-      workflowId ? { p_workflow_id: workflowId } : {}
+      workflowId ? { p_workflow_id: workflowId, p_limit: 50 } : { p_limit: 50 }
     )
 
     if (error) this.handleError(error)
@@ -836,6 +861,20 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowVersionRecord[]
+  }
+
+  async getVersionSnapshot(versionId: string): Promise<WorkflowVersionSnapshotRecord | null> {
+    const { data, error } = await supabase.rpc('fn_get_workflow_version_snapshot', {
+      p_version_id: versionId,
+    })
+
+    if (error) this.handleError(error)
+    const row = Array.isArray(data) ? data[0] : data
+    if (!row) return null
+    return {
+      nodes: Array.isArray(row.nodes) ? row.nodes as WorkflowNodeRecord[] : [],
+      edges: Array.isArray(row.edges) ? row.edges as WorkflowEdgeRecord[] : [],
+    }
   }
 
   async createVersion(workflowId: string, changelog?: string): Promise<string> {
