@@ -59,6 +59,11 @@ features:
     link: /en/reference/community-api/index
     linkText: Community API
 
+  - title: MCP Server — Third-Party Integration
+    details: Embed the LenserFight MCP server into your AI product. 31 tools (lenses, battles, workflows) over a single HTTPS endpoint with OAuth 2.1 PKCE. Works with Claude.ai, Cursor, and any MCP-compatible client.
+    link: /en/reference/mcp-server/provider-index
+    linkText: Provider integration guide
+
   - title: Contributor-ready docs
     details: The public docs focus on local setup, workflow reliability, i18n localization, and small, reviewable contributions.
     link: /en/how-to/contributors/how-to-contribute

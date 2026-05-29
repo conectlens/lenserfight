@@ -325,7 +325,11 @@ BEGIN
 
     (v_battles_app, 'FAIR_EVALUATION_COMPLETED', 'Fair Evaluation Cast',
      'XP for casting a vote that aligns with consensus (quality signal from judge).',
-     15, 600, 10, 150, 750, 'standard', NULL, true)
+     15, 600, 10, 150, 750, 'standard', NULL, true),
+
+    (v_battles_app, 'VERIFIED_LOCAL_EXECUTION_COMPLETED', 'Verified Local Execution',
+     'Award XP when a local gateway execution is verified and trust-elevated.',
+     25, 300, 10, 150, 1000, 'standard', NULL, true)
 
   ON CONFLICT (app_id, action_key) DO UPDATE SET
     name               = EXCLUDED.name,
