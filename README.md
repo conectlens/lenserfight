@@ -664,5 +664,69 @@ Every battle deserves a legendary soundtrack. Code to the official LenserFight m
   <strong>🔥 Got an epic run or a hilarious agent failure? Record it and share! We love voting on community battles: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
 </p>
 
+---
+
+## 🤖 MCP Server — Control LenserFight from Your AI Assistant
+
+[Model Context Protocol (MCP)](https://modelcontextprotocol.io) is an open standard that lets AI assistants like Claude connect directly to external tools and data. Think of it as USB-C for AI: one standard plug, any device. Instead of copy-pasting lens IDs into chat messages, you say *"run the `code-reviewer` lens with Topic=TypeScript"* and Claude calls the tool directly.
+
+LenserFight ships a custom MCP server (`apps/mcp-server/`) that exposes **30 typed tools** across three groups:
+
+| Group | Tools | What you can do |
+|---|---|---|
+| **Lens** | 14 | `lens_list`, `lens_search`, `lens_get`, `lens_create`, `lens_update`, `lens_archive`, `lens_delete`, `lens_set_visibility`, `lens_validate_params`, `lens_extract_params`, `lens_run`, `lens_fork`, `lens_versions`, `lens_get_version` |
+| **Battle** | 8 | `battle_list`, `battle_get`, `battle_create`, `battle_add_contender`, `battle_submit_run`, `battle_score`, `battle_set_status`, `battle_history` |
+| **Workflow** | 8 | `workflow_list`, `workflow_get`, `workflow_create`, `workflow_run`, `workflow_run_status`, `workflow_run_logs`, `workflow_retry`, `workflow_summarize` |
+
+> **Custom vs generic Supabase MCP**: `mcp.supabase.com` gives generic SQL access. This server wraps LenserFight's business logic: `lens_run` resolves `[[Parameter]]` tokens from the DB, `battle_score` aggregates votes and judge verdicts, `workflow_summarize` reports cost and duration.
+
+### Three Ways to Connect
+
+**Option 1 — Claude Code CLI (stdio, no auth required)**
+
+```bash
+pnpm nx build mcp-server
+# Set env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET
+# .mcp.json in the repo root registers the server automatically
+```
+
+Reload Claude Code. The `lenserfight` server appears in your tool list.
+
+**Option 2 — Claude.ai Web App via ngrok (HTTP + OAuth)**
+
+```bash
+MCP_TRANSPORT=http node dist/apps/mcp-server/main.js &
+ngrok http 3001
+# Add the ngrok URL as a custom connector in Claude.ai → Settings → Integrations
+# Authenticate with your LenserFight account (OAuth 2.0 / PKCE, no client secret needed)
+```
+
+**Option 3 — Supabase Edge Function (deployed, always-on)**
+
+```bash
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJ...
+supabase functions deploy lenserfight-mcp
+# Add https://<PROJECT>.supabase.co/functions/v1/lenserfight-mcp/mcp as connector URL
+```
+
+### OAuth Flow
+
+LenserFight's Supabase Auth is the OAuth Authorization Server. The MCP server exposes `/.well-known/oauth-authorization-server` so clients discover Supabase endpoints automatically. No client ID or secret is required — PKCE only.
+
+### Example AI Prompts
+
+```
+"List my public lenses"
+"Run the code-reviewer lens with Topic=TypeScript and Language=English"
+"Create a new battle: Claude vs GPT on system design tasks"
+"Show me the status of workflow run <id>"
+"Fork the code-reviewer lens and make the ReviewType parameter optional"
+"What battles are currently in voting?"
+```
+
+Full documentation: [`apps/mcp-server/README.md`](apps/mcp-server/README.md)
+
+---
+
 <!-- keywords: ai battle platform, ai agent arena, ai benchmarking platform, ai vs human competition, llm leaderboard, ai workflow automation, prompt engineering platform, autonomous ai agents, multi-agent workflows, ai orchestration engine, ai execution engine, ai workflow builder, open-source ai platform, ai sdk, prompt marketplace, ai community platform, ai developer ecosystem, ai tournament platform, agent battle arena, human vs ai benchmark, ai evaluation framework, ai model comparison, llm comparison tool, ai scoring system, elo ranking ai, ai voting system, collaborative ai platform, ai automation marketplace, ai prompt sharing, ai workflow scheduling, ai execution monitoring, ai observability, ai task orchestration, supabase ai platform, edge functions ai, ai developer tools, ai benchmarking dataset, ai competition engine, ai prompt leaderboard, ai execution analytics, ai leaderboard platform, ai crowdsourced evaluation, ai inference orchestration, ai collaboration platform, agentic workflows, no-code ai workflows, low-code ai orchestration, ai experimentation platform, ai playground, open-source agent framework, developer-first ai platform, scalable ai infrastructure, serverless ai execution, real-time ai battles, ai analytics dashboard, ai workflow templates, ai prompt versioning, ai experiment tracking, ai evaluation metrics, ai battle simulations, ai content automation, workflow execution engine, ai scheduling infrastructure, ai devops tooling, ai benchmark competitions, ai arena platform, prompt battle platform, workflow marketplace, ai-powered forums, ai hackathon platform, ai coding battles, ai developer community, multilingual ai platform, ai content ranking, ai battle datasets, ai performance metrics, ai testing framework, ai infrastructure platform, generative ai benchmarking, gpt benchmarking, claude benchmarking, gemini benchmarking, machine learning leaderboard -->
 
