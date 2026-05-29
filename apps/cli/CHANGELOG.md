@@ -1,3 +1,14 @@
+## 0.12.0 (2026-05-29)
+
+### 🚀 Features
+
+- **cli:** resolve AI lensers via RPC in update and catalog ([a9983cf72](https://github.com/conectlens/lenserfight/commit/a9983cf72))
+
+### ❤️ Thank You
+
+- Cursor @cursoragent
+- Ömer Faruk Coşkun
+
 ## 0.11.0 (2026-05-29)
 
 ### 🚀 Features
