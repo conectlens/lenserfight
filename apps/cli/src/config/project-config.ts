@@ -84,13 +84,178 @@ export interface LenserfightConfig {
 // ---------------------------------------------------------------------------
 
 export const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
-const CLOUD_API_URL = 'https://api.lenserfight.com';
 
 export const LOCAL_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7kyqHDkAkEXER0xnuvvidGu0XP2yJZCqMnY';
 
 const LOCAL_SERVICE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0';
+
+/** PostgREST + Edge Functions path on any Supabase project URL. */
+export const SUPABASE_EDGE_FUNCTIONS_SUFFIX = '/functions/v1';
+export const PRODUCTION_AUTH_BASE_URL = 'https://auth.lenserfight.com';
+
+/** Official LenserFight Cloud Supabase project (public client credentials). */
+export const PRODUCTION_SUPABASE_URL = 'https://jrjlbycxihqqbwmsmpjn.supabase.co';
+
+/** Publishable/anon key for {@link PRODUCTION_SUPABASE_URL} — safe for CLI client RPC. */
+export const PRODUCTION_SUPABASE_ANON_KEY =
+  'sb_publishable_L1H6fuj1jULbxhWBrfze2Q_vUyb7cB6';
+
+/** `{supabaseUrl}/functions/v1` — canonical HTTP API base when using Edge Functions. */
+export function supabaseEdgeFunctionsBaseUrl(supabaseUrl: string): string {
+  const base = supabaseUrl.trim().replace(/\/$/, '');
+  if (base.endsWith(SUPABASE_EDGE_FUNCTIONS_SUFFIX)) {
+    return base;
+  }
+  return `${base}${SUPABASE_EDGE_FUNCTIONS_SUFFIX}`;
+}
+
+/**
+ * Execution / platform API base URL.
+ * Explicit `API_URL` / `LENSERFIGHT_CLOUD_API_URL` wins when not dev-only in cloud mode;
+ * otherwise derived from `SUPABASE_URL`.
+ */
+export function resolveCloudApiUrl(
+  mode: EffectiveApiMode,
+  supabaseUrl: string | undefined,
+  explicitUrl?: string,
+): string {
+  const explicit = explicitUrl?.trim();
+  if (explicit && !(mode === 'cloud' && isDevOnlyHostUrl(explicit))) {
+    return explicit.replace(/\/$/, '');
+  }
+  if (supabaseUrl?.trim()) {
+    return supabaseEdgeFunctionsBaseUrl(supabaseUrl);
+  }
+  return '';
+}
+
+/** True for localhost, LAN, or Tailscale/CGNAT hosts — not valid cloud API targets. */
+export function isDevOnlyHostUrl(url: string): boolean {
+  try {
+    const { hostname } = new URL(url);
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+      return true;
+    }
+    if (hostname.endsWith('.local')) return true;
+    const parts = hostname.split('.').map((p) => Number(p));
+    if (parts.length === 4 && parts.every((n) => !Number.isNaN(n))) {
+      const [a, b] = parts;
+      if (a === 10) return true;
+      if (a === 192 && b === 168) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      // Tailscale CGNAT 100.64.0.0/10
+      if (a === 100 && b >= 64 && b <= 127) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/** @deprecated Use {@link isDevOnlyHostUrl}. */
+export const isDevOnlyAuthBaseUrl = isDevOnlyHostUrl;
+
+export function isLocalSupabaseAnonKey(key?: string): boolean {
+  const trimmed = key?.trim();
+  return !!trimmed && trimmed === LOCAL_ANON_KEY;
+}
+
+function pickFirstCloudHostUrl(...candidates: (string | undefined)[]): string {
+  for (const candidate of candidates) {
+    const value = candidate?.trim();
+    if (!value) continue;
+    if (!isDevOnlyHostUrl(value)) return value;
+  }
+  return '';
+}
+
+/** Supabase API origin: cloud skips dev-only env/project URLs; falls back to production. */
+export function resolveSupabaseUrl(
+  mode: EffectiveApiMode,
+  envUrl?: string,
+  projectUrl?: string,
+): string {
+  if (mode === 'local') {
+    return envUrl?.trim() || projectUrl?.trim() || LOCAL_SUPABASE_URL;
+  }
+  return pickFirstCloudHostUrl(envUrl, projectUrl) || PRODUCTION_SUPABASE_URL;
+}
+
+/** True when env keys are only valid together with a dev Supabase URL. */
+function isEnvKeyBoundToDevSupabase(envKey?: string, envUrl?: string): boolean {
+  return !!(envKey?.trim() && envUrl?.trim() && isDevOnlyHostUrl(envUrl));
+}
+
+/** Anon/publishable key: cloud skips local demo JWT and .env keys paired with dev URLs. */
+export function resolveSupabaseAnonKey(
+  mode: EffectiveApiMode,
+  envKey?: string,
+  userKey?: string,
+  envUrl?: string,
+): string {
+  if (mode === 'local') {
+    return envKey?.trim() || userKey?.trim() || LOCAL_ANON_KEY;
+  }
+  const envKeyUsable =
+    envKey?.trim() && !isLocalSupabaseAnonKey(envKey) && !isEnvKeyBoundToDevSupabase(envKey, envUrl);
+  if (envKeyUsable) return envKey.trim();
+  for (const key of [userKey]) {
+    const value = key?.trim();
+    if (value && !isLocalSupabaseAnonKey(value)) return value;
+  }
+  return PRODUCTION_SUPABASE_ANON_KEY;
+}
+
+function isLocalSupabaseServiceRoleKey(key?: string): boolean {
+  const trimmed = key?.trim();
+  return !!trimmed && trimmed === LOCAL_SERVICE_KEY;
+}
+
+export function resolveSupabaseServiceRoleKey(
+  mode: EffectiveApiMode,
+  envKey?: string,
+  userKey?: string,
+): string | undefined {
+  if (mode === 'local') {
+    return envKey?.trim() || userKey?.trim() || LOCAL_SERVICE_KEY;
+  }
+  for (const key of [envKey, userKey]) {
+    const value = key?.trim();
+    if (value && !isLocalSupabaseServiceRoleKey(value)) return value;
+  }
+  return undefined;
+}
+
+/** Browser login base URL: Cloud always uses production; Supabase local may use AUTH_BASE_URL. */
+export function resolveAuthBaseUrl(
+  mode: EffectiveApiMode,
+  envAuthBaseUrl?: string,
+): string | undefined {
+  if (mode === 'cloud') {
+    if (envAuthBaseUrl && isDevOnlyHostUrl(envAuthBaseUrl)) {
+      return PRODUCTION_AUTH_BASE_URL;
+    }
+    return envAuthBaseUrl || PRODUCTION_AUTH_BASE_URL;
+  }
+  return envAuthBaseUrl;
+}
+
+/** Fail fast when cloud mode still resolves to a dev-only backend (should not happen). */
+export function assertCloudSupabaseConfigured(config: LenserfightConfig): void {
+  if (config.mode !== 'cloud') return;
+  if (!config.supabaseUrl?.trim() || isDevOnlyHostUrl(config.supabaseUrl)) {
+    throw new Error(
+      'Cloud mode could not resolve a hosted Supabase URL. Run `lf use cloud` and retry, or `lf init --mode cloud --url https://<project-ref>.supabase.co`.',
+    );
+  }
+  if (!config.supabaseAnonKey?.trim() || isLocalSupabaseAnonKey(config.supabaseAnonKey)) {
+    throw new Error(
+      'Cloud mode could not resolve a hosted Supabase anon/publishable key. Set SUPABASE_ANON_KEY for a custom project or use the default cloud target.',
+    );
+  }
+}
 
 // ---------------------------------------------------------------------------
 // OS-aware device config directory
@@ -230,7 +395,17 @@ export function saveConfig(
     }
   })();
 
-  const safe = stripSecrets({ ...existing, ...config } as Record<string, unknown>);
+  const merged = { ...existing, ...config } as Record<string, unknown>;
+  const safe = stripSecrets(merged);
+  const effectiveMode = (safe['mode'] ?? existing['mode'] ?? 'cloud') as 'local' | 'cloud';
+  if (effectiveMode === 'cloud') {
+    if (typeof safe['supabaseUrl'] === 'string' && isDevOnlyHostUrl(safe['supabaseUrl'])) {
+      delete safe['supabaseUrl'];
+    }
+    if (typeof safe['cloudApiUrl'] === 'string' && isDevOnlyHostUrl(safe['cloudApiUrl'])) {
+      delete safe['cloudApiUrl'];
+    }
+  }
   writeFileSync(dirPath, JSON.stringify(safe, null, 2) + '\n');
 
   // Best-effort: register this workspace in the device config so the TUI
@@ -392,7 +567,9 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
 
   const anonKey =
     process.env['SUPABASE_ANON_KEY'] ||
-    file['SUPABASE_ANON_KEY'];
+    process.env['SUPABASE_PUBLISHABLE_KEY'] ||
+    file['SUPABASE_ANON_KEY'] ||
+    file['SUPABASE_PUBLISHABLE_KEY'];
 
   const serviceKey =
     process.env['SUPABASE_SERVICE_ROLE_KEY'] ||
@@ -471,7 +648,7 @@ export function getEffectiveMode(cwd = process.cwd()): {
 // Resolution order (highest → lowest):
 //   1. process.env / .env.local / .env
 //   2. Device config  (OS-aware path, legacy ~/.lenserfight/ fallback)
-//   3. Well-known local Supabase defaults (mode: local only)
+//   3. Well-known defaults: local Supabase stack | production cloud project
 // ---------------------------------------------------------------------------
 
 export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
@@ -483,16 +660,16 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
 
   const isLocal = mode === 'local';
 
+  const supabaseUrl = resolveSupabaseUrl(mode, env.supabaseUrl, project.supabaseUrl);
+
   const result: LenserfightConfig = {
     mode,
-    supabaseUrl:
-      env.supabaseUrl ||
-      project.supabaseUrl ||
-      (isLocal ? LOCAL_SUPABASE_URL : ''),
-    cloudApiUrl:
-      env.cloudApiUrl ||
-      project.cloudApiUrl ||
-      (isLocal ? 'http://localhost:8786' : CLOUD_API_URL),
+    supabaseUrl,
+    cloudApiUrl: resolveCloudApiUrl(
+      mode,
+      supabaseUrl || undefined,
+      env.cloudApiUrl || project.cloudApiUrl,
+    ),
     cloudId: project.cloudId,
     defaultStorageAdapter:
       env.defaultStorageAdapter ||
@@ -500,14 +677,17 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
       (isLocal ? 'supabase' : undefined),
     autoOpenBrowser: project.autoOpenBrowser,
     enabledApps: project.enabledApps,
-    supabaseAnonKey:
-      env.supabaseAnonKey ||
-      user.supabaseAnonKey ||
-      (isLocal ? LOCAL_ANON_KEY : ''),
-    supabaseServiceRoleKey:
-      env.supabaseServiceRoleKey ||
-      user.supabaseServiceRoleKey ||
-      (isLocal ? LOCAL_SERVICE_KEY : undefined),
+    supabaseAnonKey: resolveSupabaseAnonKey(
+      mode,
+      env.supabaseAnonKey,
+      user.supabaseAnonKey,
+      env.supabaseUrl,
+    ),
+    supabaseServiceRoleKey: resolveSupabaseServiceRoleKey(
+      mode,
+      env.supabaseServiceRoleKey,
+      user.supabaseServiceRoleKey,
+    ),
     apiKey: env.apiKey,
     developerToken:
       env.developerToken ||
@@ -517,7 +697,7 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
       user.developerTokenExpiresAt,
     developerTokenId: user.developerTokenId,
     ollamaBaseUrl: env.ollamaBaseUrl,
-    authBaseUrl: env.authBaseUrl,
+    authBaseUrl: resolveAuthBaseUrl(mode, env.authBaseUrl),
     dbPort: project.dbPort,
     apiPort: project.apiPort,
     authToken: user.authToken,

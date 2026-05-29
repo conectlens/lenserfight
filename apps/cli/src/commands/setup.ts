@@ -221,8 +221,11 @@ async function runJourneyInteractive(state: JourneyState): Promise<void> {
 
   const config = resolveConfig()
   const webBase = config.cloudApiUrl
-    ? config.cloudApiUrl.replace('/rest/v1', '').replace('/api', '')
-    : 'https://lenserfight.com'
+    ? config.cloudApiUrl
+        .replace(/\/functions\/v1\/?$/, '')
+        .replace('/rest/v1', '')
+        .replace('/api', '')
+    : config.supabaseUrl?.replace(/\/$/, '') || 'https://lenserfight.com'
   const webUrl = `${webBase}${step.webPath}`
 
   console.log('')

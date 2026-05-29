@@ -27,7 +27,7 @@ lf profile use staging && lf
 
 The dashboard renders three regions, top to bottom:
 
-1. **Header.** Workspace banner, the active profile name (highlighted), and a colored health badge (`HEALTHY` green or `DOWN` red). The badge probes the platform-api `/health` endpoint when available, falling back to Supabase auth health.
+1. **Header.** Workspace banner, the active profile name (highlighted), and a colored health badge (`HEALTHY` green or `DOWN` red). In **cloud** mode the badge uses hosted Supabase `GET /auth/v1/health` (with the publishable/anon key). In **local** mode it also tries a legacy platform-api `/health` when configured (not `{SUPABASE_URL}/functions/v1/health`).
 2. **Status line.** Local timestamp and the refresh cadence (`refresh 2s`).
 3. **Recent agent action logs.** Up to 10 rows from `agents.action_logs`, newest first, showing time, action type, and a truncated payload preview.
 

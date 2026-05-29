@@ -17,7 +17,7 @@ your-project/
 |-------|------|---------|-------------|
 | `mode` | `local` \| `cloud` | `local` | Target environment |
 | `supabaseUrl` | string | `http://127.0.0.1:54321` | Supabase API URL |
-| `cloudApiUrl` | string | `http://localhost:8786` / `https://api.lenserfight.com` | LenserFight Cloud API URL |
+| `cloudApiUrl` | string | `{SUPABASE_URL}/functions/v1` | Supabase Edge Functions base (override with `API_URL`) |
 | `cloudId` | string | — | Project identifier on LenserFight Cloud |
 | `dbPort` | number | `54322` | PostgreSQL port |
 | `apiPort` | number | `54321` | PostgREST API port |

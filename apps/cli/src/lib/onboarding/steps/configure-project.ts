@@ -30,7 +30,7 @@ export const configureProjectStep: OnboardingStep = {
       const lines = [
         `SUPABASE_URL=${LOCAL_SUPABASE_URL}`,
         `SUPABASE_ANON_KEY=${LOCAL_ANON_KEY}`,
-        'API_URL=http://localhost:8786',
+        `API_URL=${LOCAL_SUPABASE_URL}/functions/v1`,
       ]
       if (options.ollamaBaseUrl) {
         lines.push(`LENSERFIGHT_OLLAMA_BASE_URL=${options.ollamaBaseUrl}`)
