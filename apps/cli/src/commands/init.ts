@@ -22,7 +22,7 @@ export default defineCommand({
     mode: {
       type: 'string',
       description: 'Environment mode: local or cloud',
-      default: 'local',
+      default: 'cloud',
     },
     url: {
       type: 'string',
@@ -35,7 +35,7 @@ export default defineCommand({
     },
   },
   async run({ args }) {
-    const mode = args.mode === 'cloud' ? 'cloud' : 'local';
+    const mode = args.mode === 'local' ? 'local' : 'cloud';
 
     if (configExists()) {
       const existing = loadConfig();

@@ -142,7 +142,7 @@ const PROJECT_CONFIG_FILE_IN_DIR = 'lenserfight.json';
 const PROJECT_CONFIG_LEGACY_FILE = '.lenserfight.json';
 
 const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
-  mode: 'local',
+  mode: 'cloud',
   dbPort: 54322,
   apiPort: 54321,
 };
@@ -454,12 +454,21 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
   const user = loadUserConfig();
   const env = loadEnvConfig(cwd);
 
-  // --local global flag overrides project config mode for this invocation
+  // --local / --cloud global flags override project config mode for this invocation
   const forcedLocal = process.env['LF_LOCAL'] === '1';
-  const isLocal = forcedLocal || project.mode === 'local';
+  const forcedCloud = process.env['LF_CLOUD'] === '1';
+
+  let mode: 'local' | 'cloud' = project.mode;
+  if (forcedLocal) {
+    mode = 'local';
+  } else if (forcedCloud) {
+    mode = 'cloud';
+  }
+
+  const isLocal = mode === 'local';
 
   const result: LenserfightConfig = {
-    mode: forcedLocal ? 'local' : project.mode,
+    mode,
     supabaseUrl:
       env.supabaseUrl ||
       project.supabaseUrl ||
