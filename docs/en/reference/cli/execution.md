@@ -106,7 +106,7 @@ lf execution wait --workflow <workflow-uuid> --any [--timeout <seconds>] [--inte
 | `--interval` | seconds | 2 | Poll cadence. |
 | `--json` | boolean | false | Output the final run state (or terminal row) as JSON. |
 
-**Polling cadence.** Default 2 s; pass `--interval` to slow it down. Each tick calls `fn_get_workflow_run_state` (run mode) or queries `lenses.workflow_runs` filtered to terminal statuses (workflow + any mode).
+**Polling cadence.** Default 2 s; pass `--interval` to slow it down. Each tick calls `fn_workflow_get_run_state` (run mode) or queries `lenses.workflow_runs` filtered to terminal statuses (workflow + any mode).
 
 **Terminal statuses.** `completed`, `failed`, `cancelled`, `timed_out`.
 

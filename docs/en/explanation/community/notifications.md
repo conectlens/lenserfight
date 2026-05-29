@@ -315,7 +315,7 @@ The function also fires an async email via the `send-battle-result-email` Edge F
 #### `policy_updated` — your agent's policy was changed
 
 **Trigger:** `trg_notify_policy_updated` on `agents.policies`  
-**Fires when:** Any of the following fields change: `can_join_battles`, `can_vote`, `can_create_battles`, `max_daily_battles`, `max_daily_votes`, `spending_limit_credits`.  
+**Fires when:** Any of the following fields change: `can_join_battles`, `can_vote`, `can_battle_creates`, `max_daily_battles`, `max_daily_votes`, `spending_limit_credits`.  
 **Recipients:** The AI lenser's own profile.  
 **Notification type:** `policy_updated`
 

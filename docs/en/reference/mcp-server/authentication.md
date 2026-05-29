@@ -90,7 +90,7 @@ Response:
 }
 ```
 
-> **LF Cloud note:** Dynamic registration works correctly via `https://mcp.lenserfight.com` — the Cloudflare proxy serves the MCP server at the domain root, so OAuth discovery resolves as expected. If you were using the raw Supabase URL (`jrjlbycxihqqbwmsmpjn.supabase.co`) before, switch to `https://mcp.lenserfight.com/mcp`.
+> **LF Cloud note:** Dynamic registration works correctly via `https://mcp.lenserfight.com` — the Cloudflare proxy serves the MCP server at the domain root, so OAuth discovery resolves as expected.
 
 ### Flow summary
 

@@ -5,7 +5,7 @@ description: Connect your AI product to the LenserFight MCP server in under 5 mi
 
 # Provider Quickstart
 
-**Goal:** Connect your MCP-compatible product to the LenserFight MCP server, authorize a user, and make a successful `lens_list` call — in under 5 minutes.
+**Goal:** Connect your MCP-compatible product to the LenserFight MCP server, authorize a user, and make a successful `list_lenses` call — in under 5 minutes.
 
 **What you need:**
 - An MCP-compatible client (Claude.ai, Cursor, or any client that implements OAuth 2.1 PKCE + RFC 7591)
@@ -18,7 +18,7 @@ description: Connect your AI product to the LenserFight MCP server in under 5 mi
 The LenserFight MCP server is hosted on LF Cloud. The single stable endpoint is:
 
 ```
-https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
+https://mcp.lenserfight.com/mcp
 ```
 
 This URL handles all MCP JSON-RPC requests, OAuth discovery, token exchange, and health checks. There is no separate base URL needed.
@@ -30,7 +30,7 @@ This URL handles all MCP JSON-RPC requests, OAuth discovery, token exchange, and
 You do not pre-register with LenserFight. On the first connection your client calls:
 
 ```http
-POST https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/register
+POST https://mcp.lenserfight.com/oauth/register
 Content-Type: application/json
 
 {
@@ -57,7 +57,7 @@ Save `client_id`. Use it in every authorization request going forward. Most MCP 
 Generate a PKCE code verifier and challenge, then redirect the user to:
 
 ```
-https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize
+https://mcp.lenserfight.com/oauth/authorize
   ?response_type=code
   &client_id=lf_mcp_client_abc123...
   &redirect_uri=https://myproduct.com/api/mcp/auth_callback
@@ -75,7 +75,7 @@ On success, the server redirects to your `redirect_uri` with `?code=lf_mcp_<hex>
 ## Step 4 — Exchange the code for a token
 
 ```http
-POST https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/token
+POST https://mcp.lenserfight.com/oauth/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=authorization_code
@@ -100,7 +100,7 @@ Store the `access_token`. This is a long-lived MCP token — it does not expire 
 ## Step 5 — Make your first tool call
 
 ```http
-POST https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
+POST https://mcp.lenserfight.com/mcp
 Authorization: Bearer lf_mcp_abc123...
 Content-Type: application/json
 
@@ -109,7 +109,7 @@ Content-Type: application/json
   "id": 1,
   "method": "tools/call",
   "params": {
-    "name": "lens_list",
+    "name": "list_lenses",
     "arguments": { "limit": 5 }
   }
 }
@@ -142,7 +142,7 @@ If your product **is** Claude.ai:
 1. Open **claude.ai → Settings → Connectors → Add custom connector**.
 2. Set **Remote MCP server URL** to:
    ```
-   https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
+   https://mcp.lenserfight.com/mcp
    ```
 3. Leave OAuth Client ID and Secret blank (dynamic registration handles it).
 4. Click **Add**. Sign in with your LenserFight credentials when the popup appears.
@@ -158,7 +158,7 @@ Add to your MCP config file (e.g., `~/.cursor/mcp.json` or `.mcp.json` in your w
 {
   "mcpServers": {
     "lenserfight": {
-      "url": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp"
+      "url": "https://mcp.lenserfight.com/mcp"
     }
   }
 }
@@ -173,12 +173,12 @@ Cursor will detect the OAuth requirement from the discovery document and initiat
 At any time:
 
 ```bash
-curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/health
+curl https://mcp.lenserfight.com/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 
 Or from within your AI assistant:
-> "Call `lens_list` with `limit=1` using the LenserFight connection."
+> "Call `list_lenses` with `limit=1` using the LenserFight connection."
 
 ---
 

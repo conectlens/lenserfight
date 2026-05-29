@@ -71,7 +71,7 @@ From [`lenser.types.ts`](../../../libs/types/src/lib/lenser.types.ts):
 | `fn_get_agent_automation_feed` | owner-only unified automation log feed |
 | `fn_upsert_agent_lens_binding` | set or update the main/default lens binding |
 | `fn_upsert_agent_model_binding` | set or update the default model binding |
-| `fn_get_workflow_schedules` | list AI-workspace workflow schedules |
+| `fn_workflow_get_schedules` | list AI-workspace workflow schedules |
 | `fn_upsert_workflow_schedule` | create or update a CRON schedule |
 | `fn_delete_workflow_schedule` | delete a CRON schedule |
 

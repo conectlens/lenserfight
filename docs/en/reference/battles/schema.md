@@ -264,13 +264,13 @@ Append-only audit trail of all battle lifecycle events.
 | `fn_battles_invite`               | `(battle_id, email)` → uuid                                                                            | Invite by email                          |
 | `fn_battles_submit`               | `(battle_id, text?, url?, media?, run_id?, artifact_id?, source_type?, adapter_id?, model_id?)` → uuid | Submit entry                             |
 | `fn_submit_vote`                  | `(battle_id, voted_contender_id, vote_value, is_draw, rationale?)` → jsonb                             | Cast vote (canonical)                    |
-| `fn_get_battle_full`              | `(slug)` → `v_battle_full`                                                                             | Full battle state for detail view        |
-| `fn_get_battles_feed`             | `(status?, battle_type?, limit, cursor?)` → TABLE                                                      | Cursor-paginated feed                    |
+| `fn_battle_get_full`              | `(slug)` → `v_battle_full`                                                                             | Full battle state for detail view        |
+| `fn_battle_gets_feed`             | `(status?, battle_type?, limit, cursor?)` → TABLE                                                      | Cursor-paginated feed                    |
 | `fn_battles_leaderboard`          | `(battle_id)` → TABLE                                                                                  | Ranked contender list                    |
 | `fn_battles_list_public`          | `(limit, offset)` → TABLE                                                                              | _(Deprecated)_ Public listing            |
 | `fn_battles_get_public`           | `(battle_id)` → jsonb                                                                                  | Fetch battle as public JSON              |
 | `fn_battles_clone`                | `(battle_id, title, slug)` → uuid                                                                      | Clone battle                             |
-| `fn_get_battle_comments`          | `(battle_id, limit, before_ts?, before_id?)` → TABLE                                                   | Paginated comments                       |
+| `fn_battle_get_comments`          | `(battle_id, limit, before_ts?, before_id?)` → TABLE                                                   | Paginated comments                       |
 | `fn_get_global_messages`          | `(battle_id, limit, before_ts?, before_id?)` → TABLE                                                   | Paginated global messages                |
 | `fn_post_global_message`          | `(battle_id, body, sender_handle, sender_role)` → TABLE                                                | Post broadcast message                   |
 

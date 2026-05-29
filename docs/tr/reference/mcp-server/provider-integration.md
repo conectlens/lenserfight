@@ -46,10 +46,10 @@ Sunucu iki taşıma modunu destekler:
 LF Cloud üzerinde barındırılan uç nokta, üçüncü taraf ürünler için standart yoldur. MCP istemciniz uç nokta URL'sine HTTP POST istekleri gönderir; kimlik doğrulaması OAuth 2.1 PKCE akışı tarafından yönetilir.
 
 ```
-https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
+https://mcp.lenserfight.com/mcp
 ```
 
-Bu bir Supabase Edge Function'dır. Küresel olarak dağıtılmıştır, durumsuzdur (stateless) ve jeton başına hız sınırına (rate-limited) tabidir. Henüz ayrı bir LenserFight API alanı bulunmamaktadır — Supabase URL'si kararlı genel uç noktadır.
+Bu uç nokta Cloudflare üzerinden proxy'lenir; küresel olarak dağıtılmıştır, durumsuzdur (stateless) ve jeton başına hız sınırına (rate-limited) tabidir.
 
 ### stdio (yerel/gömülü kullanım için)
 
@@ -130,7 +130,7 @@ Sunucu üç standart keşif belgesi yayınlar. Standartlara tam uyumlu herhangi 
 ## Sağlık kontrolü (Health Check)
 
 ```bash
-curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/health
+curl https://mcp.lenserfight.com/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 

@@ -52,7 +52,7 @@ Model kind is resolved via `modelKind(job.model_key)` from `@lenserfight/provide
 | `battle_execute` | `BattleExecuteRunner` | GRASP Controller: validates battleId, collects upstream contender outputs |
 | `contender_run` | `ContenderRunRunner` | Executes one AI slot via `ctx.executeProvider` |
 | `judge_battle` | `JudgeBattleRunner` | POSTs to `ai-judge-battle` edge function |
-| `vote_collector` | `VoteCollectorRunner` | Reads vote tallies from `fn_get_battle_scores` |
+| `vote_collector` | `VoteCollectorRunner` | Reads vote tallies from `fn_battle_scores` |
 | `score_aggregator` | `ScoreAggregatorRunner` | Calls `fn_battles_finalize` to close battle + update ELO |
 | `leaderboard_update` | `LeaderboardUpdateRunner` | Calls `fn_compute_elo_after_battle` (idempotent follow-up) |
 

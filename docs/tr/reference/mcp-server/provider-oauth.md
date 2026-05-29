@@ -225,7 +225,7 @@ mcp-session-id: <your_session_id>
   "jsonrpc": "2.0",
   "id": 1,
   "method": "tools/call",
-  "params": { "name": "lens_list", "arguments": { "limit": 5 } }
+  "params": { "name": "list_lenses", "arguments": { "limit": 5 } }
 }
 ```
 

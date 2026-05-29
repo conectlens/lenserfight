@@ -86,13 +86,13 @@ type CreateLensDTO = {
 
 Backed by:
 
-- `lenses.fn_create_lens`
+- `lenses.fn_lens_create`
 
 ### Update lens
 
 Backed by:
 
-- `lenses.fn_update_lens`
+- `lenses.fn_lens_update`
 
 ### Create draft version
 

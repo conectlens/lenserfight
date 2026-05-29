@@ -57,7 +57,7 @@ If authorization fails:
 
 | Error | Cause | Fix |
 |---|---|---|
-| **No Lenser profile found** | Account exists but onboarding was never completed | Sign in at lenserfight.com, complete the handle selection step, then retry |
+| **No Lenser profile found** | Account exists but onboarding was never completed | The auth app automatically redirects to onboarding and completes authorization on return — no manual navigation needed. |
 | **Authorization failed** | Session expired or was already used | Start the connector flow again from Claude.ai settings |
 
 ### Step 3 — Test the connection
@@ -66,7 +66,7 @@ Back in Claude.ai, start a new chat and ask:
 
 > "Use the LenserFight connector to list my lenses."
 
-Claude calls `lens_list` and responds. If it works, the integration is healthy.
+Claude calls `list_lenses` and responds. If it works, the integration is healthy.
 
 ### Cursor / other HTTP MCP clients
 
@@ -179,7 +179,7 @@ Launch Claude Code from inside the repo root. It auto-discovers `.mcp.json` and 
 Use the lenserfight MCP server to list my lenses.
 ```
 
-Claude calls `lens_list` and returns the result.
+Claude calls `list_lenses` and returns the result.
 
 > **Security note:** stdio mode runs with the service role key, which bypasses RLS. Keep `.env.mcp.local` out of version control and do not share your shell session.
 
@@ -309,7 +309,7 @@ If authorization fails:
 | Error | Cause | Fix |
 |---|---|---|
 | **Redirected to blank page or 404** | Local auth app is not running | Run `pnpm nx serve auth` and retry |
-| **No Lenser profile found** | The auth account has no Lenser profile | Open the LenserFight web app, sign in, complete onboarding, then retry |
+| **No Lenser profile found** | The auth account has no Lenser profile | The auth app automatically redirects to onboarding and completes authorization on return — no manual navigation needed. |
 | **Authorization session expired** | More than 5 minutes passed before clicking Allow | Start the connector flow again from Claude.ai settings |
 
 ### Step 5 — Test it
@@ -318,7 +318,7 @@ Back in Claude.ai, start a new chat and ask:
 
 > "Use the LenserFight Local connector to list my lenses."
 
-Claude calls `lens_list` and responds.
+Claude calls `list_lenses` and responds.
 
 ### Reconnecting after a restart
 
@@ -335,32 +335,32 @@ The OAuth client `lf_mcp_client_localdev` and its database row are recreated on 
 
 Available tool families — see the full parameter tables in the tool reference pages:
 
-- **[Lens tools](./tools-lens)** — `lens_list`, `lens_search`, `lens_get`, `lens_run`, `lens_find_and_run`, `lens_create`, `lens_update`, `lens_fork`, `lens_versions`, and more
-- **[Battle tools](./tools-battle)** — `battle_list`, `battle_get`, `battle_create`, `battle_add_contender`, `battle_submit_run`, `battle_score`, `battle_set_status`, `battle_history`
-- **[Workflow tools](./tools-workflow)** — `workflow_list`, `workflow_get`, `workflow_create`, `workflow_run`, `workflow_run_status`, `workflow_run_logs`, `workflow_retry`, `workflow_summarize`
+- **[Lens tools](./tools-lens)** — `list_lenses`, `search_lenses`, `get_lens`, `run_lens`, `find_and_run_lens`, `create_lens`, `update_lens`, `fork_lens`, `list_lens_versions`, and more
+- **[Battle tools](./tools-battle)** — `list_battles`, `get_battle`, `create_battle`, `add_battle_contender`, `submit_battle_run`, `get_battle_score`, `set_battle_status`, `get_battle_history`
+- **[Workflow tools](./tools-workflow)** — `list_workflows`, `get_workflow`, `create_workflow`, `run_workflow`, `get_workflow_run_status`, `get_workflow_run_logs`, `retry_workflow`, `summarize_workflow`
 
 ### Daily usage examples
 
 **Discover and run a lens by topic:**
-> "Use `lens_find_and_run` with query='logo brief'. Ask me for any missing parameters."
+> "Use `find_and_run_lens` with query='logo brief'. Ask me for any missing parameters."
 
 The tool returns either a `resolved_prompt` (Claude executes it immediately) or a `needs_params` list with the labels it still needs from you.
 
 **Run a known lens with parameters:**
-> "Call `lens_run` with `lens_id=<uuid>` and `param_values={Topic: 'TypeScript', Language: 'English'}`."
+> "Call `run_lens` with `lens_id=<uuid>` and `param_values={Topic: 'TypeScript', Language: 'English'}`."
 
 **Browse your battles:**
-> "List my last 10 battles using `battle_list`."
+> "List my last 10 battles using `list_battles`."
 
 **Start and monitor a workflow:**
-> "Create a workflow named 'Daily Summary', start a run with empty inputs, then poll `workflow_run_status` until it completes."
+> "Create a workflow named 'Daily Summary', start a run with empty inputs, then poll `get_workflow_run_status` until it completes."
 
-### How `lens_run` works
+### How `run_lens` works
 
-`lens_run` only **resolves the template** — it substitutes `[[Parameter]]` tokens with the values you supply and returns the finished prompt string. The calling AI model (Claude) is what actually executes that prompt. The flow is:
+`run_lens` only **resolves the template** — it substitutes `[[Parameter]]` tokens with the values you supply and returns the finished prompt string. The calling AI model (Claude) is what actually executes that prompt. The flow is:
 
 1. You ask: *"Use the logo brief lens for ACME Corp."*
-2. Claude calls `lens_find_and_run(query='logo brief', param_values={Brand: 'ACME Corp'})`.
+2. Claude calls `find_and_run_lens(query='logo brief', param_values={Brand: 'ACME Corp'})`.
 3. The server returns `{ resolved_prompt: "Generate a logo brief for ACME Corp...", lens_title: "Logo Brief", ... }`.
 4. Claude executes the resolved prompt and returns the output to you.
 
@@ -394,7 +394,7 @@ It must be reachable at `http://localhost:3004` before the tunnel redirects land
 
 ### `No Lenser profile found`
 
-The auth account exists but never completed the onboarding flow. Sign in to the LenserFight web app, pick a handle, then retry the connector authorization.
+The auth account exists but never completed the onboarding flow. The auth app automatically redirects to onboarding and completes authorization on return — no manual navigation needed.
 
 ### Clear the VitePress docs cache
 
@@ -428,7 +428,7 @@ After connecting in any mode, run this two-step check:
 
 > "List my lenses using the LenserFight connector, then describe the first result in detail."
 
-Claude should call `lens_list`, then `lens_get` on the first ID. If both succeed, the integration is healthy.
+Claude should call `list_lenses`, then `get_lens` on the first ID. If both succeed, the integration is healthy.
 
 You can also hit the health endpoint directly:
 

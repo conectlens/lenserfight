@@ -93,7 +93,7 @@ The lenser integration uses citty and is documented at [docs/reference/cli/run.m
 lenserfight inspect <subcommand>
 ```
 
-Source: [apps/cli/src/commands/inspect.ts](../../apps/cli/src/commands/inspect.ts). Wraps `fn_get_workflow_run_state` and `fn_get_run_provenance` to render the n8n-style inspector in the terminal.
+Source: [apps/cli/src/commands/inspect.ts](../../apps/cli/src/commands/inspect.ts). Wraps `fn_workflow_get_run_state` and `fn_get_run_provenance` to render the n8n-style inspector in the terminal.
 
 ## Lenser / Agent commands
 
@@ -204,7 +204,7 @@ lenserfight schedule <subcommand>
 
 | Subcommand | Maps to |
 |------------|---------|
-| `list [--workflow <id>]` | [`fn_get_workflow_schedules`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L692) |
+| `list [--workflow <id>]` | [`fn_workflow_get_schedules`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L692) |
 | `inspect --schedule <id>` | Single-row read of `lenses.workflow_schedules` |
 | `create --workflow <id> --cron <expr> --timezone <tz> --assignee-type agent\|team --assignee-id <id> [--inputs-template <json>] [--approval-policy <json>] [--retry-policy <json>] [--failure-policy <json>] [--queue-policy <json>] [--inactive]` | [`fn_upsert_workflow_schedule`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L762) |
 | `update --schedule <id> [...same flags as create]` | Same RPC with `p_schedule_id` |

@@ -19,12 +19,12 @@ Bu kılavuz, desteklenen her bağlantı modu için LenserFight MCP sunucusunu ü
 
 **Tüm üretim entegrasyonları için bunu kullanın.**
 
-LenserFight MCP sunucusu bir Supabase Edge Function olarak çalışır. Dağıtılacak veya sürdürülecek ayrı bir sunucu yoktur. İstemciniz HTTPS üzerinden standart MCP JSON-RPC istekleri gönderir.
+LenserFight MCP sunucusu Cloudflare üzerinden proxy'lenen kararlı bir genel adrese sahiptir. Dağıtılacak veya sürdürülecek ayrı bir sunucu yoktur. İstemciniz HTTPS üzerinden standart MCP JSON-RPC istekleri gönderir.
 
 ### Uç nokta (Endpoint)
 
 ```
-https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
+https://mcp.lenserfight.com/mcp
 ```
 
 ### OAuth keşfi (Uyumlu istemciler için otomatik)
@@ -32,15 +32,15 @@ https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp
 MCP standartlarına tam uyumlu bir istemci keşif belgesini okur ve OAuth işlemlerini otomatik olarak gerçekleştirir:
 
 ```bash
-curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/.well-known/oauth-authorization-server
+curl https://mcp.lenserfight.com/.well-known/oauth-authorization-server
 ```
 
 ```json
 {
-  "issuer": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp",
-  "authorization_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/authorize",
-  "token_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/token",
-  "registration_endpoint": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/oauth/register",
+  "issuer": "https://mcp.lenserfight.com",
+  "authorization_endpoint": "https://mcp.lenserfight.com/oauth/authorize",
+  "token_endpoint": "https://mcp.lenserfight.com/oauth/token",
+  "registration_endpoint": "https://mcp.lenserfight.com/oauth/register",
   "response_types_supported": ["code"],
   "grant_types_supported": ["authorization_code"],
   "code_challenge_methods_supported": ["S256"],
@@ -53,7 +53,7 @@ curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/.well
 1. **claude.ai → Ayarlar → Bağlayıcılar → Özel bağlayıcı ekle** yolunu izleyin.
 2. Bilgileri doldurun:
    - **Adı (Name):** `LenserFight`
-   - **Uzak MCP sunucu URL'si (Remote MCP server URL):** `https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp`
+   - **Uzak MCP sunucu URL'si (Remote MCP server URL):** `https://mcp.lenserfight.com/mcp`
    - **OAuth İstemci Kimliği (OAuth Client ID):** boş bırakın (dinamik kayıt)
    - **OAuth İstemci Parolası (OAuth Client Secret):** boş bırakın (yalnızca PKCE — parola yok)
 3. **Ekle (Add)** seçeneğine tıklayın.
@@ -67,7 +67,7 @@ curl https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/.well
 {
   "mcpServers": {
     "lenserfight": {
-      "url": "https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp"
+      "url": "https://mcp.lenserfight.com/mcp"
     }
   }
 }
@@ -91,7 +91,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 
 const transport = new StreamableHTTPClientTransport(
-  new URL('https://jrjlbycxihqqbwmsmpjn.supabase.co/functions/v1/lenserfight-mcp/mcp'),
+  new URL('https://mcp.lenserfight.com/mcp'),
   {
     // OAuth akışını tamamladıktan sonra lf_mcp_* erişim jetonunu buraya girin
     requestInit: {
@@ -103,7 +103,7 @@ const transport = new StreamableHTTPClientTransport(
 const client = new Client({ name: 'my-product', version: '1.0.0' }, { capabilities: {} })
 await client.connect(transport)
 
-const result = await client.callTool({ name: 'lens_list', arguments: { limit: 10 } })
+const result = await client.callTool({ name: 'list_lenses', arguments: { limit: 10 } })
 console.log(result)
 ```
 

@@ -46,7 +46,7 @@ title: <Human-readable title>
 description: <One-sentence what-and-why, ≤ 160 chars. Used by /ray search.>
 author: '@lenserfight'           # or @chainabit / @conectlens
 visibility: public                # public | unlisted | private
-forkable: true                    # whether fn_create_lens can clone it
+forkable: true                    # whether fn_lens_create can clone it
 disclaimer: |                      # MANDATORY for legal/finance templates
   <full disclaimer text>
 inputs:

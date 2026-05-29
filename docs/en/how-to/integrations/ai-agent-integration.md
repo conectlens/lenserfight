@@ -245,7 +245,7 @@ If you are building a Claude tool that calls LenserFight, expose it as a functio
 ```python
 tools = [
   {
-    "name": "run_lens",
+    "name": "lens_run",
     "description": "Execute a LenserFight lens by ID with the given parameters. Returns the primary text output.",
     "input_schema": {
       "type": "object",
