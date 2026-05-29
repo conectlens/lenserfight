@@ -37,11 +37,18 @@ A footer line lists the key bindings.
 
 | Key | Action |
 |---|---|
-| `a` | Approvals — runs `lf approval list` in a child process. |
-| `b` | Battles — runs `lf battle list`. |
-| `s` | Schedules — runs `lf schedule list`. |
-| `m` | Memory — runs `lf memory list-entries`. |
+| `e` | **Execute** — workflow runs, battle exec, lens prompts, team dispatch ([`lf execute`](/en/reference/cli/execute.md)). |
+| `k` | **Configure** — local BYOK keys, cloud BYOK, Ollama, providers ([`lf configure`](/en/reference/cli/configure.md)). |
+| `a` | Approvals — pending agent run approvals. |
+| `b` | Battles — list, create, exec, stream-feed. |
+| `s` | Schedules — workflow schedules. |
+| `m` | Memory — agent memory entries. |
+| `l` | Lensers — human + AI lenser catalog. |
+| `f` | Feed and leaderboard. |
+| `:` | Command bar (autocomplete over 200+ commands). |
 | `q` / `Esc` / `Ctrl-C` | Quit and restore the cursor. |
+
+Child commands show a short **fsociety-style** prelude before running. Long waits support streaming via `lf execute workflow stream` or `lf execution events --follow`.
 
 When you trigger a binding, the dashboard pauses, hands the terminal to the spawned `lf` subcommand, and returns to the live view when you press `q` after the child exits.
 
