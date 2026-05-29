@@ -5,6 +5,7 @@ import { getServiceClient } from './client.js';
 import { registerLensTools } from './tools/lens/index.js';
 import { registerBattleTools } from './tools/battle/index.js';
 import { registerWorkflowTools } from './tools/workflow/index.js';
+import { registerAgentTools } from './tools/agent/index.js';
 import { bootStdio } from './transport/stdio.js';
 import { bootHttp } from './transport/http.js';
 
@@ -17,6 +18,7 @@ export function buildServer(sb: SupabaseClient): McpServer {
   registerLensTools(server, sb);
   registerBattleTools(server, sb);
   registerWorkflowTools(server, sb);
+  registerAgentTools(server, sb);
 
   return server;
 }
