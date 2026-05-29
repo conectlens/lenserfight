@@ -5,13 +5,21 @@ import { handleError } from '../../utils/api'
 import { printJson, printTable } from '../../utils/output'
 import { makeLifecycleCommand } from '../../utils/lifecycle'
 
+async function loadSubCommand(
+  mod: { subCommands?: Record<string, unknown> } | undefined,
+  name: string,
+): Promise<{ run?: (c: unknown) => Promise<void> } | undefined> {
+  const sub = mod?.subCommands?.[name]
+  const cmd = typeof sub === 'function' ? await (sub as () => Promise<unknown>)() : sub
+  return cmd as { run?: (c: unknown) => Promise<void> } | undefined
+}
+
 const list = defineCommand({
   meta: { name: 'list', description: 'List your cloud workflows.' },
   async run(ctx) {
     const workflow = await import('../workflow')
-    const listCmd = (workflow.default as { subCommands?: Record<string, unknown> }).subCommands?.list
-    const cmd = typeof listCmd === 'function' ? await listCmd() : listCmd
-    return (cmd as { run?: (c: typeof ctx) => Promise<void> })?.run?.(ctx)
+    const cmd = await loadSubCommand(workflow.default as { subCommands?: Record<string, unknown> }, 'list')
+    return cmd?.run?.(ctx)
   },
 })
 
@@ -21,9 +29,8 @@ const create = defineCommand({
   meta: { name: 'create', description: 'Create a cloud workflow.' },
   async run(ctx) {
     const workflow = await import('../workflow')
-    const createCmd = (workflow.default as { subCommands?: Record<string, unknown> }).subCommands?.create
-    const cmd = typeof createCmd === 'function' ? await createCmd() : createCmd
-    return (cmd as { run?: (c: typeof ctx) => Promise<void> })?.run?.(ctx)
+    const cmd = await loadSubCommand(workflow.default as { subCommands?: Record<string, unknown> }, 'create')
+    return cmd?.run?.(ctx)
   },
 })
 
@@ -41,9 +48,8 @@ const update = defineCommand({
   },
   async run(ctx) {
     const schedule = await import('../schedule')
-    const updateCmd = (schedule.default as { subCommands?: Record<string, unknown> }).subCommands?.update
-    const cmd = typeof updateCmd === 'function' ? await updateCmd() : updateCmd
-    return (cmd as { run?: (c: typeof ctx) => Promise<void> })?.run?.(ctx)
+    const cmd = await loadSubCommand(schedule.default as { subCommands?: Record<string, unknown> }, 'update')
+    return cmd?.run?.(ctx)
   },
 })
 
@@ -56,11 +62,11 @@ const insert = defineCommand({
   },
   async run({ args }) {
     const workflow = await import('../workflow')
-    const trigger = (workflow.default as { subCommands?: Record<string, unknown> }).subCommands?.trigger
-    const triggerCmd = typeof trigger === 'function' ? await trigger() : trigger
-    const add = (triggerCmd as { subCommands?: Record<string, { run?: (c: unknown) => Promise<void> }> })
-      ?.subCommands?.add
-    const addCmd = typeof add === 'function' ? await add() : add
+    const triggerCmd = await loadSubCommand(workflow.default as { subCommands?: Record<string, unknown> }, 'trigger')
+    const addCmd = await loadSubCommand(
+      triggerCmd as { subCommands?: Record<string, unknown> } | undefined,
+      'add',
+    )
     await addCmd?.run?.({
       args: { id: args.id, type: args.type, condition: args.condition },
       cmd: {},
@@ -76,9 +82,8 @@ const stop = defineCommand({
   },
   async run({ args }) {
     const execution = await import('../execution')
-    const cancel = (execution.default as { subCommands?: Record<string, unknown> }).subCommands?.cancel
-    const cancelCmd = typeof cancel === 'function' ? await cancel() : cancel
-    await (cancelCmd as { run?: (c: unknown) => Promise<void> })?.run?.({
+    const cancelCmd = await loadSubCommand(execution.default as { subCommands?: Record<string, unknown> }, 'cancel')
+    await cancelCmd?.run?.({
       args: { run: args.run, json: false },
       cmd: {},
       rawArgs: [],
@@ -90,9 +95,8 @@ const schedule = defineCommand({
   meta: { name: 'schedule', description: 'Create a cron schedule for a workflow.' },
   async run(ctx) {
     const scheduleMod = await import('../schedule')
-    const createCmd = (scheduleMod.default as { subCommands?: Record<string, unknown> }).subCommands?.create
-    const cmd = typeof createCmd === 'function' ? await createCmd() : createCmd
-    return (cmd as { run?: (c: typeof ctx) => Promise<void> })?.run?.(ctx)
+    const cmd = await loadSubCommand(scheduleMod.default as { subCommands?: Record<string, unknown> }, 'create')
+    return cmd?.run?.(ctx)
   },
 })
 
@@ -140,9 +144,8 @@ const runLocal = defineCommand({
   meta: { name: 'run', description: 'Simulate a local WORKFLOW.md file.' },
   async run(ctx) {
     const workflow = await import('../workflow')
-    const runCmd = (workflow.default as { subCommands?: Record<string, unknown> }).subCommands?.run
-    const cmd = typeof runCmd === 'function' ? await runCmd() : runCmd
-    return (cmd as { run?: (c: typeof ctx) => Promise<void> })?.run?.(ctx)
+    const cmd = await loadSubCommand(workflow.default as { subCommands?: Record<string, unknown> }, 'run')
+    return cmd?.run?.(ctx)
   },
 })
 
@@ -150,9 +153,8 @@ const validate = defineCommand({
   meta: { name: 'validate', description: 'Validate a local WORKFLOW.md file.' },
   async run(ctx) {
     const workflow = await import('../workflow')
-    const validateCmd = (workflow.default as { subCommands?: Record<string, unknown> }).subCommands?.validate
-    const cmd = typeof validateCmd === 'function' ? await validateCmd() : validateCmd
-    return (cmd as { run?: (c: typeof ctx) => Promise<void> })?.run?.(ctx)
+    const cmd = await loadSubCommand(workflow.default as { subCommands?: Record<string, unknown> }, 'validate')
+    return cmd?.run?.(ctx)
   },
 })
 
