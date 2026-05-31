@@ -98,6 +98,63 @@ describe('memory list-entries', () => {
     const cmd = await getSubCmd('list-entries')
     await cmd.run?.({ args: { profile: 'mp-1', workflow: '', scope: '', limit: '10', json: false } })
 
-    expect(mockCallRpc).toHaveBeenCalled()
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_read_memory_entries',
+      expect.objectContaining({ p_profile_id: 'mp-1', p_limit: 10 }),
+      expect.objectContaining({ requireAuth: true }),
+    )
+  })
+
+  it('falls back to a sane limit when --limit is non-numeric', async () => {
+    mockCallRpc.mockResolvedValueOnce([] as any)
+
+    const cmd = await getSubCmd('list-entries')
+    await cmd.run?.({ args: { profile: 'mp-1', workflow: '', scope: '', limit: 'abc', json: false } })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_read_memory_entries',
+      expect.objectContaining({ p_limit: 20 }),
+      expect.objectContaining({ requireAuth: true }),
+    )
+  })
+
+  it('errors when neither --profile nor --workflow is given', async () => {
+    const cmd = await getSubCmd('list-entries')
+    await cmd.run?.({ args: { profile: '', workflow: '', scope: '', limit: '20', json: false } })
+
+    expect(mockCallRpc).not.toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
+  })
+})
+
+describe('memory write-entry', () => {
+  it('clamps an out-of-range confidence into [0,1]', async () => {
+    mockCallRpc.mockResolvedValueOnce('entry-1' as any)
+
+    const cmd = await getSubCmd('write-entry')
+    await cmd.run?.({
+      args: { profile: 'mp-1', scope: 'project', source: 'manual', content: 'hi', confidence: '5' },
+    })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_write_memory_entry',
+      expect.objectContaining({ p_confidence: 1 }),
+      expect.objectContaining({ requireAuth: true }),
+    )
+  })
+
+  it('defaults confidence to 0.7 when value is non-numeric', async () => {
+    mockCallRpc.mockResolvedValueOnce('entry-1' as any)
+
+    const cmd = await getSubCmd('write-entry')
+    await cmd.run?.({
+      args: { profile: 'mp-1', scope: 'project', source: 'manual', content: 'hi', confidence: 'nope' },
+    })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_write_memory_entry',
+      expect.objectContaining({ p_confidence: 0.7 }),
+      expect.objectContaining({ requireAuth: true }),
+    )
   })
 })

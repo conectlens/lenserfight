@@ -100,4 +100,36 @@ describe('media delete', () => {
 
     expect(mockHandleError).toHaveBeenCalled()
   })
+
+  it('refuses to delete without --force and sets exit code 1', async () => {
+    const cmd = await getSubCmd('delete')
+    await cmd.run?.({ args: { id: 'media-123', force: false } })
+
+    expect(mockCallRpc).not.toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
+    expect(consola.warn).toHaveBeenCalled()
+  })
+})
+
+describe('media set-visibility', () => {
+  it('rejects an invalid visibility value via handleError', async () => {
+    const cmd = await getSubCmd('set-visibility')
+    await cmd.run?.({ args: { id: 'media-1', visibility: 'bogus' } })
+
+    expect(mockCallRpc).not.toHaveBeenCalled()
+    expect(mockHandleError).toHaveBeenCalled()
+  })
+
+  it('calls fn_toggle_media_visibility for a valid value', async () => {
+    mockCallRpc.mockResolvedValueOnce(undefined as any)
+
+    const cmd = await getSubCmd('set-visibility')
+    await cmd.run?.({ args: { id: 'media-1', visibility: 'public' } })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_toggle_media_visibility',
+      { p_object_id: 'media-1', p_visibility: 'public' },
+      { requireAuth: true },
+    )
+  })
 })

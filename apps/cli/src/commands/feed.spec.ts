@@ -44,6 +44,14 @@ describe('lf feed', () => {
     expect(process.exitCode).toBe(1)
   })
 
+  it('rejects a non-numeric --limit without calling the feed service', async () => {
+    await feedCmd?.run?.({ args: { type: 'threads', limit: 'abc', json: false }, cmd: {}, rawArgs: [] })
+
+    expect(consolaError).toHaveBeenCalledWith(expect.stringContaining('Invalid --limit'), 'abc')
+    expect(process.exitCode).toBe(1)
+    expect(mockGetPersonalContentFeed).not.toHaveBeenCalled()
+  })
+
   it('outputs JSON when feed returns items and --json is set', async () => {
     mockGetPersonalContentFeed.mockResolvedValueOnce([{ id: 'item-1', title: 'Hello' }])
 

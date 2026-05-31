@@ -88,3 +88,20 @@ describe('lens create', () => {
     expect(mockHandleError).toHaveBeenCalled()
   })
 })
+
+describe('lens version list', () => {
+  async function getVersionList(): Promise<AnyCmd> {
+    const versionGroup = await getSubCmd('version')
+    return versionGroup.subCommands?.list as AnyCmd
+  }
+
+  it('emits an empty JSON array (not an info line) when no versions and --json set', async () => {
+    mockCallRpc.mockResolvedValueOnce([] as any)
+
+    const cmd = await getVersionList()
+    await cmd.run?.({ args: { id: 'lens-1', json: true } })
+
+    expect(mockPrintJson).toHaveBeenCalledWith([])
+    expect(consola.info).not.toHaveBeenCalled()
+  })
+})

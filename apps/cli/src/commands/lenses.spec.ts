@@ -82,6 +82,16 @@ describe('lenses star', () => {
   });
 });
 
+describe('lenses view', () => {
+  it('emits JSON null (not a warn) when lens missing and --json set', async () => {
+    mockCallRpc.mockResolvedValueOnce(null);
+    const { default: lensesCmd } = await import('./lenses') as { default: AnyCmd };
+    const viewCmd = await resolveSubCmd(lensesCmd, 'view');
+    await viewCmd.run?.({ args: { slug: 'missing', json: true }, cmd: {}, rawArgs: [] });
+    expect(mockPrintJson).toHaveBeenCalledWith(null);
+  });
+});
+
 describe('lenses search', () => {
   it('calls fn_lenses_search with the query', async () => {
     mockCallRpc.mockResolvedValueOnce([]);

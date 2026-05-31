@@ -4,14 +4,19 @@ jest.mock('consola', () => ({
   default: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), success: jest.fn(), log: jest.fn() },
 }))
 jest.mock('../utils/api', () => ({ callRpc: jest.fn(), callRest: jest.fn(), handleError: jest.fn() }))
+jest.mock('../utils/output', () => ({ printTable: jest.fn(), printJson: jest.fn() }))
 
 import consola from 'consola'
-import { callRpc } from '../utils/api'
+import { callRpc, callRest } from '../utils/api'
+import { printJson } from '../utils/output'
 
 const consolaError = (consola as unknown as { error: jest.Mock }).error
 const consolaSuccess = (consola as unknown as { success: jest.Mock }).success
 const consolaInfo = (consola as unknown as { info: jest.Mock }).info
+const consolaLog = (consola as unknown as { log: jest.Mock }).log
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
+const mockCallRest = callRest as jest.MockedFunction<typeof callRest>
+const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCmd = { subCommands?: Record<string, AnyCmd>; run?: (ctx: any) => Promise<void> }
@@ -78,5 +83,48 @@ describe('lf report content', () => {
     })
 
     expect(consolaInfo).toHaveBeenCalledWith(expect.stringContaining('already reported'))
+  })
+})
+
+describe('lf report show', () => {
+  let showCmd: AnyCmd
+
+  beforeAll(() => {
+    showCmd = reportCmd.subCommands?.show as AnyCmd
+  })
+
+  it('emits machine-parseable JSON via printJson (not consola.log) with --json', async () => {
+    mockCallRest.mockResolvedValueOnce([{ id: 'rep-1', title: 'Run' }] as never)
+
+    await showCmd?.run?.({ args: { id: 'rep-1', json: true }, cmd: {}, rawArgs: [] })
+
+    expect(mockPrintJson).toHaveBeenCalledWith(expect.objectContaining({ id: 'rep-1' }))
+    expect(consolaLog).not.toHaveBeenCalled()
+  })
+
+  it('sets exitCode 1 when the report is not found', async () => {
+    mockCallRest.mockResolvedValueOnce([] as never)
+
+    await showCmd?.run?.({ args: { id: 'ghost', json: false }, cmd: {}, rawArgs: [] })
+
+    expect(process.exitCode).toBe(1)
+    expect(consolaError).toHaveBeenCalledWith(expect.stringContaining('No run report'), 'ghost')
+  })
+})
+
+describe('lf report incidents', () => {
+  let incidentsCmd: AnyCmd
+
+  beforeAll(() => {
+    incidentsCmd = reportCmd.subCommands?.incidents as AnyCmd
+  })
+
+  it('emits [] via printJson when empty and --json is set', async () => {
+    mockCallRest.mockResolvedValueOnce([] as never)
+
+    await incidentsCmd?.run?.({ args: { id: 'rep-1', json: true }, cmd: {}, rawArgs: [] })
+
+    expect(mockPrintJson).toHaveBeenCalledWith([])
+    expect(consolaInfo).not.toHaveBeenCalled()
   })
 })

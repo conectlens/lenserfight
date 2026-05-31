@@ -15,6 +15,9 @@ jest.mock('../utils/api', () => ({
   callRest: jest.fn(),
   handleError: jest.fn(),
 }))
+jest.mock('../utils/workflow-ref', () => ({
+  resolveWorkflowId: jest.fn((id: string) => Promise.resolve(id)),
+}))
 jest.mock('../utils/automation-objects', () => ({
   buildWorkflowSimulationReport: jest.fn().mockReturnValue({ nodes: [], edges: [], summary: 'ok' }),
   parseAutomationDocument: jest.fn(),
@@ -38,12 +41,15 @@ jest.mock('../utils/lifecycle', () => ({
 import consola from 'consola'
 import { parseAutomationDocument } from '../utils/automation-objects'
 import { printJson, printTable } from '../utils/output'
+import { callRpc } from '../utils/api'
 
 const mockParseAutomationDocument = parseAutomationDocument as jest.MockedFunction<typeof parseAutomationDocument>
 const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
 const mockPrintTable = printTable as jest.MockedFunction<typeof printTable>
+const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
 const consolaError = (consola as unknown as { error: jest.Mock }).error
 const consolaWarn = (consola as unknown as { warn: jest.Mock }).warn
+const consolaInfo = (consola as unknown as { info: jest.Mock }).info
 const consolaSuccess = (consola as unknown as { success: jest.Mock }).success
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -199,5 +205,38 @@ describe('workflow run', () => {
 
     const [jsonArg] = mockPrintJson.mock.calls[0]
     expect(jsonArg).toMatchObject({ status: 'blocked', step_count: 0 })
+  })
+})
+
+describe('workflow create', () => {
+  let createCmd: AnyCmd
+
+  beforeAll(() => {
+    createCmd = workflowCmd.subCommands?.create as AnyCmd
+  })
+
+  it('prints the slug without a stray leading colon', async () => {
+    mockCallRpc.mockResolvedValueOnce({ id: 'wf-1', slug: 'my-pipeline', title: 'My Pipeline' } as never)
+
+    await createCmd?.run?.({
+      args: { name: 'My Pipeline', template: '', description: '', json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(consolaInfo).toHaveBeenCalledWith('Slug: %s', 'my-pipeline')
+    expect(consolaInfo).not.toHaveBeenCalledWith('Slug: :%s', expect.anything())
+  })
+
+  it('rejects an unknown template before calling the RPC', async () => {
+    await createCmd?.run?.({
+      args: { name: 'X', template: 'not-a-template', description: '', json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockCallRpc).not.toHaveBeenCalled()
+    expect(consolaError).toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
   })
 })

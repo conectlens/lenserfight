@@ -98,6 +98,33 @@ describe('run replay --dry-run', () => {
     expect(mockCallRpc).not.toHaveBeenCalledWith('fn_start_workflow_run', expect.anything(), expect.anything());
   });
 
+  it('starts the new run with p_inputs (not p_context_inputs) and no unsupported params', async () => {
+    mockCallRpc
+      .mockResolvedValueOnce({ workflow_id: 'wf-9', context_inputs: { a: 1 }, status: 'completed' })
+      .mockResolvedValueOnce({ id: 'new-run-1' });
+
+    const { default: runCmd } = await import('./run') as { default: AnyCmd };
+    const replayCmd = await resolveSubCmd(runCmd, 'replay');
+
+    await replayCmd.run?.({
+      args: { id: 'run-uuid', adapter: '', 'dry-run': false },
+      cmd: {},
+      rawArgs: [],
+    });
+
+    expect(process.exitCode).toBe(0);
+    expect(mockCallRpc).toHaveBeenLastCalledWith(
+      'fn_start_workflow_run',
+      { p_workflow_id: 'wf-9', p_inputs: { a: 1 } },
+      { requireAuth: true },
+    );
+    // The canonical RPC overload has no p_context_inputs / p_trigger_mode / p_parent_run_id.
+    const lastPayload = mockCallRpc.mock.calls.at(-1)?.[1] as Record<string, unknown>;
+    expect(lastPayload).not.toHaveProperty('p_context_inputs');
+    expect(lastPayload).not.toHaveProperty('p_trigger_mode');
+    expect(lastPayload).not.toHaveProperty('p_parent_run_id');
+  });
+
   it('exits 1 when the source run is not found', async () => {
     mockCallRpc.mockResolvedValueOnce(null);
 
@@ -184,6 +211,42 @@ describe('run full — error paths', () => {
     });
 
     expect(process.exitCode).toBe(1);
+  });
+
+  it('joins with p_agent_id and starts the run with p_inputs (canonical param names)', async () => {
+    jest.useFakeTimers();
+    try {
+      mockCallRpc
+        .mockResolvedValueOnce({ status: 'open', title: 'T', workflow_id: 'wf-1' }) // get_public
+        .mockResolvedValueOnce({ submission_id: 'sub-1' }) // join
+        .mockResolvedValueOnce({ id: 'run-1' }) // start_workflow_run
+        .mockResolvedValueOnce({ status: 'completed' }) // poll → terminal
+        .mockResolvedValue(undefined); // start_voting, cast_vote, finalize
+
+      const { default: runCmd } = await import('./run') as { default: AnyCmd };
+      const fullCmd = await resolveSubCmd(runCmd, 'full');
+
+      const done = fullCmd.run?.({
+        args: { id: 'b-1', adapter: 'adapter-9', 'dry-run': false },
+        cmd: {},
+        rawArgs: [],
+      });
+      await jest.runAllTimersAsync();
+      await done;
+
+      expect(mockCallRpc).toHaveBeenCalledWith(
+        'fn_battles_join',
+        { p_battle_id: 'b-1', p_agent_id: 'adapter-9' },
+        { requireAuth: true },
+      );
+      expect(mockCallRpc).toHaveBeenCalledWith(
+        'fn_start_workflow_run',
+        { p_workflow_id: 'wf-1', p_inputs: { submission_id: 'sub-1', battle_id: 'b-1' } },
+        { requireAuth: true },
+      );
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('exits 1 when join returns no submission_id', async () => {

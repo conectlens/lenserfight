@@ -143,7 +143,7 @@ describe('update', () => {
     writeSpy.mockRestore()
   })
 
-  it('prints instructions (exit 0) when the install method is undetectable', async () => {
+  it('defaults to npm-global install for a realistic global node_modules path', async () => {
     mockCheckForUpdate.mockResolvedValue({
       current: '0.2.0',
       latest: '0.3.0',
@@ -159,10 +159,13 @@ describe('update', () => {
       rawArgs: [],
     })
 
-    expect(mockSpawnSync).not.toHaveBeenCalled()
+    expect(mockSpawnSync).toHaveBeenCalledWith(
+      'npm',
+      ['install', '-g', '@lenserfight/cli@latest'],
+      { stdio: 'inherit' },
+    )
     expect(consolaError).not.toHaveBeenCalled()
     expect(process.exitCode).toBe(0)
-    expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining('npm install -g'))
     writeSpy.mockRestore()
   })
 

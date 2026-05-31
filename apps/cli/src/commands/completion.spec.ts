@@ -96,6 +96,41 @@ describe('completion install', () => {
     }
   })
 
+  it('replaces (does not duplicate) an existing block on --force', async () => {
+    const fs = jest.requireMock('node:fs') as { existsSync: jest.Mock }
+    fs.existsSync.mockReturnValue(true)
+    readFileMock.mockResolvedValue('# user content\nalias x=1\n\n# lenserfight-completion\nOLD SCRIPT\n')
+    try {
+      const cmd = await getSubCmd('install')
+      await cmd.run?.({ args: { shell: 'zsh', force: true }, cmd: {}, rawArgs: [] })
+
+      expect(writeFileMock).toHaveBeenCalledTimes(1)
+      const content = writeFileMock.mock.calls[0][1] as string
+      // Pre-existing user content is preserved.
+      expect(content).toContain('# user content')
+      expect(content).toContain('alias x=1')
+      // The stale block is gone and exactly one sentinel remains.
+      expect(content).not.toContain('OLD SCRIPT')
+      expect(content.match(/# lenserfight-completion/g)?.length).toBe(1)
+    } finally {
+      fs.existsSync.mockReturnValue(false)
+    }
+  })
+
+  it('does not write when already installed and --force is not set', async () => {
+    const fs = jest.requireMock('node:fs') as { existsSync: jest.Mock }
+    fs.existsSync.mockReturnValue(true)
+    readFileMock.mockResolvedValue('# lenserfight-completion\nOLD SCRIPT\n')
+    try {
+      const cmd = await getSubCmd('install')
+      await cmd.run?.({ args: { shell: 'zsh', force: false }, cmd: {}, rawArgs: [] })
+
+      expect(writeFileMock).not.toHaveBeenCalled()
+    } finally {
+      fs.existsSync.mockReturnValue(false)
+    }
+  })
+
   it('rejects an invalid --shell value', async () => {
     const consolaError = (jest.requireMock('consola').default as { error: jest.Mock }).error
     const cmd = await getSubCmd('install')

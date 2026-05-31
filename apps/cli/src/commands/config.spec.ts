@@ -14,14 +14,17 @@ jest.mock('../config/project-config', () => ({
 jest.mock('./config-local-battle-key', () => ({ default: { meta: { name: 'local-battle-key' } } }))
 jest.mock('./config-webhook-secret', () => ({ default: { meta: { name: 'webhook-secret' } } }))
 jest.mock('node:fs', () => ({ readFileSync: jest.fn(), writeFileSync: jest.fn() }))
+jest.mock('../utils/api', () => ({ handleError: jest.fn() }))
 
 import { loadConfig } from '../config/project-config'
 import { printJson, printSuccess, printWarn } from '../utils/output'
+import { handleError } from '../utils/api'
 
 const mockLoadConfig = loadConfig as jest.MockedFunction<typeof loadConfig>
 const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
 const mockPrintSuccess = printSuccess as jest.MockedFunction<typeof printSuccess>
 const mockPrintWarn = printWarn as jest.MockedFunction<typeof printWarn>
+const mockHandleError = handleError as jest.MockedFunction<typeof handleError>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCmd = { subCommands?: Record<string, AnyCmd>; run?: (ctx: any) => Promise<void> }
@@ -76,5 +79,16 @@ describe('config validate', () => {
 
     expect(mockPrintWarn).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
+  })
+
+  it('routes a thrown loadConfig error to handleError instead of rejecting', async () => {
+    const boom = new Error('config file unreadable')
+    mockLoadConfig.mockImplementation(() => { throw boom })
+
+    await expect(
+      validateCmd?.run?.({ args: { json: false }, cmd: {}, rawArgs: [] }),
+    ).resolves.not.toThrow()
+
+    expect(mockHandleError).toHaveBeenCalledWith(boom)
   })
 })
