@@ -61,14 +61,18 @@ export default defineCommand({
 
     const installMethod = detectInstallMethod()
     const targetSpec = resolveInstallSpec(channel, result.latest)
+    const pm = packageManagerCommand(installMethod)
 
-    if (args.instructions) {
+    // No detectable package manager (or the user asked for manual steps): print
+    // the install commands and exit successfully — this is a guidance path, not
+    // a failure.
+    if (args.instructions || !pm) {
       printInstallInstructions(installMethod, targetSpec, channel)
       return
     }
 
     consola.start(`Installing ${targetSpec}…`)
-    const ok = runPackageManagerInstall(installMethod, targetSpec)
+    const ok = runPackageManagerInstall(pm, targetSpec)
     if (!ok) {
       consola.error('Update failed. Try the command below manually:\n')
       printInstallInstructions(installMethod, targetSpec, channel)
@@ -102,9 +106,16 @@ function detectInstallMethod(): InstallMethod {
   return 'unknown'
 }
 
+// Permissive semver (incl. pre-release / build metadata), e.g. 1.2.3, 1.2.3-beta.1, 1.2.3+build.5
+const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
+
 function resolveInstallSpec(channel: ReturnType<typeof detectChannel>, latest: string): string {
   if (channel === 'stable') return '@lenserfight/cli@latest'
-  return `@lenserfight/cli@${latest}`
+  // `latest` is fetched from the npm registry over the network. Validate it as a
+  // semver before interpolating it into a spec we then execute, and fall back to
+  // the channel dist-tag if the registry returned anything unexpected.
+  if (SEMVER_RE.test(latest)) return `@lenserfight/cli@${latest}`
+  return `@lenserfight/cli@${channel}`
 }
 
 function packageManagerCommand(method: InstallMethod): { cmd: string; args: string[] } | null {
@@ -120,10 +131,10 @@ function packageManagerCommand(method: InstallMethod): { cmd: string; args: stri
   }
 }
 
-function runPackageManagerInstall(method: InstallMethod, targetSpec: string): boolean {
-  const pm = packageManagerCommand(method)
-  if (!pm) return false
-
+function runPackageManagerInstall(
+  pm: { cmd: string; args: string[] },
+  targetSpec: string,
+): boolean {
   const result = spawnSync(pm.cmd, [...pm.args, targetSpec], { stdio: 'inherit' })
   return result.status === 0
 }
