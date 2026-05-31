@@ -593,6 +593,13 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
     )
   }
 
+  // Single-node test — delegates to a full dry run so node inputs resolve from
+  // the real topology, without creating a run record or executing side effects.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleRunNode = useCallback((_nodeId: string) => {
+    void handleDryRunClick()
+  }, [])
+
   // Canvas uses whichever result set is active: dry-run results take priority,
   // then fall back to the most recent real run results.
   const activeNodeResults = useMemo<WorkflowNodeResultRecord[]>(() => {
@@ -950,6 +957,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                 onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
                 nodeResults={activeNodeResults}
                 configuringNodeId={selectedNodeConfig?.nodeId ?? null}
+                onRunNode={isOwner ? handleRunNode : undefined}
               />
             </>
           )}
