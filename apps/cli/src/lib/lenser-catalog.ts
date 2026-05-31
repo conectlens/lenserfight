@@ -1,3 +1,4 @@
+import consola from 'consola';
 import { callRpc } from '../utils/api';
 
 export type LenserKind = 'human' | 'ai';
@@ -88,6 +89,12 @@ async function searchLensers(query: string, limit: number): Promise<LenserSearch
   return Array.isArray(rows) ? rows : [];
 }
 
+/** True when an RPC error indicates the function is not deployed (PostgREST 404 / PGRST202). */
+function isFunctionMissingError(err: unknown): boolean {
+  const e = err as { status?: number; code?: string } | null;
+  return e?.code === 'PGRST202' || e?.status === 404;
+}
+
 async function resolveAiLenserIdsForProfiles(profileIds: string[]): Promise<Map<string, string>> {
   if (profileIds.length === 0) return new Map();
 
@@ -98,7 +105,15 @@ async function resolveAiLenserIdsForProfiles(profileIds: string[]): Promise<Map<
       { requireAuth: true },
     );
     return new Map((rows ?? []).map((r) => [r.profile_id, r.ai_lenser_id]));
-  } catch {
+  } catch (err) {
+    // Only fall back when the batch RPC is not deployed yet. Any other error
+    // (auth, network, RLS) must surface: the owner-only fallback below cannot
+    // resolve public agents and would otherwise hide them with no diagnostic.
+    if (!isFunctionMissingError(err)) throw err;
+    consola.debug(
+      'fn_resolve_ai_lenser_ids_for_profiles missing; falling back to per-profile owner lookup',
+    );
+
     const byProfile = new Map<string, string>();
     await Promise.all(
       profileIds.map(async (profileId) => {
@@ -193,18 +208,17 @@ async function listPublicAiLensers(limit = 50): Promise<LenserCatalogRow[]> {
   for (const profile of aiProfiles) {
     const aiLenserId = agentByProfile.get(profile.id);
     if (!aiLenserId) continue;
-    rows.push(
-      mapAgentProfileToRow(
-        {
-          id: aiLenserId,
-          profile_id: profile.id,
-          handle: profile.handle,
-          display_name: profile.display_name,
-          is_active: true,
-        },
-        'public',
-      ),
-    );
+    // The batch resolver returns only the id mapping, not agents.ai_lensers
+    // columns. Leave is_active/runtime_pref/created_at undefined so they render
+    // as "unknown" rather than asserting a possibly-suspended agent is active.
+    rows.push({
+      profile_id: profile.id,
+      ai_lenser_id: aiLenserId,
+      handle: profile.handle,
+      display_name: profile.display_name ?? profile.handle,
+      type: 'ai',
+      scope: 'public',
+    });
   }
   return rows;
 }
@@ -327,12 +341,20 @@ async function getPublicAiLenserProfile(aiLenserId: string): Promise<AgentProfil
   if (!snap || typeof snap !== 'object') return null;
 
   const agentId = String(snap.agent_id ?? '');
-  if (!agentId) return null;
+  const profileId = String(snap.profile_id ?? '');
+  if (!agentId || !profileId) return null;
+
+  // fn_redacted_agent_snapshot has no visibility gate — it returns any agent by
+  // id. Enforce the same public/community/self/owned visibility as the rest of
+  // the catalog before exposing it, so private/community agents the caller
+  // cannot otherwise see are not leaked through this path.
+  const visible = await resolveAiLenserIdsForProfiles([profileId]);
+  if (visible.get(profileId) !== agentId) return null;
 
   return {
     id: agentId,
     ai_lenser_id: agentId,
-    profile_id: String(snap.profile_id ?? ''),
+    profile_id: profileId,
     handle: String(snap.handle ?? ''),
     display_name: (snap.display_name as string | null) ?? null,
     is_active: snap.is_active !== false,

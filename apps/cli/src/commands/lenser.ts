@@ -63,7 +63,7 @@ function printCatalogRows(rows: LenserCatalogRow[], json: boolean, aiDetail = fa
         truncate(a.display_name, 28),
         a.scope ?? '—',
         a.runtime_pref ?? '—',
-        a.is_active === false ? 'no' : 'yes',
+        a.is_active === undefined ? '—' : a.is_active ? 'yes' : 'no',
         a.ai_lenser_id ?? '—',
       ]),
     );
