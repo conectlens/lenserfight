@@ -9,7 +9,9 @@ AS $$
   SELECT p.id AS profile_id, al.id AS ai_lenser_id
   FROM lensers.profiles p
   JOIN agents.ai_lensers al ON al.profile_id = p.id
-  WHERE p.id = ANY(p_profile_ids)
+  -- Cap input cardinality: this function is anon-callable, so bound the scan
+  -- against abusive oversized arrays. Callers (CLI/MCP) pass <= 50 ids.
+  WHERE p.id = ANY(p_profile_ids[1:1000])
     AND p.type = 'ai'
     AND p.status = 'active'
     AND p.deletion_requested_at IS NULL
@@ -22,6 +24,7 @@ AS $$
         FROM agents.ownerships o
         WHERE o.ai_lenser_id = al.id
           AND o.owner_lenser_id = lensers.get_auth_human_lenser_id()
+          AND o.revoked_at IS NULL
       )
     );
 $$;
