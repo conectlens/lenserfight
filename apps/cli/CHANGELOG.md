@@ -1,3 +1,18 @@
+## 0.13.0 (2026-05-31)
+
+### 🚀 Features
+
+- update battle creation command schema to require title, slug, and task parameters ([dcf615152](https://github.com/conectlens/lenserfight/commit/dcf615152))
+
+### 🩹 Fixes
+
+- improve input handling with input locking and better escape sequence filtering in CLI dashboard ([de8621334](https://github.com/conectlens/lenserfight/commit/de8621334))
+- display full date and time in action log rows instead of time only ([b0812dfba](https://github.com/conectlens/lenserfight/commit/b0812dfba))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 0.12.2 (2026-05-31)
 
 ### 🚀 Features
