@@ -347,6 +347,7 @@ const EN_REFERENCE_SIDEBAR = [
       { text: 'Battles', link: '/en/reference/battles/index' },
       { text: 'Battle Axes', link: '/en/reference/concepts/battle-axes' },
       { text: 'Connectors (alpha)', link: '/en/reference/connectors/index' },
+      { text: 'MCP Tool Reference', link: '/en/reference/mcp' },
       {
         text: 'MCP Server',
         collapsed: false,
@@ -2540,6 +2541,18 @@ export default defineConfig({
           ],
         },
       ],
+      // ── Guides ─────────────────────────────────────────────────────────────
+      '/en/guides/': [
+        {
+          text: 'Guides',
+          items: [
+            { text: 'Workflow Builder', link: '/en/guides/workflow-builder' },
+            { text: 'Battles', link: '/en/guides/battles' },
+            { text: 'AI Providers', link: '/en/guides/providers' },
+          ],
+        },
+      ],
+
       // ── Reference ──────────────────────────────────────────────────────────
       '/en/reference/': EN_REFERENCE_SIDEBAR,
       '/en/reference/mcp-server/': [
@@ -2565,6 +2578,14 @@ export default defineConfig({
             { text: 'Connection Modes', link: '/en/reference/mcp-server/provider-connection' },
             { text: 'OAuth & Auth', link: '/en/reference/mcp-server/provider-oauth' },
             { text: 'All 31 Tools', link: '/en/reference/mcp-server/provider-tools' },
+          ],
+        },
+      ],
+      '/en/reference/mcp': [
+        {
+          text: 'Reference',
+          items: [
+            { text: 'MCP Tool Reference', link: '/en/reference/mcp' },
           ],
         },
       ],
