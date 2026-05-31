@@ -611,7 +611,7 @@ const SUB_DASHBOARDS: Record<string, SubDashboardDef> = {
     commands: [
       { key: 'l', cmd:    ['battle', 'list'],                             label: 'list battles' },
       { key: 'v', prompt: 'battle view ',                                 label: 'view battle     [<SLUG-or-ID>]' },
-      { key: 'c', prompt: 'battle create --lenser-a  --lenser-b ',        label: 'create battle   [--lenser-a <ID> --lenser-b <ID>]' },
+      { key: 'c', prompt: 'battle create --title  --slug  --task ',        label: 'create battle   [--title <text> --slug <slug> --task <prompt>]' },
       { key: 'x', prompt: 'battle exec ',                                 label: 'exec battle     [<id>]' },
       { key: 'd', prompt: 'battle dispatch ',                             label: 'dispatch battle [<id>]' },
       { key: 's', prompt: 'battle stream-feed ',                          label: 'stream battle   [<SLUG-or-ID>]' },
