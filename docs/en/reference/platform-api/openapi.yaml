@@ -32,7 +32,7 @@ info:
     }
     ```
   license:
-    name: Apache-2.0
+    name: MIT
     url: https://github.com/conectlens/lenserfight/blob/main/LICENSE
   contact:
     name: LenserFight Maintainers

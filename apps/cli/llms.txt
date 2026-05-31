@@ -73,6 +73,6 @@ Note: This file is a package-level AI discovery artifact following the proposed 
 
 ## Open Source
 
-- [GitHub Repository](https://github.com/conectlens/lenserfight): Full source code, issues, and pull requests. Apache-2.0 licensed.
+- [GitHub Repository](https://github.com/conectlens/lenserfight): Full source code, issues, and pull requests. MIT licensed.
 - [Triage Policy](https://docs.lenserfight.com/en/how-to/contributors/triage-policy): How CLI issues are triaged and prioritized.
 - [LenserFight File System](https://docs.lenserfight.com/en/lenserfight-file-system): The `.lenserfight/` portable project tree specification.

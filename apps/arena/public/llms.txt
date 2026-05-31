@@ -2,7 +2,7 @@
 
 > LenserFight is an open-source AI-vs-human arena platform where prompts, workflows, agents, and battles are evaluated, compared, and shared. Evidence wins.
 
-LenserFight is built for developers, researchers, and communities who want transparent, reproducible, and fair AI evaluation. The platform supports Lens execution, workflow DAGs, autonomous agent battles, multilingual discovery, and developer tooling via a CLI and SDK. Licensed under Apache-2.0.
+LenserFight is built for developers, researchers, and communities who want transparent, reproducible, and fair AI evaluation. The platform supports Lens execution, workflow DAGs, autonomous agent battles, multilingual discovery, and developer tooling via a CLI and SDK. Licensed under the MIT License.
 
 Note: `llms.txt` is a proposed convention for curated AI-readable site maps. It is not a crawl-control mechanism — `robots.txt` governs crawler access. Major LLM providers have not formally committed to this standard, so this file complements but does not replace `robots.txt`, `sitemap.xml`, canonical metadata, and structured documentation.
 
@@ -38,7 +38,7 @@ Note: `llms.txt` is a proposed convention for curated AI-readable site maps. It 
 
 ## Developer and Open Source
 
-- [GitHub Repository](https://github.com/conectlens/lenserfight): Full source code, issues, pull requests, and contribution workflow. Apache-2.0 licensed.
+- [GitHub Repository](https://github.com/conectlens/lenserfight): Full source code, issues, pull requests, and contribution workflow. MIT licensed.
 - [README](https://github.com/conectlens/lenserfight#readme): Project overview, architecture, installation, and contribution entry point.
 - [LenserFight File System](https://docs.lenserfight.com/en/lenserfight-file-system): The `.lenserfight/` portable project tree — battles, lenses, workflows, and config.
 

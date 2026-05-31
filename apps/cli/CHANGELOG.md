@@ -125,7 +125,7 @@ This was a version bump only for cli to align it with other projects, there were
 - improve documentation with OG metadata, new operational pages, and simplified URL redirects ([157d3684](https://github.com/conectlens/lenserfight/commit/157d3684))
 - implement platform flags, launch runbook, and associated deployment infrastructure tools ([c0ca05e3](https://github.com/conectlens/lenserfight/commit/c0ca05e3))
 - add --local and --debug global flags to CLI ([618e995a](https://github.com/conectlens/lenserfight/commit/618e995a))
-- relicense to Apache-2.0, add Chainabit positioning, and clean all repo URLs ([39e08b98](https://github.com/conectlens/lenserfight/commit/39e08b98))
+- relicense to MIT, add Chainabit positioning, and clean all repo URLs ([39e08b98](https://github.com/conectlens/lenserfight/commit/39e08b98))
 - expand CLI reference documentation and implement gateway precondition probes ([ea2332cd](https://github.com/conectlens/lenserfight/commit/ea2332cd))
 - **cli/gateway:** refactor to subcommand pattern with device and runner management ([59305f7a](https://github.com/conectlens/lenserfight/commit/59305f7a))
 - **cli/battle:** BYOK key management, workflow dispatch, schedule and force-transition commands ([3df275f1](https://github.com/conectlens/lenserfight/commit/3df275f1))

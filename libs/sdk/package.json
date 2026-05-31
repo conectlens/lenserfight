@@ -2,7 +2,7 @@
   "name": "@lenserfight/sdk",
   "version": "0.2.0-alpha.16",
   "description": "LenserFight public client SDK — read battles, lenses, agents, protocols, and templates from any Supabase-backed deployment",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "main": "./index.cjs",
   "module": "./index.mjs",
   "types": "./index.d.ts",

@@ -4,7 +4,7 @@ This page records the **Community Edition** public-repo direction. Historical mi
 
 ## Current focus (2026)
 
-- **First-public readiness** — docs truth, contributor CI gates (`pnpm smoke`), permissive **Apache-2.0** license, brand guidelines, Trust Gateway preview boundaries.
+- **First-public readiness** — docs truth, contributor CI gates (`pnpm smoke`), permissive **MIT** license, brand guidelines, Trust Gateway preview boundaries.
 - **Connector alpha** — in-repo `@lenserfight/adapters/connector` and RPCs; stable npm **v1** remains Phase 16 (RFC-0001).
 - **Trust Gateway** — source-first rollout; see [OSS cutover](/en/explanation/gateway/oss-cutover) and [release readiness](/en/explanation/gateway/release-readiness).
 

@@ -28,12 +28,12 @@ Version bumps are determined by Conventional Commits (see [Branching and Version
 
 ## First public GitHub Release (paste template)
 
-Use when publishing **`v0.10.0-alpha.2`** (or the current `package.json` version) for the first Apache-2.0 Community Edition line:
+Use when publishing **`v0.10.0-alpha.2`** (or the current `package.json` version) for the first MIT Community Edition line:
 
 ```markdown
 ## LenserFight Community Edition
 
-**License:** Apache-2.0 — see the `LICENSE` file in this repository.
+**License:** MIT — see the `LICENSE` file in this repository.
 
 **Trademarks:** The LenserFight name and logos are governed separately.
 

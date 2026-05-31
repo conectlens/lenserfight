@@ -58,4 +58,4 @@ surface.
 
 For the deeper walkthrough see the [SDK quickstart](https://docs.lenserfight.com/how-to/integrations/sdk-quickstart) and the [reference docs](https://docs.lenserfight.com/reference/sdk).
 
-Apache-2.0.
+MIT.

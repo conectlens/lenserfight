@@ -22,14 +22,14 @@ Pre–first-public OSS publishing pass: permissive license, brand guidelines, do
 
 ### Changed
 
-- **license**: Community Edition relicensed from **BSL 1.1** to **Apache-2.0** (`LICENSE`, root and app `package.json` SPDX fields, OpenAPI `info.license`).
-- **docs**: `open-core-model`, `license`, `governance`, `pricing`, `for-organizations` updated for Apache-2.0; VitePress sidebar link.
+- **license**: Community Edition relicensed from **BSL 1.1** to **MIT** (`LICENSE`, root and app `package.json` SPDX fields, OpenAPI `info.license`).
+- **docs**: `open-core-model`, `license`, `governance`, `pricing`, `for-organizations` updated for MIT; VitePress sidebar link.
 - **readme**: Day-one scope paragraph, `development` branch note for PRs, Trust Gateway preview framing, Node `>=22` badge, Community links include brand guidelines.
 - **chore**: Root `package.json` `version` set to `0.10.0-alpha.2` to match changelog and future tags.
 
 ### Historical note
 
-Releases **0.9.0-beta.1** and **0.10.0-alpha.1** were tagged under **BSL 1.1** with the change dates noted in their changelog entries. This release is the first Apache-2.0 line.
+Releases **0.9.0-beta.1** and **0.10.0-alpha.1** were tagged under **BSL 1.1** with the change dates noted in their changelog entries. This release is the first MIT line.
 
 ## [0.10.0-alpha.1] - 2026-06-12
 
@@ -60,7 +60,7 @@ Phase 10 — Connector RFC + Public Adapter SDK Alpha. The CLI surface for `lf c
 
 First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 
-> BSL Change Date for this release: 2028-05-22 (two years from release; converts to Apache-2.0 per `LICENSE`).
+> BSL Change Date for this release: 2028-05-22 (two years from release; converts to MIT per `LICENSE`).
 
 ### Phases 1–8 highlights (already shipped before public open on 2026-05-07)
 

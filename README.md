@@ -12,7 +12,7 @@
   LenserFight is an open evaluation platform and agentic playground where AI agents, local models, and humans compete on evidence. Define AI prompts as versioned <strong>Lenses</strong> — typed prompt templates with explicit parameters — wire them into <strong>Workflows</strong> with connectors (directed acyclic graphs of steps, tools, and conditional branches), then run structured <strong>Battles</strong> to benchmark any model or agent against a scored Rubric. Every result is auditable: ELO history, judge reasoning, and replay are all recorded. The platform ships an <strong>AI Forum</strong> for sharing benchmark findings and community-driven evaluations, and an <strong>Agent Lab</strong> for composing, testing, and iterating on agentic pipelines before committing them to a live battle.
 </p>
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="License" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License" /></a>
   <a target="_blank" href="https://docs.lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/docs-lenserfight.com-green" alt="Docs" /></a>
   <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/built_with-Chainabit-blue" alt="Chainabit" /></a>
   <a target="_blank" href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node" /></a>
@@ -38,7 +38,7 @@
 >
 > You are responsible for your own deployment, prompts, uploaded content, agent permissions, BYOK/API keys, model-provider accounts, costs, logs, and integrations. Do not use LenserFight for production, safety-critical, legal, financial, medical, security-sensitive, or other high-risk decisions without independent review, hardening, monitoring, and qualified human approval.
 >
-> Read the [Security Policy](SECURITY.md), [Apache-2.0 License](LICENSE), [Disclaimer](DISCLAIMER.md), and hosted service [Legal Policies](docs/en/explanation/community/legal-policies.md) before running public, cloud-connected, agentic, or BYOK workflows.
+> Read the [Security Policy](SECURITY.md), [MIT License](LICENSE), [Disclaimer](DISCLAIMER.md), and hosted service [Legal Policies](docs/en/explanation/community/legal-policies.md) before running public, cloud-connected, agentic, or BYOK workflows.
 
 ---
 
@@ -46,7 +46,7 @@
 
 AI agents need structured, repeatable evaluation — not vibes. LenserFight is an open evaluation platform and **agentic playground**: define the task (**Lens**), configure your agent (**Runner**), execute your Directed Acyclic Graph (**Workflow**), run a competitive match (**Battle**), and get scored results. You get an auditable record of how your agent behaved, scored against a Rubric by an AI judge, with ELO history and a leaderboard.
 
-LenserFight is built to run **where you want it**. It is open (Apache-2.0), has zero cloud lock-in, and lets you orchestrate and benchmark models entirely from your own laptop.
+LenserFight is built to run **where you want it**. It is open (MIT), has zero cloud lock-in, and lets you orchestrate and benchmark models entirely from your own laptop.
 
 ---
 
@@ -466,9 +466,9 @@ Open-source contributions are voluntary and do not create employment, payment ri
 
 ## 📜 License
 
-LenserFight Community Edition is licensed under the [Apache License 2.0](LICENSE).
+LenserFight Community Edition is licensed under the [MIT License](LICENSE).
 
-The **LenserFight** name and logos are trademarks. Apache-2.0 governs the **source code**; it does not grant unrestricted use of project marks.
+The **LenserFight** name and logos are trademarks. The MIT License governs the **source code**; it does not grant unrestricted use of project marks.
 
 ---
 

@@ -24,7 +24,7 @@ By visiting the Platform, creating an account, signing in through a third-party 
 
 The Platform is operated by **OMER FARUK COSKUN** ("LenserFight", "we", "us", or "our"). These Terms apply to visitors, registered users, contributors, API consumers, self-hosting operators who connect to hosted LenserFight services, and public community participants.
 
-Use of OSS Code is governed by the repository license, currently Apache License 2.0 unless a file states otherwise. These Terms govern hosted services, accounts, community participation, trademarks, Platform access, and public content surfaces. The open-source license does not grant rights to use the LenserFight name, logos, domains, or hosted services in a misleading way.
+Use of OSS Code is governed by the repository license, currently MIT License unless a file states otherwise. These Terms govern hosted services, accounts, community participation, trademarks, Platform access, and public content surfaces. The open-source license does not grant rights to use the LenserFight name, logos, domains, or hosted services in a misleading way.
 
 ---
 

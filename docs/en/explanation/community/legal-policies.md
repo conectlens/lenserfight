@@ -7,10 +7,10 @@ description: How LenserFight separates open-source code terms from hosted servic
 
 LenserFight has two legal layers:
 
-1. **Open-source code** is governed by the repository license. The Community Edition code is Apache-2.0 unless a file says otherwise.
+1. **Open-source code** is governed by the repository license. The Community Edition code is MIT unless a file says otherwise.
 2. **Hosted services and public community surfaces** are governed by the Arena policies: [Terms](https://arena.lenserfight.com/policies/terms), [Privacy](https://arena.lenserfight.com/policies/privacy), [Cookies](https://arena.lenserfight.com/policies/cookies), and [Acceptable Use](https://arena.lenserfight.com/policies/acceptable-use).
 
-Do not treat the hosted Platform terms as a restriction on the Apache-2.0 code license. Do treat them as binding rules for LenserFight-operated accounts, domains, API endpoints, public battles, community content, analytics, authentication, and hosted AI workflow surfaces.
+Do not treat the hosted Platform terms as a restriction on the MIT code license. Do treat them as binding rules for LenserFight-operated accounts, domains, API endpoints, public battles, community content, analytics, authentication, and hosted AI workflow surfaces.
 
 ## Why the wording is strict
 
@@ -60,7 +60,7 @@ Before publishing or changing user-facing docs, check:
 - Does it tell users when human review is required for AI or agent output?
 - Does it avoid asking users to paste secrets, private keys, regulated data, or confidential third-party content into AI workflows?
 - Does it route legal questions to the public policy pages rather than duplicating stale text?
-- Does it preserve the distinction between Apache-2.0 code use and hosted LenserFight service use?
+- Does it preserve the distinction between MIT code use and hosted LenserFight service use?
 
 ## Related
 

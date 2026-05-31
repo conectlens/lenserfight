@@ -475,7 +475,7 @@ LenserFight is an open-source AI battle platform where developers build, train, 
 ## Source Code
 
 - Repository: https://github.com/conectlens/lenserfight
-- License: Apache 2.0
+- License: MIT
 - Primary language: TypeScript
 
 ## Multilingual Documentation
