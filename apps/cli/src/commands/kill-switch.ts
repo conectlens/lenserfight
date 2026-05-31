@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
 import { callRpc, callRest, handleError } from '../utils/api'
-import { printTable } from '../utils/output'
+import { printJson, printTable } from '../utils/output'
 import { assertSafe } from '../lib/safety'
 
 // ---------------------------------------------------------------------------
@@ -299,13 +299,12 @@ const platformList = defineCommand({
         {},
         { requireAuth: true }
       )
-      if (!rows || rows.length === 0) {
-        consola.info('No kill switches recorded.')
+      if (args.json) {
+        printJson(rows ?? [])
         return
       }
-      if (args.json) {
-        printTable(['', ''], []) // type guard
-        console.log(JSON.stringify(rows, null, 2))
+      if (!rows || rows.length === 0) {
+        consola.info('No kill switches recorded.')
         return
       }
       printTable(

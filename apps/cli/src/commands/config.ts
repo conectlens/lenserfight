@@ -12,6 +12,7 @@ import {
   type ProjectConfig,
 } from '../config/project-config'
 import { printJson, printSuccess, printWarn } from '../utils/output'
+import { handleError } from '../utils/api'
 
 interface ConfigExportPayload {
   projectConfig: ProjectConfig
@@ -62,27 +63,31 @@ const validate = defineCommand({
     },
   },
   async run({ args }) {
-    const projectConfig = loadConfig()
-    rejectUnsupportedStorageAdapter(projectConfig.defaultStorageAdapter)
-    const valid = validateProjectConfig(projectConfig)
+    try {
+      const projectConfig = loadConfig()
+      rejectUnsupportedStorageAdapter(projectConfig.defaultStorageAdapter)
+      const valid = validateProjectConfig(projectConfig)
 
-    if (args.json) {
-      printJson({
-        valid,
-        errors: validateProjectConfig.errors ?? [],
-      })
-      process.exitCode = valid ? 0 : 1
-      return
+      if (args.json) {
+        printJson({
+          valid,
+          errors: validateProjectConfig.errors ?? [],
+        })
+        process.exitCode = valid ? 0 : 1
+        return
+      }
+
+      if (!valid) {
+        printWarn('Config validation failed.')
+        printJson(validateProjectConfig.errors ?? [])
+        process.exitCode = 1
+        return
+      }
+
+      printSuccess('Configuration is valid.')
+    } catch (err) {
+      handleError(err)
     }
-
-    if (!valid) {
-      printWarn('Config validation failed.')
-      printJson(validateProjectConfig.errors ?? [])
-      process.exitCode = 1
-      return
-    }
-
-    printSuccess('Configuration is valid.')
   },
 })
 
@@ -99,18 +104,22 @@ const exportConfig = defineCommand({
     },
   },
   async run({ args }) {
-    const user = loadUserConfig()
-    const payload: ConfigExportPayload = {
-      projectConfig: loadConfig(),
-      userConfig: {
-        defaultAdapterId: user.defaultAdapterId,
-        communitySlug: user.communitySlug,
-        onboarding: user.onboarding,
-      },
-    }
+    try {
+      const user = loadUserConfig()
+      const payload: ConfigExportPayload = {
+        projectConfig: loadConfig(),
+        userConfig: {
+          defaultAdapterId: user.defaultAdapterId,
+          communitySlug: user.communitySlug,
+          onboarding: user.onboarding,
+        },
+      }
 
-    writeFileSync(resolve(process.cwd(), args.out), `${JSON.stringify(payload, null, 2)}\n`, 'utf-8')
-    printSuccess('Exported safe config to %s', args.out)
+      writeFileSync(resolve(process.cwd(), args.out), `${JSON.stringify(payload, null, 2)}\n`, 'utf-8')
+      printSuccess('Exported safe config to %s', args.out)
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 
@@ -127,20 +136,24 @@ const importConfig = defineCommand({
     },
   },
   async run({ args }) {
-    const raw = JSON.parse(readFileSync(resolve(process.cwd(), args.file), 'utf-8')) as ConfigExportPayload
-    rejectUnsupportedStorageAdapter(raw.projectConfig.defaultStorageAdapter)
-    const valid = validateProjectConfig(raw.projectConfig)
-    if (!valid) {
-      throw new Error(`Invalid project config import: ${ajv.errorsText(validateProjectConfig.errors)}`)
-    }
+    try {
+      const raw = JSON.parse(readFileSync(resolve(process.cwd(), args.file), 'utf-8')) as ConfigExportPayload
+      rejectUnsupportedStorageAdapter(raw.projectConfig.defaultStorageAdapter)
+      const valid = validateProjectConfig(raw.projectConfig)
+      if (!valid) {
+        throw new Error(`Invalid project config import: ${ajv.errorsText(validateProjectConfig.errors)}`)
+      }
 
-    saveConfig(raw.projectConfig)
-    saveUserConfig({
-      defaultAdapterId: raw.userConfig.defaultAdapterId,
-      communitySlug: raw.userConfig.communitySlug,
-      onboarding: raw.userConfig.onboarding as Record<string, never> | undefined,
-    })
-    printSuccess('Imported safe config from %s', args.file)
+      saveConfig(raw.projectConfig)
+      saveUserConfig({
+        defaultAdapterId: raw.userConfig.defaultAdapterId,
+        communitySlug: raw.userConfig.communitySlug,
+        onboarding: raw.userConfig.onboarding as Record<string, never> | undefined,
+      })
+      printSuccess('Imported safe config from %s', args.file)
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 

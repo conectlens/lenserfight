@@ -79,13 +79,13 @@ const list = defineCommand({
         { requireAuth: true }
       );
 
-      if (!Array.isArray(rubrics) || rubrics.length === 0) {
-        consola.info('No rubrics found.');
+      if (args.json) {
+        printJson(Array.isArray(rubrics) ? rubrics : []);
         return;
       }
 
-      if (args.json) {
-        printJson(rubrics);
+      if (!Array.isArray(rubrics) || rubrics.length === 0) {
+        consola.info('No rubrics found.');
         return;
       }
 

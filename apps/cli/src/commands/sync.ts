@@ -80,19 +80,49 @@ const pushCmd = defineCommand({
   },
   async run({ args }) {
     try {
-      if (args.path) {
-        assertSupabaseLocalForSync()
-        registerAutomationFiles(findAutomationFiles(args.path))
-      }
       if (!args.all && !args.path && !args.id) {
         consola.error('Specify --all, --path <file>, or --id with --kind.')
         process.exitCode = 1
         return
       }
-      const result = await pushAllFromRegistry({
-        kind: (args.kind || undefined) as AutomationObjectKind | undefined,
-        id: args.id || undefined,
-      })
+
+      let importedIds: string[] | undefined
+      if (args.path) {
+        assertSupabaseLocalForSync()
+        const { imported, failures } = registerAutomationFiles(findAutomationFiles(args.path))
+        if (failures.length > 0) {
+          consola.error('%d file(s) failed import validation; nothing pushed.', failures.length)
+          for (const failure of failures) {
+            consola.error('  %s', failure.filePath)
+            for (const issue of failure.issues) consola.error('    - %s: %s', issue.path, issue.message)
+          }
+          process.exitCode = 1
+          return
+        }
+        importedIds = imported.map((entry) => entry.id)
+      }
+
+      // When pushing by --path, constrain to the just-imported entries instead of
+      // flushing the whole registry. --all explicitly opts into pushing everything.
+      const results = importedIds && !args.all
+        ? await Promise.all(
+            importedIds.map((id) =>
+              pushAllFromRegistry({
+                kind: (args.kind || undefined) as AutomationObjectKind | undefined,
+                id,
+              }),
+            ),
+          )
+        : [
+            await pushAllFromRegistry({
+              kind: (args.kind || undefined) as AutomationObjectKind | undefined,
+              id: args.id || undefined,
+            }),
+          ]
+      const result = results.reduce(
+        (acc, r) => ({ pushed: acc.pushed + r.pushed, skipped: acc.skipped + r.skipped }),
+        { pushed: 0, skipped: 0 },
+      )
       if (args.json) {
         printJson(result)
         return

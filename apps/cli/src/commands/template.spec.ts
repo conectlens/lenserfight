@@ -105,4 +105,14 @@ describe('template list', () => {
 
     expect(consola.info).toHaveBeenCalledWith('No templates found.')
   })
+
+  it('emits an empty JSON array (not an info line) when no templates and --json set', async () => {
+    mockCallRpc.mockResolvedValueOnce([] as any)
+
+    const cmd = await getSubCmd('list')
+    await cmd.run?.({ args: { limit: '20', json: true } })
+
+    expect(mockPrintJson).toHaveBeenCalledWith([])
+    expect(consola.info).not.toHaveBeenCalled()
+  })
 })

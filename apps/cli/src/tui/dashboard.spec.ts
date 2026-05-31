@@ -22,6 +22,7 @@ import {
   formatHealthStatus,
   validateSubcommand,
   getSuggestions,
+  cycleSuggestion,
   COMMAND_CATALOG,
   applyWorkspacePrompt,
 } from './dashboard'
@@ -122,6 +123,39 @@ describe('getSuggestions', () => {
     const lower = getSuggestions('battle')
     const upper = getSuggestions('BATTLE')
     expect(lower.length).toBe(upper.length)
+  })
+
+  it('ranks prefix matches ahead of mid-string matches', () => {
+    // "run " is both a prefix of top-level "run …" commands and a substring of
+    // "battle run". The prefix matches must come first.
+    const results = getSuggestions('run ')
+    expect(results.length).toBeGreaterThan(0)
+    expect(results[0].cmd.startsWith('run ')).toBe(true)
+    // a mid-string-only match ("battle run") must not outrank a prefix match
+    const firstSubstringIdx = results.findIndex((r) => !r.cmd.startsWith('run '))
+    const lastPrefixIdx = results.map((r) => r.cmd.startsWith('run ')).lastIndexOf(true)
+    if (firstSubstringIdx >= 0) {
+      expect(lastPrefixIdx).toBeLessThan(firstSubstringIdx)
+    }
+  })
+})
+
+describe('cycleSuggestion', () => {
+  it('returns -1 when there are no suggestions', () => {
+    expect(cycleSuggestion(-1, 0, 1)).toBe(-1)
+    expect(cycleSuggestion(2, 0, -1)).toBe(-1)
+  })
+
+  it('advances forward and wraps around', () => {
+    expect(cycleSuggestion(-1, 3, 1)).toBe(0)
+    expect(cycleSuggestion(0, 3, 1)).toBe(1)
+    expect(cycleSuggestion(2, 3, 1)).toBe(0)
+  })
+
+  it('moves backward and wraps around', () => {
+    expect(cycleSuggestion(1, 3, -1)).toBe(0)
+    expect(cycleSuggestion(0, 3, -1)).toBe(2)
+    expect(cycleSuggestion(-1, 3, -1)).toBe(2)
   })
 })
 

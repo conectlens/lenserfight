@@ -8,20 +8,21 @@ A custom [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 
 Think of MCP as USB-C for AI: a single, open standard that lets any AI assistant talk to any data source or tool. Instead of pasting lens IDs into chat messages, you say *"run the `code-reviewer` lens with Topic=TypeScript"* and Claude calls `run_lens` directly.
 
-MCP separates **servers** (tools that expose capabilities) from **clients** (the AI that uses them). This server is a **Resource Server** — it wraps LenserFight's Supabase database and exposes 42 typed tools.
+MCP separates **servers** (tools that expose capabilities) from **clients** (the AI that uses them). This server is a **Resource Server** — it wraps LenserFight's Supabase database and exposes 45 typed tools.
 
 > **This vs the generic Supabase MCP**: `mcp.supabase.com` gives an AI generic SQL access to any Supabase project. This server wraps LenserFight's *business logic* — `run_lens` resolves `[[Parameter]]` tokens from the database, `get_battle_score` fetches vote aggregates and AI judge verdicts, `summarize_workflow` calculates cost and duration. You get typed, safe, purpose-built tools, not raw SQL access.
 
 ---
 
-## 42 Tools Across 4 Groups
+## 45 Tools Across 5 Groups
 
 | Group | Count | Purpose |
 |---|---|---|
 | **Lens** | 15 | Create, run, fork, version, and search prompt templates |
-| **Battle** | 8 | Create battles, add contenders, submit runs, read scores |
+| **Battle** | 9 | Create battles, add contenders, submit runs, score, finalize, and read history |
 | **Workflow** | 8 | Create, run, monitor, retry, and summarize workflow executions |
 | **Agent** | 12 | Create and manage AI Lensers, assign tools, run team actions |
+| **User** | 1 | Read the authenticated lenser's identity (`get_me`) |
 
 ---
 
@@ -215,9 +216,10 @@ src/
 │   └── stdio.ts       stdio transport (Claude Code CLI)
 ├── tools/
 │   ├── lens/          15 lens tools
-│   ├── battle/        8 battle tools
+│   ├── battle/        9 battle tools
 │   ├── workflow/      8 workflow tools
-│   └── agent/         12 AI Lenser tools
+│   ├── agent/         12 AI Lenser tools
+│   └── user/          1 identity tool (get_me)
 └── services/
     ├── lens.service.ts
     ├── battle.service.ts

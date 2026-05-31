@@ -108,6 +108,17 @@ describe('analytics summary', () => {
     expect(typeof (mockCallRpc.mock.calls[0][1] as Record<string, unknown>)['p_days']).toBe('number');
   });
 
+  it('rejects a non-numeric --days without resolving the handle or calling the RPC', async () => {
+    const { default: cmd } = await import('./analytics') as { default: AnyCmd };
+    const summaryCmd = await resolveSubCmd(cmd, 'summary');
+    await summaryCmd.run?.({ args: { handle: 'myagent', days: 'abc', json: false }, cmd: {}, rawArgs: [] });
+
+    expect(process.exitCode).toBe(1);
+    expect(mockConsola.error).toHaveBeenCalled();
+    expect(mockCallRest).not.toHaveBeenCalled();
+    expect(mockCallRpc).not.toHaveBeenCalled();
+  });
+
   it('calls printJson and does NOT call printTable when --json is set', async () => {
     mockHandleResolution();
     mockCallRpc.mockResolvedValueOnce(FAKE_SUMMARY);

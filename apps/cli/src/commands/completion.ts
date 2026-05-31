@@ -156,6 +156,18 @@ function scriptForShell(shell: Shell): string {
   return fishScript()
 }
 
+/**
+ * Remove a previously installed completion block from an rc file's contents.
+ * Our block always begins with SENTINEL and is the only managed region, so we
+ * drop everything from the first SENTINEL line to the end and trim trailing
+ * whitespace. Returns the surviving prefix (may be empty).
+ */
+function stripCompletionBlock(contents: string): string {
+  const idx = contents.indexOf(SENTINEL)
+  if (idx === -1) return contents
+  return contents.slice(0, idx).replace(/\s+$/, '')
+}
+
 // ─── Subcommands ─────────────────────────────────────────────────────────────
 
 const completionBash = defineCommand({
@@ -235,13 +247,17 @@ const completionInstall = defineCommand({
 
       // bash/zsh: append-once with a sentinel guard.
       const existing = existsSync(rcPath) ? await fsp.readFile(rcPath, 'utf-8') : ''
-      if (existing.includes(SENTINEL) && !args.force) {
-        consola.info('lf completion already installed in %s. Pass --force to re-append.', rcPath)
+      const alreadyInstalled = existing.includes(SENTINEL)
+      if (alreadyInstalled && !args.force) {
+        consola.info('lf completion already installed in %s. Pass --force to re-install.', rcPath)
         return
       }
-      const block = '\n' + script + '\n'
-      await fsp.writeFile(rcPath, existing + block)
-      consola.success('Appended lf completion to %s.', rcPath)
+      // With --force, strip the previous block so we replace rather than
+      // append a duplicate completion definition.
+      const base = alreadyInstalled ? stripCompletionBlock(existing) : existing
+      const separator = base && !base.endsWith('\n') ? '\n' : ''
+      await fsp.writeFile(rcPath, base + separator + '\n' + script + '\n')
+      consola.success('%s lf completion in %s.', alreadyInstalled ? 'Re-installed' : 'Appended', rcPath)
       consola.info('Reload your shell or run: source %s', rcPath)
     } catch (err) {
       handleError(err)

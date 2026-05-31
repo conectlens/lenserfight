@@ -38,12 +38,19 @@ export default defineCommand({
       return;
     }
 
+    const limit = parseInt(args.limit, 10);
+    if (!Number.isFinite(limit) || limit < 1) {
+      consola.error('Invalid --limit: %s. Must be a positive integer.', args.limit);
+      process.exitCode = 1;
+      return;
+    }
+
     try {
       const results = await callRpc<Array<Record<string, unknown>>>(
         'fn_lensers_get_leaderboard',
         {
           p_period: args.period,
-          p_limit: parseInt(args.limit, 10),
+          p_limit: limit,
         }
         // No auth required — public endpoint
       );

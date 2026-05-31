@@ -73,13 +73,13 @@ const list = defineCommand({
         { requireAuth: true }
       );
 
-      if (!Array.isArray(templates) || templates.length === 0) {
-        consola.info('No templates found.');
+      if (args.json) {
+        printJson(Array.isArray(templates) ? templates : []);
         return;
       }
 
-      if (args.json) {
-        printJson(templates);
+      if (!Array.isArray(templates) || templates.length === 0) {
+        consola.info('No templates found.');
         return;
       }
 

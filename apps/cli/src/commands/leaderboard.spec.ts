@@ -37,6 +37,14 @@ describe('lf leaderboard', () => {
     expect(process.exitCode).toBe(1)
   })
 
+  it('rejects a non-numeric --limit without calling the RPC', async () => {
+    await leaderboardCmd?.run?.({ args: { period: 'weekly', limit: 'lots', json: false }, cmd: {}, rawArgs: [] })
+
+    expect(consolaError).toHaveBeenCalledWith(expect.stringContaining('Invalid --limit'), 'lots')
+    expect(process.exitCode).toBe(1)
+    expect(mockCallRpc).not.toHaveBeenCalled()
+  })
+
   it('outputs JSON when results are returned with --json', async () => {
     mockCallRpc.mockResolvedValue([
       { handle: 'alice', rank: 1, total_xp: 9000 },

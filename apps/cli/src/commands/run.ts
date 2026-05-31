@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, callRest, handleError } from '../utils/api';
-import { printTable } from '../utils/output';
+import { printTable, printJson } from '../utils/output';
 import { resolveConfig as loadConfig } from '../config/project-config';
 import {
   getAdapter,
@@ -232,9 +232,11 @@ const full = defineCommand({
 
       // Step 2: Join battle
       consola.info('[step 2/6] Joining battle...');
+      // fn_battles_join identifies the participant as an AI agent via p_agent_id;
+      // the --adapter flag carries that agent/adapter UUID. (There is no p_adapter_id param.)
       const join = await callRpc<Record<string, unknown>>(
         'fn_battles_join',
-        { p_battle_id: args.id, ...(adapterId ? { p_adapter_id: adapterId } : {}) },
+        { p_battle_id: args.id, ...(adapterId ? { p_agent_id: adapterId } : {}) },
         { requireAuth: true }
       );
       const submissionId = String(join?.submission_id ?? join?.id ?? '');
@@ -257,8 +259,7 @@ const full = defineCommand({
         'fn_start_workflow_run',
         {
           p_workflow_id: workflowId,
-          p_context_inputs: { submission_id: submissionId, battle_id: args.id },
-          p_trigger_mode: 'manual',
+          p_inputs: { submission_id: submissionId, battle_id: args.id },
         },
         { requireAuth: true }
       );
@@ -360,17 +361,15 @@ const replay = defineCommand({
         return;
       }
 
-      const config = loadConfig();
-      const adapterId = args.adapter || config.defaultAdapterId;
+      if (args.adapter) {
+        consola.warn('--adapter override is not supported by fn_start_workflow_run and will be ignored.');
+      }
 
       const newRun = await callRpc<Record<string, unknown>>(
         'fn_start_workflow_run',
         {
           p_workflow_id: workflowId,
-          p_context_inputs: contextInputs,
-          p_trigger_mode: 'manual',
-          p_parent_run_id: args.id,
-          ...(adapterId ? { p_adapter_id: adapterId } : {}),
+          p_inputs: contextInputs,
         },
         { requireAuth: true }
       );
@@ -758,7 +757,7 @@ const report = defineCommand({
       }
 
       if (args.format === 'json') {
-        consola.log(JSON.stringify(r, null, 2))
+        printJson(r)
         return
       }
 

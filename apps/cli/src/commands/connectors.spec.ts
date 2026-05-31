@@ -31,6 +31,13 @@ beforeEach(() => {
   process.exitCode = 0;
 });
 
+// Tests below intentionally set process.exitCode to assert CLI exit behavior.
+// Reset it afterwards so a non-zero value doesn't leak into Jest's own process
+// exit code and fail the run.
+afterEach(() => {
+  process.exitCode = 0;
+});
+
 describe('connectors list', () => {
   it('calls fn_connectors_list with requireAuth', async () => {
     mockCallRpc.mockResolvedValueOnce([]);

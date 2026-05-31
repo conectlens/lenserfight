@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, callRest, handleError } from '../utils/api';
-import { printTable } from '../utils/output';
+import { printTable, printJson } from '../utils/output';
 
 const VALID_TYPES = ['thread', 'lens'] as const;
 const VALID_REASONS = [
@@ -156,13 +156,13 @@ const list = defineCommand({
         }
       )
 
-      if (!rows || rows.length === 0) {
-        consola.info('No run reports found for @%s.', args.handle)
+      if (args.json) {
+        printJson(rows ?? [])
         return
       }
 
-      if (args.json) {
-        consola.log(JSON.stringify(rows, null, 2))
+      if (!rows || rows.length === 0) {
+        consola.info('No run reports found for @%s.', args.handle)
         return
       }
 
@@ -229,7 +229,7 @@ const show = defineCommand({
       }
 
       if (args.json) {
-        consola.log(JSON.stringify(report, null, 2))
+        printJson(report)
         return
       }
 
@@ -294,13 +294,13 @@ const incidents = defineCommand({
         }
       )
 
-      if (!rows || rows.length === 0) {
-        consola.info('No incidents recorded for report %s.', args.id)
+      if (args.json) {
+        printJson(rows ?? [])
         return
       }
 
-      if (args.json) {
-        consola.log(JSON.stringify(rows, null, 2))
+      if (!rows || rows.length === 0) {
+        consola.info('No incidents recorded for report %s.', args.id)
         return
       }
 

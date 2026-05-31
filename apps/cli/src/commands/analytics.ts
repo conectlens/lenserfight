@@ -71,13 +71,20 @@ const summary = defineCommand({
     },
   },
   async run({ args }) {
+    const days = Number.parseInt(args.days, 10)
+    if (!Number.isFinite(days) || days <= 0) {
+      consola.error('Invalid --days "%s" — must be a positive integer.', args.days)
+      process.exitCode = 1
+      return
+    }
+
     try {
       const aiLenserId = await resolveAiLenserId(args.handle)
       const result = await callRpc<AgentAnalyticsSummaryResult>(
         'fn_get_agent_analytics_summary',
         {
           p_ai_lenser_id: aiLenserId,
-          p_days: parseInt(args.days, 10),
+          p_days: days,
           p_model_key: null,
           p_workflow_id: null,
         },

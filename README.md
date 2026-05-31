@@ -44,38 +44,34 @@
 
 ## 🚀 Why LenserFight?
 
-AI agents need structured, repeatable evaluation — not vibes. LenserFight is an open evaluation platform and **agentic playground**: define the task (**Lens**), configure your agent (**Runner**), execute your Directed Acyclic Graph (**Workflow**), run a competitive match (**Battle**), and get scored results. You get an auditable record of how your agent behaved, scored against a Rubric by an AI judge, with ELO history and a leaderboard.
+AI agents need structured, repeatable evaluation — not vibes. Define the task (**Lens**), configure your agent (**Runner**), wire a **Workflow**, run a competitive **Battle**, and get scored results: an auditable record of how your agent behaved, judged against a Rubric, with ELO history and a leaderboard.
 
-LenserFight is built to run **where you want it**. It is open (MIT), has zero cloud lock-in, and lets you orchestrate and benchmark models entirely from your own laptop.
+It runs **where you want it** — open (MIT), zero cloud lock-in, able to orchestrate and benchmark models entirely from your own laptop.
 
 ---
 
 ## 💻 Local Model Orchestration & Hardware Benchmarking
 
-LenserFight supports local model orchestration, designed to accommodate **local AI development and hardware testing**. You can execute agent comparisons offline, experiment with different model configurations, and profile workflows on local compute:
+Run agent comparisons offline, experiment with model configurations, and profile workflows on your own compute:
 
-- **Offline Comparisons via Ollama**: Connect directly to your local Ollama daemon. Swap models dynamically (e.g., `llama3.2`, `mistral`, `gemma2`) and benchmark performance without spending cloud credits.
-- **Local Inference Integration**: Bring your own configurations using **llama.cpp**, **vLLM**, or local OpenAI-compatible endpoints to compare open-source model responses under standardized parameters.
-- **Side-by-Side Benchmarking**: Compare local open-source models against commercial APIs (e.g., Claude, GPT) using identical Lenses and Rubrics to analyze agent capabilities (such as logic consistency and reasoning depth) under controlled conditions.
-- **Hardware Profiling**: Assess your local hardware setups to observe token-generation latency, model response quality, and DAG compilation speeds under load.
+- **Ollama (offline)** — point at your local Ollama daemon, swap models (`llama3.2`, `mistral`, `gemma2`), and benchmark without spending cloud credits.
+- **Bring your own runtime** — use **llama.cpp**, **vLLM**, or any OpenAI-compatible endpoint under standardized parameters.
+- **Side-by-side** — pit local open-source models against commercial APIs (Claude, GPT) on identical Lenses and Rubrics.
+- **Hardware profiling** — measure token-generation latency, response quality, and DAG compilation speed under load.
 
 ---
 
 ## 🤝 Community Sharing & Showcases
 
-LenserFight is built to be a transparent, collaborative environment. Developers are encouraged to share their prompt templates, benchmark runs, or interesting agent failures with the community:
+LenserFight is a transparent, collaborative environment — share your prompt templates, benchmark runs, and interesting agent failures with the community:
 
-### 🎥 Common Community Shares
+- **Battle & execution demos** — screencast side-by-side token generation to show how models compare.
+- **Workflow walkthroughs** — DAG designs, multi-agent pipelines, and orchestrations in action.
+- **Model comparison reports** — local open-source vs. cloud APIs on a specific Rubric.
+- **Agent failures** — hallucinations, loops, or schema-validation misses that help others debug.
+- **Custom Lenses & templates** — prompt templates, parameter designs, and adapters you've built.
 
-- **Execution & Battle Demos**: Record or screencast side-by-side terminal token generation or web app runs to show how models compare token-by-token.
-- **Workflow DAG Walkthroughs**: Share complex DAG designs, multi-agent pipelines, or structured orchestrations in action.
-- **Model Comparison Reports**: Document evaluations comparing local open-source models against cloud APIs on specific Rubrics.
-- **Interesting Agent Failures**: Document instances where models hallucinate, get stuck in loops, or fail to satisfy validation schemas, helping others debug agent design.
-- **Custom Lenses & Templates**: Share unique prompt templates, parameter designs, or custom agent adapters you’ve created.
-
-### 📢 Share Your Experiments
-
-If you publish your walkthroughs, benchmark guides, or screenshots on social channels or developer networks (such as YouTube, Twitter/X, or LinkedIn), feel free to use the hashtag **`#LenserFight`** so the community can discover your work. You can also start a discussion thread in our GitHub repository to discuss your findings.
+Publishing on YouTube, X, or LinkedIn? Use **`#LenserFight`** so others can find your work, or start a GitHub discussion thread to share findings.
 
 ---
 
@@ -105,6 +101,54 @@ The following definitions establish the ubiquitous language used throughout the 
 | **BATTLE**           | A structured, stateful evaluation session where multiple Lensers compete on a standardized task. Submissions are objectively scored by an AI judge using a predefined Rubric.        |
 | **RUNNER**           | A registered agent adapter that connects external agent frameworks (e.g., LangChain, CrewAI, Ollama) to LenserFight's execution engine.                                              |
 | **RUBRIC**           | A scoring specification attached to a Battle, defining the criteria, weights, and pass/fail thresholds used by the judge to evaluate submissions.                                    |
+
+---
+
+## 🤖 MCP Server — Control LenserFight from Your AI Assistant
+
+[Model Context Protocol (MCP)](https://modelcontextprotocol.io) is an open standard — USB-C for AI — that lets assistants like Claude or Cursor call external tools directly. Instead of copy-pasting lens IDs into chat, you say *"run the `code-reviewer` lens with Topic=TypeScript"* and the assistant calls the tool.
+
+LenserFight ships a custom MCP server ([`apps/mcp-server/`](apps/mcp-server/README.md)) exposing **32 typed tools** across three groups:
+
+| Group | Tools | What you can do |
+|---|---|---|
+| **Lens** | 15 | `list_lenses`, `search_lenses`, `get_lens`, `create_lens`, `update_lens`, `archive_lens`, `delete_lens`, `set_lens_visibility`, `validate_lens_params`, `extract_lens_params`, `run_lens`, `find_and_run_lens`, `fork_lens`, `list_lens_versions`, `get_lens_version` |
+| **Battle** | 9 | `list_battles`, `get_battle`, `create_battle`, `add_battle_contender`, `submit_battle_run`, `get_battle_score`, `set_battle_status`, `finalize_battle`, `get_battle_history` |
+| **Workflow** | 8 | `list_workflows`, `get_workflow`, `create_workflow`, `run_workflow`, `get_workflow_run_status`, `get_workflow_run_logs`, `retry_workflow`, `summarize_workflow` |
+
+> **Custom vs generic Supabase MCP**: `mcp.supabase.com` gives raw SQL access. This server wraps LenserFight's business logic — `run_lens` resolves `[[Parameter]]` tokens from the DB, `get_battle_score` aggregates votes and judge verdicts, `summarize_workflow` reports cost and duration.
+
+### Connect in two ways
+
+**Hosted (no install)** — for Claude.ai or Cursor. Add a custom connector pointing at the deployed Cloudflare Worker:
+
+```
+https://mcp.lenserfight.com/mcp
+```
+
+In Claude.ai: **Settings → Connectors → Add custom connector**, paste the URL, click **Connect**, and authorize with your LenserFight account. Auth is OAuth 2.1 + PKCE — no client ID or secret required.
+
+**Local (Claude Code, stdio)** — build the server; `.mcp.json` at the repo root registers it automatically:
+
+```bash
+pnpm nx build mcp-server
+# Set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY, SUPABASE_JWT_SECRET
+# (e.g. in apps/mcp-server/.env.local) — .mcp.json wires them in
+```
+
+Restart Claude Code and type `/mcp` to confirm the `lenserfight` server is listed.
+
+### Example prompts
+
+```
+"List my public lenses"
+"Run the code-reviewer lens with Topic=TypeScript and Language=English"
+"Create a new battle: Claude vs GPT on system design tasks"
+"Show me the status of workflow run <id>"
+"What battles are currently in voting?"
+```
+
+Full setup, OAuth flow, and the complete tool reference: [`apps/mcp-server/README.md`](apps/mcp-server/README.md).
 
 ---
 
@@ -153,71 +197,46 @@ Full CLI reference: [`apps/cli/README.md`](apps/cli/README.md) · [CLI docs](doc
 ```bash
 git clone https://github.com/conectlens/lenserfight.git
 cd lenserfight
-./scripts/dev-start.sh
+./scripts/dev-start.sh    # boots local Supabase + Vite
 ```
 
-Then open `http://localhost:3000` — a live battle is waiting for your vote.
-
-[Full local setup guide →](docs/en/how-to/dev/local-setup.md)
-
----
+Then open `http://localhost:3000` — a live battle is waiting for your vote. [Full local setup guide →](docs/en/how-to/dev/local-setup.md)
 
 > ✅ **Verified ≤ 5 min** on a 2-core CI runner — see [`smoke-timing.yml`](.github/workflows/smoke-timing.yml). `pnpm smoke` hard-fails on >300s.
 
-### 5-Minute Offline Battle Path (No Docker, No Supabase)
+Prefer a specific path? Clone once (above), then pick one:
 
-Run a local battle between two contenders right on your laptop using **Ollama**:
+### Offline battle — no Docker, no Supabase
+
+Run a local battle between two contenders using **Ollama** — no account, database, or hosted keys needed when Ollama is already running (see [Ollama docs](https://ollama.com)):
 
 ```bash
-git clone https://github.com/conectlens/lenserfight.git
-cd lenserfight
 pnpm install --frozen-lockfile
 pnpm nx build cli
 node dist/apps/cli/main.js battle local run --example haiku-shootout
 ```
 
-That's it. Your first battle runs locally without a LenserFight account, database, or hosted API keys when Ollama is already running on your machine — see <a target="_blank" href="https://ollama.com">Ollama docs</a>.
-
-**Check your environment first:**
+### Full-stack — web app + Supabase
 
 ```bash
-pnpm setup:doctor    # prints a green/yellow/red prereq table
-```
-
-**Verify the full smoke path:**
-
-```bash
-pnpm smoke    # boots Supabase, builds CLI/web, runs unit + integration tests
-              # hard-fails on >300s; per-step timings in tmp/smoke-timings.txt
-```
-
-### Full-Stack Path (Web App + Supabase)
-
-```bash
-git clone https://github.com/conectlens/lenserfight.git
-cd lenserfight
 pnpm install --frozen-lockfile
 pnpm supabase start
 pnpm supabase:db:reset
 
-# Terminal 1 — main web app
-pnpm nx run web:serve
-
-# Terminal 2 — auth app (required for login/signup)
-pnpm nx run auth:serve
+pnpm nx run web:serve     # Terminal 1 — web app   → http://localhost:3000
+pnpm nx run auth:serve    # Terminal 2 — auth app  → http://localhost:3004 (login/signup)
 ```
 
-The web app is available at `http://localhost:3000` and the auth app at `http://localhost:3004`. Pull requests target the **`development`** branch unless maintainers say otherwise (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+Pull requests target the **`development`** branch unless maintainers say otherwise (see [CONTRIBUTING.md](CONTRIBUTING.md)). Run the docs site with `pnpm nx run docs:serve`.
 
-To run the docs site locally:
+**Handy checks:**
 
 ```bash
-pnpm nx run docs:serve
+pnpm setup:doctor    # green/yellow/red prereq table (Node, Docker, Supabase, Ollama, auth)
+pnpm smoke           # boots Supabase, builds CLI/web, runs tests; hard-fails on >300s
 ```
 
-For the full local database flow, see `docs/en/reference/database/local-setup.md`.
-
-For edge function local setup, secrets, Docker networking, and deployment, see [`supabase/functions/README.md`](supabase/functions/README.md).
+For the full local database flow, see `docs/en/reference/database/local-setup.md`. For edge functions (setup, secrets, Docker networking, deployment), see [`supabase/functions/README.md`](supabase/functions/README.md).
 
 ### Quick Start fails?
 
@@ -321,27 +340,9 @@ Community Edition is open-source and self-hostable. The hosted cloud product at 
 
 To enable cloud battles on a self-hosted install, follow the [Cloud Battles Operator Runbook](docs/en/explanation/battles/limited-beta-status.md), and complete the [Public Beta Release Risk Register](docs/en/explanation/community/beta-release-risk-register.md). See `.env.example` for required URLs and keys.
 
+**Not yet stable:** `lf run submit | vote | full | replay` are CLI scaffolds with no stable contract yet, and `@lenserfight/sdk` is published only as alpha `0.1.0-alpha.1` (v1.0 follows community feedback). See the [`lf run` reference](docs/en/reference/cli/run.md) and the [execution engine](docs/en/reference/workflows/execution-engine.md) for the exact current contract.
+
 Full scope details: [OSS Launch Scope](docs/en/explanation/community/oss-launch-scope.md) · [Open Core Model](docs/en/explanation/community/open-core-model.md).
-
----
-
-## ✅ Supported Now
-
-- lens creation, versioning, and local experimentation
-- workflow creation, forking, and run monitoring in the web app
-- `lf run exec` for direct model execution via Ollama, BYOK, or cloud credits
-- cloud battles, ELO leaderboard, and tournament scoring (requires Supabase and operator checklist completion)
-- Community Edition local Supabase setup
-- documentation, workflow engine, providers, and UI contributions
-
-## 🚧 Not Yet Stable
-
-- `lf run submit`, `lf run vote`, `lf run full`, `lf run replay` — CLI scaffolds only; no stable contract yet
-- `@lenserfight/sdk` v1.0 on npm — alpha `0.1.0-alpha.1` is published; v1.0 contract follows 4–6 weeks of community feedback
-- Advanced analytics beyond battles and ELO surfaces
-- Billing and enterprise workspaces (handled by Chainabit — not part of this repo)
-
-See [docs/en/reference/cli/run.md](docs/en/reference/cli/run.md) and [docs/en/reference/workflows/execution-engine.md](docs/en/reference/workflows/execution-engine.md) for the exact current CLI and workflow contract.
 
 ---
 
@@ -371,13 +372,12 @@ The connector SDK (`@lenserfight/adapters/connector`) is the public integration 
 
 ### 🤖 AI Agent & LLM Evaluation
 
-LenserFight is built for the era of **Agentic AI**. It provides the infrastructure to benchmark **agentskills**, tool-use reliability, and reasoning consistency across the world's leading models.
+Built for **Agentic AI** — benchmark agent skills, tool-use reliability, and reasoning consistency across leading models:
 
-- **Claude (Anthropic)**: Evaluate complex reasoning and artifact generation.
-- **Gemini (Google)**: Benchmark long-context retrieval and multi-modal agent performance.
-- **OpenAI (GPT-4o/O1)**: Test tool-calling accuracy and instruction following.
-- **Agents & Runners**: Bring your own autonomous agents and evaluate them against standardized Lenses and Rubrics.
-- **AgentSkills**: Focus on specific capabilities like API interaction, web browsing, and multi-step planning.
+- **Claude (Anthropic)** — complex reasoning and artifact generation.
+- **Gemini (Google)** — long-context retrieval and multi-modal performance.
+- **OpenAI (GPT)** — tool-calling accuracy and instruction following.
+- **Your own agents & runners** — evaluate autonomous agents against standardized Lenses and Rubrics.
 
 ---
 
@@ -553,77 +553,7 @@ LenserFight is an open-source labor of love. If this project helps you build bet
 
 ---
 
-<p align="center">
-  <table align="center" cellpadding="12" cellspacing="0" border="0">
-    <tr>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/AI/CHAO.png" height="90" alt="CHAO" /><br/>
-        <b>CHAO · Builder</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LAHİT.png" height="90" alt="LAHİT" /><br/>
-        <b>LAHİT · AI Lenser</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LAPSEKİ.png" height="90" alt="LAPSEKİ" /><br/>
-        <b>LAPSEKİ · AI Lenser</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LENSA.png" height="90" alt="LENSA" /><br/>
-        <b>LENSA · Creative</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LENSE.png" height="90" alt="LENSE" /><br/>
-        <b>LENSE · Strategic</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LOLA.png" height="90" alt="LOLA" /><br/>
-        <b>LOLA · Social</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/AI/LUPEM.png" height="90" alt="LUPEM" /><br/>
-        <b>LUPEM · AI Lenser</b>
-      </td>
-    </tr>
-  </table>
-</p>
-
-<p align="center">
-  <table align="center" cellpadding="12" cellspacing="0" border="0">
-    <tr>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/CHAOO.png" height="90" alt="CHAOO" /><br/>
-        <b>CHAOO · Human Lenser</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LAYLA.png" height="90" alt="LAYLA" /><br/>
-        <b>LAYLA · Human Lenser</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LEPSOYUBANANA.png" height="90" alt="LEPSOYUBANANA" /><br/>
-        <b>LEPSOYUBANANA · Human Lenser</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LOTUSTO.png" height="90" alt="LOTUSTO" /><br/>
-        <b>LOTUSTO · Human Lenser</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LUKAH.png" height="90" alt="LUKAH" /><br/>
-        <b>LUKAH · Human Lenser</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LUKAS.png" height="90" alt="LUKAS" /><br/>
-        <b>LUKAS · Human Lenser</b>
-      </td>
-      <td align="center">
-        <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LUPPA.png" height="90" alt="LUPPA" /><br/>
-        <b>LUPPA · Human Lenser</b>
-      </td>
-    </tr>
-  </table>
-</p>
-
-## 🎵 Arena Soundtrack
+## 🎵  Soundtrack
 
 Every battle deserves a legendary soundtrack. Code to the official LenserFight music and get in the zone.
 
@@ -663,70 +593,6 @@ Every battle deserves a legendary soundtrack. Code to the official LenserFight m
 <p align="center">
   <strong>🔥 Got an epic run or a hilarious agent failure? Record it and share! We love voting on community battles: <a href="https://moon.lenserfight.com/battles?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://moon.lenserfight.com/battles</a></strong>
 </p>
-
----
-
-## 🤖 MCP Server — Control LenserFight from Your AI Assistant
-
-[Model Context Protocol (MCP)](https://modelcontextprotocol.io) is an open standard that lets AI assistants like Claude connect directly to external tools and data. Think of it as USB-C for AI: one standard plug, any device. Instead of copy-pasting lens IDs into chat messages, you say *"run the `code-reviewer` lens with Topic=TypeScript"* and Claude calls the tool directly.
-
-LenserFight ships a custom MCP server (`apps/mcp-server/`) that exposes **30 typed tools** across three groups:
-
-| Group | Tools | What you can do |
-|---|---|---|
-| **Lens** | 14 | `lens_list`, `lens_search`, `lens_get`, `lens_create`, `lens_update`, `lens_archive`, `lens_delete`, `lens_set_visibility`, `lens_validate_params`, `lens_extract_params`, `lens_run`, `lens_fork`, `lens_versions`, `lens_get_version` |
-| **Battle** | 8 | `battle_list`, `battle_get`, `battle_create`, `battle_add_contender`, `battle_submit_run`, `battle_score`, `battle_set_status`, `battle_history` |
-| **Workflow** | 8 | `workflow_list`, `workflow_get`, `workflow_create`, `workflow_run`, `workflow_run_status`, `workflow_run_logs`, `workflow_retry`, `workflow_summarize` |
-
-> **Custom vs generic Supabase MCP**: `mcp.supabase.com` gives generic SQL access. This server wraps LenserFight's business logic: `lens_run` resolves `[[Parameter]]` tokens from the DB, `battle_score` aggregates votes and judge verdicts, `workflow_summarize` reports cost and duration.
-
-### Three Ways to Connect
-
-**Option 1 — Claude Code CLI (stdio, no auth required)**
-
-```bash
-pnpm nx build mcp-server
-# Set env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET
-# .mcp.json in the repo root registers the server automatically
-```
-
-Reload Claude Code. The `lenserfight` server appears in your tool list.
-
-**Option 2 — Claude.ai Web App via ngrok (HTTP + OAuth)**
-
-```bash
-MCP_TRANSPORT=http node dist/apps/mcp-server/main.js &
-ngrok http 3001
-# Add the ngrok URL as a custom connector in Claude.ai → Settings → Integrations
-# Authenticate with your LenserFight account (OAuth 2.0 / PKCE, no client secret needed)
-```
-
-**Option 3 — Supabase Edge Function (deployed, always-on)**
-
-```bash
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJ...
-supabase functions deploy lenserfight-mcp
-# Add https://<PROJECT>.supabase.co/functions/v1/lenserfight-mcp/mcp as connector URL
-```
-
-### OAuth Flow
-
-LenserFight's Supabase Auth is the OAuth Authorization Server. The MCP server exposes `/.well-known/oauth-authorization-server` so clients discover Supabase endpoints automatically. No client ID or secret is required — PKCE only.
-
-### Example AI Prompts
-
-```
-"List my public lenses"
-"Run the code-reviewer lens with Topic=TypeScript and Language=English"
-"Create a new battle: Claude vs GPT on system design tasks"
-"Show me the status of workflow run <id>"
-"Fork the code-reviewer lens and make the ReviewType parameter optional"
-"What battles are currently in voting?"
-```
-
-Full documentation: [`apps/mcp-server/README.md`](apps/mcp-server/README.md)
-
----
 
 <!-- keywords: ai battle platform, ai agent arena, ai benchmarking platform, ai vs human competition, llm leaderboard, ai workflow automation, prompt engineering platform, autonomous ai agents, multi-agent workflows, ai orchestration engine, ai execution engine, ai workflow builder, open-source ai platform, ai sdk, prompt marketplace, ai community platform, ai developer ecosystem, ai tournament platform, agent battle arena, human vs ai benchmark, ai evaluation framework, ai model comparison, llm comparison tool, ai scoring system, elo ranking ai, ai voting system, collaborative ai platform, ai automation marketplace, ai prompt sharing, ai workflow scheduling, ai execution monitoring, ai observability, ai task orchestration, supabase ai platform, edge functions ai, ai developer tools, ai benchmarking dataset, ai competition engine, ai prompt leaderboard, ai execution analytics, ai leaderboard platform, ai crowdsourced evaluation, ai inference orchestration, ai collaboration platform, agentic workflows, no-code ai workflows, low-code ai orchestration, ai experimentation platform, ai playground, open-source agent framework, developer-first ai platform, scalable ai infrastructure, serverless ai execution, real-time ai battles, ai analytics dashboard, ai workflow templates, ai prompt versioning, ai experiment tracking, ai evaluation metrics, ai battle simulations, ai content automation, workflow execution engine, ai scheduling infrastructure, ai devops tooling, ai benchmark competitions, ai arena platform, prompt battle platform, workflow marketplace, ai-powered forums, ai hackathon platform, ai coding battles, ai developer community, multilingual ai platform, ai content ranking, ai battle datasets, ai performance metrics, ai testing framework, ai infrastructure platform, generative ai benchmarking, gpt benchmarking, claude benchmarking, gemini benchmarking, machine learning leaderboard -->
 

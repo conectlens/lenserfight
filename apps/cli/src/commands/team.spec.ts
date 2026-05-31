@@ -33,6 +33,7 @@ const consolaLog = (consola as unknown as { log: jest.Mock }).log
 const consolaError = (consola as unknown as { error: jest.Mock }).error
 const consolaSuccess = (consola as unknown as { success: jest.Mock }).success
 const consolaInfo = (consola as unknown as { info: jest.Mock }).info
+const consolaWarn = (consola as unknown as { warn: jest.Mock }).warn
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCmd = { run?: (ctx: any) => Promise<void>; subCommands?: Record<string, AnyCmd | (() => Promise<AnyCmd>)> }
@@ -209,4 +210,76 @@ describe('lf team set-role', () => {
       expect(process.exitCode).toBe(0)
     }
   )
+})
+
+describe('lf team dispatch', () => {
+  it('passes only the parameters fn_create_team_run accepts', async () => {
+    mockCallRpc.mockResolvedValueOnce({ id: 'run-1', approval_status: 'pending' } as never)
+    const cmd = await getSubCmd('dispatch')
+    await cmd.run?.({
+      args: {
+        assignment: 'asg-1',
+        'ai-lenser': 'lenser-1',
+        'team-id': 'team-1',
+        'workflow-id': 'wf-1',
+        metadata: '',
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_create_team_run',
+      {
+        p_ai_lenser_id: 'lenser-1',
+        p_workflow_id: 'wf-1',
+        p_workflow_assignment_id: 'asg-1',
+        p_team_id: 'team-1',
+      },
+      { requireAuth: true },
+    )
+    expect(consolaWarn).not.toHaveBeenCalled()
+    expect(mockHandleError).not.toHaveBeenCalled()
+  })
+
+  it('warns that --metadata is not persisted but still dispatches', async () => {
+    mockCallRpc.mockResolvedValueOnce({ id: 'run-2', approval_status: 'pending' } as never)
+    const cmd = await getSubCmd('dispatch')
+    await cmd.run?.({
+      args: {
+        assignment: 'asg-1',
+        'ai-lenser': 'lenser-1',
+        'team-id': '',
+        'workflow-id': 'wf-1',
+        metadata: '{"foo":"bar"}',
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(consolaWarn).toHaveBeenCalled()
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_create_team_run',
+      expect.objectContaining({ p_team_id: null }),
+      { requireAuth: true },
+    )
+  })
+
+  it('rejects malformed --metadata JSON before calling the RPC', async () => {
+    const cmd = await getSubCmd('dispatch')
+    await cmd.run?.({
+      args: {
+        assignment: 'asg-1',
+        'ai-lenser': 'lenser-1',
+        'team-id': '',
+        'workflow-id': 'wf-1',
+        metadata: '{not json',
+      },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockCallRpc).not.toHaveBeenCalled()
+    expect(mockHandleError).toHaveBeenCalled()
+  })
 })

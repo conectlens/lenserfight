@@ -19,9 +19,11 @@ jest.mock('consola', () => ({
 }))
 
 import { callRpc } from '../utils/api'
+import { printTable } from '../utils/output'
 import byokCommand from './byok'
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
+const mockPrintTable = printTable as jest.MockedFunction<typeof printTable>
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -91,6 +93,26 @@ describe('lf byok check-rotation', () => {
       args: { json: false },
     })
 
+    expect(process.exitCode).toBe(1)
+  })
+
+  it('shows "n/a" days_overdue for a never-rotated key instead of an epoch-based number', async () => {
+    mockCallRpc.mockResolvedValueOnce([
+      {
+        id: 'key-uuid-never',
+        provider: 'anthropic',
+        key_hint: 'wxyz',
+        agent_id: 'agent-uuid-2',
+        last_rotated_at: null,
+      },
+    ])
+
+    await (checkRotationCmd as { run: (ctx: unknown) => Promise<void> }).run({
+      args: { json: false },
+    })
+
+    const rows = mockPrintTable.mock.calls[0][1] as string[][]
+    expect(rows[0]).toEqual(['anthropic', '···· wxyz', 'never', 'n/a'])
     expect(process.exitCode).toBe(1)
   })
 })

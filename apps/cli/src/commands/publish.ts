@@ -46,7 +46,7 @@ const results = defineCommand({
     },
     format: {
       type: 'string',
-      description: 'Output format: json or csv',
+      description: 'Output format: json | csv',
       default: 'json',
     },
     out: {
@@ -55,6 +55,12 @@ const results = defineCommand({
     },
   },
   async run({ args }) {
+    if (args.format !== 'json' && args.format !== 'csv') {
+      consola.error('Invalid --format "%s". Must be one of: json, csv', args.format);
+      process.exitCode = 1;
+      return;
+    }
+
     try {
       const data = await callRpc<Array<Record<string, unknown>>>(
         'fn_battles_results_export',

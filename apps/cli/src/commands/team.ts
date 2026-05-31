@@ -563,22 +563,21 @@ const teamDispatch = defineCommand({
   },
   async run({ args }) {
     try {
-      const metadata = parseJsonArg(args.metadata, 'metadata') ?? {}
-      const body: Record<string, unknown> = {
-        ai_lenser_id: args['ai-lenser'],
-        team_id: args['team-id'] || null,
-        workflow_id: args['workflow-id'],
-        workflow_assignment_id: args.assignment,
-        status: 'queued',
-        metadata,
+      // Validate metadata JSON eagerly so a malformed flag fails fast. The
+      // fn_create_team_run RPC does not yet accept a metadata payload, so warn
+      // the caller that a provided value will not be persisted rather than
+      // silently dropping it.
+      if (args.metadata) {
+        parseJsonArg(args.metadata, 'metadata')
+        consola.warn('--metadata is not yet persisted by fn_create_team_run and will be ignored.')
       }
       const result = await callRpc<Record<string, unknown>>(
         'fn_create_team_run',
         {
-          p_ai_lenser_id: body.ai_lenser_id,
-          p_workflow_id: body.workflow_id || null,
-          p_workflow_assignment_id: body.workflow_assignment_id || null,
-          p_team_id: body.team_id || null,
+          p_ai_lenser_id: args['ai-lenser'],
+          p_workflow_id: args['workflow-id'] || null,
+          p_workflow_assignment_id: args.assignment || null,
+          p_team_id: args['team-id'] || null,
         },
         { requireAuth: true }
       )
