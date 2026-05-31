@@ -56,12 +56,6 @@ const mediaList = defineCommand({
   async run({ args }) {
     try {
       const limit = Math.max(1, Math.min(200, Number.parseInt(args.limit, 10) || 25))
-      const query: Record<string, string | number> = {
-        select:
-          'id,bucket,object_key,external_url,mime_type,media_type,byte_size,visibility,lifecycle_state,created_at,request_id',
-        order: 'created_at.desc',
-        limit,
-      }
       if (args.run) {
         // TODO: replace with fn_get_execution_run once added to schema.sql.
         // execution.runs is not yet exposed via a public RPC; --run filter is unavailable on cloud.
@@ -317,8 +311,9 @@ const mediaDelete = defineCommand({
   async run({ args }) {
     try {
       if (!args.force) {
-        consola.warn(`This will soft-delete media object ${args.id}. Pass --force to skip.`)
-        process.exit(1)
+        consola.warn(`This will soft-delete media object ${args.id}. Pass --force to confirm.`)
+        process.exitCode = 1
+        return
       }
       await callRpc<void>('fn_delete_media_object', { p_object_id: args.id }, { requireAuth: true })
       consola.success(`Deleted media object ${args.id}.`)

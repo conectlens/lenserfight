@@ -17,17 +17,17 @@ async function printQR(url: string): Promise<void> {
     }
     await new Promise<void>((resolve) => {
       qrTerminal.generate(url, { small: true }, (qr) => {
-        console.log('\n' + qr)
+        consola.log('\n' + qr)
         resolve()
       })
     })
   } catch {
     // Fallback: print URL in a prominent box
     const bar = '─'.repeat(url.length + 4)
-    console.log(`\n┌${bar}┐`)
-    console.log(`│  ${url}  │`)
-    console.log(`└${bar}┘`)
-    console.log('\nPaste the URL above into a QR generator to share.\n')
+    consola.log(`\n┌${bar}┐`)
+    consola.log(`│  ${url}  │`)
+    consola.log(`└${bar}┘`)
+    consola.log('\nPaste the URL above into a QR generator to share.\n')
   }
 }
 

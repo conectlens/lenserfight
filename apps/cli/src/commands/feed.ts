@@ -36,8 +36,14 @@ export default defineCommand({
       return;
     }
 
+    const limit = parseInt(args.limit, 10)
+    if (!Number.isFinite(limit) || limit < 1) {
+      consola.error('Invalid --limit: %s. Must be a positive integer.', args.limit)
+      process.exitCode = 1
+      return
+    }
+
     try {
-      const limit = parseInt(args.limit, 10)
       const results = await getPersonalContentFeed(args.type, limit)
 
       if (!results.length) {

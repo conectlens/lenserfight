@@ -161,13 +161,13 @@ const versionList = defineCommand({
         { requireAuth: true }
       );
 
-      if (!Array.isArray(versions) || versions.length === 0) {
-        consola.info('No versions found for lens %s.', args.id);
+      if (args.json) {
+        printJson(Array.isArray(versions) ? versions : []);
         return;
       }
 
-      if (args.json) {
-        printJson(versions);
+      if (!Array.isArray(versions) || versions.length === 0) {
+        consola.info('No versions found for lens %s.', args.id);
         return;
       }
 
@@ -665,7 +665,7 @@ const lensTemplateList = defineCommand({
       id,
       description: t.description,
     }))
-    if (args.json) { console.log(JSON.stringify(rows, null, 2)); return }
+    if (args.json) { printJson(rows); return }
     for (const { id, description } of rows) {
       consola.log(`  ${id.padEnd(16)} ${description}`)
     }

@@ -182,9 +182,9 @@ const view = defineCommand({
         {}
       );
 
-      if (!lens) { consola.warn('Lens not found: %s', args.slug); return; }
+      if (args.json) { printJson(lens ?? null); return; }
 
-      if (args.json) { printJson(lens); return; }
+      if (!lens) { consola.warn('Lens not found: %s', args.slug); return; }
 
       consola.info('Slug:        %s', lens.slug);
       consola.info('Title:       %s', lens.title);

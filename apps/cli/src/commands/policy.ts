@@ -85,13 +85,13 @@ const policyLog = defineCommand({
         { requireAuth: true, query }
       )
 
-      if (!rows || rows.length === 0) {
-        consola.info('No policy evaluations found for @%s.', args.handle)
+      if (args.json) {
+        printJson(rows ?? [])
         return
       }
 
-      if (args.json) {
-        printJson(rows)
+      if (!rows || rows.length === 0) {
+        consola.info('No policy evaluations found for @%s.', args.handle)
         return
       }
 
@@ -136,6 +136,11 @@ const policyStats = defineCommand({
       description: 'Time window: 24h | 7d | 30d (default 24h)',
       default: '24h',
     },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
   },
   async run({ args }) {
     const ms = PERIOD_MAP[args.period]
@@ -163,26 +168,33 @@ const policyStats = defineCommand({
         }
       )
 
-      if (!rows || rows.length === 0) {
-        consola.info('No policy evaluations in the last %s for @%s.', args.period, args.handle)
-        return
-      }
-
       // Group client-side
       const counts = new Map<string, number>()
-      for (const row of rows) {
+      for (const row of rows ?? []) {
         const key = `${row['policy_type'] ?? 'unknown'}|${row['verdict'] ?? 'unknown'}`
         counts.set(key, (counts.get(key) ?? 0) + 1)
       }
 
+      const grouped = Array.from(counts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([key, count]) => {
+          const [policyType, verdict] = key.split('|')
+          return { policy_type: policyType, verdict, count }
+        })
+
+      if (args.json) {
+        printJson(grouped)
+        return
+      }
+
+      if (grouped.length === 0) {
+        consola.info('No policy evaluations in the last %s for @%s.', args.period, args.handle)
+        return
+      }
+
       printTable(
         ['Policy Type', 'Verdict', 'Count'],
-        Array.from(counts.entries())
-          .sort((a, b) => b[1] - a[1])
-          .map(([key, count]) => {
-            const [policyType, verdict] = key.split('|')
-            return [policyType, verdict, String(count)]
-          })
+        grouped.map((g) => [g.policy_type, g.verdict, String(g.count)])
       )
     } catch (err) {
       handleError(err)
@@ -207,7 +219,7 @@ const policySet = defineCommand({
     },
     file: {
       type: 'string',
-      description: 'Path to a JSON or YAML policy file',
+      description: 'Path to a JSON policy file',
       default: '',
     },
     'policy-type': {

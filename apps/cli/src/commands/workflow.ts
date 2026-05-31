@@ -283,7 +283,7 @@ const create = defineCommand({
 
       consola.success('Workflow created.')
       consola.info('ID:   %s', result['id'])
-      consola.info('Slug: :%s', result['slug'])
+      consola.info('Slug: %s', result['slug'])
       consola.info('Name: %s', result['title'])
       if (args.template) consola.info('Template: %s', args.template)
       consola.info('')

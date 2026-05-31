@@ -279,13 +279,19 @@ const byokCheckRotation = defineCommand({
       printTable(
         ['provider', 'hint', 'last_rotated', 'days_overdue'],
         overdue.map((k) => {
-          const rotatedAt = k.last_rotated_at ? new Date(k.last_rotated_at).getTime() : 0
-          const daysOverdue = Math.floor((now - rotatedAt) / 86_400_000) - 90
+          // A key that was never rotated has no meaningful "days overdue"
+          // (computing against epoch 0 yields ~20k days of nonsense), so
+          // surface it as "n/a" instead.
+          let daysOverdue = 'n/a'
+          if (k.last_rotated_at) {
+            const elapsed = Math.floor((now - new Date(k.last_rotated_at).getTime()) / 86_400_000)
+            daysOverdue = String(Math.max(0, elapsed - 90))
+          }
           return [
             k.provider,
             k.key_hint ? `···· ${k.key_hint}` : '????',
             k.last_rotated_at ? new Date(k.last_rotated_at).toLocaleDateString() : 'never',
-            String(Math.max(0, daysOverdue)),
+            daysOverdue,
           ]
         })
       )

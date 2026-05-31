@@ -89,20 +89,22 @@ const register = defineCommand({
     }
 
     try {
-      const id = await callRpc<string>(
+      const result = await callRpc<{ id?: string } | string>(
         'fn_register_tool',
         {
           p_key: fm.id,
           p_name: fm.name,
           p_description: parsed.document.body ?? '',
-          p_permission_level: fm.permission_level ?? 'read',
-          p_risk_level: fm.risk_level ?? 'safe',
-          p_cost_level: fm.cost_level ?? 'low',
-          p_schema: fm.input_schema ?? {},
+          p_category: fm.category ?? 'general',
+          p_schema_input: fm.input_schema ?? {},
+          p_schema_output: fm.output_schema ?? {},
+          p_requires_approval: Array.isArray(fm.approval_rules) && fm.approval_rules.length > 0,
+          p_is_dangerous: fm.risk_level === 'destructive',
         },
         { requireAuth: true },
       )
-      if (args.json) return printJson({ id })
+      const id = typeof result === 'string' ? result : (result?.id ?? '')
+      if (args.json) return printJson(typeof result === 'string' ? { id } : result)
       consola.success('Tool registered: %s', id)
     } catch (err) {
       handleError(err)

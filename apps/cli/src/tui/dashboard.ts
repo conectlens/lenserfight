@@ -6,7 +6,19 @@ import { getAgentWorkspaceContext } from '../lib/agent-workspace-context'
 import { formatAgentWorkspaceBanner } from '../commands/agents'
 import { getAgentWorkspaceOpsLines } from '../commands/agents/workspace-ops'
 import { truncate } from '../utils/output'
-import { A, sym } from '../utils/ansi'
+import { A, sym, isPlainText, stripAnsi } from '../utils/ansi'
+
+// Single sink for full-screen frames. Honors NO_COLOR / dumb-terminal / non-TTY
+// by stripping ANSI so the dashboard degrades to readable plain text. The
+// cursor-home + clear-screen control codes are only meaningful on a real TTY,
+// so they are dropped in plain-text mode too.
+function writeFrame(body: string): void {
+  if (isPlainText()) {
+    process.stdout.write(stripAnsi(body) + '\n')
+    return
+  }
+  process.stdout.write(A.clearScreen + A.homeCursor + body + '\n')
+}
 
 // Pure helpers — exported for unit tests without standing up a TTY.
 
@@ -310,9 +322,27 @@ export const COMMAND_CATALOG: Array<{ cmd: string; desc: string }> = [
 export function getSuggestions(input: string, max = 5): Array<{ cmd: string; desc: string }> {
   if (!input.trim()) return []
   const lower = input.toLowerCase()
-  return COMMAND_CATALOG
-    .filter((e) => e.cmd.startsWith(lower) || e.cmd.includes(lower))
-    .slice(0, max)
+  // Rank prefix matches ahead of mid-string matches so that typing e.g. "run"
+  // surfaces "run submit" before "battle run". Catalog order is preserved
+  // within each rank tier.
+  const prefix: typeof COMMAND_CATALOG = []
+  const substring: typeof COMMAND_CATALOG = []
+  for (const e of COMMAND_CATALOG) {
+    if (e.cmd.startsWith(lower)) prefix.push(e)
+    else if (e.cmd.includes(lower)) substring.push(e)
+  }
+  return [...prefix, ...substring].slice(0, max)
+}
+
+/**
+ * Compute the next highlighted suggestion index when cycling with Tab / arrows.
+ * Wraps around in both directions. Returns -1 (no selection) when the list is
+ * empty so callers can keep the "free-typed input" behavior.
+ */
+export function cycleSuggestion(current: number, count: number, dir: 1 | -1): number {
+  if (count <= 0) return -1
+  if (dir === 1) return (current + 1) % count
+  return current <= 0 ? count - 1 : current - 1
 }
 
 // ─── Subcommand validation ────────────────────────────────────────────────────
@@ -533,7 +563,7 @@ function paintMainScreen(): void {
 
   paintCommandBar(buf, cmdState, 'lf')
 
-  process.stdout.write(A.clearScreen + A.homeCursor + buf.join('\n') + '\n')
+  writeFrame(buf.join('\n'))
 }
 
 async function renderFrame(): Promise<void> {
@@ -789,7 +819,7 @@ function paintSubScreen(def: SubDashboardDef, subCmd: CmdBarState): void {
 
   paintCommandBar(buf, subCmd, `lf ${def.title.toLowerCase()}`)
 
-  process.stdout.write(A.clearScreen + A.homeCursor + buf.join('\n') + '\n')
+  writeFrame(buf.join('\n'))
 }
 
 // ─── Sub-dashboard interaction loop ──────────────────────────────────────────
@@ -818,6 +848,15 @@ async function runSubDashboard(def: SubDashboardDef): Promise<void> {
           process.stdin.off('data', onData)
           resolve()
         }
+        return
+      }
+      // Arrow / shift-tab suggestion navigation in command mode (honors the
+      // advertised "Tab/↑↓ to pick" hint). Must precede the escape swallow.
+      if (subCmd.active && (key === '\x1b[A' || key === '\x1b[B' || key === '\x1b[Z')) {
+        const count = getSuggestions(subCmd.input).length
+        const dir: 1 | -1 = key === '\x1b[B' ? 1 : -1
+        subCmd = { ...subCmd, selectedSuggestion: cycleSuggestion(subCmd.selectedSuggestion, count, dir) }
+        paintSubScreen(def, subCmd)
         return
       }
       if (key.startsWith('\x1b')) return
@@ -856,8 +895,7 @@ async function runSubDashboard(def: SubDashboardDef): Promise<void> {
         if (key === '\t') {
           const suggestions = getSuggestions(subCmd.input)
           if (suggestions.length > 0) {
-            const next = (subCmd.selectedSuggestion + 1) % suggestions.length
-            subCmd = { ...subCmd, selectedSuggestion: next }
+            subCmd = { ...subCmd, selectedSuggestion: cycleSuggestion(subCmd.selectedSuggestion, suggestions.length, 1) }
             paintSubScreen(def, subCmd)
           }
           return
@@ -1034,6 +1072,16 @@ export async function runDashboard(): Promise<void> {
       }
       return
     }
+    // Arrow / shift-tab suggestion navigation in command mode (honors the
+    // advertised "Tab/↑↓ to pick" hint). Must be handled before the generic
+    // escape-sequence swallow below.
+    if (cmdState.active && (key === '\x1b[A' || key === '\x1b[B' || key === '\x1b[Z')) {
+      const count = getSuggestions(cmdState.input).length
+      const dir: 1 | -1 = key === '\x1b[B' ? 1 : -1
+      cmdState = { ...cmdState, selectedSuggestion: cycleSuggestion(cmdState.selectedSuggestion, count, dir) }
+      paintMainScreen()
+      return
+    }
     // Swallow unrecognised multi-byte escape sequences (arrow keys, F-keys, etc.)
     if (key.startsWith('\x1b')) return
 
@@ -1048,8 +1096,7 @@ export async function runDashboard(): Promise<void> {
       if (key === '\t') {
         const suggestions = getSuggestions(cmdState.input)
         if (suggestions.length > 0) {
-          const next = (cmdState.selectedSuggestion + 1) % suggestions.length
-          cmdState = { ...cmdState, selectedSuggestion: next }
+          cmdState = { ...cmdState, selectedSuggestion: cycleSuggestion(cmdState.selectedSuggestion, suggestions.length, 1) }
           paintMainScreen()
         }
         return

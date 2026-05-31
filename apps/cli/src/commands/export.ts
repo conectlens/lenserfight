@@ -2,6 +2,7 @@ import { defineCommand } from 'citty'
 import consola from 'consola'
 
 import { canonicalAutomationKind, exportAutomationObject, exportAutomationTemplate, isAutomationObjectKind } from '../utils/automation-objects'
+import { handleError } from '../utils/api'
 
 export default defineCommand({
   meta: {
@@ -56,8 +57,7 @@ export default defineCommand({
       consola.info('Source: %s', source)
       consola.info('Target: %s', target)
     } catch (error) {
-      consola.error((error as Error).message)
-      process.exitCode = 1
+      handleError(error)
     }
   },
 })

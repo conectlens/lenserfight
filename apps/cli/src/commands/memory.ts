@@ -136,12 +136,13 @@ const listEntries = defineCommand({
         return
       }
 
+      const limit = Math.max(1, Math.min(500, parseInt(args.limit, 10) || 20))
       const entries = await callRpc<MemoryEntryRow[]>(
         'fn_read_memory_entries',
         {
           p_profile_id: args.profile,
           p_scope: args.scope || null,
-          p_limit: parseInt(args.limit, 10),
+          p_limit: limit,
           p_team_run_id: null,
         },
         { requireAuth: true },
@@ -182,6 +183,8 @@ const writeEntry = defineCommand({
   },
   async run({ args }) {
     try {
+      const parsedConfidence = parseFloat(args.confidence)
+      const confidence = Math.max(0, Math.min(1, Number.isNaN(parsedConfidence) ? 0.7 : parsedConfidence))
       const id = await callRpc<string>(
         'fn_write_memory_entry',
         {
@@ -189,7 +192,7 @@ const writeEntry = defineCommand({
           p_scope: args.scope,
           p_source: args.source,
           p_content: args.content,
-          p_confidence: parseFloat(args.confidence),
+          p_confidence: confidence,
           p_expires_at: null,
           p_team_run_id: null,
           p_metadata: {},
@@ -373,7 +376,7 @@ const createProfile = defineCommand({
           p_name: args.name,
           p_scope_type: args.scope,
           p_isolation_mode: args.isolation,
-          p_retention_days: parseInt(args['retention-days'], 10),
+          p_retention_days: parseInt(args['retention-days'], 10) || 90,
         },
         { requireAuth: true },
       )
