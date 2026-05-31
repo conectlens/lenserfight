@@ -1,3 +1,17 @@
+## 0.14.0 (2026-05-31)
+
+### 🚀 Features
+
+- add workflow slug support for user-friendly referencing in CLI and database functions ([1b8cb7bd7](https://github.com/conectlens/lenserfight/commit/1b8cb7bd7))
+
+### 🩹 Fixes
+
+- improve package manager detection for Homebrew-managed npm and default to npm-global as a fallback ([ecac3edda](https://github.com/conectlens/lenserfight/commit/ecac3edda))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 0.13.0 (2026-05-31)
 
 ### 🚀 Features
