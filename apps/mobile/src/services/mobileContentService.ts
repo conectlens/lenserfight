@@ -127,6 +127,33 @@ export const mobileContentService = {
     }
   },
 
+  async getBattlesFeed(status?: string, limit = 20): Promise<BattleFeedItemRecord[]> {
+    try {
+      return await battlesService.getBattlesFeedItems({ status, limit })
+    } catch (error) {
+      throw publicMessage(error)
+    }
+  },
+
+  async createBattle(
+    title: string,
+    taskPrompt: string,
+    battleType: 'ai_vs_ai' | 'human_vs_human_open_votes' | 'human_vs_ai',
+    rules?: string,
+  ): Promise<string | null> {
+    try {
+      const record = await battlesService.createBattle({
+        title,
+        task_prompt: taskPrompt,
+        battle_type: battleType,
+        voter_eligibility: 'open',
+      })
+      return record.id ?? null
+    } catch (error) {
+      throw publicMessage(error)
+    }
+  },
+
   async getLenserLenses(handle: string, viewerId?: string): Promise<LensViewModel[]> {
     try {
       return await lensesService.getLenserLenses(handle, 0, 10, viewerId)

@@ -31,12 +31,12 @@ export function startBattleAutoPromoteWorker(): () => void {
   let timer: ReturnType<typeof setInterval> | undefined
 
   async function tick() {
+    const _cycleStart = performance.now()
     try {
       const n = await runBattleAutoPromoteCycle()
-      if (n > 0) {
-        nodeLogger.info('battle-auto-promote: promoted this cycle', { count: n })
-      }
+      nodeLogger.info({ workerId: 'battle-auto-promote-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: n, errors: 0 }, 'cycle')
     } catch (err) {
+      nodeLogger.error({ workerId: 'battle-auto-promote-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: 0, errors: 1 }, 'cycle')
       nodeLogger.error('battle-auto-promote: cycle error', {
         message: err instanceof Error ? err.message : String(err),
       })

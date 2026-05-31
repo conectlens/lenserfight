@@ -31,12 +31,12 @@ export function startBattleFinalizeWorker(): () => void {
   let timer: ReturnType<typeof setInterval> | undefined
 
   async function tick() {
+    const _cycleStart = performance.now()
     try {
       const n = await runBattleFinalizeCycle()
-      if (n > 0) {
-        nodeLogger.info('battle-finalize: finalized this cycle', { count: n })
-      }
+      nodeLogger.info({ workerId: 'battle-finalize-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: n, errors: 0 }, 'cycle')
     } catch (err) {
+      nodeLogger.error({ workerId: 'battle-finalize-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: 0, errors: 1 }, 'cycle')
       nodeLogger.error('battle-finalize: cycle error', {
         message: err instanceof Error ? err.message : String(err),
       })

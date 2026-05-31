@@ -1,3 +1,4 @@
+import http from 'node:http'
 import { callProvider } from '@lenserfight/providers'
 import { byokKeyResolver } from '@lenserfight/providers'
 import { nodeLogger } from '@lenserfight/utils/logger'
@@ -11,6 +12,34 @@ import { startBattleAutoPromoteWorker } from './battle-auto-promote-worker'
 import { startBattleFinalizeWorker } from './battle-finalize-worker'
 import { startWebhookDrainWorker } from './webhook-drain-worker'
 import { startWorkflowEventDispatcher } from './workflow-event-dispatcher'
+import { pollAsyncMediaBatch } from './async-media-poll-worker'
+
+let _workerReady = false
+
+const HEALTH_PORT = parseInt(process.env['WORKER_HEALTH_PORT'] ?? '9090', 10)
+const HEALTH_TOKEN = process.env['WORKER_HEALTH_TOKEN']
+const _healthServer = http.createServer(async (req, res) => {
+  if (HEALTH_TOKEN && req.headers.authorization !== 'Bearer ' + HEALTH_TOKEN) {
+    res.writeHead(401, { 'Content-Type': 'application/json' })
+    return res.end(JSON.stringify({ error: 'unauthorized' }))
+  }
+  if (req.url === '/ready') {
+    res.writeHead(_workerReady ? 200 : 503, { 'Content-Type': 'application/json' })
+    return res.end(JSON.stringify({ ready: _workerReady }))
+  }
+  if (req.url === '/health') {
+    try {
+      const { data } = await createServiceSupabaseClient().rpc('fn_admin_health')
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      return res.end(JSON.stringify({ status: 'ok', health: data }))
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      return res.end(JSON.stringify({ status: 'error', error: String(e) }))
+    }
+  }
+  res.writeHead(404); res.end()
+})
+_healthServer.listen(HEALTH_PORT, () => nodeLogger.info({ port: HEALTH_PORT }, 'health server ready'))
 
 const WORKER_ID = process.env['BATTLE_WORKER_ID'] ?? `worker-${process.pid}`
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env['WORKER_HEARTBEAT_INTERVAL_MS'] ?? '10000', 10)
@@ -199,12 +228,34 @@ async function runLoop(): Promise<void> {
     stopWorkflowDispatch = startWorkflowEventDispatcher()
   }
 
+  // CE: Start async media poll worker
+  const asyncMediaPollEnabled = process.env['PLATFORM_API_ASYNC_MEDIA_POLL_ENABLED'] !== 'false'
+  let stopAsyncMediaPollWorker: (() => void) | undefined
+  if (asyncMediaPollEnabled && !once) {
+    const ASYNC_MEDIA_POLL_INTERVAL_MS = parseInt(process.env['ASYNC_MEDIA_POLL_INTERVAL_MS'] ?? '15000', 10)
+    async function asyncMediaPollTick() {
+      try {
+        await pollAsyncMediaBatch()
+      } catch (err) {
+        nodeLogger.error('async-media-poll-worker: cycle error', {
+          message: err instanceof Error ? err.message : String(err),
+        })
+      }
+    }
+    asyncMediaPollTick().catch(() => undefined)
+    const asyncMediaPollTimer = setInterval(() => { asyncMediaPollTick().catch(() => undefined) }, ASYNC_MEDIA_POLL_INTERVAL_MS)
+    nodeLogger.info('async-media-poll-worker: started', { intervalMs: ASYNC_MEDIA_POLL_INTERVAL_MS })
+    stopAsyncMediaPollWorker = () => { clearInterval(asyncMediaPollTimer) }
+  }
+
   // Start heartbeat timer (independent of main loop)
   let heartbeatTimer: ReturnType<typeof setInterval> | undefined
   if (!once) {
     heartbeatTimer = setInterval(emitHeartbeat, HEARTBEAT_INTERVAL_MS)
     await emitHeartbeat()
   }
+
+  _workerReady = true
 
   do {
     const results = await Promise.allSettled([
@@ -232,12 +283,15 @@ async function runLoop(): Promise<void> {
     }
   } while (true)
 
+  _workerReady = false
+  _healthServer.close()
   if (heartbeatTimer) clearInterval(heartbeatTimer)
   if (stopVoteAnomalyWorker) stopVoteAnomalyWorker()
   if (stopAutoPromoteWorker) stopAutoPromoteWorker()
   if (stopFinalizeWorker) stopFinalizeWorker()
   if (stopWebhookDrain) stopWebhookDrain()
   if (stopWorkflowDispatch) stopWorkflowDispatch()
+  if (stopAsyncMediaPollWorker) stopAsyncMediaPollWorker()
 }
 
 runLoop().catch((error) => {
