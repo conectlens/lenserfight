@@ -801,18 +801,29 @@ async function runSubDashboard(def: SubDashboardDef): Promise<void> {
   return new Promise((resolve) => {
     try { process.stdin.setRawMode(true) } catch { /* ignore */ }
 
+    let subProcessing = false
+
     const onData = async (data: Buffer | string) => {
       const key = data.toString()
 
       if (key === '\x03') { process.exit(130) }
+      if (subProcessing) return
+
+      // Bare \x1b = Esc key. Multi-byte \x1b sequences = arrow/function keys, swallow.
+      if (key === '\x1b') {
+        if (subCmd.active) {
+          subCmd = { active: false, input: '', error: null, selectedSuggestion: -1 }
+          paintSubScreen(def, subCmd)
+        } else {
+          process.stdin.off('data', onData)
+          resolve()
+        }
+        return
+      }
+      if (key.startsWith('\x1b')) return
 
       // ── Command input mode ─────────────────────────────────────────────────
       if (subCmd.active) {
-        if (key === '\x1b') {
-          subCmd = { active: false, input: '', error: null, selectedSuggestion: -1 }
-          paintSubScreen(def, subCmd)
-          return
-        }
         if (key === '\r' || key === '\n') {
           const suggestions = getSuggestions(subCmd.input)
           let raw = subCmd.input.trim()
@@ -832,32 +843,21 @@ async function runSubDashboard(def: SubDashboardDef): Promise<void> {
             return
           }
           subCmd = { active: false, input: '', error: null, selectedSuggestion: -1 }
+          subProcessing = true
           process.stdin.off('data', onData)
           try { process.stdin.setRawMode(false) } catch { /* ignore */ }
           await runChild(argv)
           try { process.stdin.setRawMode(true) } catch { /* ignore */ }
+          subProcessing = false
           paintSubScreen(def, subCmd)
           process.stdin.on('data', onData)
           return
         }
-        // Tab — cycle forward
         if (key === '\t') {
           const suggestions = getSuggestions(subCmd.input)
           if (suggestions.length > 0) {
             const next = (subCmd.selectedSuggestion + 1) % suggestions.length
             subCmd = { ...subCmd, selectedSuggestion: next }
-            paintSubScreen(def, subCmd)
-          }
-          return
-        }
-        // Shift+Tab — cycle backwards
-        if (key === '\x1b[Z') {
-          const suggestions = getSuggestions(subCmd.input)
-          if (suggestions.length > 0) {
-            const prev = subCmd.selectedSuggestion <= 0
-              ? suggestions.length - 1
-              : subCmd.selectedSuggestion - 1
-            subCmd = { ...subCmd, selectedSuggestion: prev }
             paintSubScreen(def, subCmd)
           }
           return
@@ -888,18 +888,20 @@ async function runSubDashboard(def: SubDashboardDef): Promise<void> {
       const action = def.commands.find((c) => c.key === key)
       if (action) {
         if (action.prompt !== undefined) {
-        subCmd = {
-          active: true,
-          input: applyWorkspacePrompt(action.prompt, def.workspace),
-          error: null,
-          selectedSuggestion: -1,
-        }
-        paintSubScreen(def, subCmd)
+          subCmd = {
+            active: true,
+            input: applyWorkspacePrompt(action.prompt, def.workspace),
+            error: null,
+            selectedSuggestion: -1,
+          }
+          paintSubScreen(def, subCmd)
         } else if (action.cmd) {
+          subProcessing = true
           process.stdin.off('data', onData)
           try { process.stdin.setRawMode(false) } catch { /* ignore */ }
           await runChild(action.cmd)
           try { process.stdin.setRawMode(true) } catch { /* ignore */ }
+          subProcessing = false
           paintSubScreen(def, subCmd)
           process.stdin.on('data', onData)
         }
@@ -1013,21 +1015,34 @@ export async function runDashboard(): Promise<void> {
     void renderFrame()
   }
 
+  let processing = false
   process.stdin.on('data', async (data) => {
     const key = data.toString()
 
     if (key === '\x03') { exit(130); return }
-    if (inChild) return
+    if (inChild || processing) return
+
+    // Ignore bare escape prefix that's part of a multi-byte arrow/function key
+    // sequence (e.g. \x1b arrives alone before [A). Only treat \x1b as Esc when
+    // it arrives as a standalone single byte with no follow-up characters.
+    if (key === '\x1b') {
+      if (cmdState.active) {
+        cmdState = { active: false, input: '', error: null, selectedSuggestion: -1 }
+        paintMainScreen()
+      } else {
+        exit(0)
+      }
+      return
+    }
+    // Swallow unrecognised multi-byte escape sequences (arrow keys, F-keys, etc.)
+    if (key.startsWith('\x1b')) return
 
     // ── Command input mode ───────────────────────────────────────────────────
     if (cmdState.active) {
-      if (key === '\x1b') {
-        cmdState = { active: false, input: '', error: null, selectedSuggestion: -1 }
-        paintMainScreen()
-        return
-      }
       if (key === '\r' || key === '\n') {
+        processing = true
         await submitCommand()
+        processing = false
         return
       }
       if (key === '\t') {
@@ -1035,17 +1050,6 @@ export async function runDashboard(): Promise<void> {
         if (suggestions.length > 0) {
           const next = (cmdState.selectedSuggestion + 1) % suggestions.length
           cmdState = { ...cmdState, selectedSuggestion: next }
-          paintMainScreen()
-        }
-        return
-      }
-      if (key === '\x1b[Z') {
-        const suggestions = getSuggestions(cmdState.input)
-        if (suggestions.length > 0) {
-          const prev = cmdState.selectedSuggestion <= 0
-            ? suggestions.length - 1
-            : cmdState.selectedSuggestion - 1
-          cmdState = { ...cmdState, selectedSuggestion: prev }
           paintMainScreen()
         }
         return
@@ -1068,16 +1072,18 @@ export async function runDashboard(): Promise<void> {
       paintMainScreen()
       return
     }
-    if (key === 'q' || key === 'Q' || key === '\x1b') { exit(0); return }
+    if (key === 'q' || key === 'Q') { exit(0); return }
 
     const subDef = SUB_DASHBOARDS[key.toLowerCase()]
     if (subDef) {
+      processing = true
       inChild = true
       if (timer) clearInterval(timer)
       try { process.stdin.setRawMode(false) } catch { /* ignore */ }
       await runSubDashboard(subDef)
       try { process.stdin.setRawMode(true) } catch { /* ignore */ }
       inChild = false
+      processing = false
       timer = setInterval(() => { void renderFrame() }, 2000)
       void renderFrame()
     }
