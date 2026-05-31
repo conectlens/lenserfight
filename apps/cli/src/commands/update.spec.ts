@@ -25,9 +25,10 @@ jest.mock('../lib/version', () => ({
 
 import { spawnSync } from 'node:child_process'
 import consola from 'consola'
-import { checkForUpdate, invalidateUpdateCache } from '@lenserfight/utils/update-check'
+import { checkForUpdate, detectChannel, invalidateUpdateCache } from '@lenserfight/utils/update-check'
 
 const mockCheckForUpdate = checkForUpdate as jest.MockedFunction<typeof checkForUpdate>
+const mockDetectChannel = detectChannel as jest.MockedFunction<typeof detectChannel>
 const mockSpawnSync = spawnSync as jest.MockedFunction<typeof spawnSync>
 const mockInvalidateUpdateCache = invalidateUpdateCache as jest.MockedFunction<
   typeof invalidateUpdateCache
@@ -140,6 +141,71 @@ describe('update', () => {
     expect(consolaError).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
     writeSpy.mockRestore()
+  })
+
+  it('prints instructions (exit 0) when the install method is undetectable', async () => {
+    mockCheckForUpdate.mockResolvedValue({
+      current: '0.2.0',
+      latest: '0.3.0',
+      hasUpdate: true,
+    } as never)
+    // Realistic globally-installed path: contains the package name, not /npm/.
+    process.argv[1] = '/usr/local/lib/node_modules/@lenserfight/cli/dist/main.mjs'
+    const writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
+
+    await updateCmd.run?.({
+      args: { check: false, instructions: false, json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockSpawnSync).not.toHaveBeenCalled()
+    expect(consolaError).not.toHaveBeenCalled()
+    expect(process.exitCode).toBe(0)
+    expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining('npm install -g'))
+    writeSpy.mockRestore()
+  })
+
+  it('installs the exact version for a valid pre-release on a non-stable channel', async () => {
+    mockDetectChannel.mockReturnValueOnce('beta')
+    mockCheckForUpdate.mockResolvedValue({
+      current: '0.2.0',
+      latest: '0.3.0-beta.1',
+      hasUpdate: true,
+    } as never)
+
+    await updateCmd.run?.({
+      args: { check: false, instructions: false, json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockSpawnSync).toHaveBeenCalledWith(
+      'npm',
+      ['install', '-g', '@lenserfight/cli@0.3.0-beta.1'],
+      expect.objectContaining({ stdio: 'inherit' }),
+    )
+  })
+
+  it('falls back to the channel dist-tag when the registry version is malformed', async () => {
+    mockDetectChannel.mockReturnValueOnce('beta')
+    mockCheckForUpdate.mockResolvedValue({
+      current: '0.2.0',
+      latest: 'latest && rm -rf ~',
+      hasUpdate: true,
+    } as never)
+
+    await updateCmd.run?.({
+      args: { check: false, instructions: false, json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockSpawnSync).toHaveBeenCalledWith(
+      'npm',
+      ['install', '-g', '@lenserfight/cli@beta'],
+      expect.objectContaining({ stdio: 'inherit' }),
+    )
   })
 
   it('outputs JSON when --json flag is set', async () => {
