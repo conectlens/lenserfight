@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { callRest, callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '../utils/api'
 import { printJson, printTable, truncate } from '../utils/output'
 
 interface TeamRunRow {
@@ -83,22 +83,14 @@ const approvalList = defineCommand({
       return
     }
     try {
-      const rows = await callRest<TeamRunRow[]>(
-        'agents',
-        'team_runs',
-        'GET',
-        undefined,
+      const rows = await callRpc<TeamRunRow[]>(
+        'fn_list_approval_requests',
         {
-          requireAuth: true,
-          query: {
-            select:
-              'id,ai_lenser_id,team_id,workflow_id,workflow_run_id,workflow_assignment_id,status,approval_status,metadata,created_at',
-            ai_lenser_id: `eq.${args['ai-lenser']}`,
-            approval_status: `eq.${args.status}`,
-            order: 'created_at.desc',
-            limit: args.limit,
-          },
-        }
+          p_ai_lenser_id: args['ai-lenser'],
+          p_approval_status: args.status,
+          p_limit: parseInt(args.limit, 10),
+        },
+        { requireAuth: true }
       )
 
       if (!rows || rows.length === 0) {
@@ -113,14 +105,14 @@ const approvalList = defineCommand({
 
       printTable(
         ['Request', 'Workflow', 'Team', 'Run Status', 'Gate', 'Created'],
-        rows.map((r) => [
-          r.id.slice(0, 8) + '…',
-          r.workflow_id ? r.workflow_id.slice(0, 8) + '…' : '—',
-          r.team_id ? r.team_id.slice(0, 8) + '…' : '—',
-          r.status,
-          truncate(String(r.metadata?.gate_kind ?? '—'), 18),
-          new Date(r.created_at).toLocaleString(),
-        ])
+        rows.map((r) => {
+          const row = r as unknown as Record<string, unknown>
+          const rid = String(row['request_id'] ?? row['id'] ?? '').slice(0, 8) + '…'
+          const wid = row['workflow_id'] ? String(row['workflow_id']).slice(0, 8) + '…' : '—'
+          const tid = row['team_id'] ? String(row['team_id']).slice(0, 8) + '…' : '—'
+          const gate = truncate(String((row['metadata'] as Record<string,unknown>)?.['gate_kind'] ?? '—'), 18)
+          return [rid, wid, tid, String(row['status'] ?? '—'), gate, new Date(String(row['created_at'])).toLocaleString()]
+        })
       )
     } catch (err) {
       handleError(err)
@@ -144,17 +136,11 @@ const approvalInspect = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<TeamRunRow[]>(
-        'agents',
-        'team_runs',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.request}`, select: '*' },
-        }
+      const run = await callRpc<Record<string, unknown>>(
+        'fn_get_approval_request',
+        { p_request_id: args.request },
+        { requireAuth: true }
       )
-      const run = rows?.[0]
       if (!run) {
         consola.error('Approval request %s not found.', args.request)
         process.exitCode = 1
@@ -282,20 +268,24 @@ const approvalAudit = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<AgentRunEventRow[]>(
-        'agents',
-        'agent_run_events',
-        'GET',
-        undefined,
+      const req = await callRpc<Record<string, unknown>>(
+        'fn_get_approval_request',
+        { p_request_id: args.request },
+        { requireAuth: true }
+      )
+      if (!req) {
+        consola.error('Approval request %s not found.', args.request)
+        process.exitCode = 1
+        return
+      }
+      const rows = await callRpc<AgentRunEventRow[]>(
+        'fn_agent_run_events',
         {
-          requireAuth: true,
-          query: {
-            select: 'id,team_run_id,agent_run_step_id,event_type,payload,occurred_at',
-            team_run_id: `eq.${args.request}`,
-            order: 'occurred_at.desc',
-            limit: args.limit,
-          },
-        }
+          p_ai_lenser_id: req['ai_lenser_id'],
+          p_run_id: args.request,
+          p_limit: parseInt(args.limit, 10),
+        },
+        { requireAuth: true }
       )
 
       if (!rows || rows.length === 0) {
@@ -431,19 +421,13 @@ const approvalListStanding = defineCommand({
   },
   async run({ args }) {
     try {
-      const query: Record<string, string | number | boolean | undefined> = {
-        revoked_at: 'is.null',
-        select: 'id,workflow_id,gate_kind,granted_at,expires_at,revoked_at,granted_by',
-        order: 'granted_at.desc',
-      }
-      if (args.workflow) query.workflow_id = `eq.${args.workflow}`
-
-      const rows = await callRest<StandingApprovalRow[]>(
-        'agents',
-        'standing_approvals',
-        'GET',
-        undefined,
-        { requireAuth: true, query }
+      const rows = await callRpc<StandingApprovalRow[]>(
+        'fn_list_standing_approvals',
+        {
+          p_workflow_id: args.workflow || null,
+          p_limit: 100,
+        },
+        { requireAuth: true }
       )
 
       if (!rows || rows.length === 0) {
@@ -557,26 +541,9 @@ const approvalBulkApprove = defineCommand({
       if (since) filters['since'] = since
       if (args.workflow) filters['workflow_id'] = args.workflow
 
-      // Best-effort preview count via PostgREST. Falls back to "?" if unavailable.
-      let previewCount = '?'
-      try {
-        const query: Record<string, string> = {
-          select: 'id',
-          approval_status: `eq.${(filters['status'] as string) || 'pending'}`,
-        }
-        if (filters['workflow_id']) query['workflow_id'] = `eq.${filters['workflow_id']}`
-        if (since) query['created_at'] = `gte.${since}`
-        const rows = await callRest<TeamRunRow[]>(
-          'agents',
-          'team_runs',
-          'GET',
-          undefined,
-          { requireAuth: true, query },
-        )
-        previewCount = String((rows ?? []).length)
-      } catch {
-        /* preview is best-effort — never fails the bulk op */
-      }
+      // Preview count is not available without a dedicated RPC; show "?" until
+      // fn_count_pending_approvals is added to schema.sql.
+      const previewCount = '?'
 
       if (!args.force) {
         const ok = await promptYesNo(

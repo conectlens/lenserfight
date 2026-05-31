@@ -86,7 +86,7 @@ describe('approval revoke-standing', () => {
 
 describe('approval list-standing', () => {
   it('filters by workflow when --workflow is supplied', async () => {
-    mockCallRest.mockResolvedValueOnce([
+    mockCallRpc.mockResolvedValueOnce([
       {
         id: 'aaaa-bbbb-cccc-dddd-eeee',
         workflow_id: 'wf-1',
@@ -105,24 +105,16 @@ describe('approval list-standing', () => {
       rawArgs: [],
     })
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'agents',
-      'standing_approvals',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        requireAuth: true,
-        query: expect.objectContaining({
-          revoked_at: 'is.null',
-          workflow_id: 'eq.wf-1',
-        }),
-      })
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_list_standing_approvals',
+      expect.objectContaining({ p_workflow_id: 'wf-1' }),
+      { requireAuth: true },
     )
     expect(mockPrintTable).toHaveBeenCalled()
   })
 
-  it('omits the workflow_id filter when --workflow is empty', async () => {
-    mockCallRest.mockResolvedValueOnce([] as unknown as never)
+  it('passes null workflow_id when --workflow is empty', async () => {
+    mockCallRpc.mockResolvedValueOnce([] as unknown as never)
     const cmd = await getSub('list-standing')
 
     await cmd.run?.({
@@ -131,10 +123,11 @@ describe('approval list-standing', () => {
       rawArgs: [],
     })
 
-    const call = mockCallRest.mock.calls[0]
-    const opts = call[4] as { query: Record<string, unknown> }
-    expect(opts.query.workflow_id).toBeUndefined()
-    expect(opts.query.revoked_at).toBe('is.null')
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_list_standing_approvals',
+      expect.objectContaining({ p_workflow_id: null }),
+      { requireAuth: true },
+    )
   })
 })
 

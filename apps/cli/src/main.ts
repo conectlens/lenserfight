@@ -71,7 +71,7 @@ const main = defineCommand({
 
     if (isDebug) consola.level = 4
     if (effectiveMode === 'local') {
-      process.stderr.write('Supabase local mode active (--local / lf use local)\n')
+      process.stderr.write('Supabase local mode active (--local / lf use local). Run "lf use cloud" to switch to cloud.\n')
     }
 
     await defaultRun(ctx)

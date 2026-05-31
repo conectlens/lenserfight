@@ -3,7 +3,7 @@
  * Mirrors `executionRepository` / `workflowsRepository` RPC contracts.
  */
 import type { CrossAgentFeedItem, LensExecutionHistoryItem } from '@lenserfight/types'
-import { callRest, callRpc } from '../../utils/api'
+import { callRpc } from '../../utils/api'
 import { getHumanActivityFeed } from './agent-workspace'
 
 export type { CrossAgentFeedItem, LensExecutionHistoryItem }
@@ -78,25 +78,31 @@ export async function listWorkflowRuns(
   return Array.isArray(rows) ? rows : []
 }
 
-/** Recent workflow runs across owned workflows (PostgREST on lenses.workflow_runs). */
+/** Recent workflow runs. With workflowId uses fn_list_workflow_runs;
+ *  without it uses fn_list_recent_workflow_runs (cross-workflow, current user).
+ */
 export async function listRecentWorkflowRuns(
   options: ListRecentWorkflowRunsOptions = {},
 ): Promise<WorkflowRunListRow[]> {
   const limit = options.limit ?? 25
-  const query: Record<string, string | number | undefined> = {
-    select:
-      'id,workflow_id,status,active_node_id,created_at,started_at,completed_at,parent_run_id',
-    order: 'created_at.desc',
-    limit,
+  let rows: WorkflowRunListRow[]
+  if (options.workflowId) {
+    const r = await callRpc<WorkflowRunListRow[]>(
+      'fn_list_workflow_runs',
+      { p_workflow_id: options.workflowId, p_limit: limit, p_offset: 0 },
+      { requireAuth: true },
+    )
+    rows = Array.isArray(r) ? r : []
+  } else {
+    const r = await callRpc<WorkflowRunListRow[]>(
+      'fn_list_recent_workflow_runs',
+      { p_limit: limit, p_offset: 0 },
+      { requireAuth: true },
+    )
+    rows = Array.isArray(r) ? r : []
   }
-  if (options.workflowId) query.workflow_id = `eq.${options.workflowId}`
-  if (options.status) query.status = `eq.${options.status}`
-
-  const rows = await callRest<WorkflowRunListRow[]>('lenses', 'workflow_runs', 'GET', undefined, {
-    requireAuth: true,
-    query,
-  })
-  return rows ?? []
+  if (!options.status) return rows
+  return rows.filter((r) => r.status === options.status)
 }
 
 /** Platform execution health snapshot (`fn_get_execution_status`). */

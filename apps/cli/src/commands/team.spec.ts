@@ -23,10 +23,10 @@ jest.mock('../utils/output', () => ({
 
 import consola from 'consola'
 
-import { callRest, handleError } from '../utils/api'
+import { callRpc, handleError } from '../utils/api'
 import { printJson } from '../utils/output'
 
-const mockCallRest = callRest as jest.MockedFunction<typeof callRest>
+const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
 const mockHandleError = handleError as jest.MockedFunction<typeof handleError>
 const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
 const consolaLog = (consola as unknown as { log: jest.Mock }).log
@@ -51,7 +51,7 @@ async function getSubCmd(name: string): Promise<AnyCmd> {
 
 describe('lf team conversation', () => {
   it('prints a tree-style conversation with indentation by depth', async () => {
-    mockCallRest.mockResolvedValueOnce([
+    mockCallRpc.mockResolvedValueOnce([
       {
         id: 'msg-1',
         team_run_id: 'run-uuid',
@@ -83,22 +83,12 @@ describe('lf team conversation', () => {
       rawArgs: [],
     })
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'agents',
-      'v_team_run_conversation',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        requireAuth: true,
-        query: expect.objectContaining({
-          team_run_id: 'eq.run-uuid',
-          order: 'occurred_at.asc',
-          limit: '100',
-        }),
-      })
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_get_team_run_conversation',
+      { p_run_id: 'run-uuid', p_limit: 100 },
+      { requireAuth: true },
     )
 
-    // Two log lines, second indented (depth=1 → 2 leading spaces).
     const logLines = consolaLog.mock.calls.map((c) => String(c[0]))
     expect(logLines).toHaveLength(2)
     expect(logLines[0]).toMatch(/agent-aa→all: plan/)
@@ -108,7 +98,7 @@ describe('lf team conversation', () => {
   })
 
   it('reports info when there are no messages', async () => {
-    mockCallRest.mockResolvedValueOnce([] as never)
+    mockCallRpc.mockResolvedValueOnce([] as never)
     const cmd = await getSubCmd('conversation')
     await cmd.run?.({
       args: { 'run-id': 'run-uuid', limit: '100', json: false },
@@ -122,7 +112,7 @@ describe('lf team conversation', () => {
 
 describe('lf team scratchpad', () => {
   it('prints the version and JSON body of the shared scratchpad', async () => {
-    mockCallRest.mockResolvedValueOnce([
+    mockCallRpc.mockResolvedValueOnce([
       {
         shared_scratchpad: { notes: 'hello', items: [1, 2] },
         shared_scratchpad_version: 7,
@@ -136,25 +126,17 @@ describe('lf team scratchpad', () => {
       rawArgs: [],
     })
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'agents',
-      'team_runs',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        requireAuth: true,
-        query: expect.objectContaining({
-          select: 'shared_scratchpad,shared_scratchpad_version',
-          id: 'eq.run-uuid',
-        }),
-      })
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_get_team_run_scratchpad',
+      { p_run_id: 'run-uuid' },
+      { requireAuth: true },
     )
     expect(consolaInfo).toHaveBeenCalledWith('Version: %d', 7)
     expect(mockPrintJson).toHaveBeenCalledWith({ notes: 'hello', items: [1, 2] })
   })
 
   it('--json prints only the raw scratchpad payload', async () => {
-    mockCallRest.mockResolvedValueOnce([
+    mockCallRpc.mockResolvedValueOnce([
       { shared_scratchpad: { a: 1 }, shared_scratchpad_version: 2 },
     ] as never)
 
@@ -170,7 +152,7 @@ describe('lf team scratchpad', () => {
   })
 
   it('errors out when the team run is not found', async () => {
-    mockCallRest.mockResolvedValueOnce([] as never)
+    mockCallRpc.mockResolvedValueOnce([] as never)
     const cmd = await getSubCmd('scratchpad')
     await cmd.run?.({
       args: { 'run-id': 'missing', json: false },
@@ -186,33 +168,28 @@ describe('lf team set-role', () => {
   it('rejects an invalid role without calling the API', async () => {
     const cmd = await getSubCmd('set-role')
     await cmd.run?.({
-      args: { 'member-id': 'm-1', role: 'bogus' },
+      args: { 'member-id': 'm-1', role: 'bogus', team: 'team-uuid' },
       cmd: {},
       rawArgs: [],
     })
     expect(consolaError).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
-    expect(mockCallRest).not.toHaveBeenCalled()
+    expect(mockCallRpc).not.toHaveBeenCalled()
   })
 
-  it('PATCHes agents.team_members for a valid role', async () => {
-    mockCallRest.mockResolvedValueOnce(undefined as never)
+  it('calls fn_update_team_member_role for a valid role', async () => {
+    mockCallRpc.mockResolvedValueOnce(undefined as never)
     const cmd = await getSubCmd('set-role')
     await cmd.run?.({
-      args: { 'member-id': 'm-1', role: 'reviewer' },
+      args: { 'member-id': 'm-1', role: 'reviewer', team: 'team-uuid' },
       cmd: {},
       rawArgs: [],
     })
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'agents',
-      'team_members',
-      'PATCH',
-      { role: 'reviewer' },
-      expect.objectContaining({
-        requireAuth: true,
-        query: { id: 'eq.m-1' },
-      })
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_update_team_member_role',
+      { p_team_id: 'team-uuid', p_member_id: 'm-1', p_role: 'reviewer' },
+      { requireAuth: true },
     )
     expect(consolaSuccess).toHaveBeenCalled()
     expect(process.exitCode).toBe(0)
@@ -221,14 +198,14 @@ describe('lf team set-role', () => {
   it.each(['leader', 'executor', 'reviewer', 'observer', 'operator'])(
     'accepts role %s',
     async (role) => {
-      mockCallRest.mockResolvedValueOnce(undefined as never)
+      mockCallRpc.mockResolvedValueOnce(undefined as never)
       const cmd = await getSubCmd('set-role')
       await cmd.run?.({
-        args: { 'member-id': 'm-1', role },
+        args: { 'member-id': 'm-1', role, team: 'team-uuid' },
         cmd: {},
         rawArgs: [],
       })
-      expect(mockCallRest).toHaveBeenCalled()
+      expect(mockCallRpc).toHaveBeenCalled()
       expect(process.exitCode).toBe(0)
     }
   )

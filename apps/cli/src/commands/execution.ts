@@ -4,7 +4,7 @@ import {
   getExecutionPlatformStatus,
   listRecentWorkflowRuns,
 } from '../lib/data-services/executions'
-import { callRest, callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '../utils/api'
 import { printJson, printTable, truncate } from '../utils/output'
 import { assertSafe } from '../lib/safety'
 
@@ -68,12 +68,10 @@ interface WorkflowRunProvenanceEdgeRow {
 }
 
 interface WorkflowRunEventRow {
-  id?: string
   event_id: number
   type: string
   run_id: string
-  workflow_id: string | null
-  timestamp: string
+  occurred_at: string
   payload: Record<string, unknown>
 }
 
@@ -351,28 +349,21 @@ const executionEvents = defineCommand({
     }
 
     try {
-      const query: Record<string, string | number | undefined> = {
-        select: 'event_id,type,run_id,workflow_id,timestamp,payload',
-        run_id: `eq.${args.run}`,
-        order: 'event_id.asc',
-        limit: args.limit,
-      }
-      if (args.after) {
-        const parsed = parseInt(args.after, 10)
-        if (!Number.isFinite(parsed)) {
-          consola.error('--after must be a number, got "%s"', args.after)
-          process.exitCode = 1
-          return
-        }
-        query.event_id = `gt.${parsed}`
+      const afterEventId = args.after ? parseInt(args.after, 10) : 0
+      if (args.after && !Number.isFinite(afterEventId)) {
+        consola.error('--after must be a number, got "%s"', args.after)
+        process.exitCode = 1
+        return
       }
 
-      const rows = await callRest<WorkflowRunEventRow[]>(
-        'lenses',
-        'workflow_run_events',
-        'GET',
-        undefined,
-        { requireAuth: true, query }
+      const rows = await callRpc<WorkflowRunEventRow[]>(
+        'fn_list_workflow_run_events',
+        {
+          p_run_id: args.run,
+          p_after_event_id: afterEventId,
+          p_limit: parseInt(args.limit, 10),
+        },
+        { requireAuth: true }
       )
 
       if (!rows || rows.length === 0) {
@@ -387,7 +378,7 @@ const executionEvents = defineCommand({
 
       printTable(
         ['#', 'When', 'Type'],
-        rows.map((e) => [String(e.event_id), new Date(e.timestamp).toLocaleString(), e.type])
+        rows.map((e) => [String(e.event_id), new Date(e.occurred_at).toLocaleString(), e.type])
       )
     } catch (err) {
       handleError(err)
@@ -447,24 +438,12 @@ const executionWait = defineCommand({
         while (true) {
           await new Promise<void>((resolve) => setTimeout(resolve, intervalMs))
 
-          const rows = await callRest<WorkflowRunRow[]>(
-            'lenses',
-            'workflow_runs',
-            'GET',
-            undefined,
-            {
-              requireAuth: true,
-              query: {
-                workflow_id: `eq.${args.workflow}`,
-                status: 'in.(completed,failed,cancelled,timed_out)',
-                order: 'created_at.desc',
-                limit: 1,
-                select:
-                  'id,workflow_id,status,active_node_id,created_at,started_at,completed_at,parent_run_id',
-              },
-            }
+          const runs = await callRpc<WorkflowRunRow[]>(
+            'fn_list_workflow_runs',
+            { p_workflow_id: args.workflow, p_limit: 5, p_offset: 0 },
+            { requireAuth: true }
           )
-          const terminal = rows?.[0]
+          const terminal = runs?.find((r) => TERMINAL_STATUSES.has(r.status))
           if (terminal) {
             const ok = terminal.status === 'completed'
             if (args.json) printJson(terminal)
@@ -628,11 +607,11 @@ const executionRetry = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<WorkflowRunRow[]>('lenses', 'workflow_runs', 'GET', undefined, {
-        requireAuth: true,
-        query: { id: `eq.${args.run}`, select: 'id,status' },
-      })
-      const existing = rows?.[0]
+      const existing = await callRpc<WorkflowRunStateProjection | null>(
+        'fn_get_workflow_run_state',
+        { p_run_id: args.run },
+        { requireAuth: true }
+      )
       if (!existing) {
         consola.error('Run %s not found.', args.run)
         process.exitCode = 1

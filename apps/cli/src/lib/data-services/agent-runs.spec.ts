@@ -18,23 +18,16 @@ describe('agent-runs data service', () => {
     jest.clearAllMocks()
   })
 
-  it('listActiveTeamRuns filters queued, running, and blocked', async () => {
-    mockCallRest.mockResolvedValue([{ id: 'run-1', status: 'running' }])
+  it('listActiveTeamRuns calls fn_list_active_team_runs', async () => {
+    mockCallRpc.mockResolvedValue([{ id: 'run-1', status: 'running' }])
 
     const rows = await listActiveTeamRuns('agent-1')
 
     expect(rows).toHaveLength(1)
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'agents',
-      'team_runs',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        query: expect.objectContaining({
-          ai_lenser_id: 'eq.agent-1',
-          status: 'in.(queued,running,blocked)',
-        }),
-      }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_list_active_team_runs',
+      { p_ai_lenser_id: 'agent-1' },
+      { requireAuth: true },
     )
   })
 
@@ -51,11 +44,12 @@ describe('agent-runs data service', () => {
   })
 
   it('killAgentWorkers cancels active runs then enables kill switch and pause', async () => {
-    mockCallRest.mockResolvedValue([
-      { id: 'run-a', status: 'running' },
-      { id: 'run-b', status: 'queued' },
-    ])
-    mockCallRpc.mockResolvedValue(undefined)
+    mockCallRpc
+      .mockResolvedValueOnce([
+        { id: 'run-a', status: 'running' },
+        { id: 'run-b', status: 'queued' },
+      ])
+      .mockResolvedValue(undefined)
 
     const result = await killAgentWorkers('agent-1')
 

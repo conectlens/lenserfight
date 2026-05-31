@@ -22,11 +22,10 @@ jest.mock('../utils/output', () => ({
 }))
 
 import consola from 'consola'
-import { callRpc, callRest, handleError } from '../utils/api'
+import { callRpc, handleError } from '../utils/api'
 import { printJson, printTable } from '../utils/output'
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
-const mockCallRest = callRest as jest.MockedFunction<typeof callRest>
 const mockHandleError = handleError as jest.MockedFunction<typeof handleError>
 const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
 const mockPrintTable = printTable as jest.MockedFunction<typeof printTable>
@@ -46,33 +45,37 @@ async function getSubCmd(key: string): Promise<AnyCmd> {
 }
 
 describe('media list', () => {
-  it('lists media assets for user', async () => {
-    mockCallRest.mockResolvedValueOnce([
-      { id: 'media-1', filename: 'photo.png', media_type: 'image', size_bytes: 1024, created_at: '2026-01-01' },
+  it('lists media assets via fn_list_media_objects', async () => {
+    mockCallRpc.mockResolvedValueOnce([
+      { id: 'media-1', filename: 'photo.png', media_type: 'image', byte_size: 1024, created_at: '2026-01-01' },
     ] as any)
 
     const cmd = await getSubCmd('list')
-    await cmd.run?.({ args: { limit: '20', json: false } })
+    await cmd.run?.({ args: { run: '', limit: '20', json: false } })
 
-    expect(mockCallRest).toHaveBeenCalled()
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_list_media_objects',
+      expect.objectContaining({ p_limit: 20 }),
+      { requireAuth: true },
+    )
     expect(mockPrintTable).toHaveBeenCalled()
   })
 
   it('outputs JSON when --json set', async () => {
-    const assets = [{ id: 'media-1', filename: 'a.png' }]
-    mockCallRest.mockResolvedValueOnce(assets as any)
+    const assets = [{ id: 'media-1', filename: 'a.png', created_at: '2026-01-01' }]
+    mockCallRpc.mockResolvedValueOnce(assets as any)
 
     const cmd = await getSubCmd('list')
-    await cmd.run?.({ args: { limit: '20', json: true } })
+    await cmd.run?.({ args: { run: '', limit: '20', json: true } })
 
     expect(mockPrintJson).toHaveBeenCalledWith(assets)
   })
 
   it('calls handleError on failure', async () => {
-    mockCallRest.mockRejectedValueOnce(new Error('network'))
+    mockCallRpc.mockRejectedValueOnce(new Error('network'))
 
     const cmd = await getSubCmd('list')
-    await cmd.run?.({ args: { limit: '20', json: false } })
+    await cmd.run?.({ args: { run: '', limit: '20', json: false } })
 
     expect(mockHandleError).toHaveBeenCalled()
   })

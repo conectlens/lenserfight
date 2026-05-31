@@ -21,9 +21,9 @@ jest.mock('../utils/output', () => ({
   truncate: (s: string, n: number) => (s.length > n ? s.slice(0, n) + '…' : s),
 }))
 
-import { callRest } from '../utils/api'
+import { callRpc } from '../utils/api'
 
-const mockCallRest = callRest as jest.MockedFunction<typeof callRest>
+const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCmd = { run?: (ctx: any) => Promise<void>; subCommands?: Record<string, AnyCmd | (() => Promise<AnyCmd>)> }
@@ -41,7 +41,7 @@ async function getSubCmd(key: string): Promise<AnyCmd> {
 
 describe('execution wait --workflow --any', () => {
   it('exits 0 when the latest terminal run for the workflow is "completed"', async () => {
-    mockCallRest.mockResolvedValueOnce([
+    mockCallRpc.mockResolvedValueOnce([
       {
         id: 'run-1',
         workflow_id: 'wf-1',
@@ -69,24 +69,15 @@ describe('execution wait --workflow --any', () => {
     })
 
     expect(process.exitCode).toBe(0)
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'lenses',
-      'workflow_runs',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        requireAuth: true,
-        query: expect.objectContaining({
-          workflow_id: 'eq.wf-1',
-          status: 'in.(completed,failed,cancelled,timed_out)',
-          limit: 1,
-        }),
-      }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_list_workflow_runs',
+      expect.objectContaining({ p_workflow_id: 'wf-1' }),
+      { requireAuth: true },
     )
   })
 
   it('exits 1 when the latest terminal run is "failed"', async () => {
-    mockCallRest.mockResolvedValueOnce([
+    mockCallRpc.mockResolvedValueOnce([
       {
         id: 'run-2',
         workflow_id: 'wf-1',

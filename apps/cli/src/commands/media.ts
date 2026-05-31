@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { callRpc, callRest, handleError } from '../utils/api'
+import { callRpc, handleError } from '../utils/api'
 import { printJson, printTable } from '../utils/output'
 import { resolveConfig as resolveBaseConfig } from '../config/project-config'
 
@@ -63,29 +63,16 @@ const mediaList = defineCommand({
         limit,
       }
       if (args.run) {
-        // The run_id → request_id mapping is enforced at the worker; we filter
-        // by request_id after the worker writes it to media.objects.
-        const runs = await callRest<Array<{ request_id: string }>>(
-          'execution',
-          'runs',
-          'GET',
-          undefined,
-          {
-            query: { select: 'request_id', id: `eq.${args.run}`, limit: 1 },
-            requireAuth: true,
-          }
-        )
-        if (runs.length === 0) {
-          consola.warn(`No run found for id ${args.run} (or RLS denied access).`)
-          return
-        }
-        query['request_id'] = `eq.${runs[0].request_id}`
+        // TODO: replace with fn_get_execution_run once added to schema.sql.
+        // execution.runs is not yet exposed via a public RPC; --run filter is unavailable on cloud.
+        consola.warn('--run filter requires a public RPC not yet available. Showing all media.')
       }
 
-      const rows = await callRest<MediaObjectRow[]>('media', 'objects', 'GET', undefined, {
-        query,
-        requireAuth: true,
-      })
+      const rows = await callRpc<MediaObjectRow[]>(
+        'fn_list_media_objects',
+        { p_limit: limit },
+        { requireAuth: true }
+      )
 
       if (args.json) {
         printJson(rows)
@@ -131,15 +118,12 @@ const mediaDownload = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<MediaObjectRow[]>('media', 'objects', 'GET', undefined, {
-        query: {
-          select: 'id,bucket,object_key,external_url,mime_type',
-          id: `eq.${args.id}`,
-          limit: 1,
-        },
-        requireAuth: true,
-      })
-      if (rows.length === 0) {
+      const rows = await callRpc<MediaObjectRow[]>(
+        'fn_get_media_object',
+        { p_object_id: args.id },
+        { requireAuth: true }
+      )
+      if (!rows || rows.length === 0) {
         throw new Error(`Media object ${args.id} not found (or RLS denied access).`)
       }
       const obj = rows[0]
@@ -217,16 +201,12 @@ const mediaInfo = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<MediaObjectRow[]>('media', 'objects', 'GET', undefined, {
-        query: {
-          select:
-            'id,bucket,object_key,external_url,mime_type,media_type,byte_size,visibility,lifecycle_state,created_at,duration_seconds,video_width,video_height,audio_sample_rate,audio_channels',
-          id: `eq.${args.id}`,
-          limit: 1,
-        },
-        requireAuth: true,
-      })
-      if (rows.length === 0) {
+      const rows = await callRpc<MediaObjectRow[]>(
+        'fn_get_media_object',
+        { p_object_id: args.id },
+        { requireAuth: true }
+      )
+      if (!rows || rows.length === 0) {
         throw new Error(`Media object ${args.id} not found (or RLS denied access).`)
       }
       const obj = rows[0]
@@ -269,15 +249,12 @@ const mediaPlay = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<MediaObjectRow[]>('media', 'objects', 'GET', undefined, {
-        query: {
-          select: 'id,bucket,object_key,external_url,mime_type',
-          id: `eq.${args.id}`,
-          limit: 1,
-        },
-        requireAuth: true,
-      })
-      if (rows.length === 0) {
+      const rows = await callRpc<MediaObjectRow[]>(
+        'fn_get_media_object',
+        { p_object_id: args.id },
+        { requireAuth: true }
+      )
+      if (!rows || rows.length === 0) {
         throw new Error(`Media object ${args.id} not found (or RLS denied access).`)
       }
       const obj = rows[0]
@@ -402,15 +379,15 @@ const mediaCleanup = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<MediaObjectRow[]>('media', 'objects', 'GET', undefined, {
-        query: {
-          select: 'id,mime_type,media_type,lifecycle_state,created_at',
-          lifecycle_state: 'eq.pending',
-          created_at: `lt.${args.before}`,
-          limit: 100,
-        },
-        requireAuth: true,
-      })
+      const allRows = await callRpc<MediaObjectRow[]>(
+        'fn_list_media_objects',
+        { p_limit: 100 },
+        { requireAuth: true }
+      )
+      const beforeDate = new Date(args.before)
+      const rows = (allRows ?? []).filter(
+        (r) => r.lifecycle_state === 'pending' && new Date(r.created_at) < beforeDate
+      )
 
       if (rows.length === 0) {
         consola.info('No orphaned pending uploads found.')
@@ -457,22 +434,13 @@ const mediaManifest = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<Array<{ media_manifest: unknown }>>(
-        'lenses',
-        'workflow_runs',
-        'GET',
-        undefined,
-        {
-          query: {
-            select: 'media_manifest',
-            id: `eq.${args.run}`,
-            limit: 1,
-          },
-          requireAuth: true,
-        }
+      const rows = await callRpc<Array<{ media_manifest: unknown }>>(
+        'fn_get_workflow_run_media_manifest',
+        { p_run_id: args.run },
+        { requireAuth: true }
       )
 
-      if (rows.length === 0) {
+      if (!rows || rows.length === 0) {
         throw new Error(`Workflow run ${args.run} not found (or RLS denied access).`)
       }
 

@@ -7,7 +7,7 @@ jest.mock('./agent-workspace', () => ({
   getHumanActivityFeed: jest.fn(),
 }))
 
-import { callRest, callRpc } from '../../utils/api'
+import { callRpc } from '../../utils/api'
 import { getHumanActivityFeed } from './agent-workspace'
 import {
   getExecutionPlatformStatus,
@@ -18,7 +18,6 @@ import {
 } from './executions'
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
-const mockCallRest = callRest as jest.MockedFunction<typeof callRest>
 const mockGetHumanActivityFeed = getHumanActivityFeed as jest.MockedFunction<
   typeof getHumanActivityFeed
 >
@@ -60,24 +59,27 @@ describe('executions data-services', () => {
     )
   })
 
-  it('listRecentWorkflowRuns queries workflow_runs via PostgREST', async () => {
-    mockCallRest.mockResolvedValue([])
+  it('listRecentWorkflowRuns with workflowId calls fn_list_workflow_runs', async () => {
+    mockCallRpc.mockResolvedValue([])
 
     await listRecentWorkflowRuns({ workflowId: 'wf-1', status: 'completed', limit: 10 })
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'lenses',
-      'workflow_runs',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        requireAuth: true,
-        query: expect.objectContaining({
-          workflow_id: 'eq.wf-1',
-          status: 'eq.completed',
-          limit: 10,
-        }),
-      }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_list_workflow_runs',
+      { p_workflow_id: 'wf-1', p_limit: 10, p_offset: 0 },
+      { requireAuth: true },
+    )
+  })
+
+  it('listRecentWorkflowRuns without workflowId calls fn_list_recent_workflow_runs', async () => {
+    mockCallRpc.mockResolvedValue([])
+
+    await listRecentWorkflowRuns({ limit: 15 })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_list_recent_workflow_runs',
+      { p_limit: 15, p_offset: 0 },
+      { requireAuth: true },
     )
   })
 
