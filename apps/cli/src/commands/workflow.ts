@@ -3,7 +3,7 @@ import consola from 'consola'
 
 import { type WorkflowFrontmatter } from '@lenserfight/types'
 
-import { callRpc, callRest, handleError } from '../utils/api'
+import { callRpc, handleError } from '../utils/api'
 import {
   buildWorkflowSimulationReport,
   parseAutomationDocument,
@@ -323,20 +323,26 @@ const list = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<Array<Record<string, unknown>>>(
-        'lenses',
-        'workflows',
-        'GET',
-        undefined,
+      const self = await callRpc<Record<string, unknown>>(
+        'fn_lensers_get_active_profile',
+        {},
+        { requireAuth: true }
+      )
+      const lenserId = self?.id as string | undefined
+      if (!lenserId) {
+        consola.error('Could not resolve your profile. Run `lf auth login` first.')
+        process.exitCode = 1
+        return
+      }
+
+      const rows = await callRpc<Array<Record<string, unknown>>>(
+        'fn_get_my_workflows',
         {
-          requireAuth: true,
-          query: {
-            select: 'id,title,description,visibility,archived_at,deleted_at,created_at',
-            order: 'created_at.desc',
-            limit: args.limit,
-            offset: args.offset,
-          },
-        }
+          p_lenser_id: lenserId,
+          p_offset: parseInt(args.offset, 10),
+          p_limit: parseInt(args.limit, 10),
+        },
+        { requireAuth: true }
       )
 
       if (!Array.isArray(rows) || rows.length === 0) {
@@ -351,12 +357,12 @@ const list = defineCommand({
       }
 
       printTable(
-        ['ID', 'Name', 'State', 'Visibility', 'Created'],
+        ['ID', 'Name', 'Visibility', 'Nodes', 'Created'],
         rows.map((r) => [
           String(r['id'] ?? ''),
           truncate(String(r['title'] ?? ''), 36),
-          r['deleted_at'] ? 'deleted' : r['archived_at'] ? 'archived' : 'active',
           String(r['visibility'] ?? '—'),
+          String(r['node_count'] ?? '0'),
           r['created_at'] ? new Date(String(r['created_at'])).toLocaleDateString() : '—',
         ])
       )
