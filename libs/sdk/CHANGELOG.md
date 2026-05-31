@@ -1,3 +1,7 @@
+## 0.2.0-alpha.27 (2026-05-31)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
 ## 0.2.0-alpha.26 (2026-05-31)
 
 This was a version bump only for sdk to align it with other projects, there were no code changes.
