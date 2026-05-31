@@ -874,6 +874,21 @@ describe('SupabaseBattlesRepository', () => {
   })
 
   // ---------------------------------------------------------------------------
+  // finalizeBattle — scoring → closed (+ winner) via the MCP finalize wrapper
+  // ---------------------------------------------------------------------------
+  describe('finalizeBattle', () => {
+    it('calls fn_mcp_battle_finalize with p_battle_id', async () => {
+      await repo.finalizeBattle(BATTLE_ID)
+      expect(mockRpc).toHaveBeenCalledWith('fn_mcp_battle_finalize', { p_battle_id: BATTLE_ID })
+    })
+
+    it('rethrows errors via handleError', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: new Error('finalize error') })
+      await expect(repo.finalizeBattle(BATTLE_ID)).rejects.toThrow()
+    })
+  })
+
+  // ---------------------------------------------------------------------------
   // scheduleBattle
   // ---------------------------------------------------------------------------
   describe('scheduleBattle', () => {
