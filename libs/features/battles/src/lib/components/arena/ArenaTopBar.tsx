@@ -46,6 +46,8 @@ interface ArenaTopBarProps {
   isMusicEnabled?: boolean
   /** Callback to toggle music on/off. */
   onToggleMusic?: () => void
+  /** Show a live-voting indicator badge when battle is in voting phase. */
+  showLiveBadge?: boolean
 }
 
 export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
@@ -60,6 +62,7 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
   myContenderSlot,
   isMusicEnabled,
   onToggleMusic,
+  showLiveBadge,
 }) => {
   const { label, color } = PHASE_LABELS[currentPhase]
   const battleType = deriveBattleType(battle)
@@ -112,6 +115,14 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
       <span className={`flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full ${color}`}>
         {label}
       </span>
+
+      {/* Live voting badge */}
+      {showLiveBadge && (
+        <span className="flex-shrink-0 flex items-center gap-1 text-[11px] font-semibold text-green-400">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+          Live
+        </span>
+      )}
 
       {/* Fighter slot chip */}
       {myContenderSlot && (
