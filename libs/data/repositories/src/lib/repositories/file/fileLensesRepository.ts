@@ -273,4 +273,8 @@ export class FileLensesRepository implements LensesRepositoryPort {
   async updateVersionParams(_versionId: string, _params: Array<{ label: string; toolId: string }>): Promise<void> {
     // No-op in file mode — version params are not persisted separately.
   }
+
+  async getHeadVersion(_lensId: string): Promise<LensVersion | null> {
+    return null
+  }
 }

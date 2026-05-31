@@ -143,4 +143,8 @@ export class FileAuthRepository implements AuthRepositoryPort {
   async revokeDeveloperToken(_tokenId: string): Promise<void> {
     // No-op in file mode.
   }
+
+  async resolveHandleToEmail(_handle: string): Promise<string | null> {
+    return null
+  }
 }

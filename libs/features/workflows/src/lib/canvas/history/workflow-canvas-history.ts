@@ -1,29 +1,29 @@
 import type { WorkflowCanvasSelection } from '../selection/workflow-canvas-selection'
 import type { Edge, Node } from '@xyflow/react'
 
-export interface WorkflowCanvasGraphSnapshot<T = unknown> {
+export interface WorkflowCanvasGraphSnapshot<T extends Record<string, unknown> = Record<string, unknown>> {
   nodes: Node<T>[]
   edges: Edge[]
   selection: WorkflowCanvasSelection
 }
 
-export interface WorkflowCanvasHistoryEntry<T = unknown> {
+export interface WorkflowCanvasHistoryEntry<T extends Record<string, unknown> = Record<string, unknown>> {
   label: string
   before: WorkflowCanvasGraphSnapshot<T>
   after: WorkflowCanvasGraphSnapshot<T>
 }
 
-export interface WorkflowCanvasHistoryState<T = unknown> {
+export interface WorkflowCanvasHistoryState<T extends Record<string, unknown> = Record<string, unknown>> {
   past: WorkflowCanvasHistoryEntry<T>[]
   future: WorkflowCanvasHistoryEntry<T>[]
   limit: number
 }
 
-export function createWorkflowCanvasHistory<T>(limit = 100): WorkflowCanvasHistoryState<T> {
+export function createWorkflowCanvasHistory<T extends Record<string, unknown> = Record<string, unknown>>(limit = 100): WorkflowCanvasHistoryState<T> {
   return { past: [], future: [], limit }
 }
 
-function snapshotFingerprint<T>(snapshot: WorkflowCanvasGraphSnapshot<T>): string {
+function snapshotFingerprint<T extends Record<string, unknown>>(snapshot: WorkflowCanvasGraphSnapshot<T>): string {
   return JSON.stringify({
     nodes: snapshot.nodes.map((node) => ({
       id: node.id,
@@ -44,14 +44,14 @@ function snapshotFingerprint<T>(snapshot: WorkflowCanvasGraphSnapshot<T>): strin
   })
 }
 
-export function areWorkflowCanvasSnapshotsEqual<T>(
+export function areWorkflowCanvasSnapshotsEqual<T extends Record<string, unknown>>(
   a: WorkflowCanvasGraphSnapshot<T>,
   b: WorkflowCanvasGraphSnapshot<T>,
 ): boolean {
   return snapshotFingerprint(a) === snapshotFingerprint(b)
 }
 
-export function pushWorkflowCanvasHistory<T>(
+export function pushWorkflowCanvasHistory<T extends Record<string, unknown>>(
   state: WorkflowCanvasHistoryState<T>,
   entry: WorkflowCanvasHistoryEntry<T>,
 ): WorkflowCanvasHistoryState<T> {
@@ -60,7 +60,7 @@ export function pushWorkflowCanvasHistory<T>(
   return { ...state, past: nextPast, future: [] }
 }
 
-export function undoWorkflowCanvasHistory<T>(
+export function undoWorkflowCanvasHistory<T extends Record<string, unknown>>(
   state: WorkflowCanvasHistoryState<T>,
 ): { state: WorkflowCanvasHistoryState<T>; snapshot: WorkflowCanvasGraphSnapshot<T> | null; label?: string } {
   const entry = state.past[state.past.length - 1]
@@ -76,7 +76,7 @@ export function undoWorkflowCanvasHistory<T>(
   }
 }
 
-export function redoWorkflowCanvasHistory<T>(
+export function redoWorkflowCanvasHistory<T extends Record<string, unknown>>(
   state: WorkflowCanvasHistoryState<T>,
 ): { state: WorkflowCanvasHistoryState<T>; snapshot: WorkflowCanvasGraphSnapshot<T> | null; label?: string } {
   const entry = state.future[0]

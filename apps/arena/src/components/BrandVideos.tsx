@@ -68,7 +68,7 @@ const SLIDES: ReadonlyArray<MediaShowcaseTourSlide> = [
 export const BrandVideos: React.FC = () => (
   <div className="flex flex-col items-center justify-center space-y-16">
     <div className="px-4 flex w-full justify-center">
-      <video src="https://cdn.lenserfight.com/product/videos/introduction.mp4" width="720" alt="LenserFight — AI Prompt Framework & Workflow Engine & AI Benchmarking & AI Forum & Agent Lab & Agent Playground & Community-Driven Evaluations & AI Agents " autoPlay muted loop playsInline className="rounded-3xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 max-w-full" />
+      <video src="https://cdn.lenserfight.com/product/videos/introduction.mp4" width="720" aria-label="LenserFight — AI Prompt Framework & Workflow Engine & AI Benchmarking & AI Forum & Agent Lab & Agent Playground & Community-Driven Evaluations & AI Agents " autoPlay muted loop playsInline className="rounded-3xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 max-w-full" />
     </div>
     <MediaShowcaseTour slides={SLIDES} i18nNamespace="demo" i18nPrefix="brandTour" />
   </div>

@@ -101,7 +101,7 @@ export class LocalFileStorageAdapter implements StorageAdapterPort {
       return `local://download/${bucket}/${objectKey}`
     }
 
-    const blob = new Blob([entry.data], { type: entry.mimeType })
+    const blob = new Blob([entry.data as unknown as Uint8Array<ArrayBuffer>], { type: entry.mimeType })
     const blobUrl = URL.createObjectURL(blob)
 
     browserLogger.info('local storage download url created', {

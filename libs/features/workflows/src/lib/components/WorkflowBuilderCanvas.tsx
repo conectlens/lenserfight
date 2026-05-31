@@ -76,6 +76,7 @@ import { WorkflowCanvasNode } from './WorkflowCanvasNode'
 
 import type { WorkflowNodeData, WorkflowNodeConfig } from './WorkflowCanvasNode'
 import type { DraggedLensData } from './WorkflowLensPalette'
+import type { LensKind } from '@lenserfight/types'
 import type {
   WorkflowNodeRecord,
   WorkflowEdgeRecord,
@@ -1661,7 +1662,7 @@ function WorkflowBuilderCanvasInner({
         return {
           id: n.id,
           lensId: data.lens_id ?? '',
-          kind: getNodeTypeForFlowNode(n) ?? 'text',
+          kind: (getNodeTypeForFlowNode(n) ?? 'text') as LensKind,
           paramLabels: incomingLabels,
         }
       }),

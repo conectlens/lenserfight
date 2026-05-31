@@ -16,6 +16,7 @@ import {
 } from '@lenserfight/infra/execution'
 import { createWorkflowModerationGateway } from '@lenserfight/infra/moderation'
 import { byokKeyResolver, callProvider } from '@lenserfight/providers'
+import { mapToLifecycle } from '@lenserfight/api/contracts'
 import { mapEngineEventToSse, WorkflowEventType } from '@lenserfight/types'
 import { generateUUID } from '@lenserfight/utils/text'
 import { useCallback, useRef } from 'react'

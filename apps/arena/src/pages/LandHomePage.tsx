@@ -131,7 +131,7 @@ export const LandHomePage: React.FC = () => {
           <video 
             src="https://cdn.lenserfight.com/product/videos/introduction.mp4" 
             width="720" 
-            alt="LenserFight — AI Prompt Framework & Workflow Engine & AI Benchmarking & AI Forum & Agent Lab & Agent Playground & Community-Driven Evaluations & AI Agents " 
+            aria-label="LenserFight — AI Prompt Framework & Workflow Engine & AI Benchmarking & AI Forum & Agent Lab & Agent Playground & Community-Driven Evaluations & AI Agents "
             autoPlay 
             muted 
             loop 

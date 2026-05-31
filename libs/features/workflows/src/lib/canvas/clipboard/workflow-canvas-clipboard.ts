@@ -153,7 +153,7 @@ export function createWorkflowCanvasPaste(
         data: options.hydrateEdgeData ? options.hydrateEdgeData(edge.data) : edge.data,
       } satisfies Edge
     })
-    .filter((edge): edge is Edge => edge !== null)
+    .filter((e): e is NonNullable<typeof e> => e !== null)
 
   return {
     nodes: nextNodes,

@@ -36,7 +36,7 @@ export function selectAllWorkflowItems(nodes: Node[], edges: Edge[]): WorkflowCa
   }
 }
 
-export function applyWorkflowSelectionToGraph<T>(
+export function applyWorkflowSelectionToGraph<T extends Record<string, unknown>>(
   nodes: Node<T>[],
   edges: Edge[],
   selection: WorkflowCanvasSelection,
@@ -56,7 +56,7 @@ export function getWorkflowSelectionFromGraph(nodes: Node[], edges: Edge[]): Wor
   })
 }
 
-export function filterGraphBySelection<T>(
+export function filterGraphBySelection<T extends Record<string, unknown>>(
   nodes: Node<T>[],
   edges: Edge[],
   selection: WorkflowCanvasSelection,
