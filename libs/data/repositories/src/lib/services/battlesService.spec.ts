@@ -31,6 +31,7 @@ const { mockRepo } = vi.hoisted(() => ({
     getLensAssignment: vi.fn(),
     openVoting: vi.fn(),
     closeVoting: vi.fn(),
+    finalizeBattle: vi.fn(),
     getAiJudgeVerdicts: vi.fn(),
     getDLQEntries: vi.fn(),
     retryDLQEntry: vi.fn(),
@@ -82,6 +83,32 @@ describe('battlesService', () => {
       mockRepo.submitVote.mockResolvedValue({ data: null })
       const result = await battlesService.submitVote({ battle_id: BATTLE_ID, vote_value: 'A' } as any)
       expect(result).toBeUndefined()
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // finalize lifecycle — scoring → closed (+ closed → published) delegation
+  // ---------------------------------------------------------------------------
+  describe('finalize lifecycle', () => {
+    it('finalizeBattle delegates to battlesRepo.finalizeBattle(battleId)', async () => {
+      mockRepo.finalizeBattle.mockResolvedValue(undefined)
+      await battlesService.finalizeBattle(BATTLE_ID)
+      expect(mockRepo.finalizeBattle).toHaveBeenCalledTimes(1)
+      expect(mockRepo.finalizeBattle).toHaveBeenCalledWith(BATTLE_ID)
+    })
+
+    it('propagates repo errors from finalizeBattle without swallowing', async () => {
+      mockRepo.finalizeBattle.mockRejectedValue(new Error('finalize error'))
+      await expect(battlesService.finalizeBattle(BATTLE_ID)).rejects.toThrow('finalize error')
+    })
+
+    it('publishBattle delegates to battlesRepo.publishBattle(battleId)', async () => {
+      const published = { id: BATTLE_ID, status: 'published' }
+      mockRepo.publishBattle.mockResolvedValue(published)
+      const result = await battlesService.publishBattle(BATTLE_ID)
+      expect(mockRepo.publishBattle).toHaveBeenCalledTimes(1)
+      expect(mockRepo.publishBattle).toHaveBeenCalledWith(BATTLE_ID)
+      expect(result).toEqual(published)
     })
   })
 

@@ -57,6 +57,9 @@ function mapError(message: string | undefined): McpError | null {
   if (message.includes('battle_not_found')) return new McpError('NOT_FOUND', 'Battle not found');
   if (message.includes('invalid_status_transition') || message.includes('transition'))
     return new McpError('INVALID_TRANSITION', message);
+  if (message.includes('Battle not found')) return new McpError('NOT_FOUND', 'Battle not found');
+  if (message.includes('must be in voting or scoring status'))
+    return new McpError('INVALID_TRANSITION', message);
   return null;
 }
 
@@ -138,6 +141,14 @@ export const battleService = {
     const { data, error } = (await sb.rpc('fn_mcp_battle_set_status' as never, {
       p_battle_id: args.battle_id,
       p_status: args.status,
+    })) as unknown as RpcResult<unknown>;
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
+    return data;
+  },
+
+  async finalize(sb: SupabaseClient, battle_id: string): Promise<unknown> {
+    const { data, error } = (await sb.rpc('fn_mcp_battle_finalize' as never, {
+      p_battle_id: battle_id,
     })) as unknown as RpcResult<unknown>;
     if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
     return data;

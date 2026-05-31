@@ -7,9 +7,11 @@ import { Badge } from '@lenserfight/ui/components'
 import type { BattleLayoutContext } from '../../types/battle-layout.types'
 import type { VoteValue } from '../../types/battle.types'
 import { VotePanel } from '../scoring/VotePanel'
+import { VotingWindowGate } from '../scoring/VotingWindowGate'
 import { BattleResultCTA } from '../result/BattleResultCTA'
 import { ExecutionMetadataPanel } from './ExecutionMetadataPanel'
 import { ScorecardPanel } from './ScorecardPanel'
+import { deriveBattleWinner } from '../../util/deriveWinner'
 
 type BattleResultsPanelProps = Pick<
   BattleLayoutContext,
@@ -180,19 +182,11 @@ export function BattleResultsPanel({
   const aggB = aggregates.find((a) => a.contender_id === contenderB?.id)
   const drawCount = (aggA?.draw_count ?? 0) + (aggB?.draw_count ?? 0)
 
-  const winnerSlot: 'A' | 'B' | 'draw' | undefined = isResult
-    ? (() => {
-        const aVotes = aggA?.raw_vote_count ?? 0
-        const bVotes = aggB?.raw_vote_count ?? 0
-        if (aVotes === bVotes) return 'draw'
-        return aVotes > bVotes ? 'A' : 'B'
-      })()
-    : undefined
-
-  const winnerName =
-    winnerSlot === 'A' ? contenderA?.display_name :
-    winnerSlot === 'B' ? contenderB?.display_name :
-    undefined
+  // Authoritative finalized winner first (mode-aware, covers AI-judge battles),
+  // provisional vote tally otherwise.
+  const derivedWinner = deriveBattleWinner(battle, contenders, aggregates)
+  const winnerSlot = isResult ? derivedWinner.slot : undefined
+  const winnerName = isResult ? derivedWinner.name : undefined
 
   const hasExecutionMetadata = executionJobs.length > 0 && (
     executionJobs.some((j) => j.claimed_at || j.error_message)
@@ -263,15 +257,17 @@ export function BattleResultsPanel({
 
               {currentPhase === 'voting' && contenderA && contenderB && (
                 <motion.div key="voting" variants={panelVariants} initial="initial" animate="animate" exit="exit" className="space-y-4">
-                  <VotePanel
-                    battleId={battle.id}
-                    contenderA={{ id: contenderA.id, displayName: contenderA.display_name }}
-                    contenderB={{ id: contenderB.id, displayName: contenderB.display_name }}
-                    disabled={!currentUserId}
-                    voterEligibility={battle.voter_eligibility}
-                    existingVote={(myVote as VoteValue | null) ?? null}
-                    onVote={onVote}
-                  />
+                  <VotingWindowGate battle={battle}>
+                    <VotePanel
+                      battleId={battle.id}
+                      contenderA={{ id: contenderA.id, displayName: contenderA.display_name }}
+                      contenderB={{ id: contenderB.id, displayName: contenderB.display_name }}
+                      disabled={!currentUserId}
+                      voterEligibility={battle.voter_eligibility}
+                      existingVote={(myVote as VoteValue | null) ?? null}
+                      onVote={onVote}
+                    />
+                  </VotingWindowGate>
                   {/* Show live vote counts during voting */}
                   {totalVotes > 0 && (
                     <div className="rounded-xl border border-surface-border-subtle bg-surface-raised p-4">

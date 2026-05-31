@@ -3,8 +3,8 @@
 -- Verifies the runtime safety controls added in migration 20271001000000 and
 -- 20271001000001:
 --
---   1. pg_cron schedule for 'auto-close-voting'    → _safe() wrapper
---   2. pg_cron schedule for 'auto-finalize-battles' → _safe() wrapper
+--   1. pg_cron job 'auto-close-voting'    is retired (B6 consolidation)
+--   2. pg_cron job 'auto-finalize-battles' is retired (B6 consolidation)
 --   3. pg_cron schedule for 'dispatch-scheduled-workflows' → _safe() wrapper
 --   4. 'cleanup-cron-runs' pg_cron job exists
 --   5. automation.fn_cleanup_cron_runs() deletes rows older than p_retention_days
@@ -18,35 +18,34 @@ BEGIN;
 SELECT plan(7);
 
 -- ── Test 1-3: pg_cron safe wrapper wiring ────────────────────────────────────
--- Passes when the cron.job table is accessible. If pg_cron is not installed
--- the result is a diagnostic warning rather than a hard failure.
+-- Tests 1-2: auto-close-voting and auto-finalize-battles were retired in
+-- migration 20270601000013 (consolidated onto fn_worker_run_finalize_cycle).
+-- Verify they are absent so the uncoordinated dual-driver is provably gone.
 
 SELECT CASE
   WHEN to_regnamespace('cron') IS NOT NULL THEN
     ok(
-      EXISTS(
+      NOT EXISTS(
         SELECT 1 FROM cron.job
         WHERE jobname = 'auto-close-voting'
-          AND command ILIKE '%fn_auto_close_voting_safe%'
       ),
-      'auto-close-voting pg_cron entry uses _safe() wrapper (Z10)'
+      'auto-close-voting pg_cron job is retired (B6 — single driver consolidation)'
     )
   ELSE
-    ok(true, 'pg_cron not installed — skipping auto-close-voting safe-wrapper check')
+    ok(true, 'pg_cron not installed — skipping auto-close-voting retirement check')
 END;
 
 SELECT CASE
   WHEN to_regnamespace('cron') IS NOT NULL THEN
     ok(
-      EXISTS(
+      NOT EXISTS(
         SELECT 1 FROM cron.job
         WHERE jobname = 'auto-finalize-battles'
-          AND command ILIKE '%fn_auto_finalize_battles_safe%'
       ),
-      'auto-finalize-battles pg_cron entry uses _safe() wrapper (Z10)'
+      'auto-finalize-battles pg_cron job is retired (B6 — single driver consolidation)'
     )
   ELSE
-    ok(true, 'pg_cron not installed — skipping auto-finalize-battles safe-wrapper check')
+    ok(true, 'pg_cron not installed — skipping auto-finalize-battles retirement check')
 END;
 
 SELECT CASE

@@ -501,6 +501,38 @@ export class WorkflowExecutionService {
       )
     }
 
+    // A stop_return runner raises this flag via variableMutations; the engine
+    // then skips every remaining non-terminal node and finishes the run as
+    // `completed`. Distinct from cancellation (abort) which finishes `cancelled`.
+    const markRemainingSkipped = async () => {
+      const pendingNodes = nodes.filter((node) => {
+        const result = results.get(node.id)
+        return (
+          !result ||
+          result.status === 'pending' ||
+          result.status === 'awaiting_dependency' ||
+          result.status === 'queued' ||
+          result.status === 'running' ||
+          result.status === 'streaming' ||
+          result.status === 'retrying'
+        )
+      })
+
+      await Promise.all(
+        pendingNodes.map(async (node) => {
+          const skipped: NodeResult = { nodeId: node.id, status: 'skipped' }
+          results.set(node.id, skipped)
+          await ctx.onNodeStatusChange(node.id, skipped)
+          await emit(ctx, {
+            runId: ctx.runId,
+            nodeId: node.id,
+            name: 'node_skipped',
+            metadata: { reason: 'workflow_halted' },
+          })
+        })
+      )
+    }
+
     // Mark every node that still has unresolved upstream edges as
     // `awaiting_dependency` up-front so the n8n-style inspector can render the
     // waiting badge instead of "pending" on initial fetch. Nodes with zero
@@ -625,6 +657,33 @@ export class WorkflowExecutionService {
                 return
               }
               // substitute_default falls through and renders with empty values.
+            }
+
+            // ── Conditional branch gate (n8n-style true skip) ───────────
+            // A node whose incoming edges include a conditional one, and where
+            // NO incoming edge is currently satisfied, sits on a branch that was
+            // not taken (the false side of an IF, a non-matching Switch port).
+            // Skip it instead of running with empty input, so a non-selected
+            // branch never fires side effects. Roots (no incoming edges) and
+            // nodes with >=1 satisfied edge proceed unchanged. Skipping
+            // propagates: a 'skipped' source is never 'completed', so
+            // isEdgeConditionSatisfied is false for its outgoing edges, marking
+            // downstream branch nodes dead in turn.
+            const incomingEdges = edges.filter((edg) => edg.targetNodeId === nodeId)
+            if (
+              incomingEdges.some((edg) => edg.condition != null) &&
+              !incomingEdges.some((edg) => isEdgeConditionSatisfied(edg, results))
+            ) {
+              const branchSkipped: NodeResult = { nodeId, status: 'skipped' }
+              results.set(nodeId, branchSkipped)
+              await ctx.onNodeStatusChange(nodeId, branchSkipped)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'node_skipped',
+                metadata: { reason: 'branch_not_taken' },
+              })
+              return
             }
 
             await ctx.onNodeStatusChange(nodeId, { nodeId, status: 'running' })
@@ -1168,6 +1227,14 @@ export class WorkflowExecutionService {
         const cancelledResult = finish(ctx.runId, results, 'cancelled')
         await notifyMemoryRunCompleted(cancelledResult.status)
         return cancelledResult
+      }
+
+      // Stop/Return halt: a stop_return runner sets `__workflow_halt` via
+      // variableMutations (merged into rootInputs above). When raised, skip all
+      // remaining nodes and finish cleanly instead of scheduling further waves.
+      if (ctx.rootInputs?.['__workflow_halt'] === true) {
+        await markRemainingSkipped()
+        break
       }
 
       // Build next wave: decrement dependents only for edges whose condition holds.

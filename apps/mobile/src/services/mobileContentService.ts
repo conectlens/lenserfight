@@ -1,6 +1,9 @@
 import {
   battlesService,
   type BattleFeedItemRecord,
+  type ContenderRecord,
+  type SubmitVoteInput,
+  type VoteAggregateRecord,
   lenserService,
   lensesService,
   tagService,
@@ -16,12 +19,28 @@ import type {
   ThreadFeedItem,
 } from '@lenserfight/types'
 
-export type { BattleFeedItemRecord as MobileBattle }
+/**
+ * Detail-screen battle shape. Extends the feed-item shape with the authoritative
+ * winner id from fn_get_battle (BattleRecord.winner_contender_id) so the detail
+ * screen can derive the winner slot by matching contender ids — winner_slot on
+ * the feed-item shape is only populated by the feed RPC, not the single-battle RPC.
+ */
+export type MobileBattle = BattleFeedItemRecord & {
+  winner_contender_id: string | null
+}
+
+export type { ContenderRecord, SubmitVoteInput, VoteAggregateRecord }
 
 export interface TagDetailBundle {
   tag: TagUsage | null
   threads: ThreadFeedItem[]
   lenses: LensViewModel[]
+}
+
+export interface MobileBattleResult {
+  battle: MobileBattle
+  contenders: ContenderRecord[]
+  aggregates: VoteAggregateRecord[]
 }
 
 function publicMessage(error: unknown): Error {
@@ -124,11 +143,13 @@ export const mobileContentService = {
     }
   },
 
-  async getBattle(id: string): Promise<BattleFeedItemRecord | null> {
+  async getBattle(id: string): Promise<MobileBattle | null> {
     try {
       const record = await battlesService.getBattleById(id)
       if (!record) return null
-      // Map BattleRecord to BattleFeedItemRecord shape for the mobile screen
+      // Map BattleRecord to the detail-screen shape. winner_slot is not on the
+      // single-battle RPC; carry the authoritative winner_contender_id so the
+      // screen derives the slot by matching contender ids.
       return {
         id: record.id,
         slug: record.slug ?? '',
@@ -147,10 +168,50 @@ export const mobileContentService = {
         contender_b_name: null,
         contender_b_type: null,
         winner_slot: null,
-        content_type: null,
-      } as BattleFeedItemRecord
+        winner_contender_id: record.winner_contender_id ?? null,
+        content_type: record.content_type ?? null,
+      }
     } catch (error) {
       throw publicMessage(error)
     }
+  },
+
+  async getBattleResult(id: string): Promise<MobileBattleResult | null> {
+    try {
+      // Resolve the battle directly by id (single-battle RPC) instead of scanning
+      // the keyset-paginated feed, which misses older/closed battles outside the
+      // newest-first window (deep links, history). Three parallel RPCs, no N+1.
+      const [battle, contenders, aggregates] = await Promise.all([
+        this.getBattle(id),
+        battlesService.getContenders(id),
+        battlesService.getVoteAggregates(id),
+      ])
+      if (!battle) return null
+      return { battle, contenders, aggregates }
+    } catch (error) {
+      throw publicMessage(error)
+    }
+  },
+
+  async getMyBattleVote(id: string): Promise<{ vote_value: string } | null> {
+    try {
+      return await battlesService.getMyVote(id)
+    } catch (error) {
+      throw publicMessage(error)
+    }
+  },
+
+  async checkBattleVoteEligibility(battleId: string, lenserId: string): Promise<boolean> {
+    try {
+      return await battlesService.checkVoterEligibility(battleId, lenserId)
+    } catch (error) {
+      throw publicMessage(error)
+    }
+  },
+
+  // Intentionally NOT wrapped in publicMessage: fn_submit_vote enforces
+  // eligibility/rate-limit (P0429) server-side and its message must reach the UI.
+  async submitBattleVote(input: SubmitVoteInput): Promise<void> {
+    await battlesService.submitVote(input)
   },
 }

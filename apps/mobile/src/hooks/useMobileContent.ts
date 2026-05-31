@@ -1,6 +1,9 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { mobileContentService } from '../services/mobileContentService'
+import {
+  mobileContentService,
+  type SubmitVoteInput,
+} from '../services/mobileContentService'
 
 export function useThreadList() {
   return useQuery({
@@ -66,6 +69,43 @@ export function useBattleDetail(id: string) {
     queryKey: ['mobile', 'battle', id],
     queryFn: () => mobileContentService.getBattle(id),
     enabled: !!id,
+  })
+}
+
+export function useBattleResult(id: string) {
+  return useQuery({
+    queryKey: ['mobile', 'battle-result', id],
+    queryFn: () => mobileContentService.getBattleResult(id),
+    enabled: !!id,
+  })
+}
+
+export function useMyBattleVote(id?: string) {
+  return useQuery({
+    queryKey: ['mobile', 'battle-vote', id],
+    queryFn: () => mobileContentService.getMyBattleVote(id!),
+    enabled: !!id,
+  })
+}
+
+export function useBattleVoteEligibility(battleId?: string, lenserId?: string) {
+  return useQuery({
+    queryKey: ['mobile', 'battle-eligibility', battleId, lenserId],
+    queryFn: () => mobileContentService.checkBattleVoteEligibility(battleId!, lenserId!),
+    enabled: !!battleId && !!lenserId,
+    staleTime: 1000 * 60,
+  })
+}
+
+export function useSubmitBattleVote(battleId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: SubmitVoteInput) => mobileContentService.submitBattleVote(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mobile', 'battle-result', battleId] })
+      queryClient.invalidateQueries({ queryKey: ['mobile', 'battle-vote', battleId] })
+      queryClient.invalidateQueries({ queryKey: ['mobile', 'battle', battleId] })
+    },
   })
 }
 

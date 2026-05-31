@@ -23,7 +23,7 @@ fi
 # 2. lf battle browse --limit 1
 # ---------------------------------------------------------------------------
 if pnpm nx run cli:build --skip-nx-cache 2>/dev/null; then
-  if node dist/apps/cli/main.js battle browse --limit 1 --json 2>&1 | grep -q '\['; then
+  if LF_LOCAL=1 node dist/apps/cli/main.js battle browse --limit 1 --json 2>&1 | grep -q '\['; then
     step_ok "lf battle browse --limit 1"
   else
     step_fail "lf battle browse --limit 1 returned no results"

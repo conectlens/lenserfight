@@ -124,15 +124,34 @@
     "empty": "No battles available yet.",
     "detail": "Battle",
     "status": {
-      "pending": "Pending",
-      "active": "Active",
+      "draft": "Draft",
+      "open": "Open",
+      "executing": "Running",
       "voting": "Voting",
-      "judging": "Judging",
-      "completed": "Completed"
+      "scoring": "Scoring",
+      "closed": "Closed",
+      "published": "Published",
+      "archived": "Archived"
     },
     "timeLeft": "Ends",
     "viewOnWeb": "View full battle",
-    "webNote": "Submit entries and vote on the full battle page."
+    "webNote": "Submit entries and vote on the full battle page.",
+    "result": {
+      "title": "Result",
+      "winner": "Winner",
+      "votes": "votes",
+      "tie": "No clear winner",
+      "pending": "Results are not final yet."
+    },
+    "vote": {
+      "title": "Cast your vote",
+      "voteFor": "Vote for {{name}}",
+      "draw": "It is a tie",
+      "submitted": "Vote submitted",
+      "ineligible": "You are not eligible to vote in this battle.",
+      "signInToVote": "Sign in to vote",
+      "closed": "Voting has closed."
+    }
   },
   "actions": {
     "back": "Back",

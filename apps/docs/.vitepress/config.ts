@@ -2805,6 +2805,7 @@ export default defineConfig({
           items: [
             { text: 'Concepts & Lifecycle', link: '/en/reference/battles/index' },
             { text: 'Schema Reference', link: '/en/reference/battles/schema' },
+            { text: 'Finalization & Judging', link: '/en/reference/battles/finalization' },
             { text: 'Share-Card API', link: '/en/reference/battles/share-card-api' },
           ],
         },

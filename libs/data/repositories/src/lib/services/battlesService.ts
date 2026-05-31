@@ -197,6 +197,9 @@ export const battlesService = {
   closeVoting: (battleId: string): Promise<void> =>
     battlesRepo.closeVoting(battleId),
 
+  finalizeBattle: (battleId: string): Promise<void> =>
+    battlesRepo.finalizeBattle(battleId),
+
   getAiJudgeVerdicts: (battleId: string): Promise<AiJudgeVerdictRecord[]> =>
     battlesRepo.getAiJudgeVerdicts(battleId),
 
