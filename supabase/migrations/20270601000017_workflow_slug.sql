@@ -112,6 +112,9 @@ GRANT ALL ON FUNCTION "public"."fn_get_workflow"("p_ref" "text") TO "authenticat
 GRANT ALL ON FUNCTION "public"."fn_get_workflow"("p_ref" "text") TO "service_role";
 
 -- ─── Update fn_create_workflow to return slug ────────────────────────────────
+-- DROP required: PostgreSQL rejects CREATE OR REPLACE when RETURNS TABLE changes.
+
+DROP FUNCTION IF EXISTS "public"."fn_create_workflow"("text", "text", "text");
 
 CREATE OR REPLACE FUNCTION "public"."fn_create_workflow"(
   "p_title"       "text",
@@ -165,6 +168,9 @@ GRANT ALL ON FUNCTION "public"."fn_create_workflow"("p_title" "text", "p_descrip
 GRANT ALL ON FUNCTION "public"."fn_create_workflow"("p_title" "text", "p_description" "text", "p_visibility" "text") TO "service_role";
 
 -- ─── Update fn_get_my_workflows to include slug ──────────────────────────────
+-- DROP required: PostgreSQL rejects CREATE OR REPLACE when RETURNS TABLE changes.
+
+DROP FUNCTION IF EXISTS "public"."fn_get_my_workflows"("uuid", integer, integer, "text", "text", "text");
 
 CREATE OR REPLACE FUNCTION "public"."fn_get_my_workflows"(
   "p_lenser_id" "uuid",
