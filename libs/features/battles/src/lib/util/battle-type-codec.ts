@@ -47,7 +47,7 @@ function isBattleType(value: unknown): value is BattleType {
   return typeof value === 'string' && (LEGACY_TYPES as readonly string[]).includes(value)
 }
 
-function hasPolicy(value: Record<string, unknown> | null | undefined): value is LenserBattlePolicy {
+function hasPolicy(value: unknown): value is LenserBattlePolicy {
   return !!value && Object.keys(value).length > 0
 }
 

@@ -64,6 +64,34 @@ export function useBattleList() {
   })
 }
 
+export function useBattlesFeed(status?: string) {
+  return useQuery({
+    queryKey: ['mobile', 'battles-feed', status ?? 'all'],
+    queryFn: () => mobileContentService.getBattlesFeed(status, 20),
+  })
+}
+
+export function useCreateBattle() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      title,
+      taskPrompt,
+      battleType,
+      rules,
+    }: {
+      title: string
+      taskPrompt: string
+      battleType: 'ai_vs_ai' | 'human_vs_human_open_votes' | 'human_vs_ai'
+      rules?: string
+    }) => mobileContentService.createBattle(title, taskPrompt, battleType, rules),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mobile', 'battles-feed'] })
+      queryClient.invalidateQueries({ queryKey: ['mobile', 'battles'] })
+    },
+  })
+}
+
 export function useBattleDetail(id: string) {
   return useQuery({
     queryKey: ['mobile', 'battle', id],

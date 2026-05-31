@@ -68,6 +68,9 @@ const LazyAutomationsPage = lazy(() =>
 const LazyShortLinkRedirect = lazy(() =>
   import('@lenserfight/features/share').then((module) => ({ default: module.ShortLinkRedirect }))
 )
+const LazyLeaderboardPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.LeaderboardPage }))
+)
 const LazyCreateLenserProfileModal = lazy(() =>
   import('@lenserfight/features/onboarding').then((module) => ({
     default: module.CreateLenserProfileModal,
@@ -307,7 +310,14 @@ export const WebRouter: React.FC = () => {
         <Route path="/tags/*" element={<Navigate to="/ray" replace />} />
         <Route path="/rays/*" element={<Navigate to="/ray" replace />} />
         <Route path="/len/*" element={<Navigate to="/ray" replace />} />
-        <Route path="/leaderboard" element={<Navigate to="/lenserboard" replace />} />
+        <Route
+          path="/leaderboard"
+          element={
+            <DashboardFrame>
+              <LazyLeaderboardPage />
+            </DashboardFrame>
+          }
+        />
         <Route path="/store" element={<Navigate to="/" replace />} />
 
         {/* Unknown routes */}

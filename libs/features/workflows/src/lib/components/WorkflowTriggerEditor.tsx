@@ -2,7 +2,7 @@ import { supabase } from '@lenserfight/data/supabase'
 import { Badge, Button } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Copy, Plus, Trash2 } from 'lucide-react'
+import { Copy, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import React, { useCallback, useState } from 'react'
 
 type TriggerType = 'cron' | 'battle_event' | 'webhook' | 'manual'
@@ -16,6 +16,105 @@ interface WorkflowTrigger {
   enabled: boolean
   last_fired_at: string | null
   created_at: string
+}
+
+interface WebhookUrlConfig {
+  webhook_url: string
+  has_secret: boolean
+  workflow_id: string
+}
+
+function WebhookUrlPanel({ workflowId }: { workflowId: string }) {
+  const qc = useQueryClient()
+  const [copiedUrl, setCopiedUrl] = useState(false)
+  const [newSecret, setNewSecret] = useState<string | null>(null)
+
+  const { data: config, isLoading } = useQuery<WebhookUrlConfig | null>({
+    queryKey: ['workflow-webhook-url', workflowId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('fn_get_workflow_webhook_url', {
+        p_workflow_id: workflowId,
+      })
+      if (error) throw error
+      return data as WebhookUrlConfig | null
+    },
+    staleTime: 1000 * 60,
+  })
+
+  const { mutate: rotateSecret, isPending: isRotating } = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('fn_rotate_webhook_secret', {
+        p_workflow_id: workflowId,
+      })
+      if (error) throw error
+      return data as string
+    },
+    onSuccess: (secret) => {
+      setNewSecret(secret)
+      qc.invalidateQueries({ queryKey: ['workflow-webhook-url', workflowId] })
+    },
+  })
+
+  const handleCopyUrl = useCallback(() => {
+    if (!config?.webhook_url) return
+    navigator.clipboard.writeText(config.webhook_url).catch(() => undefined)
+    setCopiedUrl(true)
+    setTimeout(() => setCopiedUrl(false), 2000)
+  }, [config?.webhook_url])
+
+  if (isLoading) return null
+
+  return (
+    <div className="mt-3 rounded-lg border border-surface-border bg-surface-raised px-3 py-3 space-y-2">
+      <p className="text-[10px] font-semibold text-surface-text-muted uppercase tracking-wide">
+        Webhook endpoint
+      </p>
+
+      {config?.webhook_url && (
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={config.webhook_url}
+            className="flex-1 min-w-0 rounded-lg border border-surface-border bg-surface px-2.5 py-1.5 text-xs font-mono text-surface-text focus:outline-none"
+          />
+          <Button size="sm" variant="ghost" onClick={handleCopyUrl} title="Copy webhook URL">
+            <Copy className="h-3.5 w-3.5" />
+            {copiedUrl && <span className="ml-1 text-xs">Copied!</span>}
+          </Button>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <div>
+          {config?.has_secret ? (
+            <Badge color="green" variant="outline" className="text-[10px]">Secret configured</Badge>
+          ) : (
+            <Badge color="yellow" variant="outline" className="text-[10px]">No secret — endpoint is public</Badge>
+          )}
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => rotateSecret()}
+          disabled={isRotating}
+          title="Rotate webhook secret"
+          className="flex items-center gap-1 text-xs"
+        >
+          <RefreshCw className="h-3 w-3" />
+          {isRotating ? 'Rotating…' : 'Rotate secret'}
+        </Button>
+      </div>
+
+      {newSecret && (
+        <div className="rounded-lg border border-yellow-400/40 bg-yellow-50/10 px-3 py-2 space-y-1">
+          <p className="text-[10px] font-medium text-yellow-600 dark:text-yellow-400">
+            New secret — copy now, it won&apos;t be shown again:
+          </p>
+          <code className="block text-xs font-mono break-all text-surface-text">{newSecret}</code>
+        </div>
+      )}
+    </div>
+  )
 }
 
 const CRON_PRESETS = [
@@ -182,43 +281,48 @@ export function WorkflowTriggerEditor({ workflowId }: WorkflowTriggerEditorProps
           {triggers.map((t) => (
             <div
               key={t.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-surface-border bg-surface-raised px-4 py-3"
+              className="rounded-xl border border-surface-border bg-surface-raised px-4 py-3"
             >
-              <div className="space-y-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <Badge color="blue" variant="outline" className="text-[10px]">{t.trigger_type}</Badge>
-                  {!t.enabled && <Badge color="gray" variant="outline" className="text-[10px]">disabled</Badge>}
-                </div>
-                <div className="text-xs text-surface-text-muted font-mono truncate">
-                  {JSON.stringify(t.condition)}
-                </div>
-                {t.last_fired_at && (
-                  <div className="text-[10px] text-surface-text-muted">
-                    Last fired: {new Date(t.last_fired_at).toLocaleString()}
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Badge color="blue" variant="outline" className="text-[10px]">{t.trigger_type}</Badge>
+                    {!t.enabled && <Badge color="gray" variant="outline" className="text-[10px]">disabled</Badge>}
                   </div>
-                )}
-              </div>
-              <div className="flex gap-2 shrink-0">
-                {t.trigger_type === 'webhook' && t.webhook_secret && (
+                  <div className="text-xs text-surface-text-muted font-mono truncate">
+                    {JSON.stringify(t.condition)}
+                  </div>
+                  {t.last_fired_at && (
+                    <div className="text-[10px] text-surface-text-muted">
+                      Last fired: {new Date(t.last_fired_at).toLocaleString()}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  {t.trigger_type === 'webhook' && t.webhook_secret && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleCopySecret(t.id, t.webhook_secret!)}
+                      title="Copy webhook secret"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {copiedId === t.id && <span className="ml-1 text-xs">Copied!</span>}
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleCopySecret(t.id, t.webhook_secret!)}
-                    title="Copy webhook secret"
+                    onClick={() => deleteTrigger(t.id)}
+                    title="Delete trigger"
                   >
-                    <Copy className="h-3.5 w-3.5" />
-                    {copiedId === t.id && <span className="ml-1 text-xs">Copied!</span>}
+                    <Trash2 className="h-3.5 w-3.5 text-red-400" />
                   </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => deleteTrigger(t.id)}
-                  title="Delete trigger"
-                >
-                  <Trash2 className="h-3.5 w-3.5 text-red-400" />
-                </Button>
+                </div>
               </div>
+              {t.trigger_type === 'webhook' && (
+                <WebhookUrlPanel workflowId={workflowId} />
+              )}
             </div>
           ))}
         </div>

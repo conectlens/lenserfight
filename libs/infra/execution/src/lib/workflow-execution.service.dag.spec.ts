@@ -920,6 +920,36 @@ describe('MergeRunner fan-in (end-to-end)', () => {
   })
 })
 
+// ── IF false-branch produces skipped node ────────────────────────────────────
+
+describe('IF false-branch produces skipped node', () => {
+  afterEach(() => clearNodeRunners())
+
+  it('routes false branch: trueNode is skipped, falseNode is completed', async () => {
+    registerNodeRunner(new IfConditionRunner())
+    const service = new WorkflowExecutionService(echoProvider())
+    const ctx = makeCtx({ rootInputs: { input: 'x' } })
+
+    const nodes: WorkflowNode[] = [
+      n('ifNode', { lensId: null, config: { nodeType: 'if_condition', operator: 'equals', value: 'never' } }),
+      n('trueNode'),
+      n('falseNode'),
+    ]
+    const edges: WorkflowEdge[] = [
+      { ...e('ifNode', 'trueNode'), sourceOutputKey: 'branch', targetParamLabel: 'branchVal', condition: { type: 'equals', value: 'true' } },
+      { ...e('ifNode', 'falseNode'), sourceOutputKey: 'branch', targetParamLabel: 'branchVal', condition: { type: 'equals', value: 'false' } },
+    ]
+
+    const result = await service.executeWorkflow(nodes, edges, ctx)
+
+    // ifNode has no upstream; evaluates operator 'equals' 'never' → false branch
+    expect(statusOf(result, 'ifNode')).toBe('completed')
+    expect(outputDataOf(result, 'ifNode')?.['branch']).toBe('false')
+    expect(statusOf(result, 'trueNode')).toBe('skipped')
+    expect(statusOf(result, 'falseNode')).toBe('completed')
+  })
+})
+
 describe('StopReturnRunner halt (end-to-end)', () => {
   afterEach(() => clearNodeRunners())
 

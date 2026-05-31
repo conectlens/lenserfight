@@ -27,6 +27,7 @@ import type {
   WorkflowRunEventRecord,
   WorkflowRunRecord,
   WorkflowVersionRecord,
+  WorkflowVersionSnapshotRecord,
   WorkflowsListFilter,
   WorkflowsRepositoryPort,
 } from '../workflowsRepository'
@@ -441,5 +442,9 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
 
   async reorderTasks(_phaseId: string, _orderedIds: string[]): Promise<void> {
     // No-op in file mode.
+  }
+
+  async getVersionSnapshot(_versionId: string): Promise<WorkflowVersionSnapshotRecord | null> {
+    return null
   }
 }

@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 import { ProviderError } from '@lenserfight/providers'
+import type { ContentPart } from '@lenserfight/providers'
 import type { StreamingErrorEnvelope } from '@lenserfight/ui/components'
 
 import { FundingAdapterError, selectFundingAdapter, type MediaModality } from '../adapters'
@@ -248,8 +249,9 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
             const prompt =
               first && typeof first.content === 'string'
                 ? first.content
-                : (first?.content?.find((p) => p.type === 'text') as { text: string } | undefined)
-                    ?.text ?? ''
+                : (Array.isArray(first?.content)
+                    ? (first.content.find((p: ContentPart) => p.type === 'text') as { text: string } | undefined)
+                    : undefined)?.text ?? ''
 
             return adapter.executeMedia(
               {
@@ -257,7 +259,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
                 versionId: dto.versionId,
                 provider: dto.providerKey,
                 model: dto.modelKey,
-                modality: dto.output_modality,
+                modality: dto.output_modality as MediaModality,
                 prompt,
                 inputSnapshot: { ...dto.inputSnapshot, prompt },
                 attachmentBindings,
@@ -428,19 +430,28 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
         versionParams: dto.versionParams,
         params: dto.params,
       })
-        .then((messages) =>
-          adapter.streamText(
+        .then((messages) => {
+          const textMessages = messages.map((m) => ({
+            ...m,
+            content: Array.isArray(m.content)
+              ? m.content
+                  .filter((p: ContentPart) => p.type === 'text')
+                  .map((p: ContentPart) => (p as { type: 'text'; text: string }).text)
+                  .join('')
+              : m.content,
+          }))
+          return adapter.streamText(
             {
               lensId,
               versionId: dto.versionId,
               provider: dto.providerKey,
               model: dto.modelKey,
-              messages,
+              messages: textMessages,
             },
             controller.signal,
             callbacks,
-          ),
-        )
+          )
+        })
         .catch((err: unknown) => {
           if (!isActive()) return
           if ((err as Error).name === 'AbortError') {

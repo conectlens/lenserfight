@@ -76,6 +76,7 @@ import { WorkflowCanvasNode } from './WorkflowCanvasNode'
 
 import type { WorkflowNodeData, WorkflowNodeConfig } from './WorkflowCanvasNode'
 import type { DraggedLensData } from './WorkflowLensPalette'
+import type { LensKind } from '@lenserfight/types'
 import type {
   WorkflowNodeRecord,
   WorkflowEdgeRecord,
@@ -281,6 +282,11 @@ export interface WorkflowBuilderCanvasProps {
    * so users always know which node is being edited, independent of RF selection.
    */
   configuringNodeId?: string | null
+  /**
+   * Called when the user triggers a single-node test run from the canvas.
+   * Receives the node id to run. If omitted, the run-node command is disabled.
+   */
+  onRunNode?: (nodeId: string) => void
 }
 
 // ─── Public component — wraps inner in ReactFlowProvider ─────────────────────
@@ -307,6 +313,7 @@ function WorkflowBuilderCanvasInner({
   onEdit,
   nodeResults,
   configuringNodeId,
+  onRunNode,
 }: WorkflowBuilderCanvasProps) {
   const { screenToFlowPosition, fitView, zoomIn, zoomOut, setViewport } = useReactFlow()
   const { locale } = useLocale()
@@ -1225,6 +1232,12 @@ function WorkflowBuilderCanvasInner({
     persistGraphTransition(before, result.snapshot)
   }, [applySnapshot, makeSnapshot, persistGraphTransition])
 
+  const selectedNodeId = selection.nodeIds.length === 1 ? selection.nodeIds[0] : null
+  const selectedFlowNode = selectedNodeId
+    ? flowNodes.find((n) => n.id === selectedNodeId)
+    : null
+  const selectedNodeKind = selectedFlowNode ? getNodeTypeForFlowNode(selectedFlowNode) : undefined
+
   const commandState = useMemo(
     () => ({
       readOnly,
@@ -1236,7 +1249,7 @@ function WorkflowBuilderCanvasInner({
       canPaste: hasClipboard,
       canUndo: historyState.past.length > 0,
       canRedo: historyState.future.length > 0,
-      canRunNode: false,
+      canRunNode: !!selectedNodeId && !!workflowId && selectedNodeKind !== 'trigger' && !!onRunNode,
     }),
     [
       flowNodes.length,
@@ -1245,6 +1258,10 @@ function WorkflowBuilderCanvasInner({
       historyState.past.length,
       readOnly,
       selection,
+      selectedNodeId,
+      selectedNodeKind,
+      workflowId,
+      onRunNode,
     ]
   )
 
@@ -1307,7 +1324,14 @@ function WorkflowBuilderCanvasInner({
             toast.info(
               'Add a connected node by dragging from the node sidebar, then connect from the source handle.'
             ),
-          runNode: () => toast.info('Node test runs are not enabled for this node yet.'),
+          runNode: () => {
+            const nodeId = selectionRef.current.nodeIds[0]
+            if (nodeId && onRunNode) {
+              onRunNode(nodeId)
+            } else {
+              toast.info('Node test runs are not enabled for this node yet.')
+            }
+          },
           deleteEdge: () =>
             deleteGraphItems('Delete edge', { nodeIds: [], edgeIds: selectionRef.current.edgeIds }),
           inspectEdgeCompatibility: inspectSelectedEdgeCompatibility,
@@ -1379,6 +1403,7 @@ function WorkflowBuilderCanvasInner({
       zoomIn,
       zoomOut,
       setViewport,
+      onRunNode,
     ]
   )
 
@@ -1637,7 +1662,7 @@ function WorkflowBuilderCanvasInner({
         return {
           id: n.id,
           lensId: data.lens_id ?? '',
-          kind: getNodeTypeForFlowNode(n) ?? 'text',
+          kind: (getNodeTypeForFlowNode(n) ?? 'text') as LensKind,
           paramLabels: incomingLabels,
         }
       }),
@@ -1669,11 +1694,31 @@ function WorkflowBuilderCanvasInner({
   const warnCount = simulationReport.diagnostics.filter((d) => d.severity === 'warn').length
   const showDiagnostics = !readOnly && (errorCount > 0 || warnCount > 0)
 
+  // ── Edge status decoration — colored after a run ──────────────────────────
+  // When nodeResults is non-empty, tint edges green (both endpoints completed)
+  // or grey-dashed (target skipped). Clears automatically when results clear.
+  const decoratedEdges = useMemo(() => {
+    if (!nodeResults || nodeResults.length === 0) return flowEdges
+    const statusMap = new Map(nodeResults.map((r) => [r.node_id, r.status]))
+    return flowEdges.map((edge) => {
+      const sourceStatus = statusMap.get(edge.source)
+      const targetStatus = statusMap.get(edge.target)
+      let edgeStyle: React.CSSProperties | undefined
+      if (sourceStatus === 'completed' && targetStatus === 'completed') {
+        edgeStyle = { stroke: '#22c55e', strokeWidth: 2 }
+      } else if (targetStatus === 'skipped') {
+        edgeStyle = { stroke: '#6b7280', strokeWidth: 1, strokeDasharray: '5,5' }
+      }
+      if (!edgeStyle) return edge
+      return { ...edge, style: edgeStyle }
+    })
+  }, [flowEdges, nodeResults])
+
   return (
     <div ref={canvasContainerRef} className="relative h-full w-full">
       <ReactFlow
         nodes={flowNodes}
-        edges={flowEdges}
+        edges={decoratedEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={readOnly ? undefined : onNodesChange}

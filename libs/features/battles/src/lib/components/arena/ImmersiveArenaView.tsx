@@ -290,6 +290,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
           myContenderSlot={myContenderSlot}
           isMusicEnabled={music.isEnabled}
           onToggleMusic={music.toggleEnabled}
+          showLiveBadge={battle.status === 'voting'}
         />
 
         {/* Main content area + optional desktop chat rail */}

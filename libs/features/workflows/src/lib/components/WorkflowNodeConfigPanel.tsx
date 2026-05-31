@@ -56,6 +56,7 @@ export function WorkflowNodeConfigPanel({
   )
   const [jsonImportOpen, setJsonImportOpen] = useState(false)
   const [csvImportOpen, setCsvImportOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'config' | 'inputs' | 'outputs'>('config')
 
   const { models, isLoading: modelsLoading } = useAIModels()
   const nodeFunding = useFundingSource(selectedProviderKey)
@@ -82,10 +83,13 @@ export function WorkflowNodeConfigPanel({
     )
     setParamOverrides(currentConfig.param_overrides ?? {})
     setSelectedProviderKey('')
+    setActiveTab('config')
   }, [nodeId, currentConfig.model_id, currentConfig.param_overrides])
 
   const upstreamOutputs = useUpstreamNodeOutputs({ nodeId, edges, nodes, nodeResults })
   const hasRun = nodeResults.length > 0
+
+  const nodeResult = nodeResults.find((r) => r.node_id === nodeId) ?? null
 
   // Incoming edge mappings for this node (which params are auto-wired from previous nodes)
   const incomingEdges = edges.filter((e) => e.target_node_id === nodeId)
@@ -146,23 +150,83 @@ export function WorkflowNodeConfigPanel({
   return (
     <aside className="flex flex-col w-100 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-border">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold text-greyscale-900 dark:text-greyscale-50 truncate">
-            Configure Node
-          </p>
-          <p className="text-[11px] text-greyscale-400 truncate mt-0.5">{nodeLabel}</p>
+      <div className="flex flex-col border-b border-surface-border">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-greyscale-900 dark:text-greyscale-50 truncate">
+              Configure Node
+            </p>
+            <p className="text-[11px] text-greyscale-400 truncate mt-0.5">{nodeLabel}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="!p-1 !h-6 !w-6 text-greyscale-400 hover:text-greyscale-700 transition-colors flex-shrink-0"
+          >
+            <X size={14} />
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="!p-1 !h-6 !w-6 text-greyscale-400 hover:text-greyscale-700 transition-colors flex-shrink-0"
-        >
-          <X size={14} />
-        </Button>
+        <div className="flex items-center gap-1 px-4 pb-2">
+          {(['config', 'inputs', 'outputs'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                activeTab === tab
+                  ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
+                  : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {activeTab === 'inputs' && (
+        <div className="flex-1 overflow-y-auto p-4">
+          {nodeResult?.output_data?.['_resolvedInputSnapshot'] ? (
+            <pre className="text-xs font-mono bg-muted rounded p-2 overflow-auto max-h-64">
+              {JSON.stringify(nodeResult.output_data['_resolvedInputSnapshot'], null, 2)}
+            </pre>
+          ) : nodeResult ? (
+            <pre className="text-xs font-mono bg-muted rounded p-2 overflow-auto max-h-64">
+              {JSON.stringify(nodeResult.output_data ?? {}, null, 2)}
+            </pre>
+          ) : (
+            <p className="text-muted-foreground text-xs p-4 text-center text-greyscale-400">
+              Run workflow to see inputs
+            </p>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'outputs' && (
+        <div className="flex-1 overflow-y-auto p-4">
+          {nodeResult?.output_data ? (
+            (() => {
+              const mediaType = nodeResult.output_data['mediaType'] as string | undefined
+              const url = nodeResult.output_data['url'] as string | undefined
+              if (mediaType === 'image' && url) {
+                return <img src={url} alt="Node output" className="max-w-full rounded" />
+              }
+              return (
+                <pre className="text-xs font-mono bg-muted rounded p-2 overflow-auto max-h-64">
+                  {JSON.stringify(nodeResult.output_data, null, 2)}
+                </pre>
+              )
+            })()
+          ) : (
+            <p className="text-muted-foreground text-xs p-4 text-center text-greyscale-400">
+              Run workflow to see outputs
+            </p>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'config' && (
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
         <div className="space-y-2 border-surface-border">
           <div className="flex items-center justify-between gap-2">
@@ -292,6 +356,7 @@ export function WorkflowNodeConfigPanel({
           </Button>
         </div>
       </div>
+      )}
 
       <JsonImportDialog
         open={jsonImportOpen}

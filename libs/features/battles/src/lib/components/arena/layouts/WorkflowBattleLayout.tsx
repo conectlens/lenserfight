@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { mapToLifecycle } from '@lenserfight/api/contracts'
 import { Layers } from 'lucide-react'
 import type { BattleLayoutContext, LensContextDetail } from '../../../types/battle-layout.types'
 import type { Contender, Submission } from '../../../types/battle.types'

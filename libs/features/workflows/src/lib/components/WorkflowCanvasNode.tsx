@@ -292,6 +292,13 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
       {/* Execution status badge — top-right corner */}
       {showBadge && <WorkflowNodeExecutionBadge status={executionStatus!} />}
 
+      {/* Running overlay — shown while node is actively executing */}
+      {(executionStatus === 'running' || executionStatus === 'streaming') && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
+          <span className="text-xs text-white font-medium">Running…</span>
+        </div>
+      )}
+
       {/* Configuring indicator — top-right corner (only when drawer is open and no execution badge) */}
       {isConfiguring && !selected && !showBadge && (
         <span

@@ -49,7 +49,7 @@ export const MentionAutocompleteList: React.FC<MentionAutocompleteListProps> = (
             `}
           >
             <div className="flex items-center gap-3">
-              <Avatar src={user.avatar_url ?? undefined} alt={user.display_name} size="xs" />
+              <Avatar src={user.avatar_url ?? undefined} alt={user.display_name} size="sm" />
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span

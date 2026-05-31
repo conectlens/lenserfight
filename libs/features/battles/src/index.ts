@@ -148,6 +148,7 @@ export { TemplateSelectorStep } from './lib/components/creation/TemplateSelector
 export type { TemplateSelectorStepProps } from './lib/components/creation/TemplateSelectorStep'
 export * from './lib/pages/BattleDetailPage'
 export * from './lib/pages/BattleResultPage'
+export * from './lib/pages/LeaderboardPage'
 export * from './lib/pages/JoinBattlePage'
 export * from './lib/pages/BattleReplayPage'
 export * from './lib/pages/BattleLenserboardPage'

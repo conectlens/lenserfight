@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../../dist/out-tsc",
+    "jsx": "react-jsx",
     "types": ["node", "vite/client"]
   },
   "exclude": [

@@ -32,7 +32,7 @@ const cardVariant = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: 'spring', stiffness: 280, damping: 22 },
+    transition: { type: 'spring' as const, stiffness: 280, damping: 22 },
   },
 }
 

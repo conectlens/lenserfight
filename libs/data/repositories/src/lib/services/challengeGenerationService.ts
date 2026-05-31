@@ -6,6 +6,9 @@ import { getGeneratorRequirements } from '@lenserfight/domain/battle-governance'
 import { generatedChallengesRepository } from '../repositories/generatedChallengesRepository'
 import { executionService } from './executionService'
 
+// Allow Deno global in Node TypeScript builds (runtime check guards actual access).
+declare const Deno: { env: { get(key: string): string | undefined } } | undefined
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface ChallengeGenerationRequest {
