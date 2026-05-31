@@ -894,7 +894,8 @@ const finalize = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRpc('fn_battles_finalize', { p_battle_id: args.id }, { requireAuth: true })
+      // Creator-checked wrapper; public.fn_battles_finalize is now service_role-only.
+      await callRpc('fn_mcp_battle_finalize', { p_battle_id: args.id }, { requireAuth: true })
       consola.success('Battle %s finalized.', args.id)
       consola.info('View results: lf battle leaderboard %s', args.id)
     } catch (err) {

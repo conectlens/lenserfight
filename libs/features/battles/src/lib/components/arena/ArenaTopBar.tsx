@@ -123,7 +123,10 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
       {/* Manage button — owner only, actionable statuses */}
       {isOwner &&
         onManageOpen &&
-        (battle.status === 'draft' || battle.status === 'open' || battle.status === 'voting') && (
+        (battle.status === 'draft' ||
+          battle.status === 'open' ||
+          battle.status === 'voting' ||
+          battle.status === 'scoring') && (
           <button
             type="button"
             onClick={onManageOpen}

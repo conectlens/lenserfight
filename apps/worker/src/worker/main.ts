@@ -8,6 +8,7 @@ import { processNextScheduledWorkflow } from './scheduled-workflow-worker'
 import { processNextTeamRun } from './team-run-worker'
 import { startVoteAnomalyWorker } from './vote-anomaly-worker'
 import { startBattleAutoPromoteWorker } from './battle-auto-promote-worker'
+import { startBattleFinalizeWorker } from './battle-finalize-worker'
 import { startWebhookDrainWorker } from './webhook-drain-worker'
 import { startWorkflowEventDispatcher } from './workflow-event-dispatcher'
 
@@ -177,6 +178,13 @@ async function runLoop(): Promise<void> {
     stopAutoPromoteWorker = startBattleAutoPromoteWorker()
   }
 
+  // CB: Start battle finalize poller (scoring -> closed, winner selection)
+  const finalizeWorkerEnabled = process.env['PLATFORM_API_BATTLE_FINALIZE_WORKER_ENABLED'] !== 'false'
+  let stopFinalizeWorker: (() => void) | undefined
+  if (finalizeWorkerEnabled && !once) {
+    stopFinalizeWorker = startBattleFinalizeWorker()
+  }
+
   // CB: Start webhook drain worker
   const webhookDrainEnabled = process.env['PLATFORM_API_WEBHOOK_DRAIN_ENABLED'] !== 'false'
   let stopWebhookDrain: (() => void) | undefined
@@ -227,6 +235,7 @@ async function runLoop(): Promise<void> {
   if (heartbeatTimer) clearInterval(heartbeatTimer)
   if (stopVoteAnomalyWorker) stopVoteAnomalyWorker()
   if (stopAutoPromoteWorker) stopAutoPromoteWorker()
+  if (stopFinalizeWorker) stopFinalizeWorker()
   if (stopWebhookDrain) stopWebhookDrain()
   if (stopWorkflowDispatch) stopWorkflowDispatch()
 }

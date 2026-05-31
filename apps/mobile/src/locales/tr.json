@@ -124,15 +124,34 @@
     "empty": "Henüz düello yok.",
     "detail": "Düello",
     "status": {
-      "pending": "Bekliyor",
-      "active": "Aktif",
+      "draft": "Taslak",
+      "open": "Açık",
+      "executing": "Çalışıyor",
       "voting": "Oylamada",
-      "judging": "Değerlendirmede",
-      "completed": "Tamamlandı"
+      "scoring": "Puanlama",
+      "closed": "Kapandı",
+      "published": "Yayında",
+      "archived": "Arşivlendi"
     },
     "timeLeft": "Bitiş",
     "viewOnWeb": "Düelloyu tam görüntüle",
-    "webNote": "Giriş göndermek ve oy vermek için tam düello sayfasına git."
+    "webNote": "Giriş göndermek ve oy vermek için tam düello sayfasına git.",
+    "result": {
+      "title": "Sonuç",
+      "winner": "Kazanan",
+      "votes": "oy",
+      "tie": "Net kazanan yok",
+      "pending": "Sonuçlar henüz kesinleşmedi."
+    },
+    "vote": {
+      "title": "Oyunu kullan",
+      "voteFor": "{{name}} için oy ver",
+      "draw": "Berabere",
+      "submitted": "Oy gönderildi",
+      "ineligible": "Bu düelloda oy verme hakkın yok.",
+      "signInToVote": "Oy vermek için giriş yap",
+      "closed": "Oylama kapandı."
+    }
   },
   "actions": {
     "back": "Geri",
