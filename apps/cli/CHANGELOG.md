@@ -1,3 +1,13 @@
+## 0.15.0 (2026-05-31)
+
+### 🚀 Features
+
+- add comprehensive unit test coverage and standardize RPC parameter names across CLI commands ([e16baacd7](https://github.com/conectlens/lenserfight/commit/e16baacd7))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 0.14.0 (2026-05-31)
 
 ### 🚀 Features
