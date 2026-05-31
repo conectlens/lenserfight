@@ -1,3 +1,14 @@
+## 0.12.1 (2026-05-31)
+
+### 🩹 Fixes
+
+- **cli:** close privacy regression and update correctness bugs ([ad314fcac](https://github.com/conectlens/lenserfight/commit/ad314fcac))
+
+### ❤️ Thank You
+
+- Claude Sonnet 4.6
+- ÖMER FARUK COŞKUN
+
 ## 0.12.0 (2026-05-29)
 
 ### 🚀 Features
