@@ -1,4 +1,4 @@
-import { callRest, callRpc } from '../../utils/api'
+import { callRpc } from '../../utils/api'
 
 export type AgentTeamRunRow = {
   id: string
@@ -10,25 +10,13 @@ export type AgentTeamRunRow = {
   created_at: string
 }
 
-const ACTIVE_RUN_STATUSES = 'in.(queued,running,blocked)'
 
 /** Active team runs for an agent (queued, running, or blocked). */
 export async function listActiveTeamRuns(aiLenserId: string): Promise<AgentTeamRunRow[]> {
-  const rows = await callRest<AgentTeamRunRow[]>(
-    'agents',
-    'team_runs',
-    'GET',
-    undefined,
-    {
-      requireAuth: true,
-      query: {
-        select: 'id,ai_lenser_id,team_id,workflow_id,status,approval_status,created_at',
-        ai_lenser_id: `eq.${aiLenserId}`,
-        status: ACTIVE_RUN_STATUSES,
-        order: 'created_at.desc',
-        limit: '200',
-      },
-    },
+  const rows = await callRpc<AgentTeamRunRow[]>(
+    'fn_list_active_team_runs',
+    { p_ai_lenser_id: aiLenserId },
+    { requireAuth: true },
   )
   return rows ?? []
 }

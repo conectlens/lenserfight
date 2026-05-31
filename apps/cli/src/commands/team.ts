@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { callRest, callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '../utils/api'
 import { printJson, printTable, truncate } from '../utils/output'
 
 // ─── Phase X5 row types ────────────────────────────────────────────────────
@@ -112,19 +112,10 @@ const teamList = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<AgentTeamRow[]>(
-        'agents',
-        'teams',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: {
-            select: 'id,ai_lenser_id,name,description,status,is_active,created_at,updated_at',
-            ai_lenser_id: `eq.${args['ai-lenser']}`,
-            order: 'updated_at.desc',
-          },
-        }
+      const rows = await callRpc<AgentTeamRow[]>(
+        'fn_list_agent_teams',
+        { p_ai_lenser_id: args['ai-lenser'] },
+        { requireAuth: true }
       )
 
       if (!rows || rows.length === 0) {
@@ -183,19 +174,16 @@ const teamCreate = defineCommand({
       return
     }
     try {
-      const rows = await callRest<AgentTeamRow[]>(
-        'agents',
-        'teams',
-        'POST',
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_create_agent_team',
         {
-          ai_lenser_id: args['ai-lenser'],
-          name: args.name,
-          description: args.description || (args.template ? `Created from template: ${args.template}` : null),
+          p_ai_lenser_id: args['ai-lenser'],
+          p_name: args.name,
+          p_description: args.description || (args.template ? `Created from template: ${args.template}` : null) || null,
         },
-        { requireAuth: true, prefer: 'return=representation' }
+        { requireAuth: true }
       )
-
-      const team = Array.isArray(rows) ? rows[0] : (rows as unknown as AgentTeamRow)
+      const team = (result as unknown as AgentTeamRow)
       consola.success('Team created.')
       consola.info('Team ID: %s', team.id)
       consola.info('Name:    %s', team.name)
@@ -221,20 +209,10 @@ const teamMembers = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<AgentTeamMemberRow[]>(
-        'agents',
-        'team_members',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: {
-            select:
-              'id,team_id,agent_id,role,responsibility,lane,sort_order,is_active,personality_profile_id,memory_profile_id,tool_profile_id,model_profile_id',
-            team_id: `eq.${args.team}`,
-            order: 'lane.asc,sort_order.asc',
-          },
-        }
+      const rows = await callRpc<AgentTeamMemberRow[]>(
+        'fn_get_team_members',
+        { p_team_id: args.team },
+        { requireAuth: true }
       )
 
       if (!rows || rows.length === 0) {
@@ -288,28 +266,24 @@ const teamAddMember = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<AgentTeamMemberRow[]>(
-        'agents',
-        'team_members',
-        'POST',
+      const member = await callRpc<AgentTeamMemberRow>(
+        'fn_add_team_member',
         {
-          team_id: args.team,
-          agent_id: args.agent,
-          role: args.role,
-          responsibility: args.responsibility,
-          lane: Number(args.lane),
-          sort_order: Number(args['sort-order']),
-          personality_profile_id: args['personality-profile'] || null,
-          memory_profile_id: args['memory-profile'] || null,
-          tool_profile_id: args['tool-profile'] || null,
-          model_profile_id: args['model-profile'] || null,
+          p_team_id: args.team,
+          p_agent_id: args.agent,
+          p_role: args.role,
+          p_responsibility: args.responsibility,
+          p_lane: Number(args.lane),
+          p_sort_order: Number(args['sort-order']),
+          p_personality_profile_id: args['personality-profile'] || null,
+          p_memory_profile_id: args['memory-profile'] || null,
+          p_tool_profile_id: args['tool-profile'] || null,
+          p_model_profile_id: args['model-profile'] || null,
         },
-        { requireAuth: true, prefer: 'return=representation' }
+        { requireAuth: true }
       )
-
-      const member = Array.isArray(rows) ? rows[0] : (rows as unknown as AgentTeamMemberRow)
       consola.success('Member added to team %s.', args.team)
-      consola.info('Member ID: %s', member.id)
+      consola.info('Member ID: %s', (member as AgentTeamMemberRow).id)
     } catch (err) {
       handleError(err)
     }
@@ -332,15 +306,10 @@ const teamRemoveMember = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRest(
-        'agents',
-        'team_members',
-        'DELETE',
-        undefined,
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.member}` },
-        }
+      await callRpc(
+        'fn_remove_team_member',
+        { p_member_id: args.member },
+        { requireAuth: true }
       )
       consola.success('Member %s removed.', args.member)
     } catch (err) {
@@ -362,19 +331,10 @@ const teamEdges = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<AgentTeamEdgeRow[]>(
-        'agents',
-        'team_edges',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: {
-            select: 'id,team_id,source_member_id,target_member_id,edge_type,is_blocking',
-            team_id: `eq.${args.team}`,
-            order: 'created_at.asc',
-          },
-        }
+      const rows = await callRpc<AgentTeamEdgeRow[]>(
+        'fn_list_team_edges',
+        { p_team_id: args.team },
+        { requireAuth: true }
       )
 
       if (!rows || rows.length === 0) {
@@ -452,22 +412,19 @@ const teamAddEdge = defineCommand({
       return
     }
     try {
-      const rows = await callRest<AgentTeamEdgeRow[]>(
-        'agents',
-        'team_edges',
-        'POST',
+      const edge = await callRpc<AgentTeamEdgeRow>(
+        'fn_add_team_edge',
         {
-          team_id: args.team,
-          source_member_id: args.source,
-          target_member_id: args.target,
-          edge_type: args.type,
-          is_blocking: args.blocking,
+          p_team_id: args.team,
+          p_source_member_id: args.source,
+          p_target_member_id: args.target,
+          p_edge_type: args.type,
+          p_is_blocking: args.blocking,
         },
-        { requireAuth: true, prefer: 'return=representation' }
+        { requireAuth: true }
       )
-      const edge = Array.isArray(rows) ? rows[0] : (rows as unknown as AgentTeamEdgeRow)
       consola.success('Edge added.')
-      consola.info('Edge ID: %s', edge.id)
+      consola.info('Edge ID: %s', (edge as AgentTeamEdgeRow).id)
     } catch (err) {
       handleError(err)
     }
@@ -541,16 +498,23 @@ const teamAssign = defineCommand({
       if (failure) body.failure_policy = failure
       if (queue) body.queue_policy = queue
 
-      const rows = await callRest<Array<{ id: string }>>(
-        'agents',
-        'workflow_assignments',
-        'POST',
-        body,
-        { requireAuth: true, prefer: 'return=representation' }
+      const assignment = await callRpc<{ id: string }>(
+        'fn_create_workflow_assignment',
+        {
+          p_ai_lenser_id: body.ai_lenser_id,
+          p_workflow_id: body.workflow_id,
+          p_assignee_kind: body.assignee_kind,
+          p_assignee_ai_lenser_id: body.assignee_ai_lenser_id ?? null,
+          p_assignee_team_id: body.assignee_team_id ?? null,
+          p_approval_policy: body.approval_policy ?? null,
+          p_retry_policy: body.retry_policy ?? null,
+          p_failure_policy: body.failure_policy ?? null,
+          p_queue_policy: body.queue_policy ?? null,
+        },
+        { requireAuth: true }
       )
-      const assignment = Array.isArray(rows) ? rows[0] : rows
       consola.success('Workflow assigned.')
-      consola.info('Assignment ID: %s', assignment.id)
+      consola.info('Assignment ID: %s', (assignment as { id: string }).id)
     } catch (err) {
       handleError(err)
     }
@@ -608,14 +572,17 @@ const teamDispatch = defineCommand({
         status: 'queued',
         metadata,
       }
-      const rows = await callRest<Array<{ id: string; approval_status: string }>>(
-        'agents',
-        'team_runs',
-        'POST',
-        body,
-        { requireAuth: true, prefer: 'return=representation' }
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_create_team_run',
+        {
+          p_ai_lenser_id: body.ai_lenser_id,
+          p_workflow_id: body.workflow_id || null,
+          p_workflow_assignment_id: body.workflow_assignment_id || null,
+          p_team_id: body.team_id || null,
+        },
+        { requireAuth: true }
       )
-      const run = Array.isArray(rows) ? rows[0] : rows
+      const run = result as unknown as { id: string; approval_status: string }
       consola.success('Team run queued.')
       consola.info('Team Run ID:     %s', run.id)
       consola.info('Approval status: %s', run.approval_status)
@@ -643,21 +610,10 @@ const teamRuns = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRest<AgentTeamRunRow[]>(
-        'agents',
-        'team_runs',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: {
-            select:
-              'id,ai_lenser_id,team_id,workflow_id,workflow_run_id,status,approval_status,started_at,completed_at,created_at',
-            ai_lenser_id: `eq.${args['ai-lenser']}`,
-            order: 'created_at.desc',
-            limit: args.limit,
-          },
-        }
+      const rows = await callRpc<AgentTeamRunRow[]>(
+        'fn_list_team_runs',
+        { p_ai_lenser_id: args['ai-lenser'], p_limit: Number(args.limit) || 20 },
+        { requireAuth: true }
       )
 
       if (!rows || rows.length === 0) {
@@ -755,21 +711,10 @@ const teamConversation = defineCommand({
   async run({ args }) {
     try {
       const runId = args['run-id']
-      const rows = await callRest<TeamConversationRow[]>(
-        'agents',
-        'v_team_run_conversation',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: {
-            select:
-              'id,team_run_id,from_agent_id,to_agent_id,kind,payload,parent_message_id,occurred_at,depth',
-            team_run_id: `eq.${runId}`,
-            order: 'occurred_at.asc',
-            limit: args.limit,
-          },
-        }
+      const rows = await callRpc<TeamConversationRow[]>(
+        'fn_get_team_run_conversation',
+        { p_run_id: runId, p_limit: Number(args.limit) || 100 },
+        { requireAuth: true }
       )
 
       if (!rows || rows.length === 0) {
@@ -820,19 +765,10 @@ const teamScratchpad = defineCommand({
   async run({ args }) {
     try {
       const runId = args['run-id']
-      const rows = await callRest<TeamRunScratchpadRow[]>(
-        'agents',
-        'team_runs',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: {
-            select: 'shared_scratchpad,shared_scratchpad_version',
-            id: `eq.${runId}`,
-            limit: '1',
-          },
-        }
+      const rows = await callRpc<TeamRunScratchpadRow[]>(
+        'fn_get_team_run_scratchpad',
+        { p_run_id: runId },
+        { requireAuth: true }
       )
 
       const row = Array.isArray(rows) ? rows[0] : undefined
@@ -875,6 +811,11 @@ const teamSetRole = defineCommand({
       description: 'New role',
       required: true,
     },
+    team: {
+      type: 'string',
+      description: 'Team UUID (required by fn_update_team_member_role)',
+      required: true,
+    },
   },
   async run({ args }) {
     const memberId = args['member-id']
@@ -889,15 +830,10 @@ const teamSetRole = defineCommand({
       return
     }
     try {
-      await callRest(
-        'agents',
-        'team_members',
-        'PATCH',
-        { role },
-        {
-          requireAuth: true,
-          query: { id: `eq.${memberId}` },
-        }
+      await callRpc(
+        'fn_update_team_member_role',
+        { p_team_id: args.team, p_member_id: memberId, p_role: role },
+        { requireAuth: true }
       )
       consola.success('Member %s role updated to %s.', memberId, role)
     } catch (err) {

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { defineCommand } from 'citty'
 import consola from 'consola'
 
-import { callRest, handleError } from '../utils/api'
+import { callRpc, handleError } from '../utils/api'
 import { printJson, printTable, truncate } from '../utils/output'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -239,15 +239,16 @@ const automationList = defineCommand({
       }
       if (args['active-only']) query['is_active'] = 'eq.true'
 
-      const rows = await callRest<TriggerRuleRow[]>(
-        'automation',
-        'trigger_rules',
-        'GET',
-        undefined,
-        { requireAuth: true, query },
+      const allRows = await callRpc<TriggerRuleRow[]>(
+        'fn_list_automation_rules',
+        { p_limit: 100 },
+        { requireAuth: true }
       )
+      const rows = args['active-only']
+        ? (allRows ?? []).filter((r) => r.is_active)
+        : allRows ?? []
 
-      if (!rows || rows.length === 0) {
+      if (rows.length === 0) {
         consola.info('No trigger rules found.')
         return
       }
@@ -290,33 +291,24 @@ const automationCreate = defineCommand({
       const raw = await loadRuleFile(args.file)
       const def = validateRuleDefinition(raw)
 
-      const body: Record<string, unknown> = {
-        name: def.name,
-        match_event_type: def.match_event_type,
-        action_kind: def.action_kind,
-        action_config: def.action_config,
-        match_filter: def.match_filter ?? {},
-        is_active: def.is_active ?? true,
-      }
-
-      const rows = await callRest<Array<{ id: string; name: string }>>(
-        'automation',
-        'trigger_rules',
-        'POST',
-        body,
+      const created = await callRpc<{ id: string; name: string }>(
+        'fn_create_automation_rule',
         {
-          requireAuth: true,
-          prefer: 'return=representation',
-          query: { select: 'id,name' },
+          p_name: def.name,
+          p_match_event_type: def.match_event_type,
+          p_action_kind: def.action_kind,
+          p_action_config: def.action_config,
+          p_match_filter: def.match_filter ?? {},
+          p_is_active: def.is_active ?? true,
         },
+        { requireAuth: true },
       )
 
-      const created = Array.isArray(rows) ? rows[0] : undefined
       if (!created) {
         consola.warn('Rule created but no row returned.')
         return
       }
-      printJson({ rule_id: created.id, name: created.name })
+      printJson({ rule_id: (created as { id: string }).id, name: (created as { name: string }).name })
     } catch (err) {
       handleError(err)
     }
@@ -340,15 +332,10 @@ function makeToggleCommand(name: 'enable' | 'disable', active: boolean) {
     },
     async run({ args }) {
       try {
-        await callRest(
-          'automation',
-          'trigger_rules',
-          'PATCH',
-          { is_active: active },
-          {
-            requireAuth: true,
-            query: { id: `eq.${args.id}` },
-          },
+        await callRpc(
+          'fn_toggle_automation_rule',
+          { p_rule_id: args.id, p_is_active: active },
+          { requireAuth: true }
         )
         consola.success('%s rule %s', active ? 'Enabled' : 'Disabled', args.id)
       } catch (err) {
@@ -388,15 +375,10 @@ const automationDelete = defineCommand({
       return
     }
     try {
-      await callRest(
-        'automation',
-        'trigger_rules',
-        'DELETE',
-        undefined,
-        {
-          requireAuth: true,
-          query: { id: `eq.${args.id}` },
-        },
+      await callRpc(
+        'fn_delete_automation_rule',
+        { p_rule_id: args.id },
+        { requireAuth: true }
       )
       consola.success('Deleted rule %s', args.id)
     } catch (err) {
@@ -428,20 +410,10 @@ const automationHistory = defineCommand({
   async run({ args }) {
     try {
       const limit = clampLimit(parseInt(args.limit, 10), 25, 100)
-      const rows = await callRest<EventDispatchRow[]>(
-        'automation',
-        'event_dispatches',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: {
-            select: 'event_id,status,attempted_at,error',
-            rule_id: `eq.${args.id}`,
-            order: 'attempted_at.desc',
-            limit,
-          },
-        },
+      const rows = await callRpc<EventDispatchRow[]>(
+        'fn_list_automation_dispatch_history',
+        { p_rule_id: args.id, p_limit: limit },
+        { requireAuth: true },
       )
 
       if (!rows || rows.length === 0) {

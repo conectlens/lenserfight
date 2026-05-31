@@ -26,10 +26,10 @@ jest.mock('node:fs/promises', () => ({
 
 import consola from 'consola';
 import { readFile } from 'node:fs/promises';
-import { callRest, handleError } from '../utils/api';
+import { callRpc, handleError } from '../utils/api';
 import { printJson, printTable } from '../utils/output';
 
-const mockCallRest = callRest as jest.MockedFunction<typeof callRest>;
+const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>;
 const mockHandleError = handleError as jest.MockedFunction<typeof handleError>;
 const mockReadFile = readFile as jest.MockedFunction<typeof readFile>;
 const mockPrintTable = printTable as jest.MockedFunction<typeof printTable>;
@@ -54,8 +54,8 @@ async function getSubCmd(key: string): Promise<AnyCmd> {
 // ─── list ─────────────────────────────────────────────────────────────────
 
 describe('automation list', () => {
-  it('renders a table of rules and calls callRest with the expected query', async () => {
-    mockCallRest.mockResolvedValueOnce([
+  it('renders a table of rules and calls fn_list_automation_rules', async () => {
+    mockCallRpc.mockResolvedValueOnce([
       {
         id: '11111111-2222-3333-4444-555555555555',
         name: 'Notify on battle complete',
@@ -72,23 +72,15 @@ describe('automation list', () => {
         is_active: false,
         created_at: '2026-04-01T00:00:00Z',
       },
-    ]);
+    ] as never);
 
     const cmd = await getSubCmd('list');
     await cmd.run?.({ args: { 'active-only': false, json: false }, cmd: {}, rawArgs: [] });
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'automation',
-      'trigger_rules',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        requireAuth: true,
-        query: expect.objectContaining({
-          select: 'id,name,match_event_type,action_kind,is_active,created_at',
-          order: 'created_at.desc',
-        }),
-      }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_list_automation_rules',
+      { p_limit: 100 },
+      { requireAuth: true },
     );
     expect(mockPrintTable).toHaveBeenCalled();
     const [headers, rows] = mockPrintTable.mock.calls[0];
@@ -99,27 +91,24 @@ describe('automation list', () => {
     expect(rows[1][4]).toBe('no');
   });
 
-  it('appends is_active=eq.true when --active-only is passed', async () => {
-    mockCallRest.mockResolvedValueOnce([]);
+  it('filters client-side when --active-only is passed', async () => {
+    mockCallRpc.mockResolvedValueOnce([
+      { id: 'a', name: 'r1', match_event_type: 'e', action_kind: 'notify', is_active: true, created_at: '2026-05-01T00:00:00Z' },
+      { id: 'b', name: 'r2', match_event_type: 'e', action_kind: 'notify', is_active: false, created_at: '2026-05-01T00:00:00Z' },
+    ] as never);
     const cmd = await getSubCmd('list');
     await cmd.run?.({ args: { 'active-only': true, json: false }, cmd: {}, rawArgs: [] });
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'automation',
-      'trigger_rules',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        query: expect.objectContaining({ is_active: 'eq.true' }),
-      }),
-    );
+    expect(mockCallRpc).toHaveBeenCalledWith('fn_list_automation_rules', { p_limit: 100 }, { requireAuth: true });
+    const [, rows] = mockPrintTable.mock.calls[0];
+    expect(rows).toHaveLength(1);
   });
 });
 
 // ─── create ───────────────────────────────────────────────────────────────
 
 describe('automation create', () => {
-  it('parses a valid JSON file and POSTs to automation.trigger_rules', async () => {
+  it('parses a valid JSON file and calls fn_create_automation_rule', async () => {
     const validRule = {
       name: 'Notify on win',
       match_event_type: 'battle.completed',
@@ -129,25 +118,21 @@ describe('automation create', () => {
       is_active: true,
     };
     mockReadFile.mockResolvedValueOnce(JSON.stringify(validRule));
-    mockCallRest.mockResolvedValueOnce([
-      { id: '99999999-0000-0000-0000-000000000000', name: 'Notify on win' },
-    ]);
+    mockCallRpc.mockResolvedValueOnce({ id: '99999999-0000-0000-0000-000000000000', name: 'Notify on win' } as never);
 
     const cmd = await getSubCmd('create');
     await cmd.run?.({ args: { file: '/tmp/rule.json' }, cmd: {}, rawArgs: [] });
 
     expect(mockReadFile).toHaveBeenCalledWith('/tmp/rule.json', 'utf-8');
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'automation',
-      'trigger_rules',
-      'POST',
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_create_automation_rule',
       expect.objectContaining({
-        name: 'Notify on win',
-        match_event_type: 'battle.completed',
-        action_kind: 'notify',
-        is_active: true,
+        p_name: 'Notify on win',
+        p_match_event_type: 'battle.completed',
+        p_action_kind: 'notify',
+        p_is_active: true,
       }),
-      expect.objectContaining({ requireAuth: true, prefer: 'return=representation' }),
+      { requireAuth: true },
     );
     expect(mockPrintJson).toHaveBeenCalledWith({
       rule_id: '99999999-0000-0000-0000-000000000000',
@@ -160,7 +145,7 @@ describe('automation create', () => {
     const invalidRule = {
       name: 'bad',
       match_event_type: 'battle.completed',
-      action_kind: 'send_email', // not in the allowed list
+      action_kind: 'send_email',
       action_config: {},
     };
     mockReadFile.mockResolvedValueOnce(JSON.stringify(invalidRule));
@@ -168,7 +153,7 @@ describe('automation create', () => {
     const cmd = await getSubCmd('create');
     await cmd.run?.({ args: { file: '/tmp/rule.json' }, cmd: {}, rawArgs: [] });
 
-    expect(mockCallRest).not.toHaveBeenCalled();
+    expect(mockCallRpc).not.toHaveBeenCalled();
     expect(mockHandleError).toHaveBeenCalled();
     const errArg = mockHandleError.mock.calls[0][0] as Error;
     expect(errArg.message).toMatch(/action_kind/);
@@ -189,46 +174,34 @@ describe('automation create', () => {
 
 describe('automation history', () => {
   it('clamps --limit to 100 when given 999', async () => {
-    mockCallRest.mockResolvedValueOnce([
+    mockCallRpc.mockResolvedValueOnce([
       {
         event_id: 'evt-1',
         status: 'dispatched',
         attempted_at: '2026-05-01T00:00:00Z',
         error: null,
       },
-    ]);
+    ] as never);
 
     const cmd = await getSubCmd('history');
     await cmd.run?.({ args: { id: 'rule-1', limit: '999', json: false }, cmd: {}, rawArgs: [] });
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'automation',
-      'event_dispatches',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        query: expect.objectContaining({
-          rule_id: 'eq.rule-1',
-          order: 'attempted_at.desc',
-          limit: 100,
-        }),
-      }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_list_automation_dispatch_history',
+      { p_rule_id: 'rule-1', p_limit: 100 },
+      { requireAuth: true },
     );
   });
 
   it('uses default 25 when --limit is missing/invalid', async () => {
-    mockCallRest.mockResolvedValueOnce([]);
+    mockCallRpc.mockResolvedValueOnce([] as never);
     const cmd = await getSubCmd('history');
     await cmd.run?.({ args: { id: 'rule-1', limit: 'not-a-number', json: false }, cmd: {}, rawArgs: [] });
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'automation',
-      'event_dispatches',
-      'GET',
-      undefined,
-      expect.objectContaining({
-        query: expect.objectContaining({ limit: 25 }),
-      }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_list_automation_dispatch_history',
+      { p_rule_id: 'rule-1', p_limit: 25 },
+      { requireAuth: true },
     );
   });
 });
@@ -254,7 +227,7 @@ describe('automation test', () => {
     const cmd = await getSubCmd('test');
     await cmd.run?.({ args: { file: '/tmp/rule.json', event }, cmd: {}, rawArgs: [] });
 
-    expect(mockCallRest).not.toHaveBeenCalled();
+    expect(mockCallRpc).not.toHaveBeenCalled();
     expect(consolaSuccess).toHaveBeenCalledWith(
       expect.stringContaining('WOULD FIRE'),
       'notify',
@@ -280,7 +253,7 @@ describe('automation test', () => {
     const cmd = await getSubCmd('test');
     await cmd.run?.({ args: { file: '/tmp/rule.json', event }, cmd: {}, rawArgs: [] });
 
-    expect(mockCallRest).not.toHaveBeenCalled();
+    expect(mockCallRpc).not.toHaveBeenCalled();
     expect(consolaInfo).toHaveBeenCalledWith(
       expect.stringContaining('NO MATCH'),
       '/payload/winner_id',
@@ -315,54 +288,48 @@ describe('automation test', () => {
 // ─── enable / disable / delete ────────────────────────────────────────────
 
 describe('automation enable/disable/delete', () => {
-  it('enable PATCHes is_active=true', async () => {
-    mockCallRest.mockResolvedValueOnce(undefined);
+  it('enable calls fn_toggle_automation_rule with is_active=true', async () => {
+    mockCallRpc.mockResolvedValueOnce(undefined as never);
     const cmd = await getSubCmd('enable');
     await cmd.run?.({ args: { id: 'rule-1' }, cmd: {}, rawArgs: [] });
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'automation',
-      'trigger_rules',
-      'PATCH',
-      { is_active: true },
-      expect.objectContaining({ query: { id: 'eq.rule-1' } }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_toggle_automation_rule',
+      { p_rule_id: 'rule-1', p_is_active: true },
+      { requireAuth: true },
     );
     expect(consolaSuccess).toHaveBeenCalled();
   });
 
-  it('disable PATCHes is_active=false', async () => {
-    mockCallRest.mockResolvedValueOnce(undefined);
+  it('disable calls fn_toggle_automation_rule with is_active=false', async () => {
+    mockCallRpc.mockResolvedValueOnce(undefined as never);
     const cmd = await getSubCmd('disable');
     await cmd.run?.({ args: { id: 'rule-1' }, cmd: {}, rawArgs: [] });
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'automation',
-      'trigger_rules',
-      'PATCH',
-      { is_active: false },
-      expect.objectContaining({ query: { id: 'eq.rule-1' } }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_toggle_automation_rule',
+      { p_rule_id: 'rule-1', p_is_active: false },
+      { requireAuth: true },
     );
   });
 
-  it('delete refuses without --force and does not call REST', async () => {
+  it('delete refuses without --force and does not call RPC', async () => {
     const cmd = await getSubCmd('delete');
     await cmd.run?.({ args: { id: 'rule-1', force: false }, cmd: {}, rawArgs: [] });
 
-    expect(mockCallRest).not.toHaveBeenCalled();
+    expect(mockCallRpc).not.toHaveBeenCalled();
     expect(process.exitCode).toBe(1);
   });
 
-  it('delete with --force issues DELETE', async () => {
-    mockCallRest.mockResolvedValueOnce(undefined);
+  it('delete with --force calls fn_delete_automation_rule', async () => {
+    mockCallRpc.mockResolvedValueOnce(undefined as never);
     const cmd = await getSubCmd('delete');
     await cmd.run?.({ args: { id: 'rule-1', force: true }, cmd: {}, rawArgs: [] });
 
-    expect(mockCallRest).toHaveBeenCalledWith(
-      'automation',
-      'trigger_rules',
-      'DELETE',
-      undefined,
-      expect.objectContaining({ query: { id: 'eq.rule-1' } }),
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_delete_automation_rule',
+      { p_rule_id: 'rule-1' },
+      { requireAuth: true },
     );
   });
 });

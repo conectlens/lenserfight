@@ -2,7 +2,7 @@
  * Poll workflow_run_events and render new rows with terminal FX (SSE-style tail).
  */
 
-import { callRest } from '../utils/api'
+import { callRpc } from '../utils/api'
 import { printJson } from '../utils/output'
 import { glitchLine, startSpinner, streamTokenLine } from './terminal-fx'
 import { A } from '../utils/ansi'
@@ -11,8 +11,7 @@ export interface WorkflowRunEventRow {
   event_id: number
   type: string
   run_id: string
-  workflow_id: string | null
-  timestamp: string
+  occurred_at: string
   payload: Record<string, unknown>
 }
 
@@ -21,27 +20,16 @@ export async function fetchWorkflowRunEvents(
   afterEventId: number,
   limit: number,
 ): Promise<WorkflowRunEventRow[]> {
-  const query: Record<string, string | number> = {
-    select: 'event_id,type,run_id,workflow_id,timestamp,payload',
-    run_id: `eq.${runId}`,
-    order: 'event_id.asc',
-    limit,
-  }
-  if (afterEventId > 0) {
-    query.event_id = `gt.${afterEventId}`
-  }
-  const rows = await callRest<WorkflowRunEventRow[]>(
-    'lenses',
-    'workflow_run_events',
-    'GET',
-    undefined,
-    { requireAuth: true, query },
+  const rows = await callRpc<WorkflowRunEventRow[]>(
+    'fn_list_workflow_run_events',
+    { p_run_id: runId, p_after_event_id: afterEventId, p_limit: limit },
+    { requireAuth: true },
   )
   return rows ?? []
 }
 
 function formatEventRow(e: WorkflowRunEventRow): string {
-  const ts = new Date(e.timestamp).toLocaleTimeString()
+  const ts = new Date(e.occurred_at).toLocaleTimeString()
   const payload =
     e.payload && typeof e.payload === 'object'
       ? JSON.stringify(e.payload).slice(0, 80)
