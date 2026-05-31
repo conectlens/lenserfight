@@ -267,11 +267,10 @@ const create = defineCommand({
     }
     try {
       const result = await callRpc<Record<string, unknown>>(
-        'fn_workflow_create',
+        'fn_create_workflow',
         {
-          p_name: args.name,
+          p_title: args.name,
           p_description: args.description || null,
-          p_template: args.template || null,
         },
         { requireAuth: true }
       )
@@ -283,7 +282,7 @@ const create = defineCommand({
 
       consola.success('Workflow created.')
       consola.info('ID:   %s', result['id'])
-      consola.info('Name: %s', result['name'])
+      consola.info('Name: %s', result['title'])
       if (args.template) consola.info('Template: %s', args.template)
       consola.info('')
       consola.info('Next steps:')
