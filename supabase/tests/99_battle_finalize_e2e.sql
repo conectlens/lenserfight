@@ -26,8 +26,10 @@ SELECT plan(31);
 INSERT INTO auth.users (id, email)
 VALUES
   ('11111111-bf01-1111-1111-111111111111', 'bf-owner@test.local'),
-  ('33333333-bf01-3333-3333-333333333333', 'bf-voter1@test.local'),
-  ('44444444-bf01-4444-4444-444444444444', 'bf-voter2@test.local')
+  ('33333333-bf01-3333-3333-333333333333', 'bf-contender-b@test.local'),
+  ('44444444-bf01-4444-4444-444444444444', 'bf-contender-c@test.local'),
+  ('55555555-bf01-5555-5555-555555555555', 'bf-voter1@test.local'),
+  ('66666666-bf01-6666-6666-666666666666', 'bf-voter2@test.local')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO lensers.profiles (id, user_id, handle, display_name, type)
@@ -35,9 +37,13 @@ VALUES
   ('11111111-bf01-1111-1111-111111111111',
    '11111111-bf01-1111-1111-111111111111', 'bf_owner', 'BF Owner', 'human'),
   ('33333333-bf01-3333-3333-333333333333',
-   '33333333-bf01-3333-3333-333333333333', 'bf_voter1','BF Voter 1','human'),
+   '33333333-bf01-3333-3333-333333333333', 'bf_contender_b','BF Contender B','human'),
   ('44444444-bf01-4444-4444-444444444444',
-   '44444444-bf01-4444-4444-444444444444', 'bf_voter2','BF Voter 2','human')
+   '44444444-bf01-4444-4444-444444444444', 'bf_contender_c','BF Contender C','human'),
+  ('55555555-bf01-5555-5555-555555555555',
+   '55555555-bf01-5555-5555-555555555555', 'bf_voter1','BF Voter 1','human'),
+  ('66666666-bf01-6666-6666-666666666666',
+   '66666666-bf01-6666-6666-666666666666', 'bf_voter2','BF Voter 2','human')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO battles.templates (id, creator_lenser_id, title, task_prompt, is_public)
@@ -165,8 +171,8 @@ SELECT is(
   'community: battle transitioned open → executing → voting'
 );
 
--- ── Test 7 & 8: two votes for A from distinct voters ────────────────────────
-SET LOCAL "request.jwt.claims" TO '{"sub":"33333333-bf01-3333-3333-333333333333","role":"authenticated"}';
+-- ── Test 7 & 8: two votes for A from distinct voters (non-contenders) ──────
+SET LOCAL "request.jwt.claims" TO '{"sub":"55555555-bf01-5555-5555-555555555555","role":"authenticated"}';
 SET LOCAL ROLE authenticated;
 SELECT public.fn_submit_vote(
   current_setting('lf_test.battle_a')::uuid,
@@ -177,7 +183,7 @@ SELECT public.fn_submit_vote(
 );
 RESET ROLE;
 
-SET LOCAL "request.jwt.claims" TO '{"sub":"44444444-bf01-4444-4444-444444444444","role":"authenticated"}';
+SET LOCAL "request.jwt.claims" TO '{"sub":"66666666-bf01-6666-6666-666666666666","role":"authenticated"}';
 SET LOCAL ROLE authenticated;
 SELECT public.fn_submit_vote(
   current_setting('lf_test.battle_a')::uuid,
