@@ -17,7 +17,7 @@ Default decision: **NO-GO** for public hosted beta until every `BLOCKER` and `HI
 |----------|---------|------|---------------------|-----------------|
 | BLOCKER | Hosted Terms include jurisdiction, indemnity, liability cap, privacy transfer, consumer, and professional-use language. | Invalid or unenforceable terms can create avoidable liability or regulatory exposure. | Licensed attorney review recorded in the release issue before public launch. | Required |
 | HIGH | Experimental AI outputs may be treated as advice. | Users may rely on generated legal, financial, medical, security, or other professional output. | Keep README, Disclaimer, Terms, and templates clear that outputs are informational and require qualified review. | Required for hosted launch |
-| MEDIUM | Apache-2.0 license and hosted-service terms can be confused. | Users may think hosted Terms restrict OSS code rights or that Apache-2.0 grants trademark/service rights. | Keep license, brand, README, and legal-policy split discoverable. | Recommended |
+| MEDIUM | MIT license and hosted-service terms can be confused. | Users may think hosted Terms restrict OSS code rights or that MIT grants trademark/service rights. | Keep license, brand, README, and legal-policy split discoverable. | Recommended |
 
 ## Security Risk Register
 
@@ -45,13 +45,13 @@ Default decision: **NO-GO** for public hosted beta until every `BLOCKER` and `HI
 
 ## OSS Compliance Checklist
 
-- Apache-2.0 license metadata is present in root `LICENSE` and package metadata.
-- Hosted Terms do not restrict Apache-2.0 code rights.
+- MIT license metadata is present in root `LICENSE` and package metadata.
+- Hosted Terms do not restrict MIT code rights.
 - Trademark/brand guidance is separate from code license.
 - Dependency and asset provenance are reviewed before release.
 - A root `NOTICE` file is added only if third-party attribution terms or project notices require it.
 - Contributors are told not to submit material they lack rights to contribute.
-- DCO/CLA decision is recorded before public beta; current default is Apache-2.0 contribution expectations unless maintainers choose a stricter process.
+- DCO/CLA decision is recorded before public beta; current default is MIT contribution expectations unless maintainers choose a stricter process.
 
 ## Documentation Consistency Checklist
 

@@ -24,7 +24,7 @@ Platformu ziyaret ederek, hesap oluşturarak, üçüncü taraf sağlayıcıyla g
 
 Platform **ÖMER FARUK COŞKUN** ("LenserFight", "biz") tarafından işletilir. Bu Şartlar; internet sitesi ziyaretçileri, kayıtlı kullanıcılar, katkıcılar, API kullanıcıları, barındırılan LenserFight hizmetlerine bağlanan self-hosting operatörleri ve herkese açık topluluk katılımcıları için geçerlidir.
 
-OSS Kodunun kullanımı depo lisansı ile düzenlenir; aksi bir dosyada belirtilmedikçe mevcut lisans Apache License 2.0'dır. Bu Şartlar barındırılan hizmetleri, hesapları, topluluk katılımını, markaları, Platform erişimini ve herkese açık içerik yüzeylerini düzenler. Açık kaynak lisansı, LenserFight adı, logoları, alan adları veya barındırılan hizmetlerini yanıltıcı şekilde kullanma hakkı vermez.
+OSS Kodunun kullanımı depo lisansı ile düzenlenir; aksi bir dosyada belirtilmedikçe mevcut lisans MIT License'dır. Bu Şartlar barındırılan hizmetleri, hesapları, topluluk katılımını, markaları, Platform erişimini ve herkese açık içerik yüzeylerini düzenler. Açık kaynak lisansı, LenserFight adı, logoları, alan adları veya barındırılan hizmetlerini yanıltıcı şekilde kullanma hakkı vermez.
 
 ---
 

@@ -7,7 +7,7 @@
 </p>
 <p align="center">
   <a href="."><img src="https://img.shields.io/badge/binary-lf-blue" alt="npm" /></a>
-  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="License" /></a>
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License" /></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node" /></a>
 </p>
 

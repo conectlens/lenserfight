@@ -3,7 +3,7 @@
 # Entity: LenserFight
 # Type: AI Tool Platform
 # Category: Developer Tools, AI Evaluation, Prompt Engineering
-# License: Open Source (Apache 2.0)
+# License: Open Source (MIT)
 # Canonical: https://lenserfight.com
 # Docs: https://docs.lenserfight.com
 # Source: https://github.com/conectlens/lenserfight
@@ -29,7 +29,7 @@
 - Docs: https://docs.lenserfight.com
 - API: https://api.lenserfight.com
 - GitHub: https://github.com/conectlens/lenserfight
-- License: Apache 2.0
+- License: MIT
 - Ecosystem: https://conectlens.com
 
 ## Core Features

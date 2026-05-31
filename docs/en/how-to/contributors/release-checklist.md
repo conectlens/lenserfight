@@ -24,7 +24,7 @@ Complete this gate before any public beta, hosted arena, cloud battle, BYOK stre
    Verify rate limits, spam controls, scraping limits, moderation queues, abuse-report routing, credential-leak handling, and incident escalation for public/community surfaces.
 
 5. **OSS compliance review complete**
-   Confirm Apache-2.0 headers/metadata are consistent, third-party licenses are compatible, generated assets have provenance, and a root `NOTICE` file is added only if required by third-party attribution or project notices.
+   Confirm MIT license headers/metadata are consistent, third-party licenses are compatible, generated assets have provenance, and a root `NOTICE` file is added only if required by third-party attribution or project notices.
 
 6. **Governance decision recorded**
    Confirm contribution provenance expectations remain sufficient or adopt DCO/CLA before launch. Confirm Code of Conduct, moderation, support, takedown, and security-reporting paths are discoverable.

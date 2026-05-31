@@ -63,9 +63,6 @@ export default defineCommand({
     const targetSpec = resolveInstallSpec(channel, result.latest)
     const pm = packageManagerCommand(installMethod)
 
-    // No detectable package manager (or the user asked for manual steps): print
-    // the install commands and exit successfully — this is a guidance path, not
-    // a failure.
     if (args.instructions || !pm) {
       printInstallInstructions(installMethod, targetSpec, channel)
       return
@@ -97,13 +94,15 @@ function detectInstallMethod(): InstallMethod {
   if (argv0.includes('/.pnpm/') || argv0.includes('/pnpm/global/')) return 'pnpm-global'
   if (argv0.includes('/yarn/bin/') || argv0.includes('/.yarn/')) return 'yarn-global'
   if (argv0.includes('/npm/') || execPath.includes('/npm/')) return 'npm-global'
+  // Homebrew-managed npm: /opt/homebrew/lib/node_modules/...
+  if (argv0.includes('/node_modules/') && execPath.includes('node')) return 'npm-global'
 
   const ua = process.env['npm_config_user_agent'] ?? ''
   if (ua.startsWith('pnpm/')) return 'pnpm-global'
   if (ua.startsWith('yarn/')) return 'yarn-global'
   if (ua.startsWith('npm/')) return 'npm-global'
 
-  return 'unknown'
+  return 'npm-global'
 }
 
 // Permissive semver (incl. pre-release / build metadata), e.g. 1.2.3, 1.2.3-beta.1, 1.2.3+build.5

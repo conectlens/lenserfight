@@ -2,7 +2,7 @@
   "name": "@lenserfight/adapter-connector",
   "version": "1.0.0",
   "description": "LenserFight Connector Adapter SDK — public stable v1 (the public client SDK lives at @lenserfight/sdk)",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "main": "./index.cjs",
   "module": "./index.mjs",
   "types": "./index.d.ts",

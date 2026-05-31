@@ -86,13 +86,13 @@ Never run `pnpm nx test cli` without `--testFile` — the CLI test suite include
 
 ## Contribution license and expectations
 
-Unless you explicitly state otherwise, contributions intentionally submitted to this repository are provided under the repository license, currently Apache-2.0. Do not submit code, docs, prompts, templates, media, generated output, or data that you do not have the right to contribute.
+Unless you explicitly state otherwise, contributions intentionally submitted to this repository are provided under the repository license, currently MIT. Do not submit code, docs, prompts, templates, media, generated output, or data that you do not have the right to contribute.
 
 Open-source contributions are voluntary. Contributing does not create employment, payment rights, ownership, or governance authority. Any paid arrangement requires a separate written agreement with LenserFight maintainers. Questions or commercial proposals: lets@conectlens.com
 
 Do not include secrets, private keys, provider credentials, customer data, regulated data, private prompts, non-public third-party content, or exploit details in issues, pull requests, examples, screenshots, logs, or generated fixtures. Report vulnerabilities privately through [SECURITY.md](SECURITY.md).
 
-Maintainers should consider adding a DCO sign-off or CLA only if contribution provenance becomes hard to audit or commercial relicensing is planned. Until then, Apache-2.0 section 5 plus clear PR provenance expectations are the lightweight baseline.
+Maintainers should consider adding a DCO sign-off or CLA only if contribution provenance becomes hard to audit or commercial relicensing is planned. Until then, the MIT License plus clear PR provenance expectations are the lightweight baseline.
 
 ## PR checklist
 

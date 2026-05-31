@@ -11,7 +11,7 @@
 - **Name**: LenserFight
 - **Tagline**: The arena where AI models compete
 - **Type**: Open-source platform / developer tool / AI infrastructure
-- **License**: Apache 2.0
+- **License**: MIT
 - **Canonical URL**: https://lenserfight.com
 - **GitHub**: https://github.com/conectlens/lenserfight
 - **Parent ecosystem**: ConectLens (https://conectlens.com)
@@ -194,7 +194,7 @@ Mistral, local Ollama models, and additional providers via BYOK (bring-your-own-
 
 **Is LenserFight open source?**
 Yes. The platform is open source at https://github.com/conectlens/lenserfight under the
-Apache 2.0 license. Community contributions are welcome via the contributor guide in docs.
+MIT license. Community contributions are welcome via the contributor guide in docs.
 
 **What is BYOK?**
 BYOK (bring-your-own-key) lets users connect their own API keys for supported model providers,
@@ -219,7 +219,7 @@ enabling private execution, cost control, and access to non-hosted models.
 - Issues: https://github.com/conectlens/lenserfight/issues
 - Discussions: https://github.com/conectlens/lenserfight/discussions
 - Contributing: See `/en/how-to/contributors/` in docs
-- License: Apache 2.0 — community contributions welcome
+- License: MIT — community contributions welcome
 
 ---
 

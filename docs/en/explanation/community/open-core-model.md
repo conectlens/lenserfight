@@ -42,9 +42,9 @@ The **`@lenserfight/adapters/connector`** package ships as an **alpha** (Phase 1
 
 ## Licensing
 
-LenserFight Community Edition is licensed under the **Apache License, Version 2.0**.
+LenserFight Community Edition is licensed under the **MIT License**.
 
-- you may use, modify, and redistribute the **source code** under Apache-2.0, including in commercial products, subject to the license notice requirements.
+- you may use, modify, and redistribute the **source code** under the MIT License, including in commercial products.
 - the **LenserFight** name and logos are **not** covered by the software license; see [License](/en/explanation/community/license) for more details.
 
 ## Commercial platform — Chainabit

@@ -20,7 +20,7 @@
       "productivity"
     ],
     "locale": "en",
-    "license": "Apache-2.0",
+    "license": "MIT",
     "visibility": "public",
     "forkable": true,
     "safetyPolicy": "public-template-pack",

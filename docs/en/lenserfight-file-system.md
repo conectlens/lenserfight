@@ -84,7 +84,7 @@ When two discovered items share the same `kind:slug`, the higher-precedence item
     "templateDirectories": ["lensers", "lenses", "colenses", "battles", "rays"],
     "rays": ["developer", "productivity"],
     "locale": "en",
-    "license": "Apache-2.0",
+    "license": "MIT",
     "visibility": "public",
     "forkable": true,
     "legalDisclaimerRequired": true,

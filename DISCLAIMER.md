@@ -2,7 +2,7 @@
 
 LenserFight is experimental beta open-source software. It is intended for research, development, testing, and community evaluation by users who understand the risks of AI-agent systems, third-party model providers, local/cloud deployments, and user-operated automation.
 
-The software, documentation, examples, templates, prompts, workflows, battles, agents, model outputs, and hosted preview surfaces are provided "AS IS" and "AS AVAILABLE" to the maximum extent permitted by law. The Apache-2.0 license contains the governing warranty disclaimer and limitation of liability for the open-source code.
+The software, documentation, examples, templates, prompts, workflows, battles, agents, model outputs, and hosted preview surfaces are provided "AS IS" and "AS AVAILABLE" to the maximum extent permitted by law. The MIT License contains the governing warranty disclaimer and limitation of liability for the open-source code.
 
 LenserFight may behave unpredictably, produce inaccurate or unsafe output, lose or expose data, run workflow loops, call external services, consume API credits, write logs, interact with uploaded files, or trigger third-party integrations. You are responsible for configuring, monitoring, securing, and backing up your own deployment.
 

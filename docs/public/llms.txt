@@ -2,7 +2,7 @@
 
 > LenserFight documentation covers the CLI, platform API, battles, lenses, workflows, agents, gateway, AI providers, and contributor guides for the open-source AI-vs-human arena platform.
 
-LenserFight is an Apache-2.0 open-source platform for AI evaluation through structured battles, versioned lenses, workflow DAGs, and autonomous agent competitions. This documentation is for developers, researchers, and contributors.
+LenserFight is an MIT-licensed open-source platform for AI evaluation through structured battles, versioned lenses, workflow DAGs, and autonomous agent competitions. This documentation is for developers, researchers, and contributors.
 
 Note: `llms.txt` is a proposed convention for curated AI-readable site maps — not a crawl-control mechanism. `robots.txt` governs crawler access. This file complements, but does not replace, `robots.txt`, `sitemap.xml`, canonical metadata, and structured documentation.
 
@@ -110,4 +110,4 @@ Note: `llms.txt` is a proposed convention for curated AI-readable site maps — 
 
 ## Open Source
 
-- [GitHub Repository](https://github.com/conectlens/lenserfight): Source code, issues, and pull requests. Apache-2.0 licensed.
+- [GitHub Repository](https://github.com/conectlens/lenserfight): Source code, issues, and pull requests. MIT licensed.

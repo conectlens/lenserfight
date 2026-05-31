@@ -10,8 +10,9 @@ import {
   writeWorkflowSimulationArtifacts,
 } from '../utils/automation-objects'
 import { printJson, printTable, truncate } from '../utils/output'
-import { makeLifecycleCommand } from '../utils/lifecycle'
+import { makeLifecycleCommand, runLifecycleAction } from '../utils/lifecycle'
 import { A, sym } from '../utils/ansi'
+import { resolveWorkflowId } from '../utils/workflow-ref'
 
 // Node types that can execute in the current CLI context.
 // All other types require the full hosted DAG runner.
@@ -267,11 +268,10 @@ const create = defineCommand({
     }
     try {
       const result = await callRpc<Record<string, unknown>>(
-        'fn_workflow_create',
+        'fn_create_workflow',
         {
-          p_name: args.name,
+          p_title: args.name,
           p_description: args.description || null,
-          p_template: args.template || null,
         },
         { requireAuth: true }
       )
@@ -283,7 +283,8 @@ const create = defineCommand({
 
       consola.success('Workflow created.')
       consola.info('ID:   %s', result['id'])
-      consola.info('Name: %s', result['name'])
+      consola.info('Slug: :%s', result['slug'])
+      consola.info('Name: %s', result['title'])
       if (args.template) consola.info('Template: %s', args.template)
       consola.info('')
       consola.info('Next steps:')
@@ -357,10 +358,11 @@ const list = defineCommand({
       }
 
       printTable(
-        ['ID', 'Name', 'Visibility', 'Nodes', 'Created'],
+        ['ID', 'Slug', 'Name', 'Visibility', 'Nodes', 'Created'],
         rows.map((r) => [
           String(r['id'] ?? ''),
-          truncate(String(r['title'] ?? ''), 36),
+          truncate(String(r['slug'] ?? '—'), 24),
+          truncate(String(r['title'] ?? ''), 32),
           String(r['visibility'] ?? '—'),
           String(r['node_count'] ?? '0'),
           r['created_at'] ? new Date(String(r['created_at'])).toLocaleDateString() : '—',
@@ -374,7 +376,21 @@ const list = defineCommand({
 })
 
 const lifecycleCommand = (action: Parameters<typeof makeLifecycleCommand>[1], description: string) =>
-  makeLifecycleCommand('workflow', action, description, 'Workflow UUID')
+  defineCommand({
+    meta: { name: action === 'status' ? 'lifecycle' : action, description },
+    args: {
+      id: { type: 'positional', description: 'Workflow UUID, :slug, or @:slug', required: true },
+      json: { type: 'boolean', description: 'Output as JSON', default: false },
+    },
+    async run({ args }) {
+      try {
+        const resolvedId = await resolveWorkflowId(args.id)
+        await runLifecycleAction('workflow', resolvedId, action, args.json)
+      } catch (err) {
+        handleError(err)
+      }
+    },
+  })
 
 // ---------------------------------------------------------------------------
 // CD: workflow trigger add
@@ -383,7 +399,7 @@ const lifecycleCommand = (action: Parameters<typeof makeLifecycleCommand>[1], de
 const triggerAdd = defineCommand({
   meta: { name: 'add', description: 'Add a trigger to a workflow.' },
   args: {
-    id: { type: 'positional', description: 'Workflow UUID', required: true },
+    id: { type: 'positional', description: 'Workflow UUID, :slug, or @:slug', required: true },
     type: { type: 'string', description: 'cron | battle_event | webhook | manual', default: 'battle_event' },
     condition: { type: 'string', description: 'JSON condition object', default: '{}' },
   },
@@ -391,9 +407,10 @@ const triggerAdd = defineCommand({
     try {
       let cond: Record<string, unknown>
       try { cond = JSON.parse(args.condition) } catch { cond = {} }
+      const wfId = await resolveWorkflowId(args.id)
       const result = await callRpc<{ id: string }>(
         'fn_workflow_trigger_create',
-        { p_workflow_id: args.id, p_trigger_type: args.type, p_condition: cond },
+        { p_workflow_id: wfId, p_trigger_type: args.type, p_condition: cond },
         { requireAuth: true }
       )
       consola.success('Trigger created: %s', typeof result === 'string' ? result : result?.id)
@@ -407,12 +424,13 @@ const triggerAdd = defineCommand({
 const triggerWebhookUrl = defineCommand({
   meta: { name: 'webhook-url', description: 'Print the webhook trigger URL and secret for a workflow.' },
   args: {
-    id: { type: 'positional', description: 'Workflow UUID', required: true },
+    id: { type: 'positional', description: 'Workflow UUID, :slug, or @:slug', required: true },
   },
   async run({ args }) {
     try {
+      const wfId = await resolveWorkflowId(args.id)
       const baseUrl = process.env['PLATFORM_API_URL'] ?? 'https://api.lenserfight.io'
-      consola.info('Webhook URL: %s/workflows/%s/trigger', baseUrl, args.id)
+      consola.info('Webhook URL: %s/workflows/%s/trigger', baseUrl, wfId)
       consola.warn('Body must contain { "secret": "<your-webhook-secret>", "payload": {...} }')
       consola.warn('Treat the secret as a password — do not commit it to source control.')
     } catch (err) {
@@ -430,6 +448,7 @@ const triggerList = defineCommand({
   },
   async run({ args }) {
     try {
+      const wfId = await resolveWorkflowId(args.id)
       const rows = await callRpc<Array<{
         id: string
         trigger_type: string
@@ -437,7 +456,7 @@ const triggerList = defineCommand({
         last_fired_at: string | null
       }>>(
         'fn_workflow_triggers_list',
-        { p_workflow_id: args.id },
+        { p_workflow_id: wfId },
         { requireAuth: true }
       )
       if (args.json) { printJson(rows); return }
