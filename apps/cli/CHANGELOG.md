@@ -1,3 +1,14 @@
+## 0.12.2 (2026-05-31)
+
+### 🚀 Features
+
+- **battles:** end-to-end battle finalization — migration, mode-aware winner, MCP tool, worker, and UI ([8581b9eaa](https://github.com/conectlens/lenserfight/commit/8581b9eaa))
+
+### ❤️ Thank You
+
+- Claude Sonnet 4.6
+- ÖMER FARUK COŞKUN
+
 ## 0.12.1 (2026-05-31)
 
 ### 🩹 Fixes
