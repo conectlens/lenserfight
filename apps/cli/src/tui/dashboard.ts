@@ -26,7 +26,7 @@ interface ActionLogRow {
 }
 
 export function formatActionLogRow(row: ActionLogRow): string {
-  const ts = row.created_at ? new Date(row.created_at).toLocaleTimeString() : '—'
+  const ts = row.created_at ? new Date(row.created_at).toLocaleString() : '—'
   const action = (row.action_type ?? '—').padEnd(20)
   const payload = row.payload ? JSON.stringify(row.payload) : ''
   return `${A.gray}${ts}${A.reset}  ${A.brightCyan}${action}${A.reset}  ${A.dim}${truncate(payload, 72)}${A.reset}`
