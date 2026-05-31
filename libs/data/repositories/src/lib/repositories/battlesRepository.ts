@@ -100,6 +100,8 @@ export interface BattleRecord {
   published_at: string | null
   voting_opens_at: string | null
   voting_closes_at: string | null
+  winner_contender_id?: string | null
+  finalized_at?: string | null
   battle_type: BattleType
   voter_eligibility: VoterEligibility
   handicap_config: Record<string, unknown>
@@ -936,6 +938,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
 
   async closeVoting(battleId: string): Promise<void> {
     const { error } = await supabase.rpc('fn_battle_close_voting', { p_battle_id: battleId })
+    if (error) this.handleError(error)
+  }
+
+  async finalizeBattle(battleId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_mcp_battle_finalize', { p_battle_id: battleId })
     if (error) this.handleError(error)
   }
 

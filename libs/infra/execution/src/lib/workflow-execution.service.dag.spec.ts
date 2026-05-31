@@ -4,7 +4,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
 import { registerNodeRunner, clearNodeRunners } from './runners/node-runner.registry'
+import { IfConditionRunner } from './runners/if-condition.runner'
+import { MergeRunner } from './runners/merge.runner'
 import { SetVariablesRunner } from './runners/set-variables.runner'
+import { StopReturnRunner } from './runners/stop-return.runner'
 import { WorkflowExecutionService } from './workflow-execution.service'
 
 import type { IExecutionProvider, ExecutionInput, ExecutionResult } from './execution.types'
@@ -148,7 +151,7 @@ describe('single-node workflow', () => {
 
     expect(result.status).toBe('completed')
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ text: 'my output' }),
+      expect.objectContaining({ output: 'my output' }),
       postRunEnvelopeContext,
     )
     expect(onOutcomes).toHaveBeenCalledWith([
@@ -771,5 +774,195 @@ describe('Node Runner dispatch', () => {
 
     expect(result.nodeResults[0].status).toBe('failed')
     expect(result.nodeResults[0].error).toContain('Runner exploded')
+  })
+})
+
+// ── Control-flow trio: end-to-end against the engine ──────────────────────────
+// These prove the runners integrate with the real scheduling/routing logic,
+// not just that their unit output is shaped correctly.
+
+function statusOf(result: { nodeResults: NodeResult[] }, nodeId: string): string | undefined {
+  return result.nodeResults.find((r) => r.nodeId === nodeId)?.status
+}
+
+function outputDataOf(
+  result: { nodeResults: NodeResult[] },
+  nodeId: string,
+): Record<string, unknown> | undefined {
+  return result.nodeResults.find((r) => r.nodeId === nodeId)?.outputData
+}
+
+describe('IfConditionRunner routing (end-to-end)', () => {
+  afterEach(() => clearNodeRunners())
+
+  it('routes the FALSE branch: false-consumer gets the IF input, true-consumer does not', async () => {
+    registerNodeRunner(new IfConditionRunner())
+    // echo provider echoes the rendered prompt so we can observe which branch
+    // received the IF node's output value via its conditional edge.
+    const service = new WorkflowExecutionService(echoProvider((p) => p))
+    const ctx = makeCtx({ rootInputs: { input: 'stop' } })
+
+    // a → ifc → (trueC | falseC). ifc reads a's envelope text ("prompt: stop")
+    // via inputPath and evaluates equals 'go' → false. Only the falseC edge
+    // condition is satisfied.
+    const nodes: WorkflowNode[] = [
+      n('a'),
+      n('ifc', {
+        lensId: null,
+        config: { nodeType: 'if_condition', operator: 'equals', value: 'go', inputPath: 'text' },
+      }),
+      n('trueC'),
+      n('falseC'),
+    ]
+    // Use a target label NOT seeded by rootInputs so a skipped edge resolves to
+    // '' (unsatisfied) vs the IF's branch value (satisfied).
+    const edges: WorkflowEdge[] = [
+      e('a', 'ifc'),
+      { ...e('ifc', 'trueC'), sourceOutputKey: 'branch', targetParamLabel: 'branchVal', condition: { type: 'equals', value: 'true' } },
+      { ...e('ifc', 'falseC'), sourceOutputKey: 'branch', targetParamLabel: 'branchVal', condition: { type: 'equals', value: 'false' } },
+    ]
+
+    const result = await service.executeWorkflow(nodes, edges, ctx)
+
+    expect(statusOf(result, 'ifc')).toBe('completed')
+    expect(outputDataOf(result, 'ifc')?.['branch']).toBe('false')
+
+    // FALSE branch live → falseC runs and receives the IF "branch" value.
+    // TRUE branch dead → trueC is SKIPPED (n8n: a non-taken branch never fires).
+    expect(statusOf(result, 'falseC')).toBe('completed')
+    expect(statusOf(result, 'trueC')).toBe('skipped')
+    const falseInput = result.nodeResults.find((r) => r.nodeId === 'falseC')?.resolvedInputSnapshot?.['branchVal']
+    expect(falseInput).toBe('false')
+  })
+
+  it('routes the TRUE branch when the condition holds', async () => {
+    registerNodeRunner(new IfConditionRunner())
+    const service = new WorkflowExecutionService(echoProvider((p) => p))
+    const ctx = makeCtx({
+      rootInputs: { input: 'go' },
+      async resolveLensTemplate() {
+        return '[[input]]'
+      },
+    })
+
+    const nodes: WorkflowNode[] = [
+      n('a'),
+      n('ifc', {
+        lensId: null,
+        config: { nodeType: 'if_condition', operator: 'contains', value: 'go', inputPath: 'text' },
+      }),
+      n('trueC'),
+      n('falseC'),
+    ]
+    const edges: WorkflowEdge[] = [
+      e('a', 'ifc'),
+      { ...e('ifc', 'trueC'), sourceOutputKey: 'branch', targetParamLabel: 'branchVal', condition: { type: 'equals', value: 'true' } },
+      { ...e('ifc', 'falseC'), sourceOutputKey: 'branch', targetParamLabel: 'branchVal', condition: { type: 'equals', value: 'false' } },
+    ]
+
+    const result = await service.executeWorkflow(nodes, edges, ctx)
+    expect(outputDataOf(result, 'ifc')?.['branch']).toBe('true')
+    // TRUE branch live → trueC runs; FALSE branch dead → falseC is SKIPPED.
+    expect(statusOf(result, 'trueC')).toBe('completed')
+    expect(statusOf(result, 'falseC')).toBe('skipped')
+    const trueInput = result.nodeResults.find((r) => r.nodeId === 'trueC')?.resolvedInputSnapshot?.['branchVal']
+    expect(trueInput).toBe('true')
+  })
+})
+
+describe('MergeRunner fan-in (end-to-end)', () => {
+  afterEach(() => clearNodeRunners())
+
+  it('append mode concatenates array payloads from two upstream branches', async () => {
+    registerNodeRunner(new MergeRunner())
+    // The echo provider returns the rendered prompt verbatim; each source has a
+    // distinct literal template so the two branches emit different JSON arrays.
+    const service = new WorkflowExecutionService(echoProvider((p) => p))
+    const ctx = makeCtx({
+      rootInputs: { input: 'x' },
+      async resolveLensTemplate(lensId) {
+        return lensId === 'lens-left' ? '[1,2]' : '[3,4]'
+      },
+    })
+
+    const nodes: WorkflowNode[] = [
+      n('left', { lensId: 'lens-left' }),
+      n('right', { lensId: 'lens-right' }),
+      n('mrg', { lensId: null, config: { nodeType: 'merge', mode: 'append' } }),
+    ]
+    const edges: WorkflowEdge[] = [e('left', 'mrg'), e('right', 'mrg')]
+
+    const result = await service.executeWorkflow(nodes, edges, ctx)
+    expect(statusOf(result, 'mrg')).toBe('completed')
+    expect(outputDataOf(result, 'mrg')?.['items']).toEqual([1, 2, 3, 4])
+    expect(outputDataOf(result, 'mrg')?.['branchCount']).toBe(2)
+  })
+
+  it('combine mode shallow-merges object payloads from multiple branches', async () => {
+    registerNodeRunner(new MergeRunner())
+    const service = new WorkflowExecutionService(echoProvider((p) => p))
+    const ctx = makeCtx({
+      rootInputs: { input: 'x' },
+      async resolveLensTemplate(lensId) {
+        return lensId === 'lens-left' ? '{"a":1}' : '{"b":2}'
+      },
+    })
+
+    const nodes: WorkflowNode[] = [
+      n('left', { lensId: 'lens-left' }),
+      n('right', { lensId: 'lens-right' }),
+      n('mrg', { lensId: null, config: { nodeType: 'merge', mode: 'combine' } }),
+    ]
+    const edges: WorkflowEdge[] = [e('left', 'mrg'), e('right', 'mrg')]
+
+    const result = await service.executeWorkflow(nodes, edges, ctx)
+    expect(outputDataOf(result, 'mrg')?.['merged']).toEqual({ a: 1, b: 2 })
+  })
+})
+
+describe('StopReturnRunner halt (end-to-end)', () => {
+  afterEach(() => clearNodeRunners())
+
+  it('halts the run: downstream nodes are skipped and the run completes', async () => {
+    registerNodeRunner(new StopReturnRunner())
+    const service = new WorkflowExecutionService(echoProvider())
+    const ctx = makeCtx({ rootInputs: { input: 'x' } })
+
+    // a → stop → downstream. After stop runs, the halt flag skips downstream.
+    const nodes: WorkflowNode[] = [
+      n('a'),
+      n('stop', { lensId: null, config: { nodeType: 'stop_return', returnValue: 'done' } }),
+      n('downstream'),
+    ]
+    const edges: WorkflowEdge[] = [e('a', 'stop'), e('stop', 'downstream')]
+
+    const result = await service.executeWorkflow(nodes, edges, ctx)
+
+    expect(result.status).toBe('completed')
+    expect(statusOf(result, 'a')).toBe('completed')
+    expect(statusOf(result, 'stop')).toBe('completed')
+    expect(statusOf(result, 'downstream')).toBe('skipped')
+    expect(outputDataOf(result, 'stop')?.['returnValue']).toBe('done')
+  })
+
+  it('skips a parallel branch not yet scheduled when stop halts', async () => {
+    registerNodeRunner(new StopReturnRunner())
+    const service = new WorkflowExecutionService(echoProvider())
+    const ctx = makeCtx({ rootInputs: { input: 'x' } })
+
+    // a → stop (wave 2). a → mid → tail (wave 2, wave 3). stop halts before
+    // wave 3, so tail is skipped even though mid completed.
+    const nodes: WorkflowNode[] = [
+      n('a'),
+      n('stop', { lensId: null, config: { nodeType: 'stop_return' } }),
+      n('mid'),
+      n('tail'),
+    ]
+    const edges: WorkflowEdge[] = [e('a', 'stop'), e('a', 'mid'), e('mid', 'tail')]
+
+    const result = await service.executeWorkflow(nodes, edges, ctx)
+    expect(result.status).toBe('completed')
+    expect(statusOf(result, 'stop')).toBe('completed')
+    expect(statusOf(result, 'tail')).toBe('skipped')
   })
 })

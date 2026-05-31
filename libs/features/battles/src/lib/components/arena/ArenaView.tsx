@@ -15,6 +15,7 @@ import { useVoteAggregates } from '../../hooks/query/useVoteAggregates'
 import { useVoterEligibility } from '../../hooks/query/useVoterEligibility'
 import { useAiJudgeVerdicts } from '../../hooks/query/useAiJudgeVerdicts'
 import { deriveBattleType } from '../../util/battle-type-codec'
+import { deriveBattleWinner } from '../../util/deriveWinner'
 
 import { BattleChatPanel } from '../chat/BattleChatPanel'
 import { BattleCreatorPanel } from '../display/BattleCreatorPanel'
@@ -23,6 +24,7 @@ import { BattleSEOHead } from '../display/BattleSEOHead'
 import { FightView } from './FightView'
 import { PhaseIndicator } from '../display/PhaseIndicator'
 import { ScoreSystem } from '../scoring/ScoreSystem'
+import { VotingWindowGate } from '../scoring/VotingWindowGate'
 import { XPGainToast } from '../display/XPGainToast'
 
 import type { BattleUIPhase, ContenderLensAssignmentRecord } from '../../types/battle.types'
@@ -152,22 +154,9 @@ export function ArenaView({
   const verdictsA = contenderA ? aiVerdicts.filter((v) => v.contender_id === contenderA.id) : []
   const verdictsB = contenderB ? aiVerdicts.filter((v) => v.contender_id === contenderB.id) : []
 
-  // Derive winner from aggregates for result phase
-  let winnerSlot: 'A' | 'B' | 'draw' | undefined
-  let winnerName: string | undefined
-  if (aggA && aggB) {
-    const countA = aggA.raw_vote_count ?? 0
-    const countB = aggB.raw_vote_count ?? 0
-    if (aggA.rank_position === 1 && aggB.rank_position !== 1) {
-      winnerSlot = 'A'
-      winnerName = contenderA?.display_name
-    } else if (aggB.rank_position === 1 && aggA.rank_position !== 1) {
-      winnerSlot = 'B'
-      winnerName = contenderB?.display_name
-    } else if (countA === countB && countA > 0) {
-      winnerSlot = 'draw'
-    }
-  }
+  // Resolve the winner: authoritative finalized winner first (mode-aware,
+  // covers AI-judge battles), provisional vote tally otherwise.
+  const { slot: winnerSlot, name: winnerName } = deriveBattleWinner(battle, contenders, aggregates)
 
   const handleVote = async (value: 'contender_a' | 'contender_b' | 'draw', rationale: string) => {
     if (!battle || !currentUserId) return
@@ -329,16 +318,19 @@ export function ArenaView({
                 renderContenderSlot={renderContenderSlot}
               />
               <ScoreSystem aggregates={aggregates} contenders={contenders} />
-              {contenderA && contenderB &&
-                renderVotePanel({
-                  battleId: battle.id,
-                  contenderA: { id: contenderA.id, displayName: contenderA.display_name },
-                  contenderB: { id: contenderB.id, displayName: contenderB.display_name },
-                  disabled: !currentUserId,
-                  onVote: handleVote,
-                  voterEligibility: battle.voter_eligibility,
-                  isEligible,
-                })}
+              {contenderA && contenderB && (
+                <VotingWindowGate battle={battle}>
+                  {renderVotePanel({
+                    battleId: battle.id,
+                    contenderA: { id: contenderA.id, displayName: contenderA.display_name },
+                    contenderB: { id: contenderB.id, displayName: contenderB.display_name },
+                    disabled: !currentUserId,
+                    onVote: handleVote,
+                    voterEligibility: battle.voter_eligibility,
+                    isEligible,
+                  })}
+                </VotingWindowGate>
+              )}
             </>
           )}
 

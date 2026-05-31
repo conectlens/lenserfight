@@ -7,6 +7,7 @@ import { registerBattleAddContender } from './battle-add-contender.js';
 import { registerBattleSubmitRun } from './battle-submit-run.js';
 import { registerBattleScore } from './battle-score.js';
 import { registerBattleSetStatus } from './battle-set-status.js';
+import { registerBattleFinalize } from './battle-finalize.js';
 import { registerBattleHistory } from './battle-history.js';
 
 export function registerBattleTools(server: McpServer, sb: SupabaseClient, lenserId?: string): void {
@@ -17,5 +18,6 @@ export function registerBattleTools(server: McpServer, sb: SupabaseClient, lense
   registerBattleSubmitRun(server, sb);
   registerBattleScore(server, sb);
   registerBattleSetStatus(server, sb);
+  registerBattleFinalize(server, sb);
   registerBattleHistory(server, sb, lenserId);
 }

@@ -26,6 +26,10 @@ vi.mock('../scoring/VotePanel', () => ({
   VotePanel: () => <div data-testid="vote-panel">VotePanel</div>,
 }))
 
+vi.mock('../scoring/VotingWindowGate', () => ({
+  VotingWindowGate: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 vi.mock('../result/BattleResultCTA', () => ({
   BattleResultCTA: () => <div data-testid="battle-result-cta">CTA</div>,
 }))

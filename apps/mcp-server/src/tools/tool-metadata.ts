@@ -164,6 +164,13 @@ const TOOL_CATALOG = {
       'Transition a battle to a new lifecycle status. The database enforces legal transitions; invalid moves are rejected. Closing or archiving requires confirm true to prevent accidental termination.',
     annotations: destructive,
   },
+  finalize_battle: {
+    name: 'finalize_battle',
+    title: 'Finalize Battle',
+    description:
+      'Finalize a battle that is in scoring: compute the winner from votes and AI judge verdicts, then move it to closed. Idempotent and terminal — requires confirm true. Use after voting has closed and scoring is complete.',
+    annotations: destructive,
+  },
   get_battle_history: {
     name: 'get_battle_history',
     title: 'Get Battle History',

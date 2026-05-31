@@ -65,6 +65,10 @@ export interface Battle {
   published_at: string | null
   voting_opens_at: string | null
   voting_closes_at: string | null
+  /** Authoritative winner set by fn_battles_finalize (scoring -> closed). Null until finalized or on a draw. */
+  winner_contender_id?: string | null
+  /** Timestamp the battle was finalized (scoring -> closed). Null until finalized. */
+  finalized_at?: string | null
   /** @deprecated Use deriveBattleType(battle) for UI branching/presentation. */
   battle_type: BattleType
   voter_eligibility: VoterEligibility
