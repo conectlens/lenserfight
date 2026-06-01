@@ -1,3 +1,13 @@
+## 0.3.0-alpha.1 (2026-06-01)
+
+### 🚀 Features
+
+- introduce WorkflowClient for managing workflow execution and add API key support to the SDK client ([f843f0685](https://github.com/conectlens/lenserfight/commit/f843f0685))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 0.2.0-alpha.31 (2026-06-01)
 
 ### 🚀 Features
