@@ -13,12 +13,12 @@ on:
         description: npm dist-tag and prerelease lane.
         required: true
         type: choice
-        default: alpha
+        default: stable
         options:
-          - alpha
-          - beta
-          - rc
           - stable
+          - rc
+          - beta
+          - alpha
       version_specifier:
         description: Nx release specifier. Use auto for conventional commits.
         required: true
@@ -61,7 +61,7 @@ concurrency:
 
 jobs:
   release:
-    name: ${{ (inputs.dry_run == 'true' || inputs.dry_run == true) && 'Preview' || 'Publish' }} sdk ${{ inputs.release_channel || 'alpha' }}
+    name: ${{ (inputs.dry_run == 'true' || inputs.dry_run == true) && 'Preview' || 'Publish' }} sdk ${{ inputs.release_channel || 'stable' }}
     runs-on: ubuntu-latest
     environment: npm-release
     # Skip when triggered by a release/skip-ci commit to break the re-release loop.
@@ -80,9 +80,9 @@ jobs:
         id: effective
         shell: bash
         run: |
-          # push trigger: inputs are empty — use alpha/auto/no-dry-run defaults for pre-1.0 SDK.
+          # push trigger: inputs are empty — use stable/auto/no-dry-run defaults.
           echo "dry_run=${{ inputs.dry_run == '' && 'false' || inputs.dry_run }}" >> "$GITHUB_OUTPUT"
-          echo "release_channel=${{ inputs.release_channel == '' && 'alpha' || inputs.release_channel }}" >> "$GITHUB_OUTPUT"
+          echo "release_channel=${{ inputs.release_channel == '' && 'stable' || inputs.release_channel }}" >> "$GITHUB_OUTPUT"
           echo "version_specifier=${{ inputs.version_specifier == '' && 'auto' || inputs.version_specifier }}" >> "$GITHUB_OUTPUT"
           echo "first_release=${{ inputs.first_release == '' && 'false' || inputs.first_release }}" >> "$GITHUB_OUTPUT"
           echo "allow_major=${{ inputs.allow_major == '' && 'false' || inputs.allow_major }}" >> "$GITHUB_OUTPUT"
