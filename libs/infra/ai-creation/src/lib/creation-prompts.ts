@@ -1,6 +1,7 @@
 import type {
   BattleCreationContext,
   LensCreationContext,
+  LensParamsCreationContext,
   WorkflowCreationContext,
 } from './creation.types'
 
@@ -17,6 +18,51 @@ export const MAX_CONTEXT_TOKENS = 3000
  * Enforced client-side in the hook AND server-side in the edge function.
  */
 export const MAX_PROMPT_LENGTH = 2000
+
+// ─── Lens param-fill prompts ──────────────────────────────────────────────────
+
+const LENS_PARAMS_SYSTEM = `You are a LenserFight lens parameter value generator.
+Generate appropriate values for the given parameters based on the lens context.
+Respond ONLY with a JSON object — no prose, no markdown fences, no explanation:
+{"param_label": value, ...}
+
+Type rules:
+- text / textarea / url / json → string
+- number / integer / float / decimal → number
+- boolean → true or false
+- select → one of the listed options exactly
+- multiselect / array → array of strings
+- file / files / connector → omit the key entirely`
+
+function buildParamLines(ctx: LensParamsCreationContext): string {
+  return ctx.params.map((p) => {
+    const opts = p.options?.length ? `, options: ${p.options.join(' | ')}` : ''
+    return `- "${p.label}" (${p.type}${opts})`
+  }).join('\n')
+}
+
+export function buildLensParamsMessages(
+  prompt: string | null,
+  ctx: LensParamsCreationContext,
+): Array<{ role: 'system' | 'user'; content: string }> {
+  const titleLine = ctx.lensTitle ? `Lens: "${ctx.lensTitle}"\n` : ''
+  const contentLine = ctx.lensContent
+    ? `Instructions: "${ctx.lensContent.replace(/\n+/g, ' ').slice(0, 400)}"\n`
+    : ''
+  const paramLines = buildParamLines(ctx)
+
+  const instruction = prompt?.trim()
+    ? `User instruction: ${prompt.slice(0, MAX_PROMPT_LENGTH)}`
+    : 'Generate sensible default values that illustrate how this lens should be used.'
+
+  return [
+    { role: 'system', content: LENS_PARAMS_SYSTEM },
+    {
+      role: 'user',
+      content: `${titleLine}${contentLine}\nParameters:\n${paramLines}\n\n${instruction}`,
+    },
+  ]
+}
 
 // ─── Lens prompts ─────────────────────────────────────────────────────────────
 

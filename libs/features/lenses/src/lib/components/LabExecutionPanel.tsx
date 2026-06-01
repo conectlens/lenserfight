@@ -763,14 +763,21 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
                 {profileId && (
                   <GenerateWithAIButton
                     profileId={profileId}
-                    generationType="lens"
-                    context={{}}
-                    versionParams={form.effectiveParams}
-                    lensTitle={lensTitle}
-                    lensContent={lensContent}
-                    onGenerated={() => {}}
-                    onImportedValues={form.applyImportedValues}
-                    defaultSlide={2}
+                    generationType="lens_params"
+                    context={{
+                      params: form.effectiveParams.map((p) => ({
+                        label: p.label,
+                        type: p.tool.type,
+                        ...(p.tool.options?.length ? { options: p.tool.options.map((o) => o.value) } : {}),
+                      })),
+                      lensTitle,
+                      lensContent,
+                    }}
+                    onGenerated={(output) => {
+                      if (output.type === 'lens_params') {
+                        form.applyImportedValues(output.result)
+                      }
+                    }}
                   />
                 )}
                 <button

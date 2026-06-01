@@ -1,6 +1,7 @@
 import type {
   AICreationOutput,
   GeneratedBattleResult,
+  GeneratedLensParamsResult,
   GeneratedLensResult,
   GeneratedWorkflowResult,
   GenerationType,
@@ -136,6 +137,16 @@ function parseBattleOutput(raw: string): GeneratedBattleResult {
   }
 }
 
+// ─── Lens params output parser ────────────────────────────────────────────────
+
+function parseLensParamsOutput(raw: string): GeneratedLensParamsResult {
+  const obj = extractJson(raw) as Record<string, unknown>
+  if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+    throw new Error('lens_params response must be a plain JSON object')
+  }
+  return obj
+}
+
 // ─── Unified parser ───────────────────────────────────────────────────────────
 
 export function parseCreationOutput(raw: string, type: GenerationType): AICreationOutput {
@@ -144,6 +155,9 @@ export function parseCreationOutput(raw: string, type: GenerationType): AICreati
   }
   if (type === 'battle') {
     return { type: 'battle', result: parseBattleOutput(raw) }
+  }
+  if (type === 'lens_params') {
+    return { type: 'lens_params', result: parseLensParamsOutput(raw) }
   }
   return { type: 'workflow', result: parseWorkflowOutput(raw) }
 }

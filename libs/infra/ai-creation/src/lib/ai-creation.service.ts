@@ -3,6 +3,7 @@ import type { ProviderMessage } from '@lenserfight/providers'
 import {
   buildBattlePromptedMessages,
   buildBattleRecommendationMessages,
+  buildLensParamsMessages,
   buildLensPromptedMessages,
   buildLensRecommendationMessages,
   buildWorkflowPromptedMessages,
@@ -16,6 +17,7 @@ import type {
   AICreationResult,
   BattleCreationContext,
   LensCreationContext,
+  LensParamsCreationContext,
   ProfileAIPreference,
   WorkflowCreationContext,
 } from './creation.types'
@@ -128,6 +130,10 @@ export class AICreationService {
     input: AICreationInput,
     mode: 'prompted' | 'recommendation',
   ): ProviderMessage[] {
+    if (input.generationType === 'lens_params') {
+      const ctx = (input.context ?? {}) as LensParamsCreationContext
+      return buildLensParamsMessages(mode === 'prompted' ? (input.prompt ?? null) : null, ctx)
+    }
     if (input.generationType === 'lens') {
       const ctx = (input.context ?? {}) as LensCreationContext
       return mode === 'prompted'

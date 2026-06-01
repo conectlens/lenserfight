@@ -4,13 +4,10 @@ import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/gen
 import { Alert, Button } from '@lenserfight/ui/components'
 import { TextArea } from '@lenserfight/ui/forms'
 import { Popover, type PopoverPlacement } from '@lenserfight/ui/overlays'
-import { buildImportJsonTemplate, buildImportCsvTemplate } from '@lenserfight/domain/lens-parameters'
-import type { LensVersionParam } from '@lenserfight/types'
-import { Check, ChevronLeft, ChevronRight, Copy, Sparkles } from 'lucide-react'
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react'
 
 import { useFundingSource } from '../hooks/useFundingSource'
-import { coerceJsonImport, coerceCsvRow, parseCsvText } from '../hooks/useParamImport'
 
 import { friendlyAIError } from './aiCreationError'
 import { FundingSourceToggle } from './FundingSourceToggle'
@@ -18,9 +15,9 @@ import { FundingSourceToggle } from './FundingSourceToggle'
 import type {
   AICreationOutput,
   BattleCreationContext,
-  GeneratedBattleResult,
   GenerationType,
   LensCreationContext,
+  LensParamsCreationContext,
   WorkflowCreationContext,
 } from '@lenserfight/infra/ai-creation'
 
@@ -30,7 +27,7 @@ export interface GenerateWithAIButtonProps {
   /** Which AI sublayer to invoke. */
   generationType: GenerationType
   /** Type-specific context forwarded to the prompt builders. */
-  context: LensCreationContext | WorkflowCreationContext | BattleCreationContext
+  context: LensCreationContext | WorkflowCreationContext | BattleCreationContext | LensParamsCreationContext
   /** Fired with the parsed, typed result. Callers narrow on `output.type`. */
   onGenerated: (output: AICreationOutput) => void
   /** Tooltip + popover heading. Default 'Generate with AI'. */
@@ -48,192 +45,10 @@ export interface GenerateWithAIButtonProps {
    */
   funding?: ReturnType<typeof useFundingSource>
   chainabit?: ReturnType<typeof useChainabitConnection>
-  /**
-   * When provided, the JSON/CSV import slides use the typed domain template functions
-   * (same format as JsonImportDialog / CsvImportDialog) and call `onImportedValues`
-   * instead of `onGenerated`. Omit to keep the creation-mode import format.
-   */
-  versionParams?: LensVersionParam[]
-  /** Lens title embedded in import templates so external AI understands the context. */
-  lensTitle?: string
-  /** Lens instructions/content embedded in the template so external AI generates appropriate values. */
-  lensContent?: string
-  /**
-   * Called when `versionParams` is provided and the user applies a JSON/CSV import.
-   * Receives coerced param values keyed by label.
-   */
-  onImportedValues?: (values: Record<string, unknown>) => void
-  /** Open the popover directly on this slide index (0=Funding, 1=Prompt, 2=JSON, 3=CSV). */
-  defaultSlide?: number
-}
-
-// ─── Import helpers ────────────────────────────────────────────────────────────
-
-function getJsonTemplate(type: GenerationType): string {
-  if (type === 'workflow') {
-    return JSON.stringify({ title: 'Workflow title here', description: 'What this workflow does' }, null, 2)
-  }
-  if (type === 'battle') {
-    return JSON.stringify(
-      {
-        title: 'Battle title here',
-        task_prompt: 'The shared challenge every contender receives',
-        suggestedTaskSource: 'challenge',
-        suggestedContenderStructure: 'ai_vs_ai',
-        suggestedJudgingMode: 'community_vote',
-      },
-      null,
-      2,
-    )
-  }
-  return JSON.stringify(
-    {
-      title: 'Lens title here',
-      description: 'What this lens does',
-      content: 'Prompt template — use [[param]] for each input.\nExample: You are a [[role]] tasked with [[goal]].',
-      params: ['role', 'goal'],
-      tags: ['tag-slug'],
-    },
-    null,
-    2,
-  )
-}
-
-function getCsvTemplate(type: GenerationType): string {
-  if (type === 'workflow') {
-    return `title,description\n"Workflow title","What this workflow does"`
-  }
-  if (type === 'battle') {
-    return `title,task_prompt,suggestedContenderStructure\n"Battle title","Challenge prompt","ai_vs_ai"`
-  }
-  return `title,description,content,params,tags\n"Lens title","Description","Template with [[role]] and [[goal]]","role|goal","tag-slug"`
-}
-
-function parseImportJson(raw: string, generationType: GenerationType): AICreationOutput | string {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch (e) {
-    return `Invalid JSON — ${e instanceof Error ? e.message : 'parse error'}`
-  }
-
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    return 'JSON must be a plain object, e.g. { "title": "…" }'
-  }
-
-  const obj = parsed as Record<string, unknown>
-
-  if (generationType === 'lens') {
-    const title = typeof obj.title === 'string' ? obj.title.trim() : ''
-    if (!title) return 'Missing required field: title'
-    const content = typeof obj.content === 'string' ? obj.content : ''
-    const description = typeof obj.description === 'string' ? obj.description : ''
-    const suggestedTagSlugs = (Array.isArray(obj.tags) ? obj.tags : []).filter(
-      (t): t is string => typeof t === 'string',
-    )
-    const params = (Array.isArray(obj.params) ? obj.params : []).flatMap((p) => {
-      if (typeof p === 'string' && p.trim()) return [{ label: p.trim() }]
-      if (typeof p === 'object' && p !== null && typeof (p as Record<string, unknown>).label === 'string') {
-        return [{ label: ((p as Record<string, unknown>).label as string).trim() }]
-      }
-      return []
-    })
-    return { type: 'lens', result: { title, content, description, suggestedTagSlugs, params } }
-  }
-
-  if (generationType === 'workflow') {
-    const title = typeof obj.title === 'string' ? obj.title.trim() : ''
-    if (!title) return 'Missing required field: title'
-    const description = typeof obj.description === 'string' ? obj.description : ''
-    const suggestedLensIds = (Array.isArray(obj.suggestedLensIds) ? obj.suggestedLensIds : []).filter(
-      (id): id is string => typeof id === 'string',
-    )
-    return { type: 'workflow', result: { title, description, suggestedLensIds } }
-  }
-
-  if (generationType === 'battle') {
-    const title = typeof obj.title === 'string' ? obj.title.trim() : ''
-    if (!title) return 'Missing required field: title'
-    const task_prompt = typeof obj.task_prompt === 'string' ? obj.task_prompt : ''
-    const r: GeneratedBattleResult = { title, task_prompt }
-    if (obj.suggestedTaskSource === 'lens' || obj.suggestedTaskSource === 'workflow' || obj.suggestedTaskSource === 'challenge') {
-      r.suggestedTaskSource = obj.suggestedTaskSource
-    }
-    if (obj.suggestedContenderStructure === 'ai_vs_ai' || obj.suggestedContenderStructure === 'human_vs_human' || obj.suggestedContenderStructure === 'human_vs_ai') {
-      r.suggestedContenderStructure = obj.suggestedContenderStructure
-    }
-    if (obj.suggestedJudgingMode === 'community_vote' || obj.suggestedJudgingMode === 'ai_judge' || obj.suggestedJudgingMode === 'rubric_score' || obj.suggestedJudgingMode === 'auto_score') {
-      r.suggestedJudgingMode = obj.suggestedJudgingMode
-    }
-    return { type: 'battle', result: r }
-  }
-
-  return 'Unknown generation type'
-}
-
-function parseImportCsv(raw: string, generationType: GenerationType): AICreationOutput | string {
-  const lines = raw.split(/\r?\n/).filter((l) => l.trim() !== '' && !l.trimStart().startsWith('#'))
-  if (lines.length < 2) return 'CSV needs at least two rows: a header row and one data row'
-
-  function splitLine(line: string): string[] {
-    const fields: string[] = []
-    let field = ''
-    let inQ = false
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i]
-      if (inQ) {
-        if (ch === '"' && line[i + 1] === '"') { field += '"'; i++ }
-        else if (ch === '"') inQ = false
-        else field += ch
-      } else {
-        if (ch === '"') inQ = true
-        else if (ch === ',') { fields.push(field); field = '' }
-        else field += ch
-      }
-    }
-    fields.push(field)
-    return fields
-  }
-
-  const headers = splitLine(lines[0]).map((h) => h.trim())
-  const values = splitLine(lines[1])
-  const obj: Record<string, string> = {}
-  headers.forEach((h, i) => { obj[h] = (values[i] ?? '').trim() })
-
-  if (generationType === 'lens') {
-    const title = obj['title'] ?? ''
-    if (!title) return 'Missing required column: title'
-    const params = obj['params']
-      ? obj['params'].split(/[|;]/).map((p) => ({ label: p.trim() })).filter((p) => p.label)
-      : []
-    const suggestedTagSlugs = obj['tags']
-      ? obj['tags'].split(/[|;]/).map((t) => t.trim()).filter(Boolean)
-      : []
-    return {
-      type: 'lens',
-      result: { title, content: obj['content'] ?? '', description: obj['description'] ?? '', suggestedTagSlugs, params },
-    }
-  }
-
-  if (generationType === 'workflow') {
-    const title = obj['title'] ?? ''
-    if (!title) return 'Missing required column: title'
-    return { type: 'workflow', result: { title, description: obj['description'] ?? '', suggestedLensIds: [] } }
-  }
-
-  if (generationType === 'battle') {
-    const title = obj['title'] ?? ''
-    if (!title) return 'Missing required column: title'
-    return { type: 'battle', result: { title, task_prompt: obj['task_prompt'] ?? '' } }
-  }
-
-  return 'Unknown generation type'
 }
 
 /**
  * Map a funding + chainabit instance onto FundingSourceToggle's props.
- * Mirrors the call site in CreateWorkflowWizard so every spark renders the
- * same funding UI.
  */
 function toToggleProps(
   funding: ReturnType<typeof useFundingSource>,
@@ -281,11 +96,11 @@ function toToggleProps(
 }
 
 /**
- * One reusable "Generate with AI" control used across lens, workflow, and battle
- * creation. Icon-only by default (hover shows the label); clicking opens a popover
- * with the funding source (accordion) and a prompt textarea. Per-type behaviour
- * lives entirely in the ai-creation sublayer — this component only forwards
- * `generationType` + `context` and surfaces the typed result via `onGenerated`.
+ * One reusable "Generate with AI" control used across lens, workflow, battle
+ * creation, and lens parameter filling (`generationType='lens_params'`).
+ *
+ * Two-slide popover: Funding & Model → Prompt.
+ * Callers handle the result via `onGenerated` and narrow on `output.type`.
  */
 export const GenerateWithAIButton: React.FC<GenerateWithAIButtonProps> = ({
   profileId,
@@ -299,14 +114,7 @@ export const GenerateWithAIButton: React.FC<GenerateWithAIButtonProps> = ({
   disabled,
   funding: injectedFunding,
   chainabit: injectedChainabit,
-  versionParams,
-  lensTitle,
-  lensContent,
-  onImportedValues,
-  defaultSlide,
 }) => {
-  // Hooks must be called unconditionally; prefer the injected instance when given
-  // so a parent wizard's funding state isn't duplicated.
   const [selectedProviderKey, setSelectedProviderKey] = useState('')
   const [selectedModelKey, setSelectedModelKey] = useState('')
   const { data: providers = [], isLoading: isLoadingProviders } = useAIProviders()
@@ -354,110 +162,16 @@ export const GenerateWithAIButton: React.FC<GenerateWithAIButtonProps> = ({
   })
 
   const [open, setOpen] = useState(false)
-  const [slide, setSlide] = useState(defaultSlide ?? 0)
+  const [slide, setSlide] = useState(0)
   const [prompt, setPrompt] = useState('')
-  const [importJsonText, setImportJsonText] = useState('')
-  const [importCsvText, setImportCsvText] = useState('')
-  const [importError, setImportError] = useState<string | null>(null)
-  const [copied, setCopied] = useState<'json' | 'csv' | null>(null)
   const anchorRef = useRef<HTMLButtonElement>(null)
   const textAreaId = useId()
 
   useEffect(() => {
-    if (open) {
-      if (defaultSlide !== undefined) setSlide(defaultSlide)
-    } else {
-      setImportError(null)
-      setCopied(null)
+    if (!open) {
+      resetError()
     }
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Pre-fill the import textareas with the template when the user navigates to those slides,
-  // so they can see the format immediately without clicking "Copy template".
-  useEffect(() => {
-    if (slide === 2 && !importJsonText) setImportJsonText(jsonTemplate)
-  }, [slide]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (slide === 3 && !importCsvText) setImportCsvText(csvTemplate)
-  }, [slide]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // When versionParams is provided, use the typed domain templates (same as JsonImportDialog/CsvImportDialog).
-  // Otherwise fall back to the creation-format templates.
-  const lensContext = useMemo(
-    () => (lensTitle || lensContent) ? { title: lensTitle, content: lensContent } : undefined,
-    [lensTitle, lensContent],
-  )
-
-  const jsonTemplate = useMemo(
-    () => versionParams && versionParams.length > 0
-      ? buildImportJsonTemplate(versionParams, lensContext)
-      : getJsonTemplate(generationType),
-    [versionParams, lensContext, generationType],
-  )
-
-  const csvTemplate = useMemo(
-    () => versionParams && versionParams.length > 0
-      ? buildImportCsvTemplate(versionParams, lensContext)
-      : getCsvTemplate(generationType),
-    [versionParams, lensContext, generationType],
-  )
-
-  const handleCopyTemplate = useCallback(
-    async (format: 'json' | 'csv') => {
-      const template = format === 'json' ? jsonTemplate : csvTemplate
-      try {
-        await navigator.clipboard.writeText(template)
-        setCopied(format)
-        setTimeout(() => setCopied(null), 2000)
-      } catch {
-        // clipboard denied — do nothing
-      }
-    },
-    [jsonTemplate, csvTemplate],
-  )
-
-  const handleJsonImport = useCallback(() => {
-    setImportError(null)
-    if (versionParams && versionParams.length > 0) {
-      // Param-values mode: use typed coercion, same parser as JsonImportDialog
-      const { values, errors } = coerceJsonImport(importJsonText.trim(), versionParams)
-      const parseError = errors['_parse']
-      if (parseError) { setImportError(parseError); return }
-      const coercionErrors = Object.values(errors).filter(Boolean)
-      if (coercionErrors.length > 0) { setImportError(coercionErrors[0]); return }
-      if (Object.keys(values).length === 0) { setImportError('No matching parameter values found'); return }
-      onImportedValues?.(values)
-      setOpen(false)
-      return
-    }
-    // Creation mode: map JSON to AICreationOutput
-    const result = parseImportJson(importJsonText.trim(), generationType)
-    if (typeof result === 'string') { setImportError(result); return }
-    onGenerated(result)
-    setOpen(false)
-  }, [importJsonText, versionParams, generationType, onGenerated, onImportedValues])
-
-  const handleCsvImport = useCallback(() => {
-    setImportError(null)
-    if (versionParams && versionParams.length > 0) {
-      // Param-values mode: use typed coercion, same parser as CsvImportDialog
-      const parsed = parseCsvText(importCsvText.trim())
-      if (parsed.rows.length === 0) { setImportError('CSV needs at least one data row after the header'); return }
-      const { values, errors } = coerceCsvRow(parsed.headers, parsed.rows[0], versionParams)
-      const coercionErrors = Object.values(errors).filter(Boolean)
-      if (coercionErrors.length > 0) { setImportError(coercionErrors[0]); return }
-      if (Object.keys(values).length === 0) { setImportError('No matching parameter columns found'); return }
-      onImportedValues?.(values)
-      setOpen(false)
-      return
-    }
-    // Creation mode: map CSV to AICreationOutput
-    const result = parseImportCsv(importCsvText.trim(), generationType)
-    if (typeof result === 'string') { setImportError(result); return }
-    onGenerated(result)
-    setOpen(false)
-  }, [importCsvText, versionParams, generationType, onGenerated, onImportedValues])
 
   const handleGenerate = useCallback(async () => {
     if (!profileId) return
@@ -469,7 +183,7 @@ export const GenerateWithAIButton: React.FC<GenerateWithAIButtonProps> = ({
     }
   }, [profileId, prompt, generate, resetError, onGenerated])
 
-  const SLIDES = 4
+  const SLIDES = 2
 
   return (
     <>
@@ -527,7 +241,7 @@ export const GenerateWithAIButton: React.FC<GenerateWithAIButtonProps> = ({
             style={{ transform: `translateX(-${slide * 100}%)` }}
           >
             {/* Slide 1 — Funding & model */}
-            <div className="w-full shrink-0 px-5 py-4 overflow-y-auto max-h-[28rem]">
+            <div className="w-full shrink-0 px-5 py-4 overflow-y-auto max-h-[28rem]" style={{ minWidth: '100%' }}>
               <p className="text-[11px] font-semibold text-greyscale-400 uppercase tracking-wide mb-3">
                 Funding &amp; Model
               </p>
@@ -582,90 +296,6 @@ export const GenerateWithAIButton: React.FC<GenerateWithAIButtonProps> = ({
                   {error.message}
                 </Alert>
               )}
-            </div>
-
-            {/* Slide 3 — Import from JSON */}
-            <div className="w-full shrink-0 px-5 py-4 flex flex-col gap-3" style={{ minWidth: '100%' }}>
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold text-greyscale-400 uppercase tracking-wide">
-                  Import from JSON
-                </p>
-                <button
-                  type="button"
-                  onClick={() => handleCopyTemplate('json')}
-                  className="inline-flex items-center gap-1 text-xs text-greyscale-400 hover:text-greyscale-600 transition-colors"
-                >
-                  {copied === 'json' ? <Check size={12} /> : <Copy size={12} />}
-                  {copied === 'json' ? 'Copied!' : 'Copy template'}
-                </button>
-              </div>
-              <p className="text-[11px] text-greyscale-400 -mt-1">
-                Copy the template, fill it in with any AI tool, then paste the result here.
-              </p>
-              <TextArea
-                value={importJsonText}
-                onChange={(e) => { setImportJsonText(e.target.value); setImportError(null) }}
-                placeholder={`Paste JSON here…\n\nClick "Copy template" to get the correct format.`}
-                minRows={5}
-                maxRows={10}
-              />
-              {importError && slide === 2 && (
-                <Alert variant="error" title="Import failed" onDismiss={() => setImportError(null)}>
-                  {importError}
-                </Alert>
-              )}
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleJsonImport}
-                  disabled={!importJsonText.trim()}
-                >
-                  Apply
-                </Button>
-              </div>
-            </div>
-
-            {/* Slide 4 — Import from CSV */}
-            <div className="w-full shrink-0 px-5 py-4 flex flex-col gap-3" style={{ minWidth: '100%' }}>
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold text-greyscale-400 uppercase tracking-wide">
-                  Import from CSV
-                </p>
-                <button
-                  type="button"
-                  onClick={() => handleCopyTemplate('csv')}
-                  className="inline-flex items-center gap-1 text-xs text-greyscale-400 hover:text-greyscale-600 transition-colors"
-                >
-                  {copied === 'csv' ? <Check size={12} /> : <Copy size={12} />}
-                  {copied === 'csv' ? 'Copied!' : 'Copy template'}
-                </button>
-              </div>
-              <p className="text-[11px] text-greyscale-400 -mt-1">
-                Row 1 = headers, row 2 = values. Use <code className="text-[10px]">|</code> to separate multiple params or tags.
-              </p>
-              <TextArea
-                value={importCsvText}
-                onChange={(e) => { setImportCsvText(e.target.value); setImportError(null) }}
-                placeholder={`Paste CSV here…\n\nClick "Copy template" to get the correct format.`}
-                minRows={5}
-                maxRows={10}
-              />
-              {importError && slide === 3 && (
-                <Alert variant="error" title="Import failed" onDismiss={() => setImportError(null)}>
-                  {importError}
-                </Alert>
-              )}
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleCsvImport}
-                  disabled={!importCsvText.trim()}
-                >
-                  Apply
-                </Button>
-              </div>
             </div>
           </div>
         </div>

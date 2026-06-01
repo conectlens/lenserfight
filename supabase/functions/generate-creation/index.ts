@@ -37,7 +37,7 @@ const RATE_LIMIT_MAX = 10
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type GenerationType = 'lens' | 'workflow' | 'battle'
+type GenerationType = 'lens' | 'workflow' | 'battle' | 'lens_params'
 type FundingSource = 'platform_credit' | 'user_byok_cloud'
 
 interface GenerateCreationRequest {
@@ -68,6 +68,40 @@ function checkRateLimit(userId: string): boolean {
 }
 
 // ─── Prompt / message builders ────────────────────────────────────────────────
+
+function buildLensParamsMessages(prompt: string | null, context: Record<string, unknown>) {
+  const params = Array.isArray(context.params) ? context.params as Array<{ label: string; type: string; options?: string[] }> : []
+  const titleLine = typeof context.lensTitle === 'string' && context.lensTitle ? `Lens: "${context.lensTitle}"\n` : ''
+  const contentLine = typeof context.lensContent === 'string' && context.lensContent
+    ? `Instructions: "${context.lensContent.replace(/\n+/g, ' ').slice(0, 400)}"\n`
+    : ''
+  const paramLines = params.map((p) => {
+    const opts = Array.isArray(p.options) && p.options.length ? `, options: ${p.options.join(' | ')}` : ''
+    return `- "${p.label}" (${p.type}${opts})`
+  }).join('\n')
+
+  const system = `You are a LenserFight lens parameter value generator.
+Generate appropriate values for the given parameters based on the lens context.
+Respond ONLY with a JSON object — no prose, no markdown fences, no explanation:
+{"param_label": value, ...}
+
+Type rules:
+- text / textarea / url / json → string
+- number / integer / float / decimal → number
+- boolean → true or false
+- select → one of the listed options exactly
+- multiselect / array → array of strings
+- file / files / connector → omit the key entirely`
+
+  const instruction = prompt?.trim()
+    ? `User instruction: ${prompt.slice(0, MAX_PROMPT_LENGTH)}`
+    : 'Generate sensible default values that illustrate how this lens should be used.'
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: `${titleLine}${contentLine}\nParameters:\n${paramLines}\n\n${instruction}` },
+  ]
+}
 
 function buildLensMessages(prompt: string | null, context: Record<string, unknown>) {
   const system = `You are an expert LenserFight lens author.
@@ -217,6 +251,14 @@ const BATTLE_JUDGING_MODES = ['community_vote', 'ai_judge', 'rubric_score', 'aut
 
 function pickAllowed(value: unknown, allowed: string[]): string | undefined {
   return typeof value === 'string' && allowed.includes(value) ? value : undefined
+}
+
+function parseLensParamsOutput(raw: string) {
+  const obj = extractJson(raw)
+  if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+    throw new Error('lens_params response must be a plain JSON object')
+  }
+  return { type: 'lens_params' as const, result: obj }
 }
 
 function parseBattleOutput(raw: string) {
@@ -430,8 +472,8 @@ serve(async (req: Request) => {
   const { generation_type, prompt, profile_id, context, funding_source, key_ref_id, provider_key, model_key } = body
 
   // 2. Validate required fields
-  if (!generation_type || !['lens', 'workflow', 'battle'].includes(generation_type)) {
-    return errResponse('VALIDATION_ERROR', 'generation_type must be "lens", "workflow", or "battle"', 400, req)
+  if (!generation_type || !['lens', 'workflow', 'battle', 'lens_params'].includes(generation_type)) {
+    return errResponse('VALIDATION_ERROR', 'generation_type must be "lens", "workflow", "battle", or "lens_params"', 400, req)
   }
   if (!profile_id) {
     return errResponse('VALIDATION_ERROR', 'profile_id is required', 400, req)
@@ -531,11 +573,13 @@ serve(async (req: Request) => {
 
   // 8. Build messages
   const ctx = (context ?? {}) as Record<string, unknown>
-  const messages = generation_type === 'lens'
-    ? buildLensMessages(prompt, ctx)
-    : generation_type === 'battle'
-      ? buildBattleMessages(prompt, ctx)
-      : buildWorkflowMessages(prompt, ctx)
+  const messages = generation_type === 'lens_params'
+    ? buildLensParamsMessages(prompt, ctx)
+    : generation_type === 'lens'
+      ? buildLensMessages(prompt, ctx)
+      : generation_type === 'battle'
+        ? buildBattleMessages(prompt, ctx)
+        : buildWorkflowMessages(prompt, ctx)
 
   // 9. Call provider with timeout
   const signal = AbortSignal.timeout(TIMEOUT_MS)
@@ -561,11 +605,13 @@ serve(async (req: Request) => {
 
   // 10. Parse structured output
   try {
-    const output = generation_type === 'lens'
-      ? parseLensOutput(rawContent)
-      : generation_type === 'battle'
-        ? parseBattleOutput(rawContent)
-        : parseWorkflowOutput(rawContent)
+    const output = generation_type === 'lens_params'
+      ? parseLensParamsOutput(rawContent)
+      : generation_type === 'lens'
+        ? parseLensOutput(rawContent)
+        : generation_type === 'battle'
+          ? parseBattleOutput(rawContent)
+          : parseWorkflowOutput(rawContent)
 
     const mode: 'prompted' | 'recommendation' = prompt?.trim() ? 'prompted' : 'recommendation'
     return jsonResponse({ ok: true, output, mode }, 200, req)

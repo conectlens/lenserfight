@@ -2,7 +2,7 @@ import type { FundingSource } from '@lenserfight/types'
 
 // ─── Generation target ─────────────────────────────────────────────────────────
 
-export type GenerationType = 'lens' | 'workflow' | 'battle'
+export type GenerationType = 'lens' | 'workflow' | 'battle' | 'lens_params'
 
 // ─── Profile AI preference ─────────────────────────────────────────────────────
 // Resolved from lensers.preferences via fn_get_profile_ai_preference.
@@ -22,6 +22,28 @@ export interface ProfileAIPreference {
 
 // ─── Context payloads ─────────────────────────────────────────────────────────
 // Callers supply context that shapes both prompted and recommendation-mode output.
+
+// ─── Lens param fill context ──────────────────────────────────────────────────
+
+/** Minimal param descriptor forwarded to the AI for value generation. */
+export interface LensParamDescriptor {
+  label: string
+  /** LensVersionParamType string — drives type-specific value rules in the prompt. */
+  type: string
+  /** For select / multiselect params: the allowed option values. */
+  options?: string[]
+}
+
+/**
+ * Context for `generationType === 'lens_params'`.
+ * The AI generates a `{label: value}` JSON object for each param.
+ */
+export interface LensParamsCreationContext {
+  params: LensParamDescriptor[]
+  lensTitle?: string
+  /** Truncated lens instructions — gives the AI context for what values to generate. */
+  lensContent?: string
+}
 
 export interface LensCreationContext {
   /** Tag slugs the user typically applies — used for recommendation mode. */
@@ -61,7 +83,7 @@ export interface AICreationInput {
   prompt: string | null | undefined
   /** auth.uid() of the active lenser. */
   profileId: string
-  context: LensCreationContext | WorkflowCreationContext | BattleCreationContext
+  context: LensCreationContext | WorkflowCreationContext | BattleCreationContext | LensParamsCreationContext
 }
 
 // ─── Output shapes ────────────────────────────────────────────────────────────
@@ -100,10 +122,14 @@ export interface GeneratedBattleResult {
   suggestedChallengeType?: string | null
 }
 
+/** Raw param values keyed by label — result of `generationType === 'lens_params'`. */
+export type GeneratedLensParamsResult = Record<string, unknown>
+
 export type AICreationOutput =
   | { type: 'lens'; result: GeneratedLensResult }
   | { type: 'workflow'; result: GeneratedWorkflowResult }
   | { type: 'battle'; result: GeneratedBattleResult }
+  | { type: 'lens_params'; result: GeneratedLensParamsResult }
 
 // ─── Error codes ──────────────────────────────────────────────────────────────
 
@@ -141,7 +167,7 @@ export interface GenerateCreationRequest {
   generation_type: GenerationType
   prompt: string | null
   profile_id: string
-  context: LensCreationContext | WorkflowCreationContext | BattleCreationContext
+  context: LensCreationContext | WorkflowCreationContext | BattleCreationContext | LensParamsCreationContext
   /** Resolved by the client from profile preference. */
   funding_source: 'platform_credit' | 'user_byok_cloud'
   /** Required when funding_source = 'user_byok_cloud'. */

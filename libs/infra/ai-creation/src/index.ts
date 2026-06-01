@@ -2,6 +2,8 @@
 export type {
   GenerationType,
   ProfileAIPreference,
+  LensParamDescriptor,
+  LensParamsCreationContext,
   LensCreationContext,
   WorkflowCreationContext,
   BattleCreationContext,
@@ -9,6 +11,7 @@ export type {
   GeneratedLensResult,
   GeneratedWorkflowResult,
   GeneratedBattleResult,
+  GeneratedLensParamsResult,
   AICreationOutput,
   AICreationError,
   AICreationErrorCode,
@@ -22,6 +25,7 @@ export type {
 export {
   MAX_PROMPT_LENGTH,
   MAX_CONTEXT_TOKENS,
+  buildLensParamsMessages,
   buildLensPromptedMessages,
   buildLensRecommendationMessages,
   buildWorkflowPromptedMessages,
