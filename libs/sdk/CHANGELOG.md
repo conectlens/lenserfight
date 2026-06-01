@@ -1,3 +1,13 @@
+## 0.2.0-alpha.31 (2026-06-01)
+
+### 🚀 Features
+
+- integrate AI-driven content generation into CLI and UI with support for lenses, battles, and workflows ([e4610bf8f](https://github.com/conectlens/lenserfight/commit/e4610bf8f))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 0.2.0-alpha.30 (2026-05-31)
 
 This was a version bump only for sdk to align it with other projects, there were no code changes.
