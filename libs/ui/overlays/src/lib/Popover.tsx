@@ -7,7 +7,7 @@ export interface PopoverProps {
   open: boolean
   onClose?: () => void
   /** The anchor element — pass a ref or a render prop */
-  anchorRef: React.RefObject<HTMLElement>
+  anchorRef: React.RefObject<HTMLElement | null>
   children: React.ReactNode
   placement?: PopoverPlacement
   className?: string

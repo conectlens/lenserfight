@@ -1,5 +1,6 @@
 import type {
   AICreationOutput,
+  GeneratedBattleResult,
   GeneratedLensResult,
   GeneratedWorkflowResult,
   GenerationType,
@@ -82,11 +83,67 @@ function parseWorkflowOutput(raw: string): GeneratedWorkflowResult {
   return { title, description, suggestedLensIds }
 }
 
+// ─── Battle output parser ─────────────────────────────────────────────────────
+
+// Local allow-lists mirror @lenserfight/domain/battle-governance
+// (TASK_SOURCES / CONTENDER_STRUCTURES / JUDGING_MODES). Kept inline so this
+// generic infra lib does not depend on the battle domain. A hallucinated value
+// is dropped to undefined rather than propagated.
+const BATTLE_TASK_SOURCES = new Set(['lens', 'workflow', 'challenge'])
+const BATTLE_CONTENDER_STRUCTURES = new Set(['ai_vs_ai', 'human_vs_human', 'human_vs_ai'])
+const BATTLE_JUDGING_MODES = new Set(['community_vote', 'ai_judge', 'rubric_score', 'auto_score'])
+
+function pickFromSet<T extends string>(value: unknown, allowed: Set<string>): T | undefined {
+  return typeof value === 'string' && allowed.has(value) ? (value as T) : undefined
+}
+
+function parseBattleOutput(raw: string): GeneratedBattleResult {
+  const obj = extractJson(raw) as Record<string, unknown>
+
+  const title = typeof obj.title === 'string' ? obj.title.slice(0, 120).trim() : ''
+  const task_prompt = typeof obj.task_prompt === 'string' ? obj.task_prompt.trim() : ''
+
+  if (!title) throw new Error('missing title in battle response')
+  if (task_prompt.length < 10) throw new Error('task_prompt too short in battle response')
+
+  const suggestedTaskSource = pickFromSet<GeneratedBattleResult['suggestedTaskSource'] & string>(
+    obj.suggestedTaskSource,
+    BATTLE_TASK_SOURCES,
+  )
+  const suggestedContenderStructure = pickFromSet<
+    GeneratedBattleResult['suggestedContenderStructure'] & string
+  >(obj.suggestedContenderStructure, BATTLE_CONTENDER_STRUCTURES)
+  const suggestedJudgingMode = pickFromSet<GeneratedBattleResult['suggestedJudgingMode'] & string>(
+    obj.suggestedJudgingMode,
+    BATTLE_JUDGING_MODES,
+  )
+  const suggestedChallengeType =
+    suggestedTaskSource === 'challenge' && typeof obj.suggestedChallengeType === 'string'
+      ? obj.suggestedChallengeType
+          .toLowerCase()
+          .replace(/[^a-z0-9-]/g, '-')
+          .replace(/-+/g, '-')
+          .slice(0, 40) || null
+      : null
+
+  return {
+    title,
+    task_prompt,
+    suggestedTaskSource,
+    suggestedContenderStructure,
+    suggestedJudgingMode,
+    suggestedChallengeType,
+  }
+}
+
 // ─── Unified parser ───────────────────────────────────────────────────────────
 
 export function parseCreationOutput(raw: string, type: GenerationType): AICreationOutput {
   if (type === 'lens') {
     return { type: 'lens', result: parseLensOutput(raw) }
+  }
+  if (type === 'battle') {
+    return { type: 'battle', result: parseBattleOutput(raw) }
   }
   return { type: 'workflow', result: parseWorkflowOutput(raw) }
 }

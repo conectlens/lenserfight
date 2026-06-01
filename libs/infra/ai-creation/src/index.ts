@@ -4,9 +4,11 @@ export type {
   ProfileAIPreference,
   LensCreationContext,
   WorkflowCreationContext,
+  BattleCreationContext,
   AICreationInput,
   GeneratedLensResult,
   GeneratedWorkflowResult,
+  GeneratedBattleResult,
   AICreationOutput,
   AICreationError,
   AICreationErrorCode,
@@ -16,7 +18,7 @@ export type {
   GenerateCreationErrorResponse,
 } from './lib/creation.types'
 
-// ─── Prompt builders (used by edge function) ─────────────────────────────────
+// ─── Prompt builders (used by edge function + CLI local-BYOK path) ───────────
 export {
   MAX_PROMPT_LENGTH,
   MAX_CONTEXT_TOKENS,
@@ -24,6 +26,8 @@ export {
   buildLensRecommendationMessages,
   buildWorkflowPromptedMessages,
   buildWorkflowRecommendationMessages,
+  buildBattlePromptedMessages,
+  buildBattleRecommendationMessages,
 } from './lib/creation-prompts'
 
 // ─── Output parser (used by edge function) ───────────────────────────────────

@@ -16,7 +16,7 @@ import {
 } from '@lenserfight/data/repositories'
 import type { BattleTemplateRecord, WorkflowRecord } from '@lenserfight/data/repositories'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
-import { useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
+import { useFundingSource, FundingSourceToggle, GenerateWithAIButton } from '@lenserfight/features/lenses'
 import { useLenser } from '@lenserfight/features/profile'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { useWizardStep } from '@lenserfight/ui/routing'
@@ -33,7 +33,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GitBranch, HelpCircle, Info, Layers, Swords } from 'lucide-react'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { BattleAutomationSettings } from './BattleAutomationSettings'
@@ -73,6 +73,7 @@ import type { LenserBattlePolicy } from '@lenserfight/domain/battle-governance'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../../types/battle.types'
 import { deriveBattleType } from '../../util/battle-type-codec'
+import type { AICreationOutput } from '@lenserfight/infra/ai-creation'
 import type { LensViewModel } from '@lenserfight/types'
 import { useInviteContender } from '../../hooks/mutations/useInviteContender'
 
@@ -584,6 +585,29 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     staleTime: 1000 * 60,
   })
   const myLenses: LensViewModel[] = (lensesData?.data ?? []) as LensViewModel[]
+
+  // ── AI generation (delegated to the shared GenerateWithAIButton) ───────────
+  const battleAiContext = useMemo(
+    () => ({
+      availableLensIds: myLenses.map((l) => l.id),
+      availableWorkflowIds: workflows.map((w) => w.id),
+    }),
+    [myLenses, workflows],
+  )
+
+  const handleBattleGenerated = useCallback((output: AICreationOutput) => {
+    if (output.type !== 'battle') return
+    const { title: genTitle, task_prompt } = output.result
+    setTitle(genTitle)
+    // The wizard's `description` field stores the battle task_prompt (see template load).
+    setDescription(task_prompt)
+    // Advisory suggestions — the wizard's compatibility effects coerce invalid combos.
+    if (output.result.suggestedTaskSource) setTaskSource(output.result.suggestedTaskSource)
+    if (output.result.suggestedContenderStructure)
+      setContenderStructure(output.result.suggestedContenderStructure)
+    if (output.result.suggestedJudgingMode) setJudgingMode(output.result.suggestedJudgingMode)
+    if (output.result.suggestedChallengeType) setChallengeType(output.result.suggestedChallengeType)
+  }, [])
 
   // ── Navigation ───────────────────────────────────────────────────────────
 
@@ -1255,9 +1279,21 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             {step === 3 && (
               <div className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                    Battle title
-                  </label>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <label className="block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                      Battle title
+                    </label>
+                    {lenser?.id && (
+                      <GenerateWithAIButton
+                        profileId={lenser.id}
+                        generationType="battle"
+                        context={battleAiContext}
+                        funding={battleFunding}
+                        chainabit={chainabit}
+                        onGenerated={handleBattleGenerated}
+                      />
+                    )}
+                  </div>
                   <Input
                     type="text"
                     value={title}

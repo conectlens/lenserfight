@@ -78,6 +78,7 @@ vi.mock('@lenserfight/features/lens-kinds', () => ({
 
 vi.mock('@lenserfight/features/lenses', () => ({
   FundingSourceToggle: () => null,
+  GenerateWithAIButton: () => null,
   useFundingSource: () => ({
     fundingSource: 'platform_credit',
     setFundingSource: vi.fn(),

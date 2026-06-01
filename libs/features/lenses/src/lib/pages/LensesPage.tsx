@@ -30,7 +30,7 @@ export const LensesPage: React.FC = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { hasLenser } = useAuthenticatedLenser()
-  const { isAuthenticated } = useAuth()
+  const { user, isAuthenticated } = useAuth()
 
   // URL-synced filters
   const selectedTag = searchParams.get('tag')
@@ -262,6 +262,7 @@ export const LensesPage: React.FC = () => {
         form={form}
         isSubmitting={isSubmitting}
         error={createError}
+        profileId={user?.id}
       />
 
     </div>

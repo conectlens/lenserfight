@@ -4,6 +4,7 @@ import consola from 'consola'
 import { type WorkflowFrontmatter } from '@lenserfight/types'
 
 import { callRpc, handleError } from '../utils/api'
+import { generateCreation, normalizeFunding, resolveProfileId } from '../lib/data-services/ai-generate'
 import {
   buildWorkflowSimulationReport,
   parseAutomationDocument,
@@ -489,6 +490,69 @@ const trigger = defineCommand({
 // Root command
 // ---------------------------------------------------------------------------
 
+const generate = defineCommand({
+  meta: {
+    name: 'generate',
+    description: 'Generate a workflow with AI, then optionally create it.',
+  },
+  args: {
+    prompt: { type: 'string', description: 'Describe the workflow (empty → AI recommendation).', default: '' },
+    funding: { type: 'string', description: 'Funding source: platform_credit | cloud | local', default: 'platform_credit' },
+    'byok-key-ref': { type: 'string', description: 'Cloud BYOK key UUID (required for --funding cloud)', default: '' },
+    'local-key-id': { type: 'string', description: 'Local key id (required for --funding local)', default: '' },
+    provider: { type: 'string', description: 'Provider key (openai | anthropic | google | mistral)', default: 'openai' },
+    model: { type: 'string', description: 'Model key', default: 'gpt-4o-mini' },
+    create: { type: 'boolean', description: 'Create the workflow immediately from the generated result', default: false },
+    json: { type: 'boolean', description: 'Output the generated result as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const funding = normalizeFunding(args.funding)
+      const profileId = await resolveProfileId()
+      const output = await generateCreation({
+        generationType: 'workflow',
+        prompt: args.prompt.trim() || null,
+        profileId,
+        funding,
+        providerKey: args.provider,
+        modelKey: args.model,
+        keyRefId: args['byok-key-ref'] || null,
+        localKeyId: args['local-key-id'] || null,
+        context: { availableLensIds: [] },
+      })
+      if (output.type !== 'workflow') throw new Error('Unexpected generation type.')
+      const { title, description } = output.result
+
+      if (!args.create) {
+        if (args.json) {
+          printJson(output.result)
+          return
+        }
+        consola.success('Workflow generated.')
+        consola.info('Title:       %s', title)
+        consola.info('Description: %s', description)
+        consola.info('\nRe-run with --create to save it.')
+        return
+      }
+
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_create_workflow',
+        { p_title: title, p_description: description || null },
+        { requireAuth: true }
+      )
+      if (args.json) {
+        printJson(result)
+        return
+      }
+      consola.success('Workflow created from AI generation.')
+      consola.info('ID:   %s', result['id'])
+      consola.info('Name: %s', result['title'])
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 export default defineCommand({
   meta: {
     name: 'workflow',
@@ -498,6 +562,7 @@ export default defineCommand({
     run,
     validate,
     create,
+    generate,
     list,
     status: lifecycleCommand('status', 'Show lifecycle state, pinned state, version snapshot, and delete blockers.'),
     archive: lifecycleCommand('archive', 'Archive a workflow without breaking historical runs or battles.'),

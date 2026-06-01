@@ -1,19 +1,21 @@
 import { LensKindPicker, LENS_KIND_REGISTRY } from '@lenserfight/features/lens-kinds'
-import { useAICreationGeneration } from '@lenserfight/infra/ai-creation'
 import { CreateVersionParamInput, LensKind, VisibilityEnum } from '@lenserfight/types'
-import { Alert, FormError } from '@lenserfight/ui/components'
-import { SelectField, LensContentEditor, type LensContentEditorHandle, InputField, TextArea } from '@lenserfight/ui/forms'
+import { FormError } from '@lenserfight/ui/components'
+import { SelectField, LensContentEditor, type LensContentEditorHandle, InputField } from '@lenserfight/ui/forms'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { copyTextToClipboard } from '@lenserfight/utils/text'
 import { useFormValidation, isRequired, minLength } from '@lenserfight/utils/validation'
-import { Globe, Lock, Info, Sparkles, Copy, Check } from 'lucide-react'
+import { Globe, Lock, Info, Copy, Check } from 'lucide-react'
 import React, { useMemo, useRef, useCallback, useEffect, useState } from 'react'
 
 import { useTools } from '../hooks/useTools'
 
+import { GenerateWithAIButton } from './GenerateWithAIButton'
 import { ParameterPanel } from './LensParameterPanel'
 import { LensTagInput } from './LensTagInput'
 import { LensVersionHistoryButton } from './LensVersionHistoryButton'
+
+import type { AICreationOutput } from '@lenserfight/infra/ai-creation'
 
 interface CreateLensModalProps {
   isOpen: boolean
@@ -38,8 +40,6 @@ interface CreateLensModalProps {
   lensId?: string
   /** auth.uid() of the active lenser — enables the AI generation button. */
   profileId?: string
-  /** Injected from useFundingSource().resolveLocalKey — needed for local BYOK path. */
-  resolveLocalKey?: (keyId: string) => Promise<string>
 }
 
 const VALIDATION_RULES = {
@@ -129,32 +129,21 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   isEditMode,
   lensId,
   profileId,
-  resolveLocalKey,
 }) => {
   const editorRef = useRef<LensContentEditorHandle>(null)
   const { tools, textToolId } = useTools(undefined, isOpen)
   const [lensInstructionsCopied, setLensInstructionsCopied] = useState(false)
-  const [showAiPanel, setShowAiPanel] = useState(false)
 
-  // ── AI generation state ──────────────────────────────────────────────────
-  const [aiPrompt, setAiPrompt] = useState('')
+  // ── AI generation context (forwarded to the shared GenerateWithAIButton) ──
   const aiContext = useMemo(
     () => ({ userTagSlugs: form.tags.filter((t) => !LENS_KIND_REGISTRY[t as LensKind]) }),
     [form.tags],
   )
-  const { generate, isGenerating, error: aiError, resetError: resetAiError } = useAICreationGeneration({
-    profileId: profileId ?? '',
-    generationType: 'lens',
-    context: aiContext,
-    resolveLocalKey,
-  })
 
-  const handleAIGenerate = useCallback(async () => {
-    if (!profileId) return
-    resetAiError()
-    const output = await generate(aiPrompt || null)
-    if (output?.type === 'lens') {
-      const { title, content, description, suggestedTagSlugs, params } = output.result
+  const handleAIGenerated = useCallback(
+    (output: AICreationOutput) => {
+      if (output.type !== 'lens') return
+      const { title, content, suggestedTagSlugs, params } = output.result
       form.setTitle(title)
       form.setContent(content)
       // Pre-select suggested tag slugs that are not lens-kind tags
@@ -171,9 +160,9 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
           })),
         )
       }
-      void description // description is informational, title is set above
-    }
-  }, [profileId, aiPrompt, generate, form, resetAiError, textToolId])
+    },
+    [form, textToolId],
+  )
 
   const formValues = useMemo(
     () => ({ title: form.title, content: form.content, tags: form.tags }),
@@ -237,6 +226,16 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
       title={isEditMode ? 'Edit Lens' : 'Create New Lens'}
       description={isEditMode ? 'Update your lens configuration and content.' : 'Lenses are modular AI instructions that can be reused across workflows.'}
       maxWidth="max-w-4xl"
+      headerAction={
+        profileId && !isEditMode ? (
+          <GenerateWithAIButton
+            profileId={profileId}
+            generationType="lens"
+            context={aiContext}
+            onGenerated={handleAIGenerated}
+          />
+        ) : undefined
+      }
       footer={
         <ModalFooter
           leftButton={{
@@ -287,21 +286,6 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {profileId && !isEditMode && (
-                <button
-                  type="button"
-                  onClick={() => setShowAiPanel((prev) => !prev)}
-                  title="Generate lens content with AI"
-                  className={`flex items-center gap-1.5 text-xs font-semibold transition-colors px-2 py-1 rounded-lg ${
-                    showAiPanel
-                      ? 'text-primary-yellow-600 bg-primary-yellow-500/10 hover:bg-primary-yellow-500/20'
-                      : 'text-primary-yellow-500 hover:text-primary-yellow-600 hover:bg-primary-yellow-500/10'
-                  }`}
-                >
-                  <Sparkles size={13} />
-                  Generate with AI
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleCopyLensInstructions}
@@ -337,54 +321,6 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
               )}
             </div>
           </div>
-
-          {/* Inline AI generation panel — toggled by the "Generate with AI" button */}
-          {profileId && !isEditMode && showAiPanel && (
-            <div className="rounded-2xl border border-primary-yellow-500/30 bg-primary-yellow-500/5 p-4 space-y-3">
-              <TextArea
-                id="ai-lens-prompt"
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="Describe your lens idea… or leave empty for an AI suggestion"
-                maxLength={2000}
-                minRows={2}
-                maxRows={5}
-                disabled={isGenerating}
-              />
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleAIGenerate}
-                  disabled={isGenerating || isSubmitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary-yellow-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isGenerating ? (
-                    <>
-                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Generating…
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-3.5 w-3.5" />
-                      {aiPrompt.trim() ? 'Generate from prompt' : 'Suggest a lens'}
-                    </>
-                  )}
-                </button>
-                <span className="text-xs text-greyscale-400">
-                  Uses your profile's AI funding source
-                </span>
-              </div>
-              {aiError && (
-                <Alert
-                  variant="error"
-                  title={friendlyAIError(aiError.code)}
-                  onDismiss={resetAiError}
-                >
-                  {aiError.message}
-                </Alert>
-              )}
-            </div>
-          )}
 
           <div className={`
             rounded-2xl border transition-all duration-200 overflow-hidden
@@ -444,21 +380,5 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   )
 }
 
-// ─── AI error display helper ──────────────────────────────────────────────────
-
-function friendlyAIError(code: string): string {
-  switch (code) {
-    case 'PROMPT_TOO_LONG':    return 'Prompt too long'
-    case 'TIMEOUT':            return 'Request timed out'
-    case 'RATE_LIMITED':       return 'Too many requests'
-    case 'CREDIT_EXHAUSTED':   return 'Credits or quota exhausted'
-    case 'PROVIDER_ERROR':     return 'AI provider error'
-    case 'PARSE_ERROR':        return 'Unexpected AI response'
-    case 'NO_LOCAL_KEY':       return 'No local BYOK key configured'
-    case 'GATEWAY_ERROR':      return 'Gateway connection failed'
-    case 'UNAUTHORIZED':       return 'Not authorized'
-    default:                   return 'Generation failed'
-  }
-}
 
 

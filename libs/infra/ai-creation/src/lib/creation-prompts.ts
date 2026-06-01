@@ -1,4 +1,8 @@
-import type { LensCreationContext, WorkflowCreationContext } from './creation.types'
+import type {
+  BattleCreationContext,
+  LensCreationContext,
+  WorkflowCreationContext,
+} from './creation.types'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -138,6 +142,75 @@ export function buildWorkflowRecommendationMessages(
       role: 'user',
       content: `Suggest a practical workflow that connects these lenses in a useful way.
 ${lensLine}${personaLine}${tagsLine}Choose the lens combination that forms the most coherent and valuable automation pipeline based on the context above.`,
+    },
+  ]
+}
+
+// ─── Battle prompts ─────────────────────────────────────────────────────────
+// IMPORTANT: keep behaviourally equivalent to buildBattleMessages/parseBattleOutput
+// in supabase/functions/generate-creation/index.ts (the Deno copy of this sublayer).
+
+const BATTLE_SYSTEM = `You are an expert LenserFight battle designer.
+A battle pits AI models (or humans) against each other on a single shared task, judged by the community or an AI judge.
+
+Respond ONLY with a JSON object — no prose, no markdown fences, no explanation:
+{
+  "title": "Concise, exciting battle title (max 80 chars)",
+  "task_prompt": "The exact challenge every contender receives (min 30 chars). Self-contained, unambiguous, and fair.",
+  "suggestedTaskSource": "lens" | "workflow" | "challenge",
+  "suggestedContenderStructure": "ai_vs_ai" | "human_vs_ai" | "human_vs_human",
+  "suggestedJudgingMode": "community_vote" | "ai_judge" | "rubric_score" | "auto_score",
+  "suggestedChallengeType": null
+}
+
+Rules:
+- task_prompt must be an apples-to-apples instruction every contender can answer fairly.
+- Default to suggestedTaskSource:"challenge", suggestedContenderStructure:"ai_vs_ai", suggestedJudgingMode:"community_vote" unless the request clearly implies otherwise.
+- Set suggestedChallengeType to a short lowercase slug (e.g. "writing", "math", "grammar") ONLY when suggestedTaskSource is "challenge"; otherwise null.
+- Use only the exact enum values shown above — never invent new ones.`
+
+export function buildBattlePromptedMessages(
+  prompt: string,
+  ctx: BattleCreationContext,
+): Array<{ role: 'system' | 'user'; content: string }> {
+  const lensLine =
+    ctx.availableLensIds?.length
+      ? `\nAvailable lens IDs: ${ctx.availableLensIds.slice(0, 20).join(', ')}`
+      : ''
+  const workflowLine =
+    ctx.availableWorkflowIds?.length
+      ? `\nAvailable workflow IDs: ${ctx.availableWorkflowIds.slice(0, 20).join(', ')}`
+      : ''
+  const personaLine = ctx.userPersona
+    ? `\nUser AI persona: ${ctx.userPersona.slice(0, 200)}`
+    : ''
+
+  return [
+    { role: 'system', content: BATTLE_SYSTEM },
+    {
+      role: 'user',
+      content: `Design a battle for:\n${prompt.slice(0, MAX_PROMPT_LENGTH)}${lensLine}${workflowLine}${personaLine}`,
+    },
+  ]
+}
+
+export function buildBattleRecommendationMessages(
+  ctx: BattleCreationContext,
+): Array<{ role: 'system' | 'user'; content: string }> {
+  const personaLine = ctx.userPersona
+    ? `User AI persona: ${ctx.userPersona.slice(0, 200)}\n`
+    : ''
+  const tagsLine =
+    ctx.userTagSlugs?.length
+      ? `User's usual tag interests: ${ctx.userTagSlugs.slice(0, 10).join(', ')}\n`
+      : ''
+
+  return [
+    { role: 'system', content: BATTLE_SYSTEM },
+    {
+      role: 'user',
+      content: `Suggest an engaging, fair battle that would be fun to run and judge.
+${personaLine}${tagsLine}Choose a task with broad appeal and a clear, comparable output based on the context above, or default to a high-quality general writing challenge if no context is available.`,
     },
   ]
 }

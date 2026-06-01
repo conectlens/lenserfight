@@ -29,7 +29,7 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/",
-    "tag": "alpha"
+    "tag": "latest"
   },
   "peerDependencies": {
     "@supabase/supabase-js": "^2.0.0"
