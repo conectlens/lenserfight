@@ -14,6 +14,9 @@ interface CsvImportDialogProps {
   versionParams?: LensVersionParam[]
   onApply: (values: Record<string, unknown>) => void
   currentValues?: Record<string, unknown>
+  /** Lens title and description forwarded into the template so external AI has full context. */
+  lensTitle?: string
+  lensDescription?: string
 }
 
 const DELIMITER_LABELS: Record<string, string> = {
@@ -28,6 +31,8 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   versionParams = [],
   onApply,
   currentValues,
+  lensTitle,
+  lensDescription,
 }) => {
   const [rawText, setRawText] = useState('')
   const [parsedCsv, setParsedCsv] = useState<ParsedCsv | null>(null)
@@ -35,10 +40,10 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({})
   const [copiedTemplate, setCopiedTemplate] = useState(false)
 
-  // Build typed CSV template from actual params
+  // Build typed CSV template from actual params (includes lens context so external AI has full context)
   const templateCsv = useMemo(
-    () => buildImportCsvTemplate(versionParams),
-    [versionParams],
+    () => buildImportCsvTemplate(versionParams, { title: lensTitle, description: lensDescription }),
+    [versionParams, lensTitle, lensDescription],
   )
 
   const templateHint = useMemo(
