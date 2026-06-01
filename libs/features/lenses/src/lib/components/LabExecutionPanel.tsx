@@ -17,6 +17,7 @@ import { resolveLensFileParamsForCopy } from '../utils/resolveLensFileParamsForE
 import { CsvImportDialog } from './CsvImportDialog'
 import { FreeformInput } from './FreeformInput'
 import { FundingSourceToggle } from './FundingSourceToggle'
+import { GenerateWithAIButton } from './GenerateWithAIButton'
 import { JsonImportDialog } from './JsonImportDialog'
 import { VersionParamFields } from './VersionParamFields'
 
@@ -76,6 +77,12 @@ interface LabExecutionPanelProps {
   lockedDescription?: string
   /** Called when the user clicks the sign-in button in the locked state. */
   onSignIn?: () => void
+  /** Lens title forwarded into import templates so external AI has context when filling in values. */
+  lensTitle?: string
+  /** Lens description forwarded into import templates. */
+  lensDescription?: string
+  /** auth.uid() of the active lenser — enables the AI generation button in the parameters header. */
+  profileId?: string
   // Funding source
   fundingSource?: FundingSource
   onFundingSourceChange?: (source: FundingSource) => void
@@ -153,6 +160,9 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   lockedTitle = 'Run Lens',
   lockedDescription = 'Sign in or register with a Lenser profile to run this lens and manage executions.',
   onSignIn,
+  lensTitle,
+  lensDescription,
+  profileId,
 }) => {
   const form = useLabParamForm(lensContent, params, versionParams)
 
@@ -750,6 +760,19 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
                 Parameters
               </span>
               <div className="flex items-center gap-1">
+                {profileId && (
+                  <GenerateWithAIButton
+                    profileId={profileId}
+                    generationType="lens"
+                    context={{}}
+                    versionParams={form.effectiveParams}
+                    lensTitle={lensTitle}
+                    lensContent={lensContent}
+                    onGenerated={() => {}}
+                    onImportedValues={form.applyImportedValues}
+                    defaultSlide={2}
+                  />
+                )}
                 <button
                   type="button"
                   onClick={() => setJsonImportOpen(true)}
@@ -920,6 +943,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         versionParams={form.effectiveParams}
         onApply={form.applyImportedValues}
         currentValues={form.inputValues}
+        lensTitle={lensTitle}
+        lensDescription={lensDescription}
+        lensContent={lensContent}
+        profileId={profileId}
       />
 
       <CsvImportDialog
@@ -928,6 +955,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         versionParams={form.effectiveParams}
         onApply={form.applyImportedValues}
         currentValues={form.inputValues}
+        lensTitle={lensTitle}
+        lensDescription={lensDescription}
+        lensContent={lensContent}
+        profileId={profileId}
       />
     </div>
   )

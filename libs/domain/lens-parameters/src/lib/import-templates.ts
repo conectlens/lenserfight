@@ -20,11 +20,14 @@ export interface ImportTemplateMeta {
   parameters: ImportTemplateParamMeta[]
   lens_title?: string
   lens_description?: string
+  lens_instructions?: string
 }
 
 export interface LensTemplateContext {
   title?: string
   description?: string
+  /** The lens instructions/content — included in the template so external AI knows what values to generate. */
+  content?: string
 }
 
 /** Example value for JSON/CSV import templates, aligned with lab coercion expectations. */
@@ -82,6 +85,7 @@ function buildImportMeta(versionParams: LensVersionParam[], lensContext?: LensTe
   }
   if (lensContext?.title) meta.lens_title = lensContext.title
   if (lensContext?.description) meta.lens_description = lensContext.description
+  if (lensContext?.content) meta.lens_instructions = lensContext.content
   return meta
 }
 
@@ -151,6 +155,7 @@ export function buildImportCsvTemplate(versionParams: LensVersionParam[], lensCo
   const comments: string[] = []
   if (lensContext.title) comments.push(`# lens: ${lensContext.title}`)
   if (lensContext.description) comments.push(`# description: ${lensContext.description}`)
+  if (lensContext.content) comments.push(`# lens_instructions: ${lensContext.content.replace(/\n/g, ' ').slice(0, 300)}`)
   return `${comments.join('\n')}\n${dataRows}`
 }
 

@@ -56,11 +56,15 @@ export interface GenerateWithAIButtonProps {
   versionParams?: LensVersionParam[]
   /** Lens title embedded in import templates so external AI understands the context. */
   lensTitle?: string
+  /** Lens instructions/content embedded in the template so external AI generates appropriate values. */
+  lensContent?: string
   /**
    * Called when `versionParams` is provided and the user applies a JSON/CSV import.
    * Receives coerced param values keyed by label.
    */
   onImportedValues?: (values: Record<string, unknown>) => void
+  /** Open the popover directly on this slide index (0=Funding, 1=Prompt, 2=JSON, 3=CSV). */
+  defaultSlide?: number
 }
 
 // ─── Import helpers ────────────────────────────────────────────────────────────
@@ -297,7 +301,9 @@ export const GenerateWithAIButton: React.FC<GenerateWithAIButtonProps> = ({
   chainabit: injectedChainabit,
   versionParams,
   lensTitle,
+  lensContent,
   onImportedValues,
+  defaultSlide,
 }) => {
   // Hooks must be called unconditionally; prefer the injected instance when given
   // so a parent wizard's funding state isn't duplicated.
@@ -348,7 +354,7 @@ export const GenerateWithAIButton: React.FC<GenerateWithAIButtonProps> = ({
   })
 
   const [open, setOpen] = useState(false)
-  const [slide, setSlide] = useState(0)
+  const [slide, setSlide] = useState(defaultSlide ?? 0)
   const [prompt, setPrompt] = useState('')
   const [importJsonText, setImportJsonText] = useState('')
   const [importCsvText, setImportCsvText] = useState('')
@@ -358,17 +364,29 @@ export const GenerateWithAIButton: React.FC<GenerateWithAIButtonProps> = ({
   const textAreaId = useId()
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      if (defaultSlide !== undefined) setSlide(defaultSlide)
+    } else {
       setImportError(null)
       setCopied(null)
     }
-  }, [open])
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pre-fill the import textareas with the template when the user navigates to those slides,
+  // so they can see the format immediately without clicking "Copy template".
+  useEffect(() => {
+    if (slide === 2 && !importJsonText) setImportJsonText(jsonTemplate)
+  }, [slide]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (slide === 3 && !importCsvText) setImportCsvText(csvTemplate)
+  }, [slide]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // When versionParams is provided, use the typed domain templates (same as JsonImportDialog/CsvImportDialog).
   // Otherwise fall back to the creation-format templates.
   const lensContext = useMemo(
-    () => (lensTitle ? { title: lensTitle } : undefined),
-    [lensTitle],
+    () => (lensTitle || lensContent) ? { title: lensTitle, content: lensContent } : undefined,
+    [lensTitle, lensContent],
   )
 
   const jsonTemplate = useMemo(

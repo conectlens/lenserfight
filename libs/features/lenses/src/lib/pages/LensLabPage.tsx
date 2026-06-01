@@ -637,6 +637,8 @@ export const LensLabPage: React.FC = () => {
             onChainabitConnect={chainabit.reconnect}
             isLocked={!hasActiveLenserProfile}
             onSignIn={ensureProfile}
+            lensTitle={lens?.title ?? undefined}
+            profileId={lenser?.id ?? undefined}
           />
         </div>
       </div>

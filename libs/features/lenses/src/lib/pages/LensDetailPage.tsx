@@ -775,6 +775,8 @@ export const LensDetailPage: React.FC = () => {
                   onChainabitConnect={chainabit.reconnect}
                   isLocked={!hasActiveLenserProfile}
                   onSignIn={ensureProfile}
+                  lensTitle={lens?.title ?? undefined}
+                  profileId={lenser?.id ?? undefined}
                 />
                 <LabArtifactViewer
                   selectedRunId={lab.selectedRunId}

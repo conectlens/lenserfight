@@ -7,6 +7,7 @@ import { buildImportCsvTemplate, buildImportCsvTemplateHint } from '@lenserfight
 import { copyTextToClipboard } from '@lenserfight/utils/text'
 
 import { parseCsvText, coerceCsvRow, ParsedCsv } from '../hooks/useParamImport'
+import { GenerateWithAIButton } from './GenerateWithAIButton'
 
 interface CsvImportDialogProps {
   open: boolean
@@ -17,6 +18,10 @@ interface CsvImportDialogProps {
   /** Lens title and description forwarded into the template so external AI has full context. */
   lensTitle?: string
   lensDescription?: string
+  /** Lens instructions forwarded into the template. */
+  lensContent?: string
+  /** auth.uid() — when provided, shows the Generate with AI button in the toolbar. */
+  profileId?: string
 }
 
 const DELIMITER_LABELS: Record<string, string> = {
@@ -33,6 +38,8 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   currentValues,
   lensTitle,
   lensDescription,
+  lensContent,
+  profileId,
 }) => {
   const [rawText, setRawText] = useState('')
   const [parsedCsv, setParsedCsv] = useState<ParsedCsv | null>(null)
@@ -42,8 +49,8 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
 
   // Build typed CSV template from actual params (includes lens context so external AI has full context)
   const templateCsv = useMemo(
-    () => buildImportCsvTemplate(versionParams, { title: lensTitle, description: lensDescription }),
-    [versionParams, lensTitle, lensDescription],
+    () => buildImportCsvTemplate(versionParams, { title: lensTitle, description: lensDescription, content: lensContent }),
+    [versionParams, lensTitle, lensDescription, lensContent],
   )
 
   const templateHint = useMemo(
@@ -149,6 +156,28 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
             className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-mono text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
           />
           <div className="flex items-center gap-2">
+            {profileId && (
+              <GenerateWithAIButton
+                profileId={profileId}
+                generationType="lens"
+                context={{}}
+                versionParams={versionParams}
+                lensTitle={lensTitle}
+                lensContent={lensContent}
+                onGenerated={() => {}}
+                onImportedValues={(values) => {
+                  const keys = Object.keys(values)
+                  const row = keys.map((k) => {
+                    const v = values[k]
+                    const s = Array.isArray(v) ? v.join('|') : String(v ?? '')
+                    return s.includes(',') || s.includes('"') || s.includes('\n')
+                      ? `"${s.replace(/"/g, '""')}"` : s
+                  })
+                  setRawText(`${keys.join(',')}\n${row.join(',')}`)
+                }}
+                defaultSlide={3}
+              />
+            )}
             <Button
               type="button"
               variant="ghost"
