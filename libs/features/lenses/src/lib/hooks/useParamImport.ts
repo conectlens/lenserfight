@@ -5,6 +5,7 @@ export {
   buildImportCsvTemplate as buildCsvTemplate,
   buildImportJsonTemplate as buildJsonTemplate,
   buildImportCsvTemplateHint,
+  type LensTemplateContext,
 } from '@lenserfight/domain/lens-parameters'
 
 export interface ImportResult {
@@ -207,7 +208,7 @@ function splitCsvLine(line: string, delimiter: string): string[] {
 }
 
 export function parseCsvText(raw: string): ParsedCsv {
-  const lines = raw.split(/\r?\n/).filter((l) => l.trim() !== '')
+  const lines = raw.split(/\r?\n/).filter((l) => l.trim() !== '' && !l.trimStart().startsWith('#'))
   if (lines.length === 0) return { headers: [], rows: [], delimiter: ',' }
 
   const delimiter = detectDelimiter(lines[0])

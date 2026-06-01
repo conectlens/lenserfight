@@ -14,6 +14,9 @@ interface JsonImportDialogProps {
   versionParams?: LensVersionParam[]
   onApply: (values: Record<string, unknown>) => void
   currentValues?: Record<string, unknown>
+  /** Lens title and description forwarded into the template so external AI has full context. */
+  lensTitle?: string
+  lensDescription?: string
 }
 
 export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
@@ -22,6 +25,8 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
   versionParams = [],
   onApply,
   currentValues,
+  lensTitle,
+  lensDescription,
 }) => {
   const [rawText, setRawText] = useState('')
   const [parseResult, setParseResult] = useState<ImportResult | null>(null)
@@ -42,10 +47,10 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
 
   const totalParams = versionParams.length
 
-  // Build typed template from actual params
+  // Build typed template from actual params (includes lens context so external AI has full context)
   const templateJson = useMemo(
-    () => buildImportJsonTemplate(versionParams),
-    [versionParams],
+    () => buildImportJsonTemplate(versionParams, { title: lensTitle, description: lensDescription }),
+    [versionParams, lensTitle, lensDescription],
   )
 
   const handleCopyTemplate = async () => {

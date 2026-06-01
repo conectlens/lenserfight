@@ -18,6 +18,13 @@ export interface ImportTemplateMeta {
   keys: string
   fileParams: string
   parameters: ImportTemplateParamMeta[]
+  lens_title?: string
+  lens_description?: string
+}
+
+export interface LensTemplateContext {
+  title?: string
+  description?: string
 }
 
 /** Example value for JSON/CSV import templates, aligned with lab coercion expectations. */
@@ -59,8 +66,8 @@ export function importTemplatePlaceholder(param: LensVersionParam): unknown {
   }
 }
 
-function buildImportMeta(versionParams: LensVersionParam[]): ImportTemplateMeta {
-  return {
+function buildImportMeta(versionParams: LensVersionParam[], lensContext?: LensTemplateContext): ImportTemplateMeta {
+  const meta: ImportTemplateMeta = {
     format: IMPORT_FORMAT_VERSION,
     keys: 'Object keys must match parameter labels (input_snapshot keys), not [[token]] syntax.',
     fileParams:
@@ -73,6 +80,9 @@ function buildImportMeta(versionParams: LensVersionParam[]): ImportTemplateMeta 
       importable: p.tool.type !== 'file' && p.tool.type !== 'files',
     })),
   }
+  if (lensContext?.title) meta.lens_title = lensContext.title
+  if (lensContext?.description) meta.lens_description = lensContext.description
+  return meta
 }
 
 function isImportable(param: LensVersionParam): boolean {
@@ -81,12 +91,13 @@ function isImportable(param: LensVersionParam): boolean {
 
 /**
  * JSON import template: `_import` metadata block + label-keyed example values.
+ * Pass `lensContext` to embed lens title/description so external AI tools have full context.
  */
-export function buildImportJsonTemplate(versionParams: LensVersionParam[]): string {
+export function buildImportJsonTemplate(versionParams: LensVersionParam[], lensContext?: LensTemplateContext): string {
   if (versionParams.length === 0) return ''
 
   const obj: Record<string, unknown> = {
-    [IMPORT_META_KEY]: buildImportMeta(versionParams),
+    [IMPORT_META_KEY]: buildImportMeta(versionParams, lensContext),
   }
 
   for (const p of versionParams) {
@@ -116,8 +127,9 @@ function placeholderToCsvCell(value: unknown): string {
 /**
  * Two-line CSV template: header row = labels; data row = typed example values.
  * File-type columns are omitted (not importable via paste).
+ * Pass `lensContext` to prepend a `# title:` comment so external AI tools have full context.
  */
-export function buildImportCsvTemplate(versionParams: LensVersionParam[]): string {
+export function buildImportCsvTemplate(versionParams: LensVersionParam[], lensContext?: LensTemplateContext): string {
   if (versionParams.length === 0) return ''
 
   const importable = versionParams.filter(isImportable)
@@ -132,7 +144,14 @@ export function buildImportCsvTemplate(versionParams: LensVersionParam[]): strin
     return placeholderToCsvCell(optional ? null : placeholder)
   })
 
-  return `${headers.map(escapeCsvField).join(',')}\n${values.join(',')}`
+  const dataRows = `${headers.map(escapeCsvField).join(',')}\n${values.join(',')}`
+
+  if (!lensContext?.title && !lensContext?.description) return dataRows
+
+  const comments: string[] = []
+  if (lensContext.title) comments.push(`# lens: ${lensContext.title}`)
+  if (lensContext.description) comments.push(`# description: ${lensContext.description}`)
+  return `${comments.join('\n')}\n${dataRows}`
 }
 
 /** One-line hint for CSV dialog placeholders (lists omitted file params). */
