@@ -6,6 +6,7 @@ import type {
   SdkLensSummary,
   SdkLensVersion,
   SdkLensVersionSummary,
+  SdkResolvedTemplate,
 } from './types/lenses'
 import type { SdkParameterContract } from './types/protocols'
 
@@ -82,6 +83,73 @@ export class LensClient {
       ...(detail as SdkLensVersionSummary),
       parameters: Array.isArray(paramsRes.data) ? paramsRes.data : (paramsRes.data ?? []),
     } as SdkLensVersion
+  }
+
+  /**
+   * Resolve a lens template by substituting `[[:paramId]]` tokens with the
+   * supplied values (matched by parameter label, case-insensitive). Returns the
+   * filled prompt and lists which parameters were used or missing.
+   *
+   * Requires an authenticated client (`apiKey` in `createClient`).
+   *
+   * @example
+   *   const result = await lf.lenses.resolveTemplate(lensId, { Topic: 'TypeScript' });
+   *   if (result.missing.length === 0) {
+   *     // pass result.resolvedPrompt to your AI model
+   *   }
+   */
+  async resolveTemplate(
+    lensId: string,
+    params: Record<string, string>,
+    options?: { versionId?: string },
+  ): Promise<SdkResolvedTemplate> {
+    const { data, error } = await this.rpcClient.rpc('fn_mcp_lens_resolve_template', {
+      p_lens_id: lensId,
+      p_version_id: options?.versionId ?? null,
+    })
+    if (error) {
+      throw new Error(`@lenserfight/sdk: fn_mcp_lens_resolve_template failed — ${JSON.stringify(error)}`)
+    }
+    if (!data) {
+      throw new Error(`@lenserfight/sdk: lens ${lensId} not found`)
+    }
+    const row = data as {
+      lens_id: string
+      version_id: string
+      title: string | null
+      description: string | null
+      template_body: string
+      parameters: Array<{ id: string; label: string; optional: boolean }> | null
+    }
+
+    let resolved = row.template_body
+    const missing: string[] = []
+    const used: string[] = []
+    for (const param of row.parameters ?? []) {
+      const token = `[[:${param.id}]]`
+      const value =
+        params[param.label] ??
+        params[param.label.toLowerCase()] ??
+        Object.entries(params).find(([k]) => k.toLowerCase() === param.label.toLowerCase())?.[1]
+      if (value !== undefined) {
+        resolved = resolved.split(token).join(value)
+        used.push(param.label)
+      } else if (!param.optional) {
+        missing.push(param.label)
+      } else {
+        resolved = resolved.split(token).join('')
+      }
+    }
+
+    return {
+      resolvedPrompt: resolved,
+      lensId: row.lens_id,
+      versionId: row.version_id,
+      lensTitle: row.title ?? lensId,
+      lensDescription: row.description ?? null,
+      paramsUsed: used,
+      missing,
+    }
   }
 
   /**

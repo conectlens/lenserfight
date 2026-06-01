@@ -30,13 +30,16 @@ export function createFetchRpcClient(opts: CreateClientOptions): SupabaseLikeRpc
   }
   // Trim trailing slash for predictable URL construction.
   const baseUrl = opts.url.replace(/\/+$/, '')
+  // When a developer token / API key is provided, use it as the Bearer token
+  // so requests are authenticated as the token holder rather than anon.
+  const authToken = opts.apiKey ?? opts.anonKey
   return {
     async rpc(fn, params) {
       const res = await fetchImpl(`${baseUrl}/rest/v1/rpc/${fn}`, {
         method: 'POST',
         headers: {
           apikey: opts.anonKey,
-          authorization: `Bearer ${opts.anonKey}`,
+          authorization: `Bearer ${authToken}`,
           'content-type': 'application/json',
         },
         body: JSON.stringify(params ?? {}),

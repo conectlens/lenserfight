@@ -94,3 +94,15 @@ export interface LensBrowseFilters {
   kind?: SdkLensKind
   status?: SdkContentStatus
 }
+
+export interface SdkResolvedTemplate {
+  resolvedPrompt: string
+  lensId: string
+  versionId: string
+  lensTitle: string
+  lensDescription: string | null
+  /** Parameter labels whose values were substituted. */
+  paramsUsed: string[]
+  /** Required parameter labels that were missing from the supplied values. */
+  missing: string[]
+}
