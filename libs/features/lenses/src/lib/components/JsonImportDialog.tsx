@@ -7,6 +7,7 @@ import { buildImportJsonTemplate } from '@lenserfight/domain/lens-parameters'
 import { copyTextToClipboard } from '@lenserfight/utils/text'
 
 import { coerceJsonImport, ImportResult } from '../hooks/useParamImport'
+import { GenerateWithAIButton } from './GenerateWithAIButton'
 
 interface JsonImportDialogProps {
   open: boolean
@@ -17,6 +18,10 @@ interface JsonImportDialogProps {
   /** Lens title and description forwarded into the template so external AI has full context. */
   lensTitle?: string
   lensDescription?: string
+  /** Lens instructions forwarded into the template. */
+  lensContent?: string
+  /** auth.uid() — when provided, shows the Generate with AI button in the toolbar. */
+  profileId?: string
 }
 
 export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
@@ -27,6 +32,8 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
   currentValues,
   lensTitle,
   lensDescription,
+  lensContent,
+  profileId,
 }) => {
   const [rawText, setRawText] = useState('')
   const [parseResult, setParseResult] = useState<ImportResult | null>(null)
@@ -49,8 +56,8 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
 
   // Build typed template from actual params (includes lens context so external AI has full context)
   const templateJson = useMemo(
-    () => buildImportJsonTemplate(versionParams, { title: lensTitle, description: lensDescription }),
-    [versionParams, lensTitle, lensDescription],
+    () => buildImportJsonTemplate(versionParams, { title: lensTitle, description: lensDescription, content: lensContent }),
+    [versionParams, lensTitle, lensDescription, lensContent],
   )
 
   const handleCopyTemplate = async () => {
@@ -123,6 +130,19 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
         />
 
         <div className="flex items-center gap-2">
+          {profileId && (
+            <GenerateWithAIButton
+              profileId={profileId}
+              generationType="lens"
+              context={{}}
+              versionParams={versionParams}
+              lensTitle={lensTitle}
+              lensContent={lensContent}
+              onGenerated={() => {}}
+              onImportedValues={(values) => setRawText(JSON.stringify(values, null, 2))}
+              defaultSlide={2}
+            />
+          )}
           <Button
             type="button"
             variant="ghost"
