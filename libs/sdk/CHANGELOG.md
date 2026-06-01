@@ -1,3 +1,65 @@
+## 0.2.0-alpha.31 (2026-06-01)
+
+### 🚀 Features
+
+- integrate AI-driven content generation into CLI and UI with support for lenses, battles, and workflows ([e4610bf8f](https://github.com/conectlens/lenserfight/commit/e4610bf8f))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
+## 0.2.0-alpha.30 (2026-05-31)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.29 (2026-05-31)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.28 (2026-05-31)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.27 (2026-05-31)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.26 (2026-05-31)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.25 (2026-05-31)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.24 (2026-05-29)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.23 (2026-05-29)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.22 (2026-05-29)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.21 (2026-05-29)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.20 (2026-05-29)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.19 (2026-05-29)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.2.0-alpha.18 (2026-05-29)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
 ## 0.2.0-alpha.17 (2026-05-29)
 
 ### 🚀 Features
