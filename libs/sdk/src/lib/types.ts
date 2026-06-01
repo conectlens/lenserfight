@@ -54,4 +54,12 @@ export interface CreateClientOptions {
    * undici fetch) or test environments. Defaults to global fetch.
    */
   fetch?: typeof fetch
+  /**
+   * Developer token or API key for server-to-server use (e.g. Chainabit
+   * calling LenserFight from a backend). When set, this value replaces the
+   * anon key in the `Authorization: Bearer` header, authenticating requests
+   * as the token holder. The `anonKey` is still required for Supabase project
+   * routing (the `apikey` header).
+   */
+  apiKey?: string
 }

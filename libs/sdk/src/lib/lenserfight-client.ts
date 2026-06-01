@@ -4,6 +4,7 @@ import { createFetchRpcClient, type SupabaseLikeRpcClient } from './client'
 import { LensClient } from './lens-client'
 import { ProtocolClient } from './protocol-client'
 import { TemplateClient } from './template-client'
+import { WorkflowClient } from './workflow-client'
 import type { CreateClientOptions } from './types'
 
 export class LenserFightClient {
@@ -12,6 +13,7 @@ export class LenserFightClient {
   readonly lenses: LensClient
   readonly protocols: ProtocolClient
   readonly templates: TemplateClient
+  readonly workflows: WorkflowClient
   private readonly rpc: SupabaseLikeRpcClient
 
   constructor(rpcClient: SupabaseLikeRpcClient) {
@@ -21,6 +23,7 @@ export class LenserFightClient {
     this.lenses = new LensClient(rpcClient)
     this.protocols = new ProtocolClient(rpcClient)
     this.templates = new TemplateClient(rpcClient)
+    this.workflows = new WorkflowClient(rpcClient)
   }
 
   /**
@@ -43,17 +46,27 @@ export class LenserFightClient {
 /**
  * Create a LenserFight client. The returned client exposes:
  *
+ * - `client.lenses.browse(filters?, cursor?, limit?)` — list public lenses
+ * - `client.lenses.resolveTemplate(lensId, params)` — fill a lens template (requires `apiKey`)
+ * - `client.workflows.browse()` — list workflows
+ * - `client.workflows.startRun(workflowId, inputs?)` — start a workflow run (requires `apiKey`)
+ * - `client.workflows.awaitRun(workflowId, inputs?)` — start and poll until complete (requires `apiKey`)
  * - `client.battles.browse(filters?, cursor?, limit?)` — list public battles
  * - `client.templates.renderPrompt(templateId, variables)` — render a template
  * - `client.rpcCall(fn, params)` — escape hatch for any other RPC
+ *
+ * For server-to-server use (e.g. Chainabit backend), pass `apiKey` alongside
+ * `anonKey` to authenticate requests with a developer token.
  *
  * @example
  *   import { createClient } from '@lenserfight/sdk';
  *   const lf = createClient({
  *     url: 'https://your-supabase-project.supabase.co',
- *     anonKey: '...'
+ *     anonKey: 'sb_publishable_...',
+ *     apiKey: 'your-developer-token', // optional, for authenticated operations
  *   });
- *   const battles = await lf.battles.browse({ status: 'open', limit: 10 });
+ *   const result = await lf.lenses.resolveTemplate(lensId, { Topic: 'TypeScript' });
+ *   // result.resolvedPrompt is ready to pass to your AI model
  */
 export function createClient(options: CreateClientOptions): LenserFightClient {
   const rpcClient = createFetchRpcClient(options)

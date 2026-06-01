@@ -114,7 +114,7 @@ export const Popover: React.FC<PopoverProps> = ({
         role="dialog"
         style={{ top: coords.top, left: coords.left, position: 'absolute' }}
         className={`
-          z-dropdown min-w-[10rem]
+          z-[9999] min-w-[10rem]
           bg-surface-raised
           rounded-xl border border-surface-border
           animate-in fade-in zoom-in-95 duration-fast origin-top
