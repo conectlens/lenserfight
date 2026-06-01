@@ -413,17 +413,18 @@ const LocalMediaArtifactView: React.FC<{ artifact: LocalMediaArtifact }> = ({ ar
                   )}
                 </div>
               )}
-              <div className="flex items-center justify-start border-t border-surface-border bg-surface-raised px-3 py-1.5">
+              <div className="flex items-center justify-between gap-2 border-t border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 px-3 py-2">
+                <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400 leading-snug flex-1">
+                  Generated directly by your browser using your local BYOK key. The result is{' '}
+                  <strong>not stored on LenserFight servers</strong>; download or save it locally
+                  before navigating away. ({mimeType})
+                </p>
                 <DownloadButton url={url} filename={filename} />
               </div>
             </div>
           )
         })}
       </div>
-      <p className="text-[10px] text-greyscale-400">
-        Generated directly by your browser using your local BYOK key. The result is not stored on
-        LenserFight servers; download or save it locally before navigating away. ({mimeType})
-      </p>
     </div>
   )
 }

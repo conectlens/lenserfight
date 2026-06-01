@@ -159,23 +159,30 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
             {profileId && (
               <GenerateWithAIButton
                 profileId={profileId}
-                generationType="lens"
-                context={{}}
-                versionParams={versionParams}
-                lensTitle={lensTitle}
-                lensContent={lensContent}
-                onGenerated={() => {}}
-                onImportedValues={(values) => {
-                  const keys = Object.keys(values)
-                  const row = keys.map((k) => {
-                    const v = values[k]
-                    const s = Array.isArray(v) ? v.join('|') : String(v ?? '')
-                    return s.includes(',') || s.includes('"') || s.includes('\n')
-                      ? `"${s.replace(/"/g, '""')}"` : s
-                  })
-                  setRawText(`${keys.join(',')}\n${row.join(',')}`)
+                generationType="lens_params"
+                context={{
+                  params: versionParams.map((p) => ({
+                    label: p.label,
+                    type: p.tool.type,
+                    ...(p.tool.options?.length ? { options: p.tool.options.map((o) => o.value) } : {}),
+                  })),
+                  lensTitle,
+                  lensContent,
                 }}
-                defaultSlide={3}
+                onGenerated={(output) => {
+                  if (output.type === 'lens_params') {
+                    const keys = Object.keys(output.result)
+                    const row = keys.map((k) => {
+                      const v = output.result[k]
+                      const s = Array.isArray(v) ? v.join('|') : String(v ?? '')
+                      return s.includes(',') || s.includes('"') || s.includes('\n')
+                        ? `"${s.replace(/"/g, '""')}"` : s
+                    })
+                    setRawText(`${keys.join(',')}\n${row.join(',')}`)
+                    setParsedCsv(null)
+                    setRowErrors({})
+                  }
+                }}
               />
             )}
             <Button

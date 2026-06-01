@@ -133,14 +133,22 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
           {profileId && (
             <GenerateWithAIButton
               profileId={profileId}
-              generationType="lens"
-              context={{}}
-              versionParams={versionParams}
-              lensTitle={lensTitle}
-              lensContent={lensContent}
-              onGenerated={() => {}}
-              onImportedValues={(values) => setRawText(JSON.stringify(values, null, 2))}
-              defaultSlide={2}
+              generationType="lens_params"
+              context={{
+                params: versionParams.map((p) => ({
+                  label: p.label,
+                  type: p.tool.type,
+                  ...(p.tool.options?.length ? { options: p.tool.options.map((o) => o.value) } : {}),
+                })),
+                lensTitle,
+                lensContent,
+              }}
+              onGenerated={(output) => {
+                if (output.type === 'lens_params') {
+                  setRawText(JSON.stringify(output.result, null, 2))
+                  setParseResult(null)
+                }
+              }}
             />
           )}
           <Button
