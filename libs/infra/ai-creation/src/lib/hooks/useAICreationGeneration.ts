@@ -40,7 +40,7 @@ export interface UseAICreationGenerationOptions {
    * Pass the current UI funding selection so user changes take effect immediately
    * without requiring a DB round-trip.
    */
-  fundingPreference?: Pick<ProfileAIPreference, 'fundingSource' | 'selectedKeyRefId' | 'localKeyId'>
+  fundingPreference?: Pick<ProfileAIPreference, 'fundingSource' | 'selectedKeyRefId' | 'localKeyId' | 'providerId' | 'modelId'>
 }
 
 // ─── Return value ─────────────────────────────────────────────────────────────
@@ -106,7 +106,14 @@ export function useAICreationGeneration(options: UseAICreationGenerationOptions)
         // 2. Resolve profile AI preference (UI selection overrides DB value)
         const dbPreference = await resolver.resolve(profileId)
         const preference: ProfileAIPreference = fundingPreference
-          ? { ...dbPreference, ...fundingPreference }
+          ? {
+              ...dbPreference,
+              ...fundingPreference,
+              // Don't clobber DB values with empty UI strings — only override when the user
+              // has explicitly selected a provider/model in the popup.
+              providerId: fundingPreference.providerId || dbPreference.providerId,
+              modelId: fundingPreference.modelId || dbPreference.modelId,
+            }
           : dbPreference
         const mode: 'prompted' | 'recommendation' = prompt?.trim() ? 'prompted' : 'recommendation'
 
