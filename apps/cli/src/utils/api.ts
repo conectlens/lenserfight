@@ -387,3 +387,93 @@ export async function callRest<T = unknown>(
 ): Promise<T> {
   return callRestInner(schema, table, method, body, options, false)
 }
+
+// ─── Edge Function helper ──────────────────────────────────────────────────
+//
+// Supabase Edge Functions live at `/functions/v1/<fn>` (not PostgREST). Used by
+// the AI `generate` commands to invoke `generate-creation`. Body is sent
+// verbatim (the edge function expects a fixed snake_case wire shape), and the
+// auth / refresh / 401-recovery handling mirrors callRest.
+
+async function callEdgeFunctionInner<T = unknown>(
+  fn: string,
+  body: Record<string, unknown>,
+  options: RpcOptions,
+  retried: boolean
+): Promise<T> {
+  let config = resolveConfig()
+
+  warnIfProductionInLocalMode(config)
+  assertCloudSupabaseConfigured(config)
+
+  if (!config.supabaseAnonKey) {
+    throw new Error(
+      'Supabase anon key not found. Set SUPABASE_ANON_KEY in your environment or run `lenserfight init --mode cloud`.'
+    )
+  }
+
+  if (!options.noAuth && !options.useServiceRole && config.authToken && config.authExpiresAt) {
+    if (new Date(config.authExpiresAt) <= new Date()) {
+      await tryRefreshToken(config)
+      config = resolveConfig()
+    }
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    apikey: config.supabaseAnonKey,
+  }
+
+  const bearerToken = resolveBearerToken(config, options)
+  if (bearerToken) {
+    headers['Authorization'] = `Bearer ${bearerToken}`
+  } else if (options.requireAuth) {
+    if (!retried && (await attemptAuthRecovery())) {
+      return callEdgeFunctionInner(fn, body, options, true)
+    }
+    throw new Error('Authentication required. Run `lf auth login` to sign in.')
+  }
+
+  const url = `${config.supabaseUrl}/functions/v1/${fn}`
+
+  const { isDebug } = getExecContext()
+  const ts = () => new Date().toISOString().slice(11, 23)
+  const t0 = isDebug ? performance.now() : 0
+  if (isDebug) {
+    consola.debug(`[${ts()}] EDGE POST ${redactUrl(url)}`)
+    consola.debug(`[${ts()}] headers: ${JSON.stringify(redactHeaders({ ...headers }))}`)
+  }
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  })
+
+  if (isDebug) consola.debug(`[${ts()}] → ${res.status} in ${(performance.now() - t0).toFixed(1)}ms`)
+
+  if (!res.ok) {
+    if (res.status === 401 && !retried && options.requireAuth && (await attemptAuthRecovery())) {
+      return callEdgeFunctionInner(fn, body, options, true)
+    }
+    const err = await res.json().catch(() => ({ message: res.statusText }))
+    // generate-creation shapes failures as { ok:false, error:{ code, message } }.
+    const nested = (err && typeof err === 'object' ? err.error : undefined) as
+      | { code?: string; message?: string }
+      | undefined
+    throw Object.assign(
+      new Error(nested?.message || err.message || err.error || res.statusText),
+      { status: res.status, code: nested?.code || err.code }
+    )
+  }
+
+  return res.json() as Promise<T>
+}
+
+export async function callEdgeFunction<T = unknown>(
+  fn: string,
+  body: Record<string, unknown> = {},
+  options: RpcOptions = {}
+): Promise<T> {
+  return callEdgeFunctionInner(fn, body, options, false)
+}

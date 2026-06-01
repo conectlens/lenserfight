@@ -6,16 +6,15 @@ import {
   LENS_KIND_REGISTRY,
   resolveLensKindFromTagSlugs,
 } from '@lenserfight/features/lens-kinds'
-import { FundingSourceToggle, useFundingSource } from '@lenserfight/features/lenses'
+import { FundingSourceToggle, GenerateWithAIButton, useFundingSource } from '@lenserfight/features/lenses'
 import { useChainabitConnection } from '@lenserfight/features/store'
-import { useAICreationGeneration } from '@lenserfight/infra/ai-creation'
 import { Alert, Button, StepWizard } from '@lenserfight/ui/components'
 import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/forms'
 import { DialogFooterContext, DialogHeaderContext, ModalFooter } from '@lenserfight/ui/overlays'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { CalendarClock, Check, GitBranch, GitFork, KeyRound, Layers, Sparkles } from 'lucide-react'
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useCreateWorkflow } from '../hooks/useCreateWorkflow'
@@ -25,23 +24,9 @@ import { useUpdateWorkflow } from '../hooks/useUpdateWorkflow'
 import { WorkflowCronPanel } from './WorkflowCronPanel'
 
 import type { WorkflowCronPanelRef } from './WorkflowCronPanel'
+import type { AICreationOutput } from '@lenserfight/infra/ai-creation'
 import type { LensKind, LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
-
-function friendlyWorkflowAIError(code: string): string {
-  switch (code) {
-    case 'PROMPT_TOO_LONG':    return 'Prompt too long'
-    case 'TIMEOUT':            return 'Request timed out'
-    case 'RATE_LIMITED':       return 'Too many requests'
-    case 'CREDIT_EXHAUSTED':   return 'Credits or quota exhausted'
-    case 'PROVIDER_ERROR':     return 'AI provider error'
-    case 'PARSE_ERROR':        return 'Unexpected AI response'
-    case 'NO_LOCAL_KEY':       return 'No local BYOK key configured'
-    case 'GATEWAY_ERROR':      return 'Gateway connection failed'
-    case 'UNAUTHORIZED':       return 'Not authorized'
-    default:                   return 'Generation failed'
-  }
-}
 
 export interface CreateWorkflowWizardProps {
   onCreated: (workflowId: string) => void
@@ -308,17 +293,6 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
   const funding = useFundingSource(defaultModelId)
   const chainabit = useChainabitConnection()
 
-  // ── AI generation ──────────────────────────────────────────────────────────
-  const [aiPrompt, setAiPrompt] = useState('')
-  const aiContext = { availableLensIds: [] as string[] } // populated dynamically below
-  const { generate: generateWorkflow, isGenerating: isAIGenerating, error: aiError, resetError: resetAiError } =
-    useAICreationGeneration({
-      profileId: user?.id ?? '',
-      generationType: 'workflow',
-      context: aiContext,
-      resolveLocalKey: funding.resolveLocalKey,
-    })
-
   const cronPanelRef = useRef<WorkflowCronPanelRef>(null)
   const initialTemplateForkedRef = useRef(false)
 
@@ -352,30 +326,31 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     setCreatedWorkflowId(null)
     setSelectedLenses(new Map())
     setDefaultModelId(localStorage.getItem('lf-workflow-global-model') ?? '')
-    setAiPrompt('')
-    resetAiError()
   }
 
-  const handleAIGenerateWorkflow = async () => {
-    if (!user?.id) return
-    resetAiError()
-    const output = await generateWorkflow(aiPrompt || null)
-    if (output?.type === 'workflow') {
-      const { title: genTitle, description: genDesc, suggestedLensIds } = output.result
-      setTitle(genTitle)
-      setDescription(genDesc)
-      // Pre-check suggested lenses if they match available lenses from the picker
-      if (suggestedLensIds.length > 0) {
-        setSelectedLenses((prev) => {
-          const next = new Map(prev)
-          suggestedLensIds.forEach((id) => {
-            if (!next.has(id)) next.set(id, id) // title will be updated when lens picker loads
-          })
-          return next
+  // AI generation is delegated to the shared GenerateWithAIButton; the wizard
+  // only supplies context and consumes the typed result.
+  const workflowAiContext = useMemo(
+    () => ({ availableLensIds: Array.from(selectedLenses.keys()) }),
+    [selectedLenses],
+  )
+
+  const handleWorkflowGenerated = useCallback((output: AICreationOutput) => {
+    if (output.type !== 'workflow') return
+    const { title: genTitle, description: genDesc, suggestedLensIds } = output.result
+    setTitle(genTitle)
+    setDescription(genDesc)
+    // Pre-check suggested lenses if they match available lenses from the picker
+    if (suggestedLensIds.length > 0) {
+      setSelectedLenses((prev) => {
+        const next = new Map(prev)
+        suggestedLensIds.forEach((id) => {
+          if (!next.has(id)) next.set(id, id) // title will be updated when lens picker loads
         })
-      }
+        return next
+      })
     }
-  }
+  }, [])
 
   const handleCancel = () => {
     reset()
@@ -552,55 +527,17 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     >
       {step === 0 && (
         <div className="space-y-4">
-          {/* AI generation prompt (only shown in create mode when user is authenticated) */}
+          {/* Generate with AI — compact spark icon (popover: funding accordion + prompt) */}
           {user?.id && !editMode && (
-            <div className="rounded-2xl border border-surface-border bg-surface-sunken/60 p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary-yellow-500" />
-                <span className="text-xs font-bold text-greyscale-400 uppercase tracking-widest">
-                  Generate with AI
-                </span>
-              </div>
-              <TextArea
-                id="ai-workflow-prompt"
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="Describe your workflow idea… or leave empty for an AI suggestion"
-                maxLength={2000}
-                minRows={2}
-                maxRows={4}
-                disabled={isAIGenerating}
+            <div className="flex items-center justify-end">
+              <GenerateWithAIButton
+                profileId={user.id}
+                generationType="workflow"
+                context={workflowAiContext}
+                funding={funding}
+                chainabit={chainabit}
+                onGenerated={handleWorkflowGenerated}
               />
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleAIGenerateWorkflow}
-                  disabled={isAIGenerating}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary-yellow-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isAIGenerating ? (
-                    <>
-                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Generating…
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-3.5 w-3.5" />
-                      {aiPrompt.trim() ? 'Generate from prompt' : 'Suggest a workflow'}
-                    </>
-                  )}
-                </button>
-                <span className="text-xs text-greyscale-400">Uses your profile's AI funding source</span>
-              </div>
-              {aiError && (
-                <Alert
-                  variant="error"
-                  title={friendlyWorkflowAIError(aiError.code)}
-                  onDismiss={resetAiError}
-                >
-                  {aiError.message}
-                </Alert>
-              )}
             </div>
           )}
 

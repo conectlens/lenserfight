@@ -116,8 +116,6 @@ LenserFight ships a custom MCP server ([`apps/mcp-server/`](apps/mcp-server/READ
 | **Battle** | 9 | `list_battles`, `get_battle`, `create_battle`, `add_battle_contender`, `submit_battle_run`, `get_battle_score`, `set_battle_status`, `finalize_battle`, `get_battle_history` |
 | **Workflow** | 8 | `list_workflows`, `get_workflow`, `create_workflow`, `run_workflow`, `get_workflow_run_status`, `get_workflow_run_logs`, `retry_workflow`, `summarize_workflow` |
 
-> **Custom vs generic Supabase MCP**: `mcp.supabase.com` gives raw SQL access. This server wraps LenserFight's business logic — `run_lens` resolves `[[Parameter]]` tokens from the DB, `get_battle_score` aggregates votes and judge verdicts, `summarize_workflow` reports cost and duration.
-
 ### Connect in two ways
 
 **Hosted (no install)** — for Claude.ai or Cursor. Add a custom connector pointing at the deployed Cloudflare Worker:

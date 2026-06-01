@@ -5,6 +5,7 @@ import { resolve } from 'node:path'
 import { homedir } from 'node:os'
 import { type PrivateBattleFrontmatter } from '@lenserfight/types'
 import { callRpc, handleError } from '../utils/api'
+import { generateCreation, normalizeFunding, resolveProfileId } from '../lib/data-services/ai-generate'
 import { wrapBattleLocalAliasCommand } from '../lib/battle-file-alias'
 import { assertSafe } from '../lib/safety'
 import {
@@ -116,6 +117,81 @@ const create = defineCommand({
       consola.info('  lf battle open %s              — open for entries', battle['id'])
       consola.info('  lf invite create --battle %s   — create an invite link', battle['id'])
       consola.info('  lf battle view %s', battle['id'])
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const generate = defineCommand({
+  meta: {
+    name: 'generate',
+    description: 'Generate a battle with AI, then optionally create it.',
+  },
+  args: {
+    prompt: { type: 'string', description: 'Describe the battle (empty → AI recommendation).', default: '' },
+    funding: { type: 'string', description: 'Funding source: platform_credit | cloud | local', default: 'platform_credit' },
+    'byok-key-ref': { type: 'string', description: 'Cloud BYOK key UUID (required for --funding cloud)', default: '' },
+    'local-key-id': { type: 'string', description: 'Local key id (required for --funding local)', default: '' },
+    provider: { type: 'string', description: 'Provider key (openai | anthropic | google | mistral)', default: 'openai' },
+    model: { type: 'string', description: 'Model key', default: 'gpt-4o-mini' },
+    slug: { type: 'string', description: 'URL-safe slug for --create (default: derived from title)', default: '' },
+    create: { type: 'boolean', description: 'Create the battle immediately from the generated result', default: false },
+    json: { type: 'boolean', description: 'Output the generated result as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const funding = normalizeFunding(args.funding)
+      const profileId = await resolveProfileId()
+      const output = await generateCreation({
+        generationType: 'battle',
+        prompt: args.prompt.trim() || null,
+        profileId,
+        funding,
+        providerKey: args.provider,
+        modelKey: args.model,
+        keyRefId: args['byok-key-ref'] || null,
+        localKeyId: args['local-key-id'] || null,
+        context: {},
+      })
+      if (output.type !== 'battle') throw new Error('Unexpected generation type.')
+      const { title, task_prompt, suggestedTaskSource, suggestedContenderStructure, suggestedJudgingMode } =
+        output.result
+
+      if (!args.create) {
+        if (args.json) {
+          printJson(output.result)
+          return
+        }
+        consola.success('Battle generated.')
+        consola.info('Title:       %s', title)
+        consola.info('Task prompt: %s', task_prompt)
+        consola.info('Task source: %s', suggestedTaskSource ?? '(unset)')
+        consola.info('Contenders:  %s', suggestedContenderStructure ?? '(unset)')
+        consola.info('Judging:     %s', suggestedJudgingMode ?? '(unset)')
+        consola.info('\nRe-run with --create [--slug <slug>] to save it.')
+        return
+      }
+
+      const slug = (args.slug || '').trim() || slugify(title)
+      const battle = await callRpc<Record<string, unknown>>(
+        'fn_battles_create',
+        {
+          p_title: title,
+          p_slug: slug,
+          p_task_prompt: task_prompt,
+          p_rubric_id: null,
+        },
+        { requireAuth: true }
+      )
+      if (args.json) {
+        printJson(battle)
+        return
+      }
+      consola.success('Battle created from AI generation.')
+      consola.info('ID:    %s', battle['id'])
+      consola.info('Title: %s', battle['title'])
+      consola.info('Slug:  %s', slug)
     } catch (err) {
       handleError(err)
     }
@@ -4799,6 +4875,7 @@ export default defineCommand({
   },
   subCommands: {
     create,
+    generate,
     join,
     init: localInit,
     'add-contender': localAddContender,

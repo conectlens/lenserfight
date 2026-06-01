@@ -26,6 +26,9 @@ export interface DialogProps {
   backdropClassName?: string
   /** Sticky footer rendered outside the scrollable body. Pass <ModalFooter .../> here. */
   footer?: React.ReactNode
+  /** Right-side header action (between the title block and the close button).
+   *  A child can still override this via DialogHeaderContext.setHeader({ action }). */
+  headerAction?: React.ReactNode
 }
 
 /**
@@ -53,6 +56,7 @@ export const Dialog: React.FC<DialogProps> = ({
   containerClassName = '',
   backdropClassName = '',
   footer,
+  headerAction,
 }) => {
   // Children (e.g. StepWizard) can override the header slot via context
   const [headerSlot, setHeaderSlot] = useState<DialogHeaderSlot | null>(null)
@@ -67,7 +71,7 @@ export const Dialog: React.FC<DialogProps> = ({
   const activeTitle = headerSlot?.title ?? title
   const activeDesc = headerSlot?.description ?? description
   const activeIcon = headerSlot?.icon ?? icon
-  const activeAction = headerSlot?.action
+  const activeAction = headerSlot?.action ?? headerAction
 
   const safeTitle = activeTitle ? activeTitle.slice(0, TITLE_MAX) : undefined
   const safeDesc = activeDesc ? activeDesc.slice(0, DESC_MAX) : undefined

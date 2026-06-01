@@ -2,7 +2,7 @@ import type { FundingSource } from '@lenserfight/types'
 
 // ─── Generation target ─────────────────────────────────────────────────────────
 
-export type GenerationType = 'lens' | 'workflow'
+export type GenerationType = 'lens' | 'workflow' | 'battle'
 
 // ─── Profile AI preference ─────────────────────────────────────────────────────
 // Resolved from lensers.preferences via fn_get_profile_ai_preference.
@@ -39,6 +39,17 @@ export interface WorkflowCreationContext {
   userPersona?: string | null
 }
 
+export interface BattleCreationContext {
+  /** Lens IDs the user owns — the AI may shape the task around one. */
+  availableLensIds?: string[]
+  /** Workflow IDs the user owns — the AI may suggest a workflow task source. */
+  availableWorkflowIds?: string[]
+  /** Tag slugs — same as lens context. */
+  userTagSlugs?: string[]
+  /** AI persona from lensers.preferences.ai_persona. */
+  userPersona?: string | null
+}
+
 // ─── Input ────────────────────────────────────────────────────────────────────
 
 export interface AICreationInput {
@@ -50,7 +61,7 @@ export interface AICreationInput {
   prompt: string | null | undefined
   /** auth.uid() of the active lenser. */
   profileId: string
-  context: LensCreationContext | WorkflowCreationContext
+  context: LensCreationContext | WorkflowCreationContext | BattleCreationContext
 }
 
 // ─── Output shapes ────────────────────────────────────────────────────────────
@@ -73,9 +84,26 @@ export interface GeneratedWorkflowResult {
   suggestedLensIds: string[]
 }
 
+export interface GeneratedBattleResult {
+  title: string
+  /** The shared challenge every contender receives. */
+  task_prompt: string
+  // The fields below are advisory suggestions that pre-fill the battle wizard.
+  // Their literal unions mirror @lenserfight/domain/battle-governance
+  // (TASK_SOURCES / CONTENDER_STRUCTURES / JUDGING_MODES). Kept local so this
+  // generic infra lib stays decoupled from the battle domain. The wizard's
+  // compatibility effects coerce any incompatible combination into a valid one.
+  suggestedTaskSource?: 'lens' | 'workflow' | 'challenge'
+  suggestedContenderStructure?: 'ai_vs_ai' | 'human_vs_human' | 'human_vs_ai'
+  suggestedJudgingMode?: 'community_vote' | 'ai_judge' | 'rubric_score' | 'auto_score'
+  /** Short challenge-type slug (only when suggestedTaskSource === 'challenge'). */
+  suggestedChallengeType?: string | null
+}
+
 export type AICreationOutput =
   | { type: 'lens'; result: GeneratedLensResult }
   | { type: 'workflow'; result: GeneratedWorkflowResult }
+  | { type: 'battle'; result: GeneratedBattleResult }
 
 // ─── Error codes ──────────────────────────────────────────────────────────────
 
@@ -113,7 +141,7 @@ export interface GenerateCreationRequest {
   generation_type: GenerationType
   prompt: string | null
   profile_id: string
-  context: LensCreationContext | WorkflowCreationContext
+  context: LensCreationContext | WorkflowCreationContext | BattleCreationContext
   /** Resolved by the client from profile preference. */
   funding_source: 'platform_credit' | 'user_byok_cloud'
   /** Required when funding_source = 'user_byok_cloud'. */

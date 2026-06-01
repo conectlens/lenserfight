@@ -8,6 +8,7 @@ import type {
   AICreationInput,
   AICreationOutput,
   GenerationType,
+  BattleCreationContext,
   LensCreationContext,
   WorkflowCreationContext,
   GenerateCreationRequest,
@@ -26,7 +27,7 @@ export interface UseAICreationGenerationOptions {
   /** auth.uid() of the active lenser — required. */
   profileId: string
   generationType: GenerationType
-  context: LensCreationContext | WorkflowCreationContext
+  context: LensCreationContext | WorkflowCreationContext | BattleCreationContext
   /**
    * Injected from `useFundingSource().resolveLocalKey` (or `useLocalKeyStore().resolveKey`).
    * Required only when the profile's funding source is `user_byok_local`.

@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
+import { generateCreation, normalizeFunding, resolveProfileId } from '../lib/data-services/ai-generate';
 import { markJourneyStep } from '../lib/onboarding/journey';
 import { printTable, printJson, truncate } from '../utils/output';
 import { makeLifecycleCommand } from '../utils/lifecycle';
@@ -127,6 +128,89 @@ const lensCreate = defineCommand({
       consola.success('Lens created.');
       consola.info('Lens ID: %s', lensId);
       consola.info('\nNext: lf lens version list %s', lensId);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+const lensGenerate = defineCommand({
+  meta: {
+    name: 'generate',
+    description: 'Generate lens content with AI, then optionally create it.',
+  },
+  args: {
+    prompt: { type: 'string', description: 'Describe the lens (empty → AI recommendation).', default: '' },
+    funding: { type: 'string', description: 'Funding source: platform_credit | cloud | local', default: 'platform_credit' },
+    'byok-key-ref': { type: 'string', description: 'Cloud BYOK key UUID (required for --funding cloud)', default: '' },
+    'local-key-id': { type: 'string', description: 'Local key id (required for --funding local)', default: '' },
+    provider: { type: 'string', description: 'Provider key (openai | anthropic | google | mistral)', default: 'openai' },
+    model: { type: 'string', description: 'Model key', default: 'gpt-4o-mini' },
+    create: { type: 'boolean', description: 'Create the lens immediately from the generated result', default: false },
+    json: { type: 'boolean', description: 'Output the generated result as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const funding = normalizeFunding(args.funding);
+      const profileId = await resolveProfileId();
+      const output = await generateCreation({
+        generationType: 'lens',
+        prompt: args.prompt.trim() || null,
+        profileId,
+        funding,
+        providerKey: args.provider,
+        modelKey: args.model,
+        keyRefId: args['byok-key-ref'] || null,
+        localKeyId: args['local-key-id'] || null,
+        context: {},
+      });
+      if (output.type !== 'lens') throw new Error('Unexpected generation type.');
+      const { title, content, description, params } = output.result;
+
+      if (!args.create) {
+        if (args.json) {
+          printJson(output.result);
+          return;
+        }
+        consola.success('Lens generated.');
+        consola.info('Title:       %s', title);
+        consola.info('Description: %s', description);
+        consola.info('Params:      %s', params.map((p) => p.label).join(', ') || '(none)');
+        consola.info('\nRe-run with --create to save it. Generated content:\n');
+        consola.log(content);
+        return;
+      }
+
+      if (content.trim().length < MIN_TEMPLATE_LENGTH) {
+        consola.error('Generated content is too short to create a lens (min %d characters).', MIN_TEMPLATE_LENGTH);
+        process.exitCode = 1;
+        return;
+      }
+
+      const lensId = await callRpc<string>(
+        'fn_create_lens',
+        {
+          p_visibility: 'public',
+          p_template_body: content,
+          p_title: title,
+          p_description: description || null,
+          p_language_code: 'en',
+          p_params: [],
+          p_tag_ids: [],
+          p_parent_lens_id: null,
+          p_forked_from_execution_id: null,
+        },
+        { requireAuth: true }
+      );
+
+      await markJourneyStep('lens_created', true);
+
+      if (args.json) {
+        printJson({ id: lensId });
+        return;
+      }
+      consola.success('Lens created from AI generation.');
+      consola.info('Lens ID: %s', lensId);
     } catch (err) {
       handleError(err);
     }
@@ -719,6 +803,7 @@ export default defineCommand({
   },
   subCommands: {
     create: lensCreate,
+    generate: lensGenerate,
     version,
     resource,
     import: lensImport,

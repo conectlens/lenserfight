@@ -80,6 +80,7 @@ vi.mock('@lenserfight/features/lenses', () => ({
     canUseBYOK: false,
   }),
   FundingSourceToggle: () => null,
+  GenerateWithAIButton: () => null,
 }))
 
 vi.mock('@lenserfight/features/profile', () => ({

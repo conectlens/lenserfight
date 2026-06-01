@@ -1,6 +1,8 @@
 import { callProvider } from '@lenserfight/providers'
 import type { ProviderMessage } from '@lenserfight/providers'
 import {
+  buildBattlePromptedMessages,
+  buildBattleRecommendationMessages,
   buildLensPromptedMessages,
   buildLensRecommendationMessages,
   buildWorkflowPromptedMessages,
@@ -12,6 +14,7 @@ import type {
   AICreationError,
   AICreationInput,
   AICreationResult,
+  BattleCreationContext,
   LensCreationContext,
   ProfileAIPreference,
   WorkflowCreationContext,
@@ -130,12 +133,17 @@ export class AICreationService {
       return mode === 'prompted'
         ? buildLensPromptedMessages(input.prompt!, ctx)
         : buildLensRecommendationMessages(ctx)
-    } else {
-      const ctx = (input.context ?? {}) as WorkflowCreationContext
-      return mode === 'prompted'
-        ? buildWorkflowPromptedMessages(input.prompt!, ctx)
-        : buildWorkflowRecommendationMessages(ctx)
     }
+    if (input.generationType === 'battle') {
+      const ctx = (input.context ?? {}) as BattleCreationContext
+      return mode === 'prompted'
+        ? buildBattlePromptedMessages(input.prompt!, ctx)
+        : buildBattleRecommendationMessages(ctx)
+    }
+    const ctx = (input.context ?? {}) as WorkflowCreationContext
+    return mode === 'prompted'
+      ? buildWorkflowPromptedMessages(input.prompt!, ctx)
+      : buildWorkflowRecommendationMessages(ctx)
   }
 
   private async callProviderWithTimeout(

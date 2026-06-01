@@ -1253,6 +1253,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
         error={lensModal.error}
         isEditMode={lensModal.isEditMode}
         lensId={editingLensId ?? undefined}
+        profileId={user?.id}
       />
     </div>
   )

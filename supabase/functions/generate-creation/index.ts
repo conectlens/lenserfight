@@ -1,7 +1,7 @@
 // @ts-nocheck
 // generate-creation — Supabase Edge Function (Deno runtime)
 //
-// Generates structured AI output (lens or workflow) for the creation flows.
+// Generates structured AI output (lens, workflow, or battle) for the creation flows.
 // Non-streaming: returns JSON { ok, output, mode } or { ok, error }.
 //
 // Funding source routing:
@@ -37,7 +37,7 @@ const RATE_LIMIT_MAX = 10
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type GenerationType = 'lens' | 'workflow'
+type GenerationType = 'lens' | 'workflow' | 'battle'
 type FundingSource = 'platform_credit' | 'user_byok_cloud'
 
 interface GenerateCreationRequest {
@@ -127,6 +127,46 @@ Rules: suggestedLensIds must be a subset of available IDs. Order by execution se
   ]
 }
 
+// Battle "create instructions" sublayer.
+// IMPORTANT: keep behaviourally equivalent to BATTLE_SYSTEM / buildBattle*Messages
+// in libs/infra/ai-creation/src/lib/creation-prompts.ts (the TS copy of this sublayer).
+function buildBattleMessages(prompt: string | null, context: Record<string, unknown>) {
+  const system = `You are an expert LenserFight battle designer.
+A battle pits AI models (or humans) against each other on a single shared task, judged by the community or an AI judge.
+
+Respond ONLY with a JSON object — no prose, no markdown fences, no explanation:
+{
+  "title": "Concise, exciting battle title (max 80 chars)",
+  "task_prompt": "The exact challenge every contender receives (min 30 chars). Self-contained, unambiguous, and fair.",
+  "suggestedTaskSource": "lens" | "workflow" | "challenge",
+  "suggestedContenderStructure": "ai_vs_ai" | "human_vs_ai" | "human_vs_human",
+  "suggestedJudgingMode": "community_vote" | "ai_judge" | "rubric_score" | "auto_score",
+  "suggestedChallengeType": null
+}
+
+Rules:
+- task_prompt must be an apples-to-apples instruction every contender can answer fairly.
+- Default to suggestedTaskSource:"challenge", suggestedContenderStructure:"ai_vs_ai", suggestedJudgingMode:"community_vote" unless the request clearly implies otherwise.
+- Set suggestedChallengeType to a short lowercase slug (e.g. "writing", "math") ONLY when suggestedTaskSource is "challenge"; otherwise null.
+- Use only the exact enum values shown above — never invent new ones.`
+
+  const persona = typeof context.userPersona === 'string' ? `\nUser persona: ${context.userPersona.slice(0, 200)}` : ''
+  const lensIds = Array.isArray(context.availableLensIds) && context.availableLensIds.length
+    ? `\nAvailable lens IDs: ${(context.availableLensIds as string[]).slice(0, 20).join(', ')}`
+    : ''
+  const workflowIds = Array.isArray(context.availableWorkflowIds) && context.availableWorkflowIds.length
+    ? `\nAvailable workflow IDs: ${(context.availableWorkflowIds as string[]).slice(0, 20).join(', ')}`
+    : ''
+  const userContent = prompt?.trim()
+    ? `Design a battle for:\n${prompt.slice(0, MAX_PROMPT_LENGTH)}${lensIds}${workflowIds}${persona}`
+    : `Suggest an engaging, fair battle that would be fun to run and judge.${persona}\nDefault to a high-quality general writing challenge if no context is available.`
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: userContent },
+  ]
+}
+
 // ─── Output parser ────────────────────────────────────────────────────────────
 
 function extractJson(raw: string): Record<string, unknown> {
@@ -167,6 +207,44 @@ function parseWorkflowOutput(raw: string) {
     ? (obj.suggestedLensIds as string[]).filter((id) => typeof id === 'string').slice(0, 20)
     : []
   return { type: 'workflow' as const, result: { title, description, suggestedLensIds } }
+}
+
+// Allow-lists mirror @lenserfight/domain/battle-governance enums. A hallucinated
+// value is dropped to undefined rather than propagated to the wizard.
+const BATTLE_TASK_SOURCES = ['lens', 'workflow', 'challenge']
+const BATTLE_CONTENDER_STRUCTURES = ['ai_vs_ai', 'human_vs_human', 'human_vs_ai']
+const BATTLE_JUDGING_MODES = ['community_vote', 'ai_judge', 'rubric_score', 'auto_score']
+
+function pickAllowed(value: unknown, allowed: string[]): string | undefined {
+  return typeof value === 'string' && allowed.includes(value) ? value : undefined
+}
+
+function parseBattleOutput(raw: string) {
+  const obj = extractJson(raw)
+  const title = typeof obj.title === 'string' ? obj.title.slice(0, 120).trim() : ''
+  const task_prompt = typeof obj.task_prompt === 'string' ? obj.task_prompt.trim() : ''
+  if (!title) throw new Error('missing title in AI response')
+  if (task_prompt.length < 10) throw new Error('task_prompt too short in AI response')
+
+  const suggestedTaskSource = pickAllowed(obj.suggestedTaskSource, BATTLE_TASK_SOURCES)
+  const suggestedContenderStructure = pickAllowed(obj.suggestedContenderStructure, BATTLE_CONTENDER_STRUCTURES)
+  const suggestedJudgingMode = pickAllowed(obj.suggestedJudgingMode, BATTLE_JUDGING_MODES)
+  const suggestedChallengeType =
+    suggestedTaskSource === 'challenge' && typeof obj.suggestedChallengeType === 'string'
+      ? obj.suggestedChallengeType.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').slice(0, 40) || null
+      : null
+
+  return {
+    type: 'battle' as const,
+    result: {
+      title,
+      task_prompt,
+      suggestedTaskSource,
+      suggestedContenderStructure,
+      suggestedJudgingMode,
+      suggestedChallengeType,
+    },
+  }
 }
 
 // ─── Provider caller ──────────────────────────────────────────────────────────
@@ -352,8 +430,8 @@ serve(async (req: Request) => {
   const { generation_type, prompt, profile_id, context, funding_source, key_ref_id, provider_key, model_key } = body
 
   // 2. Validate required fields
-  if (!generation_type || !['lens', 'workflow'].includes(generation_type)) {
-    return errResponse('VALIDATION_ERROR', 'generation_type must be "lens" or "workflow"', 400, req)
+  if (!generation_type || !['lens', 'workflow', 'battle'].includes(generation_type)) {
+    return errResponse('VALIDATION_ERROR', 'generation_type must be "lens", "workflow", or "battle"', 400, req)
   }
   if (!profile_id) {
     return errResponse('VALIDATION_ERROR', 'profile_id is required', 400, req)
@@ -455,7 +533,9 @@ serve(async (req: Request) => {
   const ctx = (context ?? {}) as Record<string, unknown>
   const messages = generation_type === 'lens'
     ? buildLensMessages(prompt, ctx)
-    : buildWorkflowMessages(prompt, ctx)
+    : generation_type === 'battle'
+      ? buildBattleMessages(prompt, ctx)
+      : buildWorkflowMessages(prompt, ctx)
 
   // 9. Call provider with timeout
   const signal = AbortSignal.timeout(TIMEOUT_MS)
@@ -483,7 +563,9 @@ serve(async (req: Request) => {
   try {
     const output = generation_type === 'lens'
       ? parseLensOutput(rawContent)
-      : parseWorkflowOutput(rawContent)
+      : generation_type === 'battle'
+        ? parseBattleOutput(rawContent)
+        : parseWorkflowOutput(rawContent)
 
     const mode: 'prompted' | 'recommendation' = prompt?.trim() ? 'prompted' : 'recommendation'
     return jsonResponse({ ok: true, output, mode }, 200, req)
