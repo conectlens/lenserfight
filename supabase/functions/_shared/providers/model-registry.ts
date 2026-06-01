@@ -64,8 +64,8 @@ const MODELS: ModelDescriptor[] = [
   { key: 'gemini-2.5-flash-lite',         provider: 'google', wireModel: 'gemini-2.5-flash-lite', kind: 'text' },
 
   // Google media
-  // AI Studio wire models: -001 (GA) and preview. The -002 variant is Vertex AI only.
-  { key: 'imagen-4',      provider: 'google', wireModel: 'imagen-4.0-generate-preview-06-06', kind: 'image' },
+  // AI Studio wire models: -001 suffix = GA. The -002 variant is Vertex AI only.
+  { key: 'imagen-4',      provider: 'google', wireModel: 'imagen-4.0-generate-001',           kind: 'image' },
   { key: 'imagen-3',      provider: 'google', wireModel: 'imagen-3.0-generate-001',           kind: 'image' },
   { key: 'imagen-3-fast', provider: 'google', wireModel: 'imagen-3.0-fast-generate-001',      kind: 'image' },
   { key: 'veo-3',         provider: 'google', wireModel: 'veo-2.0-generate-001',         kind: 'video' },
