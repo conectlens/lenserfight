@@ -1,3 +1,7 @@
+## 0.3.0-alpha.2 (2026-06-01)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
 ## 0.3.0-alpha.1 (2026-06-01)
 
 ### 🚀 Features
