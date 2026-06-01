@@ -10,6 +10,7 @@ import type {
   GenerationType,
   BattleCreationContext,
   LensCreationContext,
+  ProfileAIPreference,
   WorkflowCreationContext,
   GenerateCreationRequest,
   GenerateCreationResponse,
@@ -34,6 +35,12 @@ export interface UseAICreationGenerationOptions {
    * Injecting avoids a circular dependency between this lib and features/lenses.
    */
   resolveLocalKey?: (keyId: string) => Promise<string>
+  /**
+   * When provided, overrides the DB-fetched profile AI preference entirely.
+   * Pass the current UI funding selection so user changes take effect immediately
+   * without requiring a DB round-trip.
+   */
+  fundingPreference?: Pick<ProfileAIPreference, 'fundingSource' | 'selectedKeyRefId' | 'localKeyId'>
 }
 
 // ─── Return value ─────────────────────────────────────────────────────────────
@@ -68,7 +75,7 @@ const resolver = new ProfileAIPreferenceResolver(supabase)
  *  - `recommendation`   → prompt is null/empty; AI suggests based on context
  */
 export function useAICreationGeneration(options: UseAICreationGenerationOptions): UseAICreationGenerationResult {
-  const { profileId, generationType, context, resolveLocalKey } = options
+  const { profileId, generationType, context, resolveLocalKey, fundingPreference } = options
 
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<AICreationError | null>(null)
@@ -96,8 +103,11 @@ export function useAICreationGeneration(options: UseAICreationGenerationOptions)
           return null
         }
 
-        // 2. Resolve profile AI preference
-        const preference = await resolver.resolve(profileId)
+        // 2. Resolve profile AI preference (UI selection overrides DB value)
+        const dbPreference = await resolver.resolve(profileId)
+        const preference: ProfileAIPreference = fundingPreference
+          ? { ...dbPreference, ...fundingPreference }
+          : dbPreference
         const mode: 'prompted' | 'recommendation' = prompt?.trim() ? 'prompted' : 'recommendation'
 
         const input: AICreationInput = { generationType, prompt, profileId, context }
@@ -186,7 +196,7 @@ export function useAICreationGeneration(options: UseAICreationGenerationOptions)
         setIsGenerating(false)
       }
     },
-    [profileId, generationType, context, resolveLocalKey],
+    [profileId, generationType, context, resolveLocalKey, fundingPreference],
   )
 
   const resetError = useCallback(() => setError(null), [])

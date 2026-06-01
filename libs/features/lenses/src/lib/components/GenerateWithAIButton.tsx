@@ -109,6 +109,11 @@ export const GenerateWithAIButton: React.FC<GenerateWithAIButtonProps> = ({
     generationType,
     context,
     resolveLocalKey: funding.resolveLocalKey,
+    fundingPreference: {
+      fundingSource: funding.fundingSource,
+      selectedKeyRefId: funding.selectedKeyRefId,
+      localKeyId: funding.selectedLocalKeyId,
+    },
   })
 
   const [open, setOpen] = useState(false)
