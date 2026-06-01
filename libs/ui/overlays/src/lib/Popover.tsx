@@ -90,7 +90,8 @@ export const Popover: React.FC<PopoverProps> = ({
     const handler = (e: MouseEvent) => {
       if (
         panelRef.current?.contains(e.target as Node) ||
-        anchorRef.current?.contains(e.target as Node)
+        anchorRef.current?.contains(e.target as Node) ||
+        (e.target as Element)?.closest?.('.select-dropdown-portal') !== null
       ) return
       onClose?.()
     }
