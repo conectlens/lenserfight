@@ -163,6 +163,17 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const [selectedModality, setSelectedModality] = useState<'text' | 'image' | 'video' | 'audio' | 'music'>(
     () => (lensOutputKind && lensOutputKind !== 'text') ? lensOutputKind : 'text'
   )
+
+  // When the user picks a different model, snap the output selector to that
+  // model's output kind so the modality never drifts out of sync with the model.
+  React.useEffect(() => {
+    if (!selectedModelKey) return
+    const caps = getMediaCapabilities(selectedModelKey)
+    if (caps.kind && caps.kind !== 'text') {
+      setSelectedModality(caps.kind as 'image' | 'video' | 'audio' | 'music')
+    }
+  }, [selectedModelKey])
+
   const effectiveModality = hasMediaModalities ? selectedModality : 'text'
 
   // Media generation params (only used when effectiveModality !== 'text')

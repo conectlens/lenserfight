@@ -72,6 +72,8 @@ const MODELS: ModelDescriptor[] = [
   // Google media — Imagen 3 shut down June 2025. Imagen 4 GA only.
   // veo-3.0-generate-001 is the stable GA Veo 3; veo-2.0-generate-001 is legacy.
   { key: 'imagen-4', provider: 'google', wireModel: 'imagen-4.0-generate-001', kind: 'image' },
+  // Backward-compat alias: old preview wire name redirects to GA model.
+  { key: 'imagen-4.0-generate-preview-06-06', provider: 'google', wireModel: 'imagen-4.0-generate-001', kind: 'image' },
   { key: 'veo-3',    provider: 'google', wireModel: 'veo-3.0-generate-001',    kind: 'video' },
   { key: 'veo-2',    provider: 'google', wireModel: 'veo-2.0-generate-001',    kind: 'video' },
   { key: 'lyria-2',  provider: 'google', wireModel: 'lyria-002',               kind: 'music' },

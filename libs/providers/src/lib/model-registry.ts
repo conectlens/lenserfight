@@ -138,6 +138,10 @@ const MODEL_ENTRIES: ModelRegistryEntry[] = [
   // Imagen 3 was shut down June 2025. Imagen 4 GA only (-001 suffix = GA;
   // -002 variant is Vertex AI only).
   { key: 'imagen-4', provider: 'google', wireModel: 'imagen-4.0-generate-001', kind: 'image' },
+  // Backward-compat alias: the preview wire name was removed from the public
+  // API. Old lens versions / preferences that stored it verbatim now redirect
+  // to the GA model so they don't 404 at runtime.
+  { key: 'imagen-4.0-generate-preview-06-06', provider: 'google', wireModel: 'imagen-4.0-generate-001', kind: 'image' },
 
   // ── Google video (Veo) ───────────────────────────────────────────────────
   // veo-3.0-generate-001 is the stable GA Veo 3 model. veo-3.1-generate-preview
