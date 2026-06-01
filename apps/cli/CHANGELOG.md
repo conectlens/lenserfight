@@ -1,3 +1,13 @@
+## 0.16.0 (2026-06-01)
+
+### 🚀 Features
+
+- integrate AI-driven content generation into CLI and UI with support for lenses, battles, and workflows ([e4610bf8f](https://github.com/conectlens/lenserfight/commit/e4610bf8f))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 0.15.0 (2026-05-31)
 
 ### 🚀 Features
