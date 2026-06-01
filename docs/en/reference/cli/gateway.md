@@ -126,15 +126,22 @@ lf gateway serve --tailscale
 | `--port` | Port | `38080` |
 | `--tailscale` | Also bind the detected Tailscale (CGNAT 100.64/10) interface (requires consent — see `lf gateway consent grant tailscale`) | `false` |
 
-Daemon refuses to start if any of:
+Daemon refuses to start if any precondition fails:
 
-- clock skew > 5 minutes,
-- no Ed25519 key in keychain,
-- no Supabase session,
-- owner Lenser is paused,
-- workspace `global_kill_switch=true`,
-- `--tailscale` was passed without a matching consent file (precondition `tailscale_consent`),
-- `--bind 0.0.0.0` (precondition `bind_safe`).
+| Precondition | Check | Fix |
+|---|---|---|
+| `bind_safe` | `--bind 0.0.0.0` forbidden in full mode | Use `127.0.0.1` or add `--keys-only` |
+| `no_service_role` | `SUPABASE_SERVICE_ROLE_KEY` must not be set | Unset the env var |
+| `clock_skew` | Clock within 5 min of Supabase | Fix system clock |
+| `keychain_present` | OS keychain or file-backend reachable | Check `~/.lenserfight/gateway/keys/` permissions |
+| `keys_passphrase` | Master passphrase configured | `lf keys init` |
+| `identity_present` | Ed25519 keypair present (full mode only) | `lf gateway identity init` |
+| `session_present` | Supabase session exists (full mode only) | `lf login` |
+| `lenser_active` | Owner Lenser not paused (full mode only) | Unpause the Lenser |
+| `kill_switch` | `global_kill_switch=false` (full mode only) | Contact workspace admin |
+| `tailscale_consent` | Consent file matches live interface (when `--tailscale`) | `lf gateway consent grant tailscale` |
+
+`--keys-only` skips the full-mode-only preconditions (`identity_present`, `session_present`, `lenser_active`, `kill_switch`) and also allows `--bind 0.0.0.0`.
 
 ### `lf gateway doctor`
 
@@ -313,6 +320,22 @@ The `list` output uses a short device ID prefix. Status columns:
 All three commands are owner-scoped via `fn_gateway_approve_device`, `fn_gateway_revoke_device`, `fn_list_gateway_devices` and refuse to act on a device whose `owner_id` does not match the calling user (RPC returns `42501` `device_not_owned`).
 
 ---
+
+### `lf gateway pair`
+
+Print the bearer token the web app uses to authenticate against `/keys/*`. Running this once is required before you can paste a token into the Funding panel.
+
+```bash
+lf gateway pair --web     # print the token with pairing instructions (default)
+lf gateway pair --rotate  # rotate to a new token (invalidates the old one immediately)
+```
+
+The token is generated on first call and stored in the OS keychain (or the file-backend fallback). The gateway daemon auto-reads the same token on startup and prints it in the colored pairing box. You do not need to re-run `lf gateway pair` after a daemon restart — only after closing and reopening the browser tab (because `sessionStorage` is cleared on tab close).
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--web` | Print token with step-by-step pairing instructions | `true` |
+| `--rotate` | Replace the stored token with a new one | `false` |
 
 ### `lf gateway consent`
 

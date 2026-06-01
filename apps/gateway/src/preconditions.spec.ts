@@ -34,6 +34,7 @@ function passingProbes() {
   return {
     checkClockSkew: async () => ({ ok: true, skewSeconds: 0 }),
     checkKeychainPresent: async () => true,
+    checkKeysPassphrase: async () => true,
     checkIdentityPresent: async () => true,
     checkSessionPresent: async () => true,
     checkLenserActive: async () => true,
@@ -54,6 +55,7 @@ describe('evaluatePreconditions', () => {
       'no_service_role',
       'clock_skew',
       'keychain_present',
+      'keys_passphrase',
       'identity_present',
       'session_present',
       'lenser_active',
@@ -121,6 +123,7 @@ describe('evaluatePreconditions', () => {
     // The keys-only surface needs none of these — the daemon must still start.
     expect(preconditionsAllPass(results)).toBe(true)
     const ids = results.map((r) => r.id)
+    expect(ids).toContain('keys_passphrase')
     expect(ids).not.toContain('identity_present')
     expect(ids).not.toContain('session_present')
     expect(ids).not.toContain('lenser_active')

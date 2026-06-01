@@ -610,6 +610,13 @@ const identity = defineCommand({
             account: KEYCHAIN_ACCOUNT,
             secret: privateKey,
           })
+          const identityDir = path.join(homedir(), '.lenserfight', 'gateway')
+          mkdirSync(identityDir, { recursive: true, mode: 0o700 })
+          writeFileSync(
+            path.join(identityDir, 'identity.json'),
+            JSON.stringify({ public_key: publicKey, signing_algo: 'ed25519', generated_at: new Date().toISOString() }, null, 2),
+            { mode: 0o600 }
+          )
           consola.success('Keypair rotated.')
           consola.info('Register the new public key with the cloud: %s', publicKey)
         } catch (err) {
@@ -630,6 +637,13 @@ const identity = defineCommand({
             account: KEYCHAIN_ACCOUNT,
             secret: privateKey,
           })
+          const identityDir = path.join(homedir(), '.lenserfight', 'gateway')
+          mkdirSync(identityDir, { recursive: true, mode: 0o700 })
+          writeFileSync(
+            path.join(identityDir, 'identity.json'),
+            JSON.stringify({ public_key: publicKey, signing_algo: 'ed25519', generated_at: new Date().toISOString() }, null, 2),
+            { mode: 0o600 }
+          )
           consola.success('Ed25519 keypair generated.')
           consola.info('Register the public key with the cloud: %s', publicKey)
         } catch (err) {

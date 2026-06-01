@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto'
+
 import { resolveGatewayConfig } from './config'
 import { loadGatewayIdentity, sendHeartbeat } from './heartbeat'
 import { scheduleLoop } from './loops'
@@ -6,6 +8,8 @@ import { createGatewayPreconditionProbes } from './probes'
 import { startServer } from './server'
 import { dispatchCommand, outboxFlush, pullCommands } from './sync'
 import { resolveTailscaleConsent } from './tailscale'
+import { BEARER_KEYCHAIN_SERVICE, BEARER_KEYCHAIN_ACCOUNT } from './auth/bearer'
+import { keychain } from '@lenserfight/utils/keychain'
 
 /**
  * `lf-gatewayd` entry point.
@@ -87,6 +91,8 @@ async function main(): Promise<void> {
     )
   }
 
+  await printPairingBlock(server.url)
+
   let heartbeat: { stop: () => void } = { stop: () => undefined }
   let outbox: { stop: () => void } = { stop: () => undefined }
   let pull: { stop: () => void } = { stop: () => undefined }
@@ -166,6 +172,63 @@ function printPreconditions(results: { id: string; ok: boolean; message: string 
     const tag = r.ok ? 'pass' : 'FAIL'
     process.stdout.write(`[precondition] ${tag} ${r.id}: ${r.message}\n`)
   }
+}
+
+async function printPairingBlock(gatewayUrl: string): Promise<void> {
+  // Fetch or create the bearer token used by the web app to call /keys/*.
+  let token = await keychain.getSecret({ service: BEARER_KEYCHAIN_SERVICE, account: BEARER_KEYCHAIN_ACCOUNT })
+  if (!token) {
+    token = randomBytes(32).toString('base64url')
+    await keychain.setSecret({ service: BEARER_KEYCHAIN_SERVICE, account: BEARER_KEYCHAIN_ACCOUNT, secret: token })
+  }
+
+  const isTTY = process.stdout.isTTY
+  // ANSI codes — omitted when stdout is piped/redirected.
+  const c = {
+    reset:  isTTY ? '\x1b[0m'  : '',
+    bold:   isTTY ? '\x1b[1m'  : '',
+    cyan:   isTTY ? '\x1b[36m' : '',
+    yellow: isTTY ? '\x1b[33m' : '',
+    green:  isTTY ? '\x1b[32m' : '',
+    dim:    isTTY ? '\x1b[2m'  : '',
+  }
+
+  const w = 62
+  const line  = '─'.repeat(w)
+  const blank = ' '.repeat(w)
+
+  process.stdout.write('\n')
+  process.stdout.write(`${c.cyan}┌${line}┐${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}${blank}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}  ${c.bold}Gateway ready — pair the web app in 3 steps${c.reset}${' '.repeat(w - 45)}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}${blank}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}  ${c.yellow}Prerequisite: run \`lf keys init\` once (adds master passphrase).${c.reset}${' '.repeat(w - 65)}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}${blank}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}  ${c.dim}Step 1 — copy this token:${c.reset}${' '.repeat(w - 27)}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}${blank}${c.cyan}│${c.reset}\n`)
+
+  // Print the token, wrapping at w-4 chars per line.
+  const indent = '  '
+  const maxChars = w - indent.length
+  for (let i = 0; i < token.length; i += maxChars) {
+    const chunk = token.slice(i, i + maxChars)
+    const pad = ' '.repeat(w - indent.length - chunk.length)
+    process.stdout.write(`${c.cyan}│${c.reset}${indent}${c.green}${c.bold}${chunk}${c.reset}${pad}${c.cyan}│${c.reset}\n`)
+  }
+
+  process.stdout.write(`${c.cyan}│${c.reset}${blank}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}  ${c.dim}Step 2 — open the LenserFight web app, go to any lens /    ${c.reset}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}  ${c.dim}         battle / workflow page, click "Local Keys".${c.reset}${' '.repeat(11)}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}${blank}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}  ${c.dim}Step 3 — paste the token into the "Pair gateway" box.${c.reset}${' '.repeat(8)}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}${blank}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}  ${c.yellow}Gateway: ${gatewayUrl}${c.reset}${' '.repeat(Math.max(0, w - 11 - gatewayUrl.length))}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}  ${c.dim}Token lives in sessionStorage — re-run \`lf gateway pair\`${c.reset}${' '.repeat(6)}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}  ${c.dim}after closing the tab, or \`lf gateway pair --rotate\`${c.reset}${' '.repeat(9)}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}  ${c.dim}to invalidate the old one immediately.${c.reset}${' '.repeat(w - 40)}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}│${c.reset}${blank}${c.cyan}│${c.reset}\n`)
+  process.stdout.write(`${c.cyan}└${line}┘${c.reset}\n`)
+  process.stdout.write('\n')
 }
 
 main().catch((err) => {

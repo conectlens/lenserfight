@@ -203,7 +203,7 @@ export const GenerateWithAIButton: React.FC<GenerateWithAIButtonProps> = ({
         onClose={() => setOpen(false)}
         anchorRef={anchorRef}
         placement={placement}
-        className="w-[32rem] p-0 overflow-hidden"
+        className="w-[calc(100vw-2rem)] sm:w-[32rem] max-w-[32rem] p-0 overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-surface-border">
