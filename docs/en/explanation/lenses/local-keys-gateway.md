@@ -40,9 +40,28 @@ There is no separate browser-only store — the previous IndexedDB design has be
 
 ## Setup
 
-You need two short-lived CLI commands and one token paste in the browser.
+Complete these steps once, in order. Every step is required — skipping any one causes a specific error (listed in the Troubleshooting section below).
 
-### 1. Start the gateway
+### Step 0 — Prerequisites (one-time only)
+
+Open a terminal and run the following in order:
+
+```bash
+# 1. Generate the device Ed25519 keypair (stored in your OS keychain).
+#    Required for `lf gateway serve` (full mode) to pass its identity check.
+#    Skip this if you only ever run with `--keys-only`.
+lf gateway identity init
+
+# 2. Generate the master passphrase that encrypts your local keys at rest.
+#    Required before you can save any key — the gateway refuses with
+#    "passphrase_missing" (503) until this has been run.
+lf keys init
+```
+
+Both commands are **idempotent** — re-running them on an existing setup prints a
+warning and exits without overwriting anything (use `--force` to rotate).
+
+### Step 1 — Start the gateway
 
 In a terminal — **leave this running**:
 
@@ -50,37 +69,81 @@ In a terminal — **leave this running**:
 # Same machine — gateway and browser on the same box (most common).
 lf gateway serve --keys-only
 
+# Full mode (also syncs device state with the cloud).
+lf gateway serve
+
 # Tailscale or LAN — browser on another device, gateway on this one.
 lf gateway serve --keys-only --bind 0.0.0.0
 ```
 
-`--keys-only` skips the identity/session/lenser/kill_switch preconditions used by the signed-coordination feature. It also allows binding a non-loopback address without a Tailscale consent file.
+`--keys-only` skips the Ed25519 identity / Supabase session / lenser-active
+preconditions so you can use Local Keys without a full gateway identity.
+It also allows binding a non-loopback address without a Tailscale consent file.
 
-### 2. Initialise keys and add a provider key
+When the daemon starts it prints a colored box:
 
-In another terminal:
-
-```bash
-# One-time: generate the master passphrase (stored in your OS keychain)
-# and create ~/.lenserfight/keys/.
-lf keys init
-
-# Add a key — value is read from stdin so it doesn't enter shell history.
-lf keys add --provider openai --label "Prod"
-
-# Print the pairing token the browser needs.
-lf gateway pair --web
+```
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  Gateway ready — pair the web app in 3 steps                 │
+│                                                              │
+│  Prerequisite: run `lf keys init` once (adds master passphrase).│
+│                                                              │
+│  Step 1 — copy this token:                                   │
+│                                                              │
+│  <your-43-char-base64url-token>                              │
+│  ...                                                         │
+│                                                              │
+│  Step 2 — open the web app → any Funding panel → Local Keys  │
+│  Step 3 — paste the token into "Pair gateway"                │
+│                                                              │
+│  Gateway: http://127.0.0.1:38080                             │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### 3. Pair the browser
+Copy the token from this box. You can always retrieve it later with:
+
+```bash
+lf gateway pair --web       # print the current token
+lf gateway pair --rotate    # rotate to a new token (invalidates the old one)
+```
+
+### Step 2 — Add a provider key
+
+In another terminal (the gateway must still be running):
+
+```bash
+# Add a key — value is read from stdin so it never enters shell history.
+lf keys add --provider openai --label "Prod"
+
+# Verify it was stored:
+lf keys list
+```
+
+### Step 3 — Pair the browser
 
 1. Open the LenserFight web app on any lens, battle, or workflow page (anywhere with a Funding panel).
 2. In the Funding panel, click the **Local Keys** tile.
-3. A **Paste your pairing token below ↓** box appears. Paste the token from `lf gateway pair --web` and click **Pair gateway**.
+3. A **Paste your pairing token below ↓** box appears — paste the token printed in Step 1 and click **Pair gateway**.
 
 The keys added with `lf keys add` will now appear in the picker.
 
-The pairing token lives in `sessionStorage` only. Close the tab and you'll need to re-run `lf gateway pair --web` for a fresh token. There is no global Settings → Local Keys page — the pair input is inline inside the Funding panel because that is the only place Local Keys are used.
+**Token lifetime:** The pairing token lives in `sessionStorage` only. Close the tab and you'll need to re-run `lf gateway pair --web` to get a fresh token. The gateway re-uses the same token across restarts unless you rotate it with `--rotate`.
+
+---
+
+## Troubleshooting
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `[precondition] FAIL identity_present` | No Ed25519 keypair on this machine | `lf gateway identity init` |
+| `[precondition] FAIL keys_passphrase` | `lf keys init` has never been run | `lf keys init` |
+| `Failed to save key … passphrase_missing (503)` | Master passphrase missing in keychain | `lf keys init` |
+| `[keychain] OS keychain (keytar) is unavailable` | Native keytar binding not compiled for this Node version | Warning only — the file-backend fallback at `~/.lenserfight/gateway/keys/` is used automatically. Functionality is identical. |
+| `lf-gateway-init: command not found` | The gateway binary wasn't built | `pnpm nx run gateway:build-init && node dist/apps/gateway/init.js` — **or** use `lf gateway identity init` which works without building the binary. |
+| `Gateway not running` in web app | `lf gateway serve` is not running | Start it and leave it running in a dedicated terminal. |
+| `Gateway not paired` in web app | Browser has no pairing token | Run `lf gateway pair --web` and paste the token into the Funding panel. |
+| `Gateway refused this origin (403)` | App is running on a non-whitelisted URL | Use `https://lenserfight.com`, `localhost`, or `127.0.0.1`. Custom origins: set `LF_GATEWAY_EXTRA_ORIGINS`. |
 
 ---
 

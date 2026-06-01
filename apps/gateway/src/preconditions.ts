@@ -6,6 +6,7 @@ import type { TailscaleInterface } from '@lenserfight/infra/gateway'
 export type PreconditionId =
   | 'clock_skew'
   | 'keychain_present'
+  | 'keys_passphrase'
   | 'identity_present'
   | 'session_present'
   | 'kill_switch'
@@ -40,6 +41,7 @@ export async function evaluatePreconditions(
   probes: {
     checkClockSkew: () => Promise<{ ok: boolean; skewSeconds: number }>
     checkKeychainPresent: () => Promise<boolean>
+    checkKeysPassphrase: () => Promise<boolean>
     checkIdentityPresent: () => Promise<boolean>
     checkSessionPresent: () => Promise<boolean>
     checkLenserActive: () => Promise<boolean>
@@ -98,6 +100,15 @@ export async function evaluatePreconditions(
     message: keychain ? 'keychain reachable' : 'keychain unavailable',
   })
 
+  const keysPassphrase = await probes.checkKeysPassphrase()
+  results.push({
+    id: 'keys_passphrase',
+    ok: keysPassphrase,
+    message: keysPassphrase
+      ? 'master passphrase present'
+      : 'no master passphrase — run `lf keys init` first',
+  })
+
   // Signed-coordination preconditions — only meaningful for the full daemon.
   // Skip them in keys-only mode so users can pair Local Keys without first
   // setting up an Ed25519 identity, Supabase session, or owner Lenser.
@@ -108,7 +119,7 @@ export async function evaluatePreconditions(
       ok: identity,
       message: identity
         ? 'Ed25519 keypair present'
-        : 'no Ed25519 keypair — run `lf-gateway-init` first',
+        : 'no Ed25519 keypair — run `lf gateway identity init` (or `lf-gateway-init` if the daemon binary is installed)',
     })
 
     const session = await probes.checkSessionPresent()

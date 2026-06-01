@@ -5,7 +5,7 @@ const { mockUseLenser } = vi.hoisted(() => ({
   mockUseLenser: vi.fn(),
 }))
 
-vi.mock('@lenserfight/features/profile', () => ({
+vi.mock('@lenserfight/features/profile/useLenser', () => ({
   useLenser: () => mockUseLenser(),
 }))
 

@@ -125,7 +125,7 @@ function mapGatewayError(err: unknown, op: 'save' | 'update'): string {
     case 'gateway_rate_limited':
       return 'Too many requests to the gateway. Wait a minute and retry.'
     case 'passphrase_missing':
-      return 'No master passphrase configured. Run `lf keys init`.'
+      return 'No master passphrase configured. Run `lf keys init` once in a terminal, then retry.'
     case 'duplicate_key':
       return 'A key with this id already exists.'
     case 'invalid_provider':
@@ -391,21 +391,29 @@ function GatewayUnreachablePanel({
     <div className="flex flex-col gap-2 p-3 rounded-lg border border-amber-300/40 bg-amber-50 dark:bg-amber-900/10">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-          Start the LenserFight Gateway
+          Set up the LenserFight Gateway
         </p>
         <HelpButton path={GATEWAY_DOCS_PATH} label="Gateway docs" className="shrink-0" />
       </div>
-      <ol className="text-[10px] text-gray-600 dark:text-gray-400 list-decimal pl-4 space-y-0.5">
+      <ol className="text-[10px] text-gray-600 dark:text-gray-400 list-decimal pl-4 space-y-1">
         <li>
-          Run <code className="text-primary-600 dark:text-primary-400">lf gateway serve</code> in a
-          terminal and leave it running.
+          <span className="font-medium text-gray-700 dark:text-gray-300">One-time setup</span> — run
+          these two commands once, in order:
+          <br />
+          <code className="text-primary-600 dark:text-primary-400">lf gateway identity init</code>
+          <br />
+          <code className="text-primary-600 dark:text-primary-400">lf keys init</code>
         </li>
         <li>
-          Then run{' '}
-          <code className="text-primary-600 dark:text-primary-400">lf gateway pair --web</code> and
-          copy the token it prints.
+          Start the gateway and leave it running:{' '}
+          <code className="text-primary-600 dark:text-primary-400">lf gateway serve --keys-only</code>
         </li>
-        <li>Come back to this page and paste the token into the field that appears.</li>
+        <li>
+          The gateway prints a token in a colored box — or run{' '}
+          <code className="text-primary-600 dark:text-primary-400">lf gateway pair --web</code> to
+          print it again.
+        </li>
+        <li>Come back here, click <strong>Local Keys</strong>, and paste the token.</li>
       </ol>
       {onRefreshLocalKeys && (
         <button
@@ -585,7 +593,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   // boundaries, so we render them side-by-side rather than nesting Cloud / Local
   // BYOK under a shared "My Keys" parent.
   const visibleSourceCount = (caps.isChainabitConfigured ? 1 : 0) + 1 /* LF Cloud */ + 1 /* Local */
-  const sourceGridCols = visibleSourceCount === 3 ? 'grid-cols-3' : 'grid-cols-2'
+  const sourceGridCols = visibleSourceCount === 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
 
   return (
     <div className="flex flex-col gap-2">
@@ -881,14 +889,25 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
             Paste your pairing token below ↓
           </p>
-          <ol className="text-[10px] text-gray-600 dark:text-gray-400 list-decimal pl-4 space-y-0.5">
+          <ol className="text-[10px] text-gray-600 dark:text-gray-400 list-decimal pl-4 space-y-1">
             <li>
-              In a terminal on the gateway machine, run{' '}
+              <span className="font-medium text-gray-700 dark:text-gray-300">One-time setup</span> — if
+              you haven't already, run these in order:
+              <br />
+              <code className="text-primary-600 dark:text-primary-400">lf gateway identity init</code>
+              <br />
+              <code className="text-primary-600 dark:text-primary-400">lf keys init</code>
+            </li>
+            <li>
+              Start the gateway:{' '}
+              <code className="text-primary-600 dark:text-primary-400">lf gateway serve --keys-only</code>
+            </li>
+            <li>
+              Copy the token from the colored box the gateway prints — or run{' '}
               <code className="text-primary-600 dark:text-primary-400">lf gateway pair --web</code>
             </li>
-            <li>Copy the token printed on the next line</li>
             <li>
-              Paste it into the field below and click <strong>Pair gateway</strong>
+              Paste it below and click <strong>Pair gateway</strong>
             </li>
           </ol>
           <input

@@ -21,6 +21,11 @@ vi.mock('@lenserfight/features/store', () => ({
   useChainabitConnection: () => ({ state: 'connected', models: [], reconnect: vi.fn() }),
 }))
 
+vi.mock('@lenserfight/features/generations', () => ({
+  useAIProviders: () => ({ data: [], isLoading: false }),
+  useAIModelsByProvider: () => ({ data: [], isLoading: false }),
+}))
+
 vi.mock('../hooks/useFundingSource', () => ({
   useFundingSource: () => ({
     fundingSource: 'platform_credit',
@@ -64,10 +69,10 @@ describe('GenerateWithAIButton', () => {
     const trigger = screen.getByRole('button', { name: 'Generate with AI' })
     expect(trigger).toBeTruthy()
     // Popover is closed initially.
-    expect(screen.queryByText('Funding source')).toBeNull()
+    expect(screen.queryByText('Funding & Model')).toBeNull()
 
     fireEvent.click(trigger)
-    expect(screen.getByText('Funding source')).toBeTruthy()
+    expect(screen.getByText('Funding & Model')).toBeTruthy()
     expect(screen.getByTestId('funding-toggle')).toBeTruthy()
     expect(screen.getByRole('textbox')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Suggest' })).toBeTruthy()
@@ -89,7 +94,7 @@ describe('GenerateWithAIButton', () => {
 
     await waitFor(() => expect(mockGenerate).toHaveBeenCalledWith('make a seo lens'))
     await waitFor(() => expect(onGenerated).toHaveBeenCalledWith(output))
-    await waitFor(() => expect(screen.queryByText('Funding source')).toBeNull())
+    await waitFor(() => expect(screen.queryByText('Funding & Model')).toBeNull())
   })
 
   it('uses recommendation mode (null) when the prompt is empty', async () => {

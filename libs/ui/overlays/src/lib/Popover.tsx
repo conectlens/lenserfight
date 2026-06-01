@@ -120,6 +120,7 @@ export const Popover: React.FC<PopoverProps> = ({
           rounded-xl border border-surface-border
           animate-in fade-in zoom-in-95 duration-fast origin-top
           focus:outline-none
+          ${placement === 'bottom-end' ? '-translate-x-full' : ''}
           ${className}
         `}
       >

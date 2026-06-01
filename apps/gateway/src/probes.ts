@@ -3,12 +3,14 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { keychain } from '@lenserfight/utils/keychain'
+import { defaultPassphraseProvider } from '@lenserfight/data/local-keys'
 
 import type { GatewayConfig } from './config'
 
 export interface GatewayPreconditionProbes {
   checkClockSkew: () => Promise<{ ok: boolean; skewSeconds: number }>
   checkKeychainPresent: () => Promise<boolean>
+  checkKeysPassphrase: () => Promise<boolean>
   checkIdentityPresent: () => Promise<boolean>
   checkSessionPresent: () => Promise<boolean>
   checkLenserActive: () => Promise<boolean>
@@ -27,6 +29,13 @@ export function createGatewayPreconditionProbes(config: GatewayConfig): GatewayP
       try {
         await keychain.getBackend()
         return true
+      } catch {
+        return false
+      }
+    },
+    checkKeysPassphrase: async () => {
+      try {
+        return await defaultPassphraseProvider.isConfigured()
       } catch {
         return false
       }
