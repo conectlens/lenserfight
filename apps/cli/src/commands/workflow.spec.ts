@@ -37,16 +37,24 @@ jest.mock('../utils/lifecycle', () => ({
     run: jest.fn(),
   }),
 }))
+jest.mock('../lib/data-services/ai-generate', () => ({
+  generateCreation: jest.fn(),
+  resolveProfileId: jest.fn(),
+  normalizeFunding: (v: string) => v,
+}))
 
 import consola from 'consola'
 import { parseAutomationDocument } from '../utils/automation-objects'
 import { printJson, printTable } from '../utils/output'
 import { callRpc } from '../utils/api'
+import { generateCreation, resolveProfileId } from '../lib/data-services/ai-generate'
 
 const mockParseAutomationDocument = parseAutomationDocument as jest.MockedFunction<typeof parseAutomationDocument>
 const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
 const mockPrintTable = printTable as jest.MockedFunction<typeof printTable>
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
+const mockGenerateCreation = generateCreation as jest.MockedFunction<typeof generateCreation>
+const mockResolveProfileId = resolveProfileId as jest.MockedFunction<typeof resolveProfileId>
 const consolaError = (consola as unknown as { error: jest.Mock }).error
 const consolaWarn = (consola as unknown as { warn: jest.Mock }).warn
 const consolaInfo = (consola as unknown as { info: jest.Mock }).info
@@ -238,5 +246,54 @@ describe('workflow create', () => {
     expect(mockCallRpc).not.toHaveBeenCalled()
     expect(consolaError).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
+  })
+})
+
+describe('workflow generate', () => {
+  function getSub(key: string): AnyCmd {
+    const sub = workflowCmd.subCommands?.[key]
+    return (typeof sub === 'function' ? (sub as () => AnyCmd)() : sub) as AnyCmd
+  }
+  const baseArgs = {
+    prompt: 'a flow',
+    funding: 'platform_credit',
+    'byok-key-ref': '',
+    'local-key-id': '',
+    provider: 'openai',
+    model: 'gpt-4o-mini',
+    create: false,
+    json: false,
+  }
+
+  it('generates without creating when --create is omitted', async () => {
+    mockResolveProfileId.mockResolvedValueOnce('user-1')
+    mockGenerateCreation.mockResolvedValueOnce({
+      type: 'workflow',
+      result: { title: 'Flow', description: 'd', suggestedLensIds: [] },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+
+    await getSub('generate').run?.({ args: { ...baseArgs } })
+
+    expect(mockGenerateCreation).toHaveBeenCalledWith(expect.objectContaining({ generationType: 'workflow' }))
+    expect(mockCallRpc).not.toHaveBeenCalled()
+  })
+
+  it('creates the workflow from the generated result with --create', async () => {
+    mockResolveProfileId.mockResolvedValueOnce('user-1')
+    mockGenerateCreation.mockResolvedValueOnce({
+      type: 'workflow',
+      result: { title: 'Flow', description: 'd', suggestedLensIds: [] },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+    mockCallRpc.mockResolvedValueOnce({ id: 'wf-1', title: 'Flow' } as never)
+
+    await getSub('generate').run?.({ args: { ...baseArgs, create: true } })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_create_workflow',
+      expect.objectContaining({ p_title: 'Flow' }),
+      expect.objectContaining({ requireAuth: true }),
+    )
   })
 })

@@ -20,9 +20,15 @@ jest.mock('../utils/output', () => ({
   printJson: jest.fn(),
   truncate: (s: string, n: number) => (s.length > n ? s.slice(0, n) + '…' : s),
 }))
+jest.mock('../lib/data-services/ai-generate', () => ({
+  generateCreation: jest.fn(),
+  resolveProfileId: jest.fn(),
+  normalizeFunding: (v: string) => v,
+}))
 
 import consola from 'consola'
 import { callRpc, callRest, handleError } from '../utils/api'
+import { generateCreation, resolveProfileId } from '../lib/data-services/ai-generate'
 import { printTable, printJson } from '../utils/output'
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
@@ -30,6 +36,8 @@ const mockCallRest = callRest as jest.MockedFunction<typeof callRest>
 const mockHandleError = handleError as jest.MockedFunction<typeof handleError>
 const mockPrintTable = printTable as jest.MockedFunction<typeof printTable>
 const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
+const mockGenerateCreation = generateCreation as jest.MockedFunction<typeof generateCreation>
+const mockResolveProfileId = resolveProfileId as jest.MockedFunction<typeof resolveProfileId>
 const consolaSuccess = (consola as unknown as { success: jest.Mock }).success
 const consolaError = (consola as unknown as { error: jest.Mock }).error
 const consolaInfo = (consola as unknown as { info: jest.Mock }).info
@@ -746,5 +754,53 @@ describe('battle validate (legacy V1 mode)', () => {
     const data = mockPrintJson.mock.calls[0][0] as { valid: boolean; mode: string }
     expect(data.valid).toBe(false)
     expect(data.mode).toBe('v1')
+  })
+})
+
+describe('battle generate', () => {
+  const baseArgs = {
+    prompt: 'an epic battle',
+    funding: 'platform_credit',
+    'byok-key-ref': '',
+    'local-key-id': '',
+    provider: 'openai',
+    model: 'gpt-4o-mini',
+    slug: '',
+    create: false,
+    json: false,
+  }
+
+  it('generates without creating when --create is omitted', async () => {
+    mockResolveProfileId.mockResolvedValueOnce('user-1')
+    mockGenerateCreation.mockResolvedValueOnce({
+      type: 'battle',
+      result: { title: 'Haiku Duel', task_prompt: 'Write a haiku about the sea.' },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+
+    const cmd = await getSubCmd('generate')
+    await cmd.run?.({ args: { ...baseArgs } })
+
+    expect(mockGenerateCreation).toHaveBeenCalledWith(expect.objectContaining({ generationType: 'battle' }))
+    expect(mockCallRpc).not.toHaveBeenCalled()
+  })
+
+  it('creates the battle (deriving a slug) from the generated result with --create', async () => {
+    mockResolveProfileId.mockResolvedValueOnce('user-1')
+    mockGenerateCreation.mockResolvedValueOnce({
+      type: 'battle',
+      result: { title: 'Haiku Duel', task_prompt: 'Write a haiku about the sea.' },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+    mockCallRpc.mockResolvedValueOnce({ id: 'b-1', title: 'Haiku Duel' })
+
+    const cmd = await getSubCmd('generate')
+    await cmd.run?.({ args: { ...baseArgs, create: true } })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_battles_create',
+      expect.objectContaining({ p_title: 'Haiku Duel', p_task_prompt: 'Write a haiku about the sea.', p_slug: 'haiku-duel' }),
+      expect.objectContaining({ requireAuth: true }),
+    )
   })
 })

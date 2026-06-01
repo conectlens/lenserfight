@@ -25,14 +25,22 @@ jest.mock('../lib/onboarding/journey', () => ({
 jest.mock('../utils/lifecycle', () => ({
   makeLifecycleCommand: jest.fn(() => ({ meta: { name: 'mock' }, run: jest.fn() })),
 }))
+jest.mock('../lib/data-services/ai-generate', () => ({
+  generateCreation: jest.fn(),
+  resolveProfileId: jest.fn(),
+  normalizeFunding: (v: string) => v,
+}))
 
 import consola from 'consola'
 import { callRpc, handleError } from '../utils/api'
+import { generateCreation, resolveProfileId } from '../lib/data-services/ai-generate'
 import { printJson } from '../utils/output'
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>
 const mockHandleError = handleError as jest.MockedFunction<typeof handleError>
 const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
+const mockGenerateCreation = generateCreation as jest.MockedFunction<typeof generateCreation>
+const mockResolveProfileId = resolveProfileId as jest.MockedFunction<typeof resolveProfileId>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCmd = { run?: (ctx: any) => Promise<void>; subCommands?: Record<string, any> }
@@ -103,5 +111,70 @@ describe('lens version list', () => {
 
     expect(mockPrintJson).toHaveBeenCalledWith([])
     expect(consola.info).not.toHaveBeenCalled()
+  })
+})
+
+describe('lens generate', () => {
+  const baseArgs = {
+    prompt: 'a lens',
+    funding: 'platform_credit',
+    'byok-key-ref': '',
+    'local-key-id': '',
+    provider: 'openai',
+    model: 'gpt-4o-mini',
+    create: false,
+    json: false,
+  }
+
+  it('generates and prints without creating when --create is omitted', async () => {
+    mockResolveProfileId.mockResolvedValueOnce('user-1')
+    mockGenerateCreation.mockResolvedValueOnce({
+      type: 'lens',
+      result: { title: 'AI Lens', content: 'A'.repeat(60), description: 'desc', suggestedTagSlugs: [], params: [] },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+
+    const cmd = await getSubCmd('generate')
+    await cmd.run?.({ args: { ...baseArgs } })
+
+    expect(mockGenerateCreation).toHaveBeenCalledWith(
+      expect.objectContaining({ generationType: 'lens', profileId: 'user-1', funding: 'platform_credit' }),
+    )
+    expect(mockCallRpc).not.toHaveBeenCalled()
+  })
+
+  it('creates the lens from the generated content when --create is set', async () => {
+    mockResolveProfileId.mockResolvedValueOnce('user-1')
+    mockGenerateCreation.mockResolvedValueOnce({
+      type: 'lens',
+      result: { title: 'AI Lens', content: 'A'.repeat(60), description: 'desc', suggestedTagSlugs: [], params: [] },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+    mockCallRpc.mockResolvedValueOnce('lens-99' as never)
+
+    const cmd = await getSubCmd('generate')
+    await cmd.run?.({ args: { ...baseArgs, create: true, json: true } })
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_create_lens',
+      expect.objectContaining({ p_title: 'AI Lens', p_template_body: 'A'.repeat(60) }),
+      expect.objectContaining({ requireAuth: true }),
+    )
+    expect(mockPrintJson).toHaveBeenCalledWith({ id: 'lens-99' })
+  })
+
+  it('refuses to create when generated content is too short', async () => {
+    mockResolveProfileId.mockResolvedValueOnce('user-1')
+    mockGenerateCreation.mockResolvedValueOnce({
+      type: 'lens',
+      result: { title: 'AI Lens', content: 'short', description: '', suggestedTagSlugs: [], params: [] },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+
+    const cmd = await getSubCmd('generate')
+    await cmd.run?.({ args: { ...baseArgs, create: true } })
+
+    expect(mockCallRpc).not.toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
   })
 })
