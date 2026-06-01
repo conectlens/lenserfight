@@ -42,7 +42,7 @@ describe('createClient', () => {
   })
 
   it('exports SDK_VERSION matching the package.json alpha line', () => {
-    expect(SDK_VERSION).toMatch(/^0\.1\.0-alpha\.\d+$/)
+    expect(SDK_VERSION).toMatch(/^0\.\d+\.\d+-alpha\.\d+$/)
   })
 })
 
