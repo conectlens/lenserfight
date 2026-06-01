@@ -1,3 +1,13 @@
+## 0.19.0 (2026-06-01)
+
+### 🚀 Features
+
+- persist gateway identity to disk and update initialization instruction message ([002dd0dab](https://github.com/conectlens/lenserfight/commit/002dd0dab))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 0.18.0 (2026-06-01)
 
 This was a version bump only for cli to align it with other projects, there were no code changes.
