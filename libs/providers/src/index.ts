@@ -306,7 +306,10 @@ export async function callGenerativeMedia(
     });
   }
 
-  const expectedKind = modality === 'music' ? ['music', 'audio'] : [modality];
+  // audio and music are bidirectionally compatible: Lyria (kind=music) is
+  // valid for both modality='music' and modality='audio' requests, matching
+  // the same tolerance in CapabilityMapper.validateGenerativeRequest.
+  const expectedKind = (modality === 'music' || modality === 'audio') ? ['music', 'audio'] : [modality];
   if (!expectedKind.includes(descriptor.kind)) {
     throw new _ProviderError({
       code: 'unsupported_model',

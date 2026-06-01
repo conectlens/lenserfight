@@ -12,7 +12,8 @@
  * talks to the gateway, the filesystem, or some future runner is the
  * adapter's caller's concern.
  */
-import { callGenerativeMedia } from '@lenserfight/providers'
+import { callGenerativeMedia, getGenerativeAdapter } from '@lenserfight/providers'
+import type { GenerativeMediaProvider } from '@lenserfight/providers'
 import { generateUUID } from '@lenserfight/utils/text'
 
 
@@ -89,13 +90,49 @@ export function createLocalByokAdapter(ctx: LocalByokAdapterCtx): FundingAdapter
         )
 
         if (response.status === 'pending') {
-          // Async providers (video, long audio). For the local path we don't
-          // yet have a generic in-browser poll loop — surface a clear error so
-          // the user can pick a different funding source for now.
+          // Async providers (video, long audio). Poll the provider directly
+          // from the browser using the adapter's pollTask method.
+          const mediaAdapter = getGenerativeAdapter(
+            req.provider as GenerativeMediaProvider,
+            req.modality,
+          )
+          if (!mediaAdapter.pollTask) {
+            throw new FundingAdapterError(
+              `${req.modality} generation on ${req.provider} is async and does not support client-side polling. Switch to LF Cloud Keys or Chainabit.`,
+              'user_byok_local',
+              'unsupported',
+            )
+          }
+          let taskId = response.providerTaskId
+          const MAX_POLLS = 60 // 5 minutes at 5 s intervals
+          for (let i = 0; i < MAX_POLLS; i++) {
+            await new Promise<void>((resolve) => setTimeout(resolve, 5_000))
+            if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
+            const poll = await mediaAdapter.pollTask!(decryptedKey, taskId)
+            if (poll.status === 'completed') {
+              return {
+                runId: generateUUID(),
+                isAsync: false,
+                mediaUrls: poll.urls,
+                mimeType: poll.mimeType,
+                width: poll.width,
+                height: poll.height,
+                durationSeconds: poll.durationSeconds,
+              }
+            }
+            if (poll.status === 'failed') {
+              throw new FundingAdapterError(
+                (poll as { message?: string }).message ?? `${req.modality} generation failed.`,
+                'user_byok_local',
+                'transport',
+              )
+            }
+            if ('providerTaskId' in poll) taskId = (poll as { providerTaskId: string }).providerTaskId
+          }
           throw new FundingAdapterError(
-            `${req.modality} generation on ${req.provider} is async — local polling isn't supported yet. Try a synchronous image model with Local Keys, or switch funding to LF Cloud Keys / Chainabit.`,
+            `${req.modality} generation on ${req.provider} timed out after 5 minutes.`,
             'user_byok_local',
-            'unsupported',
+            'transport',
           )
         }
 

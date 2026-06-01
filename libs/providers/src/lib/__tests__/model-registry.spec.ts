@@ -8,7 +8,7 @@ describe('model-registry', () => {
     })
 
     it('finds entries by wire model name', () => {
-      expect(lookupModel('gpt-image-1')?.provider).toBe('openai')
+      expect(lookupModel('gpt-image-2')?.provider).toBe('openai')
       expect(lookupModel('claude-sonnet-4-5-20250929')?.provider).toBe('anthropic')
     })
 
@@ -18,20 +18,20 @@ describe('model-registry', () => {
   })
 
   describe('resolveWireModel', () => {
-    it('aliases dall-e-4 → gpt-image-1', () => {
-      expect(resolveWireModel('dall-e-4')).toBe('gpt-image-1')
+    it('aliases dall-e-4 → gpt-image-2', () => {
+      expect(resolveWireModel('dall-e-4')).toBe('gpt-image-2')
     })
 
     it('aliases sora-2.0 → sora-2', () => {
       expect(resolveWireModel('sora-2.0')).toBe('sora-2')
     })
 
-    it('aliases imagen-4 → imagen-4.0-generate-preview-06-06', () => {
-      expect(resolveWireModel('imagen-4')).toBe('imagen-4.0-generate-preview-06-06')
+    it('aliases imagen-4 → imagen-4.0-generate-001', () => {
+      expect(resolveWireModel('imagen-4')).toBe('imagen-4.0-generate-001')
     })
 
-    it('aliases gpt-5.4-pro to a currently-shipping gpt-4o', () => {
-      expect(resolveWireModel('gpt-5.4-pro')).toBe('gpt-4o')
+    it('aliases gpt-5.4-pro → gpt-5.4', () => {
+      expect(resolveWireModel('gpt-5.4-pro')).toBe('gpt-5.4')
     })
 
     it('passes unknown keys through unchanged', () => {

@@ -26,18 +26,20 @@ export interface ModelDescriptor {
 }
 
 const MODELS: ModelDescriptor[] = [
-  // OpenAI text
-  { key: 'gpt-5.4-pro',  provider: 'openai', wireModel: 'gpt-4o',      kind: 'text' },
-  { key: 'gpt-5.4',      provider: 'openai', wireModel: 'gpt-4o',      kind: 'text' },
-  { key: 'gpt-5.4-mini', provider: 'openai', wireModel: 'gpt-4o-mini', kind: 'text' },
-  { key: 'gpt-5.4-nano', provider: 'openai', wireModel: 'gpt-4o-mini', kind: 'text' },
-  { key: 'gpt-5.2',      provider: 'openai', wireModel: 'gpt-4o',      kind: 'text' },
-  { key: 'gpt-4o',       provider: 'openai', wireModel: 'gpt-4o',      kind: 'text' },
-  { key: 'gpt-4o-mini',  provider: 'openai', wireModel: 'gpt-4o-mini', kind: 'text' },
+  // OpenAI text — gpt-5.4/mini/nano are real GA models; gpt-5.4-pro/gpt-5.2
+  // are LF-only keys that alias to the closest tier. gpt-4o/gpt-4o-mini kept
+  // as self-references (still accepted by OpenAI, superseded by gpt-5.x).
+  { key: 'gpt-5.4-pro',  provider: 'openai', wireModel: 'gpt-5.4',      kind: 'text' },
+  { key: 'gpt-5.4',      provider: 'openai', wireModel: 'gpt-5.4',      kind: 'text' },
+  { key: 'gpt-5.4-mini', provider: 'openai', wireModel: 'gpt-5.4-mini', kind: 'text' },
+  { key: 'gpt-5.4-nano', provider: 'openai', wireModel: 'gpt-5.4-nano', kind: 'text' },
+  { key: 'gpt-5.2',      provider: 'openai', wireModel: 'gpt-5.4',      kind: 'text' },
+  { key: 'gpt-4o',       provider: 'openai', wireModel: 'gpt-4o',       kind: 'text' },
+  { key: 'gpt-4o-mini',  provider: 'openai', wireModel: 'gpt-4o-mini',  kind: 'text' },
 
-  // OpenAI image (dall-e-4 alias → gpt-image-1)
-  { key: 'dall-e-4',    provider: 'openai', wireModel: 'gpt-image-1', kind: 'image' },
-  { key: 'gpt-image-1', provider: 'openai', wireModel: 'gpt-image-1', kind: 'image' },
+  // OpenAI image — gpt-image-1 deprecated; gpt-image-2 is current.
+  { key: 'dall-e-4',    provider: 'openai', wireModel: 'gpt-image-2', kind: 'image' },
+  { key: 'gpt-image-1', provider: 'openai', wireModel: 'gpt-image-2', kind: 'image' },
   { key: 'dall-e-3',    provider: 'openai', wireModel: 'dall-e-3',    kind: 'image' },
   { key: 'dall-e-2',    provider: 'openai', wireModel: 'dall-e-2',    kind: 'image' },
 
@@ -45,37 +47,42 @@ const MODELS: ModelDescriptor[] = [
   { key: 'sora-2.0', provider: 'openai', wireModel: 'sora-2', kind: 'video' },
   { key: 'sora-2',   provider: 'openai', wireModel: 'sora-2', kind: 'video' },
 
-  // Anthropic
-  { key: 'claude-opus-4-6',   provider: 'anthropic', wireModel: 'claude-opus-4-1-20250805',     kind: 'text' },
+  // Anthropic — claude-sonnet-4/claude-opus-4 (20250514 dated) are deprecated
+  // and retire June 15 2026. All other wire IDs are current.
+  { key: 'claude-opus-4-6',   provider: 'anthropic', wireModel: 'claude-opus-4-6',             kind: 'text' },
   { key: 'claude-opus-4',     provider: 'anthropic', wireModel: 'claude-opus-4-20250514',       kind: 'text' },
-  { key: 'claude-sonnet-4-6', provider: 'anthropic', wireModel: 'claude-sonnet-4-5-20250929',   kind: 'text' },
+  { key: 'claude-sonnet-4-6', provider: 'anthropic', wireModel: 'claude-sonnet-4-6',            kind: 'text' },
   { key: 'claude-sonnet-4-5', provider: 'anthropic', wireModel: 'claude-sonnet-4-5-20250929',   kind: 'text' },
   { key: 'claude-sonnet-4-0', provider: 'anthropic', wireModel: 'claude-sonnet-4-20250514',     kind: 'text' },
   { key: 'claude-haiku-4-5',  provider: 'anthropic', wireModel: 'claude-haiku-4-5-20251001',    kind: 'text' },
   { key: 'claude-haiku-3-5',  provider: 'anthropic', wireModel: 'claude-3-5-haiku-20241022',    kind: 'text' },
 
-  // Google text
-  { key: 'gemini-3.1-pro-preview',        provider: 'google', wireModel: 'gemini-2.5-pro',        kind: 'text' },
-  { key: 'gemini-3-pro-preview',          provider: 'google', wireModel: 'gemini-2.5-pro',        kind: 'text' },
-  { key: 'gemini-2.5-pro',                provider: 'google', wireModel: 'gemini-2.5-pro',        kind: 'text' },
-  { key: 'gemini-3-flash-preview',        provider: 'google', wireModel: 'gemini-2.5-flash',      kind: 'text' },
-  { key: 'gemini-2.5-flash',              provider: 'google', wireModel: 'gemini-2.5-flash',      kind: 'text' },
-  { key: 'gemini-3.1-flash-lite-preview', provider: 'google', wireModel: 'gemini-2.5-flash-lite', kind: 'text' },
-  { key: 'gemini-2.5-flash-lite',         provider: 'google', wireModel: 'gemini-2.5-flash-lite', kind: 'text' },
+  // Google text — gemini-3.1-pro-preview / gemini-3-flash-preview are real
+  // Google API model IDs (current previews). gemini-3-pro-preview is deprecated
+  // by Google; redirect to gemini-2.5-pro. gemini-3.1-flash-lite-preview is
+  // deprecated; redirect to the stable gemini-3.1-flash-lite.
+  { key: 'gemini-3.1-pro-preview',        provider: 'google', wireModel: 'gemini-3.1-pro-preview', kind: 'text' },
+  { key: 'gemini-3-pro-preview',          provider: 'google', wireModel: 'gemini-2.5-pro',         kind: 'text' },
+  { key: 'gemini-2.5-pro',                provider: 'google', wireModel: 'gemini-2.5-pro',         kind: 'text' },
+  { key: 'gemini-3-flash-preview',        provider: 'google', wireModel: 'gemini-3-flash-preview', kind: 'text' },
+  { key: 'gemini-2.5-flash',              provider: 'google', wireModel: 'gemini-2.5-flash',       kind: 'text' },
+  { key: 'gemini-3.1-flash-lite-preview', provider: 'google', wireModel: 'gemini-3.1-flash-lite',  kind: 'text' },
+  { key: 'gemini-2.5-flash-lite',         provider: 'google', wireModel: 'gemini-2.5-flash-lite',  kind: 'text' },
 
-  // Google media
-  // AI Studio wire models: -001 (GA) and preview. The -002 variant is Vertex AI only.
-  { key: 'imagen-4',      provider: 'google', wireModel: 'imagen-4.0-generate-preview-06-06', kind: 'image' },
-  { key: 'imagen-3',      provider: 'google', wireModel: 'imagen-3.0-generate-001',           kind: 'image' },
-  { key: 'imagen-3-fast', provider: 'google', wireModel: 'imagen-3.0-fast-generate-001',      kind: 'image' },
-  { key: 'veo-3',         provider: 'google', wireModel: 'veo-2.0-generate-001',         kind: 'video' },
-  { key: 'veo-2',         provider: 'google', wireModel: 'veo-2.0-generate-001',         kind: 'video' },
-  { key: 'lyria-2',       provider: 'google', wireModel: 'lyria-002',                    kind: 'music' },
+  // Google media — Imagen 3 shut down June 2025. Imagen 4 GA only.
+  // veo-3.0-generate-001 is the stable GA Veo 3; veo-2.0-generate-001 is legacy.
+  { key: 'imagen-4', provider: 'google', wireModel: 'imagen-4.0-generate-001', kind: 'image' },
+  // Backward-compat alias: old preview wire name redirects to GA model.
+  { key: 'imagen-4.0-generate-preview-06-06', provider: 'google', wireModel: 'imagen-4.0-generate-001', kind: 'image' },
+  { key: 'veo-3',    provider: 'google', wireModel: 'veo-3.0-generate-001',    kind: 'video' },
+  { key: 'veo-2',    provider: 'google', wireModel: 'veo-2.0-generate-001',    kind: 'video' },
+  { key: 'lyria-2',  provider: 'google', wireModel: 'lyria-002',               kind: 'music' },
 
-  // Mistral
-  { key: 'mistral-large-3',      provider: 'mistral', wireModel: 'mistral-large-latest',   kind: 'text' },
-  { key: 'magistral-medium-1.2', provider: 'mistral', wireModel: 'magistral-medium-2509',  kind: 'text' },
-  { key: 'magistral-small-1.2',  provider: 'mistral', wireModel: 'magistral-small-2509',   kind: 'text' },
+  // Mistral — magistral-medium-2509 / magistral-small-2509 deprecated; replaced
+  // by mistral-medium-3.5 and mistral-small-4 respectively.
+  { key: 'mistral-large-3',      provider: 'mistral', wireModel: 'mistral-large-3-25-12',    kind: 'text' },
+  { key: 'magistral-medium-1.2', provider: 'mistral', wireModel: 'mistral-medium-3-5-26-04', kind: 'text' },
+  { key: 'magistral-small-1.2',  provider: 'mistral', wireModel: 'mistral-small-4-0-26-03',  kind: 'text' },
 
   // Stability
   { key: 'stable-diffusion-4', provider: 'stability', wireModel: 'sd3.5-large', kind: 'image' },
