@@ -1,6 +1,5 @@
 import { getWorkflowNodeCatalogEntry } from '@lenserfight/infra/execution'
 import { useLocale } from '@lenserfight/shared/i18n-locale'
-import { MarkdownRenderer } from '@lenserfight/ui/components'
 import { Drawer } from '@lenserfight/ui/overlays'
 import React, { useEffect, useState } from 'react'
 
@@ -17,15 +16,38 @@ type FetchState =
   | { status: 'missing' }
   | { status: 'error' }
 
+const DOCS_THEME_STYLE = `
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: inherit; margin: 0; padding: 8px; font-size: 13px; }
+  @media (prefers-color-scheme: dark) {
+    html { background: #111; color: #e5e7eb; }
+    a { color: #60a5fa; }
+    code { background: #1f2937; }
+    pre { background: #1f2937; }
+  }
+  @media (prefers-color-scheme: light) {
+    html { background: #fff; color: #111827; }
+    code { background: #f3f4f6; }
+    pre { background: #f3f4f6; }
+  }
+  img { max-width: 100%; }
+  pre { padding: 8px; border-radius: 4px; overflow-x: auto; }
+  code { padding: 1px 4px; border-radius: 3px; font-size: 0.85em; }
+</style>
+`
+
+function injectTheme(html: string): string {
+  const tag = DOCS_THEME_STYLE
+  const idx = html.indexOf('</head>')
+  if (idx !== -1) return html.slice(0, idx) + tag + html.slice(idx)
+  return tag + html
+}
+
 function buildDocsUrl(nodeType: string, locale: string): string {
   return `/docs/${locale}/reference/workflow-nodes/${nodeType}`
 }
 
-/**
- * Right-side 320px inline panel rendering a workflow node's reference docs.
- * Markdown body is fetched lazily on first open. Falls back to catalog
- * metadata when the .md file is not yet published (404).
- */
 export function WorkflowNodeDocsPanel({
   nodeType,
   open,
@@ -52,7 +74,7 @@ export function WorkflowNodeDocsPanel({
         }
         const body = await res.text()
         if (cancelled) return
-        setFetchState({ status: 'ready', body })
+        setFetchState({ status: 'ready', body: injectTheme(body) })
       })
       .catch(() => {
         if (!cancelled) setFetchState({ status: 'error' })
@@ -128,7 +150,14 @@ export function WorkflowNodeDocsPanel({
           {fetchState.status === 'loading' && (
             <div className="text-xs text-greyscale-500">Loading documentation…</div>
           )}
-          {fetchState.status === 'ready' && <MarkdownRenderer content={fetchState.body} />}
+          {fetchState.status === 'ready' && (
+            <iframe
+              title="Node documentation"
+              srcDoc={fetchState.body}
+              sandbox="allow-same-origin"
+              className="w-full h-96 border-0 rounded"
+            />
+          )}
           {fetchState.status === 'missing' && (
             <div className="text-xs text-greyscale-500">
               Full documentation for this node is available at{' '}
