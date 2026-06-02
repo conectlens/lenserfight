@@ -10,14 +10,14 @@ jest.mock('consola', () => ({
   },
 }))
 jest.mock('node:child_process', () => ({
-  execSync: jest.fn(),
+  spawnSync: jest.fn().mockReturnValue({ error: null }),
 }))
 
 import consola from 'consola'
-import { execSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 
 const consolaInfo = (consola as unknown as { info: jest.Mock }).info
-const mockExecSync = execSync as jest.MockedFunction<typeof execSync>
+const mockSpawnSync = spawnSync as jest.MockedFunction<typeof spawnSync>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCmd = { subCommands?: Record<string, AnyCmd>; run?: (ctx: any) => Promise<void> }
@@ -44,14 +44,14 @@ describe('docs open', () => {
     await openCmd?.run?.({ args: {}, cmd: {}, rawArgs: [] })
 
     expect(consolaInfo).toHaveBeenCalledWith('Opening docs: %s', expect.stringContaining('/reference/cli/index'))
-    expect(mockExecSync).toHaveBeenCalled()
+    expect(mockSpawnSync).toHaveBeenCalled()
   })
 
   it('maps a known topic shortcut to the correct URL', async () => {
     await openCmd?.run?.({ args: { topic: 'workflow' }, cmd: {}, rawArgs: [] })
 
     expect(consolaInfo).toHaveBeenCalledWith('Opening docs: %s', expect.stringContaining('/reference/cli/workflow'))
-    expect(mockExecSync).toHaveBeenCalled()
+    expect(mockSpawnSync).toHaveBeenCalled()
   })
 
   it('uses an absolute path as-is when topic starts with /', async () => {
@@ -69,8 +69,8 @@ describe('docs open', () => {
     expect(consolaInfo).toHaveBeenCalledWith('Opening docs: %s', expect.stringContaining('/custom-topic'))
   })
 
-  it('falls back to printing the URL if execSync throws', async () => {
-    mockExecSync.mockImplementationOnce(() => { throw new Error('xdg-open not found') })
+  it('falls back to printing the URL if spawnSync returns an error', async () => {
+    mockSpawnSync.mockReturnValueOnce({ error: new Error('xdg-open not found') } as ReturnType<typeof spawnSync>)
 
     await openCmd?.run?.({ args: { topic: 'doctor' }, cmd: {}, rawArgs: [] })
 

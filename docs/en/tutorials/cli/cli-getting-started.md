@@ -7,13 +7,57 @@ description: Go from zero to a running LenserFight CLI workflow — install, aut
 
 This guide takes you from a fresh machine to executing your first Lens and inspecting the result using only the `lf` CLI.
 
-**Prerequisites:** Node.js 20+, `pnpm`, and the LenserFight repository cloned locally.
+**Prerequisites:** Node.js **≥ 22** (LTS recommended). The CLI is an ES Module and will not run on older versions.
 
 ---
 
-## Step 1 — Build and install the CLI
+## Step 0 — Install or verify Node.js 22+
 
-The CLI is part of the monorepo. Build it once and link it globally:
+Check your current version:
+
+```bash
+node --version
+# Must print v22.x.x or higher
+```
+
+If Node.js is missing or too old, install it for your platform:
+
+**macOS**
+```bash
+# Homebrew
+brew install node@22
+```
+
+**Linux (Debian / Ubuntu)**
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
+sudo apt-get install -y nodejs
+```
+
+**Linux (RHEL / Fedora)**
+```bash
+curl -fsSL https://rpm.nodesource.com/setup_22.x | sudo bash -
+sudo dnf install -y nodejs
+```
+
+**Windows**
+```powershell
+winget install OpenJS.NodeJS.LTS
+```
+
+For more options (fnm, nvm, binary downloads) see [Installation](../../reference/cli/installation.md).
+
+---
+
+## Step 1 — Install or build the CLI
+
+**Option A — install from npm (recommended for non-monorepo use)**
+
+```bash
+npm install -g @lenserfight/cli
+```
+
+**Option B — build from the monorepo source**
 
 ```bash
 # From the repository root
@@ -26,10 +70,10 @@ Verify the install:
 
 ```bash
 lf --version
-# → lenserfight/0.x.x ...
+# → lenserfight/0.x.x node/v22.x ...
 ```
 
-> The CLI binary is `lenserfight`. The alias `lf` is also registered after linking.
+> The CLI binary is `lenserfight`. The alias `lf` is also registered. If `lf` is not found after a global npm install, ensure the npm global bin directory is in your `PATH` — run `npm bin -g` to find it.
 
 ---
 
@@ -263,9 +307,28 @@ lf execution retry <run-id>
 
 | Variable | Purpose |
 |----------|---------|
-| `LENSERFIGHT_API_KEY` | Developer, org, or service token for auth |
-| `DATA_SOURCE` | Set to `file` for local-only mode |
+| `LENSERFIGHT_API_KEY` | Developer, org, or service token for auth (skip interactive login in CI) |
+| `LF_LOCAL` | `1` — force Supabase local mode (same as `--local`) |
+| `LF_CLOUD` | `1` — force cloud mode (same as `--cloud`) |
+| `LF_DEBUG` | `1` — verbose debug output on stderr (same as `--debug`) |
+| `NO_COLOR` | Any value (including empty string) disables ANSI color |
+| `DATA_SOURCE` | `file` — use local file-based storage instead of Supabase |
 | `OLLAMA_BASE_URL` | Override Ollama endpoint (default: `http://localhost:11434`) |
+
+## CI usage
+
+Skip interactive login by exporting a developer token before running any command:
+
+```bash
+export LENSERFIGHT_API_KEY=lf_dev_...
+lf run exec --lens my-lens-slug --param input="hello"
+```
+
+Color output is automatically disabled when stdout is not a TTY. To force plain text explicitly:
+
+```bash
+NO_COLOR=1 lf lenses list
+```
 
 ---
 
@@ -291,4 +354,6 @@ lf config validate               # Validate CLI config
 - [Create a Workflow (walkthrough)](/en/tutorials/walkthroughs/create-a-workflow) — Step-by-step Workflow builder
 - [Using the Web App](/en/tutorials/walkthroughs/using-the-web-app) — The same journey through the browser
 - [CLI Reference](/en/reference/cli/index) — Full command reference
+- [Installation](../../reference/cli/installation.md) — All platforms, npm, build-from-source
+- [Cross-Platform Compatibility](../../reference/cli/compatibility.md) — Windows, CI, Docker, NO_COLOR
 - [Execution Modes](/en/reference/cli/execution-modes) — Local vs BYOK vs cloud execution

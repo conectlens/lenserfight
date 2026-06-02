@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { execSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import { c, sym } from '../utils/ansi'
 
 const DOCS_BASE_URL = 'https://docs.lenserfight.com/en'
@@ -37,20 +37,12 @@ const TOPIC_MAP: Record<string, string> = {
 }
 
 function openUrl(url: string): void {
-  const platform = process.platform
-  try {
-    if (platform === 'darwin') {
-      execSync(`open "${url}"`, { stdio: 'ignore' })
-    } else if (platform === 'win32') {
-      execSync(`cmd /c start "" "${url}"`, { stdio: 'ignore' })
-    } else {
-      // Linux — try xdg-open, fall back to instructions
-      execSync(`xdg-open "${url}"`, { stdio: 'ignore' })
-    }
-  } catch {
-    // If browser open fails, just print the URL
-    consola.info('Open manually: %s', url)
-  }
+  const [cmd, ...args] =
+    process.platform === 'darwin'  ? ['open', url] :
+    process.platform === 'win32'   ? ['cmd', '/c', 'start', '', url] :
+                                     ['xdg-open', url]
+  const { error } = spawnSync(cmd, args, { stdio: 'ignore' })
+  if (error) consola.info('Open manually: %s', url)
 }
 
 const open = defineCommand({

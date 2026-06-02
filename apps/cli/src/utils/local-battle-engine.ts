@@ -3,7 +3,7 @@
 //   LocalBattleStore  — Pure Fabrication + Information Expert: owns disk persistence
 //   LocalBattleLenser — Controller: receives "run battle" event, delegates to experts
 
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import consola from 'consola'
@@ -126,7 +126,6 @@ export class LocalBattleStore {
   }
 
   list(): LocalBattleState[] {
-    const { readdirSync } = require('node:fs') as typeof import('node:fs')
     const byId = new Map<string, LocalBattleState>()
 
     for (const d of [this.legacyDir(), this.dir()]) {

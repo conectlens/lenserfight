@@ -7,8 +7,9 @@ export interface ToolCheckResult {
 }
 
 export function checkCommand(cmd: string): string | null {
+  const finder = process.platform === 'win32' ? 'where' : 'which'
   try {
-    return execSync(`which ${cmd}`, { encoding: 'utf-8' }).trim()
+    return execSync(`${finder} ${cmd}`, { encoding: 'utf-8' }).trim()
   } catch {
     return null
   }
@@ -25,9 +26,9 @@ export function checkVersion(cmd: string): string | null {
 export function detectNode(): ToolCheckResult {
   const nodeVersion = process.version
   const nodeMajor = parseInt(nodeVersion.replace('v', '').split('.')[0], 10)
-  return nodeMajor >= 20
+  return nodeMajor >= 22
     ? { ok: true, detail: nodeVersion }
-    : { ok: false, detail: `${nodeVersion} (requires >= 20)` }
+    : { ok: false, detail: `${nodeVersion} (requires >= 22)` }
 }
 
 export function detectDocker(): ToolCheckResult {

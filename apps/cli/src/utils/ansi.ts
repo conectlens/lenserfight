@@ -10,7 +10,7 @@
 
 export function isPlainText(): boolean {
   return (
-    Boolean(process.env['NO_COLOR']) ||
+    'NO_COLOR' in process.env ||
     process.env['TERM'] === 'dumb' ||
     !process.stdout.isTTY
   )
