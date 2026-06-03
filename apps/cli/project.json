@@ -12,7 +12,7 @@
       "options": {
         "platform": "node",
         "outputPath": "dist/apps/cli",
-        "format": ["cjs"],
+        "format": ["esm"],
         "bundle": true,
         "main": "apps/cli/src/main.ts",
         "tsConfig": "apps/cli/tsconfig.app.json",
@@ -36,7 +36,7 @@
             ".js": ".js"
           },
           "banner": {
-            "js": "#!/usr/bin/env node"
+            "js": "#!/usr/bin/env node\n;(function(){var r=process.version.match(/^v(\\d+)/);if(!r||+r[1]<22){process.stderr.write('\\nError: @lenserfight/cli requires Node.js v22 or newer (you have '+process.version+').\\nDownload the latest LTS from https://nodejs.org/en/download\\n\\n');process.exit(1);}})();"
           },
           "define": {
             "import.meta.env": "undefined"
@@ -52,7 +52,7 @@
               ".js": ".js"
             },
             "banner": {
-              "js": "#!/usr/bin/env node"
+              "js": "#!/usr/bin/env node\n;(function(){var r=process.version.match(/^v(\\d+)/);if(!r||+r[1]<22){process.stderr.write('\\nError: @lenserfight/cli requires Node.js v22 or newer (you have '+process.version+').\\nDownload the latest LTS from https://nodejs.org/en/download\\n\\n');process.exit(1);}})();"
             },
             "define": {
               "import.meta.env": "undefined"

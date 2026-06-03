@@ -27,14 +27,14 @@ describe('detectNode', () => {
     Object.defineProperty(process, 'version', { value: original, writable: true })
   })
 
-  it('returns fail when Node version is < 20', () => {
+  it('returns fail when Node version is < 22', () => {
     const original = process.version
     Object.defineProperty(process, 'version', { value: 'v16.20.0', writable: true })
 
     const result = detectNode()
 
     expect(result.ok).toBe(false)
-    expect(result.detail).toContain('requires >= 20')
+    expect(result.detail).toContain('requires >= 22')
 
     Object.defineProperty(process, 'version', { value: original, writable: true })
   })

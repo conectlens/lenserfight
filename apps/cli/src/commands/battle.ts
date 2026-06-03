@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { existsSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { homedir } from 'node:os'
 import { type PrivateBattleFrontmatter } from '@lenserfight/types'
@@ -556,19 +556,17 @@ const run = defineCommand({
       }
 
       // Write result files alongside the source file
-      const { writeFileSync: wfs } = require('node:fs') as typeof import('node:fs')
-      const { resolve: res } = require('node:path') as typeof import('node:path')
       const base = (frontmatter.slug ?? frontmatter.id ?? 'battle')
         .replace(/[^a-z0-9-]/gi, '-')
         .toLowerCase()
-      const resultMd = res(process.cwd(), `${base}.result.md`)
-      const resultJson = res(process.cwd(), `${base}.result.json`)
-      wfs(
+      const resultMd = resolve(process.cwd(), `${base}.result.md`)
+      const resultJson = resolve(process.cwd(), `${base}.result.json`)
+      writeFileSync(
         resultMd,
         `# ${frontmatter.name ?? base} — Results\n\n## Contender A (${pA.provider}/${pA.model})\n\n${result.A}\n\n---\n\n## Contender B (${pB.provider}/${pB.model})\n\n${result.B}\n${judgeSection}`,
         'utf-8'
       )
-      wfs(resultJson, JSON.stringify({ ...result, battle: state }, null, 2), 'utf-8')
+      writeFileSync(resultJson, JSON.stringify({ ...result, battle: state }, null, 2), 'utf-8')
 
       if (args.json) {
         printJson({ ...result, resultMd, resultJson })

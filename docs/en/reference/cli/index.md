@@ -4,10 +4,21 @@ The `lenserfight` CLI, also available as `lf`, is the command hub for onboarding
 
 > **Interactive TUI:** Running `lf` with no subcommand opens the interactive **TUI Dashboard** (`apps/cli/src/tui/dashboard.ts`). It is the recommended starting point for exploration. Pass `--help` to skip the TUI and print top-level help instead.
 
+## System requirements
+
+| Requirement | Minimum |
+|-------------|---------|
+| **Node.js** | **≥ 22** (v22 LTS or v24 LTS recommended) |
+| OS | macOS 12+, Linux (glibc ≥ 2.17), Windows 10 build 1903+ |
+
+The CLI is distributed as an **ES Module**. Attempting to run it on Node.js < 22 produces a clear startup error rather than a cryptic stack trace. See [Installation](installation.md) and [Cross-Platform Compatibility](compatibility.md) for details.
+
 ## Start here
 
+- [Installation](installation.md) ← all platforms, build-from-source, CI
+- [Cross-Platform Compatibility](compatibility.md) ← Windows, Linux, CI, Docker, NO_COLOR
 - [Developer Onboarding](/en/tutorials/getting-started/developer-onboarding) ← zero to first battle
-- [Installation](/en/tutorials/getting-started/installation)
+- [Getting Started Tutorial](../../tutorials/cli/cli-getting-started.md)
 - [Quickstart](/en/tutorials/getting-started/quickstart)
 - [Local Database Setup](/en/reference/database/local-setup)
 - [Run Commands](/en/reference/cli/run)
@@ -308,20 +319,25 @@ See [`lf migrate-terminology`](migrate-terminology.md), [`lf whats-new`](whats-n
 
 ---
 
-## Environment variable
+## Environment variables
 
-Set `LENSERFIGHT_API_KEY` to a developer token, organisation token, or service token to bypass the stored session:
-
-```bash
-export LENSERFIGHT_API_KEY=lf_svc_...
-```
-
-This is the recommended pattern for CI/CD, backend scripts, and SaaS integrations.
+| Variable | Purpose |
+|----------|---------|
+| `LENSERFIGHT_API_KEY` | Developer, organisation, or service token — bypasses interactive auth (recommended for CI/CD) |
+| `LF_LOCAL` | Set to `1` to force local (Supabase) mode for the current invocation; equivalent to `--local` |
+| `LF_CLOUD` | Set to `1` to force cloud mode; equivalent to `--cloud` |
+| `LF_DEBUG` | Set to `1` to enable verbose debug output on stderr; equivalent to `--debug` |
+| `NO_COLOR` | Set to any value (including empty string) to disable ANSI color output (per [no-color.org](https://no-color.org/)) |
+| `TERM=dumb` | Disables color and the interactive TUI (standard dumb-terminal signal) |
+| `OLLAMA_BASE_URL` | Override the Ollama API endpoint (default: `http://localhost:11434`) |
+| `DATA_SOURCE` | Set to `file` to use local file-based storage instead of Supabase |
 
 ---
 
 ## Related
 
+- [Installation](installation.md)
+- [Cross-Platform Compatibility](compatibility.md)
 - [CLI Overview](cli-reference.md)
 - [lf setup](setup.md)
 - [lf status](status.md)

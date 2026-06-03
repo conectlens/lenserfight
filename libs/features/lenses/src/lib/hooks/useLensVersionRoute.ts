@@ -61,7 +61,7 @@ export function useLensVersionRoute(
     if (lensId) navigate(lensDetailPath(lensId, ref))
   }
 
-  const isVersionReady = !!activeVersion && Array.isArray(activeVersion.parameters)
+  const isVersionReady = !!activeVersion && (activeVersion.parameters == null || Array.isArray(activeVersion.parameters))
   const isResolvingVersion =
     !!resolvedVersionId && (isLoadingActiveVersion || !isVersionReady)
 

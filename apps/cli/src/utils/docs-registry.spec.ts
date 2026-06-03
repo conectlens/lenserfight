@@ -85,7 +85,7 @@ describe('formatDocLink', () => {
   })
 
   it('includes OSC 8 hyperlink sequences in color mode', () => {
-    process.env['NO_COLOR'] = ''
+    delete process.env['NO_COLOR']
     process.env['TERM'] = 'xterm-256color'
     Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true })
     const result = formatDocLink('auth-login')!
