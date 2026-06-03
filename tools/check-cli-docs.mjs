@@ -60,6 +60,8 @@ const CONCEPT_PAGES = new Set([
   'webhook-secret',   // lf config webhook-secret
   'community',        // social/feed grab-bag page
   'runtime-backends', // cloud / local / file-workspace backends overview
+  'compatibility',    // Node.js / OS compatibility matrix
+  'installation',     // install / upgrade guide
 ])
 
 // ─── 1. Read registered subcommands from main.ts ──────────────────────────
