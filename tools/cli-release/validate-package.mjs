@@ -110,7 +110,7 @@ try {
   assert(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(pkg.version), 'Package version is not semver', {
     version: pkg.version,
   });
-  assert(pkg.type === 'commonjs', 'CLI package must publish as commonjs', { type: pkg.type });
+  assert(pkg.type === 'module', 'CLI package must publish as ESM (type: module)', { type: pkg.type });
   assert(pkg.main === './main.js', 'Package main must point at ./main.js', { main: pkg.main });
   assert(pkg.bin?.lenserfight === './main.js', 'Missing lenserfight bin', { bin: pkg.bin });
   assert(pkg.bin?.lf === './main.js', 'Missing lf bin', { bin: pkg.bin });
