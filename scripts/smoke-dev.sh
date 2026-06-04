@@ -12,11 +12,29 @@ step_ok()   { echo -e "${GREEN}PASS${RESET} $1"; PASS=$((PASS+1)); }
 step_fail() { echo -e "${RED}FAIL${RESET} $1"; FAIL=$((FAIL+1)); }
 
 # ---------------------------------------------------------------------------
-# 1. Ensure Supabase is running
+# 1. Ensure Supabase is running and seeded
 # ---------------------------------------------------------------------------
 if ! curl -sf http://localhost:54321/health >/dev/null 2>&1; then
   echo "Supabase not running — starting..."
   pnpm supabase start 2>&1 | tail -3
+fi
+
+# Seed the local DB so battle browse has data to return.
+# supabase:db:reset restarts containers; wait for health before continuing.
+echo "Resetting and seeding local database..."
+if pnpm supabase:db:reset 2>&1 | tail -5; then
+  WAIT_ATTEMPTS=0
+  until curl -sf http://localhost:54321/health >/dev/null 2>&1; do
+    WAIT_ATTEMPTS=$((WAIT_ATTEMPTS+1))
+    if [[ $WAIT_ATTEMPTS -ge 30 ]]; then
+      step_fail "Supabase did not become healthy within 60s after db reset"
+      exit 1
+    fi
+    sleep 2
+  done
+else
+  step_fail "DB reset / seed failed"
+  exit 1
 fi
 
 # ---------------------------------------------------------------------------
