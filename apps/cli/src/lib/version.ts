@@ -1,11 +1,13 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 /** Read the CLI package version from package.json, falling back to '0.0.0-dev'. */
 export function readCliVersion(): string {
+  const thisDir = dirname(fileURLToPath(import.meta.url))
   const candidates = [
-    join(__dirname, 'package.json'),
-    resolve(__dirname, '../package.json'),
+    join(thisDir, 'package.json'),
+    resolve(thisDir, '../package.json'),
     resolve(process.cwd(), 'apps/cli/package.json'),
   ]
 

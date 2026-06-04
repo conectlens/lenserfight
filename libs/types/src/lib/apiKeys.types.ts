@@ -1,16 +1,17 @@
 /** Cloud BYOK providers (stored in platform vault, key never touches client) */
-export type CloudByokProvider = 'openai' | 'anthropic' | 'google' | 'mistral'
+export type CloudByokProvider = 'openai' | 'anthropic' | 'google' | 'mistral' | 'deepseek'
 
 /** All BYOK providers — includes Ollama for local-only execution */
 export type ByokProvider = CloudByokProvider | 'ollama'
 
 /** Provider display labels */
 export const BYOK_PROVIDER_LABELS: Record<ByokProvider, string> = {
-  openai: 'OpenAI',
+  openai:    'OpenAI',
   anthropic: 'Anthropic',
-  google: 'Google AI',
-  mistral: 'Mistral',
-  ollama: 'Ollama (Local)',
+  google:    'Google AI',
+  mistral:   'Mistral',
+  deepseek:  'DeepSeek',
+  ollama:    'Ollama (Local)',
 }
 
 /** A stored BYOK API key (never contains the full key) */

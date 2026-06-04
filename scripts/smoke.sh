@@ -51,6 +51,19 @@ record_step "[1] supabase start"
 if [[ -z "${SKIP_DB:-}" ]]; then
   echo "==> [2/9] supabase db reset (regenerates seed.sql)"
   pnpm supabase:db:reset
+  # supabase db reset restarts containers; wait for the REST API to be ready
+  # before proceeding — a 502 here means PostgREST hasn't come back up yet.
+  echo "    waiting for Supabase REST API after container restart..."
+  WAIT_ATTEMPTS=0
+  until curl -sf http://127.0.0.1:54321/health >/dev/null 2>&1; do
+    WAIT_ATTEMPTS=$((WAIT_ATTEMPTS+1))
+    if [[ $WAIT_ATTEMPTS -ge 30 ]]; then
+      echo "    ERROR: Supabase did not become healthy within 60s after db reset"
+      exit 1
+    fi
+    sleep 2
+  done
+  echo "    Supabase REST API is healthy"
   echo "==> [2b/9] supabase db test"
   supabase db test --db-url "${LOCAL_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
 else

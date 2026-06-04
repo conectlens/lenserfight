@@ -131,8 +131,15 @@ export const connectorApiClient = {
 export const partnerApiClient = {
   getBalance: (_partnerName: string) => connectorApiClient.getBalance(),
   getAiModels: (_partnerName: string) => connectorApiClient.getAiModels(),
-  startOAuthConnect: (returnUrl: string) => connectorApiClient.connect(returnUrl),
+  startOAuthConnect: (returnUrl?: string) =>
+    returnUrl !== undefined ? connectorApiClient.connect(returnUrl) : connectorApiClient.connect(),
   revokeToken: (_partnerName: string) => connectorApiClient.disconnect(),
+  /** @deprecated provisioning removed */
+  provision: (_partnerName: string): Promise<never> => Promise.reject(new Error('provisioning removed')),
+  /** @deprecated provisioning removed */
+  refreshToken: (_partnerName: string): Promise<never> => Promise.reject(new Error('provisioning removed')),
+  /** @deprecated provisioning removed */
+  sendClaimEmail: (_partnerName: string): Promise<void> => Promise.reject(new Error('provisioning removed')),
 }
 
 /** @deprecated No longer used — provisioning removed */
