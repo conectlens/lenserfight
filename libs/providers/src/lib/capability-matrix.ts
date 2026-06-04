@@ -80,7 +80,7 @@ export const PROVIDER_SUPPORT_LEVEL: Record<string, ProviderSupportLevel> = {
   perplexity: 'byok_only',
   xai:        'byok_only',
   groq:       'catalog_only',
-  deepseek:   'catalog_only',
+  deepseek:   'byok_only',
   bedrock:    'catalog_only',
   runway:     'catalog_only',
   litellm:    'catalog_only',
@@ -110,6 +110,7 @@ const EXECUTION_PATTERN: Record<string, ExecutionPattern> = {
   'google|text':    'stream',
   'mistral|text':   'stream',
   'ollama|text':    'stream',
+  'deepseek|text':  'stream',
   // Image generation — synchronous everywhere.
   'openai|image':    'sync',
   'google|image':    'sync',

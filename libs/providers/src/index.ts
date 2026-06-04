@@ -1,4 +1,5 @@
 import * as anthropic from './lib/anthropic';
+import * as deepseek from './lib/deepseek';
 import { elevenlabsAdapter } from './lib/elevenlabs';
 import { falStableVideoAdapter } from './lib/fal-stable-video';
 import * as google from './lib/google';
@@ -149,19 +150,21 @@ export {
 type TextProvider = Exclude<Provider, 'fal'>;
 
 const ADAPTERS: Record<TextProvider, ProviderAdapter> = {
-  openai: openai as unknown as ProviderAdapter,
+  openai:    openai    as unknown as ProviderAdapter,
   anthropic: anthropic as unknown as ProviderAdapter,
-  google: google as unknown as ProviderAdapter,
-  mistral: mistral as unknown as ProviderAdapter,
-  ollama: ollama as unknown as ProviderAdapter,
+  google:    google    as unknown as ProviderAdapter,
+  mistral:   mistral   as unknown as ProviderAdapter,
+  ollama:    ollama    as unknown as ProviderAdapter,
+  deepseek:  deepseek  as unknown as ProviderAdapter,
 };
 
 const STREAM_ADAPTERS: Record<TextProvider, StreamingProviderAdapter> = {
-  openai: openai as unknown as StreamingProviderAdapter,
+  openai:    openai    as unknown as StreamingProviderAdapter,
   anthropic: anthropic as unknown as StreamingProviderAdapter,
-  google: google as unknown as StreamingProviderAdapter,
-  mistral: mistral as unknown as StreamingProviderAdapter,
-  ollama: ollama as unknown as StreamingProviderAdapter,
+  google:    google    as unknown as StreamingProviderAdapter,
+  mistral:   mistral   as unknown as StreamingProviderAdapter,
+  ollama:    ollama    as unknown as StreamingProviderAdapter,
+  deepseek:  deepseek  as unknown as StreamingProviderAdapter,
 };
 
 export function getAdapter(provider: TextProvider): ProviderAdapter {

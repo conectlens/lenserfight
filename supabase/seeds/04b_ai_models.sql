@@ -657,6 +657,103 @@ ON CONFLICT (key) DO UPDATE SET
   provider_url          = EXCLUDED.provider_url,
   is_active             = EXCLUDED.is_active;
 
+-- ---------------------------------------------------------------------------
+-- DeepSeek models
+-- ---------------------------------------------------------------------------
+WITH deepseek_model_seed AS (
+  SELECT *
+  FROM (
+    VALUES
+      (
+        'DeepSeek V4 Flash',
+        ARRAY['chat','tools','json_schema']::text[],
+        'deepseek-v4-flash',
+        'deepseek',
+        1000000,
+        true,
+        true,
+        false,
+        'https://api-docs.deepseek.com/quick_start/pricing',
+        false
+      ),
+      (
+        'DeepSeek V4 Pro',
+        ARRAY['chat','reasoning','tools','json_schema']::text[],
+        'deepseek-v4-pro',
+        'deepseek',
+        1000000,
+        true,
+        true,
+        false,
+        'https://api-docs.deepseek.com/quick_start/pricing',
+        false
+      )
+  ) AS t(
+    name,
+    capabilities,
+    key,
+    provider_key,
+    context_window_tokens,
+    supports_tools,
+    supports_json_schema,
+    supports_vision,
+    provider_url,
+    is_active
+  )
+),
+deepseek_resolved AS (
+  SELECT
+    ds.name,
+    ds.capabilities,
+    ds.key,
+    p.id AS provider_id,
+    ds.context_window_tokens,
+    ds.supports_tools,
+    ds.supports_json_schema,
+    ds.supports_vision,
+    ds.provider_url,
+    ds.is_active
+  FROM deepseek_model_seed ds
+  JOIN ai.providers p ON p.key = ds.provider_key
+)
+INSERT INTO ai.models (
+  name,
+  capabilities,
+  key,
+  provider_id,
+  context_window_tokens,
+  supports_tools,
+  supports_json_schema,
+  supports_vision,
+  provider_url,
+  is_active
+)
+SELECT
+  dr.name,
+  dr.capabilities,
+  dr.key,
+  dr.provider_id,
+  dr.context_window_tokens,
+  dr.supports_tools,
+  dr.supports_json_schema,
+  dr.supports_vision,
+  dr.provider_url,
+  dr.is_active
+FROM deepseek_resolved dr
+ON CONFLICT (key) DO UPDATE SET
+  name                  = EXCLUDED.name,
+  capabilities          = EXCLUDED.capabilities,
+  provider_id           = EXCLUDED.provider_id,
+  context_window_tokens = EXCLUDED.context_window_tokens,
+  supports_tools        = EXCLUDED.supports_tools,
+  supports_json_schema  = EXCLUDED.supports_json_schema,
+  supports_vision       = EXCLUDED.supports_vision,
+  provider_url          = EXCLUDED.provider_url,
+  is_active             = EXCLUDED.is_active;
+
+UPDATE ai.models SET is_active = true
+WHERE key IN ('deepseek-v4-flash', 'deepseek-v4-pro');
+
 UPDATE ai.models m
 SET
   docs_url = COALESCE(m.docs_url, m.provider_url),

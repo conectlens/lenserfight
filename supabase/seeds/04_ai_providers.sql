@@ -255,16 +255,16 @@ WITH provider_seed AS (
         'DeepSeek',
         'https://api.deepseek.com',
         'https://api-docs.deepseek.com',
-        'catalog_only',
+        'byok_only',
         'deepseek',
         true,
         jsonb_build_object(
           'source_url', 'https://api-docs.deepseek.com',
-          'source_checked_at', '2026-05-29',
+          'source_checked_at', '2026-06-04',
           'gateway_compatible', true,
-          'platforms', jsonb_build_array('catalog'),
+          'platforms', jsonb_build_array('web', 'cli'),
           'auth_modes', jsonb_build_array('api_key'),
-          'runtime_provider_key', null
+          'runtime_provider_key', 'deepseek'
         )
       ),
       (

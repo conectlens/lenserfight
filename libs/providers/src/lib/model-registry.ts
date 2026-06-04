@@ -159,6 +159,10 @@ const MODEL_ENTRIES: ModelRegistryEntry[] = [
   { key: 'magistral-medium-1.2', provider: 'mistral', wireModel: 'mistral-medium-3-5-26-04', kind: 'text' },
   { key: 'magistral-small-1.2',  provider: 'mistral', wireModel: 'mistral-small-4-0-26-03',  kind: 'text' },
 
+  // ── DeepSeek text ────────────────────────────────────────────────────────
+  { key: 'deepseek-v4-flash', provider: 'deepseek', wireModel: 'deepseek-v4-flash', kind: 'text' },
+  { key: 'deepseek-v4-pro',   provider: 'deepseek', wireModel: 'deepseek-v4-pro',   kind: 'text' },
+
   // ── Stability (image) ────────────────────────────────────────────────────
   { key: 'stable-diffusion-4', provider: 'stability', wireModel: 'sd3.5-large',       kind: 'image' },
   { key: 'stable-image-core',  provider: 'stability', wireModel: 'core',              kind: 'image' },

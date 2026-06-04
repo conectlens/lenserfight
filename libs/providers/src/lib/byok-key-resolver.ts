@@ -21,7 +21,8 @@ const PROVIDER_ENV_MAP: Record<string, string> = {
   openai: 'OPENAI_API_KEY',
   anthropic: 'ANTHROPIC_API_KEY',
   google: 'GOOGLE_AI_API_KEY',
-  mistral: 'MISTRAL_API_KEY',
+  mistral:  'MISTRAL_API_KEY',
+  deepseek: 'DEEPSEEK_API_KEY',
   ollama: '', // Ollama: no key needed
 };
 
