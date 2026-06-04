@@ -1,3 +1,40 @@
+## 0.22.0 (2026-06-04)
+
+### 🩹 Fixes
+
+- migrate CLI to ESM, fix cross-platform compat, expand docs ([0b7c77d3b](https://github.com/conectlens/lenserfight/commit/0b7c77d3b))
+
+### ❤️ Thank You
+
+- Claude Sonnet 4.6
+- ÖMER FARUK COŞKUN
+
+## 0.21.0 (2026-06-01)
+
+This was a version bump only for cli to align it with other projects, there were no code changes.
+
+## 0.20.0 (2026-06-01)
+
+This was a version bump only for cli to align it with other projects, there were no code changes.
+
+## 0.19.0 (2026-06-01)
+
+### 🚀 Features
+
+- persist gateway identity to disk and update initialization instruction message ([002dd0dab](https://github.com/conectlens/lenserfight/commit/002dd0dab))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
+## 0.18.0 (2026-06-01)
+
+This was a version bump only for cli to align it with other projects, there were no code changes.
+
+## 0.17.0 (2026-06-01)
+
+This was a version bump only for cli to align it with other projects, there were no code changes.
+
 ## 0.16.0 (2026-06-01)
 
 ### 🚀 Features

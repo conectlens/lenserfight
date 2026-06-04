@@ -1,3 +1,57 @@
+## 0.3.0-alpha.12 (2026-06-04)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.11 (2026-06-03)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.10 (2026-06-03)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.9 (2026-06-01)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.8 (2026-06-01)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.7 (2026-06-01)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.6 (2026-06-01)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.5 (2026-06-01)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.4 (2026-06-01)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.3 (2026-06-01)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.2 (2026-06-01)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.1 (2026-06-01)
+
+### 🚀 Features
+
+- introduce WorkflowClient for managing workflow execution and add API key support to the SDK client ([f843f0685](https://github.com/conectlens/lenserfight/commit/f843f0685))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 0.2.0-alpha.31 (2026-06-01)
 
 ### 🚀 Features
