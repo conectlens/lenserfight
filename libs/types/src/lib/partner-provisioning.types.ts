@@ -34,7 +34,6 @@ export interface PartnerProvisionRecord {
 
 export interface PartnerBalance {
   credits: number
-  accountId: string
   currency: string
 }
 
