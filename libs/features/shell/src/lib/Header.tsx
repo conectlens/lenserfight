@@ -52,7 +52,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       chainabitState === 'not_connected' ||
       chainabitState === 'token_expired' ||
       chainabitState === 'insufficient_scope' ||
-      chainabitState === 'provider_error'
+      chainabitState === 'provider_error' ||
+      chainabitState === 'identity_conflict'
     ) {
       return 'flex items-center gap-1.5 text-xs font-medium text-red-500 dark:text-red-400 transition-colors hover:text-red-700 dark:hover:text-red-300'
     }

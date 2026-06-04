@@ -98,11 +98,13 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
     ? 'Connect Chainabit'
     : isReconnectState(state)
       ? 'Reconnect Chainabit'
-      : state === 'no_credits'
-        ? 'No credits remaining'
-        : state === 'provider_error'
-          ? 'Connection error'
-          : 'Chainabit'
+      : state === 'identity_conflict'
+        ? 'Chainabit already linked'
+        : state === 'no_credits'
+          ? 'No credits remaining'
+          : state === 'provider_error'
+            ? 'Connection error'
+            : 'Chainabit'
 
   const footer = (() => {
     if (state === 'loading') return undefined
@@ -175,6 +177,15 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
             label: 'Top up',
             onClick: () => window.open(topUpUrl, '_blank', 'noopener,noreferrer'),
           }}
+        />
+      )
+    }
+
+    if (state === 'identity_conflict') {
+      return (
+        <ModalFooter
+          border={false}
+          primaryButton={{ label: 'Close', onClick: onClose, variant: 'secondary' }}
         />
       )
     }
@@ -260,6 +271,18 @@ export const ChainabitModal: React.FC<ChainabitModalProps> = ({
         <div className="text-center py-4 space-y-3">
           <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
             Your Chainabit connection has expired or been revoked. Reconnect to restore access.
+          </p>
+        </div>
+      )}
+
+      {state === 'identity_conflict' && (
+        <div className="text-center py-4 space-y-3">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-900/20 mx-auto">
+            <AlertCircle size={22} className="text-amber-600 dark:text-amber-400" />
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            This Chainabit account is already linked to another LenserFight user. Sign in with the
+            account that originally connected Chainabit, or use a different Chainabit account.
           </p>
         </div>
       )}

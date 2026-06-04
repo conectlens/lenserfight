@@ -10,6 +10,7 @@ import {
 import { HelpButton } from '@lenserfight/ui/components'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { Dialog } from '@lenserfight/ui/overlays'
+import { isChainabitConnected } from '@lenserfight/infra/partner-provisioning'
 import { CHAINABIT_APP_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
 import { HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil, Loader2, FlaskConical } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
@@ -81,6 +82,28 @@ function Tooltip({ text, children }: { text: string; children: React.ReactNode }
       </span>
     </span>
   )
+}
+
+const isChainabitAccountConnected = (state: ChainabitConnectionState | undefined) =>
+  state === 'connected' || state === 'no_credits'
+
+function chainabitStatusSubtitle(
+  state: ChainabitConnectionState | undefined,
+  walletBalance: WalletBalance | undefined,
+  hasIdentity: boolean,
+): string {
+  if (!state) return '—'
+  if (state === 'provider_error') return 'Unavailable'
+  if (state === 'identity_conflict') return 'Linked elsewhere'
+  if (state === 'connected' && walletBalance != null) {
+    return `${walletBalance.balance.toLocaleString()} cr`
+  }
+  if (state === 'no_credits') return 'No credits'
+  if (isChainabitAccountConnected(state)) return 'Connected'
+  if (hasIdentity) return 'Connected'
+  if (state === 'token_expired' || state === 'insufficient_scope') return 'Reconnect'
+  if (state === 'not_connected') return 'Connect'
+  return '—'
 }
 
 function ChainabitLogo({ size = 16 }: { size?: number }) {
@@ -512,15 +535,19 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   // truly nothing the user can do from this UI in that case.
   const localByokDisabled = !canUseBYOK || localKeyAvailability === 'gateway_forbidden'
 
-  const chainabitActive = chainabitState === 'connected'
-  const chainabitNeedsAction =
-    chainabitState === 'not_connected' ||
-    chainabitState === 'token_expired' ||
-    chainabitState === 'insufficient_scope'
+  const hasChainabitIdentity = isChainabitConnected()
+  const chainabitActive = isChainabitAccountConnected(chainabitState)
+  const chainabitNeedsConnect =
+    chainabitState === 'not_connected' && !hasChainabitIdentity
+  const chainabitNeedsReconnect =
+    chainabitState === 'token_expired' || chainabitState === 'insufficient_scope'
+  const chainabitNeedsAction = chainabitNeedsConnect || chainabitNeedsReconnect
+  const chainabitShowConnectStyle = chainabitNeedsConnect
   const chainabitIsDisabled =
     chainabitState === 'loading' ||
     chainabitState === 'no_credits' ||
-    chainabitState === 'provider_error'
+    chainabitState === 'provider_error' ||
+    chainabitState === 'identity_conflict'
   const topUpUrl = `${CHAINABIT_APP_URL}/billing?utm_source=lenserfight&utm_medium=toggle&utm_campaign=topup`
 
   const handleChainabitClick = () => {
@@ -541,7 +568,8 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       chainabitState === 'not_connected' ||
       chainabitState === 'token_expired' ||
       chainabitState === 'insufficient_scope' ||
-      chainabitState === 'provider_error'
+      chainabitState === 'provider_error' ||
+      chainabitState === 'identity_conflict'
 
     if (fundingSource === 'platform_credit' && chainabitDefinitelyUnavailable) {
       if (caps.canSelectCloudByok) onFundingSourceChange('user_byok_cloud')
@@ -628,7 +656,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
                   ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
                   : chainabitIsDisabled
                     ? 'border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed'
-                    : chainabitNeedsAction
+                    : chainabitShowConnectStyle
                       ? 'border-gray-200 dark:border-gray-600 opacity-60 hover:border-orange-300 hover:opacity-100'
                       : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
               }`}
@@ -654,16 +682,8 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
                       <Loader2 size={10} className="animate-spin" />
                       Checking…
                     </>
-                  ) : chainabitState === 'provider_error' ? (
-                    'Unavailable'
-                  ) : chainabitActive && walletBalance != null ? (
-                    `${walletBalance.balance.toLocaleString()} cr`
-                  ) : chainabitState === 'no_credits' ? (
-                    'No credits'
-                  ) : chainabitNeedsAction ? (
-                    'Connect'
                   ) : (
-                    '—'
+                    chainabitStatusSubtitle(chainabitState, walletBalance, hasChainabitIdentity)
                   )}
                 </p>
               </div>
