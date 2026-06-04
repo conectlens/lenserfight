@@ -171,4 +171,50 @@ export class LensClient {
     const params = (inputContract as Record<string, unknown>)['parameters'] ?? (inputContract as Record<string, unknown>)['inputs']
     return Array.isArray(params) ? (params as SdkParameterContract[]) : []
   }
+
+  /**
+   * Extract the parameters declared by a lens version — the contracts plus their
+   * labels. Use this to know which values a lens needs before resolving it.
+   */
+  async extractParams(
+    versionId: string,
+  ): Promise<{ params: SdkParameterContract[]; labels: string[] }> {
+    const params = await this.getParameterContracts(versionId)
+    return { params, labels: params.map((p) => p.label) }
+  }
+
+  /**
+   * Validate supplied values against a lens version's parameter contracts.
+   * - `missing`: required parameter labels with no value
+   * - `unknown`: provided keys that match no contract label (case-insensitive)
+   */
+  async validateParams(
+    versionId: string,
+    values: Record<string, string>,
+  ): Promise<{
+    valid: boolean
+    missing: string[]
+    unknown: string[]
+    total: number
+    provided: number
+  }> {
+    const contracts = await this.getParameterContracts(versionId)
+    const providedKeys = new Set(Object.keys(values).map((k) => k.toLowerCase()))
+    const contractLabels = new Set(contracts.map((c) => c.label.toLowerCase()))
+
+    const missing = contracts
+      .filter((c) => c.required && !providedKeys.has(c.label.toLowerCase()))
+      .map((c) => c.label)
+    const unknown = Object.keys(values).filter(
+      (k) => !contractLabels.has(k.toLowerCase()),
+    )
+
+    return {
+      valid: missing.length === 0 && unknown.length === 0,
+      missing,
+      unknown,
+      total: contracts.length,
+      provided: Object.keys(values).length,
+    }
+  }
 }

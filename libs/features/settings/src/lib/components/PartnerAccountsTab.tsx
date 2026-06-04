@@ -19,6 +19,7 @@ function ChainabitCard() {
   const isLoading = state === 'loading'
   const isConnected = state === 'connected' || state === 'no_credits'
   const needsReconnect = state === 'token_expired' || state === 'insufficient_scope'
+  const hasIdentityConflict = state === 'identity_conflict'
 
   const handleDisconnect = async () => {
     setIsDisconnecting(true)
@@ -52,7 +53,11 @@ function ChainabitCard() {
               </span>
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-              {needsReconnect ? 'Reconnect required' : 'Not connected'}
+              {hasIdentityConflict
+                ? 'Linked to another account'
+                : needsReconnect
+                  ? 'Reconnect required'
+                  : 'Not connected'}
             </p>
           </div>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600">
@@ -60,7 +65,12 @@ function ChainabitCard() {
           </span>
         </div>
 
-        {needsReconnect ? (
+        {hasIdentityConflict ? (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            This Chainabit account is already linked to another LenserFight user. Sign in with that
+            account or use a different Chainabit login.
+          </p>
+        ) : needsReconnect ? (
           <p className="text-xs text-amber-600 dark:text-amber-400">
             Your Chainabit session has expired. Reconnect to restore wallet access.
           </p>
@@ -81,13 +91,15 @@ function ChainabitCard() {
           </>
         )}
 
-        <Button
-          variant="secondary"
-          className="!w-auto px-4 text-xs"
-          onClick={reconnect}
-        >
-          {needsReconnect ? 'Reconnect Chainabit' : 'Connect Chainabit'}
-        </Button>
+        {!hasIdentityConflict && (
+          <Button
+            variant="secondary"
+            className="!w-auto px-4 text-xs"
+            onClick={reconnect}
+          >
+            {needsReconnect ? 'Reconnect Chainabit' : 'Connect Chainabit'}
+          </Button>
+        )}
       </div>
     )
   }

@@ -1,8 +1,11 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '@lenserfight/data/supabase'
 import {
   connectorApiClient,
   isChainabitConnected,
+  parseOAuthErrorCodeFromLocation,
+  stripOAuthErrorParamsFromLocation,
   type ProviderConnectionState,
 } from '@lenserfight/infra/partner-provisioning'
 import { useAuth } from '@lenserfight/features/auth'
@@ -69,10 +72,41 @@ function classifyError(err: unknown): ProviderConnectionState {
  *   token_expired     → OAuth token expired — reconnect needed
  *   insufficient_scope → connected but missing required scopes
  *   provider_error    → Chainabit API failure
+ *   identity_conflict → Chainabit account already linked to another LenserFight user
  */
 export function useChainabitCapabilities(): UseChainabitCapabilitiesResult {
   const { isAuthenticated, user } = useAuth()
   const queryClient = useQueryClient()
+  const [identityConflict, setIdentityConflict] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (parseOAuthErrorCodeFromLocation() !== 'identity_already_exists') return
+
+    let cancelled = false
+    void (async () => {
+      try {
+        await supabase.auth.refreshSession()
+      } catch {
+        // Session may still be valid; metadata refresh is best-effort.
+      }
+      stripOAuthErrorParamsFromLocation()
+      await queryClient.invalidateQueries({ queryKey: ['chainabit'] })
+      if (!cancelled && !isChainabitConnected()) {
+        setIdentityConflict(true)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [queryClient])
+
+  useEffect(() => {
+    if (isChainabitConnected()) {
+      setIdentityConflict(false)
+    }
+  }, [user, isAuthenticated])
 
   // Only attempt the wallet fetch when the user has a Chainabit OAuth identity
   // linked. Without the identity the Edge Function has nothing to resolve and
@@ -98,6 +132,7 @@ export function useChainabitCapabilities(): UseChainabitCapabilitiesResult {
   })
 
   const state: ProviderConnectionState = (() => {
+    if (identityConflict && !hasChainabitIdentity) return 'identity_conflict'
     if (!hasChainabitIdentity) return 'not_connected'
     if (balanceQuery.isLoading) return 'loading'
     if (balanceQuery.error) return classifyError(balanceQuery.error)
@@ -120,6 +155,9 @@ export function useChainabitCapabilities(): UseChainabitCapabilitiesResult {
     // (token_expired or insufficient_scope), linkIdentity() would fail with
     // identity_already_exists.  Unlink first so the re-link flow can store
     // fresh tokens.  For not_connected there is no identity to remove.
+    if (state === 'identity_conflict') {
+      return
+    }
     if (state === 'token_expired' || state === 'insufficient_scope') {
       try {
         await connectorApiClient.disconnect()

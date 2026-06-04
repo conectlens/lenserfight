@@ -28,7 +28,11 @@ vi.mock('@lenserfight/data/repositories', () => ({
   unwrapEnvelope: vi.fn(),
 }))
 
-import { isChainabitConnected, connectorApiClient } from './partner-api-client'
+import {
+  isChainabitConnected,
+  connectorApiClient,
+  userHasChainabitIdentity,
+} from './partner-api-client'
 
 // ── isChainabitConnected ─────────────────────────────────────────────────────
 
@@ -71,6 +75,27 @@ describe('isChainabitConnected', () => {
       user: { app_metadata: { provider: 'custom_chainabit', providers: ['custom_chainabit'] } },
     })
     expect(isChainabitConnected()).toBe(false)
+  })
+
+  it('returns true when custom:chainabit is in user.identities', () => {
+    mockGetCachedSession.mockReturnValue({
+      user: {
+        app_metadata: { provider: 'email', providers: ['email'] },
+        identities: [{ provider: 'email' }, { provider: 'custom:chainabit' }],
+      },
+    })
+    expect(isChainabitConnected()).toBe(true)
+  })
+})
+
+describe('userHasChainabitIdentity', () => {
+  it('returns true for identities-only linkage', () => {
+    expect(
+      userHasChainabitIdentity({
+        app_metadata: { provider: 'email' },
+        identities: [{ provider: 'custom:chainabit' }],
+      })
+    ).toBe(true)
   })
 })
 

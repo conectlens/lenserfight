@@ -6,6 +6,7 @@ export type PartnerConnectionState =
   | 'token_expired'
   | 'insufficient_scope'
   | 'provider_error'
+  | 'identity_conflict'
 
 /** @deprecated Use PartnerConnectionState */
 export type ChainabitConnectionState = PartnerConnectionState

@@ -1,6 +1,7 @@
 // @lenserfight/sdk — public client SDK (alpha)
 
 export { createClient, createClientFromRpc, LenserFightClient } from './lib/lenserfight-client'
+export { AgentClient } from './lib/agent-client'
 export { BattleClient } from './lib/battle-client'
 export { LensClient } from './lib/lens-client'
 export { TemplateClient } from './lib/template-client'
@@ -36,5 +37,17 @@ export type {
   SdkWorkflowRunStatus,
   SdkWorkflowSummary,
 } from './lib/types/workflows'
+export type {
+  AgentBrowseFilters,
+  SdkAgentCapabilities,
+  SdkAgentDetail,
+  SdkAgentLensBinding,
+  SdkAgentModelBinding,
+  SdkAgentModelBindingMode,
+  SdkAgentOwner,
+  SdkAgentRuntimePref,
+  SdkAgentStats,
+  SdkAgentSummary,
+} from './lib/types/agents'
 
-export const SDK_VERSION = '0.3.0-alpha.0'
+export const SDK_VERSION = '0.4.0-alpha.0'
