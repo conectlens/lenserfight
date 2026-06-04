@@ -1,3 +1,14 @@
+## 0.22.0 (2026-06-04)
+
+### 🩹 Fixes
+
+- migrate CLI to ESM, fix cross-platform compat, expand docs ([0b7c77d3b](https://github.com/conectlens/lenserfight/commit/0b7c77d3b))
+
+### ❤️ Thank You
+
+- Claude Sonnet 4.6
+- ÖMER FARUK COŞKUN
+
 ## 0.21.0 (2026-06-01)
 
 This was a version bump only for cli to align it with other projects, there were no code changes.
