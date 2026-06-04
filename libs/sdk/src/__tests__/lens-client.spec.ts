@@ -70,6 +70,55 @@ describe('LensClient', () => {
     })
   })
 
+  describe('extractParams', () => {
+    it('returns the contracts and their labels', async () => {
+      const rpc = mockRpc({
+        input_contract: {
+          parameters: [
+            { label: 'Topic', required: true },
+            { label: 'Tone', required: false },
+          ],
+        },
+      })
+      const lf = createClientFromRpc(rpc)
+      const result = await lf.lenses.extractParams('v1')
+      expect(rpc.rpc).toHaveBeenCalledWith('fn_get_version_contracts', { p_version_id: 'v1' })
+      expect(result.labels).toEqual(['Topic', 'Tone'])
+      expect(result.params).toHaveLength(2)
+    })
+  })
+
+  describe('validateParams', () => {
+    const contractsRpc = () =>
+      mockRpc({
+        input_contract: {
+          parameters: [
+            { label: 'Topic', required: true },
+            { label: 'Tone', required: false },
+          ],
+        },
+      })
+
+    it('reports missing required params', async () => {
+      const lf = createClientFromRpc(contractsRpc())
+      const result = await lf.lenses.validateParams('v1', {})
+      expect(result).toMatchObject({ valid: false, missing: ['Topic'], unknown: [] })
+    })
+
+    it('is valid when required params are present (case-insensitive)', async () => {
+      const lf = createClientFromRpc(contractsRpc())
+      const result = await lf.lenses.validateParams('v1', { topic: 'AI' })
+      expect(result.valid).toBe(true)
+      expect(result.missing).toEqual([])
+    })
+
+    it('flags unknown keys', async () => {
+      const lf = createClientFromRpc(contractsRpc())
+      const result = await lf.lenses.validateParams('v1', { Topic: 'AI', bogus: 'x' })
+      expect(result).toMatchObject({ valid: false, missing: [], unknown: ['bogus'] })
+    })
+  })
+
   describe('getVersion', () => {
     it('combines fn_get_lens_version_detail + fn_get_lens_version_parameters', async () => {
       const rpc: SupabaseLikeRpcClient = {
