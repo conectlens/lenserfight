@@ -28,6 +28,8 @@ export type ProviderConnectionState =
   | 'token_expired'
   | 'insufficient_scope'
   | 'provider_error'
+  /** Chainabit OAuth identity is linked to a different LenserFight account. */
+  | 'identity_conflict'
 
 // ---------------------------------------------------------------------------
 // Back-compat aliases — keep existing consumers compiling during migration.
