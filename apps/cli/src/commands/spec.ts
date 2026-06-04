@@ -461,21 +461,7 @@ const specSchema = defineCommand({
     }
 
     // Locate schema file relative to this package's distribution location.
-    // In the monorepo source tree the schemas live alongside the TypeScript.
-    // CJS-compatible: use __filename / __dirname, fall back to import.meta when
-    // running under an ESM loader (avoids the empty-import-meta build warning).
-    const _thisFile: string =
-      typeof __filename !== 'undefined'
-        ? __filename
-        : typeof (globalThis as Record<string, unknown>)['import'] === 'object' &&
-            (globalThis as Record<string, unknown>)['import'] !== null
-          ? fileURLToPath(
-              ((globalThis as Record<string, unknown>)['import'] as Record<string, string>)[
-                'meta'
-              ] ?? 'file:///unknown'
-            )
-          : resolve('unknown')
-
+    const _thisFile = fileURLToPath(import.meta.url)
     const _thisDir = dirname(_thisFile)
 
     const candidates = [

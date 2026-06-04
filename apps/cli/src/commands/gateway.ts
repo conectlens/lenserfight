@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { homedir, networkInterfaces } from 'node:os'
-import path from 'node:path'
+import path, { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { defineCommand } from 'citty'
 import consola from 'consola'
@@ -307,7 +308,7 @@ const KEYCHAIN_ACCOUNT = 'device:active'
 function findDaemonBinary(): string | null {
   const candidates = [
     path.resolve(process.cwd(), 'dist/apps/gateway/main.js'),
-    path.resolve(__dirname, '../../gateway/main.js'),
+    path.resolve(dirname(fileURLToPath(import.meta.url)), '../../gateway/main.js'),
   ]
   for (const c of candidates) {
     if (existsSync(c)) return c

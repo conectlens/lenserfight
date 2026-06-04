@@ -2,16 +2,18 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const CHANGELOG_LINK = 'https://docs.lenserfight.com/changelog';
 
 /** Walk up from the CLI binary to find the repo root CHANGELOG.md. */
 function findChangelog(): string | null {
+  const thisDir = dirname(fileURLToPath(import.meta.url));
   const candidates = [
     // Running from dist/ → go up two levels to repo root
-    resolve(dirname(__filename), '..', '..', '..', '..', 'CHANGELOG.md'),
+    resolve(thisDir, '..', '..', '..', '..', 'CHANGELOG.md'),
     // Running from source ts-node
-    resolve(dirname(__filename), '..', '..', '..', '..', '..', 'CHANGELOG.md'),
+    resolve(thisDir, '..', '..', '..', '..', '..', 'CHANGELOG.md'),
     // CWD fallback
     resolve(process.cwd(), 'CHANGELOG.md'),
   ];
