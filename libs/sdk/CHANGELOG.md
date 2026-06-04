@@ -1,3 +1,13 @@
+## 0.3.0-alpha.13 (2026-06-04)
+
+### 🚀 Features
+
+- **agents:** SDK ([251c78aaa](https://github.com/conectlens/lenserfight/commit/251c78aaa))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 0.3.0-alpha.12 (2026-06-04)
 
 This was a version bump only for sdk to align it with other projects, there were no code changes.
