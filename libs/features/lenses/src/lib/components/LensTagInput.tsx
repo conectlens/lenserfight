@@ -1,5 +1,5 @@
 import { X, Plus } from 'lucide-react'
-import React, { useState, KeyboardEvent, useCallback } from 'react'
+import React, { useState, KeyboardEvent, ClipboardEvent, useCallback } from 'react'
 
 import { tagService } from '@lenserfight/data/repositories'
 
@@ -33,6 +33,32 @@ export const LensTagInput: React.FC<LensTagInputProps> = React.memo(({ tags, onC
       }
     },
     [input, tags, onChange]
+  )
+
+  const handlePaste = useCallback(
+    async (e: ClipboardEvent<HTMLInputElement>) => {
+      const text = e.clipboardData.getData('text')
+      if (!text.includes(',')) return
+      e.preventDefault()
+      const parts = text.split(',').map((s) => s.trim()).filter(Boolean)
+      if (parts.length === 0) return
+      setLoading(true)
+      try {
+        const results = await Promise.all(
+          parts.map((part) => tagService.processUserInput(part).catch(() => null))
+        )
+        const incoming = results
+          .filter(Boolean)
+          .map((t) => t!.name)
+          .filter((name) => !tags.includes(name))
+        const unique = [...new Set(incoming)]
+        if (unique.length > 0) onChange([...tags, ...unique])
+        setInput('')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [tags, onChange]
   )
 
   const removeTag = useCallback(
@@ -76,6 +102,7 @@ export const LensTagInput: React.FC<LensTagInputProps> = React.memo(({ tags, onC
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             placeholder={tags.length === 0 ? 'Add a tag...' : 'Add another...'}
             className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm py-1"
             disabled={loading}
