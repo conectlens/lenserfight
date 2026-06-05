@@ -622,6 +622,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
         label: p.label,
         tool_id: p.toolId,
         optional: p.optional ?? false,
+        ...(p.options?.length ? { options: p.options } : {}),
       })),
       p_tag_ids: input.tagIds ?? [],
       p_parent_lens_id: input.parentLensId ?? null,
@@ -669,7 +670,12 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       p_description: input.description ?? null,
       p_tag_ids: input.tagIds ?? null,
       p_params: input.params
-        ? input.params.map((p) => ({ label: p.label, tool_id: p.toolId, optional: p.optional ?? false }))
+        ? input.params.map((p) => ({
+            label: p.label,
+            tool_id: p.toolId,
+            optional: p.optional ?? false,
+            ...(p.options?.length ? { options: p.options } : {}),
+          }))
         : null,
     })
 

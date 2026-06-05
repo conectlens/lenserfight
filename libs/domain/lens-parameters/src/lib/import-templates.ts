@@ -11,6 +11,8 @@ export interface ImportTemplateParamMeta {
   optional: boolean
   token: string
   importable: boolean
+  /** Allowed values for select / multiselect params. */
+  allowed_values?: string[]
 }
 
 export interface ImportTemplateMeta {
@@ -75,13 +77,18 @@ function buildImportMeta(versionParams: LensVersionParam[], lensContext?: LensTe
     keys: 'Object keys must match parameter labels (input_snapshot keys), not [[token]] syntax.',
     fileParams:
       'File and files parameters cannot be imported via JSON/CSV — upload them in the lab panel.',
-    parameters: versionParams.map((p) => ({
-      label: p.label,
-      type: p.tool.type,
-      optional: !!(p.optional ?? (p.tool.required === false)),
-      token: paramTokenBracket(p.label, !!p.optional, p.tool.type),
-      importable: p.tool.type !== 'file' && p.tool.type !== 'files',
-    })),
+    parameters: versionParams.map((p) => {
+      const opts = p.tool.options
+      const meta: ImportTemplateParamMeta = {
+        label: p.label,
+        type: p.tool.type,
+        optional: !!(p.optional ?? (p.tool.required === false)),
+        token: paramTokenBracket(p.label, !!p.optional, p.tool.type),
+        importable: p.tool.type !== 'file' && p.tool.type !== 'files',
+      }
+      if (opts?.length) meta.allowed_values = opts.map((o) => o.value)
+      return meta
+    }),
   }
   if (lensContext?.title) meta.lens_title = lensContext.title
   if (lensContext?.description) meta.lens_description = lensContext.description
@@ -159,13 +166,18 @@ export function buildImportCsvTemplate(versionParams: LensVersionParam[], lensCo
   return `${comments.join('\n')}\n${dataRows}`
 }
 
-/** One-line hint for CSV dialog placeholders (lists omitted file params). */
+/** One-line hint for CSV dialog placeholders (lists omitted file params and select constraints). */
 export function buildImportCsvTemplateHint(versionParams: LensVersionParam[]): string {
   const fileLabels = versionParams
     .filter((p) => p.tool.type === 'file' || p.tool.type === 'files')
     .map((p) => p.label)
-  if (fileLabels.length === 0) {
-    return 'Headers must match parameter labels. Types are inferred from each parameter tool.'
-  }
-  return `Headers must match parameter labels. File params (${fileLabels.join(', ')}) are omitted — upload in the lab.`
+
+  const selectHints = versionParams
+    .filter((p) => (p.tool.type === 'select' || p.tool.type === 'multiselect') && p.tool.options?.length)
+    .map((p) => `${p.label}: ${p.tool.options!.map((o) => o.value).join(' | ')}`)
+
+  const parts: string[] = ['Headers must match parameter labels.']
+  if (selectHints.length) parts.push(`Allowed values — ${selectHints.join('; ')}.`)
+  if (fileLabels.length) parts.push(`File params (${fileLabels.join(', ')}) are omitted — upload in the lab.`)
+  return parts.join(' ')
 }

@@ -34,7 +34,7 @@ export function syncBindingsFromContent(
       if (prev.optional !== ep.optional) {
         return ep.optional
           ? { ...prev, optional: true }
-          : { label: prev.label, toolId: prev.toolId }
+          : { label: prev.label, toolId: prev.toolId, ...(prev.options?.length ? { options: prev.options } : {}) }
       }
       return prev
     }
