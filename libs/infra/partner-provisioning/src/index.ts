@@ -13,6 +13,8 @@ export type {
 export {
   connectorApiClient,
   isChainabitConnected,
+  parseOAuthErrorCodeFromLocation,
+  stripOAuthErrorParamsFromLocation,
   // Back-compat alias — migrate call sites to connectorApiClient
   partnerApiClient,
 } from './lib/partner-api-client'
