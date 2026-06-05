@@ -57,8 +57,8 @@ if [[ -z "${SKIP_DB:-}" ]]; then
   WAIT_ATTEMPTS=0
   until curl -sf http://127.0.0.1:54321/health >/dev/null 2>&1; do
     WAIT_ATTEMPTS=$((WAIT_ATTEMPTS+1))
-    if [[ $WAIT_ATTEMPTS -ge 30 ]]; then
-      echo "    ERROR: Supabase did not become healthy within 60s after db reset"
+    if [[ $WAIT_ATTEMPTS -ge 60 ]]; then
+      echo "    ERROR: Supabase did not become healthy within 120s after db reset"
       exit 1
     fi
     sleep 2
