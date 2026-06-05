@@ -8,16 +8,39 @@ function mockRpc(data: unknown = []): SupabaseLikeRpcClient {
 }
 
 describe('AgentClient', () => {
-  it('browse calls fn_sdk_browse_agents', async () => {
+  it('browse calls fn_sdk_browse_agents with all filter params', async () => {
     const rpc = mockRpc([])
     const lf = createClientFromRpc(rpc)
-    await lf.agents.browse({ search: 'bot' }, { created_at: '2026-01-01', id: 'x' }, 10)
+    await lf.agents.browse(
+      { search: 'bot', runtimePref: 'cloud', canJoinBattles: true },
+      { created_at: '2026-01-01', id: 'x' },
+      10,
+    )
     expect(rpc.rpc).toHaveBeenCalledWith('fn_sdk_browse_agents', {
       p_search: 'bot',
+      p_runtime_pref: 'cloud',
+      p_can_join_battles: true,
       p_cursor_created_at: '2026-01-01',
       p_cursor_id: 'x',
       p_limit: 10,
     })
+  })
+
+  it('browse returns SdkAgentPage with nextCursor when a full page is returned', async () => {
+    const agent = { id: 'a1', handle: 'bot', createdAt: '2026-01-01T00:00:00Z' }
+    const rpc = mockRpc([agent])
+    const lf = createClientFromRpc(rpc)
+    const page = await lf.agents.browse({}, undefined, 1)
+    expect(page.items).toHaveLength(1)
+    expect(page.nextCursor).toEqual({ created_at: agent.createdAt, id: agent.id })
+  })
+
+  it('browse returns null nextCursor when fewer items than limit are returned', async () => {
+    const rpc = mockRpc([])
+    const lf = createClientFromRpc(rpc)
+    const page = await lf.agents.browse({}, undefined, 20)
+    expect(page.items).toHaveLength(0)
+    expect(page.nextCursor).toBeNull()
   })
 
   it('getById calls fn_sdk_get_agent_detail', async () => {

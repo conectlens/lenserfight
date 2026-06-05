@@ -45,6 +45,7 @@ export type {
   SdkAgentModelBinding,
   SdkAgentModelBindingMode,
   SdkAgentOwner,
+  SdkAgentPage,
   SdkAgentRuntimePref,
   SdkAgentStats,
   SdkAgentSummary,
