@@ -116,14 +116,17 @@ export const useLensDetailController = (
 
   const copyLens = async () => {
     if (!lens || !lenser) return
-    await lensesService.toggleReaction(lens.id, lenser.id, 'copy')
+    const { added } = await lensesService.toggleReaction(lens.id, lenser.id, 'copy')
+    const delta = added ? 1 : -1
     updateLocalLens((prev) => ({
       ...prev,
+      usageCount: Math.max(0, prev.usageCount + delta),
       reactionCounts: {
         ...prev.reactionCounts,
-        copy: prev.reactionCounts.copy + 1,
+        copy: Math.max(0, prev.reactionCounts.copy + delta),
       },
     }))
+    queryClient.invalidateQueries({ queryKey: queryKeys.lenses.all })
   }
 
   const saveLens = async (): Promise<boolean> => {

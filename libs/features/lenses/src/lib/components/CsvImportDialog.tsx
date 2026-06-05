@@ -216,6 +216,21 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
                 {' '}· {parsedCsv.rows.length} data row{parsedCsv.rows.length !== 1 ? 's' : ''}
               </span>
             )}
+            {/* Allowed-values hint for select/multiselect params */}
+            {versionParams.some(
+              (p) => (p.tool.type === 'select' || p.tool.type === 'multiselect') && p.tool.options?.length
+            ) && (
+              <div className="flex flex-col gap-0.5 text-[11px] text-gray-500 dark:text-gray-400">
+                {versionParams
+                  .filter((p) => (p.tool.type === 'select' || p.tool.type === 'multiselect') && p.tool.options?.length)
+                  .map((p) => (
+                    <span key={p.label}>
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">{p.label}</span>
+                      {' '}allowed: {p.tool.options!.map((o) => o.value).join(', ')}
+                    </span>
+                  ))}
+              </div>
+            )}
           </div>
         </div>
 

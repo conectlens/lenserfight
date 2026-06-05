@@ -11,6 +11,29 @@ import { CreateLensDTO, CreateVersionParamInput, VisibilityEnum } from '@lenserf
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
 import { useTools } from './useTools'
 
+const VISIBILITY_PREF_KEY = 'lf_lens_vis_pref'
+const VALID_VISIBILITIES: VisibilityEnum[] = ['public', 'community', 'private']
+
+function readVisibilityPref(): VisibilityEnum {
+  try {
+    const stored = localStorage.getItem(VISIBILITY_PREF_KEY)
+    if (stored && VALID_VISIBILITIES.includes(stored as VisibilityEnum)) {
+      return stored as VisibilityEnum
+    }
+  } catch {
+    // storage unavailable
+  }
+  return 'public'
+}
+
+function writeVisibilityPref(v: VisibilityEnum) {
+  try {
+    localStorage.setItem(VISIBILITY_PREF_KEY, v)
+  } catch {
+    // storage unavailable
+  }
+}
+
 export const useCreateLens = () => {
   const { lenser } = useAuthenticatedLenser()
   const queryClient = useQueryClient()
@@ -25,7 +48,7 @@ export const useCreateLens = () => {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [tags, setTags] = useState<string[]>([])
-  const [visibility, setVisibility] = useState<VisibilityEnum>('private')
+  const [visibility, setVisibility] = useState<VisibilityEnum>(readVisibilityPref)
   const [versionParams, setVersionParams] = useState<CreateVersionParamInput[]>([])
 
   /**
@@ -49,12 +72,17 @@ export const useCreateLens = () => {
     if (textToolId && content) syncParamsFromContent(content)
   }, [textToolId, tools, content, syncParamsFromContent])
 
+  const setVisibilityWithPersist = useCallback((v: VisibilityEnum) => {
+    setVisibility(v)
+    writeVisibilityPref(v)
+  }, [])
+
   const resetForm = useCallback(() => {
     setEditId(null)
     setTitle('')
     setContent('')
     setTags([])
-    setVisibility('private')
+    setVisibility(readVisibilityPref())
     setVersionParams([])
     setError(null)
   }, [])
@@ -159,7 +187,7 @@ export const useCreateLens = () => {
       tags,
       setTags,
       visibility,
-      setVisibility,
+      setVisibility: setVisibilityWithPersist,
       versionParams,
       setVersionParams,
       syncParamsFromContent,

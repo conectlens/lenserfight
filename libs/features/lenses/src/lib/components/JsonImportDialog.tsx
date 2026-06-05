@@ -175,6 +175,24 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
           </Button>
         </div>
 
+        {/* Allowed-values hint for select/multiselect params */}
+        {versionParams.some(
+          (p) => (p.tool.type === 'select' || p.tool.type === 'multiselect') && p.tool.options?.length
+        ) && (
+          <div className="flex flex-col gap-0.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950 px-3 py-2 text-[11px] text-teal-700 dark:text-teal-300">
+            <span className="font-semibold mb-0.5">Allowed values</span>
+            {versionParams
+              .filter((p) => (p.tool.type === 'select' || p.tool.type === 'multiselect') && p.tool.options?.length)
+              .map((p) => (
+                <span key={p.label}>
+                  <span className="font-medium">{p.label}</span>
+                  {': '}
+                  {p.tool.options!.map((o) => o.value).join(', ')}
+                </span>
+              ))}
+          </div>
+        )}
+
         {/* Parse error */}
         {hasParseError && (
           <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 px-3 py-2 text-xs text-red-700 dark:text-red-300">

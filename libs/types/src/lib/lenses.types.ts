@@ -192,6 +192,8 @@ export type CreateVersionParamInput = {
   toolId: string
   /** When true the param was declared with [[label!]] syntax and is not required. */
   optional?: boolean
+  /** Per-param options for select / multiselect fields. Overrides the shared tool options. */
+  options?: { label: string; value: string }[]
 }
 
 /** Mirrors lenses.versions */
