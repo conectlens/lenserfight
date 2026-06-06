@@ -1,3 +1,21 @@
+## 0.3.0-alpha.17 (2026-06-06)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
+## 0.3.0-alpha.16 (2026-06-06)
+
+### 🚀 Features
+
+- add pagination support and runtime/battle capability filters to AgentClient.browse ([cb1a50b0c](https://github.com/conectlens/lenserfight/commit/cb1a50b0c))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
+## 0.3.0-alpha.15 (2026-06-05)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
 ## 0.3.0-alpha.14 (2026-06-05)
 
 This was a version bump only for sdk to align it with other projects, there were no code changes.
