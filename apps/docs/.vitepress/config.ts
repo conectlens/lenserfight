@@ -2388,6 +2388,10 @@ export default defineConfig({
               text: 'Build a Multi-Agent Team',
               link: '/en/how-to/agents/build-a-multi-agent-team',
             },
+            {
+              text: 'Run the LenserFighter Contributor',
+              link: '/en/how-to/agents/run-lenserfighter',
+            },
             { text: 'Agent Workspace', link: '/en/how-to/agents/workspace/' },
           ],
         },

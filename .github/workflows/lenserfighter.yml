@@ -1,0 +1,145 @@
+name: LenserFighter Autonomous Contributor
+
+# @lenserfighter — an autonomous AI Lenser that contributes to this repo on a daily
+# schedule (and on demand). Each run does ONE thing: review an open PR, triage/open one
+# issue, or draft one small fix PR. It NEVER merges and never pushes to protected branches.
+# Identity on GitHub is the `lenserfighter[bot]` GitHub App; in-product it is the
+# `@lenserfighter` AI Lenser. Setup guide: docs/en/how-to/agents/run-lenserfighter.md
+#
+# Ships INERT: until LENSERFIGHTER_APP_ID / LENSERFIGHTER_APP_PRIVATE_KEY secrets exist the
+# job skips with a notice (green, not a daily failing cron).
+
+on:
+  schedule:
+    # 07:00 UTC daily. `auto` focus rotates by day-of-week to keep cost to one action/day.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+    inputs:
+      focus:
+        description: What the agent should do this run
+        type: choice
+        default: auto
+        options:
+          - auto
+          - review-prs
+          - triage-issues
+          - draft-fix
+      task:
+        description: Optional free-text instruction that overrides the focus playbook
+        type: string
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: lenserfighter
+  cancel-in-progress: false
+
+env:
+  # Mapped here so it can be referenced in step `if:` conditions (the `secrets` context
+  # is not available in `if:`). Used only to gate on presence, never printed.
+  LF_APP_ID: ${{ secrets.LENSERFIGHTER_APP_ID }}
+
+jobs:
+  contribute:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Preflight — is the GitHub App configured?
+        id: preflight
+        run: |
+          if [ -z "$LF_APP_ID" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=LenserFighter inactive::GitHub App not configured. Add LENSERFIGHTER_APP_ID and LENSERFIGHTER_APP_PRIVATE_KEY secrets — see docs/en/how-to/agents/run-lenserfighter.md"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve focus for this run
+        id: focus
+        if: steps.preflight.outputs.configured == 'true'
+        env:
+          INPUT_FOCUS: ${{ inputs.focus }}
+        run: |
+          focus="${INPUT_FOCUS:-auto}"
+          if [ "$focus" = "auto" ]; then
+            # Rotate by day-of-week: Mon/Thu review, Tue/Fri triage, Wed/Sat draft, Sun review.
+            case "$(date -u +%u)" in
+              1|4|7) focus="review-prs" ;;
+              2|5)   focus="triage-issues" ;;
+              3|6)   focus="draft-fix" ;;
+            esac
+          fi
+          echo "focus=$focus" >> "$GITHUB_OUTPUT"
+          echo "::notice title=LenserFighter focus::$focus"
+
+      - name: Mint GitHub App installation token
+        id: app-token
+        if: steps.preflight.outputs.configured == 'true'
+        # Pin to an immutable commit SHA before merging this change. Resolve via:
+        #   gh api repos/actions/create-github-app-token/git/refs/tags/v1 | jq -r .object.sha
+        # then replace the tag below with `@<full-40-char-sha>  # v1`.
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.LENSERFIGHTER_APP_ID }}
+          private-key: ${{ secrets.LENSERFIGHTER_APP_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        if: steps.preflight.outputs.configured == 'true'
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 1
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup workspace (only when a code fix may be needed)
+        if: steps.preflight.outputs.configured == 'true' && steps.focus.outputs.focus == 'draft-fix'
+        uses: ./.github/actions/setup-workspace
+
+      - name: Run LenserFighter
+        if: steps.preflight.outputs.configured == 'true'
+        # Pin to an immutable commit SHA before merging this change. Resolve via:
+        #   gh api repos/anthropics/claude-code-action/git/refs/tags/v1 | jq -r .object.sha
+        # then replace the tag below with `@<full-40-char-sha>  # v1`.
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
+          branch_prefix: lenserfighter/
+          track_progress: true
+          prompt: |
+            You are @lenserfighter, an autonomous contributor running in ${{ github.repository }}.
+            On GitHub you act as the `lenserfighter[bot]` GitHub App.
+
+            Your single source of behavior is the persona file
+            `.lenserfight/lensers/lenserfighter/LENSER.MD`. Read it first and follow it exactly.
+
+            This run's focus is: ${{ steps.focus.outputs.focus }}
+            Optional operator instruction (may be empty): ${{ inputs.task }}
+
+            Do exactly ONE unit of work for the focus above, then stop. Hard rules (no human is
+            in the loop at runtime, so these are absolute, not "ask first"):
+            - NEVER merge or approve a PR.
+            - NEVER commit or push to `main` or `development`; always use a `lenserfighter/` branch.
+            - NEVER force-push, run database migrations, or destructive SQL.
+            - ALWAYS search existing open issues/PRs before creating one — never open a duplicate.
+            - Keep diffs minimal and scoped to the single task; no unrelated refactors.
+            - If the task is unclear, too broad, or unsafe, post a short comment explaining the
+              blocker and end the run. Do not fake progress.
+
+            For `draft-fix`: pick one issue labeled `good-first-issue`, fix the root cause minimally
+            on a `lenserfighter/` branch, add the smallest useful test, and open a PR into
+            `development` that links the issue and fills the PR template.
+            For `review-prs`: post exactly one structured review comment (correctness, security,
+            performance, style) on the most recently updated PR you have not already reviewed.
+            For `triage-issues`: open exactly one well-formed, deduped issue using the matching
+            `.github/ISSUE_TEMPLATE` and the right `area:*` label.
+
+            End with a one-paragraph report: focus, the artifact URL you produced (or
+            "no action — reason"), and any follow-up left for a human.
+          claude_args: |
+            --model claude-sonnet-4-6
+            --max-turns 15
