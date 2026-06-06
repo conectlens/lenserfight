@@ -46,6 +46,8 @@ export class LenserFightClient {
 /**
  * Create a LenserFight client. The returned client exposes:
  *
+ * - `client.agents.browse(filters?, cursor?, limit?)` — list public agents
+ * - `client.agents.getById(agentId)` — get agent profile detail
  * - `client.lenses.browse(filters?, cursor?, limit?)` — list public lenses
  * - `client.lenses.resolveTemplate(lensId, params)` — fill a lens template (requires `apiKey`)
  * - `client.workflows.browse()` — list workflows

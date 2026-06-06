@@ -1,9 +1,6 @@
 name: Release CLI
 
 on:
-  # Auto-release fires on every push to main (i.e. after a PR is merged).
-  # The workflow runs its own preflight (preflight-tests.sh + smoke-install)
-  # before publishing, so no external gate is required.
   push:
     branches:
       - main
@@ -60,20 +57,46 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
-    name: ${{ (inputs.dry_run == 'true' || inputs.dry_run == true) && 'Preview' || 'Publish' }} CLI ${{ inputs.release_channel || 'stable' }}
+  check:
+    name: Check if CLI is affected
     runs-on: ubuntu-latest
-    environment: npm-release
-    # Skip when triggered by a release/skip-ci commit to break the re-release loop.
-    # workflow_run.head_commit.message reflects the HEAD at CI completion time; checking
-    # it here prevents re-releasing when the contributors sync or a prior release pushed
-    # a [skip ci] commit between CI start and finish.
     if: >-
       github.event_name == 'workflow_dispatch' || (
         github.event_name == 'push' &&
         !startsWith(github.event.head_commit.message, 'chore(release):') &&
         !contains(github.event.head_commit.message, '[skip ci]')
       )
+    outputs:
+      affected: ${{ steps.nx.outputs.affected }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Detect affected
+        id: nx
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "affected=true" >> "$GITHUB_OUTPUT"
+          else
+            affected=$(pnpm nx show projects --affected --base=HEAD~1 --head=HEAD --plain 2>/dev/null || echo '')
+            if echo "$affected" | grep -qw "cli"; then
+              echo "affected=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "affected=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+  release:
+    name: ${{ (inputs.dry_run == 'true' || inputs.dry_run == true) && 'Preview' || 'Publish' }} CLI ${{ inputs.release_channel || 'stable' }}
+    needs: check
+    if: needs.check.outputs.affected == 'true'
+    runs-on: ubuntu-latest
+    environment: npm-release
 
     steps:
       - name: Resolve effective inputs

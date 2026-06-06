@@ -1,12 +1,11 @@
 name: Release npm packages (sdk)
 
 on:
-  # Auto-release fires on every push to main (i.e. after a PR is merged).
-  # The workflow runs its own preflight (sdk:test) before publishing,
-  # so no external gate is required.
   push:
     branches:
       - main
+    paths:
+      - 'libs/sdk/**'
   workflow_dispatch:
     inputs:
       release_channel:

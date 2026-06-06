@@ -1,4 +1,4 @@
-// @lenserfight/sdk — public client SDK (alpha)
+// @lenserfight/sdk — public client SDK
 
 export { createClient, createClientFromRpc, LenserFightClient } from './lib/lenserfight-client'
 export { AgentClient } from './lib/agent-client'
@@ -51,4 +51,4 @@ export type {
   SdkAgentSummary,
 } from './lib/types/agents'
 
-export const SDK_VERSION = '0.4.0-alpha.0'
+export const SDK_VERSION = '1.0.0'

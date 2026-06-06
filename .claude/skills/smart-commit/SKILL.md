@@ -165,6 +165,7 @@ After all groups are processed, show a summary:
 
 ## Constraints
 
+- **Branch check.** Run `git branch --show-current` before staging. If the result is `main` or `development`, warn: "You're on `<branch>` — this is a shared branch. Consider creating a feature branch first: `feature/`, `fix/`, `docs/`, or `refactor/` + short slug. See `docs/en/how-to/contributors/branching.md`." Do not block, but surface the warning prominently.
 - **Classification (Step 3) is always the first substantive action.** Never stage or commit before classifying.
 - **Never merge unrelated types into one commit.** If in doubt, split.
 - **Never skip the confirmation step.** Not even when the change looks trivial.
