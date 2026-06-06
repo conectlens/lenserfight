@@ -5,7 +5,7 @@ import {
   validateAllParamValues,
 } from '@lenserfight/domain/lens-parameters'
 import { LensParam, LensVersionParam, FundingSource, GenerativeMediaParams } from '@lenserfight/types'
-import { extractParams, validateParamValues } from '@lenserfight/utils/text'
+import { extractParams, resolveUuidRefs, validateParamValues } from '@lenserfight/utils/text'
 import { TriggerLabExecutionDTO } from './useLabController'
 import type { LocalKeyMeta } from '@lenserfight/types'
 
@@ -61,7 +61,18 @@ export function useLabParamForm(
   params?: LensParam[],
   versionParams?: LensVersionParam[],
 ): UseLabParamFormResult {
-  const variables = useMemo(() => extractVariables(lensContent), [lensContent])
+  // Resolve [[:uuid]] refs back to [[label]] before extracting variables so the
+  // visible-param set stays correct even when the stored body mixes uuid refs with
+  // named tokens (e.g. optional [[label!]] tokens a prior save failed to rewrite).
+  // Without this, extractVariables() skips uuid refs and drops those params.
+  const resolvedContent = useMemo(
+    () =>
+      versionParams && versionParams.length > 0
+        ? resolveUuidRefs(lensContent, versionParams)
+        : lensContent,
+    [lensContent, versionParams],
+  )
+  const variables = useMemo(() => extractVariables(resolvedContent), [resolvedContent])
   const usingVersionParams = !!(versionParams && versionParams.length > 0)
 
   const legacyParamSchemas = useMemo<LensParam[]>(() => {
