@@ -1,6 +1,6 @@
 ## Summary
 
--
+<!-- What changed and why — 1–3 bullets -->
 
 ## Test plan
 
@@ -8,7 +8,6 @@
 - Vitest test count added/changed: <!-- e.g. +2 tests in battle.spec.ts -->
 
 ```text
-# Paste relevant test output here
 pnpm run-pgtap        (DB changes)
 pnpm nx test <project> --testFile=path/to/file.spec.ts
 pnpm smoke            (full gate)
@@ -28,7 +27,7 @@ n/a
 
 ## Risks or follow-up
 
--
+<!-- Risks, TODOs, or follow-up issues -->
 
 ## Security, privacy, and legal surface
 

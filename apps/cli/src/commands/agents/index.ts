@@ -7,11 +7,11 @@ import {
   setAgentWorkspaceContext,
 } from '../../lib/agent-workspace-context'
 import { getActionLogs, killAgentWorkers } from '../../lib/data-services'
-import { resolveAiLenserIdFromIdentifier } from '../../lib/lenser-catalog'
+import { normalizeUsername, resolveAiLenserIdFromIdentifier } from '../../lib/lenser-catalog'
 import { assertSafe } from '../../lib/safety'
 import { callRpc, handleError } from '../../utils/api'
 import { A, sym } from '../../utils/ansi'
-import { printJson, printTable, truncate } from '../../utils/output'
+import { printJson, printTable, slugify, truncate } from '../../utils/output'
 import { printAgentWorkspaceOperations } from './workspace-ops'
 
 async function resolveRequiredAgent(arg?: string): Promise<string> {
@@ -168,16 +168,128 @@ const get = defineCommand({
   },
 })
 
+const ADAPTER_TYPES = ['openai-agents', 'langchain', 'crewai', 'mcp', 'ollama', 'http', 'custom']
+const USERNAME_RE = /^[a-z0-9][a-z0-9_-]{2,31}$/
+
 const create = defineCommand({
   meta: { name: 'create', description: 'Connect / register a new AI agent.' },
-  async run(ctx) {
-    const lenser = await import('../lenser')
-    const aiCmd = await loadSubCommand(lenser.default as { subCommands?: Record<string, unknown> }, 'ai')
-    const connectCmd = await loadSubCommand(
-      aiCmd as { subCommands?: Record<string, unknown> } | undefined,
-      'connect',
-    )
-    return connectCmd?.run?.(ctx)
+  args: {
+    name: { type: 'string', description: 'Agent display name' },
+    username: { type: 'string', description: 'Unique agent username (no @)' },
+    type: { type: 'string', description: `Adapter type: ${ADAPTER_TYPES.join(', ')}` },
+    config: { type: 'string', description: 'JSON config string or path to config file', default: '{}' },
+    gateway: { type: 'boolean', description: 'Route through local gateway', default: false },
+    device: { type: 'string', description: 'Device UUID to bind to', default: '' },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      // Resolve name with prompt if missing
+      let name = args.name?.trim()
+      if (!name) {
+        const answer = await consola.prompt('Agent display name:', { type: 'text' })
+        name = String(answer ?? '').trim()
+      }
+      if (!name) {
+        process.exitCode = 1
+        return
+      }
+
+      // Resolve username with prompt if missing
+      let rawUsername = args.username?.trim()
+      if (!rawUsername) {
+        const answer = await consola.prompt('Username (no @):', {
+          type: 'text',
+          initial: slugify(name),
+        })
+        rawUsername = String(answer ?? '').trim()
+      }
+      const username = normalizeUsername(rawUsername)
+      if (!USERNAME_RE.test(username)) {
+        consola.error('Invalid username: %s. Use 3-32 lowercase letters, numbers, underscores, or hyphens.', rawUsername)
+        process.exitCode = 1
+        return
+      }
+
+      // Resolve type with select prompt if missing
+      let type = args.type
+      if (!type) {
+        const answer = await consola.prompt('Adapter type:', {
+          type: 'select',
+          options: ADAPTER_TYPES.map(t => ({ label: t, value: t })),
+        })
+        type = String(answer ?? '')
+      }
+      if (!ADAPTER_TYPES.includes(type)) {
+        consola.error('Invalid type: %s. Must be one of: %s', type, ADAPTER_TYPES.join(', '))
+        process.exitCode = 1
+        return
+      }
+
+      // Parse config
+      let config: Record<string, unknown>
+      try {
+        config = JSON.parse(args.config)
+      } catch {
+        consola.error('Invalid JSON config: %s', args.config)
+        process.exitCode = 1
+        return
+      }
+
+      // Augment config with username/handle and optional gateway
+      config = { ...config, username, handle: username }
+      if (args.gateway) {
+        config = { ...config, gateway: true }
+      }
+
+      // Register agent
+      const agentId = await callRpc<string>(
+        'fn_runner_register',
+        {
+          p_name: name,
+          p_adapter_type: type,
+          p_config: config,
+        },
+        { requireAuth: true },
+      )
+
+      // Optional device binding
+      if (args.device) {
+        await callRpc<string>(
+          'fn_runner_bind_device',
+          {
+            p_runner_id: agentId,
+            p_device_id: args.device,
+          },
+          { requireAuth: true },
+        )
+      }
+
+      // Output
+      if (args.json) {
+        printJson({
+          id: agentId,
+          name,
+          username,
+          type,
+          gateway: args.gateway,
+          device: args.device || null,
+        })
+        return
+      }
+
+      consola.success('Agent created.')
+      consola.info('ID:       %s', agentId)
+      consola.info('Name:     %s', name)
+      consola.info('Username: @%s', username)
+      consola.info('Type:     %s', type)
+      consola.info('Next steps:')
+      consola.info('  lf agents use %s   — set as active workspace', agentId)
+      consola.info('  lf agents logs             — view recent action logs')
+      consola.info('  lf agents runs             — list recent team runs')
+    } catch (err) {
+      handleError(err)
+    }
   },
 })
 

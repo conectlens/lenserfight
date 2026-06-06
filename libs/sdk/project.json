@@ -32,7 +32,7 @@
       "dependsOn": ["build"],
       "options": {
         "packageRoot": "dist/libs/sdk",
-        "tag": "alpha",
+        "tag": "latest",
         "access": "public"
       }
     }
