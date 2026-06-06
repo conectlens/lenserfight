@@ -1,3 +1,14 @@
+## 0.24.0 (2026-06-06)
+
+### 🚀 Features
+
+- improve lf agents create with interactive prompts, --json flag, and richer output ([7ca56d1be](https://github.com/conectlens/lenserfight/commit/7ca56d1be))
+
+### ❤️ Thank You
+
+- Claude Haiku 4.5
+- ÖMER FARUK COŞKUN
+
 ## 0.23.0 (2026-06-05)
 
 This was a version bump only for cli to align it with other projects, there were no code changes.
