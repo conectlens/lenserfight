@@ -1,6 +1,6 @@
 {
   "name": "@lenserfight/sdk",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "LenserFight public client SDK — browse and execute lenses, workflows, battles, agents, and protocols from any Supabase-backed deployment",
   "license": "MIT",
   "main": "./index.cjs",
