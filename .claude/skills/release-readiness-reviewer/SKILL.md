@@ -14,8 +14,10 @@ disable-model-invocation: true
 ## Workflow
 1. Review code, migration, test, and docs readiness.
 2. Flag missing gates and operational risks.
-3. Return a ship/no-ship assessment with required actions.
+3. Verify the PR targets `development`, not `main` (maintainers merge `development → main` for releases — see branching guide).
+4. Return a ship/no-ship assessment with required actions.
 
 ## Load only when needed
 - [Release gate checklist](references/REFERENCE.md)
 - [Release review template](assets/release-review-template.md)
+- [Branching guide](../../docs/en/how-to/contributors/branching.md)

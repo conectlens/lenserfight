@@ -68,6 +68,25 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
+## 6. Git Workflow
+
+> Full rules: [`docs/en/how-to/contributors/branching.md`](docs/en/how-to/contributors/branching.md)
+
+**Branches:** Always branch from `development`. PRs target `development`. `main` is release-only — merged by maintainers only; pushing to `main` triggers the release pipeline.
+
+Branch naming: `feature/`, `fix/`, `docs/`, `refactor/` + short kebab slug (e.g., `feature/agent-browse-filters`).
+
+**Conventional Commits are required** — they drive automated version bumps and CHANGELOG quality:
+
+| Prefix | Version impact | When to use |
+|--------|---------------|-------------|
+| `feat:` | minor bump | New user-visible capability |
+| `fix:` · `perf:` · `security:` | patch bump | Bug fix / performance / security hardening |
+| `refactor:` · `docs:` · `test:` · `chore:` · `ci:` | no bump | Internal, no user-visible impact |
+| `feat!:` or footer `BREAKING CHANGE:` | major bump | Breaking API or contract change |
+
+Non-conventional commits produce "version bump only" changelogs. Every user-facing change **must** use `feat:` or `fix:`.
+
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
 

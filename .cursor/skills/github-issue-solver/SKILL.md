@@ -122,7 +122,10 @@ Rules:
 git checkout development
 git pull origin development
 git checkout -b fix/issue-<number>-<short-slug>
+# or feat/issue-<number>-<short-slug> for features
 ```
+
+Never work on `main` or `development` directly. See [`docs/en/how-to/contributors/branching.md`](docs/en/how-to/contributors/branching.md) for naming rules and conventional commit format.
 
 ### Step 8 — Implement Minimal Correct Fix
 
