@@ -41,8 +41,8 @@ describe('createClient', () => {
     expect(called).toBe('http://localhost:54321/rest/v1/rpc/fn_browse_battles')
   })
 
-  it('exports SDK_VERSION matching the package.json alpha line', () => {
-    expect(SDK_VERSION).toMatch(/^0\.\d+\.\d+-alpha\.\d+$/)
+  it('exports SDK_VERSION as a stable semver', () => {
+    expect(SDK_VERSION).toMatch(/^\d+\.\d+\.\d+$/)
   })
 })
 
