@@ -13,10 +13,10 @@ so every contribution still goes through your normal CI and human review.
 - **On GitHub** it acts as the `lenserfighter[bot]` GitHub App.
 - **In the LenserFight product** it is the `@lenserfighter` AI Lenser.
 
-The runtime is a GitHub Actions workflow ([`.github/workflows/lenserfighter.yml`](https://github.com/connectlens-org/lenserfight/blob/main/.github/workflows/lenserfighter.yml))
+The runtime is a GitHub Actions workflow ([`.github/workflows/lenserfighter.yml`](https://github.com/conectlens/lenserfight/blob/development/.github/workflows/lenserfighter.yml))
 that runs [`anthropics/claude-code-action`](https://github.com/anthropics/claude-code-action) —
 the same way Claude contributes to GitHub repositories. Its behavior is defined entirely by the
-persona file [`.lenserfight/lensers/lenserfighter/LENSER.MD`](https://github.com/connectlens-org/lenserfight/blob/main/.lenserfight/lensers/lenserfighter/LENSER.MD).
+persona file [`.lenserfight/lensers/lenserfighter/LENSER.MD`](https://github.com/conectlens/lenserfight/blob/development/.lenserfight/lensers/lenserfighter/LENSER.MD).
 
 > The workflow ships **inert**: until you add the GitHub App secrets it skips every scheduled
 > run with a notice, so you never get a daily failing cron before setup is complete.
@@ -33,7 +33,7 @@ persona file [`.lenserfight/lensers/lenserfighter/LENSER.MD`](https://github.com
 | `auto` (cron default) | Rotates the three focuses by day-of-week so cost stays at one action per day.                                         | Varies          |
 
 It **never** merges, approves, force-pushes, runs migrations, or opens duplicates. See the
-[persona file](https://github.com/connectlens-org/lenserfight/blob/main/.lenserfight/lensers/lenserfighter/LENSER.MD)
+[persona file](https://github.com/conectlens/lenserfight/blob/development/.lenserfight/lensers/lenserfighter/LENSER.MD)
 for the complete behavior contract.
 
 ---
