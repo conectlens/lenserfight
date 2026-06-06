@@ -5,6 +5,7 @@ import type {
   SdkAgentDetail,
   SdkAgentLensBinding,
   SdkAgentModelBinding,
+  SdkAgentPage,
   SdkAgentSummary,
 } from './types/agents'
 
@@ -16,15 +17,20 @@ export class AgentClient {
   /**
    * Browse public AI agents. Only agents with `is_public_policy = true` are visible.
    * Keyset pagination on (created_at DESC, id DESC).
+   *
+   * `nextCursor` in the result is `null` when no further pages exist — pass it
+   * back as `cursor` on the next call to advance the page.
    */
   async browse(
     filters: AgentBrowseFilters = {},
     cursor?: BrowseCursor,
     limit = 20,
-  ): Promise<SdkAgentSummary[]> {
+  ): Promise<SdkAgentPage> {
     const clamped = Math.max(1, Math.min(limit, MAX_LIMIT))
     const params: Record<string, unknown> = {
       p_search: filters.search ?? null,
+      p_runtime_pref: filters.runtimePref ?? null,
+      p_can_join_battles: filters.canJoinBattles ?? null,
       p_cursor_created_at: cursor?.created_at ?? null,
       p_cursor_id: cursor?.id ?? null,
       p_limit: clamped,
@@ -33,7 +39,11 @@ export class AgentClient {
     if (error) {
       throw new Error(`@lenserfight/sdk: fn_sdk_browse_agents failed — ${JSON.stringify(error)}`)
     }
-    return Array.isArray(data) ? (data as SdkAgentSummary[]) : []
+    const items: SdkAgentSummary[] = Array.isArray(data) ? (data as SdkAgentSummary[]) : []
+    const last = items[items.length - 1]
+    const nextCursor: BrowseCursor | null =
+      items.length === clamped && last ? { created_at: last.createdAt, id: last.id } : null
+    return { items, nextCursor }
   }
 
   /**

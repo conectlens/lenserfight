@@ -1,5 +1,7 @@
 // SDK public types for Agents
 
+import type { BrowseCursor } from '../types'
+
 export type SdkAgentRuntimePref = 'cloud' | 'local' | 'hybrid'
 export type SdkAgentModelBindingMode = 'single' | 'multi' | 'dynamic'
 
@@ -65,4 +67,17 @@ export interface SdkAgentModelBinding {
 
 export interface AgentBrowseFilters {
   search?: string
+  /** Filter by agent runtime preference. Only agents with `is_public_policy = true` are visible. */
+  runtimePref?: SdkAgentRuntimePref
+  /** Filter to agents that can join battles (`capabilities.canJoinBattles`). */
+  canJoinBattles?: boolean
+}
+
+/**
+ * Paginated result for `AgentClient.browse()`.
+ * `nextCursor` is `null` when no further pages exist.
+ */
+export interface SdkAgentPage {
+  items: SdkAgentSummary[]
+  nextCursor: BrowseCursor | null
 }
