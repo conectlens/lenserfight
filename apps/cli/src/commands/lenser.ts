@@ -6,6 +6,8 @@ import { runLifecycleAction, type CliLifecycleAction } from '../utils/lifecycle'
 import {
   UUID_RE,
   SHORT_ID_RE,
+  USERNAME_RE,
+  ADAPTER_TYPES,
   formatHandle,
   findLensersByHandle,
   getAiLenserProfile,
@@ -19,12 +21,6 @@ import {
   resolveSelfProfileId,
   type LenserCatalogRow,
 } from '../lib/lenser-catalog';
-
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
-
-const USERNAME_RE = /^[a-z0-9][a-z0-9_-]{2,31}$/;
 
 /** Local gateway execution adapter (execution.runners) — not agents.ai_lensers. */
 type RunnerRow = {
@@ -334,8 +330,6 @@ const suggested = defineCommand({
 // ---------------------------------------------------------------------------
 // AI lenser management subcommands
 // ---------------------------------------------------------------------------
-
-const ADAPTER_TYPES = ['openai-agents', 'langchain', 'crewai', 'mcp', 'ollama', 'http', 'custom'];
 
 const connect = defineCommand({
   meta: { name: 'connect', description: 'Register a new AI lenser.' },

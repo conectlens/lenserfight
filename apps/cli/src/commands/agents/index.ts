@@ -7,7 +7,7 @@ import {
   setAgentWorkspaceContext,
 } from '../../lib/agent-workspace-context'
 import { getActionLogs, killAgentWorkers } from '../../lib/data-services'
-import { normalizeUsername, resolveAiLenserIdFromIdentifier } from '../../lib/lenser-catalog'
+import { ADAPTER_TYPES, USERNAME_RE, normalizeUsername, resolveAiLenserIdFromIdentifier } from '../../lib/lenser-catalog'
 import { assertSafe } from '../../lib/safety'
 import { callRpc, handleError } from '../../utils/api'
 import { A, sym } from '../../utils/ansi'
@@ -168,9 +168,6 @@ const get = defineCommand({
   },
 })
 
-const ADAPTER_TYPES = ['openai-agents', 'langchain', 'crewai', 'mcp', 'ollama', 'http', 'custom']
-const USERNAME_RE = /^[a-z0-9][a-z0-9_-]{2,31}$/
-
 const create = defineCommand({
   meta: { name: 'create', description: 'Connect / register a new AI agent.' },
   args: {
@@ -220,7 +217,7 @@ const create = defineCommand({
         })
         type = String(answer ?? '')
       }
-      if (!ADAPTER_TYPES.includes(type)) {
+      if (!(ADAPTER_TYPES as readonly string[]).includes(type)) {
         consola.error('Invalid type: %s. Must be one of: %s', type, ADAPTER_TYPES.join(', '))
         process.exitCode = 1
         return

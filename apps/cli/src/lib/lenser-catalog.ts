@@ -7,6 +7,16 @@ export type LenserListFilter = 'all' | LenserKind;
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const SHORT_ID_RE = /^[0-9a-f]{6,12}$/i;
 
+/** Valid AI lenser / agent adapter types. */
+export const ADAPTER_TYPES = ['openai-agents', 'langchain', 'crewai', 'mcp', 'ollama', 'http', 'custom'] as const;
+export type AdapterType = (typeof ADAPTER_TYPES)[number];
+
+/**
+ * Username must be 3–32 chars, start with a lowercase letter or digit, and
+ * contain only lowercase letters, digits, underscores, and hyphens.
+ */
+export const USERNAME_RE = /^[a-z0-9][a-z0-9_-]{2,31}$/;
+
 export type LenserSearchRow = {
   id: string;
   handle: string;
