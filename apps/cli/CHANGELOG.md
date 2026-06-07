@@ -1,3 +1,13 @@
+## 0.24.1 (2026-06-07)
+
+### 🩹 Fixes
+
+- prevent content editor hydration while focused and improve adapter type safety in CLI command ([c105252e2](https://github.com/conectlens/lenserfight/commit/c105252e2))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 0.24.0 (2026-06-06)
 
 ### 🚀 Features
