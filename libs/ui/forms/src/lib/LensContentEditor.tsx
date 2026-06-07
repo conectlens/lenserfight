@@ -207,9 +207,12 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
       if (value !== lastKnownValue.current) hydrate()
     }, [value, hydrate])
 
-    // Re-render chips when bindings/tools change (e.g. [[file:file]] synced after debounce)
+    // Re-render chips when bindings/tools change (e.g. [[file:file]] synced after debounce).
+    // Skip hydration while the editor is focused: innerHTML replacement would reset cursor
+    // position AND destroy the browser's undo stack (Ctrl+Z stops working).
     useEffect(() => {
       if (!containerRef.current || !value) return
+      if (document.activeElement === containerRef.current) return
       lastKnownValue.current = ''
       hydrate()
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh chips only when bindings/tools change

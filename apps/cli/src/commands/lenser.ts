@@ -348,7 +348,7 @@ const connect = defineCommand({
       process.exitCode = 1;
       return;
     }
-    if (!ADAPTER_TYPES.includes(args.type)) {
+    if (!ADAPTER_TYPES.includes(args.type as (typeof ADAPTER_TYPES)[number])) {
       consola.error('Invalid lenser type: %s. Must be one of: %s', args.type, ADAPTER_TYPES.join(', '));
       process.exitCode = 1;
       return;
