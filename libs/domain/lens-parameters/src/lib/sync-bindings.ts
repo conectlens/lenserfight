@@ -28,7 +28,7 @@ export function syncBindingsFromContent(
   const extracted = parseTemplateParams(rawContent)
   const prevMap = new Map(existing.map((p) => [p.label, p]))
 
-  return extracted.map((ep) => {
+  const next = extracted.map((ep) => {
     const prev = prevMap.get(ep.label)
     if (prev) {
       if (prev.optional !== ep.optional) {
@@ -45,4 +45,9 @@ export function syncBindingsFromContent(
       ...(ep.optional ? { optional: true } : {}),
     }
   })
+
+  // Return the same reference when nothing changed so React bails out of the
+  // setVersionParams functional update and skips re-rendering consumers.
+  if (next.length === existing.length && next.every((p, i) => p === existing[i])) return existing
+  return next
 }
