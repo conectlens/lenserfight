@@ -83,7 +83,7 @@ jobs:
         # Pin to an immutable commit SHA before merging this change. Resolve via:
         #   gh api repos/actions/create-github-app-token/git/refs/tags/v1 | jq -r .object.sha
         # then replace the tag below with `@<full-40-char-sha>  # v1`.
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.LENSERFIGHTER_APP_ID }}
           private-key: ${{ secrets.LENSERFIGHTER_APP_PRIVATE_KEY }}
