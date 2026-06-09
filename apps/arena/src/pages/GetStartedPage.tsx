@@ -1,6 +1,6 @@
 import { Badge, Card } from '@lenserfight/ui/components'
 import { ArrowRight, BookOpen, Sword, Trophy, CheckCircle2 } from 'lucide-react'
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
@@ -15,6 +15,7 @@ const STEPS = [
 
 export const GetStartedPage: React.FC = () => {
   const { t } = useTranslation(['getStarted', 'common'])
+  const [audience, setAudience] = useState<'compete' | 'build'>('compete')
   return (
     <div className="bg-surface-base text-surface-text">
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
@@ -58,11 +59,31 @@ export const GetStartedPage: React.FC = () => {
           </div>
 
           <div className="space-y-4">
-            {STEPS.map(({ icon: Icon, step, href, external }, index) => {
-              const title = t(`getStarted:steps.${index}.title`)
-              const desc = t(`getStarted:steps.${index}.description`)
-              const cta = t(`getStarted:steps.${index}.cta`)
+            <div className="flex gap-1 rounded-full border border-surface-border bg-surface-raised p-1 w-fit">
+              {(['compete', 'build'] as const).map((track) => (
+                <button
+                  key={track}
+                  type="button"
+                  onClick={() => setAudience(track)}
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    audience === track
+                      ? 'bg-primary-yellow-500 text-greyscale-900'
+                      : 'text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-0'
+                  }`}
+                >
+                  {t(`getStarted:audienceFork.${track}`)}
+                </button>
+              ))}
+            </div>
+
+            {STEPS.map(({ icon: Icon, step, href: defaultHref, external: defaultExternal }, index) => {
+              const isBuildStep = index === 2 && audience === 'build'
+              const title = t(`getStarted:steps.${index}.${isBuildStep ? 'title_build' : 'title'}`)
+              const desc = t(`getStarted:steps.${index}.${isBuildStep ? 'description_build' : 'description'}`)
+              const cta = t(`getStarted:steps.${index}.${isBuildStep ? 'cta_build' : 'cta'}`)
               const fastPath = t(`getStarted:steps.${index}.fastPath`)
+              const href = isBuildStep ? '/cli' : defaultHref
+              const external = isBuildStep ? false : defaultExternal
               return (
                 <Card key={step} className="flex gap-4 p-6">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-surface-raised text-greyscale-900 dark:text-greyscale-0">
@@ -81,7 +102,7 @@ export const GetStartedPage: React.FC = () => {
                     </div>
                     {external ? (
                       <a
-                        href={href}
+                        href={href as string}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-4 py-2 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
@@ -90,7 +111,7 @@ export const GetStartedPage: React.FC = () => {
                       </a>
                     ) : (
                       <Link
-                        to={href}
+                        to={href as string}
                         className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-4 py-2 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
                       >
                         {cta} <ArrowRight size={14} />

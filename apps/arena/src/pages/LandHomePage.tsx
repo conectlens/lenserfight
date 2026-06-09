@@ -1,4 +1,4 @@
-import { Badge, Card } from '@lenserfight/ui/components'
+import { Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, CheckCircle, Heart, MessagesSquare, Shield, Star, Swords } from 'lucide-react'
 import React, { useRef } from 'react'
@@ -9,6 +9,7 @@ import { ArenaPulseSection } from '../components/ArenaPulseSection'
 import { BattleTypesShowcase } from '../components/BattleTypesShowcase'
 import { GamificationPreview } from '../components/GamificationPreview'
 import { HotThreadsSection } from '../components/HotThreadsSection'
+import { HeroFightPreview } from '../components/HeroFightPreview'
 import { WaitlistForm } from '../components/WaitlistForm'
 
 const HomeTour = React.lazy(() => import('../components/HomeTour'))
@@ -51,6 +52,7 @@ const viewport = { once: true, margin: '-60px' }
 // ── Static data ──────────────────────────────────────────────────────────────
 
 const HERO_BULLET_INDICES = [0, 1, 2] as const
+const GLOSSARY_TERM_INDICES = [0, 1, 2, 3] as const
 const HOW_IT_WORKS_ICONS = [Swords, MessagesSquare, Star] as const
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -102,6 +104,28 @@ export const LandHomePage: React.FC = () => {
           </motion.ul>
 
           <motion.div
+            className="grid grid-cols-2 gap-2"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {GLOSSARY_TERM_INDICES.map((i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp}
+                className="rounded-xl border border-surface-border bg-surface-raised px-3 py-2.5"
+              >
+                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-greyscale-500 dark:text-greyscale-400">
+                  {t(`home:glossary.terms.${i}.term`)}
+                </p>
+                <p className="mt-0.5 text-xs leading-5 text-greyscale-700 dark:text-greyscale-300">
+                  {t(`home:glossary.terms.${i}.definition`)}
+                </p>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <motion.div
             variants={fadeUp}
             initial="hidden"
             animate="visible"
@@ -123,21 +147,17 @@ export const LandHomePage: React.FC = () => {
         </motion.div>
 
         <motion.div
-          className="flex items-center justify-center"
           initial={{ opacity: 0, y: 32, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ ...spring, delay: 0.12 }}
         >
-          <video 
-            src="https://cdn.lenserfight.com/product/videos/introduction.mp4" 
-            width="720" 
-            aria-label="LenserFight — AI Prompt Framework & Workflow Engine & AI Benchmarking & AI Forum & Agent Lab & Agent Playground & Community-Driven Evaluations & AI Agents "
-            autoPlay 
-            muted 
-            loop 
-            playsInline 
-            className="rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-1 ring-black/10 dark:ring-white/10"
-          />
+          <DesktopFrame
+            title={t('home:preview.demoTitle')}
+            url={t('home:preview.demoUrl')}
+            label={t('home:preview.demoFrameLabel')}
+          >
+            <HeroFightPreview />
+          </DesktopFrame>
         </motion.div>
       </section>
 

@@ -199,6 +199,14 @@ export const CreateLenserProfileModal: React.FC = () => {
     }
   }, [sanitizedReturnTo, navigate])
 
+  const [showWelcome, setShowWelcome] = useState(
+    () => !storage.getItem('lf:onboarding_welcome_seen')
+  )
+  const dismissWelcome = useCallback(() => {
+    storage.setItem('lf:onboarding_welcome_seen', 'true')
+    setShowWelcome(false)
+  }, [])
+
   // Hoist steps array before early returns so useMemo is called unconditionally
   const wizardSteps = useMemo(() => [
     {
@@ -229,6 +237,46 @@ export const CreateLenserProfileModal: React.FC = () => {
 
   if (authLoading || isLoading || !isAuthenticated) return null
   if (hasLenser && hasCompletedOnboarding) return null
+
+  if (showWelcome) {
+    return (
+      <div className="space-y-6 px-1 py-2">
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-greyscale-900 dark:text-greyscale-0">
+            Welcome to LenserFight
+          </h2>
+          <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
+            The benchmark arena where AI and humans compete on the same prompt.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          {([
+            { term: 'Battle', definition: 'Two contenders. One prompt. Community verdict.' },
+            { term: 'Lens', definition: 'The prompt template both sides run.' },
+            { term: 'Rubric', definition: 'The scoring rules the AI judge follows.' },
+          ] as const).map(({ term, definition }) => (
+            <div key={term} className="flex gap-3 rounded-xl border border-surface-border bg-surface-raised px-4 py-3">
+              <p className="min-w-[4.5rem] text-xs font-black uppercase tracking-[0.12em] text-greyscale-500 dark:text-greyscale-400 pt-0.5">{term}</p>
+              <p className="text-sm text-greyscale-700 dark:text-greyscale-300">{definition}</p>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-xs text-greyscale-500 dark:text-greyscale-400">
+          You'll be a <span className="font-semibold text-greyscale-700 dark:text-greyscale-300">Lenser</span> — someone who creates Lenses, joins Battles, and earns XP. Setup takes about 2 minutes.
+        </p>
+
+        <button
+          type="button"
+          onClick={dismissWelcome}
+          className="w-full rounded-full bg-primary-yellow-500 px-6 py-3 text-sm font-bold text-greyscale-900 transition-all hover:bg-primary-yellow-400"
+        >
+          Set up my profile →
+        </button>
+      </div>
+    )
+  }
 
   // ── Step 0 submit: create profile ───────────────────────────────────
   const handleStep0Next = async () => {
@@ -493,7 +541,7 @@ export const CreateLenserProfileModal: React.FC = () => {
         /* ── Step 2: AI configuration (optional) ── */
         <div className="space-y-5">
           <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
-            Optionally set your preferred AI provider and model. You can change this later in Settings.
+            Skip this — you can configure your AI provider any time in Settings. Only set it now if you already have a key ready.
           </p>
 
           <SearchSelectField

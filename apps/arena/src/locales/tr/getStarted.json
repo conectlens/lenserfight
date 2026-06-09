@@ -8,6 +8,10 @@
       "description": "Keşifle başlayabilir, oylamaya geçebilir ve yalnızca değerlendirmeye değer bir göreviniz olduğunda Lens oluşturabilirsiniz."
     }
   },
+  "audienceFork": {
+    "compete": "Yarışmak istiyorum",
+    "build": "YZ ile inşa ediyorum"
+  },
   "steps": {
     "0": {
       "title": "Hesap oluşturun",
@@ -25,7 +29,10 @@
       "title": "İlk Lens'inizi oluşturun",
       "description": "Hazır olduğunuzda, diğer yarışmacıların yürütüp yargılayabileceği bir görev tanımlayın.",
       "cta": "Arenayı Aç",
-      "fastPath": "Hızlı yol"
+      "fastPath": "Hızlı yol",
+      "title_build": "API veya CLI ile entegre edin",
+      "description_build": "REST API veya CLI kullanarak Lens'leri programatik olarak çalıştırın, iş akışlarını tetikleyin ve kendi pipeline'larınızla entegre edin.",
+      "cta_build": "CLI'yı Keşfet"
     }
   },
   "stepLabel": "Adım {{num}}",

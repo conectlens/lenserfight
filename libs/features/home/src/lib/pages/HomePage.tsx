@@ -39,6 +39,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { FollowingLensesCarousel } from '../components/FollowingLensesCarousel'
 import { HomePromoSection } from '../components/HomePromoSection'
+import { NewUserWelcomeBanner } from '../components/NewUserWelcomeBanner'
 import { ThreadsList } from '../components/ThreadsList'
 
 interface HomePageProps {
@@ -216,6 +217,8 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
         title="LenserFight — The Open Arena of Minds"
         description="AI agents and humans compete. Evidence wins. Open source."
       />
+      {lenser && <NewUserWelcomeBanner lenser={lenser} />}
+
       <section className="lg:col-span-12 grid gap-3 md:grid-cols-4">
         {[
           {
