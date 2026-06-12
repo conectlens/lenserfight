@@ -158,20 +158,122 @@ describe('LensClient', () => {
   })
 
   describe('getVersion', () => {
-    it('combines fn_get_lens_version_detail + fn_get_lens_version_parameters', async () => {
-      const rpc: SupabaseLikeRpcClient = {
+    const detailRow = {
+      id: 'v1',
+      lens_id: 'l1',
+      version_number: 2,
+      status: 'published',
+      template_body: 'Hello [[:p1]]',
+      changelog: 'Initial',
+      published_at: '2026-01-01T00:00:00Z',
+      created_at: '2026-01-01T00:00:00Z',
+    }
+    const paramRow = {
+      id: 'p1',
+      label: 'topic',
+      tool_id: 't1',
+      optional: false,
+      tool: {
+        id: 't1', key: 'text', label: 'Short Text', description: null, category: 'input',
+        type: 'text', required: true, placeholder: 'Enter text...', help_text: 'A brief value.',
+        validation_schema: null, options: null,
+        icon: 'type', color: '#6366f1', is_system: true, max_length: 500, min_length: 1, sort_order: 0,
+      },
+    }
+
+    function makeVersionRpc() {
+      return {
         rpc: vi.fn(async (fn: string) => {
-          if (fn === 'fn_get_lens_version_detail') {
-            return { data: [{ id: 'v1', lens_id: 'l1', version_number: 1 }], error: null }
-          }
-          return { data: [{ id: 'p1', label: 'topic' }], error: null }
+          if (fn === 'fn_get_lens_version_detail') return { data: [detailRow], error: null }
+          return { data: [paramRow], error: null }
         }),
-      }
-      const lf = createClientFromRpc(rpc)
-      const result = await lf.lenses.getVersion('v1')
-      expect(result).toBeTruthy()
+      } as SupabaseLikeRpcClient
+    }
+
+    it('calls both RPCs with the version id', async () => {
+      const rpc = makeVersionRpc()
+      await createClientFromRpc(rpc).lenses.getVersion('v1')
       expect(rpc.rpc).toHaveBeenCalledWith('fn_get_lens_version_detail', { p_version_id: 'v1' })
       expect(rpc.rpc).toHaveBeenCalledWith('fn_get_lens_version_parameters', { p_version_id: 'v1' })
+    })
+
+    it('maps snake_case version fields to camelCase', async () => {
+      const result = await createClientFromRpc(makeVersionRpc()).lenses.getVersion('v1')
+      expect(result).not.toBeNull()
+      expect(result!.lensId).toBe('l1')
+      expect(result!.versionNumber).toBe(2)
+      expect(result!.templateBody).toBe('Hello [[:p1]]')
+      expect(result!.publishedAt).toBe('2026-01-01T00:00:00Z')
+      expect(result!.createdAt).toBe('2026-01-01T00:00:00Z')
+      expect(result!.parameterCount).toBe(1)
+    })
+
+    it('maps parameters and tool fields to camelCase', async () => {
+      const result = await createClientFromRpc(makeVersionRpc()).lenses.getVersion('v1')
+      expect(result!.parameters).toHaveLength(1)
+      const param = result!.parameters[0]
+      expect(param.toolId).toBe('t1')
+      expect(param.optional).toBe(false)
+      expect(param.tool).not.toBeNull()
+      expect(param.tool!.key).toBe('text')
+      expect(param.tool!.helpText).toBe('A brief value.')
+      expect(param.tool!.isSystem).toBe(true)
+      expect(param.tool!.maxLength).toBe(500)
+      expect(param.tool!.minLength).toBe(1)
+      expect(param.tool!.sortOrder).toBe(0)
+      expect(param.tool!.icon).toBe('type')
+      expect(param.tool!.color).toBe('#6366f1')
+    })
+
+    it('returns null when detail RPC returns empty array', async () => {
+      const rpc: SupabaseLikeRpcClient = {
+        rpc: vi.fn(async (fn: string) => {
+          if (fn === 'fn_get_lens_version_detail') return { data: [], error: null }
+          return { data: [], error: null }
+        }),
+      }
+      expect(await createClientFromRpc(rpc).lenses.getVersion('v1')).toBeNull()
+    })
+
+    it('throws when params RPC errors', async () => {
+      const rpc: SupabaseLikeRpcClient = {
+        rpc: vi.fn(async (fn: string) => {
+          if (fn === 'fn_get_lens_version_detail') return { data: [detailRow], error: null }
+          return { data: null, error: { message: 'denied' } }
+        }),
+      }
+      await expect(createClientFromRpc(rpc).lenses.getVersion('v1')).rejects.toThrowError(
+        /fn_get_lens_version_parameters failed/,
+      )
+    })
+  })
+
+  describe('getLatestVersion', () => {
+    it('resolves head_version_id via fn_get_lens_detail_bootstrap then calls getVersion', async () => {
+      const rpc: SupabaseLikeRpcClient = {
+        rpc: vi.fn(async (fn: string) => {
+          if (fn === 'fn_get_lens_detail_bootstrap')
+            return { data: { id: 'l1', head_version_id: 'v1' }, error: null }
+          if (fn === 'fn_get_lens_version_detail')
+            return { data: [{ id: 'v1', lens_id: 'l1', version_number: 1, status: 'draft', template_body: 'T', changelog: null, published_at: null, created_at: '2026-01-01T00:00:00Z' }], error: null }
+          return { data: [], error: null }
+        }),
+      }
+      const result = await createClientFromRpc(rpc).lenses.getLatestVersion('l1')
+      expect(result).not.toBeNull()
+      expect(result!.id).toBe('v1')
+      expect(rpc.rpc).toHaveBeenCalledWith('fn_get_lens_detail_bootstrap', { p_lens_id: 'l1' })
+      expect(rpc.rpc).toHaveBeenCalledWith('fn_get_lens_version_detail', { p_version_id: 'v1' })
+    })
+
+    it('returns null when bootstrap returns error', async () => {
+      const rpc = mockRpc({ error: 'not_found' })
+      expect(await createClientFromRpc(rpc).lenses.getLatestVersion('missing')).toBeNull()
+    })
+
+    it('returns null when lens has no head_version_id', async () => {
+      const rpc = mockRpc({ id: 'l1', head_version_id: null })
+      expect(await createClientFromRpc(rpc).lenses.getLatestVersion('l1')).toBeNull()
     })
   })
 })
