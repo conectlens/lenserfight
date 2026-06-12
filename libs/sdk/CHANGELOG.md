@@ -1,3 +1,13 @@
+## 2.2.0 (2026-06-12)
+
+### 🚀 Features
+
+- implement `getLatestVersion` and expand SDK parameter/tool data mapping with full schema support ([d99f00f24](https://github.com/conectlens/lenserfight/commit/d99f00f24))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 2.1.0 (2026-06-12)
 
 ### 🚀 Features
