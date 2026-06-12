@@ -15,77 +15,70 @@ export class AgentClient {
   constructor(private readonly rpcClient: SupabaseLikeRpcClient) {}
 
   /**
-   * Browse public AI agents. Only agents with `is_public_policy = true` are visible.
-   * Keyset pagination on (created_at DESC, id DESC).
-   *
-   * `nextCursor` in the result is `null` when no further pages exist — pass it
-   * back as `cursor` on the next call to advance the page.
+   * List AI agents owned by `filters.ownerId`. Uses `fn_list_agents_by_owner`.
+   * Requires an authenticated client.
    */
   async browse(
-    filters: AgentBrowseFilters = {},
-    cursor?: BrowseCursor,
+    filters: AgentBrowseFilters,
     limit = 20,
   ): Promise<SdkAgentPage> {
     const clamped = Math.max(1, Math.min(limit, MAX_LIMIT))
-    const params: Record<string, unknown> = {
-      p_search: filters.search ?? null,
-      p_runtime_pref: filters.runtimePref ?? null,
-      p_can_join_battles: filters.canJoinBattles ?? null,
-      p_cursor_created_at: cursor?.created_at ?? null,
-      p_cursor_id: cursor?.id ?? null,
-      p_limit: clamped,
-    }
-    const { data, error } = await this.rpcClient.rpc('fn_sdk_browse_agents', params)
+    const { data, error } = await this.rpcClient.rpc('fn_list_agents_by_owner', {
+      p_owner_lenser_id: filters.ownerId,
+    })
     if (error) {
-      throw new Error(`@lenserfight/sdk: fn_sdk_browse_agents failed — ${JSON.stringify(error)}`)
+      throw new Error(`@lenserfight/sdk: fn_list_agents_by_owner failed — ${JSON.stringify(error)}`)
     }
-    const items: SdkAgentSummary[] = Array.isArray(data) ? (data as SdkAgentSummary[]) : []
-    const last = items[items.length - 1]
-    const nextCursor: BrowseCursor | null =
-      items.length === clamped && last ? { created_at: last.createdAt, id: last.id } : null
+    const all: SdkAgentSummary[] = Array.isArray(data) ? (data as SdkAgentSummary[]) : []
+    const items = all.slice(0, clamped)
+    const nextCursor: BrowseCursor | null = null
     return { items, nextCursor }
   }
 
   /**
-   * Get public agent profile detail. Returns null for non-public or non-existent agents.
+   * Get agent profile detail by agent ID. Uses `fn_get_agent_profile`.
    */
   async getById(agentId: string): Promise<SdkAgentDetail | null> {
-    const { data, error } = await this.rpcClient.rpc('fn_sdk_get_agent_detail', {
-      p_agent_id: agentId,
+    const { data, error } = await this.rpcClient.rpc('fn_get_agent_profile', {
+      p_ai_lenser_id: agentId,
     })
     if (error) {
       throw new Error(
-        `@lenserfight/sdk: fn_sdk_get_agent_detail failed — ${JSON.stringify(error)}`,
+        `@lenserfight/sdk: fn_get_agent_profile failed — ${JSON.stringify(error)}`,
       )
     }
     return (data as SdkAgentDetail) ?? null
   }
 
   /**
-   * Get lens bindings for a public agent.
+   * Get lens bindings for an agent. Uses `fn_list_agent_lens_bindings`.
    */
   async getLensBindings(agentId: string): Promise<SdkAgentLensBinding[]> {
-    const { data, error } = await this.rpcClient.rpc('fn_sdk_get_agent_lens_bindings', {
-      p_agent_id: agentId,
+    const { data, error } = await this.rpcClient.rpc('fn_list_agent_lens_bindings', {
+      p_ai_lenser_id: agentId,
+      p_limit: 50,
+      p_offset: 0,
     })
     if (error) {
       throw new Error(
-        `@lenserfight/sdk: fn_sdk_get_agent_lens_bindings failed — ${JSON.stringify(error)}`,
+        `@lenserfight/sdk: fn_list_agent_lens_bindings failed — ${JSON.stringify(error)}`,
       )
     }
     return Array.isArray(data) ? (data as SdkAgentLensBinding[]) : []
   }
 
   /**
-   * Get model bindings for a public agent.
+   * Get model bindings for an agent. Uses `fn_list_agent_model_bindings`.
    */
   async getModelBindings(agentId: string): Promise<SdkAgentModelBinding[]> {
-    const { data, error } = await this.rpcClient.rpc('fn_sdk_get_agent_model_bindings', {
-      p_agent_id: agentId,
+    const { data, error } = await this.rpcClient.rpc('fn_list_agent_model_bindings', {
+      p_ai_lenser_id: agentId,
+      p_limit: 50,
+      p_offset: 0,
     })
     if (error) {
       throw new Error(
-        `@lenserfight/sdk: fn_sdk_get_agent_model_bindings failed — ${JSON.stringify(error)}`,
+        `@lenserfight/sdk: fn_list_agent_model_bindings failed — ${JSON.stringify(error)}`,
       )
     }
     return Array.isArray(data) ? (data as SdkAgentModelBinding[]) : []

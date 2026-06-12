@@ -1,41 +1,90 @@
 import type { SupabaseLikeRpcClient } from './client'
-import type { BrowseCursor } from './types'
 import type {
   LensBrowseFilters,
+  SdkContentStatus,
+  SdkLensAuthor,
   SdkLensDetail,
   SdkLensSummary,
+  SdkLensTag,
   SdkLensVersion,
   SdkLensVersionSummary,
   SdkResolvedTemplate,
+  SdkVisibility,
 } from './types/lenses'
 import type { SdkParameterContract } from './types/protocols'
 
 const MAX_LIMIT = 100
 
+type ListRow = Record<string, unknown>
+
+function extractRows(data: unknown): ListRow[] {
+  if (!data) return []
+  const asObj = data as { data?: unknown[] }
+  if (Array.isArray(asObj.data)) return asObj.data as ListRow[]
+  if (Array.isArray(data)) return data as ListRow[]
+  return []
+}
+
+function mapRow(row: ListRow): SdkLensSummary {
+  return {
+    id: row['id'] as string,
+    title: (row['title'] as string) ?? '',
+    description: (row['description'] as string | null) ?? null,
+    author: {
+      id: (row['lenser_id'] as string) ?? '',
+      handle: (row['author_handle'] as string) ?? '',
+      displayName: (row['author_handle'] as string) ?? '',
+      avatarUrl: null,
+    } as SdkLensAuthor,
+    tags: Array.isArray(row['tags']) ? (row['tags'] as SdkLensTag[]) : [],
+    visibility: (row['visibility'] as SdkVisibility) ?? 'public',
+    status: (row['status'] as SdkContentStatus) ?? 'published',
+    outputKind: null,
+    latestVersionNumber: null,
+    createdAt: (row['created_at'] as string) ?? '',
+  }
+}
+
 export class LensClient {
   constructor(private readonly rpcClient: SupabaseLikeRpcClient) {}
 
   /**
-   * Browse public lenses. Keyset pagination on (created_at DESC, id DESC).
+   * Browse public lenses. Uses fn_mcp_lens_list (offset pagination).
+   * For text search, uses fn_mcp_lens_search instead.
+   * Requires an authenticated client.
    */
   async browse(
     filters: LensBrowseFilters = {},
-    cursor?: BrowseCursor,
+    offset = 0,
     limit = 20,
   ): Promise<SdkLensSummary[]> {
     const clamped = Math.max(1, Math.min(limit, MAX_LIMIT))
-    const { data, error } = await this.rpcClient.rpc('fn_sdk_browse_lenses', {
-      p_search: filters.search ?? null,
-      p_tag: filters.tag ?? null,
-      p_kind: filters.kind ?? null,
-      p_cursor_created_at: cursor?.created_at ?? null,
-      p_cursor_id: cursor?.id ?? null,
+
+    if (filters.search) {
+      const { data, error } = await this.rpcClient.rpc('fn_mcp_lens_search', {
+        p_query: filters.search,
+        p_visibility: 'public',
+        p_limit: clamped,
+        p_offset: Math.max(0, offset),
+      })
+      if (error) {
+        throw new Error(`@lenserfight/sdk: fn_mcp_lens_search failed — ${JSON.stringify(error)}`)
+      }
+      return extractRows(data).map(mapRow)
+    }
+
+    const { data, error } = await this.rpcClient.rpc('fn_mcp_lens_list', {
       p_limit: clamped,
+      p_offset: Math.max(0, offset),
+      p_visibility: 'public',
+      p_status: filters.status ?? null,
+      p_lenser_id: null,
+      p_include_archived: false,
     })
     if (error) {
-      throw new Error(`@lenserfight/sdk: fn_sdk_browse_lenses failed — ${JSON.stringify(error)}`)
+      throw new Error(`@lenserfight/sdk: fn_mcp_lens_list failed — ${JSON.stringify(error)}`)
     }
-    return Array.isArray(data) ? (data as SdkLensSummary[]) : []
+    return extractRows(data).map(mapRow)
   }
 
   /**
@@ -44,10 +93,10 @@ export class LensClient {
   async search(
     query: string,
     filters: Omit<LensBrowseFilters, 'search'> = {},
-    cursor?: BrowseCursor,
+    offset = 0,
     limit = 20,
   ): Promise<SdkLensSummary[]> {
-    return this.browse({ ...filters, search: query }, cursor, limit)
+    return this.browse({ ...filters, search: query }, offset, limit)
   }
 
   /**
@@ -91,12 +140,6 @@ export class LensClient {
    * filled prompt and lists which parameters were used or missing.
    *
    * Requires an authenticated client (`apiKey` in `createClient`).
-   *
-   * @example
-   *   const result = await lf.lenses.resolveTemplate(lensId, { Topic: 'TypeScript' });
-   *   if (result.missing.length === 0) {
-   *     // pass result.resolvedPrompt to your AI model
-   *   }
    */
   async resolveTemplate(
     lensId: string,
@@ -173,8 +216,7 @@ export class LensClient {
   }
 
   /**
-   * Extract the parameters declared by a lens version — the contracts plus their
-   * labels. Use this to know which values a lens needs before resolving it.
+   * Extract the parameters declared by a lens version — the contracts plus their labels.
    */
   async extractParams(
     versionId: string,
@@ -185,8 +227,6 @@ export class LensClient {
 
   /**
    * Validate supplied values against a lens version's parameter contracts.
-   * - `missing`: required parameter labels with no value
-   * - `unknown`: provided keys that match no contract label (case-insensitive)
    */
   async validateParams(
     versionId: string,
