@@ -68,8 +68,10 @@ export class LenserFightClient {
  *     DB: fn_mcp_lens_search
  * - `getById(lensId)` — full lens detail including head version
  *     DB: fn_get_lens_detail_bootstrap
- * - `getVersion(versionId)` — version detail + its parameters
+ * - `getVersion(versionId)` — version detail (camelCase-mapped) + full parameters with tool info
  *     DB: fn_get_lens_version_detail + fn_get_lens_version_parameters
+ * - `getLatestVersion(lensId)` — resolves head_version_id then returns version + parameters
+ *     DB: fn_get_lens_detail_bootstrap → fn_get_lens_version_detail + fn_get_lens_version_parameters
  * - `resolveTemplate(lensId, params, { versionId? })` — fill `[[:paramId]]` tokens
  *     DB: fn_mcp_lens_resolve_template
  * - `getParameterContracts(versionId)` — raw parameter contract array from input_contract

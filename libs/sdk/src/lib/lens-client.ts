@@ -4,10 +4,11 @@ import type {
   SdkContentStatus,
   SdkLensAuthor,
   SdkLensDetail,
+  SdkLensParameter,
   SdkLensSummary,
   SdkLensTag,
   SdkLensVersion,
-  SdkLensVersionSummary,
+  SdkParameterTool,
   SdkResolvedTemplate,
   SdkVisibility,
 } from './types/lenses'
@@ -23,6 +24,39 @@ function extractRows(data: unknown): ListRow[] {
   if (Array.isArray(asObj.data)) return asObj.data as ListRow[]
   if (Array.isArray(data)) return data as ListRow[]
   return []
+}
+
+function mapTool(t: ListRow): SdkParameterTool {
+  return {
+    id: t['id'] as string,
+    key: t['key'] as string,
+    label: (t['label'] as string | null) ?? null,
+    description: (t['description'] as string | null) ?? null,
+    category: t['category'] as SdkParameterTool['category'],
+    type: t['type'] as string,
+    required: (t['required'] as boolean) ?? true,
+    placeholder: (t['placeholder'] as string | null) ?? null,
+    helpText: (t['help_text'] as string | null) ?? null,
+    options: (t['options'] as Array<{ label: string; value: string }> | null) ?? null,
+    validationSchema: (t['validation_schema'] as Record<string, unknown> | null) ?? null,
+    icon: (t['icon'] as string | null) ?? null,
+    color: (t['color'] as string | null) ?? null,
+    isSystem: (t['is_system'] as boolean) ?? false,
+    maxLength: (t['max_length'] as number | null) ?? null,
+    minLength: (t['min_length'] as number | null) ?? null,
+    sortOrder: (t['sort_order'] as number) ?? 0,
+  }
+}
+
+function mapParameter(row: ListRow): SdkLensParameter {
+  const toolRaw = row['tool'] as ListRow | null | undefined
+  return {
+    id: row['id'] as string,
+    label: row['label'] as string,
+    toolId: (row['tool_id'] as string) ?? '',
+    optional: (row['optional'] as boolean) ?? false,
+    tool: toolRaw ? mapTool(toolRaw) : null,
+  }
 }
 
 function mapRow(row: ListRow): SdkLensSummary {
@@ -125,13 +159,44 @@ export class LensClient {
     if (detailRes.error) {
       throw new Error(`@lenserfight/sdk: fn_get_lens_version_detail failed — ${JSON.stringify(detailRes.error)}`)
     }
+    if (paramsRes.error) {
+      throw new Error(`@lenserfight/sdk: fn_get_lens_version_parameters failed — ${JSON.stringify(paramsRes.error)}`)
+    }
     if (!detailRes.data) return null
-    const detail = Array.isArray(detailRes.data) ? detailRes.data[0] : detailRes.data
-    if (!detail) return null
+    const raw = (Array.isArray(detailRes.data) ? detailRes.data[0] : detailRes.data) as ListRow | undefined
+    if (!raw) return null
+    const paramRows = (Array.isArray(paramsRes.data) ? paramsRes.data : []) as ListRow[]
+    const parameters = paramRows.map(mapParameter)
     return {
-      ...(detail as SdkLensVersionSummary),
-      parameters: Array.isArray(paramsRes.data) ? paramsRes.data : (paramsRes.data ?? []),
-    } as SdkLensVersion
+      id: raw['id'] as string,
+      lensId: raw['lens_id'] as string,
+      versionNumber: raw['version_number'] as number,
+      status: raw['status'] as SdkContentStatus,
+      changelog: (raw['changelog'] as string | null) ?? null,
+      parameterCount: parameters.length,
+      createdAt: raw['created_at'] as string,
+      templateBody: raw['template_body'] as string,
+      publishedAt: (raw['published_at'] as string | null) ?? null,
+      parameters,
+    }
+  }
+
+  /**
+   * Get the latest (HEAD) version of a lens with its parameters.
+   * Convenience wrapper: resolves `head_version_id` via `fn_get_lens_detail_bootstrap`,
+   * then delegates to `getVersion()`.
+   */
+  async getLatestVersion(lensId: string): Promise<SdkLensVersion | null> {
+    const { data, error } = await this.rpcClient.rpc('fn_get_lens_detail_bootstrap', {
+      p_lens_id: lensId,
+    })
+    if (error) {
+      throw new Error(`@lenserfight/sdk: fn_get_lens_detail_bootstrap failed — ${JSON.stringify(error)}`)
+    }
+    if (!data || (data as Record<string, unknown>)['error']) return null
+    const headVersionId = (data as Record<string, unknown>)['head_version_id'] as string | null
+    if (!headVersionId) return null
+    return this.getVersion(headVersionId)
   }
 
   /**

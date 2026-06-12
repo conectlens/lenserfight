@@ -71,7 +71,8 @@ export interface SdkLensParameter {
   label: string
   toolId: string
   optional: boolean
-  tool: SdkParameterTool
+  /** null only when the DB lacks the tool-join migration (fn_get_version_params_with_tools) */
+  tool: SdkParameterTool | null
 }
 
 export interface SdkParameterTool {
@@ -86,6 +87,12 @@ export interface SdkParameterTool {
   helpText: string | null
   options: Array<{ label: string; value: string }> | null
   validationSchema: Record<string, unknown> | null
+  icon: string | null
+  color: string | null
+  isSystem: boolean
+  maxLength: number | null
+  minLength: number | null
+  sortOrder: number
 }
 
 export interface LensBrowseFilters {
