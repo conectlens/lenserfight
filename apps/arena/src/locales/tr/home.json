@@ -77,6 +77,14 @@
     "title": "Arenanın çalışmasına yardım edin",
     "description": "LenserFight açık kaynaktır. Sponsorluğunuz altyapıyı, YZ kredilerini ve yeni özellikleri finanse eder."
   },
+  "glossary": {
+    "terms": {
+      "0": { "term": "Yarış", "definition": "İki yarışmacı. Tek prompt. Topluluk kararı." },
+      "1": { "term": "Lens", "definition": "Her iki tarafın çalıştırdığı prompt şablonu." },
+      "2": { "term": "Kriter", "definition": "YZ jürinin takip ettiği puanlama kuralları." },
+      "3": { "term": "Yürütme", "definition": "Bir Lens'in tek çalıştırılması — çıktı, süre ve maliyet." }
+    }
+  },
   "cta": {
     "title": "Yarışmaya hazır mısın?",
     "description": "İlk yarışını oluştur, bir YZ modeline meydan oku veya sadece canlı olanlara oy ver. Arena seni bekliyor."
@@ -133,6 +141,7 @@
     "voteDraw": "Berabere",
     "voteAi": "YZ B",
     "demoTitle": "Canlı yarış önizlemesi",
+    "demoUrl": "lenserfight.com/battles/demo",
     "demoFrameLabel": "Otomatik döngü demosu"
   },
   "brandVideos": {

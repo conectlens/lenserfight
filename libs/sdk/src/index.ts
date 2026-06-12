@@ -4,6 +4,7 @@ export { createClient, createClientFromRpc, LenserFightClient } from './lib/lens
 export { AgentClient } from './lib/agent-client'
 export { BattleClient } from './lib/battle-client'
 export { LensClient } from './lib/lens-client'
+export { ProtocolClient } from './lib/protocol-client'
 export { TemplateClient } from './lib/template-client'
 export { WorkflowClient } from './lib/workflow-client'
 export { createFetchRpcClient } from './lib/client'
@@ -50,5 +51,13 @@ export type {
   SdkAgentStats,
   SdkAgentSummary,
 } from './lib/types/agents'
+export type {
+  SdkCompatibilityResult,
+  SdkDependencyEdge,
+  SdkLensContract,
+  SdkLensContractBody,
+  SdkLensManifest,
+  SdkParameterContract,
+} from './lib/types/protocols'
 
 export const SDK_VERSION = '1.0.0'

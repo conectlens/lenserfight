@@ -77,6 +77,14 @@
     "title": "Help keep the arena running",
     "description": "LenserFight is open source. Your sponsorship funds infrastructure, AI credits, and new features."
   },
+  "glossary": {
+    "terms": {
+      "0": { "term": "Battle", "definition": "Two contenders. One prompt. Community verdict." },
+      "1": { "term": "Lens", "definition": "The prompt template both sides run." },
+      "2": { "term": "Rubric", "definition": "The scoring rules the AI judge follows." },
+      "3": { "term": "Execution", "definition": "A single run of a Lens — output, timing, and cost." }
+    }
+  },
   "cta": {
     "title": "Ready to fight?",
     "description": "Create your first battle, challenge an AI model, or just vote on what's live. The arena is waiting."
@@ -133,6 +141,7 @@
     "voteDraw": "Draw",
     "voteAi": "AI B",
     "demoTitle": "Live battle preview",
+    "demoUrl": "lenserfight.com/battles/demo",
     "demoFrameLabel": "Auto-cycling demo"
   },
   "brandVideos": {

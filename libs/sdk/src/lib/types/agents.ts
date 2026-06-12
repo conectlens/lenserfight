@@ -66,10 +66,10 @@ export interface SdkAgentModelBinding {
 }
 
 export interface AgentBrowseFilters {
+  /** Required. The lenser ID whose agents to list. Maps to `fn_list_agents_by_owner`. */
+  ownerId: string
   search?: string
-  /** Filter by agent runtime preference. Only agents with `is_public_policy = true` are visible. */
   runtimePref?: SdkAgentRuntimePref
-  /** Filter to agents that can join battles (`capabilities.canJoinBattles`). */
   canJoinBattles?: boolean
 }
 

@@ -4,52 +4,101 @@ import { createClientFromRpc } from '../index'
 import type { SupabaseLikeRpcClient } from '../lib/client'
 
 describe('ProtocolClient', () => {
-  it('getContractByVersion calls fn_sdk_get_contract with version_id', async () => {
-    const contract = { contentHash: 'abc', body: { requiredScopes: [] } }
-    const rpc: SupabaseLikeRpcClient = { rpc: vi.fn(async () => ({ data: contract, error: null })) }
+  it('getContractByVersion calls fn_get_version_contracts and maps input_contract to body', async () => {
+    const contractBody = { specVersion: '1.0.0', requiredScopes: ['read'] }
+    const rpc: SupabaseLikeRpcClient = {
+      rpc: vi.fn(async () => ({
+        data: [{ version_id: 'v1', input_contract: contractBody, output_contract: null }],
+        error: null,
+      })),
+    }
     const lf = createClientFromRpc(rpc)
     const result = await lf.protocols.getContractByVersion('v1')
-    expect(rpc.rpc).toHaveBeenCalledWith('fn_sdk_get_contract', { p_version_id: 'v1', p_content_hash: null })
-    expect(result).toEqual(contract)
+    expect(rpc.rpc).toHaveBeenCalledWith('fn_get_version_contracts', { p_version_id: 'v1' })
+    expect(result).not.toBeNull()
+    expect(result!.body).toEqual(contractBody)
   })
 
-  it('getContractByHash calls fn_sdk_get_contract with content_hash', async () => {
-    const rpc: SupabaseLikeRpcClient = { rpc: vi.fn(async () => ({ data: null, error: null })) }
+  it('getContractByVersion returns null when no input_contract', async () => {
+    const rpc: SupabaseLikeRpcClient = {
+      rpc: vi.fn(async () => ({
+        data: [{ version_id: 'v1', input_contract: null, output_contract: null }],
+        error: null,
+      })),
+    }
     const lf = createClientFromRpc(rpc)
-    const result = await lf.protocols.getContractByHash('deadbeef')
-    expect(rpc.rpc).toHaveBeenCalledWith('fn_sdk_get_contract', { p_version_id: null, p_content_hash: 'deadbeef' })
+    const result = await lf.protocols.getContractByVersion('v1')
     expect(result).toBeNull()
   })
 
-  it('getManifest calls fn_sdk_get_manifest', async () => {
-    const manifest = { specVersion: '1.0.0', contentHash: 'abc' }
-    const rpc: SupabaseLikeRpcClient = { rpc: vi.fn(async () => ({ data: manifest, error: null })) }
+  it('getContractByHash returns null without making any RPC call', async () => {
+    const rpc: SupabaseLikeRpcClient = { rpc: vi.fn(async () => ({ data: null, error: null })) }
+    const lf = createClientFromRpc(rpc)
+    const result = await lf.protocols.getContractByHash('deadbeef')
+    expect(rpc.rpc).not.toHaveBeenCalled()
+    expect(result).toBeNull()
+  })
+
+  it('getManifest builds manifest from fn_get_version_contracts', async () => {
+    const contractBody = { specVersion: '1.0.0', requiredScopes: [] }
+    const rpc: SupabaseLikeRpcClient = {
+      rpc: vi.fn(async () => ({
+        data: [{ version_id: 'v1', input_contract: contractBody, output_contract: null }],
+        error: null,
+      })),
+    }
     const lf = createClientFromRpc(rpc)
     const result = await lf.protocols.getManifest('v1')
-    expect(rpc.rpc).toHaveBeenCalledWith('fn_sdk_get_manifest', { p_version_id: 'v1' })
-    expect(result).toEqual(manifest)
+    expect(rpc.rpc).toHaveBeenCalledWith('fn_get_version_contracts', { p_version_id: 'v1' })
+    expect(result).not.toBeNull()
+    expect(result!.body).toEqual(contractBody)
+    expect(result!.channel).toBeNull()
+    expect(result!.signatures).toEqual([])
   })
 
-  it('getDependencies calls fn_sdk_get_dependencies', async () => {
-    const edges = [{ parentContentHash: 'a', childContentHash: 'b', binding: 'lift', depth: 1 }]
-    const rpc: SupabaseLikeRpcClient = { rpc: vi.fn(async () => ({ data: edges, error: null })) }
+  it('getManifest returns null when version has no contract', async () => {
+    const rpc: SupabaseLikeRpcClient = {
+      rpc: vi.fn(async () => ({ data: [], error: null })),
+    }
+    const lf = createClientFromRpc(rpc)
+    const result = await lf.protocols.getManifest('v-missing')
+    expect(result).toBeNull()
+  })
+
+  it('getDependencies returns empty array without any RPC call', async () => {
+    const rpc: SupabaseLikeRpcClient = { rpc: vi.fn(async () => ({ data: null, error: null })) }
     const lf = createClientFromRpc(rpc)
     const result = await lf.protocols.getDependencies('abc123')
-    expect(rpc.rpc).toHaveBeenCalledWith('fn_sdk_get_dependencies', { p_content_hash: 'abc123' })
-    expect(result).toEqual(edges)
+    expect(rpc.rpc).not.toHaveBeenCalled()
+    expect(result).toEqual([])
   })
 
-  it('checkCompatibility is client-side logic', async () => {
-    const contract = { contentHash: 'x', body: { requiredScopes: ['read', 'write'] } }
-    const rpc: SupabaseLikeRpcClient = { rpc: vi.fn(async () => ({ data: contract, error: null })) }
+  it('checkCompatibility uses fn_get_version_contracts and compares scopes', async () => {
+    const contractBody = { specVersion: '1.0.0', requiredScopes: ['read', 'write'] }
+    const rpc: SupabaseLikeRpcClient = {
+      rpc: vi.fn(async () => ({
+        data: [{ version_id: 'v1', input_contract: contractBody, output_contract: null }],
+        error: null,
+      })),
+    }
     const lf = createClientFromRpc(rpc)
 
-    const compat = await lf.protocols.checkCompatibility('x', ['read'])
+    const compat = await lf.protocols.checkCompatibility('v1', ['read'])
     expect(compat.compatible).toBe(true)
     expect(compat.missingScopes).toEqual([])
 
-    const incompat = await lf.protocols.checkCompatibility('x', ['read', 'admin'])
+    const incompat = await lf.protocols.checkCompatibility('v1', ['read', 'admin'])
     expect(incompat.compatible).toBe(false)
     expect(incompat.missingScopes).toEqual(['admin'])
+  })
+
+  it('checkCompatibility returns not-compatible when contract not found', async () => {
+    const rpc: SupabaseLikeRpcClient = {
+      rpc: vi.fn(async () => ({ data: [], error: null })),
+    }
+    const lf = createClientFromRpc(rpc)
+    const result = await lf.protocols.checkCompatibility('v-missing', ['read'])
+    expect(result.compatible).toBe(false)
+    expect(result.warnings).toContain('Contract not found')
   })
 })

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createClientFromRpc } from '../index'
 import type { SupabaseLikeRpcClient } from '../lib/client'
 
-function mockRpc(data: unknown = []): SupabaseLikeRpcClient {
+function mockRpc(data: unknown = { data: [], count: 0 }): SupabaseLikeRpcClient {
   return { rpc: vi.fn(async () => ({ data, error: null })) }
 }
 
@@ -13,42 +13,80 @@ function errorRpc(): SupabaseLikeRpcClient {
 
 describe('LensClient', () => {
   describe('browse', () => {
-    it('calls fn_sdk_browse_lenses with correct params', async () => {
-      const rpc = mockRpc([])
+    it('calls fn_mcp_lens_list for non-search browse', async () => {
+      const rpc = mockRpc({ data: [], count: 0 })
       const lf = createClientFromRpc(rpc)
-      await lf.lenses.browse({ tag: 'ai', kind: 'text' }, { created_at: '2026-01-01', id: 'abc' }, 30)
-      expect(rpc.rpc).toHaveBeenCalledWith('fn_sdk_browse_lenses', {
-        p_search: null,
-        p_tag: 'ai',
-        p_kind: 'text',
-        p_cursor_created_at: '2026-01-01',
-        p_cursor_id: 'abc',
+      await lf.lenses.browse({ kind: 'text' }, 10, 30)
+      expect(rpc.rpc).toHaveBeenCalledWith('fn_mcp_lens_list', {
         p_limit: 30,
+        p_offset: 10,
+        p_visibility: 'public',
+        p_status: null,
+        p_lenser_id: null,
+        p_include_archived: false,
+      })
+    })
+
+    it('calls fn_mcp_lens_search when search filter is provided', async () => {
+      const rpc = mockRpc({ data: [], count: 0 })
+      const lf = createClientFromRpc(rpc)
+      await lf.lenses.browse({ search: 'ai tools' }, 0, 20)
+      expect(rpc.rpc).toHaveBeenCalledWith('fn_mcp_lens_search', {
+        p_query: 'ai tools',
+        p_visibility: 'public',
+        p_limit: 20,
+        p_offset: 0,
       })
     })
 
     it('clamps limit to [1, 100]', async () => {
-      const rpc = mockRpc([])
+      const rpc = mockRpc({ data: [], count: 0 })
       const lf = createClientFromRpc(rpc)
-      await lf.lenses.browse({}, undefined, 9999)
+      await lf.lenses.browse({}, 0, 9999)
       const params = (rpc.rpc as ReturnType<typeof vi.fn>).mock.calls[0][1] as Record<string, unknown>
       expect(params['p_limit']).toBe(100)
     })
 
+    it('maps fn_mcp_lens_list rows to SdkLensSummary shape', async () => {
+      const row = {
+        id: 'lens-1',
+        lenser_id: 'owner-1',
+        title: 'Test Lens',
+        description: 'A description',
+        visibility: 'public',
+        status: 'published',
+        author_handle: 'alice',
+        created_at: '2026-01-01T00:00:00Z',
+        tags: [{ id: 't1', slug: 'ai', name: 'AI' }],
+      }
+      const rpc = mockRpc({ data: [row], count: 1 })
+      const lf = createClientFromRpc(rpc)
+      const results = await lf.lenses.browse()
+      expect(results).toHaveLength(1)
+      expect(results[0]).toMatchObject({
+        id: 'lens-1',
+        title: 'Test Lens',
+        visibility: 'public',
+        status: 'published',
+        createdAt: '2026-01-01T00:00:00Z',
+        author: { handle: 'alice', displayName: 'alice' },
+      })
+    })
+
     it('throws on error', async () => {
       const lf = createClientFromRpc(errorRpc())
-      await expect(lf.lenses.browse()).rejects.toThrowError(/fn_sdk_browse_lenses failed/)
+      await expect(lf.lenses.browse()).rejects.toThrowError(/fn_mcp_lens_list failed/)
     })
   })
 
   describe('search', () => {
-    it('delegates to browse with search param', async () => {
-      const rpc = mockRpc([])
+    it('delegates to browse with search param, calling fn_mcp_lens_search', async () => {
+      const rpc = mockRpc({ data: [], count: 0 })
       const lf = createClientFromRpc(rpc)
-      await lf.lenses.search('hello world', { tag: 'test' })
-      const params = (rpc.rpc as ReturnType<typeof vi.fn>).mock.calls[0][1] as Record<string, unknown>
-      expect(params['p_search']).toBe('hello world')
-      expect(params['p_tag']).toBe('test')
+      await lf.lenses.search('hello world', { status: 'published' })
+      const [fn, params] = (rpc.rpc as ReturnType<typeof vi.fn>).mock.calls[0] as [string, Record<string, unknown>]
+      expect(fn).toBe('fn_mcp_lens_search')
+      expect(params['p_query']).toBe('hello world')
     })
   })
 

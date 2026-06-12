@@ -8,6 +8,10 @@
       "description": "You can start with discovery, move to voting, and only create a Lens when you have a task worth evaluating."
     }
   },
+  "audienceFork": {
+    "compete": "I want to compete",
+    "build": "I'm building with AI"
+  },
   "steps": {
     "0": {
       "title": "Create an account",
@@ -25,7 +29,10 @@
       "title": "Create your first Lens",
       "description": "When you're ready, define a task that other contenders can execute and judge.",
       "cta": "Open Arena",
-      "fastPath": "Fast path"
+      "fastPath": "Fast path",
+      "title_build": "Integrate via API or CLI",
+      "description_build": "Use the REST API or CLI to run Lenses programmatically, trigger workflows, and integrate with your own pipelines.",
+      "cta_build": "Explore the CLI"
     }
   },
   "stepLabel": "Step {{num}}",
