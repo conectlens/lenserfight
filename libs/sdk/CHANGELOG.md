@@ -1,3 +1,13 @@
+## 2.1.0 (2026-06-12)
+
+### 🚀 Features
+
+- export ProtocolClient and associated protocol types from the SDK ([61d6fc738](https://github.com/conectlens/lenserfight/commit/61d6fc738))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 # 2.0.0 (2026-06-06)
 
 This was a version bump only for sdk to align it with other projects, there were no code changes.
