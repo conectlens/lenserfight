@@ -308,7 +308,8 @@ const KEYCHAIN_ACCOUNT = 'device:active'
 function findDaemonBinary(): string | null {
   const candidates = [
     path.resolve(process.cwd(), 'dist/apps/gateway/main.js'),
-    path.resolve(dirname(fileURLToPath(import.meta.url)), '../../gateway/main.js'),
+    // When CLI runs from dist/apps/cli/main.js, gateway is one dir up: dist/apps/gateway/
+    path.resolve(dirname(fileURLToPath(import.meta.url)), '../gateway/main.js'),
   ]
   for (const c of candidates) {
     if (existsSync(c)) return c
@@ -356,8 +357,9 @@ const serve = defineCommand({
     const binary = findDaemonBinary()
     if (!binary) {
       consola.warn(
-        'lf-gatewayd binary not found. Build apps/gateway first:\n' +
-          '  pnpm nx run gateway:build && node dist/apps/gateway/main.js'
+        'lf-gatewayd binary not found. Build it first, then re-run this command:\n' +
+          '  pnpm nx run gateway:build\n' +
+          '  lf gateway serve'
       )
       process.exit(4)
     }
