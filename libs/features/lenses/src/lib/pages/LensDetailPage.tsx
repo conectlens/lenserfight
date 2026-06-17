@@ -611,6 +611,8 @@ export const LensDetailPage: React.FC = () => {
                 content={activeTemplateBody}
                 versionParams={activeVersionParams}
                 isLoadingVersion={isResolvingVersion}
+                isVersionUnavailable={versionRoute.isVersionUnavailable}
+                isAuthenticated={!!isAuthenticated}
                 onCopy={handleCopy}
               />
             </DesktopFrame>

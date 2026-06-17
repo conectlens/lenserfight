@@ -62,14 +62,19 @@ export function useLensVersionRoute(
   }
 
   const isVersionReady = !!activeVersion && (activeVersion.parameters == null || Array.isArray(activeVersion.parameters))
+  // Version fetch completed but returned nothing (e.g. non-owner requesting a draft, or
+  // community-visibility lens before the visibility migration is applied).
+  const isVersionUnavailable =
+    !!resolvedVersionId && !isLoadingActiveVersion && !activeVersion
   const isResolvingVersion =
-    !!resolvedVersionId && (isLoadingActiveVersion || !isVersionReady)
+    !!resolvedVersionId && !isVersionUnavailable && (isLoadingActiveVersion || !isVersionReady)
 
   return {
     parsed,
     resolvedVersionId,
     activeVersion: activeVersion ?? null,
     isResolvingVersion,
+    isVersionUnavailable,
     isLoadingVersions: needsVersionList && isLoadingVersions,
     versions,
     navigateToVersion,
