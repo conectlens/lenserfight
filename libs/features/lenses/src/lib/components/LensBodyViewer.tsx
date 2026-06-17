@@ -11,6 +11,10 @@ interface LensBodyViewerProps {
   versionParams?: LensVersionParam[]
   /** When true, shows a loader instead of rendering mismatched content/params. */
   isLoadingVersion?: boolean
+  /** When true, the version fetch completed but returned no data (e.g. anon user, draft-only lens). */
+  isVersionUnavailable?: boolean
+  /** Whether the current viewer is authenticated — affects the unavailable message. */
+  isAuthenticated?: boolean
   onCopy?: () => Promise<void>
   onFork?: () => void
   canFork?: boolean
@@ -21,6 +25,8 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({
   content,
   versionParams,
   isLoadingVersion = false,
+  isVersionUnavailable = false,
+  isAuthenticated = false,
   onCopy,
 }) => {
   const safeContent = content ?? ''
@@ -70,6 +76,12 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({
                 <Loader2 size={16} className="animate-spin" />
                 Loading version…
               </div>
+            ) : isVersionUnavailable ? (
+              <span className="text-greyscale-400">
+                {isAuthenticated
+                  ? 'No published version is available for this lens.'
+                  : 'Please sign in to access this lens.'}
+              </span>
             ) : safeContent ? (
               <LensContentReadonly
                 content={safeContent}
