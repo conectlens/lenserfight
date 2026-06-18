@@ -26,10 +26,10 @@ export const SavePresetModal: React.FC<SavePresetModalProps> = ({
   }, [isOpen])
 
   const trimmedName = name.trim()
-  const canSave = trimmedName.length > 0 && \!isSaving
+  const canSave = trimmedName.length > 0 && !isSaving
 
   const handleSave = () => {
-    if (\!canSave) return
+    if (!canSave) return
     onSave(trimmedName, note.trim())
   }
 
@@ -51,7 +51,7 @@ export const SavePresetModal: React.FC<SavePresetModalProps> = ({
             label: 'Save',
             onClick: handleSave,
             isLoading: isSaving,
-            disabled: \!canSave,
+            disabled: !canSave,
           }}
         />
       }

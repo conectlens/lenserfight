@@ -25,7 +25,7 @@ export const SavedPresetsPanel: React.FC<SavedPresetsPanelProps> = ({
   const { data: presets, isLoading } = useQuery({
     queryKey: queryKeys.savedPresets.byVersion(lensVersionId),
     queryFn: () => savedPresetsRepository.listSavedPresets(lensVersionId),
-    enabled: \!\!lensVersionId,
+    enabled: !!lensVersionId,
   })
 
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
@@ -66,7 +66,7 @@ export const SavedPresetsPanel: React.FC<SavedPresetsPanelProps> = ({
   }
 
   const handleSaveEdit = () => {
-    if (\!editTarget || \!editName.trim()) return
+    if (!editTarget || !editName.trim()) return
     updateMutation.mutate({ id: editTarget.id, name: editName.trim() })
   }
 
@@ -87,13 +87,13 @@ export const SavedPresetsPanel: React.FC<SavedPresetsPanelProps> = ({
         </div>
       )}
 
-      {\!isLoading && (\!presets || presets.length === 0) && (
+      {!isLoading && (!presets || presets.length === 0) && (
         <p className="text-sm text-greyscale-400 dark:text-greyscale-500">
           No saved presets for this version.
         </p>
       )}
 
-      {\!isLoading && presets && presets.length > 0 && (
+      {!isLoading && presets && presets.length > 0 && (
         <div className="space-y-2">
           {presets.map((preset) => (
             <div
@@ -160,7 +160,7 @@ export const SavedPresetsPanel: React.FC<SavedPresetsPanelProps> = ({
 
       {/* Delete confirm */}
       <AlertDialog
-        open={\!\!deleteTargetId}
+        open={!!deleteTargetId}
         onClose={() => setDeleteTargetId(null)}
         title="Delete preset?"
         bodyText="This preset will be permanently removed."
@@ -200,7 +200,7 @@ export const SavedPresetsPanel: React.FC<SavedPresetsPanelProps> = ({
               <button
                 type="button"
                 onClick={handleSaveEdit}
-                disabled={\!editName.trim() || updateMutation.isPending}
+                disabled={!editName.trim() || updateMutation.isPending}
                 className="px-3 py-1.5 text-xs font-medium bg-primary-yellow-500 text-greyscale-900 rounded-lg hover:bg-primary-yellow-600 disabled:opacity-50 transition-colors"
               >
                 {updateMutation.isPending ? 'Saving…' : 'Save'}
@@ -213,7 +213,7 @@ export const SavedPresetsPanel: React.FC<SavedPresetsPanelProps> = ({
       {/* Export modal */}
       {exportTarget && (
         <SavedPresetExportModal
-          isOpen={\!\!exportTarget}
+          isOpen={!!exportTarget}
           onClose={() => setExportTarget(null)}
           preset={exportTarget}
           format={exportFormat}

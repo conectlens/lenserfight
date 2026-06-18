@@ -19,7 +19,7 @@ function buildCsvText(
 
   const escapeCell = (v: unknown): string => {
     const str =
-      typeof v === 'object' && v \!== null ? JSON.stringify(v) : String(v ?? '')
+      typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v ?? '')
     return str.includes(',') || str.includes('"') || str.includes('\n')
       ? `"${str.replace(/"/g, '""')}"`
       : str
@@ -66,7 +66,7 @@ export const SavedPresetExportModal: React.FC<SavedPresetExportModalProps> = ({
           primaryButton={
             copied
               ? {
-                  label: 'Copied\!',
+                  label: 'Copied!',
                   onClick: handleCopy,
                   className: 'bg-emerald-600 hover:bg-emerald-700 border-emerald-600',
                 }
