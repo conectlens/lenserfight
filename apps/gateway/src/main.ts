@@ -244,6 +244,17 @@ async function printPairingBlock(gatewayUrl: string): Promise<void> {
 }
 
 main().catch((err) => {
-  process.stderr.write(`[lf-gatewayd] fatal: ${(err as Error).message}\n`)
+  const e = err as NodeJS.ErrnoException
+  let hint = ''
+  if (e.code === 'EPERM' || e.code === 'EACCES') {
+    hint =
+      '\n  Hint: a VPN, network extension, or OS firewall may be blocking the bind.' +
+      '\n  Try a different port: LF_GATEWAY_PORT=38081 node dist/apps/gateway/main.js'
+  } else if (e.code === 'EADDRINUSE') {
+    hint =
+      '\n  Hint: another process owns this port.' +
+      '\n  Try: LF_GATEWAY_PORT=38081 node dist/apps/gateway/main.js'
+  }
+  process.stderr.write(`[lf-gatewayd] fatal: ${e.message}${hint}\n`)
   process.exit(1)
 })

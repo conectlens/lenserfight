@@ -83,6 +83,10 @@ interface LabExecutionPanelProps {
   lensDescription?: string
   /** auth.uid() of the active lenser — enables the AI generation button in the parameters header. */
   profileId?: string
+  /** Called with the current param values when the user clicks "Save preset". Not rendered if omitted. */
+  onSavePreset?: (values: Record<string, unknown>) => void
+  /** When set, triggers applyImportedValues on the internal param form to bulk-apply preset values. */
+  importedPresetValues?: Record<string, unknown> | null
   // Funding source
   fundingSource?: FundingSource
   onFundingSourceChange?: (source: FundingSource) => void
@@ -163,8 +167,14 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   lensTitle,
   lensDescription,
   profileId,
+  onSavePreset,
+  importedPresetValues,
 }) => {
   const form = useLabParamForm(lensContent, params, versionParams)
+
+  React.useEffect(() => {
+    if (importedPresetValues) form.applyImportedValues(importedPresetValues)
+  }, [importedPresetValues]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Modality selector — only shown when the model supports non-text output modalities
   const availableOutputModalities = selectedModelOutputModalities ?? ['text']
@@ -874,6 +884,17 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
           ) : (
             <div className="flex items-stretch gap-2">
 
+              {onSavePreset && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => onSavePreset(form.inputValues)}
+                  disabled={isLocked}
+                  className="flex-shrink-0 flex items-center justify-center gap-2 h-auto py-2.5"
+                >
+                  Save preset
+                </Button>
+              )}
               <Button
                 type="submit"
                 disabled={isDisabled || isLocked}

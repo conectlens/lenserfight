@@ -1,7 +1,7 @@
 import { AuthorProfile } from './lenser.types'
 import { TagRecord } from './threads.types'
 
-export type VisibilityEnum = 'public' | 'community' | 'private'
+export type VisibilityEnum = 'public' | 'community' | 'followers' | 'private'
 export type ContentStatus = 'draft' | 'published' | 'archived'
 export type ReactionEnum = 'like' | 'love' | 'clap' | 'saved' | 'copy'
 
@@ -264,4 +264,31 @@ export interface LensStep {
   modelId?: string | null
   inputMap?: Record<string, string> | null // maps prior step output keys to this step's inputs
   outputKey?: string | null // key name for this step's output
+}
+
+export interface SavedParameterPreset {
+  id: string
+  lenser_id: string
+  lens_id: string
+  lens_version_id: string
+  name: string
+  note?: string | null
+  values: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateSavedPresetInput {
+  lenser_id: string
+  lens_id: string
+  lens_version_id: string
+  name: string
+  note?: string
+  values: Record<string, unknown>
+}
+
+export interface UpdateSavedPresetInput {
+  name?: string
+  note?: string
+  values?: Record<string, unknown>
 }

@@ -13,7 +13,6 @@
  * adapter's caller's concern.
  */
 import { callGenerativeMedia, getGenerativeAdapter } from '@lenserfight/providers'
-import type { GenerativeMediaProvider } from '@lenserfight/providers'
 import { generateUUID } from '@lenserfight/utils/text'
 
 

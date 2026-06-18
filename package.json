@@ -70,7 +70,11 @@
       "postcss": ">=8.5.6",
       "uuid": ">=9.0.1",
       "esbuild": ">=0.25.0",
-      "shell-quote": ">=1.8.4"
+      "shell-quote": ">=1.8.4",
+      "ws": ">=8.21.0",
+      "form-data": ">=4.0.6",
+      "hono": ">=4.12.25",
+      "vite": ">=7.3.5"
     }
   },
   "config": {
@@ -214,7 +218,7 @@
     "ts-prune": "^0.10.3",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.2",
-    "vite": "^7.3.2",
+    "vite": "^7.3.5",
     "vite-plugin-dts": "~4.5.4",
     "vitepress": "2.0.0-alpha.17",
     "vitest": "4.1.1"

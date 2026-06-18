@@ -97,6 +97,8 @@
   },
   "visibility": {
     "public": "Herkese açık",
+    "community": "Yalnızca üyeler",
+    "followers": "Yalnızca takipçiler",
     "private": "Gizli"
   },
   "tags": {

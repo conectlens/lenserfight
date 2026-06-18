@@ -34,7 +34,7 @@ export interface LenserPreferences {
   theme: 'light' | 'dark' | 'system'
   notifications: Record<string, unknown>
   sidebar: Record<string, unknown>
-  content_visibility: 'public' | 'community' | 'private'
+  content_visibility: 'public' | 'community' | 'private' | 'followers'
   email_digest: boolean
   ai_provider_key?: string | null
   ai_model_key?: string | null
@@ -78,7 +78,7 @@ export interface Lenser {
   location?: string
   website_url?: string
   website_display_name?: string
-  visibility?: 'public' | 'private' | 'community'
+  visibility?: 'public' | 'private' | 'community' | 'followers'
   is_in_waiting_list?: boolean
   is_super_admin?: boolean // Added for RBAC via Lenser profile
   /** @deprecated Use `preferences.language` from lensers.preferences table. */
@@ -298,13 +298,13 @@ export interface LenserProfileDTO {
   joined_at?: string
 
   // Visibility & lifecycle
-  visibility?: 'public' | 'private' | 'community'
+  visibility?: 'public' | 'private' | 'community' | 'followers'
   deletion_deadline_at?: string | null
   type?: LenserType
 
   // Content preferences (flat from lensers.preferences table)
   hide_actions?: boolean
-  content_visibility?: 'public' | 'community' | 'private'
+  content_visibility?: 'public' | 'community' | 'private' | 'followers'
 
   // Future-safe placeholders
   badges?: [] | null

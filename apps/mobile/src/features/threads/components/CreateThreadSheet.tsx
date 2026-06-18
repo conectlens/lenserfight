@@ -26,7 +26,7 @@ interface CreateThreadSheetProps {
   editData?: EditThreadData | null
 }
 
-type Visibility = 'public' | 'private'
+type Visibility = 'public' | 'community' | 'followers' | 'private'
 
 export const CreateThreadSheet: React.FC<CreateThreadSheetProps> = ({
   visible,
@@ -113,7 +113,7 @@ export const CreateThreadSheet: React.FC<CreateThreadSheetProps> = ({
       {/* Visibility */}
       <Field label={t('threads.visibility')}>
         <View style={styles.visibilityRow}>
-          {(['public', 'private'] as Visibility[]).map((v) => (
+          {(['public', 'community', 'followers', 'private'] as Visibility[]).map((v) => (
             <View key={v} style={styles.visibilityOption}>
               <MobileButton
                 label={t(`visibility.${v}`)}

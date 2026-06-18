@@ -1,4 +1,4 @@
-import { Globe, Lock } from 'lucide-react'
+import { Globe, Lock, Users, UserCheck } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -238,6 +238,8 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
 
   const visibilityOptions = [
     { value: 'public', label: 'Public', icon: Globe },
+    { value: 'community', label: 'Members only', icon: Users },
+    { value: 'followers', label: 'Followers only', icon: UserCheck },
     { value: 'private', label: 'Private', icon: Lock },
   ]
 
