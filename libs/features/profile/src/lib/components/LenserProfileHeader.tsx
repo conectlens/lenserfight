@@ -35,7 +35,7 @@ import { FollowButton } from './FollowButton'
 import { NetworkModal } from './NetworkModal'
 
 interface LenserProfileHeaderProps {
-  lenser: Lenser & { visibility?: 'public' | 'private' | 'community' }
+  lenser: Lenser & { visibility?: 'public' | 'private' | 'community' | 'followers' }
   stats: LenserStats | null
   xpSummary?: XPSummary | null
   isOwner: boolean

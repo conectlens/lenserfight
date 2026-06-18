@@ -12,7 +12,7 @@ export interface EditThreadData {
   title: string
   content: string
   tags: string[]
-  visibility: 'public' | 'private'
+  visibility: 'public' | 'community' | 'followers' | 'private'
 }
 
 const ThreadSheetContext = createContext<ThreadSheetContextValue | null>(null)

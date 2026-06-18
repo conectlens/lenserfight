@@ -43,6 +43,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 import { CreateLensModal } from '../components/CreateLensModal'
+import { SavePresetModal } from '../components/SavePresetModal'
+import { SavedPresetsPanel } from '../components/SavedPresetsPanel'
+import { savedPresetsRepository } from '@lenserfight/data/repositories'
 import { ExecutionHistoryDrawer } from '../components/ExecutionHistoryDrawer'
 import { LabArtifactViewer } from '../components/LabArtifactViewer'
 import { LabExecutionPanel } from '../components/LabExecutionPanel'
@@ -88,6 +91,9 @@ export const LensDetailPage: React.FC = () => {
   const reportContent = useReportContent()
 
   const [isSaving, setIsSaving] = useState(false)
+  const [savePresetOpen, setSavePresetOpen] = useState(false)
+  const [presetValues, setPresetValues] = useState<Record<string, unknown>>({})
+  const [isSavingPreset, setIsSavingPreset] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [reportReason, setReportReason] = useState<ReportReasonEnum>('spam')
@@ -366,6 +372,35 @@ export const LensDetailPage: React.FC = () => {
         if (isCurrentLens) navigate('/lenses')
       },
     })
+  }
+
+  const handleSavePresetOpen = (values: Record<string, unknown>) => {
+    if (!ensureProfile()) return
+    setPresetValues(values)
+    setSavePresetOpen(true)
+  }
+
+  const handleSavePreset = async (name: string, note: string) => {
+    if (!lenser || !lens) return
+    const versionId = versionRoute.resolvedVersionId
+    if (!versionId) return
+    setIsSavingPreset(true)
+    try {
+      await savedPresetsRepository.createSavedPreset({
+        lenser_id: lenser.id,
+        lens_id: lens.id,
+        lens_version_id: versionId,
+        name,
+        note,
+        values: presetValues,
+      })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.savedPresets.byVersion(versionId),
+      })
+      setSavePresetOpen(false)
+    } finally {
+      setIsSavingPreset(false)
+    }
   }
 
   const handleCreateSubmit = (newId: string) => {
@@ -779,6 +814,8 @@ export const LensDetailPage: React.FC = () => {
                   onSignIn={ensureProfile}
                   lensTitle={lens?.title ?? undefined}
                   profileId={lenser?.id ?? undefined}
+                  onSavePreset={hasActiveLenserProfile ? handleSavePresetOpen : undefined}
+                  importedPresetValues={Object.keys(presetValues).length > 0 ? presetValues : null}
                 />
                 <LabArtifactViewer
                   selectedRunId={lab.selectedRunId}
@@ -795,6 +832,16 @@ export const LensDetailPage: React.FC = () => {
                   isAuthenticatedLenser={hasActiveLenserProfile}
                   onSignIn={ensureProfile}
                 />
+                {versionRoute.resolvedVersionId && (
+                  <SavedPresetsPanel
+                    lensId={lens.id}
+                    lensVersionId={versionRoute.resolvedVersionId}
+                    versionParams={activeVersionParams}
+                    onApplyPreset={(values: Record<string, unknown>) => {
+                      setPresetValues({ ...values })
+                    }}
+                  />
+                )}
               </div>
             )}
           </Card>
@@ -859,6 +906,13 @@ export const LensDetailPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      <SavePresetModal
+        isOpen={savePresetOpen}
+        onClose={() => setSavePresetOpen(false)}
+        onSave={handleSavePreset}
+        isSaving={isSavingPreset}
+      />
 
       <CreateLensModal
         isOpen={isCreateOpen}

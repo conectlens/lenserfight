@@ -97,6 +97,8 @@
   },
   "visibility": {
     "public": "Public",
+    "community": "Members only",
+    "followers": "Followers only",
     "private": "Private"
   },
   "tags": {

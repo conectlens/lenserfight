@@ -1,6 +1,6 @@
 import { AuthorProfile } from './lenser.types'
 
-export type Visibility = 'public' | 'community' | 'private'
+export type Visibility = 'public' | 'community' | 'followers' | 'private'
 export type ContentStatus = 'draft' | 'published' | 'archived'
 
 export interface LensData {
