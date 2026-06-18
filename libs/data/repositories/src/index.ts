@@ -89,3 +89,5 @@ export * from './lib/repositories/tournamentRepository'
 export * from './lib/repositories/adminRepository'
 export * from './lib/repositories/generatedChallengesRepository'
 export * from './lib/services/challengeGenerationService'
+
+export * from './lib/repositories/savedPresetsRepository'

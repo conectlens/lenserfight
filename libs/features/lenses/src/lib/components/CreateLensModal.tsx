@@ -5,7 +5,7 @@ import { SelectField, LensContentEditor, type LensContentEditorHandle, InputFiel
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { copyTextToClipboard } from '@lenserfight/utils/text'
 import { useFormValidation, isRequired, minLength } from '@lenserfight/utils/validation'
-import { Globe, Lock, Info, Copy, Check } from 'lucide-react'
+import { Globe, Lock, Users, UserCheck, Info, Copy, Check } from 'lucide-react'
 import React, { useMemo, useRef, useCallback, useEffect, useState } from 'react'
 
 import { useTools } from '../hooks/useTools'
@@ -50,6 +50,8 @@ const VALIDATION_RULES = {
 
 const VISIBILITY_OPTIONS = [
   { value: 'public', label: 'Public', icon: Globe },
+  { value: 'community', label: 'Members only', icon: Users },
+  { value: 'followers', label: 'Followers only', icon: UserCheck },
   { value: 'private', label: 'Private', icon: Lock },
 ]
 

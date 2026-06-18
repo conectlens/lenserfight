@@ -1,7 +1,7 @@
 import { AuthorProfile } from './lenser.types'
 import { TagRecord } from './threads.types'
 
-export type VisibilityEnum = 'public' | 'community' | 'private'
+export type VisibilityEnum = 'public' | 'community' | 'followers' | 'private'
 export type ContentStatus = 'draft' | 'published' | 'archived'
 export type ReactionEnum = 'like' | 'love' | 'clap' | 'saved' | 'copy'
 
