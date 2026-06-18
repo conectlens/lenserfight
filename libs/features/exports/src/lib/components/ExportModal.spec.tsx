@@ -17,11 +17,16 @@ vi.mock('@lenserfight/ui/overlays', () => ({
         {footer}
       </div>
     ) : null,
-  ModalFooter: ({ leftButton, primaryButton }: any) => (
+  ModalFooter: ({ leftButton, primaryButton, rightButtons }: any) => (
     <div>
       <Button onClick={leftButton.onClick} disabled={leftButton.disabled}>
         {leftButton.label}
       </Button>
+      {rightButtons?.map((btn: any, i: number) => (
+        <Button key={i} onClick={btn.onClick} disabled={btn.disabled} data-testid={`right-btn-${i}`}>
+          {btn.label}
+        </Button>
+      ))}
       <Button
         onClick={primaryButton.onClick}
         disabled={primaryButton.disabled}
@@ -35,6 +40,9 @@ vi.mock('@lenserfight/ui/overlays', () => ({
 
 vi.mock('@lenserfight/ui/components', () => ({
   HelpButton: () => null,
+  Button: ({ children, onClick, disabled, ...rest }: any) => (
+    <button onClick={onClick} disabled={disabled} {...rest}>{children}</button>
+  ),
 }))
 
 vi.mock('@lenserfight/ui/feedback', () => ({
