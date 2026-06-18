@@ -1,3 +1,14 @@
+## 0.24.2 (2026-06-18)
+
+### 🩹 Fixes
+
+- **gateway:** fix binary path resolution and add startup error hints ([846c66ad4](https://github.com/conectlens/lenserfight/commit/846c66ad4))
+
+### ❤️ Thank You
+
+- Claude Sonnet 4.6
+- ÖMER FARUK COŞKUN
+
 ## 0.24.1 (2026-06-07)
 
 ### 🩹 Fixes
