@@ -295,7 +295,6 @@ export const queryKeys = {
     status: (type: string, id: string) =>
       [...queryKeys.artifactLifecycle.all, 'status', type, id] as const,
   },
-,
   savedPresets: {
     all: ['savedPresets'] as const,
     byVersion: (lensVersionId: string) =>

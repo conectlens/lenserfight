@@ -375,15 +375,15 @@ export const LensDetailPage: React.FC = () => {
   }
 
   const handleSavePresetOpen = (values: Record<string, unknown>) => {
-    if (\!ensureProfile()) return
+    if (!ensureProfile()) return
     setPresetValues(values)
     setSavePresetOpen(true)
   }
 
   const handleSavePreset = async (name: string, note: string) => {
-    if (\!lenser || \!lens) return
+    if (!lenser || !lens) return
     const versionId = versionRoute.resolvedVersionId
-    if (\!versionId) return
+    if (!versionId) return
     setIsSavingPreset(true)
     try {
       await savedPresetsRepository.createSavedPreset({
@@ -837,7 +837,7 @@ export const LensDetailPage: React.FC = () => {
                     lensId={lens.id}
                     lensVersionId={versionRoute.resolvedVersionId}
                     versionParams={activeVersionParams}
-                    onApplyPreset={(values) => {
+                    onApplyPreset={(values: Record<string, unknown>) => {
                       setPresetValues({ ...values })
                     }}
                   />

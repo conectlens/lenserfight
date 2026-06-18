@@ -1,6 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { savedPresetsRepository } from '@lenserfight/data/repositories'
-import type { SavedPreset } from '@lenserfight/data/repositories'
+import type { SavedParameterPreset } from '@lenserfight/types'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileJson, Table2, Pencil, Trash2, Play } from 'lucide-react'
@@ -29,9 +29,9 @@ export const SavedPresetsPanel: React.FC<SavedPresetsPanelProps> = ({
   })
 
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
-  const [editTarget, setEditTarget] = useState<SavedPreset | null>(null)
+  const [editTarget, setEditTarget] = useState<SavedParameterPreset | null>(null)
   const [editName, setEditName] = useState('')
-  const [exportTarget, setExportTarget] = useState<SavedPreset | null>(null)
+  const [exportTarget, setExportTarget] = useState<SavedParameterPreset | null>(null)
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json')
 
   const deleteMutation = useMutation({
@@ -55,12 +55,12 @@ export const SavedPresetsPanel: React.FC<SavedPresetsPanelProps> = ({
     },
   })
 
-  const handleOpenExport = (preset: SavedPreset, format: 'json' | 'csv') => {
+  const handleOpenExport = (preset: SavedParameterPreset, format: 'json' | 'csv') => {
     setExportTarget(preset)
     setExportFormat(format)
   }
 
-  const handleOpenEdit = (preset: SavedPreset) => {
+  const handleOpenEdit = (preset: SavedParameterPreset) => {
     setEditTarget(preset)
     setEditName(preset.name)
   }
