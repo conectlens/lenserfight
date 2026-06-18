@@ -1,93 +1,66 @@
 import { supabase } from '@lenserfight/data/supabase'
+import {
+  SavedParameterPreset,
+  CreateSavedPresetInput,
+  UpdateSavedPresetInput,
+} from '@lenserfight/types'
 
-export interface SavedPreset {
-  id: string
-  lenser_id: string
-  lens_id: string
-  lens_version_id: string
-  name: string
-  note: string | null
-  values: Record<string, unknown>
-  created_at: string
-  updated_at: string
-}
-
-export interface CreateSavedPresetInput {
-  lenser_id: string
-  lens_id: string
-  lens_version_id: string
-  name: string
-  note?: string
-  values: Record<string, unknown>
-}
-
-export interface UpdateSavedPresetInput {
-  name?: string
-  note?: string
-  values?: Record<string, unknown>
-}
-
-export interface SavedPresetsRepositoryPort {
-  listSavedPresets(lensVersionId: string): Promise<SavedPreset[]>
-  createSavedPreset(input: CreateSavedPresetInput): Promise<SavedPreset>
-  updateSavedPreset(id: string, input: UpdateSavedPresetInput): Promise<SavedPreset>
-  deleteSavedPreset(id: string): Promise<void>
-}
-
-export class SupabaseSavedPresetsRepository implements SavedPresetsRepositoryPort {
-  async listSavedPresets(lensVersionId: string): Promise<SavedPreset[]> {
-    const { data, error } = await supabase
-      .from('saved_presets')
-      .select('*')
-      .eq('lens_version_id', lensVersionId)
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    return (data ?? []) as SavedPreset[]
+export class SavedPresetsRepository {
+  private handleError(error: unknown) {
+    const normalizedError = error as { code?: string; message?: string }
+    if (!error) return
+    if (
+      normalizedError.code === '42501' ||
+      normalizedError.message?.includes('permission denied')
+    ) {
+      throw new Error('This resource is private or hidden and cannot be accessed.')
+    }
+    if (normalizedError.code === 'PGRST116') {
+      throw new Error('Requested resource was not found.')
+    }
+    throw error
   }
 
-  async createSavedPreset(input: CreateSavedPresetInput): Promise<SavedPreset> {
-    const { data, error } = await supabase
-      .from('saved_presets')
-      .insert({
-        lenser_id: input.lenser_id,
-        lens_id: input.lens_id,
-        lens_version_id: input.lens_version_id,
-        name: input.name,
-        note: input.note ?? null,
-        values: input.values,
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-    return data as SavedPreset
+  async listSavedPresets(lensVersionId: string): Promise<SavedParameterPreset[]> {
+    const { data, error } = await supabase.rpc('fn_list_saved_presets', {
+      p_lens_version_id: lensVersionId,
+    })
+    if (error) this.handleError(error)
+    return (data ?? []) as SavedParameterPreset[]
   }
 
-  async updateSavedPreset(id: string, input: UpdateSavedPresetInput): Promise<SavedPreset> {
-    const { data, error } = await supabase
-      .from('saved_presets')
-      .update({
-        ...(input.name \!== undefined ? { name: input.name } : {}),
-        ...(input.note \!== undefined ? { note: input.note } : {}),
-        ...(input.values \!== undefined ? { values: input.values } : {}),
-      })
-      .eq('id', id)
-      .select()
-      .single()
+  async createSavedPreset(input: CreateSavedPresetInput): Promise<SavedParameterPreset> {
+    const { data, error } = await supabase.rpc('fn_create_saved_preset', {
+      p_lens_id: input.lens_id,
+      p_lens_version_id: input.lens_version_id,
+      p_name: input.name,
+      p_note: input.note ?? null,
+      p_values: input.values ?? {},
+    })
+    if (error) this.handleError(error)
+    return data as SavedParameterPreset
+  }
 
-    if (error) throw error
-    return data as SavedPreset
+  async updateSavedPreset(
+    id: string,
+    input: UpdateSavedPresetInput,
+  ): Promise<SavedParameterPreset> {
+    const { data, error } = await supabase.rpc('fn_update_saved_preset', {
+      p_preset_id: id,
+      p_name: input.name ?? null,
+      p_note: input.note ?? null,
+      p_values: input.values ?? null,
+    })
+    if (error) this.handleError(error)
+    return data as SavedParameterPreset
   }
 
   async deleteSavedPreset(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('saved_presets')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
+    const { error } = await supabase.rpc('fn_delete_saved_preset', {
+      p_preset_id: id,
+    })
+    if (error) this.handleError(error)
   }
 }
 
-export const savedPresetsRepository = new SupabaseSavedPresetsRepository()
+export const savedPresetsRepository = new SavedPresetsRepository()

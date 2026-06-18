@@ -265,3 +265,30 @@ export interface LensStep {
   inputMap?: Record<string, string> | null // maps prior step output keys to this step's inputs
   outputKey?: string | null // key name for this step's output
 }
+
+export interface SavedParameterPreset {
+  id: string
+  lenser_id: string
+  lens_id: string
+  lens_version_id: string
+  name: string
+  note?: string | null
+  values: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateSavedPresetInput {
+  lenser_id: string
+  lens_id: string
+  lens_version_id: string
+  name: string
+  note?: string
+  values: Record<string, unknown>
+}
+
+export interface UpdateSavedPresetInput {
+  name?: string
+  note?: string
+  values?: Record<string, unknown>
+}
