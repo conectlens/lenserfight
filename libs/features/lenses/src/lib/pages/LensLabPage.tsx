@@ -14,7 +14,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useReportContent } from '@lenserfight/features/feedback'
 import { useShareContext } from '@lenserfight/features/share'
 import { useChainabitConnection } from '@lenserfight/features/store'
-import { LenserPreferences } from '@lenserfight/types'
+import { LenserPreferences, LensVersionParam } from '@lenserfight/types'
 import { ReportReasonEnum } from '@lenserfight/types'
 import { Button, HelpButton, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
@@ -171,6 +171,19 @@ export const LensLabPage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+
+  type ParamSnapshot = { values: Record<string, unknown>; params: LensVersionParam[]; at: number }
+  const [paramSnapshots, setParamSnapshots] = useState<ParamSnapshot[]>([])
+  const [appliedSnapshotValues, setAppliedSnapshotValues] = useState<Record<string, unknown> | null>(null)
+
+  const handleCopyWithParams = useCallback(
+    (values: Record<string, unknown>, params: LensVersionParam[]) => {
+      const hasValues = Object.values(values).some((v) => v !== '' && v != null)
+      if (!hasValues) return
+      setParamSnapshots((prev) => [{ values, params, at: Date.now() }, ...prev].slice(0, 10))
+    },
+    []
+  )
 
   const {
     isOpen: isCreateOpen,
@@ -655,6 +668,8 @@ export const LensLabPage: React.FC = () => {
             onSignIn={ensureProfile}
             lensTitle={lens?.title ?? undefined}
             profileId={lenser?.id ?? undefined}
+            onCopyWithParams={handleCopyWithParams}
+            importedPresetValues={appliedSnapshotValues}
           />
         </div>
       </div>
@@ -684,6 +699,46 @@ export const LensLabPage: React.FC = () => {
                     {p.optional && (
                       <span className="ml-auto shrink-0 text-gray-400 dark:text-gray-600 italic">optional</span>
                     )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {paramSnapshots.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-3">
+                Copied parameter sets
+              </h4>
+              <div className="space-y-3">
+                {paramSnapshots.map((snap) => (
+                  <div
+                    key={snap.at}
+                    className="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 px-3 py-2 text-xs"
+                  >
+                    <div className="space-y-1 mb-2">
+                      {snap.params.map((p) => {
+                        const val = snap.values[p.label]
+                        if (val === '' || val == null) return null
+                        return (
+                          <div key={p.label} className="flex gap-2">
+                            <code className="font-mono text-primary-600 dark:text-primary-400 shrink-0">
+                              {p.label}
+                            </code>
+                            <span className="text-gray-700 dark:text-gray-300 truncate">{String(val)}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline"
+                      onClick={() => {
+                        setAppliedSnapshotValues({ ...snap.values })
+                        setTimeout(() => setAppliedSnapshotValues(null), 0)
+                      }}
+                    >
+                      Reuse
+                    </button>
                   </div>
                 ))}
               </div>
