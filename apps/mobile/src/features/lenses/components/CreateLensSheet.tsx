@@ -147,7 +147,7 @@ export const CreateLensSheet: React.FC<CreateLensSheetProps> = ({
       {/* Visibility */}
       <Field label={t('lenses.visibility')}>
         <View style={styles.visibilityRow}>
-          {(['public', 'private'] as VisibilityEnum[]).map((v) => (
+          {(['public', 'community', 'followers', 'private'] as VisibilityEnum[]).map((v) => (
             <View key={v} style={styles.visibilityOption}>
               <MobileButton
                 label={t(`visibility.${v}`)}
