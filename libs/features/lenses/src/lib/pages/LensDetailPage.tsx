@@ -12,6 +12,7 @@ import {
   LocalDownloadTransport,
   CloudDownloadTransport,
 } from '@lenserfight/features/exports'
+import type { LensExportPayload } from '@lenserfight/shared/serializers'
 import { SupabaseExportsRepository } from '@lenserfight/data/exports'
 import { supabase } from '@lenserfight/data/supabase'
 import { SEOHead, Badge, Button, Card, DesktopFrame, HelpButton } from '@lenserfight/ui/components'
@@ -538,7 +539,22 @@ export const LensDetailPage: React.FC = () => {
                   kind="lens"
                   slug={lens.id}
                   title={lens.title ?? undefined}
-                  fetchPayload={async () => lens}
+                  fetchPayload={async (): Promise<LensExportPayload> => ({
+                    id: lens.id,
+                    slug: lens.id,
+                    title: lens.title ?? '',
+                    body: displayVersion?.templateBody ?? lens.content ?? null,
+                    version: displayVersion?.versionNumber ?? lens.latestVersionNumber ?? null,
+                    tags: lens.tags.map((t) => t.name).filter(Boolean),
+                    parameters: activeVersionParams?.map((p) => ({
+                      label: p.label,
+                      type: p.tool.type,
+                      required: !p.optional && p.tool.required,
+                      description: p.tool.helpText ?? null,
+                      placeholder: p.tool.placeholder ?? null,
+                      options: p.tool.options ?? null,
+                    })),
+                  })}
                   onConfirm={runExport}
                 />
               }

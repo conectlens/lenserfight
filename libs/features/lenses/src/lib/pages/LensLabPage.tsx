@@ -7,6 +7,7 @@ import {
   LocalDownloadTransport,
   CloudDownloadTransport,
 } from '@lenserfight/features/exports'
+import type { LensExportPayload } from '@lenserfight/shared/serializers'
 import { SupabaseExportsRepository } from '@lenserfight/data/exports'
 import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
@@ -437,7 +438,22 @@ export const LensLabPage: React.FC = () => {
             kind="lens"
             slug={lens.id}
             title={lens.title ?? undefined}
-            fetchPayload={async () => lens}
+            fetchPayload={async (): Promise<LensExportPayload> => ({
+              id: lens.id,
+              slug: lens.id,
+              title: lens.title ?? '',
+              body: displayVersion?.templateBody ?? lens.content ?? null,
+              version: displayVersion?.versionNumber ?? lens.latestVersionNumber ?? null,
+              tags: lens.tags.map((t) => t.name).filter(Boolean),
+              parameters: activeVersionParams?.map((p) => ({
+                label: p.label,
+                type: p.tool.type,
+                required: !p.optional && p.tool.required,
+                description: p.tool.helpText ?? null,
+                placeholder: p.tool.placeholder ?? null,
+                options: p.tool.options ?? null,
+              })),
+            })}
             onConfirm={runExport}
           />
         }
@@ -646,7 +662,34 @@ export const LensLabPage: React.FC = () => {
       {/* History row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2">
         {/* Execution timeline — right 5 cols (offset to align with execution panel) */}
-        <div className="lg:col-start-8 lg:col-span-5 border-t pt-6 border-gray-100 dark:border-gray-800 lg:border-t-0 lg:pt-0">
+        <div className="lg:col-start-8 lg:col-span-5 border-t pt-6 border-gray-100 dark:border-gray-800 lg:border-t-0 lg:pt-0 flex flex-col gap-6">
+          {activeVersionParams && activeVersionParams.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-3">
+                Parameters
+              </h4>
+              <div className="space-y-2">
+                {activeVersionParams.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 px-3 py-2 text-xs"
+                  >
+                    <code className="font-mono text-primary-600 dark:text-primary-400 shrink-0">
+                      [[{p.label}]]
+                    </code>
+                    <span className="text-gray-500 dark:text-gray-400 shrink-0">{p.tool.type}</span>
+                    {p.tool.helpText && (
+                      <span className="text-gray-400 dark:text-gray-500 truncate">{p.tool.helpText}</span>
+                    )}
+                    {p.optional && (
+                      <span className="ml-auto shrink-0 text-gray-400 dark:text-gray-600 italic">optional</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div>
           <div className="flex items-center gap-2 mb-4">
             <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100">History</h4>
             {lab.comparisonRunIds.length > 0 && (
@@ -674,6 +717,7 @@ export const LensLabPage: React.FC = () => {
             }}
             isAuthenticatedLenser={hasActiveLenserProfile}
           />
+          </div>
         </div>
       </div>
 
