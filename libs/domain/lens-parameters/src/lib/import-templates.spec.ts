@@ -65,8 +65,10 @@ describe('buildImportCsvTemplate', () => {
   it('omits file columns and uses label headers', () => {
     const csv = buildImportCsvTemplate([vp('topic', 'text'), vp('doc', 'file')])
     const lines = csv.split('\n')
-    expect(lines[0]).toBe('topic')
-    expect(lines[1]).toContain('text value')
+    // lines[0] is the enforcement comment
+    expect(lines[0]).toContain('IMPORTANT')
+    expect(lines[1]).toBe('topic')
+    expect(lines[2]).toContain('text value')
     expect(csv).not.toContain('doc')
   })
 

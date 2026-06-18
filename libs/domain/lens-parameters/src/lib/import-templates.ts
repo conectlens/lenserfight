@@ -17,6 +17,7 @@ export interface ImportTemplateParamMeta {
 
 export interface ImportTemplateMeta {
   format: string
+  output_rule: string
   keys: string
   fileParams: string
   parameters: ImportTemplateParamMeta[]
@@ -74,6 +75,8 @@ export function importTemplatePlaceholder(param: LensVersionParam): unknown {
 function buildImportMeta(versionParams: LensVersionParam[], lensContext?: LensTemplateContext): ImportTemplateMeta {
   const meta: ImportTemplateMeta = {
     format: IMPORT_FORMAT_VERSION,
+    output_rule:
+      'IMPORTANT: Do NOT include "_import" or any of its contents in your output. Return ONLY the parameter key-value pairs as a flat JSON object.',
     keys: 'Object keys must match parameter labels (input_snapshot keys), not [[token]] syntax.',
     fileParams:
       'File and files parameters cannot be imported via JSON/CSV — upload them in the lab panel.',
@@ -157,12 +160,12 @@ export function buildImportCsvTemplate(versionParams: LensVersionParam[], lensCo
 
   const dataRows = `${headers.map(escapeCsvField).join(',')}\n${values.join(',')}`
 
-  if (!lensContext?.title && !lensContext?.description) return dataRows
-
-  const comments: string[] = []
-  if (lensContext.title) comments.push(`# lens: ${lensContext.title}`)
-  if (lensContext.description) comments.push(`# description: ${lensContext.description}`)
-  if (lensContext.content) comments.push(`# lens_instructions: ${lensContext.content.replace(/\n/g, ' ').slice(0, 300)}`)
+  const comments: string[] = [
+    '# IMPORTANT: Return ONLY the data rows — do NOT include these comment lines in your output.',
+  ]
+  if (lensContext?.title) comments.push(`# lens: ${lensContext.title}`)
+  if (lensContext?.description) comments.push(`# description: ${lensContext.description}`)
+  if (lensContext?.content) comments.push(`# lens_instructions: ${lensContext.content.replace(/\n/g, ' ').slice(0, 300)}`)
   return `${comments.join('\n')}\n${dataRows}`
 }
 

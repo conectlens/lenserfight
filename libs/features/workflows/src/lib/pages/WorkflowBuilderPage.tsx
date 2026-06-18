@@ -773,7 +773,23 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
               kind="workflow"
               slug={workflowId}
               title={workflow.title ?? undefined}
-              fetchPayload={async () => workflow}
+              fetchPayload={async () => ({
+                ...workflow,
+                nodes: nodes.map((n) => ({
+                  id: n.id,
+                  ordinal: n.ordinal,
+                  label: n.label ?? null,
+                  lens_id: n.lens_id ?? null,
+                  version_id: n.version_id ?? null,
+                  config: n.config ?? null,
+                })),
+                edges: edges.map((e) => ({
+                  source_node_id: e.source_node_id,
+                  target_node_id: e.target_node_id,
+                  source_output_key: e.source_output_key,
+                  target_param_label: e.target_param_label,
+                })),
+              })}
               className="!h-8 w-auto rounded-xl px-2.5 text-greyscale-400"
             />
           </div>

@@ -76,6 +76,25 @@ export const SelectField: React.FC<SelectFieldProps> = ({
     optionRefs.current[index]?.scrollIntoView({ block: 'nearest' })
   }
 
+  // Prevent modal from scrolling when mouse wheel is used over the dropdown.
+  // Without this, wheel events fall through to the modal, fire a scroll event,
+  // and our capture-phase listener below closes the dropdown.
+  useEffect(() => {
+    if (!isOpen || !dropdownRef.current) return
+    const el = dropdownRef.current
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const { scrollTop, scrollHeight, clientHeight } = el
+      if (scrollHeight > clientHeight) {
+        el.scrollTop = Math.max(0, Math.min(scrollTop + e.deltaY, scrollHeight - clientHeight))
+      }
+    }
+
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [isOpen])
+
   // Close on outside click and scroll
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

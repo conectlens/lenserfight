@@ -1,20 +1,22 @@
-import React, { useCallback, useMemo, useState } from 'react'
-import { FileDown } from 'lucide-react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
+import { Check, Copy, FileDown } from 'lucide-react'
 
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { HelpButton } from '@lenserfight/ui/components'
 import { InlineNotice } from '@lenserfight/ui/feedback'
 
-import type { ExportContext, ExportFormat, ExportKind } from '@lenserfight/domain/exports'
+import type { ExportContext, ExportFormat, ExportKind, ExportRequest } from '@lenserfight/domain/exports'
 import { supabase } from '@lenserfight/data/supabase'
 import { SupabaseExportsRepository } from '@lenserfight/data/exports'
 import { useAuth } from '@lenserfight/features/auth'
+import { bootstrapSerializers, getDefaultRegistry } from '@lenserfight/shared/serializers'
 
 import { useRuntimeMode } from '../hooks/useRuntimeMode'
 import { useExportRunner } from '../hooks/useExportRunner'
-import type { TransportId } from '../transport/ExportTransport'
+import type { ExportTransport, TransportId } from '../transport/ExportTransport'
 import { CloudDownloadTransport } from '../transport/CloudDownloadTransport'
 import { LocalDownloadTransport } from '../transport/LocalDownloadTransport'
+import { ExportOrchestrator } from '../orchestrator/ExportOrchestrator'
 import { DestinationSelector } from './DestinationSelector'
 import { FormatSelector } from './FormatSelector'
 
@@ -59,7 +61,9 @@ export function ExportModal<T>({
     mode === 'cloud' ? 'cloud-download' : 'local-download',
   )
   const [isRunning, setRunning] = useState(false)
+  const [isCopied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const buildContext = useCallback((): ExportContext => ({
     userId: user?.id ?? null,
@@ -95,6 +99,35 @@ export function ExportModal<T>({
     }
     return map[kind]
   }, [kind])
+
+  const handleCopy = useCallback(async () => {
+    setError(null)
+    setRunning(true)
+    try {
+      let capturedText = ''
+      const captureTransport: ExportTransport = {
+        id: 'cloud-download' as TransportId,
+        capabilities: () => ({ availableIn: [], label: 'Clipboard', description: '' }),
+        deliver: async (payloads) => {
+          capturedText = payloads[0]?.serialized ?? ''
+          return { transport: 'cloud-download' as TransportId, artifacts: [] }
+        },
+      }
+      const registry = bootstrapSerializers(getDefaultRegistry())
+      const orchestrator = new ExportOrchestrator(registry)
+      const ctx = buildContext()
+      const request: ExportRequest = { kind, slug, format }
+      await orchestrator.run<T>({ request, ctx, fetchPayload, transport: captureTransport })
+      await navigator.clipboard.writeText(capturedText)
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
+      setCopied(true)
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      setError((err as Error).message || 'Copy failed')
+    } finally {
+      setRunning(false)
+    }
+  }, [buildContext, fetchPayload, format, kind, slug])
 
   const handleConfirm = async () => {
     setError(null)
@@ -134,6 +167,19 @@ export function ExportModal<T>({
             variant: 'secondary',
             className: 'flex-1',
           }}
+          rightButtons={[
+            {
+              label: (
+                <span className="flex items-center gap-1.5">
+                  {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                  {isCopied ? 'Copied!' : 'Copy'}
+                </span>
+              ),
+              onClick: handleCopy,
+              disabled: isRunning,
+              variant: 'secondary',
+            },
+          ]}
           primaryButton={{
             label: isRunning ? 'Exporting…' : 'Export',
             onClick: handleConfirm,
