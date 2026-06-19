@@ -330,10 +330,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
       await copyTextToClipboard(rendered)
       setCopiedWithParams(true)
       setTimeout(() => setCopiedWithParams(false), 2000)
-      onCopyWithParams?.(form.inputValues, form.effectiveParams)
     } catch {
       // clipboard failed — leave state unchanged
     }
+    onCopyWithParams?.(form.inputValues, form.effectiveParams)
   }
 
   const handleCopyWithInternalIds = async () => {
