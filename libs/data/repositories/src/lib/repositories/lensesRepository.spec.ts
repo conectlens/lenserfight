@@ -771,9 +771,9 @@ describe('SupabaseLensesRepository', () => {
   // publishVersion
   // ---------------------------------------------------------------------------
   describe('publishVersion', () => {
-    it('calls fn_publish_version with p_version_id', async () => {
+    it('calls fn_lenses_publish_version with p_version_id', async () => {
       await repo.publishVersion(VERSION_ID)
-      expect(mockRpc).toHaveBeenCalledWith('fn_publish_version', { p_version_id: VERSION_ID })
+      expect(mockRpc).toHaveBeenCalledWith('fn_lenses_publish_version', { p_version_id: VERSION_ID })
     })
 
     it('rethrows errors', async () => {
