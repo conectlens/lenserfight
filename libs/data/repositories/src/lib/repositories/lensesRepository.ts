@@ -877,7 +877,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async publishVersion(versionId: string): Promise<void> {
-    const { error } = await supabase.rpc('fn_publish_version', { p_version_id: versionId })
+    const { error } = await supabase.rpc('fn_lenses_publish_version', { p_version_id: versionId })
     if (error) this.handleError(error)
   }
 

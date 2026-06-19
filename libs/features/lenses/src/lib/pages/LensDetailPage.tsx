@@ -32,6 +32,7 @@ import {
   ListVideo,
   ImageIcon,
   Plus,
+  Upload,
 } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -58,7 +59,7 @@ import { useLensDetailController } from '../hooks/useLensDetailController'
 import { LENS_VERSION_MAIN, lensDetailPath } from '../routing/lensVersionRoutes'
 import { useLensFileParamUpload } from '../hooks/useLensFileParamUpload'
 import { useLensVersionRoute } from '../hooks/useLensVersionRoute'
-import { useLensVersionsPaginated } from '../hooks/useLensVersions'
+import { useLensVersions, useLensVersionsPaginated } from '../hooks/useLensVersions'
 
 export const LensDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -150,8 +151,17 @@ export const LensDetailPage: React.FC = () => {
   } = useLensVersionsPaginated(id ?? '', {
     enabled: showVersionPicker,
   })
+  const { publishVersion, isPublishing } = useLensVersions(id ?? '', { enabled: false })
 
   const displayVersion = versionRoute.activeVersion
+
+  const handlePublishDraft = useCallback(async () => {
+    if (!displayVersion?.id) return
+    await publishVersion(displayVersion.id)
+    queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.list(id ?? '') })
+    queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.head(id ?? '') })
+    queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.latestPublished(id ?? '') })
+  }, [displayVersion?.id, publishVersion, queryClient, id])
   const activeVersionParams = displayVersion?.parameters
   const activeTemplateBody = displayVersion?.templateBody ?? ''
   const isResolvingVersion = versionRoute.isResolvingVersion
@@ -580,6 +590,23 @@ export const LensDetailPage: React.FC = () => {
                   <span>Media</span>
                 </button>
 
+                {isOwner && displayVersion?.status === 'draft' && (
+                  <button
+                    type="button"
+                    onClick={handlePublishDraft}
+                    disabled={isPublishing}
+                    title="Publish this draft version"
+                    className="flex items-center gap-1.5 rounded-2xl border border-green-500 bg-green-500/10 px-3 py-2 text-xs font-medium text-green-600 shadow-sm transition-colors hover:bg-green-500/20 disabled:opacity-50 dark:text-green-400"
+                  >
+                    {isPublishing ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : (
+                      <Upload size={13} />
+                    )}
+                    <span>Publish</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={handleVersionToggle}
@@ -600,6 +627,83 @@ export const LensDetailPage: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {showVersionPicker && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                      Version history
+                    </p>
+                    <p className="text-xs text-greyscale-500 dark:text-greyscale-400">
+                      Select a version to preview its parameters and body.
+                    </p>
+                  </div>
+                  {isLoadingVersions && (
+                    <span className="flex items-center gap-2 text-xs text-greyscale-500">
+                      <Loader2 size={13} className="animate-spin" />
+                      Loading
+                    </span>
+                  )}
+                </div>
+                {versions.length === 0 ? (
+                  <div className="py-4 text-center text-sm text-greyscale-500 dark:text-greyscale-400">
+                    No versions found.
+                  </div>
+                ) : (
+                  <div className="max-h-56 overflow-y-auto rounded-2xl border border-surface-border">
+                    <div className="divide-y divide-surface-border">
+                      {versions.map((v) => {
+                        const isSelected = displayVersion?.id === v.id
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() =>
+                              versionRoute.navigateToVersion(
+                                isSelected ? LENS_VERSION_MAIN : v.versionNumber
+                              )
+                            }
+                            className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${isSelected
+                              ? 'bg-primary-yellow-500/10 text-primary-yellow-600'
+                              : 'bg-surface-base text-greyscale-700 hover:bg-surface-raised dark:text-greyscale-300'
+                              }`}
+                          >
+                            <span className="font-mono text-xs font-bold w-8 shrink-0">
+                              v{v.versionNumber}
+                            </span>
+                            <Badge
+                              color={v.status === 'draft' ? 'yellow' : 'green'}
+                              variant="outline"
+                            >
+                              {v.status}
+                            </Badge>
+                            <span className="min-w-0 flex-1 truncate text-xs text-greyscale-500 dark:text-greyscale-400">
+                              {v.changelog ?? 'No changelog'}
+                            </span>
+                            <span className="shrink-0 text-[10px] text-greyscale-400">
+                              {new Date(v.createdAt).toLocaleDateString()}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {hasMoreVersions && <div ref={versionSentinelRef} className="h-2" />}
+                    {isFetchingMoreVersions && (
+                      <div className="flex justify-center py-2">
+                        <Loader2 size={12} className="animate-spin text-greyscale-400" />
+                      </div>
+                    )}
+                    {isResolvingVersion && (
+                      <div className="flex items-center justify-center gap-2 border-t border-surface-border px-4 py-3 text-xs text-greyscale-500">
+                        <Loader2 size={12} className="animate-spin" />
+                        Loading selected version
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <DesktopFrame
               title="Lens reader preview"
@@ -622,83 +726,6 @@ export const LensDetailPage: React.FC = () => {
               />
             </DesktopFrame>
           </Card>
-
-          {showVersionPicker && (
-            <Card className="space-y-3 p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
-                    Version history
-                  </p>
-                  <p className="text-xs text-greyscale-500 dark:text-greyscale-400">
-                    Select a version to preview its parameters and body.
-                  </p>
-                </div>
-                {isLoadingVersions && (
-                  <span className="flex items-center gap-2 text-xs text-greyscale-500">
-                    <Loader2 size={13} className="animate-spin" />
-                    Loading
-                  </span>
-                )}
-              </div>
-              {versions.length === 0 ? (
-                <div className="py-4 text-center text-sm text-greyscale-500 dark:text-greyscale-400">
-                  No versions found.
-                </div>
-              ) : (
-                <div className="max-h-56 overflow-y-auto rounded-2xl border border-surface-border">
-                  <div className="divide-y divide-surface-border">
-                    {versions.map((v) => {
-                      const isSelected = displayVersion?.id === v.id
-                      return (
-                        <button
-                          key={v.id}
-                          type="button"
-                          onClick={() =>
-                            versionRoute.navigateToVersion(
-                              isSelected ? LENS_VERSION_MAIN : v.versionNumber
-                            )
-                          }
-                          className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${isSelected
-                            ? 'bg-primary-yellow-500/10 text-primary-yellow-600'
-                            : 'bg-surface-base text-greyscale-700 hover:bg-surface-raised dark:text-greyscale-300'
-                            }`}
-                        >
-                          <span className="font-mono text-xs font-bold w-8 shrink-0">
-                            v{v.versionNumber}
-                          </span>
-                          <Badge
-                            color={v.status === 'draft' ? 'yellow' : 'green'}
-                            variant="outline"
-                          >
-                            {v.status}
-                          </Badge>
-                          <span className="min-w-0 flex-1 truncate text-xs text-greyscale-500 dark:text-greyscale-400">
-                            {v.changelog ?? 'No changelog'}
-                          </span>
-                          <span className="shrink-0 text-[10px] text-greyscale-400">
-                            {new Date(v.createdAt).toLocaleDateString()}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                  {hasMoreVersions && <div ref={versionSentinelRef} className="h-2" />}
-                  {isFetchingMoreVersions && (
-                    <div className="flex justify-center py-2">
-                      <Loader2 size={12} className="animate-spin text-greyscale-400" />
-                    </div>
-                  )}
-                  {isResolvingVersion && (
-                    <div className="flex items-center justify-center gap-2 border-t border-surface-border px-4 py-3 text-xs text-greyscale-500">
-                      <Loader2 size={12} className="animate-spin" />
-                      Loading selected version
-                    </div>
-                  )}
-                </div>
-              )}
-            </Card>
-          )}
 
           <Card className="space-y-4 p-5">
             <button
