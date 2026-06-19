@@ -82,8 +82,8 @@ Once published, your lens can be selected in the workflow builder or referenced 
 For developers who prefer terminal-driven workflows or want to manage Lenses as code, use the `lf` CLI.
 
 - **[CLI: Create a Lens](/en/tutorials/cli/cli-getting-started#step-5-create-your-first-lens)** — Step-by-step Lens creation via terminal
-- **[CLI: Create a Workflow](/en/tutorials/cli/file-based-cli-basics#create-your-first-workflow)** — Compose Lenses into multi-step processes via `COLENS.MD`
-- **[CLI: Create a Battle](/en/tutorials/cli/file-based-cli-basics#create-your-first-battle)** — Compare Lens outputs from the terminal via `BATTLE.MD`
+- **[CLI: Create a Workflow](/en/tutorials/cli/file-based-cli-basics#create-your-first-workflow)** — Compose Lenses into multi-step processes via `SKILL.md`
+- **[CLI: Create a Battle](/en/tutorials/cli/file-based-cli-basics#create-your-first-battle)** — Compare Lens outputs from the terminal via `SKILL.md`
 
 See the [CLI: Getting Started](/en/tutorials/cli/cli-getting-started) guide for installation and authentication.
 

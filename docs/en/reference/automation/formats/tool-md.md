@@ -82,4 +82,4 @@ Timeout, rate limit, auth error, malformed upstream data, and empty result.
 ## Related
 
 - [Markdown Object Formats overview](../markdown-objects)
-- [Native `LENS.MD`](./lens-md) (lenses call tools via `parameters[i].tool_id`)
+- [Native `SKILL.md`](./lens-md) (lenses call tools via `parameters[i].tool_id`)

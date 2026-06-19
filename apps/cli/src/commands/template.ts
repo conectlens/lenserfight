@@ -295,19 +295,19 @@ const listRecurring = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
-// template submit — validate a community-contributed COLENS.MD template
+// template submit — validate a community-contributed SKILL.md template
 // and emit the gh CLI command the user should paste to open a PR.
 // ---------------------------------------------------------------------------
 const submit = defineCommand({
   meta: {
     name: 'submit',
     description:
-      'Validate a COLENS.MD template file and print a gh pr create command to submit it.',
+      'Validate a SKILL.md template file and print a gh pr create command to submit it.',
   },
   args: {
     file: {
       type: 'positional',
-      description: 'Path to the COLENS.MD template file',
+      description: 'Path to the SKILL.md template file',
       required: true,
     },
   },
@@ -332,7 +332,7 @@ const submit = defineCommand({
     const kind = result.document?.frontmatter.kind ?? 'colens';
     if (kind !== 'colens' && kind !== 'workflow') {
       consola.warn(
-        'Expected a COLENS.MD (kind=colens) but got kind="%s". Submitting anyway.',
+        'Expected a SKILL.md (kind=colens) but got kind="%s". Submitting anyway.',
         kind
       );
     }

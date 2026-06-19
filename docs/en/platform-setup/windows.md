@@ -100,9 +100,9 @@ This file contains secrets — do not commit it.
 pnpm lenserfight validate .\automation
 ```
 
-> If no markdown files exist under `./automation`, create an `LENSER.MD` first:
+> If no markdown files exist under `./automation`, create an `SKILL.md` first:
 > ```powershell
-> pnpm lenserfight export agent --template --out .\LENSER.MD
+> pnpm lenserfight export agent --template --out .\SKILL.md
 > ```
 
 ## Run a local battle

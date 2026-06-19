@@ -8,12 +8,12 @@ description: Legacy portable form of a lens/task unit with full strict frontmatt
 <ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
 
 
-The legacy portable form of a lens. Identical filename to the native form (`LENS.MD` — discovery is case-insensitive), but uses the **full** frontmatter schema (`kind`, `schema_version`, `id`, …) plus the strict section structure. Use this when interchanging lenses between tools or when stricter validation is needed.
+The legacy portable form of a lens. Identical filename to the native form (`SKILL.md` — discovery is case-insensitive), but uses the **full** frontmatter schema (`kind`, `schema_version`, `id`, …) plus the strict section structure. Use this when interchanging lenses between tools or when stricter validation is needed.
 
 ## Filename
 
-- Canonical: `LENS.MD` / `LENS.md`
-- Container: `lenses/<slug>/LENS.MD`
+- Canonical: `SKILL.md` / `LENS.md`
+- Container: `lenses/<slug>/SKILL.md`
 
 ## Required frontmatter
 
@@ -89,4 +89,4 @@ evaluation_refs: []
 ## Related
 
 - [Markdown Object Formats overview](../markdown-objects)
-- [Native `LENS.MD`](./lens-md)
+- [Native `SKILL.md`](./lens-md)

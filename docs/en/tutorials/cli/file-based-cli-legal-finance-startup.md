@@ -12,7 +12,7 @@ Goal: summarize a document, create a risk checklist, and prepare questions for c
 Structure:
 
 ```text
-.lenserfight/colenses/legal-document-review/COLENS.MD
+.lenserfight/colenses/legal-document-review/SKILL.md
 ```
 
 Relationship: legal lenses feed the `legal-triage` agent.
@@ -30,7 +30,7 @@ Goal: explain a finance report, review KPIs, and draft an investor update.
 Structure:
 
 ```text
-.lenserfight/colenses/finance-report-review/COLENS.MD
+.lenserfight/colenses/finance-report-review/SKILL.md
 ```
 
 Relationship: finance lenses feed the `finance-analyst` agent.
@@ -48,7 +48,7 @@ Goal: convert weekly notes into decisions, KPI review, and next actions.
 Structure:
 
 ```text
-.lenserfight/colenses/startup-weekly-operating-review/COLENS.MD
+.lenserfight/colenses/startup-weekly-operating-review/SKILL.md
 ```
 
 Relationship: founder review, KPI review, and decision memo lenses feed the startup operator agent.

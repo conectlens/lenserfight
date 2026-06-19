@@ -17,11 +17,11 @@ import { parse } from 'yaml'
 import { getLenserfightRuntimeDir } from './local-battle-paths'
 
 export const AUTOMATION_FILE_NAMES: Record<AutomationObjectKind, string> = {
-  lens: 'LENS.MD',
-  lenser: 'LENSER.MD',
-  colens: 'COLENS.MD',
-  battle: 'BATTLE.MD',
-  ray: 'RAY.MD',
+  lens: 'SKILL.md',
+  lenser: 'SKILL.md',
+  colens: 'SKILL.md',
+  battle: 'SKILL.md',
+  ray: 'SKILL.md',
   team: 'TEAM.MD',
   agent: 'AGENT.md',
   agent_team: 'AGENT_TEAM.md',
@@ -35,8 +35,22 @@ export const AUTOMATION_FILE_NAMES: Record<AutomationObjectKind, string> = {
 }
 
 const LEGACY_AUTOMATION_FILE_NAMES: Partial<Record<AutomationObjectKind, string[]>> = {
-  lenser: ['AGENT.MD', 'AGENT.md'],
-  colens: ['WORKFLOW.MD'],
+  lens: ['LENS.MD'],
+  lenser: ['LENSER.MD', 'AGENT.MD', 'AGENT.md'],
+  colens: ['COLENS.MD', 'WORKFLOW.MD'],
+  battle: ['BATTLE.MD'],
+  ray: ['RAY.MD'],
+}
+
+/** Maps canonical directory names to the AutomationObjectKind they contain. */
+const DIRECTORY_TO_KIND: Record<string, AutomationObjectKind> = {
+  lenses: 'lens',
+  lensers: 'lenser',
+  colenses: 'colens',
+  battles: 'battle',
+  rays: 'ray',
+  skills: 'skill',
+  teams: 'team',
 }
 
 const CANONICAL_TEMPLATE_DIRECTORIES = ['lensers', 'lenses', 'colenses', 'battles', 'rays'] as const
@@ -61,6 +75,9 @@ const PRIMARY_FILE_KIND_BY_NAME: Record<string, AutomationObjectKind> = Object.f
       fileName.toLowerCase(),
       kind as AutomationObjectKind,
     ]),
+    ...Object.entries(LEGACY_AUTOMATION_FILE_NAMES).flatMap(([kind, fileNames]) =>
+      (fileNames ?? []).map((f) => [f.toLowerCase(), kind as AutomationObjectKind])
+    ),
     ['agent.md', 'agent' as AutomationObjectKind],
     ['workflow.md', 'workflow' as AutomationObjectKind],
   ]
@@ -373,7 +390,7 @@ export function discoverLenserfightWorkspace(
       const legacyPath = isLegacyAutomationPath(filePath)
       if (legacyPath) {
         warnings.push(
-          `Legacy automation path discovered: ${filePath}. Use ${canonicalKind === 'lenser' ? 'lensers/*/LENSER.MD' : canonicalKind === 'colens' ? 'colenses/*/COLENS.MD' : 'canonical terminology'} for new files.`
+          `Legacy automation path discovered: ${filePath}. Use ${canonicalKind === 'lenser' ? 'lensers/*/SKILL.md' : canonicalKind === 'colens' ? 'colenses/*/SKILL.md' : 'canonical terminology'} for new files.`
         )
       }
       discovered.push({
@@ -436,7 +453,17 @@ export function discoverLenserfightWorkspace(
 }
 
 export function inferKindFromFilePath(filePath: string): AutomationObjectKind | undefined {
-  return PRIMARY_FILE_KIND_BY_NAME[basename(filePath).toLowerCase()]
+  const fileName = basename(filePath).toLowerCase()
+  if (fileName === 'skill.md') {
+    // Infer kind from the canonical directory segment in the path.
+    const parts = resolve(filePath).split(sep)
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const kind = DIRECTORY_TO_KIND[parts[i]]
+      if (kind !== undefined) return kind
+    }
+    return 'skill'
+  }
+  return PRIMARY_FILE_KIND_BY_NAME[fileName]
 }
 
 export function resolveUnitRoot(filePath: string): string {
@@ -866,10 +893,12 @@ function collectFileRenameOperations(dir: string, operations: TerminologyMigrati
       collectFileRenameOperations(fullPath, operations)
       continue
     }
-    const targetName = entry.toLowerCase() === 'agent.md'
-      ? 'LENSER.MD'
-      : entry.toLowerCase() === 'workflow.md'
-        ? 'COLENS.MD'
+    const lower = entry.toLowerCase()
+    const targetName =
+      lower === 'agent.md' || lower === 'workflow.md' ||
+      lower === 'lens.md' || lower === 'lenser.md' ||
+      lower === 'colens.md' || lower === 'battle.md' || lower === 'ray.md'
+        ? 'SKILL.md'
         : null
     if (!targetName || entry === targetName) continue
     pushRenameOperation(operations, fullPath, join(dir, targetName))
@@ -959,37 +988,22 @@ function slugFragment(value: string) {
 }
 
 const LENS_TEMPLATE = `---
-kind: lens
-schema_version: 1
-id: lens_<uuid>
-slug: market-brief
-name: Market Brief Lens
-description: Structured task unit for a reusable market brief prompt.
-owner:
-  workspace_id: ws_<uuid>
-visibility: workspace
-status: draft
-version: 0.1.0
-tags:
-  - research
-input_schema:
-  type: object
-output_schema:
-  type: object
-evaluation_refs: []
+name: market-brief
+description: Use when you need a structured, reusable prompt for generating market briefs. Accepts a topic and optional context.
 ---
 
-# Purpose
-Explain what this lens is meant to do.
+# Market Brief
 
-# Prompt
-Write the structured prompt body here.
+Produce a concise market brief for \`[[topic]]\` using \`[[context]]\` when provided.
 
-# Inputs
-Describe runtime inputs and validation.
+## Parameters
 
-# Outputs
-Describe the expected output shape and quality bar.
+- \`[[topic]]\` — the market or product area to brief
+- \`[[context]]\` — optional additional context (company, audience, constraints)
+
+## Output
+
+Return a structured brief with: market size, key players, trends, opportunities, and risks.
 `
 
 const LENSER_TEMPLATE = `---
@@ -1029,10 +1043,7 @@ Describe the final artifact, side effects, and acceptance criteria.
 
 const BATTLE_TEMPLATE = `---
 name: implementation-battle
-description: Use when comparing LENS, COLENS, LENSER, team, model, or human outputs against shared evals.
-participants:
-  - type: lens
-    ref: ../lenses/example-lens/LENS.MD
+description: Use when comparing lens, colens, lenser, team, model, or human outputs against shared evals.
 ---
 
 # Purpose
@@ -1049,29 +1060,16 @@ Define the result format and what evidence must be included.
 `
 
 const RAY_TEMPLATE = `---
-kind: ray
-schema_version: 1
-id: ray_<uuid>
-slug: developer
-name: Developer
+name: developer
 description: Developer productivity, review, release, and architecture templates.
-visibility: public
-status: active
-version: 0.1.0
-route: /ray/developer
-aliases:
-  - engineering
-related_item_types:
-  - lens
-  - lenser
-  - colens
-  - battle
 ---
 
-# Purpose
+# \`#developer\`
+
+## Purpose
 Describe the category this ray owns and the kinds of work users should expect.
 
-# Related Items
+## Related Items
 List the highest-signal lenses, lensers, colenses, and battles in this category.
 
 # Routing

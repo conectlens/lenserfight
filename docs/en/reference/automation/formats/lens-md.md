@@ -1,19 +1,19 @@
 ---
-title: LENS.MD — Native ConectLens Lens
+title: SKILL.md — Native ConectLens Lens
 description: Canonical file format for a ConectLens lens (reusable task unit).
 ---
 
-# `LENS.MD` — Native ConectLens lens/task unit
+# `SKILL.md` — Native ConectLens lens/task unit
 
 <ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
 
 
-`LENS.MD` is the canonical, file-first representation of a **lens**: a reusable prompt/task unit with a structured body and optional parameter contract. It is the native ConectLens form, validated by `lenserfight validate`, exported by `lenserfight export lens`, and consumed by `lenserfight workflow run`.
+`SKILL.md` is the canonical, file-first representation of a **lens**: a reusable prompt/task unit with a structured body and optional parameter contract. It is the native ConectLens form, validated by `lenserfight validate`, exported by `lenserfight export lens`, and consumed by `lenserfight workflow run`.
 
 ## Filename
 
-- Canonical: `LENS.MD` (upper-case `.MD`)
-- Container directory: `lenses/<slug>/LENS.MD` (or any path on disk; folder containment matters for progressive disclosure)
+- Canonical: `SKILL.md` (upper-case `.MD`)
+- Container directory: `lenses/<slug>/SKILL.md` (or any path on disk; folder containment matters for progressive disclosure)
 - Lookup: case-insensitive — discovery normalises file names through `PRIMARY_FILE_KIND_BY_NAME` in [automation-objects.ts](../../../../../../apps/cli/src/utils/automation-objects.ts).
 
 ## Required frontmatter
@@ -57,7 +57,7 @@ Native compact lenses (only `name` and `description`) skip section checks.
 ## Canonical template
 
 ```bash
-lenserfight export lens --template --out .lenserfight/lenses/example/LENS.MD
+lenserfight export lens --template --out .lenserfight/lenses/example/SKILL.md
 ```
 
 ```yaml

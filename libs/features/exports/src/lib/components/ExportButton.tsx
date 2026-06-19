@@ -1,17 +1,10 @@
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import { Download } from 'lucide-react'
 
 import { Button } from '@lenserfight/ui/components'
 
-import type { ExportContext, ExportFormat, ExportKind } from '@lenserfight/domain/exports'
-import { supabase } from '@lenserfight/data/supabase'
-import { SupabaseExportsRepository } from '@lenserfight/data/exports'
-import { useAuth } from '@lenserfight/features/auth'
+import type { ExportKind } from '@lenserfight/domain/exports'
 
-import { CloudDownloadTransport } from '../transport/CloudDownloadTransport'
-import { LocalDownloadTransport } from '../transport/LocalDownloadTransport'
-import type { TransportId } from '../transport/ExportTransport'
-import { useExportRunner } from '../hooks/useExportRunner'
 import { ExportModal } from './ExportModal'
 
 export interface ExportButtonProps<T> {
@@ -48,35 +41,6 @@ export function ExportButton<T>({
   isOwner = false,
 }: ExportButtonProps<T>) {
   const [open, setOpen] = useState(false)
-  const { user, isAuthenticated } = useAuth()
-
-  const buildContext = useCallback((): ExportContext => ({
-    userId: user?.id ?? null,
-    tenantId: null,
-    via: 'web',
-    host: typeof window !== 'undefined' ? window.location.host : '',
-    isOwner,
-    isAuthenticated,
-  }), [user?.id, isOwner, isAuthenticated])
-
-  const resolveTransport = useCallback((id: TransportId) => {
-    if (id === 'local-download') return new LocalDownloadTransport()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return new CloudDownloadTransport(new SupabaseExportsRepository(supabase as any))
-  }, [])
-
-  const runExportInner = useExportRunner<T>({
-    kind,
-    slug,
-    title,
-    fetchPayload,
-    buildContext,
-    resolveTransport,
-  })
-  const runExport = useCallback(
-    async (input: { format: ExportFormat; destination: TransportId }) => { await runExportInner(input) },
-    [runExportInner],
-  )
 
   return (
     <>
@@ -99,7 +63,7 @@ export function ExportButton<T>({
         slug={slug}
         title={title}
         fetchPayload={fetchPayload}
-        onConfirm={runExport}
+        isOwner={isOwner}
       />
     </>
   )

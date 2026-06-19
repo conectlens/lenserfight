@@ -12,15 +12,15 @@ Goal: produce triage, code review, test plan, and PR description.
 Structure:
 
 ```text
-.lenserfight/lenses/code-reviewer/LENS.MD
-.lenserfight/lenses/unit-test-generator/LENS.MD
-.lenserfight/lenses/pr-description-writer/LENS.MD
-.lenserfight/colenses/pr-review/COLENS.MD
+.lenserfight/lenses/code-reviewer/SKILL.md
+.lenserfight/lenses/unit-test-generator/SKILL.md
+.lenserfight/lenses/pr-description-writer/SKILL.md
+.lenserfight/colenses/pr-review/SKILL.md
 ```
 
 Relationship: the workflow intentionally chains specialized lenses.
 
-Validation: `lf validate .lenserfight/colenses/pr-review/COLENS.MD` for syntax, `lf validate` for cross-references.
+Validation: `lf validate .lenserfight/colenses/pr-review/SKILL.md` for syntax, `lf validate` for cross-references.
 
 Common mistakes: reviewing without diff context, generating tests unrelated to changed behavior.
 
@@ -33,7 +33,7 @@ Goal: create script, storyboard, thumbnail prompt, and short-form repurposing.
 Structure:
 
 ```text
-.lenserfight/colenses/youtube-content/COLENS.MD
+.lenserfight/colenses/youtube-content/SKILL.md
 ```
 
 Relationship: a content producer agent reviews the outputs from creator lenses.

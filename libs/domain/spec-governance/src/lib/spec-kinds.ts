@@ -115,7 +115,7 @@ export const SPEC_KIND_META: Record<SpecKind, SpecKindMeta> = {
   Lens: {
     kind: 'Lens',
     legacyKind: 'lens',
-    fileName: 'LENS.MD',
+    fileName: 'SKILL.md',
     description:
       'A reusable, versioned prompt contract with typed inputs and outputs. The fundamental executable unit of LenserFight.',
     requiredFields: ['kind', 'name', 'description'],
@@ -127,7 +127,7 @@ export const SPEC_KIND_META: Record<SpecKind, SpecKindMeta> = {
   Lenser: {
     kind: 'Lenser',
     legacyKind: 'lenser',
-    fileName: 'LENSER.MD',
+    fileName: 'SKILL.md',
     description:
       'An AI agent with a defined mission, tool policy, and operating rules. Runs lenses and coordinates with other lensers.',
     requiredFields: ['kind', 'name', 'description'],
@@ -139,7 +139,7 @@ export const SPEC_KIND_META: Record<SpecKind, SpecKindMeta> = {
   CoLens: {
     kind: 'CoLens',
     legacyKind: 'colens',
-    fileName: 'COLENS.MD',
+    fileName: 'SKILL.md',
     description:
       'A multi-step workflow DAG that chains lenses and lensers. Supports sequential, parallel, and conditional execution.',
     requiredFields: ['kind', 'name', 'description'],
@@ -151,7 +151,7 @@ export const SPEC_KIND_META: Record<SpecKind, SpecKindMeta> = {
   Battle: {
     kind: 'Battle',
     legacyKind: 'battle',
-    fileName: 'BATTLE.MD',
+    fileName: 'SKILL.md',
     description:
       'A public comparison template between lenses, lensers, workflows, or models. Supports AI-vs-AI, human-vs-human, and human-vs-AI structures.',
     requiredFields: ['kind', 'name', 'description'],
@@ -163,7 +163,7 @@ export const SPEC_KIND_META: Record<SpecKind, SpecKindMeta> = {
   Ray: {
     kind: 'Ray',
     legacyKind: 'ray',
-    fileName: 'RAY.MD',
+    fileName: 'SKILL.md',
     description:
       'A thematic category that groups related lenses, lensers, colenses, and battles for discovery.',
     requiredFields: ['kind', 'name', 'description'],

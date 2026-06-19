@@ -1,11 +1,11 @@
 ---
 title: lf migrate-terminology
-description: Migrate legacy file-mode terminology (AGENT.md, WORKFLOW.md) to the canonical lensers/colenses vocabulary (LENSER.MD, COLENS.MD).
+description: Migrate legacy file-mode terminology (AGENT.md, WORKFLOW.md) to the canonical lensers/colenses vocabulary (SKILL.md, SKILL.md).
 ---
 
 # `lf migrate-terminology`
 
-Rewrite legacy file-mode terminology in any `.lenserfight/` tree from `AGENT.md` / `WORKFLOW.md` to the canonical `LENSER.MD` / `COLENS.MD`. Dry-run by default — nothing is touched unless you pass `--apply`.
+Rewrite legacy file-mode terminology in any `.lenserfight/` tree from `AGENT.md` / `WORKFLOW.md` to the canonical `SKILL.md` / `SKILL.md`. Dry-run by default — nothing is touched unless you pass `--apply`.
 
 ```bash
 lf migrate-terminology              # dry-run plan (default)
@@ -32,11 +32,11 @@ By default the command discovers every `.lenserfight/` tree at or beneath the cu
 
 ```
 op       from             to                status
-rename   AGENT.md         LENSER.MD         ok
-rename   WORKFLOW.md      COLENS.MD         ok
-rewrite  COLENS.MD        (terminology)     ok
-skip     LENSER.MD        (already-canonical) skipped
-conflict AGENT.md         LENSER.MD         conflict (both files exist)
+rename   AGENT.md         SKILL.md         ok
+rename   WORKFLOW.md      SKILL.md         ok
+rewrite  SKILL.md        (terminology)     ok
+skip     SKILL.md        (already-canonical) skipped
+conflict AGENT.md         SKILL.md         conflict (both files exist)
 ```
 
 - `ok` operations will be applied with `--apply`.

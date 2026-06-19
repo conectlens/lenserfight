@@ -7,19 +7,19 @@ description: First lens, agent, workflow, battle, and ray tutorials for .lenserf
 
 ## Create your first Lens
 
-Goal: create `.lenserfight/lenses/customer-summary/LENS.MD`.
+Goal: create `.lenserfight/lenses/customer-summary/SKILL.md`.
 
 When to use it: you need a reusable prompt transformation.
 
 Structure:
 
 ```text
-.lenserfight/lenses/customer-summary/LENS.MD
+.lenserfight/lenses/customer-summary/SKILL.md
 ```
 
 Item relationship: workflows can reference it with `lens: customer-summary`.
 
-Validation: run `lf validate .lenserfight/lenses/customer-summary/LENS.MD`.
+Validation: run `lf validate .lenserfight/lenses/customer-summary/SKILL.md`.
 
 Common mistakes: missing frontmatter, vague output contract, placeholders without declared parameters.
 
@@ -27,14 +27,14 @@ Expected outcome: a reusable lens visible in project discovery.
 
 ## Create your first Agent
 
-Goal: create `.lenserfight/lensers/researcher/LENSER.MD`.
+Goal: create `.lenserfight/lensers/researcher/SKILL.md`.
 
 When to use it: you need a reusable AI role with operating rules.
 
 Structure:
 
 ```text
-.lenserfight/lensers/researcher/LENSER.MD
+.lenserfight/lensers/researcher/SKILL.md
 ```
 
 Item relationship: workflows can reference it with `agent: researcher`.
@@ -47,14 +47,14 @@ Expected outcome: a role that can be combined with lenses.
 
 ## Create your first Workflow
 
-Goal: compose a lens and agent into `.lenserfight/colenses/research-brief/COLENS.MD`.
+Goal: compose a lens and agent into `.lenserfight/colenses/research-brief/SKILL.md`.
 
 When to use it: the same multi-step process happens repeatedly.
 
 Structure:
 
 ```text
-.lenserfight/colenses/research-brief/COLENS.MD
+.lenserfight/colenses/research-brief/SKILL.md
 ```
 
 Item relationship: `nodes` should reference discovered lens and agent slugs.
@@ -74,7 +74,7 @@ When to use it: the team needs evidence for a choice.
 Structure:
 
 ```text
-.lenserfight/battles/review-comparison/BATTLE.MD
+.lenserfight/battles/review-comparison/SKILL.md
 ```
 
 Item relationship: participants reference lenses, agents, or workflows.
@@ -87,11 +87,11 @@ Expected outcome: a meaningful comparison with explicit criteria.
 
 ## Create a Ray
 
-Goal: create `.lenserfight/rays/support/RAY.MD`.
+Goal: create `.lenserfight/rays/support/SKILL.md`.
 
 When to use it: templates need a shared category.
 
-Validation: `lf validate` parses `RAY.MD` as a first-class item.
+Validation: `lf validate` parses `SKILL.md` as a first-class item.
 
 Common mistakes: using rays as vague hashtags instead of routeable categories.
 

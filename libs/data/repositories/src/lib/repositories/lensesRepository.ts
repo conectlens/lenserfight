@@ -251,11 +251,12 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     ownerId?: string | null
   ): Promise<ApiResponseEnvelope<LensRecord[]>> {
     const start = Date.now()
-    const { data, error } = await supabase
+    let publicQuery = supabase
       .from('vw_lenses_public')
       .select(this.listLensSelect)
       .ilike('title', `%${query}%`)
-      .range(offset, offset + limit - 1)
+    if (ownerId) publicQuery = publicQuery.eq('lenser_id', ownerId)
+    const { data, error } = await publicQuery.range(offset, offset + limit - 1)
 
     if (error) this.handleError(error)
     const publicResults = (data ?? []) as unknown as LensRecord[]

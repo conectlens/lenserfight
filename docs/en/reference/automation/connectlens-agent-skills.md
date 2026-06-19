@@ -13,7 +13,7 @@ ConectLens adapts Agent Skills conventions into LenserFight terminology without 
 ## Current State
 
 - File-first automation already exists through markdown objects and `lf validate`.
-- Native ConectLens primary files are now discovered by filename: `LENS.MD`, `LENSER.MD`, `COLENS.MD`, `BATTLE.MD`, and `TEAM.MD`.
+- Native ConectLens primary files are now discovered by filename: `SKILL.md`, `SKILL.md`, `SKILL.md`, `SKILL.md`, and `TEAM.MD`.
 - Compatibility files remain valid: `SKILL.MD`, `AGENT.MD`, `AGENT_TEAM.md`, `WORKFLOW.MD`, and `PRIVATE_BATTLE.md`.
 - Parameter placeholders use `[[name]]`; stored database templates may use `[[:uuid]]`.
 - Lens parameter declarations mirror `lenses.version_parameters`: each declaration needs `label` and `tool_id`.
@@ -23,17 +23,17 @@ ConectLens adapts Agent Skills conventions into LenserFight terminology without 
 
 | Agent Skills term | ConectLens term | Native file |
 |---|---|---|
-| Skill | LENS | `LENS.MD` |
-| Agent | LENSER | `LENSER.MD` |
-| Workflow | COLENS | `COLENS.MD` |
-| Orchestration / comparison | BATTLE | `BATTLE.MD` |
+| Skill | LENS | `SKILL.md` |
+| Agent | LENSER | `SKILL.md` |
+| Workflow | COLENS | `SKILL.md` |
+| Orchestration / comparison | BATTLE | `SKILL.md` |
 | Skill team | Team | `TEAM.MD` |
 | references | references | `references/` |
 | scripts | scripts | `scripts/` |
 | assets | assets | `assets/` |
 | evals | evals | `evals/` |
 
-`SKILL.MD` can be used as a compatibility wrapper, but `LENS.MD` is the native source of truth.
+`SKILL.MD` can be used as a compatibility wrapper, but `SKILL.md` is the native source of truth.
 
 ## Package Layout
 
@@ -41,10 +41,10 @@ Use folder-based units:
 
 ```txt
 .lenserfight/
-  lenses/example-lens/LENS.MD
-  lensers/example-lenser/LENSER.MD
-  colenses/example-colens/COLENS.MD
-  battles/example-battle/BATTLE.MD
+  lenses/example-lens/SKILL.md
+  lensers/example-lenser/SKILL.md
+  colenses/example-colens/SKILL.md
+  battles/example-battle/SKILL.md
   teams/example-team/TEAM.MD
 ```
 
@@ -61,7 +61,7 @@ Frontmatter references to these files must be relative to the package root and s
 
 ## LENS Rules
 
-A basic `LENS.MD` can stay simple:
+A basic `SKILL.md` can stay simple:
 
 ```md
 ---
@@ -85,21 +85,21 @@ parameters:
 
 ## BATTLE Rules
 
-`BATTLE.MD` is an orchestration document, not a generic skill file. It may reference LENS, COLENS, LENSER, teams, models, humans, evals, scoring, comparison settings, and runtime execution details.
+`SKILL.md` is an orchestration document, not a generic skill file. It may reference LENS, COLENS, LENSER, teams, models, humans, evals, scoring, comparison settings, and runtime execution details.
 
 A valid battle should declare participants or orchestration references:
 
 ```yaml
 participants:
   - type: lens
-    ref: ../lenses/a/LENS.MD
+    ref: ../lenses/a/SKILL.md
   - type: lenser
-    ref: ../lensers/reviewer/LENSER.MD
+    ref: ../lensers/reviewer/SKILL.md
 ```
 
 ## Storage Rules
 
-Commit project-safe packages under `.lenserfight/`, such as reusable `LENS.MD` files and their public `references/`, `scripts/`, `assets/`, and `evals/`.
+Commit project-safe packages under `.lenserfight/`, such as reusable `SKILL.md` files and their public `references/`, `scripts/`, `assets/`, and `evals/`.
 
 Keep private runtime data outside the project:
 
@@ -114,10 +114,10 @@ The CLI writes new local battle state to user runtime storage. Existing `.lenser
 ## Migration Notes
 
 - Move reusable local prompt packages into folder units with native primary files.
-- Rename `agents/` to `lensers/`, `workflows/` to `colenses/`, `AGENT.MD` to `LENSER.MD`, and `WORKFLOW.MD` to `COLENS.MD`.
-- Compatibility aliases remain readable, but canonical files win mixed-state conflicts and new files must use `lensers/`, `colenses/`, `LENSER.MD`, and `COLENS.MD`.
+- Rename `agents/` to `lensers/`, `workflows/` to `colenses/`, `AGENT.MD` to `SKILL.md`, and `WORKFLOW.MD` to `SKILL.md`.
+- Compatibility aliases remain readable, but canonical files win mixed-state conflicts and new files must use `lensers/`, `colenses/`, `SKILL.md`, and `SKILL.md`.
 - Use `lf migrate-terminology` for a dry-run plan or `lf migrate-terminology --apply` to rename safely. The bash helper `scripts/migrate-lenserfight-terminology.sh` supports the same migration for project, nested, and user-global `.lenserfight` directories.
-- Keep legacy `SKILL.MD`, `LENSER.MD`, `COLENS.MD`, and `PRIVATE_BATTLE.md` files only while consumers are migrating.
+- Keep legacy `SKILL.MD`, `SKILL.md`, `SKILL.md`, and `PRIVATE_BATTLE.md` files only while consumers are migrating.
 - Do not add secrets to markdown frontmatter, YAML templates, scripts, or examples.
 - Add `parameters` only when the body uses `[[...]]` placeholders.
 - Move project-root local battle JSON files out of Git history and into user runtime storage.

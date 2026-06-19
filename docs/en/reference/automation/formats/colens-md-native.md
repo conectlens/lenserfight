@@ -1,21 +1,21 @@
 ---
-title: COLENS.MD (native) — ConectLens Workflow
+title: SKILL.md (native) — ConectLens Workflow
 description: Canonical file format for a ConectLens COLENS (multi-step workflow).
 ---
 
-# `COLENS.MD` — Native ConectLens workflow/COLENS
+# `SKILL.md` — Native ConectLens workflow/COLENS
 
 <ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
 
 
-A **COLENS** is a ConectLens workflow: a coordinated, multi-step sequence of LENS and LENSER invocations. `COLENS.MD` is its native, file-first form, validated by `lenserfight validate` and run by `lenserfight workflow run`.
+A **COLENS** is a ConectLens workflow: a coordinated, multi-step sequence of LENS and LENSER invocations. `SKILL.md` is its native, file-first form, validated by `lenserfight validate` and run by `lenserfight workflow run`.
 
 ## Filename
 
-- Canonical: `COLENS.MD`
-- Container: `colenses/<slug>/COLENS.MD`
+- Canonical: `SKILL.md`
+- Container: `colenses/<slug>/SKILL.md`
 - Legacy alias recognised by discovery: `WORKFLOW.MD`
-- `lenserfight migrate-terminology` renames `WORKFLOW.md` → `COLENS.MD` and `workflows/` → `colenses/`.
+- `lenserfight migrate-terminology` renames `WORKFLOW.md` → `SKILL.md` and `workflows/` → `colenses/`.
 
 ## Required frontmatter
 
@@ -44,7 +44,7 @@ When frontmatter declares `nodes[]` or `steps[]`, each step's `lens:` or `lenser
 ## Canonical template
 
 ```bash
-lenserfight export colens --template --out .lenserfight/colenses/example/COLENS.MD
+lenserfight export colens --template --out .lenserfight/colenses/example/SKILL.md
 ```
 
 ```yaml
@@ -71,7 +71,7 @@ Describe the final artifact, side effects, and acceptance criteria.
 ## Running locally
 
 ```bash
-lenserfight workflow run .lenserfight/colenses/example/COLENS.MD
+lenserfight workflow run .lenserfight/colenses/example/SKILL.md
 ```
 
 The runner produces a `RUN_REPORT.md` under the user runtime workspace (not `.lenserfight/`).
@@ -79,6 +79,6 @@ The runner produces a `RUN_REPORT.md` under the user runtime workspace (not `.le
 ## Related
 
 - [Markdown Object Formats overview](../markdown-objects)
-- [Legacy `COLENS.MD` (portable workflow)](./colens-md-legacy)
-- [Native `LENSER.MD`](./lenser-md-native)
-- [Native `BATTLE.MD`](./battle-md)
+- [Legacy `SKILL.md` (portable workflow)](./colens-md-legacy)
+- [Native `SKILL.md`](./lenser-md-native)
+- [Native `SKILL.md`](./battle-md)

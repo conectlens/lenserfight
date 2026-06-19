@@ -73,6 +73,6 @@ Describe rubric scoring, judge agent use, and human overrides.
 ## Related
 
 - [Markdown Object Formats overview](../markdown-objects)
-- [Native `BATTLE.MD`](./battle-md)
+- [Native `SKILL.md`](./battle-md)
 - [Portable `PRIVATE_BATTLE.md`](./private-battle-md)
 - [Portable `RUN_REPORT.md`](./run-report-md)

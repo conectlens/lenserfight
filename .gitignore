@@ -72,6 +72,9 @@ Desktop.ini
 
 .notes
 
+# Claude Code — workspace state, worktrees
+.claude/worktrees/
+
 # Private internal docs (audits, drafts, pre-launch notes)
 docs/internal/
 

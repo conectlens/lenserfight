@@ -49,7 +49,7 @@ This lets the TUI dashboard (`lf`) discover all projects on the device without s
 
 ## Markdown and JSON automation objects
 
-Automation objects (`LENS.MD`, `LENSER.MD`, `COLENS.MD`, `BATTLE.MD`, `LENSER.MD`, `COLENS.MD`, `TOOL.md`, etc.) are stored as markdown files with YAML frontmatter alongside your code. The local registry at `.lenserfight/automation-registry.json` indexes them. Runtime runs and reports are written to user runtime storage.
+Automation objects (`SKILL.md`, `SKILL.md`, `SKILL.md`, `SKILL.md`, `SKILL.md`, `SKILL.md`, `TOOL.md`, etc.) are stored as markdown files with YAML frontmatter alongside your code. The local registry at `.lenserfight/automation-registry.json` indexes them. Runtime runs and reports are written to user runtime storage.
 
 ```
 .lenserfight/

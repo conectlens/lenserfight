@@ -34,7 +34,14 @@ export const LensesPage: React.FC = () => {
 
   // URL-synced filters
   const selectedTag = searchParams.get('tag')
-  const sortOrder = (searchParams.get('sort') as LensesSortOrder) || 'popular'
+  const sortOrder = useMemo<LensesSortOrder>(() => {
+    const urlSort = searchParams.get('sort') as LensesSortOrder | null
+    if (urlSort) return urlSort
+    if (isAuthenticated) {
+      return (localStorage.getItem('lenses_sort_order') as LensesSortOrder) || 'mine'
+    }
+    return 'popular'
+  }, [searchParams, isAuthenticated])
   const searchQuery = searchParams.get('q') ?? ''
   const outputKindFilter = (searchParams.get('kind') as OutputKindFilter) || 'all'
 
@@ -67,6 +74,7 @@ export const LensesPage: React.FC = () => {
   }
 
   const handleSortChange = (order: LensesSortOrder) => {
+    localStorage.setItem('lenses_sort_order', order)
     setSearchParams(
       (prev) => {
         if (order !== 'popular') prev.set('sort', order)
@@ -92,7 +100,8 @@ export const LensesPage: React.FC = () => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useLensesFeed(
     searchQuery,
     selectedTag,
-    sortOrder
+    sortOrder,
+    user?.id
   )
 
   const lenses = useMemo(() => {

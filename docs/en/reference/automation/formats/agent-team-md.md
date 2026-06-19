@@ -74,4 +74,4 @@ Delegation, review, conflict resolution, and communication norms.
 
 - [Markdown Object Formats overview](../markdown-objects)
 - [Native `TEAM.MD`](./team-md)
-- [Legacy `LENSER.MD`](./lenser-md-legacy)
+- [Legacy `SKILL.md`](./lenser-md-legacy)

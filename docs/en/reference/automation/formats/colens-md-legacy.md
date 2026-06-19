@@ -1,9 +1,9 @@
 ---
-title: COLENS.MD (legacy) — Portable Workflow
+title: SKILL.md (legacy) — Portable Workflow
 description: Legacy compatibility alias for a portable workflow with triggers, inputs, steps, and outputs.
 ---
 
-# `COLENS.MD` — Legacy compatibility alias for a portable workflow
+# `SKILL.md` — Legacy compatibility alias for a portable workflow
 
 <ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
 
@@ -12,9 +12,9 @@ The legacy portable form of a workflow. Uses `kind: workflow` semantics with str
 
 ## Filename
 
-- Canonical: `COLENS.MD`
+- Canonical: `SKILL.md`
 - Legacy alias on disk: `WORKFLOW.MD`, `WORKFLOW.md` → migrated by `lenserfight migrate-terminology`
-- Container: `colenses/<slug>/COLENS.MD` (legacy: `workflows/<slug>/WORKFLOW.md`)
+- Container: `colenses/<slug>/SKILL.md` (legacy: `workflows/<slug>/WORKFLOW.md`)
 
 ## Required frontmatter
 
@@ -78,11 +78,11 @@ Primary outputs, artifacts, and storage destinations.
 
 Run `lenserfight migrate-terminology` to:
 
-- Rename `WORKFLOW.md` / `WORKFLOW.MD` → `COLENS.MD`
+- Rename `WORKFLOW.md` / `WORKFLOW.MD` → `SKILL.md`
 - Rename `workflows/` → `colenses/`
 
 ## Related
 
 - [Markdown Object Formats overview](../markdown-objects)
-- [Native `COLENS.MD`](./colens-md-native)
+- [Native `SKILL.md`](./colens-md-native)
 - [Trigger Rule Schema](../trigger-rule-schema)

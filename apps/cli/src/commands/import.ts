@@ -32,8 +32,8 @@ export default defineCommand({
       consola.info('  lf import .lenserfight/')
       consola.info('')
       consola.info('Generate a template first:')
-      consola.info('  lf export lens --template --out LENS.MD')
-      consola.info('  lf export colens --template --out WORKFLOW.MD')
+      consola.info('  lf export lens --template --out SKILL.md')
+      consola.info('  lf export colens --template --out SKILL.md')
       process.exitCode = 1
       return
     }

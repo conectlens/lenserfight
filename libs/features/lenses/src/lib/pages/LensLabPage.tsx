@@ -1,20 +1,13 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService, preferencesService } from '@lenserfight/data/repositories'
 import type { LensVersion } from '@lenserfight/types'
-import {
-  ExportModal,
-  useExportRunner,
-  LocalDownloadTransport,
-  CloudDownloadTransport,
-} from '@lenserfight/features/exports'
+import { ExportModal } from '@lenserfight/features/exports'
 import type { LensExportPayload } from '@lenserfight/shared/serializers'
-import { SupabaseExportsRepository } from '@lenserfight/data/exports'
-import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
 import { useReportContent } from '@lenserfight/features/feedback'
 import { useShareContext } from '@lenserfight/features/share'
 import { useChainabitConnection } from '@lenserfight/features/store'
-import { LenserPreferences } from '@lenserfight/types'
+import { LenserPreferences, LensVersionParam } from '@lenserfight/types'
 import { ReportReasonEnum } from '@lenserfight/types'
 import { Button, HelpButton, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
@@ -23,7 +16,7 @@ import { useUI } from '@lenserfight/ui/providers'
 import { useDrawerRouter } from '@lenserfight/ui/routing'
 import { copyTextToClipboard, renderLensContentForCopy } from '@lenserfight/utils/text'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { History, Lock, Loader2, Pencil, Trash2, Flag, ListVideo } from 'lucide-react'
+import { History, Lock, Loader2, Pencil, Trash2, Flag, ListVideo, Upload } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
@@ -140,9 +133,16 @@ export const LensLabPage: React.FC = () => {
 
   // Version list — lazy until picker opens (URL route resolves main without full list)
   const [showVersionPicker, setShowVersionPicker] = useState(false)
-  const { versions, isLoading: isLoadingVersions } = useLensVersions(id ?? '', {
+  const { versions, isLoading: isLoadingVersions, publishVersion } = useLensVersions(id ?? '', {
     enabled: showVersionPicker,
   })
+
+  const handlePublishVersion = useCallback(async () => {
+    const versionId = lens?.latestPublishedVersion?.id ?? lens?.headVersionId
+    if (!versionId) return
+    await publishVersion(versionId)
+    queryClient.invalidateQueries({ queryKey: ['lens-core', id] })
+  }, [lens?.latestPublishedVersion?.id, lens?.headVersionId, publishVersion, queryClient, id])
 
   const displayVersion = versionRoute.activeVersion
   const activeLensContent = displayVersion?.templateBody ?? ''
@@ -172,6 +172,19 @@ export const LensLabPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
+  type ParamSnapshot = { values: Record<string, unknown>; params: LensVersionParam[]; at: number }
+  const [paramSnapshots, setParamSnapshots] = useState<ParamSnapshot[]>([])
+  const [appliedSnapshotValues, setAppliedSnapshotValues] = useState<Record<string, unknown> | null>(null)
+
+  const handleCopyWithParams = useCallback(
+    (values: Record<string, unknown>, params: LensVersionParam[]) => {
+      const hasValues = Object.values(values).some((v) => v !== '' && v != null)
+      if (!hasValues) return
+      setParamSnapshots((prev) => [{ values, params, at: Date.now() }, ...prev].slice(0, 10))
+    },
+    []
+  )
+
   const {
     isOpen: isCreateOpen,
     openModal: openCreateModal,
@@ -197,45 +210,6 @@ export const LensLabPage: React.FC = () => {
 
   const isOwner = !!(lenser && lens && lens.author.id === lenser.id)
 
-  const buildExportContext = useCallback(
-    () => ({
-      userId: user?.id ?? null,
-      tenantId: null,
-      via: 'web' as const,
-      host: window.location.host,
-      isOwner,
-      isAuthenticated,
-    }),
-    [user?.id, isOwner, isAuthenticated]
-  )
-
-  const resolveExportTransport = useCallback(
-    (id: 'cloud-download' | 'local-download' | 'local-workspace') => {
-      if (id === 'local-download') return new LocalDownloadTransport()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return new CloudDownloadTransport(new SupabaseExportsRepository(supabase as any))
-    },
-    []
-  )
-
-  const runExportInner = useExportRunner({
-    kind: 'lens',
-    slug: lens?.id ?? '',
-    title: lens?.title ?? null,
-    fetchPayload: async () => lens,
-    buildContext: buildExportContext,
-    resolveTransport: resolveExportTransport,
-  })
-  const runExport = useCallback(
-    async (input: {
-      format: import('@lenserfight/domain/exports').ExportFormat
-      destination: import('@lenserfight/features/exports').TransportId
-    }) => {
-      await runExportInner(input)
-    },
-    [runExportInner]
-  )
-
   const handleDeleteClick = useCallback((targetId: string) => {
     setDeleteTargetId(targetId)
     setIsDeleteModalOpen(true)
@@ -252,12 +226,18 @@ export const LensLabPage: React.FC = () => {
       if (editId && lenser) {
         lensesService.getLensDetail(editId, lenser.id).then((detail) => {
           if (detail) {
+            const params = (detail.latestPublishedVersion?.parameters ?? []) as LensVersionParam[]
             openCreateModal({
               id: detail.id,
               title: detail.title,
-              content: detail.content,
+              content: renderLensContentForCopy(detail.content, params),
               tags: detail.tags,
               visibility: detail.visibility,
+              versionParams: params.map((p) => ({
+                label: p.label,
+                toolId: p.toolId,
+                ...(p.optional ? { optional: true } : {}),
+              })),
             })
           }
         })
@@ -270,7 +250,7 @@ export const LensLabPage: React.FC = () => {
     if (!lens?.id) return []
 
     if (isOwner) {
-      return [
+      const actions: { label: string; icon: React.ReactNode; onClick: () => void; variant?: 'danger' }[] = [
         {
           label: 'Edit Lens',
           icon: <Pencil size={16} />,
@@ -280,9 +260,19 @@ export const LensLabPage: React.FC = () => {
           label: 'Delete Lens',
           icon: <Trash2 size={16} />,
           onClick: () => handleDeleteClick(lens.id),
-          variant: 'danger' as const,
+          variant: 'danger',
         },
       ]
+
+      if (lens.latestPublishedVersion?.status === 'draft') {
+        actions.unshift({
+          label: 'Publish',
+          icon: <Upload size={16} />,
+          onClick: handlePublishVersion,
+        })
+      }
+
+      return actions
     }
 
     if (hasActiveLenserProfile) {
@@ -297,7 +287,7 @@ export const LensLabPage: React.FC = () => {
     }
 
     return []
-  }, [handleDeleteClick, handleEditClick, hasActiveLenserProfile, isOwner, lens?.id])
+  }, [handleDeleteClick, handleEditClick, handlePublishVersion, hasActiveLenserProfile, isOwner, lens?.id, lens?.latestPublishedVersion?.status])
 
   useEffect(() => {
     setPageActions(pageActions)
@@ -454,7 +444,7 @@ export const LensLabPage: React.FC = () => {
                 options: p.tool.options ?? null,
               })),
             })}
-            onConfirm={runExport}
+            isOwner={isOwner}
           />
         }
       />
@@ -491,8 +481,8 @@ export const LensLabPage: React.FC = () => {
                 onClick={() => setShowVersionPicker((v) => !v)}
                 title={showVersionPicker ? 'Hide version history' : 'Show version history'}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all ${showVersionPicker
-                    ? 'border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+                  ? 'border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
               >
                 <History size={13} />
@@ -543,8 +533,8 @@ export const LensLabPage: React.FC = () => {
                           )
                         }
                         className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${isSelected
-                            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/60 text-gray-700 dark:text-gray-300'
+                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-800/60 text-gray-700 dark:text-gray-300'
                           }`}
                       >
                         <span className="font-mono font-bold text-xs w-8 shrink-0">
@@ -552,8 +542,8 @@ export const LensLabPage: React.FC = () => {
                         </span>
                         <span
                           className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${v.status === 'draft'
-                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                            : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
                             }`}
                         >
                           {v.status}
@@ -655,6 +645,8 @@ export const LensLabPage: React.FC = () => {
             onSignIn={ensureProfile}
             lensTitle={lens?.title ?? undefined}
             profileId={lenser?.id ?? undefined}
+            onCopyWithParams={handleCopyWithParams}
+            importedPresetValues={appliedSnapshotValues}
           />
         </div>
       </div>
@@ -663,60 +655,74 @@ export const LensLabPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2">
         {/* Execution timeline — right 5 cols (offset to align with execution panel) */}
         <div className="lg:col-start-8 lg:col-span-5 border-t pt-6 border-gray-100 dark:border-gray-800 lg:border-t-0 lg:pt-0 flex flex-col gap-6">
-          {activeVersionParams && activeVersionParams.length > 0 && (
+          {paramSnapshots.length > 0 && (
             <div>
               <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-3">
-                Parameters
+                Copied parameter sets
               </h4>
-              <div className="space-y-2">
-                {activeVersionParams.map((p) => (
+              <div className="space-y-3">
+                {paramSnapshots.map((snap) => (
                   <div
-                    key={p.id}
-                    className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 px-3 py-2 text-xs"
+                    key={snap.at}
+                    className="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 px-3 py-2 text-xs"
                   >
-                    <code className="font-mono text-primary-600 dark:text-primary-400 shrink-0">
-                      [[{p.label}]]
-                    </code>
-                    <span className="text-gray-500 dark:text-gray-400 shrink-0">{p.tool.type}</span>
-                    {p.tool.helpText && (
-                      <span className="text-gray-400 dark:text-gray-500 truncate">{p.tool.helpText}</span>
-                    )}
-                    {p.optional && (
-                      <span className="ml-auto shrink-0 text-gray-400 dark:text-gray-600 italic">optional</span>
-                    )}
+                    <div className="space-y-1 mb-2">
+                      {snap.params.map((p) => {
+                        const val = snap.values[p.label]
+                        if (val === '' || val == null) return null
+                        return (
+                          <div key={p.label} className="flex gap-2">
+                            <code className="font-mono text-primary-600 dark:text-primary-400 shrink-0">
+                              {p.label}
+                            </code>
+                            <span className="text-gray-700 dark:text-gray-300 truncate">{String(val)}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline"
+                      onClick={() => {
+                        setAppliedSnapshotValues({ ...snap.values })
+                        setTimeout(() => setAppliedSnapshotValues(null), 0)
+                      }}
+                    >
+                      Reuse
+                    </button>
                   </div>
                 ))}
               </div>
             </div>
           )}
           <div>
-          <div className="flex items-center gap-2 mb-4">
-            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100">History</h4>
-            {lab.comparisonRunIds.length > 0 && (
-              <span className="text-xs text-primary-600 dark:text-primary-400 font-medium">
-                {lab.comparisonRunIds.length}/2 selected
-              </span>
-            )}
-          </div>
-          <LabExecutionTimeline
-            history={lab.history}
-            isLoading={lab.isLoadingHistory}
-            hasMore={lab.hasMoreHistory}
-            selectedRunId={lab.selectedRunId}
-            comparisonRunIds={lab.comparisonRunIds}
-            onSelectRun={(_requestId, runId) => runId && lab.setSelectedRunId(runId)}
-            onToggleComparison={lab.toggleComparison}
-            onLoadMore={lab.loadMoreHistory}
-            isOwner={isOwner}
-            onRestoreVersion={(versionId) => {
-              versionExecution.restoreAndExecute(versionId)
-              const cached = queryClient.getQueryData<LensVersion>(
-                queryKeys.lensVersions.detail(versionId)
-              )
-              if (cached && id) versionRoute.navigateToVersion(cached.versionNumber)
-            }}
-            isAuthenticatedLenser={hasActiveLenserProfile}
-          />
+            <div className="flex items-center gap-2 mb-4">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100">History</h4>
+              {lab.comparisonRunIds.length > 0 && (
+                <span className="text-xs text-primary-600 dark:text-primary-400 font-medium">
+                  {lab.comparisonRunIds.length}/2 selected
+                </span>
+              )}
+            </div>
+            <LabExecutionTimeline
+              history={lab.history}
+              isLoading={lab.isLoadingHistory}
+              hasMore={lab.hasMoreHistory}
+              selectedRunId={lab.selectedRunId}
+              comparisonRunIds={lab.comparisonRunIds}
+              onSelectRun={(_requestId, runId) => runId && lab.setSelectedRunId(runId)}
+              onToggleComparison={lab.toggleComparison}
+              onLoadMore={lab.loadMoreHistory}
+              isOwner={isOwner}
+              onRestoreVersion={(versionId) => {
+                versionExecution.restoreAndExecute(versionId)
+                const cached = queryClient.getQueryData<LensVersion>(
+                  queryKeys.lensVersions.detail(versionId)
+                )
+                if (cached && id) versionRoute.navigateToVersion(cached.versionNumber)
+              }}
+              isAuthenticatedLenser={hasActiveLenserProfile}
+            />
           </div>
         </div>
       </div>

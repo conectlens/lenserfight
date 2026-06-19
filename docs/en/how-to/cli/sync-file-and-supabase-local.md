@@ -16,7 +16,7 @@ This does not target Cloud. For cloud drafts from file battles, use `lf battle f
 lf sync status          # list registry entries
 lf sync plan            # dry-run push plan (requires Supabase local)
 lf sync push --all      # push registry to local Supabase
-lf sync push --path ./lenses/my-lens/LENS.MD
+lf sync push --path ./lenses/my-lens/SKILL.md
 lf sync pull --kind lens --id <id>   # refresh file from registry export
 ```
 

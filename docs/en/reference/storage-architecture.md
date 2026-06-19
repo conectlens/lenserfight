@@ -59,7 +59,7 @@ LenserFight loads environment variables in this order. Later sources override ea
 7. `~/.lenserfight/.env.tokens` (gitignored, secret-only)
 8. Process environment variables (highest precedence)
 
-Tokens live exclusively in layers 6, 7, and 8. Templates (`LENS.MD`, `COLENS.MD`, `BATTLE.MD`, YAML, JSON) must never contain raw token values — they reference variable names only.
+Tokens live exclusively in layers 6, 7, and 8. Templates (`SKILL.md`, `SKILL.md`, `SKILL.md`, YAML, JSON) must never contain raw token values — they reference variable names only.
 
 ## Battle storage separation
 
@@ -67,7 +67,7 @@ The legacy `.lenserfight/local-battles/<id>.json` path mixed portable battle def
 
 | Concept                          | Path                                              | Layer      |
 | -------------------------------- | ------------------------------------------------- | ---------- |
-| Battle template definition       | `.lenserfight/battles/<slug>/BATTLE.MD`           | Portable   |
+| Battle template definition       | `.lenserfight/battles/<slug>/SKILL.md`           | Portable   |
 | Battle config (rubric, scoring)  | `.lenserfight/battles/<slug>/config.yaml`         | Portable   |
 | Battle execution trace           | `~/.lenserfight/runtime/battles/<battle-id>/`     | Runtime    |
 | Cached AI responses for a battle | `~/.lenserfight/cache/ai-responses/`              | Runtime    |
@@ -79,14 +79,14 @@ Any tool that reads or writes battle data MUST honour this split. Migration of l
 
 LenserFight belongs to the **ConectLens** ecosystem. The filesystem layout preserves ConectLens vocabulary in the canonical filename:
 
-- `LENS.MD` — prompt asset (ConectLens-native)
-- `LENSER.MD` — owner profile (reserved, not yet exported)
-- `LENSER.MD` — configured AI lenser
-- `COLENS.MD` — DAG of lenses
-- `BATTLE.MD` — scored competition
-- `RAY.MD` — discovery ray
+- `SKILL.md` — prompt asset (ConectLens-native)
+- `SKILL.md` — owner profile (reserved, not yet exported)
+- `SKILL.md` — configured AI lenser
+- `SKILL.md` — DAG of lenses
+- `SKILL.md` — scored competition
+- `SKILL.md` — discovery ray
 
-`SKILL.MD` is supported as an industry-compatibility alias for `LENS.MD` because many OSS AI ecosystems (Claude Code, agentskills.io, others) standardise on `SKILL.MD` for the same concept. When both files exist for the same template they MUST contain byte-identical content; the recommended pattern is to keep `LENS.MD` as the source and `SKILL.MD` as a generated mirror created by `lf doctor sync-aliases`.
+`SKILL.MD` is supported as an industry-compatibility alias for `SKILL.md` because many OSS AI ecosystems (Claude Code, agentskills.io, others) standardise on `SKILL.MD` for the same concept. When both files exist for the same template they MUST contain byte-identical content; the recommended pattern is to keep `SKILL.md` as the source and `SKILL.MD` as a generated mirror created by `lf doctor sync-aliases`.
 
 ## How the database mirrors this tree
 
@@ -94,11 +94,11 @@ Every public template in the database has a 1:1 sibling under `.lenserfight/` ke
 
 | DB table              | Mirrored at                          |
 | --------------------- | ------------------------------------ |
-| `lenses.lenses`       | `.lenserfight/lenses/<slug>/LENS.MD` |
-| `agents.ai_lensers`   | `.lenserfight/lensers/<slug>/LENSER.MD` |
-| `lenses.workflows`    | `.lenserfight/colenses/<slug>/COLENS.MD` |
-| `battles.battles`     | `.lenserfight/battles/<slug>/BATTLE.MD` |
-| `content.tags`        | `.lenserfight/rays/<slug>/RAY.MD`   |
+| `lenses.lenses`       | `.lenserfight/lenses/<slug>/SKILL.md` |
+| `agents.ai_lensers`   | `.lenserfight/lensers/<slug>/SKILL.md` |
+| `lenses.workflows`    | `.lenserfight/colenses/<slug>/SKILL.md` |
+| `battles.battles`     | `.lenserfight/battles/<slug>/SKILL.md` |
+| `content.tags`        | `.lenserfight/rays/<slug>/SKILL.md`   |
 
 A pgTAP test (`supabase/tests/31_seed_quality.sql`) enforces this invariant for every seed under `supabase/seeds/4*_*templates.sql`.
 

@@ -1,19 +1,19 @@
 ---
-title: BATTLE.MD — Native Comparison Document
+title: SKILL.md — Native Comparison Document
 description: Canonical file format for a ConectLens BATTLE (orchestration / comparison spec).
 ---
 
-# `BATTLE.MD` — Native orchestration/comparison document
+# `SKILL.md` — Native orchestration/comparison document
 
 <ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
 
 
-A **BATTLE** declares a comparison between two or more participants — lenses, lensers, colenses, teams, models, prompts, or humans — under a shared evaluation. `BATTLE.MD` is its native form, validated by `lenserfight validate` and run by `lenserfight battle run`.
+A **BATTLE** declares a comparison between two or more participants — lenses, lensers, colenses, teams, models, prompts, or humans — under a shared evaluation. `SKILL.md` is its native form, validated by `lenserfight validate` and run by `lenserfight battle run`.
 
 ## Filename
 
-- Canonical: `BATTLE.MD`
-- Container: `battles/<slug>/BATTLE.MD`
+- Canonical: `SKILL.md`
+- Container: `battles/<slug>/SKILL.md`
 
 ## Required frontmatter
 
@@ -43,7 +43,7 @@ Discovery walks `participants[]` and `contenders[]`, normalising legacy `agent` 
 ## Canonical template
 
 ```bash
-lenserfight export battle --template --out .lenserfight/battles/example/BATTLE.MD
+lenserfight export battle --template --out .lenserfight/battles/example/SKILL.md
 ```
 
 ```yaml
@@ -52,7 +52,7 @@ name: implementation-battle
 description: Use when comparing LENS, COLENS, LENSER, team, model, or human outputs against shared evals.
 participants:
   - type: lens
-    ref: ../lenses/example-lens/LENS.MD
+    ref: ../lenses/example-lens/SKILL.md
 ---
 
 # Purpose
@@ -71,11 +71,11 @@ Define the result format and what evidence must be included.
 ## Running locally
 
 ```bash
-lenserfight battle run ./BATTLE.MD
+lenserfight battle run ./SKILL.md
 ```
 
 ## Related
 
 - [Markdown Object Formats overview](../markdown-objects)
 - [Portable `PRIVATE_BATTLE.md`](./private-battle-md)
-- [Native `LENS.MD`](./lens-md), [`LENSER.MD`](./lenser-md-native), [`COLENS.MD`](./colens-md-native)
+- [Native `SKILL.md`](./lens-md), [`SKILL.md`](./lenser-md-native), [`SKILL.md`](./colens-md-native)

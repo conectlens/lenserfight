@@ -35,9 +35,9 @@ Slugs follow the `content.tags.slug` constraint:
 
 Once published, a slug is immutable. Renaming it breaks `/ray/<slug>` links and every shared template URL.
 
-## Step 2 — Write the `LENS.MD` (or `AGENT.MD`, etc.)
+## Step 2 — Write the `SKILL.md` (or `AGENT.MD`, etc.)
 
-Create the file at `.lenserfight/lenses/<slug>/LENS.MD` with this frontmatter:
+Create the file at `.lenserfight/lenses/<slug>/SKILL.md` with this frontmatter:
 
 ```yaml
 ---
@@ -111,7 +111,7 @@ Resolve `v_author` from the reserved handle (`'lenserfight'`, `'chainabit'`, or 
 
 ## Step 4 — Rays
 
-If your template introduces a ray that does not yet exist, add it to `supabase/migrations/20270812000000_canonical_production_tags.sql` and create a matching `.lenserfight/rays/<slug>/RAY.MD`. Never invent rays in template SQL — always go through the canonical migration.
+If your template introduces a ray that does not yet exist, add it to `supabase/migrations/20270812000000_canonical_production_tags.sql` and create a matching `.lenserfight/rays/<slug>/SKILL.md`. Never invent rays in template SQL — always go through the canonical migration.
 
 ## Step 5 — Disclaimers (legal / finance only)
 
@@ -165,7 +165,7 @@ seed(<category>): add <slug> template
 Body checklist:
 
 ```
-- [ ] LENS.MD / WORKFLOW.MD / BATTLE.MD / AGENT.MD added under .lenserfight/
+- [ ] SKILL.md / WORKFLOW.MD / SKILL.md / AGENT.MD added under .lenserfight/
 - [ ] SQL seed block added to the matching 4*_*templates.sql file
 - [ ] Rays exist in 20270812000000_canonical_production_tags.sql
 - [ ] Disclaimer present (if legal / finance)
