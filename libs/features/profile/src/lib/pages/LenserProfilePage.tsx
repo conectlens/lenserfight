@@ -189,6 +189,7 @@ export const LenserProfilePage: React.FC = () => {
   })
   const [loadingTab, setLoadingTab] = useState(false)
   const observer = useRef<IntersectionObserver | null>(null)
+  const isFetchingPageRef = useRef(false)
 
   const activeStandardState = activeStandardTab ? tabCache[activeStandardTab] : INITIAL_TAB_STATE
   const { data: items, page, hasMore } = activeStandardState
@@ -218,6 +219,7 @@ export const LenserProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (!handle) return
+    isFetchingPageRef.current = false
     setTabCache({
       threads: { ...INITIAL_TAB_STATE },
       lenses: { ...INITIAL_TAB_STATE },
@@ -250,7 +252,9 @@ export const LenserProfilePage: React.FC = () => {
     if (!viewedProfile) return
     if (!authUser) return
     if (!refresh && tabCache[targetTab].isLoaded && pageNum === 0) return
+    if (isFetchingPageRef.current) return
 
+    isFetchingPageRef.current = true
     if (pageNum === 0) setLoadingTab(true)
 
     try {
@@ -309,6 +313,7 @@ export const LenserProfilePage: React.FC = () => {
     } catch (cause) {
       console.error(`Failed to fetch ${targetTab}`, cause)
     } finally {
+      isFetchingPageRef.current = false
       setLoadingTab(false)
     }
   }
@@ -414,8 +419,11 @@ export const LenserProfilePage: React.FC = () => {
     fetchTabData(tab, 0, true)
   }
 
-  const handlePromptSubmit = () => {
+  const handlePromptSubmit = (id: string) => {
     handleMutationSuccess('lenses')
+    if (isPromptEditMode) {
+      navigate(`/lenses/${id}/main`)
+    }
   }
 
   const SkeletonLoader = () => {

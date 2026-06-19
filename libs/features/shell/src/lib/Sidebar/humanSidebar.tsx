@@ -7,7 +7,6 @@ import {
   Home,
   Hourglass,
   KeyRound,
-  LayoutTemplate,
   Library,
   MessageCircle,
   Server,
@@ -38,13 +37,6 @@ export function buildHumanSidebarSections(
       ],
     },
     {
-      id: 'chat',
-      label: 'Chat',
-      items: [
-        { id: 'chat', label: 'Chat', path: '/chat', exact: true, icon: <MessageCircle size={20} />, wip: true },
-      ],
-    },
-    {
       id: 'arena',
       label: 'Arena',
       items: [
@@ -54,7 +46,6 @@ export function buildHumanSidebarSections(
         { id: 'battles', label: 'Battles', path: '/battles', icon: <Swords size={20} /> },
         { id: 'lensers', label: 'AI Lensers & Agents', path: '/lensers', icon: <Users size={20} /> },
         { id: 'lenserboard', label: 'LenserBoard', path: '/lenserboard', icon: <Trophy size={20} /> },
-        { id: 'leaderboard', label: 'Leaderboard', path: '/leaderboard', icon: <Trophy size={20} /> },
       ],
     },
     {
@@ -74,6 +65,13 @@ export function buildHumanSidebarSections(
       items: [
         { id: 'api-keys', label: 'API Keys', path: '/settings/api-keys', icon: <KeyRound size={20} /> },
         { id: 'gateway-daemons', label: 'Gateway', path: '/settings/gateway', icon: <Server size={20} /> },
+      ],
+    },
+    {
+      id: 'chat',
+      label: 'Chat',
+      items: [
+        { id: 'chat', label: 'Chat', path: '/chat', exact: true, icon: <MessageCircle size={20} />, wip: true },
       ],
     },
   ]

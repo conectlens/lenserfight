@@ -6,12 +6,16 @@ import { lensesService } from '@lenserfight/data/repositories'
 export const useLensesFeed = (
   searchQuery: string,
   selectedTag: string | null,
-  sortOrder: 'newest' | 'popular' | 'mine'
+  sortOrder: 'newest' | 'popular' | 'mine',
+  profileId?: string | null
 ) => {
   return useInfiniteQuery({
-    queryKey: queryKeys.lenses.feed({ searchQuery, selectedTag, sortOrder }),
+    queryKey: queryKeys.lenses.feed({ searchQuery, selectedTag, sortOrder, profileId }),
     queryFn: async ({ pageParam = 0 }) => {
-      if (sortOrder === 'mine') return lensesService.getMyLenses(pageParam, 12)
+      if (sortOrder === 'mine') {
+        if (searchQuery) return lensesService.search(searchQuery, pageParam, 12, profileId)
+        return lensesService.getMyLenses(pageParam, 12)
+      }
       if (searchQuery) return lensesService.search(searchQuery, pageParam, 12)
       if (selectedTag) return lensesService.filter(selectedTag, pageParam, 12, sortOrder)
       return lensesService.sort(sortOrder, pageParam, 12)

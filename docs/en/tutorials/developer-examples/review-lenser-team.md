@@ -15,7 +15,7 @@ AI lenser, AI lenser team, team lead, shared tools, colens ownership, execution 
 
 ## What You Will Build
 
-You will validate [`examples/lensers/review-lenser-team`](../../../examples/lensers/review-lenser-team/README.md), a researcher lenser, reviewer lenser, and team definition.
+You will validate [`examples/lensers/review-lenser-team`](../../../../examples/lensers/review-lenser-team/README.md), a researcher lenser, reviewer lenser, and team definition.
 
 ## Prerequisites
 
@@ -71,4 +71,4 @@ Agent objects carry instructions and execution policy. The team object does not 
 
 ## Example Folder
 
-[`examples/lensers/review-lenser-team`](../../../examples/lensers/review-lenser-team/README.md)
+[`examples/lensers/review-lenser-team`](../../../../examples/lensers/review-lenser-team/README.md)

@@ -15,7 +15,7 @@ Colens, Lens reference, AI lenser, AI lenser team, approval gate, evaluation out
 
 ## What You Will Build
 
-You will simulate [`examples/colenses/research-to-rubric`](../../../examples/colenses/research-to-rubric/README.md), a colens that turns a topic into a battle task and rubric.
+You will simulate [`examples/colenses/research-to-rubric`](../../../../examples/colenses/research-to-rubric/README.md), a colens that turns a topic into a battle task and rubric.
 
 ## Prerequisites
 
@@ -74,4 +74,4 @@ The CLI validates the automation object, reads `frontmatter.steps`, summarizes e
 
 ## Example Folder
 
-[`examples/colenses/research-to-rubric`](../../../examples/colenses/research-to-rubric/README.md)
+[`examples/colenses/research-to-rubric`](../../../../examples/colenses/research-to-rubric/README.md)

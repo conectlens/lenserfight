@@ -301,7 +301,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const [jsonImportOpen, setJsonImportOpen] = useState(false)
   const [csvImportOpen, setCsvImportOpen] = useState(false)
   const [copiedWithParams, setCopiedWithParams] = useState(false)
-  const [copiedWithInternalIds, setCopiedWithInternalIds] = useState(false)
 
   const isNonEmpty = (v: unknown) => {
     if (v === undefined || v === null) return false
@@ -334,17 +333,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
       // clipboard failed — leave state unchanged
     }
     onCopyWithParams?.(form.inputValues, form.effectiveParams)
-  }
-
-  const handleCopyWithInternalIds = async () => {
-    try {
-      const rendered = await renderCopyWithParameters(false)
-      await copyTextToClipboard(rendered)
-      setCopiedWithInternalIds(true)
-      setTimeout(() => setCopiedWithInternalIds(false), 2000)
-    } catch {
-      // clipboard failed — leave state unchanged
-    }
   }
 
   const isDisabled =
@@ -939,26 +927,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
                         <ClipboardCopy size={16} />
                         <span>Copy with Parameters</span>
                       </>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handleCopyWithInternalIds}
-                    disabled={isLocked}
-                    title="Copy with media_object_id UUIDs for LenserFight execution (internal)"
-                    className={`flex-shrink-0 flex items-center justify-center gap-2 h-auto py-2 px-3 rounded-xl border shadow-sm transition-all text-xs ${copiedWithInternalIds
-                        ? 'bg-slate-600 border-slate-600 text-white'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 dark:bg-slate-900/30 dark:border-slate-700 dark:text-slate-200'
-                      }`}
-                  >
-                    {copiedWithInternalIds ? (
-                      <>
-                        <Check size={14} strokeWidth={3} />
-                        <span>Copied IDs</span>
-                      </>
-                    ) : (
-                      <span>Internal IDs</span>
                     )}
                   </Button>
                 </>
