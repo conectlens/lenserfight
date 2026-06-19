@@ -1,15 +1,8 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService, preferencesService } from '@lenserfight/data/repositories'
 import type { LensVersion } from '@lenserfight/types'
-import {
-  ExportModal,
-  useExportRunner,
-  LocalDownloadTransport,
-  CloudDownloadTransport,
-} from '@lenserfight/features/exports'
+import { ExportModal } from '@lenserfight/features/exports'
 import type { LensExportPayload } from '@lenserfight/shared/serializers'
-import { SupabaseExportsRepository } from '@lenserfight/data/exports'
-import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
 import { useReportContent } from '@lenserfight/features/feedback'
 import { useShareContext } from '@lenserfight/features/share'
@@ -216,45 +209,6 @@ export const LensLabPage: React.FC = () => {
   }, [hasActiveLenserProfile, isAuthenticated, navigate, redirectToLogin])
 
   const isOwner = !!(lenser && lens && lens.author.id === lenser.id)
-
-  const buildExportContext = useCallback(
-    () => ({
-      userId: user?.id ?? null,
-      tenantId: null,
-      via: 'web' as const,
-      host: window.location.host,
-      isOwner,
-      isAuthenticated,
-    }),
-    [user?.id, isOwner, isAuthenticated]
-  )
-
-  const resolveExportTransport = useCallback(
-    (id: 'cloud-download' | 'local-download' | 'local-workspace') => {
-      if (id === 'local-download') return new LocalDownloadTransport()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return new CloudDownloadTransport(new SupabaseExportsRepository(supabase as any))
-    },
-    []
-  )
-
-  const runExportInner = useExportRunner({
-    kind: 'lens',
-    slug: lens?.id ?? '',
-    title: lens?.title ?? null,
-    fetchPayload: async () => lens,
-    buildContext: buildExportContext,
-    resolveTransport: resolveExportTransport,
-  })
-  const runExport = useCallback(
-    async (input: {
-      format: import('@lenserfight/domain/exports').ExportFormat
-      destination: import('@lenserfight/features/exports').TransportId
-    }) => {
-      await runExportInner(input)
-    },
-    [runExportInner]
-  )
 
   const handleDeleteClick = useCallback((targetId: string) => {
     setDeleteTargetId(targetId)
@@ -490,7 +444,7 @@ export const LensLabPage: React.FC = () => {
                 options: p.tool.options ?? null,
               })),
             })}
-            onConfirm={runExport}
+            isOwner={isOwner}
           />
         }
       />

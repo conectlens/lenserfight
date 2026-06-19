@@ -26,7 +26,7 @@ Use:
 ```bash
 lf validate
 lf validate --no-global
-lf validate .lenserfight/colenses/pr-review/COLENS.MD
+lf validate .lenserfight/colenses/pr-review/SKILL.md
 ```
 
 Override behavior, highest priority first:
@@ -59,37 +59,39 @@ Full docs: [`docs/lenserfight-file-system.md`](../docs/lenserfight-file-system.m
 ```
 .lenserfight/
 ├── README.md               ← this file
-├── lenses/                 ← LENS.MD (and SKILL.MD alias) per lens template
+├── lenses/                 ← SKILL.md per lens template
 │   └── <slug>/
-│       ├── LENS.MD         ← canonical, ConectLens-native form
-│       ├── SKILL.MD        ← optional industry-compatibility alias
+│       ├── SKILL.md        ← agentskills.io-standard filename
 │       ├── references/     ← supporting prompt fragments, examples
 │       ├── assets/         ← non-secret static assets
 │       ├── templates/      ← parameter placeholder examples
 │       └── scripts/        ← optional generator/test scripts
-├── lensers/                ← LENSER.MD per lenser template
-│   └── <slug>/LENSER.MD
-├── colenses/               ← COLENS.MD per colens template
-│   └── <slug>/COLENS.MD
-├── battles/                ← BATTLE.MD per battle template
-│   └── <slug>/BATTLE.MD
-└── rays/                   ← RAY.MD per canonical production ray
-    └── <slug>/RAY.MD
+├── lensers/                ← SKILL.md per lenser template
+│   └── <slug>/SKILL.md
+├── colenses/               ← SKILL.md per colens template
+│   └── <slug>/SKILL.md
+├── battles/                ← SKILL.md per battle template
+│   └── <slug>/SKILL.md
+├── rays/                   ← SKILL.md per canonical production ray
+│   └── <slug>/SKILL.md
+└── skills/                 ← SKILL.md per agent skill (Claude Code, lf CLI)
+    └── <slug>/SKILL.md
 ```
 
 ## Core terminology
 
-LenserFight is part of the **ConectLens** ecosystem. The platform uses native terminology in `.MD` filenames so the on-disk vocabulary matches the runtime database:
+LenserFight follows the **agentskills.io** sector standard. Every item is a Skill — the `SKILL.md` filename is universal; the directory name determines the kind:
 
-| File         | Concept                                                      | DB table              |
-| ------------ | ------------------------------------------------------------ | --------------------- |
-| `LENS.MD`    | A reusable prompt asset — a single AI instruction unit       | `lenses.lenses`       |
-| `LENSER.MD` | A person or AI profile that owns lenses and execution policy | `lensers.profiles`, `agents.ai_lensers` |
-| `COLENS.MD` | A DAG of lens nodes feeding outputs into each other          | `lenses.workflows`    |
-| `BATTLE.MD`  | A scored competition between contenders                      | `battles.battles`     |
-| `RAY.MD`     | A discovery ray (`/ray/:slug` route)                         | `content.tags`        |
+| Directory    | Kind    | Concept                                                      | DB table              |
+| ------------ | ------- | ------------------------------------------------------------ | --------------------- |
+| `lenses/`    | Lens    | A reusable prompt asset — a single AI instruction unit       | `lenses.lenses`       |
+| `lensers/`   | Lenser  | An AI profile that owns lenses and execution policy          | `lensers.profiles`, `agents.ai_lensers` |
+| `colenses/`  | CoLens  | A DAG of lens nodes feeding outputs into each other          | `lenses.workflows`    |
+| `battles/`   | Battle  | A scored competition between contenders                      | `battles.battles`     |
+| `rays/`      | Ray     | A discovery ray (`/ray/:slug` route)                         | `content.tags`        |
+| `skills/`    | Skill   | An agent skill (CLI, IDE, agentic use)                       | —                     |
 
-`SKILL.MD` is supported as an industry-compatibility alias for `LENS.MD` — many OSS AI ecosystems use `SKILL.MD` for the same concept. Legacy `agents/AGENT.MD` and `workflows/WORKFLOW.MD` are read for compatibility only; canonical files are `lensers/LENSER.MD` and `colenses/COLENS.MD`.
+Legacy `agents/AGENT.MD` and `workflows/WORKFLOW.MD` are read for compatibility only.
 
 ## What MUST NOT live here
 
@@ -119,47 +121,54 @@ The seed file is the source of truth for the database row; the `.MD` file is the
 ## Authoring a new template
 
 1. Pick a slug — lowercase, hyphenated, ≤ 40 chars (matches `content.tags.slug` rules).
-2. Create `.lenserfight/lenses/<slug>/LENS.MD` with the frontmatter schema below.
+2. Create `.lenserfight/lenses/<slug>/SKILL.md` with the frontmatter schema below.
 3. Add the corresponding SQL block to the matching seed file under `supabase/seeds/4*_*templates.sql`.
-4. Add rays via `.lenserfight/rays/<slug>/RAY.MD` if you introduce a new one.
+4. Add rays via `.lenserfight/rays/<slug>/SKILL.md` if you introduce a new one.
 5. Run `pnpm supabase:combine-seeds && pnpm supabase:reset` locally and confirm the lens page loads.
 
-### `LENS.MD` frontmatter schema
+### `SKILL.md` frontmatter schema (agentskills.io standard)
 
 ```yaml
 ---
 name: <slug>
-title: <Human-readable title>
-description: <One-sentence what-and-why. Used by /ray search.>
-author: '@lenserfight' | '@chainabit' | '@conectlens'
-visibility: public | unlisted | private
-forkable: true | false
-disclaimer: <required for legal/finance templates>
-inputs:
-  - label: <param_label>
-    tool: text | textarea
-    required: true | false
-    example: <one-line example value>
-outputs:
-  kind: text | image | video | audio | table | checklist | script | structured
-tags:
-  - <slug>
-seed_uuid: <deterministic UUID matching the SQL seed>
+description: <One-sentence what-and-when. Starts with "Use when…" for agent activation.>
 ---
 ```
 
-The body of `LENS.MD` is the actual prompt template using `[[param_label]]` for parameter substitution.
+Two fields only. The body is the prompt template; use `[[param_label]]` tokens for parameter substitution.
+
+**LenserFight extensions** go in the body as markdown sections, not in frontmatter:
+- Parameters: list `[[label]]` tokens under a `## Parameters` heading with descriptions.
+- Legal disclaimers: add a `> **Disclaimer:** This output is not legal/financial advice.` blockquote.
+
+### Example
+
+```markdown
+---
+name: code-reviewer
+description: Review a diff for correctness, security, tests, maintainability, and release risk. Use when reviewing PRs or patches.
+---
+
+# Code Reviewer
+
+Review `[[diff]]` using `[[context]]` when provided.
+
+## Parameters
+
+- `[[diff]]` — the unified diff to review (required)
+- `[[context]]` — additional context such as ticket description or prior review comments (optional)
+```
 
 ## Conventions to remember
 
 - Slugs are stable. Renaming a slug breaks every `/ray/<slug>` link and every published share URL.
 - UUIDs in seeds are stable. Never change a seed UUID once it has shipped.
-- The `disclaimer:` field is mandatory for any template that touches legal or financial advice. Tests fail if it is missing on a tagged-`legal` or tagged-`finance` lens.
-- `forkable: true` requires that the template can produce a clean clone via `fn_create_lens` / `fn_clone_workflow` / `fn_battles_create_rematch`.
-- The first non-frontmatter heading of every `.MD` file should be `# <Title>` matching the frontmatter `title:`.
+- Legal/finance templates must include a disclaimer in the body (not frontmatter). Tests fail if it is missing.
+- The kind is inferred from the directory (`lenses/` → Lens, `battles/` → Battle, etc.), not from frontmatter.
+- The first non-frontmatter heading of every `SKILL.md` should be `# <Human Title>`.
 
 ## Related docs
 
 - [`docs/en/reference/storage-architecture.md`](../docs/en/reference/storage-architecture.md) — project vs. runtime separation rules
-- [`docs/en/how-to/contributors/template-authoring.md`](../docs/en/how-to/contributors/template-authoring.md) — how to write a `LENS.MD`
+- [`docs/en/how-to/contributors/template-authoring.md`](../docs/en/how-to/contributors/template-authoring.md) — how to write a `SKILL.md`
 - [`docs/en/reference/community-api/ai-lensers.md`](../docs/en/reference/community-api/ai-lensers.md) — agent API

@@ -6,15 +6,8 @@ import { useReportContent } from '@lenserfight/features/feedback'
 import { useShareContext } from '@lenserfight/features/share'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
-import {
-  ExportModal,
-  useExportRunner,
-  LocalDownloadTransport,
-  CloudDownloadTransport,
-} from '@lenserfight/features/exports'
+import { ExportModal } from '@lenserfight/features/exports'
 import type { LensExportPayload } from '@lenserfight/shared/serializers'
-import { SupabaseExportsRepository } from '@lenserfight/data/exports'
-import { supabase } from '@lenserfight/data/supabase'
 import { SEOHead, Badge, Button, Card, DesktopFrame, HelpButton } from '@lenserfight/ui/components'
 import {
   ArtifactLifecycleMenu,
@@ -203,45 +196,6 @@ export const LensDetailPage: React.FC = () => {
     submit: submitCreate,
     isEditMode,
   } = useCreateLens()
-
-  const buildExportContext = useCallback(
-    () => ({
-      userId: user?.id ?? null,
-      tenantId: null,
-      via: 'web' as const,
-      host: window.location.host,
-      isOwner,
-      isAuthenticated,
-    }),
-    [user?.id, isOwner, isAuthenticated]
-  )
-
-  const resolveExportTransport = useCallback(
-    (id: 'cloud-download' | 'local-download' | 'local-workspace') => {
-      if (id === 'local-download') return new LocalDownloadTransport()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return new CloudDownloadTransport(new SupabaseExportsRepository(supabase as any))
-    },
-    []
-  )
-
-  const runExportInner = useExportRunner({
-    kind: 'lens',
-    slug: lens?.id ?? '',
-    title: lens?.title ?? null,
-    fetchPayload: async () => lens,
-    buildContext: buildExportContext,
-    resolveTransport: resolveExportTransport,
-  })
-  const runExport = useCallback(
-    async (input: {
-      format: import('@lenserfight/domain/exports').ExportFormat
-      destination: import('@lenserfight/features/exports').TransportId
-    }) => {
-      await runExportInner(input)
-    },
-    [runExportInner]
-  )
 
   const ensureProfile = useCallback((): boolean => {
     if (!isAuthenticated) {
@@ -555,7 +509,7 @@ export const LensDetailPage: React.FC = () => {
                       options: p.tool.options ?? null,
                     })),
                   })}
-                  onConfirm={runExport}
+                  isOwner={isOwner}
                 />
               }
             />

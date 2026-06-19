@@ -28,17 +28,17 @@ You will validate [`examples/lensers/review-lenser-team`](../../../examples/lens
 ```text
 examples/lensers/review-lenser-team/
   researcher/
-    LENSER.MD
+    SKILL.md
   reviewer/
-    LENSER.MD
+    SKILL.md
   TEAM.MD
   README.md
 ```
 
 ## Step-by-Step Walkthrough
 
-1. Open `researcher/LENSER.MD` and inspect `role`, `capabilities`, `model_policy`, and `allowed_actions`.
-2. Open `reviewer/LENSER.MD` and compare its responsibilities.
+1. Open `researcher/SKILL.md` and inspect `role`, `capabilities`, `model_policy`, and `allowed_actions`.
+2. Open `reviewer/SKILL.md` and compare its responsibilities.
 3. Open `TEAM.MD` and inspect `members`, `team_lead_lenser`, and `colens_ownership`.
 4. Validate the folder.
 

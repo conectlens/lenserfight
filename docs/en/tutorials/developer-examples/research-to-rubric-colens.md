@@ -7,7 +7,7 @@ description: Simulate a multi-step file-first colens that prepares battle tasks 
 
 ## Purpose
 
-Learn how LenserFight represents a Colens as a local `COLENS.MD` automation object with ordered steps, lenser references, a Lens reference, and approval gates.
+Learn how LenserFight represents a Colens as a local `SKILL.md` automation object with ordered steps, lenser references, a Lens reference, and approval gates.
 
 ## Concepts Covered
 
@@ -27,13 +27,13 @@ You will simulate [`examples/colenses/research-to-rubric`](../../../examples/col
 
 ```text
 examples/colenses/research-to-rubric/
-  COLENS.MD
+  SKILL.md
   README.md
 ```
 
 ## Step-by-Step Walkthrough
 
-1. Open `COLENS.MD`.
+1. Open `SKILL.md`.
 2. Inspect `colens_type: evaluation`.
 3. Review the four steps: `lens_execution`, two `agent_task` steps, and an `approval_gate`.
 4. Pass a topic through `--inputs`.
@@ -43,7 +43,7 @@ examples/colenses/research-to-rubric/
 
 ```bash
 pnpm nx run cli:build
-node dist/apps/cli/main.js colens run examples/colenses/research-to-rubric/COLENS.MD --inputs '{"topic":"local battle scoring"}'
+node dist/apps/cli/main.js colens run examples/colenses/research-to-rubric/SKILL.md --inputs '{"topic":"local battle scoring"}'
 ```
 
 ## Expected Output

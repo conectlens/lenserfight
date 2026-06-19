@@ -8,7 +8,7 @@ description: Portable comparison spec with participants, evaluation, and report 
 <ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
 
 
-The portable form of a battle. Used for **workspace-private** comparisons (`kind: private_battle`), as opposed to publicly published battles or the native `BATTLE.MD`. Run with `lenserfight battle run ./PRIVATE_BATTLE.md`.
+The portable form of a battle. Used for **workspace-private** comparisons (`kind: private_battle`), as opposed to publicly published battles or the native `SKILL.md`. Run with `lenserfight battle run ./PRIVATE_BATTLE.md`.
 
 ## Filename
 
@@ -74,6 +74,6 @@ Required sections in the exported report.
 ## Related
 
 - [Markdown Object Formats overview](../markdown-objects)
-- [Native `BATTLE.MD`](./battle-md)
+- [Native `SKILL.md`](./battle-md)
 - [Portable `EVALUATION.md`](./evaluation-md)
 - [Portable `RUN_REPORT.md`](./run-report-md)

@@ -10,7 +10,7 @@ The automation-first CLI surface is the local-file companion to LenserFight's ca
 | `lf import <path>` | Register validated markdown objects in the local registry |
 | `lf export <kind> --template` | Generate a canonical object template |
 | `lf export <kind> <id>` | Re-export an imported object by id |
-| `lf workflow run <file>` | Simulate a `COLENS.MD` and emit reports |
+| `lf workflow run <file>` | Simulate a `SKILL.md` and emit reports |
 | `lf tool test <file>` | Validate a `TOOL.md` contract |
 | `lf evaluate <file>` | Validate and summarize an `EVALUATION.md` spec |
 | `lf battle run <file>` | Simulate a `PRIVATE_BATTLE.md` spec |
@@ -19,11 +19,11 @@ The automation-first CLI surface is the local-file companion to LenserFight's ca
 ## Typical local-first flow
 
 ```bash
-lenserfight export agent --template --out ./LENSER.MD
-lenserfight export workflow --template --out ./COLENS.MD
+lenserfight export agent --template --out ./SKILL.md
+lenserfight export workflow --template --out ./SKILL.md
 lenserfight validate .
 lenserfight import .
-lenserfight workflow run ./COLENS.MD
+lenserfight workflow run ./SKILL.md
 lenserfight battle run ./PRIVATE_BATTLE.md
 ```
 

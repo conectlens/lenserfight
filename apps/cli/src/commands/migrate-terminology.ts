@@ -7,7 +7,7 @@ import { printJson, printTable } from '../utils/output'
 export default defineCommand({
   meta: {
     name: 'migrate-terminology',
-    description: 'Migrate file-mode terminology to lensers/colenses and LENSER.MD/COLENS.MD.',
+    description: 'Migrate legacy file-mode terminology to lensers/colenses and SKILL.md.',
   },
   args: {
     apply: {

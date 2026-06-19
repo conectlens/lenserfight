@@ -447,8 +447,8 @@ Compare useful review outputs. This is not legal advice and must be reviewed by 
 
     const applied = planTerminologyMigration({ roots: [lf], dryRun: false })
     expect(applied.operations.every((operation) => operation.status === 'applied')).toBe(true)
-    expect(existsSync(join(lf, 'lensers', 'reviewer', 'LENSER.MD'))).toBe(true)
-    expect(existsSync(join(lf, 'colenses', 'release-flow', 'COLENS.MD'))).toBe(true)
+    expect(existsSync(join(lf, 'lensers', 'reviewer', 'SKILL.md'))).toBe(true)
+    expect(existsSync(join(lf, 'colenses', 'release-flow', 'SKILL.md'))).toBe(true)
     rmSync(root, { recursive: true, force: true })
   })
 
@@ -470,8 +470,8 @@ Compare useful review outputs. This is not legal advice and must be reviewed by 
     const agentTarget = exportAutomationTemplate('agent', undefined, root)
     const workflowTarget = exportAutomationTemplate('workflow', undefined, root)
 
-    expect(agentTarget).toBe(join(root, 'LENSER.MD'))
-    expect(workflowTarget).toBe(join(root, 'COLENS.MD'))
+    expect(agentTarget).toBe(join(root, 'SKILL.md'))
+    expect(workflowTarget).toBe(join(root, 'SKILL.md'))
     expect(existsSync(agentTarget)).toBe(true)
     expect(existsSync(workflowTarget)).toBe(true)
     rmSync(root, { recursive: true, force: true })

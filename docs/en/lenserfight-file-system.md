@@ -25,11 +25,12 @@ Tests and automation can set `LENSERFIGHT_HOME` to avoid touching the real `~/.l
 .lenserfight/
   config.json
   README.md
-  lensers/*/LENSER.MD
-  lenses/*/LENS.MD
-  colenses/*/COLENS.MD
-  battles/*/BATTLE.MD
-  rays/*/RAY.MD
+  lensers/*/SKILL.md
+  lenses/*/SKILL.md
+  colenses/*/SKILL.md
+  battles/*/SKILL.md
+  rays/*/SKILL.md
+  skills/*/SKILL.md
   templates/        # convention for reusable snippets or exported packs
   examples/         # convention for runnable examples
   snippets/         # convention for reusable prompt fragments
@@ -54,14 +55,14 @@ Only the item folders and referenced `scripts/`, `references/`, `assets/`, and `
 4. Sort paths deterministically.
 5. Resolve duplicate item slugs by precedence.
 
-For one-off validation, pass a file or directory: `lf validate .lenserfight/lenses/code-reviewer/LENS.MD`.
+For one-off validation, pass a file or directory: `lf validate .lenserfight/lenses/code-reviewer/SKILL.md`.
 
 ## Override precedence
 
 Highest wins:
 
 1. Runtime CLI flags and explicit command arguments.
-2. Item-level metadata in `LENSER.MD`, `LENS.MD`, `COLENS.MD`, `BATTLE.MD`, or `RAY.MD`.
+2. Item-level metadata in the item's `SKILL.md` file.
 3. Nearest local `.lenserfight` directory.
 4. Project-root `.lenserfight` directory.
 5. User-global `~/.lenserfight` directory.
@@ -123,7 +124,7 @@ lf validate
 lf validate --json
 lf validate --no-global
 lf validate --no-recursive
-lf validate .lenserfight/colenses/pr-review/COLENS.MD
+lf validate .lenserfight/colenses/pr-review/SKILL.md
 ```
 
 Validation checks markdown frontmatter, inferred item type, required metadata, known file names, lens parameter declarations, referenced disclosure files, colens references, battle participants, duplicate slugs, deterministic conflict winners, ray/tag references, and legal/finance disclaimer markers.
@@ -132,12 +133,12 @@ Validation checks markdown frontmatter, inferred item type, required metadata, k
 
 Canonical discovery precedence is deterministic:
 
-1. `lensers/*/LENSER.MD`
-2. `colenses/*/COLENS.MD`
+1. `lensers/*/SKILL.md`
+2. `colenses/*/SKILL.md`
 3. `agents/*/AGENT.MD` as a compatibility alias
 4. `workflows/*/WORKFLOW.MD` as a compatibility alias
 
-If a canonical and legacy item share the same slug, the canonical path wins and the legacy path is reported as an overridden duplicate. New generators and docs must use only `lensers/`, `colenses/`, `LENSER.MD`, and `COLENS.MD`.
+If a canonical and legacy item share the same slug, the canonical path wins and the legacy path is reported as an overridden duplicate. New generators and docs must use only `lensers/`, `colenses/`, `SKILL.md`, and `SKILL.md`.
 
 Use `lf migrate-terminology` to preview the rename plan, or `lf migrate-terminology --apply` to rename folders and filenames. The bash helper `scripts/migrate-lenserfight-terminology.sh` provides the same dry-run-first migration path for project, nested, and user-global `.lenserfight` directories.
 

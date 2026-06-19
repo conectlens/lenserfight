@@ -34,16 +34,16 @@ tags: []
 
 | Format | Purpose | Required fields | Validation |
 |---|---|---|---|
-| [`LENS.MD`](./formats/lens-md) | Native ConectLens lens/task unit | `name`, `description`; parameterized files also need `parameters[].label` + `tool_id` | frontmatter + parameter + disclosure checks |
-| [`LENSER.MD`](./formats/lenser-md-native) | Native ConectLens agent/LENSER definition | `name`, `description` | frontmatter + disclosure checks |
-| [`COLENS.MD`](./formats/colens-md-native) | Native ConectLens workflow/COLENS | `name`, `description` | frontmatter + disclosure checks |
-| [`BATTLE.MD`](./formats/battle-md) | Native orchestration/comparison document | `name`, `description`, participants or orchestration references | frontmatter + battle reference checks |
+| [`SKILL.md`](./formats/lens-md) | Native ConectLens lens/task unit | `name`, `description`; parameterized files also need `parameters[].label` + `tool_id` | frontmatter + parameter + disclosure checks |
+| [`SKILL.md`](./formats/lenser-md-native) | Native ConectLens agent/LENSER definition | `name`, `description` | frontmatter + disclosure checks |
+| [`SKILL.md`](./formats/colens-md-native) | Native ConectLens workflow/COLENS | `name`, `description` | frontmatter + disclosure checks |
+| [`SKILL.md`](./formats/battle-md) | Native orchestration/comparison document | `name`, `description`, participants or orchestration references | frontmatter + battle reference checks |
 | [`TEAM.MD`](./formats/team-md) | Native LENSER team definition | `name`, `description` | frontmatter + disclosure checks |
 | [`LENS.md`](./formats/lens-md-legacy) | Legacy portable lens/task unit | `id`, `name`, prompt body, input/output schema | frontmatter + section checks |
-| [`LENSER.MD`](./formats/lenser-md-legacy) | Legacy compatibility alias for a portable agent definition | metadata, instructions, permissions | frontmatter + section checks |
+| [`SKILL.md`](./formats/lenser-md-legacy) | Legacy compatibility alias for a portable agent definition | metadata, instructions, permissions | frontmatter + section checks |
 | [`AGENT_TEAM.md`](./formats/agent-team-md) | Portable team definition | members, purpose, collaboration rules | frontmatter + section checks |
 | [`TOOL.md`](./formats/tool-md) | Portable tool contract | input/output schema, auth, risk | frontmatter + section checks |
-| [`COLENS.MD`](./formats/colens-md-legacy) | Legacy compatibility alias for a portable workflow | triggers, inputs, steps, outputs | frontmatter + section checks |
+| [`SKILL.md`](./formats/colens-md-legacy) | Legacy compatibility alias for a portable workflow | triggers, inputs, steps, outputs | frontmatter + section checks |
 | [`PRIVATE_BATTLE.md`](./formats/private-battle-md) | Portable comparison spec | participants, evaluation, report | frontmatter + section checks |
 | [`SKILL.md`](./formats/skill-md) | Portable reusable capability | purpose, when to use, workflow | frontmatter + section checks |
 | [`MEMORY_POLICY.md`](./formats/memory-policy-md) | Portable memory rules | scope, retention, promotion | frontmatter + section checks |
@@ -57,13 +57,13 @@ The current CLI foundation supports:
 ```bash
 lenserfight validate ./automation
 lenserfight import ./automation
-lenserfight export lens --template --out .lenserfight/lenses/example/LENS.MD
-lenserfight export lenser --template --out .lenserfight/lensers/example/LENSER.MD
-lenserfight export colens --template --out .lenserfight/colenses/example/COLENS.MD
-lenserfight export battle --template --out .lenserfight/battles/example/BATTLE.MD
+lenserfight export lens --template --out .lenserfight/lenses/example/SKILL.md
+lenserfight export lenser --template --out .lenserfight/lensers/example/SKILL.md
+lenserfight export colens --template --out .lenserfight/colenses/example/SKILL.md
+lenserfight export battle --template --out .lenserfight/battles/example/SKILL.md
 lenserfight migrate-terminology
 lenserfight migrate-terminology --apply
-lenserfight workflow run .lenserfight/colenses/example/COLENS.MD
+lenserfight workflow run .lenserfight/colenses/example/SKILL.md
 lenserfight tool test ./TOOL.md
 lenserfight evaluate ./EVALUATION.md
 lenserfight battle run ./PRIVATE_BATTLE.md
@@ -75,7 +75,7 @@ lenserfight battle run ./PRIVATE_BATTLE.md
 - `lenserfight import` indexes validated files into a local registry
 - `lenserfight export <kind> <id>` re-emits an imported object
 - `lenserfight export <kind> --template` writes a canonical starter template
-- legacy `agent` and `workflow` template requests write canonical `LENSER.MD` and `COLENS.MD` unless `--legacy` is passed
+- legacy `agent` and `workflow` template requests write canonical `SKILL.md` and `SKILL.md` unless `--legacy` is passed
 
 ## Design rules
 

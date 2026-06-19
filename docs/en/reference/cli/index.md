@@ -311,7 +311,7 @@ See [`lf policy`](policy.md), [`lf budget`](budget.md), [`lf kill-switch`](kill-
 
 | Command | Description |
 |---------|-------------|
-| `lf migrate-terminology` | Rewrite legacy `AGENT.md`/`WORKFLOW.md` to canonical `LENSER.MD`/`COLENS.MD` (dry-run by default) |
+| `lf migrate-terminology` | Rewrite legacy `AGENT.md`/`WORKFLOW.md` to canonical `SKILL.md`/`SKILL.md` (dry-run by default) |
 | `lf whats-new [--n N]` | Print recent CHANGELOG entries |
 | `lf onboard` | Friendly alias for `lf setup` — same behavior, gentler name |
 

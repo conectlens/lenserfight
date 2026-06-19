@@ -90,7 +90,7 @@ describe('getSpecKindMeta', () => {
   it('returns the correct meta for Lens', () => {
     const meta = getSpecKindMeta('Lens')
     expect(meta.kind).toBe('Lens')
-    expect(meta.fileName).toBe('LENS.MD')
+    expect(meta.fileName).toBe('SKILL.md')
     expect(meta.legacyKind).toBe('lens')
   })
 })

@@ -16,7 +16,7 @@ so every contribution still goes through your normal CI and human review.
 The runtime is a GitHub Actions workflow ([`.github/workflows/lenserfighter.yml`](https://github.com/conectlens/lenserfight/blob/development/.github/workflows/lenserfighter.yml))
 that runs [`anthropics/claude-code-action`](https://github.com/anthropics/claude-code-action) —
 the same way Claude contributes to GitHub repositories. Its behavior is defined entirely by the
-persona file [`.lenserfight/lensers/lenserfighter/LENSER.MD`](https://github.com/conectlens/lenserfight/blob/development/.lenserfight/lensers/lenserfighter/LENSER.MD).
+persona file [`.lenserfight/lensers/lenserfighter/SKILL.md`](https://github.com/conectlens/lenserfight/blob/development/.lenserfight/lensers/lenserfighter/SKILL.md).
 
 > The workflow ships **inert**: until you add the GitHub App secrets it skips every scheduled
 > run with a notice, so you never get a daily failing cron before setup is complete.
@@ -33,7 +33,7 @@ persona file [`.lenserfight/lensers/lenserfighter/LENSER.MD`](https://github.com
 | `auto` (cron default) | Rotates the three focuses by day-of-week so cost stays at one action per day.                                         | Varies          |
 
 It **never** merges, approves, force-pushes, runs migrations, or opens duplicates. See the
-[persona file](https://github.com/conectlens/lenserfight/blob/development/.lenserfight/lensers/lenserfighter/LENSER.MD)
+[persona file](https://github.com/conectlens/lenserfight/blob/development/.lenserfight/lensers/lenserfighter/SKILL.md)
 for the complete behavior contract.
 
 ---
@@ -96,7 +96,7 @@ Watch a few manual runs (start with `review-prs`) before relying on the cron.
 - **Change cadence:** edit the `schedule.cron` expression. Keep it coarse (daily) — one unit of
   work per run keeps token and CI cost bounded.
 - **Change the model / turn budget:** edit `claude_args` (`--model`, `--max-turns`).
-- **Change behavior:** edit the persona file `.lenserfight/lensers/lenserfighter/LENSER.MD`. The
+- **Change behavior:** edit the persona file `.lenserfight/lensers/lenserfighter/SKILL.md`. The
   workflow reads it at runtime, so behavior changes do not require touching the workflow.
 
 ## Cost

@@ -1,21 +1,21 @@
 ---
-title: LENSER.MD (native) — ConectLens Agent
+title: SKILL.md (native) — ConectLens Agent
 description: Canonical file format for a ConectLens LENSER (agent definition).
 ---
 
-# `LENSER.MD` — Native ConectLens agent/LENSER definition
+# `SKILL.md` — Native ConectLens agent/LENSER definition
 
 <ExperimentalBadge title="Automation" description="This area is under active construction. File formats, APIs and runtime behaviour may shift without notice — try it, but treat it as pre-stable." />
 
 
-A **LENSER** is ConectLens's term for an agent: a persistent operator with a mission, activation rules, and operating constraints. `LENSER.MD` is its native, file-first form, validated by `lenserfight validate` and exported by `lenserfight export lenser`.
+A **LENSER** is ConectLens's term for an agent: a persistent operator with a mission, activation rules, and operating constraints. `SKILL.md` is its native, file-first form, validated by `lenserfight validate` and exported by `lenserfight export lenser`.
 
 ## Filename
 
-- Canonical: `LENSER.MD`
-- Container: `lensers/<slug>/LENSER.MD`
+- Canonical: `SKILL.md`
+- Container: `lensers/<slug>/SKILL.md`
 - Legacy aliases recognised by discovery: `AGENT.MD`, `AGENT.md` (see `LEGACY_AUTOMATION_FILE_NAMES` in [automation-objects.ts](../../../../../../apps/cli/src/utils/automation-objects.ts))
-- The `lenserfight migrate-terminology` command renames `AGENT.md` → `LENSER.MD` and `agents/` → `lensers/`.
+- The `lenserfight migrate-terminology` command renames `AGENT.md` → `SKILL.md` and `agents/` → `lensers/`.
 
 ## Required frontmatter
 
@@ -46,7 +46,7 @@ Compact native LENSERs (only `name` + `description`) skip section checks.
 ## Canonical template
 
 ```bash
-lenserfight export lenser --template --out .lenserfight/lensers/example/LENSER.MD
+lenserfight export lenser --template --out .lenserfight/lensers/example/SKILL.md
 ```
 
 ```yaml
@@ -69,7 +69,7 @@ Define boundaries, safety checks, scripts, references, and handoff expectations.
 
 ```
 lensers/<slug>/
-  LENSER.MD
+  SKILL.md
   references/        # markdown notes the LENSER reads on demand
   scripts/           # non-interactive helper scripts
   assets/            # static files
@@ -79,6 +79,6 @@ lensers/<slug>/
 ## Related
 
 - [Markdown Object Formats overview](../markdown-objects)
-- [Legacy `LENSER.MD` (portable agent definition)](./lenser-md-legacy)
+- [Legacy `SKILL.md` (portable agent definition)](./lenser-md-legacy)
 - [Native `TEAM.MD`](./team-md)
 - Implementation: [automation-objects.ts](../../../../../../apps/cli/src/utils/automation-objects.ts)

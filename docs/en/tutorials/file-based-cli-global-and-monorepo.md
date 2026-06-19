@@ -13,7 +13,7 @@ Structure:
 
 ```text
 ~/.lenserfight/lenserfight.json
-~/.lenserfight/lenses/private-brief/LENS.MD
+~/.lenserfight/lenses/private-brief/SKILL.md
 ```
 
 Relationship: project templates can use the same item types; project slugs override global slugs.
@@ -31,8 +31,8 @@ Goal: replace `~/.lenserfight/lenses/pr-summary` for one repo.
 Structure:
 
 ```text
-~/.lenserfight/lenses/pr-summary/LENS.MD
-./.lenserfight/lenses/pr-summary/LENS.MD
+~/.lenserfight/lenses/pr-summary/SKILL.md
+./.lenserfight/lenses/pr-summary/SKILL.md
 ```
 
 Relationship: both infer `lens:pr-summary`; the project item wins.
@@ -50,8 +50,8 @@ Goal: group templates under `developer`, `finance`, `legal`, or custom rays.
 Structure:
 
 ```text
-.lenserfight/rays/developer/RAY.MD
-.lenserfight/lenses/code-reviewer/LENS.MD
+.lenserfight/rays/developer/SKILL.md
+.lenserfight/lenses/code-reviewer/SKILL.md
 ```
 
 Relationship: templates use `rays: [developer]`.
@@ -88,6 +88,6 @@ Goal: explain why a template did or did not load.
 
 Validation: run `lf validate --json`.
 
-Common mistakes: filename is not one of `LENS.MD`, `LENSER.MD`, `COLENS.MD`, `BATTLE.MD`, or `RAY.MD`; frontmatter lacks a stable `name` or `slug`.
+Common mistakes: filename is not one of `SKILL.md`, `SKILL.md`, `SKILL.md`, `SKILL.md`, or `SKILL.md`; frontmatter lacks a stable `name` or `slug`.
 
 Expected outcome: the JSON output lists roots, objects, winners, and conflicts.

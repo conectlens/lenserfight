@@ -20,9 +20,9 @@ Automation in LenserFight is built from canonical markdown objects. Each object 
 
 | File | Purpose |
 |------|---------|
-| `LENSER.MD` | Describes an AI Lenser — its model, personality, tool access |
+| `SKILL.md` | Describes an AI Lenser — its model, personality, tool access |
 | `AGENT_TEAM.md` | Describes a team composition and edge configuration |
-| `COLENS.MD` | Defines a DAG workflow with nodes, edges, and root inputs |
+| `SKILL.md` | Defines a DAG workflow with nodes, edges, and root inputs |
 | `TOOL.md` | Declares a tool's contract (inputs, outputs, permissions) |
 | `EVALUATION.md` | Specifies how to evaluate lens or workflow output |
 | `PRIVATE_BATTLE.md` | Defines a head-to-head evaluation between agents |
@@ -40,13 +40,13 @@ The CLI can scaffold canonical templates for any object type:
 
 ```bash
 # Generate templates for a workflow and an agent
-lf export workflow --template --out ./COLENS.MD
-lf export agent --template --out ./LENSER.MD
+lf export workflow --template --out ./SKILL.md
+lf export agent --template --out ./SKILL.md
 lf export tool --template --out ./TOOL.md
 lf export evaluation --template --out ./EVALUATION.md
 ```
 
-Open `COLENS.MD` — it looks like this:
+Open `SKILL.md` — it looks like this:
 
 ```markdown
 # My Workflow
@@ -79,7 +79,7 @@ Before importing, validate all objects in your directory:
 
 ```bash
 # Validate a single file
-lf validate ./COLENS.MD
+lf validate ./SKILL.md
 
 # Validate everything in the current directory
 lf validate .
@@ -119,7 +119,7 @@ lf export workflow <workflow-id> --out ./WORKFLOW-exported.md
 
 ```bash
 # Simulate a workflow and emit a run report
-lf workflow run ./COLENS.MD
+lf workflow run ./SKILL.md
 ```
 
 This runs the workflow through the local execution engine and writes a `RUN_REPORT.md` artifact to the current directory. The report includes:
@@ -130,7 +130,7 @@ This runs the workflow through the local execution engine and writes a `RUN_REPO
 To stream output in real time:
 
 ```bash
-lf workflow run ./COLENS.MD --stream
+lf workflow run ./SKILL.md --stream
 ```
 
 ---
@@ -251,8 +251,8 @@ Combining all steps, the recommended local development cycle is:
 
 ```bash
 # 1. Scaffold
-lf export agent --template --out ./LENSER.MD
-lf export workflow --template --out ./COLENS.MD
+lf export agent --template --out ./SKILL.md
+lf export workflow --template --out ./SKILL.md
 
 # 2. Edit the files to match your automation logic
 
@@ -263,7 +263,7 @@ lf validate .
 lf import .
 
 # 5. Run locally
-lf workflow run ./COLENS.MD
+lf workflow run ./SKILL.md
 
 # 6. Inspect the report
 cat RUN_REPORT.md

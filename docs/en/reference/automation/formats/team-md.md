@@ -60,4 +60,4 @@ Define delegation, review, conflict resolution, and escalation rules.
 
 - [Markdown Object Formats overview](../markdown-objects)
 - [Portable `AGENT_TEAM.md`](./agent-team-md)
-- [Native `LENSER.MD`](./lenser-md-native)
+- [Native `SKILL.md`](./lenser-md-native)

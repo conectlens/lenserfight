@@ -27,7 +27,7 @@ Manage file-based and cloud Workflows. Use `lf workflow run` for local simulatio
 
 ## `lf workflow run`
 
-Parse a local `WORKFLOW.md` or `COLENS.MD`, classify each step by executability, and emit a JSON + Markdown run report.
+Parse a local `WORKFLOW.md` or `SKILL.md`, classify each step by executability, and emit a JSON + Markdown run report.
 
 ```bash
 lf workflow run <file> [--inputs <json>] [--json]
@@ -37,7 +37,7 @@ lf workflow run <file> [--inputs <json>] [--json]
 
 | Argument | Type | Required | Description |
 |---|---|---|---|
-| `file` | positional | yes | Path to `WORKFLOW.md` or `COLENS.MD` |
+| `file` | positional | yes | Path to `WORKFLOW.md` or `SKILL.md` |
 
 ### Flags
 
@@ -87,7 +87,7 @@ lf workflow validate <file> [--json]
 
 | Argument | Type | Required | Description |
 |---|---|---|---|
-| `file` | positional | yes | Path to `WORKFLOW.md` or `COLENS.MD` |
+| `file` | positional | yes | Path to `WORKFLOW.md` or `SKILL.md` |
 
 ### Flags
 

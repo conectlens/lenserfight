@@ -36,8 +36,8 @@ const EXAMPLES: Example[] = [
     category: 'file-workspace',
     title: 'File workspace — validate and simulate',
     commands: [
-      'lf validate .lenserfight/lenses/my-lens/LENS.MD',
-      'lf workflow run ./COLENS.MD --inputs \'{"topic": "AI Safety"}\'',
+      'lf validate .lenserfight/lenses/my-lens/SKILL.md',
+      'lf workflow run ./SKILL.md --inputs \'{"topic": "AI Safety"}\'',
     ],
     description: 'Markdown objects on disk. No init, Docker, or cloud keys required.',
   },

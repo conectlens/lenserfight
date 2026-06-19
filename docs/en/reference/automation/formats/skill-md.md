@@ -70,4 +70,4 @@ Step-by-step instructions the lenser should follow.
 
 - [Markdown Object Formats overview](../markdown-objects)
 - [ConectLens Agent Skills Ruleset](../ConectLens-agent-skills)
-- [Native `LENSER.MD`](./lenser-md-native)
+- [Native `SKILL.md`](./lenser-md-native)
