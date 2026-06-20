@@ -245,16 +245,27 @@ export async function executeWorkflowRun(
           if (mediaType && ['image', 'video', 'audio'].includes(mediaType) && url) {
             const mimeType = (od?.['mimeType'] as string | undefined) ?? null
             const ext = mimeType?.split('/')[1]?.split('+')[0] ?? mediaType
-            await serviceClient.rpc('fn_worker_insert_workflow_media_object', {
-              p_workspace_id: workspaceId,
-              p_owner_lenser_id: input.aiLenserId,
-              p_run_id: runId,
-              p_node_id: nodeId,
-              p_external_url: url,
-              p_mime_type: mimeType ?? '',
-              p_media_type: mediaType,
-              p_name: `wf-${runId.slice(0, 8)}-${nodeId.slice(0, 8)}.${ext}`,
-            })
+            // Media persistence is best-effort: never fail the run because the
+            // output media object could not be stored.
+            try {
+              const { error: mediaErr } = await serviceClient.rpc('fn_worker_insert_workflow_media_object', {
+                p_workspace_id: workspaceId,
+                p_owner_lenser_id: input.aiLenserId,
+                p_run_id: runId,
+                p_node_id: nodeId,
+                p_external_url: url,
+                p_mime_type: mimeType ?? '',
+                p_media_type: mediaType,
+                p_name: `wf-${runId.slice(0, 8)}-${nodeId.slice(0, 8)}.${ext}`,
+              })
+              if (mediaErr) {
+                nodeLogger.warn('workflow media insert failed', { runId, nodeId, message: mediaErr.message })
+              }
+            } catch (mediaErr) {
+              nodeLogger.warn('workflow media insert threw', {
+                runId, nodeId, message: mediaErr instanceof Error ? mediaErr.message : String(mediaErr),
+              })
+            }
           }
         }
       },
